@@ -253,37 +253,71 @@
   {:padding {:p1 "Top"
              :p2 "Right"
              :p3 "Bottom"
-             :p4 "Left"}})
+             :p4 "Left"}
+   :gap {:column-gap "Column Gap"
+         :row-gap "Row Gap"}})
 
 (defn spacing-attribute-actions [{:keys [token-id selected-shapes] :as _props}]
   (let [token {:id token-id}
         padding-attrs (:padding spacing)
         all-padding-attrs (into #{} (keys padding-attrs))
         {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes all-padding-attrs)
-        single-attributes (->> padding-attrs
-                               (map (fn [[attr title]]
-                                      (let [selected? (selected-pred attr)]
-                                        {:title title
-                                         :selected? (and (not all-selected?) selected?)
-                                         :action #(let [props {:attributes #{attr}
-                                                               :token token
-                                                               :shape-ids shape-ids}
-                                                        event (cond
-                                                                all-selected? (-> (assoc props :attributes-to-remove #{:r1 :r2 :r3 :r4 :rx :ry})
-                                                                                  (wtc/apply-token))
-                                                                selected? (wtc/unapply-token props)
-                                                                :else (-> (assoc props :on-update-shape wtc/update-shape-radius-single-corner)
-                                                                          (wtc/apply-token)))]
-                                                    (st/emit! event))}))))
-        all-attribute (let [props {:attributes all-padding-attrs
-                                   :token token
-                                   :shape-ids shape-ids}]
-                        {:title "All"
-                         :selected? all-selected?
-                         :action #(if all-selected?
-                                    (st/emit! (wtc/unapply-token props))
-                                    (st/emit! (wtc/apply-token (assoc props :on-update-shape wtc/update-shape-radius-all))))})]
-    (concat [all-attribute] single-attributes)))
+        single-padding (->> padding-attrs
+                            (map (fn [[attr title]]
+                                   (let [selected? (selected-pred attr)]
+                                     {:title title
+                                      :selected? (and (not all-selected?) selected?)
+                                      :action #(let [props {:attributes #{attr}
+                                                            :token token
+                                                            :shape-ids shape-ids}
+                                                     event (cond
+                                                             all-selected? (-> (assoc props :attributes-to-remove #{:r1 :r2 :r3 :r4 :rx :ry})
+                                                                               (wtc/apply-token))
+                                                             selected? (wtc/unapply-token props)
+                                                             :else (-> (assoc props :on-update-shape wtc/update-shape-radius-single-corner)
+                                                                       (wtc/apply-token)))]
+                                                 (st/emit! event))})))
+                            (into))
+        all-padding (let [props {:attributes all-padding-attrs
+                                 :token token
+                                 :shape-ids shape-ids}]
+                      {:title "All"
+                       :selected? all-selected?
+                       :action #(if all-selected?
+                                  (st/emit! (wtc/unapply-token props))
+                                  (st/emit! (wtc/apply-token (assoc props :on-update-shape wtc/update-shape-radius-all))))})
+        gap-attrs (:gap spacing)
+        all-gap-attrs (into #{} (keys gap-attrs))
+        {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes all-gap-attrs)
+        single-gap (->> gap-attrs
+                        (map (fn [[attr title]]
+                               (let [selected? (selected-pred attr)]
+                                 {:title title
+                                  :selected? (and (not all-selected?) selected?)
+                                  :action #(let [props {:attributes #{attr}
+                                                        :token token
+                                                        :shape-ids shape-ids}
+                                                 event (cond
+                                                         all-selected? (-> (assoc props :attributes-to-remove #{:r1 :r2 :r3 :r4 :rx :ry})
+                                                                           (wtc/apply-token))
+                                                         selected? (wtc/unapply-token props)
+                                                         :else (-> (assoc props :on-update-shape wtc/update-shape-radius-single-corner)
+                                                                   (wtc/apply-token)))]
+                                             (st/emit! event))})))
+                        (into))
+        all-gap (let [props {:attributes all-gap-attrs
+                             :token token
+                             :shape-ids shape-ids}]
+                  {:title "All"
+                   :selected? all-selected?
+                   :action #(if all-selected?
+                              (st/emit! (wtc/unapply-token props))
+                              (st/emit! (wtc/apply-token (assoc props :on-update-shape wtc/update-shape-radius-all))))})]
+    (concat [all-padding]
+            single-padding
+            [:separator]
+            [all-gap]
+            single-gap)))
 
 (comment
   (comment
