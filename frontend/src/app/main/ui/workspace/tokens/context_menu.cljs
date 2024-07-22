@@ -220,7 +220,7 @@
 (defn border-radius-attribute-actions [{:keys [token-id selected-shapes] :as _props}]
   (let [token {:id token-id}
         all-attributes #{:r1 :r2 :r3 :r4}
-        {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes #{:r1 :r2 :r3 :r4})
+        {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes all-attributes)
         single-attributes (->> {:r1 "Top Left"
                                 :r2 "Top Right"
                                 :r3 "Bottom Left"
@@ -249,18 +249,20 @@
                                     (st/emit! (wtc/apply-token (assoc props :on-update-shape wtc/update-shape-radius-all))))})]
     (concat [all-attribute] single-attributes)))
 
+(def spacing
+  {:padding {:p1 "Top"
+             :p2 "Right"
+             :p3 "Bottom"
+             :p4 "Left"}})
+
 (defn spacing-attribute-actions [{:keys [token-id selected-shapes] :as _props}]
   (let [token {:id token-id}
-        all-attributes #{:p1 :p2 :p3 :p4}
-        ids-by-attributes (wtt/shapes-ids-by-applied-attributes token selected-shapes all-attributes)
-        shape-ids (into #{} (map :id selected-shapes))
-        all-selected? (wtt/shapes-applied-all? ids-by-attributes shape-ids all-attributes)
-        single-attributes (->> {:r1 "Top Left"
-                                :r2 "Top Right"
-                                :r3 "Bottom Left"
-                                :r4 "Bottom Right"}
+        padding-attrs (:padding spacing)
+        all-padding-attrs (into #{} (keys padding-attrs))
+        {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes all-padding-attrs)
+        single-attributes (->> padding-attrs
                                (map (fn [[attr title]]
-                                      (let [selected? (seq (attr ids-by-attributes))]
+                                      (let [selected? (selected-pred attr)]
                                         {:title title
                                          :selected? (and (not all-selected?) selected?)
                                          :action #(let [props {:attributes #{attr}
@@ -273,7 +275,7 @@
                                                                 :else (-> (assoc props :on-update-shape wtc/update-shape-radius-single-corner)
                                                                           (wtc/apply-token)))]
                                                     (st/emit! event))}))))
-        all-attribute (let [props {:attributes all-attributes
+        all-attribute (let [props {:attributes all-padding-attrs
                                    :token token
                                    :shape-ids shape-ids}]
                         {:title "All"
@@ -282,6 +284,23 @@
                                     (st/emit! (wtc/unapply-token props))
                                     (st/emit! (wtc/apply-token (assoc props :on-update-shape wtc/update-shape-radius-all))))})]
     (concat [all-attribute] single-attributes)))
+
+(comment
+  (comment
+   apply-spacing-token
+   [{:title "All" :attributes #{:p1 :p2 :p3 :p4}}
+    {:title "Top" :attributes #{:p1}}
+    {:title "Right" :attributes #{:p2}}
+    {:title "Bottom" :attributes #{:p3}}
+    {:title "Left" :attributes #{:p4}}
+    :separator
+    {:title "Column Gap" :attributes #{:column-gap}}
+    {:title "Row Gap" :attributes #{:row-gap}}
+    {:title "Vertical padding" :attributes #{:p1 :p3}}
+    {:title "Horizontal padding" :attributes #{:p2 :p4}}])
+
+  nil)
+
 
 (defn shape-attribute-actions [{:keys [token-id token-type selected-shapes] :as context-data}]
   (let [attributes->actions (fn [update-fn coll]
@@ -295,19 +314,7 @@
                                            :selected? selected?)))))]
     (case token-type
       :border-radius (border-radius-attribute-actions context-data)
-      :spacing       (attributes->actions
-                      apply-spacing-token
-                      [{:title "All" :attributes #{:p1 :p2 :p3 :p4}}
-                       {:title "Top" :attributes #{:p1}}
-                       {:title "Right" :attributes #{:p2}}
-                       {:title "Bottom" :attributes #{:p3}}
-                       {:title "Left" :attributes #{:p4}}
-                       :separator
-                       {:title "Column Gap" :attributes #{:column-gap}}
-                       {:title "Vertical padding" :attributes #{:p1 :p3}}
-                       {:title "Horizontal padding" :attributes #{:p2 :p4}}
-                       {:title "Row Gap" :attributes #{:row-gap}}])
-
+      :spacing (spacing-attribute-actions context-data)
       :sizing       (attributes->actions
                      apply-sizing-token
                      [{:title "All" :attributes #{:width :height :layout-item-min-w :layout-item-max-w :layout-item-min-h :layout-item-max-h}}
