@@ -2,8 +2,7 @@ import * as React from "react";
 import Components from "@target/components";
 
 const { RawSvg } = Components;
-const { StoryWrapper, StoryGrid, StoryGridCell, StoryHeader } =
-  Components.storybook;
+const { StoryGrid, StoryGridCell, StoryHeader } = Components.storybook;
 const { svgs } = Components.meta;
 
 const assetList = Object.entries(svgs)
@@ -19,11 +18,12 @@ export default {
       control: { type: "select" },
     },
   },
+  render: ({ ...args }) => <RawSvg {...args} />,
 };
 
 export const All = {
   render: ({}) => (
-    <StoryWrapper theme="light">
+    <>
       <StoryHeader>
         <h1>All SVG Assets</h1>
         <p>Hover on an asset to see its ID.</p>
@@ -36,7 +36,7 @@ export const All = {
           </StoryGridCell>
         ))}
       </StoryGrid>
-    </StoryWrapper>
+    </>
   ),
   parameters: {
     controls: { exclude: ["id"] },
@@ -45,12 +45,8 @@ export const All = {
 };
 
 export const Default = {
-  render: ({ id, ...args }) => (
-    <StoryWrapper theme="default">
-      <RawSvg id={id} {...args} width="200" />
-    </StoryWrapper>
-  ),
   args: {
     id: "brand-gitlab",
+    width: 200,
   },
 };

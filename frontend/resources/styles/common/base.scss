@@ -19,8 +19,8 @@ $lh-133: 1.33;
 $size-4: 1rem;
 
 body {
-  background-color: var(--db-primary);
-  color: var(--df-primary);
+  background-color: var(--color-background-primary);
+  color: var(--color-foreground-primary);
   display: flex;
   flex-direction: column;
   font-family: "worksans", "vazirmatn", sans-serif;

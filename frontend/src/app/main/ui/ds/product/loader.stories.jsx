@@ -2,7 +2,6 @@ import * as React from "react";
 import Components from "@target/components";
 
 const { Loader } = Components;
-const { StoryWrapper } = Components.storybook;
 
 export default {
   title: "Product/Loader",
@@ -10,9 +9,5 @@ export default {
 };
 
 export const Default = {
-  render: () => (
-    <StoryWrapper theme="default">
-      <Loader title="Loading" />
-    </StoryWrapper>
-  ),
+  render: () => <Loader title="Loading" />,
 };
