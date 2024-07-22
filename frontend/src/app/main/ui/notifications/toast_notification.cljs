@@ -38,12 +38,10 @@
     neutral-icon))
 
 (mf/defc toast-notification
-  "These are ephemeral elements that disappear when
-   the close button is pressed,
-   the page is refreshed,
-   the page is navigated to another page or
-   after 7 seconds, which is enough time to be read,
-   except for error messages that require user interaction."
+  "These are ephemeral elements that disappear when the close button
+  is pressed, the page is refreshed, the page is navigated to another
+  page or after 7 seconds, which is enough time to be read, except for
+  error messages that require user interaction."
 
   {::mf/props :obj}
   [{:keys [type content on-close links] :as props}]
