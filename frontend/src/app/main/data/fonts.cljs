@@ -13,7 +13,7 @@
    [app.common.media :as cm]
    [app.common.uuid :as uuid]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as msg]
+   [app.main.data.notifications :as ntf]
    [app.main.fonts :as fonts]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -183,7 +183,7 @@
                     #(when
                       (not-empty %)
                        (st/emit!
-                        (msg/error
+                        (ntf/error
                          (if (> (count %) 1)
                            (tr "errors.bad-font-plural" (str/join ", " %))
                            (tr "errors.bad-font" (first %)))))))

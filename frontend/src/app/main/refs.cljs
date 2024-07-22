@@ -24,9 +24,6 @@
 (def router
   (l/derived :router st/state))
 
-(def message
-  (l/derived :message st/state))
-
 (def profile
   (l/derived :profile st/state))
 

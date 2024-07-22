@@ -10,7 +10,7 @@
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.config :as cf]
-   [app.main.data.messages :as msg]
+   [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -37,7 +37,7 @@
   {::mf/props :obj}
   []
   [:& context-notification
-   {:type :warning
+   {:level :warning
     :content (tr "auth.demo-warning")}])
 
 (defn create-demo-profile
@@ -57,10 +57,10 @@
                    (cond
                      (and (= type :restriction)
                           (= code :provider-not-configured))
-                     (st/emit! (msg/error (tr "errors.auth-provider-not-configured")))
+                     (st/emit! (ntf/error (tr "errors.auth-provider-not-configured")))
 
                      :else
-                     (st/emit! (msg/error (tr "errors.generic"))))))))
+                     (st/emit! (ntf/error (tr "errors.generic"))))))))
 
 (def ^:private schema:login-form
   [:map {:title "LoginForm"}
@@ -86,7 +86,7 @@
 
               (and (= :restriction (:type cause))
                    (= :ldap-not-initialized (:code cause)))
-              (st/emit! (msg/error (tr "errors.ldap-disabled")))
+              (st/emit! (ntf/error (tr "errors.ldap-disabled")))
 
               (and (= :restriction (:type cause))
                    (= :admin-only-profile (:code cause)))
@@ -145,9 +145,8 @@
     [:*
      (when-let [message @error]
        [:& context-notification
-        {:type :error
+        {:level :error
          :content message
-         :data-testid "login-banner"
          :role "alert"}])
 
      [:& fm/form {:on-submit on-submit

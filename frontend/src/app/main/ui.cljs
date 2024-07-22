@@ -14,7 +14,7 @@
    [app.main.ui.debug.icons-preview :refer [icons-preview]]
    [app.main.ui.frame-preview :as frame-preview]
    [app.main.ui.icons :as i]
-   [app.main.ui.messages :as msgs]
+   [app.main.ui.notifications :as notifications]
    [app.main.ui.onboarding.newsletter :refer [onboarding-newsletter]]
    [app.main.ui.onboarding.questions :refer [questions-modal]]
    [app.main.ui.onboarding.team-choice :refer [onboarding-team-modal]]
@@ -194,6 +194,6 @@
       (if edata
         [:& static/exception-page {:data edata :route route}]
         [:*
-         [:& msgs/notifications-hub]
+         [:& notifications/current-notification]
          (when route
            [:& main-page {:route route :profile profile}])])]]))

@@ -7,8 +7,8 @@
 (ns app.main.ui.dashboard.project-menu
   (:require
    [app.main.data.dashboard :as dd]
-   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
@@ -30,7 +30,7 @@
 
         on-duplicate-success
         (fn [new-project]
-          (st/emit! (msg/success (tr "dashboard.success-duplicate-project"))
+          (st/emit! (ntf/success (tr "dashboard.success-duplicate-project"))
                     (rt/nav :dashboard-files
                             {:team-id (:team-id new-project)
                              :project-id (:id new-project)})))
@@ -51,12 +51,12 @@
         (fn [team-id]
           (let [data  {:id (:id project) :team-id team-id}
                 mdata {:on-success #(on-move-success team-id)}]
-            #(st/emit! (msg/success (tr "dashboard.success-move-project"))
+            #(st/emit! (ntf/success (tr "dashboard.success-move-project"))
                        (dd/move-project (with-meta data mdata)))))
 
         delete-fn
         (fn [_]
-          (st/emit! (msg/success (tr "dashboard.success-delete-project"))
+          (st/emit! (ntf/success (tr "dashboard.success-delete-project"))
                     (dd/delete-project project)
                     (dd/go-to-projects (:team-id project))))
 

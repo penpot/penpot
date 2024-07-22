@@ -15,7 +15,7 @@
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.media :as di]
-   [app.main.data.messages :as msg]
+   [app.main.data.notifications :as ntf]
    [app.main.data.websocket :as ws]
    [app.main.features :as features]
    [app.main.repo :as rp]
@@ -711,4 +711,4 @@
 
                         (tr "errors.generic"))]
 
-        (rx/of (msg/warn hint))))))
+        (rx/of (ntf/warn hint))))))

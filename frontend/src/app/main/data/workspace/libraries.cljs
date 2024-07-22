@@ -28,8 +28,8 @@
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dc]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.notifications :as-alias dwn]
@@ -1016,7 +1016,7 @@
                                                               file))
            (rx/concat
             (rx/of (set-updating-library false)
-                   (msg/hide-tag :sync-dialog))
+                   (ntf/hide {:tag :sync-dialog}))
             (when (seq (:redo-changes changes))
               (rx/of (dch/commit-changes changes)))
             (when-not (empty? updated-frames)
@@ -1084,12 +1084,12 @@
                                                   (sync-file (:current-file-id state)
                                                              (:id library)))
                                                 libraries-need-sync))
-                           (st/emit! msg/hide))
+                           (st/emit! (ntf/hide)))
             do-dismiss #(do (st/emit! ignore-sync)
-                            (st/emit! msg/hide))]
+                            (st/emit! (ntf/hide)))]
 
         (when (seq libraries-need-sync)
-          (rx/of (msg/info-dialog
+          (rx/of (ntf/dialog
                   :content (tr "workspace.updates.there-are-updates")
                   :controls :inline-actions
                   :links   [{:label (tr "workspace.updates.more-info")

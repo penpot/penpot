@@ -24,6 +24,8 @@
    [clojure.set :as set]
    [potok.v2.core :as ptk]))
 
+;; FIXME: this ns should be renamed to something different
+
 (declare process-message)
 (declare handle-presence)
 (declare handle-pointer-update)

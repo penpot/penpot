@@ -10,8 +10,8 @@
    [app.common.exceptions :as ex]
    [app.common.pprint :as pp]
    [app.common.schema :as-alias sm]
-   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.util.globals :as glob]
@@ -104,7 +104,7 @@
   (let [msg (tr "errors.auth.unable-to-login")
         uri (. (. js/document -location) -href)]
     (st/emit! (du/logout {:capture-redirect true}))
-    (ts/schedule 500 #(st/emit! (msg/warn msg)))
+    (ts/schedule 500 #(st/emit! (ntf/warn msg)))
     (ts/schedule 1000 #(swap! storage assoc :redirect-url uri))))
 
 ;; Error that happens on an active business model validation does not
@@ -123,7 +123,7 @@
     (= code :invalid-paste-data)
     (let [message (tr "errors.paste-data-validation")]
       (st/async-emit!
-       (msg/show {:content message
+       (ntf/show {:content message
                   :notification-type :toast
                   :type :error
                   :timeout 3000})))
@@ -138,7 +138,7 @@
 (defmethod ptk/handle-error :assertion
   [error]
   (ts/schedule
-   #(st/emit! (msg/show {:content "Internal Assertion Error"
+   #(st/emit! (ntf/show {:content "Internal Assertion Error"
                          :notification-type :toast
                          :type :error
                          :timeout 3000})))
@@ -154,7 +154,7 @@
   [error]
   (ts/schedule
    #(st/emit!
-     (msg/show {:content "Something wrong has happened (on worker)."
+     (ntf/show {:content "Something wrong has happened (on worker)."
                 :notification-type :toast
                 :type :error
                 :timeout 3000})))
@@ -168,7 +168,7 @@
 (defmethod ptk/handle-error :svg-parser
   [_]
   (ts/schedule
-   #(st/emit! (msg/show {:content "SVG is invalid or malformed"
+   #(st/emit! (ntf/show {:content "SVG is invalid or malformed"
                          :notification-type :toast
                          :type :error
                          :timeout 3000}))))
@@ -177,7 +177,7 @@
 (defmethod ptk/handle-error :comment-error
   [_]
   (ts/schedule
-   #(st/emit! (msg/show {:content "There was an error with the comment"
+   #(st/emit! (ntf/show {:content "There was an error with the comment"
                          :notification-type :toast
                          :type :error
                          :timeout 3000}))))

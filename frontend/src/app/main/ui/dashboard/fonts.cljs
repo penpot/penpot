@@ -180,12 +180,12 @@
                            :on-selected on-selected}]]
 
        [:& context-notification {:content (tr "dashboard.fonts.hero-text2")
-                                 :type :default
+                                 :level :default
                                  :is-html true}]
 
        (when problematic-fonts?
          [:& context-notification {:content (tr "dashboard.fonts.warning-text")
-                                   :type :warning
+                                   :level :warning
                                    :is-html true}])]]
 
      [:*

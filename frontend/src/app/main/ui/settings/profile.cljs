@@ -9,8 +9,8 @@
   (:require
    [app.common.schema :as sm]
    [app.config :as cf]
-   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -30,7 +30,7 @@
   (let [data  (:clean-data @form)]
     (st/emit! (du/update-profile data)
               (du/persist-profile)
-              (msg/success (tr "notifications.profile-saved")))))
+              (ntf/success (tr "notifications.profile-saved")))))
 
 ;; --- Profile Form
 

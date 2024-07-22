@@ -9,7 +9,7 @@
   (:require
    [app.common.schema :as sm]
    [app.config :as cf]
-   [app.main.data.messages :as msg]
+   [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -46,22 +46,22 @@
            (let [{:keys [type code] :as edata} (ex-data cause)]
              (condp = [type code]
                [:restriction :registration-disabled]
-               (st/emit! (msg/error (tr "errors.registration-disabled")))
+               (st/emit! (ntf/error (tr "errors.registration-disabled")))
 
                [:restriction :email-domain-is-not-allowed]
-               (st/emit! (msg/error (tr "errors.email-domain-not-allowed")))
+               (st/emit! (ntf/error (tr "errors.email-domain-not-allowed")))
 
                [:restriction :email-has-permanent-bounces]
-               (st/emit! (msg/error (tr "errors.email-has-permanent-bounces" (:email edata))))
+               (st/emit! (ntf/error (tr "errors.email-has-permanent-bounces" (:email edata))))
 
                [:restriction :email-has-complaints]
-               (st/emit! (msg/error (tr "errors.email-has-permanent-bounces" (:email edata))))
+               (st/emit! (ntf/error (tr "errors.email-has-permanent-bounces" (:email edata))))
 
                [:validation :email-as-password]
                (swap! form assoc-in [:errors :password]
                       {:code "errors.email-as-password"})
 
-               (st/emit! (msg/error (tr "errors.generic")))))))
+               (st/emit! (ntf/error (tr "errors.generic")))))))
 
         on-submit
         (mf/use-fn
@@ -198,7 +198,7 @@
         on-error
         (mf/use-fn
          (fn [_]
-           (st/emit! (msg/error (tr "errors.generic")))))
+           (st/emit! (ntf/error (tr "errors.generic")))))
 
         on-submit
         (mf/use-fn

@@ -13,8 +13,8 @@
    [app.config :as cf]
    [app.main.data.common :as dc]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
@@ -134,7 +134,7 @@
         copy-link
         (fn [_]
           (wapi/write-to-clipboard current-link)
-          (st/emit! (msg/show {:type :info
+          (st/emit! (ntf/show {:type :info
                                :notification-type :toast
                                :content (tr "common.share-link.link-copied-success")
                                :timeout 1000})))
