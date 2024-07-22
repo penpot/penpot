@@ -1713,6 +1713,9 @@ msgstr "Upload custom fonts"
 msgid "labels.uploading"
 msgstr "Uploading…"
 
+msgid "labels.loading"
+msgstr "Loading…"
+
 msgid "labels.view-only"
 msgstr "View only"
 

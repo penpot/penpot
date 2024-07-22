@@ -22,6 +22,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.viewer.comments :refer [comments-layer comments-sidebar]]
@@ -628,11 +629,10 @@
       (st/emit! (dv/initialize params))
       (fn []
         (st/emit! (dv/finalize params)))))
-
   (if-let [data (mf/deref refs/viewer-data)]
     (let [props (obj/merge props #js {:data data :key (dm/str file-id)})]
       [:> viewer-content props])
 
-    [:div {:class (stl/css :loader-content)}
-     i/loader-pencil]))
+    [:> loader*  {:title (tr "labels.loading")
+                  :overlay true}]))
 

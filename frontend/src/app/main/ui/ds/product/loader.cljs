@@ -11,23 +11,18 @@
   (:require
    [rumext.v2 :as mf]))
 
-(mf/defc loader*
-  {::mf/props :obj}
+(mf/defc loader-icon*
+  {::mf/props :obj
+   ::mf/private true}
   [{:keys [class width height title] :rest props}]
   (let [class (dm/str (or class "") " " (stl/css :loader))
-        both-provided (and width height)
-        neither-provided (and (nil? width) (nil? height))
+
         props (mf/spread-props props {:viewBox "0 0 677.34762 182.15429"
                                       :role "status"
                                       :width (or width "100px")
                                       :height (or height "27px")
                                       :class class})]
-    (assert (or both-provided neither-provided)
-            (dm/str "Invalid props: both 'width' and 'height' must be provided or neither. "
-                    "Received width: " width ", height: " height))
-    ;; TODO: Add a translated label insted of the title prop.    
-    (assert title
-            (dm/str "You must provide an accesible name for the component"))
+
     [:> "svg" props
      [:title title]
      [:g
@@ -36,3 +31,26 @@
       [:path {:class (stl/css :loader-line)
               :d
               "M134.482 157.147v25l518.57.008.002-25-518.572-.008z"}]]]))
+
+(mf/defc loader*
+  {::mf/props :obj}
+  [{:keys [class wrapperclass width height title overlay children] :rest props}]
+
+  (let [both-provided (and width height)
+        neither-provided (and (nil? width) (nil? height))
+        wrapperclass (dm/str (or wrapperclass "") " " (stl/css-case :loader-wrapper true
+                                                                    :loader-wrapper-overlay overlay))
+        props (mf/spread-props props {:class wrapperclass})]
+
+    (assert title
+            (dm/str "You must provide an accesible name for the component"))
+
+    (assert (or both-provided neither-provided)
+            (dm/str "Invalid props: both 'width' and 'height' must be provided or neither. "
+                    "Received width: " width ", height: " height))
+    [:> "div" props
+     [:> loader-icon* {:title title
+                       :width width
+                       :class class
+                       :height height}]
+     children]))

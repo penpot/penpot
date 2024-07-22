@@ -14,12 +14,25 @@
   }
 }
 
-.loader {
+.loader-wrapper {
   --color-loader-foreground: var(--color-foreground-secondary);
-  fill: var(--color-loader-foreground);
+  color: var(--color-loader-foreground);
+  display: flex;
+  column-gap: var(--sp-s);
+}
+
+.loader-wrapper-overlay {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  width: 100%;
+}
+
+.loader {
+  fill: currentColor;
 }
 
 .loader-line {
-  fill: var(--color-loader-foreground);
+  fill: currentColor;
   animation: line-pencil 0.8s infinite linear;
 }

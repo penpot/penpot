@@ -1770,6 +1770,9 @@ msgstr "Cargar fuente"
 msgid "labels.uploading"
 msgstr "Subiendo…"
 
+msgid "labels.loading"
+msgstr "Cargando…"
+
 msgid "labels.view-only"
 msgstr "Solo lectura"
 

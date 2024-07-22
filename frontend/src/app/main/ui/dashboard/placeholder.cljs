@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.placeholder
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -40,6 +41,9 @@
 
 (mf/defc loading-placeholder
   []
-  [:div {:class (stl/css :grid-empty-placeholder :loader)}
-   [:div {:class (stl/css :icon)} i/loader-pencil]
-   [:div {:class (stl/css :text)} (tr "dashboard.loading-files")]])
+  [:> loader*  {:width "64px"
+                :height "64px"
+                :title (tr "labels.loading")
+                :overlay true
+                :class (stl/css :placeholder-loader)}
+   [:div {:class (stl/css :placeholder-text)} (tr "dashboard.loading-files")]])
