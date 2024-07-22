@@ -66,6 +66,22 @@
               (let [id (obj/get self "$id")]
                 (st/emit! (dwsl/update-layout #{id} {:layout-flex-dir value}))))))}
 
+       {:name "wrap"
+        :get #(-> % u/proxy->shape :layout-wrap-type d/name)
+        :set
+        (fn [self value]
+          (let [value (keyword value)]
+            (cond
+              (not (contains? ctl/wrap-types value))
+              (u/display-not-valid :wrap value)
+
+              (not (r/check-permission plugin-id "content:write"))
+              (u/display-not-valid :wrap "Plugin doesn't have 'content:write' permission")
+
+              :else
+              (let [id (obj/get self "$id")]
+                (st/emit! (dwsl/update-layout #{id} {:layout-wrap-type value}))))))}
+
        {:name "alignItems"
         :get #(-> % u/proxy->shape :layout-align-items d/name)
         :set
