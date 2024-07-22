@@ -15,7 +15,6 @@
 (declare hide)
 (declare show)
 
-(def default-animation-timeout 600)
 (def default-timeout 7000)
 
 (def ^:private
@@ -76,14 +75,7 @@
   (ptk/reify ::hide
     ptk/UpdateEvent
     (update [_ state]
-      (d/update-when state :message assoc :status :hide))
-
-    ptk/WatchEvent
-    (watch [_ _ stream]
-      (let [stopper (rx/filter (ptk/type? ::show) stream)]
-        (->> (rx/of #(dissoc % :message))
-             (rx/delay default-animation-timeout)
-             (rx/take-until stopper))))))
+      (dissoc state :message))))
 
 (defn hide-tag
   [tag]
