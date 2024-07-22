@@ -190,16 +190,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn notify!
+  "Send flash notifications.
+
+  This method allows send flash notifications to specified target destinations.
+  The message can be a free text or a preconfigured one.
+
+  The destination can be: all, profile-id, team-id, or a coll of them."
   [{:keys [::mbus/msgbus ::db/pool]} & {:keys [dest code message level]
                                         :or {code :generic level :info}
                                         :as params}]
   (dm/verify!
    ["invalid level %" level]
    (contains? #{:success :error :info :warning} level))
-
-  (dm/verify!
-   ["invalid code: %" code]
-   (contains? #{:generic :upgrade-version} code))
 
   (letfn [(send [dest]
             (l/inf :hint "sending notification" :dest (str dest))
@@ -226,6 +228,9 @@
 
           (resolve-dest [dest]
             (cond
+              (= :all dest)
+              [uuid/zero]
+
               (uuid? dest)
               [dest]
 
@@ -241,14 +246,15 @@
                          (mapcat resolve-dest))
                         dest)
 
-              (and (coll? dest)
-                   (every? coll? dest))
+              (and (vector? dest)
+                   (every? vector? dest))
               (sequence (comp
                          (map vec)
                          (mapcat resolve-dest))
                         dest)
 
-              (vector? dest)
+              (and (vector? dest)
+                   (keyword? (first dest)))
               (let [[op param] dest]
                 (cond
                   (= op :email)
