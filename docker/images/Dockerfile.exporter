@@ -1,3 +1,19 @@
+FROM penpotapp/devenv:latest AS build
+
+COPY --chown=penpot:users . /home/penpot/penpot
+WORKDIR /home/penpot/penpot
+USER penpot:users
+
+RUN ./manage.sh version > build_version.txt
+
+WORKDIR /home/penpot/penpot/exporter
+RUN ./scripts/build $(cat ../build_version.txt)
+
+WORKDIR /home/penpot/penpot/bundles
+RUN cp -r ../exporter/target ./exporter
+RUN cp -r ../build_version.txt ./exporter/version.txt
+RUN ../manage.sh put-license-file ./exporter
+
 FROM ubuntu:22.04
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
@@ -95,7 +111,7 @@ RUN set -eux; \
     mkdir -p /opt/penpot; \
     chown -R penpot:penpot /opt/penpot;
 
-ADD --chown=penpot:penpot ./bundle-exporter/ /opt/penpot/exporter
+COPY --from=build --chown=penpot:penpot /home/penpot/penpot/bundles/exporter/ /opt/penpot/exporter/
 
 WORKDIR /opt/penpot/exporter
 USER penpot:penpot

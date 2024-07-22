@@ -95,24 +95,6 @@ function run-devenv-shell {
     docker exec -ti penpot-devenv-main sudo -EH -u penpot bash
 }
 
-
-function build {
-    echo ">> build start: $1"
-    local version=$(print-current-version);
-
-    pull-devenv-if-not-exists;
-    docker volume create ${DEVENV_PNAME}_user_data;
-    docker run -t --rm \
-           --mount source=${DEVENV_PNAME}_user_data,type=volume,target=/home/penpot/ \
-           --mount source=`pwd`,type=bind,target=/home/penpot/penpot \
-           -e EXTERNAL_UID=$CURRENT_USER_ID \
-           -e SHADOWCLJS_EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS \
-           -w /home/penpot/penpot/$1 \
-           $DEVENV_IMGNAME:latest sudo -EH -u penpot ./scripts/build $version
-
-    echo ">> build end: $1"
-}
-
 function put-license-file {
     local target=$1;
     tee -a $target/LICENSE  >> /dev/null <<EOF
@@ -124,68 +106,18 @@ Copyright (c) KALEIDOS INC
 EOF
 }
 
-function build-frontend-bundle {
-    echo ">> bundle frontend start";
-
-    mkdir -p ./bundles
-    local version=$(print-current-version);
-    local bundle_dir="./bundles/frontend";
-
-    build "frontend";
-
-    rm -rf $bundle_dir;
-    mv ./frontend/target/dist $bundle_dir;
-    echo $version > $bundle_dir/version.txt;
-    put-license-file $bundle_dir;
-    echo ">> bundle frontend end";
-}
-
-function build-backend-bundle {
-    echo ">> bundle backend start";
-
-    mkdir -p ./bundles
-    local version=$(print-current-version);
-    local bundle_dir="./bundles/backend";
-
-    build "backend";
-
-    rm -rf $bundle_dir;
-    mv ./backend/target/dist $bundle_dir;
-    echo $version > $bundle_dir/version.txt;
-    put-license-file $bundle_dir;
-    echo ">> bundle backend end";
-}
-
-function build-exporter-bundle {
-    echo ">> bundle exporter start";
-
-    mkdir -p ./bundles
-    local version=$(print-current-version);
-    local bundle_dir="./bundles/exporter";
-
-    build "exporter";
-
-    rm -rf $bundle_dir;
-    mv ./exporter/target $bundle_dir;
-
-    echo $version > $bundle_dir/version.txt
-    put-license-file $bundle_dir;
-
-    echo ">> bundle exporter end";
-}
-
 function build-docker-images {
-    rsync -avr --delete ./bundles/frontend/ ./docker/images/bundle-frontend/;
-    rsync -avr --delete ./bundles/backend/ ./docker/images/bundle-backend/;
-    rsync -avr --delete ./bundles/exporter/ ./docker/images/bundle-exporter/;
+    echo ">> docker frontend image build start";
+    docker build -t penpotapp/frontend:$CURRENT_BRANCH -t penpotapp/frontend:latest -f ./docker/images/Dockerfile.frontend .;
+    echo ">> docker frontend image build end";
 
-    pushd ./docker/images;
+    echo ">> docker backend image build start";
+    docker build -t penpotapp/backend:$CURRENT_BRANCH -t penpotapp/backend:latest -f ./docker/images/Dockerfile.backend .;
+    echo ">> docker backend image build end";
 
-    docker build -t penpotapp/frontend:$CURRENT_BRANCH -t penpotapp/frontend:latest -f Dockerfile.frontend .;
-    docker build -t penpotapp/backend:$CURRENT_BRANCH -t penpotapp/backend:latest -f Dockerfile.backend .;
-    docker build -t penpotapp/exporter:$CURRENT_BRANCH -t penpotapp/exporter:latest -f Dockerfile.exporter .;
-
-    popd;
+    echo ">> docker exporter image build start";
+    docker build -t penpotapp/exporter:$CURRENT_BRANCH -t penpotapp/exporter:latest -f ./docker/images/Dockerfile.exporter .;
+    echo ">> docker exporter image build end";
 }
 
 function usage {
@@ -242,25 +174,12 @@ case $1 in
         log-devenv ${@:2}
         ;;
 
+    # production builds internal tooling
+    put-license-file)
+        put-license-file ${@:2}
+        ;;
+
     # production builds
-    build-bundle)
-        build-frontend-bundle;
-        build-backend-bundle;
-        build-exporter-bundle;
-        ;;
-
-    build-frontend-bundle)
-        build-frontend-bundle;
-        ;;
-
-    build-backend-bundle)
-        build-backend-bundle;
-        ;;
-
-    build-exporter-bundle)
-        build-exporter-bundle;
-        ;;
-
     build-docker-images)
         build-docker-images
         ;;

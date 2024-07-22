@@ -1,3 +1,19 @@
+FROM penpotapp/devenv:latest AS build
+
+COPY --chown=penpot:users . /home/penpot/penpot
+WORKDIR /home/penpot/penpot
+USER penpot:users
+
+RUN ./manage.sh version > build_version.txt
+
+WORKDIR /home/penpot/penpot/frontend
+RUN ./scripts/build $(cat ../build_version.txt)
+
+WORKDIR /home/penpot/penpot/bundles
+RUN cp -r ../frontend/target/dist ./frontend
+RUN cp -r ../build_version.txt ./frontend/version.txt
+RUN ../manage.sh put-license-file ./frontend
+
 FROM nginx:1.23
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
@@ -6,11 +22,11 @@ RUN set -ex; \
     mkdir -p /opt/data/assets; \
     chown -R penpot:penpot /opt/data;
 
-ADD ./bundle-frontend/ /var/www/app/
-ADD ./files/config.js /var/www/app/js/config.js
-ADD ./files/nginx.conf /etc/nginx/nginx.conf.template
-ADD ./files/nginx-mime.types /etc/nginx/mime.types
-ADD ./files/nginx-entrypoint.sh /entrypoint.sh
+COPY --from=build /home/penpot/penpot/bundles/frontend/ /var/www/app/
+ADD ./docker/images/files/config.js /var/www/app/js/config.js
+ADD ./docker/images/files/nginx.conf /etc/nginx/nginx.conf.template
+ADD ./docker/images/files/nginx-mime.types /etc/nginx/mime.types
+ADD ./docker/images/files/nginx-entrypoint.sh /entrypoint.sh
 
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
