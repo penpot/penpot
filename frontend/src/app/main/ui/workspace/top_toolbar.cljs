@@ -91,7 +91,7 @@
         hide-toolbar?        (mf/deref toolbar-hidden)
 
         interrupt
-        (mf/use-fn #(st/emit! :interrupt))
+        (mf/use-fn #(st/emit! :interrupt (dw/clear-edition-mode)))
 
         select-drawtool
         (mf/use-fn
