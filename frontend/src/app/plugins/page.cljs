@@ -131,7 +131,16 @@
 
       :else
       (let [page (u/proxy->page self)]
-        (apply array (keys (dm/get-in page [:options :plugin-data (keyword "shared" namespace)])))))))
+        (apply array (keys (dm/get-in page [:options :plugin-data (keyword "shared" namespace)]))))))
+
+  (openPage
+    [_]
+    (cond
+      (not (r/check-permission $plugin "content:read"))
+      (u/display-not-valid :openPage "Plugin doesn't have 'content:read' permission")
+
+      :else
+      (st/emit! (dw/go-to-page $id)))))
 
 (crc/define-properties!
   PageProxy

@@ -479,8 +479,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn create-page
-  [{:keys [file-id]}]
-  (let [id (uuid/next)]
+  [{:keys [page-id file-id]}]
+  (let [id (or page-id (uuid/next))]
     (ptk/reify ::create-page
       ev/Event
       (-data [_]
