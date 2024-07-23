@@ -25,8 +25,10 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.util.dom :as dom]
    [app.util.timers :as timers]
-   [clojure.set :as set :refer [rename-keys]]
+   [beicon.v2.core :as rx]
+   [clojure.set :as set]
    [okulary.core :as l]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def tokens-menu-ref
@@ -179,14 +181,18 @@
                          :selected-shapes selected-shapes})))
 
 (defn update-shape-dimensions [value shape-ids attributes]
-  (st/emit! (dwt/update-dimensions shape-ids (first attributes) value)))
+  (ptk/reify ::update-shape-dimensions
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of
+       (when (:width attributes) (dwt/update-dimensions shape-ids :width value))
+       (when (:height attributes) (dwt/update-dimensions shape-ids :height value))))))
 
 (defn update-layout-sizing-limits [value shape-ids attributes]
   (st/emit! (dwsl/update-layout-child shape-ids {(first attributes) value})))
 
-(defn apply-sizing-token [{:keys [token-id token-type-props selected-shapes]} attributes]
-  (let [token (dt/get-token-data-from-token-id token-id)
-        updated-token-type-props (cond
+(defn apply-sizing-token [{:keys [token token-type-props selected-shapes]} attributes]
+  (let [updated-token-type-props (cond
                                    (set/superset? #{:width :height} attributes)
                                    (assoc token-type-props
                                           :on-update-shape update-shape-dimensions
@@ -388,6 +394,12 @@
                                             (st/emit! event))}))
                             attribute-labels)]
     (concat [all-action] single-actions)))
+
+(defn sizing-attribute-actions [context-data]
+  (concat
+   (all-or-sepearate-actions {:width "Width" :height "Height"} update-shape-dimensions context-data)
+   [:separator]))
+
 (defn generic-attribute-actions [attributes title {:keys [token selected-shapes]}]
   (let [{:keys [on-update-shape] :as p} (get wtc/token-types (:type token))
         {:keys [selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)]
@@ -407,6 +419,7 @@
 (def shape-attribute-actions-map
   {:border-radius border-radius-attribute-actions
    :spacing spacing-attribute-actions
+   :sizing sizing-attribute-actions
    :rotation (partial generic-attribute-actions #{:rotation} "Rotation")
    :opacity (partial generic-attribute-actions #{:opacity} "Opacity")
    :stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")})
