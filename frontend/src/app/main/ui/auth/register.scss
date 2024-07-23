@@ -9,7 +9,7 @@
 
 .accept-terms-and-privacy-wrapper {
   :global(a) {
-    color: $df-secondary;
+    color: var(--color-foreground-secondary);
     font-weight: $fw700;
   }
 }

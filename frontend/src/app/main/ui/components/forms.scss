@@ -93,7 +93,7 @@
   top: calc(50% - $s-8);
   svg {
     @extend .button-icon-small;
-    stroke: $df-secondary;
+    stroke: var(--color-foreground-secondary);
     width: $s-16;
     height: $s-16;
   }

@@ -6,10 +6,10 @@
 
 @use "sass:meta";
 
-.light {
-  --color-background-disabled: var(--lb-quaternary);
-  --color-foreground-disabled: var(--lf-secondary-40);
-  --color-accent-tertiary-muted: var(--la-tertiary-10);
+:root {
+  @include meta.load-css("./_hljs-dark-theme.scss");
+}
 
-  --overlay-color: var(--lb-primary-60);
+.light {
+  @include meta.load-css("./_hljs-light-theme.scss");
 }

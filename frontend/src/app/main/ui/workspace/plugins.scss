@@ -26,7 +26,7 @@
   }
 
   hr {
-    border-color: $db-tertiary;
+    border-color: var(--color-background-tertiary);
   }
 }
 
@@ -148,12 +148,12 @@
 
 .plugin-title {
   @include bodyMediumTypography;
-  color: $df-primary;
+  color: var(--color-foreground-primary);
 }
 
 .plugin-summary {
   @include bodySmallTypography;
-  color: $df-secondary;
+  color: var(--color-foreground-secondary);
 }
 
 .plugins-empty {
@@ -173,19 +173,19 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: $db-tertiary;
+  background: var(--color-background-tertiary);
 
   svg {
     width: $s-16;
     height: $s-16;
-    stroke: $df-secondary;
+    stroke: var(--color-foreground-secondary);
     fill: none;
   }
 }
 
 .plugins-empty-text {
   @include bodySmallTypography;
-  color: $df-primary;
+  color: var(--color-foreground-primary);
 }
 
 div.input-error {
@@ -206,7 +206,7 @@ div.input-error {
 }
 
 .plugins-link {
-  color: $da-primary;
+  color: var(--color-accent-primary);
   font-size: $fs-12;
   display: inline-flex;
   align-items: center;
@@ -216,7 +216,7 @@ div.input-error {
     margin-top: calc(-1 * $s-2);
     width: $s-12;
     height: $s-12;
-    stroke: $da-primary;
+    stroke: var(--color-accent-primary);
     fill: none;
   }
 }
@@ -239,7 +239,7 @@ div.input-error {
   svg {
     width: $s-24;
     height: $s-24;
-    stroke: $da-primary;
+    stroke: var(--color-accent-primary);
     fill: none;
   }
 }
@@ -247,14 +247,14 @@ div.input-error {
 .permissions-list-text {
   @include bodySmallTypography;
   margin: 0;
-  color: $df-secondary;
+  color: var(--color-foreground-secondary);
 }
 
 .permissions-disclaimer {
   @include bodySmallTypography;
   padding: $s-16;
-  background: $db-tertiary;
-  color: $df-secondary;
+  background: var(--color-background-tertiary);
+  color: var(--color-foreground-secondary);
   border-radius: $br-4;
 }
 
@@ -265,10 +265,10 @@ div.input-error {
 
 .discover {
   @include bodySmallTypography;
-  color: $df-secondary;
+  color: var(--color-foreground-secondary);
   margin-top: $s-24;
 
   a {
-    color: $da-primary;
+    color: var(--color-accent-primary);
   }
 }

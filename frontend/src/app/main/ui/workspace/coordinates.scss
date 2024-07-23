@@ -9,7 +9,7 @@
 $width-settings-bar: 256px;
 
 .container {
-  background-color: var(--db-primary);
+  background-color: var(--color-background-primary);
   border-radius: $br-4;
   bottom: 0px;
   padding: $s-2 $s-8;
@@ -28,6 +28,6 @@ $width-settings-bar: 256px;
 }
 
 .coordinate {
-  color: var(--df-primary);
+  color: var(--color-foreground-primary);
   font-size: $fs-12;
 }
