@@ -17,33 +17,38 @@
 (mf/defc notifications-hub
   []
   (let [message  (mf/deref refs/message)
-
-        on-close #(st/emit! dmsg/hide)
-
-        toast-message   {:type (or (:type message) :info)
-                         :links (:links message)
-                         :on-close on-close
-                         :content (:content message)}
-
-        inline-message  {:actions (:actions message)
-                         :links (:links message)
-                         :content (:content message)}
-
-        context-message {:type (or (:type message) :info)
-                         :links (:links message)
-                         :content (:content message)}
-
-        is-context-msg (and (nil? (:timeout message)) (nil? (:actions message)))
-        is-toast-msg   (or (= :toast (:notification-type message)) (some? (:timeout message)))
-        is-inline-msg  (or (= :inline (:notification-type message)) (and (some? (:position message)) (= :floating (:position message))))]
+        on-close (mf/use-fn #(st/emit! dmsg/hide))
+        context? (and (nil? (:timeout message))
+                      (nil? (:actions message)))
+        inline?  (or (= :inline (:notification-type message))
+                     (= :floating (:position message)))
+        toast?   (or (= :toast (:notification-type message))
+                     (some? (:timeout message)))]
 
     (when message
       (cond
-        is-toast-msg
-        [:& toast-notification toast-message]
-        is-inline-msg
-        [:& inline-notification inline-message]
-        is-context-msg
-        [:& context-notification context-message]
+        toast?
+        [:& toast-notification
+         {:type (or (:type message) :info)
+          :links (:links message)
+          :on-close on-close
+          :content (:content message)}]
+
+        inline?
+        [:& inline-notification
+         {:actions (:actions message)
+          :links (:links message)
+          :content (:content message)}]
+
+        context?
+        [:& context-notification
+         {:type (or (:type message) :info)
+          :links (:links message)
+          :content (:content message)}]
+
         :else
-        [:& toast-notification toast-message]))))
+        [:& toast-notification
+         {:type (or (:type message) :info)
+          :links (:links message)
+          :on-close on-close
+          :content (:content message)}]))))
