@@ -4,6 +4,8 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "sass:color";
+
 $mint-150: #7efff5;
 $mint-250: #00d1b8;
 $mint-700: #426158;
@@ -69,6 +71,8 @@ $grayish-blue-500: #8f9da3;
 
   --color-foreground-primary: #{$black};
   --color-foreground-secondary: #{$blue-teal-700};
+
+  --color-shadow: #{color.change($blue-teal-700, $alpha: 0.2)};
 }
 
 :global(.default) {
@@ -94,4 +98,6 @@ $grayish-blue-500: #8f9da3;
 
   --color-foreground-primary: #{$white};
   --color-foreground-secondary: #{$grayish-blue-500};
+
+  --color-shadow: #{color.change($black, $alpha: 0.6)};
 }
