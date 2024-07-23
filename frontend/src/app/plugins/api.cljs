@@ -352,7 +352,7 @@
 
   (openViewer
     [_]
-     (let [params {:page-id (:current-page-id @st/state)
+    (let [params {:page-id (:current-page-id @st/state)
                   :file-id (:current-file-id @st/state)
                   :section "interactions"}]
       (st/emit! (dw/go-to-viewer params))))

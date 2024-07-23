@@ -10,6 +10,8 @@
    [app.common.data.macros :as dm]
    [app.util.object :as obj]))
 
+(def shape-proxy nil)
+
 (defn format-id
   [id]
   (when id (dm/str id)))
@@ -422,3 +424,163 @@
   [tracks]
   (when (some? tracks)
     (format-array format-track tracks)))
+
+
+;; export interface PenpotDissolve {
+;;   type: 'dissolve';
+;;   duration: number;
+;;   easing?: 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out';
+;; }
+;;
+;; export interface PenpotSlide {
+;;   type: 'slide';
+;;   way: 'in' | 'out';
+;;   direction?:
+;;     | 'right'
+;;     | 'left'
+;;     | 'up'
+;;     | 'down';
+;;   duration: number;
+;;   offsetEffect?: boolean;
+;;   easing?: 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out';
+;; }
+;;
+;; export interface PenpotPush {
+;;   type: 'push';
+;;   direction?:
+;;     | 'right'
+;;     | 'left'
+;;     | 'up'
+;;     | 'down';
+;;
+;;   duration: number;
+;;   easing?: 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out';
+;; }
+;;
+;; export type PenpotAnimation = PenpotDissolve | PenpotSlide | PenpotPush;
+
+(defn format-animation
+  [animation]
+  (when animation
+    (obj/clear-empty
+     (case (:animation-type animation)
+
+       :dissolve
+       #js {:type "dissolve"
+            :duration (:duration animation)
+            :easing (format-key (:easing animation))}
+
+       :slide
+       #js {:type "slide"
+            :way (format-key (:way animation))
+            :direction (format-key (:direction animation))
+            :duration (:duration animation)
+            :easing (format-key (:easing animation))
+            :offsetEffect (:offset-effect animation)}
+
+       :push
+       #js {:type "push"
+            :direction (format-key (:direction animation))
+            :duration (:duration animation)
+            :easing (format-key (:easing animation))}
+       nil))))
+
+;;export type PenpotAction =
+;;  | PenpotNavigateTo
+;;  | PenpotOpenOverlay
+;;  | PenpotToggleOverlay
+;;  | PenpotCloseOverlay
+;;  | PenpotPreviousScreen
+;;  | PenpotOpenUrl;
+;;
+;;export interface PenpotNavigateTo {
+;;  type: 'navigate-to';
+;;  destination: PenpotFrame;
+;;  preserveScrollPosition?: boolean;
+;;  animation: PenpotAnimation;
+;;}
+;;
+;;export interface PenpotOverlayAction {
+;;  destination: PenpotFrame;
+;;  relativeTo?: PenpotShape;
+;;  position?:
+;;    | 'manual'
+;;    | 'center'
+;;    | 'top-left'
+;;    | 'top-right'
+;;    | 'top-center'
+;;    | 'bottom-left'
+;;    | 'bottom-right'
+;;    | 'bottom-center';
+;;  manualPositionLocation?: PenpotPoint;
+;;  closeWhenClickOutside?: boolean;
+;;  addBackgroundOverlay?: boolean;
+;;  animation: PenpotAnimation;
+;;}
+;;
+;;export interface PenpotOpenOverlay extends PenpotOverlayAction {
+;;  type: 'open-overlay';
+;;}
+;;
+;;export interface PenpotToggleOverlay extends PenpotOverlayAction {
+;;  type: 'toggle-overlay';
+;;}
+;;
+;;export interface PenpotCloseOverlay {
+;;  type: 'close-overlay';
+;;  destination?: PenpotFrame;
+;;  animation: PenpotAnimation;
+;;}
+;;
+;;export interface PenpotPreviousScreen {
+;;  type: 'previous-screen';
+;;}
+;;
+;;export interface PenpotOpenUrl {
+;;  type: 'open-url';
+;;  url: string;
+;;}
+(defn format-action
+  [interaction plugin file-id page-id]
+  (when interaction
+    (obj/clear-empty
+     (case (:action-type interaction)
+       :navigate
+       #js {:type "navigate-to"
+            :destination (when (:destination interaction) (shape-proxy plugin file-id page-id (:destination interaction)))
+            :preserveScrollPosition (:preserve-scroll interaction false)
+            :animation (format-animation (:animation interaction))}
+
+       :open-overlay
+       #js {:type "open-overlay"
+            :destination (when (:destination interaction) (shape-proxy plugin file-id page-id (:destination interaction)))
+            :relativeTo (when (:relative-to interaction) (shape-proxy plugin file-id page-id (:relative-to interaction)))
+            :position (format-key (:overlay-pos-type interaction))
+            :manualPositionLocation (format-point (:overlay-position interaction))
+            :closeWhenClickOutside (:close-click-outside interaction)
+            :addBackgroundOverlay (:background-overlay interaction)
+            :animation (format-animation (:animation interaction))}
+
+       :toggle-overlay
+       #js {:type "toggle-overlay"
+            :destination (when (:destination interaction) (shape-proxy plugin file-id page-id (:destination interaction)))
+            :relativeTo (when (:relative-to interaction) (shape-proxy plugin file-id page-id (:relative-to interaction)))
+            :position (format-key (:overlay-pos-type interaction))
+            :manualPositionLocation (format-point (:overlay-position interaction))
+            :closeWhenClickOutside (:close-click-outside interaction)
+            :addBackgroundOverlay (:background-overlay interaction)
+            :animation (format-animation (:animation interaction))}
+
+       :close-overlay
+       #js {:type "close-overlay"
+            :destination (when (:destination interaction) (shape-proxy plugin file-id page-id (:destination interaction)))
+            :animation (format-animation (:animation interaction))}
+
+       :prev-screen
+       #js {:type "previous-screen"}
+
+       :open-url
+       #js {:type "open-url"
+            :url (:url interaction)}
+
+       nil))))
