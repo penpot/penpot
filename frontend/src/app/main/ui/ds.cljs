@@ -6,6 +6,8 @@
 
 (ns app.main.ui.ds
   (:require
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list]]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg* raw-svg-list]]
    [app.main.ui.ds.foundations.typography :refer [typography-list]]
@@ -16,8 +18,10 @@
 
 (def default
   "A export used for storybook"
-  #js {:Heading heading*
+  #js {:Button button*
+       :Heading heading*
        :Icon icon*
+       :IconButton icon-button*
        :Loader loader*
        :RawSvg raw-svg*
        :Text text*
