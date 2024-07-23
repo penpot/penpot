@@ -216,9 +216,8 @@
      :shape-ids shape-ids
      :selected-pred #(seq (% ids-by-attributes))}))
 
-(defn border-radius-attribute-actions [{:keys [token-id selected-shapes] :as _props}]
-  (let [token {:id token-id}
-        all-attributes #{:r1 :r2 :r3 :r4}
+(defn border-radius-attribute-actions [{:keys [token selected-shapes]}]
+  (let [all-attributes #{:r1 :r2 :r3 :r4}
         {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes all-attributes)
         single-attributes (->> {:r1 "Top Left"
                                 :r2 "Top Right"
@@ -256,9 +255,8 @@
    :gap {:column-gap "Column Gap"
          :row-gap "Row Gap"}})
 
-(defn gap-attribute-actions [{:keys [token-id selected-shapes] :as _props}]
-  (let [token {:id token-id}
-        on-update-shape update-layout-spacing
+(defn gap-attribute-actions [{:keys [token selected-shapes]}]
+  (let [on-update-shape update-layout-spacing
         gap-attrs (:gap spacing)
         all-gap-attrs (into #{} (keys gap-attrs))
         {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes all-gap-attrs)
@@ -288,9 +286,8 @@
                         (into))]
     (concat all-gap single-gap)))
 
-(defn spacing-attribute-actions [{:keys [token-id selected-shapes] :as props}]
-  (let [token {:id token-id}
-        on-update-shape (fn [resolved-value shape-ids attrs]
+(defn spacing-attribute-actions [{:keys [token selected-shapes] :as context-data}]
+  (let [on-update-shape (fn [resolved-value shape-ids attrs]
                           (dwsl/update-layout shape-ids {:layout-padding (zipmap attrs (repeat resolved-value))}))
         padding-attrs (:padding spacing)
         all-padding-attrs (into #{} (keys padding-attrs))
@@ -358,40 +355,32 @@
                                                                    :else (-> (assoc props :on-update-shape on-update-shape)
                                                                              (wtc/apply-token)))]
                                                        (st/emit! event))}))))
-        gap-items (gap-attribute-actions props)]
+        gap-items (gap-attribute-actions context-data)]
     (concat padding-items
             single-padding-items
             [:separator]
             gap-items)))
 
-(comment
-  (comment
-   apply-spacing-token
-   [{:title "All" :attributes #{:p1 :p2 :p3 :p4}}
-    {:title "Top" :attributes #{:p1}}
-    {:title "Right" :attributes #{:p2}}
-    {:title "Bottom" :attributes #{:p3}}
-    {:title "Left" :attributes #{:p4}}
-    :separator
-    {:title "Column Gap" :attributes #{:column-gap}}
-    {:title "Row Gap" :attributes #{:row-gap}}
-    {:title "Vertical padding" :attributes #{:p1 :p3}}
-    {:title "Horizontal padding" :attributes #{:p2 :p4}}])
+(def shape-attribute-actions-map
+  {:border-radius border-radius-attribute-actions
+   :spacing spacing-attribute-actions
+   :sizing nil})
 
-  nil)
+(defn shape-attribute-actions [{:keys [token] :as context-data}]
+  (when-let [with-actions (get shape-attribute-actions-map (:type token))]
+    (with-actions context-data)))
 
-
-(defn shape-attribute-actions [{:keys [token-id token-type selected-shapes] :as context-data}]
+(defn shape-attribute-actions* [{:keys [token selected-shapes] :as context-data}]
   (let [attributes->actions (fn [update-fn coll]
                               (for [{:keys [attributes] :as item} coll]
                                 (cond
                                   (= :separator item) item
                                   :else
-                                  (let [selected? (wtt/shapes-token-applied? {:id token-id} selected-shapes attributes)]
+                                  (let [selected? (wtt/shapes-token-applied? {:id token} selected-shapes attributes)]
                                     (assoc item
                                            :action #(update-fn context-data attributes)
                                            :selected? selected?)))))]
-    (case token-type
+    (case (:type token)
       :border-radius (border-radius-attribute-actions context-data)
       :spacing (spacing-attribute-actions context-data)
       :sizing       (attributes->actions
@@ -428,15 +417,15 @@
 
       [])))
 
-(defn generate-menu-entries [{:keys [token-id token-type-props _token-type selected-shapes] :as context-data}]
-  (let [{:keys [modal]} token-type-props
+(defn generate-menu-entries [{:keys [token selected-shapes] :as context-data}]
+  (let [{:keys [modal]} (get wtc/token-types (:type token))
         attribute-actions (when (seq selected-shapes)
                             (shape-attribute-actions context-data))
-        default-actions [{:title "Delete Token" :action #(st/emit! (dt/delete-token token-id))}
-                         {:title "Duplicate Token" :action #(st/emit! (dt/duplicate-token token-id))}
+        default-actions [{:title "Delete Token" :action #(st/emit! (dt/delete-token (:id token)))}
+                         {:title "Duplicate Token" :action #(st/emit! (dt/duplicate-token (:id token)))}
                          {:title "Edit Token" :action (fn [event]
                                                         (let [{:keys [key fields]} modal
-                                                              token (dt/get-token-data-from-token-id token-id)]
+                                                              token (dt/get-token-data-from-token-id (:id token))]
                                                           (st/emit! dt/hide-token-context-menu)
                                                           (dom/stop-propagation event)
                                                           (modal/show! key {:x (.-clientX ^js event)
@@ -452,7 +441,7 @@
 (mf/defc token-pill-context-menu
   [context-data]
   (let [menu-entries (generate-menu-entries context-data)]
-    (for [[index {:keys [title action selected? children submenu] :as entry}] (d/enumerate menu-entries)]
+    (for [[index {:keys [title action selected? submenu] :as entry}] (d/enumerate menu-entries)]
       (cond
         (= :separator entry) [:& menu-separator]
         :else
@@ -484,8 +473,9 @@
         dropdown-ref   (mf/use-ref)
         objects (mf/deref refs/workspace-page-objects)
         selected (mf/deref refs/selected-shapes)
-        selected-shapes (into [] (keep (d/getf objects)) selected)]
-
+        selected-shapes (into [] (keep (d/getf objects)) selected)
+        token-id (:token-id mdata)
+        token (get (mf/deref refs/workspace-tokens) token-id)]
     (mf/use-effect
      (mf/deps mdata)
      #(let [dropdown (mf/ref-val dropdown-ref)]
@@ -506,7 +496,5 @@
             :on-context-menu prevent-default}
       (when  (= :token (:type mdata))
         [:ul {:class (stl/css :context-list)}
-         [:& token-pill-context-menu {:token-id (:token-id mdata)
-                                      :token-type-props (:token-type-props mdata)
-                                      :token-type (:token-type mdata)
+         [:& token-pill-context-menu {:token token
                                       :selected-shapes selected-shapes}]])]]))
