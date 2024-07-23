@@ -138,19 +138,23 @@
                          :token-type-props updated-token-type-props
                          :selected-shapes selected-shapes})))
 
-(defn update-layout-spacing [value shape-ids attributes]
-  (if-let [layout-gap (cond
-                        (:row-gap attributes) {:row-gap value}
-                        (:column-gap attributes) {:column-gap value})]
-    (st/emit! (dwsl/update-layout shape-ids {:layout-gap layout-gap}))
-    (st/emit! (dwsl/update-layout shape-ids {:layout-padding (zipmap attributes (repeat value))}))))
+(defn update-layout-spacing [value selected-shapes attributes]
+  (doseq [shape selected-shapes]
+    (let [shape-id (:id shape)]
+      (if-let [layout-gap (cond
+                            (:row-gap attributes) {:row-gap value}
+                            (:column-gap attributes) {:column-gap value})]
+        (st/emit! (dwsl/update-layout [shape-id] {:layout-gap layout-gap}))
+        (when (:layout shape)
+          (st/emit! (dwsl/update-layout [shape-id] {:layout-padding (zipmap attributes (repeat value))})))))))
 
 
 (defn apply-spacing-token [{:keys [token-id token-type-props selected-shapes]} attributes]
   (let [token (dt/get-token-data-from-token-id token-id)
         attributes (set attributes)
         updated-token-type-props (assoc token-type-props
-                                        :on-update-shape update-layout-spacing
+                                        :on-update-shape (fn [value shape-ids]
+                                                           (update-layout-spacing value selected-shapes attributes))
                                         :attributes attributes)]
     (wtc/on-apply-token {:token token
                          :token-type-props updated-token-type-props
