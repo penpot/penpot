@@ -361,6 +361,33 @@
             [:separator]
             gap-items)))
 
+(defn all-or-sepearate-actions [attribute-labels on-update-shape {:keys [token selected-shapes]}]
+  (let [attributes (set (keys attribute-labels))
+        {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)
+        all-action (let [props {:attributes attributes
+                                :token token
+                                :shape-ids shape-ids}]
+                     {:title "All"
+                      :selected? all-selected?
+                      :action #(if all-selected?
+                                 (st/emit! (wtc/unapply-token props))
+                                 (st/emit! (wtc/apply-token (assoc props :on-update-shape on-update-shape))))})
+        single-actions (map (fn [[attr title]]
+                              (let [selected? (selected-pred attr)]
+                                {:title title
+                                 :selected? (and (not all-selected?) selected?)
+                                 :action #(let [props {:attributes #{attr}
+                                                       :token token
+                                                       :shape-ids shape-ids}
+                                                event (cond
+                                                        all-selected? (-> (assoc props :attributes-to-remove attributes)
+                                                                          (wtc/apply-token))
+                                                        selected? (wtc/unapply-token props)
+                                                        :else (-> (assoc props :on-update-shape on-update-shape)
+                                                                  (wtc/apply-token)))]
+                                            (st/emit! event))}))
+                            attribute-labels)]
+    (concat [all-action] single-actions)))
 (defn generic-attribute-actions [attributes title {:keys [token selected-shapes]}]
   (let [{:keys [on-update-shape] :as p} (get wtc/token-types (:type token))
         {:keys [selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)]
