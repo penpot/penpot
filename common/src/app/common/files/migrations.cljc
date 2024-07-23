@@ -22,6 +22,7 @@
    [app.common.schema :as sm]
    [app.common.svg :as csvg]
    [app.common.text :as txt]
+   [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
@@ -1004,6 +1005,17 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
+(def ^:private valid-color?
+  (sm/lazy-validator ::ctc/color))
+
+(defn migrate-up-51
+  "This migration fixes library invalid colors"
+
+  [data]
+  (let [update-colors
+        (fn [colors]
+          (into {} (filter #(-> % val valid-color?) colors)))]
+    (update data :colors update-colors)))
 
 (def migrations
   "A vector of all applicable migrations"
@@ -1046,4 +1058,5 @@
    {:id 47 :migrate-up migrate-up-47}
    {:id 48 :migrate-up migrate-up-48}
    {:id 49 :migrate-up migrate-up-49}
-   {:id 50 :migrate-up migrate-up-50}])
+   {:id 50 :migrate-up migrate-up-50}
+   {:id 51 :migrate-up migrate-up-51}])
