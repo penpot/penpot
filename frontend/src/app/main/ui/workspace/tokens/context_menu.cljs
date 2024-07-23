@@ -257,7 +257,38 @@
    :gap {:column-gap "Column Gap"
          :row-gap "Row Gap"}})
 
-(defn spacing-attribute-actions [{:keys [token-id selected-shapes] :as _props}]
+(defn gap-attribute-actions [{:keys [token-id selected-shapes] :as _props}]
+  (let [token {:id token-id}
+        gap-attrs (:gap spacing)
+        all-gap-attrs (into #{} (keys gap-attrs))
+        {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes all-gap-attrs)
+        all-gap (let [props {:attributes all-gap-attrs
+                             :token token
+                             :shape-ids shape-ids}]
+                  [{:title "All"
+                    :selected? all-selected?
+                    :action #(if all-selected?
+                               (st/emit! (wtc/unapply-token props))
+                               (st/emit! (wtc/apply-token (assoc props :on-update-shape wtc/update-shape-radius-all))))}])
+        single-gap (->> gap-attrs
+                        (map (fn [[attr title]]
+                               (let [selected? (selected-pred attr)]
+                                 {:title title
+                                  :selected? (and (not all-selected?) selected?)
+                                  :action #(let [props {:attributes #{attr}
+                                                        :token token
+                                                        :shape-ids shape-ids}
+                                                 event (cond
+                                                         all-selected? (-> (assoc props :attributes-to-remove #{:r1 :r2 :r3 :r4 :rx :ry})
+                                                                           (wtc/apply-token))
+                                                         selected? (wtc/unapply-token props)
+                                                         :else (-> (assoc props :on-update-shape wtc/update-shape-radius-single-corner)
+                                                                   (wtc/apply-token)))]
+                                             (st/emit! event))})))
+                        (into))]
+    (concat all-gap single-gap)))
+
+(defn spacing-attribute-actions [{:keys [token-id selected-shapes] :as props}]
   (let [token {:id token-id}
         on-update-shape (fn [resolved-value shape-ids attrs]
                           (dwsl/update-layout shape-ids {:layout-padding (zipmap attrs (repeat resolved-value))}))
@@ -327,38 +358,11 @@
                                                                    :else (-> (assoc props :on-update-shape on-update-shape)
                                                                              (wtc/apply-token)))]
                                                        (st/emit! event))}))))
-        gap-attrs (:gap spacing)
-        all-gap-attrs (into #{} (keys gap-attrs))
-        {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes all-gap-attrs)
-        single-gap (->> gap-attrs
-                        (map (fn [[attr title]]
-                               (let [selected? (selected-pred attr)]
-                                 {:title title
-                                  :selected? (and (not all-selected?) selected?)
-                                  :action #(let [props {:attributes #{attr}
-                                                        :token token
-                                                        :shape-ids shape-ids}
-                                                 event (cond
-                                                         all-selected? (-> (assoc props :attributes-to-remove #{:r1 :r2 :r3 :r4 :rx :ry})
-                                                                           (wtc/apply-token))
-                                                         selected? (wtc/unapply-token props)
-                                                         :else (-> (assoc props :on-update-shape wtc/update-shape-radius-single-corner)
-                                                                   (wtc/apply-token)))]
-                                             (st/emit! event))})))
-                        (into))
-        all-gap (let [props {:attributes all-gap-attrs
-                             :token token
-                             :shape-ids shape-ids}]
-                  {:title "All"
-                   :selected? all-selected?
-                   :action #(if all-selected?
-                              (st/emit! (wtc/unapply-token props))
-                              (st/emit! (wtc/apply-token (assoc props :on-update-shape wtc/update-shape-radius-all))))})]
+        gap-items (gap-attribute-actions props)]
     (concat padding-items
             single-padding-items
             [:separator]
-            [all-gap]
-            single-gap)))
+            gap-items)))
 
 (comment
   (comment
