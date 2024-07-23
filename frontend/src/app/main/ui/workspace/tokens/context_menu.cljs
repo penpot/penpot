@@ -361,10 +361,28 @@
             [:separator]
             gap-items)))
 
+(defn generic-attribute-actions [attributes title {:keys [token selected-shapes]}]
+  (let [{:keys [on-update-shape] :as p} (get wtc/token-types (:type token))
+        {:keys [selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)]
+    (map (fn [attribute]
+           (let [selected? (selected-pred attribute)
+                 props {:attributes #{attribute}
+                        :token token
+                        :shape-ids shape-ids}]
+
+             {:title title
+              :selected? selected?
+              :action #(if selected?
+                         (st/emit! (wtc/unapply-token props))
+                         (st/emit! (wtc/apply-token (assoc props :on-update-shape on-update-shape))))}))
+         attributes)))
+
 (def shape-attribute-actions-map
   {:border-radius border-radius-attribute-actions
    :spacing spacing-attribute-actions
-   :sizing nil})
+   :rotation (partial generic-attribute-actions #{:rotation} "Rotation")
+   :opacity (partial generic-attribute-actions #{:opacity} "Opacity")
+   :stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")})
 
 (defn shape-attribute-actions [{:keys [token] :as context-data}]
   (when-let [with-actions (get shape-attribute-actions-map (:type token))]
@@ -381,8 +399,6 @@
                                            :action #(update-fn context-data attributes)
                                            :selected? selected?)))))]
     (case (:type token)
-      :border-radius (border-radius-attribute-actions context-data)
-      :spacing (spacing-attribute-actions context-data)
       :sizing       (attributes->actions
                      apply-sizing-token
                      [{:title "All" :attributes #{:width :height :layout-item-min-w :layout-item-max-w :layout-item-min-h :layout-item-max-h}}
@@ -403,17 +419,7 @@
                        {:title "y" :attributes #{:y}}])
                       ;;TODO: Background blur {:title "Background blur" :attributes #{:width}}])
 
-      :opacity      (attributes->actions
-                     apply-rotation-opacity-stroke-token
-                     [{:title "opacity" :attributes #{:opacity}}])
 
-      :rotation     (attributes->actions
-                     apply-rotation-opacity-stroke-token
-                     [{:title "rotation" :attributes #{:rotation}}])
-
-      :stroke-width (attributes->actions
-                     apply-rotation-opacity-stroke-token
-                     [{:title "stroke width" :attributes #{:stroke-width}}])
 
       [])))
 
