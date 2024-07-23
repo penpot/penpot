@@ -305,30 +305,28 @@
                                                                               :attributes vertical-attributes
                                                                               :on-update-shape on-update-shape)))]
                                     (st/emit! event)))}]
-        ;; single-padding (->> padding-attrs
-        ;;                     (map (fn [[attr title]]
-        ;;                            (let [selected? (selected-pred attr)]
-        ;;                              {:title title
-        ;;                               :selected? (and (not all-selected?) selected?)
-        ;;                               :action #(let [props {:attributes #{attr}
-        ;;                                                     :token token
-        ;;                                                     :shape-ids shape-ids}
-        ;;                                              event (cond
-        ;;                                                      all-selected? (-> (assoc props :attributes-to-remove all-padding-attrs)
-        ;;                                                                        (wtc/apply-token))
-        ;;                                                      selected? (wtc/unapply-token props)
-        ;;                                                      :else (-> (assoc props :on-update-shape wtc/update-shape-radius-single-corner)
-        ;;                                                                (wtc/apply-token)))]
-        ;;                                          (st/emit! event))})))
-        ;;                     (into))
-        ;; all-padding (let [props {:attributes all-padding-attrs
-        ;;                          :token token
-        ;;                          :shape-ids shape-ids}]
-        ;;               {:title "All"
-        ;;                :selected? all-selected?
-        ;;                :action #(if all-selected?
-        ;;                           (st/emit! (wtc/unapply-token props))
-        ;;                           (st/emit! (wtc/apply-token (assoc props :on-update-shape wtc/update-shape-radius-all))))})
+        single-padding-items (->> padding-attrs
+                                  (map (fn [[attr title]]
+                                         (let [same-axis-selected? (cond
+                                                                     (get horizontal-attributes attr) horizontal-padding-selected?
+                                                                     (get vertical-attributes attr) vertical-padding-selected?
+                                                                     :else true)
+                                               selected? (and
+                                                          (not all-selected?)
+                                                          (not same-axis-selected?)
+                                                          (selected-pred attr))]
+                                           {:title title
+                                            :selected? selected?
+                                            :action #(let [props {:attributes #{attr}
+                                                                  :token token
+                                                                  :shape-ids shape-ids}
+                                                           event (cond
+                                                                   all-selected? (-> (assoc props :attributes-to-remove all-padding-attrs)
+                                                                                     (wtc/apply-token))
+                                                                   selected? (wtc/unapply-token props)
+                                                                   :else (-> (assoc props :on-update-shape on-update-shape)
+                                                                             (wtc/apply-token)))]
+                                                       (st/emit! event))}))))
         gap-attrs (:gap spacing)
         all-gap-attrs (into #{} (keys gap-attrs))
         {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes all-gap-attrs)
@@ -357,6 +355,7 @@
                               (st/emit! (wtc/unapply-token props))
                               (st/emit! (wtc/apply-token (assoc props :on-update-shape wtc/update-shape-radius-all))))})]
     (concat padding-items
+            single-padding-items
             [:separator]
             [all-gap]
             single-gap)))
