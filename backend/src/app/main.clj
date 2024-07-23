@@ -254,7 +254,7 @@
    {::http.client/client (ig/ref ::http.client/client)}
 
    ::oidc.providers/gitlab
-   {}
+   {::http.client/client (ig/ref ::http.client/client)}
 
    ::oidc.providers/generic
    {::http.client/client (ig/ref ::http.client/client)}

@@ -70,6 +70,20 @@
         (handle-response-transformation request mdata)
         (handle-before-comple-hook mdata))))
 
+(defn get-external-session-id
+  [request]
+  (when-let [session-id (rreq/get-header request "x-external-session-id")]
+    (when-not (or (> (count session-id) 256)
+                  (= session-id "null")
+                  (str/blank? session-id))
+      session-id)))
+
+(defn- get-external-event-origin
+  [request]
+  (when-let [origin (rreq/get-header request "x-event-origin")]
+    (when-not (> (count origin) 256)
+      origin)))
+
 (defn- rpc-handler
   "Ring handler that dispatches cmd requests and convert between
   internal async flow into ring async flow."
@@ -79,8 +93,8 @@
         profile-id   (or (::session/profile-id request)
                          (::actoken/profile-id request))
 
-        session-id   (rreq/get-header request "x-external-session-id")
-        event-origin (rreq/get-header request "x-event-origin")
+        session-id   (get-external-session-id request)
+        event-origin (get-external-event-origin request)
 
         data         (-> params
                          (assoc ::handler-name handler-name)
