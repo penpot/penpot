@@ -25,7 +25,7 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.util.dom :as dom]
    [app.util.timers :as timers]
-   [clojure.set :as set]
+   [clojure.set :as set :refer [rename-keys]]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -140,11 +140,10 @@
 
 (defn update-layout-spacing [value shape-ids attributes]
   (if-let [layout-gap (cond
-                        (:row-gap attributes) {:row-gap value}
-                        (:column-gap attributes) {:column-gap value})]
-    (st/emit! (dwsl/update-layout shape-ids {:layout-gap layout-gap}))
-    (st/emit! (dwsl/update-layout shape-ids {:layout-padding (zipmap attributes (repeat value))}))))
-
+                          (:row-gap attributes) {:row-gap value}
+                          (:column-gap attributes) {:column-gap value})]
+    (dwsl/update-layout shape-ids {:layout-gap layout-gap})
+    (dwsl/update-layout shape-ids {:layout-padding (zipmap attributes (repeat value))})))
 
 (defn apply-spacing-token [{:keys [token-id token-type-props selected-shapes]} attributes]
   (let [token (dt/get-token-data-from-token-id token-id)
@@ -259,6 +258,7 @@
 
 (defn gap-attribute-actions [{:keys [token-id selected-shapes] :as _props}]
   (let [token {:id token-id}
+        on-update-shape update-layout-spacing
         gap-attrs (:gap spacing)
         all-gap-attrs (into #{} (keys gap-attrs))
         {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes all-gap-attrs)
@@ -269,7 +269,7 @@
                     :selected? all-selected?
                     :action #(if all-selected?
                                (st/emit! (wtc/unapply-token props))
-                               (st/emit! (wtc/apply-token (assoc props :on-update-shape wtc/update-shape-radius-all))))}])
+                               (st/emit! (wtc/apply-token (assoc props :on-update-shape on-update-shape))))}])
         single-gap (->> gap-attrs
                         (map (fn [[attr title]]
                                (let [selected? (selected-pred attr)]
@@ -279,10 +279,10 @@
                                                         :token token
                                                         :shape-ids shape-ids}
                                                  event (cond
-                                                         all-selected? (-> (assoc props :attributes-to-remove #{:r1 :r2 :r3 :r4 :rx :ry})
+                                                         all-selected? (-> (assoc props :attributes-to-remove #{:row-gap :column-gap})
                                                                            (wtc/apply-token))
                                                          selected? (wtc/unapply-token props)
-                                                         :else (-> (assoc props :on-update-shape wtc/update-shape-radius-single-corner)
+                                                         :else (-> (assoc props :on-update-shape on-update-shape)
                                                                    (wtc/apply-token)))]
                                              (st/emit! event))})))
                         (into))]
