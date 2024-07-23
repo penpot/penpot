@@ -189,7 +189,12 @@
        (when (:height attributes) (dwt/update-dimensions shape-ids :height value))))))
 
 (defn update-layout-sizing-limits [value shape-ids attributes]
-  (st/emit! (dwsl/update-layout-child shape-ids {(first attributes) value})))
+  (let [props (-> {:layout-item-min-w value
+                   :layout-item-min-h value
+                   :layout-item-max-w value
+                   :layout-item-max-h value}
+                  (select-keys attributes))]
+    (dwsl/update-layout-child shape-ids props)))
 
 (defn apply-sizing-token [{:keys [token token-type-props selected-shapes]} attributes]
   (let [updated-token-type-props (cond
@@ -397,8 +402,17 @@
 
 (defn sizing-attribute-actions [context-data]
   (concat
-   (all-or-sepearate-actions {:width "Width" :height "Height"} update-shape-dimensions context-data)
-   [:separator]))
+   (all-or-sepearate-actions {:width "Width"
+                              :height "Height"}
+                             update-shape-dimensions context-data)
+   [:separator]
+   (all-or-sepearate-actions {:layout-item-min-w "Min Width"
+                              :layout-item-min-h "Min Height"}
+                             update-layout-sizing-limits context-data)
+   [:separator]
+   (all-or-sepearate-actions {:layout-item-max-w "Max Width"
+                              :layout-item-max-h "Max Height"}
+                             update-layout-sizing-limits context-data)))
 
 (defn generic-attribute-actions [attributes title {:keys [token selected-shapes]}]
   (let [{:keys [on-update-shape] :as p} (get wtc/token-types (:type token))
