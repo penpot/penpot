@@ -2,6 +2,10 @@
 
 ## 2.1.1
 
+### :sparkles: New features
+
+- Consolidate templates new order and naming  [Taiga #8392](https://tree.taiga.io/project/penpot/task/8392)
+
 ### :bug: Bugs fixed
 
 - Fix pencil loader [Taiga #8348](https://tree.taiga.io/project/penpot/issue/8348)
