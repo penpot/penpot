@@ -475,17 +475,13 @@
                 :on-context-menu prevent-default}
            children]])])))
 
-(mf/defc menu-separator
-  []
-  [:li {:class (stl/css :separator)}])
-
 (mf/defc context-menu-tree
   [context-data]
   (let [entries (generate-menu-entries context-data)]
     (for [[index {:keys [title action selected? submenu] :as entry}] (d/enumerate entries)]
       [:* {:key (str title " " index)}
        (cond
-         (= :separator entry) [:& menu-separator]
+         (= :separator entry) [:li {:class (stl/css :separator)}]
          submenu [:& menu-entry {:title title}
                   [:& context-menu-tree (assoc context-data :type submenu)]]
          :else [:& menu-entry
