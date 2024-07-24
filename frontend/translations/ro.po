@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-07-24 14:09+0000\n"
+"PO-Revision-Date: 2024-07-25 17:09+0000\n"
 "Last-Translator: AlexTECPlayz <alextec70@outlook.com>\n"
 "Language-Team: Romanian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ro/>\n"
@@ -49,9 +49,8 @@ msgid "auth.fullname"
 msgstr "Numele complet"
 
 #: src/app/main/ui/auth/register.cljs
-#, fuzzy
 msgid "auth.login-here"
-msgstr "Conectează-te"
+msgstr "Logați-vă aici."
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
@@ -4931,3 +4930,23 @@ msgstr "Click pentru a închide calea"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.work-email"
 msgstr "Email lucru"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-mail"
+msgstr "Verificați-vă e-mailul"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-tagline"
+msgstr ""
+"Cu un cont Penpot gratuit, puteți crea echipe nelimitate și colabora cu alți "
+"designeri și dezvoltatori în oricâte proiecte doriți. "
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "Logare în contul meu"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-tagline"
+msgstr ""
+"Penpot este unealta gratuită cu cod sursă liber pentru colaborare în design "
+"și cod"
