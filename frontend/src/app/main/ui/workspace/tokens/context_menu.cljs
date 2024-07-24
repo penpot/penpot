@@ -33,26 +33,6 @@
 
 ;; Events ----------------------------------------------------------------------
 
-(defn update-shape-radius-single-corner [value shape-ids attribute]
-  (st/emit!
-   (dch/update-shapes shape-ids
-                      (fn [shape]
-                        (when (ctsr/has-radius? shape)
-                          (ctsr/set-radius-4 shape (first attribute) value)))
-                      {:reg-objects? true
-                       :attrs [:rx :ry :r1 :r2 :r3 :r4]})))
-
-(defn apply-border-radius-token [{:keys [token-id token-type-props selected-shapes]} attributes]
-  (let [token (dt/get-token-data-from-token-id token-id)
-        updated-token-type-props (if (set/superset? #{:r1 :r2 :r3 :r4} attributes)
-                                   (assoc token-type-props
-                                          :on-update-shape update-shape-radius-single-corner
-                                          :attributes attributes)
-                                   token-type-props)]
-    (wtc/on-apply-token {:token token
-                         :token-type-props updated-token-type-props
-                         :selected-shapes selected-shapes})))
-
 (defn update-layout-spacing [value shape-ids attributes]
   (if-let [layout-gap (cond
                           (:row-gap attributes) {:row-gap value}
@@ -108,30 +88,6 @@
                    :layout-item-max-h value}
                   (select-keys attributes))]
     (dwsl/update-layout-child shape-ids props)))
-
-(defn apply-sizing-token [{:keys [token token-type-props selected-shapes]} attributes]
-  (let [updated-token-type-props (cond
-                                   (set/superset? #{:width :height} attributes)
-                                   (assoc token-type-props
-                                          :on-update-shape update-shape-dimensions
-                                          :attributes attributes)
-
-                                   (set/superset? #{:layout-item-min-w :layout-item-max-w
-                                                    :layout-item-min-h :layout-item-max-h} attributes)
-                                   (assoc token-type-props
-                                          :on-update-shape update-layout-sizing-limits
-                                          :attributes attributes)
-
-                                   :else token-type-props)]
-    (wtc/on-apply-token {:token token
-                         :token-type-props updated-token-type-props
-                         :selected-shapes selected-shapes})))
-
-(defn apply-rotation-opacity-stroke-token [{:keys [token-id token-type-props selected-shapes]} attributes]
-  (let [token (dt/get-token-data-from-token-id token-id)]
-    (wtc/on-apply-token {:token token
-                         :token-type-props token-type-props
-                         :selected-shapes selected-shapes})))
 
 ;; Actions ---------------------------------------------------------------------
 
