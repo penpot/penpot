@@ -33,7 +33,7 @@
      :selected-pred #(seq (% ids-by-attributes))}))
 
 (defn generic-attribute-actions [attributes title {:keys [token selected-shapes]}]
-  (let [{:keys [on-update-shape]} (get wtty/token-types (:type token))
+  (let [{:keys [on-update-shape]} (wtty/get-token-properties token)
         {:keys [selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)]
     (map (fn [attribute]
            (let [selected? (selected-pred attribute)
@@ -200,7 +200,7 @@
                     (generic-attribute-actions #{:y} "Y" context-data)))}))
 
 (defn default-actions [{:keys [token]}]
-  (let [{:keys [modal]} (get wtty/token-types token)]
+  (let [{:keys [modal]} (wtty/get-token-properties token)]
     [{:title "Delete Token"
       :action #(st/emit! (dt/delete-token (:id token)))}
      {:title "Duplicate Token"

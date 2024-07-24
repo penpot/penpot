@@ -100,5 +100,8 @@
                         {:label "Text Decoration" :key :text-decoration}
                         {:label "Text Case" :key :text-case}]}}])))
 
+(defn get-token-properties [token]
+  (get token-types (:type token)))
+
 (defn token-attributes [token-type]
   (get-in token-types [token-type :attributes]))
