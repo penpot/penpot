@@ -4,20 +4,21 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.shapes.text.new-editor.content.styles
+(ns app.util.text.content.styles
   (:require
-   [app.common.text :as txt]
    [app.common.transit :as transit]))
 
 (defn encode
   [value]
-  (.stringify js/JSON value))
+  (transit/encode-str value)
+  #_(.stringify js/JSON value))
 
 (defn decode
   [value]
   (if (= value "")
     nil
-    (.parse js/JSON value)))
+    (transit/decode-str value)
+    #_(.parse js/JSON value)))
 
 (def mapping
   {:fills ["--fills" encode decode]

@@ -6,10 +6,7 @@
  * Copyright (c) KALEIDOS INC
  */
 
-import cljs from "goog:cljs.core";
-
 import TextEditor from "./new_editor/TextEditor.js";
-import textLayoutImpl from "./new_editor/TextLayout.js";
 
 /**
  * Applies styles to the current selection or the
@@ -45,42 +42,6 @@ export function setRoot(editor, root) {
 }
 
 /**
- * Performs a layout operation from content.
- *
- * @param {cljs.PersistentHashMap} content
- * @param {*} options
- * @returns {ContentLayout}
- */
-export function layoutFromContent(content, options) {
-  return textLayout.layoutFromContent(content, options);
-}
-
-/**
- * Performs a layout operation using a HTML element.
- *
- * @param {HTMLElement} element
- * @returns {ContentLayout}
- */
-export function layoutFromElement(element) {
-  return textLayout.layoutFromElement(element);
-}
-
-/**
- * Performs a layout operation using a TextEditor.
- *
- * @param {TextEditor} editor
- * @param {"complete"|"partial"} type
- * @param {CommandMutations} mutations
- * @returns {ContentLayout}
- */
-export function layoutFromEditor(editor, type, mutations) {
-  if (type === "complete") {
-    return textLayout.partialLayoutFromElement(editor.element, mutations);
-  }
-  return textLayout.layoutFromElement(editor.element);
-}
-
-/**
  * Creates a new Text Editor instance.
  *
  * @param {HTMLElement} element
@@ -93,14 +54,8 @@ export function createTextEditor(element, options) {
   });
 }
 
-export const textLayout = textLayoutImpl;
-
 export default {
-  textLayout,
   createTextEditor,
   setRoot,
-  getRoot,
-  layoutFromContent,
-  layoutFromEditor,
-  layoutFromElement,
+  getRoot
 };

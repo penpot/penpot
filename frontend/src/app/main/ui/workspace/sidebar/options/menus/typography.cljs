@@ -397,7 +397,7 @@
         handle-change
         (fn [type]
           (if (= text-transform type)
-            (on-change {:text-transform "unset"})
+            (on-change {:text-transform "none"})
             (on-change {:text-transform type}))
           (when (some? on-blur) (on-blur)))]
 

@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.shapes.text.new-editor.content.to-dom
+(ns app.util.text.content.to-dom
   (:require
    [app.common.text :as txt]
    [app.util.dom :as dom]
-   [app.main.ui.workspace.shapes.text.new-editor.content.styles :as styles]))
+   [app.util.text.content.styles :as styles]))
 
 (defn set-dataset
   [element data]

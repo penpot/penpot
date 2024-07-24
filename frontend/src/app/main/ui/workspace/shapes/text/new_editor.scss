@@ -7,9 +7,6 @@
 
 .text-editor-container {
   height: 100%;
-  display: flex;
-  flex-direction: column;
-
   position: relative;
 }
 
@@ -18,8 +15,9 @@
 }
 
 .text-editor-content {
-  /* We need this variable to convert from a pixel based line-height to
-     to a unit based one. */
+  // We need this variable to convert from a pixel based line-height to
+  // to a unit based one.
+  // FIXME: 🔥
   --line-height-divisor: 14;
 
   height: 100%;
@@ -34,7 +32,7 @@
 
   color: transparent;
 
-  div {
+  [data-itype="paragraph"] {
     line-height: inherit;
     user-select: text;
 
@@ -43,26 +41,32 @@
     /* font-size: 0px; */
   }
 
-  span {
+  [data-itype="inline"] {
     line-break: auto;
     line-height: inherit;
   }
-}
 
-.align-top {
   [data-itype="root"] {
-    justify-content: flex-start;
+    display: flex;
+    flex-direction: column;
   }
-}
 
-.align-center {
-  [data-itype="root"] {
-    justify-content: center;
+  // Vertical align.
+  &.align-top {
+    [data-itype="root"] {
+      justify-content: start;
+    }
   }
-}
 
-.align-bottom {
-  [data-itype="root"] {
-    justify-content: flex-end;
+  &.align-center {
+    [data-itype="root"] {
+      justify-content: center;
+    }
+  }
+
+  &.align-bottom {
+    [data-itype="root"] {
+      justify-content: end;
+    }
   }
 }

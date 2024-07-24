@@ -87,19 +87,19 @@
                        :attrs txt/text-node-attrs}))
         layout-item-values (select-keys shape layout-item-attrs)
 
-        _ (js/console.log "fill-values" (clj->js fill-values))
+        ;;_ (js/console.log "fill-values" (clj->js fill-values))
 
         fill-values (when (and (= st/*text-editor* "v2") (some? v2-editor-state))
                       (d/merge fill-values (select-keys v2-editor-state fill-attrs)))
 
-        _ (js/console.log "fill-values" (clj->js fill-values))
+        ;;_ (js/console.log "fill-values" (clj->js fill-values))
 
-        _ (js/console.log "text-values" (clj->js text-values))
+        ;; _ (js/console.log "text-values" (clj->js text-values))
 
         text-values (when (and (= st/*text-editor* "v2") (some? v2-editor-state))
                       (d/merge text-values v2-editor-state))]
 
-        _ (js/console.log "text-values" (clj->js text-values))
+        ;;_ (js/console.log "text-values" (clj->js text-values))
 
     [:*
      [:& layer-menu {:ids ids

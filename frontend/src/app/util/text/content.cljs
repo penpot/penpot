@@ -4,12 +4,12 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.shapes.text.new-editor.content
+(ns app.util.text.content
   (:require
    [app.common.text :as txt]
-   [app.main.ui.workspace.shapes.text.new-editor.content.from-dom :as fd]
-   [app.main.ui.workspace.shapes.text.new-editor.content.styles :as styles]
-   [app.main.ui.workspace.shapes.text.new-editor.content.to-dom :as td]))
+   [app.util.text.content.from-dom :as fd]
+   [app.util.text.content.styles :as styles]
+   [app.util.text.content.to-dom :as td]))
 
 (defn get-style-defaults
   "Returns a Javascript object compatible with the TextEditor default styles"

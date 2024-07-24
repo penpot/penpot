@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.shapes.text.new-editor.content.from-dom
+(ns app.util.text.content.from-dom
   (:require
    [app.common.data :as d]
    [app.common.text :as txt]
-   [app.main.ui.workspace.shapes.text.new-editor.content.styles :as styles]))
+   [app.util.text.content.styles :as styles]))
 
 (defn is-text-node
   [node]

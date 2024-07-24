@@ -106,7 +106,7 @@
           [:& (mf/provider muc/render-id) {:key index :value render-id}
            ;; Text fills definition. Need to be defined per-text block
            [:defs
-            [:& fills/fills          {:shape shape :render-id render-id}]]
+            [:& fills/fills {:shape shape :render-id render-id}]]
 
            [:& shape-custom-strokes {:shape shape :position index :render-id render-id}
             [:> :text props (:text data)]]]))]]))

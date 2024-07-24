@@ -6,7 +6,7 @@ var __privateGet = (obj, member, getter) => (__accessCheck(obj, member, "read fr
 var __privateAdd = (obj, member, value) => member.has(obj) ? __typeError("Cannot add the same private member more than once") : member instanceof WeakSet ? member.add(obj) : member.set(obj, value);
 var __privateSet = (obj, member, value, setter) => (__accessCheck(obj, member, "write to private field"), setter ? setter.call(obj, value) : member.set(obj, value), value);
 var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "access private method"), method);
-var _rootNode, _currentNode, _added, _removed, _updated, _textEditor, _selection, _ranges, _range, _focusNode, _focusOffset, _anchorNode, _anchorOffset, _savedSelection, _textNodeIterator, _currentStyle, _inertElement, _debug, _mutations, _SelectionController_instances, applyStylesToCurrentStyle_fn, updateCurrentStyle_fn, _onSelectionChange, setup_fn, getSavedRange_fn, applyStylesTo_fn, applyStylesToSavedSelection_fn, applyStylesToCurrentSelection_fn, _timeout, _target, _time, _hasPendingChanges, _onTimeout, _element, _events, _root, _changeController, _selectionController, _selectionImposterElement, _styleDefaults, _TextEditor_instances, setupElementProperties_fn, setupRoot_fn, setup_fn2, _onBlur, _onFocus, _onPaste, _onCut, _onCopy, _onBeforeInput, notifyLayout_fn;
+var _timeout, _time, _hasPendingChanges, _onTimeout, _rootNode, _currentNode, _added, _removed, _updated, _textEditor, _selection, _ranges, _range, _focusNode, _focusOffset, _anchorNode, _anchorOffset, _savedSelection, _textNodeIterator, _currentStyle, _inertElement, _debug, _mutations, _styleDefaults, _SelectionController_instances, applyDefaultStylesToCurrentStyle_fn, applyStylesToCurrentStyle_fn, updateCurrentStyle_fn, _onSelectionChange, notifyStyleChange_fn, setup_fn, getSavedRange_fn, applyStylesTo_fn, _element, _events, _root, _changeController, _selectionController, _selectionImposterElement, _styleDefaults2, _TextEditor_instances, setupElementProperties_fn, setupRoot_fn, _onChange, _onStyleChange, setup_fn2, createSelectionImposter_fn, _onBlur, _onFocus, _onPaste, _onCut, _onCopy, _onBeforeInput, _onInput, notifyLayout_fn;
 function copy(event, editor) {
 }
 function cut(event, editor) {
@@ -22,6 +22,7 @@ function setStyle(element, styleName, styleValue, styleUnit) {
 }
 function setStylesFromObject(element, allowedStyles, styleObject) {
   for (const [styleName, styleUnit] of allowedStyles) {
+    if (!(styleName in styleObject)) continue;
     const styleValue = styleObject[styleName];
     if (styleValue) {
       setStyle(element, styleName, styleValue, styleUnit);
@@ -220,12 +221,7 @@ function getInlineLength(inline) {
 const TAG$1 = "DIV";
 const TYPE$1 = "paragraph";
 const QUERY = `[data-itype="${TYPE$1}"]`;
-const STYLES$1 = [
-  ["text-align"],
-  ["direction"],
-  ["line-height"],
-  ["font-size", "px"]
-];
+const STYLES$1 = [["text-align"], ["direction"]];
 function isLikeParagraph(element) {
   return !isLikeInline(element);
 }
@@ -253,11 +249,10 @@ function createParagraph(inlines, styles, attrs) {
   });
 }
 function createEmptyParagraph(styles) {
-  return createParagraph([
-    createEmptyInline(styles)
-  ], styles);
+  return createParagraph([createEmptyInline(styles)], styles);
 }
 function setParagraphStyles(element, styles) {
+  console.log("setParagraphStyles", element, styles);
   return setStyles(element, STYLES$1, styles);
 }
 function getParagraph(node) {
@@ -270,20 +265,16 @@ function getParagraph(node) {
 }
 function isParagraphStart(node, offset) {
   const paragraph = getParagraph(node);
-  if (!paragraph)
-    throw new Error("Can't find the paragraph");
+  if (!paragraph) throw new Error("Can't find the paragraph");
   const inline = getInline(node);
-  if (!inline)
-    throw new Error("Can't find the inline");
+  if (!inline) throw new Error("Can't find the inline");
   return paragraph.firstElementChild === inline && isOffsetAtStart(inline.firstChild, offset);
 }
 function isParagraphEnd(node, offset) {
   const paragraph = getParagraph(node);
-  if (!paragraph)
-    throw new Error("Cannot find the paragraph");
+  if (!paragraph) throw new Error("Cannot find the paragraph");
   const inline = getInline(node);
-  if (!inline)
-    throw new Error("Cannot find the inline");
+  if (!inline) throw new Error("Cannot find the inline");
   return paragraph.lastElementChild === inline && isOffsetAtEnd(inline.firstChild, offset);
 }
 function splitParagraph(paragraph, inline, offset) {
@@ -322,48 +313,59 @@ function mapContentFragmentFromDocument(document2, root) {
       if (currentParagraph) {
         fragment.appendChild(currentParagraph);
       }
-      currentParagraph = createParagraph(
-        void 0,
-        parentStyle
-      );
+      currentParagraph = createParagraph(void 0, parentStyle);
     } else {
       if (currentParagraph === null) {
         currentParagraph = createParagraph();
       }
     }
     currentParagraph.appendChild(
-      createInline(
-        new Text(currentNode.nodeValue),
-        parentStyle
-      )
+      createInline(new Text(currentNode.nodeValue), parentStyle)
     );
     currentNode = nodeIterator.nextNode();
   }
   fragment.appendChild(currentParagraph);
   return fragment;
 }
-function mapContentFragmentFromString(html) {
+function mapContentFragmentFromHTML(html) {
   const parser = new DOMParser();
   const htmlDocument = parser.parseFromString(html, "text/html");
-  return mapContentFragmentFromDocument(htmlDocument, htmlDocument.documentElement);
+  return mapContentFragmentFromDocument(
+    htmlDocument,
+    htmlDocument.documentElement
+  );
 }
-function paste(event, editor) {
+function mapContentFragmentFromString(string) {
+  const lines = string.replace(/\r/g, "").split("\n");
+  const fragment = document.createDocumentFragment();
+  for (const line of lines) {
+    if (line === "") {
+      fragment.appendChild(createEmptyParagraph());
+    } else {
+      fragment.appendChild(createParagraph([createInline(new Text(line))]));
+    }
+  }
+  return fragment;
+}
+function paste(event, editor, selectionController) {
+  event.preventDefault();
+  let fragment = null;
   if (event.clipboardData.types.includes("text/html")) {
-    event.preventDefault();
+    console.log("text/html");
     const html = event.clipboardData.getData("text/html");
-    const fragment = mapContentFragmentFromString(html);
-    const selection = window.getSelection();
-    if (!selection.rangeCount)
-      return;
-    selection.deleteFromDocument();
-    selection.getRangeAt(0).insertNode(fragment);
-    selection.collapseToEnd();
+    fragment = mapContentFragmentFromHTML(html);
   } else if (event.clipboardData.types.includes("text/plain")) {
+    console.log("text/plain");
     const plain = event.clipboardData.getData("text/plain");
-    event.clipboardData.clearData();
-    event.clipboardData.setData("text/plain", plain);
+    fragment = mapContentFragmentFromString(plain);
+  }
+  if (!fragment) {
+    return;
+  }
+  if (selectionController.isCollapsed) {
+    selectionController.insertPaste(fragment);
   } else {
-    event.preventDefault();
+    selectionController.replaceWithPaste(fragment);
   }
 }
 const clipboard = {
@@ -380,14 +382,136 @@ function insertText(event, editor, selectionController) {
       return selectionController.replaceLineBreak(event.data);
     }
   }
-  if (selectionController.isTextSame) {
-    return selectionController.replaceText(event.data);
+  if (selectionController.isMultiParagraph) {
+    return selectionController.replaceParagraphs(event.data);
   } else if (selectionController.isMultiInline) {
     return selectionController.replaceInlines(event.data);
-  } else if (selectionController.isMultiParagraph) {
-    return selectionController.replaceParagraphs(event.data);
+  } else if (selectionController.isTextSame) {
+    return selectionController.replaceText(event.data);
   }
 }
+function insertParagraph(event, editor, selectionController) {
+  event.preventDefault();
+  if (selectionController.isCollapsed) {
+    return selectionController.insertParagraph();
+  }
+  return selectionController.replaceWithParagraph();
+}
+function deleteByCut(event, editor, selectionController) {
+  event.preventDefault();
+  if (selectionController.isCollapsed) {
+    throw new Error("This should be impossible");
+  }
+  return selectionController.removeSelected();
+}
+function deleteContentBackward(event, editor, selectionController) {
+  event.preventDefault();
+  if (selectionController.isCollapsed) {
+    if (selectionController.isTextFocus && selectionController.focusOffset > 0) {
+      return selectionController.removeBackwardText();
+    } else if (selectionController.isTextFocus && selectionController.focusAtStart) {
+      return selectionController.mergeBackwardParagraph();
+    } else if (selectionController.isInlineFocus || selectionController.isLineBreakFocus) {
+      return selectionController.removeBackwardParagraph();
+    }
+  }
+  return selectionController.removeSelected();
+}
+function deleteContentForward(event, editor, selectionController) {
+  event.preventDefault();
+  if (selectionController.isCollapsed) {
+    if (selectionController.isTextFocus && selectionController.focusOffset >= 0) {
+      return selectionController.removeForwardText();
+    } else if (selectionController.isTextFocus && selectionController.focusAtEnd) {
+      return selectionController.mergeForwardParagraph();
+    } else if ((selectionController.isInlineFocus || selectionController.isLineBreakFocus) && editor.numParagraphs > 1) {
+      return selectionController.removeForwardParagraph();
+    }
+  }
+  return selectionController.removeSelected();
+}
+const commands = {
+  insertText,
+  insertParagraph,
+  deleteByCut,
+  deleteContentBackward,
+  deleteContentForward
+};
+class ChangeController extends EventTarget {
+  /**
+   * Constructor
+   *
+   * @param {number} [time=500]
+   */
+  constructor(time = 500) {
+    super();
+    /**
+     * Keeps the timeout id.
+     *
+     * @type {number}
+     */
+    __privateAdd(this, _timeout, null);
+    /**
+     * Keeps the time at which we're going to
+     * call the debounced change calls.
+     *
+     * @type {number}
+     */
+    __privateAdd(this, _time, 1e3);
+    /**
+     * Keeps if we have some pending changes or not.
+     *
+     * @type {boolean}
+     */
+    __privateAdd(this, _hasPendingChanges, false);
+    __privateAdd(this, _onTimeout, () => {
+      this.dispatchEvent(new Event("change"));
+    });
+    if (typeof time === "number" && (!Number.isInteger(time) || time <= 0)) {
+      throw new TypeError("Invalid time");
+    }
+    __privateSet(this, _time, time ?? 500);
+  }
+  /**
+   * Indicates that there are some pending changes.
+   *
+   * @type {boolean}
+   */
+  get hasPendingChanges() {
+    return __privateGet(this, _hasPendingChanges);
+  }
+  /**
+   * Tells the ChangeController that a change has been made
+   * but that you need to delay the notification (and debounce)
+   * for sometime.
+   */
+  notifyDebounced() {
+    __privateSet(this, _hasPendingChanges, true);
+    clearTimeout(__privateGet(this, _timeout));
+    __privateSet(this, _timeout, setTimeout(__privateGet(this, _onTimeout), __privateGet(this, _time)));
+  }
+  /**
+   * Tells the ChangeController that a change should be notified
+   * immediately.
+   */
+  notifyImmediately() {
+    clearTimeout(__privateGet(this, _timeout));
+    __privateGet(this, _onTimeout).call(this);
+  }
+  /**
+   * Disposes the referenced resources.
+   */
+  dispose() {
+    if (this.hasPendingChanges) {
+      this.notifyImmediately();
+    }
+    clearTimeout(__privateGet(this, _timeout));
+  }
+}
+_timeout = new WeakMap();
+_time = new WeakMap();
+_hasPendingChanges = new WeakMap();
+_onTimeout = new WeakMap();
 function tryOffset(offset) {
   if (!Number.isInteger(offset) || offset < 0)
     throw new TypeError("Invalid offset");
@@ -396,6 +520,7 @@ function tryString(str) {
   if (typeof str !== "string") throw new TypeError("Invalid string");
 }
 function insertInto(str, offset, text) {
+  console.log(str, offset, text);
   tryString(str);
   tryOffset(offset);
   tryString(text);
@@ -421,10 +546,47 @@ function removeForward(str, offset) {
   tryOffset(offset);
   return str.slice(0, offset) + str.slice(offset + 1);
 }
+const TAG = "DIV";
+const TYPE = "root";
+const STYLES = [["vertical-align"]];
+function isRoot(node) {
+  if (!node) return false;
+  if (!isElement(node, TAG)) return false;
+  if (node.dataset.itype !== TYPE) return false;
+  return true;
+}
+function createRoot(paragraphs, styles, attrs) {
+  if (!Array.isArray(paragraphs) || !paragraphs.every(isParagraph))
+    throw new TypeError("Invalid root children");
+  return createElement(TAG, {
+    attributes: { id: createRandomId(), ...attrs },
+    data: { itype: TYPE },
+    styles,
+    allowedStyles: STYLES,
+    children: paragraphs
+  });
+}
+function createEmptyRoot(styles) {
+  return createRoot([createEmptyParagraph(styles)], styles);
+}
+function setRootStyles(element, styles) {
+  return setStyles(element, STYLES, styles);
+}
+function isTextNode(node) {
+  if (!node) throw new TypeError("Invalid text node");
+  return node.nodeType === Node.TEXT_NODE || isLineBreak(node);
+}
 function getTextNodeLength(node) {
   if (!node) throw new TypeError("Invalid text node");
   if (isLineBreak(node)) return 0;
   return node.nodeValue.length;
+}
+function getClosestTextNode(node) {
+  if (isTextNode(node)) return node;
+  if (isInline(node)) return node.firstChild;
+  if (isParagraph(node)) return node.firstChild.firstChild;
+  if (isRoot(node)) return node.firstChild.firstChild.firstChild;
+  throw new Error("Cannot find a text node");
 }
 const TextNodeIteratorDirection = {
   FORWARD: 1,
@@ -491,8 +653,12 @@ const _TextNodeIterator = class _TextNodeIterator {
         direction
       );
     }
+    let safeGuard = Date.now();
     let currentNode = startNode;
     while (currentNode) {
+      if (Date.now() - safeGuard >= 1e3) {
+        throw new Error("Iteration timeout");
+      }
       if (skipNodes.has(currentNode)) {
         currentNode = direction === TextNodeIteratorDirection.FORWARD ? currentNode.nextSibling : currentNode.previousSibling;
         continue;
@@ -571,8 +737,7 @@ const _TextNodeIterator = class _TextNodeIterator {
    * @returns {Text|HTMLBRElement}
    */
   nextNode() {
-    if (!__privateGet(this, _currentNode))
-      return null;
+    if (!__privateGet(this, _currentNode)) return null;
     const nextNode = _TextNodeIterator.findUp(
       __privateGet(this, _currentNode),
       __privateGet(this, _rootNode),
@@ -591,8 +756,7 @@ const _TextNodeIterator = class _TextNodeIterator {
    * @returns {Text|HTMLBRElement}
    */
   previousNode() {
-    if (!__privateGet(this, _currentNode))
-      return null;
+    if (!__privateGet(this, _currentNode)) return null;
     const previousNode = _TextNodeIterator.findUp(
       __privateGet(this, _currentNode),
       __privateGet(this, _rootNode),
@@ -614,12 +778,9 @@ class CommandMutations {
     __privateAdd(this, _added, /* @__PURE__ */ new Set());
     __privateAdd(this, _removed, /* @__PURE__ */ new Set());
     __privateAdd(this, _updated, /* @__PURE__ */ new Set());
-    if (added && Array.isArray(added))
-      __privateSet(this, _added, new Set(added));
-    if (updated && Array.isArray(updated))
-      __privateSet(this, _updated, new Set(updated));
-    if (removed && Array.isArray(removed))
-      __privateSet(this, _removed, new Set(removed));
+    if (added && Array.isArray(added)) __privateSet(this, _added, new Set(added));
+    if (updated && Array.isArray(updated)) __privateSet(this, _updated, new Set(updated));
+    if (removed && Array.isArray(removed)) __privateSet(this, _removed, new Set(removed));
   }
   get added() {
     return __privateGet(this, _added);
@@ -659,28 +820,6 @@ class CommandMutations {
 _added = new WeakMap();
 _removed = new WeakMap();
 _updated = new WeakMap();
-const TAG = "DIV";
-const TYPE = "root";
-const STYLES = [["vertical-align"]];
-function createRoot(paragraphs, styles, attrs) {
-  if (!Array.isArray(paragraphs) || !paragraphs.every(isParagraph))
-    throw new TypeError("Invalid root children");
-  return createElement(TAG, {
-    attributes: { id: createRandomId(), ...attrs },
-    data: { itype: TYPE },
-    styles,
-    allowedStyles: STYLES,
-    children: paragraphs
-  });
-}
-function createEmptyRoot(styles) {
-  return createRoot([
-    createEmptyParagraph(styles)
-  ], styles);
-}
-function setRootStyles(element, styles) {
-  return setStyles(element, STYLES, styles);
-}
 const SelectionDirection = {
   /** The anchorNode is behind the focusNode  */
   FORWARD: 1,
@@ -689,7 +828,7 @@ const SelectionDirection = {
   /** The focusNode is behind the anchorNode */
   BACKWARD: -1
 };
-class SelectionController {
+class SelectionController extends EventTarget {
   /**
    * Constructor
    *
@@ -698,6 +837,7 @@ class SelectionController {
    * @param {SelectionControllerOptions} [options]
    */
   constructor(textEditor, selection, options) {
+    super();
     __privateAdd(this, _SelectionController_instances);
     /**
      * Reference to the text editor.
@@ -773,9 +913,17 @@ class SelectionController {
      */
     __privateAdd(this, _debug, null);
     /**
+     * Command Mutations.
+     *
      * @type {CommandMutations}
      */
     __privateAdd(this, _mutations, new CommandMutations());
+    /**
+     * Style defaults.
+     *
+     * @type {Object.<string, *>}
+     */
+    __privateAdd(this, _styleDefaults, null);
     /**
      * This is called on every `selectionchange` because it is dispatched
      * only by the `document` object.
@@ -815,21 +963,14 @@ class SelectionController {
         __privateGet(this, _ranges).clear();
       }
       if (focusNodeChanges) {
-        const inline = getInline(__privateGet(this, _selection).focusNode);
-        if (inline) {
-          __privateMethod(this, _SelectionController_instances, updateCurrentStyle_fn).call(this, inline);
-          __privateGet(this, _textEditor).dispatchEvent(
-            new CustomEvent("stylechange", {
-              detail: __privateGet(this, _currentStyle)
-            })
-          );
-        }
+        __privateMethod(this, _SelectionController_instances, notifyStyleChange_fn).call(this);
       }
       if (__privateGet(this, _debug)) {
         __privateGet(this, _debug).update(this);
       }
     });
     __privateSet(this, _debug, options == null ? void 0 : options.debug);
+    __privateSet(this, _styleDefaults, options == null ? void 0 : options.styleDefaults);
     __privateSet(this, _selection, selection);
     __privateSet(this, _textEditor, textEditor);
     __privateSet(this, _textNodeIterator, new TextNodeIterator(__privateGet(this, _textEditor).element));
@@ -860,19 +1001,31 @@ class SelectionController {
    */
   restoreSelection() {
     if (!__privateGet(this, _savedSelection)) return false;
-    __privateGet(this, _selection).setBaseAndExtent(
-      __privateGet(this, _savedSelection).anchorNode,
-      __privateGet(this, _savedSelection).anchorOffset,
-      __privateGet(this, _savedSelection).focusNode,
-      __privateGet(this, _savedSelection).focusOffset
-    );
+    if (__privateGet(this, _savedSelection).anchorNode && __privateGet(this, _savedSelection).focusNode) {
+      __privateGet(this, _selection).setBaseAndExtent(
+        __privateGet(this, _savedSelection).anchorNode,
+        __privateGet(this, _savedSelection).anchorOffset,
+        __privateGet(this, _savedSelection).focusNode,
+        __privateGet(this, _savedSelection).focusOffset
+      );
+    }
     __privateSet(this, _savedSelection, null);
     return true;
   }
-  startCommand() {
+  /**
+   * Marks the start of a mutation.
+   *
+   * Clears all the mutations kept in CommandMutations.
+   */
+  startMutation() {
     __privateGet(this, _mutations).clear();
   }
-  endCommand() {
+  /**
+   * Marks the end of a mutation.
+   *
+   * @returns
+   */
+  endMutation() {
     return __privateGet(this, _mutations);
   }
   /**
@@ -969,9 +1122,13 @@ class SelectionController {
    * @type {SelectionDirection}
    */
   get direction() {
-    if (this.isCollapsed || __privateGet(this, _range).startContainer === __privateGet(this, _range).endContainer)
+    if (this.isCollapsed) {
       return SelectionDirection.NONE;
-    return __privateGet(this, _range).startContainer === __privateGet(this, _selection).focusNode ? SelectionDirection.BACKWARD : SelectionDirection.FORWARD;
+    }
+    if (this.focusNode !== this.anchorNode) {
+      return this.startContainer === this.focusNode ? SelectionDirection.BACKWARD : SelectionDirection.FORWARD;
+    }
+    return this.focusOffset < this.anchorOffset ? SelectionDirection.BACKWARD : SelectionDirection.FORWARD;
   }
   /**
    * Indicates that the editor element has the
@@ -995,6 +1152,8 @@ class SelectionController {
     return __privateGet(this, _selection).isCollapsed;
   }
   /**
+   * Current or saved anchor node.
+   *
    * @type {Node}
    */
   get anchorNode() {
@@ -1004,6 +1163,8 @@ class SelectionController {
     return __privateGet(this, _anchorNode);
   }
   /**
+   * Current or saved anchor offset.
+   *
    * @type {number}
    */
   get anchorOffset() {
@@ -1013,6 +1174,24 @@ class SelectionController {
     return __privateGet(this, _selection).anchorOffset;
   }
   /**
+   * Indicates that the caret is at the start of the node.
+   *
+   * @type {boolean}
+   */
+  get anchorAtStart() {
+    return this.anchorOffset === 0;
+  }
+  /**
+   * Indicates that the caret is at the end of the node.
+   *
+   * @type {boolean}
+   */
+  get anchorAtEnd() {
+    return this.anchorOffset === this.anchorNode.nodeValue.length;
+  }
+  /**
+   * Current or saved focus node.
+   *
    * @type {Node}
    */
   get focusNode() {
@@ -1022,6 +1201,8 @@ class SelectionController {
     return __privateGet(this, _focusNode);
   }
   /**
+   * Current or saved focus offset.
+   *
    * @type {number}
    */
   get focusOffset() {
@@ -1053,7 +1234,7 @@ class SelectionController {
    * @type {HTMLElement|null}
    */
   get focusParagraph() {
-    return getParagraph(__privateGet(this, _selection).focusNode);
+    return getParagraph(this.focusNode);
   }
   /**
    * Returns the inline in the focus node
@@ -1062,7 +1243,7 @@ class SelectionController {
    * @type {HTMLElement|null}
    */
   get focusInline() {
-    return getInline(__privateGet(this, _selection).focusNode);
+    return getInline(this.focusNode);
   }
   /**
    * Returns the current paragraph in the anchor
@@ -1071,7 +1252,7 @@ class SelectionController {
    * @type {HTMLElement|null}
    */
   get anchorParagraph() {
-    return getParagraph(__privateGet(this, _selection).anchorNode);
+    return getParagraph(this.anchorNode);
   }
   /**
    * Returns the current inline in the anchor
@@ -1080,7 +1261,17 @@ class SelectionController {
    * @type {HTMLElement|null}
    */
   get anchorInline() {
-    return getInline(__privateGet(this, _selection).anchorNode);
+    return getInline(this.anchorNode);
+  }
+  /**
+   * Start container of the current range.
+   */
+  get startContainer() {
+    var _a, _b, _c;
+    if (__privateGet(this, _savedSelection)) {
+      return (_b = (_a = __privateGet(this, _savedSelection)) == null ? void 0 : _a.range) == null ? void 0 : _b.startContainer;
+    }
+    return (_c = __privateGet(this, _range)) == null ? void 0 : _c.startContainer;
   }
   /**
    * `startOffset` of the current range.
@@ -1088,8 +1279,11 @@ class SelectionController {
    * @type {number|null}
    */
   get startOffset() {
-    var _a;
-    return (_a = __privateGet(this, _range)) == null ? void 0 : _a.startOffset;
+    var _a, _b, _c;
+    if (__privateGet(this, _savedSelection)) {
+      return (_b = (_a = __privateGet(this, _savedSelection)) == null ? void 0 : _a.range) == null ? void 0 : _b.startOffset;
+    }
+    return (_c = __privateGet(this, _range)) == null ? void 0 : _c.startOffset;
   }
   /**
    * Start paragraph of the current range.
@@ -1097,10 +1291,9 @@ class SelectionController {
    * @type {HTMLElement|null}
    */
   get startParagraph() {
-    if (!__privateGet(this, _range)) {
-      return null;
-    }
-    return getParagraph(__privateGet(this, _range).startContainer);
+    const startContainer = this.startContainer;
+    if (!startContainer) return null;
+    return getParagraph(startContainer);
   }
   /**
    * Start inline of the current page.
@@ -1108,10 +1301,21 @@ class SelectionController {
    * @type {HTMLElement|null}
    */
   get startInline() {
-    if (!__privateGet(this, _range)) {
-      return null;
+    const startContainer = this.startContainer;
+    if (!startContainer) return null;
+    return getInline(startContainer);
+  }
+  /**
+   * End container of the current range.
+   *
+   * @type {Node}
+   */
+  get endContainer() {
+    var _a, _b, _c;
+    if (__privateGet(this, _savedSelection)) {
+      return (_b = (_a = __privateGet(this, _savedSelection)) == null ? void 0 : _a.range) == null ? void 0 : _b.endContainer;
     }
-    return getInline(__privateGet(this, _range).startContainer);
+    return (_c = __privateGet(this, _range)) == null ? void 0 : _c.endContainer;
   }
   /**
    * `endOffset` of the current range
@@ -1119,8 +1323,11 @@ class SelectionController {
    * @type {HTMLElement|null}
    */
   get endOffset() {
-    var _a;
-    return (_a = __privateGet(this, _range)) == null ? void 0 : _a.endOffset;
+    var _a, _b, _c;
+    if (__privateGet(this, _savedSelection)) {
+      return (_b = (_a = __privateGet(this, _savedSelection)) == null ? void 0 : _a.range) == null ? void 0 : _b.endOffset;
+    }
+    return (_c = __privateGet(this, _range)) == null ? void 0 : _c.endOffset;
   }
   /**
    * Paragraph element of the `endContainer` of
@@ -1129,10 +1336,9 @@ class SelectionController {
    * @type {HTMLElement|null}
    */
   get endParagraph() {
-    if (!__privateGet(this, _range)) {
-      return null;
-    }
-    return getParagraph(__privateGet(this, _range).endContainer);
+    const endContainer = this.endContainer;
+    if (!endContainer) return null;
+    return getParagraph(endContainer);
   }
   /**
    * Inline element of the `endContainer` of
@@ -1141,18 +1347,18 @@ class SelectionController {
    * @type {HTMLElement|null}
    */
   get endInline() {
-    if (!__privateGet(this, _range)) {
-      return null;
-    }
-    return getInline(__privateGet(this, _range).endContainer);
+    const endContainer = this.endContainer;
+    if (!endContainer) return null;
+    return getInline(endContainer);
   }
   /**
-   *
+   * Returns true if the anchor node and the focus
+   * node are the same text nodes.
    *
    * @type {boolean}
    */
   get isTextSame() {
-    return this.isTextFocus === this.isTextAnchor && __privateGet(this, _focusNode) === __privateGet(this, _anchorNode);
+    return this.isTextFocus === this.isTextAnchor && this.focusNode === this.anchorNode;
   }
   /**
    * Indicates that focus node is a text node.
@@ -1160,7 +1366,7 @@ class SelectionController {
    * @type {boolean}
    */
   get isTextFocus() {
-    return __privateGet(this, _selection).focusNode.nodeType === Node.TEXT_NODE;
+    return this.focusNode.nodeType === Node.TEXT_NODE;
   }
   /**
    * Indicates that anchor node is a text node.
@@ -1168,27 +1374,47 @@ class SelectionController {
    * @type {boolean}
    */
   get isTextAnchor() {
-    return __privateGet(this, _selection).anchorNode.nodeType === Node.TEXT_NODE;
-  }
-  get isInlineFocus() {
-    return isInline(__privateGet(this, _focusNode));
-  }
-  get isInlineAnchor() {
-    return isInline(__privateGet(this, _anchorNode));
-  }
-  get isParagraphFocus() {
-    return isParagraph(__privateGet(this, _focusNode));
-  }
-  get isParagraphAnchor() {
-    return isParagraph(__privateGet(this, _anchorNode));
+    return this.anchorNode.nodeType === Node.TEXT_NODE;
   }
   /**
-   * Returns true if the current focus node is a line break.
+   * Is true if the current focus node is a inline.
+   *
+   * @type {boolean}
+   */
+  get isInlineFocus() {
+    return isInline(this.focusNode);
+  }
+  /**
+   * Is true if the current anchor node is a inline.
+   *
+   * @type {boolean}
+   */
+  get isInlineAnchor() {
+    return isInline(this.anchorNode);
+  }
+  /**
+   * Is true if the current focus node is a paragraph.
+   *
+   * @type {boolean}
+   */
+  get isParagraphFocus() {
+    return isParagraph(this.focusNode);
+  }
+  /**
+   * Is true if the current anchor node is a paragraph.
+   *
+   * @type {boolean}
+   */
+  get isParagraphAnchor() {
+    return isParagraph(this.anchorNode);
+  }
+  /**
+   * Is true if the current focus node is a line break.
    *
    * @type {boolean}
    */
   get isLineBreakFocus() {
-    return isLineBreak(__privateGet(this, _selection).focusNode) || isInline(__privateGet(this, _selection).focusNode) && isLineBreak(__privateGet(this, _selection).focusNode.firstChild);
+    return isLineBreak(this.focusNode) || isInline(this.focusNode) && isLineBreak(this.focusNode.firstChild);
   }
   /**
    * Indicates that we have multiple nodes selected.
@@ -1196,7 +1422,7 @@ class SelectionController {
    * @type {boolean}
    */
   get isMulti() {
-    return __privateGet(this, _selection).focusNode !== __privateGet(this, _selection).anchorNode;
+    return this.focusNode !== this.anchorNode;
   }
   /**
    * Indicates that we have selected multiple
@@ -1223,11 +1449,8 @@ class SelectionController {
    * @type {boolean}
    */
   get isInlineStart() {
-    if (!__privateGet(this, _selection).isCollapsed) return false;
-    return isInlineStart(
-      __privateGet(this, _selection).focusNode,
-      __privateGet(this, _selection).focusOffset
-    );
+    if (!this.isCollapsed) return false;
+    return isInlineStart(this.focusNode, this.focusOffset);
   }
   /**
    * Indicates that the caret (only the caret)
@@ -1237,8 +1460,8 @@ class SelectionController {
    * @type {boolean}
    */
   get isInlineEnd() {
-    if (!__privateGet(this, _selection).isCollapsed) return false;
-    return isInlineEnd(__privateGet(this, _selection).focusNode, __privateGet(this, _selection).focusOffset);
+    if (!this.isCollapsed) return false;
+    return isInlineEnd(this.focusNode, this.focusOffset);
   }
   /**
    * Indicates that we're in the starting position of a paragraph.
@@ -1246,11 +1469,8 @@ class SelectionController {
    * @type {boolean}
    */
   get isParagraphStart() {
-    if (!__privateGet(this, _selection).isCollapsed) return false;
-    return isParagraphStart(
-      __privateGet(this, _selection).focusNode,
-      __privateGet(this, _selection).focusOffset
-    );
+    if (!this.isCollapsed) return false;
+    return isParagraphStart(this.focusNode, this.focusOffset);
   }
   /**
    * Indicates that we're in the ending position of a paragraph.
@@ -1258,17 +1478,40 @@ class SelectionController {
    * @type {boolean}
    */
   get isParagraphEnd() {
-    if (!__privateGet(this, _selection).isCollapsed) return false;
-    return isParagraphEnd(
-      __privateGet(this, _selection).focusNode,
-      __privateGet(this, _selection).focusOffset
-    );
+    if (!this.isCollapsed) return false;
+    return isParagraphEnd(this.focusNode, this.focusOffset);
   }
+  /**
+   * Insert pasted fragment.
+   *
+   * @param {DocumentFragment} fragment
+   */
+  insertPaste(fragment) {
+    const numParagraphs = fragment.children.length;
+    console.log("insertPaste", numParagraphs);
+  }
+  /**
+   * Replaces data with pasted fragment
+   *
+   * @param {DocumentFragment} fragment
+   */
+  replaceWithPaste(fragment) {
+    const numParagraphs = fragment.children.length;
+    console.log("replaceWithPaste", numParagraphs);
+  }
+  /**
+   * Replaces the current line break with text
+   *
+   * @param {string} text
+   */
   replaceLineBreak(text) {
     const newText = document.createTextNode(text);
-    getInline(__privateGet(this, _focusNode)).replaceChildren(newText);
+    this.focusInline.replaceChildren(newText);
     this.collapse(newText, text.length);
   }
+  /**
+   * Removes text forward from the current position.
+   */
   removeForwardText() {
     __privateGet(this, _textNodeIterator).currentNode = __privateGet(this, _focusNode);
     const removedData = removeForward(
@@ -1281,12 +1524,17 @@ class SelectionController {
     const paragraph = this.focusParagraph;
     const nextTextNode = __privateGet(this, _textNodeIterator).nextNode();
     if (__privateGet(this, _focusNode).nodeValue === "") {
-      if (paragraph) __privateGet(this, _focusNode).parentElement.remove();
+      if (paragraph) {
+        __privateGet(this, _focusNode).parentElement.remove();
+      }
       this.collapse(nextTextNode, 0);
     } else {
       this.collapse(__privateGet(this, _focusNode), __privateGet(this, _focusOffset));
     }
   }
+  /**
+   * Removes text backward from the current caret position.
+   */
   removeBackwardText() {
     __privateGet(this, _textNodeIterator).currentNode = __privateGet(this, _focusNode);
     const removedData = removeBackward(
@@ -1314,71 +1562,110 @@ class SelectionController {
       this.collapse(previousTextNode, getTextNodeLength(previousTextNode));
     }
   }
+  /**
+   * Inserts some text in the caret position.
+   *
+   * @param {string} newText
+   */
   insertText(newText) {
-    __privateGet(this, _focusNode).nodeValue = insertInto(
-      __privateGet(this, _focusNode).nodeValue,
-      __privateGet(this, _focusOffset),
+    this.focusNode.nodeValue = insertInto(
+      this.focusNode.nodeValue,
+      this.focusOffset,
       newText
     );
-    this.collapse(__privateGet(this, _focusNode), __privateGet(this, _focusOffset) + newText.length);
+    this.collapse(this.focusNode, this.focusOffset + newText.length);
     __privateGet(this, _mutations).update(this.focusInline);
   }
+  /**
+   * Replaces currently selected text.
+   *
+   * @param {string} newText
+   */
   replaceText(newText) {
-    const startOffset = Math.min(__privateGet(this, _anchorOffset), __privateGet(this, _focusOffset));
-    const endOffset = Math.max(__privateGet(this, _anchorOffset), __privateGet(this, _focusOffset));
-    __privateGet(this, _focusNode).nodeValue = replaceWith(
-      __privateGet(this, _focusNode).nodeValue,
+    const startOffset = Math.min(this.anchorOffset, this.focusOffset);
+    const endOffset = Math.max(this.anchorOffset, this.focusOffset);
+    this.focusNode.nodeValue = replaceWith(
+      this.focusNode.nodeValue,
       startOffset,
       endOffset,
       newText
     );
-    this.collapse(__privateGet(this, _focusNode), startOffset + newText.length);
+    this.collapse(this.focusNode, startOffset + newText.length);
     __privateGet(this, _mutations).update(this.focusInline);
   }
+  /**
+   * Replaces the selected inlines with new text.
+   *
+   * @param {string} newText
+   */
   replaceInlines(newText) {
-    const paragraph = this.focusParagraph;
-    if (this.startInline === paragraph.firstElementChild && this.startOffset === 0 && this.endInline === paragraph.lastElementChild && this.endOffset === paragraph.lastElementChild.textContent.length) {
+    const currentParagraph = this.focusParagraph;
+    if (this.startInline === currentParagraph.firstChild && this.startOffset === 0 && this.endInline === currentParagraph.lastChild && this.endOffset === currentParagraph.lastChild.textContent.length) {
       const newTextNode = new Text(newText);
-      paragraph.replaceChildren(
-        createInline(newTextNode, __privateGet(this, _anchorNode).style)
+      currentParagraph.replaceChildren(
+        createInline(newTextNode, this.anchorInline.style)
       );
       this.collapse(newTextNode, newTextNode.nodeValue.length);
       return;
     }
-    const startInline = this.startInline;
-    const endInline = this.endInline;
     __privateGet(this, _range).deleteContents();
-    __privateGet(this, _focusNode).nodeValue = insertInto(
-      __privateGet(this, _focusNode).nodeValue,
-      __privateGet(this, _focusOffset),
+    this.focusNode.nodeValue = insertInto(
+      this.focusNode.nodeValue,
+      this.focusOffset,
       newText
     );
-    if (startInline.textContent === "") {
-      startInline.remove();
+    for (const child of currentParagraph.children) {
+      if (child.textContent === "") {
+        child.remove();
+      }
     }
-    if (endInline.textContent === "") {
-      endInline.remove();
-    }
-    this.collapse(__privateGet(this, _focusNode), __privateGet(this, _focusOffset) + newText.length);
+    this.collapse(this.focusNode, this.focusOffset + newText.length);
   }
+  /**
+   * Replaces paragraphs with text.
+   *
+   * @param {*} newText
+   */
   replaceParagraphs(newText) {
-    this.focusParagraph;
-    this.anchorParagraph;
+    const currentParagraph = this.focusParagraph;
+    __privateGet(this, _range).deleteContents();
+    this.focusNode.nodeValue = insertInto(
+      this.focusNode.nodeValue,
+      this.focusOffset,
+      newText
+    );
+    for (const child of currentParagraph.children) {
+      if (child.textContent === "") {
+        child.remove();
+      }
+    }
   }
+  /**
+   * Inserts a new paragraph after the current paragraph.
+   */
   insertParagraphAfter() {
     const currentParagraph = this.focusParagraph;
-    const newParagraph = createEmptyParagraph(currentParagraph.style);
+    const newParagraph = createEmptyParagraph(__privateGet(this, _styleDefaults));
     currentParagraph.after(newParagraph);
     this.collapse(newParagraph.firstChild.firstChild, 0);
+    __privateGet(this, _mutations).update(currentParagraph);
     __privateGet(this, _mutations).add(newParagraph);
   }
+  /**
+   * Inserts a new paragraph before the current paragraph.
+   */
   insertParagraphBefore() {
     const currentParagraph = this.focusParagraph;
-    const newParagraph = createEmptyParagraph(currentParagraph.style);
+    const newParagraph = createEmptyParagraph(__privateGet(this, _styleDefaults));
     currentParagraph.before(newParagraph);
+    __privateGet(this, _mutations).update(currentParagraph);
     __privateGet(this, _mutations).add(newParagraph);
   }
+  /**
+   * Splits the current paragraph.
+   */
   splitParagraph() {
+    const currentParagraph = this.focusParagraph;
     const newParagraph = splitParagraph(
       this.focusParagraph,
       this.focusInline,
@@ -1386,8 +1673,12 @@ class SelectionController {
     );
     this.focusParagraph.after(newParagraph);
     this.collapse(newParagraph.firstChild.firstChild, 0);
+    __privateGet(this, _mutations).update(currentParagraph);
     __privateGet(this, _mutations).add(newParagraph);
   }
+  /**
+   * Inserts a new paragraph
+   */
   insertParagraph() {
     if (this.isParagraphEnd) {
       return this.insertParagraphAfter();
@@ -1396,15 +1687,24 @@ class SelectionController {
     }
     return this.splitParagraph();
   }
+  /**
+   * Replaces the currently selected content with
+   * a paragraph.
+   */
   replaceWithParagraph() {
     __privateGet(this, _range).deleteContents();
+    const currentParagraph = this.focusParagraph;
     const newParagraph = splitParagraphAtNode(
       __privateGet(this, _range).startContainer,
       __privateGet(this, _range).endOffset
     );
     this.focusParagraph.after(newParagraph);
+    __privateGet(this, _mutations).update(currentParagraph);
     __privateGet(this, _mutations).add(newParagraph);
   }
+  /**
+   * Removes a paragraph in backward direction.
+   */
   removeBackwardParagraph() {
     const previousParagraph = this.focusParagraph.previousSibling;
     if (!previousParagraph) {
@@ -1415,9 +1715,13 @@ class SelectionController {
     const previousInline = previousParagraph.children.length > 1 ? previousParagraph.children.item(previousParagraph.children.length - 1) : previousParagraph.firstChild;
     const previousOffset = isLineBreak(previousInline.firstChild) ? 0 : previousInline.firstChild.nodeValue.length;
     this.collapse(previousInline.firstChild, previousOffset);
-    __privateGet(this, _mutations).remove();
+    __privateGet(this, _mutations).remove(paragraphToBeRemoved);
   }
+  /**
+   * Merges the previous paragraph with the current paragraph.
+   */
   mergeBackwardParagraph() {
+    const currentParagraph = this.focusParagraph;
     const previousParagraph = this.focusParagraph.previousElementSibling;
     if (!previousParagraph) {
       return;
@@ -1432,36 +1736,89 @@ class SelectionController {
       mergeParagraphs(previousParagraph, this.focusParagraph);
     }
     this.collapse(previousInline.firstChild, previousOffset);
+    __privateGet(this, _mutations).remove(currentParagraph);
+    __privateGet(this, _mutations).update(previousParagraph);
   }
+  /**
+   * Merges the next paragraph with the current paragraph.
+   */
   mergeForwardParagraph() {
+    const currentParagraph = this.focusParagraph;
     const nextParagraph = this.focusParagraph.nextElementSibling;
     if (!nextParagraph) {
       return;
     }
     mergeParagraphs(this.focusParagraph, nextParagraph);
+    __privateGet(this, _mutations).update(currentParagraph);
+    __privateGet(this, _mutations).remove(nextParagraph);
   }
+  /**
+   * Removes text
+   */
+  removeText() {
+    return this.replaceText("");
+  }
+  /**
+   * Removes inlines.
+   */
+  removeInlines() {
+    return this.replaceInlines("");
+  }
+  /**
+   * Removes paragraphs.
+   */
+  removeParagraphs() {
+    return this.replaceParagraphs("");
+  }
+  /**
+   * Removes the selected content.
+   */
   removeSelected() {
-    __privateGet(this, _textNodeIterator).currentNode = __privateGet(this, _range).startContainer;
     const affectedInlines = /* @__PURE__ */ new Set();
     const affectedParagraphs = /* @__PURE__ */ new Set();
-    do {
-      affectedInlines.add(getInline(__privateGet(this, _textNodeIterator).currentNode));
-      affectedParagraphs.add(getParagraph(__privateGet(this, _textNodeIterator).currentNode));
-      __privateGet(this, _textNodeIterator).nextNode();
-    } while (__privateGet(this, _textNodeIterator).currentNode !== __privateGet(this, _range).endContainer);
+    if (__privateGet(this, _range).startContainer !== __privateGet(this, _range).endContainer) {
+      let startTime = Date.now();
+      const startNode = getClosestTextNode(__privateGet(this, _range).startContainer);
+      const endNode = getClosestTextNode(__privateGet(this, _range).endContainer);
+      __privateGet(this, _textNodeIterator).currentNode = startNode;
+      do {
+        if (Date.now() - startTime >= 1e3) {
+          throw new Error("Timeout");
+        }
+        const inline = getInline(__privateGet(this, _textNodeIterator).currentNode);
+        const paragraph = getParagraph(__privateGet(this, _textNodeIterator).currentNode);
+        affectedInlines.add(inline);
+        affectedParagraphs.add(paragraph);
+        __privateGet(this, _textNodeIterator).nextNode();
+      } while (__privateGet(this, _textNodeIterator).currentNode !== endNode);
+    }
     __privateGet(this, _range).deleteContents();
     for (const inline of affectedInlines) {
-      if (inline.textContent === "") inline.remove();
+      if (inline.textContent === "") {
+        inline.remove();
+        __privateGet(this, _mutations).remove(inline);
+      }
     }
     for (const paragraph of affectedParagraphs) {
-      if (paragraph.children.length === 0) paragraph.remove();
+      if (paragraph.children.length === 0) {
+        paragraph.remove();
+        __privateGet(this, _mutations).remove(paragraph);
+      }
+    }
+    if (__privateGet(this, _textEditor).numParagraphs === 0) {
+      const emptyParagraph = createEmptyParagraph();
+      __privateGet(this, _textEditor).root.appendChild(emptyParagraph);
+      this.collapse(emptyParagraph.firstChild.firstChild, 0);
     }
   }
+  /**
+   * Applies styles to selection
+   *
+   * @param {Object.<string, *>} newStyles
+   * @returns {}
+   */
   applyStyles(newStyles) {
-    if (!__privateGet(this, _savedSelection)) {
-      return __privateMethod(this, _SelectionController_instances, applyStylesToCurrentSelection_fn).call(this, newStyles);
-    }
-    return __privateMethod(this, _SelectionController_instances, applyStylesToSavedSelection_fn).call(this, newStyles);
+    return __privateMethod(this, _SelectionController_instances, applyStylesTo_fn).call(this, this.startContainer, this.startOffset, this.endContainer, this.endOffset, newStyles);
   }
 }
 _textEditor = new WeakMap();
@@ -1478,7 +1835,22 @@ _currentStyle = new WeakMap();
 _inertElement = new WeakMap();
 _debug = new WeakMap();
 _mutations = new WeakMap();
+_styleDefaults = new WeakMap();
 _SelectionController_instances = new WeakSet();
+/**
+ * Applies the default styles to the currentStyle
+ * CSSStyleDeclaration.
+ */
+applyDefaultStylesToCurrentStyle_fn = function() {
+  if (__privateGet(this, _styleDefaults)) {
+    for (const [name, value] of Object.entries(__privateGet(this, _styleDefaults))) {
+      __privateGet(this, _currentStyle).setProperty(
+        name,
+        value + (name === "font-size" ? "px" : "")
+      );
+    }
+  }
+};
 /**
  * Applies some styles to the currentStyle
  * CSSStyleDeclaration
@@ -1498,6 +1870,7 @@ applyStylesToCurrentStyle_fn = function(element) {
  * @param {HTMLSpanElement} inline
  */
 updateCurrentStyle_fn = function(inline) {
+  __privateMethod(this, _SelectionController_instances, applyDefaultStylesToCurrentStyle_fn).call(this);
   const root = inline.parentElement.parentElement;
   __privateMethod(this, _SelectionController_instances, applyStylesToCurrentStyle_fn).call(this, root);
   const paragraph = inline.parentElement;
@@ -1505,6 +1878,20 @@ updateCurrentStyle_fn = function(inline) {
   __privateMethod(this, _SelectionController_instances, applyStylesToCurrentStyle_fn).call(this, inline);
 };
 _onSelectionChange = new WeakMap();
+/**
+ * Notifies that the styles have changed.
+ */
+notifyStyleChange_fn = function() {
+  const inline = this.focusInline;
+  if (inline) {
+    __privateMethod(this, _SelectionController_instances, updateCurrentStyle_fn).call(this, inline);
+    this.dispatchEvent(
+      new CustomEvent("stylechange", {
+        detail: __privateGet(this, _currentStyle)
+      })
+    );
+  }
+};
 /**
  * Setups
  */
@@ -1546,6 +1933,16 @@ getSavedRange_fn = function() {
     endOffset: __privateGet(this, _range).endOffset
   };
 };
+/**
+ * Applies styles from the startNode to the endNode.
+ *
+ * @param {Node} startNode
+ * @param {number} startOffset
+ * @param {Node} endNode
+ * @param {number} endOffset
+ * @param {Object.<string,*>|CSSStyleDeclaration} newStyles
+ * @returns {void}
+ */
 applyStylesTo_fn = function(startNode, startOffset, endNode, endOffset, newStyles) {
   console.log(
     "applyStylesTo",
@@ -1559,194 +1956,49 @@ applyStylesTo_fn = function(startNode, startOffset, endNode, endOffset, newStyle
   setRootStyles(root, newStyles);
   if (startNode === endNode) {
     if (startOffset === 0 && endOffset === endNode.nodeValue.length) {
-      const paragraph = getParagraph(startNode);
-      const inline = getInline(startNode);
+      const paragraph = this.startParagraph;
+      const inline = this.startInline;
       setParagraphStyles(paragraph, newStyles);
       setInlineStyles(inline, newStyles);
-    } else {
-      const paragraph = getParagraph(startNode);
+    } else if (startOffset !== endOffset) {
+      const paragraph = this.startParagraph;
       setParagraphStyles(paragraph, newStyles);
-      const inline = getInline(startNode);
+      const inline = this.startInline;
       const midText = startNode.splitText(startOffset);
-      console.log("midText", midText.nodeValue);
       const endText = midText.splitText(endOffset - startOffset);
-      console.log("endText", endText.nodeValue);
-      console.log("midText", midText.nodeValue);
       const midInline = createInline(midText, newStyles);
       const endInline = createInline(endText, inline.style);
       inline.after(midInline);
       midInline.after(endInline);
       this.setBaseAndExtent(midText, 0, midText, midText.nodeValue.length);
+    } else {
+      const paragraph = this.startParagraph;
+      setParagraphStyles(paragraph, newStyles);
     }
-    return;
+    return __privateMethod(this, _SelectionController_instances, notifyStyleChange_fn).call(this);
   }
+  let startTime = Date.now();
   __privateGet(this, _textNodeIterator).currentNode = startNode;
   do {
+    if (Date.now() - startTime >= 1e3) {
+      throw new Error("Timeout");
+    }
     getParagraph(__privateGet(this, _textNodeIterator).currentNode);
     const inline = getInline(__privateGet(this, _textNodeIterator).currentNode);
-    if (__privateGet(this, _textNodeIterator).currentNode === startNode && startOffset > 0) ;
-    else if (__privateGet(this, _textNodeIterator).currentNode === startNode && startOffset === 0 || __privateGet(this, _textNodeIterator).currentNode !== startNode && __privateGet(this, _textNodeIterator).currentNode !== endNode || __privateGet(this, _textNodeIterator).currentNode === endNode && endOffset === __privateGet(this, _textNodeIterator).currentNode.nodeValue.length) {
-      for (const [styleName, styleValue] of Object.entries(newStyles)) {
-        inline.style.setProperty(styleName, styleValue + "px");
-      }
-    } else if (__privateGet(this, _textNodeIterator).currentNode === endNode && endOffset < __privateGet(this, _textNodeIterator).currentNode.nodeValue.length) ;
+    if (__privateGet(this, _textNodeIterator).currentNode === startNode && startOffset > 0) {
+      const newInline = splitInline(inline, startOffset);
+      setInlineStyles(newInline, newStyles);
+    } else if (__privateGet(this, _textNodeIterator).currentNode === startNode && startOffset === 0 || __privateGet(this, _textNodeIterator).currentNode !== startNode && __privateGet(this, _textNodeIterator).currentNode !== endNode || __privateGet(this, _textNodeIterator).currentNode === endNode && endOffset === __privateGet(this, _textNodeIterator).currentNode.nodeValue.length) {
+      setInlineStyles(inline, newStyles);
+    } else if (__privateGet(this, _textNodeIterator).currentNode === endNode && endOffset < __privateGet(this, _textNodeIterator).currentNode.nodeValue.length) {
+      splitInline(inline, endOffset);
+      setInlineStyles(inline, newStyles);
+    }
     if (__privateGet(this, _textNodeIterator).currentNode === endNode) return;
     __privateGet(this, _textNodeIterator).nextNode();
   } while (__privateGet(this, _textNodeIterator).currentNode);
+  __privateMethod(this, _SelectionController_instances, notifyStyleChange_fn).call(this);
 };
-applyStylesToSavedSelection_fn = function(newStyles) {
-  return __privateMethod(this, _SelectionController_instances, applyStylesTo_fn).call(this, __privateGet(this, _savedSelection).range.startContainer, __privateGet(this, _savedSelection).range.startOffset, __privateGet(this, _savedSelection).range.endContainer, __privateGet(this, _savedSelection).range.endOffset, newStyles);
-};
-applyStylesToCurrentSelection_fn = function(newStyles) {
-  return __privateMethod(this, _SelectionController_instances, applyStylesTo_fn).call(this, __privateGet(this, _range).startContainer, __privateGet(this, _range).startOffset, __privateGet(this, _range).endContainer, __privateGet(this, _range).endOffset, newStyles);
-};
-function insertParagraph(event, editor, selectionController) {
-  console.log(event.type, event.inputType);
-  event.preventDefault();
-  if (selectionController.isCollapsed) {
-    return selectionController.insertParagraph();
-  }
-  return selectionController.replaceWithParagraph();
-}
-function insertFromPaste(event, editor, selectionController) {
-  console.log(event.inputType, event.data);
-  if (selectionController.isCollapsed) {
-    return selectionController.insertPaste(event.data);
-  }
-  return selectionController.replaceWithPaste(event.data);
-}
-function deleteByCut(event, editor, selectionController) {
-  event.preventDefault();
-  if (selectionController.isCollapsed) {
-    throw new Error("This should be impossible");
-  }
-  return selectionController.removeSelected();
-}
-function deleteContentBackward(event, editor, selectionController) {
-  event.preventDefault();
-  if (selectionController.isCollapsed) {
-    if (selectionController.isTextFocus && selectionController.focusOffset > 0) {
-      console.log("removeBackwardText");
-      return selectionController.removeBackwardText();
-    } else if (selectionController.isTextFocus && selectionController.focusAtStart) {
-      console.log("mergeBackwardParagraph");
-      return selectionController.mergeBackwardParagraph();
-    } else if (selectionController.isInlineFocus || selectionController.isLineBreakFocus) {
-      console.log("removeBackwardParagraph");
-      return selectionController.removeBackwardParagraph();
-    }
-  }
-  return selectionController.removeSelected();
-}
-function deleteContentForward(event, editor, selectionController) {
-  event.preventDefault();
-  if (selectionController.isCollapsed) {
-    if (selectionController.isTextFocus && selectionController.focusOffset >= 0) {
-      return selectionController.removeForwardText();
-    } else if (selectionController.isTextFocus && selectionController.focusAtEnd) {
-      return selectionController.mergeForwardParagraph();
-    } else if ((selectionController.isInlineFocus || selectionController.isLineBreakFocus) && editor.numParagraphs > 1) {
-      return selectionController.removeForwardParagraph();
-    }
-  }
-  return selectionController.removeSelected();
-}
-const commands = {
-  insertText,
-  insertParagraph,
-  insertFromPaste,
-  deleteByCut,
-  deleteContentBackward,
-  deleteContentForward
-};
-class ChangeController {
-  /**
-   * Constructor
-   *
-   * @param {EventTarget} target
-   * @param {number} [time=500]
-   */
-  constructor(target, time = 500) {
-    /**
-     * Keeps the timeout id.
-     *
-     * @type {number}
-     */
-    __privateAdd(this, _timeout, null);
-    /**
-     * Reference to the EventTarget that receives
-     * the `change` events.
-     *
-     * @type {EventTarget}
-     */
-    __privateAdd(this, _target, null);
-    /**
-     * Keeps the time at which we're going to
-     * call the debounced change calls.
-     *
-     * @type {number}
-     */
-    __privateAdd(this, _time, 1e3);
-    /**
-     * Keeps if we have some pending changes or not.
-     *
-     * @type {boolean}
-     */
-    __privateAdd(this, _hasPendingChanges, false);
-    __privateAdd(this, _onTimeout, () => {
-      __privateGet(this, _target).dispatchEvent(new Event("change"));
-    });
-    if (!(target instanceof EventTarget)) {
-      throw new TypeError("Invalid EventTarget");
-    }
-    __privateSet(this, _target, target);
-    if (typeof time === "number" && (!Number.isInteger(time) || time <= 0)) {
-      throw new TypeError("Invalid time");
-    }
-    __privateSet(this, _time, time ?? 500);
-  }
-  /**
-   * Indicates that there are some pending changes.
-   *
-   * @type {boolean}
-   */
-  get hasPendingChanges() {
-    return __privateGet(this, _hasPendingChanges);
-  }
-  /**
-   * Tells the ChangeController that a change has been made
-   * but that you need to delay the notification (and debounce)
-   * for sometime.
-   */
-  notifyDebounced() {
-    __privateSet(this, _hasPendingChanges, true);
-    clearTimeout(__privateGet(this, _timeout));
-    __privateSet(this, _timeout, setTimeout(__privateGet(this, _onTimeout), __privateGet(this, _time)));
-  }
-  /**
-   * Tells the ChangeController that a change should be notified
-   * immediately.
-   */
-  notifyImmediately() {
-    clearTimeout(__privateGet(this, _timeout));
-    __privateGet(this, _onTimeout).call(this);
-  }
-  /**
-   * Disposes the referenced resources.
-   */
-  dispose() {
-    if (this.hasPendingChanges) {
-      this.notifyImmediately();
-    }
-    clearTimeout(__privateGet(this, _timeout));
-    __privateSet(this, _target, null);
-  }
-}
-_timeout = new WeakMap();
-_target = new WeakMap();
-_time = new WeakMap();
-_hasPendingChanges = new WeakMap();
-_onTimeout = new WeakMap();
 function createSelectionImposterFromClientRects(referenceRect, clientRects) {
   const fragment = document.createDocumentFragment();
   for (const rect of clientRects) {
@@ -1770,6 +2022,10 @@ function removeEventListeners(target, object) {
     ([type, listener]) => target.removeEventListener(type, listener)
   );
 }
+const LayoutType = {
+  FULL: "full",
+  PARTIAL: "partial"
+};
 class TextEditor extends EventTarget {
   /**
    * Constructor.
@@ -1820,25 +2076,33 @@ class TextEditor extends EventTarget {
      *
      * @type {Object.<string, *>}
      */
-    __privateAdd(this, _styleDefaults, null);
+    __privateAdd(this, _styleDefaults2, null);
+    /**
+     * Dispatchs a `change` event.
+     *
+     * @param {CustomEvent} e
+     * @returns {void}
+     */
+    __privateAdd(this, _onChange, (e) => this.dispatchEvent(new e.constructor(e.type, e)));
+    /**
+     * Dispatchs a `stylechange` event.
+     *
+     * @param {CustomEvent} e
+     * @returns {void}
+     */
+    __privateAdd(this, _onStyleChange, (e) => {
+      __privateMethod(this, _TextEditor_instances, createSelectionImposter_fn).call(this);
+      this.dispatchEvent(new e.constructor(e.type, e));
+    });
     /**
      * On blur we create a new FakeSelection if there's any.
      *
      * @param {FocusEvent} e
      */
     __privateAdd(this, _onBlur, (e) => {
-      var _a;
       __privateGet(this, _changeController).notifyImmediately();
       __privateGet(this, _selectionController).saveSelection();
-      if (__privateGet(this, _selectionImposterElement)) {
-        const rects = (_a = __privateGet(this, _selectionController).range) == null ? void 0 : _a.getClientRects();
-        if (rects) {
-          const rect = __privateGet(this, _selectionImposterElement).getBoundingClientRect();
-          __privateGet(this, _selectionImposterElement).replaceChildren(
-            createSelectionImposterFromClientRects(rect, rects)
-          );
-        }
-      }
+      __privateMethod(this, _TextEditor_instances, createSelectionImposter_fn).call(this);
     });
     /**
      * On focus we should restore the FakeSelection from the current
@@ -1858,9 +2122,9 @@ class TextEditor extends EventTarget {
      *
      * @param {ClipboardEvent} e
      */
-    __privateAdd(this, _onPaste, (e) => clipboard.paste(e, this));
-    __privateAdd(this, _onCut, (e) => clipboard.cut(e, this));
-    __privateAdd(this, _onCopy, (e) => clipboard.copy(e, this));
+    __privateAdd(this, _onPaste, (e) => clipboard.paste(e, this, __privateGet(this, _selectionController)));
+    __privateAdd(this, _onCut, (e) => clipboard.cut(e, this, __privateGet(this, _selectionController)));
+    __privateAdd(this, _onCopy, (e) => clipboard.copy(e, this, __privateGet(this, _selectionController)));
     /**
      * Event called before the DOM is modified.
      *
@@ -1868,17 +2132,23 @@ class TextEditor extends EventTarget {
      */
     __privateAdd(this, _onBeforeInput, (e) => {
       if (!(e.inputType in commands)) {
-        e.preventDefault();
+        if (e.inputType !== "insertCompositionText") {
+          e.preventDefault();
+        }
         return;
       }
       if (e.inputType in commands) {
         const command = commands[e.inputType];
-        __privateGet(this, _selectionController).startCommand();
+        __privateGet(this, _selectionController).startMutation();
         command(e, this, __privateGet(this, _selectionController));
         __privateGet(this, _changeController).notifyDebounced();
-        const mutations = __privateGet(this, _selectionController).endCommand();
-        console.log("mutations", mutations);
-        __privateMethod(this, _TextEditor_instances, notifyLayout_fn).call(this, "complete", mutations);
+        const mutations = __privateGet(this, _selectionController).endMutation();
+        __privateMethod(this, _TextEditor_instances, notifyLayout_fn).call(this, LayoutType.FULL, mutations);
+      }
+    });
+    __privateAdd(this, _onInput, (e) => {
+      if (e.inputType === "insertCompositionText") {
+        __privateMethod(this, _TextEditor_instances, notifyLayout_fn).call(this, LayoutType.FULL, null);
       }
     });
     if (!(element instanceof HTMLElement))
@@ -1891,9 +2161,10 @@ class TextEditor extends EventTarget {
       paste: __privateGet(this, _onPaste),
       cut: __privateGet(this, _onCut),
       copy: __privateGet(this, _onCopy),
-      beforeinput: __privateGet(this, _onBeforeInput)
+      beforeinput: __privateGet(this, _onBeforeInput),
+      input: __privateGet(this, _onInput)
     });
-    __privateSet(this, _styleDefaults, options == null ? void 0 : options.styleDefaults);
+    __privateSet(this, _styleDefaults2, options == null ? void 0 : options.styleDefaults);
     __privateMethod(this, _TextEditor_instances, setup_fn2).call(this, options);
   }
   /**
@@ -1985,8 +2256,11 @@ class TextEditor extends EventTarget {
    * @param {*} styles
    */
   applyStylesToSelection(styles) {
+    console.log("applyStylesToSelection", styles);
+    __privateGet(this, _selectionController).startMutation();
     __privateGet(this, _selectionController).applyStyles(styles);
-    __privateMethod(this, _TextEditor_instances, notifyLayout_fn).call(this);
+    const mutations = __privateGet(this, _selectionController).endMutation();
+    __privateMethod(this, _TextEditor_instances, notifyLayout_fn).call(this, LayoutType.FULL, mutations);
     return this;
   }
   /**
@@ -2000,7 +2274,9 @@ class TextEditor extends EventTarget {
    * Disposes everything
    */
   dispose() {
+    __privateGet(this, _changeController).removeEventListener("change", __privateGet(this, _onChange));
     __privateGet(this, _changeController).dispose();
+    __privateGet(this, _selectionController).removeEventListener("stylechange", __privateGet(this, _onStyleChange));
     __privateGet(this, _selectionController).dispose();
     removeEventListeners(__privateGet(this, _element), __privateGet(this, _events));
     __privateSet(this, _element, null);
@@ -2013,7 +2289,7 @@ _root = new WeakMap();
 _changeController = new WeakMap();
 _selectionController = new WeakMap();
 _selectionImposterElement = new WeakMap();
-_styleDefaults = new WeakMap();
+_styleDefaults2 = new WeakMap();
 _TextEditor_instances = new WeakSet();
 /**
  * Setups editor properties.
@@ -2038,9 +2314,11 @@ setupElementProperties_fn = function() {
  * Setups the root element.
  */
 setupRoot_fn = function() {
-  __privateSet(this, _root, createEmptyRoot(__privateGet(this, _styleDefaults)));
+  __privateSet(this, _root, createEmptyRoot(__privateGet(this, _styleDefaults2)));
   __privateGet(this, _element).appendChild(__privateGet(this, _root));
 };
+_onChange = new WeakMap();
+_onStyleChange = new WeakMap();
 /**
  * Setups the elements, the properties and the
  * initial content.
@@ -2049,12 +2327,29 @@ setup_fn2 = function(options) {
   __privateMethod(this, _TextEditor_instances, setupElementProperties_fn).call(this);
   __privateMethod(this, _TextEditor_instances, setupRoot_fn).call(this);
   __privateSet(this, _changeController, new ChangeController(this));
+  __privateGet(this, _changeController).addEventListener("change", __privateGet(this, _onChange));
   __privateSet(this, _selectionController, new SelectionController(
     this,
     document.getSelection(),
     options
   ));
+  __privateGet(this, _selectionController).addEventListener("stylechange", __privateGet(this, _onStyleChange));
   addEventListeners(__privateGet(this, _element), __privateGet(this, _events));
+};
+/**
+ * Creates the selection imposter.
+ */
+createSelectionImposter_fn = function() {
+  var _a;
+  if (__privateGet(this, _selectionImposterElement)) {
+    const rects = (_a = __privateGet(this, _selectionController).range) == null ? void 0 : _a.getClientRects();
+    if (rects) {
+      const rect = __privateGet(this, _selectionImposterElement).getBoundingClientRect();
+      __privateGet(this, _selectionImposterElement).replaceChildren(
+        createSelectionImposterFromClientRects(rect, rects)
+      );
+    }
+  }
 };
 _onBlur = new WeakMap();
 _onFocus = new WeakMap();
@@ -2062,13 +2357,14 @@ _onPaste = new WeakMap();
 _onCut = new WeakMap();
 _onCopy = new WeakMap();
 _onBeforeInput = new WeakMap();
+_onInput = new WeakMap();
 /**
  * Notifies that the edited texts needs layout.
  *
- * @param {'complete'|'partial'} type
+ * @param {'full'|'partial'} type
  * @param {CommandMutations} mutations
  */
-notifyLayout_fn = function(type = "complete", mutations) {
+notifyLayout_fn = function(type = LayoutType.FULL, mutations) {
   this.dispatchEvent(
     new CustomEvent("needslayout", {
       detail: {

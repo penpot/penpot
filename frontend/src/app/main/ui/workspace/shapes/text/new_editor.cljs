@@ -19,9 +19,10 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
-   [app.main.ui.workspace.shapes.text.new-editor.content :as c]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
+   [app.util.text.content :as content]
+   [app.util.text.layout :as layout]
    [goog.events :as events]
    [rumext.v2 :as mf]))
 
@@ -50,7 +51,7 @@
          (fn []
            (let [text-editor-instance (mf/ref-val text-editor-instance-ref)
                  container (mf/ref-val text-editor-container-ref)
-                 new-content (c/dom->cljs (impl/getRoot text-editor-instance))]
+                 new-content (content/dom->cljs (impl/getRoot text-editor-instance))]
              (when (some? new-content)
                (st/emit! (dwt/v2-update-text-shape-content shape-id new-content true)))
              (dom/set-style! container "opacity" 0))))
@@ -65,18 +66,18 @@
         (mf/use-fn
          (fn [e]
            (js/console.log (.-type e) e)
-           (st/emit! (dwt/v2-update-text-editor-styles shape-id (c/get-styles-from-event e)))))
+           (st/emit! (dwt/v2-update-text-editor-styles shape-id (content/get-styles-from-event e)))))
 
         on-needslayout
         (mf/use-fn
          (fn [e]
            (js/console.log (.-type e) e)
            (let [text-editor-instance (mf/ref-val text-editor-instance-ref)
-                 new-content (c/dom->cljs (impl/getRoot text-editor-instance))
+                 new-content (content/dom->cljs (impl/getRoot text-editor-instance))
                  layout-detail (.-detail e)
                  layout-type (.-type layout-detail)
                  layout-mutations (.-mutations layout-detail)
-                 new-layout (impl/layoutFromEditor text-editor-instance layout-type layout-mutations)]
+                 new-layout (layout/layout-from-editor text-editor-instance layout-type layout-mutations)]
              (js/console.log "new-content" new-content "new-layout" new-layout)
              (when (some? new-content)
                (st/emit! (dwt/v2-update-text-shape-content shape-id new-content false))
@@ -86,8 +87,8 @@
         (mf/use-fn
          (fn []
            (let [text-editor-instance (mf/ref-val text-editor-instance-ref)
-                 new-content (c/dom->cljs (impl/getRoot text-editor-instance))
-                 new-layout (impl/layoutFromEditor text-editor-instance)]
+                 new-content (content/dom->cljs (impl/getRoot text-editor-instance))
+                 new-layout (layout/layout-from-editor text-editor-instance)]
              (when (some? new-content)
                (st/emit! (dwt/v2-update-text-shape-content shape-id new-content true))
                (st/emit! (dwt/v2-update-text-shape-layout shape-id new-layout))))))
@@ -112,7 +113,7 @@
      (fn []
        (let [keys [(events/listen js/document "keyup" on-key-up)]
              text-editor (mf/ref-val text-editor-ref)
-             style-defaults (c/get-style-defaults (d/merge txt/default-text-attrs default-font))
+             style-defaults (content/get-style-defaults (d/merge txt/default-text-attrs default-font))
              _ (js/console.log "style-defaults" style-defaults)
              text-editor-options #js {:styleDefaults style-defaults
                                       :selectionImposterElement (mf/ref-val text-editor-selection-ref)}
@@ -123,7 +124,7 @@
          (.addEventListener text-editor-instance "change" on-change)
          (st/emit! (dwt/update-editor text-editor-instance))
          (when (some? content)
-           (impl/setRoot text-editor-instance (c/cljs->dom content)))
+           (impl/setRoot text-editor-instance (content/cljs->dom content)))
 
          ;; This function is called when the component is unmount.
          (fn []
@@ -140,10 +141,7 @@
                      " "
                      (cur/get-dynamic "text" (:rotation shape))
                      " "
-                     (stl/css-case :text-editor-container true
-                                   :align-top    (= (:vertical-align content "top") "top")
-                                   :align-center (= (:vertical-align content) "center")
-                                   :align-bottom (= (:vertical-align content) "bottom")))
+                     (stl/css :text-editor-container))
       :ref text-editor-container-ref
       :data-testid "text-editor-container"
       :style {:width (:width shape)
@@ -159,7 +157,10 @@
       {:class (stl/css :text-editor-selection-imposter)
        :ref text-editor-selection-ref}]
      [:div
-      {:class (stl/css :text-editor-content)
+      {:class (stl/css-case :text-editor-content true
+                            :align-top    (= (:vertical-align content "top") "top")
+                            :align-center (= (:vertical-align content) "center")
+                            :align-bottom (= (:vertical-align content) "bottom"))
        :ref text-editor-ref
        :data-testid "text-editor-content"
        :data-x (dm/get-prop shape :x)
