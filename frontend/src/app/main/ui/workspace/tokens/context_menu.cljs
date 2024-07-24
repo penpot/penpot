@@ -52,7 +52,7 @@
 
 (defn update-shape-position [value shape-ids attributes]
   (doseq [shape-id shape-ids]
-    (st/emit! (dw/update-position shape-id {(first attributes) value}))))
+    (st/emit! (dwt/update-position shape-id {(first attributes) value}))))
 
 (defn apply-dimensions-token [{:keys [token-id token-type-props selected-shapes]} attributes]
   (let [token (dt/get-token-data-from-token-id token-id)
