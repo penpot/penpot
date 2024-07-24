@@ -431,53 +431,27 @@
          attributes)))
 
 (def shape-attribute-actions-map
-  {:border-radius border-radius-attribute-actions
-   :spacing spacing-attribute-actions
-   :sizing sizing-attribute-actions
-   :rotation (partial generic-attribute-actions #{:rotation} "Rotation")
-   :opacity (partial generic-attribute-actions #{:opacity} "Opacity")
-   :stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")
-   :dimensions (fn [_]
-                 [{:title "Spacing" :submenu :spacing}])})
+  (let [stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")]
+    {:border-radius border-radius-attribute-actions
+     :spacing spacing-attribute-actions
+     :sizing sizing-attribute-actions
+     :rotation (partial generic-attribute-actions #{:rotation} "Rotation")
+     :opacity (partial generic-attribute-actions #{:opacity} "Opacity")
+     :stroke-width stroke-width
+     :dimensions (fn [context-data]
+                   (concat
+                    [{:title "Spacing" :submenu :spacing}
+                     {:title "Sizing" :submenu :sizing}
+                     :separator
+                     {:title "Border Radius" :submenu :border-radius}]
+                    (stroke-width context-data)
+                    [:separator]
+                    (generic-attribute-actions #{:x} "X" context-data)
+                    (generic-attribute-actions #{:y} "Y" context-data)))}))
 
 (defn shape-attribute-actions [{:keys [type token] :as context-data}]
   (when-let [with-actions (get shape-attribute-actions-map (or type (:type token)))]
     (with-actions context-data)))
-
-(defn shape-attribute-actions* [{:keys [token selected-shapes] :as context-data}]
-  (let [attributes->actions (fn [update-fn coll]
-                              (for [{:keys [attributes] :as item} coll]
-                                (cond
-                                  (= :separator item) item
-                                  :else
-                                  (let [selected? (wtt/shapes-token-applied? {:id token} selected-shapes attributes)]
-                                    (assoc item
-                                           :action #(update-fn context-data attributes)
-                                           :selected? selected?)))))]
-    (case (:type token)
-      :sizing       (attributes->actions
-                     apply-sizing-token
-                     [{:title "All" :attributes #{:width :height :layout-item-min-w :layout-item-max-w :layout-item-min-h :layout-item-max-h}}
-                      {:title "Width" :attributes #{:width}}
-                      {:title "Height" :attributes #{:height}}
-                      {:title "Min width" :attributes #{:layout-item-min-w}}
-                      {:title "Max width" :attributes #{:layout-item-max-w}}
-                      {:title "Min height" :attributes #{:layout-item-min-h}}
-                      {:title "Max height" :attributes #{:layout-item-max-h}}])
-
-      :dimensions    (attributes->actions
-                      apply-dimensions-token
-                      [{:title "Spacing" :submenu :spacing}
-                       {:title "Sizing" :submenu :sizing}
-                       {:title "Border Radius" :submenu :border-radius}
-                       {:title "Border Width" :attributes #{:stroke-width}}
-                       {:title "x" :attributes #{:x}}
-                       {:title "y" :attributes #{:y}}])
-                      ;;TODO: Background blur {:title "Background blur" :attributes #{:width}}])
-
-
-
-      [])))
 
 (defn generate-menu-entries [{:keys [token selected-shapes] :as context-data}]
   (let [{:keys [modal]} (get wtc/token-types (:type token))
