@@ -24,8 +24,7 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]
-   [promesa.core :as p]
-   [cljs.pprint :as pprint]))
+   [promesa.core :as p]))
 
 ;; Helpers ---------------------------------------------------------------------
 
@@ -51,11 +50,13 @@
 
 ;; Shape Update Functions ------------------------------------------------------
 
-(defn update-shape-radius-single-corner [value shape-ids attribute]
+(defn update-shape-radius-single-corner [value shape-ids attributes]
   (dch/update-shapes shape-ids
                      (fn [shape]
                        (when (ctsr/has-radius? shape)
-                         (ctsr/set-radius-4 shape (first attribute) value)))
+                         (cond-> shape
+                           (:rx shape) (ctsr/switch-to-radius-4)
+                           :always (ctsr/set-radius-4 (first attributes) value))))
                      {:reg-objects? true
                       :attrs [:rx :ry :r1 :r2 :r3 :r4]}))
 
