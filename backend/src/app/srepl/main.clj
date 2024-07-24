@@ -752,7 +752,7 @@
                 {:deleted deleted :total total})))]
 
     (let [path       (fs/path path)
-          deleted-at (dt/minus (dt/now) cf/deletion-delay)]
+          deleted-at (dt/minus (dt/now) (cf/get-deletion-delay))]
 
       (when-not (fs/exists? path)
         (throw (ex-info "path does not exists" {:path path})))
