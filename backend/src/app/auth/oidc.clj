@@ -572,7 +572,7 @@
             props   (audit/profile->props profile)
             context (d/without-nils {:external-session-id (:external-session-id info)})]
 
-        (audit/submit! cfg {::audit/type "command"
+        (audit/submit! cfg {::audit/type "action"
                             ::audit/name "login-with-oidc"
                             ::audit/profile-id (:id profile)
                             ::audit/ip-addr (inet/parse-request request)
