@@ -364,14 +364,11 @@
                     (generic-attribute-actions #{:x} "X" context-data)
                     (generic-attribute-actions #{:y} "Y" context-data)))}))
 
-(defn shape-attribute-actions [{:keys [type token] :as context-data}]
-  (when-let [with-actions (get shape-attribute-actions-map (or type (:type token)))]
-    (with-actions context-data)))
-
-(defn generate-menu-entries [{:keys [token selected-shapes] :as context-data}]
+(defn generate-menu-entries [{:keys [type token] :as context-data}]
   (let [{:keys [modal]} (get wtc/token-types (:type token))
-        attribute-actions (when (seq selected-shapes)
-                            (shape-attribute-actions context-data))
+        with-actions (get shape-attribute-actions-map (or type (:type token)))
+        attribute-actions (when with-actions
+                            (with-actions context-data))
         default-actions [{:title "Delete Token"
                           :action #(st/emit! (dt/delete-token (:id token)))}
                          {:title "Duplicate Token"
