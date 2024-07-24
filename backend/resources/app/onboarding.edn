@@ -1,4 +1,16 @@
-[{:id "tutorial-for-beginners"
+[{:id "wireframing-kit"
+  :name "Wireframe library"
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/wireframing-kit.penpot"}
+ {:id "prototype-examples"
+  :name "Prototipe template"
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/prototype-examples.penpot"}
+ {:id "plants-app"
+  :name "UI mockup example"
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Plants-app.penpot"}
+ {:id "penpot-design-system"
+  :name "Design system example"
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Penpot-Design-system.penpot"}
+ {:id "tutorial-for-beginners"
   :name "Tutorial for beginners"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/tutorial-for-beginners.penpot"}
  {:id "lucide-icons"
@@ -7,12 +19,6 @@
  {:id "font-awesome"
   :name "Font Awesome"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Font-Awesome.penpot"}
- {:id "plants-app"
-  :name "Plants app"
-  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Plants-app.penpot"}
- {:id "wireframing-kit"
-  :name "Wireframing Kit"
-  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/wireframing-kit.penpot"}
  {:id "black-white-mobile-templates"
   :name "Black & White Mobile Templates"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Black-White-Mobile-Templates.penpot"}
@@ -30,10 +36,4 @@
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Open-Color-Scheme.penpot"}
  {:id "flex-layout-playground"
   :name "Flex Layout Playground"
-  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Flex-Layout-Playground.penpot"}
- {:id "prototype-examples"
-  :name "Prototipe template"
-  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/prototype-examples.penpot"}
- {:id "penpot-design-system"
-  :name "Design system example"
-  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Penpot-Design-system.penpot"}]
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Flex-Layout-Playground.penpot"}]
