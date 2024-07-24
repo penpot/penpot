@@ -137,36 +137,33 @@
    :gap {:column-gap "Column Gap"
          :row-gap "Row Gap"}})
 
-(defn gap-attribute-actions [{:keys [token selected-shapes]}]
-  (let [on-update-shape update-layout-spacing
-        gap-attrs (:gap spacing)
-        all-gap-attrs (into #{} (keys gap-attrs))
-        {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes all-gap-attrs)
-        all-gap (let [props {:attributes all-gap-attrs
-                             :token token
-                             :shape-ids shape-ids}]
-                  [{:title "All"
-                    :selected? all-selected?
-                    :action #(if all-selected?
-                               (st/emit! (wtc/unapply-token props))
-                               (st/emit! (wtc/apply-token (assoc props :on-update-shape on-update-shape))))}])
-        single-gap (->> gap-attrs
-                        (map (fn [[attr title]]
-                               (let [selected? (selected-pred attr)]
-                                 {:title title
-                                  :selected? (and (not all-selected?) selected?)
-                                  :action #(let [props {:attributes #{attr}
-                                                        :token token
-                                                        :shape-ids shape-ids}
-                                                 event (cond
-                                                         all-selected? (-> (assoc props :attributes-to-remove #{:row-gap :column-gap})
-                                                                           (wtc/apply-token))
-                                                         selected? (wtc/unapply-token props)
-                                                         :else (-> (assoc props :on-update-shape on-update-shape)
-                                                                   (wtc/apply-token)))]
-                                             (st/emit! event))})))
-                        (into))]
-    (concat all-gap single-gap)))
+(defn all-or-sepearate-actions [attribute-labels on-update-shape {:keys [token selected-shapes]}]
+  (let [attributes (set (keys attribute-labels))
+        {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)
+        all-action (let [props {:attributes attributes
+                                :token token
+                                :shape-ids shape-ids}]
+                     {:title "All"
+                      :selected? all-selected?
+                      :action #(if all-selected?
+                                 (st/emit! (wtc/unapply-token props))
+                                 (st/emit! (wtc/apply-token (assoc props :on-update-shape on-update-shape))))})
+        single-actions (map (fn [[attr title]]
+                              (let [selected? (selected-pred attr)]
+                                {:title title
+                                 :selected? (and (not all-selected?) selected?)
+                                 :action #(let [props {:attributes #{attr}
+                                                       :token token
+                                                       :shape-ids shape-ids}
+                                                event (cond
+                                                        all-selected? (-> (assoc props :attributes-to-remove attributes)
+                                                                          (wtc/apply-token))
+                                                        selected? (wtc/unapply-token props)
+                                                        :else (-> (assoc props :on-update-shape on-update-shape)
+                                                                  (wtc/apply-token)))]
+                                            (st/emit! event))}))
+                            attribute-labels)]
+    (concat [all-action] single-actions)))
 
 (defn spacing-attribute-actions [{:keys [token selected-shapes] :as context-data}]
   (let [on-update-shape (fn [resolved-value shape-ids attrs]
@@ -237,39 +234,13 @@
                                                                    :else (-> (assoc props :on-update-shape on-update-shape)
                                                                              (wtc/apply-token)))]
                                                        (st/emit! event))}))))
-        gap-items (gap-attribute-actions context-data)]
+        gap-items (all-or-sepearate-actions {:column-gap "Column Gap"
+                                             :row-gap "Row Gap"}
+                                            update-layout-spacing context-data)]
     (concat padding-items
             single-padding-items
             [:separator]
             gap-items)))
-
-(defn all-or-sepearate-actions [attribute-labels on-update-shape {:keys [token selected-shapes]}]
-  (let [attributes (set (keys attribute-labels))
-        {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)
-        all-action (let [props {:attributes attributes
-                                :token token
-                                :shape-ids shape-ids}]
-                     {:title "All"
-                      :selected? all-selected?
-                      :action #(if all-selected?
-                                 (st/emit! (wtc/unapply-token props))
-                                 (st/emit! (wtc/apply-token (assoc props :on-update-shape on-update-shape))))})
-        single-actions (map (fn [[attr title]]
-                              (let [selected? (selected-pred attr)]
-                                {:title title
-                                 :selected? (and (not all-selected?) selected?)
-                                 :action #(let [props {:attributes #{attr}
-                                                       :token token
-                                                       :shape-ids shape-ids}
-                                                event (cond
-                                                        all-selected? (-> (assoc props :attributes-to-remove attributes)
-                                                                          (wtc/apply-token))
-                                                        selected? (wtc/unapply-token props)
-                                                        :else (-> (assoc props :on-update-shape on-update-shape)
-                                                                  (wtc/apply-token)))]
-                                            (st/emit! event))}))
-                            attribute-labels)]
-    (concat [all-action] single-actions)))
 
 (defn sizing-attribute-actions [context-data]
   (concat
