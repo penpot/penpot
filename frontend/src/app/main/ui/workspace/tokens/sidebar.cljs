@@ -97,10 +97,11 @@
                              (mf/deps selected-shapes token-type-props)
                              (fn [event token]
                                (dom/stop-propagation event)
-                               (st/emit!
-                                (wtc/toggle-token {:token token
-                                                   :shapes selected-shapes
-                                                   :token-type-props token-type-props}))))
+                               (when (seq selected-shapes)
+                                 (st/emit!
+                                  (wtc/toggle-token {:token token
+                                                     :shapes selected-shapes
+                                                     :token-type-props token-type-props})))))
         tokens-count (count tokens)]
     [:div {:on-click on-toggle-open-click}
      [:& cmm/asset-section {:icon (mf/fnc icon-wrapper [_]
