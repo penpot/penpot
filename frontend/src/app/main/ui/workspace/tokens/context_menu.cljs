@@ -436,10 +436,12 @@
    :sizing sizing-attribute-actions
    :rotation (partial generic-attribute-actions #{:rotation} "Rotation")
    :opacity (partial generic-attribute-actions #{:opacity} "Opacity")
-   :stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")})
+   :stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")
+   :dimensions (fn [_]
+                 [{:title "Spacing" :submenu :spacing}])})
 
-(defn shape-attribute-actions [{:keys [token] :as context-data}]
-  (when-let [with-actions (get shape-attribute-actions-map (:type token))]
+(defn shape-attribute-actions [{:keys [type token] :as context-data}]
+  (when-let [with-actions (get shape-attribute-actions-map (or type (:type token)))]
     (with-actions context-data)))
 
 (defn shape-attribute-actions* [{:keys [token selected-shapes] :as context-data}]
@@ -513,7 +515,8 @@
                                                                                          :hidden-icon (not selected?))}])
                                               :selected? selected?))
          (when submenu
-           (let [submenu-entries (shape-attribute-actions (assoc context-data :token-type submenu))]
+           (let [submenu-entries (-> (assoc context-data :type submenu)
+                                     (generate-menu-entries))]
              (for [[index {:keys [title action selected?] :as sub-entry}] (d/enumerate submenu-entries)]
                (cond
                  (= :separator sub-entry) [:& menu-separator]
