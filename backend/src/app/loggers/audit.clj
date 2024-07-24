@@ -80,13 +80,17 @@
          (remove #(contains? reserved-props (key %))))
         props))
 
-(defn params->context
-  "Extract default context properties from RPC params object"
+(defn event-from-rpc-params
+  "Create a base event skeleton with pre-filled some important
+  data that can be extracted from RPC params object"
   [params]
-  (d/without-nils
-   {:external-session-id (::rpc/external-session-id params)
-    :event-origin (::rpc/external-event-origin params)
-    :triggered-by (::rpc/handler-name params)}))
+  (let [context {:external-session-id (::rpc/external-session-id params)
+                 :external-event-origin (::rpc/external-event-origin params)
+                 :triggered-by (::rpc/handler-name params)}]
+    {::type "action"
+     ::profile-id (::rpc/profile-id params)
+     ::ip-addr (::rpc/ip-addr params)
+     ::context (d/without-nils context)}))
 
 ;; --- SPECS
 

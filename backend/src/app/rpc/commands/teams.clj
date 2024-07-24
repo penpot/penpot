@@ -787,18 +787,15 @@
           (l/info :hint "invitation token" :token itoken))
 
 
-        (let [props   (-> (dissoc tprops :profile-id)
-                          (audit/clean-props))
-              context (audit/params->context params)]
-
-          (audit/submit! cfg
-                         {::audit/type "action"
-                          ::audit/name (if updated?
-                                         "update-team-invitation"
-                                         "create-team-invitation")
-                          ::audit/profile-id (:id profile)
-                          ::audit/props props
-                          ::audit/context context}))
+        (let [props  (-> (dissoc tprops :profile-id)
+                         (audit/clean-props))
+              evname (if updated?
+                       "update-team-invitation"
+                       "create-team-invitation")
+              event (-> (audit/event-from-rpc-params params)
+                        (assoc ::audit/name evname)
+                        (assoc ::audit/props props))]
+          (audit/submit! cfg event))
 
         (eml/send! {::eml/conn conn
                     ::eml/factory eml/invite-to-team
@@ -882,62 +879,51 @@
 (sv/defmethod ::create-team-with-invitations
   {::doc/added "1.17"
    ::sm/params schema:create-team-with-invitations}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id emails role name] :as params}]
-  (db/with-atomic [conn pool]
+  [cfg {:keys [::rpc/profile-id emails role name] :as params}]
 
-    (let [features (-> (cfeat/get-enabled-features cf/flags)
-                       (cfeat/check-client-features! (:features params)))
+  (db/tx-run! cfg
+              (fn [{:keys [::db/conn] :as cfg}]
+                (let [features (-> (cfeat/get-enabled-features cf/flags)
+                                   (cfeat/check-client-features! (:features params)))
 
-          params   (-> params
-                       (assoc :profile-id profile-id)
-                       (assoc :features features))
+                      params   (-> params
+                                   (assoc :profile-id profile-id)
+                                   (assoc :features features))
 
-          cfg      (assoc cfg ::db/conn conn)
-          team     (create-team cfg params)
-          profile  (db/get-by-id conn :profile profile-id)
-          emails   (into #{} (map profile/clean-email) emails)
-          context  (audit/params->context params)]
+                      cfg      (assoc cfg ::db/conn conn)
+                      team     (create-team cfg params)
+                      profile  (db/get-by-id conn :profile profile-id)
+                      emails   (into #{} (map profile/clean-email) emails)]
 
-      ;; Create invitations for all provided emails.
-      (->> emails
-           (map (fn [email]
-                  (-> params
-                      (assoc :team team)
-                      (assoc :profile profile)
-                      (assoc :email email)
-                      (assoc :role role))))
-           (run! (partial create-invitation cfg)))
+                  (let [props {:name name :features features}
+                        event (-> (audit/event-from-rpc-params params)
+                                  (assoc ::audit/name "create-team")
+                                  (assoc ::audit/props props))]
+                    (audit/submit! cfg event))
 
-      (run! (partial quotes/check-quote! conn)
-            (list {::quotes/id ::quotes/teams-per-profile
-                   ::quotes/profile-id profile-id}
-                  {::quotes/id ::quotes/invitations-per-team
-                   ::quotes/profile-id profile-id
-                   ::quotes/team-id (:id team)
-                   ::quotes/incr (count emails)}
-                  {::quotes/id ::quotes/profiles-per-team
-                   ::quotes/profile-id profile-id
-                   ::quotes/team-id (:id team)
-                   ::quotes/incr (count emails)}))
+                  ;; Create invitations for all provided emails.
+                  (->> emails
+                       (map (fn [email]
+                              (-> params
+                                  (assoc :team team)
+                                  (assoc :profile profile)
+                                  (assoc :email email)
+                                  (assoc :role role))))
+                       (run! (partial create-invitation cfg)))
 
-      (audit/submit! cfg
-                     {::audit/type "action"
-                      ::audit/name "create-team"
-                      ::audit/profile-id profile-id
-                      ::audit/props {:name name
-                                     :features features}
-                      ::audit/context context})
+                  (run! (partial quotes/check-quote! conn)
+                        (list {::quotes/id ::quotes/teams-per-profile
+                               ::quotes/profile-id profile-id}
+                              {::quotes/id ::quotes/invitations-per-team
+                               ::quotes/profile-id profile-id
+                               ::quotes/team-id (:id team)
+                               ::quotes/incr (count emails)}
+                              {::quotes/id ::quotes/profiles-per-team
+                               ::quotes/profile-id profile-id
+                               ::quotes/team-id (:id team)
+                               ::quotes/incr (count emails)}))
 
-      (audit/submit! cfg
-                     {::audit/type "command"
-                      ::audit/name "create-team-invitations"
-                      ::audit/profile-id profile-id
-                      ::audit/props {:emails emails
-                                     :role role
-                                     :profile-id profile-id
-                                     :invitations (count emails)}})
-
-      (vary-meta team assoc ::audit/props {:invitations (count emails)}))))
+                  (vary-meta team assoc ::audit/props {:invitations (count emails)})))))
 
 ;; --- Query: get-team-invitation-token
 
