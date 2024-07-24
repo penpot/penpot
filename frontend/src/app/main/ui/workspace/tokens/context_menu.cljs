@@ -260,30 +260,31 @@
                     (generic-attribute-actions #{:x} "X" context-data)
                     (generic-attribute-actions #{:y} "Y" context-data)))}))
 
-(defn generate-menu-entries [{:keys [type token] :as context-data}]
-  (let [{:keys [modal]} (get wtc/token-types (:type token))
-        with-actions (get shape-attribute-actions-map (or type (:type token)))
-        attribute-actions (when with-actions
-                            (with-actions context-data))
-        default-actions [{:title "Delete Token"
-                          :action #(st/emit! (dt/delete-token (:id token)))}
-                         {:title "Duplicate Token"
-                          :action #(st/emit! (dt/duplicate-token (:id token)))}
-                         {:title "Edit Token"
-                          :action (fn [event]
-                                    (let [{:keys [key fields]} modal
-                                          token (dt/get-token-data-from-token-id (:id token))]
-                                      (st/emit! dt/hide-token-context-menu)
-                                      (dom/stop-propagation event)
-                                      (modal/show! key {:x (.-clientX ^js event)
-                                                        :y (.-clientY ^js event)
-                                                        :position :right
-                                                        :fields fields
-                                                        :token token})))}]]
+(defn default-actions [{:keys [token]}]
+  (let [{:keys [modal]} (get wtc/token-types token)]
+    [{:title "Delete Token"
+      :action #(st/emit! (dt/delete-token (:id token)))}
+     {:title "Duplicate Token"
+      :action #(st/emit! (dt/duplicate-token (:id token)))}
+     {:title "Edit Token"
+      :action (fn [event]
+                (let [{:keys [key fields]} modal
+                      token (dt/get-token-data-from-token-id (:id token))]
+                  (st/emit! dt/hide-token-context-menu)
+                  (dom/stop-propagation event)
+                  (modal/show! key {:x (.-clientX ^js event)
+                                    :y (.-clientY ^js event)
+                                    :position :right
+                                    :fields fields
+                                    :token token})))}]))
+
+(defn selection-actions [{:keys [type token] :as context-data}]
+  (let [with-actions (get shape-attribute-actions-map (or type (:type token)))
+        attribute-actions (with-actions context-data)]
     (concat
      attribute-actions
-     (when attribute-actions [:separator])
-     default-actions)))
+     [:separator]
+     (default-actions context-data))))
 
 ;; Components ------------------------------------------------------------------
 
@@ -340,8 +341,10 @@
          children]])]))
 
 (mf/defc context-menu-tree
-  [context-data]
-  (let [entries (generate-menu-entries context-data)]
+  [{:keys [selected-shapes] :as context-data}]
+  (let [entries (if (seq selected-shapes)
+                  (selection-actions context-data)
+                  (default-actions context-data))]
     (for [[index {:keys [title action selected? submenu] :as entry}] (d/enumerate entries)]
       [:* {:key (str title " " index)}
        (cond
@@ -382,7 +385,6 @@
             :ref dropdown-ref
             :style {:top top :left left}
             :on-context-menu prevent-default}
-      (when  (= :token (:type mdata))
-        [:ul {:class (stl/css :context-list)}
-         [:& context-menu-tree {:token token
-                                :selected-shapes selected-shapes}]])]]))
+      [:ul {:class (stl/css :context-list)}
+       [:& context-menu-tree {:token token
+                              :selected-shapes selected-shapes}]]]]))
