@@ -93,14 +93,6 @@
      :shape-ids shape-ids
      :selected-pred #(seq (% ids-by-attributes))}))
 
-(def spacing
-  {:padding {:p1 "Top"
-             :p2 "Right"
-             :p3 "Bottom"
-             :p4 "Left"}
-   :gap {:column-gap "Column Gap"
-         :row-gap "Row Gap"}})
-
 (defn all-or-sepearate-actions [{:keys [attribute-labels on-update-shape-all on-update-shape]}
                                 {:keys [token selected-shapes]}]
   (let [attributes (set (keys attribute-labels))
@@ -133,7 +125,10 @@
 (defn spacing-attribute-actions [{:keys [token selected-shapes] :as context-data}]
   (let [on-update-shape (fn [resolved-value shape-ids attrs]
                           (dwsl/update-layout shape-ids {:layout-padding (zipmap attrs (repeat resolved-value))}))
-        padding-attrs (:padding spacing)
+        padding-attrs {:p1 "Top"
+                       :p2 "Right"
+                       :p3 "Bottom"
+                       :p4 "Left"}
         all-padding-attrs (into #{} (keys padding-attrs))
         {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes all-padding-attrs)
         horizontal-attributes #{:p1 :p3}
