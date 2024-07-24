@@ -21,27 +21,17 @@
    [app.rpc :as-alias rpc]
    [app.rpc.retry :as rtry]
    [app.setup :as-alias setup]
+   [app.util.inet :as inet]
    [app.util.services :as-alias sv]
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [integrant.core :as ig]
-   [ring.request :as rreq]))
+   [integrant.core :as ig]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn parse-client-ip
-  [request]
-  (let [ip-addr (or (some-> (rreq/get-header request "x-forwarded-for") (str/split ",") first)
-                    (rreq/get-header request "x-real-ip")
-                    (some-> (rreq/remote-addr request) str))
-        ip-addr (-> ip-addr
-                    (str/split ":" 2)
-                    (first))]
-    ip-addr))
 
 (defn extract-utm-params
   "Extracts additional data from params and namespace them under
@@ -99,7 +89,6 @@
     :triggered-by (::rpc/handler-name params)}))
 
 ;; --- SPECS
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COLLECTOR
@@ -167,14 +156,16 @@
                       (assoc :external-session-id session-id)
                       (assoc :external-event-origin event-origin)
                       (assoc :access-token-id (some-> token-id str))
-                      (d/without-nils))]
+                      (d/without-nils))
+
+        ip-addr   (inet/parse-request request)]
 
     {::type (or (::type resultm)
                 (::rpc/type cfg))
      ::name (or (::name resultm)
                 (::sv/name mdata))
      ::profile-id profile-id
-     ::ip-addr (some-> request parse-client-ip)
+     ::ip-addr ip-addr
      ::props props
      ::context context
 
@@ -202,7 +193,7 @@
                 :name (::name event)
                 :type (::type event)
                 :profile-id (::profile-id event)
-                :ip-addr (::ip-addr event "0.0.0.0")
+                :ip-addr (::ip-addr event)
                 :context (::context event {})
                 :props (::props event {})
                 :source "backend"}
@@ -246,8 +237,7 @@
                        (assoc :created-at tnow)
                        (update :tracked-at #(or % tnow))
                        (assoc :props {})
-                       (assoc :context {})
-                       (assoc :ip-addr "0.0.0.0"))]
+                       (assoc :context {}))]
         (append-audit-entry! cfg params)))
 
     (when (and (contains? cf/flags :webhooks)

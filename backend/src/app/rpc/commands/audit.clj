@@ -14,11 +14,12 @@
    [app.config :as cf]
    [app.db :as db]
    [app.http :as-alias http]
-   [app.loggers.audit :as audit]
+   [app.loggers.audit :as-alias audit]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
+   [app.util.inet :as inet]
    [app.util.services :as sv]
    [app.util.time :as dt]))
 
@@ -61,7 +62,7 @@
 (defn- handle-events
   [{:keys [::db/pool]} {:keys [::rpc/profile-id events] :as params}]
   (let [request (-> params meta ::http/request)
-        ip-addr (audit/parse-client-ip request)
+        ip-addr (inet/parse-request request)
         tnow    (dt/now)
         xform   (comp
                  (map (fn [event]

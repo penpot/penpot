@@ -26,6 +26,7 @@
    [app.rpc.commands.profile :as profile]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
+   [app.util.inet :as inet]
    [app.util.json :as json]
    [app.util.time :as dt]
    [buddy.sign.jwk :as jwk]
@@ -574,7 +575,7 @@
         (audit/submit! cfg {::audit/type "command"
                             ::audit/name "login-with-oidc"
                             ::audit/profile-id (:id profile)
-                            ::audit/ip-addr (audit/parse-client-ip request)
+                            ::audit/ip-addr (inet/parse-request request)
                             ::audit/props props
                             ::audit/context context})
 
