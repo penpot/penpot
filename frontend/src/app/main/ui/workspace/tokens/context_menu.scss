@@ -46,7 +46,6 @@
 .context-menu-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   height: $s-28;
   width: 100%;
   padding: $s-6;
@@ -54,27 +53,34 @@
   cursor: pointer;
 
   .title {
+    flex-grow: 1;
     @include bodySmallTypography;
     color: var(--menu-foreground-color);
     margin-left: calc(($s-32 + $s-28) / 2);
   }
-  .shortcut {
-    @include flexCenter;
-    gap: $s-2;
-    color: var(--menu-shortcut-foreground-color);
-    .shortcut-key {
-      @include bodySmallTypography;
-      @include flexCenter;
-      height: $s-20;
-      padding: $s-2 $s-6;
-      border-radius: $br-6;
-      background-color: var(--menu-shortcut-background-color);
+
+  .icon-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .icon-wrapper + .title {
+    margin-left: $s-6;
+  }
+
+  .selected-icon {
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--menu-foreground-color);
     }
   }
 
-  .submenu-icon svg {
-    @extend .button-icon-small;
-    stroke: var(--menu-foreground-color);
+  .submenu-icon {
+    margin-left: $s-2;
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--menu-foreground-color);
+    }
   }
 
   &:hover {
@@ -86,60 +92,14 @@
       color: var(--menu-shortcut-foreground-color-hover);
     }
   }
+
   &:focus {
     border: 1px solid var(--menu-border-color-focus);
     background-color: var(--menu-background-color-focus);
   }
-}
 
-.icon-menu-item {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  height: $s-28;
-  padding: $s-6;
-  border-radius: $br-8;
-  &:hover {
-    background-color: var(--menu-background-color-hover);
+  &[disabled] {
+    pointer-events: none;
+    opacity: 0.6;
   }
-
-  span.title {
-    margin-left: $s-6;
-  }
-
-  .selected-icon {
-    svg {
-      @extend .button-icon-small;
-      stroke: var(--menu-foreground-color);
-    }
-  }
-
-  .shape-icon {
-    margin-left: $s-2;
-    svg {
-      @extend .button-icon-small;
-      stroke: var(--menu-foreground-color);
-    }
-  }
-
-  .icon-wrapper {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    margin: 0;
-  }
-}
-
-.icon-menu-item[disabled],
-.context-menu-item[disabled] {
-  pointer-events: none;
-  opacity: 0.6;
-}
-
-// TODO: Allow selected items wihtout an icon for the context menu
-.empty-icon {
-  width: 0;
-  height: 0;
-}
-.hidden-icon {
-  width: 11px;
 }
