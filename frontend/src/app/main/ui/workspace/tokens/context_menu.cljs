@@ -106,15 +106,14 @@
             [:span {:key (dm/str shortcut "-" idx)
                     :class (stl/css :shortcut-key)} sc])])
 
-       (when (> (count children) 1)
-         [:span {:class (stl/css :submenu-icon)} i/arrow])
-
-       (when (> (count children) 1)
-         [:ul {:class (stl/css :token-context-submenu)
-               :ref submenu-ref
-               :style {:display "none" :left 235}
-               :on-context-menu prevent-default}
-          children])])))
+       (when children
+         [:*
+          [:span {:class (stl/css :submenu-icon)} i/arrow]
+          [:ul {:class (stl/css :token-context-submenu)
+                :ref submenu-ref
+                :style {:display "none" :left 235}
+                :on-context-menu prevent-default}
+           children]])])))
 
 (mf/defc menu-separator
   []
@@ -474,34 +473,21 @@
      (when attribute-actions [:separator])
      default-actions)))
 
-(mf/defc token-pill-context-menu
+(mf/defc context-menu-tree
   [context-data]
-  (let [menu-entries (generate-menu-entries context-data)]
-    (for [[index {:keys [title action selected? submenu] :as entry}] (d/enumerate menu-entries)]
+  (let [entries (generate-menu-entries context-data)]
+    (for [[index {:keys [title action selected? submenu] :as entry}] (d/enumerate entries)]
       [:* {:key (str title " " index)}
        (cond
          (= :separator entry) [:& menu-separator]
-         :else
-         [:& menu-entry (cond-> {:title title}
-                          (not submenu) (assoc :on-click action
-                                               ;; TODO: Allow selected items wihtout an icon for the context menu
-                                               :icon (mf/html [:div {:class (stl/css-case :empty-icon true
-                                                                                          :hidden-icon (not selected?))}])
-                                               :selected? selected?))
-          (when submenu
-            (let [submenu-entries (-> (assoc context-data :type submenu)
-                                      (generate-menu-entries))]
-              (for [[index {:keys [title action selected?] :as sub-entry}] (d/enumerate submenu-entries)]
-                [:* {:key (str title " " index)}
-                 (cond
-                   (= :separator sub-entry) [:& menu-separator]
-                   :else
-                   [:& menu-entry {:key index
-                                   :title title
-                                   :on-click action
-                                   :icon  (mf/html [:div {:class (stl/css-case :empty-icon true
-                                                                               :hidden-icon (not selected?))}])
-                                   :selected? selected?}])])))])])))
+         submenu [:& menu-entry {:title title}
+                  [:& context-menu-tree (assoc context-data :type submenu)]]
+         :else [:& menu-entry
+                {:title title
+                 :on-click action
+                 :icon (mf/html [:div {:class (stl/css-case :empty-icon true
+                                                            :hidden-icon (not selected?))}])
+                 :selected? selected?}])])))
 
 (mf/defc token-context-menu
   []
@@ -534,5 +520,5 @@
             :on-context-menu prevent-default}
       (when  (= :token (:type mdata))
         [:ul {:class (stl/css :context-list)}
-         [:& token-pill-context-menu {:token token
-                                      :selected-shapes selected-shapes}]])]]))
+         [:& context-menu-tree {:token token
+                                :selected-shapes selected-shapes}]])]]))
