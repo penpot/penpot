@@ -98,8 +98,8 @@
         {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes all-attributes)
         single-attributes (->> {:r1 "Top Left"
                                 :r2 "Top Right"
-                                :r3 "Bottom Left"
-                                :r4 "Bottom Right"}
+                                :r4 "Bottom Left"
+                                :r3 "Bottom Right"}
                                (map (fn [[attr title]]
                                       (let [selected? (selected-pred attr)]
                                         {:title title
