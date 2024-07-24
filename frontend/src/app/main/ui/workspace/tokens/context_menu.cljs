@@ -504,29 +504,30 @@
   [context-data]
   (let [menu-entries (generate-menu-entries context-data)]
     (for [[index {:keys [title action selected? submenu] :as entry}] (d/enumerate menu-entries)]
-      (cond
-        (= :separator entry) [:& menu-separator]
-        :else
-        [:& menu-entry (cond-> {:key index
-                                :title title}
-                         (not submenu) (assoc :on-click action
-                                              ;; TODO: Allow selected items wihtout an icon for the context menu
-                                              :icon (mf/html [:div {:class (stl/css-case :empty-icon true
-                                                                                         :hidden-icon (not selected?))}])
-                                              :selected? selected?))
-         (when submenu
-           (let [submenu-entries (-> (assoc context-data :type submenu)
-                                     (generate-menu-entries))]
-             (for [[index {:keys [title action selected?] :as sub-entry}] (d/enumerate submenu-entries)]
-               (cond
-                 (= :separator sub-entry) [:& menu-separator]
-                 :else
-                 [:& menu-entry {:key index
-                                 :title title
-                                 :on-click action
-                                 :icon  (mf/html [:div {:class (stl/css-case :empty-icon true
-                                                                             :hidden-icon (not selected?))}])
-                                 :selected? selected?}]))))]))))
+      [:* {:key (str title " " index)}
+       (cond
+         (= :separator entry) [:& menu-separator]
+         :else
+         [:& menu-entry (cond-> {:title title}
+                          (not submenu) (assoc :on-click action
+                                               ;; TODO: Allow selected items wihtout an icon for the context menu
+                                               :icon (mf/html [:div {:class (stl/css-case :empty-icon true
+                                                                                          :hidden-icon (not selected?))}])
+                                               :selected? selected?))
+          (when submenu
+            (let [submenu-entries (-> (assoc context-data :type submenu)
+                                      (generate-menu-entries))]
+              (for [[index {:keys [title action selected?] :as sub-entry}] (d/enumerate submenu-entries)]
+                [:* {:key (str title " " index)}
+                 (cond
+                   (= :separator sub-entry) [:& menu-separator]
+                   :else
+                   [:& menu-entry {:key index
+                                   :title title
+                                   :on-click action
+                                   :icon  (mf/html [:div {:class (stl/css-case :empty-icon true
+                                                                               :hidden-icon (not selected?))}])
+                                   :selected? selected?}])])))])])))
 
 (mf/defc token-context-menu
   []
