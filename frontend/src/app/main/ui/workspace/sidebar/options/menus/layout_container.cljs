@@ -14,10 +14,8 @@
    [app.config :as cf]
    [app.main.data.events :as-alias ev]
    [app.main.data.workspace :as udw]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.shape-layout :as dwsl]
-   [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -31,6 +29,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.editable-select :refer [editable-select]]
+   [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -864,7 +863,7 @@
                                    (wtc/tokens-name-map->select-options
                                     {:shape shape
                                      :tokens spacing-tokens
-                                     :attributes (wtc/token-attributes :spacing)
+                                     :attributes (wtty/token-attributes :spacing)
                                      :selected-attributes #{:spacing-column}})))
 
         spacing-row-options (mf/use-memo
@@ -873,7 +872,7 @@
                                 (wtc/tokens-name-map->select-options
                                  {:shape shape
                                   :tokens spacing-tokens
-                                  :attributes (wtc/token-attributes :spacing)
+                                  :attributes (wtty/token-attributes :spacing)
                                   :selected-attributes #{:spacing-row}})))
 
         padding-x-options (mf/use-memo
@@ -882,7 +881,7 @@
                               (wtc/tokens-name-map->select-options
                                {:shape shape
                                 :tokens spacing-tokens
-                                :attributes (wtc/token-attributes :spacing)
+                                :attributes (wtty/token-attributes :spacing)
                                 :selected-attributes #{:padding-p1 :padding-p3}})))
 
         padding-y-options (mf/use-memo
@@ -891,7 +890,7 @@
                               (wtc/tokens-name-map->select-options
                                {:shape shape
                                 :tokens spacing-tokens
-                                :attributes (wtc/token-attributes :spacing)
+                                :attributes (wtty/token-attributes :spacing)
                                 :selected-attributes #{:padding-p2 :padding-p4}})))
 
         on-add-layout

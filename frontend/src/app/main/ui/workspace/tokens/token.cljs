@@ -1,7 +1,13 @@
 (ns app.main.ui.workspace.tokens.token
   (:require
-   [cuerdas.core :as str]
-   [clojure.set :as set]))
+   [app.common.data :as d]
+   [clojure.set :as set]
+   [cuerdas.core :as str]))
+
+(defn resolve-token-value [{:keys [value resolved-value] :as token}]
+  (or
+   resolved-value
+   (d/parse-double value)))
 
 (defn attributes-map
   "Creats an attributes map using collection of `attributes` for `id`."

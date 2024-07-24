@@ -11,78 +11,18 @@
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.data.workspace.shape-layout :as dwsl]
-   [app.main.data.workspace.transforms :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.token :as wtt]
+   [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
    [app.util.timers :as timers]
-   [beicon.v2.core :as rx]
-   [clojure.set :as set]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
-
-;; Events ----------------------------------------------------------------------
-
-(defn update-layout-spacing [value shape-ids attributes]
-  (if-let [layout-gap (cond
-                          (:row-gap attributes) {:row-gap value}
-                          (:column-gap attributes) {:column-gap value})]
-    (dwsl/update-layout shape-ids {:layout-gap layout-gap})
-    (dwsl/update-layout shape-ids {:layout-padding (zipmap attributes (repeat value))})))
-
-(defn apply-spacing-token [{:keys [token-id token-type-props selected-shapes]} attributes]
-  (let [token (dt/get-token-data-from-token-id token-id)
-        attributes (set attributes)
-        updated-token-type-props (assoc token-type-props
-                                        :on-update-shape update-layout-spacing
-                                        :attributes attributes)]
-    (wtc/on-apply-token {:token token
-                         :token-type-props updated-token-type-props
-                         :selected-shapes selected-shapes})))
-
-(defn update-shape-position [value shape-ids attributes]
-  (doseq [shape-id shape-ids]
-    (st/emit! (dwt/update-position shape-id {(first attributes) value}))))
-
-(defn apply-dimensions-token [{:keys [token-id token-type-props selected-shapes]} attributes]
-  (let [token (dt/get-token-data-from-token-id token-id)
-        attributes (set attributes)
-        updated-token-type-props (cond
-                                   (set/superset? #{:x :y} attributes)
-                                   (assoc token-type-props
-                                          :on-update-shape update-shape-position
-                                          :attributes attributes)
-
-                                   (set/superset? #{:stroke-width} attributes)
-                                   (assoc token-type-props
-                                          :on-update-shape wtc/update-stroke-width
-                                          :attributes attributes)
-
-                                   :else token-type-props)]
-    (wtc/on-apply-token {:token token
-                         :token-type-props updated-token-type-props
-                         :selected-shapes selected-shapes})))
-
-(defn update-shape-dimensions [value shape-ids attributes]
-  (ptk/reify ::update-shape-dimensions
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of
-       (when (:width attributes) (dwt/update-dimensions shape-ids :width value))
-       (when (:height attributes) (dwt/update-dimensions shape-ids :height value))))))
-
-(defn update-layout-sizing-limits [value shape-ids attributes]
-  (let [props (-> {:layout-item-min-w value
-                   :layout-item-min-h value
-                   :layout-item-max-w value
-                   :layout-item-max-h value}
-                  (select-keys attributes))]
-    (dwsl/update-layout-child shape-ids props)))
 
 ;; Actions ---------------------------------------------------------------------
 
@@ -94,7 +34,7 @@
      :selected-pred #(seq (% ids-by-attributes))}))
 
 (defn generic-attribute-actions [attributes title {:keys [token selected-shapes]}]
-  (let [{:keys [on-update-shape]} (get wtc/token-types (:type token))
+  (let [{:keys [on-update-shape]} (get wtty/token-types (:type token))
         {:keys [selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)]
     (map (fn [attribute]
            (let [selected? (selected-pred attribute)
@@ -212,7 +152,7 @@
                                                        (st/emit! event))}))))
         gap-items (all-or-sepearate-actions {:attribute-labels {:column-gap "Column Gap"
                                                                 :row-gap "Row Gap"}
-                                             :on-update-shape update-layout-spacing}
+                                             :on-update-shape wtch/update-layout-spacing}
                                             context-data)]
     (concat padding-items
             single-padding-items
@@ -223,17 +163,17 @@
   (concat
    (all-or-sepearate-actions {:attribute-labels {:width "Width"
                                                  :height "Height"}
-                              :on-update-shape update-shape-dimensions}
+                              :on-update-shape wtch/update-shape-dimensions}
                              context-data)
    [:separator]
    (all-or-sepearate-actions {:attribute-labels {:layout-item-min-w "Min Width"
                                                  :layout-item-min-h "Min Height"}
-                              :on-update-shape update-layout-sizing-limits}
+                              :on-update-shape wtch/update-layout-sizing-limits}
                              context-data)
    [:separator]
    (all-or-sepearate-actions {:attribute-labels {:layout-item-max-w "Max Width"
                                                  :layout-item-max-h "Max Height"}
-                              :on-update-shape update-layout-sizing-limits}
+                              :on-update-shape wtch/update-layout-sizing-limits}
                              context-data)))
 
 (def shape-attribute-actions-map
@@ -242,8 +182,8 @@
                                                                           :r2 "Top Right"
                                                                           :r4 "Bottom Left"
                                                                           :r3 "Bottom Right"}
-                                                       :on-update-shape-all wtc/update-shape-radius-all
-                                                       :on-update-shape wtc/update-shape-radius-single-corner})
+                                                       :on-update-shape-all wtch/update-shape-radius-all
+                                                       :on-update-shape wtch/update-shape-radius-single-corner})
      :spacing spacing-attribute-actions
      :sizing sizing-attribute-actions
      :rotation (partial generic-attribute-actions #{:rotation} "Rotation")
@@ -261,7 +201,7 @@
                     (generic-attribute-actions #{:y} "Y" context-data)))}))
 
 (defn default-actions [{:keys [token]}]
-  (let [{:keys [modal]} (get wtc/token-types token)]
+  (let [{:keys [modal]} (get wtty/token-types token)]
     [{:title "Delete Token"
       :action #(st/emit! (dt/delete-token (:id token)))}
      {:title "Duplicate Token"

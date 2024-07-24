@@ -28,7 +28,7 @@
 
 ;; Helpers ---------------------------------------------------------------------
 
-(defn resolve-token-value [{:keys [value resolved-value] :as token}]
+(defn resolve-token-value [{:keys [value resolved-value] :as _token}]
   (or
    resolved-value
    (d/parse-double value)))
@@ -47,64 +47,6 @@
        (map (fn [[_k {:keys [name] :as item}]]
               (cond-> (assoc item :label name)
                 (wtt/token-applied? item shape (or selected-attributes attributes)) (assoc :selected? true))))))
-
-;; Shape Update Functions ------------------------------------------------------
-
-(defn update-shape-radius-single-corner [value shape-ids attributes]
-  (dch/update-shapes shape-ids
-                     (fn [shape]
-                       (when (ctsr/has-radius? shape)
-                         (cond-> shape
-                           (:rx shape) (ctsr/switch-to-radius-4)
-                           :always (ctsr/set-radius-4 (first attributes) value))))
-                     {:reg-objects? true
-                      :attrs [:rx :ry :r1 :r2 :r3 :r4]}))
-
-(defn update-shape-radius-all [value shape-ids]
-  (dch/update-shapes shape-ids
-                     (fn [shape]
-                       (when (ctsr/has-radius? shape)
-                         (ctsr/set-radius-1 shape value)))
-                     {:reg-objects? true
-                      :attrs ctt/border-radius-keys}))
-
-(defn update-shape-dimensions [value shape-ids]
-  (ptk/reify ::update-shape-dimensions
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of
-       (dwt/update-dimensions shape-ids :width value)
-       (dwt/update-dimensions shape-ids :height value)))))
-
-(defn update-opacity [value shape-ids]
-  (dch/update-shapes shape-ids #(assoc % :opacity value)))
-
-(defn update-stroke-width
-  [value shape-ids]
-  (dch/update-shapes shape-ids (fn [shape]
-                                 (when (seq (:strokes shape))
-                                   (assoc-in shape [:strokes 0 :stroke-width] value)))))
-
-(defn update-rotation [value shape-ids]
-  (ptk/reify ::update-shape-dimensions
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of
-       (udw/trigger-bounding-box-cloaking shape-ids)
-       (udw/increase-rotation shape-ids value)))))
-
-(defn update-layout-spacing-column [value shape-ids]
-  (ptk/reify ::update-layout-spacing-column
-    ptk/WatchEvent
-    (watch [_ state _]
-      (rx/concat
-       (for [shape-id shape-ids]
-         (let [shape (dt/get-shape-from-state shape-id state)
-               layout-direction (:layout-flex-dir shape)
-               layout-update (if (or (= layout-direction :row-reverse) (= layout-direction :row))
-                               {:layout-gap {:column-gap value}}
-                               {:layout-gap {:row-gap value}})]
-           (dwsl/update-layout [shape-id] layout-update)))))))
 
 ;; Events ----------------------------------------------------------------------
 
@@ -212,104 +154,3 @@
   (let [all-tokens (deref refs/workspace-tokens)
         transformed-tokens-json (transform-tokens-into-json-format all-tokens)]
     (export-tokens-file transformed-tokens-json)))
-
-;; Token types -----------------------------------------------------------------
-
-(def token-types
-  (ordered-map
-   [:border-radius
-    {:title "Border Radius"
-     :attributes ctt/border-radius-keys
-     :on-update-shape update-shape-radius-all
-     :modal {:key :tokens/border-radius
-             :fields [{:label "Border Radius"
-                       :key :border-radius}]}}]
-   [:stroke-width
-    {:title "Stroke Width"
-     :attributes ctt/stroke-width-keys
-     :on-update-shape update-stroke-width
-     :modal {:key :tokens/stroke-width
-             :fields [{:label "Stroke Width"
-                       :key :stroke-width}]}}]
-
-   [:sizing
-    {:title "Sizing"
-     :attributes #{:width :height}
-     :on-update-shape update-shape-dimensions
-     :modal {:key :tokens/sizing
-             :fields [{:label "Sizing"
-                       :key :sizing}]}}]
-   [:dimensions
-    {:title "Dimensions"
-     :attributes #{:width :height}
-     :on-update-shape update-shape-dimensions
-     :modal {:key :tokens/dimensions
-             :fields [{:label "Dimensions"
-                       :key :dimensions}]}}]
-
-   [:opacity
-    {:title "Opacity"
-     :attributes ctt/opacity-keys
-     :on-update-shape update-opacity
-     :modal {:key :tokens/opacity
-             :fields [{:label "Opacity"
-                       :key :opacity}]}}]
-
-   [:rotation
-    {:title "Rotation"
-     :attributes ctt/rotation-keys
-     :on-update-shape update-rotation
-     :modal {:key :tokens/rotation
-             :fields [{:label "Rotation"
-                       :key :rotation}]}}]
-   [:spacing
-    {:title "Spacing"
-     :attributes ctt/spacing-keys
-     :on-update-shape update-layout-spacing-column
-     :modal {:key :tokens/spacing
-             :fields [{:label "Spacing"
-                       :key :spacing}]}}]
-   (comment
-     [:boolean
-      {:title "Boolean"
-       :modal {:key :tokens/boolean
-               :fields [{:label "Boolean"}]}}]
-
-     [:box-shadow
-      {:title "Box Shadow"
-       :modal {:key :tokens/box-shadow
-               :fields [{:label "Box shadows"
-                         :key :box-shadow
-                         :type :box-shadow}]}}]
-
-     [:numeric
-      {:title "Numeric"
-       :modal {:key :tokens/numeric
-               :fields [{:label "Numeric"
-                         :key :numeric}]}}]
-
-     [:other
-      {:title "Other"
-       :modal {:key :tokens/other
-               :fields [{:label "Other"
-                         :key :other}]}}]
-     [:string
-      {:title "String"
-       :modal {:key :tokens/string
-               :fields [{:label "String"
-                         :key :string}]}}]
-     [:typography
-      {:title "Typography"
-       :modal {:key :tokens/typography
-               :fields [{:label "Font" :key :font-family}
-                        {:label "Weight" :key :weight}
-                        {:label "Font Size" :key :font-size}
-                        {:label "Line Height" :key :line-height}
-                        {:label "Letter Spacing" :key :letter-spacing}
-                        {:label "Paragraph Spacing" :key :paragraph-spacing}
-                        {:label "Paragraph Indent" :key :paragraph-indent}
-                        {:label "Text Decoration" :key :text-decoration}
-                        {:label "Text Case" :key :text-case}]}}])))
-
-(defn token-attributes [token-type]
-  (get-in token-types [token-type :attributes]))

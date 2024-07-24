@@ -17,6 +17,7 @@
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
+   [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -131,7 +132,7 @@
   Sort each group alphabetically (by their `:token-key`)."
   [tokens]
   (let [tokens-by-type (wtc/group-tokens-by-type tokens)
-        {:keys [empty filled]} (->> wtc/token-types
+        {:keys [empty filled]} (->> wtty/token-types
                                     (map (fn [[token-key token-type-props]]
                                            {:token-key token-key
                                             :token-type-props token-type-props
