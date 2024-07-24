@@ -264,8 +264,10 @@
            multi-colors? multi-assets? on-asset-click on-assets-delete
            on-clear-selection on-group on-rename-group on-ungroup colors
            selected-full]}]
-  (let [group-open?    (or ^boolean force-open?
-                           ^boolean (get open-groups prefix (if (= prefix "") true false)))
+  (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
+                         false
+                         (or ^boolean force-open?
+                             ^boolean (get open-groups prefix (if (= prefix "") true false))))
         dragging*      (mf/use-state false)
         dragging?      (deref dragging*)
 
