@@ -15,7 +15,6 @@
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
-   [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
    [beicon.v2.core :as rx]

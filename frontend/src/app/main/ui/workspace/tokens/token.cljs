@@ -4,7 +4,7 @@
    [clojure.set :as set]
    [cuerdas.core :as str]))
 
-(defn resolve-token-value [{:keys [value resolved-value] :as token}]
+(defn resolve-token-value [{:keys [value resolved-value] :as _token}]
   (or
    resolved-value
    (d/parse-double value)))
