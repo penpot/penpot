@@ -340,7 +340,7 @@
               :on-context-menu prevent-default}
          children]])]))
 
-(mf/defc context-menu-tree
+(mf/defc menu-tree
   [{:keys [selected-shapes] :as context-data}]
   (let [entries (if (seq selected-shapes)
                   (selection-actions context-data)
@@ -350,7 +350,7 @@
        (cond
          (= :separator entry) [:li {:class (stl/css :separator)}]
          submenu [:& menu-entry {:title title}
-                  [:& context-menu-tree (assoc context-data :type submenu)]]
+                  [:& menu-tree (assoc context-data :type submenu)]]
          :else [:& menu-entry
                 {:title title
                  :on-click action
@@ -386,5 +386,5 @@
             :style {:top top :left left}
             :on-context-menu prevent-default}
       [:ul {:class (stl/css :context-list)}
-       [:& context-menu-tree {:token token
-                              :selected-shapes selected-shapes}]]]]))
+       [:& menu-tree {:token token
+                      :selected-shapes selected-shapes}]]]]))
