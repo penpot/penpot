@@ -14,6 +14,7 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
+   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
@@ -100,9 +101,9 @@
                                (dom/stop-propagation event)
                                (when (seq selected-shapes)
                                  (st/emit!
-                                  (wtc/toggle-token {:token token
-                                                     :shapes selected-shapes
-                                                     :token-type-props token-type-props})))))
+                                  (wtch/toggle-token {:token token
+                                                      :shapes selected-shapes
+                                                      :token-type-props token-type-props})))))
         tokens-count (count tokens)]
     [:div {:on-click on-toggle-open-click}
      [:& cmm/asset-section {:icon (mf/fnc icon-wrapper [_]

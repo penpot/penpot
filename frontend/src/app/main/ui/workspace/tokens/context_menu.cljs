@@ -16,7 +16,6 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.tokens.changes :as wtch]
-   [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
@@ -45,8 +44,8 @@
              {:title title
               :selected? selected?
               :action #(if selected?
-                         (st/emit! (wtc/unapply-token props))
-                         (st/emit! (wtc/apply-token (assoc props :on-update-shape on-update-shape))))}))
+                         (st/emit! (wtch/unapply-token props))
+                         (st/emit! (wtch/apply-token (assoc props :on-update-shape on-update-shape))))}))
          attributes)))
 
 (defn all-or-sepearate-actions [{:keys [attribute-labels on-update-shape-all on-update-shape]}
@@ -59,8 +58,8 @@
                      {:title "All"
                       :selected? all-selected?
                       :action #(if all-selected?
-                                 (st/emit! (wtc/unapply-token props))
-                                 (st/emit! (wtc/apply-token (assoc props :on-update-shape (or on-update-shape-all on-update-shape)))))})
+                                 (st/emit! (wtch/unapply-token props))
+                                 (st/emit! (wtch/apply-token (assoc props :on-update-shape (or on-update-shape-all on-update-shape)))))})
         single-actions (map (fn [[attr title]]
                               (let [selected? (selected-pred attr)]
                                 {:title title
@@ -70,10 +69,10 @@
                                                        :shape-ids shape-ids}
                                                 event (cond
                                                         all-selected? (-> (assoc props :attributes-to-remove attributes)
-                                                                          (wtc/apply-token))
-                                                        selected? (wtc/unapply-token props)
+                                                                          (wtch/apply-token))
+                                                        selected? (wtch/unapply-token props)
                                                         :else (-> (assoc props :on-update-shape on-update-shape)
-                                                                  (wtc/apply-token)))]
+                                                                  (wtch/apply-token)))]
                                             (st/emit! event))}))
                             attribute-labels)]
     (concat [all-action] single-actions)))
@@ -102,19 +101,19 @@
                                                :token token
                                                :shape-ids shape-ids}]
                                     (if all-selected?
-                                      (st/emit! (wtc/unapply-token props))
-                                      (st/emit! (wtc/apply-token (assoc props :on-update-shape on-update-shape))))))}
+                                      (st/emit! (wtch/unapply-token props))
+                                      (st/emit! (wtch/apply-token (assoc props :on-update-shape on-update-shape))))))}
                        {:title "Horizontal"
                         :selected? horizontal-padding-selected?
                         :action (fn []
                                   (let [props {:token token
                                                :shape-ids shape-ids}
                                         event (cond
-                                                all-selected? (wtc/apply-token (assoc props :attributes-to-remove vertical-attributes))
-                                                horizontal-padding-selected? (wtc/apply-token (assoc props :attributes-to-remove horizontal-attributes))
-                                                :else (wtc/apply-token (assoc props
-                                                                              :attributes horizontal-attributes
-                                                                              :on-update-shape on-update-shape)))]
+                                                all-selected? (wtch/apply-token (assoc props :attributes-to-remove vertical-attributes))
+                                                horizontal-padding-selected? (wtch/apply-token (assoc props :attributes-to-remove horizontal-attributes))
+                                                :else (wtch/apply-token (assoc props
+                                                                               :attributes horizontal-attributes
+                                                                               :on-update-shape on-update-shape)))]
                                     (st/emit! event)))}
                        {:title "Vertical"
                         :selected? vertical-padding-selected?
@@ -122,11 +121,11 @@
                                   (let [props {:token token
                                                :shape-ids shape-ids}
                                         event (cond
-                                                all-selected? (wtc/apply-token (assoc props :attributes-to-remove vertical-attributes))
-                                                vertical-padding-selected? (wtc/apply-token (assoc props :attributes-to-remove vertical-attributes))
-                                                :else (wtc/apply-token (assoc props
-                                                                              :attributes vertical-attributes
-                                                                              :on-update-shape on-update-shape)))]
+                                                all-selected? (wtch/apply-token (assoc props :attributes-to-remove vertical-attributes))
+                                                vertical-padding-selected? (wtch/apply-token (assoc props :attributes-to-remove vertical-attributes))
+                                                :else (wtch/apply-token (assoc props
+                                                                               :attributes vertical-attributes
+                                                                               :on-update-shape on-update-shape)))]
                                     (st/emit! event)))}]
         single-padding-items (->> padding-attrs
                                   (map (fn [[attr title]]
@@ -145,10 +144,10 @@
                                                                   :shape-ids shape-ids}
                                                            event (cond
                                                                    all-selected? (-> (assoc props :attributes-to-remove all-padding-attrs)
-                                                                                     (wtc/apply-token))
-                                                                   selected? (wtc/unapply-token props)
+                                                                                     (wtch/apply-token))
+                                                                   selected? (wtch/unapply-token props)
                                                                    :else (-> (assoc props :on-update-shape on-update-shape)
-                                                                             (wtc/apply-token)))]
+                                                                             (wtch/apply-token)))]
                                                        (st/emit! event))}))))
         gap-items (all-or-sepearate-actions {:attribute-labels {:column-gap "Column Gap"
                                                                 :row-gap "Row Gap"}

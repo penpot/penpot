@@ -6,13 +6,14 @@
 
 (ns app.main.ui.workspace.tokens.changes
   (:require
-   [app.common.types.token :as ctt]
    [app.common.types.shape.radius :as ctsr]
+   [app.common.types.token :as ctt]
    [app.main.data.tokens :as dt]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace :as udw]
+   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.transforms :as dwt]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
@@ -23,6 +24,67 @@
    [promesa.core :as p]))
 
 ;; Token Updates ---------------------------------------------------------------
+
+(defn apply-token
+  "Apply `attributes` that match `token` for `shape-ids`.
+
+  Optionally remove attributes from `attributes-to-remove`,
+  this is useful for applying a single attribute from an attributes set
+  while removing other applied tokens from this set."
+  [{:keys [attributes attributes-to-remove token shape-ids on-update-shape] :as _props}]
+  (ptk/reify ::apply-token
+    ptk/WatchEvent
+    (watch [_ state _]
+      (->> (rx/from (sd/resolve-tokens+ (get-in state [:workspace-data :tokens])))
+           (rx/mapcat
+            (fn [sd-tokens]
+              (let [undo-id (js/Symbol)
+                    resolved-value (-> (get sd-tokens (:id token))
+                                       (wtt/resolve-token-value))
+                    tokenized-attributes (wtt/attributes-map attributes (:id token))]
+                (rx/of
+                 (dwu/start-undo-transaction undo-id)
+                 (dch/update-shapes shape-ids (fn [shape]
+                                                (cond-> shape
+                                                  attributes-to-remove (update :applied-tokens #(apply (partial dissoc %) attributes-to-remove))
+                                                  :always (update :applied-tokens merge tokenized-attributes))))
+                 (when on-update-shape
+                   (on-update-shape resolved-value shape-ids attributes))
+                 (dwu/commit-undo-transaction undo-id)))))))))
+
+(defn unapply-token
+  "Removes `attributes` that match `token` for `shape-ids`.
+
+  Doesn't update shape attributes."
+  [{:keys [attributes token shape-ids] :as _props}]
+  (ptk/reify ::unapply-token
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of
+       (let [remove-token #(when % (wtt/remove-attributes-for-token-id attributes (:id token) %))]
+         (dch/update-shapes
+          shape-ids
+          (fn [shape]
+            (update shape :applied-tokens remove-token))))))))
+
+(defn toggle-token
+  [{:keys [token-type-props token shapes] :as _props}]
+  (ptk/reify ::on-toggle-token
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [attributes on-update-shape]} token-type-props
+            unapply-tokens? (wtt/shapes-token-applied? token shapes (:attributes token-type-props))
+            shape-ids (map :id shapes)]
+        (if unapply-tokens?
+          (rx/of
+           (unapply-token {:attributes attributes
+                           :token token
+                           :shape-ids shape-ids}))
+          (rx/of
+           (apply-token {:attributes attributes
+                         :token token
+                         :shape-ids shape-ids
+                         :on-update-shape on-update-shape})))))))
 
 (defn on-apply-token [{:keys [token token-type-props selected-shapes] :as _props}]
   (let [{:keys [attributes on-apply on-update-shape]
@@ -125,9 +187,9 @@
                                           :attributes attributes)
 
                                    :else token-type-props)]
-    (wtc/on-apply-token {:token token
-                         :token-type-props updated-token-type-props
-                         :selected-shapes selected-shapes})))
+    (on-apply-token {:token token
+                     :token-type-props updated-token-type-props
+                     :selected-shapes selected-shapes})))
 
 (defn update-layout-sizing-limits [value shape-ids attributes]
   (ptk/reify ::update-layout-sizing-limits
