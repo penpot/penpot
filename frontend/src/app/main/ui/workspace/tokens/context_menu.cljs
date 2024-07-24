@@ -324,6 +324,7 @@
             :ref dropdown-ref
             :style {:top top :left left}
             :on-context-menu prevent-default}
-      [:ul {:class (stl/css :context-list)}
-       [:& menu-tree {:token token
-                      :selected-shapes selected-shapes}]]]]))
+      (when token
+        [:ul {:class (stl/css :context-list)}
+         [:& menu-tree {:token token
+                        :selected-shapes selected-shapes}]])]]))
