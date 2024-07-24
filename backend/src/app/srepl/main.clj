@@ -21,8 +21,10 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.db.sql :as-alias sql]
    [app.features.components-v2 :as feat.comp-v2]
    [app.features.fdata :as feat.fdata]
+   [app.loggers.audit :as audit]
    [app.main :as main]
    [app.msgbus :as mbus]
    [app.rpc.commands.auth :as auth]
@@ -38,10 +40,12 @@
    [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
    [app.worker :as wrk]
+   [clojure.java.io :as io]
    [clojure.pprint :refer [print-table]]
    [clojure.stacktrace :as strace]
    [clojure.tools.namespace.repl :as repl]
    [cuerdas.core :as str]
+   [datoteka.fs :as fs]
    [promesa.exec :as px]
    [promesa.exec.semaphore :as ps]
    [promesa.util :as pu]))
@@ -190,16 +194,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn notify!
+  "Send flash notifications.
+
+  This method allows send flash notifications to specified target destinations.
+  The message can be a free text or a preconfigured one.
+
+  The destination can be: all, profile-id, team-id, or a coll of them."
   [{:keys [::mbus/msgbus ::db/pool]} & {:keys [dest code message level]
                                         :or {code :generic level :info}
                                         :as params}]
   (dm/verify!
    ["invalid level %" level]
    (contains? #{:success :error :info :warning} level))
-
-  (dm/verify!
-   ["invalid code: %" code]
-   (contains? #{:generic :upgrade-version} code))
 
   (letfn [(send [dest]
             (l/inf :hint "sending notification" :dest (str dest))
@@ -226,6 +232,9 @@
 
           (resolve-dest [dest]
             (cond
+              (= :all dest)
+              [uuid/zero]
+
               (uuid? dest)
               [dest]
 
@@ -241,14 +250,15 @@
                          (mapcat resolve-dest))
                         dest)
 
-              (and (coll? dest)
-                   (every? coll? dest))
+              (and (vector? dest)
+                   (every? vector? dest))
               (sequence (comp
                          (map vec)
                          (mapcat resolve-dest))
                         dest)
 
-              (vector? dest)
+              (and (vector? dest)
+                   (keyword? (first dest)))
               (let [[op param] dest]
                 (cond
                   (= op :email)
@@ -475,6 +485,27 @@
 ;; DELETE/RESTORE OBJECTS (WITH CASCADE, SOFT)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn delete-file!
+  "Mark a project for deletion"
+  [file-id]
+  (let [file-id (h/parse-uuid file-id)
+        tnow    (dt/now)]
+
+    (audit/insert! main/system
+                   {::audit/name "delete-file"
+                    ::audit/type "action"
+                    ::audit/profile-id uuid/zero
+                    ::audit/props {:id file-id}
+                    ::audit/context {:triggered-by "srepl"
+                                     :cause "explicit call to delete-file!"}
+                    ::audit/tracked-at tnow})
+    (wrk/invoke! (-> main/system
+                     (assoc ::wrk/task :delete-object)
+                     (assoc ::wrk/params {:object :file
+                                          :deleted-at tnow
+                                          :id file-id})))
+    :deleted))
+
 (defn- restore-file*
   [{:keys [::db/conn]} file-id]
   (db/update! conn :file
@@ -502,19 +533,104 @@
 
   :restored)
 
+(defn restore-file!
+  "Mark a file and all related objects as not deleted"
+  [file-id]
+  (let [file-id (h/parse-uuid file-id)]
+    (db/tx-run! main/system
+                (fn [system]
+                  (when-let [file (some-> (db/get* system :file
+                                                   {:id file-id}
+                                                   {::db/remove-deleted false
+                                                    ::sql/columns [:id :name]})
+                                          (files/decode-row))]
+                    (audit/insert! system
+                                   {::audit/name "restore-file"
+                                    ::audit/type "action"
+                                    ::audit/profile-id uuid/zero
+                                    ::audit/props file
+                                    ::audit/context {:triggered-by "srepl"
+                                                     :cause "explicit call to restore-file!"}
+                                    ::audit/tracked-at (dt/now)})
+
+                    (restore-file* system file-id))))))
+
+(defn delete-project!
+  "Mark a project for deletion"
+  [project-id]
+  (let [project-id (h/parse-uuid project-id)
+        tnow       (dt/now)]
+
+    (audit/insert! main/system
+                   {::audit/name "delete-project"
+                    ::audit/type "action"
+                    ::audit/profile-id uuid/zero
+                    ::audit/props {:id project-id}
+                    ::audit/context {:triggered-by "srepl"
+                                     :cause "explicit call to delete-project!"}
+                    ::audit/tracked-at tnow})
+
+    (wrk/invoke! (-> main/system
+                     (assoc ::wrk/task :delete-object)
+                     (assoc ::wrk/params {:object :project
+                                          :deleted-at tnow
+                                          :id project-id})))
+    :deleted))
+
 (defn- restore-project*
   [{:keys [::db/conn] :as cfg} project-id]
-
   (db/update! conn :project
               {:deleted-at nil}
               {:id project-id})
 
   (doseq [{:keys [id]} (db/query conn :file
                                  {:project-id project-id}
-                                 {::db/columns [:id]})]
+                                 {::sql/columns [:id]})]
     (restore-file* cfg id))
 
   :restored)
+
+(defn restore-project!
+  "Mark a project and all related objects as not deleted"
+  [project-id]
+  (let [project-id (h/parse-uuid project-id)]
+    (db/tx-run! main/system
+                (fn [system]
+                  (when-let [project (db/get* system :project
+                                              {:id project-id}
+                                              {::db/remove-deleted false})]
+                    (audit/insert! system
+                                   {::audit/name "restore-project"
+                                    ::audit/type "action"
+                                    ::audit/profile-id uuid/zero
+                                    ::audit/props project
+                                    ::audit/context {:triggered-by "srepl"
+                                                     :cause "explicit call to restore-team!"}
+                                    ::audit/tracked-at (dt/now)})
+
+                    (restore-project* system project-id))))))
+
+(defn delete-team!
+  "Mark a team for deletion"
+  [team-id]
+  (let [team-id (h/parse-uuid team-id)
+        tnow    (dt/now)]
+
+    (audit/insert! main/system
+                   {::audit/name "delete-team"
+                    ::audit/type "action"
+                    ::audit/profile-id uuid/zero
+                    ::audit/props {:id team-id}
+                    ::audit/context {:triggered-by "srepl"
+                                     :cause "explicit call to delete-profile!"}
+                    ::audit/tracked-at tnow})
+
+    (wrk/invoke! (-> main/system
+                     (assoc ::wrk/task :delete-object)
+                     (assoc ::wrk/params {:object :team
+                                          :deleted-at tnow
+                                          :id team-id})))
+    :deleted))
 
 (defn- restore-team*
   [{:keys [::db/conn] :as cfg} team-id]
@@ -528,84 +644,127 @@
 
   (doseq [{:keys [id]} (db/query conn :project
                                  {:team-id team-id}
-                                 {::db/columns [:id]})]
+                                 {::sql/columns [:id]})]
     (restore-project* cfg id))
 
   :restored)
 
-(defn- restore-profile*
-  [{:keys [::db/conn] :as cfg} profile-id]
-  (db/update! conn :profile
-              {:deleted-at nil}
-              {:id profile-id})
-
-  (doseq [{:keys [id]} (profile/get-owned-teams conn profile-id)]
-    (restore-team* cfg id))
-
-  :restored)
-
-
-(defn restore-deleted-profile!
-  "Mark a team and all related objects as not deleted"
-  [profile-id]
-  (let [profile-id (h/parse-uuid profile-id)]
-    (db/tx-run! main/system restore-profile* profile-id)))
-
-(defn restore-deleted-team!
+(defn restore-team!
   "Mark a team and all related objects as not deleted"
   [team-id]
   (let [team-id (h/parse-uuid team-id)]
-    (db/tx-run! main/system restore-team* team-id)))
+    (db/tx-run! main/system
+                (fn [system]
+                  (when-let [team (some-> (db/get* system :team
+                                                   {:id team-id}
+                                                   {::db/remove-deleted false})
+                                          (teams/decode-row))]
+                    (audit/insert! system
+                                   {::audit/name "restore-team"
+                                    ::audit/type "action"
+                                    ::audit/profile-id uuid/zero
+                                    ::audit/props team
+                                    ::audit/context {:triggered-by "srepl"
+                                                     :cause "explicit call to restore-team!"}
+                                    ::audit/tracked-at (dt/now)})
 
-(defn restore-deleted-project!
-  "Mark a project and all related objects as not deleted"
-  [project-id]
-  (let [project-id (h/parse-uuid project-id)]
-    (db/tx-run! main/system restore-project* project-id)))
+                    (restore-team* system team-id))))))
 
-(defn restore-deleted-file!
-  "Mark a file and all related objects as not deleted"
-  [file-id]
-  (let [file-id (h/parse-uuid file-id)]
-    (db/tx-run! main/system restore-file* file-id)))
-
-(defn delete-team!
-  "Mark a team for deletion"
-  [team-id]
-  (let [team-id (h/parse-uuid team-id)]
-    (wrk/invoke! (-> main/system
-                     (assoc ::wrk/task :delete-object)
-                     (assoc ::wrk/params {:object :team
-                                          :deleted-at (dt/now)
-                                          :id team-id})))))
 (defn delete-profile!
-  "Mark a profile for deletion"
+  "Mark a profile for deletion."
   [profile-id]
-  (let [profile-id (h/parse-uuid profile-id)]
+  (let [profile-id (h/parse-uuid profile-id)
+        tnow       (dt/now)]
+
+    (audit/insert! main/system
+                   {::audit/name "delete-profile"
+                    ::audit/type "action"
+                    ::audit/profile-id uuid/zero
+                    ::audit/context {:triggered-by "srepl"
+                                     :cause "explicit call to delete-profile!"}
+                    ::audit/tracked-at tnow})
+
     (wrk/invoke! (-> main/system
                      (assoc ::wrk/task :delete-object)
                      (assoc ::wrk/params {:object :profile
-                                          :deleted-at (dt/now)
-                                          :id profile-id})))))
-(defn delete-project!
-  "Mark a project for deletion"
-  [project-id]
-  (let [project-id (h/parse-uuid project-id)]
-    (wrk/invoke! (-> main/system
-                     (assoc ::wrk/task :delete-object)
-                     (assoc ::wrk/params {:object :project
-                                          :deleted-at (dt/now)
-                                          :id project-id})))))
+                                          :deleted-at tnow
+                                          :id profile-id})))
+    :deleted))
 
-(defn delete-file!
-  "Mark a project for deletion"
-  [file-id]
-  (let [file-id (h/parse-uuid file-id)]
-    (wrk/invoke! (-> main/system
-                     (assoc ::wrk/task :delete-object)
-                     (assoc ::wrk/params {:object :file
-                                          :deleted-at (dt/now)
-                                          :id file-id})))))
+(defn restore-profile!
+  "Mark a team and all related objects as not deleted"
+  [profile-id]
+  (let [profile-id (h/parse-uuid profile-id)]
+    (db/tx-run! main/system
+                (fn [system]
+                  (when-let [profile (some-> (db/get* system :profile
+                                                      {:id profile-id}
+                                                      {::db/remove-deleted false})
+                                             (profile/decode-row))]
+                    (audit/insert! system
+                                   {::audit/name "restore-profile"
+                                    ::audit/type "action"
+                                    ::audit/profile-id uuid/zero
+                                    ::audit/props (audit/profile->props profile)
+                                    ::audit/context {:triggered-by "srepl"
+                                                     :cause "explicit call to restore-profile!"}
+                                    ::audit/tracked-at (dt/now)})
+
+                    (db/update! system :profile
+                                {:deleted-at nil}
+                                {:id profile-id}
+                                {::db/return-keys false})
+
+                    (doseq [{:keys [id]} (profile/get-owned-teams system profile-id)]
+                      (restore-team* system id))
+
+                    :restored)))))
+
+(defn delete-profiles-in-bulk!
+  [system path]
+  (letfn [(process-data! [system deleted-at emails]
+            (loop [emails  emails
+                   deleted 0
+                   total   0]
+              (if-let [email (first emails)]
+                (if-let [profile (db/get* system :profile
+                                          {:email (str/lower email)}
+                                          {::db/remove-deleted false})]
+                  (do
+                    (audit/insert! system
+                                   {::audit/name "delete-profile"
+                                    ::audit/type "action"
+                                    ::audit/tracked-at deleted-at
+                                    ::audit/props (audit/profile->props profile)
+                                    ::audit/context {:triggered-by "srepl"
+                                                     :cause "explicit call to delete-profiles-in-bulk!"}})
+                    (wrk/invoke! (-> system
+                                     (assoc ::wrk/task :delete-object)
+                                     (assoc ::wrk/params {:object :profile
+                                                          :deleted-at deleted-at
+                                                          :id (:id profile)})))
+                    (recur (rest emails)
+                           (inc deleted)
+                           (inc total)))
+                  (recur (rest emails)
+                         deleted
+                         (inc total)))
+                {:deleted deleted :total total})))]
+
+    (let [path       (fs/path path)
+          deleted-at (dt/minus (dt/now) cf/deletion-delay)]
+
+      (when-not (fs/exists? path)
+        (throw (ex-info "path does not exists" {:path path})))
+
+      (db/tx-run! system
+                  (fn [system]
+                    (with-open [reader (io/reader path)]
+                      (process-data! system deleted-at (line-seq reader))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CASCADE FIXING
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn process-deleted-profiles-cascade
   []

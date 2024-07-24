@@ -2278,6 +2278,10 @@ msgstr "Actualizar un componente en biblioteca"
 msgid "notifications.by-code.upgrade-version"
 msgstr "Una nueva versión está disponible, por favor actualiza la página"
 
+#: src/app/main/data/common.cljs
+msgid "notifications.by-code.maintenance"
+msgstr "Pausa de mantenimiento: en los próximos 5 minutos estaremos fuera de servicio por un breve mantenimiento."
+
 #: src/app/main/ui/dashboard/team.cljs
 msgid "notifications.invitation-email-sent"
 msgstr "Invitación enviada con éxito"

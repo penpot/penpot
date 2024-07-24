@@ -19,8 +19,10 @@
    [app.email.blacklist :as email.blacklist]
    [app.email.whitelist :as email.whitelist]
    [app.http.client :as http]
+   [app.http.errors :as errors]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
+   [app.rpc :as rpc]
    [app.rpc.commands.profile :as profile]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
@@ -130,8 +132,8 @@
           (-> body json/decode :keys process-oidc-jwks)
           (do
             (l/warn :hint "unable to retrieve JWKs (unexpected response status code)"
-                    :http-status status
-                    :http-body  body)
+                    :response-status status
+                    :response-body  body)
             nil)))
       (catch Throwable cause
         (l/warn :hint "unable to retrieve JWKs (unexpected exception)"
@@ -145,18 +147,18 @@
   (when (contains? cf/flags :login-with-oidc)
     (if-let [opts (prepare-oidc-opts cfg)]
       (let [jwks (fetch-oidc-jwks cfg opts)]
-        (l/info :hint "provider initialized"
-                :provider "oidc"
-                :method (if (:discover? opts) "discover" "manual")
-                :client-id (:client-id opts)
-                :client-secret (obfuscate-string (:client-secret opts))
-                :scopes     (str/join "," (:scopes opts))
-                :auth-uri   (:auth-uri opts)
-                :user-uri   (:user-uri opts)
-                :token-uri  (:token-uri opts)
-                :roles-attr (:roles-attr opts)
-                :roles      (:roles opts)
-                :keys       (str/join "," (map str (keys jwks))))
+        (l/inf :hint "provider initialized"
+               :provider "oidc"
+               :method (if (:discover? opts) "discover" "manual")
+               :client-id (:client-id opts)
+               :client-secret (obfuscate-string (:client-secret opts))
+               :scopes     (str/join "," (:scopes opts))
+               :auth-uri   (:auth-uri opts)
+               :user-uri   (:user-uri opts)
+               :token-uri  (:token-uri opts)
+               :roles-attr (:roles-attr opts)
+               :roles      (:roles opts)
+               :keys       (str/join "," (map str (keys jwks))))
         (assoc opts :jwks jwks))
       (do
         (l/warn :hint "unable to initialize auth provider, missing configuration" :provider "oidc")
@@ -180,10 +182,10 @@
       (if (and (string? (:client-id opts))
                (string? (:client-secret opts)))
         (do
-          (l/info :hint "provider initialized"
-                  :provider "google"
-                  :client-id (:client-id opts)
-                  :client-secret (obfuscate-string (:client-secret opts)))
+          (l/inf :hint "provider initialized"
+                 :provider "google"
+                 :client-id (:client-id opts)
+                 :client-secret (obfuscate-string (:client-secret opts)))
           opts)
 
         (do
@@ -208,8 +210,9 @@
           (ex/raise :type :internal
                     :code :unable-to-retrieve-github-emails
                     :hint "unable to retrieve github emails"
-                    :http-status status
-                    :http-body body))
+                    :request-uri (:uri params)
+                    :response-status status
+                    :response-body body))
 
         (->> body json/decode (filter :primary) first :email))))
 
@@ -234,10 +237,10 @@
       (if (and (string? (:client-id opts))
                (string? (:client-secret opts)))
         (do
-          (l/info :hint "provider initialized"
-                  :provider "github"
-                  :client-id (:client-id opts)
-                  :client-secret (obfuscate-string (:client-secret opts)))
+          (l/inf :hint "provider initialized"
+                 :provider "github"
+                 :client-id (:client-id opts)
+                 :client-secret (obfuscate-string (:client-secret opts)))
           opts)
 
         (do
@@ -249,7 +252,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod ig/init-key ::providers/gitlab
-  [_ _]
+  [_ cfg]
   (let [base (cf/get :gitlab-base-uri "https://gitlab.com")
         opts {:base-uri      base
               :client-id     (cf/get :gitlab-client-id)
@@ -258,17 +261,18 @@
               :auth-uri      (str base "/oauth/authorize")
               :token-uri     (str base "/oauth/token")
               :user-uri      (str base "/oauth/userinfo")
+              :jwks-uri      (str base "/oauth/discovery/keys")
               :name          "gitlab"}]
     (when (contains? cf/flags :login-with-gitlab)
       (if (and (string? (:client-id opts))
                (string? (:client-secret opts)))
-        (do
-          (l/info :hint "provider initialized"
-                  :provider "gitlab"
-                  :base-uri base
-                  :client-id (:client-id opts)
-                  :client-secret (obfuscate-string (:client-secret opts)))
-          opts)
+        (let [jwks (fetch-oidc-jwks cfg opts)]
+          (l/inf :hint "provider initialized"
+                 :provider "gitlab"
+                 :base-uri base
+                 :client-id (:client-id opts)
+                 :client-secret (obfuscate-string (:client-secret opts)))
+          (assoc opts :jwks jwks))
 
         (do
           (l/warn :hint "unable to initialize auth provider, missing configuration" :provider "gitlab")
@@ -324,26 +328,31 @@
                 :uri (:token-uri provider)
                 :body (u/map->query-string params)}]
 
-    (l/trace :hint "request access token"
-             :provider (:name provider)
-             :client-id (:client-id provider)
-             :client-secret (obfuscate-string (:client-secret provider))
-             :grant-type (:grant_type params)
-             :redirect-uri (:redirect_uri params))
+    (l/trc :hint "fetch access token"
+           :provider (:name provider)
+           :client-id (:client-id provider)
+           :client-secret (obfuscate-string (:client-secret provider))
+           :grant-type (:grant_type params)
+           :redirect-uri (:redirect_uri params))
 
     (let [{:keys [status body]} (http/req! cfg req {:sync? true})]
-      (l/trace :hint "access token response" :status status :body body)
+      (l/trc :hint "access token fetched" :status status :body body)
       (if (= status 200)
-        (let [data (json/decode body)]
-          {:token/access (get data :access_token)
-           :token/id     (get data :id_token)
-           :token/type   (get data :token_type)})
-
+        (let [data (json/decode body)
+              data {:token/access (get data :access_token)
+                    :token/id     (get data :id_token)
+                    :token/type   (get data :token_type)}]
+          (l/trc :hint "access token fetched"
+                 :token-id (:token/id data)
+                 :token-type (:token/type data)
+                 :token (:token/access data))
+          data)
         (ex/raise :type :internal
-                  :code :unable-to-retrieve-token
-                  :hint "unable to retrieve token"
-                  :http-status status
-                  :http-body body)))))
+                  :code :unable-to-fetch-access-token
+                  :hint "unable to fetch access token"
+                  :request-uri (:uri req)
+                  :response-status status
+                  :response-body body)))))
 
 (defn- process-user-info
   [provider tdata info]
@@ -370,9 +379,9 @@
 
 (defn- fetch-user-info
   [{:keys [::provider] :as cfg} tdata]
-  (l/trace :hint "fetch user info"
-           :uri (:user-uri provider)
-           :token (obfuscate-string (:token/access tdata)))
+  (l/trc :hint "fetch user info"
+         :uri (:user-uri provider)
+         :token (obfuscate-string (:token/access tdata)))
 
   (let [params   {:uri (:user-uri provider)
                   :headers {"Authorization" (str (:token/type tdata) " " (:token/access tdata))}
@@ -380,9 +389,9 @@
                   :method :get}
         response (http/req! cfg params {:sync? true})]
 
-    (l/trace :hint "user info response"
-             :status (:status response)
-             :body   (:body response))
+    (l/trc :hint "user info response"
+           :status (:status response)
+           :body   (:body response))
 
     (when-not (s/int-in-range? 200 300 (:status response))
       (ex/raise :type :internal
@@ -432,7 +441,7 @@
 
         info   (process-user-info provider tdata info)]
 
-    (l/trace :hint "user info" :info info)
+    (l/trc :hint "user info" :info info)
 
     (when-not (s/valid? ::info info)
       (l/warn :hint "received incomplete profile info object (please set correct scopes)" :info info)
@@ -586,22 +595,33 @@
         (redirect-to-register cfg info request)
         (redirect-with-error "registration-disabled")))))
 
+(defn- get-external-session-id
+  [request]
+  (let [session-id (rreq/get-header request "x-external-session-id")]
+    (when (string? session-id)
+      (if (or (> (count session-id) 256)
+              (= session-id "null")
+              (str/blank? session-id))
+        nil
+        session-id))))
+
 (defn- auth-handler
   [cfg {:keys [params] :as request}]
-  (let [props (audit/extract-utm-params params)
-        esid  (rreq/get-header request "x-external-session-id")
-        state (tokens/generate (::setup/props cfg)
-                               {:iss :oauth
-                                :invitation-token (:invitation-token params)
-                                :external-session-id esid
-                                :props props
-                                :exp (dt/in-future "4h")})
-        uri   (build-auth-uri cfg state)]
+  (let [props  (audit/extract-utm-params params)
+        esid   (rpc/get-external-session-id request)
+        params {:iss :oauth
+                :invitation-token (:invitation-token params)
+                :external-session-id esid
+                :props props
+                :exp (dt/in-future "4h")}
+        state  (tokens/generate (::setup/props cfg)
+                                (d/without-nils params))
+        uri    (build-auth-uri cfg state)]
     {::rres/status 200
      ::rres/body {:redirect-uri uri}}))
 
 (defn- callback-handler
-  [cfg request]
+  [{:keys [::provider] :as cfg} request]
   (try
     (if-let [error (dm/get-in request [:params :error])]
       (redirect-with-error "unable-to-auth" error)
@@ -609,7 +629,16 @@
             profile (get-profile cfg info)]
         (process-callback cfg request info profile)))
     (catch Throwable cause
-      (l/err :hint "error on oauth process" :cause cause)
+      (binding [l/*context* (-> (errors/request->context request)
+                                (assoc :auth/provider (:name provider)))]
+        (let [edata (ex-data cause)]
+          (cond
+            (= :validation (:type edata))
+            (l/wrn :hint "invalid token received" :cause cause)
+
+            :else
+            (l/err :hint "error on oauth process" :cause cause))))
+
       (redirect-with-error "unable-to-auth" (ex-message cause)))))
 
 (def provider-lookup

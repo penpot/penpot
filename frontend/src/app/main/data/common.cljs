@@ -13,6 +13,7 @@
    [app.main.data.modal :as modal]
    [app.main.features :as features]
    [app.main.repo :as rp]
+   [app.main.store :as st]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -58,6 +59,10 @@
   []
   (.reload js/location))
 
+(defn hide-notifications!
+  []
+  (st/emit! msg/hide))
+
 (defn handle-notification
   [{:keys [message code level] :as params}]
   (ptk/reify ::show-notification
@@ -74,6 +79,15 @@
                   :type level
                   :actions [{:label "Refresh" :callback force-reload!}]
                   :tag :notification)))
+
+        :maintenance
+        (rx/of (msg/dialog
+                :content (tr "notifications.by-code.maintenance")
+                :controls :inline-actions
+                :type level
+                :actions [{:label (tr "labels.accept")
+                           :callback hide-notifications!}]
+                :tag :notification))
 
         (rx/of (msg/dialog
                 :content message

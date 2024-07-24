@@ -35,9 +35,13 @@
 
 (defn parse-client-ip
   [request]
-  (or (some-> (rreq/get-header request "x-forwarded-for") (str/split ",") first)
-      (rreq/get-header request "x-real-ip")
-      (some-> (rreq/remote-addr request) str)))
+  (let [ip-addr (or (some-> (rreq/get-header request "x-forwarded-for") (str/split ",") first)
+                    (rreq/get-header request "x-real-ip")
+                    (some-> (rreq/remote-addr request) str))
+        ip-addr (-> ip-addr
+                    (str/split ":" 2)
+                    (first))]
+    ip-addr))
 
 (defn extract-utm-params
   "Extracts additional data from params and namespace them under
@@ -192,15 +196,33 @@
          (::webhooks/event? resultm)
          false)}))
 
-(defn- handle-event!
-  [cfg event]
+(defn- event->params
+  [event]
   (let [params {:id (uuid/next)
                 :name (::name event)
                 :type (::type event)
                 :profile-id (::profile-id event)
-                :ip-addr (::ip-addr event)
-                :context (::context event)
-                :props (::props event)}
+                :ip-addr (::ip-addr event "0.0.0.0")
+                :context (::context event {})
+                :props (::props event {})
+                :source "backend"}
+        tnow   (::tracked-at event)]
+
+    (cond-> params
+      (some? tnow)
+      (assoc :tracked-at tnow))))
+
+(defn- append-audit-entry!
+  [cfg params]
+  (let [params (-> params
+                   (update :props db/tjson)
+                   (update :context db/tjson)
+                   (update :ip-addr db/inet))]
+    (db/insert! cfg :audit-log params)))
+
+(defn- handle-event!
+  [cfg event]
+  (let [params (event->params event)
         tnow   (dt/now)]
 
     (when (contains? cf/flags :audit-log)
@@ -209,12 +231,8 @@
       ;; this case we just retry the operation.
       (let [params (-> params
                        (assoc :created-at tnow)
-                       (assoc :tracked-at tnow)
-                       (update :props db/tjson)
-                       (update :context db/tjson)
-                       (update :ip-addr db/inet)
-                       (assoc :source "backend"))]
-        (db/insert! cfg :audit-log params)))
+                       (update :tracked-at #(or % tnow)))]
+        (append-audit-entry! cfg params)))
 
     (when (and (or (contains? cf/flags :telemetry)
                    (cf/get :telemetry-enabled))
@@ -226,12 +244,11 @@
       ;; NOTE: this is only executed when general audit log is disabled
       (let [params (-> params
                        (assoc :created-at tnow)
-                       (assoc :tracked-at tnow)
-                       (assoc :props (db/tjson {}))
-                       (assoc :context (db/tjson {}))
-                       (assoc :ip-addr (db/inet "0.0.0.0"))
-                       (assoc :source "backend"))]
-        (db/insert! cfg :audit-log params)))
+                       (update :tracked-at #(or % tnow))
+                       (assoc :props {})
+                       (assoc :context {})
+                       (assoc :ip-addr "0.0.0.0"))]
+        (append-audit-entry! cfg params)))
 
     (when (and (contains? cf/flags :webhooks)
                (::webhooks/event? event))
@@ -258,9 +275,9 @@
 
 (defn submit!
   "Submit audit event to the collector."
-  [cfg params]
+  [cfg event]
   (try
-    (let [event (d/without-nils params)
+    (let [event (d/without-nils event)
           cfg   (-> cfg
                     (assoc ::rtry/when rtry/conflict-exception?)
                     (assoc ::rtry/max-retries 6)
@@ -269,3 +286,18 @@
       (rtry/invoke! cfg db/tx-run! handle-event! event))
     (catch Throwable cause
       (l/error :hint "unexpected error processing event" :cause cause))))
+
+(defn insert!
+  "Submit audit event to the collector, intended to be used only from
+  command line helpers because this skips all webhooks and telemetry
+  logic."
+  [cfg event]
+  (when (contains? cf/flags :audit-log)
+    (let [event (d/without-nils event)]
+      (us/verify! ::event event)
+      (db/run! cfg (fn [cfg]
+                     (let [tnow   (dt/now)
+                           params (-> (event->params event)
+                                      (assoc :created-at tnow)
+                                      (update :tracked-at #(or % tnow)))]
+                       (append-audit-entry! cfg params)))))))
