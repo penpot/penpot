@@ -93,6 +93,22 @@
      :shape-ids shape-ids
      :selected-pred #(seq (% ids-by-attributes))}))
 
+(defn generic-attribute-actions [attributes title {:keys [token selected-shapes]}]
+  (let [{:keys [on-update-shape]} (get wtc/token-types (:type token))
+        {:keys [selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)]
+    (map (fn [attribute]
+           (let [selected? (selected-pred attribute)
+                 props {:attributes #{attribute}
+                        :token token
+                        :shape-ids shape-ids}]
+
+             {:title title
+              :selected? selected?
+              :action #(if selected?
+                         (st/emit! (wtc/unapply-token props))
+                         (st/emit! (wtc/apply-token (assoc props :on-update-shape on-update-shape))))}))
+         attributes)))
+
 (defn all-or-sepearate-actions [{:keys [attribute-labels on-update-shape-all on-update-shape]}
                                 {:keys [token selected-shapes]}]
   (let [attributes (set (keys attribute-labels))
@@ -219,22 +235,6 @@
                                                  :layout-item-max-h "Max Height"}
                               :on-update-shape update-layout-sizing-limits}
                              context-data)))
-
-(defn generic-attribute-actions [attributes title {:keys [token selected-shapes]}]
-  (let [{:keys [on-update-shape]} (get wtc/token-types (:type token))
-        {:keys [selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)]
-    (map (fn [attribute]
-           (let [selected? (selected-pred attribute)
-                 props {:attributes #{attribute}
-                        :token token
-                        :shape-ids shape-ids}]
-
-             {:title title
-              :selected? selected?
-              :action #(if selected?
-                         (st/emit! (wtc/unapply-token props))
-                         (st/emit! (wtc/apply-token (assoc props :on-update-shape on-update-shape))))}))
-         attributes)))
 
 (def shape-attribute-actions-map
   (let [stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")]
