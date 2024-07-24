@@ -31,93 +31,7 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-(def tokens-menu-ref
-  (l/derived :token-context-menu refs/workspace-local))
-
-(defn- prevent-default
-  [event]
-  (dom/prevent-default event)
-  (dom/stop-propagation event))
-
-(mf/defc menu-entry
-  {::mf/props :obj}
-  [{:keys [title shortcut on-click on-pointer-enter on-pointer-leave
-           on-unmount children selected? icon disabled value]}]
-  (let [submenu-ref (mf/use-ref nil)
-        hovering?   (mf/use-ref false)
-        on-pointer-enter
-        (mf/use-callback
-         (fn []
-           (mf/set-ref-val! hovering? true)
-           (let [submenu-node (mf/ref-val submenu-ref)]
-             (when (some? submenu-node)
-               (dom/set-css-property! submenu-node "display" "block")))
-           (when on-pointer-enter (on-pointer-enter))))
-
-        on-pointer-leave
-        (mf/use-callback
-         (fn []
-           (mf/set-ref-val! hovering? false)
-           (let [submenu-node (mf/ref-val submenu-ref)]
-             (when (some? submenu-node)
-               (timers/schedule
-                50
-                #(when-not (mf/ref-val hovering?)
-                   (dom/set-css-property! submenu-node "display" "none")))))
-           (when on-pointer-leave (on-pointer-leave))))
-
-        set-dom-node
-        (mf/use-callback
-         (fn [dom]
-           (let [submenu-node (mf/ref-val submenu-ref)]
-             (when (and (some? dom) (some? submenu-node))
-               (dom/set-css-property! submenu-node "top" (str (.-offsetTop dom) "px"))))))]
-
-    (mf/use-effect
-     (mf/deps on-unmount)
-     (constantly on-unmount))
-
-    (if icon
-      [:li {:class (stl/css :icon-menu-item)
-            :disabled disabled
-            :data-value value
-            :ref set-dom-node
-            :on-click on-click
-            :on-pointer-enter on-pointer-enter
-            :on-pointer-leave on-pointer-leave}
-       [:span
-        {:class (stl/css :icon-wrapper)}
-        (if selected? [:span {:class (stl/css :selected-icon)}
-                       i/tick]
-            [:span {:class (stl/css :selected-icon)}])
-        [:span {:class (stl/css :shape-icon)} icon]]
-       [:span {:class (stl/css :title)} title]]
-      [:li {:class (stl/css :context-menu-item)
-            :disabled disabled
-            :ref set-dom-node
-            :data-value value
-            :on-click on-click
-            :on-pointer-enter on-pointer-enter
-            :on-pointer-leave on-pointer-leave}
-       [:span {:class (stl/css :title)} title]
-       (when shortcut
-         [:span   {:class (stl/css :shortcut)}
-          (for [[idx sc] (d/enumerate (scd/split-sc shortcut))]
-            [:span {:key (dm/str shortcut "-" idx)
-                    :class (stl/css :shortcut-key)} sc])])
-
-       (when children
-         [:*
-          [:span {:class (stl/css :submenu-icon)} i/arrow]
-          [:ul {:class (stl/css :token-context-submenu)
-                :ref submenu-ref
-                :style {:display "none" :left 235}
-                :on-context-menu prevent-default}
-           children]])])))
-
-(mf/defc menu-separator
-  []
-  [:li {:class (stl/css :separator)}])
+;; Events ----------------------------------------------------------------------
 
 (defn update-shape-radius-single-corner [value shape-ids attribute]
   (st/emit!
@@ -218,6 +132,8 @@
     (wtc/on-apply-token {:token token
                          :token-type-props token-type-props
                          :selected-shapes selected-shapes})))
+
+;; Actions ---------------------------------------------------------------------
 
 (defn attribute-actions [token selected-shapes attributes]
   (let [ids-by-attributes (wtt/shapes-ids-by-applied-attributes token selected-shapes attributes)
@@ -472,6 +388,96 @@
      attribute-actions
      (when attribute-actions [:separator])
      default-actions)))
+
+;; Components ------------------------------------------------------------------
+
+(def tokens-menu-ref
+  (l/derived :token-context-menu refs/workspace-local))
+
+(defn- prevent-default
+  [event]
+  (dom/prevent-default event)
+  (dom/stop-propagation event))
+
+(mf/defc menu-entry
+  {::mf/props :obj}
+  [{:keys [title shortcut on-click on-pointer-enter on-pointer-leave
+           on-unmount children selected? icon disabled value]}]
+  (let [submenu-ref (mf/use-ref nil)
+        hovering?   (mf/use-ref false)
+        on-pointer-enter
+        (mf/use-callback
+         (fn []
+           (mf/set-ref-val! hovering? true)
+           (let [submenu-node (mf/ref-val submenu-ref)]
+             (when (some? submenu-node)
+               (dom/set-css-property! submenu-node "display" "block")))
+           (when on-pointer-enter (on-pointer-enter))))
+
+        on-pointer-leave
+        (mf/use-callback
+         (fn []
+           (mf/set-ref-val! hovering? false)
+           (let [submenu-node (mf/ref-val submenu-ref)]
+             (when (some? submenu-node)
+               (timers/schedule
+                50
+                #(when-not (mf/ref-val hovering?)
+                   (dom/set-css-property! submenu-node "display" "none")))))
+           (when on-pointer-leave (on-pointer-leave))))
+
+        set-dom-node
+        (mf/use-callback
+         (fn [dom]
+           (let [submenu-node (mf/ref-val submenu-ref)]
+             (when (and (some? dom) (some? submenu-node))
+               (dom/set-css-property! submenu-node "top" (str (.-offsetTop dom) "px"))))))]
+
+    (mf/use-effect
+     (mf/deps on-unmount)
+     (constantly on-unmount))
+
+    (if icon
+      [:li {:class (stl/css :icon-menu-item)
+            :disabled disabled
+            :data-value value
+            :ref set-dom-node
+            :on-click on-click
+            :on-pointer-enter on-pointer-enter
+            :on-pointer-leave on-pointer-leave}
+       [:span
+        {:class (stl/css :icon-wrapper)}
+        (if selected? [:span {:class (stl/css :selected-icon)}
+                       i/tick]
+            [:span {:class (stl/css :selected-icon)}])
+        [:span {:class (stl/css :shape-icon)} icon]]
+       [:span {:class (stl/css :title)} title]]
+      [:li {:class (stl/css :context-menu-item)
+            :disabled disabled
+            :ref set-dom-node
+            :data-value value
+            :on-click on-click
+            :on-pointer-enter on-pointer-enter
+            :on-pointer-leave on-pointer-leave}
+       [:span {:class (stl/css :title)} title]
+       (when shortcut
+         [:span   {:class (stl/css :shortcut)}
+          (for [[idx sc] (d/enumerate (scd/split-sc shortcut))]
+            [:span {:key (dm/str shortcut "-" idx)
+                    :class (stl/css :shortcut-key)} sc])])
+
+       (when children
+         [:*
+          [:span {:class (stl/css :submenu-icon)} i/arrow]
+          [:ul {:class (stl/css :token-context-submenu)
+                :ref submenu-ref
+                :style {:display "none" :left 235}
+                :on-context-menu prevent-default}
+           children]])])))
+
+(mf/defc menu-separator
+  []
+  [:li {:class (stl/css :separator)}])
 
 (mf/defc context-menu-tree
   [context-data]
