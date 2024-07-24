@@ -93,37 +93,6 @@
      :shape-ids shape-ids
      :selected-pred #(seq (% ids-by-attributes))}))
 
-(defn border-radius-attribute-actions [{:keys [token selected-shapes]}]
-  (let [all-attributes #{:r1 :r2 :r3 :r4}
-        {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes all-attributes)
-        single-attributes (->> {:r1 "Top Left"
-                                :r2 "Top Right"
-                                :r4 "Bottom Left"
-                                :r3 "Bottom Right"}
-                               (map (fn [[attr title]]
-                                      (let [selected? (selected-pred attr)]
-                                        {:title title
-                                         :selected? (and (not all-selected?) selected?)
-                                         :action #(let [props {:attributes #{attr}
-                                                               :token token
-                                                               :shape-ids shape-ids}
-                                                        event (cond
-                                                                all-selected? (-> (assoc props :attributes-to-remove #{:r1 :r2 :r3 :r4 :rx :ry})
-                                                                                  (wtc/apply-token))
-                                                                selected? (wtc/unapply-token props)
-                                                                :else (-> (assoc props :on-update-shape wtc/update-shape-radius-single-corner)
-                                                                          (wtc/apply-token)))]
-                                                    (st/emit! event))}))))
-        all-attribute (let [props {:attributes all-attributes
-                                   :token token
-                                   :shape-ids shape-ids}]
-                        {:title "All"
-                         :selected? all-selected?
-                         :action #(if all-selected?
-                                    (st/emit! (wtc/unapply-token props))
-                                    (st/emit! (wtc/apply-token (assoc props :on-update-shape wtc/update-shape-radius-all))))})]
-    (concat [all-attribute] single-attributes)))
-
 (def spacing
   {:padding {:p1 "Top"
              :p2 "Right"
@@ -132,7 +101,8 @@
    :gap {:column-gap "Column Gap"
          :row-gap "Row Gap"}})
 
-(defn all-or-sepearate-actions [attribute-labels on-update-shape {:keys [token selected-shapes]}]
+(defn all-or-sepearate-actions [{:keys [attribute-labels on-update-shape-all on-update-shape]}
+                                {:keys [token selected-shapes]}]
   (let [attributes (set (keys attribute-labels))
         {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)
         all-action (let [props {:attributes attributes
@@ -142,7 +112,7 @@
                       :selected? all-selected?
                       :action #(if all-selected?
                                  (st/emit! (wtc/unapply-token props))
-                                 (st/emit! (wtc/apply-token (assoc props :on-update-shape on-update-shape))))})
+                                 (st/emit! (wtc/apply-token (assoc props :on-update-shape (or on-update-shape-all on-update-shape)))))})
         single-actions (map (fn [[attr title]]
                               (let [selected? (selected-pred attr)]
                                 {:title title
@@ -229,9 +199,10 @@
                                                                    :else (-> (assoc props :on-update-shape on-update-shape)
                                                                              (wtc/apply-token)))]
                                                        (st/emit! event))}))))
-        gap-items (all-or-sepearate-actions {:column-gap "Column Gap"
-                                             :row-gap "Row Gap"}
-                                            update-layout-spacing context-data)]
+        gap-items (all-or-sepearate-actions {:attribute-labels {:column-gap "Column Gap"
+                                                                :row-gap "Row Gap"}
+                                             :on-update-shape update-layout-spacing}
+                                            context-data)]
     (concat padding-items
             single-padding-items
             [:separator]
@@ -239,20 +210,23 @@
 
 (defn sizing-attribute-actions [context-data]
   (concat
-   (all-or-sepearate-actions {:width "Width"
-                              :height "Height"}
-                             update-shape-dimensions context-data)
+   (all-or-sepearate-actions {:attribute-labels {:width "Width"
+                                                 :height "Height"}
+                              :on-update-shape update-shape-dimensions}
+                             context-data)
    [:separator]
-   (all-or-sepearate-actions {:layout-item-min-w "Min Width"
-                              :layout-item-min-h "Min Height"}
-                             update-layout-sizing-limits context-data)
+   (all-or-sepearate-actions {:attribute-labels {:layout-item-min-w "Min Width"
+                                                 :layout-item-min-h "Min Height"}
+                              :on-update-shape update-layout-sizing-limits}
+                             context-data)
    [:separator]
-   (all-or-sepearate-actions {:layout-item-max-w "Max Width"
-                              :layout-item-max-h "Max Height"}
-                             update-layout-sizing-limits context-data)))
+   (all-or-sepearate-actions {:attribute-labels {:layout-item-max-w "Max Width"
+                                                 :layout-item-max-h "Max Height"}
+                              :on-update-shape update-layout-sizing-limits}
+                             context-data)))
 
 (defn generic-attribute-actions [attributes title {:keys [token selected-shapes]}]
-  (let [{:keys [on-update-shape] :as p} (get wtc/token-types (:type token))
+  (let [{:keys [on-update-shape]} (get wtc/token-types (:type token))
         {:keys [selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)]
     (map (fn [attribute]
            (let [selected? (selected-pred attribute)
@@ -269,7 +243,12 @@
 
 (def shape-attribute-actions-map
   (let [stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")]
-    {:border-radius border-radius-attribute-actions
+    {:border-radius (partial all-or-sepearate-actions {:attribute-labels {:r1 "Top Left"
+                                                                          :r2 "Top Right"
+                                                                          :r4 "Bottom Left"
+                                                                          :r3 "Bottom Right"}
+                                                       :on-update-shape-all wtc/update-shape-radius-all
+                                                       :on-update-shape wtc/update-shape-radius-single-corner})
      :spacing spacing-attribute-actions
      :sizing sizing-attribute-actions
      :rotation (partial generic-attribute-actions #{:rotation} "Rotation")
