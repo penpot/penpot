@@ -24,6 +24,7 @@
    [:sizing
     {:title "Sizing"
      :attributes #{:width :height}
+     :all-attributes ctt/sizing-keys
      :on-update-shape wtch/update-shape-dimensions
      :modal {:key :tokens/sizing
              :fields [{:label "Sizing"

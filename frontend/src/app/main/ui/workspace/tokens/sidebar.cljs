@@ -72,7 +72,7 @@
   [{:keys [type tokens selected-shapes token-type-props]}]
   (let [open? (mf/deref (-> (l/key type)
                             (l/derived lens:token-type-open-status)))
-        {:keys [modal attributes title]} token-type-props
+        {:keys [modal attributes all-attributes title]} token-type-props
 
         on-context-menu (mf/use-fn
                          (fn [event token]
@@ -124,7 +124,7 @@
             [:& token-pill
              {:key (:id token)
               :token token
-              :highlighted? (wtt/shapes-token-applied? token selected-shapes attributes)
+              :highlighted? (wtt/shapes-token-applied? token selected-shapes (or all-attributes attributes))
               :on-click #(on-token-pill-click % token)
               :on-context-menu #(on-context-menu % token)}])]])]]))
 
