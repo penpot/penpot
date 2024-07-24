@@ -2581,15 +2581,15 @@ msgid "labels.event"
 msgstr "Event"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.search"
+msgid "onboarding.questions.referer.search"
 msgstr "Search Engine (Google, Yahoo, Bing)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.social"
+msgid "onboarding.questions.referer.social"
 msgstr "Social Media (X, Linkedin, FB, etc)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "labels.article"
+msgid "onboarding.questions.referer.article"
 msgstr "Article (Blog, Post, Newsletter)"
 
 #: src/app/main/ui/onboarding/questions.cljs
