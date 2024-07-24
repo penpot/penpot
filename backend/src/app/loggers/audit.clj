@@ -21,27 +21,17 @@
    [app.rpc :as-alias rpc]
    [app.rpc.retry :as rtry]
    [app.setup :as-alias setup]
+   [app.util.inet :as inet]
    [app.util.services :as-alias sv]
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [integrant.core :as ig]
-   [ring.request :as rreq]))
+   [integrant.core :as ig]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn parse-client-ip
-  [request]
-  (let [ip-addr (or (some-> (rreq/get-header request "x-forwarded-for") (str/split ",") first)
-                    (rreq/get-header request "x-real-ip")
-                    (some-> (rreq/remote-addr request) str))
-        ip-addr (-> ip-addr
-                    (str/split ":" 2)
-                    (first))]
-    ip-addr))
 
 (defn extract-utm-params
   "Extracts additional data from params and namespace them under
@@ -90,16 +80,19 @@
          (remove #(contains? reserved-props (key %))))
         props))
 
-(defn params->context
-  "Extract default context properties from RPC params object"
+(defn event-from-rpc-params
+  "Create a base event skeleton with pre-filled some important
+  data that can be extracted from RPC params object"
   [params]
-  (d/without-nils
-   {:external-session-id (::rpc/external-session-id params)
-    :event-origin (::rpc/external-event-origin params)
-    :triggered-by (::rpc/handler-name params)}))
+  (let [context {:external-session-id (::rpc/external-session-id params)
+                 :external-event-origin (::rpc/external-event-origin params)
+                 :triggered-by (::rpc/handler-name params)}]
+    {::type "action"
+     ::profile-id (::rpc/profile-id params)
+     ::ip-addr (::rpc/ip-addr params)
+     ::context (d/without-nils context)}))
 
 ;; --- SPECS
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COLLECTOR
@@ -167,14 +160,16 @@
                       (assoc :external-session-id session-id)
                       (assoc :external-event-origin event-origin)
                       (assoc :access-token-id (some-> token-id str))
-                      (d/without-nils))]
+                      (d/without-nils))
+
+        ip-addr   (inet/parse-request request)]
 
     {::type (or (::type resultm)
                 (::rpc/type cfg))
      ::name (or (::name resultm)
                 (::sv/name mdata))
      ::profile-id profile-id
-     ::ip-addr (some-> request parse-client-ip)
+     ::ip-addr ip-addr
      ::props props
      ::context context
 
@@ -202,7 +197,7 @@
                 :name (::name event)
                 :type (::type event)
                 :profile-id (::profile-id event)
-                :ip-addr (::ip-addr event "0.0.0.0")
+                :ip-addr (::ip-addr event)
                 :context (::context event {})
                 :props (::props event {})
                 :source "backend"}
@@ -246,8 +241,7 @@
                        (assoc :created-at tnow)
                        (update :tracked-at #(or % tnow))
                        (assoc :props {})
-                       (assoc :context {})
-                       (assoc :ip-addr "0.0.0.0"))]
+                       (assoc :context {}))]
         (append-audit-entry! cfg params)))
 
     (when (and (contains? cf/flags :webhooks)
