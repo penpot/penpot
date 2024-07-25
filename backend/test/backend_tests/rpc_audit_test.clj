@@ -28,7 +28,8 @@
     ring.request/Request
     (get-header [_ name]
       (case name
-        "x-forwarded-for" "127.0.0.44"))))
+        "x-forwarded-for" "127.0.0.44"
+        "x-real-ip" "127.0.0.43"))))
 
 (t/deftest push-events-1
   (with-redefs [app.config/flags #{:audit-log}]
@@ -46,6 +47,7 @@
                              :profile-id (:id prof)
                              :timestamp (dt/now)
                              :type "action"}]}
+
           params  (with-meta params
                     {:app.http/request http-request})
 

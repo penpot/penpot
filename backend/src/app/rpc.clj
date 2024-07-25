@@ -29,6 +29,7 @@
    [app.rpc.rlimit :as rlimit]
    [app.setup :as-alias setup]
    [app.storage :as-alias sto]
+   [app.util.inet :as inet]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -81,7 +82,9 @@
 (defn- get-external-event-origin
   [request]
   (when-let [origin (rreq/get-header request "x-event-origin")]
-    (when-not (> (count origin) 256)
+    (when-not (or (> (count origin) 256)
+                  (= origin "null")
+                  (str/blank? origin))
       origin)))
 
 (defn- rpc-handler
@@ -93,11 +96,13 @@
         profile-id   (or (::session/profile-id request)
                          (::actoken/profile-id request))
 
+        ip-addr      (inet/parse-request request)
         session-id   (get-external-session-id request)
         event-origin (get-external-event-origin request)
 
         data         (-> params
                          (assoc ::handler-name handler-name)
+                         (assoc ::ip-addr ip-addr)
                          (assoc ::request-at (dt/now))
                          (assoc ::external-session-id session-id)
                          (assoc ::external-event-origin event-origin)

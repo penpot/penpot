@@ -169,19 +169,15 @@
         ;; if we have logged-in user and it matches the invitation we proceed
         ;; with accepting the invitation and joining the current profile to the
         ;; invited team.
-        (let [context (audit/params->context params)
-              props   {:team-id (:team-id claims)
-                       :role (:role claims)
-                       :invitation-id (:id invitation)}]
+        (let [props {:team-id (:team-id claims)
+                     :role (:role claims)
+                     :invitation-id (:id invitation)}
+              event (-> (audit/event-from-rpc-params params)
+                        (assoc ::audit/name "accept-team-invitation")
+                        (assoc ::audit/props props))]
 
           (accept-invitation cfg claims invitation profile)
-          (audit/submit! cfg
-                         {::audit/type "action"
-                          ::audit/name "accept-team-invitation"
-                          ::audit/profile-id profile-id
-                          ::audit/props props
-                          ::audit/context context})
-
+          (audit/submit! cfg event)
           (assoc claims :state :created))
 
         (ex/raise :type :validation

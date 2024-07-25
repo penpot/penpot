@@ -413,15 +413,13 @@
                                   {:modified-at (dt/now)}
                                   {:id project-id})
 
-                      (let [props   (audit/clean-props params)
-                            context (audit/params->context params)]
+                      (let [props (audit/clean-props params)]
                         (doseq [file-id result]
-                          (audit/submit! cfg
-                                         {::audit/type "action"
-                                          ::audit/name "create-file"
-                                          ::audit/profile-id profile-id
-                                          ::audit/props (assoc props :id file-id)
-                                          ::audit/context context})))
+                          (let [props (assoc props :id file-id)
+                                event (-> (audit/event-from-rpc-params params)
+                                          (assoc ::audit/name "create-file")
+                                          (assoc ::audit/props props))]
+                            (audit/submit! cfg event))))
 
                       result))))
 

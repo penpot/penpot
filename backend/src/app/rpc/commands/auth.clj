@@ -340,13 +340,16 @@
 
         profile    (if-let [profile-id (:profile-id claims)]
                      (profile/get-profile conn profile-id)
-                     (let [is-active (or (boolean (:is-active params))
+                     (let [is-active (or (boolean (:is-active claims))
                                          (not (contains? cf/flags :email-verification)))
                            params    (-> params
                                          (assoc :is-active is-active)
                                          (update :password #(profile/derive-password cfg %)))]
                        (->> (create-profile! conn params)
                             (create-profile-rels! conn))))
+
+        ;; When no profile-id comes on claims means a new register
+        created?   (not (:profile-id claims))
 
         invitation (when-let [token (:invitation-token params)]
                      (tokens/verify (::setup/props cfg) {:token token :iss :team-invitation}))
@@ -385,8 +388,8 @@
       ;; When a new user is created and it is already activated by
       ;; configuration or specified by OIDC, we just mark the profile
       ;; as logged-in
-      (not (:profile-id claims))
-      (if (:is-active claims)
+      created?
+      (if (:is-active profile)
         (-> (profile/strip-private-attrs profile)
             (rph/with-transform (session/create-fn cfg (:id profile)))
             (rph/with-meta

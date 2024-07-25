@@ -403,9 +403,9 @@
         (mf/with-memo []
           (-> (shuffle [{:label (tr "labels.youtube") :value "youtube"}
                         {:label (tr "labels.event") :value "event"}
-                        {:label (tr "labels.search") :value "search"}
-                        {:label (tr "labels.social") :value "social"}
-                        {:label (tr "labels.article") :value "article"}])
+                        {:label (tr "onboarding.questions.referer.search") :value "search"}
+                        {:label (tr "onboarding.questions.referer.social") :value "social"}
+                        {:label (tr "onboarding.questions.referer.article") :value "article"}])
               (conj {:label (tr "labels.other-short") :value "other"})))
 
         current-referer
