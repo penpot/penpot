@@ -237,7 +237,7 @@
 
 (mf/defc menu-entry
   {::mf/props :obj}
-  [{:keys [title value on-click selected? children]}]
+  [{:keys [title value on-click selected? children submenu-offset]}]
   (let [submenu-ref (mf/use-ref nil)
         hovering?   (mf/use-ref false)
         on-pointer-enter
@@ -275,7 +275,9 @@
         [:span {:class (stl/css :submenu-icon)} i/arrow]
         [:ul {:class (stl/css :token-context-submenu)
               :ref submenu-ref
-              :style {:display "none" :left 235}
+              :style {:display "none"
+                      :top 0
+                      :left (str submenu-offset "px")}
               :on-context-menu prevent-default}
          children]])]))
 
@@ -288,7 +290,8 @@
       [:* {:key (str title " " index)}
        (cond
          (= :separator entry) [:li {:class (stl/css :separator)}]
-         submenu [:& menu-entry {:title title}
+         submenu [:& menu-entry {:title title
+                                 :submenu-offset (:submenu-offset context-data)}
                   [:& menu-tree (assoc context-data :type submenu)]]
          :else [:& menu-entry
                 {:title title
@@ -297,27 +300,22 @@
 
 (mf/defc token-context-menu
   []
-  (let [mdata          (mf/deref tokens-menu-ref)
-        top            (- (get-in mdata [:position :y]) 20)
-        left           (get-in mdata [:position :x])
-        dropdown-ref   (mf/use-ref)
+  (let [mdata (mf/deref tokens-menu-ref)
+        top (+ (get-in mdata [:position :y]) 5)
+        left (+ (get-in mdata [:position :x]) 5)
+        width (mf/use-state 0)
+        dropdown-ref (mf/use-ref)
         objects (mf/deref refs/workspace-page-objects)
         selected (mf/deref refs/selected-shapes)
         selected-shapes (into [] (keep (d/getf objects)) selected)
         token-id (:token-id mdata)
         token (get (mf/deref refs/workspace-tokens) token-id)]
-    (mf/use-effect
-     (mf/deps mdata)
-     #(let [dropdown (mf/ref-val dropdown-ref)]
-        (when dropdown
-          (let [bounding-rect (dom/get-bounding-rect dropdown)
-                window-size (dom/get-window-size)
-                delta-x (max (- (+ (:right bounding-rect) 250) (:width window-size)) 0)
-                delta-y (max (- (:bottom bounding-rect) (:height window-size)) 0)
-                new-style (str "top: " (- top delta-y) "px; "
-                               "left: " (- left delta-x) "px;")]
-            (when (or (> delta-x 0) (> delta-y 0))
-              (.setAttribute ^js dropdown "style" new-style))))))
+
+     (mf/use-effect
+      (fn []
+        (when-let [node (mf/ref-val dropdown-ref)]
+          (reset! width (.-offsetWidth node)))))
+
     [:& dropdown {:show (boolean mdata)
                   :on-close #(st/emit! dt/hide-token-context-menu)}
      [:div {:class (stl/css :token-context-menu)
@@ -326,5 +324,6 @@
             :on-context-menu prevent-default}
       (when token
         [:ul {:class (stl/css :context-list)}
-         [:& menu-tree {:token token
+         [:& menu-tree {:submenu-offset @width
+                        :token token
                         :selected-shapes selected-shapes}]])]]))
