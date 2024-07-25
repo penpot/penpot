@@ -12,6 +12,7 @@
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
@@ -140,11 +141,18 @@
                                    (assoc-in shape [:strokes 0 :stroke-width] value)))))
 
 (defn update-layout-spacing [value shape-ids attributes]
-  (if-let [layout-gap (cond
-                          (:row-gap attributes) {:row-gap value}
-                          (:column-gap attributes) {:column-gap value})]
-    (dwsl/update-layout shape-ids {:layout-gap layout-gap})
-    (dwsl/update-layout shape-ids {:layout-padding (zipmap attributes (repeat value))})))
+  (ptk/reify ::update-layout-spacing
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [layout-shape-ids (-> (wsh/lookup-shapes state shape-ids)
+                                 (comp (filter :layout)
+                                       (map :id)))]
+        (rx/of
+         (if-let [layout-gap (cond
+                                (:row-gap attributes) {:row-gap value}
+                                (:column-gap attributes) {:column-gap value})]
+           (dwsl/update-layout layout-shape-ids {:layout-gap layout-gap})
+           (dwsl/update-layout layout-shape-ids {:layout-padding (zipmap attributes (repeat value))})))))))
 
 (defn update-shape-dimensions [value shape-ids attributes]
   (ptk/reify ::update-shape-dimensions
