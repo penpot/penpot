@@ -86,23 +86,6 @@
                          :shape-ids shape-ids
                          :on-update-shape on-update-shape})))))))
 
-(defn on-apply-token [{:keys [token token-type-props selected-shapes] :as _props}]
-  (let [{:keys [attributes on-apply on-update-shape]
-         :or {on-apply dt/update-token-from-attributes}} token-type-props
-        shape-ids (->> selected-shapes
-                       (eduction
-                        (remove #(wtt/shapes-token-applied? token % attributes))
-                        (map :id)))]
-
-    (p/let [sd-tokens (sd/resolve-workspace-tokens+ {:debug? true})]
-      (let [resolved-token (get sd-tokens (:id token))
-            resolved-token-value (wtt/resolve-token-value resolved-token)]
-        (doseq [shape selected-shapes]
-          (st/emit! (on-apply {:token-id (:id token)
-                               :shape-id (:id shape)
-                               :attributes attributes}))
-          (on-update-shape resolved-token-value shape-ids attributes))))))
-
 ;; Shape Updates ---------------------------------------------------------------
 
 (defn update-shape-radius-all [value shape-ids]
@@ -178,25 +161,6 @@
 (defn update-shape-position [value shape-ids attributes]
   (doseq [shape-id shape-ids]
     (st/emit! (dwt/update-position shape-id {(first attributes) value}))))
-
-(defn apply-dimensions-token [{:keys [token-id token-type-props selected-shapes]} attributes]
-  (let [token (dt/get-token-data-from-token-id token-id)
-        attributes (set attributes)
-        updated-token-type-props (cond
-                                   (set/superset? #{:x :y} attributes)
-                                   (assoc token-type-props
-                                          :on-update-shape update-shape-position
-                                          :attributes attributes)
-
-                                   (set/superset? #{:stroke-width} attributes)
-                                   (assoc token-type-props
-                                          :on-update-shape update-stroke-width
-                                          :attributes attributes)
-
-                                   :else token-type-props)]
-    (on-apply-token {:token token
-                     :token-type-props updated-token-type-props
-                     :selected-shapes selected-shapes})))
 
 (defn update-layout-sizing-limits [value shape-ids attributes]
   (ptk/reify ::update-layout-sizing-limits
