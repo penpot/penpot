@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.record :as crc]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
    [app.plugins.page :as page]
@@ -93,7 +94,18 @@
 
       :else
       (let [file (u/proxy->file self)]
-        (apply array (keys (dm/get-in file [:data :plugin-data (keyword "shared" namespace)])))))))
+        (apply array (keys (dm/get-in file [:data :plugin-data (keyword "shared" namespace)]))))))
+
+  (createPage
+    [_]
+    (cond
+      (not (r/check-permission $plugin "content:write"))
+      (u/display-not-valid :createPage "Plugin doesn't have 'content:write' permission")
+
+      :else
+      (let [page-id (uuid/next)]
+        (st/emit! (dw/create-page {:page-id page-id :file-id $id}))
+        (page/page-proxy $plugin $id page-id)))))
 
 (crc/define-properties!
   FileProxy

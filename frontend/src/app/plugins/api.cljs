@@ -19,6 +19,7 @@
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as ch]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.groups :as dwg]
@@ -347,7 +348,26 @@
                      (mapcat #(cfh/get-children-with-self objects (:id %))))
                 shapes)]
           (cg/generate-style-code
-           objects type shapes shapes-with-children {:with-prelude? prelude?}))))))
+           objects type shapes shapes-with-children {:with-prelude? prelude?})))))
+
+  (openViewer
+    [_]
+    (let [params {:page-id (:current-page-id @st/state)
+                  :file-id (:current-file-id @st/state)
+                  :section "interactions"}]
+      (st/emit! (dw/go-to-viewer params))))
+
+  (createPage
+    [_]
+    (let [file-id (:current-file-id @st/state)
+          id (uuid/next)]
+      (st/emit! (dw/create-page {:page-id id :file-id file-id}))
+      (page/page-proxy $plugin file-id id)))
+
+  (openPage
+    [_ page]
+    (let [id (obj/get page "$id")]
+      (st/emit! (dw/go-to-page id)))))
 
 (defn create-context
   [plugin-id]

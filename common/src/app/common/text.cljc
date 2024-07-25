@@ -428,6 +428,8 @@
   [shape text]
   (let [content (:content shape)
 
+        root-styles (select-keys content root-attrs)
+
         paragraph-style (merge
                          default-text-attrs
                          (select-keys (->> content (node-seq is-paragraph-node?) first) text-all-attrs))
@@ -447,10 +449,12 @@
                   :children [(merge {:text pt} text-style)]}))))
 
         new-content
-        {:type "root"
-         :children
-         [{:type "paragraph-set"
-           :children paragraphs}]}]
+        (d/patch-object
+         {:type "root"
+          :children
+          [{:type "paragraph-set"
+            :children paragraphs}]}
+         root-styles)]
 
     (assoc shape :content new-content)))
 

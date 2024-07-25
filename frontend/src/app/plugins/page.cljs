@@ -8,17 +8,63 @@
   "RPC for plugins runtime."
   (:require
    [app.common.colors :as cc]
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.record :as crc]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.interactions :as dwi]
    [app.main.store :as st]
+   [app.plugins.format :as format]
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
    [app.plugins.shape :as shape]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [cuerdas.core :as str]))
+
+(deftype FlowProxy [$plugin $file $page $id]
+  Object
+  (remove [_]
+    (st/emit! (dwi/remove-flow $page $id))))
+
+(defn flow-proxy? [p]
+  (instance? FlowProxy p))
+
+(defn flow-proxy
+  [plugin-id file-id page-id id]
+  (crc/add-properties!
+   (FlowProxy. plugin-id file-id page-id id)
+   {:name "$plugin" :enumerable false :get (constantly plugin-id)}
+   {:name "$file" :enumerable false :get (constantly file-id)}
+   {:name "$page" :enumerable false :get (constantly page-id)}
+   {:name "$id" :enumerable false :get (constantly id)}
+   {:name "page" :enumerable false :get (fn [_] (u/locate-page file-id page-id))}
+
+   {:name "name"
+    :get #(-> % u/proxy->flow :name)
+    :set
+    (fn [_ value]
+      (cond
+        (or (not (string? value)) (empty? value))
+        (u/display-not-valid :name value)
+
+        :else
+        (st/emit! (dwi/update-flow page-id id #(assoc % :name value)))))}
+
+   {:name "startingFrame"
+    :get
+    (fn [self]
+      (let [frame (-> self u/proxy->flow :starting-frame)]
+        (u/locate-shape file-id page-id frame)))
+    :set
+    (fn [_ value]
+      (cond
+        (not (shape/shape-proxy? value))
+        (u/display-not-valid :startingFrame value)
+
+        :else
+        (st/emit! (dwi/update-flow page-id id #(assoc % :starting-frame (obj/get value "$id"))))))}))
 
 (deftype PageProxy [$plugin $file $id]
   Object
@@ -131,7 +177,39 @@
 
       :else
       (let [page (u/proxy->page self)]
-        (apply array (keys (dm/get-in page [:options :plugin-data (keyword "shared" namespace)])))))))
+        (apply array (keys (dm/get-in page [:options :plugin-data (keyword "shared" namespace)]))))))
+
+  (openPage
+    [_]
+    (cond
+      (not (r/check-permission $plugin "content:read"))
+      (u/display-not-valid :openPage "Plugin doesn't have 'content:read' permission")
+
+      :else
+      (st/emit! (dw/go-to-page $id))))
+
+  (createFlow
+    [_ name frame]
+    (cond
+      (or (not (string? name)) (empty? name))
+      (u/display-not-valid :createFlow-name name)
+
+      (not (shape/shape-proxy? frame))
+      (u/display-not-valid :createFlow-frame frame)
+
+      :else
+      (let [flow-id (uuid/next)]
+        (st/emit! (dwi/add-flow flow-id $id name (obj/get frame "$id")))
+        (flow-proxy $plugin $file $id flow-id))))
+
+  (removeFlow
+    [_ flow]
+    (cond
+      (not (flow-proxy? flow))
+      (u/display-not-valid :removeFlow-flow flow)
+
+      :else
+      (st/emit! (dwi/remove-flow $id (obj/get flow "$id"))))))
 
 (crc/define-properties!
   PageProxy
@@ -183,4 +261,10 @@
         (u/display-not-valid :background "Plugin doesn't have 'content:write' permission")
 
         :else
-        (st/emit! (dw/change-canvas-color id {:color value}))))}))
+        (st/emit! (dw/change-canvas-color id {:color value}))))}
+
+   {:name "flows"
+    :get
+    (fn [self]
+      (let [flows (d/nilv (-> (u/proxy->page self) :options :flows) [])]
+        (format/format-array #(flow-proxy plugin-id file-id id (:id %)) flows)))}))
