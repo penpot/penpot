@@ -898,8 +898,7 @@
       (-> state
           (d/update-in-when [:dashboard-files id :is-shared] (constantly is-shared))
           (d/update-in-when [:dashboard-recent-files id :is-shared] (constantly is-shared))
-          (cond->
-           (not is-shared)
+          (cond-> (not is-shared)
             (d/update-when :dashboard-shared-files dissoc id))))
 
     ptk/WatchEvent
@@ -909,7 +908,7 @@
              (rx/ignore))))))
 
 (defn set-file-thumbnail
-  [file-id thumbnail-uri]
+  [file-id thumbnail-id]
   (ptk/reify ::set-file-thumbnail
     ptk/UpdateEvent
     (update [_ state]
@@ -917,10 +916,10 @@
                 (->> files
                      (mapv #(cond-> %
                               (= file-id (:id %))
-                              (assoc :thumbnail-uri thumbnail-uri)))))]
+                              (assoc :thumbnail-id thumbnail-id)))))]
         (-> state
-            (d/update-in-when [:dashboard-files file-id] assoc :thumbnail-uri thumbnail-uri)
-            (d/update-in-when [:dashboard-recent-files file-id] assoc :thumbnail-uri thumbnail-uri)
+            (d/update-in-when [:dashboard-files file-id] assoc :thumbnail-id thumbnail-id)
+            (d/update-in-when [:dashboard-recent-files file-id] assoc :thumbnail-id thumbnail-id)
             (d/update-when :dashboard-search-result update-search-files))))))
 
 ;; --- EVENT: create-file
