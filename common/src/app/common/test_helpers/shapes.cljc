@@ -12,6 +12,7 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.types.color :as ctc]
    [app.common.types.colors-list :as ctcl]
+   [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
@@ -68,6 +69,19 @@
                (thf/get-page file page-label)
                (thf/current-page file))]
     (ctst/get-shape page id)))
+
+(defn update-shape
+  [file shape-label attr val & {:keys [page-label]}]
+  (let [page (if page-label
+               (thf/get-page file page-label)
+               (thf/current-page file))
+        shape (ctst/get-shape page (thi/id shape-label))]
+    (ctf/update-file-data
+     file
+     (fn [file-data]
+       (ctpl/update-page file-data
+                         (:id page)
+                         #(ctst/set-shape % (ctn/set-shape-attr shape attr val)))))))
 
 (defn sample-color
   [label & {:keys [] :as params}]

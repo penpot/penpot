@@ -202,6 +202,11 @@
   [group]
   (str/starts-with? (name group) "swap-slot-"))
 
+(defn normal-touched-groups
+  "Gets all touched groups that are not swap slots."
+  [shape]
+  (into #{} (remove swap-slot? (:touched shape))))
+
 (defn group->swap-slot
   [group]
   (uuid/uuid (subs (name group) 10)))
