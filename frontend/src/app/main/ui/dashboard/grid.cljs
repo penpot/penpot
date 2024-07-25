@@ -97,6 +97,7 @@
                 :loading "lazy"
                 :decoding "async"}]
          [:> loader* {:class (stl/css :grid-loader)
+                      :overlay true
                       :title (tr "labels.loading")}]))]))
 
 ;; --- Grid Item Library
@@ -116,6 +117,7 @@
   [:div {:class (stl/css :grid-item-th :library)}
    (if (nil? file)
      [:> loader* {:class (stl/css :grid-loader)
+                  :overlay true
                   :title (tr "labels.loading")}]
      (let [summary (:library-summary file)
            components (:components summary)

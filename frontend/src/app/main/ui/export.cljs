@@ -319,8 +319,7 @@
 
    [:div {:class (stl/css :file-name)}
     (if (:loading? file)
-      [:> loader*  {:width "16px"
-                    :height "24px"
+      [:> loader*  {:width 16
                     :title (tr "labels.loading")}]
       [:span {:class (stl/css :file-icon)}
        (cond (:export-success? file) i/tick

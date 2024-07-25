@@ -373,7 +373,5 @@ $thumbnail-default-height: $s-168; // Default width
 }
 
 .grid-loader {
-  width: calc(var(--th-width, #{$thumbnail-default-width}) * 0.25);
-  height: 100%;
-  align-self: center;
+  --icon-width: calc(var(--th-width, #{$thumbnail-default-width}) * 0.25);
 }

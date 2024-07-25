@@ -7,28 +7,38 @@ export default {
   title: "Product/Loader",
   component: Loader,
   args: {
-    title: "Loading",
+    title: "Loading…",
     overlay: false,
   },
-  parameters: {
-    controls: { exclude: ["theme", "style", "title", "overlay"] },
+  argTypes: {
+    width: { control: "number" },
+    height: { control: "number" },
+    overlay: { control: "boolean" },
+    children: { control: "text" },
   },
-  render: ({ children, ...args }) => <Loader {...args}>{children}</Loader>,
+  render: ({ ...args }) => <Loader {...args} />,
 };
 
 export const Default = {};
 
+export const WithContent = {
+  args: {
+    children: "Lorem ipsum",
+  },
+};
+
 export const Overlay = {
   args: {
     overlay: true,
-    style: { height: "100vh" },
+    children: "Lorem ipsum",
+  },
+  parameters: {
+    layout: "fullscreen",
   },
 };
 
 export const Inline = {
   args: {
-    children: "Loading...",
-    width: "16px",
-    height: "24px",
+    children: "Lorem ipsum",
   },
 };

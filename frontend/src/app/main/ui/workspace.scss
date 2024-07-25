@@ -21,9 +21,7 @@
 }
 
 .workspace-loader {
-  @include flexCenter;
   grid-area: viewport;
-  background-color: var(--loader-background);
 }
 
 .workspace-content {

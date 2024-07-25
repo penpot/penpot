@@ -41,9 +41,7 @@
 
 (mf/defc loading-placeholder
   []
-  [:> loader*  {:width "64px"
-                :height "64px"
+  [:> loader*  {:width 32
                 :title (tr "labels.loading")
-                :overlay true
                 :class (stl/css :placeholder-loader)}
-   [:div {:class (stl/css :placeholder-text)} (tr "dashboard.loading-files")]])
+   [:span {:class (stl/css :placeholder-text)} (tr "dashboard.loading-files")]])

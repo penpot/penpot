@@ -125,6 +125,7 @@
 (mf/defc workspace-loader
   []
   [:> loader*  {:title (tr "labels.loading")
+                :class (stl/css :workspace-loader)
                 :overlay true}])
 
 (mf/defc workspace-page

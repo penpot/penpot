@@ -268,8 +268,7 @@
 
      [:div {:class (stl/css :file-name)}
       (if loading?
-        [:> loader*  {:width "16px"
-                      :height "24px"
+        [:> loader*  {:width 16
                       :title (tr "labels.loading")}]
         [:div {:class (stl/css-case :file-icon true
                                     :icon-fill ready?)}
