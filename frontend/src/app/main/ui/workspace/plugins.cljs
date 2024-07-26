@@ -107,7 +107,8 @@
         handle-install-click
         (mf/use-callback
          (mf/deps plugins-state plugin-url)
-         (fn []
+         (fn [event]
+           (dom/prevent-default event)
            (reset! fetching-manifest? true)
            (->> (http/send! {:method :get
                              :uri plugin-url
@@ -160,7 +161,9 @@
       [:div {:class (stl/css :modal-title)} (tr "workspace.plugins.title")]
 
       [:div {:class (stl/css :modal-content)}
-       [:div {:class (stl/css :top-bar)}
+       [:form {:class (stl/css :top-bar)
+               :onSubmit handle-install-click}
+
         [:& search-bar {:on-change handle-url-input
                         :value plugin-url
                         :placeholder (tr "workspace.plugins.search-placeholder")
@@ -168,7 +171,7 @@
 
         [:button {:class (stl/css :primary-button)
                   :disabled @fetching-manifest?
-                  :on-click handle-install-click} (tr "workspace.plugins.install")]]
+                  :type "submit"} (tr "workspace.plugins.install")]]
 
        (when error?
          [:div {:class (stl/css-case :info true :error error?)}
