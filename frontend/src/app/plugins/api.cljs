@@ -30,6 +30,7 @@
    [app.plugins.file :as file]
    [app.plugins.fonts :as fonts]
    [app.plugins.format :as format]
+   [app.plugins.history :as history]
    [app.plugins.library :as library]
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
@@ -394,4 +395,5 @@
    {:name "currentUser" :get #(.getCurrentUser ^js %)}
    {:name "activeUsers" :get #(.getActiveUsers ^js %)}
    {:name "fonts" :get (fn [_] (fonts/fonts-subcontext plugin-id))}
-   {:name "library" :get (fn [_] (library/library-subcontext plugin-id))}))
+   {:name "library" :get (fn [_] (library/library-subcontext plugin-id))}
+   {:name "history" :get (fn [_] (history/history-subcontext plugin-id))}))
