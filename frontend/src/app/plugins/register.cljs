@@ -10,7 +10,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [app.util.storage :refer [storage]]))
 
 ;; Stores the installed plugins information
 (defonce ^:private registry (atom {}))
@@ -57,32 +58,22 @@
      :icon icon
      :permissions (into #{} (map str) permissions)}))
 
-(defn format-plugin-data
-  "Format into a JS object the plugin data. This will be used to be stored in the local storage."
-  [{:keys [plugin-id name description host code icon permissions]}]
-  #js {:plugin-id plugin-id
-       :name name
-       :description description
-       :host host
-       :code code
-       :icon icon
-       :permissions (apply array permissions)})
-
-(defn parse-plugin-data
-  "Parsers the JS plugin data into a CLJS data structure. This will be used primarily when the local storage
-  data is retrieved"
-  [^js data]
-  {:plugin-id (obj/get data "plugin-id")
-   :name (obj/get data "name")
-   :description (obj/get data "description")
-   :host (obj/get data "host")
-   :code (obj/get data "code")
-   :icon (obj/get data "icon")
-   :permissions (into #{} (obj/get data "permissions"))})
-
-(defn load-from-store
+;; FIXME: LEGACY version of the load from store
+;; can be removed before deploying plugins to production
+;; Needs to be preserved for the beta users
+(defn legacy-load-from-store
   []
-  (let [ls (.-localStorage js/window)
+  (let [parse-plugin-data
+        (fn [^js data]
+          {:plugin-id (obj/get data "plugin-id")
+           :name (obj/get data "name")
+           :description (obj/get data "description")
+           :host (obj/get data "host")
+           :code (obj/get data "code")
+           :icon (obj/get data "icon")
+           :permissions (into #{} (obj/get data "permissions"))})
+
+        ls (.-localStorage js/window)
         plugins-val (.getItem ls "plugins")]
     (when plugins-val
       (let [stored (->> (.parse js/JSON plugins-val)
@@ -93,12 +84,14 @@
 
 (defn save-to-store
   []
-  (->> (:ids @registry)
-       (map #(dm/get-in @registry [:data %]))
-       (map format-plugin-data)
-       (apply array)
-       (.stringify js/JSON)
-       (.setItem (.-localStorage js/window) "plugins")))
+  (swap! storage assoc :plugins @registry))
+
+(defn load-from-store
+  []
+  (if (:plugins @storage)
+    (reset! registry (:plugins @storage))
+    (do (legacy-load-from-store)
+        (save-to-store))))
 
 (defn init
   []

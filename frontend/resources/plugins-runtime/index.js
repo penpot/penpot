@@ -56,7 +56,7 @@ const k = globalThis, {
   preventExtensions: Xs,
   setPrototypeOf: xo,
   values: ko,
-  fromEntries: ht
+  fromEntries: mt
 } = _n, {
   species: Vr,
   toStringTag: qe,
@@ -76,7 +76,7 @@ const k = globalThis, {
   return n;
 }, {
   apply: ne,
-  construct: hr,
+  construct: mr,
   get: oa,
   getOwnPropertyDescriptor: sa,
   has: Ao,
@@ -94,9 +94,9 @@ const k = globalThis, {
 ), Ro = (
   /** @type {any} */
   P(_e.flatMap)
-), gr = P(_e.pop), X = P(_e.push), la = P(_e.slice), ua = P(_e.some), Oo = P(_e.sort), da = P(_e[rr]), $e = P(Nt.set), Ue = P(Nt.get), Lr = P(Nt.has), fa = P(Nt.delete), pa = P(Nt.entries), ma = P(Nt[rr]), Sn = P(nr.add);
+), gr = P(_e.pop), X = P(_e.push), la = P(_e.slice), ua = P(_e.some), Oo = P(_e.sort), da = P(_e[rr]), $e = P(Nt.set), Ue = P(Nt.get), Lr = P(Nt.has), fa = P(Nt.delete), pa = P(Nt.entries), ha = P(Nt[rr]), Sn = P(nr.add);
 P(nr.delete);
-const Vn = P(nr.forEach), En = P(nr.has), ha = P(nr[rr]), xn = P(Rr.test), kn = P(Rr.exec), ga = P(Rr[Po]), Mo = P(Le.endsWith), Lo = P(Le.includes), ya = P(Le.indexOf);
+const Vn = P(nr.forEach), En = P(nr.has), ma = P(nr[rr]), xn = P(Rr.test), kn = P(Rr.exec), ga = P(Rr[Po]), Mo = P(Le.endsWith), Lo = P(Le.includes), ya = P(Le.indexOf);
 P(Le.match);
 const yr = P(No.next), Fo = P(No.throw), vr = (
   /** @type {any} */
@@ -142,10 +142,10 @@ const { freeze: at } = Object, { apply: Ta } = Reflect, Cn = (t) => (e, ...r) =>
       l
     )} must be a string.`;
     let d = l;
-    const f = t.process || void 0, m = typeof f == "object" && f.env || void 0;
-    if (typeof m == "object" && c in m) {
+    const f = t.process || void 0, h = typeof f == "object" && f.env || void 0;
+    if (typeof h == "object" && c in h) {
       e || Aa(r, c);
-      const p = m[c];
+      const p = h[c];
       typeof p == "string" || ir`Environment option named ${nt(
         c
       )}, if present, must have a corresponding string value, got ${nt(
@@ -204,7 +204,7 @@ const Bo = (t, e = void 0) => {
           return a;
         Oo(i);
         const l = se(i, (u) => [u, a[u]]);
-        return ht(l);
+        return mt(l);
       }
       case "function":
         return `[Function ${a.name || "<anon>"}]`;
@@ -264,13 +264,13 @@ const { isSafeInteger: Ca } = Number, { freeze: vt } = Object, { toStringTag: $a
   const c = (d, f) => {
     if (t < 1)
       return u;
-    let m = o(d);
-    if (m === void 0 && (m = qn(void 0), Kn(n, m)), !m.data)
-      for (r += 1, m.data = /* @__PURE__ */ new WeakMap(), e.set(d, m); r > t; ) {
+    let h = o(d);
+    if (h === void 0 && (h = qn(void 0), Kn(n, h)), !h.data)
+      for (r += 1, h.data = /* @__PURE__ */ new WeakMap(), e.set(d, h); r > t; ) {
         const p = n.prev;
         Kr(p), p.data = void 0, r -= 1;
       }
-    return m.data.set(d, f), u;
+    return h.data.set(d, f), u;
   };
   vt(c);
   const l = (d) => {
@@ -366,7 +366,7 @@ const Yo = ({ template: t, args: e }) => {
     X(r, o, i);
   }
   return r[r.length - 1] === "" && gr(r), r;
-}, mr = new Me();
+}, hr = new Me();
 let nn = 0;
 const Yn = new Me(), Jo = (t, e = t.name) => {
   let r = L(Yn, t);
@@ -418,7 +418,7 @@ const Yn = new Me(), Jo = (t, e = t.name) => {
     writable: !0,
     enumerable: !1,
     configurable: !0
-  })), ie(mr, u, Yo(i)), r !== void 0 && Jo(u, r), a && La(u), u;
+  })), ie(hr, u, Yo(i)), r !== void 0 && Jo(u, r), a && La(u), u;
 };
 y(on);
 const { addLogArgs: Fa, takeLogArgsArray: Da } = Vo(), sn = new Me(), $n = (t, e) => {
@@ -446,10 +446,10 @@ const Ua = (t) => {
   resetErrorTagNum: () => {
     nn = 0;
   },
-  getMessageLogArgs: (t) => L(mr, t),
+  getMessageLogArgs: (t) => L(hr, t),
   takeMessageLogArgs: (t) => {
-    const e = L(mr, t);
-    return ba(mr, t), e;
+    const e = L(hr, t);
+    return ba(hr, t), e;
   },
   takeNoteLogArgsArray: (t, e) => {
     const r = Da(t);
@@ -462,28 +462,28 @@ const Ua = (t) => {
 };
 y(br);
 const jr = (t = void 0, e = !1) => {
-  const r = e ? Ko : ft, n = r`Check failed`, o = (f = n, m = void 0, p = void 0) => {
-    const h = on(f, m, p);
-    throw t !== void 0 && t(h), h;
+  const r = e ? Ko : ft, n = r`Check failed`, o = (f = n, h = void 0, p = void 0) => {
+    const m = on(f, h, p);
+    throw t !== void 0 && t(m), m;
   };
   y(o);
-  const a = (f, ...m) => o(r(f, ...m));
-  function i(f, m = void 0, p = void 0, h = void 0) {
-    f || o(m, p, h);
+  const a = (f, ...h) => o(r(f, ...h));
+  function i(f, h = void 0, p = void 0, m = void 0) {
+    f || o(h, p, m);
   }
-  const c = (f, m, p = void 0, h = void 0, _ = void 0) => {
-    Nr(f, m) || o(
-      p || r`Expected ${f} is same as ${m}`,
-      h || Js,
+  const c = (f, h, p = void 0, m = void 0, _ = void 0) => {
+    Nr(f, h) || o(
+      p || r`Expected ${f} is same as ${h}`,
+      m || Js,
       _
     );
   };
   y(c);
-  const l = (f, m, p) => {
-    if (typeof f !== m) {
-      if (typeof m == "string" || a`${Je(m)} must be a string`, p === void 0) {
-        const h = _r(m);
-        p = r`${f} must be ${rn(h)}`;
+  const l = (f, h, p) => {
+    if (typeof f !== h) {
+      if (typeof h == "string" || a`${Je(h)} must be a string`, p === void 0) {
+        const m = _r(h);
+        p = r`${f} must be ${rn(m)}`;
       }
       o(p, v);
     }
@@ -494,7 +494,7 @@ const jr = (t = void 0, e = !1) => {
     fail: o,
     equal: c,
     typeof: l,
-    string: (f, m = void 0) => l(f, "string", m),
+    string: (f, h = void 0) => l(f, "string", h),
     note: $n,
     details: r,
     Fail: a,
@@ -545,13 +545,13 @@ const ja = (t) => ne(Qo, t, []) !== void 0, Za = (t) => {
       }
       const a = (d) => {
         ja(d) ? za(d) : y(d);
-        const f = Ze(d), m = j(d);
-        o(m), ut(De(f), (p) => {
-          const h = f[
+        const f = Ze(d), h = j(d);
+        o(h), ut(De(f), (p) => {
+          const m = f[
             /** @type {string} */
             p
           ];
-          oe(h, "value") ? o(h.value) : (o(h.get), o(h.set));
+          oe(m, "value") ? o(m.value) : (o(m.get), o(m.set));
         });
       }, i = qr === void 0 && ka === void 0 ? (
         // On platforms without v8's error own stack accessor problem,
@@ -1967,89 +1967,89 @@ const ss = () => {
 };
 function Ka(t, e) {
   let r = !1;
-  const n = (m, ...p) => (r || (console.groupCollapsed("Removing unpermitted intrinsics"), r = !0), console[m](...p)), o = ["undefined", "boolean", "number", "string", "symbol"], a = new Pe(
+  const n = (h, ...p) => (r || (console.groupCollapsed("Removing unpermitted intrinsics"), r = !0), console[h](...p)), o = ["undefined", "boolean", "number", "string", "symbol"], a = new Pe(
     St ? se(
       Ke(
         re(wr["%SharedSymbol%"]),
-        ([m, p]) => p === "symbol" && typeof St[m] == "symbol"
+        ([h, p]) => p === "symbol" && typeof St[h] == "symbol"
       ),
-      ([m]) => [St[m], `@@${m}`]
+      ([h]) => [St[h], `@@${h}`]
     ) : []
   );
-  function i(m, p) {
+  function i(h, p) {
     if (typeof p == "string")
       return p;
-    const h = Ue(a, p);
+    const m = Ue(a, p);
     if (typeof p == "symbol") {
-      if (h)
-        return h;
+      if (m)
+        return m;
       {
         const _ = ea(p);
         return _ !== void 0 ? `RegisteredSymbol(${_})` : `Unique${pe(p)}`;
       }
     }
-    throw v(`Unexpected property name type ${m} ${p}`);
+    throw v(`Unexpected property name type ${h} ${p}`);
   }
-  function c(m, p, h) {
+  function c(h, p, m) {
     if (!Ye(p))
-      throw v(`Object expected: ${m}, ${p}, ${h}`);
+      throw v(`Object expected: ${h}, ${p}, ${m}`);
     const _ = j(p);
-    if (!(_ === null && h === null)) {
-      if (h !== void 0 && typeof h != "string")
-        throw v(`Malformed whitelist permit ${m}.__proto__`);
-      if (_ !== t[h || "%ObjectPrototype%"])
-        throw v(`Unexpected intrinsic ${m}.__proto__ at ${h}`);
+    if (!(_ === null && m === null)) {
+      if (m !== void 0 && typeof m != "string")
+        throw v(`Malformed whitelist permit ${h}.__proto__`);
+      if (_ !== t[m || "%ObjectPrototype%"])
+        throw v(`Unexpected intrinsic ${h}.__proto__ at ${m}`);
     }
   }
-  function l(m, p, h, _) {
+  function l(h, p, m, _) {
     if (typeof _ == "object")
-      return f(m, p, _), !0;
+      return f(h, p, _), !0;
     if (_ === !1)
       return !1;
     if (typeof _ == "string") {
-      if (h === "prototype" || h === "constructor") {
+      if (m === "prototype" || m === "constructor") {
         if (oe(t, _)) {
           if (p !== t[_])
-            throw v(`Does not match whitelist ${m}`);
+            throw v(`Does not match whitelist ${h}`);
           return !0;
         }
       } else if (Mr(o, _)) {
         if (typeof p !== _)
           throw v(
-            `At ${m} expected ${_} not ${typeof p}`
+            `At ${h} expected ${_} not ${typeof p}`
           );
         return !0;
       }
     }
-    throw v(`Unexpected whitelist permit ${_} at ${m}`);
+    throw v(`Unexpected whitelist permit ${_} at ${h}`);
   }
-  function u(m, p, h, _) {
-    const S = J(p, h);
+  function u(h, p, m, _) {
+    const S = J(p, m);
     if (!S)
-      throw v(`Property ${h} not found at ${m}`);
+      throw v(`Property ${m} not found at ${h}`);
     if (oe(S, "value")) {
       if (Qn(_))
-        throw v(`Accessor expected at ${m}`);
-      return l(m, S.value, h, _);
+        throw v(`Accessor expected at ${h}`);
+      return l(h, S.value, m, _);
     }
     if (!Qn(_))
-      throw v(`Accessor not expected at ${m}`);
-    return l(`${m}<get>`, S.get, h, _.get) && l(`${m}<set>`, S.set, h, _.set);
+      throw v(`Accessor not expected at ${h}`);
+    return l(`${h}<get>`, S.get, m, _.get) && l(`${h}<set>`, S.set, m, _.set);
   }
-  function d(m, p, h) {
-    const _ = h === "__proto__" ? "--proto--" : h;
+  function d(h, p, m) {
+    const _ = m === "__proto__" ? "--proto--" : m;
     if (oe(p, _))
       return p[_];
-    if (typeof m == "function" && oe(an, _))
+    if (typeof h == "function" && oe(an, _))
       return an[_];
   }
-  function f(m, p, h) {
+  function f(h, p, m) {
     if (p == null)
       return;
-    const _ = h["[[Proto]]"];
-    c(m, p, _), typeof p == "function" && e(p);
+    const _ = m["[[Proto]]"];
+    c(h, p, _), typeof p == "function" && e(p);
     for (const S of De(p)) {
-      const T = i(m, S), N = `${m}.${T}`, x = d(p, h, T);
+      const T = i(h, S), N = `${h}.${T}`, x = d(p, m, T);
       if (!x || !u(N, p, S, x)) {
         x !== !1 && n("warn", `Removing ${N}`);
         try {
@@ -2138,7 +2138,7 @@ function Ja(t = "safe") {
   }, o = ({ powers: c = "none" } = {}) => {
     let l;
     return c === "original" ? l = function(...d) {
-      return new.target === void 0 ? ne(e, void 0, d) : hr(e, d, new.target);
+      return new.target === void 0 ? ne(e, void 0, d) : mr(e, d, new.target);
     } : l = function(...d) {
       if (new.target === void 0)
         throw v(
@@ -2148,7 +2148,7 @@ function Ja(t = "safe") {
         throw v(
           "secure mode Calling new %SharedDate%() with no arguments throws"
         );
-      return hr(e, d, new.target);
+      return mr(e, d, new.target);
     }, F(l, {
       length: { value: 7 },
       prototype: {
@@ -2222,7 +2222,7 @@ function Qa(t = "safe") {
     throw v(`unrecognized regExpTaming ${t}`);
   const e = We.prototype, r = (a = {}) => {
     const i = function(...l) {
-      return new.target === void 0 ? We(...l) : hr(We, l, new.target);
+      return new.target === void 0 ? We(...l) : mr(We, l, new.target);
     };
     if (F(i, {
       length: { value: 2 },
@@ -2425,9 +2425,9 @@ const ei = {
 };
 function ri(t, e, r = []) {
   const n = new Ct(r);
-  function o(u, d, f, m) {
-    if ("value" in m && m.configurable) {
-      const { value: p } = m, h = En(n, f), { get: _, set: S } = J(
+  function o(u, d, f, h) {
+    if ("value" in h && h.configurable) {
+      const { value: p } = h, m = En(n, f), { get: _, set: S } = J(
         {
           get [f]() {
             return p;
@@ -2439,7 +2439,7 @@ function ri(t, e, r = []) {
                   f
                 )}' of '${u}'`
               );
-            oe(this, f) ? this[f] = T : (h && console.error(v(`Override property ${f}`)), M(this, f, {
+            oe(this, f) ? this[f] = T : (m && console.error(v(`Override property ${f}`)), M(this, f, {
               value: T,
               writable: !0,
               enumerable: !0,
@@ -2457,33 +2457,33 @@ function ri(t, e, r = []) {
       }), M(d, f, {
         get: _,
         set: S,
-        enumerable: m.enumerable,
-        configurable: m.configurable
+        enumerable: h.enumerable,
+        configurable: h.configurable
       });
     }
   }
   function a(u, d, f) {
-    const m = J(d, f);
-    m && o(u, d, f, m);
+    const h = J(d, f);
+    h && o(u, d, f, h);
   }
   function i(u, d) {
     const f = Ze(d);
-    f && ut(De(f), (m) => o(u, d, m, f[m]));
+    f && ut(De(f), (h) => o(u, d, h, f[h]));
   }
   function c(u, d, f) {
-    for (const m of De(f)) {
-      const p = J(d, m);
+    for (const h of De(f)) {
+      const p = J(d, h);
       if (!p || p.get || p.set)
         continue;
-      const h = `${u}.${pe(m)}`, _ = f[m];
+      const m = `${u}.${pe(h)}`, _ = f[h];
       if (_ === !0)
-        a(h, d, m);
+        a(m, d, h);
       else if (_ === "*")
-        i(h, p.value);
+        i(m, p.value);
       else if (Ye(_))
-        c(h, p.value, _);
+        c(m, p.value, _);
       else
-        throw v(`Unexpected override enablement plan ${h}`);
+        throw v(`Unexpected override enablement plan ${m}`);
     }
   }
   let l;
@@ -2714,7 +2714,7 @@ ${o}
   );
 };
 y(ps);
-const { Fail: pi } = z, mi = () => {
+const { Fail: pi } = z, hi = () => {
   const t = Z(null), e = y({
     eval: {
       get() {
@@ -2733,12 +2733,12 @@ const { Fail: pi } = z, mi = () => {
     revoked: null
   };
   return r;
-}, ro = "\\s*[@#]\\s*([a-zA-Z][a-zA-Z0-9]*)\\s*=\\s*([^\\s\\*]*)", hi = new We(
+}, ro = "\\s*[@#]\\s*([a-zA-Z][a-zA-Z0-9]*)\\s*=\\s*([^\\s\\*]*)", mi = new We(
   `(?:\\s*//${ro}|/\\*${ro}\\s*\\*/)\\s*$`
 ), Nn = (t) => {
   let e = "<unknown>";
   for (; t.length > 0; ) {
-    const r = kn(hi, t);
+    const r = kn(mi, t);
     if (r === null)
       break;
     t = Pn(t, 0, t.length - r[0].length), r[3] === "sourceURL" ? e = r[4] : r[1] === "sourceURL" && (e = r[2]);
@@ -2754,15 +2754,15 @@ function Rn(t, e) {
   return Tn(Pn(t, 0, r), `
 `).length + n;
 }
-const ms = new We("(?:<!--|-->)", "g"), hs = (t) => {
-  const e = Rn(t, ms);
+const hs = new We("(?:<!--|-->)", "g"), ms = (t) => {
+  const e = Rn(t, hs);
   if (e < 0)
     return t;
   const r = Nn(t);
   throw tr(
     `Possible HTML comment rejected at ${r}:${e}. (SES_HTML_COMMENT_REJECTED)`
   );
-}, gs = (t) => vr(t, ms, (r) => r[0] === "<" ? "< ! --" : "-- >"), ys = new We(
+}, gs = (t) => vr(t, hs, (r) => r[0] === "<" ? "< ! --" : "-- >"), ys = new We(
   "(^|[^.]|\\.\\.\\.)\\bimport(\\s*(?:\\(|/[/*]))",
   "g"
 ), vs = (t) => {
@@ -2784,13 +2784,13 @@ const ms = new We("(?:<!--|-->)", "g"), hs = (t) => {
   throw tr(
     `Possible direct eval expression rejected at ${r}:${e}. (SES_EVAL_REJECTED)`
   );
-}, ws = (t) => (t = hs(t), t = vs(t), t), Ss = (t, e) => {
+}, ws = (t) => (t = ms(t), t = vs(t), t), Ss = (t, e) => {
   for (const r of e)
     t = r(t);
   return t;
 };
 y({
-  rejectHtmlComments: y(hs),
+  rejectHtmlComments: y(ms),
   evadeHtmlCommentTest: y(gs),
   rejectImportExpressions: y(vs),
   evadeImportExpressionTest: y(_s),
@@ -2924,7 +2924,7 @@ const bi = (t) => {
   globalTransforms: r = [],
   sloppyGlobalsMode: n = !1
 }) => {
-  const o = n ? ps(t) : fi, a = mi(), { evalScope: i } = a, c = y({
+  const o = n ? ps(t) : fi, a = hi(), { evalScope: i } = a, c = y({
     evalScope: i,
     moduleLexicals: e,
     globalObject: t,
@@ -2934,21 +2934,21 @@ const bi = (t) => {
   const u = () => {
     l || (l = bi(c));
   };
-  return { safeEvaluate: (f, m) => {
-    const { localTransforms: p = [] } = m || {};
+  return { safeEvaluate: (f, h) => {
+    const { localTransforms: p = [] } = h || {};
     u(), f = Ss(f, [
       ...p,
       ...r,
       ws
     ]);
-    let h;
+    let m;
     try {
       return a.allowNextEvalToBeUnsafe(), ne(l, t, [f]);
     } catch (_) {
-      throw h = _, _;
+      throw m = _, _;
     } finally {
       const _ = "eval" in i;
-      delete i.eval, _ && (a.revoked = { err: h }, wi`handler did not reset allowNextEvalToBeUnsafe ${h}`);
+      delete i.eval, _ && (a.revoked = { err: m }, wi`handler did not reset allowNextEvalToBeUnsafe ${m}`);
     }
   } };
 }, Si = ") { [native code] }";
@@ -3046,7 +3046,7 @@ const Mn = y([
 ]), xi = (t, { shouldResetForDebugging: e = !1 } = {}) => {
   e && t.resetErrorTagNum();
   let r = [];
-  const n = ht(
+  const n = mt(
     se(xs, ([i, c]) => {
       const l = (...u) => {
         X(r, [i, ...u]);
@@ -3119,7 +3119,7 @@ const Fn = (t, e) => {
     for (const K of G)
       c(S, T, it.NOTE, K, x);
     l(S, x, N);
-  }, m = se(Mn, ([S, T]) => {
+  }, h = se(Mn, ([S, T]) => {
     const N = (...x) => {
       const D = [], G = i(x, D);
       t[S](...G), l(S, D);
@@ -3128,12 +3128,12 @@ const Fn = (t, e) => {
   }), p = Ke(
     Ln,
     ([S, T]) => S in t
-  ), h = se(p, ([S, T]) => {
+  ), m = se(p, ([S, T]) => {
     const N = (...x) => {
       t[S](...x);
     };
     return M(N, "name", { value: S }), [S, y(N)];
-  }), _ = ht([...m, ...h]);
+  }), _ = mt([...h, ...m]);
   return (
     /** @type {VirtualConsole} */
     y(_)
@@ -3149,7 +3149,7 @@ const ki = (t, e, r) => {
     (u) => typeof u == "string" && Lo(u, `
 `) ? ki(u, `
 `, n) : [u]
-  ), l = [...n, ...l]), r(...l)), a = (l, u) => ({ [l]: (...d) => u(...d) })[l], i = ht([
+  ), l = [...n, ...l]), r(...l)), a = (l, u) => ({ [l]: (...d) => u(...d) })[l], i = mt([
     ...se(Mn, ([l]) => [
       l,
       a(l, o)
@@ -3178,7 +3178,7 @@ const Pi = (t, e, r = void 0) => {
     ([i, c]) => i in t
   ), o = se(n, ([i, c]) => [i, y((...u) => {
     (c === void 0 || e.canLog(c)) && t[i](...u);
-  })]), a = ht(o);
+  })]), a = mt(o);
   return (
     /** @type {VirtualConsole} */
     y(a)
@@ -3204,8 +3204,8 @@ const ao = (t) => {
     },
     unhandledRejectionHandler: (d, f) => {
       e += 1;
-      const m = e;
-      $e(r, m, d), ie(o, f, m), Ea(i, f, m, f);
+      const h = e;
+      $e(r, h, d), ie(o, f, h), Ea(i, f, h, f);
     },
     processTerminationHandler: () => {
       for (const [d, f] of pa(r))
@@ -3300,7 +3300,7 @@ const ao = (t) => {
   "toString"
   // TODO replace to use only whitelisted info
 ], Ii = (t) => {
-  const r = ht(se(Ai, (n) => {
+  const r = mt(se(Ai, (n) => {
     const o = t[n];
     return [n, () => ne(o, t, [])];
   }));
@@ -3329,11 +3329,11 @@ const ao = (t) => {
   return t;
 }, Zi = (t, e, r, n) => {
   const o = t.captureStackTrace, a = (p) => n === "verbose" ? !0 : Li(p.getFileName()), i = (p) => {
-    let h = `${p}`;
-    return n === "concise" && (h = ji(h)), `
-  at ${h}`;
-  }, c = (p, h) => Rt(
-    se(Ke(h, a), i),
+    let m = `${p}`;
+    return n === "concise" && (m = ji(m)), `
+  at ${m}`;
+  }, c = (p, m) => Rt(
+    se(Ke(m, a), i),
     ""
   ), l = new Me(), u = {
     // The optional `optFn` argument is for cutting off the bottom of
@@ -3341,9 +3341,9 @@ const ao = (t) => {
     // call to that function. Since this isn't the "real" captureStackTrace
     // but instead calls the real one, if no other cutoff is provided,
     // we cut this one off.
-    captureStackTrace(p, h = u.captureStackTrace) {
+    captureStackTrace(p, m = u.captureStackTrace) {
       if (typeof o == "function") {
-        ne(o, t, [p, h]);
+        ne(o, t, [p, m]);
         return;
       }
       Io(p, "stack", "");
@@ -3353,30 +3353,30 @@ const ao = (t) => {
     // string associated with an error.
     // See https://tc39.es/proposal-error-stacks/
     getStackString(p) {
-      let h = L(l, p);
-      if (h === void 0 && (p.stack, h = L(l, p), h || (h = { stackString: "" }, ie(l, p, h))), h.stackString !== void 0)
-        return h.stackString;
-      const _ = c(p, h.callSites);
+      let m = L(l, p);
+      if (m === void 0 && (p.stack, m = L(l, p), m || (m = { stackString: "" }, ie(l, p, m))), m.stackString !== void 0)
+        return m.stackString;
+      const _ = c(p, m.callSites);
       return ie(l, p, { stackString: _ }), _;
     },
-    prepareStackTrace(p, h) {
+    prepareStackTrace(p, m) {
       if (r === "unsafe") {
-        const _ = c(p, h);
+        const _ = c(p, m);
         return ie(l, p, { stackString: _ }), `${p}${_}`;
       } else
-        return ie(l, p, { callSites: h }), "";
+        return ie(l, p, { callSites: m }), "";
     }
   }, d = u.prepareStackTrace;
   t.prepareStackTrace = d;
-  const f = new $t([d]), m = (p) => {
+  const f = new $t([d]), h = (p) => {
     if (or(f, p))
       return p;
-    const h = {
+    const m = {
       prepareStackTrace(_, S) {
         return ie(l, _, { callSites: S }), p(_, Ci(S));
       }
     };
-    return Fr(f, h.prepareStackTrace), h.prepareStackTrace;
+    return Fr(f, m.prepareStackTrace), m.prepareStackTrace;
   };
   return F(e, {
     captureStackTrace: {
@@ -3391,8 +3391,8 @@ const ao = (t) => {
       },
       set(p) {
         if (typeof p == "function") {
-          const h = m(p);
-          t.prepareStackTrace = h;
+          const m = h(p);
+          t.prepareStackTrace = m;
         } else
           t.prepareStackTrace = d;
       },
@@ -3411,9 +3411,9 @@ function Gi(t = "safe", e = "concise") {
   if (e !== "concise" && e !== "verbose")
     throw v(`unrecognized stackFiltering ${e}`);
   const r = ue.prototype, n = typeof ue.captureStackTrace == "function" ? "v8" : "unknown", { captureStackTrace: o } = ue, a = (u = {}) => {
-    const d = function(...m) {
+    const d = function(...h) {
       let p;
-      return new.target === void 0 ? p = ne(ue, this, m) : p = hr(ue, m, new.target), n === "v8" && ne(o, ue, [p, d]), p;
+      return new.target === void 0 ? p = ne(ue, this, h) : p = mr(ue, h, new.target), n === "v8" && ne(o, ue, [p, d]), p;
     };
     return F(d, {
       length: { value: 1 },
@@ -3563,7 +3563,7 @@ const qi = (t, e) => y({
     o.imports,
     u,
     n
-  ), m = y({
+  ), h = y({
     compartment: r,
     staticModuleRecord: o,
     moduleSpecifier: n,
@@ -3580,21 +3580,21 @@ const qi = (t, e) => y({
       i,
       c
     ]);
-  return $e(d, n, m), m;
+  return $e(d, n, h), h;
 };
 function* Yi(t, e, r, n, o, a, i) {
   const { importHook: c, importNowHook: l, moduleMap: u, moduleMapHook: d, moduleRecords: f } = L(t, r);
-  let m = u[n];
-  if (m === void 0 && d !== void 0 && (m = d(n)), typeof m == "string")
+  let h = u[n];
+  if (h === void 0 && d !== void 0 && (h = d(n)), typeof h == "string")
     z.fail(
       un`Cannot map module ${xe(n)} to ${xe(
-        m
+        h
       )} in parent compartment, not yet implemented`,
       v
     );
-  else if (m !== void 0) {
-    const h = L(e, m);
-    h === void 0 && z.fail(
+  else if (h !== void 0) {
+    const m = L(e, h);
+    m === void 0 && z.fail(
       un`Cannot map module ${xe(
         n
       )} because the value is not a module exports namespace, or is from another realm`,
@@ -3603,8 +3603,8 @@ function* Yi(t, e, r, n, o, a, i) {
     const _ = yield Ut(
       t,
       e,
-      h.compartment,
-      h.specifier,
+      m.compartment,
+      m.specifier,
       o,
       a,
       i
@@ -3626,14 +3626,14 @@ function* Yi(t, e, r, n, o, a, i) {
           "Cannot redirect to an explicit record with a specified compartment"
         );
       const {
-        compartment: h = r,
+        compartment: m = r,
         specifier: _ = n,
         record: S,
         importMeta: T
       } = p, N = uo(
         t,
         e,
-        h,
+        m,
         _,
         S,
         o,
@@ -3648,7 +3648,7 @@ function* Yi(t, e, r, n, o, a, i) {
         throw v(
           "Cannot redirect to an implicit record with a specified importMeta"
         );
-      const h = yield Ut(
+      const m = yield Ut(
         t,
         e,
         p.compartment,
@@ -3657,7 +3657,7 @@ function* Yi(t, e, r, n, o, a, i) {
         a,
         i
       );
-      return $e(f, n, h), h;
+      return $e(f, n, m), m;
     }
     throw v("Unnexpected RedirectStaticModuleInterface record shape");
   }
@@ -3933,19 +3933,19 @@ const Xi = (t, e) => e, Qi = (t, e) => t, fo = async (t, e, r, n) => {
         `SES third-party static module record "exports" property must be an array of strings for module ${o}`
       );
     ut(e.exports, (f) => {
-      let m = c[f];
+      let h = c[f];
       const p = [];
       M(c, f, {
-        get: () => m,
+        get: () => h,
         set: (S) => {
-          m = S;
+          h = S;
           for (const T of p)
             T(S);
         },
         enumerable: !0,
         configurable: !1
       }), u[f] = (S) => {
-        X(p, S), S(m);
+        X(p, S), S(h);
       };
     }), u["*"] = (f) => {
       f(c);
@@ -3985,18 +3985,18 @@ const Xi = (t, e) => e, Qi = (t, e) => t, fo = async (t, e, r, n) => {
     __syncModuleProgram__: u,
     __fixedExportMap__: d = {},
     __liveExportMap__: f = {},
-    __reexportMap__: m = {},
+    __reexportMap__: h = {},
     __needsImportMeta__: p = !1,
-    __syncModuleFunctor__: h
+    __syncModuleFunctor__: m
   } = i, _ = L(t, o), { __shimTransforms__: S, importMetaHook: T } = _, { exportsProxy: N, exportsTarget: x, activate: D } = Dn(
     o,
     _,
     e,
     a
-  ), G = Z(null), B = Z(null), K = Z(null), ze = Z(null), me = Z(null);
-  c && $r(me, c), p && T && T(a, me);
+  ), G = Z(null), B = Z(null), K = Z(null), ze = Z(null), he = Z(null);
+  c && $r(he, c), p && T && T(a, he);
   const Ge = Z(null), rt = Z(null);
-  ut(re(d), ([he, [H]]) => {
+  ut(re(d), ([me, [H]]) => {
     let V = Ge[H];
     if (!V) {
       let ee, te = !0, ce = [];
@@ -4023,22 +4023,22 @@ const Xi = (t, e) => e, Qi = (t, e) => t, fo = async (t, e, r, n) => {
         }
       }, Ge[H] = V, K[H] = be;
     }
-    G[he] = {
+    G[me] = {
       get: V.get,
       set: void 0,
       enumerable: !0,
       configurable: !1
-    }, rt[he] = V.notify;
+    }, rt[me] = V.notify;
   }), ut(
     re(f),
-    ([he, [H, V]]) => {
+    ([me, [H, V]]) => {
       let ee = Ge[H];
       if (!ee) {
         let te, ce = !0;
         const Y = [], be = () => {
           if (ce)
             throw lt(
-              `binding ${cr(he)} not yet initialized`
+              `binding ${cr(me)} not yet initialized`
             );
           return te;
         }, gt = y((Se) => {
@@ -4064,22 +4064,22 @@ const Xi = (t, e) => e, Qi = (t, e) => t, fo = async (t, e, r, n) => {
           configurable: !1
         }), ze[H] = gt;
       }
-      G[he] = {
+      G[me] = {
         get: ee.get,
         set: void 0,
         enumerable: !0,
         configurable: !1
-      }, rt[he] = ee.notify;
+      }, rt[me] = ee.notify;
     }
   );
-  const Be = (he) => {
-    he(x);
+  const Be = (me) => {
+    me(x);
   };
   rt["*"] = Be;
-  function ar(he) {
+  function ar(me) {
     const H = Z(null);
     H.default = !1;
-    for (const [V, ee] of he) {
+    for (const [V, ee] of me) {
       const te = Ue(n, V);
       te.execute();
       const { notifiers: ce } = te;
@@ -4097,8 +4097,8 @@ const Xi = (t, e) => e, Qi = (t, e) => t, fo = async (t, e, r, n) => {
           ce
         ))
           H[Y] === void 0 ? H[Y] = be : H[Y] = !1;
-      if (m[V])
-        for (const [Y, be] of m[V])
+      if (h[V])
+        for (const [Y, be] of h[V])
           H[be] = ce[Y];
     }
     for (const [V, ee] of re(H))
@@ -4120,7 +4120,7 @@ const Xi = (t, e) => e, Qi = (t, e) => t, fo = async (t, e, r, n) => {
     ), y(x), D();
   }
   let Ot;
-  h !== void 0 ? Ot = h : Ot = Ts(_, u, {
+  m !== void 0 ? Ot = m : Ot = Ts(_, u, {
     globalObject: o.globalThis,
     transforms: S,
     __moduleShimLexicals__: B
@@ -4128,15 +4128,15 @@ const Xi = (t, e) => e, Qi = (t, e) => t, fo = async (t, e, r, n) => {
   let zn = !1, Gn;
   function Gs() {
     if (Ot) {
-      const he = Ot;
+      const me = Ot;
       Ot = null;
       try {
-        he(
+        me(
           y({
             imports: y(ar),
             onceVar: y(K),
             liveVar: y(ze),
-            importMeta: me
+            importMeta: he
           })
         );
       } catch (H) {
@@ -4228,13 +4228,13 @@ const uc = (t, e, r) => {
     );
   $e(c, o, u);
   for (const [d, f] of re(a)) {
-    const m = As(
+    const h = As(
       t,
       e,
       n,
       f
     );
-    $e(l, d, m);
+    $e(l, d, h);
   }
   return u;
 }, { quote: Xr } = z, bt = new Me(), Ce = new Me(), lr = (t) => {
@@ -4339,9 +4339,9 @@ const dn = (t, e, r) => {
       __shimTransforms__: u = [],
       resolveHook: d,
       importHook: f,
-      importNowHook: m,
+      importNowHook: h,
       moduleMapHook: p,
-      importMetaHook: h
+      importMetaHook: m
     } = i, _ = [...l, ...u], S = new Pe(), T = new Pe(), N = new Pe();
     for (const [G, B] of re(a || {})) {
       if (typeof B == "string")
@@ -4380,10 +4380,10 @@ const dn = (t, e, r) => {
       safeEvaluate: D,
       resolveHook: d,
       importHook: f,
-      importNowHook: m,
+      importNowHook: h,
       moduleMap: a,
       moduleMapHook: p,
-      importMetaHook: h,
+      importMetaHook: m,
       moduleRecords: S,
       __shimTransforms__: u,
       deferredExports: N,
@@ -4399,7 +4399,7 @@ function dc() {
   return arguments;
 }
 const fc = () => {
-  const t = ve.prototype.constructor, e = J(dc(), "callee"), r = e && e.get, n = _a(new pe()), o = j(n), a = Rr[Po] && ga(/./), i = a && j(a), c = da([]), l = j(c), u = j(Vs), d = ma(new Pe()), f = j(d), m = ha(new Ct()), p = j(m), h = j(l);
+  const t = ve.prototype.constructor, e = J(dc(), "callee"), r = e && e.get, n = _a(new pe()), o = j(n), a = Rr[Po] && ga(/./), i = a && j(a), c = da([]), l = j(c), u = j(Vs), d = ha(new Pe()), f = j(d), h = ma(new Ct()), p = j(h), m = j(l);
   function* _() {
   }
   const S = Qr(_), T = S.prototype;
@@ -4410,7 +4410,7 @@ const fc = () => {
   ), D = x.prototype, G = D.prototype, B = j(G);
   async function K() {
   }
-  const ze = Qr(K), me = {
+  const ze = Qr(K), he = {
     "%InertFunction%": t,
     "%ArrayIteratorPrototype%": l,
     "%InertAsyncFunction%": ze,
@@ -4420,7 +4420,7 @@ const fc = () => {
     "%AsyncIteratorPrototype%": B,
     "%Generator%": T,
     "%InertGeneratorFunction%": S,
-    "%IteratorPrototype%": h,
+    "%IteratorPrototype%": m,
     "%MapIteratorPrototype%": f,
     "%RegExpStringIteratorPrototype%": i,
     "%SetIteratorPrototype%": p,
@@ -4429,21 +4429,21 @@ const fc = () => {
     "%TypedArray%": u,
     "%InertCompartment%": Un
   };
-  return k.Iterator && (me["%IteratorHelperPrototype%"] = j(
+  return k.Iterator && (he["%IteratorHelperPrototype%"] = j(
     // eslint-disable-next-line @endo/no-polymorphic-call
     k.Iterator.from([]).take(0)
-  ), me["%WrapForValidIteratorPrototype%"] = j(
+  ), he["%WrapForValidIteratorPrototype%"] = j(
     // eslint-disable-next-line @endo/no-polymorphic-call
     k.Iterator.from({ next() {
     } })
-  )), k.AsyncIterator && (me["%AsyncIteratorHelperPrototype%"] = j(
+  )), k.AsyncIterator && (he["%AsyncIteratorHelperPrototype%"] = j(
     // eslint-disable-next-line @endo/no-polymorphic-call
     k.AsyncIterator.from([]).take(0)
-  ), me["%WrapForValidAsyncIteratorPrototype%"] = j(
+  ), he["%WrapForValidAsyncIteratorPrototype%"] = j(
     // eslint-disable-next-line @endo/no-polymorphic-call
     k.AsyncIterator.from({ next() {
     } })
-  )), me;
+  )), he;
 }, Is = (t, e) => {
   if (e !== "safe" && e !== "unsafe")
     throw v(`unrecognized fakeHardenOption ${e}`);
@@ -4463,20 +4463,20 @@ const pc = () => {
   });
   const n = re(
     Ze(t)
-  ), o = ht(
+  ), o = mt(
     se(n, ([a, i]) => [
       a,
       { ...i, configurable: !0 }
     ])
   );
   return F(r, o), { "%SharedSymbol%": r };
-}, mc = (t) => {
+}, hc = (t) => {
   try {
     return t(), !1;
   } catch {
     return !0;
   }
-}, mo = (t, e, r) => {
+}, ho = (t, e, r) => {
   if (t === void 0)
     return !1;
   const n = J(t, e);
@@ -4489,23 +4489,23 @@ const pc = () => {
   if (ne(a, c, [i]), c[e] !== i)
     return !1;
   const l = { __proto__: t };
-  return ne(a, l, [i]), l[e] !== i || !mc(() => ne(a, t, [r])) || "originalValue" in o || n.configurable === !1 ? !1 : (M(t, e, {
+  return ne(a, l, [i]), l[e] !== i || !hc(() => ne(a, t, [r])) || "originalValue" in o || n.configurable === !1 ? !1 : (M(t, e, {
     value: r,
     writable: !0,
     enumerable: n.enumerable,
     configurable: !0
   }), !0);
-}, hc = (t) => {
-  mo(
+}, mc = (t) => {
+  ho(
     t["%IteratorPrototype%"],
     "constructor",
     t.Iterator
-  ), mo(
+  ), ho(
     t["%IteratorPrototype%"],
     qe,
     "Iterator"
   );
-}, { Fail: ho, details: go, quote: yo } = z;
+}, { Fail: mo, details: go, quote: yo } = z;
 let ur, dr;
 const gc = Ga(), yc = () => {
   let t = !1;
@@ -4550,16 +4550,16 @@ const gc = Ga(), yc = () => {
       /** @param {string} debugName */
       (Be) => Be !== ""
     ),
-    __hardenTaming__: m = le("LOCKDOWN_HARDEN_TAMING", "safe"),
+    __hardenTaming__: h = le("LOCKDOWN_HARDEN_TAMING", "safe"),
     dateTaming: p = "safe",
     // deprecated
-    mathTaming: h = "safe",
+    mathTaming: m = "safe",
     // deprecated
     ..._
   } = t;
-  d === "unsafeEval" || d === "safeEval" || d === "noEval" || ho`lockdown(): non supported option evalTaming: ${yo(d)}`;
+  d === "unsafeEval" || d === "safeEval" || d === "noEval" || mo`lockdown(): non supported option evalTaming: ${yo(d)}`;
   const S = De(_);
-  if (S.length === 0 || ho`lockdown(): non supported option ${yo(S)}`, ur === void 0 || // eslint-disable-next-line @endo/no-polymorphic-call
+  if (S.length === 0 || mo`lockdown(): non supported option ${yo(S)}`, ur === void 0 || // eslint-disable-next-line @endo/no-polymorphic-call
   z.fail(
     go`Already locked down at ${ur} (SES_ALREADY_LOCKED_DOWN)`,
     v
@@ -4573,17 +4573,17 @@ const gc = Ga(), yc = () => {
       "Already locked down but not by this SES instance (SES_MULTIPLE_INSTANCES)"
     );
   Ei(u);
-  const N = Es(), { addIntrinsics: x, completePrototypes: D, finalIntrinsics: G } = ss(), B = Is(gc, m);
-  x({ harden: B }), x(Ya()), x(Ja(p)), x(Gi(e, l)), x(Xa(h)), x(Qa(o)), x(pc()), x(fc()), D();
+  const N = Es(), { addIntrinsics: x, completePrototypes: D, finalIntrinsics: G } = ss(), B = Is(gc, h);
+  x({ harden: B }), x(Ya()), x(Ja(p)), x(Gi(e, l)), x(Xa(m)), x(Qa(o)), x(pc()), x(fc()), D();
   const K = G(), ze = { __proto__: null };
   typeof k.Buffer == "function" && (ze.Buffer = k.Buffer);
-  let me;
-  e !== "unsafe" && (me = K["%InitialGetStackString%"]);
+  let he;
+  e !== "unsafe" && (he = K["%InitialGetStackString%"]);
   const Ge = Ti(
     i,
     r,
     n,
-    me
+    he
   );
   if (k.console = /** @type {Console} */
   Ge.console, typeof /** @type {any} */
@@ -4591,7 +4591,7 @@ const gc = Ga(), yc = () => {
     // eslint-disable-next-line no-underscore-dangle
     /** @type {any} */
     Ge.console._times
-  )), e === "unsafe" && k.assert === z && (k.assert = jr(void 0, !0)), ai(K, a), hc(K), Ka(K, N), cs(k), ls(k, {
+  )), e === "unsafe" && k.assert === z && (k.assert = jr(void 0, !0)), ai(K, a), mc(K), Ka(K, N), cs(k), ls(k, {
     intrinsics: K,
     newGlobalPropertyNames: Jn,
     makeCompartmentConstructor: dn,
@@ -4660,8 +4660,8 @@ k[bc] = _c;
 const wc = (t, e) => {
   let r = { x: 0, y: 0 }, n = { x: 0, y: 0 }, o = { x: 0, y: 0 };
   const a = (l) => {
-    const { clientX: u, clientY: d } = l, f = u - o.x + n.x, m = d - o.y + n.y;
-    r = { x: f, y: m }, t.style.transform = `translate(${f}px, ${m}px)`, e == null || e();
+    const { clientX: u, clientY: d } = l, f = u - o.x + n.x, h = d - o.y + n.y;
+    r = { x: f, y: h }, t.style.transform = `translate(${f}px, ${h}px)`, e == null || e();
   }, i = () => {
     document.removeEventListener("mousemove", a), document.removeEventListener("mouseup", i);
   }, c = (l) => {
@@ -5034,7 +5034,7 @@ class Q {
 }
 const I = Object.freeze({
   status: "aborted"
-}), wt = (t) => ({ status: "dirty", value: t }), ae = (t) => ({ status: "valid", value: t }), pn = (t) => t.status === "aborted", mn = (t) => t.status === "dirty", jt = (t) => t.status === "valid", Zt = (t) => typeof Promise < "u" && t instanceof Promise;
+}), wt = (t) => ({ status: "dirty", value: t }), ae = (t) => ({ status: "valid", value: t }), pn = (t) => t.status === "aborted", hn = (t) => t.status === "dirty", jt = (t) => t.status === "valid", Zt = (t) => typeof Promise < "u" && t instanceof Promise;
 function kr(t, e, r, n) {
   if (typeof e == "function" ? t !== e || !n : !e.has(t))
     throw new TypeError("Cannot read private member from an object whose class did not declare it");
@@ -6305,10 +6305,10 @@ class U extends $ {
     return o.common.async ? Promise.resolve().then(async () => {
       const u = [];
       for (const d of l) {
-        const f = await d.key, m = await d.value;
+        const f = await d.key, h = await d.value;
         u.push({
           key: f,
-          value: m,
+          value: h,
           alwaysSet: d.alwaysSet
         });
       }
@@ -6665,14 +6665,14 @@ class Zr extends $ {
     });
   }
 }
-function hn(t, e) {
+function mn(t, e) {
   const r = Ve(t), n = Ve(e);
   if (t === e)
     return { valid: !0, data: t };
   if (r === w.object && n === w.object) {
     const o = O.objectKeys(e), a = O.objectKeys(t).filter((c) => o.indexOf(c) !== -1), i = { ...t, ...e };
     for (const c of a) {
-      const l = hn(t[c], e[c]);
+      const l = mn(t[c], e[c]);
       if (!l.valid)
         return { valid: !1 };
       i[c] = l.data;
@@ -6683,7 +6683,7 @@ function hn(t, e) {
       return { valid: !1 };
     const o = [];
     for (let a = 0; a < t.length; a++) {
-      const i = t[a], c = e[a], l = hn(i, c);
+      const i = t[a], c = e[a], l = mn(i, c);
       if (!l.valid)
         return { valid: !1 };
       o.push(l.data);
@@ -6697,8 +6697,8 @@ class Vt extends $ {
     const { status: r, ctx: n } = this._processInputParams(e), o = (a, i) => {
       if (pn(a) || pn(i))
         return I;
-      const c = hn(a.value, i.value);
-      return c.valid ? ((mn(a) || mn(i)) && r.dirty(), { status: r.value, value: c.data }) : (b(n, {
+      const c = mn(a.value, i.value);
+      return c.valid ? ((hn(a) || hn(i)) && r.dirty(), { status: r.value, value: c.data }) : (b(n, {
         code: g.invalid_intersection_types
       }), I);
     };
@@ -6869,7 +6869,7 @@ Ar.create = (t, e, r) => new Ar({
   typeName: A.ZodMap,
   ...C(r)
 });
-class mt extends $ {
+class ht extends $ {
   _parse(e) {
     const { status: r, ctx: n } = this._processInputParams(e);
     if (n.parsedType !== w.set)
@@ -6908,13 +6908,13 @@ class mt extends $ {
     return n.common.async ? Promise.all(c).then((l) => i(l)) : i(c);
   }
   min(e, r) {
-    return new mt({
+    return new ht({
       ...this._def,
       minSize: { value: e, message: E.toString(r) }
     });
   }
   max(e, r) {
-    return new mt({
+    return new ht({
       ...this._def,
       maxSize: { value: e, message: E.toString(r) }
     });
@@ -6926,7 +6926,7 @@ class mt extends $ {
     return this.min(1, e);
   }
 }
-mt.create = (t, e) => new mt({
+ht.create = (t, e) => new ht({
   valueType: t,
   minSize: null,
   maxSize: null,
@@ -7474,7 +7474,7 @@ var A;
 })(A || (A = {}));
 const Hc = (t, e = {
   message: `Input not instance of ${t.name}`
-}) => Fs((r) => r instanceof t, e), Ds = ke.create, Us = Xe.create, Vc = Ir.create, Wc = Qe.create, js = zt.create, qc = pt.create, Kc = Pr.create, Yc = Gt.create, Jc = Bt.create, Xc = At.create, Qc = dt.create, el = je.create, tl = Tr.create, rl = Te.create, nl = U.create, ol = U.strictCreate, sl = Ht.create, al = Zr.create, il = Vt.create, cl = Oe.create, ll = Wt.create, ul = Ar.create, dl = mt.create, fl = xt.create, pl = qt.create, ml = Kt.create, hl = et.create, gl = Yt.create, yl = It.create, _o = Ae.create, vl = Ne.create, _l = tt.create, bl = Ae.createWithPreprocess, wl = sr.create, Sl = () => Ds().optional(), El = () => Us().optional(), xl = () => js().optional(), kl = {
+}) => Fs((r) => r instanceof t, e), Ds = ke.create, Us = Xe.create, Vc = Ir.create, Wc = Qe.create, js = zt.create, qc = pt.create, Kc = Pr.create, Yc = Gt.create, Jc = Bt.create, Xc = At.create, Qc = dt.create, el = je.create, tl = Tr.create, rl = Te.create, nl = U.create, ol = U.strictCreate, sl = Ht.create, al = Zr.create, il = Vt.create, cl = Oe.create, ll = Wt.create, ul = Ar.create, dl = ht.create, fl = xt.create, pl = qt.create, hl = Kt.create, ml = et.create, gl = Yt.create, yl = It.create, _o = Ae.create, vl = Ne.create, _l = tt.create, bl = Ae.createWithPreprocess, wl = sr.create, Sl = () => Ds().optional(), El = () => Us().optional(), xl = () => js().optional(), kl = {
   string: (t) => ke.create({ ...t, coerce: !0 }),
   number: (t) => Xe.create({ ...t, coerce: !0 }),
   boolean: (t) => zt.create({
@@ -7497,7 +7497,7 @@ var W = /* @__PURE__ */ Object.freeze({
   DIRTY: wt,
   OK: ae,
   isAborted: pn,
-  isDirty: mn,
+  isDirty: hn,
   isValid: jt,
   isAsync: Zt,
   get util() {
@@ -7530,7 +7530,7 @@ var W = /* @__PURE__ */ Object.freeze({
   ZodTuple: Oe,
   ZodRecord: Wt,
   ZodMap: Ar,
-  ZodSet: mt,
+  ZodSet: ht,
   ZodFunction: xt,
   ZodLazy: qt,
   ZodLiteral: Kt,
@@ -7563,12 +7563,12 @@ var W = /* @__PURE__ */ Object.freeze({
   date: qc,
   discriminatedUnion: al,
   effect: _o,
-  enum: hl,
+  enum: ml,
   function: fl,
   instanceof: Hc,
   intersection: il,
   lazy: pl,
-  literal: ml,
+  literal: hl,
   map: ul,
   nan: Vc,
   nativeEnum: gl,
@@ -7619,8 +7619,8 @@ function Al(t, e, r, n) {
     `${u.inlineEnd}px`
   );
   const d = window.innerWidth - u.inlineEnd, f = window.innerHeight - u.blockStart;
-  let m = Math.min((n == null ? void 0 : n.width) || c, d), p = Math.min((n == null ? void 0 : n.height) || l, f);
-  return m = Math.max(m, a), p = Math.max(p, i), o.setAttribute("title", t), o.setAttribute("iframe-src", e), o.setAttribute("width", String(m)), o.setAttribute("height", String(p)), document.body.appendChild(o), o;
+  let h = Math.min((n == null ? void 0 : n.width) || c, d), p = Math.min((n == null ? void 0 : n.height) || l, f);
+  return h = Math.max(h, a), p = Math.max(p, i), o.setAttribute("title", t), o.setAttribute("iframe-src", e), o.setAttribute("width", String(h)), o.setAttribute("height", String(p)), document.body.appendChild(o), o;
 }
 const Il = W.function().args(
   W.string(),
@@ -7782,6 +7782,9 @@ function Ml(t, e) {
     },
     get viewport() {
       return t.viewport;
+    },
+    get history() {
+      return t.history;
     },
     get library() {
       return o("library:read"), t.library;
