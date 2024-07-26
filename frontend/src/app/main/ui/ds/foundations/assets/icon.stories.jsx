@@ -5,16 +5,12 @@ const { Icon } = Components;
 const { StoryGrid, StoryGridCell, StoryHeader } = Components.storybook;
 const { icons } = Components.meta;
 
-const iconList = Object.entries(icons)
-  .map(([_, value]) => value)
-  .sort();
-
 export default {
   title: "Foundations/Assets/Icon",
   component: Components.Icon,
   argTypes: {
     id: {
-      options: iconList,
+      options: icons,
       control: { type: "select" },
     },
     size: {
@@ -33,7 +29,7 @@ export const All = {
         <p>Hover on an icon to see its ID.</p>
       </StoryHeader>
       <StoryGrid>
-        {iconList.map((iconId) => (
+        {icons.map((iconId) => (
           <StoryGridCell
             title={iconId}
             key={iconId}
