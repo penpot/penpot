@@ -27,7 +27,7 @@
        :Text text*
        ;; meta / misc
        :meta #js {:icons (clj->js (sort icon-list))
-                  :svgs raw-svg-list
+                  :svgs (clj->js (sort raw-svg-list))
                   :typography (clj->js typography-list)}
        :storybook #js {:StoryGrid sb/story-grid*
                        :StoryGridCell sb/story-grid-cell*

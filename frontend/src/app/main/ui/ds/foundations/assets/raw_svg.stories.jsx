@@ -5,16 +5,12 @@ const { RawSvg } = Components;
 const { StoryGrid, StoryGridCell, StoryHeader } = Components.storybook;
 const { svgs } = Components.meta;
 
-const assetList = Object.entries(svgs)
-  .map(([_, value]) => value)
-  .sort();
-
 export default {
   title: "Foundations/Assets/RawSvg",
   component: Components.RawSvg,
   argTypes: {
     id: {
-      options: assetList,
+      options: svgs,
       control: { type: "select" },
     },
   },
@@ -30,7 +26,7 @@ export const All = {
       </StoryHeader>
 
       <StoryGrid size="200">
-        {assetList.map((x) => (
+        {svgs.map((x) => (
           <StoryGridCell key={x} title={x}>
             <RawSvg id={x} style={{ maxWidth: "100%" }} />
           </StoryGridCell>
