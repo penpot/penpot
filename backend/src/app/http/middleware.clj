@@ -10,6 +10,7 @@
    [app.common.logging :as l]
    [app.common.transit :as t]
    [app.config :as cf]
+   [app.http.errors :as errors]
    [clojure.data.json :as json]
    [cuerdas.core :as str]
    [ring.request :as rreq]
@@ -70,12 +71,12 @@
                 :else
                 request)))
 
-          (handle-error [cause]
+          (handle-error [cause request]
             (cond
               (instance? RuntimeException cause)
               (if-let [cause (ex-cause cause)]
-                (handle-error cause)
-                (throw cause))
+                (handle-error cause request)
+                (errors/handle cause request))
 
               (instance? RequestTooBigException cause)
               (ex/raise :type :validation
@@ -89,14 +90,14 @@
                         :cause cause)
 
               :else
-              (throw cause)))]
+              (errors/handle cause request)))]
 
     (fn [request]
       (if (= (rreq/method request) :post)
-        (let [request (ex/try! (process-request request))]
-          (if (ex/exception? request)
-            (handle-error request)
-            (handler request)))
+        (try
+          (-> request process-request handler)
+          (catch Throwable cause
+            (handle-error cause request)))
         (handler request)))))
 
 (def parse-request

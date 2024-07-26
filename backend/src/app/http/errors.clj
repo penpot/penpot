@@ -14,16 +14,10 @@
    [app.http :as-alias http]
    [app.http.access-token :as-alias actoken]
    [app.http.session :as-alias session]
+   [app.util.inet :as inet]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
    [ring.request :as rreq]
    [ring.response :as rres]))
-
-(defn- parse-client-ip
-  [request]
-  (or (some-> (rreq/get-header request "x-forwarded-for") (str/split ",") first)
-      (rreq/get-header request "x-real-ip")
-      (rreq/remote-addr request)))
 
 (defn request->context
   "Extracts error report relevant context data from request."
@@ -31,14 +25,16 @@
   (let [claims (-> {}
                    (into (::session/token-claims request))
                    (into (::actoken/token-claims request)))]
+
     {:request/path       (:path request)
      :request/method     (:method request)
      :request/params     (:params request)
      :request/user-agent (rreq/get-header request "user-agent")
-     :request/ip-addr    (parse-client-ip request)
+     :request/ip-addr    (inet/parse-request request)
      :request/profile-id (:uid claims)
      :version/frontend   (or (rreq/get-header request "x-frontend-version") "unknown")
      :version/backend    (:full cf/version)}))
+
 
 (defmulti handle-error
   (fn [cause _ _]
