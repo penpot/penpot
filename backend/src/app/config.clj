@@ -42,8 +42,9 @@
    :rpc-rlimit-config "resources/rlimit.edn"
    :rpc-climit-config "resources/climit.edn"
 
-   :file-change-snapshot-every 5
-   :file-change-snapshot-timeout "3h"
+   :file-snapshot-total 10
+   :file-snapshot-every 5
+   :file-snapshot-timeout "3h"
 
    :public-uri "http://localhost:3449"
    :host "localhost"
@@ -100,8 +101,9 @@
     [:telemetry-uri {:optional true} :string]
     [:telemetry-with-taiga {:optional true} :boolean] ;; DELETE
 
-    [:file-change-snapshot-every {:optional true} :int]
-    [:file-change-snapshot-timeout {:optional true} ::dt/duration]
+    [:file-snapshot-total {:optional true} :int]
+    [:file-snapshot-every {:optional true} :int]
+    [:file-snapshot-timeout {:optional true} ::dt/duration]
 
     [:media-max-file-size {:optional true} :int]
     [:deletion-delay {:optional true} ::dt/duration] ;; REVIEW

@@ -61,7 +61,7 @@
 (def default
   {:database-uri "postgresql://postgres/penpot_test"
    :redis-uri "redis://redis/1"
-   :file-change-snapshot-every 1})
+   :file-snapshot-every 1})
 
 (def config
   (cf/read-config :prefix "penpot-test"
@@ -76,6 +76,7 @@
    :enable-feature-fdata-pointer-map
    :enable-feature-fdata-objets-map
    :enable-feature-components-v2
+   :enable-file-snapshot
    :disable-file-validation])
 
 (defn state-init

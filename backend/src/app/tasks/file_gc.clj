@@ -314,7 +314,7 @@
                                         0
                                         (get-candidates cfg))]
 
-                    (l/inf :hint "task finished"
+                    (l/inf :hint "finished"
                            :min-age (dt/format-duration min-age)
                            :processed total)
 
