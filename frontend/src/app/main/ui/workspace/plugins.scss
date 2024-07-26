@@ -213,7 +213,7 @@ div.input-error {
   gap: $s-4;
 
   svg {
-    margin-top: calc(-1 * var($s-2));
+    margin-top: calc(-1 * $s-2);
     width: $s-12;
     height: $s-12;
     stroke: $da-primary;
@@ -261,4 +261,14 @@ div.input-error {
 .action-buttons {
   display: flex;
   gap: $s-12;
+}
+
+.discover {
+  @include bodySmallTypography;
+  color: $df-secondary;
+  margin-top: $s-24;
+
+  a {
+    color: $da-primary;
+  }
 }

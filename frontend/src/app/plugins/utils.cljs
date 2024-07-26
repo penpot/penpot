@@ -113,6 +113,25 @@
     (when (and (some? file-id) (some? id))
       (locate-library-component file-id id))))
 
+(defn proxy->flow
+  [proxy]
+  (let [file-id (obj/get proxy "$file")
+        page-id (obj/get proxy "$page")
+        flow-id (obj/get proxy "$id")
+        page (locate-page file-id page-id)]
+    (when (some? page)
+      (d/seek #(= (:id %) flow-id) (-> page :options :flows)))))
+
+(defn proxy->interaction
+  [proxy]
+  (let [file-id (obj/get proxy "$file")
+        page-id (obj/get proxy "$page")
+        shape-id (obj/get proxy "$shape")
+        index (obj/get proxy "$index")
+        shape (locate-shape file-id page-id shape-id)]
+    (when (some? shape)
+      (get-in shape [:interactions index]))))
+
 (defn get-data
   ([self attr]
    (-> (obj/get self "_data")

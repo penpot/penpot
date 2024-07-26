@@ -48,8 +48,7 @@
   #{:flex :grid})
 
 (def flex-direction-types
-  ;;TODO remove reverse-column and reverse-row after script
-  #{:row :reverse-row :row-reverse :column :reverse-column :column-reverse})
+  #{:row :row-reverse :column :column-reverse})
 
 (def grid-direction-types
   #{:row :column})
@@ -58,7 +57,7 @@
   #{:simple :multiple})
 
 (def wrap-types
-  #{:wrap :nowrap :no-wrap}) ;;TODO remove no-wrap after script
+  #{:wrap :nowrap})
 
 (def padding-type
   #{:simple :multiple})

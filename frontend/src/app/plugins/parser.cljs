@@ -23,6 +23,12 @@
   [color]
   (if (string? color) (-> color str/lower) color))
 
+(defn parse-point
+  [^js point]
+  (when point
+    {:x (obj/get point "x")
+     :y (obj/get point "y")}))
+
 ;; {
 ;;    name?: string;
 ;;    nameLike?: string;
@@ -394,3 +400,164 @@
   [^js content]
   (when (some? content)
     (into [] (map parse-command) content)))
+
+;; export interface PenpotDissolve {
+;;   type: 'dissolve';
+;;   duration: number;
+;;   easing?: 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out';
+;; }
+;;
+;; export interface PenpotSlide {
+;;   type: 'slide';
+;;   way: 'in' | 'out';
+;;   direction?:
+;;     | 'right'
+;;     | 'left'
+;;     | 'up'
+;;     | 'down';
+;;   duration: number;
+;;   offsetEffect?: boolean;
+;;   easing?: 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out';
+;; }
+;;
+;; export interface PenpotPush {
+;;   type: 'push';
+;;   direction?:
+;;     | 'right'
+;;     | 'left'
+;;     | 'up'
+;;     | 'down';
+;;
+;;   duration: number;
+;;   easing?: 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out';
+;; }
+;;
+;; export type PenpotAnimation = PenpotDissolve | PenpotSlide | PenpotPush;
+
+(defn parse-animation
+  [^js animation]
+  (when animation
+    (let [animation-type (-> (obj/get animation "type") parse-keyword)]
+      (d/without-nils
+       (case animation-type
+         :dissolve
+         {:type animation-type
+          :duration (obj/get animation "duration")
+          :easing (-> (obj/get animation "easing") parse-keyword)}
+
+         :slide
+         {:type animation-type
+          :way (-> (obj/get animation "way") parse-keyword)
+          :direction (-> (obj/get animation "direction") parse-keyword)
+          :duration (obj/get animation "duration")
+          :easing (-> (obj/get animation "easing") parse-keyword)
+          :offset-effect (obj/get animation "offsetEffect")}
+
+         :push
+         {:type animation-type
+          :direction (-> (obj/get animation "direction") parse-keyword)
+          :duration (obj/get animation "duration")
+          :easing (-> (obj/get animation "easing") parse-keyword)}
+
+         nil)))))
+
+;;export type PenpotAction =
+;;  | PenpotNavigateTo
+;;  | PenpotOpenOverlay
+;;  | PenpotToggleOverlay
+;;  | PenpotCloseOverlay
+;;  | PenpotPreviousScreen
+;;  | PenpotOpenUrl;
+;;
+;;export interface PenpotNavigateTo {
+;;  type: 'navigate-to';
+;;  destination: PenpotFrame;
+;;  preserveScrollPosition?: boolean;
+;;  animation: PenpotAnimation;
+;;}
+;;
+;;export interface PenpotOverlayAction {
+;;  destination: PenpotFrame;
+;;  relativeTo?: PenpotShape;
+;;  position?:
+;;    | 'manual'
+;;    | 'center'
+;;    | 'top-left'
+;;    | 'top-right'
+;;    | 'top-center'
+;;    | 'bottom-left'
+;;    | 'bottom-right'
+;;    | 'bottom-center';
+;;  manualPositionLocation?: PenpotPoint;
+;;  closeWhenClickOutside?: boolean;
+;;  addBackgroundOverlay?: boolean;
+;;  animation: PenpotAnimation;
+;;}
+;;
+;;export interface PenpotOpenOverlay extends PenpotOverlayAction {
+;;  type: 'open-overlay';
+;;}
+;;
+;;export interface PenpotToggleOverlay extends PenpotOverlayAction {
+;;  type: 'toggle-overlay';
+;;}
+;;
+;;export interface PenpotCloseOverlay {
+;;  type: 'close-overlay';
+;;  destination?: PenpotFrame;
+;;  animation: PenpotAnimation;
+;;}
+;;
+;;export interface PenpotPreviousScreen {
+;;  type: 'previous-screen';
+;;}
+;;
+;;export interface PenpotOpenUrl {
+;;  type: 'open-url';
+;;  url: string;
+;;}
+(defn parse-action
+  [action]
+  (when action
+    (let [action-type (-> (obj/get action "type") parse-keyword)]
+      (d/without-nils
+       (case action-type
+         :navigate-to
+         {:action-type :navigate
+          :destination (-> (obj/get action "destination") (obj/get "$id"))
+          :preserve-scroll (obj/get action "preserveScrollPosition")
+          :animation (-> (obj/get action "animation") parse-animation)}
+
+         (:open-overlay
+          :toggle-overlay)
+         {:action-type action-type
+          :destination (-> (obj/get action "destination") (obj/get "$id"))
+          :relative-to (-> (obj/get action "relativeTo") (obj/get "$id"))
+          :overlay-pos-type (-> (obj/get action "position") parse-keyword)
+          :overlay-position (-> (obj/get action "manualPositionLocation") parse-point)
+          :close-click-outside (obj/get action "closeWhenClickOutside")
+          :background-overlay (obj/get action "addBackgroundOverlay")
+          :animation (-> (obj/get action "animation") parse-animation)}
+
+         :close-overlay
+         {:action-type action-type
+          :destination (-> (obj/get action "destination") (obj/get "$id"))
+          :animation (-> (obj/get action "animation") parse-animation)}
+
+         :previous-screen
+         {:action-type :prev-screen}
+
+         :open-url
+         {:action-type action-type
+          :url (obj/get action "url")}
+
+         nil)))))
+
+(defn parse-interaction
+  [^js interaction]
+  (when interaction
+    (let [trigger (-> (obj/get interaction "trigger") parse-keyword)
+          delay (obj/get interaction "trigger")
+          action (-> (obj/get interaction "action") parse-action)]
+      (d/without-nils
+       (d/patch-object {:event-type trigger :delay delay}  action)))))

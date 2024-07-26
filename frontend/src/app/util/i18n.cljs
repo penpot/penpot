@@ -156,10 +156,11 @@
 
 (mf/defc tr-html*
   {::mf/props :obj}
-  [{:keys [content class tag-name]}]
+  [{:keys [content class tag-name on-click]}]
   (let [tag-name (d/nilv tag-name "p")]
     [:> tag-name {:dangerouslySetInnerHTML #js {:__html content}
-                  :className class}]))
+                  :className class
+                  :on-click on-click}]))
 
 ;; DEPRECATED
 (defn use-locale

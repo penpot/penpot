@@ -25,6 +25,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape.blur :as ctsb]
    [app.common.types.shape.export :as ctse]
+   [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.path :as ctsp]
    [app.common.types.shape.radius :as ctsr]
@@ -32,6 +33,8 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.groups :as dwg]
+   [app.main.data.workspace.interactions :as dwi]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
@@ -51,6 +54,81 @@
    [cuerdas.core :as str]
    [promesa.core :as p]))
 
+(declare shape-proxy)
+(declare shape-proxy?)
+
+(deftype InteractionProxy [$plugin $file $page $shape $index]
+  Object
+  (remove [_]
+    (st/emit! (dwi/remove-interaction {:id $shape} $index))))
+
+(defn interaction-proxy? [p]
+  (instance? InteractionProxy p))
+
+(defn interaction-proxy
+  [plugin-id file-id page-id shape-id index]
+  (crc/add-properties!
+   (InteractionProxy. plugin-id file-id page-id shape-id index)
+   {:name "$plugin" :enumerable false :get (constantly plugin-id)}
+   {:name "$file" :enumerable false :get (constantly file-id)}
+   {:name "$page" :enumerable false :get (constantly page-id)}
+   {:name "$shape" :enumerable false :get (constantly shape-id)}
+   {:name "$index" :enumerable false :get (constantly index)}
+
+   ;; Not enumerable so we don't have an infinite loop
+   {:name "shape" :enumerable false
+    :get (fn [_] (shape-proxy plugin-id file-id page-id shape-id))}
+
+   {:name "trigger"
+    :get #(-> % u/proxy->interaction :event-type format/format-key)
+    :set
+    (fn [_ value]
+      (let [value (parser/parse-keyword value)]
+        (cond
+          (not (contains? ctsi/event-types value))
+          (u/display-not-valid :trigger value)
+
+          :else
+          (st/emit! (dwi/update-interaction
+                     {:id shape-id}
+                     index
+                     #(assoc % :event-type value)
+                     {:page-id page-id})))))}
+
+   {:name "delay"
+    :get #(-> % u/proxy->interaction :delay)
+    :set
+    (fn [_ value]
+      (cond
+        (or (not (number? value)) (not (pos? value)))
+        (u/display-not-valid :delay value)
+
+        :else
+        (st/emit! (dwi/update-interaction
+                   {:id shape-id}
+                   index
+                   #(assoc % :delay value)
+                   {:page-id page-id}))))}
+
+   {:name "action"
+    :get #(-> % u/proxy->interaction (format/format-action plugin-id file-id page-id))
+    :set
+    (fn [self value]
+      (let [params (parser/parse-action value)
+            interaction
+            (-> (u/proxy->interaction self)
+                (d/patch-object params))]
+        (cond
+          (not (sm/validate ::ctsi/interaction interaction))
+          (u/display-not-valid :action interaction)
+
+          :else
+          (st/emit! (dwi/update-interaction
+                     {:id shape-id}
+                     index
+                     #(d/patch-object % params)
+                     {:page-id page-id})))))}))
+
 (def lib-typography-proxy? nil)
 (def lib-component-proxy nil)
 
@@ -61,8 +139,6 @@
    (dwt/current-paragraph-values {:shape shape :attrs txt/paragraph-attrs})
    (dwt/current-text-values {:shape shape :attrs txt/text-node-attrs})))
 
-(declare shape-proxy)
-(declare shape-proxy?)
 
 (defn- shadow-defaults
   [shadow]
@@ -441,6 +517,11 @@
         (let [[root component] (u/locate-component objects shape)]
           (lib-component-proxy $plugin (:component-file root) (:id component))))))
 
+  (detach
+    [_]
+    (st/emit! (dwl/detach-component $id)))
+
+  ;; Export
   (export
     [self value]
     (let [value (parser/parse-export value)]
@@ -466,7 +547,31 @@
                   (rx/mapcat #(rp/cmd! :export {:cmd :get-resource :wait true :id (:id %) :blob? true}))
                   (rx/mapcat #(.arrayBuffer %))
                   (rx/map #(js/Uint8Array. %))
-                  (rx/subs! resolve reject)))))))))
+                  (rx/subs! resolve reject))))))))
+
+  ;; Interactions
+  (addInteraction
+    [self interaction]
+    (let [interaction
+          (-> ctsi/default-interaction
+              (d/patch-object (parser/parse-interaction interaction)))]
+      (cond
+        (not (sm/validate ::ctsi/interaction interaction))
+        (u/display-not-valid :addInteraction interaction)
+
+        :else
+        (let [index (-> (u/proxy->shape self) (:interactions [])  count)]
+          (st/emit! (dwi/add-interaction $page $id interaction))
+          (interaction-proxy $plugin $file $page $id index)))))
+
+  (removeInteraction
+    [_ interaction]
+    (cond
+      (not (interaction-proxy? interaction))
+      (u/display-not-valid :removeInteraction interaction)
+
+      :else
+      (st/emit! (dwi/remove-interaction {:id $id} (obj/get interaction "$index"))))))
 
 (defn shape-proxy? [p]
   (instance? ShapeProxy p))
@@ -474,6 +579,8 @@
 ;; Prevent circular dependency
 (do (set! flex/shape-proxy? shape-proxy?)
     (set! grid/shape-proxy? shape-proxy?))
+
+(set! format/shape-proxy shape-proxy)
 
 (crc/define-properties!
   ShapeProxy
@@ -819,6 +926,13 @@
                  :else
                  (st/emit! (dw/update-position id {:y value})))))}
 
+          {:name "parent"
+           ;; not enumerable so there are no infinite loops
+           :enumerable false
+           :get (fn [self]
+                  (let [shape (u/proxy->shape self)
+                        parent-id (:parent-id shape)]
+                    (shape-proxy (obj/get self "$file") (obj/get self "$page") parent-id)))}
           {:name "parentX"
            :get (fn [self]
                   (let [shape (u/proxy->shape self)
@@ -1024,7 +1138,17 @@
                    id (obj/get self "$id")
                    objects (u/locate-objects file-id page-id)]
                (when (ctl/grid-layout-immediate-child-id? objects id)
-                 (grid/layout-cell-proxy plugin-id file-id page-id id))))})
+                 (grid/layout-cell-proxy plugin-id file-id page-id id))))}
+
+
+          ;; Interactions
+          {:name "interactions"
+           :get
+           (fn [self]
+             (let [interactions (-> self u/proxy->shape :interactions)]
+               (format/format-array
+                #(interaction-proxy plugin-id file-id page-id id %)
+                (range 0 (count interactions)))))})
 
          (cond-> (or (cfh/frame-shape? data) (cfh/group-shape? data) (cfh/svg-raw-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!

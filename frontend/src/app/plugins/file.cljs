@@ -5,16 +5,23 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.plugins.file
-  "RPC for plugins runtime."
   (:require
    [app.common.data.macros :as dm]
    [app.common.record :as crc]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
+   [app.main.features :as features]
    [app.main.store :as st]
+   [app.main.ui.export :as mue]
+   [app.main.worker :as uw]
    [app.plugins.page :as page]
+   [app.plugins.parser :as parser]
    [app.plugins.register :as r]
    [app.plugins.utils :as u]
-   [app.util.object :as obj]))
+   [app.util.http :as http]
+   [app.util.object :as obj]
+   [beicon.v2.core :as rx]
+   [promesa.core :as p]))
 
 (deftype FileProxy [$plugin $id]
   Object
@@ -93,7 +100,58 @@
 
       :else
       (let [file (u/proxy->file self)]
-        (apply array (keys (dm/get-in file [:data :plugin-data (keyword "shared" namespace)])))))))
+        (apply array (keys (dm/get-in file [:data :plugin-data (keyword "shared" namespace)]))))))
+
+  (createPage
+    [_]
+    (cond
+      (not (r/check-permission $plugin "content:write"))
+      (u/display-not-valid :createPage "Plugin doesn't have 'content:write' permission")
+
+      :else
+      (let [page-id (uuid/next)]
+        (st/emit! (dw/create-page {:page-id page-id :file-id $id}))
+        (page/page-proxy $plugin $id page-id))))
+
+  (export
+    [self type export-type]
+    (let [export-type (or (parser/parse-keyword export-type) :all)]
+      (cond
+        (not (contains? #{"penpot" "zip"} type))
+        (u/display-not-valid :export-type type)
+
+        (not (contains? (set mue/export-types) export-type))
+        (u/display-not-valid :export-exportType export-type)
+
+        :else
+        (let [export-cmd (if (= type "penpot") :export-binary-file :export-standard-file)
+              file (u/proxy->file self)
+              features (features/get-team-enabled-features @st/state)
+              team-id  (:current-team-id @st/state)]
+          (p/create
+           (fn [resolve reject]
+             (->> (uw/ask-many!
+                   {:cmd export-cmd
+                    :team-id team-id
+                    :features features
+                    :export-type export-type
+                    :files [file]})
+                  (rx/mapcat #(->> (rx/of %) (rx/delay 1000)))
+                  (rx/mapcat
+                   (fn [msg]
+                     (case (:type msg)
+                       :error
+                       (rx/throw (ex-info "cannot export file" {:type :export-file}))
+
+                       :progress
+                       (rx/empty)
+
+                       :finish
+                       (http/send! {:method :get :uri (:uri msg) :mode :no-cors :response-type :blob}))))
+                  (rx/first)
+                  (rx/mapcat (fn [{:keys [body]}] (.arrayBuffer ^js body)))
+                  (rx/map (fn [data] (js/Uint8Array. data)))
+                  (rx/subs! resolve reject)))))))))
 
 (crc/define-properties!
   FileProxy

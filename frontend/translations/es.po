@@ -5366,7 +5366,7 @@ msgid "workspace.plugins.title"
 msgstr "Extensiones"
 
 msgid "workspace.toolbar.plugins"
-msgstr "Extensiones"
+msgstr "Extensiones (%s)"
 
 msgid "workspace.plugins.search-placeholder"
 msgstr "Intruduzca URL de la extensión"
@@ -5418,3 +5418,8 @@ msgstr "Leer la información de sus bibliotecas y recursos."
 
 msgid "workspace.plugins.permissions.library-write"
 msgstr "Leer y modificar la información de sus bibliotecas y recursos."
+
+#, markdown
+msgid "workspace.plugins.discover"
+msgstr ""
+"Descubre [más extensiones](%s)"

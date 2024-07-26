@@ -16,7 +16,7 @@
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.icons :as i]
-   [app.plugins :as plugins]
+   [app.plugins.register :as preg]
    [app.util.avatars :as avatars]
    [app.util.dom :as dom]
    [app.util.http :as http]
@@ -80,11 +80,13 @@
    ::mf/register-as :plugin-management}
   []
 
-  (let [plugins-state* (mf/use-state @plugins/pluginsdb)
+  (let [plugins-state* (mf/use-state #(preg/plugins-list))
         plugins-state @plugins-state*
 
         plugin-url* (mf/use-state "")
         plugin-url  @plugin-url*
+
+        fetching-manifest? (mf/use-state false)
 
         input-status* (mf/use-state nil) ;; :error-url :error-manifest :success
         input-status  @input-status*
@@ -106,6 +108,7 @@
         (mf/use-callback
          (mf/deps plugins-state plugin-url)
          (fn []
+           (reset! fetching-manifest? true)
            (->> (http/send! {:method :get
                              :uri plugin-url
                              :omit-default-headers true
@@ -113,18 +116,20 @@
                 (rx/map :body)
                 (rx/subs!
                  (fn [body]
-                   (let [plugin (plugins/parser-manifest plugin-url body)]
+                   (reset! fetching-manifest? false)
+                   (let [plugin (preg/parse-manifest plugin-url body)]
                      (st/emit! (ptk/event ::ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
                      (modal/show!
                       :plugin-permissions
                       {:plugin plugin
                        :on-accept
                        #(do
-                          (plugins/install-plugin! plugin)
+                          (preg/install-plugin! plugin)
                           (modal/show! :plugin-management {}))})
                      (reset! input-status* :success)
                      (reset! plugin-url* "")))
                  (fn [_]
+                   (reset! fetching-manifest? false)
                    (reset! input-status* :error-url))))))
 
         handle-open-plugin
@@ -141,12 +146,13 @@
         (mf/use-callback
          (mf/deps plugins-state)
          (fn [plugin-index]
-           (let [plugin (nth @plugins/pluginsdb plugin-index)]
+           (let [plugins-list (preg/plugins-list)
+                 plugin (nth plugins-list plugin-index)]
              (st/emit! (ptk/event ::ev/event {::ev/name "remove-plugin"
                                               :name (:name plugin)
                                               :host (:host plugin)}))
-             (plugins/remove-plugin! plugin)
-             (reset! plugins-state* @plugins/pluginsdb))))]
+             (preg/remove-plugin! plugin)
+             (reset! plugins-state* (preg/plugins-list)))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :plugin-management)}
@@ -161,11 +167,17 @@
                         :class (stl/css-case :input-error error?)}]
 
         [:button {:class (stl/css :primary-button)
+                  :disabled @fetching-manifest?
                   :on-click handle-install-click} (tr "workspace.plugins.install")]]
 
        (when error?
          [:div {:class (stl/css-case :info true :error error?)}
           (tr "workspace.plugins.error.url")])
+
+       [:> i18n/tr-html*
+        {:class (stl/css :discover)
+         :on-click #(st/emit! (ptk/event ::ev/event {::ev/name "open-plugins-list"}))
+         :content (tr "workspace.plugins.discover" cf/plugins-list-uri)}]
 
        [:hr]
 

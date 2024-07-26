@@ -5286,7 +5286,7 @@ msgid "workspace.plugins.menu.title"
 msgstr "Plugins"
 
 msgid "workspace.toolbar.plugins"
-msgstr "Plugins"
+msgstr "Plugins (%s)"
 
 msgid "workspace.plugins.menu.plugins-manager"
 msgstr "Plugins manager"
@@ -5314,3 +5314,8 @@ msgstr "Read your libraries and assets."
 
 msgid "workspace.plugins.permissions.library-write"
 msgstr "Read and modify your libraries and assets."
+
+#, markdown
+msgid "workspace.plugins.discover"
+msgstr ""
+"Discover [more plugins](%s)"
