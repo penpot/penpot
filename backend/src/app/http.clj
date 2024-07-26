@@ -150,8 +150,8 @@
    [["" {:middleware [[mw/server-timing]
                       [mw/params]
                       [mw/format-response]
-                      [mw/errors errors/handle]
                       [mw/parse-request]
+                      [mw/errors errors/handle]
                       [session/soft-auth cfg]
                       [actoken/soft-auth cfg]
                       [mw/restrict-methods]]}

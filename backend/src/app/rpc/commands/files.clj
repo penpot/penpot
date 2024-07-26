@@ -657,7 +657,7 @@
             f.modified_at,
             f.name,
             f.is_shared,
-            ft.media_id,
+            ft.media_id AS thumbnail_id,
             row_number() over w as row_num
        from file as f
       inner join project as p on (p.id = f.project_id)
@@ -676,10 +676,8 @@
   [conn team-id]
   (->> (db/exec! conn [sql:team-recent-files team-id])
        (mapv (fn [row]
-               (if-let [media-id (:media-id row)]
-                 (-> row
-                     (dissoc :media-id)
-                     (assoc :thumbnail-uri (resolve-public-uri media-id)))
+               (if-let [media-id (:thumbnail-id row)]
+                 (assoc row :thumbnail-uri (resolve-public-uri media-id))
                  (dissoc row :media-id))))))
 
 (def ^:private schema:get-team-recent-files

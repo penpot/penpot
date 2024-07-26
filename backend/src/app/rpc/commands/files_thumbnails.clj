@@ -407,4 +407,5 @@
                     (when-not (db/read-only? conn)
                       (let [cfg   (update cfg ::sto/storage media/configure-assets-storage)
                             media (create-file-thumbnail! cfg params)]
-                        {:uri (files/resolve-public-uri (:id media))})))))
+                        {:uri (files/resolve-public-uri (:id media))
+                         :id (:id media)})))))

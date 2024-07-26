@@ -12,7 +12,6 @@
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.repo :as rp]
-   [app.util.router :as rt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -131,8 +130,7 @@
                            (rx/concat
                             (if (= :authentication (:type cause))
                               (rx/empty)
-                              (rx/of (rt/assign-exception cause)
-                                     (ptk/data-event ::error cause)
+                              (rx/of (ptk/data-event ::error cause)
                                      (update-status :error)))
                             (rx/of (discard-persistence-state))
                             (rx/throw cause))))))))))
