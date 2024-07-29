@@ -127,9 +127,10 @@
   (ptk/reify ::update-layout-spacing
     ptk/WatchEvent
     (watch [_ state _]
-      (let [layout-shape-ids (-> (wsh/lookup-shapes state shape-ids)
-                                 (comp (filter :layout)
-                                       (map :id)))]
+      (let [layout-shape-ids (->> (wsh/lookup-shapes state shape-ids)
+                                  (eduction
+                                   (filter :layout)
+                                   (map :id)))]
         (rx/of
          (if-let [layout-gap (cond
                                 (:row-gap attributes) {:row-gap value}
