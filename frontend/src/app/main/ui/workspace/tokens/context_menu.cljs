@@ -32,8 +32,10 @@
      :shape-ids shape-ids
      :selected-pred #(seq (% ids-by-attributes))}))
 
-(defn generic-attribute-actions [attributes title {:keys [token selected-shapes]}]
-  (let [{:keys [on-update-shape]} (wtty/get-token-properties token)
+(defn generic-attribute-actions [attributes title {:keys [token selected-shapes on-update-shape]}]
+  (let [on-update-shape-fn (or on-update-shape
+                               (-> (wtty/get-token-properties token)
+                                   (:on-update-shape)))
         {:keys [selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)]
     (map (fn [attribute]
            (let [selected? (selected-pred attribute)
@@ -43,9 +45,9 @@
 
              {:title title
               :selected? selected?
-              :action #(if selected?
-                         (st/emit! (wtch/unapply-token props))
-                         (st/emit! (wtch/apply-token (assoc props :on-update-shape on-update-shape))))}))
+              :action (if selected?
+                        (st/emit! (wtch/unapply-token props))
+                        (st/emit! (wtch/apply-token (assoc props :on-update-shape on-update-shape-fn))))}))
          attributes)))
 
 (defn all-or-sepearate-actions [{:keys [attribute-labels on-update-shape-all on-update-shape]}
