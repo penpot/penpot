@@ -123,21 +123,6 @@
                                  (when (seq (:strokes shape))
                                    (assoc-in shape [:strokes 0 :stroke-width] value)))))
 
-(defn update-layout-spacing [value shape-ids attributes]
-  (ptk/reify ::update-layout-spacing
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [layout-shape-ids (->> (wsh/lookup-shapes state shape-ids)
-                                  (eduction
-                                   (filter :layout)
-                                   (map :id)))]
-        (rx/of
-         (if-let [layout-gap (cond
-                                (:row-gap attributes) {:row-gap value}
-                                (:column-gap attributes) {:column-gap value})]
-           (dwsl/update-layout layout-shape-ids {:layout-gap layout-gap})
-           (dwsl/update-layout layout-shape-ids {:layout-padding (zipmap attributes (repeat value))})))))))
-
 (defn update-shape-dimensions [value shape-ids attributes]
   (ptk/reify ::update-shape-dimensions
     ptk/WatchEvent
@@ -146,17 +131,30 @@
        (when (:width attributes) (dwt/update-dimensions shape-ids :width value))
        (when (:height attributes) (dwt/update-dimensions shape-ids :height value))))))
 
+(defn- attributes->layout-gap [attributes value]
+  (let [layout-gap (-> (set/intersection attributes #{:column-gap :row-gap})
+                       (zipmap (repeat value)))]
+    {:layout-gap layout-gap}))
+
+(defn update-layout-spacing [value shape-ids attributes]
+  (ptk/reify ::update-layout-spacing
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [layout-shape-ids (->> (wsh/lookup-shapes state shape-ids)
+                                  (eduction
+                                   (filter :layout)
+                                   (map :id)))
+            layout-attributes (attributes->layout-gap attributes value)]
+        (rx/of
+         (dwsl/update-layout layout-shape-ids layout-attributes))))))
+
 (defn update-layout-spacing-column [value shape-ids]
   (ptk/reify ::update-layout-spacing-column
     ptk/WatchEvent
-    (watch [_ state _]
+    (watch [_ _ _]
       (rx/concat
        (for [shape-id shape-ids]
-         (let [shape (dt/get-shape-from-state shape-id state)
-               layout-direction (:layout-flex-dir shape)
-               layout-update (if (or (= layout-direction :row-reverse) (= layout-direction :row))
-                               {:layout-gap {:column-gap value}}
-                               {:layout-gap {:row-gap value}})]
+         (let [layout-update {:layout-gap {:column-gap value :row-gap value}}]
            (dwsl/update-layout [shape-id] layout-update)))))))
 
 (defn update-shape-position [value shape-ids attributes]
