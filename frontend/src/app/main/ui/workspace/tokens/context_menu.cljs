@@ -313,7 +313,6 @@
     (mf/use-effect
      (mf/deps mdata)
      (fn []
-       (js/console.log "(mf/ref-val dropdown-ref)" (mf/ref-val dropdown-ref))
        (when-let [node (mf/ref-val dropdown-ref)]
          (reset! width (.-offsetWidth node)))))
     [:& dropdown {:show (boolean mdata)
