@@ -241,14 +241,9 @@
 
      (when group-open?
        [:*
-        (when-let [components (not-empty (get groups "" []))]
+        (let [components (not-empty (get groups "" []))]
           [:div {:class-name (stl/css-case :asset-grid listing-thumbs?
-                                           :asset-enum (not listing-thumbs?)
-                                           :drop-space (and
-                                                        (empty? components)
-                                                        (some? groups)
-                                                        (not dragging?)
-                                                        local))
+                                           :asset-enum (not listing-thumbs?))
                  :on-drag-enter on-drag-enter
                  :on-drag-leave on-drag-leave
                  :on-drag-over dom/prevent-default
@@ -261,7 +256,8 @@
            (when (and (empty? components)
                       (some? groups)
                       local)
-             [:div {:class (stl/css :drop-space)}])
+             [:div {:class (stl/css-case :drop-space true
+                                         :drop-space-small (not dragging?))}])
 
            (for [component components]
              [:& components-item

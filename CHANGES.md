@@ -10,6 +10,10 @@
 
 ### :sparkles: New features
 
+### :bug: Bugs fixed
+
+- Fix components are not dragged from the group to the assets tab [Taiga #8273](https://tree.taiga.io/project/penpot/issue/8273)
+
 ## 2.1.1
 
 ### :sparkles: New features
