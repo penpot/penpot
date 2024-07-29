@@ -734,12 +734,19 @@
                 :email email
                 :hint "the profile has reported repeatedly as spam or has bounces"))
 
-    ;; Secondly check if the invited member email is part of the global spam/bounce report.
+    ;; Secondly check if the invited member email is part of the global bounce report.
     (when (eml/has-bounce-reports? conn email)
-      (ex/raise :type :validation
+      (ex/raise :type :restriction
                 :code :email-has-permanent-bounces
                 :email email
-                :hint "the email you invite has been repeatedly reported as spam or bounce"))
+                :hint "the email you invite has been repeatedly reported as bounce"))
+
+    ;; Secondly check if the invited member email is part of the global complain report.
+    (when (eml/has-complaint-reports? conn email)
+      (ex/raise :type :restriction
+                :code :email-has-complaints
+                :email email
+                :hint "the email you invite has been repeatedly reported as spam"))
 
     ;; When we have email verification disabled and invitation user is
     ;; already present in the database, we proceed to add it to the

@@ -70,8 +70,9 @@
       (on-update-submit form)
       (on-create-submit form))))
 
-(mf/defc team-form-modal {::mf/register modal/components
-                          ::mf/register-as :team-form}
+(mf/defc team-form-modal
+  {::mf/register modal/components
+   ::mf/register-as :team-form}
   [{:keys [team] :as props}]
   (let [initial (mf/use-memo (fn [] (or team {})))
         form    (fm/use-form :spec ::team-form

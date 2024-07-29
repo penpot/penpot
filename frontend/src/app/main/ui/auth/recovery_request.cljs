@@ -59,7 +59,8 @@
                :profile-is-muted
                (rx/of (msg/error (tr "errors.profile-is-muted")))
 
-               :email-has-permanent-bounces
+               (:email-has-permanent-bounces
+                :email-has-complaints)
                (rx/of (msg/error (tr "errors.email-has-permanent-bounces" (:email data))))
 
                (rx/throw cause)))))

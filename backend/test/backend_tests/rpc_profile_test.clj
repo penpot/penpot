@@ -590,9 +590,10 @@
     (th/create-global-complaint-for pool {:type :bounce :email "user@example.com"})
 
     (let [out (th/command! data)]
-      (t/is (th/success? out))
-      (let [result (:result out)]
-        (t/is (contains? result :token))))))
+      (t/is (not (th/success? out)))
+      (let [edata (-> out :error ex-data)]
+        (t/is (= :restriction (:type edata)))
+        (t/is (= :email-has-permanent-bounces (:code edata)))))))
 
 (t/deftest register-profile-with-complained-email
   (let [pool  (:app.db/pool th/*system*)
@@ -603,9 +604,11 @@
     (th/create-global-complaint-for pool {:type :complaint :email "user@example.com"})
 
     (let [out (th/command! data)]
-      (t/is (th/success? out))
-      (let [result (:result out)]
-        (t/is (contains? result :token))))))
+      (t/is (not (th/success? out)))
+
+      (let [edata (-> out :error ex-data)]
+        (t/is (= :restriction (:type edata)))
+        (t/is (= :email-has-complaints (:code edata)))))))
 
 (t/deftest register-profile-with-email-as-password
   (let [data {::th/type :prepare-register-profile
@@ -636,20 +639,26 @@
 
       ;; with complaints
       (th/create-global-complaint-for pool {:type :complaint :email (:email data)})
-      (let [out (th/command! data)]
+      (let [out   (th/command! data)]
         ;; (th/print-result! out)
         (t/is (nil? (:result out)))
-        (t/is (= 2 (:call-count @mock))))
+
+        (let [edata (-> out :error ex-data)]
+          (t/is (= :restriction (:type edata)))
+          (t/is (= :email-has-complaints (:code edata))))
+
+        (t/is (= 1 (:call-count @mock))))
 
       ;; with bounces
       (th/create-global-complaint-for pool {:type :bounce :email (:email data)})
-      (let [out   (th/command! data)
-            error (:error out)]
+      (let [out   (th/command! data)]
         ;; (th/print-result! out)
-        (t/is (th/ex-info? error))
-        (t/is (th/ex-of-type? error :validation))
-        (t/is (th/ex-of-code? error :email-has-permanent-bounces))
-        (t/is (= 2 (:call-count @mock)))))))
+
+        (let [edata (-> out :error ex-data)]
+          (t/is (= :restriction (:type edata)))
+          (t/is (= :email-has-permanent-bounces (:code edata))))
+
+        (t/is (= 1 (:call-count @mock)))))))
 
 
 (t/deftest email-change-request-without-smtp
@@ -714,7 +723,7 @@
               out   (th/command! data)]
           ;; (th/print-result! out)
           (t/is (nil? (:result out)))
-          (t/is (= 2 (:call-count @mock))))
+          (t/is (= 1 (:call-count @mock))))
 
         ;; with valid email and active user with global bounce
         (th/create-global-complaint-for pool {:type :bounce :email (:email profile2)})
@@ -723,7 +732,7 @@
           (t/is (nil? (:result out)))
           (t/is (nil? (:error out)))
           ;; (th/print-result! out)
-          (t/is (= 2 (:call-count @mock))))))))
+          (t/is (= 1 (:call-count @mock))))))))
 
 
 (t/deftest update-profile-password
