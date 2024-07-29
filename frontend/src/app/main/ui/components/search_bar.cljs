@@ -18,6 +18,7 @@
   [props]
   (let [children    (unchecked-get props "children")
         on-change   (unchecked-get props "on-change")
+        on-enter    (unchecked-get props "on-enter")
         value       (unchecked-get props "value")
         on-clear    (unchecked-get props "clear-action")
         placeholder (unchecked-get props "placeholder")
@@ -47,7 +48,10 @@
            (let [enter? (kbd/enter? event)
                  esc?   (kbd/esc? event)
                  node   (dom/get-target event)]
-             (when ^boolean enter? (dom/blur! node))
+             (when ^boolean enter?
+               (dom/blur! node)
+               (when (fn? on-enter)
+                 (on-enter event)))
              (when ^boolean esc? (dom/blur! node)))))]
     [:span {:class (stl/css-case :search-box true
                                  :has-children (some? children))}

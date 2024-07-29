@@ -161,10 +161,10 @@
       [:div {:class (stl/css :modal-title)} (tr "workspace.plugins.title")]
 
       [:div {:class (stl/css :modal-content)}
-       [:form {:class (stl/css :top-bar)
-               :onSubmit handle-install-click}
+       [:div {:class (stl/css :top-bar)}
 
         [:& search-bar {:on-change handle-url-input
+                        :on-enter handle-install-click
                         :value plugin-url
                         :placeholder (tr "workspace.plugins.search-placeholder")
                         :class (stl/css-case :input-error error?)}]
