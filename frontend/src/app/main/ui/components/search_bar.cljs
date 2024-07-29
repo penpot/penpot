@@ -44,6 +44,7 @@
 
         handle-key-down
         (mf/use-fn
+         (mf/deps on-enter)
          (fn [event]
            (let [enter? (kbd/enter? event)
                  esc?   (kbd/esc? event)

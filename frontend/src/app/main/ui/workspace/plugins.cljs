@@ -171,7 +171,9 @@
 
         [:button {:class (stl/css :primary-button)
                   :disabled @fetching-manifest?
-                  :type "submit"} (tr "workspace.plugins.install")]]
+                  :on-click handle-install-click
+                  :type "button"}
+         (tr "workspace.plugins.install")]]
 
        (when error?
          [:div {:class (stl/css-case :info true :error error?)}
