@@ -10,18 +10,12 @@ import Components from "@target/components";
 const { Button } = Components;
 const { icons } = Components.meta;
 
-const iconList = [
-  ...Object.entries(icons)
-    .map(([_, value]) => value)
-    .sort(),
-];
-
 export default {
   title: "Buttons/Button",
   component: Components.Button,
   argTypes: {
     icon: {
-      options: iconList,
+      options: icons,
       control: { type: "select" },
     },
     disabled: { control: "boolean" },

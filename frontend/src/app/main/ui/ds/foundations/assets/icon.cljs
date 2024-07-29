@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.ds.foundations.assets.icon
-  (:refer-clojure :exclude [mask])
+  (:refer-clojure :exclude [mask drop filter remove])
   (:require-macros
    [app.common.data.macros :as dm]
    [app.main.style :as stl]
@@ -116,7 +116,7 @@
 (def ^:icon-id distribute-vertical-spacing "distribute-vertical-spacing")
 (def ^:icon-id document "document")
 (def ^:icon-id download "download")
-(def ^:icon-id drop-icon "drop")
+(def ^:icon-id drop "drop")
 (def ^:icon-id easing-ease-in-out "easing-ease-in-out")
 (def ^:icon-id easing-ease-in "easing-ease-in")
 (def ^:icon-id easing-ease-out "easing-ease-out")
@@ -128,7 +128,7 @@
 (def ^:icon-id expand "expand")
 (def ^:icon-id feedback "feedback")
 (def ^:icon-id fill-content "fill-content")
-(def ^:icon-id filter-icon "filter")
+(def ^:icon-id filter "filter")
 (def ^:icon-id fixed-width "fixed-width")
 (def ^:icon-id flex-grid "flex-grid")
 (def ^:icon-id flex-horizontal "flex-horizontal")
@@ -209,7 +209,7 @@
 (def ^:icon-id puzzle "puzzle")
 (def ^:icon-id rectangle "rectangle")
 (def ^:icon-id reload "reload")
-(def ^:icon-id remove-icon "remove")
+(def ^:icon-id remove "remove")
 (def ^:icon-id rgba "rgba")
 (def ^:icon-id rgba-complementary "rgba-complementary")
 (def ^:icon-id rotation "rotation")
@@ -280,6 +280,7 @@
 (mf/defc icon*
   {::mf/props :obj}
   [{:keys [id size class] :rest props}]
+  (assert (contains? icon-list id) "invalid icon id")
   (let [class (dm/str (or class "") " " (stl/css :icon))
         props (mf/spread-props props {:class class :width icon-size-m :height icon-size-m})
         size-px (cond (= size "s") icon-size-s :else icon-size-m)

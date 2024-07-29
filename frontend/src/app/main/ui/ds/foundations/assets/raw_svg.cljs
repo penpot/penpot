@@ -16,22 +16,21 @@
 (def ^:svg-id brand-github "brand-github")
 (def ^:svg-id brand-gitlab "brand-gitlab")
 (def ^:svg-id brand-google "brand-google")
-
 (def ^:svg-id loader "loader")
-(def ^:svg-id logo "penpot-logo")
-(def ^:svg-id logo-icon "penpot-logo-icon")
 (def ^:svg-id logo-error-screen "logo-error-screen")
 (def ^:svg-id login-illustration "login-illustration")
-
 (def ^:svg-id marketing-arrows "marketing-arrows")
 (def ^:svg-id marketing-exchange "marketing-exchange")
 (def ^:svg-id marketing-file "marketing-file")
 (def ^:svg-id marketing-layers "marketing-layers")
+(def ^:svg-id penpot-logo "penpot-logo")
+(def ^:svg-id penpot-logo-icon "penpot-logo-icon")
 
 (def raw-svg-list "A collection of all raw SVG assets" (collect-raw-svgs))
 
 (mf/defc raw-svg*
   {::mf/props :obj}
   [{:keys [id] :rest props}]
+  (assert (contains? raw-svg-list id) "invalid raw svg id")
   [:> "svg" props
    [:use {:href (dm/str "#asset-" id)}]])

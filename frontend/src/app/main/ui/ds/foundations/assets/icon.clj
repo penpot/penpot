@@ -7,15 +7,11 @@
 (ns app.main.ui.ds.foundations.assets.icon
   (:require
    [clojure.core :as c]
-   [cuerdas.core :as str]
    [rumext.v2]))
 
-(defmacro collect-icons
-  []
+(defmacro collect-icons []
   (let [ns-info (:ns &env)]
-    `(cljs.core/js-obj
-      ~@(->> (:defs ns-info)
-             (map val)
-             (filter (fn [entry] (-> entry :meta :icon-id)))
-             (mapcat (fn [{:keys [name]}]
-                       [(-> name c/name str/camel str/capital) name]))))))
+    `(set '~(->> (:defs ns-info)
+                 (map val)
+                 (filter (fn [entry] (-> entry :meta :icon-id)))
+                 (map (fn [{:keys [name]}] (c/name name)))))))

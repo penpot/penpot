@@ -9,7 +9,7 @@
    [app.common.data.macros :as dm]
    [app.main.style :as stl])
   (:require
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list]]
    [rumext.v2 :as mf]))
 
 (def button-variants (set '("primary" "secondary" "ghost" "destructive")))
@@ -17,9 +17,9 @@
 (mf/defc icon-button*
   {::mf/props :obj}
   [{:keys [class icon variant aria-label] :rest props}]
-  (assert (or (not variant) (contains? button-variants variant)) "invalid variant")
+  (assert (contains? icon-list icon) "expected valid icon id")
+  (assert (or (not variant) (contains? button-variants variant)) "expected valid variant")
   (assert (some? aria-label) "aria-label must be provided")
-  (assert (some? icon) "an icon id must be provided")
   (let [variant (or variant "primary")
         class (dm/str class " " (stl/css-case :icon-button true
                                               :icon-button-primary (= variant "primary")
