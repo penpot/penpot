@@ -27,7 +27,7 @@
 
   background: var(--button-bg-color);
   color: var(--button-fg-color);
-  border: 1px solid var(--button-border-color);
+  border: $b-1 solid var(--button-border-color);
 
   &:hover {
     --button-bg-color: var(--button-hover-bg-color);
