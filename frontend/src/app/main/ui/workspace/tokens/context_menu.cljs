@@ -311,6 +311,7 @@
         token-id (:token-id mdata)
         token (get (mf/deref refs/workspace-tokens) token-id)]
     (mf/use-effect
+     (mf/deps mdata)
      (fn []
        (when-let [node (mf/ref-val dropdown-ref)]
          (reset! width (.-offsetWidth node)))))
