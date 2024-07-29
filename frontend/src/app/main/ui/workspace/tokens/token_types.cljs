@@ -1,8 +1,9 @@
 (ns app.main.ui.workspace.tokens.token-types
   (:require
+   [app.common.data :as d :refer [ordered-map]]
    [app.common.types.token :as ctt]
    [app.main.ui.workspace.tokens.changes :as wtch]
-   [app.common.data :as d :refer [ordered-map]]))
+   [clojure.set :as set]))
 
 (def token-types
   (ordered-map
@@ -32,6 +33,11 @@
    [:dimensions
     {:title "Dimensions"
      :attributes #{:width :height}
+     :all-attributes (set/union
+                      ctt/spacing-keys
+                      ctt/sizing-keys
+                      ctt/border-radius-keys
+                      ctt/stroke-width-keys)
      :on-update-shape wtch/update-shape-dimensions
      :modal {:key :tokens/dimensions
              :fields [{:label "Dimensions"
