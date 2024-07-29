@@ -198,8 +198,8 @@
                      {:title "Border Radius" :submenu :border-radius}]
                     (stroke-width context-data)
                     [:separator]
-                    (generic-attribute-actions #{:x} "X" context-data)
-                    (generic-attribute-actions #{:y} "Y" context-data)))}))
+                    (generic-attribute-actions #{:x} "X" (assoc context-data :on-update-shape wtch/update-shape-position))
+                    (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape wtch/update-shape-position))))}))
 
 (defn default-actions [{:keys [token]}]
   (let [{:keys [modal]} (wtty/get-token-properties token)]

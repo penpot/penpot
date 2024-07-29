@@ -158,8 +158,11 @@
            (dwsl/update-layout [shape-id] layout-update)))))))
 
 (defn update-shape-position [value shape-ids attributes]
-  (doseq [shape-id shape-ids]
-    (st/emit! (dwt/update-position shape-id {(first attributes) value}))))
+  (ptk/reify ::update-shape-position
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/concat
+       (map #(dwt/update-position % (zipmap attributes (repeat value))) shape-ids)))))
 
 (defn update-layout-sizing-limits [value shape-ids attributes]
   (ptk/reify ::update-layout-sizing-limits
