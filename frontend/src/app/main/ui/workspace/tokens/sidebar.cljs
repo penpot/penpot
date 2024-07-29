@@ -15,6 +15,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.changes :as wtch]
+   [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
@@ -155,6 +156,7 @@
         token-groups (mf/with-memo [tokens]
                        (sorted-token-groups tokens))]
     [:article
+     [:& token-context-menu]
      [:div.assets-bar
       (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
                                                                 (:empty token-groups))]
