@@ -2,7 +2,7 @@
   :name "Wireframe library"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/wireframing-kit.penpot"}
  {:id "prototype-examples"
-  :name "Prototipe template"
+  :name "Prototype template"
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/prototype-examples.penpot"}
  {:id "plants-app"
   :name "UI mockup example"
