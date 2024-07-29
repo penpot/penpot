@@ -5,9 +5,40 @@ const { Loader } = Components;
 
 export default {
   title: "Product/Loader",
-  component: Components.Loader,
+  component: Loader,
+  args: {
+    title: "Loading…",
+    overlay: false,
+  },
+  argTypes: {
+    width: { control: "number" },
+    height: { control: "number" },
+    overlay: { control: "boolean" },
+    children: { control: "text" },
+  },
+  render: ({ ...args }) => <Loader {...args} />,
 };
 
-export const Default = {
-  render: () => <Loader title="Loading" />,
+export const Default = {};
+
+export const WithContent = {
+  args: {
+    children: "Lorem ipsum",
+  },
+};
+
+export const Overlay = {
+  args: {
+    overlay: true,
+    children: "Lorem ipsum",
+  },
+  parameters: {
+    layout: "fullscreen",
+  },
+};
+
+export const Inline = {
+  args: {
+    children: "Lorem ipsum",
+  },
 };

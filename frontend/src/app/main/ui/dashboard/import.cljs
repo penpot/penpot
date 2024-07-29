@@ -18,6 +18,7 @@
    [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
+   [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as i]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.main.worker :as uw]
@@ -266,14 +267,17 @@
                    :editable (and ready? (not editing?)))}
 
      [:div {:class (stl/css :file-name)}
-      [:div {:class (stl/css-case :file-icon true
-                                  :icon-fill ready?)}
-       (cond loading?       i/loader-pencil
-             ready?         i/logo-icon
-             import-warn?   i/msg-warning
-             import-error?  i/close
-             import-finish? i/tick
-             analyze-error? i/close)]
+      (if loading?
+        [:> loader*  {:width 16
+                      :title (tr "labels.loading")}]
+        [:div {:class (stl/css-case :file-icon true
+                                    :icon-fill ready?)}
+         (cond ready?         i/logo-icon
+               import-warn?   i/msg-warning
+               import-error?  i/close
+               import-finish? i/tick
+               analyze-error? i/close)])
+
 
       (if editing?
         [:div {:class (stl/css :file-name-edit)}

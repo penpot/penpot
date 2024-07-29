@@ -15,6 +15,7 @@
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.shapes :refer [shape-wrapper]]
    [app.main.worker :as uw]
@@ -317,10 +318,12 @@
                               :error    (:export-error? file))}
 
    [:div {:class (stl/css :file-name)}
-    [:span {:class (stl/css :file-icon)}
-     (cond (:export-success? file) i/tick
-           (:export-error? file)   i/close
-           (:loading? file)        i/loader-pencil)]
+    (if (:loading? file)
+      [:> loader*  {:width 16
+                    :title (tr "labels.loading")}]
+      [:span {:class (stl/css :file-icon)}
+       (cond (:export-success? file) i/tick
+             (:export-error? file)   i/close)])
 
     [:div {:class (stl/css :file-name-label)}
      (:name file)]]])

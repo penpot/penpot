@@ -278,16 +278,6 @@ $thumbnail-default-height: $s-168; // Default width
     height: auto;
     width: 100%;
   }
-
-  svg {
-    height: 100%;
-    width: 100%;
-  }
-
-  :global(svg#loader-pencil) {
-    stroke: $db-quaternary;
-    width: calc(var(--th-width, #{$thumbnail-default-width}) * 0.25);
-  }
 }
 
 // LIBRARY VIEW
@@ -380,4 +370,8 @@ $thumbnail-default-height: $s-168; // Default width
   display: grid;
   grid-template-columns: auto 1fr;
   gap: $s-8;
+}
+
+.grid-loader {
+  --icon-width: calc(var(--th-width, #{$thumbnail-default-width}) * 0.25);
 }

@@ -12,21 +12,6 @@
   display: grid;
   padding: $s-12 0;
 
-  &.loader {
-    justify-items: center;
-  }
-
-  .icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    svg {
-      width: $s-64;
-      height: $s-64;
-      fill: $df-secondary;
-    }
-  }
-
   &.libs {
     background-image: url(/images/ph-left.svg), url(/images/ph-right.svg);
     background-position:
@@ -89,4 +74,18 @@
     color: $df-secondary;
     font-size: $fs-16;
   }
+}
+
+.placeholder-loader {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  row-gap: var(--sp-xxxl);
+  margin: var(--sp-xxxl) 0 var(--sp-m) 0;
+}
+
+.placeholder-text {
+  color: $df-secondary;
+  font-size: $fs-16;
+  text-align: center;
 }

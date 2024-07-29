@@ -17,9 +17,9 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.hooks.resize :refer [use-resize-observer]]
-   [app.main.ui.icons :as i]
    [app.main.ui.workspace.colorpicker]
    [app.main.ui.workspace.context-menu :refer [context-menu]]
    [app.main.ui.workspace.coordinates :as coordinates]
@@ -124,8 +124,9 @@
 
 (mf/defc workspace-loader
   []
-  [:div {:class (stl/css :workspace-loader)}
-   i/loader-pencil])
+  [:> loader*  {:title (tr "labels.loading")
+                :class (stl/css :workspace-loader)
+                :overlay true}])
 
 (mf/defc workspace-page
   {::mf/wrap-props false}
@@ -147,7 +148,6 @@
       (fn []
         (when (some? page-id)
           (st/emit! (dw/finalize-page page-id)))))
-
     (if ^boolean page-ready?
       [:& workspace-content {:page-id page-id
                              :file file

@@ -18,15 +18,10 @@
   grid-template-rows: 1fr;
   grid-template-columns: auto 1fr auto;
   overflow: hidden;
+}
 
-  .workspace-loader {
-    @include flexCenter;
-    grid-area: viewport;
-    background-color: var(--loader-background);
-    :global(svg#loader-pencil) {
-      fill: var(--icon-foreground);
-    }
-  }
+.workspace-loader {
+  grid-area: viewport;
 }
 
 .workspace-content {

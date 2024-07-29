@@ -5,13 +5,12 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.auth.verify-token
-  (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.messages :as msg]
    [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.main.ui.icons :as i]
+   [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.static :as static]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -95,5 +94,5 @@
 
     (if @bad-token
       [:> static/invalid-token {}]
-      [:div {:class (stl/css :verify-token)}
-       i/loader-pencil])))
+      [:> loader*  {:title (tr "labels.loading")
+                    :overlay true}])))
