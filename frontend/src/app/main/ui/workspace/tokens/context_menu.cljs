@@ -310,12 +310,10 @@
         selected-shapes (into [] (keep (d/getf objects)) selected)
         token-id (:token-id mdata)
         token (get (mf/deref refs/workspace-tokens) token-id)]
-
-     (mf/use-effect
-      (fn []
-        (when-let [node (mf/ref-val dropdown-ref)]
-          (reset! width (.-offsetWidth node)))))
-
+    (mf/use-effect
+     (fn []
+       (when-let [node (mf/ref-val dropdown-ref)]
+         (reset! width (.-offsetWidth node)))))
     [:& dropdown {:show (boolean mdata)
                   :on-close #(st/emit! dt/hide-token-context-menu)}
      [:div {:class (stl/css :token-context-menu)
