@@ -87,7 +87,7 @@
 
         color (if selected?
                 (if (ctn/in-any-component? objects frame)
-                  "var(--color-component-highlight)"
+                  "var(--assets-component-hightlight)"
                   "var(--color-accent-tertiary)")
                 "#8f9da3") ;; TODO: Set this color on the DS
 

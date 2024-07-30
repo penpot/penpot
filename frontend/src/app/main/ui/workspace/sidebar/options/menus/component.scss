@@ -260,7 +260,7 @@
 .component-list-empty {
   @include bodySmallTypography;
   margin: 0 $s-4 0 $s-8;
-  color: $df-secondary;
+  color: var(--color-foreground-secondary);
 }
 
 .component-item {

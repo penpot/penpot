@@ -289,7 +289,7 @@
   }
 
   .track-name {
-    color: $df-primary;
+    color: var(--color-foreground-primary);
   }
 
   .track-detail {
@@ -297,7 +297,7 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     width: 100%;
-    color: $df-secondary;
+    color: var(--color-foreground-secondary);
   }
 
   .expand-icon {
@@ -357,11 +357,11 @@
   button {
     @include buttonStyle;
     padding: $s-8;
-    color: $df-primary;
+    color: var(--color-foreground-primary);
     border-radius: $br-6;
 
     &:hover {
-      background: $db-quaternary;
+      background: var(--color-background-quaternary);
     }
   }
 }

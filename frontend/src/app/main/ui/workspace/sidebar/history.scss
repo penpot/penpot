@@ -95,7 +95,7 @@
     }
     .history-entry-summary-text {
       margin: 0 $s-8;
-      color: $df-primary;
+      color: var(--color-foreground-primary);
     }
     .history-entry-summary-button {
       opacity: $op-0;

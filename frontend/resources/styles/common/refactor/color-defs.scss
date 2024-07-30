@@ -9,83 +9,49 @@
 :root {
   // DARK
   // Dark background
-  --db-primary: #18181a;
-  --db-primary-60: #{color.change(#18181a, $alpha: 0.6)};
-  --db-secondary: #000000;
-  --db-secondary-30: #{color.change(#000000, $alpha: 0.3)};
-  --db-secondary-40: #{color.change(#000000, $alpha: 0.4)};
-  --db-secondary-80: #{color.change(#000000, $alpha: 0.8)};
-  --db-tertiary: #212426;
-  --db-quaternary: #2e3434;
+  --db-primary-60: #{color.change(#18181a, $alpha: 0.6)}; // used on overlay dark mode
 
   //Dark foreground
-  --df-primary: #ffffff;
-  --df-secondary: #8f9da3;
-  --df-secondary-40: #{color.change(#8f9da3, $alpha: 0.4)}; // TODO: Check if needed
+  --df-secondary: #8f9da3; // Used on button disabled background dark mode, grid metadata and some svg
+  --df-secondary-40: #{color.change(#8f9da3, $alpha: 0.4)}; // Used on button disabled foreground dark mode
 
   //Dark accent
-  --da-primary: #7efff5;
-  --da-primary-muted: #426158;
-  --da-secondary: #bb97d8;
-  --da-tertiary: #00d1b8;
-  --da-tertiary-10: #{color.change(#00d1b8, $alpha: 0.1)};
-  --da-tertiary-70: #{color.change(#00d1b8, $alpha: 0.7)};
-  --da-quaternary: #ff6fe0;
+  --da-tertiary-10: #{color.change(#00d1b8, $alpha: 0.1)}; // selection rect dark mode
+  --da-tertiary-70: #{color.change(#00d1b8, $alpha: 0.7)}; // selection rect background dark mode
 
   // LIGHT
   // Light background
-  --lb-primary: #ffffff;
-  --lb-primary-60: #{color.change(#ffffff, $alpha: 0.6)};
-  --lb-secondary: #e8eaee;
-  --lb-secondary-30: #{color.change(#e8eaee, $alpha: 0.3)};
-  --lb-secondary-80: #{color.change(#e8eaee, $alpha: 0.8)};
-  --lb-tertiary: #f3f4f6;
-  --lb-quaternary: #eef0f2;
+  --lb-primary-60: #{color.change(#ffffff, $alpha: 0.6)}; // overlay color light mode
+  --lb-quaternary: #eef0f2; // background disabled token
 
   //Light foreground
-  --lf-primary: #000;
-  --lf-secondary: #495e74;
-  --lf-secondary-40: #{color.change(#495e74, $alpha: 0.4)};
-  --lf-secondary-50: #{color.change(#495e74, $alpha: 0.5)};
+  --lf-secondary-40: #{color.change(#495e74, $alpha: 0.4)}; // foreground disabled token
 
   //Light accent
-  --la-primary: #6911d4;
-  --la-primary-muted: #e1d2f5;
-  --la-secondary: #1345aa;
-  --la-tertiary: #8c33eb;
-  --la-tertiary-10: #{color.change(#8c33eb, $alpha: 0.1)};
-  --la-tertiary-70: #{color.change(#8c33eb, $alpha: 0.7)};
-  --la-quaternary: #ff6fe0;
+  --la-tertiary-10: #{color.change(#8c33eb, $alpha: 0.1)}; // selection rect light mode
+  --la-tertiary-70: #{color.change(#8c33eb, $alpha: 0.7)}; // selection rect background light mode
 
   // STATUS COLOR
-  --status-color-success-200: #a7e8d9;
-  --status-color-success-500: #2d9f8f;
-  --status-color-success-950: #0a2927;
+  --status-color-success-200: #a7e8d9; // Used on Register confirmation text
+  --status-color-success-500: #2d9f8f; // Used on accept icon, and status widget
 
-  --status-color-warning-200: #ffc8a8;
-  --status-color-warning-500: #fe4811;
-  --status-color-warning-950: #440806;
+  --status-color-warning-500: #fe4811; // Used on status widget, some buttons and warnings icons and elements
 
-  --status-color-error-200: #ffcada;
-  --status-color-error-500: #ff3277;
-  --status-color-error-950: #500124;
+  --status-color-error-500: #ff3277; // Used on discard icon, some borders and svg, and on status widget
 
-  --status-color-info-200: #bae3fd;
-  --status-color-info-500: #0e9be9;
-  --status-color-info-950: #082c49;
-  // Status color default will change with theme and will be defined on theme files
+  --status-color-info-500: #0e9be9; // used on pixel grid and status widget
 
   //GENERIC
-  --color-canvas: #e8e9ea;
+  --color-canvas: #e8e9ea; // Not defined on DS
 
   // APP COLORS
-  --app-white: #ffffff;
-  --app-black: #000;
+  --app-white: #ffffff; // Used in several places
+  --app-black: #000; // Used on interactions, measurements and editor files
 
   // SOCIAL LOGIN BUTTONS
   --google-login-background: #4285f4;
   --google-login-background-hover: #{color.adjust(#4285f4, $lightness: -15%)};
-  --google-login-foreground: var(--df-primary);
+  --google-login-foreground: var(--app-white);
 
   --github-login-background: #4c4c4c;
   --github-login-background-hover: #{color.adjust(#4c4c4c, $lightness: -15%)};

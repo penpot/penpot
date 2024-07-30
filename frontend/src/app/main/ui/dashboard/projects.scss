@@ -155,7 +155,7 @@
 
 // Team hero
 .team-hero {
-  background-color: $db-tertiary;
+  background-color: var(--color-background-tertiary);
   border-radius: $br-8;
   border: none;
   display: flex;
@@ -185,7 +185,7 @@
 
 .title {
   font-size: $fs-24;
-  color: $df-primary;
+  color: var(--color-foreground-primary);
   font-weight: $fw400;
 }
 
@@ -193,11 +193,11 @@
   flex: 1;
   font-size: $fs-16;
   span {
-    color: $df-secondary;
+    color: var(--color-foreground-secondary);
     display: block;
   }
   a {
-    color: $da-primary;
+    color: var(--color-accent-primary);
   }
   padding: $s-8 0;
 }

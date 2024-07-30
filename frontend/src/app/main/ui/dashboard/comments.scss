@@ -32,7 +32,7 @@
   font-size: $fs-12;
   padding: $s-24;
   text-align: center;
-  color: $df-secondary;
+  color: var(--color-foreground-secondary);
 }
 
 .comments-icon {
@@ -57,7 +57,7 @@
   }
 
   &:hover {
-    background-color: $db-quaternary;
+    background-color: var(--color-background-quaternary);
     --comment-icon-small-foreground-color: var(--icon-foreground-active);
   }
 }
@@ -69,7 +69,7 @@
 
 .dropdown {
   @include menuShadow;
-  background-color: $db-tertiary;
+  background-color: var(--color-background-tertiary);
   border-radius: $br-8;
   border: $s-1 solid transparent;
   bottom: $s-4;
@@ -82,7 +82,7 @@
 
   hr {
     margin: 0;
-    border-color: $df-secondary;
+    border-color: var(--color-foreground-secondary);
   }
 }
 
@@ -94,7 +94,7 @@
 }
 
 .header-title {
-  color: $df-secondary;
+  color: var(--color-foreground-secondary);
   font-size: $fs-11;
   line-height: 1.28;
   flex-grow: 1;
