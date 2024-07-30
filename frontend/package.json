@@ -5,7 +5,9 @@
   "author": "Kaleidos INC",
   "private": true,
   "packageManager": "yarn@4.2.2",
-  "browserslist": ["defaults"],
+  "browserslist": [
+    "defaults"
+  ],
   "type": "module",
   "repository": {
     "type": "git",

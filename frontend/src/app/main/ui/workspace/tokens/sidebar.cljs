@@ -14,9 +14,12 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
+   [app.main.ui.workspace.tokens.changes :as wtch]
+   [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
+   [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -70,7 +73,7 @@
   [{:keys [type tokens selected-shapes token-type-props]}]
   (let [open? (mf/deref (-> (l/key type)
                             (l/derived lens:token-type-open-status)))
-        {:keys [modal attributes title]} token-type-props
+        {:keys [modal attributes all-attributes title]} token-type-props
 
         on-context-menu (mf/use-fn
                          (fn [event token]
@@ -78,8 +81,6 @@
                            (dom/stop-propagation event)
                            (st/emit! (dt/show-token-context-menu {:type :token
                                                                   :position (dom/get-client-position event)
-                                                                  :token-type-props token-type-props
-                                                                  :token-type type
                                                                   :token-id (:id token)}))))
 
         on-toggle-open-click (mf/use-fn
@@ -99,10 +100,11 @@
                              (mf/deps selected-shapes token-type-props)
                              (fn [event token]
                                (dom/stop-propagation event)
-                               (st/emit!
-                                (wtc/toggle-token {:token token
-                                                   :shapes selected-shapes
-                                                   :token-type-props token-type-props}))))
+                               (when (seq selected-shapes)
+                                 (st/emit!
+                                  (wtch/toggle-token {:token token
+                                                      :shapes selected-shapes
+                                                      :token-type-props token-type-props})))))
         tokens-count (count tokens)]
     [:div {:on-click on-toggle-open-click}
      [:& cmm/asset-section {:icon (mf/fnc icon-wrapper [_]
@@ -123,7 +125,7 @@
             [:& token-pill
              {:key (:id token)
               :token token
-              :highlighted? (wtt/shapes-token-applied? token selected-shapes attributes)
+              :highlighted? (wtt/shapes-token-applied? token selected-shapes (or all-attributes attributes))
               :on-click #(on-token-pill-click % token)
               :on-context-menu #(on-context-menu % token)}])]])]]))
 
@@ -132,7 +134,7 @@
   Sort each group alphabetically (by their `:token-key`)."
   [tokens]
   (let [tokens-by-type (wtc/group-tokens-by-type tokens)
-        {:keys [empty filled]} (->> wtc/token-types
+        {:keys [empty filled]} (->> wtty/token-types
                                     (map (fn [[token-key token-type-props]]
                                            {:token-key token-key
                                             :token-type-props token-type-props
@@ -154,6 +156,7 @@
         token-groups (mf/with-memo [tokens]
                        (sorted-token-groups tokens))]
     [:article
+     [:& token-context-menu]
      [:div.assets-bar
       (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
                                                                 (:empty token-groups))]

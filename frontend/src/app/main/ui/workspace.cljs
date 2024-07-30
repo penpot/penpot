@@ -30,7 +30,6 @@
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [app.main.ui.workspace.sidebar.collapsable-button :refer [collapsed-button]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
-   [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.modals]
    [app.main.ui.workspace.viewport :refer [viewport]]
    [app.util.debug :as dbg]
@@ -206,7 +205,6 @@
                                         :style {:background-color background-color
                                                 :touch-action "none"}}
            [:& context-menu]
-           [:& token-context-menu]
 
            (if ^boolean file-ready?
              [:& workspace-page {:page-id page-id

@@ -1,6 +1,13 @@
 (ns app.main.ui.workspace.tokens.token
   (:require
+   [app.common.data :as d]
+   [clojure.set :as set]
    [cuerdas.core :as str]))
+
+(defn resolve-token-value [{:keys [value resolved-value] :as _token}]
+  (or
+   resolved-value
+   (d/parse-double value)))
 
 (defn attributes-map
   "Creats an attributes map using collection of `attributes` for `id`."
@@ -18,19 +25,63 @@
                  applied-tokens)
         (into {}))))
 
+(defn token-attribute-applied?
+  "Test if `token` is applied to a `shape` on single `token-attribute`."
+  [token shape token-attribute]
+  (when-let [id (get-in shape [:applied-tokens token-attribute])]
+    (= (:id token) id)))
+
 (defn token-applied?
-  "Test if `token` is applied to a `shape` with the given `token-attributes`."
+  "Test if `token` is applied to a `shape` with at least one of the one of the given `token-attributes`."
   [token shape token-attributes]
-  (let [{:keys [id]} token
-        applied-tokens (get shape :applied-tokens {})]
-    (some (fn [attr]
-            (= (get applied-tokens attr) id))
-          token-attributes)))
+  (some #(token-attribute-applied? token shape %) token-attributes))
+
+(defn token-applied-attributes
+  "Return a set of which `token-attributes` are applied with `token`."
+  [token shape token-attributes]
+  (-> (filter #(token-attribute-applied? token shape %) token-attributes)
+      (set)))
 
 (defn shapes-token-applied?
-  "Test if `token` is applied to to any of `shapes` with the given `token-attributes`."
+  "Test if `token` is applied to to any of `shapes` with at least one of the one of the given `token-attributes`."
   [token shapes token-attributes]
   (some #(token-applied? token % token-attributes) shapes))
+
+(defn shapes-token-applied-all?
+  "Test if `token` is applied to to any of `shapes` with at least one of the one of the given `token-attributes`."
+  [token shapes token-attributes]
+  (some #(token-applied? token % token-attributes) shapes))
+
+(defn shapes-ids-by-applied-attributes [token shapes token-attributes]
+  (reduce (fn [acc shape]
+            (let [applied-ids-by-attribute (->> (map #(when (token-attribute-applied? token shape %)
+                                                        [% #{(:id shape)}])
+                                                     token-attributes)
+                                                (filter some?)
+                                                (into {}))]
+              (merge-with into acc applied-ids-by-attribute)))
+          {} shapes))
+
+(defn shapes-applied-all? [ids-by-attributes shape-ids attributes]
+  (every? #(set/superset? (get ids-by-attributes %) shape-ids) attributes))
+
+(defn group-shapes-by-all-applied
+  [token shapes token-attributes]
+  (reduce
+   (fn [acc cur-shape]
+     (let [applied-attrs (token-applied-attributes token cur-shape token-attributes)]
+       (cond
+         (empty? applied-attrs) (update acc :none (fnil conj []) cur-shape)
+         (= applied-attrs token-attributes) (update acc :all (fnil conj []) cur-shape)
+         :else (reduce (fn [acc' cur']
+                         (update-in acc' [:some cur'] (fnil conj []) cur-shape))
+                       acc applied-attrs))))
+   {} shapes))
+
+(defn group-shapes-by-all-applied-all? [grouped-shapes]
+  (and (seq (:all grouped-shapes))
+       (empty? (:other grouped-shapes))
+       (empty? (:some grouped-shapes))))
 
 (defn token-name->path
   "Splits token-name into a path vector split by `.` characters.

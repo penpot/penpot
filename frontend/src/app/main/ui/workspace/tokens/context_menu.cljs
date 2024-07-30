@@ -8,26 +8,227 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
-   [app.common.types.shape.radius :as ctsr]
    [app.main.data.modal :as modal]
-   [app.main.data.shortcuts :as scd]
    [app.main.data.tokens :as dt]
-   [app.main.data.workspace :as dw]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.shape-layout :as dwsl]
-   [app.main.data.workspace.transforms :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.tokens.core :as wtc]
+   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.token :as wtt]
+   [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
    [app.util.timers :as timers]
-   [clojure.set :as set]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
+
+;; Actions ---------------------------------------------------------------------
+
+(defn attribute-actions [token selected-shapes attributes]
+  (let [ids-by-attributes (wtt/shapes-ids-by-applied-attributes token selected-shapes attributes)
+        shape-ids (into #{} (map :id selected-shapes))]
+    {:all-selected? (wtt/shapes-applied-all? ids-by-attributes shape-ids attributes)
+     :shape-ids shape-ids
+     :selected-pred #(seq (% ids-by-attributes))}))
+
+(defn generic-attribute-actions [attributes title {:keys [token selected-shapes on-update-shape]}]
+  (let [on-update-shape-fn (or on-update-shape
+                               (-> (wtty/get-token-properties token)
+                                   (:on-update-shape)))
+        {:keys [selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)]
+    (map (fn [attribute]
+           (let [selected? (selected-pred attribute)
+                 props {:attributes #{attribute}
+                        :token token
+                        :shape-ids shape-ids}]
+
+             {:title title
+              :selected? selected?
+              :action (fn []
+                        (if selected?
+                         (st/emit! (wtch/unapply-token props))
+                         (st/emit! (wtch/apply-token (assoc props :on-update-shape on-update-shape-fn)))))}))
+         attributes)))
+
+(defn all-or-sepearate-actions [{:keys [attribute-labels on-update-shape-all on-update-shape]}
+                                {:keys [token selected-shapes]}]
+  (let [attributes (set (keys attribute-labels))
+        {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)
+        all-action (let [props {:attributes attributes
+                                :token token
+                                :shape-ids shape-ids}]
+                     {:title "All"
+                      :selected? all-selected?
+                      :action #(if all-selected?
+                                 (st/emit! (wtch/unapply-token props))
+                                 (st/emit! (wtch/apply-token (assoc props :on-update-shape (or on-update-shape-all on-update-shape)))))})
+        single-actions (map (fn [[attr title]]
+                              (let [selected? (selected-pred attr)]
+                                {:title title
+                                 :selected? (and (not all-selected?) selected?)
+                                 :action #(let [props {:attributes #{attr}
+                                                       :token token
+                                                       :shape-ids shape-ids}
+                                                event (cond
+                                                        all-selected? (-> (assoc props :attributes-to-remove attributes)
+                                                                          (wtch/apply-token))
+                                                        selected? (wtch/unapply-token props)
+                                                        :else (-> (assoc props :on-update-shape on-update-shape)
+                                                                  (wtch/apply-token)))]
+                                            (st/emit! event))}))
+                            attribute-labels)]
+    (concat [all-action] single-actions)))
+
+(defn spacing-attribute-actions [{:keys [token selected-shapes] :as context-data}]
+  (let [on-update-shape (fn [resolved-value shape-ids attrs]
+                          (dwsl/update-layout shape-ids {:layout-padding (zipmap attrs (repeat resolved-value))}))
+        padding-attrs {:p1 "Top"
+                       :p2 "Right"
+                       :p3 "Bottom"
+                       :p4 "Left"}
+        all-padding-attrs (into #{} (keys padding-attrs))
+        {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes all-padding-attrs)
+        horizontal-attributes #{:p1 :p3}
+        horizontal-padding-selected? (and
+                                      (not all-selected?)
+                                      (every? selected-pred horizontal-attributes))
+        vertical-attributes #{:p2 :p4}
+        vertical-padding-selected? (and
+                                    (not all-selected?)
+                                    (every? selected-pred vertical-attributes))
+        padding-items [{:title "All"
+                        :selected? all-selected?
+                        :action (fn []
+                                  (let [props {:attributes all-padding-attrs
+                                               :token token
+                                               :shape-ids shape-ids}]
+                                    (if all-selected?
+                                      (st/emit! (wtch/unapply-token props))
+                                      (st/emit! (wtch/apply-token (assoc props :on-update-shape on-update-shape))))))}
+                       {:title "Horizontal"
+                        :selected? horizontal-padding-selected?
+                        :action (fn []
+                                  (let [props {:token token
+                                               :shape-ids shape-ids}
+                                        event (cond
+                                                all-selected? (wtch/apply-token (assoc props :attributes-to-remove vertical-attributes))
+                                                horizontal-padding-selected? (wtch/apply-token (assoc props :attributes-to-remove horizontal-attributes))
+                                                :else (wtch/apply-token (assoc props
+                                                                               :attributes horizontal-attributes
+                                                                               :on-update-shape on-update-shape)))]
+                                    (st/emit! event)))}
+                       {:title "Vertical"
+                        :selected? vertical-padding-selected?
+                        :action (fn []
+                                  (let [props {:token token
+                                               :shape-ids shape-ids}
+                                        event (cond
+                                                all-selected? (wtch/apply-token (assoc props :attributes-to-remove vertical-attributes))
+                                                vertical-padding-selected? (wtch/apply-token (assoc props :attributes-to-remove vertical-attributes))
+                                                :else (wtch/apply-token (assoc props
+                                                                               :attributes vertical-attributes
+                                                                               :on-update-shape on-update-shape)))]
+                                    (st/emit! event)))}]
+        single-padding-items (->> padding-attrs
+                                  (map (fn [[attr title]]
+                                         (let [same-axis-selected? (cond
+                                                                     (get horizontal-attributes attr) horizontal-padding-selected?
+                                                                     (get vertical-attributes attr) vertical-padding-selected?
+                                                                     :else true)
+                                               selected? (and
+                                                          (not all-selected?)
+                                                          (not same-axis-selected?)
+                                                          (selected-pred attr))]
+                                           {:title title
+                                            :selected? selected?
+                                            :action #(let [props {:attributes #{attr}
+                                                                  :token token
+                                                                  :shape-ids shape-ids}
+                                                           event (cond
+                                                                   all-selected? (-> (assoc props :attributes-to-remove all-padding-attrs)
+                                                                                     (wtch/apply-token))
+                                                                   selected? (wtch/unapply-token props)
+                                                                   :else (-> (assoc props :on-update-shape on-update-shape)
+                                                                             (wtch/apply-token)))]
+                                                       (st/emit! event))}))))
+        gap-items (all-or-sepearate-actions {:attribute-labels {:column-gap "Column Gap"
+                                                                :row-gap "Row Gap"}
+                                             :on-update-shape wtch/update-layout-spacing}
+                                            context-data)]
+    (concat padding-items
+            single-padding-items
+            [:separator]
+            gap-items)))
+
+(defn sizing-attribute-actions [context-data]
+  (concat
+   (all-or-sepearate-actions {:attribute-labels {:width "Width"
+                                                 :height "Height"}
+                              :on-update-shape wtch/update-shape-dimensions}
+                             context-data)
+   [:separator]
+   (all-or-sepearate-actions {:attribute-labels {:layout-item-min-w "Min Width"
+                                                 :layout-item-min-h "Min Height"}
+                              :on-update-shape wtch/update-layout-sizing-limits}
+                             context-data)
+   [:separator]
+   (all-or-sepearate-actions {:attribute-labels {:layout-item-max-w "Max Width"
+                                                 :layout-item-max-h "Max Height"}
+                              :on-update-shape wtch/update-layout-sizing-limits}
+                             context-data)))
+
+(def shape-attribute-actions-map
+  (let [stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")]
+    {:border-radius (partial all-or-sepearate-actions {:attribute-labels {:r1 "Top Left"
+                                                                          :r2 "Top Right"
+                                                                          :r4 "Bottom Left"
+                                                                          :r3 "Bottom Right"}
+                                                       :on-update-shape-all wtch/update-shape-radius-all
+                                                       :on-update-shape wtch/update-shape-radius-single-corner})
+     :spacing spacing-attribute-actions
+     :sizing sizing-attribute-actions
+     :rotation (partial generic-attribute-actions #{:rotation} "Rotation")
+     :opacity (partial generic-attribute-actions #{:opacity} "Opacity")
+     :stroke-width stroke-width
+     :dimensions (fn [context-data]
+                   (concat
+                    [{:title "Spacing" :submenu :spacing}
+                     {:title "Sizing" :submenu :sizing}
+                     :separator
+                     {:title "Border Radius" :submenu :border-radius}]
+                    (stroke-width context-data)
+                    [:separator]
+                    (generic-attribute-actions #{:x} "X" (assoc context-data :on-update-shape wtch/update-shape-position))
+                    (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape wtch/update-shape-position))))}))
+
+(defn default-actions [{:keys [token]}]
+  (let [{:keys [modal]} (wtty/get-token-properties token)]
+    [{:title "Delete Token"
+      :action #(st/emit! (dt/delete-token (:id token)))}
+     {:title "Duplicate Token"
+      :action #(st/emit! (dt/duplicate-token (:id token)))}
+     {:title "Edit Token"
+      :action (fn [event]
+                (let [{:keys [key fields]} modal
+                      token (dt/get-token-data-from-token-id (:id token))]
+                  (st/emit! dt/hide-token-context-menu)
+                  (dom/stop-propagation event)
+                  (modal/show! key {:x (.-clientX ^js event)
+                                    :y (.-clientY ^js event)
+                                    :position :right
+                                    :fields fields
+                                    :token token})))}]))
+
+(defn selection-actions [{:keys [type token] :as context-data}]
+  (let [with-actions (get shape-attribute-actions-map (or type (:type token)))
+        attribute-actions (with-actions context-data)]
+    (concat
+     attribute-actions
+     [:separator]
+     (default-actions context-data))))
+
+;; Components ------------------------------------------------------------------
 
 (def tokens-menu-ref
   (l/derived :token-context-menu refs/workspace-local))
@@ -39,312 +240,92 @@
 
 (mf/defc menu-entry
   {::mf/props :obj}
-  [{:keys [title shortcut on-click on-pointer-enter on-pointer-leave
-           on-unmount children selected? icon disabled value]}]
+  [{:keys [title value on-click selected? children submenu-offset]}]
   (let [submenu-ref (mf/use-ref nil)
         hovering?   (mf/use-ref false)
         on-pointer-enter
         (mf/use-callback
          (fn []
            (mf/set-ref-val! hovering? true)
-           (let [submenu-node (mf/ref-val submenu-ref)]
-             (when (some? submenu-node)
-               (dom/set-css-property! submenu-node "display" "block")))
-           (when on-pointer-enter (on-pointer-enter))))
-
+           (when-let [submenu-node (mf/ref-val submenu-ref)]
+             (dom/set-css-property! submenu-node "display" "block"))))
         on-pointer-leave
         (mf/use-callback
          (fn []
            (mf/set-ref-val! hovering? false)
-           (let [submenu-node (mf/ref-val submenu-ref)]
-             (when (some? submenu-node)
-               (timers/schedule
-                50
-                #(when-not (mf/ref-val hovering?)
-                   (dom/set-css-property! submenu-node "display" "none")))))
-           (when on-pointer-leave (on-pointer-leave))))
-
+           (when-let [submenu-node (mf/ref-val submenu-ref)]
+             (timers/schedule 50 #(when-not (mf/ref-val hovering?)
+                                    (dom/set-css-property! submenu-node "display" "none"))))))
         set-dom-node
         (mf/use-callback
          (fn [dom]
            (let [submenu-node (mf/ref-val submenu-ref)]
              (when (and (some? dom) (some? submenu-node))
                (dom/set-css-property! submenu-node "top" (str (.-offsetTop dom) "px"))))))]
+    [:li
+     {:class (stl/css :context-menu-item)
+      :ref set-dom-node
+      :data-value value
+      :on-click on-click
+      :on-pointer-enter on-pointer-enter
+      :on-pointer-leave on-pointer-leave}
+     (when selected?
+       [:span {:class (stl/css :icon-wrapper)}
+        [:span {:class (stl/css :selected-icon)} i/tick]])
+     [:span {:class (stl/css :title)} title]
+     (when children
+       [:*
+        [:span {:class (stl/css :submenu-icon)} i/arrow]
+        [:ul {:class (stl/css :token-context-submenu)
+              :ref submenu-ref
+              :style {:display "none"
+                      :top 0
+                      :left (str submenu-offset "px")}
+              :on-context-menu prevent-default}
+         children]])]))
 
-    (mf/use-effect
-     (mf/deps on-unmount)
-     (constantly on-unmount))
-
-    (if icon
-      [:li {:class (stl/css :icon-menu-item)
-            :disabled disabled
-            :data-value value
-            :ref set-dom-node
-            :on-click on-click
-            :on-pointer-enter on-pointer-enter
-            :on-pointer-leave on-pointer-leave}
-       [:span
-        {:class (stl/css :icon-wrapper)}
-        (if selected? [:span {:class (stl/css :selected-icon)}
-                       i/tick]
-            [:span {:class (stl/css :selected-icon)}])
-        [:span {:class (stl/css :shape-icon)} icon]]
-       [:span {:class (stl/css :title)} title]]
-      [:li {:class (stl/css :context-menu-item)
-            :disabled disabled
-            :ref set-dom-node
-            :data-value value
-            :on-click on-click
-            :on-pointer-enter on-pointer-enter
-            :on-pointer-leave on-pointer-leave}
-       [:span {:class (stl/css :title)} title]
-       (when shortcut
-         [:span   {:class (stl/css :shortcut)}
-          (for [[idx sc] (d/enumerate (scd/split-sc shortcut))]
-            [:span {:key (dm/str shortcut "-" idx)
-                    :class (stl/css :shortcut-key)} sc])])
-
-       (when (> (count children) 1)
-         [:span {:class (stl/css :submenu-icon)} i/arrow])
-
-       (when (> (count children) 1)
-         [:ul {:class (stl/css :token-context-submenu)
-               :ref submenu-ref
-               :style {:display "none" :left 235}
-               :on-context-menu prevent-default}
-          children])])))
-
-(mf/defc menu-separator
-  []
-  [:li {:class (stl/css :separator)}])
-
-(defn update-shape-radius-single-corner [value shape-ids attribute]
-  (st/emit!
-   (dch/update-shapes shape-ids
-                      (fn [shape]
-                        (when (ctsr/has-radius? shape)
-                          (ctsr/set-radius-4 shape (first attribute) value)))
-                      {:reg-objects? true
-                       :attrs [:rx :ry :r1 :r2 :r3 :r4]})))
-
-(defn apply-border-radius-token [{:keys [token-id token-type-props selected-shapes]} attributes]
-  (let [token (dt/get-token-data-from-token-id token-id)
-        updated-token-type-props (if (set/superset? #{:r1 :r2 :r3 :r4} attributes)
-                                   (assoc token-type-props
-                                          :on-update-shape update-shape-radius-single-corner
-                                          :attributes attributes)
-                                   token-type-props)]
-    (wtc/on-apply-token {:token token
-                         :token-type-props updated-token-type-props
-                         :selected-shapes selected-shapes})))
-
-(defn update-layout-spacing [value selected-shapes attributes]
-  (doseq [shape selected-shapes]
-    (let [shape-id (:id shape)]
-      (if-let [layout-gap (cond
-                            (:row-gap attributes) {:row-gap value}
-                            (:column-gap attributes) {:column-gap value})]
-        (st/emit! (dwsl/update-layout [shape-id] {:layout-gap layout-gap}))
-        (when (:layout shape)
-          (st/emit! (dwsl/update-layout [shape-id] {:layout-padding (zipmap attributes (repeat value))})))))))
-
-
-(defn apply-spacing-token [{:keys [token-id token-type-props selected-shapes]} attributes]
-  (let [token (dt/get-token-data-from-token-id token-id)
-        attributes (set attributes)
-        updated-token-type-props (assoc token-type-props
-                                        :on-update-shape (fn [value shape-ids]
-                                                           (update-layout-spacing value selected-shapes attributes))
-                                        :attributes attributes)]
-    (wtc/on-apply-token {:token token
-                         :token-type-props updated-token-type-props
-                         :selected-shapes selected-shapes})))
-
-(defn update-shape-position [value shape-ids attributes]
-  (doseq [shape-id shape-ids]
-    (st/emit! (dw/update-position shape-id {(first attributes) value}))))
-
-(defn apply-dimensions-token [{:keys [token-id token-type-props selected-shapes]} attributes]
-  (let [token (dt/get-token-data-from-token-id token-id)
-        attributes (set attributes)
-        updated-token-type-props (cond
-                                   (set/superset? #{:x :y} attributes)
-                                   (assoc token-type-props
-                                          :on-update-shape update-shape-position
-                                          :attributes attributes)
-
-                                   (set/superset? #{:stroke-width} attributes)
-                                   (assoc token-type-props
-                                          :on-update-shape wtc/update-stroke-width
-                                          :attributes attributes)
-
-                                   :else token-type-props)]
-    (wtc/on-apply-token {:token token
-                         :token-type-props updated-token-type-props
-                         :selected-shapes selected-shapes})))
-
-(defn update-shape-dimensions [value shape-ids attributes]
-  (st/emit! (dwt/update-dimensions shape-ids (first attributes) value)))
-
-(defn update-layout-sizing-limits [value shape-ids attributes]
-  (st/emit! (dwsl/update-layout-child shape-ids {(first attributes) value})))
-
-(defn apply-sizing-token [{:keys [token-id token-type-props selected-shapes]} attributes]
-  (let [token (dt/get-token-data-from-token-id token-id)
-        updated-token-type-props (cond
-                                   (set/superset? #{:width :height} attributes)
-                                   (assoc token-type-props
-                                          :on-update-shape update-shape-dimensions
-                                          :attributes attributes)
-
-                                   (set/superset? #{:layout-item-min-w :layout-item-max-w
-                                                    :layout-item-min-h :layout-item-max-h} attributes)
-                                   (assoc token-type-props
-                                          :on-update-shape update-layout-sizing-limits
-                                          :attributes attributes)
-
-                                   :else token-type-props)]
-    (wtc/on-apply-token {:token token
-                         :token-type-props updated-token-type-props
-                         :selected-shapes selected-shapes})))
-
-(defn apply-rotation-opacity-stroke-token [{:keys [token-id token-type-props selected-shapes]} attributes]
-  (let [token (dt/get-token-data-from-token-id token-id)]
-    (wtc/on-apply-token {:token token
-                         :token-type-props token-type-props
-                         :selected-shapes selected-shapes})))
-
-(defn additional-actions [{:keys [token-id token-type selected-shapes] :as context-data}]
-  (let [attributes->actions (fn [update-fn coll]
-                              (for [{:keys [attributes] :as item} coll]
-                                (let [selected? (wtt/shapes-token-applied? {:id token-id} selected-shapes attributes)]
-                                  (assoc item
-                                         :action #(update-fn context-data attributes)
-                                         :selected? selected?))))]
-    (case token-type
-      :border-radius (attributes->actions
-                      apply-border-radius-token
-                      [{:title "All" :attributes #{:r1 :r2 :r3 :r4}}
-                       {:title "Top Left" :attributes #{:r1}}
-                       {:title "Top Right" :attributes #{:r2}}
-                       {:title "Bottom Right" :attributes #{:r3}}
-                       {:title "Bottom Left" :attributes #{:r4}}])
-      :spacing       (attributes->actions
-                      apply-spacing-token
-                      [{:title "All" :attributes #{:p1 :p2 :p3 :p4}}
-                       {:title "Column Gap" :attributes #{:column-gap}}
-                       {:title "Vertical padding" :attributes #{:p1 :p3}}
-                       {:title "Horizontal padding" :attributes #{:p2 :p4}}
-                       {:title "Row Gap" :attributes #{:row-gap}}
-                       {:title "Top" :attributes #{:p1}}
-                       {:title "Right" :attributes #{:p2}}
-                       {:title "Bottom" :attributes #{:p3}}
-                       {:title "Left" :attributes #{:p4}}])
-
-      :sizing       (attributes->actions
-                     apply-sizing-token
-                     [{:title "All" :attributes #{:width :height :layout-item-min-w :layout-item-max-w :layout-item-min-h :layout-item-max-h}}
-                      {:title "Width" :attributes #{:width}}
-                      {:title "Height" :attributes #{:height}}
-                      {:title "Min width" :attributes #{:layout-item-min-w}}
-                      {:title "Max width" :attributes #{:layout-item-max-w}}
-                      {:title "Min height" :attributes #{:layout-item-min-h}}
-                      {:title "Max height" :attributes #{:layout-item-max-h}}])
-
-      :dimensions    (attributes->actions
-                      apply-dimensions-token
-                      [{:title "Spacing" :submenu :spacing}
-                       {:title "Sizing" :submenu :sizing}
-                       {:title "Border Radius" :submenu :border-radius}
-                       {:title "Border Width" :attributes #{:stroke-width}}
-                       {:title "x" :attributes #{:x}}
-                       {:title "y" :attributes #{:y}}])
-                      ;;TODO: Background blur {:title "Background blur" :attributes #{:width}}])
-
-      :opacity      (attributes->actions
-                     apply-rotation-opacity-stroke-token
-                     [{:title "opacity" :attributes #{:opacity}}])
-
-      :rotation     (attributes->actions
-                     apply-rotation-opacity-stroke-token
-                     [{:title "rotation" :attributes #{:rotation}}])
-
-      :stroke-width (attributes->actions
-                     apply-rotation-opacity-stroke-token
-                     [{:title "stroke width" :attributes #{:stroke-width}}])
-
-      [])))
-
-(defn generate-menu-entries [{:keys [token-id token-type-props token-type selected-shapes] :as context-data}]
-  (let [{:keys [modal]} token-type-props
-        default-actions [{:title "Delete Token" :action #(st/emit! (dt/delete-token token-id))}
-                         {:title "Duplicate Token" :action #(st/emit! (dt/duplicate-token token-id))}
-                         {:title "Edit Token" :action (fn [event]
-                                                        (let [{:keys [key fields]} modal
-                                                              token (dt/get-token-data-from-token-id token-id)]
-                                                          (st/emit! dt/hide-token-context-menu)
-                                                          (dom/stop-propagation event)
-                                                          (modal/show! key {:x (.-clientX ^js event)
-                                                                            :y (.-clientY ^js event)
-                                                                            :position :right
-                                                                            :fields fields
-                                                                            :token token})))}]
-        specific-actions (additional-actions context-data)
-        all-actions (concat specific-actions default-actions)]
-    all-actions))
-
-(mf/defc token-pill-context-menu
-  [context-data]
-  (let [menu-entries (generate-menu-entries context-data)]
-    (for [[index {:keys [title action selected? children submenu]}] (d/enumerate menu-entries)]
-      [:& menu-entry (cond-> {:key index
-                              :title title}
-                       (not submenu) (assoc :on-click action
-                      ;; TODO: Allow selected items wihtout an icon for the context menu
-                                            :icon (mf/html [:div {:class (stl/css-case :empty-icon true
-                                                                                       :hidden-icon (not selected?))}])
-                                            :selected? selected?))
-       (when submenu
-         (let [submenu-entries (additional-actions (assoc context-data :token-type submenu))]
-           (for [[index {:keys [title action selected?]}] (d/enumerate submenu-entries)]
-             [:& menu-entry {:key index
-                             :title title
-                             :on-click action
-                             :icon  (mf/html [:div {:class (stl/css-case :empty-icon true
-                                                                         :hidden-icon (not selected?))}])
-                             :selected? selected?}])))])))
+(mf/defc menu-tree
+  [{:keys [selected-shapes] :as context-data}]
+  (let [entries (if (seq selected-shapes)
+                  (selection-actions context-data)
+                  (default-actions context-data))]
+    (for [[index {:keys [title action selected? submenu] :as entry}] (d/enumerate entries)]
+      [:* {:key (str title " " index)}
+       (cond
+         (= :separator entry) [:li {:class (stl/css :separator)}]
+         submenu [:& menu-entry {:title title
+                                 :submenu-offset (:submenu-offset context-data)}
+                  [:& menu-tree (assoc context-data :type submenu)]]
+         :else [:& menu-entry
+                {:title title
+                 :on-click action
+                 :selected? selected?}])])))
 
 (mf/defc token-context-menu
   []
-  (let [mdata          (mf/deref tokens-menu-ref)
-        top            (- (get-in mdata [:position :y]) 20)
-        left           (get-in mdata [:position :x])
-        dropdown-ref   (mf/use-ref)
+  (let [mdata (mf/deref tokens-menu-ref)
+        top (+ (get-in mdata [:position :y]) 5)
+        left (+ (get-in mdata [:position :x]) 5)
+        width (mf/use-state 0)
+        dropdown-ref (mf/use-ref)
         objects (mf/deref refs/workspace-page-objects)
         selected (mf/deref refs/selected-shapes)
-        selected-shapes (into [] (keep (d/getf objects)) selected)]
-
+        selected-shapes (into [] (keep (d/getf objects)) selected)
+        token-id (:token-id mdata)
+        token (get (mf/deref refs/workspace-tokens) token-id)]
     (mf/use-effect
      (mf/deps mdata)
-     #(let [dropdown (mf/ref-val dropdown-ref)]
-        (when dropdown
-          (let [bounding-rect (dom/get-bounding-rect dropdown)
-                window-size (dom/get-window-size)
-                delta-x (max (- (+ (:right bounding-rect) 250) (:width window-size)) 0)
-                delta-y (max (- (:bottom bounding-rect) (:height window-size)) 0)
-                new-style (str "top: " (- top delta-y) "px; "
-                               "left: " (- left delta-x) "px;")]
-            (when (or (> delta-x 0) (> delta-y 0))
-              (.setAttribute ^js dropdown "style" new-style))))))
+     (fn []
+       (when-let [node (mf/ref-val dropdown-ref)]
+         (reset! width (.-offsetWidth node)))))
     [:& dropdown {:show (boolean mdata)
                   :on-close #(st/emit! dt/hide-token-context-menu)}
      [:div {:class (stl/css :token-context-menu)
             :ref dropdown-ref
             :style {:top top :left left}
             :on-context-menu prevent-default}
-      (when  (= :token (:type mdata))
+      (when token
         [:ul {:class (stl/css :context-list)}
-         [:& token-pill-context-menu {:token-id (:token-id mdata)
-                                      :token-type-props (:token-type-props mdata)
-                                      :token-type (:token-type mdata)
-                                      :selected-shapes selected-shapes}]])]]))
+         [:& menu-tree {:submenu-offset @width
+                        :token token
+                        :selected-shapes selected-shapes}]])]]))

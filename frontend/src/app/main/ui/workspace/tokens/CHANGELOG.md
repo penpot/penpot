@@ -18,6 +18,25 @@ If possible add video here from PR as well
 
 ## Changes
 
+### 2024-07-25 - UX Improvements for the context menu
+
+[Link to PR](https://github.com/tokens-studio/tokens-studio-for-penpot/pull/224)
+
+Changes context menu behavior according to [Specs](https://github.com/tokens-studio/obsidian-docs/blob/31f0d7f98ff5ac922970f3009fe877cc02d6d0cd/Products/TS%20for%20Penpot/Specs/Token%20State%20Specs.md)
+
+-   Removing a token wont update the shape
+-   Mixed selection (shapes with applied, shapes without applied) will always unapply token
+-   Multi selection of shapes without token will apply the token to all
+-   Every shape change and token applying should be one undo step now
+-   Prevent token applying when nothign is selected
+-   `All` is a toggle instead of a checkbox if all tokens have been applied
+    -   For instance with border radius the context menu can `:r1 :r2 :r3 :r4` which will highlight `All`
+    -   If one attribute is missing it will check the single attributes
+    -   Clicking a single attribute after clicking `All` will remove the other attributes
+-   Fixed some issues for switching between split and uniform border radius
+-   Clicking a token wont apply all attributes anymore. We apply only a select collection of attributes, which makes most sense. For instance on `sizing` we only apply `width` and `height` instead of all (`max-width`, `max-height`, `min-heigt`, `min-width`)
+
+
 ### 2024-07-05 - UX Improvements when applying tokens
 
 [Link to PR](https://github.com/tokens-studio/tokens-studio-for-penpot/compare/token-studio-develop...ux-improvements?body=&expand=1)
