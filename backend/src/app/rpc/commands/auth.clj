@@ -286,14 +286,17 @@
     (try
       (-> (db/insert! conn :profile params)
           (profile/decode-row))
-      (catch org.postgresql.util.PSQLException e
-        (let [state (.getSQLState e)]
+      (catch org.postgresql.util.PSQLException cause
+        (let [state (.getSQLState cause)]
           (if (not= state "23505")
-            (throw e)
-            (ex/raise :type :validation
-                      :code :email-already-exists
-                      :hint "email already exists"
-                      :cause e)))))))
+            (throw cause)
+
+            (do
+              (l/error :hint "not an error" :cause cause)
+              (ex/raise :type :validation
+                        :code :email-already-exists
+                        :hint "email already exists"
+                        :cause cause))))))))
 
 (defn create-profile-rels!
   [conn {:keys [id] :as profile}]
