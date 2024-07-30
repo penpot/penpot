@@ -45,9 +45,10 @@
 
              {:title title
               :selected? selected?
-              :action (if selected?
-                        (st/emit! (wtch/unapply-token props))
-                        (st/emit! (wtch/apply-token (assoc props :on-update-shape on-update-shape-fn))))}))
+              :action (fn []
+                        (if selected?
+                         (st/emit! (wtch/unapply-token props))
+                         (st/emit! (wtch/apply-token (assoc props :on-update-shape on-update-shape-fn)))))}))
          attributes)))
 
 (defn all-or-sepearate-actions [{:keys [attribute-labels on-update-shape-all on-update-shape]}
