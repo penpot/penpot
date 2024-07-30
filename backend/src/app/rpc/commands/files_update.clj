@@ -123,12 +123,13 @@
         (feat.fdata/persist-pointers! cfg id)
         result))))
 
-(declare get-lagged-changes)
-(declare send-notifications!)
-(declare update-file)
-(declare update-file*)
-(declare update-file-data)
-(declare take-snapshot?)
+(declare ^:private delete-old-snapshots!)
+(declare ^:private get-lagged-changes)
+(declare ^:private send-notifications!)
+(declare ^:private take-snapshot?)
+(declare ^:private update-file)
+(declare ^:private update-file*)
+(declare ^:private update-file-data)
 
 ;; If features are specified from params and the final feature
 ;; set is different than the persisted one, update it on the
@@ -238,11 +239,14 @@
                  :created-at created-at
                  :file-id (:id file)
                  :revn (:revn file)
+                 :label (::snapshot-label file)
+                 :data (::snapshot-data file)
                  :features (db/create-array conn "text" (:features file))
-                 :data (when (take-snapshot? file)
-                         (:data file))
                  :changes (blob/encode changes)}
                 {::db/return-keys false})
+
+    (when (::snapshot-data file)
+      (delete-old-snapshots! cfg file))
 
     (db/update! conn :file
                 {:revn (:revn file)
@@ -286,7 +290,6 @@
                                   (-> data
                                       (blob/decode)
                                       (assoc :id (:id file)))))
-
         ;; For avoid unnecesary overhead of creating multiple pointers
         ;; and handly internally with objects map in their worst
         ;; case (when probably all shapes and all pointers will be
@@ -322,8 +325,27 @@
         file (-> (files/check-version! file)
                  (update :revn inc)
                  (update :data cpc/process-changes changes)
-                 (update :data d/without-nils))]
+                 (update :data d/without-nils))
 
+        file (if (take-snapshot? file)
+               (let [tpoint   (dt/tpoint)
+                     snapshot (-> (:data file)
+                                  (feat.fdata/process-pointers deref)
+                                  (feat.fdata/process-objects (partial into {}))
+                                  (blob/encode))
+                     elapsed (tpoint)
+                     label   (str "internal/snapshot/" (:revn file))]
+
+                 (l/trc :hint "take snapshot"
+                        :file-id (str (:id file))
+                        :revn (:revn file)
+                        :label label
+                        :elapsed (dt/format-duration elapsed))
+
+                 (-> file
+                     (assoc ::snapshot-data snapshot)
+                     (assoc ::snapshot-label label)))
+               file)]
 
     (binding [pmap/*tracked* nil]
       (when (contains? cf/flags :soft-file-validation)
@@ -353,13 +375,42 @@
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."
   [{:keys [revn modified-at] :as file}]
-  (let [freq    (or (cf/get :file-change-snapshot-every) 20)
-        timeout (or (cf/get :file-change-snapshot-timeout)
-                    (dt/duration {:hours 1}))]
-    (or (= 1 freq)
-        (zero? (mod revn freq))
-        (> (inst-ms (dt/diff modified-at (dt/now)))
-           (inst-ms timeout)))))
+  (when (contains? cf/flags :file-snapshot)
+    (let [freq    (or (cf/get :file-snapshot-every) 20)
+          timeout (or (cf/get :file-snapshot-timeout)
+                      (dt/duration {:hours 1}))]
+
+      (or (= 1 freq)
+          (zero? (mod revn freq))
+          (> (inst-ms (dt/diff modified-at (dt/now)))
+             (inst-ms timeout))))))
+
+;; Get the latest available snapshots without exceeding the total
+;; snapshot limit.
+(def ^:private sql:get-latest-snapshots
+  "SELECT fch.id, fch.created_at
+     FROM file_change AS fch
+    WHERE fch.file_id = ?
+      AND fch.label LIKE 'internal/%'
+    ORDER BY fch.created_at DESC
+    LIMIT ?")
+
+;; Mark all snapshots that are outside the allowed total threshold
+;; available for the GC.
+(def ^:private sql:delete-snapshots
+  "UPDATE file_change
+      SET label = NULL
+    WHERE file_id = ?
+      AND label IS NOT NULL
+      AND created_at < ?")
+
+(defn- delete-old-snapshots!
+  [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
+  (when-let [snapshots (not-empty (db/exec! conn [sql:get-latest-snapshots id
+                                                  (cf/get :file-snapshot-total 10)]))]
+    (let [last-date (-> snapshots peek :created-at)
+          result    (db/exec-one! conn [sql:delete-snapshots id last-date])]
+      (l/trc :hint "delete old snapshots" :file-id (str id) :total (db/get-update-count result)))))
 
 (def ^:private
   sql:lagged-changes
