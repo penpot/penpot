@@ -33,7 +33,6 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-
 (def ^:private arrow-icon
   (i/icon-xref :arrow (stl/css :arrow-icon)))
 
@@ -62,10 +61,10 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [{:keys [section team]}]
-  (let [on-nav-members           (mf/use-fn #(st/emit! (dd/go-to-team-members)))
-        on-nav-settings          (mf/use-fn #(st/emit! (dd/go-to-team-settings)))
-        on-nav-invitations       (mf/use-fn #(st/emit! (dd/go-to-team-invitations)))
-        on-nav-webhooks          (mf/use-fn #(st/emit! (dd/go-to-team-webhooks)))
+  (let [on-nav-members       (mf/use-fn #(st/emit! (dd/go-to-team-members)))
+        on-nav-settings      (mf/use-fn #(st/emit! (dd/go-to-team-settings)))
+        on-nav-invitations   (mf/use-fn #(st/emit! (dd/go-to-team-invitations)))
+        on-nav-webhooks      (mf/use-fn #(st/emit! (dd/go-to-team-webhooks)))
 
         members-section?     (= section :dashboard-team-members)
         settings-section?    (= section :dashboard-team-settings)
@@ -157,21 +156,22 @@
                     (dd/fetch-team-invitations)))
 
         on-error
-        (fn [{:keys [type code] :as error}]
-          (cond
-            (and (= :validation type)
-                 (= :profile-is-muted code))
-            (st/emit! (msg/error (tr "errors.profile-is-muted"))
-                      (modal/hide))
+        (fn [_form cause]
+          (let [{:keys [type code] :as error} (ex-data cause)]
+            (cond
+              (and (= :validation type)
+                   (= :profile-is-muted code))
+              (st/emit! (msg/error (tr "errors.profile-is-muted"))
+                        (modal/hide))
 
-            (and (= :validation type)
-                 (or (= :member-is-muted code)
-                     (= :email-has-permanent-bounces code)))
-            (swap! error-text (tr "errors.email-spam-or-permanent-bounces" (:email error)))
+              (or (= :member-is-muted code)
+                  (= :email-has-permanent-bounces code)
+                  (= :email-has-complaints code))
+              (swap! error-text (tr "errors.email-spam-or-permanent-bounces" (:email error)))
 
-            :else
-            (st/emit! (msg/error (tr "errors.generic"))
-                      (modal/hide))))
+              :else
+              (st/emit! (msg/error (tr "errors.generic"))
+                        (modal/hide)))))
 
         on-submit
         (fn [form]
@@ -563,22 +563,24 @@
         on-error
         (mf/use-fn
          (mf/deps email)
-         (fn [{:keys [type code] :as error}]
-           (cond
-             (and (= :validation type)
-                  (= :profile-is-muted code))
-             (rx/of (msg/error (tr "errors.profile-is-muted")))
+         (fn [cause]
+           (let [{:keys [type code] :as error} (ex-data cause)]
+             (cond
+               (and (= :validation type)
+                    (= :profile-is-muted code))
+               (rx/of (msg/error (tr "errors.profile-is-muted")))
 
-             (and (= :validation type)
-                  (= :member-is-muted code))
-             (rx/of (msg/error (tr "errors.member-is-muted")))
+               (and (= :validation type)
+                    (= :member-is-muted code))
+               (rx/of (msg/error (tr "errors.member-is-muted")))
 
-             (and (= :validation type)
-                  (= :email-has-permanent-bounces code))
-             (rx/of (msg/error (tr "errors.email-has-permanent-bounces" email)))
+               (and (= :restriction type)
+                    (or (= :email-has-permanent-bounces code)
+                        (= :email-has-complaints code)))
+               (rx/of (msg/error (tr "errors.email-has-permanent-bounces" email)))
 
-             :else
-             (rx/throw error))))
+               :else
+               (rx/throw cause)))))
 
         on-delete
         (mf/use-fn
@@ -587,7 +589,6 @@
            (let [params {:email email :team-id team-id}
                  mdata  {:on-success #(st/emit! (dd/fetch-team-invitations))}]
              (st/emit! (dd/delete-team-invitation (with-meta params mdata))))))
-
 
         on-resend-success
         (mf/use-fn

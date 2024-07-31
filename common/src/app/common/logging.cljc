@@ -153,14 +153,29 @@
 (defn build-message
   [props]
   (loop [props  (seq props)
-         result []]
+         result []
+         body   nil]
     (if-let [[k v] (first props)]
-      (if (simple-ident? k)
+      (cond
+        (simple-ident? k)
         (recur (next props)
-               (conj result (str (name k) "=" (pr-str v))))
+               (conj result (str (name k) "=" (pr-str v)))
+               body)
+
+        (= ::body k)
         (recur (next props)
-               result))
-      (str/join ", " result))))
+               result
+               v)
+
+        :else
+        (recur (next props)
+               result
+               body))
+
+      (let [message (str/join ", " result)]
+        (if (string? body)
+          (str message "\n" body)
+          message)))))
 
 (defn build-stack-trace
   [cause]
