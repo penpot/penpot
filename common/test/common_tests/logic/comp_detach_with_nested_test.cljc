@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns common-tests.logic.comp-detach-with-swap-test
+(ns common-tests.logic.comp-detach-with-nested-test
   (:require
    [app.common.files.changes-builder :as pcb]
    [app.common.logic.libraries :as cll]
@@ -18,7 +18,7 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
-;; Related .penpot file: common/test/cases/detach-with-swap.penpot
+;; Related .penpot file: common/test/cases/detach-with-nested.penpot
 (defn- setup-file
   []
   ;; {:r-ellipse} [:name Ellipse, :type :frame]                         # [Component :c-ellipse]
@@ -195,3 +195,177 @@
     (t/is (= (:shape-ref copy-nested-rectangle) (thi/id :rectangle)))
     (t/is (nil? (ctk/get-swap-slot copy-nested-rectangle)))))
 
+(t/deftest test-propagate-touched
+  (let [;; ==== Setup
+        file (-> (setup-file)
+                 (ths/update-shape :nested2-ellipse :fills (ths/sample-fills-color :fill-color "#fabada"))
+                 (thc/instantiate-component :c-big-board
+                                            :copy-big-board
+                                            :children-labels [:copy-h-board-with-ellipse
+                                                              :copy-nested2-h-ellipse
+                                                              :copy-nested2-ellipse]))
+
+        page                 (thf/current-page file)
+        nested2-ellipse      (ths/get-shape file :nested2-ellipse)
+        copy-nested2-ellipse (ths/get-shape file :copy-nested2-ellipse)
+
+        ;; ==== Action
+        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+                                                  (pcb/with-page page)
+                                                  (pcb/with-objects (:objects page)))
+                                              page
+                                              {(:id file) file}
+                                              (thi/id :copy-big-board))
+        file'   (thf/apply-changes file changes)
+
+        ;; ==== Get
+        nested2-ellipse'      (ths/get-shape file' :nested2-ellipse)
+        copy-nested2-ellipse' (ths/get-shape file' :copy-nested2-ellipse)
+        fills'                (:fills copy-nested2-ellipse')
+        fill'                 (first fills')]
+
+    ;; ==== Check
+
+    ;; The touched group must be propagated to the copy, because now this copy
+    ;; has the original ellipse component as near main, but its attributes have
+    ;; been inherited from the ellipse inside big-board.
+    (t/is (= (:touched nested2-ellipse) #{:fill-group}))
+    (t/is (= (:touched copy-nested2-ellipse) nil))
+    (t/is (= (:touched nested2-ellipse') #{:fill-group}))
+    (t/is (= (:touched copy-nested2-ellipse') #{:fill-group}))
+    (t/is (= (count fills') 1))
+    (t/is (= (:fill-color fill') "#fabada"))
+    (t/is (= (:fill-opacity fill') 1))))
+
+(t/deftest test-merge-touched
+  (let [;; ==== Setup
+        file (-> (setup-file)
+                 (ths/update-shape :nested2-ellipse :fills (ths/sample-fills-color :fill-color "#fabada"))
+                 (thc/instantiate-component :c-big-board
+                                            :copy-big-board
+                                            :children-labels [:copy-h-board-with-ellipse
+                                                              :copy-nested2-h-ellipse
+                                                              :copy-nested2-ellipse])
+                 (ths/update-shape :copy-nested2-ellipse :name "Modified name")
+                 (ths/update-shape :copy-nested2-ellipse :fills (ths/sample-fills-color :fill-color "#abcdef")))
+
+        page                 (thf/current-page file)
+        nested2-ellipse      (ths/get-shape file :nested2-ellipse)
+        copy-nested2-ellipse (ths/get-shape file :copy-nested2-ellipse)
+
+        ;; ==== Action
+        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+                                                  (pcb/with-page page)
+                                                  (pcb/with-objects (:objects page)))
+                                              page
+                                              {(:id file) file}
+                                              (thi/id :copy-big-board))
+        file'   (thf/apply-changes file changes)
+
+        ;; ==== Get
+        nested2-ellipse'      (ths/get-shape file' :nested2-ellipse)
+        copy-nested2-ellipse' (ths/get-shape file' :copy-nested2-ellipse)
+        fills'                (:fills copy-nested2-ellipse')
+        fill'                 (first fills')]
+
+    ;; ==== Check
+
+    ;; If the copy have been already touched, merge the groups and preserve the modifications.
+    (t/is (= (:touched nested2-ellipse) #{:fill-group}))
+    (t/is (= (:touched copy-nested2-ellipse) #{:name-group :fill-group}))
+    (t/is (= (:touched nested2-ellipse') #{:fill-group}))
+    (t/is (= (:touched copy-nested2-ellipse') #{:name-group :fill-group}))
+    (t/is (= (count fills') 1))
+    (t/is (= (:fill-color fill') "#abcdef"))
+    (t/is (= (:fill-opacity fill') 1))))
+
+(t/deftest test-dont-propagete-touched-when-swapped-copy
+  (let [;; ==== Setup
+        file (-> (setup-file)
+                 (ths/update-shape :nested-rectangle :fills (ths/sample-fills-color :fill-color "#fabada"))
+                 (thc/instantiate-component :c-big-board
+                                            :copy-big-board
+                                            :children-labels [:copy-h-board-with-ellipse
+                                                              :copy-nested2-h-ellipse
+                                                              :copy-nested2-ellipse])
+                 (thc/component-swap :copy-h-board-with-ellipse
+                                     :c-board-with-rectangle
+                                     :copy-h-board-with-rectangle
+                                     :children-labels [:copy-nested2-h-rectangle
+                                                       :copy-nested2-rectangle]))
+
+        page (thf/current-page file)
+        nested2-rectangle      (ths/get-shape file :nested2-rectangle)
+        copy-nested2-rectangle (ths/get-shape file :copy-nested2-rectangle)
+
+        ;; ==== Action
+        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+                                                  (pcb/with-page page)
+                                                  (pcb/with-objects (:objects page)))
+                                              page
+                                              {(:id file) file}
+                                              (thi/id :copy-big-board))
+        file'   (thf/apply-changes file changes)
+
+        ;; ==== Get
+        nested2-rectangle'      (ths/get-shape file' :nested2-rectangle)
+        copy-nested2-rectangle' (ths/get-shape file' :copy-nested2-rectangle)
+        fills'                  (:fills copy-nested2-rectangle')
+        fill'                   (first fills')]
+
+    ;; ==== Check
+
+    ;; If the copy has been swapped, there is nothing to propagate since it's already
+    ;; pointing to the swapped near main.
+    (t/is (= (:touched nested2-rectangle) nil))
+    (t/is (= (:touched copy-nested2-rectangle) nil))
+    (t/is (= (:touched nested2-rectangle') nil))
+    (t/is (= (:touched copy-nested2-rectangle') nil))
+    (t/is (= (count fills') 1))
+    (t/is (= (:fill-color fill') "#fabada"))
+    (t/is (= (:fill-opacity fill') 1))))
+
+(t/deftest test-propagate-touched-when-swapped-main
+  (let [;; ==== Setup
+        file (-> (setup-file)
+                 (thc/component-swap :nested2-h-ellipse
+                                     :c-rectangle
+                                     :nested2-h-rectangle
+                                     :children-labels [:nested2-rectangle])
+                 (ths/update-shape :nested2-rectangle :fills (ths/sample-fills-color :fill-color "#fabada"))
+                 (thc/instantiate-component :c-big-board
+                                            :copy-big-board
+                                            :children-labels [:copy-h-board-with-ellipse
+                                                              :copy-nested2-h-rectangle
+                                                              :copy-nested2-rectangle]))
+
+        page (thf/current-page file)
+        nested2-rectangle      (ths/get-shape file :nested2-rectangle)
+        copy-nested2-rectangle (ths/get-shape file :copy-nested2-rectangle)
+
+        ;; ==== Action
+        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+                                                  (pcb/with-page page)
+                                                  (pcb/with-objects (:objects page)))
+                                              page
+                                              {(:id file) file}
+                                              (thi/id :copy-big-board))
+        file'   (thf/apply-changes file changes)
+
+        ;; ==== Get
+        nested2-rectangle'      (ths/get-shape file' :nested2-rectangle)
+        copy-nested2-rectangle' (ths/get-shape file' :copy-nested2-rectangle)
+        fills'                  (:fills copy-nested2-rectangle')
+        fill'                   (first fills')]
+
+    ;; ==== Check
+
+    ;; If the main has been swapped, there is no difference. It propagates the same as
+    ;; if it were the original component.
+    (t/is (= (:touched nested2-rectangle) #{:fill-group}))
+    (t/is (= (:touched copy-nested2-rectangle) nil))
+    (t/is (= (:touched nested2-rectangle') #{:fill-group}))
+    (t/is (= (:touched copy-nested2-rectangle') #{:fill-group}))
+    (t/is (= (count fills') 1))
+    (t/is (= (:fill-color fill') "#fabada"))
+    (t/is (= (:fill-opacity fill') 1))))

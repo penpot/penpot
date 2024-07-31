@@ -288,13 +288,23 @@
                         (some? (:shape-ref ref-shape))
                         (pcb/update-shapes [(:id shape)] #(assoc % :shape-ref (:shape-ref ref-shape)))
 
-                        ;; When advancing level, if the referenced shape has a swap slot, it must be
-                        ;; copied to the current shape, because the shape-ref now will not be pointing
-                        ;; to a near main (except for first level subcopies).
+                        ;; When advancing level, the normal touched groups (not swap slots) of the
+                        ;; ref-shape must be merged into the current shape, because they refer to
+                        ;; the new referenced shape.
+                        (some? ref-shape)
+                        (pcb/update-shapes
+                         [(:id shape)]
+                         #(assoc % :touched
+                                 (clojure.set/union (:touched shape)
+                                                    (ctk/normal-touched-groups ref-shape))))
+
+                        ;; Swap slot must also be copied if the current shape has not any,
+                        ;; except if this is the first level subcopy.
                         (and (some? (ctk/get-swap-slot ref-shape))
                              (nil? (ctk/get-swap-slot shape))
                              (not= (:id shape) shape-id))
                         (pcb/update-shapes [(:id shape)] #(ctk/set-swap-slot % (ctk/get-swap-slot ref-shape))))))]
+
     (reduce skip-near changes children)))
 
 (defn prepare-restore-component
