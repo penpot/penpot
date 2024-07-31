@@ -4,7 +4,7 @@
   "license": "MPL-2.0",
   "author": "Kaleidos INC",
   "private": true,
-  "packageManager": "yarn@4.2.2",
+  "packageManager": "yarn@4.3.1",
   "browserslist": [
     "defaults"
   ],
@@ -37,7 +37,7 @@
     "e2e:test": "playwright test --project default",
     "storybook:compile": "yarn run compile && clojure -M:dev:shadow-cljs compile storybook",
     "storybook:server": "yarn run storybook dev -p 6006 --no-open",
-    "storybook:watch": "yarn run storybook:compile && concurrently \"clojure -M:dev:shadow-cljs watch storybook\" \"yarn run storybook:server\" \"yarn run watch\"",
+    "storybook:watch": "concurrently \"clojure -M:dev:shadow-cljs watch storybook\" \"yarn run storybook:server\" \"yarn run watch\"",
     "storybook:build": "yarn run storybook:compile && storybook build"
   },
   "devDependencies": {
@@ -80,7 +80,7 @@
     "rimraf": "^5.0.7",
     "sass": "^1.77.4",
     "sass-embedded": "^1.77.2",
-    "shadow-cljs": "2.28.8",
+    "shadow-cljs": "2.28.11",
     "storybook": "^8.2.2",
     "svg-sprite": "^2.0.4",
     "typescript": "^5.4.5",
