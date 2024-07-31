@@ -48,7 +48,8 @@
                          (not= section :auth-register-validate)
                          (not= section :auth-register-success))
         params  (:query-params route)
-        error   (:error params)]
+        error   (:error params)
+        hide-image-auth? (cf/external-feature-flag "signup-01" "test")]
 
     (mf/with-effect []
       (dom/set-html-title (tr "title.default")))
@@ -57,14 +58,17 @@
       (when error
         (st/emit! (du/show-redirect-error error))))
 
-    [:main {:class (stl/css :auth-section)}
+    [:main {:class (stl/css-case :auth-section (not hide-image-auth?)
+                                 :auth-section-hide-image hide-image-auth?)}
      (when show-login-icon
        [:h1 {:class (stl/css :logo-container)}
         [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} i/logo]])
-     [:div {:class (stl/css :login-illustration)}
-      i/login-illustration]
+     (when (not hide-image-auth?)
+       [:div {:class (stl/css :login-illustration)}
+        i/login-illustration])
 
-     [:section {:class (stl/css :auth-content)}
+     [:section {:class (stl/css-case :auth-content (not hide-image-auth?)
+                                     :auth-content-hide-image hide-image-auth?)}
 
       (case section
         :auth-register

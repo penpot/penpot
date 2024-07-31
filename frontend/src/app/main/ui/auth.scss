@@ -24,6 +24,24 @@
   }
 }
 
+// A-B text signup-01
+.auth-section-hide-image {
+  position: relative;
+  align-items: center;
+  background: var(--panel-background-color);
+  display: grid;
+  gap: $s-32;
+  height: 100%;
+  padding: $s-32;
+  width: 100%;
+  overflow: auto;
+
+  @media (max-width: 992px) {
+    display: flex;
+    justify-content: center;
+  }
+}
+
 .logo-container {
   position: absolute;
   top: $s-20;
@@ -59,6 +77,19 @@
   grid-template-rows: 1fr auto;
   gap: $s-24;
   height: fit-content;
+  max-width: $s-412;
+  padding-block-end: $s-8;
+  position: relative;
+  width: 100%;
+}
+
+// A-B text signup-01
+.auth-content-hide-image {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: $s-24;
+  height: fit-content;
+  margin: auto;
   max-width: $s-412;
   padding-block-end: $s-8;
   position: relative;
