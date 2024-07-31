@@ -8,20 +8,17 @@
   (:require
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
-   [app.main.data.tokens :as dt]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.store :as st]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
-   [potok.v2.core :as ptk]
-   [promesa.core :as p]))
+   [potok.v2.core :as ptk]))
 
 ;; Token Updates ---------------------------------------------------------------
 
