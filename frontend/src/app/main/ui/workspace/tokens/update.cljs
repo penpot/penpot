@@ -5,15 +5,42 @@
    [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.style-dictionary :as wtsd]
-   [clojure.set :as set]))
+   [clojure.set :as set]
+   [clojure.data :as data]))
+
+(def filter-existing-values? false)
 
 (defn invert-collect-key-vals
-  [xs resolved-tokens]
+  [xs resolved-tokens shape]
   (-> (reduce
        (fn [acc [k v]]
          (let [resolved-value (get-in resolved-tokens [v :resolved-value])]
-           (update acc resolved-value (fnil conj #{}) k)))
+           (if (and filter-existing-values? (= (get shape k) resolved-value))
+             acc
+             (update acc resolved-value (fnil conj #{}) k))))
        {} xs)))
+
+(defn split-attribute-groups [attrs-values-map]
+  (reduce
+   (fn [acc [attrs v]]
+     (cond
+       (some attrs #{:rx :ry}) (let [[_ a b] (data/diff #{:rx :ry} attrs)]
+                                 (assoc acc
+                                        a v
+                                        b v))
+
+       (some attrs #{:widht :height}) (let [[_ a b] (data/diff #{:width :height} attrs)]
+                                        (assoc acc
+                                               a v
+                                               b v))
+       (some attrs ctt/spacing-keys) (let [[_ rst gap] (data/diff #{:row-gap :column-gap} attrs)
+                                           [_ position padding] (data/diff #{:p1 :p2 :p3 :p4} rst)]
+                                       (cond-> acc
+                                         (seq gap) (assoc gap v)
+                                         (seq position) (assoc position v)
+                                         (seq padding) (assoc padding v)))
+       :else (assoc acc attrs v)))
+   {} attrs-values-map))
 
 (defn shape-ids-by-values
   [attrs-values-map object-id]
@@ -34,10 +61,12 @@
   (let [resolved-tokens (wtsd/get-cached-tokens @refs/workspace-tokens)]
     (->> @refs/workspace-page-objects
          (reduce
-          (fn [acc [object-id {:keys [applied-tokens]}]]
+          (fn [acc [object-id {:keys [applied-tokens] :as shape}]]
             (if (seq applied-tokens)
-              (let [applied-tokens (-> (invert-collect-key-vals applied-tokens resolved-tokens)
-                                       (shape-ids-by-values object-id))]
+              (let [applied-tokens (->
+                                    (invert-collect-key-vals applied-tokens resolved-tokens shape)
+                                    (shape-ids-by-values object-id)
+                                    (split-attribute-groups))]
                 (deep-merge acc applied-tokens))
               acc))
           {}))))
@@ -54,8 +83,6 @@
    #{:width :height} wtch/update-shape-dimensions
    #{:layout-item-min-w :layout-item-min-h :layout-item-max-w :layout-item-max-h} wtch/update-layout-sizing-limits
    ctt/rotation-keys wtch/update-rotation})
-
-(merge {} (into {} [[:a 1]]))
 
 
 (def attributes-collect-by-pairs
