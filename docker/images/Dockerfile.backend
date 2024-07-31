@@ -1,3 +1,19 @@
+FROM penpotapp/devenv:latest AS build
+
+COPY --chown=penpot:users . /home/penpot/penpot
+WORKDIR /home/penpot/penpot
+USER penpot:users
+
+RUN ./manage.sh version > build_version.txt
+
+WORKDIR /home/penpot/penpot/backend
+RUN ./scripts/build $(cat ../build_version.txt)
+
+WORKDIR /home/penpot/penpot/bundles
+RUN cp -r ../backend/target/dist ./backend
+RUN cp -r ../build_version.txt ./backend/version.txt
+RUN ../manage.sh put-license-file ./backend
+
 FROM ubuntu:22.04
 
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
@@ -59,7 +75,7 @@ RUN set -eux; \
     tar -xf /tmp/openjdk.tar.gz --strip-components=1; \
     rm -rf /tmp/openjdk.tar.gz;
 
-COPY --chown=penpot:penpot ./bundle-backend/ /opt/penpot/backend/
+COPY --from=build --chown=penpot:penpot /home/penpot/penpot/bundles/backend/ /opt/penpot/backend/
 
 USER penpot:penpot
 WORKDIR /opt/penpot/backend
