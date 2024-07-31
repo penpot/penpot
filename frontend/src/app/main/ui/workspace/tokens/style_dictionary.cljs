@@ -111,6 +111,9 @@
 
 (defonce !tokens-cache (atom nil))
 
+(defn get-cached-tokens [tokens]
+  (get @!tokens-cache tokens tokens))
+
 (defn use-resolved-tokens
   "The StyleDictionary process function is async, so we can't use resolved values directly.
 
