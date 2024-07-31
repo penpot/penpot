@@ -711,52 +711,14 @@
   (ctyl/delete-typography data id))
 
 ;; === Operations
-
 (defmethod process-operation :set
   [on-changed shape op]
-  (let [attr            (:attr op)
-        group           (get ctk/sync-attrs attr)
-        val             (:val op)
-        shape-val       (get shape attr)
-        ignore          (or (:ignore-touched op) (= attr :position-data)) ;; position-data is a derived attribute and
-        ignore-geometry (:ignore-geometry op)                             ;; never triggers touched by itself
-        is-geometry?    (and (or (= group :geometry-group)
-                                 (and (= group :content-group) (= (:type shape) :path)))
-                             (not (#{:width :height} attr))) ;; :content in paths are also considered geometric
-                        ;; TODO: the check of :width and :height probably may be removed
-                        ;;       after the check added in data/workspace/modifiers/check-delta
-                        ;;       function. Better check it and test toroughly when activating
-                        ;;       components-v2 mode.
-        in-copy?        (ctk/in-component-copy? shape)
-
-        ;; For geometric attributes, there are cases in that the value changes
-        ;; slightly (e.g. when rounding to pixel, or when recalculating text
-        ;; positions in different zoom levels). To take this into account, we
-        ;; ignore geometric changes smaller than 1 pixel.
-        equal? (if is-geometry?
-                 (gsh/close-attrs? attr val shape-val 1)
-                 (gsh/close-attrs? attr val shape-val))]
-
-    ;; Notify when value has changed, except when it has not moved relative to the
-    ;; component head.
-    (when (and group (not equal?) (not (and ignore-geometry is-geometry?)))
-      (on-changed shape))
-
-    (cond-> shape
-      ;; Depending on the origin of the attribute change, we need or not to
-      ;; set the "touched" flag for the group the attribute belongs to.
-      ;; In some cases we need to ignore touched only if the attribute is
-      ;; geometric (position, width or transformation).
-      (and in-copy? group (not ignore) (not equal?)
-           (not (and ignore-geometry is-geometry?)))
-      (-> (update :touched cfh/set-touched-group group)
-          (dissoc :remote-synced))
-
-      (nil? val)
-      (dissoc attr)
-
-      (some? val)
-      (assoc attr val))))
+  (ctn/set-shape-attr shape
+                      (:attr op)
+                      (:val op)
+                      :on-changed on-changed
+                      :ignore-touched (:ignore-touched op)
+                      :ignore-geometry (:ignore-geometry op)))
 
 (defmethod process-operation :set-touched
   [_ shape op]

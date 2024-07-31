@@ -504,8 +504,8 @@
       (assoc :proportion-lock true)))
 
 (defn setup-shape
-  "A function that initializes the geometric data of
-  the shape. The props must have :x :y :width :height."
+  "A function that initializes the geometric data of the shape. The props must
+  contain at least :x :y :width :height."
   [{:keys [type] :as props}]
   (let [shape (make-minimal-shape type)
 

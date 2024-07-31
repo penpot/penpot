@@ -276,19 +276,19 @@
 (sv/defmethod ::request-email-change
   {::doc/added "1.0"
    ::sm/params schema:request-email-change}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id email] :as params}]
-  (db/with-atomic [conn pool]
-    (let [profile (db/get-by-id conn :profile profile-id)
-          cfg     (assoc cfg ::conn conn)
-          params  (assoc params
-                         :profile profile
-                         :email (clean-email email))]
-      (if (contains? cf/flags :smtp)
-        (request-email-change! cfg params)
-        (change-email-immediately! cfg params)))))
+  [cfg {:keys [::rpc/profile-id email] :as params}]
+  (db/tx-run! cfg
+              (fn [cfg]
+                (let [profile (db/get-by-id cfg :profile profile-id)
+                      params  (assoc params
+                                     :profile profile
+                                     :email (clean-email email))]
+                  (if (contains? cf/flags :smtp)
+                    (request-email-change! cfg params)
+                    (change-email-immediately! cfg params))))))
 
 (defn- change-email-immediately!
-  [{:keys [::conn]} {:keys [profile email] :as params}]
+  [{:keys [::db/conn]} {:keys [profile email] :as params}]
   (when (not= email (:email profile))
     (check-profile-existence! conn params))
 
@@ -299,7 +299,7 @@
   {:changed true})
 
 (defn- request-email-change!
-  [{:keys [::conn] :as cfg} {:keys [profile email] :as params}]
+  [{:keys [::db/conn] :as cfg} {:keys [profile email] :as params}]
   (let [token   (tokens/generate (::setup/props cfg)
                                  {:iss :change-email
                                   :exp (dt/in-future "15m")
@@ -319,9 +319,28 @@
                 :hint "looks like the profile has reported repeatedly as spam or has permanent bounces."))
 
     (when (eml/has-bounce-reports? conn email)
-      (ex/raise :type :validation
+      (ex/raise :type :restriction
                 :code :email-has-permanent-bounces
-                :hint "looks like the email you invite has been repeatedly reported as spam or permanent bounce"))
+                :email email
+                :hint "looks like the email has bounce reports"))
+
+    (when (eml/has-complaint-reports? conn email)
+      (ex/raise :type :restriction
+                :code :email-has-complaints
+                :email email
+                :hint "looks like the email has spam complaint reports"))
+
+    (when (eml/has-bounce-reports? conn (:email profile))
+      (ex/raise :type :restriction
+                :code :email-has-permanent-bounces
+                :email (:email profile)
+                :hint "looks like the email has bounce reports"))
+
+    (when (eml/has-complaint-reports? conn (:email profile))
+      (ex/raise :type :restriction
+                :code :email-has-complaints
+                :email (:email profile)
+                :hint "looks like the email has spam complaint reports"))
 
     (eml/send! {::eml/conn conn
                 ::eml/factory eml/change-email

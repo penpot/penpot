@@ -501,7 +501,7 @@
         ; original component doesn't exist or is deleted. So for this function purposes, they
         ; are removed from the list
         remove? (fn [shape]
-                  (let [component (get-in libraries [(:component-file shape) :data  :components (:component-id shape)])]
+                  (let [component (get-in libraries [(:component-file shape) :data :components (:component-id shape)])]
                     (and component (not (:deleted component)))))
 
         selected-components (cond->> (mapcat collect-main-shapes children objects)
@@ -537,3 +537,48 @@
        (if (or no-changes? (not (invalid-structure-for-component? objects parent children pasting? libraries)))
          [parent-id (get-frame parent-id)]
          (recur (:parent-id parent) objects children pasting? libraries))))))
+
+;; --- SHAPE UPDATE
+
+(defn set-shape-attr
+  [shape attr val & {:keys [on-changed ignore-touched ignore-geometry]}]
+  (let [group           (get ctk/sync-attrs attr)
+        shape-val       (get shape attr)
+        ignore          (or ignore-touched (= attr :position-data)) ;; position-data is a derived attribute and
+        is-geometry?    (and (or (= group :geometry-group)          ;; never triggers touched by itself
+                                 (and (= group :content-group) (= (:type shape) :path)))
+                             (not (#{:width :height} attr))) ;; :content in paths are also considered geometric
+                        ;; TODO: the check of :width and :height probably may be removed
+                        ;;       after the check added in data/workspace/modifiers/check-delta
+                        ;;       function. Better check it and test toroughly when activating
+                        ;;       components-v2 mode.
+        in-copy?        (ctk/in-component-copy? shape)
+
+        ;; For geometric attributes, there are cases in that the value changes
+        ;; slightly (e.g. when rounding to pixel, or when recalculating text
+        ;; positions in different zoom levels). To take this into account, we
+        ;; ignore geometric changes smaller than 1 pixel.
+        equal? (if is-geometry?
+                 (gsh/close-attrs? attr val shape-val 1)
+                 (gsh/close-attrs? attr val shape-val))]
+
+    ;; Notify when value has changed, except when it has not moved relative to the
+    ;; component head.
+    (when (and on-changed group (not equal?) (not (and ignore-geometry is-geometry?)))
+      (on-changed shape))
+
+    (cond-> shape
+      ;; Depending on the origin of the attribute change, we need or not to
+      ;; set the "touched" flag for the group the attribute belongs to.
+      ;; In some cases we need to ignore touched only if the attribute is
+      ;; geometric (position, width or transformation).
+      (and in-copy? group (not ignore) (not equal?)
+           (not (and ignore-geometry is-geometry?)))
+      (-> (update :touched ctk/set-touched-group group)
+          (dissoc :remote-synced))
+
+      (nil? val)
+      (dissoc attr)
+
+      (some? val)
+      (assoc attr val))))

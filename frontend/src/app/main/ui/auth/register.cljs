@@ -43,13 +43,19 @@
         on-error
         (mf/use-fn
          (fn [form cause]
-           (let [{:keys [type code]} (ex-data cause)]
+           (let [{:keys [type code] :as edata} (ex-data cause)]
              (condp = [type code]
                [:restriction :registration-disabled]
                (st/emit! (msg/error (tr "errors.registration-disabled")))
 
                [:restriction :email-domain-is-not-allowed]
                (st/emit! (msg/error (tr "errors.email-domain-not-allowed")))
+
+               [:restriction :email-has-permanent-bounces]
+               (st/emit! (msg/error (tr "errors.email-has-permanent-bounces" (:email edata))))
+
+               [:restriction :email-has-complaints]
+               (st/emit! (msg/error (tr "errors.email-has-permanent-bounces" (:email edata))))
 
                [:validation :email-as-password]
                (swap! form assoc-in [:errors :password]

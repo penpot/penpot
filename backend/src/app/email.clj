@@ -446,3 +446,11 @@
                                             {:email email :type "bounce"}
                                             {:limit 10}))]
      (>= (count reports) threshold))))
+
+(defn has-reports?
+  ([conn email] (has-reports? conn email nil))
+  ([conn email {:keys [threshold] :or {threshold 1}}]
+   (let [reports (db/exec! conn (sql/select :global-complaint-report
+                                            {:email email}
+                                            {:limit 10}))]
+     (>= (count reports) threshold))))

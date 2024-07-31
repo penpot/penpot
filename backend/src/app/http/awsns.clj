@@ -9,6 +9,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.pprint :as pp]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.http.client :as http]
@@ -16,10 +17,10 @@
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.worker :as-alias wrk]
+   [clojure.data.json :as j]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
-   [jsonista.core :as j]
    [promesa.exec :as px]
    [ring.request :as rreq]
    [ring.response :as-alias rres]))
@@ -136,83 +137,110 @@
 
 (defn- parse-json
   [v]
-  (ex/ignoring
-   (j/read-value v)))
+  (try
+    (j/read-str v)
+    (catch Throwable cause
+      (l/wrn :hint "unable to decode request body"
+             :cause cause))))
 
 (defn- register-bounce-for-profile
   [{:keys [::db/pool]} {:keys [type kind profile-id] :as report}]
   (when (= kind "permanent")
-    (db/with-atomic [conn pool]
-      (db/insert! conn :profile-complaint-report
+    (try
+      (db/insert! pool :profile-complaint-report
                   {:profile-id profile-id
                    :type (name type)
                    :content (db/tjson report)})
 
-      ;; TODO: maybe also try to find profiles by mail and if exists
-      ;; register profile reports for them?
-      (doseq [recipient (:recipients report)]
-        (db/insert! conn :global-complaint-report
-                    {:email (:email recipient)
-                     :type (name type)
-                     :content (db/tjson report)}))
+      (catch Throwable cause
+        (l/warn :hint "unable to persist profile complaint"
+                :cause cause)))
 
-      (let [profile (db/exec-one! conn (sql/select :profile {:id profile-id}))]
-        (when (some #(= (:email profile) (:email %)) (:recipients report))
-          ;; If the report matches the profile email, this means that
-          ;; the report is for itself, can be caused when a user
-          ;; registers with an invalid email or the user email is
-          ;; permanently rejecting receiving the email. In this case we
-          ;; have no option to mark the user as muted (and in this case
-          ;; the profile will be also inactive.
-          (db/update! conn :profile
-                      {:is-muted true}
-                      {:id profile-id}))))))
-
-(defn- register-complaint-for-profile
-  [{:keys [::db/pool]} {:keys [type profile-id] :as report}]
-  (db/with-atomic [conn pool]
-    (db/insert! conn :profile-complaint-report
-                {:profile-id profile-id
-                 :type (name type)
-                 :content (db/tjson report)})
-
-    ;; TODO: maybe also try to find profiles by email and if exists
-    ;; register profile reports for them?
-    (doseq [email (:recipients report)]
-      (db/insert! conn :global-complaint-report
-                  {:email email
+    (doseq [recipient (:recipients report)]
+      (db/insert! pool :global-complaint-report
+                  {:email (:email recipient)
                    :type (name type)
                    :content (db/tjson report)}))
 
-    (let [profile (db/exec-one! conn (sql/select :profile {:id profile-id}))]
-      (when (some #(= % (:email profile)) (:recipients report))
+    (let [profile (db/exec-one! pool (sql/select :profile {:id profile-id}))]
+      (when (some #(= (:email profile) (:email %)) (:recipients report))
         ;; If the report matches the profile email, this means that
-        ;; the report is for itself, rare case but can happen; In this
-        ;; case just mark profile as muted (very rare case).
-        (db/update! conn :profile
+        ;; the report is for itself, can be caused when a user
+        ;; registers with an invalid email or the user email is
+        ;; permanently rejecting receiving the email. In this case we
+        ;; have no option to mark the user as muted (and in this case
+        ;; the profile will be also inactive.
+
+        (l/inf :hint "mark profile: muted"
+               :profile-id (str (:id profile))
+               :email (:email profile)
+               :reason "bounce report"
+               :report-id (:feedback-id report))
+
+        (db/update! pool :profile
                     {:is-muted true}
-                    {:id profile-id})))))
+                    {:id profile-id}
+                    {::db/return-keys false})))))
+
+(defn- register-complaint-for-profile
+  [{:keys [::db/pool]} {:keys [type profile-id] :as report}]
+
+  (try
+    (db/insert! pool :profile-complaint-report
+                {:profile-id profile-id
+                 :type (name type)
+                 :content (db/tjson report)})
+    (catch Throwable cause
+      (l/warn :hint "unable to persist profile complaint"
+              :cause cause)))
+
+  ;; TODO: maybe also try to find profiles by email and if exists
+  ;; register profile reports for them?
+  (doseq [email (:recipients report)]
+    (db/insert! pool :global-complaint-report
+                {:email email
+                 :type (name type)
+                 :content (db/tjson report)}))
+
+  (let [profile (db/exec-one! pool (sql/select :profile {:id profile-id}))]
+    (when (some #(= % (:email profile)) (:recipients report))
+      ;; If the report matches the profile email, this means that
+      ;; the report is for itself, rare case but can happen; In this
+      ;; case just mark profile as muted (very rare case).
+      (l/inf :hint "mark profile: muted"
+             :profile-id (str (:id profile))
+             :email (:email profile)
+             :reason "complaint report"
+             :report-id (:feedback-id report))
+
+      (db/update! pool :profile
+                  {:is-muted true}
+                  {:id profile-id}
+                  {::db/return-keys false}))))
 
 (defn- process-report
   [cfg {:keys [type profile-id] :as report}]
-  (l/trace :action "processing report" :report (pr-str report))
   (cond
     ;; In this case we receive a bounce/complaint notification without
     ;; confirmed identity, we just emit a warning but do nothing about
     ;; it because this is not a normal case. All notifications should
     ;; come with profile identity.
     (nil? profile-id)
-    (l/warn :msg "a notification without identity received from AWS"
-            :report (pr-str report))
+    (l/wrn :hint "not-identified report"
+           ::l/body (pp/pprint-str report {:length 40 :level 6}))
 
     (= "bounce" type)
-    (register-bounce-for-profile cfg report)
+    (do
+      (l/trc :hint "bounce report"
+             ::l/body (pp/pprint-str report {:length 40 :level 6}))
+      (register-bounce-for-profile cfg report))
 
     (= "complaint" type)
-    (register-complaint-for-profile cfg report)
+    (do
+      (l/trc :hint "complaint report"
+             ::l/body (pp/pprint-str report {:length 40 :level 6}))
+      (register-complaint-for-profile cfg report))
 
     :else
-    (l/warn :msg "unrecognized report received from AWS"
-            :report (pr-str report))))
-
-
+    (l/wrn :hint "unrecognized report"
+           ::l/body (pp/pprint-str report {:length 20 :level 4}))))

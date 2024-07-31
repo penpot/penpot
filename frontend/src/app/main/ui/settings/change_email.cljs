@@ -21,21 +21,22 @@
    [rumext.v2 :as mf]))
 
 (defn- on-error
-  [form error]
-  (case (:code (ex-data error))
-    :email-already-exists
-    (swap! form (fn [data]
-                  (let [error {:message (tr "errors.email-already-exists")}]
-                    (assoc-in data [:errors :email-1] error))))
+  [form cause]
+  (let [{:keys [code] :as error} (ex-data cause)]
+    (case code
+      :email-already-exists
+      (swap! form (fn [data]
+                    (let [error {:message (tr "errors.email-already-exists")}]
+                      (assoc-in data [:errors :email-1] error))))
 
-    :profile-is-muted
-    (rx/of (msg/error (tr "errors.profile-is-muted")))
+      :profile-is-muted
+      (rx/of (msg/error (tr "errors.profile-is-muted")))
 
-    :email-has-permanent-bounces
-    (let [email (get @form [:data :email-1])]
-      (rx/of (msg/error (tr "errors.email-has-permanent-bounces" email))))
+      (:email-has-permanent-bounces
+       :email-has-complaints)
+      (rx/of (msg/error (tr "errors.email-has-permanent-bounces" (:email error))))
 
-    (rx/throw error)))
+      (rx/throw cause))))
 
 (defn- on-success
   [profile data]
