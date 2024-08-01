@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    ["lodash.debounce" :as debounce]
+   [app.main.ui.workspace.tokens.update :as wtu]
    [app.common.data :as d]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
@@ -246,6 +247,7 @@ Token names should only contain letters and digits separated by . characters.")}
                                                         final-description (assoc :description final-description)
                                                         (:id token) (assoc :id (:id token)))]
                                             (st/emit! (dt/add-token token))
+                                            (st/emit! (wtu/update-workspace-tokens-event))
                                             (modal/hide!)))))))))]
     [:form
      {:on-submit on-submit}
