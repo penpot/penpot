@@ -34,11 +34,12 @@
     "compile:cljs": "clojure -M:dev:shadow-cljs compile main",
     "compile:storybook": "node ./scripts/compile-storybook.js",
     "watch": "node ./scripts/watch.js",
+    "watch:storybook": "node ./scripts/watch-storybook.js",
     "e2e:server": "node ./scripts/e2e-server.js",
     "e2e:test": "playwright test --project default",
     "storybook:compile": "yarn run compile:storybook && clojure -M:dev:shadow-cljs release storybook",
     "storybook:server": "yarn run storybook dev -p 6006 --no-open",
-    "storybook:watch": "concurrently \"clojure -M:dev:shadow-cljs watch storybook\" \"yarn run storybook:server\" \"yarn run watch\"",
+    "storybook:watch": "concurrently \"clojure -M:dev:shadow-cljs watch storybook\" \"yarn run storybook:server\" \"yarn run watch:storybook\"",
     "storybook:build": "yarn run storybook:compile && storybook build"
   },
   "devDependencies": {
