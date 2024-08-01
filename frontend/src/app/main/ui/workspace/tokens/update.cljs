@@ -1,16 +1,17 @@
 (ns app.main.ui.workspace.tokens.update
   (:require
-   [beicon.v2.core :as brx]
    [app.common.types.token :as ctt]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.style-dictionary :as wtsd]
+   [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [beicon.v2.core :as rx]
    [clojure.data :as data]
    [clojure.set :as set]
-   [potok.v2.core :as ptk]
-   [beicon.v2.core :as rx]))
+   [potok.v2.core :as ptk]))
 
 ;; Constants -------------------------------------------------------------------
 
@@ -107,20 +108,32 @@
                update-infos)))
        shapes-update-info))
 
+(defn update-tokens [resolved-tokens]
+  (->> @refs/workspace-page-objects
+       (collect-shapes-update-info resolved-tokens)
+       (actionize-shapes-update-info)))
+
 (defn update-workspace-tokens []
   (let [resolved-tokens (wtsd/get-cached-tokens @refs/workspace-tokens)]
-    (->> @refs/workspace-page-objects
-         (collect-shapes-update-info resolved-tokens)
-         (actionize-shapes-update-info))))
+    (update-tokens resolved-tokens)))
 
 (defn update-workspace-tokens-event []
   (ptk/reify ::update-shape-position
     ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (update-workspace-tokens)
-           (mapv (fn [[f & attrs]]
-                   (apply f attrs)))
-           (brx/concat)))))
+    (watch [_ state _]
+      (->>
+       (rx/from (sd/resolve-tokens+ (get-in state [:workspace-data :tokens])))
+       (rx/mapcat
+        (fn [sd-tokens]
+          (let [undo-id (js/Symbol)]
+            (rx/concat
+             (rx/of (dwu/start-undo-transaction undo-id))
+             (rx/concat
+              (->> (update-tokens sd-tokens)
+                   (map (fn [[f & attrs]]
+                          (apply f attrs)))
+                   (rx/concat)))
+             (rx/of (dwu/commit-undo-transaction undo-id))))))))))
 
 (comment
   (update-workspace-tokens)
