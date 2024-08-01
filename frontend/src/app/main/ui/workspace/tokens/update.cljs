@@ -107,7 +107,7 @@
             (let [action (some attribute-actions-map attrs)]
               (map
                (fn [[v shape-ids]]
-                 (list action v shape-ids attrs))
+                 (action v shape-ids attrs))
                update-infos)))
        shapes-update-info))
 
@@ -133,8 +133,6 @@
              (rx/of (dwu/start-undo-transaction undo-id))
              (rx/concat
               (->> (update-tokens sd-tokens)
-                   (map (fn [[f & attrs]]
-                          (apply f attrs)))
                    (rx/concat)))
              (rx/of (dwu/commit-undo-transaction undo-id))))))))))
 
