@@ -7,7 +7,6 @@
    [app.main.store :as st]
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.style-dictionary :as wtsd]
-   [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [beicon.v2.core :as rx]
    [clojure.data :as data]
    [clojure.set :as set]
@@ -126,7 +125,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (->>
-       (rx/from (sd/resolve-tokens+ (get-in state [:workspace-data :tokens])))
+       (rx/from (wtsd/resolve-tokens+ (get-in state [:workspace-data :tokens])))
        (rx/mapcat
         (fn [sd-tokens]
           (let [undo-id (js/Symbol)]
