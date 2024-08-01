@@ -101,7 +101,7 @@ Token names should only contain letters and digits separated by . characters.")}
                   new-tokens (update tokens token-id merge {:id token-id
                                                             :value input
                                                             :name token-name})]
-              (-> (sd/resolve-tokens+ new-tokens {:debug? true})
+              (-> (sd/resolve-tokens+ new-tokens #_ {:debug? true})
                   (p/then
                    (fn [resolved-tokens]
                      (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-id)]
