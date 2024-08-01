@@ -55,8 +55,12 @@
   [xs resolved-tokens shape]
   (-> (reduce
        (fn [acc [k v]]
-         (let [resolved-value (get-in resolved-tokens [v :resolved-value])]
-           (if (and filter-existing-values? (= (get shape k) resolved-value))
+         (let [resolved-token (get resolved-tokens v)
+               resolved-value (get resolved-token :resolved-value)
+               skip? (or
+                      (not (get resolved-tokens v))
+                      (and filter-existing-values? (= (get shape k) resolved-value)))]
+           (if skip?
              acc
              (update acc resolved-value (fnil conj #{}) k))))
        {} xs)))
