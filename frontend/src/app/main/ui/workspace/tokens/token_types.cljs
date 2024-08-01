@@ -66,7 +66,8 @@
                        :key :rotation}]}}]
    [:spacing
     {:title "Spacing"
-     :attributes ctt/spacing-keys
+     :attributes #{:column-gap :row-gap}
+     :all-attributes ctt/spacing-keys
      :on-update-shape wtch/update-layout-spacing
      :modal {:key :tokens/spacing
              :fields [{:label "Spacing"
