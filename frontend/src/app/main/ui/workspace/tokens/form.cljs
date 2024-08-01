@@ -247,7 +247,7 @@ Token names should only contain letters and digits separated by . characters.")}
                                                             final-description (assoc :description final-description)
                                                             (:id token) (assoc :id (:id token)))]
                                             (st/emit! (dt/update-create-token new-token))
-                                            (st/emit! (wtu/update-workspace-tokens-event))
+                                            (st/emit! (wtu/update-workspace-tokens))
                                             (modal/hide!)))))))))]
     [:form
      {:on-submit on-submit}

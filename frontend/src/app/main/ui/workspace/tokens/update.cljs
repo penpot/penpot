@@ -117,11 +117,7 @@
        (actionize-shapes-update-info)))
 
 (defn update-workspace-tokens []
-  (let [resolved-tokens (wtsd/get-cached-tokens @refs/workspace-tokens)]
-    (update-tokens resolved-tokens)))
-
-(defn update-workspace-tokens-event []
-  (ptk/reify ::update-shape-position
+  (ptk/reify ::update-workspace-tokens
     ptk/WatchEvent
     (watch [_ state _]
       (->>
@@ -135,14 +131,3 @@
               (->> (update-tokens sd-tokens)
                    (rx/concat)))
              (rx/of (dwu/commit-undo-transaction undo-id))))))))))
-
-(comment
-  (->> (update-workspace-tokens)
-       (map rest)
-       (into []))
-
-
-  (update-workspace-tokens)
-  
-  (st/emit! (update-workspace-tokens-event))
-  nil)
