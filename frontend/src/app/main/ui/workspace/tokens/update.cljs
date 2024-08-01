@@ -80,7 +80,7 @@
                                          (seq gap) (assoc gap v)
                                          (seq position) (assoc position v)
                                          (seq padding) (assoc padding v)))
-       :else (assoc acc attrs v)))
+       attrs (assoc acc attrs v)))
    {} attrs-values-map))
 
 (defn shape-ids-by-values
