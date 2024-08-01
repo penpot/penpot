@@ -26,3 +26,7 @@ rsync -avr resources/public/ target/dist/
 
 sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/dist/index.html;
 sed -i -re "s/\%buildDate\%/$BUILD_DATE/g" ./target/dist/index.html;
+
+# build storybook
+yarn run storybook:build || exit 1;
+rsync -avr storybook-static/ target/dist/storybook-static
