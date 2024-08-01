@@ -32,11 +32,11 @@
     "translations:find-unused": "node ./scripts/find-unused-translations.js",
     "compile": "node ./scripts/compile.js",
     "compile:cljs": "clojure -M:dev:shadow-cljs compile main",
+    "compile:storybook": "node ./scripts/compile-storybook.js",
     "watch": "node ./scripts/watch.js",
     "e2e:server": "node ./scripts/e2e-server.js",
     "e2e:test": "playwright test --project default",
-    "storybook:compile": "yarn run compile && clojure -M:dev:shadow-cljs compile storybook",
-    "storybook:release": "yarn run compile && clojure -M:dev:shadow-cljs compile storybook && yarn run storybook build",
+    "storybook:compile": "yarn run compile:storybook && clojure -M:dev:shadow-cljs release storybook",
     "storybook:server": "yarn run storybook dev -p 6006 --no-open",
     "storybook:watch": "concurrently \"clojure -M:dev:shadow-cljs watch storybook\" \"yarn run storybook:server\" \"yarn run watch\"",
     "storybook:build": "yarn run storybook:compile && storybook build"
