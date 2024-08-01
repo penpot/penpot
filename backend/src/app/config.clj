@@ -52,8 +52,8 @@
 
    :redis-uri "redis://redis/0"
 
-   :assets-storage-backend :assets-fs
-   :storage-assets-fs-directory "assets"
+   :objects-storage-backend "fs"
+   :objects-storage-fs-directory "assets"
 
    :assets-path "/internal/assets/"
    :smtp-default-reply-to "Penpot <no-reply@example.com>"
@@ -207,16 +207,24 @@
     [:prepl-host {:optional true} :string]
     [:prepl-port {:optional true} :int]
 
-    [:assets-storage-backend {:optional true} :keyword]
     [:media-directory {:optional true} :string] ;; REVIEW
     [:media-uri {:optional true} :string]
     [:assets-path {:optional true} :string]
 
+    ;; Legacy, will be removed in 2.5
+    [:assets-storage-backend {:optional true} :keyword]
     [:storage-assets-fs-directory {:optional true} :string]
     [:storage-assets-s3-bucket {:optional true} :string]
     [:storage-assets-s3-region {:optional true} :keyword]
     [:storage-assets-s3-endpoint {:optional true} :string]
-    [:storage-assets-s3-io-threads {:optional true} :int]]))
+    [:storage-assets-s3-io-threads {:optional true} :int]
+
+    [:objects-storage-backend {:optional true} :keyword]
+    [:objects-storage-fs-directory {:optional true} :string]
+    [:objects-storage-s3-bucket {:optional true} :string]
+    [:objects-storage-s3-region {:optional true} :keyword]
+    [:objects-storage-s3-endpoint {:optional true} :string]
+    [:objects-storage-s3-io-threads {:optional true} :int]]))
 
 (def default-flags
   [:enable-backend-api-doc

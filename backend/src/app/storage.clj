@@ -6,11 +6,13 @@
 
 (ns app.storage
   "Objects storage abstraction layer."
+  (:refer-clojure :exclude [resolve])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.storage.fs :as sfs]
    [app.storage.impl :as impl]
@@ -18,16 +20,23 @@
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [datoteka.fs :as fs]
-   [integrant.core :as ig]
-   [promesa.core :as p])
+   [integrant.core :as ig])
   (:import
    java.io.InputStream))
+
+(defn get-legacy-backend
+  []
+  (let [name (cf/get :assets-storage-backend)]
+    (case name
+      :assets-fs :fs
+      :assets-s3 :s3
+      :fs)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Storage Module State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::id #{:assets-fs :assets-s3})
+(s/def ::id #{:assets-fs :assets-s3 :fs :s3})
 (s/def ::s3 ::ss3/backend)
 (s/def ::fs ::sfs/backend)
 (s/def ::type #{:fs :s3})
@@ -45,11 +54,13 @@
   [_ {:keys [::backends ::db/pool] :as cfg}]
   (-> (d/without-nils cfg)
       (assoc ::backends (d/without-nils backends))
-      (assoc ::db/pool-or-conn pool)))
+      (assoc ::backend (or (get-legacy-backend)
+                           (cf/get :objects-storage-backend :fs)))
+      (assoc ::db/connectable pool)))
 
 (s/def ::backend keyword?)
 (s/def ::storage
-  (s/keys :req [::backends ::db/pool ::db/pool-or-conn]
+  (s/keys :req [::backends ::db/pool ::db/connectable]
           :opt [::backend]))
 
 (s/def ::storage-with-backend
@@ -61,23 +72,26 @@
 
 (defn get-metadata
   [params]
-  (into {}
-        (remove (fn [[k _]] (qualified-keyword? k)))
-        params))
+  (reduce-kv (fn [res k _]
+               (if (qualified-keyword? k)
+                 (dissoc res k)
+                 res))
+             params
+             params))
 
 (defn- get-database-object-by-hash
-  [pool-or-conn backend bucket hash]
+  [connectable backend bucket hash]
   (let [sql (str "select * from storage_object "
                  " where (metadata->>'~:hash') = ? "
                  "   and (metadata->>'~:bucket') = ? "
                  "   and backend = ?"
                  "   and deleted_at is null"
                  " limit 1")]
-    (some-> (db/exec-one! pool-or-conn [sql hash bucket (name backend)])
+    (some-> (db/exec-one! connectable [sql hash bucket (name backend)])
             (update :metadata db/decode-transit-pgobject))))
 
 (defn- create-database-object
-  [{:keys [::backend ::db/pool-or-conn]} {:keys [::content ::expired-at ::touched-at] :as params}]
+  [{:keys [::backend ::db/connectable]} {:keys [::content ::expired-at ::touched-at ::touch] :as params}]
   (let [id     (or (:id params) (uuid/random))
         mdata  (cond-> (get-metadata params)
                  (satisfies? impl/IContentHash content)
@@ -86,7 +100,9 @@
                  :always
                  (dissoc :id))
 
-        ;; FIXME: touch object on deduplicated put operation ??
+        touched-at (if touch
+                     (or touched-at (dt/now))
+                     touched-at)
 
         ;; NOTE: for now we don't reuse the deleted objects, but in
         ;; futute we can consider reusing deleted objects if we
@@ -95,10 +111,20 @@
         result (when (and (::deduplicate? params)
                           (:hash mdata)
                           (:bucket mdata))
-                 (get-database-object-by-hash pool-or-conn backend (:bucket mdata) (:hash mdata)))
+                 (let [result (get-database-object-by-hash connectable backend
+                                                           (:bucket mdata)
+                                                           (:hash mdata))]
+                   (if touch
+                     (do
+                       (db/update! connectable :storage-object
+                                   {:touched-at touched-at}
+                                   {:id (:id result)}
+                                   {::db/return-keys false})
+                       (assoc result :touced-at touched-at))
+                     result)))
 
         result (or result
-                   (-> (db/insert! pool-or-conn :storage-object
+                   (-> (db/insert! connectable :storage-object
                                    {:id id
                                     :size (impl/get-size content)
                                     :backend (name backend)
@@ -154,9 +180,9 @@
 (dm/export impl/object?)
 
 (defn get-object
-  [{:keys [::db/pool-or-conn] :as storage} id]
+  [{:keys [::db/connectable] :as storage} id]
   (us/assert! ::storage storage)
-  (retrieve-database-object pool-or-conn id))
+  (retrieve-database-object connectable id))
 
 (defn put-object!
   "Creates a new object with the provided content."
@@ -172,10 +198,10 @@
 
 (defn touch-object!
   "Mark object as touched."
-  [{:keys [::db/pool-or-conn] :as storage} object-or-id]
+  [{:keys [::db/connectable] :as storage} object-or-id]
   (us/assert! ::storage storage)
   (let [id (if (impl/object? object-or-id) (:id object-or-id) object-or-id)]
-    (-> (db/update! pool-or-conn :storage-object
+    (-> (db/update! connectable :storage-object
                     {:touched-at (dt/now)}
                     {:id id})
         (db/get-update-count)
@@ -195,11 +221,10 @@
   "Returns a byte array of object content."
   [storage object]
   (us/assert! ::storage storage)
-  (if (or (nil? (:expired-at object))
-          (dt/is-after? (:expired-at object) (dt/now)))
+  (when (or (nil? (:expired-at object))
+            (dt/is-after? (:expired-at object) (dt/now)))
     (-> (impl/resolve-backend storage (:backend object))
-        (impl/get-object-bytes object))
-    (p/resolved nil)))
+        (impl/get-object-bytes object))))
 
 (defn get-object-url
   ([storage object]
@@ -223,13 +248,26 @@
       (-> (impl/get-object-url backend object nil) file-url->path))))
 
 (defn del-object!
-  [{:keys [::db/pool-or-conn] :as storage} object-or-id]
+  [{:keys [::db/connectable] :as storage} object-or-id]
   (us/assert! ::storage storage)
   (let [id  (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
-        res (db/update! pool-or-conn :storage-object
+        res (db/update! connectable :storage-object
                         {:deleted-at (dt/now)}
                         {:id id})]
     (pos? (db/get-update-count res))))
 
-(dm/export impl/resolve-backend)
 (dm/export impl/calculate-hash)
+
+(defn configure
+  [storage connectable]
+  (assoc storage ::db/connectable connectable))
+
+(defn resolve
+  "Resolves the storage instance with preconfigured backend. You can
+  specify to reuse the database connection from provided
+  cfg/system (default false)."
+  [cfg & {:as opts}]
+  (let [storage (::storage cfg)]
+    (if (::db/reuse-conn opts false)
+      (configure storage (db/get-connectable cfg))
+      storage)))

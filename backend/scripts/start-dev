@@ -19,6 +19,7 @@ export PENPOT_FLAGS="\
        enable-smtp \
        enable-file-snapshot \
        enable-access-tokens \
+       enable-tiered-file-data-storage \
        enable-file-validation \
        enable-file-schema-validation";
 
@@ -56,9 +57,9 @@ mc mb penpot-s3/penpot -p -q
 
 export AWS_ACCESS_KEY_ID=penpot-devenv
 export AWS_SECRET_ACCESS_KEY=penpot-devenv
-export PENPOT_ASSETS_STORAGE_BACKEND=assets-s3
-export PENPOT_STORAGE_ASSETS_S3_ENDPOINT=http://minio:9000
-export PENPOT_STORAGE_ASSETS_S3_BUCKET=penpot
+export PENPOT_OBJECTS_STORAGE_BACKEND=s3
+export PENPOT_OBJECTS_STORAGE_S3_ENDPOINT=http://minio:9000
+export PENPOT_OBJECTS_STORAGE_S3_BUCKET=penpot
 
 entrypoint=${1:-app.main};
 

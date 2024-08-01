@@ -10,7 +10,6 @@
   file is eligible to be garbage collected after some period of
   inactivity (the default threshold is 72h)."
   (:require
-   [app.common.data :as d]
    [app.binfile.common :as bfc]
    [app.common.files.migrations :as fmg]
    [app.common.files.validate :as cfv]
@@ -22,11 +21,11 @@
    [app.config :as cf]
    [app.db :as db]
    [app.features.fdata :as feat.fdata]
-   [app.media :as media]
    [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
+   [app.worker :as wrk]
    [clojure.set :as set]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
@@ -272,17 +271,16 @@
 
 (defn- process-file!
   [cfg]
-  (try
-    (if-let [file (get-file cfg)]
-      (let [file (decode-file cfg file)
-            file (clean-media! cfg file)
-            file (persist-file! cfg file)]
-        (clean-data-fragments! cfg file))
-      (l/dbg :hint "skip" :file-id (str (::file-id cfg))))
-    (catch Throwable cause
-      (l/err :hint "error on cleaning file"
-             :file-id (str (::file-id cfg))
-             :cause cause))))
+  (if-let [file (get-file cfg)]
+    (let [file (decode-file cfg file)
+          file (clean-media! cfg file)
+          file (persist-file! cfg file)]
+      (clean-data-fragments! cfg file)
+      true)
+
+    (do
+      (l/dbg :hint "skip" :file-id (str (::file-id cfg)))
+      false)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HANDLER
@@ -294,13 +292,27 @@
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [{:keys [props] :as task}]
-    (let [min-age (dt/duration (:min-age props 0))
+    (let [min-age (dt/duration (or (:min-age props)
+                                   (cf/get-deletion-delay)))
           cfg     (-> cfg
                       (assoc ::db/rollback (:rollback? props))
                       (assoc ::file-id (:file-id props))
                       (assoc ::min-age (db/interval min-age)))]
 
-      (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                        (let [cfg (update cfg ::sto/storage media/configure-assets-storage conn)]
-                          (process-file! cfg))))
-      nil)))
+      (try
+        (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                          (let [cfg (update cfg ::sto/storage sto/configure conn)
+                                res (process-file! cfg)]
+
+                            (when (contains? cf/flags :tiered-file-data-storage)
+                              (wrk/submit! (-> cfg
+                                               (assoc ::wrk/task :offload-file-data)
+                                               (assoc ::wrk/params props)
+                                               (assoc ::wrk/priority 10)
+                                               (assoc ::wrk/delay 1000))))
+                            res)))
+
+        (catch Throwable cause
+          (l/err :hint "error on cleaning file"
+                 :file-id (str (:file-id props))
+                 :cause cause))))))

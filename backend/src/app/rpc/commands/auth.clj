@@ -522,7 +522,6 @@
                (create-recovery-token)
                (send-email-notification conn)))))))
 
-
 (def schema:request-profile-recovery
   [:map {:title "request-profile-recovery"}
    [:email ::sm/email]])

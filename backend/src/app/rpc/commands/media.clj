@@ -56,21 +56,19 @@
    ::climit/id [[:process-image/by-profile ::rpc/profile-id]
                 [:process-image/global]]}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id content] :as params}]
-  (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
+  (files/check-edition-permissions! pool profile-id file-id)
+  (media/validate-media-type! content)
+  (media/validate-media-size! content)
 
-    (files/check-edition-permissions! pool profile-id file-id)
-    (media/validate-media-type! content)
-    (media/validate-media-size! content)
-
-    (db/run! cfg (fn [cfg]
-                   (let [object (create-file-media-object cfg params)
-                         props  {:name (:name params)
-                                 :file-id file-id
-                                 :is-local (:is-local params)
-                                 :size (:size content)
-                                 :mtype (:mtype content)}]
-                     (with-meta object
-                       {::audit/replace-props props}))))))
+  (db/run! cfg (fn [cfg]
+                 (let [object (create-file-media-object cfg params)
+                       props  {:name (:name params)
+                               :file-id file-id
+                               :is-local (:is-local params)
+                               :size (:size content)
+                               :mtype (:mtype content)}]
+                   (with-meta object
+                     {::audit/replace-props props})))))
 
 (defn- big-enough-for-thumbnail?
   "Checks if the provided image info is big enough for
@@ -183,9 +181,8 @@
   {::doc/added "1.17"
    ::sm/params schema:create-file-media-object-from-url}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
-  (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
-    (files/check-edition-permissions! pool profile-id file-id)
-    (create-file-media-object-from-url cfg (assoc params :profile-id profile-id))))
+  (files/check-edition-permissions! pool profile-id file-id)
+  (create-file-media-object-from-url cfg (assoc params :profile-id profile-id)))
 
 (defn download-image
   [{:keys [::http/client]} uri]

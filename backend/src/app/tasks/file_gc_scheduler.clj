@@ -8,7 +8,6 @@
   "A maintenance task that is responsible of properly scheduling the
   file-gc task for all files that matches the eligibility threshold."
   (:require
-   [app.common.logging :as l]
    [app.config :as cf]
    [app.db :as db]
    [app.util.time :as dt]
