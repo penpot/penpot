@@ -672,11 +672,11 @@
       (apply-changes-local)))
 
 (defn update-token
-  [changes token]
-  (let [token-id (:id token)]
-    (-> changes
-        (update :redo-changes conj {:type :mod-token :id token-id :token token})
-        (apply-changes-local))))
+  [changes {:keys [id] :as token} prev-token]
+  (-> changes
+      (update :redo-changes conj {:type :mod-token :id id :token token})
+      (update :undo-changes conj {:type :mod-token :id id :token (or prev-token token)})
+      (apply-changes-local)))
 
 (defn delete-token
   [changes token-id]
