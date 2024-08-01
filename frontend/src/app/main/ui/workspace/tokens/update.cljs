@@ -66,14 +66,14 @@
    (fn [acc [attrs v]]
      (cond
        (some attrs #{:rx :ry}) (let [[_ a b] (data/diff #{:rx :ry} attrs)]
-                                 (assoc acc
-                                        a v
-                                        b v))
+                                 (cond-> (assoc acc b v)
+                                   ;; Exact match in attrs
+                                   a (assoc a v)))
 
        (some attrs #{:widht :height}) (let [[_ a b] (data/diff #{:width :height} attrs)]
-                                        (assoc acc
-                                               a v
-                                               b v))
+                                        (cond-> (assoc acc b v)
+                                          ;; Exact match in attrs
+                                          a (assoc a v)))
        (some attrs ctt/spacing-keys) (let [[_ rst gap] (data/diff #{:row-gap :column-gap} attrs)
                                            [_ position padding] (data/diff #{:p1 :p2 :p3 :p4} rst)]
                                        (cond-> acc
