@@ -140,6 +140,12 @@
              (rx/of (dwu/commit-undo-transaction undo-id))))))))))
 
 (comment
+  (->> (update-workspace-tokens)
+       (map rest)
+       (into []))
+
+
   (update-workspace-tokens)
+  
   (st/emit! (update-workspace-tokens-event))
   nil)
