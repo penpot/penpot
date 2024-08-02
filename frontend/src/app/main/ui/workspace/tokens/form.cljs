@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    ["lodash.debounce" :as debounce]
+   [app.main.ui.workspace.tokens.update :as wtu]
    [app.common.data :as d]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
@@ -100,7 +101,7 @@ Token names should only contain letters and digits separated by . characters.")}
                   new-tokens (update tokens token-id merge {:id token-id
                                                             :value input
                                                             :name token-name})]
-              (-> (sd/resolve-tokens+ new-tokens {:debug? true})
+              (-> (sd/resolve-tokens+ new-tokens #_ {:debug? true})
                   (p/then
                    (fn [resolved-tokens]
                      (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-id)]
@@ -240,12 +241,13 @@ Token names should only contain letters and digits separated by . characters.")}
                                         ;; The result should be a vector of all resolved validations
                                         ;; We do not handle the error case as it will be handled by the components validations
                                         (when (and (seq result) (not err))
-                                          (let [token (cond-> {:name final-name
-                                                               :type (or (:type token) token-type)
-                                                               :value final-value}
-                                                        final-description (assoc :description final-description)
-                                                        (:id token) (assoc :id (:id token)))]
-                                            (st/emit! (dt/add-token token))
+                                          (let [new-token (cond-> {:name final-name
+                                                                   :type (or (:type token) token-type)
+                                                                   :value final-value}
+                                                            final-description (assoc :description final-description)
+                                                            (:id token) (assoc :id (:id token)))]
+                                            (st/emit! (dt/update-create-token new-token))
+                                            (st/emit! (wtu/update-workspace-tokens))
                                             (modal/hide!)))))))))]
     [:form
      {:on-submit on-submit}

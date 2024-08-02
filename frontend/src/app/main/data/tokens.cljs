@@ -95,14 +95,18 @@
   (let [workspace-data (deref refs/workspace-data)]
     (get (:tokens workspace-data) id)))
 
-(defn add-token
+(defn update-create-token
   [token]
   (let [token (update token :id #(or % (uuid/next)))]
     (ptk/reify ::add-token
       ptk/WatchEvent
       (watch [it _ _]
-        (let [changes (-> (pcb/empty-changes it)
-                          (pcb/add-token token))]
+        (let [prev-token (get-token-data-from-token-id (:id token))
+              changes (if prev-token
+                        (-> (pcb/empty-changes it)
+                            (pcb/update-token token prev-token))
+                        (-> (pcb/empty-changes it)
+                            (pcb/add-token token)))]
           (rx/of (dch/commit-changes changes)))))))
 
 (defn delete-token
@@ -122,7 +126,7 @@
   (let [new-token (-> (get-token-data-from-token-id id)
                       (dissoc :id)
                       (update :name #(str/concat % "-copy")))]
-    (add-token new-token)))
+    (update-create-token new-token)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TEMP (Move to test)
