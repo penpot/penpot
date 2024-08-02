@@ -342,7 +342,6 @@
         :data-attr "p1"
         :on-change on-change'
         :on-focus on-focus
-        :nillable true
         :min 0
         :value p1}]]
      [:div {:class (stl/css :padding-simple)
@@ -357,7 +356,6 @@
         :on-change on-change'
         :on-focus on-focus
         :on-blur on-padding-blur
-        :nillable true
         :min 0
         :value p2}]]]))
 
@@ -400,7 +398,6 @@
         :on-change on-change'
         :on-focus on-focus
         :on-blur on-padding-blur
-        :nillable true
         :min 0
         :value p1}]]
 
@@ -415,7 +412,6 @@
         :on-change on-change'
         :on-focus on-focus
         :on-blur on-padding-blur
-        :nillable true
         :min 0
         :value p2}]]
 
@@ -430,7 +426,6 @@
         :on-change on-change'
         :on-focus on-focus
         :on-blur on-padding-blur
-        :nillable true
         :min 0
         :value p3}]]
 
@@ -445,7 +440,6 @@
         :on-change on-change'
         :on-focus on-focus
         :on-blur on-padding-blur
-        :nillable true
         :min 0
         :value p4}]]]))
 
