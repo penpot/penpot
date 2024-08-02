@@ -49,23 +49,23 @@
                 (tr "workspace.options.fill"))
 
         ;; Excluding nil values
-        values (d/without-nils values)
-        fills (:fills values)
-        has-fills? (or (= :multiple fills) (some? (seq fills)))
+        values               (d/without-nils values)
+        fills                (:fills values)
+        has-fills?           (or (= :multiple fills) (some? (seq fills)))
 
 
-        state*          (mf/use-state has-fills?)
-        open?           (deref state*)
+        state*               (mf/use-state true)
+        open?                (deref state*)
 
-        toggle-content  (mf/use-fn #(swap! state* not))
+        toggle-content       (mf/use-fn #(swap! state* not))
 
-        open-content    (mf/use-fn #(reset! state* true))
+        open-content         (mf/use-fn #(reset! state* true))
 
-        close-content    (mf/use-fn #(reset! state* false))
+        close-content        (mf/use-fn #(reset! state* false))
 
         hide-fill-on-export? (:hide-fill-on-export values false)
 
-        checkbox-ref (mf/use-ref)
+        checkbox-ref         (mf/use-ref)
 
         on-add
         (mf/use-fn
@@ -149,7 +149,7 @@
                    :data-testid "add-fill"
                    :on-click on-add} i/add])]]
 
-     (when open?
+     (when (and open? has-fills?)
        [:div {:class (stl/css :element-content)}
         (cond
           (= :multiple fills)
