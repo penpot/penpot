@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-07-11 20:09+0000\n"
+"PO-Revision-Date: 2024-08-05 19:09+0000\n"
 "Last-Translator: Nima K <nimiossa@gmail.com>\n"
 "Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
 "fa/>\n"
@@ -267,11 +267,9 @@ msgstr "Penpot شما"
 msgid "dashboard.delete-team"
 msgstr "حذف تیم"
 
-#, fuzzy
 msgid "dashboard.download-binary-file"
 msgstr "دانلود فایل پنپات (.penpot)"
 
-#, fuzzy
 msgid "dashboard.download-standard-file"
 msgstr "دانلود فایل استاندارد (.svg + .json)"
 
@@ -291,9 +289,8 @@ msgstr ""
 "به [کتابخانه‌ها و الگوها] بروید "
 "(https://penpot.app/libraries-templates)"
 
-#, fuzzy
 msgid "dashboard.export-binary-multi"
-msgstr "دانلود %s فایل پنپات (.penpot)"
+msgstr "دانلود %s عدد فایل های پنپات (.penpot)"
 
 msgid "dashboard.export-frames"
 msgstr "خروجی آرت‌بوردها به پی‌دی‌اف"
@@ -331,9 +328,8 @@ msgstr "هیچ عنصری با تنظیمات اکسپورت وجود ندارد
 msgid "dashboard.export-shapes.title"
 msgstr "انتخاب اکسپورت"
 
-#, fuzzy
 msgid "dashboard.export-standard-multi"
-msgstr "دانلود %s فایل استاندارد (.svg + .json)"
+msgstr "دانلود %s عدد فایل های استاندارد (.svg + .json)"
 
 msgid "dashboard.export.detail"
 msgstr "* ممکن است شامل کامپوننت‌ها، گرافیک، رنگ‌ها و/یا تایپوگرافی باشد."
@@ -3119,3 +3115,108 @@ msgstr ""
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.register-account-tagline"
 msgstr "اطلاع دهید که شما را با چه نامی در ایمیل ها و حساب کاربری صدا کنیم."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-tagline"
+msgstr ""
+"با اکانت رایگان پنپات، شما توانایی ایجاد تیم های نامحدود را برای همکاری با "
+"طراحان و برنامه نویسان روی پروژه های نامحدود دارید. "
+
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"با ایجاد اکانت جدید شما با تمامی مفاد terms of service (قوانین و مقررات "
+"استفاده از این سرویس و حقوق متقابل ما و شما) و مفاد privacy policy (چگونگی "
+"مراقبت از حریم شخصی شما توسط ما) موافقت میکنید."
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr ""
+"من با قوانین و مقررات این سرویس و چگونگی مراقبت از اطلاعات شخصی در این سرویس "
+"را قبول میکنم."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create.success"
+msgstr "توکن دسترسی با موفقیت ایجاد شد."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.errors-required-name"
+msgstr "اسم مورد نیاز است"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-180-days"
+msgstr "۱۸۰ روز"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+#, fuzzy
+msgid "dashboard.access-tokens.expired-on"
+msgstr "تاریخ انقضای توکن دسترسی %s بوده"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+#, fuzzy
+msgid "dashboard.access-tokens.no-expiration"
+msgstr "بدون تاریخ انقضا"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+#, fuzzy
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "توکن دسترسی تاریخ انقضایش در تاریخ %s تمام میشود"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "این توکن دسترسی تاریخ انقضا ندارد"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.copied-success"
+msgstr "توکن دسترسی با موفقیت کپی شد"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, fuzzy
+msgid "dasboard.walkthrough-hero.title"
+msgstr "گذری در رابط کاربریِ برنامه"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr ""
+"برای ایجاد توکن دسترسی جدید دکمه «ایجاد توکن دسترسی جدید» توکن را کلیک کنید."
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create"
+msgstr "ایجاد توکن دسترسی جدید"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-60-days"
+msgstr "۶۰ روز"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expires-on"
+msgstr "تاریخ انقضا %s میباشد"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-90-days"
+msgstr "۹۰ روز"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+#, fuzzy
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "هیچ گاه (بدون تاریخ انقضا)"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.personal"
+msgstr "توکنِ دسترسیِ شخصی"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+#, fuzzy
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"توکن های دسترسی شخصی میتوانند به عنوان جایگزینی به جای رمز عبور و نام کاربری "
+"باشند برای برنامه ها برای دسترسی به API درونی پنپات"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.expiration-30-days"
+msgstr "۳۰ روز"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+#, fuzzy
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "شما تا به حال هیچ توکن دسترسی نداشتید."
