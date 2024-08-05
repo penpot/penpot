@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-08-05 19:09+0000\n"
+"Last-Translator: sangpil hwang <h.sangpil@gmail.com>\n"
 "Language-Team: Korean <https://hosted.weblate.org/projects/penpot/frontend/"
 "ko/>\n"
 "Language: ko\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.6-dev\n"
+"X-Generator: Weblate 5.7-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -834,3 +834,20 @@ msgstr ""
 "라이브러리에 추가된 파일은 여기에서 볼 수 있습니다. 파일을 공유하거나 펜팟의 "
 "[라이브러리와 템플릿](https://penpot.app/libraries-templates.html) 에서 "
 "추가해 보십시오."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.work-email"
+msgstr "작업용 이메일"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-mail"
+msgstr "이메일을 확인하세요"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-tagline"
+msgstr "펜팟 무료 계정과 함께라면, 무제한으로 팀을 만들고 다른 디자이너 및 개발자와 "
+"원하는 만큼 프로젝트에서 협업할 수 있습니다. "
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-account-tagline"
+msgstr "대시보드와 이메일 에서 당신을 어떻게 호칭할지 저희에게 알려주세요."
