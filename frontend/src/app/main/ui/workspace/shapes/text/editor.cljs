@@ -193,6 +193,7 @@
 
                        keep-style?
                        (ted/set-style-override styleOverride))]
+             (js/console.log "val" val)
              (st/emit! (dwt/update-editor-state shape val)))))
 
         on-editor

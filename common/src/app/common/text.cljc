@@ -76,6 +76,9 @@
    text-transform-attrs
    text-fills))
 
+(def text-style-attrs
+  (d/concat-vec root-attrs paragraph-attrs text-node-attrs))
+
 (def text-all-attrs (d/concat-set shape-attrs root-attrs paragraph-attrs text-node-attrs))
 
 (def default-text-attrs
@@ -300,6 +303,7 @@
 
 (defn convert-to-draft
   [root]
+  (prn root)
   (letfn [(process-attr [children ranges [k v]]
             (loop [children (seq children)
                    start    nil

@@ -28,6 +28,7 @@
 (def on-event identity)
 
 (def ^:dynamic *debug-events* false)
+(def ^:dynamic *text-editor* "v2")
 
 ;; Only created in development build
 (when *assert*

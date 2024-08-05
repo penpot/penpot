@@ -14,8 +14,9 @@ goog.scope(function () {
   const self = app.util.text_position_data;
   const document = goog.global.document;
 
+  // We do not need to create new ranges.
+  const range = document.createRange();
   function getRangeRects(node, start, end) {
-    const range = document.createRange();
     range.setStart(node, start);
     range.setEnd(node, end);
     return [...range.getClientRects()].filter((r) => r.width > 0);

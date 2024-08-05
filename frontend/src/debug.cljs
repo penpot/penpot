@@ -513,3 +513,18 @@
                        #_(.reload js/location))
                      (fn [cause]
                        (js/console.log "EE:" cause)))))))
+
+(defn ^:export debug-text-editor
+  [version]
+  (cond
+    (= version 1)
+    (set! st/*text-editor* "v1")
+
+    (= version 2)
+    (set! st/*text-editor* "v2")
+
+    :else
+    (let [current-version st/*text-editor*]
+      (js/console.warn "Unsupported text editor version" version "using" current-version)))
+
+  (js* "app.main.reinit()"))

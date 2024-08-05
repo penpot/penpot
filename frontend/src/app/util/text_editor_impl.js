@@ -185,7 +185,7 @@ export function splitBlockPreservingData(state) {
 }
 
 export function addBlurSelectionEntity(state) {
-  let content = state.getCurrentContent(state);
+  let content = state.getCurrentContent();
   const selection = state.getSelection();
 
   content = content.createEntity("PENPOT_SELECTION", "MUTABLE");

@@ -112,6 +112,7 @@
                   (update-fn))]
     (impl/applyInlineStyle state (txt/attrs-to-styles attrs))))
 
+;; FIXME: Never used
 (defn editor-split-block
   [state]
   (impl/splitBlockPreservingData state))

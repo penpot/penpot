@@ -128,7 +128,7 @@
              (st/emit!
               (dwu/start-undo-transaction uid)
               (dwsh/update-shapes ids #(assoc % :grow-type grow-type)))
-             ;; We asynchronously commit so every sychronous event is resolved first and inside the transaction
+             ;; We asynchronously commit so every synchronous event is resolved first and inside the transaction
              (ts/schedule #(st/emit! (dwu/commit-undo-transaction uid))))
            (when (some? on-blur) (on-blur))))]
 
@@ -211,6 +211,7 @@
         (mf/use-fn
          (mf/deps values)
          (fn [ids attrs]
+           (js/console.log "emit-update!" ids attrs)
            (st/emit! (dwt/save-font (-> (merge txt/default-text-attrs values attrs)
                                         (select-keys txt/text-node-attrs)))
                      (dwt/update-all-attrs ids attrs))))
@@ -272,6 +273,9 @@
                   :values values
                   :on-change on-change
                   :show-recent true
+                  ;; TODO: Necesito comprender por qué se añadió esto para entender
+                  ;; cuál es el motivo para hacer esto. Quizá se pueda eliminar del
+                  ;; código actual.
                   :on-blur
                   (fn []
                     (ts/schedule
