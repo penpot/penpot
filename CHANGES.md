@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.1.2
+
+### :bug: Bugs fixed
+
+- User switch language to "zh_hant" will get 400 [Github #4884](https://github.com/penpot/penpot/issues/4884)
+
 ## 2.1.1
 
 ### :sparkles: New features
