@@ -116,9 +116,12 @@
 
 (defn update-stroke-width
   [value shape-ids]
-  (dch/update-shapes shape-ids (fn [shape]
-                                 (when (seq (:strokes shape))
-                                   (assoc-in shape [:strokes 0 :stroke-width] value)))))
+  (dch/update-shapes shape-ids
+                     (fn [shape]
+                       (when (seq (:strokes shape))
+                         (assoc-in shape [:strokes 0 :stroke-width] value)))
+                     {:reg-objects? true
+                      :attrs [:strokes]}))
 
 (defn update-shape-dimensions [value shape-ids attributes]
   (ptk/reify ::update-shape-dimensions
