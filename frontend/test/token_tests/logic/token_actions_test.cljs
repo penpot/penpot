@@ -14,12 +14,12 @@
 (t/use-fixtures :each
   {:before thp/reset-idmap!})
 
-(defn- setup-file
-  []
+(defn setup-file
+  [& {:keys [rect-1 rect-2 rect-3]}]
   (-> (cthf/sample-file :file-1 :page-label :page-1)
-      (ctho/add-rect :rect-1 {})
-      (ctho/add-rect :rect-2 {})
-      (ctho/add-rect :rect-3 {})
+      (ctho/add-rect :rect-1 rect-1)
+      (ctho/add-rect :rect-2 rect-2)
+      (ctho/add-rect :rect-3 rect-3)
       (toht/add-token :token-1 {:value "12"
                                 :name "borderRadius.sm"
                                 :type :border-radius})
