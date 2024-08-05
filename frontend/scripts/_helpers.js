@@ -404,6 +404,15 @@ async function generateTemplates() {
   );
   await fs.writeFile("./.storybook/preview-body.html", content);
 
+  content = await renderTemplate(
+    "resources/templates/preview-head.mustache",
+    {
+      manifest: manifest,
+    },
+    partials,
+  );
+  await fs.writeFile("./.storybook/preview-head.html", content);
+
   content = await renderTemplate("resources/templates/render.mustache", {
     manifest: manifest,
     translations: JSON.stringify(translations),
