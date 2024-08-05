@@ -165,27 +165,52 @@
 (t/deftest test-apply-opacity
   (t/testing "applies opacity token and updates the shapes opacity"
     (t/async
-      done
-      (let [file (-> (setup-file)
-                     (toht/add-token :token-target {:value "0.5"
-                                                    :name "opacity.medium"
-                                                    :type :opacity}))
-            store (ths/setup-store file)
-            rect-1 (cths/get-shape file :rect-1)
-            events [(wtch/apply-token {:shape-ids [(:id rect-1)]
-                                       :attributes #{:opacity}
-                                       :token (toht/get-token file :token-target)
-                                       :on-update-shape wtch/update-opacity})]]
-        (tohs/run-store-async
-         store done events
-         (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)
-                 token-target' (toht/get-token file' :token-target)
-                 rect-1' (cths/get-shape file' :rect-1)]
-             (t/is (some? (:applied-tokens rect-1')))
-             (t/is (= (:opacity (:applied-tokens rect-1')) (:id token-target')))
-             ;; TODO Fix opacity shape update not working?
-             #_(t/is (= (:opacity rect-1') 0.5)))))))))
+     done
+     (let [file (-> (setup-file)
+                    (toht/add-token :opacity-float {:value "0.3"
+                                                    :name "opacity.float"
+                                                    :type :opacity})
+                    (toht/add-token :opacity-percent {:value "40%"
+                                                      :name "opacity.percent"
+                                                      :type :opacity})
+                    (toht/add-token :opacity-invalid {:value "100"
+                                                      :name "opacity.invalid"
+                                                      :type :opacity}))
+           store (ths/setup-store file)
+           rect-1 (cths/get-shape file :rect-1)
+           rect-2 (cths/get-shape file :rect-2)
+           rect-3 (cths/get-shape file :rect-3)
+           events [(wtch/apply-token {:shape-ids [(:id rect-1)]
+                                      :attributes #{:opacity}
+                                      :token (toht/get-token file :opacity-float)
+                                      :on-update-shape wtch/update-opacity})
+                   (wtch/apply-token {:shape-ids [(:id rect-2)]
+                                      :attributes #{:opacity}
+                                      :token (toht/get-token file :opacity-percent)
+                                      :on-update-shape wtch/update-opacity})
+                   (wtch/apply-token {:shape-ids [(:id rect-3)]
+                                      :attributes #{:opacity}
+                                      :token (toht/get-token file :opacity-invalid)
+                                      :on-update-shape wtch/update-opacity})]]
+       (tohs/run-store-async
+        store done events
+        (fn [new-state]
+          (let [file' (ths/get-file-from-store new-state)
+                rect-1' (cths/get-shape file' :rect-1)
+                rect-2' (cths/get-shape file' :rect-2)
+                rect-3' (cths/get-shape file' :rect-3)
+                token-opacity-float (toht/get-token file' :opacity-float)
+                token-opacity-percent (toht/get-token file' :opacity-percent)
+                token-opacity-invalid (toht/get-token file' :opacity-invalid)]
+            (t/testing "float value got translated to float and applied to opacity"
+              (t/is (= (:opacity (:applied-tokens rect-1')) (:id token-opacity-float)))
+              (t/is (= (:opacity rect-1') 0.3)))
+            (t/testing "percentage value got translated to float and applied to opacity"
+              (t/is (= (:opacity (:applied-tokens rect-2')) (:id token-opacity-percent)))
+              (t/is (= (:opacity rect-2') 0.4)))
+            (t/testing "invalid opacity value got applied but did not change shape"
+              (t/is (= (:opacity (:applied-tokens rect-3')) (:id token-opacity-invalid)))
+              (t/is (nil? (:opacity rect-3')))))))))))
 
 (t/deftest test-apply-rotation
   (t/testing "applies rotation token and updates the shapes rotation"
