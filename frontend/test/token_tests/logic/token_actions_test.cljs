@@ -4,7 +4,6 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.shapes :as cths]
    [app.main.ui.workspace.tokens.changes :as wtch]
-   [app.main.ui.workspace.tokens.core :as wtc]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
