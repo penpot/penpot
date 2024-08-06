@@ -20,6 +20,7 @@
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.token-types :as wtty]
+   [app.main.ui.workspace.tokens.sets :refer [sets-sidebar]]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -171,6 +172,7 @@
    ::mf/wrap-props false}
   [_props]
   [:div {:class (stl/css :sidebar-tab-wrapper)}
+   [:& sets-sidebar]  ;; Add sets sidebar here
    [:& tokens-explorer]
    [:button {:class (stl/css :download-json-button)
              :on-click wtc/download-tokens-as-json}
