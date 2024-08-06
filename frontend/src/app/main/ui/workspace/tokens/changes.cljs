@@ -94,7 +94,8 @@
                       :attrs ctt/border-radius-keys}))
 
 (defn update-opacity [value shape-ids]
-  (dch/update-shapes shape-ids #(assoc % :opacity value)))
+  (when (<= 0 value 1)
+    (dch/update-shapes shape-ids #(assoc % :opacity value))))
 
 (defn update-rotation [value shape-ids]
   (ptk/reify ::update-shape-dimensions

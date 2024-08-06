@@ -89,7 +89,7 @@
     (let [resolved-tokens (reduce
                            (fn [acc ^js cur]
                              (let [value (.-value cur)
-                                   resolved-value (d/parse-integer (.-value cur))
+                                   resolved-value (d/parse-double (.-value cur))
                                    original-value (-> cur .-original .-value)
                                    id (uuid (.-uuid (.-id cur)))
                                    missing-reference? (and (not resolved-value)

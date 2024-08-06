@@ -18,6 +18,12 @@ If possible add video here from PR as well
 
 ## Changes
 
+### 2024-08-05 - Fix opacity updating
+
+[Link to PR](https://github.com/orgs/tokens-studio/projects/69/views/11?pane=issue&itemId=69801248)
+
+Fixes opacity not being applied correctly to shapes.
+
 ### 2024-08-05 - Fix stroke witdth applying breaking app
 
 [Link to PR](https://github.com/orgs/tokens-studio/projects/69/views/11?pane=issue&itemId=73072870)
