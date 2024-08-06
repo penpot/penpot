@@ -63,10 +63,12 @@
     [:map-of {:gen/max 5} ::sm/uuid ::media-object]]
    [:plugin-data {:optional true}
     [:map-of {:gen/max 5} :keyword ::ctpg/plugin-data]]
-   [:token-themes [:vector ::sm/uuid]]
+   [:token-themes {:optional true}
+    [:vector ::sm/uuid]]
    [:token-themes-index {:optional true}
     [:map-of {:gen/max 5} ::sm/uuid ::ctt/token-theme]]
-   [:token-set-groups [:vector ::sm/uuid]]
+   [:token-set-groups {:optional true}
+    [:vector ::sm/uuid]]
    [:token-set-groups-index {:optional true}
     [:map-of {:gen/max 10} ::sm/uuid ::ctt/token-set-group]]
    [:token-sets-index {:optional true}

@@ -16,11 +16,22 @@
    [:modified-at {:optional true} ::sm/inst]
    [:sets [:set {:gen/max 10 :gen/min 1} ::sm/uuid]]])
 
+(sm/register! ::token-set-group-ref
+  [:map
+   [:id :sm/uuid]
+   [:type [:= :group]]])
+
+(sm/register! ::token-set-ref
+  [:map
+   [:id :sm/uuid]
+   [:type [:= :set]]])
+
 (sm/register! ::token-set-group
   [:map {:title "TokenSetGroup"}
    [:id ::sm/uuid]
    [:name :string]
-   [:sets [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]])
+   [:items [:vector {:gen/max 10 :gen/min 1}
+            [:or ::token-set-group-ref ::token-set-ref]]]])
 
 (sm/register! ::token-set
   [:map {:title "TokenSet"}
