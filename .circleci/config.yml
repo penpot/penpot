@@ -22,10 +22,10 @@ jobs:
 
       # Download and cache dependencies
       - restore_cache:
-         keys:
-           - v1-dependencies-{{ checksum "backend/deps.edn" }}-{{ checksum "frontend/deps.edn"}}-{{ checksum "common/deps.edn"}}
-           # fallback to using the latest cache if no exact match is found
-           - v1-dependencies-
+          keys:
+            - v1-dependencies-{{ checksum "backend/deps.edn" }}-{{ checksum "frontend/deps.edn"}}-{{ checksum "common/deps.edn"}}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
 
       - run: cd .clj-kondo && cat config.edn
       - run: cat .cljfmt.edn
@@ -108,7 +108,7 @@ jobs:
           working_directory: "./frontend"
           command: |
             yarn install
-            yarn run compile
+            yarn run build:app:assets
             clojure -M:dev:shadow-cljs release main
             yarn playwright install --with-deps chromium
             yarn e2e:test
@@ -126,7 +126,6 @@ jobs:
             PENPOT_TEST_REDIS_URI: "redis://localhost/1"
 
       - save_cache:
-         paths:
-           - ~/.m2
-         key: v1-dependencies-{{ checksum "backend/deps.edn" }}-{{ checksum "frontend/deps.edn"}}-{{ checksum "common/deps.edn"}}
-
+          paths:
+            - ~/.m2
+          key: v1-dependencies-{{ checksum "backend/deps.edn" }}-{{ checksum "frontend/deps.edn"}}-{{ checksum "common/deps.edn"}}

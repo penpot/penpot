@@ -82,6 +82,31 @@ export async function compileSassDebug(worker) {
   return `${result.css}\n`;
 }
 
+export async function compileSassStorybook(worker) {
+  const limitFn = pLimit(4);
+  const sourceDir = ph.join("src", "app", "main", "ui", "ds");
+
+  const dsFiles = (await fs.readdir(sourceDir, { recursive: true }))
+    .filter(isSassFile)
+    .map((filename) => ph.join(sourceDir, filename));
+  const procs = [compileSass(worker, "resources/styles/main-default.scss", {})];
+
+  for (let path of dsFiles) {
+    const proc = limitFn(() => compileSass(worker, path, { modules: true }));
+    procs.push(proc);
+  }
+
+  const result = await Promise.all(procs);
+  return result.reduce(
+    (acc, item) => {
+      acc.index[item.outputPath] = item.css;
+      acc.items.push(item.outputPath);
+      return acc;
+    },
+    { index: {}, items: [] },
+  );
+}
+
 export async function compileSassAll(worker) {
   const limitFn = pLimit(4);
   const sourceDir = "src";
@@ -379,6 +404,15 @@ async function generateTemplates() {
   );
   await fs.writeFile("./.storybook/preview-body.html", content);
 
+  content = await renderTemplate(
+    "resources/templates/preview-head.mustache",
+    {
+      manifest: manifest,
+    },
+    partials,
+  );
+  await fs.writeFile("./.storybook/preview-head.html", content);
+
   content = await renderTemplate("resources/templates/render.mustache", {
     manifest: manifest,
     translations: JSON.stringify(translations),
@@ -392,6 +426,22 @@ async function generateTemplates() {
   });
 
   await fs.writeFile("./resources/public/rasterizer.html", content);
+}
+
+export async function compileStorybookStyles() {
+  const worker = startWorker();
+  const start = process.hrtime();
+
+  log.info("init: compile storybook styles");
+  let result = await compileSassStorybook(worker);
+  result = concatSass(result);
+
+  await fs.mkdir("./resources/public/css", { recursive: true });
+  await fs.writeFile("./resources/public/css/ds.css", result);
+
+  const end = process.hrtime(start);
+  log.info("done: compile storybook styles", `(${ppt(end)})`);
+  worker.terminate();
 }
 
 export async function compileStyles() {

@@ -4,6 +4,8 @@
 
 set -ex
 
+export INCLUDE_STORYBOOK=${BUILD_STORYBOOK:-no};
+
 export CURRENT_VERSION=$1;
 export BUILD_DATE=$(date -R);
 export CURRENT_HASH=${CURRENT_HASH:-$(git rev-parse --short HEAD)};
@@ -20,9 +22,16 @@ rm -rf target/dist;
 
 clojure -M:dev:shadow-cljs release main --config-merge "{:release-version \"${CURRENT_HASH}-${TS}\"}" $EXTRA_PARAMS || exit 1
 
-yarn run compile || exit 1;
+yarn run build:app:assets || exit 1;
+
 mkdir -p target/dist;
 rsync -avr resources/public/ target/dist/
 
 sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/dist/index.html;
 sed -i -re "s/\%buildDate\%/$BUILD_DATE/g" ./target/dist/index.html;
+
+if [ "$INCLUDE_STORYBOOK" = "yes"];  then
+    # build storybook
+    yarn run build:storybook || exit 1;
+    rsync -avr storybook-static/ target/dist/storybook-static;
+fi
