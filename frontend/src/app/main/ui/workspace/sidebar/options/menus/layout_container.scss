@@ -84,7 +84,7 @@
   gap: $s-4;
   .column-gap {
     @extend .input-element;
-    position: relative;
+    @include bodySmallTypography;
     width: $s-108;
     &.disabled {
       @extend .disabled-input;
@@ -92,7 +92,7 @@
   }
   .row-gap {
     @extend .input-element;
-    position: relative;
+    @include bodySmallTypography;
     width: $s-108;
     &.disabled {
       @extend .disabled-input;
@@ -115,7 +115,7 @@
 
     .padding-simple {
       @extend .input-element;
-      position: relative;
+      @include bodySmallTypography;
       max-width: $s-108;
     }
   }
@@ -127,6 +127,7 @@
 
     .padding-multiple {
       @extend .input-element;
+      @include bodySmallTypography;
       max-width: $s-108;
     }
   }
@@ -242,6 +243,7 @@
 
   .track-info-value {
     @extend .input-element;
+    @include bodySmallTypography;
     border-radius: 0;
     border-right: $s-1 solid var(--panel-background-color);
   }
@@ -287,7 +289,7 @@
   }
 
   .track-name {
-    color: $df-primary;
+    color: var(--color-foreground-primary);
   }
 
   .track-detail {
@@ -295,7 +297,7 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     width: 100%;
-    color: $df-secondary;
+    color: var(--color-foreground-secondary);
   }
 
   .expand-icon {
@@ -355,11 +357,11 @@
   button {
     @include buttonStyle;
     padding: $s-8;
-    color: $df-primary;
+    color: var(--color-foreground-primary);
     border-radius: $br-6;
 
     &:hover {
-      background: $db-quaternary;
+      background: var(--color-background-quaternary);
     }
   }
 }

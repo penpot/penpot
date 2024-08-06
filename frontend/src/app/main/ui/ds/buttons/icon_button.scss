@@ -1,0 +1,33 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../typography.scss" as *;
+@use "../_sizes.scss" as *;
+@use "./buttons" as *;
+
+.icon-button {
+  @extend %base-button;
+  width: #{$sz-32};
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.icon-button-primary {
+  @extend %base-button-primary;
+}
+
+.icon-button-secondary {
+  @extend %base-button-secondary;
+}
+
+.icon-button-ghost {
+  @extend %base-button-ghost;
+}
+
+.icon-button-destructive {
+  @extend %base-button-destructive;
+}

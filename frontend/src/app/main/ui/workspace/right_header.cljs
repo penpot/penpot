@@ -25,38 +25,35 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(def ref:workspace-persistence
-  (l/derived :workspace-persistence st/state))
+(def ref:persistence-status
+  (l/derived :status refs/persistence))
 
 ;; --- Persistence state Widget
 
 (mf/defc persistence-state-widget
-  {::mf/wrap [mf/memo]}
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
   []
-  (let [{:keys [status]} (mf/deref ref:workspace-persistence)]
+  (let [status (mf/deref ref:persistence-status)]
     [:div {:class (stl/css :persistence-status-widget)}
      (case status
        :pending
-       [:div {:class (stl/css-case :status-icon true
-                                   :pending-status true)
+       [:div {:class (stl/css :status-icon :pending-status)
               :title (tr "workspace.header.unsaved")}
         i/status-alert]
 
        :saving
-       [:div {:class (stl/css-case :status-icon true
-                                   :saving-status true)
-              :title (tr "workspace.header.saving")}
-        i/status-update]
+       [:div {:class (stl/css :status-icon :pending-status)
+              :title (tr "workspace.header.unsaved")}
+        i/status-alert]
 
        :saved
-       [:div {:class (stl/css-case :status-icon true
-                                   :saved-status true)
+       [:div {:class (stl/css :status-icon :saved-status)
               :title (tr "workspace.header.saved")}
         i/status-tick]
 
        :error
-       [:div {:class (stl/css-case :status-icon true
-                                   :error-status true)
+       [:div {:class (stl/css :status-icon :error-status)
               :title "There was an error saving the data. Please refresh if this persists."}
         i/status-wrong]
 

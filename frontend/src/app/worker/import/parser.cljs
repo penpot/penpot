@@ -12,6 +12,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.svg.path :as svg.path]
+   [app.common.types.component :as ctk]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
    [app.util.json :as json]
@@ -129,6 +130,15 @@
          (into {}))
     style-str))
 
+(defn parse-touched
+  "Transform a string of :touched-groups into a set"
+  [touched-str]
+  (let [touched (->> (str/split touched-str " ")
+                     (map #(keyword (subs % 1)))
+                     (filter ctk/valid-touched-group?)
+                     (into #{}))]
+    touched))
+
 (defn add-attrs
   [m attrs]
   (reduce-kv
@@ -234,19 +244,22 @@
                                        (first))
 
             ;; The nodes with the "frame-background" class can have some anidation depending on the strokes they have
-            g-nodes    (find-all-nodes node :g)
-            defs-nodes (flatten (map #(find-all-nodes % :defs) g-nodes))
-            gg-nodes   (flatten (map #(find-all-nodes % :g) g-nodes))
+            g-nodes     (find-all-nodes node :g)
+            defs-nodes  (flatten (map #(find-all-nodes % :defs) g-nodes))
+            gg-nodes    (flatten (map #(find-all-nodes % :g) g-nodes))
 
+            ;; The first g node contains the opacity for frames
+            main-g-node (first g-nodes)
 
-            rect-nodes (flatten [[(find-all-nodes node :rect)]
-                                 (map #(find-all-nodes % #{:rect :path}) defs-nodes)
-                                 (map #(find-all-nodes % #{:rect :path}) g-nodes)
-                                 (map #(find-all-nodes % #{:rect :path}) gg-nodes)])
-            svg-node (d/seek #(= "frame-background" (get-in % [:attrs :class])) rect-nodes)]
+            rect-nodes  (flatten [[(find-all-nodes node :rect)]
+                                  (map #(find-all-nodes % #{:rect :path}) defs-nodes)
+                                  (map #(find-all-nodes % #{:rect :path}) g-nodes)
+                                  (map #(find-all-nodes % #{:rect :path}) gg-nodes)])
+            svg-node    (d/seek #(= "frame-background" (get-in % [:attrs :class])) rect-nodes)]
         (merge
          (add-attrs {} (:attrs frame-clip-rect-node))
          (add-attrs {} (:attrs svg-node))
+         (add-attrs {} (:attrs main-g-node))
          node-attrs))
 
       (= type :svg-raw)
@@ -424,7 +437,8 @@
         component-file        (get-meta node :component-file uuid/uuid)
         shape-ref             (get-meta node :shape-ref uuid/uuid)
         component-root?       (get-meta node :component-root str->bool)
-        main-instance?        (get-meta node :main-instance str->bool)]
+        main-instance?        (get-meta node :main-instance str->bool)
+        touched               (get-meta node :touched parse-touched)]
 
     (cond-> props
       (some? stroke-color-ref-id)
@@ -442,7 +456,10 @@
       (assoc :main-instance main-instance?)
 
       (some? shape-ref)
-      (assoc :shape-ref shape-ref))))
+      (assoc :shape-ref shape-ref)
+
+      (seq touched)
+      (assoc :touched touched))))
 
 (defn add-fill
   [props node svg-data]

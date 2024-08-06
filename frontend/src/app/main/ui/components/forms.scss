@@ -38,10 +38,9 @@
   }
 }
 
-.input-with-label {
+.input-with-label-form {
   @include flexColumn;
   gap: $s-8;
-  @include bodySmallTypography;
   justify-content: flex-start;
   align-items: flex-start;
   height: 100%;
@@ -55,6 +54,7 @@
     color: var(--input-foreground-color-active);
     margin-top: 0;
     width: 100%;
+    max-width: 100%;
     height: 100%;
     padding: 0 $s-8;
 
@@ -64,6 +64,7 @@
       border-radius: $br-8;
     }
   }
+
   // Input autofill
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
@@ -92,7 +93,7 @@
   top: calc(50% - $s-8);
   svg {
     @extend .button-icon-small;
-    stroke: $df-secondary;
+    stroke: var(--color-foreground-secondary);
     width: $s-16;
     height: $s-16;
   }
@@ -168,6 +169,10 @@
       span {
         border-color: var(--input-checkbox-border-color-hover);
       }
+    }
+    a {
+      // Need for terms and conditions links on register checkbox
+      color: var(--link-foreground-color);
     }
   }
 }
@@ -259,11 +264,10 @@
 // SUBMIT-BUTTON
 .button-submit {
   @extend .button-primary;
-}
-
-:disabled {
-  @extend .button-disabled;
-  min-height: $s-32;
+  &:disabled {
+    @extend .button-disabled;
+    min-height: $s-32;
+  }
 }
 
 // MULTI INPUT
@@ -368,7 +372,7 @@
   height: fit-content;
   border-radius: $br-8;
   padding: $s-8;
-  color: var(--input-foreground-color);
+  color: var(--input-foreground-color-rest);
   border: $s-1 solid transparent;
   &:focus,
   &:focus-within {
@@ -394,14 +398,12 @@
   border-radius: $br-circle;
 }
 
-.radio-label.with-image {
+.radio-label-image {
   @include smallTitleTipography;
   display: grid;
   grid-template-rows: auto auto 0px;
   justify-items: center;
   gap: 0;
-  height: $s-116;
-  width: $s-92;
   border-radius: $br-8;
   margin: 0;
   border: 1px solid var(--color-background-tertiary);
@@ -414,22 +416,29 @@
     outline: none;
     border: $s-1 solid var(--input-border-color-active);
   }
+  .image-text {
+    color: var(--input-foreground-color-rest);
+    display: grid;
+    align-self: center;
+    margin-bottom: $s-16;
+    padding-inline: $s-8;
+    text-align: center;
+  }
 }
 
 .image-inside {
-  width: $s-60;
-  height: $s-48;
-  background-size: $s-48;
+  margin: $s-16;
+  background-size: 100%;
   background-repeat: no-repeat;
   background-position: center;
 }
 
 .icon-inside {
-  width: $s-60;
-  height: $s-48;
+  margin: $s-16;
+  @include flexCenter;
   svg {
-    width: $s-60;
-    height: $s-48;
+    width: 40px;
+    height: 60px;
     stroke: var(--icon-foreground);
     fill: none;
   }

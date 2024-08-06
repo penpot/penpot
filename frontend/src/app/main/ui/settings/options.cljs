@@ -7,7 +7,6 @@
 (ns app.main.ui.settings.options
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.spec :as us]
    [app.main.data.messages :as msg]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
@@ -15,14 +14,12 @@
    [app.main.ui.components.forms :as fm]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [cljs.spec.alpha :as s]
    [rumext.v2 :as mf]))
 
-(s/def ::lang (s/nilable ::us/string))
-(s/def ::theme (s/nilable ::us/not-empty-string))
-
-(s/def ::options-form
-  (s/keys :opt-un [::lang ::theme]))
+(def ^:private schema:options-form
+  [:map {:title "OptionsForm"}
+   [:lang {:optional true} [:string {:max 20}]]
+   [:theme {:optional true} [:string {:max 250}]]])
 
 (defn- on-success
   [profile]
@@ -41,7 +38,7 @@
   (let [profile (mf/deref refs/profile)
         initial (mf/with-memo [profile]
                   (update profile :lang #(or % "")))
-        form    (fm/use-form :spec ::options-form
+        form    (fm/use-form :schema schema:options-form
                              :initial initial)]
 
     [:& fm/form {:class (stl/css :options-form)
@@ -56,7 +53,7 @@
                      :label (tr "dashboard.select-ui-language")
                      :default ""
                      :name :lang
-                     :data-test "setting-lang"}]]
+                     :data-testid "setting-lang"}]]
 
      [:h3 (tr "dashboard.theme-change")]
      [:div {:class (stl/css :fields-row)}
@@ -65,11 +62,11 @@
                      :default "default"
                      :options [{:label "Penpot Dark (default)" :value "default"}
                                {:label "Penpot Light" :value "light"}]
-                     :data-test "setting-theme"}]]
+                     :data-testid "setting-theme"}]]
 
      [:> fm/submit-button*
       {:label (tr "dashboard.update-settings")
-       :data-test "submit-lang-change"
+       :data-testid "submit-lang-change"
        :class (stl/css :btn-primary)}]]))
 
 ;; --- Password Page
@@ -80,7 +77,7 @@
    #(dom/set-html-title (tr "title.settings.options")))
 
   [:div {:class (stl/css :dashboard-settings)}
-   [:div {:class (stl/css :form-container) :data-test "settings-form"}
+   [:div {:class (stl/css :form-container) :data-testid "settings-form"}
     [:h2 (tr "labels.settings")]
     [:& options-form {}]]])
 

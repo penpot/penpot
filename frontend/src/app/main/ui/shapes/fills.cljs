@@ -14,6 +14,7 @@
    [app.common.geom.shapes.text :as gst]
    [app.config :as cf]
    [app.main.ui.shapes.attrs :as attrs]
+   [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.gradients :as grad]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
@@ -57,7 +58,7 @@
                           (keep :fill-image)
                           (map cf/resolve-file-media))
                          fills)
-
+        embed       (embed/use-data-uris uris)
         transform   (gsh/transform-str shape)
 
         pat-props   #js {:patternUnits "userSpaceOnUse"
@@ -119,7 +120,7 @@
                  (let [uri (cf/resolve-file-media (:fill-image value))
                        keep-ar? (-> value :fill-image :keep-aspect-ratio)
                        image-props #js {:id (dm/str "fill-image-" render-id "-" fill-index)
-                                        :href (get uris uri uri)
+                                        :href (get embed uri uri)
                                         :preserveAspectRatio (if keep-ar? "xMidYMid slice" "none")
                                         :width width
                                         :height height

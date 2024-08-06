@@ -16,6 +16,7 @@
    [app.config :as cf]
    [app.db :as db]
    [app.http.sse :as sse]
+   [app.loggers.audit :as audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
@@ -90,7 +91,7 @@
   (sm/define
     [:map {:title "duplicate-file"}
      [:file-id ::sm/uuid]
-     [:name {:optional true} :string]]))
+     [:name {:optional true} [:string {:max 250}]]]))
 
 (sv/defmethod ::duplicate-file
   "Duplicate a single file in the same team."
@@ -152,7 +153,7 @@
   (sm/define
     [:map {:title "duplicate-project"}
      [:project-id ::sm/uuid]
-     [:name {:optional true} :string]]))
+     [:name {:optional true} [:string {:max 250}]]]))
 
 (sv/defmethod ::duplicate-project
   "Duplicate an entire project with all the files"
@@ -397,17 +398,30 @@
 ;; --- COMMAND: Clone Template
 
 (defn- clone-template
-  [{:keys [::wrk/executor ::bf.v1/project-id] :as cfg} template]
-  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+  [cfg {:keys [project-id ::rpc/profile-id] :as params} template]
+  (db/tx-run! cfg (fn [{:keys [::db/conn ::wrk/executor] :as cfg}]
                     ;; NOTE: the importation process performs some operations that
                     ;; are not very friendly with virtual threads, and for avoid
                     ;; unexpected blocking of other concurrent operations we
                     ;; dispatch that operation to a dedicated executor.
-                    (let [result (px/submit! executor (partial bf.v1/import-files! cfg template))]
+                    (let [cfg    (-> cfg
+                                     (assoc ::bf.v1/project-id project-id)
+                                     (assoc ::bf.v1/profile-id profile-id))
+                          result (px/invoke! executor (partial bf.v1/import-files! cfg template))]
+
                       (db/update! conn :project
                                   {:modified-at (dt/now)}
                                   {:id project-id})
-                      (deref result)))))
+
+                      (let [props (audit/clean-props params)]
+                        (doseq [file-id result]
+                          (let [props (assoc props :id file-id)
+                                event (-> (audit/event-from-rpc-params params)
+                                          (assoc ::audit/name "create-file")
+                                          (assoc ::audit/props props))]
+                            (audit/submit! cfg event))))
+
+                      result))))
 
 (def ^:private
   schema:clone-template
@@ -425,16 +439,14 @@
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id template-id] :as params}]
   (let [project   (db/get-by-id pool :project project-id {:columns [:id :team-id]})
         _         (teams/check-edition-permissions! pool profile-id (:team-id project))
-        template  (tmpl/get-template-stream cfg template-id)
-        params    (-> cfg
-                      (assoc ::bf.v1/project-id (:id project))
-                      (assoc ::bf.v1/profile-id profile-id))]
+        template  (tmpl/get-template-stream cfg template-id)]
+
     (when-not template
       (ex/raise :type :not-found
                 :code :template-not-found
                 :hint "template not found"))
 
-    (sse/response #(clone-template params template))))
+    (sse/response #(clone-template cfg params template))))
 
 ;; --- COMMAND: Get list of builtin templates
 

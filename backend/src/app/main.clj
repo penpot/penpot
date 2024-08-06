@@ -102,13 +102,13 @@
    {::mdef/name "penpot_tasks_timing"
     ::mdef/help "Background tasks timing (milliseconds)."
     ::mdef/labels ["name"]
-    ::mdef/type :summary}
+    ::mdef/type :histogram}
 
    :redis-eval-timing
    {::mdef/name "penpot_redis_eval_timing"
     ::mdef/help "Redis EVAL commands execution timings (ms)"
     ::mdef/labels ["name"]
-    ::mdef/type :summary}
+    ::mdef/type :histogram}
 
    :rpc-climit-queue
    {::mdef/name "penpot_rpc_climit_queue"
@@ -126,7 +126,7 @@
    {::mdef/name "penpot_rpc_climit_timing"
     ::mdef/help "Summary of the time between queuing and executing on the CLIMIT"
     ::mdef/labels ["name"]
-    ::mdef/type :summary}
+    ::mdef/type :histogram}
 
    :audit-http-handler-queue-size
    {::mdef/name "penpot_audit_http_handler_queue_size"
@@ -144,7 +144,7 @@
    {::mdef/name "penpot_audit_http_handler_timing"
     ::mdef/help "Summary of the time between queuing and executing on the audit log http handler"
     ::mdef/labels []
-    ::mdef/type :summary}
+    ::mdef/type :histogram}
 
    :executors-active-threads
    {::mdef/name "penpot_executors_active_threads"
@@ -254,7 +254,7 @@
    {::http.client/client (ig/ref ::http.client/client)}
 
    ::oidc.providers/gitlab
-   {}
+   {::http.client/client (ig/ref ::http.client/client)}
 
    ::oidc.providers/generic
    {::http.client/client (ig/ref ::http.client/client)}
@@ -267,7 +267,9 @@
                           :github (ig/ref ::oidc.providers/github)
                           :gitlab (ig/ref ::oidc.providers/gitlab)
                           :oidc   (ig/ref ::oidc.providers/generic)}
-    ::session/manager    (ig/ref ::session/manager)}
+    ::session/manager    (ig/ref ::session/manager)
+    ::email/blacklist    (ig/ref ::email/blacklist)
+    ::email/whitelist    (ig/ref ::email/whitelist)}
 
    :app.http/router
    {::session/manager    (ig/ref ::session/manager)
@@ -322,7 +324,10 @@
     ::rpc/climit         (ig/ref ::rpc/climit)
     ::rpc/rlimit         (ig/ref ::rpc/rlimit)
     ::setup/templates    (ig/ref ::setup/templates)
-    ::setup/props        (ig/ref ::setup/props)}
+    ::setup/props        (ig/ref ::setup/props)
+
+    ::email/blacklist    (ig/ref ::email/blacklist)
+    ::email/whitelist    (ig/ref ::email/whitelist)}
 
    :app.rpc.doc/routes
    {:methods (ig/ref :app.rpc/methods)}
@@ -338,7 +343,6 @@
     ::wrk/tasks
     {:sendmail           (ig/ref ::email/handler)
      :objects-gc         (ig/ref :app.tasks.objects-gc/handler)
-     :orphan-teams-gc    (ig/ref :app.tasks.orphan-teams-gc/handler)
      :file-gc            (ig/ref :app.tasks.file-gc/handler)
      :file-xlog-gc       (ig/ref :app.tasks.file-xlog-gc/handler)
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
@@ -355,6 +359,12 @@
      (ig/ref ::webhooks/process-event-handler)
      :run-webhook
      (ig/ref ::webhooks/run-webhook-handler)}}
+
+   ::email/blacklist
+   {}
+
+   ::email/whitelist
+   {}
 
    ::email/sendmail
    {::email/host             (cf/get :smtp-host)
@@ -376,9 +386,6 @@
    :app.tasks.objects-gc/handler
    {::db/pool     (ig/ref ::db/pool)
     ::sto/storage (ig/ref ::sto/storage)}
-
-   :app.tasks.orphan-teams-gc/handler
-   {::db/pool (ig/ref ::db/pool)}
 
    :app.tasks.delete-object/handler
    {::db/pool (ig/ref ::db/pool)}
@@ -469,9 +476,6 @@
       :task :objects-gc}
 
      {:cron #app/cron "0 0 0 * * ?" ;; daily
-      :task :orphan-teams-gc}
-
-     {:cron #app/cron "0 0 0 * * ?" ;; daily
       :task :storage-gc-deleted}
 
      {:cron #app/cron "0 0 0 * * ?" ;; daily
@@ -520,6 +524,7 @@
 
 (defn start
   []
+  (cf/validate!)
   (ig/load-namespaces (merge system-config worker-config))
   (alter-var-root #'system (fn [sys]
                              (when sys (ig/halt! sys))

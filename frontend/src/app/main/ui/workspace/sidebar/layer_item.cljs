@@ -59,6 +59,7 @@
             :ref dref
             :on-click on-select-shape
             :on-context-menu on-context-menu
+            :data-testid "layer-row"
             :class (stl/css-case
                     :layer-row true
                     :highlight highlighted?

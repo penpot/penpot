@@ -2,12 +2,19 @@
 
 We want to thank to the amazing people that help us! Thank you! You're the best!
 
+Feel free you make a PR updating this file if you miss you in the
+list.
+
 ## Security
+
 * Husnain Iqbal (CEO OF ALPHA INFERNO PVT LTD)
 * [Shiraz Ali Khan](https://www.linkedin.com/in/shiraz-ali-khan-1ba508180/)
 * Vaibhav Shukla
+* Hassan Ahmed (Alias Xen Lee)
+* Michal Biesiada (@mbiesiad)
 
 ## Internationalization
+
 * [00ff88](https://hosted.weblate.org/user/00ff88)
 * [AhmadHB](https://hosted.weblate.org/user/AhmadHB)
 * [Aimee](https://hosted.weblate.org/user/Aimee)
@@ -89,6 +96,7 @@ We want to thank to the amazing people that help us! Thank you! You're the best!
 * [zcraber](https://hosted.weblate.org/user/zcraber)
 
 ## Libraries & templates
+
 * systxema
 * plumilla
 * victor crespo

@@ -58,6 +58,7 @@
 
 .z-index-wrapper {
   @extend .input-element;
+  @include bodySmallTypography;
   width: $s-60;
 }
 
@@ -94,6 +95,7 @@
   .vertical-margin,
   .horizontal-margin {
     @extend .input-element;
+    @include bodySmallTypography;
     width: $s-108;
   }
 }
@@ -109,6 +111,7 @@
 .left-margin,
 .right-margin {
   @extend .input-element;
+  @include bodySmallTypography;
   width: $s-108;
 }
 
@@ -127,6 +130,7 @@
 .layout-item-max-w,
 .layout-item-max-h {
   @extend .input-element;
+  @include bodySmallTypography;
   width: $s-108;
   .icon-text {
     justify-content: flex-start;

@@ -34,8 +34,6 @@
   (def debug-exclude-events
     #{:app.main.data.workspace.notifications/handle-pointer-update
       :app.main.data.workspace.notifications/handle-pointer-send
-      :app.main.data.workspace.persistence/update-persistence-status
-      :app.main.data.workspace.changes/update-indices
       :app.main.data.websocket/send-message
       :app.main.data.workspace.selection/change-hover-state})
 
@@ -65,7 +63,7 @@
                   :app.util.router/assign-exception}]
     (->> (rx/merge
           (->> stream
-               (rx/filter (ptk/type? :app.main.data.workspace.changes/commit-changes))
+               (rx/filter (ptk/type? :app.main.data.changes/commit))
                (rx/map #(-> % deref :hint-origin)))
           (rx/map ptk/type stream))
          (rx/filter #(not (contains? omitset %)))

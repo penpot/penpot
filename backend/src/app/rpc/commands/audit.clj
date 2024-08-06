@@ -14,11 +14,12 @@
    [app.config :as cf]
    [app.db :as db]
    [app.http :as-alias http]
-   [app.loggers.audit :as audit]
+   [app.loggers.audit :as-alias audit]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
+   [app.util.inet :as inet]
    [app.util.services :as sv]
    [app.util.time :as dt]))
 
@@ -61,7 +62,7 @@
 (defn- handle-events
   [{:keys [::db/pool]} {:keys [::rpc/profile-id events] :as params}]
   (let [request (-> params meta ::http/request)
-        ip-addr (audit/parse-client-ip request)
+        ip-addr (inet/parse-request request)
         tnow    (dt/now)
         xform   (comp
                  (map (fn [event]
@@ -77,10 +78,19 @@
     (when (seq events)
       (db/insert-many! pool :audit-log event-columns events))))
 
+(def valid-event-types
+  #{"action" "identify"})
+
 (def schema:event
   [:map {:title "Event"}
-   [:name [:string {:max 250}]]
-   [:type [:string {:max 250}]]
+   [:name
+    [:and {:gen/elements ["update-file", "get-profile"]}
+     [:string {:max 250}]
+     [:re #"[\d\w-]{1,50}"]]]
+   [:type
+    [:and {:gen/elements valid-event-types}
+     [:string {:max 250}]
+     [::sm/one-of {:format "string"} valid-event-types]]]
    [:props
     [:map-of :keyword :any]]
    [:context {:optional true}

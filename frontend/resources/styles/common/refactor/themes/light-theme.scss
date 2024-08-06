@@ -7,40 +7,9 @@
 @use "sass:meta";
 
 .light {
-  --color-background-primary: var(--lb-primary);
-  --color-background-secondary: var(--lb-secondary);
-  --color-background-tertiary: var(--lb-tertiary);
-  --color-background-quaternary: var(--lb-quaternary);
-  --color-background-subtle: var(--lb-secondary-30); //Whatch this¡¡
   --color-background-disabled: var(--lb-quaternary);
-  --color-foreground-primary: var(--lf-primary);
-  --color-foreground-secondary: var(--lf-secondary);
   --color-foreground-disabled: var(--lf-secondary-40);
-  --color-accent-primary: var(--la-primary);
-  --color-accent-primary-muted: var(--la-primary-muted);
-  --color-accent-secondary: var(--la-secondary);
-  --color-accent-tertiary: var(--la-tertiary);
   --color-accent-tertiary-muted: var(--la-tertiary-10);
-  --color-accent-quaternary: var(--la-quaternary);
-  --color-component-highlight: var(--la-secondary);
-
-  --color-success-background: var(--status-color-success-200);
-  --color-success-foreground: var(--status-color-success-500);
-
-  --color-warning-background: var(--status-color-warning-200);
-  --color-warning-foreground: var(--status-color-warning-500);
-
-  --color-error-background: var(--status-color-error-200);
-  --color-error-foreground: var(--status-color-error-500);
-
-  --color-info-background: var(--status-color-info-200);
-  --color-info-foreground: var(--status-color-info-500);
 
   --overlay-color: var(--lb-primary-60);
-  --overlay-color-onboarding-a-b-test: var(--lb-primary-90);
-
-  --shadow-color: var(--lf-secondary-40);
-  --radio-button-box-shadow: 0 0 0 1px var(--lb-secondary) inset;
-
-  @include meta.load-css("hljs-light-theme");
 }

@@ -292,7 +292,7 @@
   [:map {:title "create-comment-thread"}
    [:file-id ::sm/uuid]
    [:position ::gpt/point]
-   [:content :string]
+   [:content [:string {:max 250}]]
    [:page-id ::sm/uuid]
    [:frame-id ::sm/uuid]
    [:share-id {:optional true} [:maybe ::sm/uuid]]])
@@ -418,7 +418,7 @@
   schema:create-comment
   [:map {:title "create-comment"}
    [:thread-id ::sm/uuid]
-   [:content :string]
+   [:content [:string {:max 250}]]
    [:share-id {:optional true} [:maybe ::sm/uuid]]])
 
 (sv/defmethod ::create-comment
@@ -477,7 +477,7 @@
   schema:update-comment
   [:map {:title "update-comment"}
    [:id ::sm/uuid]
-   [:content :string]
+   [:content [:string {:max 250}]]
    [:share-id {:optional true} [:maybe ::sm/uuid]]])
 
 (sv/defmethod ::update-comment

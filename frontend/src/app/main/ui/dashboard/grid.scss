@@ -6,6 +6,9 @@
 
 @import "refactor/common-refactor.scss";
 
+// TODO: Legacy sass variables. We should remove them in favor of DS tokens.
+$bp-max-1366: "(max-width: 1366px)";
+
 $thumbnail-default-width: $s-252; // Default width
 $thumbnail-default-height: $s-168; // Default width
 
@@ -60,7 +63,7 @@ $thumbnail-default-height: $s-168; // Default width
 
   &.dragged {
     border-radius: $br-4;
-    outline: $br-4 solid $da-primary;
+    outline: $br-4 solid var(--color-accent-primary);
     text-align: initial;
     width: calc(var(--th-width) + $s-12);
     height: var(--th-height, #{$thumbnail-default-height});
@@ -68,7 +71,7 @@ $thumbnail-default-height: $s-168; // Default width
 
   &.overlay {
     border-radius: $br-4;
-    border: $s-2 solid $da-tertiary;
+    border: $s-2 solid var(--color-accent-tertiary);
     height: 100%;
     opacity: 0;
     pointer-events: none;
@@ -98,7 +101,7 @@ $thumbnail-default-height: $s-168; // Default width
 
     h3 {
       border: $s-1 solid transparent;
-      color: $df-primary;
+      color: var(--color-foreground-primary);
       font-size: $fs-16;
       font-weight: $fw400;
       height: $s-28;
@@ -117,7 +120,7 @@ $thumbnail-default-height: $s-168; // Default width
     }
 
     .date {
-      color: $df-secondary;
+      color: var(--color-foreground-secondary);
       overflow: hidden;
       text-overflow: ellipsis;
       width: 100%;
@@ -133,7 +136,7 @@ $thumbnail-default-height: $s-168; // Default width
   }
 
   .item-badge {
-    background-color: $da-primary;
+    background-color: var(--color-accent-primary);
     border: none;
     border-radius: $br-6;
     position: absolute;
@@ -146,7 +149,7 @@ $thumbnail-default-height: $s-168; // Default width
     justify-content: center;
 
     svg {
-      stroke: $db-secondary;
+      stroke: var(--color-background-secondary);
       fill: none;
       height: $s-16;
       width: $s-16;
@@ -154,18 +157,18 @@ $thumbnail-default-height: $s-168; // Default width
   }
 
   &.add-file {
-    border: $s-1 dashed $df-secondary;
+    border: $s-1 dashed var(--color-foreground-secondary);
     justify-content: center;
     box-shadow: none;
 
     span {
-      color: $db-primary;
+      color: var(--color-background-primary);
       font-size: $fs-14;
     }
 
     &:hover {
-      background-color: $df-primary;
-      border: $s-2 solid $da-tertiary;
+      background-color: var(--color-foreground-primary);
+      border: $s-2 solid var(--color-accent-tertiary);
     }
   }
 }
@@ -176,9 +179,9 @@ $thumbnail-default-height: $s-168; // Default width
   left: $s-4;
   width: $s-32;
   height: $s-32;
-  background-color: $da-tertiary;
+  background-color: var(--color-accent-tertiary);
   border-radius: $br-circle;
-  color: $db-secondary;
+  color: var(--color-background-secondary);
   font-size: $fs-16;
   display: flex;
   justify-content: center;
@@ -194,7 +197,7 @@ $thumbnail-default-height: $s-168; // Default width
   &:hover,
   &:focus,
   &:focus-within {
-    background-color: $db-tertiary;
+    background-color: var(--color-background-tertiary);
     .project-th-actions {
       opacity: 1;
     }
@@ -205,7 +208,7 @@ $thumbnail-default-height: $s-168; // Default width
 
   .selected {
     .grid-item-th {
-      outline: $s-4 solid $da-tertiary;
+      outline: $s-4 solid var(--color-accent-tertiary);
     }
   }
 }
@@ -220,7 +223,7 @@ $thumbnail-default-height: $s-168; // Default width
   width: $s-32;
 
   span {
-    color: $db-secondary;
+    color: var(--color-background-secondary);
   }
 }
 
@@ -275,16 +278,6 @@ $thumbnail-default-height: $s-168; // Default width
     height: auto;
     width: 100%;
   }
-
-  svg {
-    height: 100%;
-    width: 100%;
-  }
-
-  :global(svg#loader-pencil) {
-    stroke: $db-quaternary;
-    width: calc(var(--th-width, #{$thumbnail-default-width}) * 0.25);
-  }
 }
 
 // LIBRARY VIEW
@@ -297,7 +290,7 @@ $thumbnail-default-height: $s-168; // Default width
 }
 
 .grid-item-th.library {
-  background-color: $db-tertiary;
+  background-color: var(--color-background-tertiary);
   flex-direction: column;
   height: 90%;
   justify-content: flex-start;
@@ -306,7 +299,7 @@ $thumbnail-default-height: $s-168; // Default width
 
   .asset-section {
     font-size: $fs-12;
-    color: $df-secondary;
+    color: var(--color-foreground-secondary);
 
     &:not(:first-child) {
       margin-top: $s-16;
@@ -319,7 +312,7 @@ $thumbnail-default-height: $s-168; // Default width
     text-transform: uppercase;
 
     .num-assets {
-      color: $df-secondary;
+      color: var(--color-foreground-secondary);
     }
   }
 
@@ -327,7 +320,7 @@ $thumbnail-default-height: $s-168; // Default width
     align-items: center;
     border-radius: $br-4;
     border: $s-1 solid transparent;
-    color: $df-primary;
+    color: var(--color-foreground-primary);
     display: flex;
     font-size: $fs-12;
     margin-top: $s-4;
@@ -335,7 +328,7 @@ $thumbnail-default-height: $s-168; // Default width
     position: relative;
 
     .name-block {
-      color: $df-secondary;
+      color: var(--color-foreground-secondary);
       width: calc(100% - $s-24 - $s-8);
     }
 
@@ -356,11 +349,11 @@ $thumbnail-default-height: $s-168; // Default width
     }
 
     .color-name {
-      color: $df-primary;
+      color: var(--color-foreground-primary);
     }
 
     .color-value {
-      color: $df-secondary;
+      color: var(--color-foreground-secondary);
       margin-left: $s-4;
       text-transform: uppercase;
     }
@@ -377,4 +370,8 @@ $thumbnail-default-height: $s-168; // Default width
   display: grid;
   grid-template-columns: auto 1fr;
   gap: $s-8;
+}
+
+.grid-loader {
+  --icon-width: calc(var(--th-width, #{$thumbnail-default-width}) * 0.25);
 }

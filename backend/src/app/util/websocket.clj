@@ -11,7 +11,7 @@
    [app.common.logging :as l]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
-   [app.loggers.audit :refer [parse-client-ip]]
+   [app.util.inet :as inet]
    [app.util.time :as dt]
    [promesa.exec :as px]
    [promesa.exec.csp :as sp]
@@ -84,7 +84,7 @@
         output-ch  (sp/chan :buf output-buff-size)
         hbeat-ch   (sp/chan :buf (sp/sliding-buffer 6))
         close-ch   (sp/chan)
-        ip-addr    (parse-client-ip request)
+        ip-addr    (inet/parse-request request)
         uagent     (rreq/get-header request "user-agent")
         id         (uuid/next)
         state      (atom {})

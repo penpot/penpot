@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.main.data.exports :as de]
-   [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -97,9 +97,9 @@
          (mf/deps ids)
          (fn []
            (let [xspec {:type :png :suffix "" :scale 1}]
-             (st/emit! (dch/update-shapes ids
-                                          (fn [shape]
-                                            (assoc shape :exports (into [xspec] (:exports shape)))))))))
+             (st/emit! (dwsh/update-shapes ids
+                                           (fn [shape]
+                                             (assoc shape :exports (into [xspec] (:exports shape)))))))))
 
         delete-export
         (mf/use-fn
@@ -110,16 +110,16 @@
                                                               (mapv second)))
 
                  remove (fn [shape] (update shape :exports remove-fill-by-index position))]
-             (st/emit! (dch/update-shapes ids remove)))))
+             (st/emit! (dwsh/update-shapes ids remove)))))
 
         on-scale-change
         (mf/use-fn
          (mf/deps ids)
          (fn [index event]
            (let [scale (d/parse-double event)]
-             (st/emit! (dch/update-shapes ids
-                                          (fn [shape]
-                                            (assoc-in shape [:exports index :scale] scale)))))))
+             (st/emit! (dwsh/update-shapes ids
+                                           (fn [shape]
+                                             (assoc-in shape [:exports index :scale] scale)))))))
 
         on-suffix-change
         (mf/use-fn
@@ -129,26 +129,26 @@
                  index   (-> (dom/get-current-target event)
                              (dom/get-data "value")
                              (d/parse-integer))]
-             (st/emit! (dch/update-shapes ids
-                                          (fn [shape]
-                                            (assoc-in shape [:exports index :suffix] value)))))))
+             (st/emit! (dwsh/update-shapes ids
+                                           (fn [shape]
+                                             (assoc-in shape [:exports index :suffix] value)))))))
 
         on-type-change
         (mf/use-fn
          (mf/deps ids)
          (fn [index event]
            (let [type (keyword event)]
-             (st/emit! (dch/update-shapes ids
-                                          (fn [shape]
-                                            (assoc-in shape [:exports index :type] type)))))))
+             (st/emit! (dwsh/update-shapes ids
+                                           (fn [shape]
+                                             (assoc-in shape [:exports index :type] type)))))))
 
         on-remove-all
         (mf/use-fn
          (mf/deps ids)
          (fn []
-           (st/emit! (dch/update-shapes ids
-                                        (fn [shape]
-                                          (assoc shape :exports []))))))
+           (st/emit! (dwsh/update-shapes ids
+                                         (fn [shape]
+                                           (assoc shape :exports []))))))
         manage-key-down
         (mf/use-fn
          (fn [event]

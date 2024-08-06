@@ -136,13 +136,13 @@
 
         ;; IMPORTANT: as modifying copies structure is now forbidden, this action
         ;; will not have any effect, and so the parent shape won't also be touched.
-        changes (cls/generate-relocate-shapes (pcb/empty-changes)
-                                              (:objects page)
-                                              #{(:parent-id copy-root)}   ; parents
-                                              (thi/id :copy-root)      ; parent-id
-                                              (:id page)               ; page-id
-                                              0                        ; to-index
-                                              #{(thi/id :free-shape)}) ; ids
+        changes (cls/generate-relocate (pcb/empty-changes)
+                                       (:objects page)
+                                       (thi/id :copy-root)      ; parent-id
+                                       (:id page)               ; page-id
+                                       0                        ; to-index
+                                       #{(thi/id :free-shape)}) ; ids
+
 
         file-mdf  (thf/apply-changes file changes)
         page-mdf  (thf/current-page file-mdf)
@@ -231,13 +231,13 @@
 
         ;; IMPORTANT: as modifying copies structure is now forbidden, this action
         ;; will not have any effect, and so the parent shape won't also be touched.
-        changes (cls/generate-relocate-shapes (pcb/empty-changes)
-                                              (:objects page)
-                                              #{(:parent-id copy-child1)}   ; parents
-                                              (thi/id :copy-root)      ; parent-id
-                                              (:id page)               ; page-id
-                                              2                        ; to-index
-                                              #{(:id copy-child1)}) ; ids
+        changes (cls/generate-relocate (pcb/empty-changes)
+                                       (:objects page)
+                                       (thi/id :copy-root)      ; parent-id
+                                       (:id page)               ; page-id
+                                       2                        ; to-index
+                                       #{(:id copy-child1)})     ; ids
+
 
         file-mdf  (thf/apply-changes file changes)
         page-mdf  (thf/current-page file-mdf)

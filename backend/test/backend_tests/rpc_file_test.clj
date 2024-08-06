@@ -166,6 +166,10 @@
          :name "test"
          :id page-id}])
 
+      ;; Check the number of fragments before adding the page
+      (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
+        (t/is (= 3 (count rows))))
+
       ;; The file-gc should mark for remove unused fragments
       (let [res (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
@@ -176,11 +180,11 @@
 
       ;; The objects-gc should remove unused fragments
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 1 (:processed res))))
+        (t/is (= 3 (:processed res))))
 
       ;; Check the number of fragments
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
-        (t/is (= 4 (count rows))))
+        (t/is (= 2 (count rows))))
 
       ;; Add shape to page that should add a new fragment
       (update-file!
@@ -203,7 +207,7 @@
 
       ;; Check the number of fragments
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
-        (t/is (= 5 (count rows))))
+        (t/is (= 3 (count rows))))
 
       ;; The file-gc should mark for remove unused fragments
       (let [res (th/run-task! :file-gc {:min-age 0})]
@@ -211,13 +215,13 @@
 
       ;; The objects-gc should remove unused fragments
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 1 (:processed res))))
+        (t/is (= 3 (:processed res))))
 
       ;; Check the number of fragments; should be 3 because changes
       ;; are also holding pointers to fragments;
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)
                                                    :deleted-at nil})]
-        (t/is (= 6 (count rows))))
+        (t/is (= 2 (count rows))))
 
       ;; Lets proceed to delete all changes
       (th/db-delete! :file-change {:file-id (:id file)})
@@ -233,11 +237,11 @@
       ;; Check the number of fragments;
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
         ;; (pp/pprint rows)
-        (t/is (= 8 (count rows)))
+        (t/is (= 4 (count rows)))
         (t/is (= 2 (count (remove (comp some? :deleted-at) rows)))))
 
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 6 (:processed res))))
+        (t/is (= 2 (:processed res))))
 
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)})]
         (t/is (= 2 (count rows)))))))
@@ -338,7 +342,7 @@
         (t/is (= 1 (count (remove (comp some? :deleted-at) rows)))))
 
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 2 (:processed res))))
+        (t/is (= 3 (:processed res))))
 
       ;; check file media objects
       (let [rows (th/db-query :file-media-object {:file-id (:id file)})]
@@ -367,7 +371,7 @@
         (t/is (= 1 (:processed res))))
 
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 2 (:processed res))))
+        (t/is (= 3 (:processed res))))
 
       ;; Now that file-gc have deleted the file-media-object usage,
       ;; lets execute the touched-gc task, we should see that two of
@@ -494,11 +498,11 @@
         (t/is (= 1 (:processed res))))
 
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 1 (:processed res))))
+        (t/is (= 2 (:processed res))))
 
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)
                                                    :deleted-at nil})]
-        (t/is (= (count rows) 2)))
+        (t/is (= (count rows) 1)))
 
       ;; retrieve file and check trimmed attribute
       (let [row (th/db-get :file {:id (:id file)})]
@@ -535,11 +539,11 @@
         (t/is (= 1 (:processed res))))
 
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 6 (:processed res))))
+        (t/is (= 7 (:processed res))))
 
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)
                                                    :deleted-at nil})]
-        (t/is (= (count rows) 3)))
+        (t/is (= (count rows) 1)))
 
       ;; Now that file-gc have deleted the file-media-object usage,
       ;; lets execute the touched-gc task, we should see that two of
@@ -702,7 +706,7 @@
       ;; thumbnail lets execute the objects-gc task which remove
       ;; the rows and mark as touched the storage object rows
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 3 (:processed res))))
+        (t/is (= 5 (:processed res))))
 
       ;; Now that objects-gc have deleted the object thumbnail lets
       ;; execute the touched-gc task
@@ -732,7 +736,7 @@
 
       (let [res (th/run-task! :objects-gc {:min-age 0})]
         ;; (pp/pprint res)
-        (t/is (= 2 (:processed res))))
+        (t/is (= 3 (:processed res))))
 
       ;; We still have th storage objects in the table
       (let [rows (th/db-query :storage-object {:deleted-at nil})]
@@ -1127,9 +1131,9 @@
         (t/is (= 1 (:processed res))))
 
       ;; check that object thumbnails are still here
-      (let [res (th/db-exec! ["select * from file_tagged_object_thumbnail"])]
-        ;; (th/print-result! res)
-        (t/is (= 1 (count res))))
+      (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
+        ;; (app.common.pprint/pprint rows)
+        (t/is (= 1 (count rows))))
 
       ;; insert object snapshot for for unknown frame
       (let [data {::th/type :create-file-object-thumbnail
@@ -1148,12 +1152,19 @@
       (th/db-exec! ["update file set has_media_trimmed=false where id=?" (:id file)])
 
       ;; check that we have all object thumbnails
-      (let [res (th/db-exec! ["select * from file_tagged_object_thumbnail"])]
-        (t/is (= 2 (count res))))
+      (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
+        ;; (app.common.pprint/pprint rows)
+        (t/is (= 2 (count rows))))
 
       ;; run the task again
       (let [res (th/run-task! :file-gc {:min-age 0})]
         (t/is (= 1 (:processed res))))
+
+      ;; check that we have all object thumbnails
+      (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
+        ;; (app.common.pprint/pprint rows)
+        (t/is (= 2 (count rows))))
+
 
       ;; check that the unknown frame thumbnail is deleted
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
@@ -1161,9 +1172,10 @@
         (t/is (= 1 (count (remove :deleted-at rows)))))
 
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 3 (:processed res))))
+        (t/is (= 4 (:processed res))))
 
       (let [rows (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)})]
+        ;; (app.common.pprint/pprint rows)
         (t/is (= 1 (count rows)))))))
 
 (t/deftest file-thumbnail-ops
@@ -1220,7 +1232,3 @@
 
       (let [rows (th/db-query :file-thumbnail {:file-id (:id file)})]
         (t/is (= 1 (count rows)))))))
-
-
-
-

@@ -11,12 +11,12 @@
    [app.common.data.macros :as dm]
    [app.main.data.events :as ev]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.i18n :refer [t] :as i18n]
+   [app.util.i18n :refer [tr] :as i18n]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
@@ -104,49 +104,49 @@
 
 (defn entry-type->message
   "Formats the message that will be displayed to the user"
-  [locale type multiple?]
+  [type multiple?]
   (let [arity (if multiple? "multiple" "single")
         attribute (name (or type :multiple))]
     ;; Execution time translation strings:
-    ;;   workspace.undo.entry.multiple.circle
-    ;;   workspace.undo.entry.multiple.color
-    ;;   workspace.undo.entry.multiple.component
-    ;;   workspace.undo.entry.multiple.curve
-    ;;   workspace.undo.entry.multiple.frame
-    ;;   workspace.undo.entry.multiple.group
-    ;;   workspace.undo.entry.multiple.media
-    ;;   workspace.undo.entry.multiple.multiple
-    ;;   workspace.undo.entry.multiple.page
-    ;;   workspace.undo.entry.multiple.path
-    ;;   workspace.undo.entry.multiple.rect
-    ;;   workspace.undo.entry.multiple.shape
-    ;;   workspace.undo.entry.multiple.text
-    ;;   workspace.undo.entry.multiple.typography
-    ;;   workspace.undo.entry.single.circle
-    ;;   workspace.undo.entry.single.color
-    ;;   workspace.undo.entry.single.component
-    ;;   workspace.undo.entry.single.curve
-    ;;   workspace.undo.entry.single.frame
-    ;;   workspace.undo.entry.single.group
-    ;;   workspace.undo.entry.single.image
-    ;;   workspace.undo.entry.single.media
-    ;;   workspace.undo.entry.single.multiple
-    ;;   workspace.undo.entry.single.page
-    ;;   workspace.undo.entry.single.path
-    ;;   workspace.undo.entry.single.rect
-    ;;   workspace.undo.entry.single.shape
-    ;;   workspace.undo.entry.single.text
-    ;;   workspace.undo.entry.single.typography
-    (t locale (str/format "workspace.undo.entry.%s.%s" arity attribute))))
+    ;;   (tr "workspace.undo.entry.multiple.circle")
+    ;;   (tr "workspace.undo.entry.multiple.color")
+    ;;   (tr "workspace.undo.entry.multiple.component")
+    ;;   (tr "workspace.undo.entry.multiple.curve")
+    ;;   (tr "workspace.undo.entry.multiple.frame")
+    ;;   (tr "workspace.undo.entry.multiple.group")
+    ;;   (tr "workspace.undo.entry.multiple.media")
+    ;;   (tr "workspace.undo.entry.multiple.multiple")
+    ;;   (tr "workspace.undo.entry.multiple.page")
+    ;;   (tr "workspace.undo.entry.multiple.path")
+    ;;   (tr "workspace.undo.entry.multiple.rect")
+    ;;   (tr "workspace.undo.entry.multiple.shape")
+    ;;   (tr "workspace.undo.entry.multiple.text")
+    ;;   (tr "workspace.undo.entry.multiple.typography")
+    ;;   (tr "workspace.undo.entry.single.circle")
+    ;;   (tr "workspace.undo.entry.single.color")
+    ;;   (tr "workspace.undo.entry.single.component")
+    ;;   (tr "workspace.undo.entry.single.curve")
+    ;;   (tr "workspace.undo.entry.single.frame")
+    ;;   (tr "workspace.undo.entry.single.group")
+    ;;   (tr "workspace.undo.entry.single.image")
+    ;;   (tr "workspace.undo.entry.single.media")
+    ;;   (tr "workspace.undo.entry.single.multiple")
+    ;;   (tr "workspace.undo.entry.single.page")
+    ;;   (tr "workspace.undo.entry.single.path")
+    ;;   (tr "workspace.undo.entry.single.rect")
+    ;;   (tr "workspace.undo.entry.single.shape")
+    ;;   (tr "workspace.undo.entry.single.text")
+    ;;   (tr "workspace.undo.entry.single.typography")
+    (tr (str/format "workspace.undo.entry.%s.%s" arity attribute))))
 
-(defn entry->message [locale entry]
-  (let [value (entry-type->message locale (:type entry) (= :multiple (:id entry)))]
+(defn entry->message [entry]
+  (let [value (entry-type->message (:type entry) (= :multiple (:id entry)))]
     (case (:operation entry)
-      :new (t locale "workspace.undo.entry.new" value)
-      :modify (t locale "workspace.undo.entry.modify" value)
-      :delete (t locale "workspace.undo.entry.delete" value)
-      :move (t locale "workspace.undo.entry.move" value)
-      (t locale "workspace.undo.entry.unknown" value))))
+      :new (tr "workspace.undo.entry.new" value)
+      :modify (tr "workspace.undo.entry.modify" value)
+      :delete (tr "workspace.undo.entry.delete" value)
+      :move (tr "workspace.undo.entry.move" value)
+      (tr "workspace.undo.entry.unknown" value))))
 
 (defn entry->icon [{:keys [type]}]
   (case type
@@ -284,8 +284,9 @@
 
        nil)]))
 
-(mf/defc history-entry [{:keys [locale entry idx-entry disabled? current?]}]
+(mf/defc history-entry
   {::mf/props :obj}
+  [{:keys [entry idx-entry disabled? current?]}]
   (let [hover?         (mf/use-state false)
         show-detail?   (mf/use-state false)
         toggle-show-detail
@@ -304,12 +305,12 @@
                                 :show-detail @show-detail?)
            :on-pointer-enter #(reset! hover? true)
            :on-pointer-leave #(reset! hover? false)
-           :on-click #(st/emit! (dwc/undo-to-index idx-entry))}
+           :on-click #(st/emit! (dwu/undo-to-index idx-entry))}
 
      [:div {:class (stl/css :history-entry-summary)}
       [:div {:class (stl/css :history-entry-summary-icon)}
        (entry->icon entry)]
-      [:div {:class (stl/css :history-entry-summary-text)}  (entry->message locale entry)]
+      [:div {:class (stl/css :history-entry-summary-text)}  (entry->message entry)]
       (when (:detail entry)
         [:div {:class (stl/css-case :history-entry-summary-button true
                                     :button-opened @show-detail?)
@@ -320,9 +321,9 @@
      (when @show-detail?
        [:& history-entry-details {:entry entry}])]))
 
-(mf/defc history-toolbox []
-  (let [locale (mf/deref i18n/locale)
-        objects (mf/deref refs/workspace-page-objects)
+(mf/defc history-toolbox
+  []
+  (let [objects (mf/deref refs/workspace-page-objects)
         {:keys [items index]} (mf/deref workspace-undo)
         entries (parse-entries items objects)
         toggle-history
@@ -331,18 +332,17 @@
                         (vary-meta assoc ::ev/origin "history-toolbox"))))]
     [:div {:class (stl/css :history-toolbox)}
      [:div {:class (stl/css :history-toolbox-title)}
-      [:span (t locale "workspace.undo.title")]
+      [:span (tr "workspace.undo.title")]
       [:div {:class (stl/css :close-button)
              :on-click toggle-history}
        i/close]]
      (if (empty? entries)
        [:div {:class (stl/css :history-entry-empty)}
         [:div {:class (stl/css :history-entry-empty-icon)} i/history]
-        [:div {:class (stl/css :history-entry-empty-msg)} (t locale "workspace.undo.empty")]]
+        [:div {:class (stl/css :history-entry-empty-msg)} (tr "workspace.undo.empty")]]
        [:ul {:class (stl/css :history-entries)}
         (for [[idx-entry entry] (->> entries (map-indexed vector) reverse)] #_[i (range 0 10)]
              [:& history-entry {:key (str "entry-" idx-entry)
-                                :locale locale
                                 :entry entry
                                 :idx-entry idx-entry
                                 :current? (= idx-entry index)

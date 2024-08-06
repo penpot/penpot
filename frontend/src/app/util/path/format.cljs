@@ -10,6 +10,8 @@
    [app.common.svg.path.subpath :refer [pt=]]
    [app.util.array :as arr]))
 
+;; TODO: move to common
+
 (def path-precision 3)
 
 (defn- join-params
@@ -132,3 +134,4 @@
     (catch :default err
       (.error js/console err)
       nil)))
+

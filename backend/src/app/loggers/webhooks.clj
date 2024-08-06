@@ -64,22 +64,22 @@
   (s/keys :req [::db/pool]))
 
 (defmethod ig/init-key ::process-event-handler
-  [_ {:keys [::db/pool] :as cfg}]
+  [_ cfg]
   (fn [{:keys [props] :as task}]
-    (let [event (::event props)]
+    (let [event (:event props)]
       (l/dbg :hint "process webhook event" :name (:name event))
 
       (when-let [items (lookup-webhooks cfg event)]
         (l/trc :hint "webhooks found for event" :total (count items))
 
-        (db/with-atomic [conn pool]
-          (doseq [item items]
-            (wrk/submit! ::wrk/conn conn
-                         ::wrk/task :run-webhook
-                         ::wrk/queue :webhooks
-                         ::wrk/max-retries 3
-                         ::event event
-                         ::config item)))))))
+        (db/tx-run! cfg (fn [cfg]
+                          (doseq [item items]
+                            (wrk/submit! (-> cfg
+                                             (assoc ::wrk/task :run-webhook)
+                                             (assoc ::wrk/queue :webhooks)
+                                             (assoc ::wrk/max-retries 3)
+                                             (assoc ::wrk/params {:event event
+                                                                  :config item}))))))))))
 
 ;; --- RUN
 
@@ -128,8 +128,8 @@
                          :rsp-data (db/tjson rsp)}))]
 
     (fn [{:keys [props] :as task}]
-      (let [event (::event props)
-            whook (::config props)
+      (let [event (:event props)
+            whook (:config props)
 
             body  (case (:mtype whook)
                     "application/json" (json/write-str event json-write-opts)

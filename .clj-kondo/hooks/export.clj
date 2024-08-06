@@ -12,6 +12,7 @@
 
 (def registry (atom {}))
 
+
 (defn potok-reify
   [{:keys [:node :filename] :as params}]
   (let [[rnode rtype & other] (:children node)
@@ -66,12 +67,86 @@
   (let [[cname mdata params & body] (rest (:children node))
         [params body] (if (api/vector-node? mdata)
                         [mdata (cons params body)]
-                        [params body])]
-    (let [result (api/list-node
-                  (into [(api/token-node 'fn)
-                         params]
-                        (cons mdata body)))]
-      {:node result})))
+                        [params body])
+
+        result (api/list-node
+                (into [(api/token-node 'fn) params]
+                      (cons mdata body)))]
+
+    {:node result}))
+
+
+(defn- parse-defc
+  [{:keys [children] :as node}]
+  (let [args (rest children)
+
+        [cname args]
+        (if (api/token-node? (first args))
+          [(first args) (rest args)]
+          (throw (ex-info "unexpected1" {})))
+
+        [docs args]
+        (if (api/string-node? (first args))
+          [(first args) (rest args)]
+          ["" args])
+
+        [mdata args]
+        (if (api/map-node? (first args))
+          [(first args) (rest args)]
+          [(api/map-node []) args])
+
+        [params body]
+        (if (api/vector-node? (first args))
+          [(first args) (rest args)]
+          (throw (ex-info "unexpected2" {})))]
+
+    [cname docs mdata params body]))
+
+(defn rumext-defc
+  [{:keys [node]}]
+  (let [[cname docs mdata params body] (parse-defc node)
+
+        param1        (first (:children params))
+        paramN        (rest (:children params))
+
+        param1        (if (api/map-node? param1)
+                        (let [param1    (into {} (comp
+                                                  (partition-all 2)
+                                                  (map (fn [[k v]]
+                                                         [(if (api/keyword-node? k)
+                                                            (:k k)
+                                                            k)
+                                                          (if (api/vector-node? v)
+                                                            (vec (:children v))
+                                                            v)])))
+                                              (:children param1))
+
+                              binding   (:rest param1)
+                              param1    (if binding
+                                          (if (contains? param1 :as)
+                                            (update param1 :keys (fnil conj []) binding)
+                                            (assoc param1 :as binding))
+                                          param1)]
+                          (->> (dissoc param1 :rest)
+                               (mapcat (fn [[k v]]
+                                         [(if (keyword? k)
+                                            (api/keyword-node k)
+                                            k)
+                                          (if (vector? v)
+                                            (api/vector-node v)
+                                            v)]))
+                               (api/map-node)))
+                        param1)
+
+        result (api/list-node
+                (into [(api/token-node 'defn)
+                       cname
+                       (api/vector-node (filter some? (cons param1 paramN)))]
+                      (cons mdata body)))]
+
+    ;; (prn (api/sexpr result))
+
+    {:node result}))
 
 
 (defn rumext-lazycomponent

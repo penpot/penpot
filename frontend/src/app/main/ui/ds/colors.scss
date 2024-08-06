@@ -1,0 +1,103 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "sass:color";
+
+$mint-150: #7efff5;
+$mint-250: #00d1b8;
+$mint-700: #426158;
+
+$green-200: #a7e8d9;
+$green-500: #2d9f8f;
+$green-950: #0a2927;
+
+$orange-200: #ffc8a8;
+$orange-500: #fe4811;
+$orange-950: #440806;
+
+$red-200: #ffcada;
+$red-500: #ff3277;
+$red-700: #c80857;
+$red-950: #500124;
+
+$pink-400: #ff6fe0;
+
+$purple-200: #e1d2f5;
+$purple-400: #bb97d8;
+$purple-600: #8c33eb;
+$purple-700: #6911d4;
+
+$blue-200: #bae3fd;
+$blue-500: #0e9be9;
+$blue-950: #082c49;
+
+$cobalt-700: #1345aa;
+
+$black: #000;
+$gray-950: #18181a;
+$gray-900: #212426;
+$gray-800: #2e3434;
+$gray-200: #e8eaee;
+$gray-100: #eef0f2;
+$gray-50: #f3f4f6;
+$white: #fff;
+
+$blue-teal-700: #495e74;
+$grayish-blue-500: #8f9da3;
+
+:global(.light) {
+  --color-accent-primary: #{$purple-700};
+  --color-accent-primary-muted: #{$purple-200};
+  --color-accent-secondary: #{$cobalt-700};
+  --color-accent-tertiary: #{$purple-600};
+  --color-accent-quaternary: #{$pink-400};
+
+  --color-accent-success: #{$green-500};
+  --color-background-success: #{$green-200};
+  --color-accent-warning: #{$orange-500};
+  --color-background-warning: #{$orange-200};
+  --color-accent-error: #{$red-500};
+  --color-background-error: #{$red-200};
+  --color-accent-info: #{$blue-500};
+  --color-background-info: #{$blue-200};
+
+  --color-background-primary: #{$white};
+  --color-background-secondary: #{$gray-200};
+  --color-background-tertiary: #{$gray-50};
+  --color-background-quaternary: #{$gray-100};
+
+  --color-foreground-primary: #{$black};
+  --color-foreground-secondary: #{$blue-teal-700};
+
+  --color-shadow: #{color.change($blue-teal-700, $alpha: 0.2)};
+}
+
+:global(.default) {
+  --color-accent-primary: #{$mint-150};
+  --color-accent-primary-muted: #{$mint-700};
+  --color-accent-secondary: #{$purple-400};
+  --color-accent-tertiary: #{$mint-250};
+  --color-accent-quaternary: #{$pink-400};
+
+  --color-accent-success: #{$green-500};
+  --color-background-success: #{$green-950};
+  --color-accent-warning: #{$orange-500};
+  --color-background-warning: #{$orange-950};
+  --color-accent-error: #{$red-700};
+  --color-background-error: #{$red-950};
+  --color-accent-info: #{$blue-500};
+  --color-background-info: #{$blue-950};
+
+  --color-background-primary: #{$gray-950};
+  --color-background-secondary: #{$black};
+  --color-background-tertiary: #{$gray-900};
+  --color-background-quaternary: #{$gray-800};
+
+  --color-foreground-primary: #{$white};
+  --color-foreground-secondary: #{$grayish-blue-500};
+
+  --color-shadow: #{color.change($black, $alpha: 0.6)};
+}

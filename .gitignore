@@ -48,6 +48,8 @@
 /deploy
 /docker/images/bundle*
 /exporter/target
+/frontend/.storybook/preview-body.html
+/frontend/.storybook/preview-head.html
 /frontend/cypress/fixtures/validuser.json
 /frontend/cypress/videos/*/
 /frontend/cypress/videos/*/
@@ -68,7 +70,6 @@
 /web
 clj-profiler/
 node_modules
-frontend/.storybook/preview-body.html
 /test-results/
 /playwright-report/
 /blob-report/

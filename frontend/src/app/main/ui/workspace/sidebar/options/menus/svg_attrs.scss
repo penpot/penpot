@@ -37,6 +37,7 @@
 
 .attr-input {
   @extend .input-element;
+  @include bodySmallTypography;
   width: $s-124;
 }
 
@@ -64,7 +65,7 @@
   font-size: $fs-10;
   text-transform: uppercase;
   margin-inline-start: $s-4;
-  color: $df-primary;
+  color: var(--color-foreground-primary);
 }
 
 .attr-row {

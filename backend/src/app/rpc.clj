@@ -29,6 +29,7 @@
    [app.rpc.rlimit :as rlimit]
    [app.setup :as-alias setup]
    [app.storage :as-alias sto]
+   [app.util.inet :as inet]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -70,6 +71,22 @@
         (handle-response-transformation request mdata)
         (handle-before-comple-hook mdata))))
 
+(defn get-external-session-id
+  [request]
+  (when-let [session-id (rreq/get-header request "x-external-session-id")]
+    (when-not (or (> (count session-id) 256)
+                  (= session-id "null")
+                  (str/blank? session-id))
+      session-id)))
+
+(defn- get-external-event-origin
+  [request]
+  (when-let [origin (rreq/get-header request "x-event-origin")]
+    (when-not (or (> (count origin) 256)
+                  (= origin "null")
+                  (str/blank? origin))
+      origin)))
+
 (defn- rpc-handler
   "Ring handler that dispatches cmd requests and convert between
   internal async flow into ring async flow."
@@ -79,8 +96,16 @@
         profile-id   (or (::session/profile-id request)
                          (::actoken/profile-id request))
 
+        ip-addr      (inet/parse-request request)
+        session-id   (get-external-session-id request)
+        event-origin (get-external-event-origin request)
+
         data         (-> params
+                         (assoc ::handler-name handler-name)
+                         (assoc ::ip-addr ip-addr)
                          (assoc ::request-at (dt/now))
+                         (assoc ::external-session-id session-id)
+                         (assoc ::external-event-origin event-origin)
                          (assoc ::session/id (::session/id request))
                          (assoc ::cond/key etag)
                          (cond-> (uuid? profile-id)
@@ -188,10 +213,10 @@
 (defn- wrap-all
   [cfg f mdata]
   (as-> f $
-    (wrap-metrics cfg $ mdata)
     (cond/wrap cfg $ mdata)
     (retry/wrap-retry cfg $ mdata)
     (climit/wrap cfg $ mdata)
+    (wrap-metrics cfg $ mdata)
     (rlimit/wrap cfg $ mdata)
     (wrap-audit cfg $ mdata)
     (wrap-spec-conform cfg $ mdata)

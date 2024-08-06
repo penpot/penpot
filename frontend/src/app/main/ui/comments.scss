@@ -142,11 +142,10 @@
 // thread-content
 .thread-content {
   position: absolute;
-  overflow-y: scroll;
-  scrollbar-gutter: stable;
+  overflow-y: auto;
   width: $s-284;
   padding: $s-12;
-  padding-inline-end: 0;
+  padding-inline-end: $s-8;
 
   pointer-events: auto;
   user-select: text;
@@ -236,6 +235,7 @@
 .reply-form {
   textarea {
     @extend .input-element;
+    @include bodySmallTypography;
     line-height: 1.45;
     height: 100%;
     width: 100%;

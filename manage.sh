@@ -65,6 +65,12 @@ function start-devenv {
     docker compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml up -d;
 }
 
+function create-devenv {
+    pull-devenv-if-not-exists $@;
+
+    docker compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml create;
+}
+
 function stop-devenv {
     docker compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml stop -t 2;
 }
@@ -194,6 +200,7 @@ function usage {
     echo "Options:"
     echo "- pull-devenv                      Pulls docker development oriented image"
     echo "- build-devenv                     Build docker development oriented image"
+    echo "- create-devenv                    Create the development oriented docker compose service."
     echo "- start-devenv                     Start the development oriented docker compose service."
     echo "- stop-devenv                      Stops the development oriented docker compose service."
     echo "- drop-devenv                      Remove the development oriented docker compose containers, volumes and clean images."
@@ -221,6 +228,10 @@ case $1 in
 
     push-devenv)
         push-devenv ${@:2}
+        ;;
+
+    create-devenv)
+        create-devenv ${@:2}
         ;;
 
     start-devenv)

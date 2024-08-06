@@ -19,6 +19,7 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.grid-layout :as gslg]
+   [app.common.logging :as log]
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.schema :as sm]
@@ -34,14 +35,15 @@
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.changes :as dch]
    [app.main.data.comments :as dcm]
    [app.main.data.events :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
+   [app.main.data.persistence :as dps]
    [app.main.data.users :as du]
    [app.main.data.workspace.bool :as dwb]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.collapse :as dwco]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.edition :as dwe]
@@ -59,7 +61,6 @@
    [app.main.data.workspace.notifications :as dwn]
    [app.main.data.workspace.path :as dwdp]
    [app.main.data.workspace.path.shapes-to-path :as dwps]
-   [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
@@ -87,6 +88,7 @@
    [potok.v2.core :as ptk]))
 
 (def default-workspace-local {:zoom 1})
+(log/set-level! :debug)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Initialization
@@ -341,15 +343,32 @@
              :workspace-presence {}))
 
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of msg/hide
-             (dcm/retrieve-comment-threads file-id)
-             (dwp/initialize-file-persistence file-id)
-             (fetch-bundle project-id file-id)))
+    (watch [_ _ stream]
+      (log/debug :hint "initialize-file" :file-id file-id)
+      (let [stoper-s (rx/filter (ptk/type? ::finalize-file) stream)]
+        (rx/merge
+         (rx/of msg/hide
+                (features/initialize)
+                (dcm/retrieve-comment-threads file-id)
+                (fetch-bundle project-id file-id))
+
+         (->> stream
+              (rx/filter dch/commit?)
+              (rx/map deref)
+              (rx/mapcat (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo?]}]
+                           (if (and save-undo? (seq undo-changes))
+                             (let [entry {:undo-changes undo-changes
+                                          :redo-changes redo-changes
+                                          :undo-group undo-group
+                                          :tags tags}]
+                               (rx/of (dwu/append-undo entry stack-undo?)))
+                             (rx/empty))))
+
+              (rx/take-until stoper-s)))))
 
     ptk/EffectEvent
     (effect [_ _ _]
-      (let [name (str "workspace-" file-id)]
+      (let [name (dm/str "workspace-" file-id)]
         (unchecked-set ug/global "name" name)))))
 
 (defn finalize-file
@@ -460,8 +479,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn create-page
-  [{:keys [file-id]}]
-  (let [id (uuid/next)]
+  [{:keys [page-id file-id]}]
+  (let [id (or page-id (uuid/next))]
     (ptk/reify ::create-page
       ev/Event
       (-data [_]
@@ -548,6 +567,35 @@
                         (pcb/mod-page page name))]
 
         (rx/of (dch/commit-changes changes))))))
+
+(defn set-plugin-data
+  ([file-id type namespace key value]
+   (set-plugin-data file-id type nil nil namespace key value))
+  ([file-id type id namespace key value]
+   (set-plugin-data file-id type id nil namespace key value))
+  ([file-id type id page-id namespace key value]
+   (dm/assert! (contains? #{:file :page :shape :color :typography :component} type))
+   (dm/assert! (or (nil? id) (uuid? id)))
+   (dm/assert! (or (nil? page-id) (uuid? page-id)))
+   (dm/assert! (uuid? file-id))
+   (dm/assert! (keyword? namespace))
+   (dm/assert! (string? key))
+   (dm/assert! (or (nil? value) (string? value)))
+
+   (ptk/reify ::set-file-plugin-data
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [file-data
+             (if (= file-id (:current-file-id state))
+               (:workspace-data state)
+               (get-in state [:workspace-libraries file-id :data]))
+
+             changes
+             (-> (pcb/empty-changes it)
+                 (pcb/with-file-data file-data)
+                 (assoc :file-id file-id)
+                 (pcb/mod-plugin-data type id page-id namespace key value))]
+         (rx/of (dch/commit-changes changes)))))))
 
 (declare purge-page)
 (declare go-to-file)
@@ -671,7 +719,7 @@
   (ptk/reify ::update-shape
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dch/update-shapes [id] #(merge % attrs))))))
+      (rx/of (dwsh/update-shapes [id] #(merge % attrs))))))
 
 (defn start-rename-shape
   "Start shape renaming process"
@@ -808,15 +856,14 @@
             ids      (filter #(not (cfh/is-parent? objects parent-id %)) ids)
 
             all-parents (into #{parent-id} (map #(cfh/get-parent-id objects %)) ids)
-            parents  (if ignore-parents? #{parent-id} all-parents)
 
-            changes (cls/generate-relocate-shapes (pcb/empty-changes it)
-                                                  objects
-                                                  parents
-                                                  parent-id
-                                                  page-id
-                                                  to-index
-                                                  ids)
+            changes (cls/generate-relocate (pcb/empty-changes it)
+                                           objects
+                                           parent-id
+                                           page-id
+                                           to-index
+                                           ids
+                                           :ignore-parents? ignore-parents?)
             undo-id (js/Symbol)]
 
         (rx/of (dwu/start-undo-transaction undo-id)
@@ -982,7 +1029,7 @@
                   (assoc shape :proportion-lock false)
                   (-> (assoc shape :proportion-lock true)
                       (gpp/assign-proportions))))]
-        (rx/of (dch/update-shapes [id] assign-proportions))))))
+        (rx/of (dwsh/update-shapes [id] assign-proportions))))))
 
 (defn toggle-proportion-lock
   []
@@ -996,8 +1043,8 @@
             multi         (attrs/get-attrs-multi selected-obj [:proportion-lock])
             multi?        (= :multiple (:proportion-lock multi))]
         (if multi?
-          (rx/of (dch/update-shapes selected #(assoc % :proportion-lock true)))
-          (rx/of (dch/update-shapes selected #(update % :proportion-lock not))))))))
+          (rx/of (dwsh/update-shapes selected #(assoc % :proportion-lock true)))
+          (rx/of (dwsh/update-shapes selected #(update % :proportion-lock not))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Navigation
@@ -1076,6 +1123,14 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-assets :open-status file-id section] open?))))
+
+(defn clear-assets-section-open
+  []
+  (ptk/reify ::clear-assets-section-open
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-assets :open-status] {}))))
+
 
 (defn set-assets-group-open
   [file-id section path open?]
@@ -1258,7 +1313,7 @@
                        (assoc :section section)
                        (some? frame-id)
                        (assoc :frame-id frame-id))]
-         (rx/of ::dwp/force-persist
+         (rx/of ::dps/force-persist
                 (rt/nav-new-window* {:rname :viewer
                                      :path-params pparams
                                      :query-params qparams
@@ -1271,7 +1326,7 @@
      ptk/WatchEvent
      (watch [_ state _]
        (when-let [team-id (or team-id (:current-team-id state))]
-         (rx/of ::dwp/force-persist
+         (rx/of ::dps/force-persist
                 (rt/nav :dashboard-projects {:team-id team-id})))))))
 
 (defn go-to-dashboard-fonts
@@ -1280,7 +1335,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (rx/of ::dwp/force-persist
+        (rx/of ::dps/force-persist
                (rt/nav :dashboard-fonts {:team-id team-id}))))))
 
 
@@ -1997,16 +2052,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn change-canvas-color
-  [color]
-  (ptk/reify ::change-canvas-color
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [page    (wsh/lookup-page state)
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-page page)
-                        (pcb/set-page-option :background (:color color)))]
-
-        (rx/of (dch/commit-changes changes))))))
+  ([color]
+   (change-canvas-color nil color))
+  ([page-id color]
+   (ptk/reify ::change-canvas-color
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [page-id (or page-id (:current-page-id state))
+             page    (wsh/lookup-page state page-id)
+             changes (-> (pcb/empty-changes it)
+                         (pcb/with-page page)
+                         (pcb/set-page-option :background (:color color)))]
+         (rx/of (dch/commit-changes changes)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Read only

@@ -5,7 +5,6 @@
 // Copyright (c) KALEIDOS INC
 
 @use "sass:math";
-@import "common/dependencies/mixin";
 
 // Typography scale
 $fs-base: 16;
@@ -24,3 +23,6 @@ $fs-36: math.div(36, $fs-base) + rem;
 $fw400: 400; // Regular (CSS value: 'normal')
 $fw500: 500; // Medium
 $fw700: 700; // Bold (CSS value: 'bold')
+
+// Line heights
+$lh-150: 1.5;

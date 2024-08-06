@@ -189,10 +189,6 @@
   }
 }
 
-.loader-content {
-  @extend .loader-base;
-}
-
 /** FULLSCREEN */
 [data-fullscreen="true"] .viewer-bottom {
   transform: translateY($s-40);

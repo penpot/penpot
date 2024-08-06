@@ -331,10 +331,12 @@
 }
 
 .profile {
+  @include buttonStyle;
   display: grid;
   grid-template-columns: auto 1fr;
   gap: $s-8;
   cursor: pointer;
+  text-align: left;
 }
 
 .profile-fullname {

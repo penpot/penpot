@@ -6,7 +6,7 @@
 
 (ns app.main.data.workspace.fix-broken-shapes
   (:require
-   [app.main.data.workspace.changes :as dch]
+   [app.main.data.changes :as dch]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 

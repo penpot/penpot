@@ -62,7 +62,8 @@
       var(--palette-button-shadow-final) 100%
     );
   }
-  &.disabled ::after {
+
+  &:disabled::after {
     background-image: none;
   }
 
@@ -72,27 +73,26 @@
 }
 
 .color-palette-content {
-  display: flex;
   overflow: hidden;
+}
 
-  .color-palette-inside {
-    display: flex;
-    gap: $s-8;
-  }
-  .color-cell {
-    display: grid;
-    grid-template-columns: 100%;
-    grid-template-rows: auto 1fr;
-    justify-items: center;
-    height: 100%;
-    width: $s-80;
-    &.is-not-library-color {
-      width: $s-64;
-    }
-    &.no-text {
-      @include flexCenter;
-      width: $s-32;
-    }
+.color-palette-inside {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--color-cell-width);
+  gap: $s-8;
+}
+
+.color-cell {
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: auto 1fr;
+  justify-items: center;
+  height: 100%;
+
+  &.no-text {
+    @include flexCenter;
+    width: $s-32;
   }
 }
 

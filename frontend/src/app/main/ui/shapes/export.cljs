@@ -50,6 +50,9 @@
 (defn bool->str [val]
   (when (some? val) (str val)))
 
+(defn touched->str [val]
+  (str/join " " (map str val)))
+
 (defn add-factory [shape]
   (fn add!
     ([props attr]
@@ -136,7 +139,6 @@
         (cond-> bool?
           (add! :bool-type)))))
 
-
 (defn add-library-refs [props shape]
   (let [add! (add-factory shape)]
     (-> props
@@ -150,7 +152,8 @@
         (add! :component-id)
         (add! :component-root)
         (add! :main-instance)
-        (add! :shape-ref))))
+        (add! :shape-ref)
+        (add! :touched touched->str))))
 
 (defn prefix-keys [m]
   (letfn [(prefix-entry [[k v]]
@@ -260,7 +263,7 @@
    [:*
     (when (contains? shape :svg-attrs)
       (let [svg-transform (get shape :svg-transform)
-            svg-attrs     (->> shape :svg-attrs keys (mapv d/name) (str/join ","))
+            svg-attrs     (->> shape :svg-attrs keys (mapv (comp d/name str/kebab)) (str/join ","))
             svg-defs      (->> shape :svg-defs keys (mapv d/name) (str/join ","))]
         [:> "penpot:svg-import"
          #js {:penpot:svg-attrs          (when-not (empty? svg-attrs) svg-attrs)

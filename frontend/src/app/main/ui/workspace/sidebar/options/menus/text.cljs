@@ -10,8 +10,8 @@
    [app.common.data :as d]
    [app.common.text :as txt]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -32,7 +32,7 @@
   (let [{:keys [text-align]} values
         handle-change
         (mf/use-fn
-         (mf/deps on-blur)
+         (mf/deps on-change on-blur)
          (fn [value]
            (on-change {:text-align value})
            (when (some? on-blur) (on-blur))))]
@@ -64,7 +64,7 @@
   (let [direction     (:text-direction values)
         handle-change
         (mf/use-fn
-         (mf/deps direction)
+         (mf/deps on-change on-blur direction)
          (fn [value]
            (let [dir (if (= value direction)
                        "none"
@@ -93,7 +93,7 @@
         vertical-align (or vertical-align "top")
         handle-change
         (mf/use-fn
-         (mf/deps on-blur)
+         (mf/deps on-change on-blur)
          (fn [value]
            (on-change {:vertical-align value})
            (when (some? on-blur) (on-blur))))]
@@ -127,8 +127,8 @@
                  grow-type (keyword value)]
              (st/emit!
               (dwu/start-undo-transaction uid)
-              (dch/update-shapes ids #(assoc % :grow-type grow-type)))
-            ;; We asynchronously commit so every sychronous event is resolved first and inside the transaction
+              (dwsh/update-shapes ids #(assoc % :grow-type grow-type)))
+             ;; We asynchronously commit so every sychronous event is resolved first and inside the transaction
              (ts/schedule #(st/emit! (dwu/commit-undo-transaction uid))))
            (when (some? on-blur) (on-blur))))]
 
@@ -154,7 +154,7 @@
   (let [text-decoration (or (:text-decoration values) "none")
         handle-change
         (mf/use-fn
-         (mf/deps text-decoration)
+         (mf/deps on-change on-blur text-decoration)
          (fn [value]
            (let [decoration (if (= value text-decoration)
                               "none"

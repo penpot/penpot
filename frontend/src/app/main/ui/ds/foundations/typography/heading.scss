@@ -1,0 +1,50 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+@use "../../typography.scss" as t;
+
+.display-typography {
+  @include t.use-typography("display");
+}
+
+.title-large-typography {
+  @include t.use-typography("title-large");
+}
+
+.title-medium-typography {
+  @include t.use-typography("title-medium");
+}
+
+.title-small-typography {
+  @include t.use-typography("title-small");
+}
+
+.headline-large-typography {
+  @include t.use-typography("headline-large");
+}
+
+.headline-medium-typography {
+  @include t.use-typography("headline-medium");
+}
+
+.headline-small-typography {
+  @include t.use-typography("headline-small");
+}
+
+.body-large-typography {
+  @include t.use-typography("body-large");
+}
+
+.body-medium-typography {
+  @include t.use-typography("body-medium");
+}
+
+.body-small-typography {
+  @include t.use-typography("body-small");
+}
+
+.code-font-typography {
+  @include t.use-typography("code-font");
+}

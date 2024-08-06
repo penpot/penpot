@@ -8,18 +8,19 @@
   "Tokens generation API."
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
-   [app.common.spec :as us]
    [app.common.transit :as t]
    [app.util.time :as dt]
-   [buddy.sign.jwe :as jwe]
-   [clojure.spec.alpha :as s]))
-
-(s/def ::tokens-key bytes?)
+   [buddy.sign.jwe :as jwe]))
 
 (defn generate
   [{:keys [tokens-key]} claims]
-  (us/assert! ::tokens-key tokens-key)
+
+  (dm/assert!
+   "expexted token-key to be bytes instance"
+   (bytes? tokens-key))
+
   (let [payload (-> claims
                     (assoc :iat (dt/now))
                     (d/without-nils)
@@ -39,15 +40,13 @@
       (ex/raise :type :validation
                 :code :invalid-token
                 :reason :token-expired
-                :params params
-                :claims claims))
+                :params params))
     (when (and (contains? params :iss)
                (not= (:iss claims)
                      (:iss params)))
       (ex/raise :type :validation
                 :code :invalid-token
                 :reason :invalid-issuer
-                :claims claims
                 :params params))
     claims))
 

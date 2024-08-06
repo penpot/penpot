@@ -9,7 +9,7 @@
 .exception-layout {
   width: 100%;
   height: 100%;
-  background-color: $db-secondary;
+  background-color: var(--color-background-secondary);
 }
 
 .deco-before,
@@ -19,7 +19,7 @@
 
   svg {
     position: absolute;
-    fill: $df-secondary;
+    fill: var(--color-foreground-secondary);
     height: 1537px;
     width: $s-80;
   }
@@ -48,7 +48,7 @@
   border: none;
   cursor: pointer;
   svg {
-    fill: $df-primary;
+    fill: var(--color-foreground-primary);
     width: $s-48;
     height: auto;
   }
@@ -75,12 +75,12 @@
 
 .main-message {
   @include bigTitleTipography;
-  color: $df-primary;
+  color: var(--color-foreground-primary);
 }
 
 .desc-message {
   @include bigTitleTipography;
-  color: $df-secondary;
+  color: var(--color-foreground-secondary);
 }
 
 .sign-info {
@@ -95,6 +95,6 @@
 
 .image {
   svg {
-    fill: $df-primary;
+    fill: var(--color-foreground-primary);
   }
 }

@@ -1,0 +1,141 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "./utils.scss" as *;
+
+$_font-weight-regular: 400;
+$_font-weight-medium: 500;
+
+$_font-lineheight-dense: 1.2;
+$_font-lineheight-compact: 1.3;
+$_font-lineheight-normal: 1.4;
+
+$_fs-12: px2rem(12);
+$_fs-14: px2rem(14);
+$_fs-16: px2rem(16);
+$_fs-18: px2rem(18);
+$_fs-20: px2rem(20);
+$_fs-24: px2rem(24);
+$_fs-36: px2rem(36);
+
+@mixin _font-style-display {
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: $_font-weight-regular;
+  line-height: $_font-lineheight-normal;
+  font-size: $_fs-36;
+}
+
+@mixin _font-style-title-large {
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: $_font-weight-regular;
+  line-height: $_font-lineheight-normal;
+  font-size: $_fs-24;
+}
+
+@mixin _font-style-title-medium {
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: $_font-weight-regular;
+  line-height: $_font-lineheight-normal;
+  font-size: $_fs-20;
+}
+
+@mixin _font-style-title-small {
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: $_font-weight-regular;
+  line-height: $_font-lineheight-dense;
+  font-size: $_fs-14;
+}
+
+@mixin _font-style-headline-large {
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: $_font-weight-regular;
+  line-height: $_font-lineheight-normal;
+  font-size: $_fs-18;
+  text-transform: uppercase;
+}
+
+@mixin _font-style-headline-medium {
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: $_font-weight-regular;
+  line-height: $_font-lineheight-normal;
+  font-size: $_fs-16;
+  text-transform: uppercase;
+}
+
+@mixin _font-style-headline-small {
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: $_font-weight-medium;
+  line-height: $_font-lineheight-dense;
+  font-size: $_fs-12;
+  text-transform: uppercase;
+}
+
+@mixin _font-style-body-large {
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: $_font-weight-regular;
+  line-height: $_font-lineheight-normal;
+  font-size: $_fs-16;
+}
+
+@mixin _font-style-body-medium {
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: $_font-weight-regular;
+  line-height: $_font-lineheight-compact;
+  font-size: $_fs-14;
+}
+
+@mixin _font-style-body-small {
+  font-family: "worksans", "vazirmatn", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: $_font-weight-regular;
+  line-height: $_font-lineheight-compact;
+  font-size: $_fs-12;
+}
+
+@mixin _font-style-code-font {
+  font-family: "Roboto Mono", monospace;
+  font-optical-sizing: auto;
+  font-weight: $_font-weight-regular;
+  line-height: $_font-lineheight-dense;
+  font-size: $_fs-12;
+}
+
+@mixin use-typography($typography-name) {
+  @if $typography-name == "display" {
+    @include _font-style-display;
+  } @else if $typography-name == "title-large" {
+    @include _font-style-title-large;
+  } @else if $typography-name == "title-medium" {
+    @include _font-style-title-medium;
+  } @else if $typography-name == "title-small" {
+    @include _font-style-title-small;
+  } @else if $typography-name == "headline-large" {
+    @include _font-style-headline-large;
+  } @else if $typography-name == "headline-medium" {
+    @include _font-style-headline-medium;
+  } @else if $typography-name == "headline-small" {
+    @include _font-style-headline-small;
+  } @else if $typography-name == "body-large" {
+    @include _font-style-body-large;
+  } @else if $typography-name == "body-medium" {
+    @include _font-style-body-medium;
+  } @else if $typography-name == "body-small" {
+    @include _font-style-body-small;
+  } @else if $typography-name == "code-font" {
+    @include _font-style-code-font;
+  } @else {
+    @error "Unknown typography: " + $typography-name;
+  }
+}

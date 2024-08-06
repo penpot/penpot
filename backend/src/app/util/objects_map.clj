@@ -19,7 +19,8 @@
    [app.common.fressian :as fres]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
-   [clojure.core :as c])
+   [clojure.core :as c]
+   [clojure.data.json :as json])
   (:import
    clojure.lang.Counted
    clojure.lang.IHashEq
@@ -82,6 +83,10 @@
                      ^:unsynchronized-mutable content
                      ^:unsynchronized-mutable loaded?
                      ^:unsynchronized-mutable modified?]
+
+  json/JSONWriter
+  (-write [this writter options]
+    (json/-write (into {} this) writter options))
 
   IHashEq
   (hasheq [this]

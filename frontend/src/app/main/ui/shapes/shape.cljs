@@ -72,6 +72,8 @@
                              (obj/set! "pointerEvents" pointer-events)
                              (cond-> (not (cfh/frame-shape? shape))
                                (obj/set! "opacity" (:opacity shape)))
+                             (cond-> (:hidden shape)
+                               (obj/set! "display" "none"))
                              (cond-> (and blend-mode (not= blend-mode :normal))
                                (obj/set! "mixBlendMode" (d/name blend-mode))))
 
@@ -94,6 +96,7 @@
             (obj/unset! "disable-shadows?")
             (obj/set! "ref" ref)
             (obj/set! "id" (dm/fmt "shape-%" shape-id))
+            (obj/set! "data-testid" (:name shape))
 
             ;; TODO: This is added for backward compatibility.
             (cond-> (and (cfh/text-shape? shape) (empty? (:position-data shape)))

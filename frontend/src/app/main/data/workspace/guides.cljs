@@ -11,8 +11,8 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.types.page :as ctp]
+   [app.main.data.changes :as dwc]
    [app.main.data.events :as ev]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -42,7 +42,7 @@
             (-> (pcb/empty-changes it)
                 (pcb/with-page page)
                 (pcb/update-page-option :guides assoc (:id guide) guide))]
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of (dwc/commit-changes changes))))))
 
 (defn remove-guide
   [guide]
@@ -66,7 +66,7 @@
             (-> (pcb/empty-changes it)
                 (pcb/with-page page)
                 (pcb/update-page-option :guides dissoc (:id guide)))]
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of (dwc/commit-changes changes))))))
 
 (defn remove-guides
   [ids]
@@ -79,19 +79,20 @@
         (rx/from (->> guides (mapv #(remove-guide %))))))))
 
 (defmethod ptk/resolve ::move-frame-guides
-  [_ ids]
+  [_ args]
   (dm/assert!
    "expected a coll of uuids"
-   (every? uuid? ids))
+   (every? uuid? (:ids args)))
   (ptk/reify ::move-frame-guides
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [ids (:ids args)
+            object-modifiers (:modifiers args)
+
+            objects (wsh/lookup-page-objects state)
 
             is-frame? (fn [id] (= :frame (get-in objects [id :type])))
             frame-ids? (into #{} (filter is-frame?) ids)
-
-            object-modifiers  (get state :workspace-modifiers)
 
             build-move-event
             (fn [guide]

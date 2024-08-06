@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.icons :as i]
@@ -36,7 +36,6 @@
         [:span {:class (stl/css :attr-name)} label]
         [:div  {:class (stl/css :attr-input)}
          [:input {:value value
-                  :class "input-text"
                   :on-change handle-change}]]
         [:div  {:class (stl/css :attr-actions)}
          [:button {:class (stl/css :attr-action-btn)
@@ -66,7 +65,7 @@
          (fn [attr value]
            (let [update-fn
                  (fn [shape] (assoc-in shape (concat [:svg-attrs] attr) value))]
-             (st/emit! (dch/update-shapes ids update-fn)))))
+             (st/emit! (dwsh/update-shapes ids update-fn)))))
 
         handle-delete
         (mf/use-fn
@@ -81,7 +80,7 @@
                                  (empty? (get-in shape [:svg-attrs :style]))
                                  (update :svg-attrs dissoc :style))]
                      shape))]
-             (st/emit! (dch/update-shapes ids update-fn)))))]
+             (st/emit! (dwsh/update-shapes ids update-fn)))))]
 
     (when-not (empty? attrs)
       [:div {:class (stl/css :element-set)}

@@ -48,8 +48,7 @@
   #{:flex :grid})
 
 (def flex-direction-types
-  ;;TODO remove reverse-column and reverse-row after script
-  #{:row :reverse-row :row-reverse :column :reverse-column :column-reverse})
+  #{:row :row-reverse :column :column-reverse})
 
 (def grid-direction-types
   #{:row :column})
@@ -58,7 +57,7 @@
   #{:simple :multiple})
 
 (def wrap-types
-  #{:wrap :nowrap :no-wrap}) ;;TODO remove no-wrap after script
+  #{:wrap :nowrap})
 
 (def padding-type
   #{:simple :multiple})
@@ -87,7 +86,7 @@
    :layout-item-absolute
    :layout-item-z-index])
 
-(sm/def! ::layout-attrs
+(sm/register! ::layout-attrs
   [:map {:title "LayoutAttrs"}
    [:layout {:optional true} [::sm/one-of layout-types]]
    [:layout-flex-dir {:optional true} [::sm/one-of flex-direction-types]]
@@ -130,7 +129,7 @@
 (def grid-cell-justify-self-types
   #{:auto :start :center :end :stretch})
 
-(sm/def! ::grid-cell
+(sm/register! ::grid-cell
   [:map {:title "GridCell"}
    [:id ::sm/uuid]
    [:area-name {:optional true} :string]
@@ -144,7 +143,7 @@
    [:shapes
     [:vector {:gen/max 1} ::sm/uuid]]])
 
-(sm/def! ::grid-track
+(sm/register! ::grid-track
   [:map {:title "GridTrack"}
    [:type [::sm/one-of grid-track-types]]
    [:value {:optional true} [:maybe ::sm/safe-number]]])
@@ -166,7 +165,7 @@
 (def item-align-self-types
   #{:start :end :center :stretch})
 
-(sm/def! ::layout-child-attrs
+(sm/register! ::layout-child-attrs
   [:map {:title "LayoutChildAttrs"}
    [:layout-item-margin-type {:optional true} [::sm/one-of item-margin-types]]
    [:layout-item-margin {:optional true}
@@ -192,7 +191,7 @@
 (def valid-layouts
   #{:flex :grid})
 
-(sm/def! ::layout
+(sm/register! ::layout
   [::sm/one-of valid-layouts])
 
 (defn flex-layout?
@@ -604,18 +603,23 @@
 
 (defn remove-layout-item-data
   [shape]
-  (dissoc shape
-          :layout-item-margin
-          :layout-item-margin-type
-          :layout-item-h-sizing
-          :layout-item-v-sizing
-          :layout-item-max-h
-          :layout-item-min-h
-          :layout-item-max-w
-          :layout-item-min-w
-          :layout-item-align-self
-          :layout-item-absolute
-          :layout-item-z-index))
+  (-> shape
+      (dissoc :layout-item-margin
+              :layout-item-margin-type
+              :layout-item-max-h
+              :layout-item-min-h
+              :layout-item-max-w
+              :layout-item-min-w
+              :layout-item-align-self
+              :layout-item-absolute
+              :layout-item-z-index)
+      (cond-> (or (not (any-layout? shape))
+                  (= :fill (:layout-item-h-sizing shape)))
+        (dissoc :layout-item-h-sizing)
+
+        (or (not (any-layout? shape))
+            (= :fill (:layout-item-v-sizing shape)))
+        (dissoc :layout-item-v-sizing))))
 
 (defn update-flex-scale
   [shape scale]
@@ -1469,13 +1473,15 @@
           (push-into-cell children row column))
         (assign-cells objects))))
 
+(defn get-cell-by-index
+  [parent to-index]
+  (let [cells (get-cells parent {:sort? true :remove-empty? true})
+        to-index (- (count cells) to-index)]
+    (nth cells to-index nil)))
+
 (defn add-children-to-index
   [parent ids objects to-index]
-  (let [ids (into (d/ordered-set) ids)
-        cells (get-cells parent {:sort? true :remove-empty? true})
-        to-index (- (count cells) to-index)
-        target-cell (nth cells to-index nil)]
-
+  (let [target-cell (get-cell-by-index parent to-index)]
     (cond-> parent
       (some? target-cell)
       (add-children-to-cell ids objects [(:row target-cell) (:column target-cell)]))))

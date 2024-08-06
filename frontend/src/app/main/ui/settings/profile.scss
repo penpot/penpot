@@ -12,7 +12,7 @@
   justify-content: center;
   align-items: center;
   a:not(.button-primary) {
-    color: $df-secondary;
+    color: var(--color-foreground-secondary);
   }
 }
 
@@ -34,11 +34,11 @@
       width: 100%;
       font-size: $fs-11;
       text-transform: uppercase;
-      background-color: $db-tertiary;
-      color: $df-primary;
+      background-color: var(--color-background-tertiary);
+      color: var(--color-foreground-primary);
       &:hover {
-        color: $da-primary;
-        background-color: $db-quaternary;
+        color: var(--color-accent-primary);
+        background-color: var(--color-background-quaternary);
       }
     }
     hr {
@@ -64,7 +64,7 @@
   }
 
   .field-title {
-    color: $df-primary;
+    color: var(--color-foreground-primary);
 
     &:not(:first-child) {
       margin-top: $s-64;
@@ -72,7 +72,7 @@
   }
 
   .field-text {
-    color: $df-secondary;
+    color: var(--color-foreground-secondary);
   }
 
   .custom-input,
@@ -81,41 +81,41 @@
     label {
       position: relative;
       text-transform: uppercase;
-      color: $df-primary;
+      color: var(--color-foreground-primary);
       font-size: $fs-11;
       margin-bottom: $s-12;
       margin-left: calc(-1 * $s-4);
     }
     input,
     select {
-      background-color: $db-tertiary;
+      background-color: var(--color-background-tertiary);
       border-radius: $br-8;
       border-color: transparent;
-      color: $df-primary;
+      color: var(--color-foreground-primary);
       padding: 0 $s-16;
       &:focus {
-        outline: $s-1 solid $da-primary;
+        outline: $s-1 solid var(--color-accent-primary);
       }
       ::placeholder {
-        color: $df-secondary;
+        color: var(--color-foreground-secondary);
       }
     }
     .help-icon {
       bottom: $s-12;
       top: auto;
       svg {
-        fill: $df-secondary;
+        fill: var(--color-foreground-secondary);
       }
     }
     &.disabled {
       input {
         background-color: var(--input-background-color-disabled);
-        border-color: $db-quaternary;
-        color: $df-secondary;
+        border-color: var(--color-background-quaternary);
+        color: var(--color-foreground-secondary);
       }
     }
     .input-container {
-      background-color: $db-tertiary;
+      background-color: var(--color-background-tertiary);
       border-radius: $br-8;
       border-color: transparent;
       margin-top: $s-24;
@@ -125,21 +125,21 @@
           top: calc(-1 * $s-24);
         }
         span {
-          color: $df-primary;
+          color: var(--color-foreground-primary);
         }
       }
       &:focus {
-        border: $s-1 solid $da-primary;
+        border: $s-1 solid var(--color-accent-primary);
       }
     }
     textarea {
       border-radius: $br-8;
       padding: $s-12 $s-16;
-      background-color: $db-tertiary;
-      color: $df-primary;
+      background-color: var(--color-background-tertiary);
+      color: var(--color-foreground-primary);
       border: none;
       &:focus {
-        outline: $s-1 solid $da-primary;
+        outline: $s-1 solid var(--color-accent-primary);
       }
     }
   }
@@ -152,13 +152,13 @@
 
   h1 {
     font-size: $fs-36;
-    color: $db-tertiary;
+    color: var(--color-background-tertiary);
     margin-bottom: $s-20;
   }
 
   .subtitle {
     font-size: $fs-24;
-    color: $db-tertiary;
+    color: var(--color-background-tertiary);
     margin-bottom: $s-20;
   }
 
@@ -168,7 +168,7 @@
     margin-bottom: $s-48;
 
     svg {
-      fill: $db-primary;
+      fill: var(--color-background-primary);
       height: 40%;
       width: 40%;
     }
@@ -176,14 +176,14 @@
 
   .notification-text {
     font-size: $fs-16;
-    color: $db-primary;
+    color: var(--color-background-primary);
     margin-bottom: $s-20;
   }
 
   .notification-text-email {
-    background: $df-primary;
+    background: var(--color-foreground-primary);
     border-radius: $br-4;
-    color: $db-primary;
+    color: var(--color-background-primary);
     font-size: $fs-16;
     font-weight: $fw500;
     margin: $s-24 0 $s-40 0;
@@ -194,7 +194,7 @@
   h2 {
     font-size: $fs-24;
     font-weight: $fw400;
-    color: $df-primary;
+    color: var(--color-foreground-primary);
     display: flex;
     align-items: center;
     margin: $s-16 0;
@@ -203,7 +203,7 @@
   h3 {
     font-size: $fs-12;
     font-weight: $fw400;
-    color: $df-primary;
+    color: var(--color-foreground-primary);
     display: flex;
     align-items: center;
     margin: $s-8 0;
@@ -217,11 +217,11 @@
   }
 
   p {
-    color: $db-primary;
+    color: var(--color-background-primary);
   }
 
   hr {
-    border-color: $df-secondary;
+    border-color: var(--color-foreground-secondary);
   }
 
   .links {
@@ -258,10 +258,10 @@ form.avatar-form {
     height: 100%;
     border-radius: 50%;
     font-size: $fs-24;
-    color: $df-primary;
+    color: var(--color-foreground-primary);
     line-height: 6;
     text-align: center;
-    background: $da-tertiary;
+    background: var(--color-accent-tertiary);
     z-index: $z-index-modal;
   }
 
@@ -290,27 +290,27 @@ form.avatar-form {
 }
 
 .newsletter-subs {
-  border-bottom: $s-1 solid $df-secondary;
-  border-top: $s-1 solid $df-secondary;
+  border-bottom: $s-1 solid var(--color-foreground-secondary);
+  border-top: $s-1 solid var(--color-foreground-secondary);
   padding: $s-32 0;
   margin-bottom: $s-32;
 
   .newsletter-title {
-    font-family: "worksans", sans-serif;
-    color: $df-secondary;
+    font-family: "worksans", "vazirmatn", sans-serif;
+    color: var(--color-foreground-secondary);
     font-size: $fs-14;
   }
 
   label {
-    font-family: "worksans", sans-serif;
-    color: $db-primary;
+    font-family: "worksans", "vazirmatn", sans-serif;
+    color: var(--color-background-primary);
     font-size: $fs-12;
     margin-right: calc(-1 * $s-16);
     margin-bottom: $s-12;
   }
 
   .info {
-    color: $df-secondary;
+    color: var(--color-foreground-secondary);
     font-size: $fs-12;
     margin-bottom: $s-8;
   }

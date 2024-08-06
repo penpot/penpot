@@ -34,6 +34,7 @@
    [app.util.blob :as blob]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as wrk]
    [app.worker.runner]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
@@ -57,15 +58,14 @@
 (def ^:dynamic *system* nil)
 (def ^:dynamic *pool* nil)
 
-(def defaults
+(def default
   {:database-uri "postgresql://postgres/penpot_test"
    :redis-uri "redis://redis/1"
-   :file-change-snapshot-every 1})
+   :file-snapshot-every 1})
 
 (def config
-  (->> (cf/read-env "penpot-test")
-       (merge cf/defaults defaults)
-       (us/conform ::cf/config)))
+  (cf/read-config :prefix "penpot-test"
+                  :default (merge cf/default default)))
 
 (def default-flags
   [:enable-secure-session-cookies
@@ -76,6 +76,7 @@
    :enable-feature-fdata-pointer-map
    :enable-feature-fdata-objets-map
    :enable-feature-components-v2
+   :enable-file-snapshot
    :disable-file-validation])
 
 (defn state-init
@@ -86,6 +87,8 @@
                 app.auth/derive-password identity
                 app.auth/verify-password (fn [a b] {:valid (= a b)})
                 app.common.features/get-enabled-features (fn [& _] app.common.features/supported-features)]
+
+    (cf/validate! :exit-on-error? false)
 
     (fs/create-dir "/tmp/penpot")
 
@@ -103,10 +106,10 @@
                      (dissoc :app.srepl/server
                              :app.http/server
                              :app.http/router
-                             :app.auth.oidc/google-provider
-                             :app.auth.oidc/gitlab-provider
-                             :app.auth.oidc/github-provider
-                             :app.auth.oidc/generic-provider
+                             :app.auth.oidc.providers/google
+                             :app.auth.oidc.providers/gitlab
+                             :app.auth.oidc.providers/github
+                             :app.auth.oidc.providers/generic
                              :app.setup/templates
                              :app.auth.oidc/routes
                              :app.worker/monitor
@@ -377,9 +380,9 @@
   ([name]
    (run-task! name {}))
   ([name params]
-   (let [tasks (:app.worker/registry *system*)]
-     (let [task-fn (get tasks (d/name name))]
-       (task-fn params)))))
+   (wrk/invoke! (-> *system*
+                    (assoc ::wrk/task name)
+                    (assoc ::wrk/params params)))))
 
 (def sql:pending-tasks
   "select t.* from task as t
@@ -522,7 +525,6 @@
      (get data key (get cf/config key)))
     ([key default]
      (get data key (get cf/config key default)))))
-
 
 (defn reset-mock!
   [m]

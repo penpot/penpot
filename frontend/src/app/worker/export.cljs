@@ -52,7 +52,7 @@
                           :libraries            (->> (:libraries file) (into #{}) (mapv str))
                           :exportType           (d/name export-type)
                           :hasComponents        (d/not-empty? (ctkl/components-seq (:data file)))
-                          :hasDeletedComponents (d/not-empty? (get-in file [:data :deleted-components]))
+                          :hasDeletedComponents (d/not-empty? (ctkl/deleted-components-seq (:data file)))
                           :hasMedia             (d/not-empty? (get-in file [:data :media]))
                           :hasColors            (d/not-empty? (get-in file [:data :colors]))
                           :hasTypographies      (d/not-empty? (get-in file [:data :typographies]))}))))]
@@ -93,6 +93,9 @@
 (def ^:const color-keys
   [:name :color :opacity :gradient :path])
 
+(def ^:const image-color-keys
+  [:width :height :mtype :name :keep-aspect-ratio])
+
 (def ^:const typography-keys
   [:name :font-family :font-id :font-size :font-style :font-variant-id :font-weight
    :letter-spacing :line-height :text-transform :path])
@@ -102,7 +105,21 @@
 
 (defn collect-color
   [result color]
-  (collect-entries result color color-keys))
+  (let [id               (str (:id color))
+        basic-data       (select-keys color color-keys)
+        image-color-data (when-let [image-color (:image color)]
+                           (->> (select-keys image-color image-color-keys)))
+        color-data       (cond-> basic-data
+                           (some? image-color-data)
+                           (->
+                            (assoc :image image-color-data)
+                            (assoc-in [:image :id] (str (get-in color [:image :id])))))]
+    (-> result
+        (assoc id
+               (->> color-data
+                    (d/deep-mapm
+                     (fn [[k v]]
+                       [(-> k str/camel) v])))))))
 
 (defn collect-typography
   [result typography]
@@ -114,11 +131,25 @@
 
 (defn parse-library-color
   [[file-id colors]]
-  (let [markup
-        (->> (vals colors)
-             (reduce collect-color {})
-             (json/encode))]
-    [(str file-id "/colors.json") markup]))
+  (rx/merge
+   (let [markup
+         (->> (vals colors)
+              (reduce collect-color {})
+              (json/encode))]
+     (rx/of (vector (str file-id "/colors.json") markup)))
+
+   (->> (rx/from (vals colors))
+        (rx/map :image)
+        (rx/filter d/not-empty?)
+        (rx/merge-map
+         (fn [image-color]
+           (let [file-path (str/concat file-id "/colors/" (:id image-color) (cm/mtype->extension (:mtype image-color)))]
+             (->> (http/send!
+                   {:uri (cfg/resolve-file-media image-color)
+                    :response-type :blob
+                    :method :get})
+                  (rx/map :body)
+                  (rx/map #(vector file-path %)))))))))
 
 (defn parse-library-typographies
   [[file-id typographies]]
@@ -151,12 +182,12 @@
 
 (defn parse-library-components
   [file]
-  (->> (r/render-components (:data file) :components)
+  (->> (r/render-components (:data file) false)
        (rx/map #(vector (str (:id file) "/components.svg") %))))
 
 (defn parse-deleted-components
   [file]
-  (->> (r/render-components (:data file) :deleted-components)
+  (->> (r/render-components (:data file) true)
        (rx/map #(vector (str (:id file) "/deleted-components.svg") %))))
 
 (defn fetch-file-with-libraries
@@ -355,7 +386,7 @@
              (rx/merge-map vals)
              (rx/map #(vector (:id %) (get-in % [:data :colors])))
              (rx/filter #(d/not-empty? (second %)))
-             (rx/map parse-library-color))
+             (rx/merge-map parse-library-color))
 
         typographies-stream
         (->> files-stream
@@ -380,7 +411,7 @@
         deleted-components-stream
         (->> files-stream
              (rx/merge-map vals)
-             (rx/filter #(d/not-empty? (get-in % [:data :deleted-components])))
+             (rx/filter #(d/not-empty? (ctkl/deleted-components-seq (:data %))))
              (rx/merge-map parse-deleted-components))
 
         pages-stream

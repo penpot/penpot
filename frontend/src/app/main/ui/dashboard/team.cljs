@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.config :as cfg]
    [app.main.data.dashboard :as dd]
@@ -32,7 +33,6 @@
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
-
 
 (def ^:private arrow-icon
   (i/icon-xref :arrow (stl/css :arrow-icon)))
@@ -62,10 +62,10 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [{:keys [section team]}]
-  (let [on-nav-members           (mf/use-fn #(st/emit! (dd/go-to-team-members)))
-        on-nav-settings          (mf/use-fn #(st/emit! (dd/go-to-team-settings)))
-        on-nav-invitations       (mf/use-fn #(st/emit! (dd/go-to-team-invitations)))
-        on-nav-webhooks          (mf/use-fn #(st/emit! (dd/go-to-team-webhooks)))
+  (let [on-nav-members       (mf/use-fn #(st/emit! (dd/go-to-team-members)))
+        on-nav-settings      (mf/use-fn #(st/emit! (dd/go-to-team-settings)))
+        on-nav-invitations   (mf/use-fn #(st/emit! (dd/go-to-team-invitations)))
+        on-nav-webhooks      (mf/use-fn #(st/emit! (dd/go-to-team-webhooks)))
 
         members-section?     (= section :dashboard-team-members)
         settings-section?    (= section :dashboard-team-settings)
@@ -81,7 +81,7 @@
                                   :team team
                                   :origin :team}))))]
 
-    [:header {:class (stl/css :dashboard-header :team)}
+    [:header {:class (stl/css :dashboard-header :team) :data-testid "dashboard-header"}
      [:div {:class (stl/css :dashboard-title)}
       [:h1 (cond
              members-section? (tr "labels.members")
@@ -105,7 +105,7 @@
         [:a
          {:class (stl/css :btn-secondary :btn-small)
           :on-click on-invite-member
-          :data-test "invite-member"}
+          :data-testid "invite-member"}
          (tr "dashboard.invite-profile")]
         [:div {:class (stl/css :blank-space)}])]]))
 
@@ -131,6 +131,12 @@
 (s/def ::invite-member-form
   (s/keys :req-un [::role ::emails ::team-id]))
 
+(def ^:private schema:invite-member-form
+  [:map {:title "InviteMemberForm"}
+   [:role :keyword]
+   [:emails [::sm/set {:kind ::sm/email :min 1}]]
+   [:team-id ::sm/uuid]])
+
 (mf/defc invite-members-modal
   {::mf/register modal/components
    ::mf/register-as :invite-members
@@ -139,9 +145,14 @@
   (let [members-map (mf/deref refs/dashboard-team-members)
         perms       (:permissions team)
 
-        roles       (mf/use-memo (mf/deps perms) #(get-available-roles perms))
-        initial     (mf/use-memo (constantly {:role "editor" :team-id (:id team)}))
-        form        (fm/use-form :spec ::invite-member-form
+        roles       (mf/with-memo [perms]
+                      (get-available-roles perms))
+        team-id     (:id team)
+
+        initial     (mf/with-memo [team-id]
+                      {:role "editor" :team-id team-id})
+
+        form        (fm/use-form :schema schema:invite-member-form
                                  :initial initial)
         error-text  (mf/use-state  "")
 
@@ -157,21 +168,22 @@
                     (dd/fetch-team-invitations)))
 
         on-error
-        (fn [{:keys [type code] :as error}]
-          (cond
-            (and (= :validation type)
-                 (= :profile-is-muted code))
-            (st/emit! (msg/error (tr "errors.profile-is-muted"))
-                      (modal/hide))
+        (fn [_form cause]
+          (let [{:keys [type code] :as error} (ex-data cause)]
+            (cond
+              (and (= :validation type)
+                   (= :profile-is-muted code))
+              (st/emit! (msg/error (tr "errors.profile-is-muted"))
+                        (modal/hide))
 
-            (and (= :validation type)
-                 (or (= :member-is-muted code)
-                     (= :email-has-permanent-bounces code)))
-            (swap! error-text (tr "errors.email-spam-or-permanent-bounces" (:email error)))
+              (or (= :member-is-muted code)
+                  (= :email-has-permanent-bounces code)
+                  (= :email-has-complaints code))
+              (swap! error-text (tr "errors.email-spam-or-permanent-bounces" (:email error)))
 
-            :else
-            (st/emit! (msg/error (tr "errors.generic"))
-                      (modal/hide))))
+              :else
+              (st/emit! (msg/error (tr "errors.generic"))
+                        (modal/hide)))))
 
         on-submit
         (fn [form]
@@ -563,22 +575,24 @@
         on-error
         (mf/use-fn
          (mf/deps email)
-         (fn [{:keys [type code] :as error}]
-           (cond
-             (and (= :validation type)
-                  (= :profile-is-muted code))
-             (rx/of (msg/error (tr "errors.profile-is-muted")))
+         (fn [cause]
+           (let [{:keys [type code] :as error} (ex-data cause)]
+             (cond
+               (and (= :validation type)
+                    (= :profile-is-muted code))
+               (rx/of (msg/error (tr "errors.profile-is-muted")))
 
-             (and (= :validation type)
-                  (= :member-is-muted code))
-             (rx/of (msg/error (tr "errors.member-is-muted")))
+               (and (= :validation type)
+                    (= :member-is-muted code))
+               (rx/of (msg/error (tr "errors.member-is-muted")))
 
-             (and (= :validation type)
-                  (= :email-has-permanent-bounces code))
-             (rx/of (msg/error (tr "errors.email-has-permanent-bounces" email)))
+               (and (= :restriction type)
+                    (or (= :email-has-permanent-bounces code)
+                        (= :email-has-complaints code)))
+               (rx/of (msg/error (tr "errors.email-has-permanent-bounces" email)))
 
-             :else
-             (rx/throw error))))
+               :else
+               (rx/throw cause)))))
 
         on-delete
         (mf/use-fn
@@ -587,7 +601,6 @@
            (let [params {:email email :team-id team-id}
                  mdata  {:on-success #(st/emit! (dd/fetch-team-invitations))}]
              (st/emit! (dd/delete-team-invitation (with-meta params mdata))))))
-
 
         on-resend-success
         (mf/use-fn
@@ -693,8 +706,8 @@
   [:div {:class (stl/css :empty-invitations)}
    [:span (tr "labels.no-invitations")]
    (when can-invite?
-     [:& i18n/tr-html {:label "labels.no-invitations-hint"
-                       :tag-name "span"}])])
+     [:> i18n/tr-html* {:content (tr "labels.no-invitations-hint")
+                        :tag-name "span"}])])
 
 (mf/defc invitation-section
   [{:keys [team invitations] :as props}]
@@ -746,10 +759,11 @@
 ;; WEBHOOKS SECTION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::uri ::us/uri)
-(s/def ::mtype ::us/not-empty-string)
-(s/def ::webhook-form
-  (s/keys :req-un [::uri ::mtype]))
+(def ^:private schema:webhook-form
+  [:map {:title "WebhookForm"}
+   [:uri [::sm/uri {:max 4069 :prefix #"^http[s]?://"
+                    :error/code "errors.webhooks.invalid-uri"}]]
+   [:mtype ::sm/text]])
 
 (def valid-webhook-mtypes
   [{:label "application/json" :value "application/json"}
@@ -763,12 +777,12 @@
   {::mf/register modal/components
    ::mf/register-as :webhook}
   [{:keys [webhook] :as props}]
-  ;; FIXME: this is a workaround because input fields do not support rendering hooks
-  (let [initial (mf/use-memo (fn [] (or (some-> webhook (update :uri str))
-                                        {:is-active false :mtype "application/json"})))
-        form    (fm/use-form :spec ::webhook-form
-                             :initial initial
-                             :validators [(fm/validate-length :uri fm/max-uri-length-allowed (tr "team.webhooks.max-length"))])
+
+  (let [initial (mf/with-memo []
+                  (or (some-> webhook (update :uri str))
+                      {:is-active false :mtype "application/json"}))
+        form    (fm/use-form :schema schema:webhook-form
+                             :initial initial)
         on-success
         (mf/use-fn
          (fn [_]
@@ -878,8 +892,8 @@
   [:div {:class (stl/css :webhooks-hero-container)}
    [:h2 {:class (stl/css :hero-title)}
     (tr "labels.webhooks")]
-   [:& i18n/tr-html {:class (stl/css :hero-desc)
-                     :label "dashboard.webhooks.description"}]
+   [:> i18n/tr-html* {:class (stl/css :hero-desc)
+                      :content (tr "dashboard.webhooks.description")}]
    [:button {:class (stl/css :hero-btn)
              :on-click #(st/emit! (modal/show :webhook {}))}
     (tr "dashboard.webhooks.create")]])

@@ -8,7 +8,7 @@
   (:require
    [app.auth.ldap :as ldap]
    [app.common.exceptions :as ex]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.db :as db]
    [app.http.session :as session]
    [app.loggers.audit :as-alias audit]
@@ -19,27 +19,25 @@
    [app.rpc.helpers :as rph]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
-   [app.util.services :as sv]
-   [clojure.spec.alpha :as s]))
+   [app.util.services :as sv]))
 
 ;; --- COMMAND: login-with-ldap
 
 (declare login-or-register)
 
-(s/def ::email ::us/email)
-(s/def ::password ::us/string)
-(s/def ::invitation-token ::us/string)
-
-(s/def ::login-with-ldap
-  (s/keys :req-un [::email ::password]
-          :opt-un [::invitation-token]))
+(def schema:login-with-ldap
+  [:map {:title "login-with-ldap"}
+   [:email ::sm/email]
+   [:password auth/schema:password]
+   [:invitation-token {:optional true} auth/schema:token]])
 
 (sv/defmethod ::login-with-ldap
   "Performs the authentication using LDAP backend. Only works if LDAP
   is properly configured and enabled with `login-with-ldap` flag."
   {::rpc/auth false
    ::doc/added "1.15"
-   ::doc/module :auth}
+   ::doc/module :auth
+   ::sm/params schema:login-with-ldap}
   [{:keys [::setup/props ::ldap/provider] :as cfg} params]
   (when-not provider
     (ex/raise :type :restriction

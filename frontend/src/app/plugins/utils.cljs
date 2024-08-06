@@ -9,11 +9,10 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.spec :as us]
-   [app.common.uuid :as uuid]
+   [app.common.types.container :as ctn]
+   [app.common.types.file :as ctf]
    [app.main.store :as st]
    [app.util.object :as obj]
-   [cuerdas.core :as str]
    [promesa.core :as p]))
 
 (defn locate-file
@@ -30,8 +29,10 @@
   (dm/get-in (locate-file file-id) [:data :pages-index id]))
 
 (defn locate-objects
-  [file-id page-id]
-  (:objects (locate-page file-id page-id)))
+  ([]
+   (locate-objects (:current-file-id @st/state) (:current-page-id @st/state)))
+  ([file-id page-id]
+   (:objects (locate-page file-id page-id))))
 
 (defn locate-shape
   [file-id page-id id]
@@ -52,6 +53,23 @@
   [file-id id]
   (assert (uuid? id) "Component not valid uuid")
   (dm/get-in (locate-file file-id) [:data :components id]))
+
+(defn locate-presence
+  [session-id]
+  (dm/get-in @st/state [:workspace-presence session-id]))
+
+(defn locate-profile
+  [session-id]
+  (let [{:keys [profile-id]} (locate-presence session-id)]
+    (dm/get-in @st/state [:users profile-id])))
+
+(defn locate-component
+  [objects shape]
+  (let [current-file-id (:current-file-id @st/state)
+        workspace-data (:workspace-data @st/state)
+        workspace-libraries (:workspace-libraries @st/state)
+        root (ctn/get-instance-root objects shape)]
+    [root (ctf/resolve-component root {:id current-file-id :data workspace-data} workspace-libraries {:include-deleted? true})]))
 
 (defn proxy->file
   [proxy]
@@ -86,14 +104,33 @@
   (let [file-id (obj/get proxy "$file")
         id (obj/get proxy "$id")]
     (when (and (some? file-id) (some? id))
-      (locate-library-color file-id id))))
+      (locate-library-typography file-id id))))
 
 (defn proxy->library-component
   [proxy]
   (let [file-id (obj/get proxy "$file")
         id (obj/get proxy "$id")]
     (when (and (some? file-id) (some? id))
-      (locate-library-color file-id id))))
+      (locate-library-component file-id id))))
+
+(defn proxy->flow
+  [proxy]
+  (let [file-id (obj/get proxy "$file")
+        page-id (obj/get proxy "$page")
+        flow-id (obj/get proxy "$id")
+        page (locate-page file-id page-id)]
+    (when (some? page)
+      (d/seek #(= (:id %) flow-id) (-> page :options :flows)))))
+
+(defn proxy->interaction
+  [proxy]
+  (let [file-id (obj/get proxy "$file")
+        page-id (obj/get proxy "$page")
+        shape-id (obj/get proxy "$shape")
+        index (obj/get proxy "$index")
+        shape (locate-shape file-id page-id shape-id)]
+    (when (some? shape)
+      (get-in shape [:interactions index]))))
 
 (defn get-data
   ([self attr]
@@ -121,56 +158,6 @@
   ([self attr mapfn]
    (-> (get-state self attr)
        (mapfn))))
-
-(defn from-js
-  "Converts the object back to js"
-  ([obj]
-   (from-js obj #{:type}))
-  ([obj keyword-keys]
-   (when (some? obj)
-     (let [process-node
-           (fn process-node [node]
-             (reduce-kv
-              (fn [m k v]
-                (let [k (keyword (str/kebab k))
-                      v (cond (map? v)
-                              (process-node v)
-
-                              (vector? v)
-                              (mapv process-node v)
-
-                              (and (string? v) (re-matches us/uuid-rx v))
-                              (uuid/uuid v)
-
-                              (contains? keyword-keys k)
-                              (keyword v)
-
-                              :else v)]
-                  (assoc m k v)))
-              {}
-              node))]
-       (process-node (js->clj obj))))))
-
-(defn to-js
-  "Converts to javascript an camelize the keys"
-  [obj]
-  (when (some? obj)
-    (let [result
-          (reduce-kv
-           (fn [m k v]
-             (let [v (cond (object? v) (to-js v)
-                           (uuid? v) (dm/str v)
-                           :else v)]
-               (assoc m (str/camel (name k)) v)))
-           {}
-           obj)]
-      (clj->js result))))
-
-(defn array-to-js
-  [value]
-  (.freeze
-   js/Object
-   (apply array (->> value (map to-js)))))
 
 (defn result-p
   "Creates a pair of atom+promise. The promise will be resolved when the atom gets a value.

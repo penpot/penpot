@@ -35,25 +35,24 @@
 
 (def ^:private
   schema:operation
-  (sm/define
-    [:multi {:dispatch :type :title "Operation" ::smd/simplified true}
-     [:set
-      [:map {:title "SetOperation"}
-       [:type [:= :set]]
-       [:attr :keyword]
-       [:val :any]
-       [:ignore-touched {:optional true} :boolean]
-       [:ignore-geometry {:optional true} :boolean]]]
-     [:set-touched
-      [:map {:title "SetTouchedOperation"}
-       [:type [:= :set-touched]]
-       [:touched [:maybe [:set :keyword]]]]]
-     [:set-remote-synced
-      [:map {:title "SetRemoteSyncedOperation"}
-       [:type [:= :set-remote-synced]]
-       [:remote-synced {:optional true} [:maybe :boolean]]]]]))
+  [:multi {:dispatch :type :title "Operation" ::smd/simplified true}
+   [:set
+    [:map {:title "SetOperation"}
+     [:type [:= :set]]
+     [:attr :keyword]
+     [:val :any]
+     [:ignore-touched {:optional true} :boolean]
+     [:ignore-geometry {:optional true} :boolean]]]
+   [:set-touched
+    [:map {:title "SetTouchedOperation"}
+     [:type [:= :set-touched]]
+     [:touched [:maybe [:set :keyword]]]]]
+   [:set-remote-synced
+    [:map {:title "SetRemoteSyncedOperation"}
+     [:type [:= :set-remote-synced]]
+     [:remote-synced {:optional true} [:maybe :boolean]]]]])
 
-(sm/define! ::change
+(sm/register! ::change
   [:schema
    [:multi {:dispatch :type :title "Change" ::smd/simplified true}
     [:set-option
@@ -134,6 +133,18 @@
       [:type [:= :mod-page]]
       [:id ::sm/uuid]
       [:name :string]]]
+
+    [:mod-plugin-data
+     [:map {:title "ModPagePluginData"}
+      [:type [:= :mod-plugin-data]]
+      [:object-type [::sm/one-of #{:file :page :shape :color :typography :component}]]
+      ;; It's optional because files don't need the id for type :file
+      [:object-id {:optional true} [:maybe ::sm/uuid]]
+      ;; Only needed in type shape
+      [:page-id {:optional true} [:maybe ::sm/uuid]]
+      [:namespace :keyword]
+      [:key :string]
+      [:value [:maybe :string]]]]
 
     [:del-page
      [:map {:title "DelPageChange"}
@@ -252,7 +263,7 @@
       [:type [:= :del-token]]
       [:id ::sm/uuid]]]]])
 
-(sm/define! ::changes
+(sm/register! ::changes
   [:sequential {:gen/max 2} ::change])
 
 (def check-change!
@@ -604,6 +615,36 @@
   [data {:keys [id name]}]
   (d/update-in-when data [:pages-index id] assoc :name name))
 
+(defmethod process-change :mod-plugin-data
+  [data {:keys [object-type object-id page-id namespace key value]}]
+
+  (when (and (= object-type :shape) (nil? page-id))
+    (ex/raise :type :internal :hint "update for shapes needs a page-id"))
+
+  (letfn [(update-fn
+            [data]
+            (if (some? value)
+              (assoc-in data [:plugin-data namespace key] value)
+              (update-in data [:plugin-data namespace] (fnil dissoc {}) key)))]
+    (case object-type
+      :file
+      (update-fn data)
+
+      :page
+      (d/update-in-when data [:pages-index object-id :options] update-fn)
+
+      :shape
+      (d/update-in-when data [:pages-index page-id :objects object-id] update-fn)
+
+      :color
+      (d/update-in-when data [:colors object-id] update-fn)
+
+      :typography
+      (d/update-in-when data [:typographies object-id] update-fn)
+
+      :component
+      (d/update-in-when data [:components object-id] update-fn))))
+
 (defmethod process-change :del-page
   [data {:keys [id]}]
   (ctpl/delete-page data id))
@@ -702,52 +743,14 @@
   (ctol/delete-token data id))
 
 ;; === Operations
-
 (defmethod process-operation :set
   [on-changed shape op]
-  (let [attr            (:attr op)
-        group           (get ctk/sync-attrs attr)
-        val             (:val op)
-        shape-val       (get shape attr)
-        ignore          (or (:ignore-touched op) (= attr :position-data)) ;; position-data is a derived attribute and
-        ignore-geometry (:ignore-geometry op)                             ;; never triggers touched by itself
-        is-geometry?    (and (or (= group :geometry-group)
-                                 (and (= group :content-group) (= (:type shape) :path)))
-                             (not (#{:width :height} attr))) ;; :content in paths are also considered geometric
-                        ;; TODO: the check of :width and :height probably may be removed
-                        ;;       after the check added in data/workspace/modifiers/check-delta
-                        ;;       function. Better check it and test toroughly when activating
-                        ;;       components-v2 mode.
-        in-copy?        (ctk/in-component-copy? shape)
-
-        ;; For geometric attributes, there are cases in that the value changes
-        ;; slightly (e.g. when rounding to pixel, or when recalculating text
-        ;; positions in different zoom levels). To take this into account, we
-        ;; ignore geometric changes smaller than 1 pixel.
-        equal? (if is-geometry?
-                 (gsh/close-attrs? attr val shape-val 1)
-                 (gsh/close-attrs? attr val shape-val))]
-
-    ;; Notify when value has changed, except when it has not moved relative to the
-    ;; component head.
-    (when (and group (not equal?) (not (and ignore-geometry is-geometry?)))
-      (on-changed shape))
-
-    (cond-> shape
-      ;; Depending on the origin of the attribute change, we need or not to
-      ;; set the "touched" flag for the group the attribute belongs to.
-      ;; In some cases we need to ignore touched only if the attribute is
-      ;; geometric (position, width or transformation).
-      (and in-copy? group (not ignore) (not equal?)
-           (not (and ignore-geometry is-geometry?)))
-      (-> (update :touched cfh/set-touched-group group)
-          (dissoc :remote-synced))
-
-      (nil? val)
-      (dissoc attr)
-
-      (some? val)
-      (assoc attr val))))
+  (ctn/set-shape-attr shape
+                      (:attr op)
+                      (:val op)
+                      :on-changed on-changed
+                      :ignore-touched (:ignore-touched op)
+                      :ignore-geometry (:ignore-geometry op)))
 
 (defmethod process-operation :set-touched
   [_ shape op]

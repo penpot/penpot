@@ -62,8 +62,8 @@
       (th/reset-mock! mock)
       (let [data (assoc data :emails ["foo@bar.com"])
             out  (th/command! data)]
-        (t/is (th/success? out))
-        (t/is (= 1 (:call-count (deref mock)))))
+        (t/is (not (th/success? out)))
+        (t/is (= 0 (:call-count (deref mock)))))
 
       ;; get invitation token
       (let [params {::th/type :get-team-invitation-token
@@ -86,7 +86,7 @@
         (t/is (= 0 (:call-count @mock)))
 
         (let [edata (-> out :error ex-data)]
-          (t/is (= :validation (:type edata)))
+          (t/is (= :restriction (:type edata)))
           (t/is (= :email-has-permanent-bounces (:code edata)))))
 
       ;; invite internal user that is muted

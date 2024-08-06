@@ -13,15 +13,25 @@
 .modal-dialog {
   @extend .modal-container-base;
   display: grid;
-  grid-template-rows: auto 1fr;
-  height: $s-472;
-  max-height: $s-472;
-  width: $s-472;
-  max-width: $s-472;
+  grid-template-rows: auto 1fr auto;
+
+  &.plugin-permissions {
+    width: $s-412;
+    max-width: $s-412;
+  }
+
+  &.plugin-management {
+    width: $s-472;
+    max-width: $s-472;
+  }
 
   hr {
-    border-color: $db-tertiary;
+    border-color: var(--color-background-tertiary);
   }
+}
+
+.modal-footer {
+  margin-top: 2rem;
 }
 
 .close-btn {
@@ -42,12 +52,30 @@
 .modal-content {
   display: flex;
   flex-direction: column;
-  height: $s-380;
-  padding-bottom: $s-16;
+
+  .plugin-permissions & {
+    gap: $s-20;
+  }
+
+  .plugin-management & {
+    height: $s-380;
+    max-height: $s-380;
+  }
 }
 
 .primary-button {
   @extend .button-primary;
+  @include headlineSmallTypography;
+  padding: $s-0 $s-16;
+}
+
+.button-expand {
+  width: 100%;
+  margin: 0;
+}
+
+.cancel-button {
+  @extend .button-secondary;
   @include headlineSmallTypography;
   padding: $s-0 $s-16;
 }
@@ -89,7 +117,7 @@
 .plugins-list {
   padding-top: $s-20;
   overflow-x: hidden;
-  overflow-y: scroll;
+  overflow-y: auto;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -120,12 +148,12 @@
 
 .plugin-title {
   @include bodyMediumTypography;
-  color: $df-primary;
+  color: var(--color-foreground-primary);
 }
 
 .plugin-summary {
   @include bodySmallTypography;
-  color: $df-secondary;
+  color: var(--color-foreground-secondary);
 }
 
 .plugins-empty {
@@ -133,7 +161,9 @@
   flex-direction: column;
   align-items: center;
   gap: $s-20;
-  margin-top: $s-16;
+  height: 100%;
+  justify-content: center;
+  padding: $s-36 0;
 }
 
 .plugins-empty-logo {
@@ -143,20 +173,19 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: $db-tertiary;
+  background: var(--color-background-tertiary);
 
   svg {
     width: $s-16;
     height: $s-16;
+    stroke: var(--color-foreground-secondary);
     fill: none;
-    stroke: $df-secondary;
-    stroke-width: 0.8px;
   }
 }
 
 .plugins-empty-text {
   @include bodySmallTypography;
-  color: $df-primary;
+  color: var(--color-foreground-primary);
 }
 
 div.input-error {
@@ -177,17 +206,69 @@ div.input-error {
 }
 
 .plugins-link {
-  color: $da-primary;
+  color: var(--color-accent-primary);
   font-size: $fs-12;
   display: inline-flex;
   align-items: center;
   gap: $s-4;
 
   svg {
-    margin-top: calc(-1 * var($s-2));
+    margin-top: calc(-1 * $s-2);
     width: $s-12;
     height: $s-12;
-    stroke: $da-primary;
+    stroke: var(--color-accent-primary);
     fill: none;
+  }
+}
+
+.plugin-permissions {
+}
+
+.permissions-list {
+  display: flex;
+  flex-direction: column;
+  gap: $s-24;
+}
+
+.permissions-list-entry {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: $s-16;
+  align-items: center;
+
+  svg {
+    width: $s-24;
+    height: $s-24;
+    stroke: var(--color-accent-primary);
+    fill: none;
+  }
+}
+
+.permissions-list-text {
+  @include bodySmallTypography;
+  margin: 0;
+  color: var(--color-foreground-secondary);
+}
+
+.permissions-disclaimer {
+  @include bodySmallTypography;
+  padding: $s-16;
+  background: var(--color-background-tertiary);
+  color: var(--color-foreground-secondary);
+  border-radius: $br-4;
+}
+
+.action-buttons {
+  display: flex;
+  gap: $s-12;
+}
+
+.discover {
+  @include bodySmallTypography;
+  color: var(--color-foreground-secondary);
+  margin-top: $s-24;
+
+  a {
+    color: var(--color-accent-primary);
   }
 }

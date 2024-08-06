@@ -39,7 +39,7 @@
 
   // Overrides background setted in the theme
   :global(.hljs) {
-    background: $db-tertiary;
+    background: var(--color-background-tertiary);
   }
 
   &.collapsed {

@@ -11,7 +11,7 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
@@ -102,7 +102,7 @@
                                [:constraints-h :center])
                    nil ())]
 
-             (st/emit! (dch/update-shapes
+             (st/emit! (dwsh/update-shapes
                         ids
                         #(assoc % constraint new-value))))))
 
@@ -111,7 +111,7 @@
          (mf/deps ids)
          (fn [value]
            (when-not (str/empty? value)
-             (st/emit! (dch/update-shapes
+             (st/emit! (dwsh/update-shapes
                         ids
                         #(assoc % :constraints-h (keyword value)))))))
 
@@ -120,7 +120,7 @@
          (mf/deps ids)
          (fn [value]
            (when-not (str/empty? value)
-             (st/emit! (dch/update-shapes
+             (st/emit! (dwsh/update-shapes
                         ids
                         #(assoc % :constraints-v (keyword value)))))))
 
@@ -128,7 +128,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [_]
-           (st/emit! (dch/update-shapes ids #(update % :fixed-scroll not)))))
+           (st/emit! (dwsh/update-shapes ids #(update % :fixed-scroll not)))))
 
         options-h
         (mf/with-memo [constraints-h]
@@ -207,14 +207,14 @@
                       :on-click on-constraint-button-clicked}
              [:span {:class (stl/css :resalted-area)}]]]]
           [:div {:class (stl/css :contraints-selects)}
-           [:div {:class (stl/css :horizontal-select)}
+           [:div {:class (stl/css :horizontal-select) :data-testid "constraint-h-select"}
             [:& select
-             {:default-value (d/nilv (d/name constraints-h) "scale")
+             {:default-value (if (not= constraints-h :multiple) (d/nilv (d/name constraints-h) "scale") "")
               :options options-h
               :on-change on-constraint-h-select-changed}]]
-           [:div {:class (stl/css :vertical-select)}
+           [:div {:class (stl/css :vertical-select) :data-testid "constraint-v-select"}
             [:& select
-             {:default-value (d/nilv (d/name constraints-v) "scale")
+             {:default-value (if (not= constraints-v :multiple) (d/nilv (d/name constraints-v) "scale") "")
               :options options-v
               :on-change on-constraint-v-select-changed}]]
            (when first-level?

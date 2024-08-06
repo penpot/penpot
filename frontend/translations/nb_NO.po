@@ -15,11 +15,6 @@ msgstr ""
 msgid "auth.confirm-password"
 msgstr "Bekreft passord"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-#, fuzzy
-msgid "auth.email"
-msgstr "E-post"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Glemt passordet?"
@@ -33,7 +28,7 @@ msgid "auth.new-password"
 msgstr "Skriv inn et nytt passord"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Gjenopprettelsessymbolet er ugyldig."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs

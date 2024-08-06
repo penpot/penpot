@@ -9,7 +9,7 @@
   data resources."
   (:refer-clojure :exclude [read-string hash-map merge name update-vals
                             parse-double group-by iteration concat mapcat
-                            parse-uuid max min])
+                            parse-uuid max min regexp?])
   #?(:cljs
      (:require-macros [app.common.data]))
 
@@ -223,7 +223,6 @@
 (defn vec-without-nils
   [coll]
   (into [] (remove nil?) coll))
-
 
 (defn without-nils
   "Given a map, return a map removing key-value
@@ -641,6 +640,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utilities
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn regexp?
+  "Return `true` if `x` is a regexp pattern
+  instance."
+  [x]
+  #?(:cljs (cljs.core/regexp? x)
+     :clj (instance? java.util.regex.Pattern x)))
 
 (defn nilf
   "Returns a new function that if you pass nil as any argument will

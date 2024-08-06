@@ -18,11 +18,12 @@
    [rumext.v2 :as mf]))
 
 (defn on-error
-  [{:keys [code] :as error}]
-  (if (= :owner-teams-with-people code)
-    (let [msg (tr "notifications.profile-deletion-not-allowed")]
-      (rx/of (msg/error msg)))
-    (rx/throw error)))
+  [cause]
+  (let [code (-> cause ex-data :code)]
+    (if (= :owner-teams-with-people code)
+      (let [msg (tr "notifications.profile-deletion-not-allowed")]
+        (rx/of (msg/error msg)))
+      (rx/throw cause))))
 
 (mf/defc delete-account-modal
   {::mf/register modal/components
@@ -59,6 +60,6 @@
         [:button {:class (stl/css-case :accept-button true
                                        :danger true)
                   :on-click on-accept
-                  :data-test "delete-account-btn"}
+                  :data-testid "delete-account-btn"}
          (tr "modals.delete-account.confirm")]]]]]))
 

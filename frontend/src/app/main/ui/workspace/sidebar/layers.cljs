@@ -69,7 +69,7 @@
         highlighted    (mf/deref refs/highlighted-shapes)
         highlighted    (hooks/use-equal-memo highlighted)
         root           (get objects uuid/zero)]
-    [:div {:class (stl/css :element-list)}
+    [:div {:class (stl/css :element-list) :data-testid "layer-item"}
      [:& hooks/sortable-container {}
       (for [[index id] (reverse (d/enumerate (:shapes root)))]
         (when-let [obj (get objects id)]
@@ -510,7 +510,7 @@
         (mf/use-fn
          #(st/emit! (dw/toggle-focus-mode)))]
 
-    [:div#layers {:class (stl/css :layers)}
+    [:div#layers {:class (stl/css :layers) :data-testid "layer-tree"}
      (if (d/not-empty? focus)
        [:div {:class (stl/css :tool-window-bar)}
         [:button {:class (stl/css :focus-title)

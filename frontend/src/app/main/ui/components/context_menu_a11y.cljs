@@ -39,7 +39,7 @@
         id          (gobj/get props "id")
         klass       (gobj/get props "class")
         key-index   (gobj/get props "key-index")
-        data-test   (gobj/get props "data-test")]
+        data-testid   (gobj/get props "data-testid")]
     [:li {:id id
           :class klass
           :tab-index "0"
@@ -47,7 +47,7 @@
           :on-click on-click
           :key key-index
           :role "menuitem"
-          :data-test data-test}
+          :data-testid data-testid}
      children]))
 
 (mf/defc context-menu-a11y'
@@ -230,7 +230,7 @@
                      id (:id option)
                      sub-options (:sub-options option)
                      option-handler (:option-handler option)
-                     data-test (:data-test option)]
+                     data-testid (:data-testid option)]
                  (when option-name
                    (if (= option-name :separator)
                      [:li {:key (dm/str "context-item-" index)
@@ -240,7 +240,7 @@
                        :key id
                        :class (stl/css-case
                                :is-selected (and selected (= option-name selected))
-                               :selected (and selected (= data-test selected))
+                               :selected (and selected (= data-testid selected))
                                :context-menu-item true)
                        :key-index (dm/str "context-item-" index)
                        :tab-index "0"
@@ -251,18 +251,18 @@
                              :on-click #(do (dom/stop-propagation %)
                                             (on-close)
                                             (option-handler %))
-                             :data-test data-test}
+                             :data-testid data-testid}
                          (if (and in-dashboard? (= option-name "Default"))
                            (tr "dashboard.default-team-name")
                            option-name)
 
-                         (when (and selected (= data-test selected))
+                         (when (and selected (= data-testid selected))
                            [:span {:class (stl/css :selected-icon)} i/tick])]
 
                         [:a {:class (stl/css :context-menu-action :submenu)
                              :data-no-close true
                              :on-click (enter-submenu option-name sub-options)
-                             :data-test data-test}
+                             :data-testid data-testid}
                          option-name
                          [:span {:class (stl/css :submenu-icon)} i/arrow]])]))))])])])))
 

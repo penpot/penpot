@@ -287,7 +287,7 @@
   height: $s-52;
   margin-top: $s-8;
   border-radius: $br-circle;
-  background: $db-quaternary;
+  background: var(--color-background-quaternary);
   display: flex;
   justify-content: center;
   align-items: center;

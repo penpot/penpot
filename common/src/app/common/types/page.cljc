@@ -10,6 +10,7 @@
    [app.common.schema :as sm]
    [app.common.types.color :as-alias ctc]
    [app.common.types.grid :as ctg]
+   [app.common.types.plugins :as ctpg]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]))
 
@@ -17,20 +18,20 @@
 ;; SCHEMAS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(sm/define! ::flow
+(sm/register! ::flow
   [:map {:title "PageFlow"}
    [:id ::sm/uuid]
    [:name :string]
    [:starting-frame ::sm/uuid]])
 
-(sm/define! ::guide
+(sm/register! ::guide
   [:map {:title "PageGuide"}
    [:id ::sm/uuid]
    [:axis [::sm/one-of #{:x :y}]]
    [:position ::sm/safe-number]
    [:frame-id {:optional true} [:maybe ::sm/uuid]]])
 
-(sm/define! ::page
+(sm/register! ::page
   [:map {:title "FilePage"}
    [:id ::sm/uuid]
    [:name :string]
@@ -43,7 +44,9 @@
      [:flows {:optional true}
       [:vector {:gen/max 2} ::flow]]
      [:guides {:optional true}
-      [:map-of {:gen/max 2} ::sm/uuid ::guide]]]]])
+      [:map-of {:gen/max 2} ::sm/uuid ::guide]]
+     [:plugin-data {:optional true}
+      [:map-of {:gen/max 5} :keyword ::ctpg/plugin-data]]]]])
 
 (def check-page-guide!
   (sm/check-fn ::guide))

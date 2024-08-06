@@ -6,10 +6,11 @@
 
 (ns backend-tests.rpc-profile-test
   (:require
-   [app.auth :as auth]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.email.blacklist :as email.blacklist]
+   [app.email.whitelist :as email.whitelist]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.tokens :as tokens]
@@ -126,7 +127,7 @@
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))))))
 
-(t/deftest profile-deletion-simple
+(t/deftest profile-deletion-1
   (let [prof (th/create-profile* 1)
         file (th/create-file* 1 {:profile-id (:id prof)
                                  :project-id (:default-project-id prof)
@@ -152,22 +153,21 @@
       (t/is (nil? (:error out)))
       (t/is (= 1 (count (:result out)))))
 
-    ;; execute permanent deletion task
-    (let [result (th/run-task! :objects-gc {:min-age 0})]
-      (t/is (= 1 (:processed result))))
-
-    (let [row (th/db-get :team
-                         {:id (:default-team-id prof)}
-                         {::db/remove-deleted false})]
-      (t/is (nil? (:deleted-at row))))
-
-    (let [result (th/run-task! :orphan-teams-gc {:min-age 0})]
-      (t/is (= 1 (:processed result))))
+    (th/run-pending-tasks!)
 
     (let [row (th/db-get :team
                          {:id (:default-team-id prof)}
                          {::db/remove-deleted false})]
       (t/is (dt/instant? (:deleted-at row))))
+
+    ;; execute permanent deletion task
+    (let [result (th/run-task! :objects-gc {:min-age 0})]
+      (t/is (= 4 (:processed result))))
+
+    (let [row (th/db-get :team
+                         {:id (:default-team-id prof)}
+                         {::db/remove-deleted false})]
+      (t/is (nil? row)))
 
     ;; query profile after delete
     (let [params {::th/type :get-profile
@@ -177,14 +177,187 @@
       (let [result (:result out)]
         (t/is (= uuid/zero (:id result)))))))
 
-(t/deftest registration-domain-whitelist
-  (let [whitelist #{"gmail.com" "hey.com" "ya.ru"}]
-    (t/testing "allowed email domain"
-      (t/is (true? (auth/email-domain-in-whitelist? whitelist "username@ya.ru")))
-      (t/is (true? (auth/email-domain-in-whitelist? #{} "username@somedomain.com"))))
+(t/deftest profile-deletion-2
+  (let [prof1 (th/create-profile* 1)
+        prof2 (th/create-profile* 2)
+        file1 (th/create-file* 1 {:profile-id (:id prof1)
+                                  :project-id (:default-project-id prof1)
+                                  :is-shared false})
+        team1 (th/create-team* 1 {:profile-id (:id prof1)})
 
-    (t/testing "not allowed email domain"
-      (t/is (false? (auth/email-domain-in-whitelist? whitelist "username@somedomain.com"))))))
+        role1 (th/create-team-role* {:team-id (:id team1)
+                                     :profile-id (:id prof2)
+
+                                     :role :editor})]
+    ;; Assert all roles for team
+    (let [roles (th/db-query :team-profile-rel {:team-id (:id team1)})]
+      (t/is (= 2 (count roles))))
+
+    ;; Request profile to be deleted
+    (let [params {::th/type :delete-profile
+                  ::rpc/profile-id (:id prof1)}
+          out    (th/command! params)]
+      ;; (th/print-result! out)
+
+      (let [error (:error out)
+            edata (ex-data error)]
+        (t/is (th/ex-info? error))
+        (t/is (= (:type edata) :validation))
+        (t/is (= (:code edata) :owner-teams-with-people))))))
+
+(t/deftest profile-deletion-3
+  (let [prof1 (th/create-profile* 1)
+        prof2 (th/create-profile* 2)
+        prof3 (th/create-profile* 3)
+        file1 (th/create-file* 1 {:profile-id (:id prof1)
+                                  :project-id (:default-project-id prof1)
+                                  :is-shared false})
+        team1 (th/create-team* 1 {:profile-id (:id prof1)})
+
+        role1 (th/create-team-role* {:team-id (:id team1)
+                                     :profile-id (:id prof2)
+                                     :role :editor})
+        role2 (th/create-team-role* {:team-id (:id team1)
+                                     :profile-id (:id prof3)
+                                     :role :editor})]
+
+    ;; Assert all roles for team
+    (let [roles (th/db-query :team-profile-rel {:team-id (:id team1)})]
+      (t/is (= 3 (count roles))))
+
+    ;; Request profile to be deleted (it should fail)
+    (let [params {::th/type :delete-profile
+                  ::rpc/profile-id (:id prof1)}
+          out    (th/command! params)]
+      ;; (th/print-result! out)
+
+      (let [error (:error out)
+            edata (ex-data error)]
+        (t/is (th/ex-info? error))
+        (t/is (= (:type edata) :validation))
+        (t/is (= (:code edata) :owner-teams-with-people))))
+
+    ;; Leave team by role 1
+    (let [params {::th/type :leave-team
+                  ::rpc/profile-id (:id prof2)
+                  :id (:id team1)}
+          out    (th/command! params)]
+
+      ;; (th/print-result! out)
+      (t/is (nil? (:result out)))
+      (t/is (nil? (:error out))))
+
+    ;; Request profile to be deleted (it should fail)
+    (let [params {::th/type :delete-profile
+                  ::rpc/profile-id (:id prof1)}
+          out    (th/command! params)]
+      ;; (th/print-result! out)
+      (let [error (:error out)
+            edata (ex-data error)]
+        (t/is (th/ex-info? error))
+        (t/is (= (:type edata) :validation))
+        (t/is (= (:code edata) :owner-teams-with-people))))
+
+    ;; Leave team by role 0 (the default) and reassing owner to role 3
+    ;; without reassinging it (should fail)
+    (let [params {::th/type :leave-team
+                  ::rpc/profile-id (:id prof1)
+                  ;; :reassign-to (:id prof3)
+                  :id (:id team1)}
+          out    (th/command! params)]
+
+      ;; (th/print-result! out)
+
+      (let [error (:error out)
+            edata (ex-data error)]
+        (t/is (th/ex-info? error))
+        (t/is (= (:type edata) :validation))
+        (t/is (= (:code edata) :owner-cant-leave-team))))
+
+    ;; Leave team by role 0 (the default) and reassing owner to role 3
+    (let [params {::th/type :leave-team
+                  ::rpc/profile-id (:id prof1)
+                  :reassign-to (:id prof3)
+                  :id (:id team1)}
+          out    (th/command! params)]
+
+      ;; (th/print-result! out)
+      (t/is (nil? (:result out)))
+      (t/is (nil? (:error out))))
+
+    ;; Request profile to be deleted
+    (let [params {::th/type :delete-profile
+                  ::rpc/profile-id (:id prof1)}
+          out    (th/command! params)]
+      ;; (th/print-result! out)
+
+      (t/is (= {} (:result out)))
+      (t/is (nil? (:error out))))
+
+    ;; query files after profile soft deletion
+    (let [params {::th/type :get-project-files
+                  ::rpc/profile-id (:id prof1)
+                  :project-id (:default-project-id prof1)}
+          out    (th/command! params)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out)))
+      (t/is (= 1 (count (:result out)))))
+
+    (th/run-pending-tasks!)
+
+    ;; execute permanent deletion task
+    (let [result (th/run-task! :objects-gc {:min-age 0})]
+      (t/is (= 4 (:processed result))))
+
+    (let [row (th/db-get :team
+                         {:id (:default-team-id prof1)}
+                         {::db/remove-deleted false})]
+      (t/is (nil? row)))
+
+    ;; query profile after delete
+    (let [params {::th/type :get-profile
+                  ::rpc/profile-id (:id prof1)}
+          out    (th/command! params)]
+      ;; (th/print-result! out)
+      (let [result (:result out)]
+        (t/is (= uuid/zero (:id result)))))))
+
+
+(t/deftest profile-deletion-4
+  (let [prof1 (th/create-profile* 1)
+        file1 (th/create-file* 1 {:profile-id (:id prof1)
+                                  :project-id (:default-project-id prof1)
+                                  :is-shared false})
+        team1 (th/create-team* 1 {:profile-id (:id prof1)})
+        team2 (th/create-team* 2 {:profile-id (:id prof1)})]
+
+    ;; Request profile to be deleted
+    (let [params {::th/type :delete-profile
+                  ::rpc/profile-id (:id prof1)}
+          out    (th/command! params)]
+      ;; (th/print-result! out)
+      (t/is (= {} (:result out)))
+      (t/is (nil? (:error out))))
+
+    (th/run-pending-tasks!)
+
+    (let [rows (th/db-exec! ["select id,name,deleted_at from team where deleted_at is not null"])]
+      (t/is (= 3 (count rows))))
+
+    ;; execute permanent deletion task
+    (let [result (th/run-task! :objects-gc {:min-age 0})]
+      (t/is (= 8 (:processed result))))))
+
+
+(t/deftest email-blacklist-1
+  (t/is (false? (email.blacklist/enabled? th/*system*)))
+  (t/is (true? (email.blacklist/enabled? (assoc th/*system* :app.email/blacklist []))))
+  (t/is (true? (email.blacklist/contains? (assoc th/*system* :app.email/blacklist #{"foo.com"}) "AA@FOO.COM"))))
+
+(t/deftest email-whitelist-1
+  (t/is (false? (email.whitelist/enabled? th/*system*)))
+  (t/is (true? (email.whitelist/enabled? (assoc th/*system* :app.email/whitelist []))))
+  (t/is (true? (email.whitelist/contains? (assoc th/*system* :app.email/whitelist #{"foo.com"}) "AA@FOO.COM"))))
 
 (t/deftest prepare-register-and-register-profile-1
   (let [data  {::th/type :prepare-register-profile
@@ -417,9 +590,10 @@
     (th/create-global-complaint-for pool {:type :bounce :email "user@example.com"})
 
     (let [out (th/command! data)]
-      (t/is (th/success? out))
-      (let [result (:result out)]
-        (t/is (contains? result :token))))))
+      (t/is (not (th/success? out)))
+      (let [edata (-> out :error ex-data)]
+        (t/is (= :restriction (:type edata)))
+        (t/is (= :email-has-permanent-bounces (:code edata)))))))
 
 (t/deftest register-profile-with-complained-email
   (let [pool  (:app.db/pool th/*system*)
@@ -430,9 +604,11 @@
     (th/create-global-complaint-for pool {:type :complaint :email "user@example.com"})
 
     (let [out (th/command! data)]
-      (t/is (th/success? out))
-      (let [result (:result out)]
-        (t/is (contains? result :token))))))
+      (t/is (not (th/success? out)))
+
+      (let [edata (-> out :error ex-data)]
+        (t/is (= :restriction (:type edata)))
+        (t/is (= :email-has-complaints (:code edata)))))))
 
 (t/deftest register-profile-with-email-as-password
   (let [data {::th/type :prepare-register-profile
@@ -463,20 +639,26 @@
 
       ;; with complaints
       (th/create-global-complaint-for pool {:type :complaint :email (:email data)})
-      (let [out (th/command! data)]
+      (let [out   (th/command! data)]
         ;; (th/print-result! out)
         (t/is (nil? (:result out)))
-        (t/is (= 2 (:call-count @mock))))
+
+        (let [edata (-> out :error ex-data)]
+          (t/is (= :restriction (:type edata)))
+          (t/is (= :email-has-complaints (:code edata))))
+
+        (t/is (= 1 (:call-count @mock))))
 
       ;; with bounces
       (th/create-global-complaint-for pool {:type :bounce :email (:email data)})
-      (let [out   (th/command! data)
-            error (:error out)]
+      (let [out   (th/command! data)]
         ;; (th/print-result! out)
-        (t/is (th/ex-info? error))
-        (t/is (th/ex-of-type? error :validation))
-        (t/is (th/ex-of-code? error :email-has-permanent-bounces))
-        (t/is (= 2 (:call-count @mock)))))))
+
+        (let [edata (-> out :error ex-data)]
+          (t/is (= :restriction (:type edata)))
+          (t/is (= :email-has-permanent-bounces (:code edata))))
+
+        (t/is (= 1 (:call-count @mock)))))))
 
 
 (t/deftest email-change-request-without-smtp
@@ -541,7 +723,7 @@
               out   (th/command! data)]
           ;; (th/print-result! out)
           (t/is (nil? (:result out)))
-          (t/is (= 2 (:call-count @mock))))
+          (t/is (= 1 (:call-count @mock))))
 
         ;; with valid email and active user with global bounce
         (th/create-global-complaint-for pool {:type :bounce :email (:email profile2)})
@@ -550,7 +732,7 @@
           (t/is (nil? (:result out)))
           (t/is (nil? (:error out)))
           ;; (th/print-result! out)
-          (t/is (= 2 (:call-count @mock))))))))
+          (t/is (= 1 (:call-count @mock))))))))
 
 
 (t/deftest update-profile-password

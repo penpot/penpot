@@ -21,11 +21,10 @@
   (with-mocks [submit-mock {:target 'app.worker/submit! :return nil}]
     (let [prof (th/create-profile* 1 {:is-active true})
           res  (th/run-task! :process-webhook-event
-                             {:props
-                              {:app.loggers.webhooks/event
-                               {:type "command"
-                                :name "create-project"
-                                :props {:team-id (:default-team-id prof)}}}})]
+                             {:event
+                              {:type "command"
+                               :name "create-project"
+                               :props {:team-id (:default-team-id prof)}}})]
 
       (t/is (= 0 (:call-count @submit-mock)))
       (t/is (nil? res)))))
@@ -35,11 +34,10 @@
     (let [prof (th/create-profile* 1 {:is-active true})
           whk  (th/create-webhook* {:team-id (:default-team-id prof)})
           res  (th/run-task! :process-webhook-event
-                             {:props
-                              {:app.loggers.webhooks/event
-                               {:type "command"
-                                :name "create-project"
-                                :props {:team-id (:default-team-id prof)}}}})]
+                             {:event
+                              {:type "command"
+                               :name "create-project"
+                               :props {:team-id (:default-team-id prof)}}})]
 
       (t/is (= 1 (:call-count @submit-mock)))
       (t/is (nil? res)))))
@@ -52,9 +50,8 @@
                 :name "create-project"
                 :props {:team-id (:default-team-id prof)}}
           res  (th/run-task! :run-webhook
-                             {:props
-                              {:app.loggers.webhooks/event evt
-                               :app.loggers.webhooks/config whk}})]
+                             {:event evt
+                              :config whk})]
 
       (t/is (= 1 (:call-count @http-mock)))
 
@@ -75,9 +72,8 @@
                 :name "create-project"
                 :props {:team-id (:default-team-id prof)}}
           res  (th/run-task! :run-webhook
-                             {:props
-                              {:app.loggers.webhooks/event evt
-                               :app.loggers.webhooks/config whk}})]
+                             {:event evt
+                              :config whk})]
 
       (t/is (= 1 (:call-count @http-mock)))
 
@@ -94,14 +90,12 @@
       ;; RUN 2 times more
 
       (th/run-task! :run-webhook
-                    {:props
-                     {:app.loggers.webhooks/event evt
-                      :app.loggers.webhooks/config whk}})
+                    {:event evt
+                     :config whk})
 
       (th/run-task! :run-webhook
-                    {:props
-                     {:app.loggers.webhooks/event evt
-                      :app.loggers.webhooks/config whk}})
+                    {:event evt
+                     :config whk})
 
 
       (let [rows (th/db-query :webhook-delivery {:webhook-id (:id whk)})]

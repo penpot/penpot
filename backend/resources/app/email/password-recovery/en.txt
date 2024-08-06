@@ -1,4 +1,4 @@
-Hello {{name}}!
+Hello {{name|abbreviate:25}}!
 
 We received a request to reset your password. Click the link below to choose a
 new one:

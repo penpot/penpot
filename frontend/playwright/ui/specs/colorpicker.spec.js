@@ -6,7 +6,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 // Fix for https://tree.taiga.io/project/penpot/issue/7549
-test("Bug 7549 - User clicks on color swatch to display the color picker next to it", async ({ page }) => {
+test("Bug 7549 - User clicks on color swatch to display the color picker next to it", async ({
+  page,
+}) => {
   const workspacePage = new WorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
 
