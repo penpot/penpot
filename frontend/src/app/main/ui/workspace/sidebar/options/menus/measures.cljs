@@ -245,7 +245,7 @@
                  undo-id (js/Symbol)]
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
                        (dwu/start-undo-transaction undo-id)
-                       (dch/update-shapes ids
+                       (dwsh/update-shapes ids
                                           (if token-value
                                             #(assoc-in % [:applied-tokens attr] (:id value))
                                             #(d/dissoc-in % [:applied-tokens attr]))
@@ -294,7 +294,7 @@
         (mf/use-fn
          (mf/deps ids-with-children)
          (fn [update-fn]
-           (dch/update-shapes ids-with-children
+           (dwsh/update-shapes ids-with-children
                                (fn [shape]
                                  (if (ctsr/has-radius? shape)
                                    (update-fn shape)

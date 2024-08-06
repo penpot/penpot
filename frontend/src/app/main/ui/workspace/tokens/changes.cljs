@@ -9,8 +9,8 @@
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
    [app.main.data.workspace :as udw]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -41,10 +41,10 @@
                     tokenized-attributes (wtt/attributes-map attributes (:id token))]
                 (rx/of
                  (dwu/start-undo-transaction undo-id)
-                 (dch/update-shapes shape-ids (fn [shape]
-                                                (cond-> shape
-                                                  attributes-to-remove (update :applied-tokens #(apply (partial dissoc %) attributes-to-remove))
-                                                  :always (update :applied-tokens merge tokenized-attributes))))
+                 (dwsh/update-shapes shape-ids (fn [shape]
+                                                 (cond-> shape
+                                                   attributes-to-remove (update :applied-tokens #(apply (partial dissoc %) attributes-to-remove))
+                                                   :always (update :applied-tokens merge tokenized-attributes))))
                  (when on-update-shape
                    (on-update-shape resolved-value shape-ids attributes))
                  (dwu/commit-undo-transaction undo-id)))))))))
@@ -59,7 +59,7 @@
     (watch [_ _ _]
       (rx/of
        (let [remove-token #(when % (wtt/remove-attributes-for-token-id attributes (:id token) %))]
-         (dch/update-shapes
+         (dwsh/update-shapes
           shape-ids
           (fn [shape]
             (update shape :applied-tokens remove-token))))))))
@@ -86,7 +86,7 @@
 ;; Shape Updates ---------------------------------------------------------------
 
 (defn update-shape-radius-all [value shape-ids]
-  (dch/update-shapes shape-ids
+  (dwsh/update-shapes shape-ids
                      (fn [shape]
                        (when (ctsr/has-radius? shape)
                          (ctsr/set-radius-1 shape value)))
@@ -95,7 +95,7 @@
 
 (defn update-opacity [value shape-ids]
   (when (<= 0 value 1)
-    (dch/update-shapes shape-ids #(assoc % :opacity value))))
+    (dwsh/update-shapes shape-ids #(assoc % :opacity value))))
 
 (defn update-rotation [value shape-ids]
   (ptk/reify ::update-shape-dimensions
@@ -106,7 +106,7 @@
        (udw/increase-rotation shape-ids value)))))
 
 (defn update-shape-radius-single-corner [value shape-ids attributes]
-  (dch/update-shapes shape-ids
+  (dwsh/update-shapes shape-ids
                      (fn [shape]
                        (when (ctsr/has-radius? shape)
                          (cond-> shape
@@ -117,7 +117,7 @@
 
 (defn update-stroke-width
   [value shape-ids]
-  (dch/update-shapes shape-ids
+  (dwsh/update-shapes shape-ids
                      (fn [shape]
                        (when (seq (:strokes shape))
                          (assoc-in shape [:strokes 0 :stroke-width] value)))
