@@ -27,6 +27,7 @@
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.token :as cto]
+   [app.common.types.token-theme :as ctt]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
@@ -58,12 +59,20 @@
     [:vector {:gen/max 3} ::ctc/recent-color]]
    [:typographies {:optional true}
     [:map-of {:gen/max 2} ::sm/uuid ::cty/typography]]
-   [:tokens {:optional true}
-    [:map-of {:gen/max 100} ::sm/uuid ::cto/token]]
    [:media {:optional true}
     [:map-of {:gen/max 5} ::sm/uuid ::media-object]]
    [:plugin-data {:optional true}
-    [:map-of {:gen/max 5} :keyword ::ctpg/plugin-data]]])
+    [:map-of {:gen/max 5} :keyword ::ctpg/plugin-data]]
+   [:token-themes [:vector ::sm/uuid]]
+   [:token-themes-index {:optional true}
+    [:map-of {:gen/max 5} ::sm/uuid ::ctt/token-theme]]
+   [:token-set-groups [:vector ::sm/uuid]]
+   [:token-set-groups-index {:optional true}
+    [:map-of {:gen/max 10} ::sm/uuid ::ctt/token-set-group]]
+   [:token-sets-index {:optional true}
+    [:map-of {:gen/max 10} ::sm/uuid ::ctt/token-set]]
+   [:tokens {:optional true}
+    [:map-of {:gen/max 100} ::sm/uuid ::cto/token]]])
 
 (def check-file-data!
   (sm/check-fn ::data))
