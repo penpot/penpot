@@ -13,12 +13,12 @@
 (t/use-fixtures :each
   {:before thp/reset-idmap!})
 
-(defn- setup-file
-  []
+(defn setup-file
+  [& {:keys [rect-1 rect-2 rect-3]}]
   (-> (cthf/sample-file :file-1 :page-label :page-1)
-      (ctho/add-rect :rect-1 {})
-      (ctho/add-rect :rect-2 {})
-      (ctho/add-rect :rect-3 {})
+      (ctho/add-rect :rect-1 rect-1)
+      (ctho/add-rect :rect-2 rect-2)
+      (ctho/add-rect :rect-3 rect-3)
       (toht/add-token :token-1 {:value "12"
                                 :name "borderRadius.sm"
                                 :type :border-radius})
@@ -235,6 +235,39 @@
              (t/is (some? (:applied-tokens rect-1')))
              (t/is (= (:rotation (:applied-tokens rect-1')) (:id token-target')))
              (t/is (= (:rotation rect-1') 120)))))))))
+
+(t/deftest test-apply-stroke-width
+  (t/testing "applies stroke-width token and updates the shapes with stroke"
+    (t/async
+     done
+     (let [file (-> (setup-file {:rect-1 {:strokes [{:stroke-alignment :inner,
+                                                     :stroke-style :solid,
+                                                     :stroke-color "#000000",
+                                                     :stroke-opacity 1,
+                                                     :stroke-width 5}]}})
+                    (toht/add-token :token-target {:value "10"
+                                                   :name "stroke-width.sm"
+                                                   :type :stroke-width}))
+           store (ths/setup-store file)
+           rect-with-stroke (cths/get-shape file :rect-1)
+           rect-without-stroke (cths/get-shape file :rect-2)
+           events [(wtch/apply-token {:shape-ids [(:id rect-with-stroke) (:id rect-without-stroke)]
+                                      :attributes #{:stroke-width}
+                                      :token (toht/get-token file :token-target)
+                                      :on-update-shape wtch/update-stroke-width})]]
+       (tohs/run-store-async
+        store done events
+        (fn [new-state]
+          (let [file' (ths/get-file-from-store new-state)
+                token-target' (toht/get-token file' :token-target)
+                rect-with-stroke' (cths/get-shape file' :rect-1)
+                rect-without-stroke' (cths/get-shape file' :rect-2)]
+            (t/testing "token got applied to rect with stroke and shape stroke got updated"
+              (t/is (= (:stroke-width (:applied-tokens rect-with-stroke')) (:id token-target')))
+              (t/is (= (get-in rect-with-stroke' [:strokes 0 :stroke-width]) 10)))
+            (t/testing "token got applied to rect without stroke but shape didnt get updated"
+              (t/is (= (:stroke-width (:applied-tokens rect-without-stroke')) (:id token-target')))
+              (t/is (empty? (:strokes rect-without-stroke')))))))))))
 
 (t/deftest test-toggle-token-none
   (t/testing "should apply token to all selected items, where no item has the token applied"
