@@ -30,7 +30,7 @@ rsync -avr resources/public/ target/dist/
 sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/dist/index.html;
 sed -i -re "s/\%buildDate\%/$BUILD_DATE/g" ./target/dist/index.html;
 
-if [ "$INCLUDE_STORYBOOK" = "yes"];  then
+if [ "$INCLUDE_STORYBOOK" = "yes" ];  then
     # build storybook
     yarn run build:storybook || exit 1;
     rsync -avr storybook-static/ target/dist/storybook-static;
