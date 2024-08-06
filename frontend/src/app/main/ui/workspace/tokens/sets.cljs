@@ -31,20 +31,23 @@
            #uuid "0381446e-1f1d-423f-912c-ab577d61b79b" {:type :set
                                                          :name "Set Root 2"}})
 
-(defn render-set [set-id]
+
+(mf/defc render-set
+  [{:keys [set-id]}]
   (println "Rendering set with ID:" set-id)
-  (let [set (get sets set-id)
-        {:keys [type name children]} set
-        icon (if (= type :group) i/document i/document)] ;; Correct icon for groups
-    [:div {:class (stl/css-case :set-item true :group (= type :group))}
-     [:div {:class (stl/css :set-icon)} icon]
-     [:span {:class (stl/css :set-name)} name]
-     (when children
-       [:div {:class (stl/css :set-children)}
-        (for [child-id children]
-          (do
-            (println "Rendering child ID:" child-id)
-            ^{:key (str child-id)} [render-set child-id]))])]))
+  (let [set (get sets set-id)]
+    (when set
+      (let [{:keys [type name children]} set
+            icon (if (= type :group) i/document i/document)] ;; Correct icon for groups
+        [:div {:class (stl/css-case :set-item true :group (= type :group))}
+         [:div {:class (stl/css :set-icon)} icon]
+         [:span {:class (stl/css :set-name)} name]
+         (when children
+           [:div {:class (stl/css :set-children)}
+            (for [child-id children]
+              (do
+                (println "Rendering child ID:" child-id)
+                ^{:key (str child-id)} [:& render-set {:key (str child-id):set-id child-id}]))])]))))
 
 (mf/defc sets-list
   {::mf/wrap-props false}
