@@ -18,6 +18,12 @@ If possible add video here from PR as well
 
 ## Changes
 
+### 2024-08-05 - Fix stroke witdth applying breaking app
+
+[Link to PR](https://github.com/orgs/tokens-studio/projects/69/views/11?pane=issue&itemId=73072870)
+
+`:stroke-width` token applying wont update for shapes without a stroke.
+
 ### 2024-07-25 - UX Improvements for the context menu
 
 [Link to PR](https://github.com/tokens-studio/tokens-studio-for-penpot/pull/224)
