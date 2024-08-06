@@ -47,7 +47,7 @@
     :string
     :typography})
 
-(sm/def! ::token
+(sm/register! ::token
   [:map {:title "Token"}
    [:id ::sm/uuid]
    [:name :string]
@@ -56,7 +56,7 @@
    [:description {:optional true} :string]
    [:modified-at {:optional true} ::sm/inst]])
 
-(sm/def! ::border-radius
+(sm/register! ::border-radius
   [:map
    [:rx {:optional true} ::sm/uuid]
    [:ry {:optional true} ::sm/uuid]
@@ -67,13 +67,13 @@
 
 (def border-radius-keys (schema-keys ::border-radius))
 
-(sm/def! ::stroke-width
+(sm/register! ::stroke-width
   [:map
    [:stroke-width {:optional true} ::sm/uuid]])
 
 (def stroke-width-keys (schema-keys ::stroke-width))
 
-(sm/def! ::sizing
+(sm/register! ::sizing
   [:map
    [:width {:optional true} ::sm/uuid]
    [:height {:optional true} ::sm/uuid]
@@ -84,13 +84,13 @@
 
 (def sizing-keys (schema-keys ::sizing))
 
-(sm/def! ::opacity
+(sm/register! ::opacity
   [:map
    [:opacity {:optional true} ::sm/uuid]])
 
 (def opacity-keys (schema-keys ::opacity))
 
-(sm/def! ::spacing
+(sm/register! ::spacing
   [:map
    [:row-gap {:optional true} ::sm/uuid]
    [:column-gap {:optional true} ::sm/uuid]
@@ -103,7 +103,7 @@
 
 (def spacing-keys (schema-keys ::spacing))
 
-(sm/def! ::dimensions
+(sm/register! ::dimensions
   (merge-schemas ::sizing
                  ::spacing
                  ::stroke-width
@@ -111,16 +111,16 @@
 
 (def dimensions-keys (schema-keys ::dimensions))
 
-(sm/def! ::rotation
+(sm/register! ::rotation
   [:map
    [:rotation {:optional true} ::sm/uuid]])
 
 (def rotation-keys (schema-keys ::rotation))
 
-(sm/def! ::tokens
+(sm/register! ::tokens
   [:map {:title "Applied Tokens"}])
 
-(sm/def! ::applied-tokens
+(sm/register! ::applied-tokens
   (merge-schemas ::tokens
                  ::border-radius
                  ::sizing
