@@ -127,6 +127,10 @@
     (db/delete! conn :team-invitation
                 {:team-id team-id :email-to member-email})
 
+    ;; Delete any request
+    (db/delete! conn :team-request
+                {:team-id team-id :requester-id (:id member)})
+
     (assoc member :is-active true)))
 
 (def schema:team-invitation-claims

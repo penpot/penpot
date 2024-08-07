@@ -52,7 +52,7 @@
       (assoc :project-id (uuid project-id)))))
 
 (mf/defc dashboard-content
-  [{:keys [team projects project section search-term profile] :as props}]
+  [{:keys [team projects project section search-term profile invite-email] :as props}]
   (let [container          (mf/use-ref)
         content-width      (mf/use-state 0)
         project-id         (:id project)
@@ -129,7 +129,7 @@
        [:& libraries-page {:team team}]
 
        :dashboard-team-members
-       [:& team-members-page {:team team :profile profile}]
+       [:& team-members-page {:team team :profile profile :invite-email invite-email}]
 
        :dashboard-team-invitations
        [:& team-invitations-page {:team team}]
@@ -153,6 +153,7 @@
         project-id     (:project-id params)
         team-id        (:team-id params)
         search-term    (:search-term params)
+        invite-email   (-> route :query-params :invite-email)
 
         teams          (mf/deref refs/teams)
         team           (get teams team-id)
@@ -204,5 +205,6 @@
              :project project
              :section section
              :search-term search-term
-             :team team}])])]]))
+             :team team
+             :invite-email invite-email}])])]]))
 

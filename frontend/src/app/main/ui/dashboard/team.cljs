@@ -61,7 +61,7 @@
 (mf/defc header
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
-  [{:keys [section team]}]
+  [{:keys [section team invite-email]}]
   (let [on-nav-members       (mf/use-fn #(st/emit! (dd/go-to-team-members)))
         on-nav-settings      (mf/use-fn #(st/emit! (dd/go-to-team-settings)))
         on-nav-invitations   (mf/use-fn #(st/emit! (dd/go-to-team-invitations)))
@@ -79,7 +79,12 @@
          (fn []
            (st/emit! (modal/show {:type :invite-members
                                   :team team
-                                  :origin :team}))))]
+                                  :origin :team
+                                  :invite-email invite-email}))))]
+
+    (mf/with-effect
+      (when invite-email
+        (on-invite-member)))
 
     [:header {:class (stl/css :dashboard-header :team) :data-testid "dashboard-header"}
      [:div {:class (stl/css :dashboard-title)}
@@ -141,7 +146,7 @@
   {::mf/register modal/components
    ::mf/register-as :invite-members
    ::mf/wrap-props false}
-  [{:keys [team origin]}]
+  [{:keys [team origin invite-email]}]
   (let [members-map (mf/deref refs/dashboard-team-members)
         perms       (:permissions team)
 
@@ -192,7 +197,8 @@
                         :on-error   (partial on-error form)}]
             (st/emit! (-> (dd/invite-team-members (with-meta params mdata))
                           (with-meta {::ev/origin origin}))
-                      (dd/fetch-team-invitations))))]
+                      (dd/fetch-team-invitations)
+                      (dd/fetch-team-members (:id team)))))]
 
 
     [:div {:class (stl/css-case :modal-team-container true
@@ -223,7 +229,8 @@
                            :valid-item-fn us/parse-email
                            :caution-item-fn current-members-emails
                            :label (tr "modals.invite-member.emails")
-                           :on-submit  on-submit}]]
+                           :on-submit  on-submit
+                           :invite-email invite-email}]]
 
       [:div {:class (stl/css :action-buttons)}
        [:> fm/submit-button*
@@ -497,7 +504,7 @@
 
 (mf/defc team-members-page
   {::mf/wrap-props false}
-  [{:keys [team profile]}]
+  [{:keys [team profile invite-email]}]
   (let [members-map (mf/deref refs/dashboard-team-members)]
 
     (mf/with-effect [team]
@@ -511,7 +518,7 @@
       (st/emit! (dd/fetch-team-members (:id team))))
 
     [:*
-     [:& header {:section :dashboard-team-members :team team}]
+     [:& header {:section :dashboard-team-members :team team :invite-email invite-email}]
      [:section {:class (stl/css :dashboard-container :dashboard-team-members)}
       [:& team-members
        {:profile profile

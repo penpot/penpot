@@ -72,23 +72,3 @@
     fill: var(--main-icon-foreground);
   }
 }
-
-.terms-login {
-  @include bodySmallTypography;
-  display: flex;
-  gap: $s-4;
-  justify-content: center;
-  width: 100%;
-}
-
-.and-text {
-  border-bottom: $s-1 solid transparent;
-  color: var(--title-foreground-color);
-}
-
-.auth-link {
-  color: var(--link-foreground-color);
-  &:hover {
-    text-decoration: underline;
-  }
-}

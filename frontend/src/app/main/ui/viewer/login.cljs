@@ -10,14 +10,12 @@
    [app.common.logging :as log]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
-   [app.main.ui.auth :refer [terms-login]]
    [app.main.ui.auth.login :refer [login-methods]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
-   [app.main.ui.auth.register :refer [register-methods register-validate-form register-success-page]]
+   [app.main.ui.auth.register :refer [register-methods register-validate-form register-success-page terms-register]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.storage :refer [storage]]
    [rumext.v2 :as mf]))
 
 (log/set-level! :warn)
@@ -26,8 +24,7 @@
   {::mf/register modal/components
    ::mf/register-as :login-register}
   [_]
-  (let [uri (. (. js/document -location) -href)
-        user-email (mf/use-state "")
+  (let [user-email (mf/use-state "")
         register-token (mf/use-state "")
 
         current-section* (mf/use-state :login)
@@ -65,9 +62,6 @@
         (fn [data]
           (reset! register-token (:token data))
           (set-current-section :register-validate))]
-
-    (mf/with-effect []
-      (swap! storage assoc :redirect-url uri))
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
@@ -125,4 +119,4 @@
 
        (when main-section
          [:div {:class (stl/css :links)}
-          [:& terms-login]])]]]))
+          [:& terms-register]])]]]))

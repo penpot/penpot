@@ -2680,6 +2680,12 @@ msgstr "Comenzar"
 msgid "labels.student-teacher"
 msgstr "Estudiante o profesorado"
 
+msgid "labels.login"
+msgstr "Entrar"
+
+msgid "labels.ok"
+msgstr "Ok"
+
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 msgid "settings.detach"
 msgstr "Desacoplar"
@@ -5426,3 +5432,80 @@ msgstr "Leer y modificar la información de sus bibliotecas y recursos."
 msgid "workspace.plugins.discover"
 msgstr ""
 "Descubre [más extensiones](%s)"
+
+msgid "not-found.desc-message.error"
+msgstr "Error 404"
+
+msgid "not-found.desc-message.doesnt-exist"
+msgstr "Esta página no existe"
+
+msgid "not-found.copyright"
+msgstr "Kaleidos @2024"
+
+msgid "not-found.made-with-love"
+msgstr "Hecho con AMOR y Software Libre"
+
+msgid "not-found.no-permission.file"
+msgstr "No tienes permiso para acceder a este archivo."
+
+msgid "not-found.no-permission.project"
+msgstr "No tienes permiso para acceder a este proyecto."
+
+msgid "not-found.no-permission.you-can-ask.file"
+msgstr "Para acceder a este archivo, puedes pedir permiso al propietario del equipo."
+
+msgid "not-found.no-permission.you-can-ask.project"
+msgstr "Para acceder a este proyecto, puedes pedir permiso al propietario del equipo."
+
+msgid "not-found.no-permission.if-approves"
+msgstr "Si el propietario lo aprueba, te invitará al equipo."
+
+msgid "not-found.no-permission.ask"
+msgstr "SOLICITAR ACCESO"
+
+msgid "not-found.no-permission.already-requested.file"
+msgstr "Ya has solicitado acceso a este archivo."
+
+msgid "not-found.no-permission.already-requested.project"
+msgstr "Ya has solicitado acceso a este proyecto."
+
+msgid "not-found.no-permission.already-requested.or-others.file"
+msgstr "Ya has solicitado acceso a este archivo o a otros archivos o proyectos del mismo equipo."
+
+msgid "not-found.no-permission.already-requested.or-others.project"
+msgstr "Ya has solicitado acceso a este proyecto o a otros proyectos o archivos del mismo equipo."
+
+msgid "not-found.no-permission.done.success"
+msgstr "¡Tu solicitud se ha enviado correctamente!"
+
+msgid "not-found.no-permission.done.remember"
+msgstr "Recuerda que, si el propietario la aprueba, entrarás en el equipo."
+
+msgid "not-found.no-permission.go-dashboard"
+msgstr "Ir a tu Penpot"
+
+msgid "not-found.no-permission.project-name"
+msgstr "PROYECTO"
+
+msgid "not-found.no-permission.penpot-file"
+msgstr "Archivo de Penpot"
+
+msgid "not-found.login.login"
+msgstr "Entrar"
+
+msgid "not-found.login.free"
+msgstr "Penpot es la herramienta de diseño libre y de código abierto para la colaboración entre diseño y código"
+
+msgid "not-found.login.signup-free"
+msgstr "Registrate gratis"
+
+msgid "not-found.login.start-using"
+msgstr "¡Y comienza a usar Penpot en segundos!"
+
+msgid "not-found.login.sent-recovery"
+msgstr "Hemos enviado un email de recuperación a"
+
+msgid "not-found.login.sent-recovery-check"
+msgstr "Revisa tu correo y haz clic en el enlace para crear una nueva contraseña."
+
+

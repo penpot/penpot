@@ -70,7 +70,7 @@
     [:string {:min 1}]]])
 
 (mf/defc login-form
-  [{:keys [params on-success-callback origin] :as props}]
+  [{:keys [params on-success-callback on-recovery-request origin] :as props}]
   (let [initial (mf/with-memo [params] params)
         error   (mf/use-state false)
         form    (fm/use-form :schema schema:login-form
@@ -138,9 +138,9 @@
                            :on-success on-success})]
              (st/emit! (du/login-with-ldap params)))))
 
-        on-recovery-request
-        (mf/use-fn
-         #(st/emit! (rt/nav :auth-recovery-request)))]
+        on-recovery-request (or on-recovery-request
+                                (mf/use-fn
+                                 #(st/emit! (rt/nav :auth-recovery-request))))]
 
     [:*
      (when-let [message @error]
@@ -243,7 +243,7 @@
        (tr "auth.login-with-oidc-submit")])))
 
 (mf/defc login-methods
-  [{:keys [params on-success-callback origin] :as props}]
+  [{:keys [params on-success-callback on-recovery-request origin] :as props}]
   [:*
    (when show-alt-login-buttons?
      [:*
@@ -257,7 +257,7 @@
    (when (or (contains? cf/flags :login)
              (contains? cf/flags :login-with-password)
              (contains? cf/flags :login-with-ldap))
-     [:& login-form {:params params :on-success-callback on-success-callback :origin origin}])])
+     [:& login-form {:params params :on-success-callback on-success-callback :on-recovery-request on-recovery-request :origin origin}])])
 
 (mf/defc login-page
   [{:keys [params] :as props}]

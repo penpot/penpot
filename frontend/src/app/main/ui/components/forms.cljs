@@ -420,7 +420,7 @@
   (into [] (distinct) (conj coll item)))
 
 (mf/defc multi-input
-  [{:keys [form label class name trim valid-item-fn caution-item-fn on-submit] :as props}]
+  [{:keys [form label class name trim valid-item-fn caution-item-fn on-submit invite-email] :as props}]
   (let [form       (or form (mf/use-ctx form-ctx))
         input-name (get props :name)
         touched?   (get-in @form [:touched input-name])
@@ -527,6 +527,12 @@
             values (conj-dedup result {:text val :valid (valid-item-fn val)})
             values (filterv #(:valid %) values)]
         (update-form! values)))
+
+    (mf/with-effect
+      (when invite-email
+        (swap! items conj-dedup {:text (str/trim invite-email)
+                                 :valid (valid-item-fn invite-email)
+                                 :caution (caution-item-fn invite-email)})))
 
     [:div {:class klass}
      [:input {:id (name input-name)

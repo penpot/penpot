@@ -723,6 +723,23 @@
   [cfg {:keys [::rpc/profile-id] :as params}]
   (db/tx-run! cfg get-file-summary (assoc params :profile-id profile-id)))
 
+
+;; --- COMMAND QUERY: get-file-info
+
+(defn- get-file-info
+  [{:keys [::db/conn] :as cfg} {:keys [id] :as params}]
+  (db/get* conn :file
+           {:id id}
+           {::sql/columns [:id]}))
+
+(sv/defmethod ::get-file-info
+  "Retrieve minimal file info by its ID."
+  {::rpc/auth false
+   ::doc/added "2.2.0"
+   ::sm/params schema:get-file}
+  [cfg params]
+  (db/tx-run! cfg get-file-info params))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MUTATION COMMANDS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

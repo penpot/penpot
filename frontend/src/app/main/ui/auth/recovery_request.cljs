@@ -102,3 +102,15 @@
                    :class (stl/css :go-back-link)
                    :data-testid "go-back-link"}
        (tr "labels.go-back")]]]))
+
+
+(mf/defc recovery-sent-page
+  [{:keys [email]}]
+  [:div {:class (stl/css :auth-form-wrapper :register-success)}
+   [:div {:class (stl/css :auth-title-wrapper)}
+    [:h2 {:class (stl/css :auth-title)}
+     (tr "auth.check-mail")]
+    [:div {:class (stl/css :notification-text)} (tr "not-found.login.sent-recovery")]]
+   [:div {:class (stl/css :notification-text-email)} email]
+   [:div {:class (stl/css :notification-text)} (tr "not-found.login.sent-recovery-check")]])
+

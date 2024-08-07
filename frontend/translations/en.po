@@ -2627,6 +2627,12 @@ msgstr "Start"
 msgid "labels.student-teacher"
 msgstr "Student or teacher"
 
+msgid "labels.login"
+msgstr "Login"
+
+msgid "labels.ok"
+msgstr "Ok"
+
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 msgid "settings.detach"
 msgstr "Detach"
@@ -5322,3 +5328,78 @@ msgstr "Read and modify your libraries and assets."
 msgid "workspace.plugins.discover"
 msgstr ""
 "Discover [more plugins](%s)"
+
+msgid "not-found.desc-message.error"
+msgstr "404 error"
+
+msgid "not-found.desc-message.doesnt-exist"
+msgstr "This page doesn't exist"
+
+msgid "not-found.copyright"
+msgstr "Kaleidos @2024"
+
+msgid "not-found.made-with-love"
+msgstr "Made with LOVE and Open Source"
+
+msgid "not-found.no-permission.file"
+msgstr "You don't have access to this file."
+
+msgid "not-found.no-permission.project"
+msgstr "You don't have access to this project."
+
+msgid "not-found.no-permission.you-can-ask.file"
+msgstr "To access this file, you can ask the team owner."
+
+msgid "not-found.no-permission.you-can-ask.project"
+msgstr "To access this project, you can ask the team owner."
+
+msgid "not-found.no-permission.if-approves"
+msgstr "If the owner allows it, you're going to be invited to the team."
+
+msgid "not-found.no-permission.ask"
+msgstr "REQUEST ACCESS"
+
+msgid "not-found.no-permission.already-requested.file"
+msgstr "You have already requested access to this file."
+
+msgid "not-found.no-permission.already-requested.project"
+msgstr "You have already requested access to this project."
+
+msgid "not-found.no-permission.already-requested.or-others.file"
+msgstr "You have already requested access to this file or other files or projects of this team."
+
+msgid "not-found.no-permission.already-requested.or-others.project"
+msgstr "You have already requested access to this project or other projects or files of this team."
+
+msgid "not-found.no-permission.done.success"
+msgstr "Your request has been sent correctly!"
+
+msgid "not-found.no-permission.done.remember"
+msgstr "Remember that, if the owner allows it, you're going to be invited to the team."
+
+msgid "not-found.no-permission.go-dashboard"
+msgstr "Go to your Penpot"
+
+msgid "not-found.no-permission.project-name"
+msgstr "PROJECT"
+
+msgid "not-found.no-permission.penpot-file"
+msgstr "Penpot file"
+
+msgid "not-found.login.login"
+msgstr "Login"
+
+msgid "not-found.login.free"
+msgstr "Penpot is the free and open-source design tool for collaboration between Design and Code"
+
+msgid "not-found.login.signup-free"
+msgstr "Signup for free"
+
+msgid "not-found.login.start-using"
+msgstr "And start using Penpot in seconds!"
+
+msgid "not-found.login.sent-recovery"
+msgstr "We have sent a recovery email to"
+
+msgid "not-found.login.sent-recovery-check"
+msgstr "Check your email and click on the link to create a new password."

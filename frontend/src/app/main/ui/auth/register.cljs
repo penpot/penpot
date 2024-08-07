@@ -7,6 +7,7 @@
 (ns app.main.ui.auth.register
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.config :as cf]
    [app.main.data.messages :as msg]
@@ -103,11 +104,12 @@
 
 (mf/defc register-methods
   {::mf/props :obj}
-  [{:keys [params on-success-callback]}]
+  [{:keys [params hide-separator on-success-callback]}]
   [:*
    (when login/show-alt-login-buttons?
      [:& login/login-buttons {:params params}])
-   [:hr {:class (stl/css :separator)}]
+   (when (or login/show-alt-login-buttons? (false? hide-separator))
+     [:hr {:class (stl/css :separator)}])
    [:& register-form {:params params :on-success-callback on-success-callback}]])
 
 (mf/defc register-page
@@ -251,14 +253,37 @@
 
 (mf/defc register-success-page
   {::mf/props :obj}
-  []
-  (let [email (::email @sto/storage)]
+  [{:keys [params]}]
+  (let [email (or (:email params) (::email @sto/storage))]
     [:div {:class (stl/css :auth-form-wrapper :register-success)}
-     [:h1 {:class (stl/css :logo-container)}
-      [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} i/logo]]
+     (when-not (:hide-logo params)
+       [:h1 {:class (stl/css :logo-container)}
+        [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} i/logo]])
      [:div {:class (stl/css :auth-title-wrapper)}
       [:h2 {:class (stl/css :auth-title)}
        (tr "auth.check-mail")]
       [:div {:class (stl/css :notification-text)} (tr "auth.verification-email-sent")]]
      [:div {:class (stl/css :notification-text-email)} email]
      [:div {:class (stl/css :notification-text)} (tr "auth.check-your-email")]]))
+
+
+(mf/defc terms-register
+  []
+  (let [show-all?     (and cf/terms-of-service-uri cf/privacy-policy-uri)
+        show-terms?   (some? cf/terms-of-service-uri)
+        show-privacy? (some? cf/privacy-policy-uri)]
+
+    (when show-all?
+      [:div {:class (stl/css :terms-register)}
+       (when show-terms?
+         [:a {:href cf/terms-of-service-uri :target "_blank" :class (stl/css :auth-link)}
+          (tr "auth.terms-of-service")])
+
+       (when show-all?
+         [:span {:class (stl/css :and-text)}
+          (dm/str " " (tr "labels.and") "  ")])
+
+       (when show-privacy?
+         [:a {:href cf/privacy-policy-uri :target "_blank" :class (stl/css :auth-link)}
+          (tr "auth.privacy-policy")])])))
+

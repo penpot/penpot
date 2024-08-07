@@ -1,0 +1,34 @@
+Hello!
+
+
+Hello!
+
+{{requested-by|abbreviate:25}} ({{requested-by-email}}) has requested access to the file named “{{file-name|abbreviate:25}}”.
+
+To provide this access, you have the following options:
+
+- Give Access to the “{{team-name|abbreviate:25}}” Team:
+
+This will automatically include {{requested-by|abbreviate:25}} in the team, so the user can see all the projects and files in it.
+
+Click the link below to provide team access:
+
+{{ public-uri }}/#/dashboard/team/{{team-id}}/members?invite-email={{requested-by-email}}
+
+
+
+- Send a View-Only Link:
+
+Alternatively, you can create and share a view-only link to the file. This will allow {{requested-by|abbreviate:25}} to view the content without making any changes.
+
+Click the link below to generate and send the link:
+
+{{ public-uri }}/#/view/{{file-id}}?page-id={{page-id}}&section=interactions&index=0&share=true
+
+
+
+If you do not wish to grant access at this time, you can simply disregard this email.
+Thank you
+
+
+The Penpot team.

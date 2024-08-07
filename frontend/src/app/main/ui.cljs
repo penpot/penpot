@@ -133,7 +133,7 @@
         [:& dashboard-page {:route route :profile profile}]]
        :viewer
        (let [{:keys [query-params path-params]} route
-             {:keys [index share-id section page-id interactions-mode frame-id]
+             {:keys [index share-id section page-id interactions-mode frame-id share]
               :or {section :interactions interactions-mode :show-on-click}} query-params
              {:keys [file-id]} path-params]
          [:? {}
@@ -154,7 +154,8 @@
                                     :hide false
                                     :show true
                                     :show-on-click false)
-              :frame-id frame-id}])])
+              :frame-id frame-id
+              :share share}])])
 
        :workspace
        (let [project-id (some-> params :path :project-id uuid)

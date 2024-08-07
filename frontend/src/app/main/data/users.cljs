@@ -153,13 +153,8 @@
   accepting invitation, or third party auth signup or singin."
   [profile]
   (letfn [(get-redirect-event []
-            (let [team-id (get-current-team-id profile)
-                  redirect-url (:redirect-url @storage)]
-              (if (some? redirect-url)
-                (do
-                  (swap! storage dissoc :redirect-url)
-                  (.replace js/location redirect-url))
-                (rt/nav' :dashboard-projects {:team-id team-id}))))]
+            (let [team-id (get-current-team-id profile)]
+              (rt/nav' :dashboard-projects {:team-id team-id})))]
 
     (ptk/reify ::logged-in
       ev/Event
@@ -316,7 +311,6 @@
      ptk/EffectEvent
      (effect [_ _ _]
        ;; We prefer to keek some stuff in the storage like the current-team-id and the profile
-       (swap! storage dissoc :redirect-url)
        (set-current-team! nil)))))
 
 (defn logout

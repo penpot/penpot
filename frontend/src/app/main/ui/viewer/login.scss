@@ -12,6 +12,7 @@
 
 .modal-container {
   @extend .modal-container-base;
+  width: $s-368;
 }
 
 .modal-header {
@@ -32,8 +33,8 @@
   @include bodySmallTypography;
   gap: $s-24;
   max-height: $s-400;
-  width: $s-368;
   overflow: hidden auto;
+
   form {
     display: flex;
     flex-direction: column;
@@ -46,7 +47,6 @@
   display: flex;
   justify-content: center;
   flex-direction: column;
-  max-width: $s-368;
 }
 
 .links {
@@ -64,6 +64,7 @@
     color: var(--modal-text-foreground-color);
     margin-top: $s-12;
   }
+
   a {
     @extend .button-secondary;
     height: $s-40;

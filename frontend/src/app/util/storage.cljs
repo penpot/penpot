@@ -44,3 +44,4 @@
 (defonce storage (atom (load (ex/ignoring (unchecked-get g/global "localStorage")))))
 
 (add-watch storage :persistence #(persist js/localStorage %3 %4))
+

@@ -155,3 +155,41 @@
                          :files files
                          :binary? binary?}))))))))
 
+;;;;;;;;;;;;;;;;;;;;;;
+;; File info
+;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-file-info
+  [on-info params]
+  (ptk/reify ::get-file-info
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! :get-file-info params)
+           (rx/map on-info)))))
+
+;;;;;;;;;;;;;;;;;;;;;;
+;; Team info
+;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-team-info
+  [on-info params]
+  (ptk/reify ::get-team-info
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! :get-team-info params)
+           (rx/map on-info)))))
+
+;;;;;;;;;;;;;;;;;;;;;;
+;; Team Request
+;;;;;;;;;;;;;;;;;;;;;;
+(defn create-team-request
+  [params]
+  (ptk/reify ::create-team-request
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error rx/throw}} (meta params)]
+        (->> (rp/cmd! :create-team-request params)
+             (rx/tap on-success)
+             (rx/catch on-error))))))

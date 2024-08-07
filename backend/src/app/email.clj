@@ -17,6 +17,8 @@
    [app.db :as db]
    [app.db.sql :as sql]
    [app.email.invite-to-team :as-alias email.invite-to-team]
+   [app.email.join-team :as-alias email.join-team]
+   [app.email.request-team-access :as-alias email.request-team-access]
    [app.metrics :as mtx]
    [app.util.template :as tmpl]
    [app.worker :as wrk]
@@ -396,6 +398,79 @@
 (def invite-to-team
   "Teams member invitation email."
   (template-factory ::invite-to-team))
+
+
+(s/def ::email.join-team/invited-by ::us/string)
+(s/def ::email.join-team/team ::us/string)
+(s/def ::email.join-team/team-id ::us/uuid)
+
+(s/def ::join-team
+  (s/keys :req-un [::email.join-team/invited-by
+                   ::email.join-team/team-id
+                   ::email.join-team/team]))
+
+(def join-team
+  "Teams member joined after request email."
+  (template-factory ::join-team))
+
+(s/def ::email.request-team-access/requested-by ::us/string)
+(s/def ::email.request-team-access/requested-by-email ::us/string)
+(s/def ::email.request-team-access/team-name ::us/string)
+(s/def ::email.request-team-access/team-id ::us/uuid)
+(s/def ::email.request-team-access/file-name ::us/string)
+(s/def ::email.request-team-access/file-id ::us/uuid)
+(s/def ::email.request-team-access/page-id ::us/uuid)
+
+(s/def ::request-file-access
+  (s/keys :req-un [::email.request-team-access/requested-by
+                   ::email.request-team-access/requested-by-email
+                   ::email.request-team-access/team-name
+                   ::email.request-team-access/team-id
+                   ::email.request-team-access/file-name
+                   ::email.request-team-access/file-id
+                   ::email.request-team-access/page-id]))
+
+(def request-file-access
+  "File access request email."
+  (template-factory ::request-file-access))
+
+
+(s/def ::request-file-access-yourpenpot
+  (s/keys :req-un [::email.request-team-access/requested-by
+                   ::email.request-team-access/requested-by-email
+                   ::email.request-team-access/team-name
+                   ::email.request-team-access/team-id
+                   ::email.request-team-access/file-name
+                   ::email.request-team-access/file-id
+                   ::email.request-team-access/page-id]))
+
+(def request-file-access-yourpenpot
+  "File access on Your Penpot request email."
+  (template-factory ::request-file-access-yourpenpot))
+
+(s/def ::request-file-access-yourpenpot-view
+  (s/keys :req-un [::email.request-team-access/requested-by
+                   ::email.request-team-access/requested-by-email
+                   ::email.request-team-access/team-name
+                   ::email.request-team-access/team-id
+                   ::email.request-team-access/file-name
+                   ::email.request-team-access/file-id
+                   ::email.request-team-access/page-id]))
+
+(def request-file-access-yourpenpot-view
+  "File access on Your Penpot view mode request email."
+  (template-factory ::request-file-access-yourpenpot-view))
+
+(s/def ::request-team-access
+  (s/keys :req-un [::email.request-team-access/requested-by
+                   ::email.request-team-access/requested-by-email
+                   ::email.request-team-access/team-name
+                   ::email.request-team-access/team-id]))
+
+(def request-team-access
+  "Team access request email."
+  (template-factory ::request-team-access))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; BOUNCE/COMPLAINS HELPERS
