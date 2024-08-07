@@ -32,7 +32,7 @@
                                                          :name "Set Root 2"}})
 
 
-(mf/defc render-set
+(mf/defc sets-tree
   [{:keys [set-id]}]
   (println "Rendering set with ID:" set-id)
   (let [set (get sets set-id)]
@@ -40,14 +40,15 @@
       (let [{:keys [type name children]} set
             icon (if (= type :group) i/document i/document)] ;; Correct icon for groups
         [:div {:class (stl/css-case :set-item true :group (= type :group))}
-         [:div {:class (stl/css :set-icon)} icon]
+         [:div {:class (stl/css :set-icon)}
+          [:svg {:class (stl/css :set-icon-svg)} icon]]
          [:span {:class (stl/css :set-name)} name]
          (when children
            [:div {:class (stl/css :set-children)}
             (for [child-id children]
               (do
                 (println "Rendering child ID:" child-id)
-                ^{:key (str child-id)} [:& render-set {:key (str child-id):set-id child-id}]))])]))))
+                ^{:key (str child-id)} [:& sets-tree {:key (str child-id) :set-id child-id}]))])]))))
 
 (mf/defc sets-list
   {::mf/wrap-props false}
@@ -56,7 +57,7 @@
   [:div.assets-bar
    (for [set-id sets-root-order]
      ^{:key (str set-id)}
-     [:& render-set {:key (str set-id) :set-id set-id}])])
+     [:& sets-tree {:key (str set-id) :set-id set-id}])])
 
 (mf/defc sets-sidebar
   {::mf/wrap-props false}

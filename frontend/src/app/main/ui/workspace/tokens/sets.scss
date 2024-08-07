@@ -20,7 +20,7 @@
   align-items: center;
   justify-content: space-between;
   margin-left: $s-2;
-  color: var(--title-foreground-color-hover);
+  color: var(--layer-row-foreground-color);
 }
 
 .add-button {
@@ -46,6 +46,7 @@
   min-height: $s-32;
   width: 100%;
   cursor: pointer;
+  color: var(--layer-row-foreground-color);
   &.group {
     padding-left: $s-12;
   }
