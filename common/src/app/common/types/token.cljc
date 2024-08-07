@@ -47,10 +47,12 @@
     :string
     :typography})
 
+(def token-name-ref :string)
+
 (sm/register! ::token
   [:map {:title "Token"}
    [:id ::sm/uuid]
-   [:name :string]
+   [:name token-name-ref]
    [:type [::sm/one-of token-types]]
    [:value :any]
    [:description {:optional true} :string]
@@ -58,48 +60,48 @@
 
 (sm/register! ::border-radius
   [:map
-   [:rx {:optional true} ::sm/uuid]
-   [:ry {:optional true} ::sm/uuid]
-   [:r1 {:optional true} ::sm/uuid]
-   [:r2 {:optional true} ::sm/uuid]
-   [:r3 {:optional true} ::sm/uuid]
-   [:r4 {:optional true} ::sm/uuid]])
+   [:rx {:optional true} token-name-ref]
+   [:ry {:optional true} token-name-ref]
+   [:r1 {:optional true} token-name-ref]
+   [:r2 {:optional true} token-name-ref]
+   [:r3 {:optional true} token-name-ref]
+   [:r4 {:optional true} token-name-ref]])
 
 (def border-radius-keys (schema-keys ::border-radius))
 
 (sm/register! ::stroke-width
   [:map
-   [:stroke-width {:optional true} ::sm/uuid]])
+   [:stroke-width {:optional true} token-name-ref]])
 
 (def stroke-width-keys (schema-keys ::stroke-width))
 
 (sm/register! ::sizing
   [:map
-   [:width {:optional true} ::sm/uuid]
-   [:height {:optional true} ::sm/uuid]
-   [:layout-item-min-w {:optional true} ::sm/uuid]
-   [:layout-item-max-w {:optional true} ::sm/uuid]
-   [:layout-item-min-h {:optional true} ::sm/uuid]
-   [:layout-item-max-h {:optional true} ::sm/uuid]])
+   [:width {:optional true} token-name-ref]
+   [:height {:optional true} token-name-ref]
+   [:layout-item-min-w {:optional true} token-name-ref]
+   [:layout-item-max-w {:optional true} token-name-ref]
+   [:layout-item-min-h {:optional true} token-name-ref]
+   [:layout-item-max-h {:optional true} token-name-ref]])
 
 (def sizing-keys (schema-keys ::sizing))
 
 (sm/register! ::opacity
   [:map
-   [:opacity {:optional true} ::sm/uuid]])
+   [:opacity {:optional true} token-name-ref]])
 
 (def opacity-keys (schema-keys ::opacity))
 
 (sm/register! ::spacing
   [:map
-   [:row-gap {:optional true} ::sm/uuid]
-   [:column-gap {:optional true} ::sm/uuid]
-   [:p1 {:optional true} ::sm/uuid]
-   [:p2 {:optional true} ::sm/uuid]
-   [:p3 {:optional true} ::sm/uuid]
-   [:p4 {:optional true} ::sm/uuid]
-   [:x {:optional true} ::sm/uuid]
-   [:y {:optional true} ::sm/uuid]])
+   [:row-gap {:optional true} token-name-ref]
+   [:column-gap {:optional true} token-name-ref]
+   [:p1 {:optional true} token-name-ref]
+   [:p2 {:optional true} token-name-ref]
+   [:p3 {:optional true} token-name-ref]
+   [:p4 {:optional true} token-name-ref]
+   [:x {:optional true} token-name-ref]
+   [:y {:optional true} token-name-ref]])
 
 (def spacing-keys (schema-keys ::spacing))
 
@@ -113,7 +115,7 @@
 
 (sm/register! ::rotation
   [:map
-   [:rotation {:optional true} ::sm/uuid]])
+   [:rotation {:optional true} token-name-ref]])
 
 (def rotation-keys (schema-keys ::rotation))
 

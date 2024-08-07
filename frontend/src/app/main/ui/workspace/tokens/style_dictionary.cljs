@@ -86,18 +86,19 @@
   [tokens & {:keys [debug?] :as config}]
   (p/let [sd-tokens (-> (wtt/token-names-tree tokens)
                         (resolve-sd-tokens+ config))]
-    (let [resolved-tokens (reduce
+    (let [tokens-by-name (wtt/token-names-map tokens)
+          resolved-tokens (reduce
                            (fn [acc ^js cur]
                              (let [value (.-value cur)
                                    resolved-value (d/parse-double (.-value cur))
                                    original-value (-> cur .-original .-value)
-                                   id (uuid (.-uuid (.-id cur)))
+                                   id (.-name cur)
                                    missing-reference? (and (not resolved-value)
                                                            (re-find #"\{" value)
                                                            (= value original-value))]
                                (cond-> (assoc-in acc [id :resolved-value] resolved-value)
                                  missing-reference? (update-in [id :errors] (fnil conj #{}) :style-dictionary/missing-reference))))
-                           tokens sd-tokens)]
+                           tokens-by-name sd-tokens)]
       (when debug?
         (js/console.log "Resolved tokens" resolved-tokens))
       resolved-tokens)))
@@ -157,6 +158,7 @@
   (->
    (clj->js {"a" {:name "a" :value "5"}
              "b" {:name "b" :value "{a} * 2"}})
+
    (#(resolve-sd-tokens+ % {:debug? true})))
 
   (let [example (-> (shadow.resource/inline "./data/example-tokens-set.json")

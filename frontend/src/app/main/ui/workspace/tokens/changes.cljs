@@ -38,7 +38,7 @@
               (let [undo-id (js/Symbol)
                     resolved-value (-> (get sd-tokens (:id token))
                                        (wtt/resolve-token-value))
-                    tokenized-attributes (wtt/attributes-map attributes (:id token))]
+                    tokenized-attributes (wtt/attributes-map attributes token)]
                 (rx/of
                  (dwu/start-undo-transaction undo-id)
                  (dwsh/update-shapes shape-ids (fn [shape]
@@ -58,7 +58,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of
-       (let [remove-token #(when % (wtt/remove-attributes-for-token-id attributes (:id token) %))]
+       (let [remove-token #(when % (wtt/remove-attributes-for-token attributes token %))]
          (dwsh/update-shapes
           shape-ids
           (fn [shape]

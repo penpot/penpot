@@ -4,6 +4,9 @@
    [clojure.set :as set]
    [cuerdas.core :as str]))
 
+(defn token-identifier [{:keys [name] :as _token}]
+  name)
+
 (defn resolve-token-value [{:keys [value resolved-value] :as _token}]
   (or
    resolved-value
@@ -11,17 +14,17 @@
 
 (defn attributes-map
   "Creats an attributes map using collection of `attributes` for `id`."
-  [attributes id]
-  (->> (map (fn [attr] {attr id}) attributes)
+  [attributes token]
+  (->> (map (fn [attr] [attr (token-identifier token)]) attributes)
        (into {})))
 
-(defn remove-attributes-for-token-id
+(defn remove-attributes-for-token
   "Removes applied tokens with `token-id` for the given `attributes` set from `applied-tokens`."
-  [attributes token-id applied-tokens]
+  [attributes token applied-tokens]
   (let [attr? (set attributes)]
     (->> (remove (fn [[k v]]
                    (and (attr? k)
-                        (= v token-id)))
+                        (= v (token-identifier token))))
                  applied-tokens)
         (into {}))))
 
@@ -29,7 +32,7 @@
   "Test if `token` is applied to a `shape` on single `token-attribute`."
   [token shape token-attribute]
   (when-let [id (get-in shape [:applied-tokens token-attribute])]
-    (= (:id token) id)))
+    (= (token-identifier token) id)))
 
 (defn token-applied?
   "Test if `token` is applied to a `shape` with at least one of the one of the given `token-attributes`."
