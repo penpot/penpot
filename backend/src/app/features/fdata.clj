@@ -58,28 +58,26 @@
 (defn load-pointer
   "A database loader pointer helper"
   [system file-id id]
-  (let [{:keys [content]} (db/get system :file-data-fragment
-                                  {:id id :file-id file-id}
-                                  {::sql/columns [:content]
-                                   ::db/check-deleted false})]
+  (let [fragment (db/get* system :file-data-fragment
+                          {:id id :file-id file-id}
+                          {::sql/columns [:data]})]
 
     (l/trc :hint "load pointer"
            :file-id (str file-id)
            :id (str id)
-           :found (some? content))
+           :found (some? fragment))
 
-    (when-not content
+    (when-not fragment
       (ex/raise :type :internal
                 :code :fragment-not-found
                 :hint "fragment not found"
                 :file-id file-id
                 :fragment-id id))
 
-    (blob/decode content)))
+    (blob/decode (:data fragment))))
 
 (defn persist-pointers!
-  "Given a database connection and the final file-id, persist all
-  pointers to the underlying storage (the database)."
+  "Persist all currently tracked pointer objects"
   [system file-id]
   (let [conn (db/get-connection system)]
     (doseq [[id item] @pmap/*tracked*]
@@ -89,7 +87,7 @@
           (db/insert! conn :file-data-fragment
                       {:id id
                        :file-id file-id
-                       :content content}))))))
+                       :data content}))))))
 
 (defn process-pointers
   "Apply a function to all pointers on the file. Usuly used for

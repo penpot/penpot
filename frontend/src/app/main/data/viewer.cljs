@@ -134,7 +134,7 @@
                                       (uuid? share-id)
                                       (assoc :share-id share-id))]
                          (->> (rp/cmd! :get-file-fragment params)
-                              (rx/map :content)
+                              (rx/map :data)
                               (rx/map #(vector key %)))))]
 
         (->> (rp/cmd! :get-view-only-bundle params')
