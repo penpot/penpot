@@ -56,6 +56,10 @@
                              (uw/ask! {:cmd :update-page-index
                                        :page-id page-id
                                        :changes changes})))
+             (rx/catch (fn [cause]
+                         (log/warn :hint "unable to update index"
+                                   :cause cause)
+                         (rx/empty)))
              (rx/ignore))))))
 
 (defn- get-pending-commits
