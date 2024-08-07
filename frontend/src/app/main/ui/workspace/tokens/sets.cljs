@@ -2,6 +2,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.ui.icons :as i]
+   [app.main.ui.components.title-bar :refer [title-bar]]
    [rumext.v2 :as mf]))
 
 ;; Sample data
@@ -32,28 +33,34 @@
                                                          :name "Set Root 2"}})
 
 
+(mf/defc set-item
+  [{:keys [icon name]}]
+  [:div {:class (stl/css :set-item)}
+   [:span {:class (stl/css :icon)} icon]
+   [:span {:class (stl/css :set-name)} name]])
+   
 (mf/defc sets-tree
   [{:keys [set-id]}]
-  (println "Rendering set with ID:" set-id)
+  ;;(println "Rendering set with ID:" set-id)
   (let [set (get sets set-id)]
     (when set
       (let [{:keys [type name children]} set
-            icon (if (= type :group) i/document i/document)]
-        [:div {:class (stl/css-case :set-item true :group (= type :group))}
-         [:div {:class (stl/css :set-icon)}
-          [:svg {:class (stl/css :set-icon-svg)} icon]]
-         [:span {:class (stl/css :set-name)} name]
+            icon i/document]
+        [:div {:class (stl/css :set-item-container)}
+          [:div {:class (stl/css :set-item)}
+         [:span {:class (stl/css :icon)} icon]
+         [:div {:class (stl/css :set-name)} name]]
          (when children
            [:div {:class (stl/css :set-children)}
             (for [child-id children]
               (do
-                (println "Rendering child ID:" child-id)
+                ;;(println "Rendering child ID:" child-id)
                 ^{:key (str child-id)} [:& sets-tree {:key (str child-id) :set-id child-id}]))])]))))
 
 (mf/defc sets-list
   {::mf/wrap-props false}
   []
-  (println "Rendering Sets List with root order:" sets-root-order)
+  ;;(println "Rendering Sets List with root order:" sets-root-order)
   [:div {:class (stl/css :sets-list)}
    (for [set-id sets-root-order]
      ^{:key (str set-id)}
@@ -62,11 +69,17 @@
 (mf/defc sets-sidebar
   {::mf/wrap-props false}
   []
-  (println "Rendering sets sidebar")
+  
+  (let [open? (mf/use-state true)]
+  (println "Rendering sets sidebar" open?)
   [:div {:class (stl/css :sets-sidebar)}
    [:div {:class (stl/css :sidebar-header)}
-    "SETS"
+   [:& title-bar {:collapsable true
+                  :collapsed (not @open?)
+                  :title "SETS"
+                  :on-collapsed #(swap! open? not)}]
     [:button {:class (stl/css :add-set)
               :on-click #(println "Add Set")} 
      i/add]]
-   [:& sets-list]])
+     (when @open?
+   [:& sets-list])]))

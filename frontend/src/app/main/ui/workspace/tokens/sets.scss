@@ -43,34 +43,44 @@
   overflow-y: auto;
 }
 
+.set-item-container {
+  width: 100%;
+  cursor: pointer;
+  color: var(--layer-row-foreground-color);
+  padding-left: 20px;
+}
+
 .set-item {
-  @include bodySmallTypography;
+  display: flex;
+  align-items: center;
   min-height: $s-32;
   width: 100%;
   cursor: pointer;
   color: var(--layer-row-foreground-color);
+
   &.group {
     padding-left: $s-12;
   }
+
   .set-name {
     @include textEllipsis;
     flex-grow: 1;
     padding-left: $s-2;
   }
-  .set-icon {
-    @include flexCenter;
-    height: $s-20; 
-    width: $s-20;   
-    padding: 0 $s-4 0 $s-8;
+
+  .icon {
+    display: flex;
+    align-items: center;
+    width: $s-20;
+    height: $s-20;
+    padding-right: $s-4;
+
     svg {
-      height: $s-20;  
-      width: $s-20;  
+      height: $s-20;
+      width: $s-20;
       color: white;
       fill: none;
       stroke: var(--icon-foreground);
     }
-  }
-  .set-children {
-    padding-left: $s-12;
   }
 }
