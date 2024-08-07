@@ -1,5 +1,6 @@
 (ns token-tests.logic.token-actions-test
   (:require
+   [app.common.logging :as log]
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.shapes :as cths]
@@ -11,7 +12,10 @@
    [token-tests.helpers.tokens :as toht]))
 
 (t/use-fixtures :each
-  {:before thp/reset-idmap!})
+  {:before (fn []
+             ;; Ignore rxjs async errors
+             (log/set-level! "app.main.data.changes" :error)
+             (thp/reset-idmap!))})
 
 (defn setup-file
   [& {:keys [rect-1 rect-2 rect-3]}]
