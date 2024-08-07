@@ -97,7 +97,7 @@
              (when cls
                (cond
                  (true? v)  cls
-                 (false? v) nil
+                 (false? v) ""
                  :else     `(if ~v ~cls ""))))))
    (interpose " ")))
 

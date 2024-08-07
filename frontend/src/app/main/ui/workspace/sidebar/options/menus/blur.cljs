@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.uuid :as uuid]
-   [app.main.data.workspace.changes :as dch]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.title-bar :refer [title-bar]]
@@ -44,7 +44,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [update-fn]
-           (st/emit! (dch/update-shapes ids update-fn))))
+           (st/emit! (dwsh/update-shapes ids update-fn))))
 
         handle-add
         (mf/use-fn
@@ -87,6 +87,7 @@
                      :class        (stl/css-case :title-spacing-blur (not has-value?))}
        (when-not has-value?
          [:button {:class (stl/css :add-blur)
+                   :data-testid "add-blur"
                    :on-click handle-add} i/add])]]
      (when (and open? has-value?)
        [:div {:class (stl/css :element-set-content)}

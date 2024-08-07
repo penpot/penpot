@@ -10,6 +10,10 @@
   height: $s-12;
 }
 
+.drop-space-small {
+  height: $s-2;
+}
+
 .asset-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax($s-96, 1fr));
@@ -43,6 +47,7 @@
     background-color: var(--assets-item-name-background-color);
     border: $s-1 solid transparent;
     color: var(--assets-item-name-foreground-color);
+
     input {
       @include textEllipsis;
       @include bodySmallTypography;
@@ -50,11 +55,13 @@
       height: auto;
       padding: 0;
     }
+
     span {
       display: flex;
       align-items: center;
       height: 100%;
     }
+
     &.editing {
       border-color: var(--input-border-color-focus);
       border-radius: $br-4;
@@ -72,6 +79,7 @@
 
   &.selected {
     border: $s-2 solid var(--assets-item-border-color);
+
     &::before {
       content: " ";
       position: absolute;
@@ -123,21 +131,27 @@
   &:not(:last-child) {
     margin-bottom: $s-4;
   }
+
   &:hover {
     background-color: var(--assets-item-background-color-hover);
+
     .item-name {
       color: var(--assets-item-name-foreground-color-hover);
+
       &.editing {
         background: var(--input-background-color);
+
         input {
           color: var(--input-foreground-color-active);
         }
+
         span svg {
           stroke: var(--input-foreground-color-active);
         }
       }
     }
   }
+
   &.selected {
     border: $s-1 solid var(--assets-item-border-color);
   }
@@ -148,6 +162,7 @@
   @include textEllipsis;
   order: 2;
   color: var(--assets-item-name-foreground-color);
+
   input {
     @include textEllipsis;
     @include bodySmallTypography;
@@ -155,6 +170,7 @@
     height: $s-32;
     padding: $s-4;
   }
+
   span {
     display: flex;
     place-items: center;
@@ -199,6 +215,7 @@
   width: $s-28;
   margin-left: $s-2;
   border-radius: $br-8;
+
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);

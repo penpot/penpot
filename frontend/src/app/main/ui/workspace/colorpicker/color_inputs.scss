@@ -17,6 +17,7 @@
     @include flexRow;
     .input-wrapper {
       @extend .input-element;
+      @include bodySmallTypography;
       width: $s-84;
       display: flex;
       align-items: baseline;
@@ -26,6 +27,7 @@
     @include flexRow;
     .input-wrapper {
       @extend .input-element;
+      @include bodySmallTypography;
       width: $s-84;
       &.hex {
         width: $s-172;

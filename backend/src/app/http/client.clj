@@ -54,9 +54,10 @@
   "A convencience toplevel function for gradual migration to a new API
   convention."
   ([cfg-or-client request]
-   (let [client (resolve-client cfg-or-client)]
+   (let [client  (resolve-client cfg-or-client)
+         request (update request :uri str)]
      (send! client request {:sync? true})))
   ([cfg-or-client request options]
-   (let [client (resolve-client cfg-or-client)]
+   (let [client  (resolve-client cfg-or-client)
+         request (update request :uri str)]
      (send! client request (merge {:sync? true} options)))))
-

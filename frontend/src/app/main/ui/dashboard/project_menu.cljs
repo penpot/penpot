@@ -85,12 +85,12 @@
                    {:option-name    (tr "labels.rename")
                     :id             "project-menu-rename"
                     :option-handler on-edit
-                    :data-test      "project-rename"})
+                    :data-testid      "project-rename"})
                  (when-not (:is-default project)
                    {:option-name    (tr "dashboard.duplicate")
                     :id             "project-menu-duplicated"
                     :option-handler on-duplicate
-                    :data-test      "project-duplicate"})
+                    :data-testid      "project-duplicate"})
                  (when-not (:is-default project)
                    {:option-name    (tr "dashboard.pin-unpin")
                     :id             "project-menu-pin"
@@ -103,19 +103,19 @@
                                        {:option-name    (:name team)
                                         :id             (:name team)
                                         :option-handler (on-move (:id team))})
-                    :data-test      "project-move-to"})
+                    :data-testid      "project-move-to"})
                  (when (some? on-import)
                    {:option-name    (tr "dashboard.import")
                     :id             "project-menu-import"
                     :option-handler on-import-files
-                    :data-test      "file-import"})
+                    :data-testid      "file-import"})
                  (when-not (:is-default project)
                    {:option-name    :separator})
                  (when-not (:is-default project)
                    {:option-name    (tr "labels.delete")
                     :id             "project-menu-delete"
                     :option-handler on-delete
-                    :data-test      "project-delete"})]]
+                    :data-testid      "project-delete"})]]
 
     [:*
      [:& udi/import-form {:ref file-input

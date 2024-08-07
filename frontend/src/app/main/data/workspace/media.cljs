@@ -20,9 +20,9 @@
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.changes :as dch]
    [app.main.data.media :as dmm]
    [app.main.data.messages :as msg]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -131,7 +131,7 @@
           (rx/merge-map svg->clj)
           (rx/tap on-svg)))))
 
-(defn- process-blobs
+(defn process-blobs
   [{:keys [file-id local? name blobs force-media on-image on-svg]}]
   (letfn [(svg-blob? [blob]
             (and (not force-media)
@@ -467,4 +467,5 @@
     (watch [_ _ _]
       (->> (svg->clj [name svg-string])
            (rx/take 1)
-           (rx/map #(svg/add-svg-shapes id % position {:change-selection? false}))))))
+           (rx/map #(svg/add-svg-shapes id % position {:ignore-selection? true
+                                                       :change-selection? false}))))))

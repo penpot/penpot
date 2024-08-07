@@ -15,42 +15,42 @@
 (declare hide)
 (declare show)
 
-(def default-animation-timeout 600)
 (def default-timeout 7000)
 
-(def ^:private
-  schema:message
-  (sm/define
-    [:map {:title "Message"}
-     [:type [::sm/one-of #{:success :error :info :warning}]]
-     [:status {:optional true}
-      [::sm/one-of #{:visible :hide}]]
-     [:position {:optional true}
-      [::sm/one-of #{:fixed :floating :inline}]]
-     [:notification-type {:optional true}
-      [::sm/one-of #{:inline :context :toast}]]
-     [:controls {:optional true}
-      [::sm/one-of #{:none :close :inline-actions :bottom-actions}]]
-     [:tag {:optional true}
-      [:or :string :keyword]]
-     [:timeout {:optional true}
-      [:maybe :int]]
-     [:actions {:optional true}
-      [:vector
-       [:map
-        [:label :string]
-        [:callback ::sm/fn]]]]
-     [:links {:optional true}
-      [:vector
-       [:map
-        [:label :string]
-        [:callback ::sm/fn]]]]]))
+(def ^:private schema:message
+  [:map {:title "Message"}
+   [:type [::sm/one-of #{:success :error :info :warning}]]
+   [:status {:optional true}
+    [::sm/one-of #{:visible :hide}]]
+   [:position {:optional true}
+    [::sm/one-of #{:fixed :floating :inline}]]
+   [:notification-type {:optional true}
+    [::sm/one-of #{:inline :context :toast}]]
+   [:controls {:optional true}
+    [::sm/one-of #{:none :close :inline-actions :bottom-actions}]]
+   [:tag {:optional true}
+    [:or :string :keyword]]
+   [:timeout {:optional true}
+    [:maybe :int]]
+   [:actions {:optional true}
+    [:vector
+     [:map
+      [:label :string]
+      [:callback ::sm/fn]]]]
+   [:links {:optional true}
+    [:vector
+     [:map
+      [:label :string]
+      [:callback ::sm/fn]]]]])
+
+(def ^:private valid-message?
+  (sm/validator schema:message))
 
 (defn show
   [data]
   (dm/assert!
    "expected valid message map"
-   (sm/check! schema:message data))
+   (valid-message? data))
 
   (ptk/reify ::show
     ptk/UpdateEvent
@@ -76,14 +76,7 @@
   (ptk/reify ::hide
     ptk/UpdateEvent
     (update [_ state]
-      (d/update-when state :message assoc :status :hide))
-
-    ptk/WatchEvent
-    (watch [_ _ stream]
-      (let [stopper (rx/filter (ptk/type? ::show) stream)]
-        (->> (rx/of #(dissoc % :message))
-             (rx/delay default-animation-timeout)
-             (rx/take-until stopper))))))
+      (dissoc state :message))))
 
 (defn hide-tag
   [tag]

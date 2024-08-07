@@ -12,7 +12,7 @@
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]))
 
-(sm/def! ::permissions
+(sm/register! ::permissions
   [:map {:title "Permissions"}
    [:type {:gen/elements [:membership :share-link]} :keyword]
    [:is-owner :boolean]

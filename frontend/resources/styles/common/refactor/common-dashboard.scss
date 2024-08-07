@@ -53,12 +53,12 @@
         align-items: center;
         flex-basis: $s-140;
         border-bottom: $s-3 solid transparent;
-        color: $df-secondary;
+        color: var(--color-foreground-secondary);
         height: $s-40;
         padding: $s-4 $s-24;
         font-weight: $fw400;
         &:hover {
-          color: $db-secondary;
+          color: var(--color-background-secondary);
           text-decoration: none;
         }
       }
@@ -71,7 +71,7 @@
     margin-left: $s-12;
 
     h1 {
-      color: $df-primary;
+      color: var(--color-foreground-primary);
       display: block;
       flex-shrink: 0;
       font-size: $fs-24;
@@ -95,13 +95,13 @@
     cursor: pointer;
 
     svg {
-      stroke: $df-secondary;
+      stroke: var(--color-foreground-secondary);
       fill: none;
       width: $s-16;
       height: $s-16;
 
       &:hover {
-        stroke: $da-tertiary;
+        stroke: var(--color-accent-tertiary);
         fill: none;
       }
     }
@@ -122,15 +122,15 @@
     li {
       a {
         font-size: $s-16;
-        color: $df-secondary;
+        color: var(--color-foreground-secondary);
         border-color: transparent;
         &:hover {
-          color: $df-primary;
+          color: var(--color-foreground-primary);
         }
       }
       &.active {
         a {
-          color: $df-primary;
+          color: var(--color-foreground-primary);
         }
       }
     }
@@ -146,7 +146,7 @@
 
 .btn-secondary {
   @extend .button-secondary;
-  color: $df-primary;
+  color: var(--color-foreground-primary);
   font-size: $fs-12;
   text-transform: uppercase;
   padding: 0 $s-16;

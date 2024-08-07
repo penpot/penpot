@@ -317,8 +317,7 @@
      (effect [_ _ _]
        ;; We prefer to keek some stuff in the storage like the current-team-id and the profile
        (swap! storage dissoc :redirect-url)
-       (set-current-team! nil)
-       (i18n/reset-locale)))))
+       (set-current-team! nil)))))
 
 (defn logout
   ([] (logout {}))
@@ -328,11 +327,15 @@
      (-data [_] {})
 
      ptk/WatchEvent
-     (watch [_ _ _]
-       (->> (rp/cmd! :logout)
-            (rx/delay-at-least 300)
-            (rx/catch (constantly (rx/of 1)))
-            (rx/map #(logged-out params)))))))
+     (watch [_ state _]
+       (let [profile-id (:profile-id state)]
+         (->> (rx/interval 500)
+              (rx/take 1)
+              (rx/mapcat (fn [_]
+                           (->> (rp/cmd! :logout {:profile-id profile-id})
+                                (rx/delay-at-least 300)
+                                (rx/catch (constantly (rx/of 1))))))
+              (rx/map #(logged-out params))))))))
 
 ;; --- Update Profile
 
@@ -565,10 +568,9 @@
                   on-success identity}} (meta params)]
         (->> (rp/cmd! :delete-profile {})
              (rx/tap on-success)
-             (rx/delay-at-least 300)
-             (rx/catch (constantly (rx/of 1)))
              (rx/map logged-out)
-             (rx/catch on-error))))))
+             (rx/catch on-error)
+             (rx/delay-at-least 300))))))
 
 ;; --- EVENT: request-profile-recovery
 
@@ -693,15 +695,20 @@
   (ptk/reify ::show-redirect-error
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [hint (case error
-                   "registration-disabled"
-                   (tr "errors.registration-disabled")
-                   "profile-blocked"
-                   (tr "errors.profile-blocked")
-                   "auth-provider-not-allowed"
-                   (tr "errors.auth-provider-not-allowed")
-                   "email-domain-not-allowed"
-                   (tr "errors.email-domain-not-allowed")
-                   :else
-                   (tr "errors.generic"))]
+      (when-let [hint (case error
+                        "registration-disabled"
+                        (tr "errors.registration-disabled")
+                        "profile-blocked"
+                        (tr "errors.profile-blocked")
+                        "auth-provider-not-allowed"
+                        (tr "errors.auth-provider-not-allowed")
+                        "email-domain-not-allowed"
+                        (tr "errors.email-domain-not-allowed")
+
+                        ;; We explicitly do not show any error here, it a explicit user operation.
+                        "unable-to-auth"
+                        nil
+
+                        (tr "errors.generic"))]
+
         (rx/of (msg/warn hint))))))

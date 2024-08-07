@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.1.0
+## 2.2.0
 
 ### :rocket: Epics and highlights
 
@@ -9,17 +9,86 @@
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features
-- Improve auth process [Taiga #Change Auth Process](https://tree.taiga.io/project/penpot/us/7094)
 
 ### :bug: Bugs fixed
+
+- Fix components are not dragged from the group to the assets tab [Taiga #8273](https://tree.taiga.io/project/penpot/issue/8273)
+
+## 2.1.1
+
+### :sparkles: New features
+
+- Consolidate templates new order and naming  [Taiga #8392](https://tree.taiga.io/project/penpot/task/8392)
+
+### :bug: Bugs fixed
+
+- Fix the “search” label in translations [Taiga #8402](https://tree.taiga.io/project/penpot/issue/8402)
+- Fix pencil loader [Taiga #8348](https://tree.taiga.io/project/penpot/issue/8348)
+- Fix several issues on the OIDC.
+- Fix regression on the `email-verification` flag [Taiga #8398](https://tree.taiga.io/project/penpot/issue/8398)
+
+## 2.1.0 - Things can only get better!
+
+### :rocket: Epics and highlights
+
+### :boom: Breaking changes & Deprecations
+
+### :heart: Community contributions (Thank you!)
+
+### :sparkles: New features
+
+- Improve auth process [Taiga #7094](https://tree.taiga.io/project/penpot/us/7094)
+- Add locking degrees increment (hold shift) on path edition [Taiga #7761](https://tree.taiga.io/project/penpot/issue/7761)
+- Persistence & Concurrent Edition Enhancements [Taiga #5657](https://tree.taiga.io/project/penpot/us/5657)
+- Allow library colors as recent colors [Taiga #7640](https://tree.taiga.io/project/penpot/issue/7640)
+- Missing scroll in viewmode comments [Taiga #7427](https://tree.taiga.io/project/penpot/issue/7427)
+- Comments in View mode should mimic the positioning behavior of the Workspace [Taiga #7346](https://tree.taiga.io/project/penpot/issue/7346)
+- Misaligned input on comments [Taiga #7461](https://tree.taiga.io/project/penpot/issue/7461)
+
+### :bug: Bugs fixed
+
+- Fix selection rectangle appears on scroll [Taiga #7525](https://tree.taiga.io/project/penpot/issue/7525)
+- Fix layer tree not expanding to the bottom edge [Taiga #7466](https://tree.taiga.io/project/penpot/issue/7466)
+- Fix guides move when board is moved by inputs [Taiga #8010](https://tree.taiga.io/project/penpot/issue/8010)
+- Fix clickable area of Penptot logo in the viewer [Taiga #7988](https://tree.taiga.io/project/penpot/issue/7988)
+- Fix constraints dropdown when selecting multiple shapes [Taiga #7686](https://tree.taiga.io/project/penpot/issue/7686)
+- Layout and scrollign fixes for the bottom palette [Taiga #7559](https://tree.taiga.io/project/penpot/issue/7559)
+- Fix expand libraries when search results are present [Taiga #7876](https://tree.taiga.io/project/penpot/issue/7876)
+- Fix color palette default library [Taiga #8029](https://tree.taiga.io/project/penpot/issue/8029)
+- Component Library is lost after exporting/importing in .zip format [Github #4672](https://github.com/penpot/penpot/issues/4672)
+- Fix problem with moving+selection not working properly [Taiga #7943](https://tree.taiga.io/project/penpot/issue/7943)
+- Fix problem with flex layout fit to content not positioning correctly children [Taiga #7537](https://tree.taiga.io/project/penpot/issue/7537)
+- Fix black line is displaying after show main [Taiga #7653](https://tree.taiga.io/project/penpot/issue/7653)
+- Fix "Share prototypes" modal remains open [Taiga #7442](https://tree.taiga.io/project/penpot/issue/7442)
+- Fix "Components visibility and opacity" [#4694](https://github.com/penpot/penpot/issues/4694)
+- Fix "Attribute overrides in copies are not exported in zip file" [Taiga #8072](https://tree.taiga.io/project/penpot/issue/8072)
+- Fix group not automatically selected in the Layers panel after creation [Taiga #8078](https://tree.taiga.io/project/penpot/issue/8078)
+- Fix export boards loses opacity [Taiga #7592](https://tree.taiga.io/project/penpot/issue/7592)
+- Fix change color on imported svg also changes the stroke alignment[Taiga #7673](https://github.com/penpot/penpot/pull/7673)
+- Fix show in view mode and interactions workflow [Taiga #4711](https://github.com/penpot/penpot/pull/4711)
+- Fix internal error when I set up a stroke for some objects without and with stroke [Taiga #7558](https://tree.taiga.io/project/penpot/issue/7558)
+- Toolbar keeps toggling on and off on spacebar press [Taiga #7654](https://github.com/penpot/penpot/pull/7654)
+- Fix toolbar keeps hiding when click outside workspace [Taiga #7776](https://tree.taiga.io/project/penpot/issue/7776)
+- Fix open overlay relative to a frame [Taiga #7563](https://tree.taiga.io/project/penpot/issue/7563)
+- Workspace-palette items stay hidden when opening with keyboard-shortcut [Taiga #7489](https://tree.taiga.io/project/penpot/issue/7489)
+- Fix SVG attrs are not handled correctly when exporting/importing in .zip [Taiga #7920](https://tree.taiga.io/project/penpot/issue/7920)
+- Fix validation error when detaching with two nested copies and a swap [Taiga #8095](https://tree.taiga.io/project/penpot/issue/8095)
+- Export shapes that are rotated act a bit strange when reimported [Taiga #7585](https://tree.taiga.io/project/penpot/issue/7585)
+- Penpot crashes when a new colorpicker is created while uploading an image to another instance [Taiga #8119](https://tree.taiga.io/project/penpot/issue/8119)
+- Removing Underline and Strikethrough Affects the Previous Text Object [Taiga #8103](https://tree.taiga.io/project/penpot/issue/8103)
+- Color library loses association with shapes when exporting/importing the document [Taiga #8132](https://tree.taiga.io/project/penpot/issue/8132)
+- Fix can't collapse groups when searching in the assets tab [Taiga #8125](https://tree.taiga.io/project/penpot/issue/8125)
+- Fix 'Detach instance' shortcut is not working [Taiga #8102](https://tree.taiga.io/project/penpot/issue/8102)
+- Fix import file message does not detect 0 as error [Taiga #6824](https://tree.taiga.io/project/penpot/issue/6824)
+- Image Color Library is not persisted when exporting/importing in .zip [Taiga #8131](https://tree.taiga.io/project/penpot/issue/8131)
+- Fix export files including libraries [Taiga #8266](https://tree.taiga.io/project/penpot/issue/8266)
 
 ## 2.0.3
 
 ### :bug: Bugs fixed
 
-- Fix chrome scrollbar styling [Taiga Issue #7852](https://tree.taiga.io/project/penpot/issue/7852)
+- Fix chrome scrollbar styling [Taiga #7852](https://tree.taiga.io/project/penpot/issue/7852)
 - Fix incorrect password encoding on create-profile manage scritp [Github #3651](https://github.com/penpot/penpot/issues/3651)
-
 
 ## 2.0.2
 
@@ -30,7 +99,7 @@
 
 ### :bug: Bugs fixed
 
-- Fix color palette sorting [Taiga Issue #7458](https://tree.taiga.io/project/penpot/issue/7458)
+- Fix color palette sorting [Taiga #7458](https://tree.taiga.io/project/penpot/issue/7458)
 - Fix style scoping problem with imported SVG [Taiga #7671](https://tree.taiga.io/project/penpot/issue/7671)
 
 
@@ -175,7 +244,7 @@
 - Fix problem when changing typography assets [Github #3683](https://github.com/penpot/penpot/issues/3683)
 - Internal error when you copy and paste some main components between files [Taiga #7397](https://tree.taiga.io/project/penpot/issue/7397)
 - Fix toolbar disappearing [Taiga #7411](https://tree.taiga.io/project/penpot/issue/7411)
-- Fix long text on tab breaks UI [Taiga Issue #7421](https://tree.taiga.io/project/penpot/issue/7421)
+- Fix long text on tab breaks UI [Taiga #7421](https://tree.taiga.io/project/penpot/issue/7421)
 
 ## 1.19.5
 

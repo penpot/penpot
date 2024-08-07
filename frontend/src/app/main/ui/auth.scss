@@ -31,6 +31,7 @@
   display: flex;
   justify-content: flex-start;
   width: $s-120;
+  height: $s-96;
   margin-block-end: $s-52;
 }
 
@@ -43,7 +44,7 @@
 
   svg {
     width: 100%;
-    fill: $df-primary;
+    fill: var(--color-foreground-primary);
     height: auto;
   }
 

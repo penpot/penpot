@@ -10,7 +10,7 @@
   display: flex;
   flex-direction: column;
   background-color: var(--panel-background-color);
-  color: $df-primary;
+  color: var(--color-foreground-primary);
   font-size: $fs-12;
   user-select: text;
 }
@@ -54,8 +54,8 @@
 .shape-title {
   font-size: $fs-14;
   padding-bottom: $s-4;
-  background: $db-quaternary;
-  color: $df-primary;
+  background: var(--color-background-quaternary);
+  color: var(--color-foreground-primary);
   padding: $s-8;
   border-radius: $s-8;
   display: flex;
@@ -83,7 +83,7 @@
 }
 
 .shape-link {
-  color: $df-primary;
+  color: var(--color-foreground-primary);
   text-decoration: underline;
 }
 

@@ -1,0 +1,132 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../_borders.scss" as *;
+@use "../_sizes.scss" as *;
+@use "../utils.scss" as *;
+
+%base-button {
+  --button-bg-color: initial;
+  --button-fg-color: initial;
+  --button-hover-bg-color: initial;
+  --button-hover-fg-color: initial;
+  --button-active-bg-color: initial;
+  --button-disabled-bg-color: initial;
+  --button-disabled-fg-color: initial;
+  --button-border-color: var(--button-bg-color);
+  --button-focus-inner-ring-color: initial;
+  --button-focus-outer-ring-color: initial;
+
+  appearance: none;
+  height: $sz-32;
+  border: none;
+  border-radius: $br-8;
+
+  background: var(--button-bg-color);
+  color: var(--button-fg-color);
+  border: $b-1 solid var(--button-border-color);
+
+  &:hover {
+    --button-bg-color: var(--button-hover-bg-color);
+    --button-fg-color: var(--button-hover-fg-color);
+  }
+
+  &:active {
+    --button-bg-color: var(--button-active-bg-color);
+  }
+
+  &:focus-visible {
+    outline: var(--button-focus-inner-ring-color) solid #{px2rem(2)};
+    outline-offset: -#{px2rem(3)};
+    --button-border-color: var(--button-focus-outer-ring-color);
+    --button-fg-color: var(--button-focus-fg-color);
+  }
+
+  &:disabled {
+    --button-bg-color: var(--button-disabled-bg-color);
+    --button-fg-color: var(--button-disabled-fg-color);
+  }
+}
+
+%base-button-primary {
+  --button-bg-color: var(--color-accent-primary);
+  --button-fg-color: var(--color-background-secondary);
+
+  --button-hover-bg-color: var(--color-accent-tertiary);
+  --button-hover-fg-color: var(--color-background-secondary);
+
+  --button-active-bg-color: var(--color-accent-tertiary);
+
+  --button-disabled-bg-color: var(--color-accent-primary-muted);
+  --button-disabled-fg-color: var(--color-background-secondary);
+
+  --button-focus-bg-color: var(--color-accent-primary);
+  --button-focus-fg-color: var(--color-background-secondary);
+  --button-focus-inner-ring-color: var(--color-background-secondary);
+  --button-focus-outer-ring-color: var(--color-accent-primary);
+
+  &:active {
+    box-shadow: inset 0 0 #{px2rem(10)} #{px2rem(2)} rgba(0, 0, 0, 0.2);
+  }
+}
+
+%base-button-secondary {
+  --button-bg-color: var(--color-background-tertiary);
+  --button-fg-color: var(--color-foreground-secondary);
+
+  --button-hover-bg-color: var(--color-background-tertiary);
+  --button-hover-fg-color: var(--color-accent-primary);
+
+  --button-active-bg-color: var(--color-background-quaternary);
+
+  --button-disabled-bg-color: transparent;
+  --button-disabled-fg-color: var(--color-foreground-secondary);
+
+  --button-focus-bg-color: var(--color-background-tertiary);
+  --button-focus-fg-color: var(--color-foreground-primary);
+  --button-focus-inner-ring-color: var(--color-background-secondary);
+  --button-focus-outer-ring-color: var(--color-accent-primary);
+}
+
+%base-button-ghost {
+  --button-bg-color: transparent;
+  --button-fg-color: var(--color-foreground-secondary);
+
+  --button-hover-bg-color: var(--color-background-tertiary);
+  --button-hover-fg-color: var(--color-accent-primary);
+
+  --button-active-bg-color: var(--color-background-quaternary);
+
+  --button-disabled-bg-color: transparent;
+  --button-disabled-fg-color: var(--color-accent-primary-muted);
+
+  --button-focus-bg-color: transparent;
+  --button-focus-fg-color: var(--color-foreground-secondary);
+  --button-focus-inner-ring-color: transparent;
+  --button-focus-outer-ring-color: var(--color-accent-primary);
+}
+
+%base-button-destructive {
+  --button-bg-color: var(--color-accent-error);
+  --button-fg-color: var(--color-foreground-primary);
+
+  --button-hover-bg-color: var(--color-background-error);
+  --button-hover-fg-color: var(--color-foreground-primary);
+
+  --button-active-bg-color: var(--color-accent-error);
+
+  --button-disabled-bg-color: var(--color-background-error);
+  --button-disabled-fg-color: var(--color-accent-error);
+
+  --button-focus-bg-color: var(--color-accent-error);
+  --button-focus-fg-color: var(--color-foreground-primary);
+  --button-focus-inner-ring-color: var(--color-background-primary);
+  --button-focus-outer-ring-color: var(--color-accent-primary);
+
+  &:active {
+    box-shadow: inset 0 0 #{px2rem(10)} #{px2rem(2)} rgba(0, 0, 0, 0.2);
+  }
+}

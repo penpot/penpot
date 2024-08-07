@@ -169,9 +169,10 @@
                      :on-collapsed toggle-content
                      :title        label
                      :class        (stl/css-case :title-spacing-stroke (not has-strokes?))}
-
-       [:button {:class (stl/css :add-stroke)
-                 :on-click on-add-stroke} i/add]]]
+       (when (not (= :multiple strokes))
+         [:button {:class (stl/css :add-stroke)
+                   :data-testid "add-stroke"
+                   :on-click on-add-stroke} i/add])]]
      (when open?
        [:div {:class (stl/css-case :element-content true
                                    :empty-content (not has-strokes?))}

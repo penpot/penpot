@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 13:04+0000\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Chinese (Simplified) "
-"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hans/>\n"
+"Language-Team: Chinese (Simplified) <https://hosted.weblate.org/projects/"
+"penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -35,11 +35,6 @@ msgstr "只是想试试？"
 msgid "auth.demo-warning"
 msgstr "这是一个演示服务，请【不要】用于真实工作，这些项目将被周期性地抹除。"
 
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "电子邮件"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "忘记密码？"
@@ -49,6 +44,7 @@ msgid "auth.fullname"
 msgstr "全名"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "在这里登录"
 
@@ -76,20 +72,12 @@ msgstr "LDAP登录"
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID登录"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "姓名必须包含一些空格以外的字符。"
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "姓名最多包含250个字符。"
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "输入新的密码"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "恢复令牌无效。"
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -115,10 +103,6 @@ msgstr "密码"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "至少8位字符"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "密码必须包含一些空格以外的字符。"
 
 msgid "auth.privacy-policy"
 msgstr "隐私政策"
@@ -148,10 +132,6 @@ msgid "auth.register-submit"
 msgstr "创建账号"
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "免费且开源"
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
 msgstr "创建账号"
 
@@ -165,11 +145,6 @@ msgstr "服务协议"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.terms-privacy-agreement"
 msgstr "创建账号意味着您认可我们的服务条例和隐私政策。"
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr "创建新账号，即代表你同意我们的[服务条例](%s)和[隐私政策](%s)。"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -280,7 +255,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "生成新令牌"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "成功创建访问令牌。"
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -290,10 +265,6 @@ msgstr "点击“生成新令牌”按钮来生成一个。"
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "你目前还没有令牌。"
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "名称是必填项"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -333,7 +304,9 @@ msgstr "个人访问令牌"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.personal.description"
-msgstr "个人访问令牌可被理解为密码认证的代替选项，常用于允许（第三方）应用访问Penpot内部API"
+msgstr ""
+"个人访问令牌可被理解为密码认证的代替选项，常用于允许（第三方）应用访问Penpot"
+"内部API"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.token-will-expire"
@@ -384,10 +357,11 @@ msgid "dashboard.duplicate-multi"
 msgstr "复制 %s 个文件"
 
 #: src/app/main/ui/dashboard/grid.cljs
+#, fuzzy
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"添加到库的文件将出现在这里。尝试分享你的文件或从我们的[库和模板](https://penpot.app/libraries-templates."
-"html)添加。"
+"添加到库的文件将出现在这里。尝试分享你的文件或从我们的[库和模板](https://penp"
+"ot.app/libraries-templates.html)添加。"
 
 msgid "dashboard.export-binary-multi"
 msgstr "下载 %s Penpot文件 (.penpot)"
@@ -474,13 +448,15 @@ msgstr[1] "%s 个字体添加成功"
 
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
-"你在此上传的任何网络字体文件，将会被添加至本团队下文件的字体属性中的可用字体族列表中。拥有相同字体族名称的字体文件，将会按照字体族进行分组。你可以上传以"
+"你在此上传的任何网络字体文件，将会被添加至本团队下文件的字体属性中的可用字体"
+"族列表中。拥有相同字体族名称的字体文件，将会按照字体族进行分组。你可以上传以"
 "下格式的字体文件：**TTF，OTF和WOFF**（你只需要上传其中一种即可）。"
 
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"你应当只向Penpot上传你所拥有的字体，或是你持有使用许可的字体。点击[Penpot服务条例](https://penpot.app/terms."
-"html)查看更多有关内容权利的章节。或许你也想了解一下[字体许可授权] (https://www.typography.com/faq)。"
+"你应当只向Penpot上传你所拥有的字体，或是你持有使用许可的字体。点击[Penpot服务"
+"条例](https://penpot.app/terms.html)查看更多有关内容权利的章节。或许你也想了"
+"解一下[字体许可授权] (https://www.typography.com/faq)。"
 
 #: src/app/main/ui/dashboard/fonts.cljs
 msgid "dashboard.fonts.upload-all"
@@ -488,9 +464,10 @@ msgstr "全部上传"
 
 msgid "dashboard.fonts.warning-text"
 msgstr ""
-"我们在你的字体中检测到一个可能的问题，与不同操作系统的垂直度量有关。为了检查它，你可以使用字体垂直度量服务，如[这个](https://"
-"vertical-metrics.netlify.app/)。此外，我们建议使用[Transfonter](https://transfonter."
-"org/)来生成网络字体并修复错误。 "
+"我们在你的字体中检测到一个可能的问题，与不同操作系统的垂直度量有关。为了检查"
+"它，你可以使用字体垂直度量服务，如[这个](https://vertical-metrics.netlify."
+"app/)。此外，我们建议使用[Transfonter](https://transfonter.org/)来生成网络字"
+"体并修复错误。 "
 
 msgid "dashboard.import"
 msgstr "导入文件"
@@ -747,7 +724,9 @@ msgid "dashboard.webhooks.create.success"
 msgstr "Webhook创建成功。"
 
 msgid "dashboard.webhooks.description"
-msgstr "Webhooks是一种简单的方式，允许其他网站和应用程序在Penpot的某些事件发生时得到通知。我们将发送一个POST请求到你提供的每个URL。"
+msgstr ""
+"Webhooks是一种简单的方式，允许其他网站和应用程序在Penpot的某些事件发生时得到"
+"通知。我们将发送一个POST请求到你提供的每个URL。"
 
 msgid "dashboard.webhooks.empty.add-one"
 msgstr "按“添加webhook”按钮添加一个。"
@@ -843,11 +822,11 @@ msgstr "电子邮件“%s”收到了非常多的永久退信报告。"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "请输入有效的电子邮件"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "确认电子邮件必须保持一致"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -855,7 +834,9 @@ msgstr "此邮箱[%s]已被标记为垃圾邮件或已被永久拉黑。"
 
 #: src/app/main/errors.cljs
 msgid "errors.feature-mismatch"
-msgstr "看起来你正在打开一个启用了'%s'功能的文件，但当前penpot版本并不支持该功能或已将其禁用。"
+msgstr ""
+"看起来你正在打开一个启用了'%s'功能的文件，但当前penpot版本并不支持该功能或已"
+"将其禁用。"
 
 #: src/app/main/errors.cljs
 msgid "errors.feature-not-supported"
@@ -863,7 +844,9 @@ msgstr "不支持功能“%s”。"
 
 #: src/app/main/errors.cljs
 msgid "errors.file-feature-mismatch"
-msgstr "看起来当前启用的功能，与正在打开的文件所依赖的功能不匹配。在打开文件前，需要应用对“%s”修改。"
+msgstr ""
+"看起来当前启用的功能，与正在打开的文件所依赖的功能不匹配。在打开文件前，需要"
+"应用对“%s”修改。"
 
 #: src/app/main/ui/auth/verify_token.cljs,
 #: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
@@ -965,7 +948,6 @@ msgstr "连接错误，无法访问 URL"
 msgid "errors.webhooks.invalid-uri"
 msgstr "网址未通过验证。"
 
-#, fuzzy
 msgid "errors.webhooks.last-delivery"
 msgstr "上次交付不成功。"
 
@@ -1011,25 +993,25 @@ msgstr "话题"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.subtitle"
-msgstr "请说明你发邮件的原因，详细说明这是一个问题反馈、一个点子还是一个疑问。我们会尽快回复。"
+msgstr ""
+"请说明你发邮件的原因，详细说明这是一个问题反馈、一个点子还是一个疑问。我们会"
+"尽快回复。"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.title"
 msgstr "电子邮件"
 
 #: src/app/main/ui/settings/feedback.cljs
-#, fuzzy
 msgid "feedback.twitter-go-to"
-msgstr "前往Twtter"
+msgstr "前往X(原Twitter)"
 
 #: src/app/main/ui/settings/feedback.cljs
 msgid "feedback.twitter-subtitle1"
 msgstr "这里可以帮助您解决技术问题。"
 
 #: src/app/main/ui/settings/feedback.cljs
-#, fuzzy
 msgid "feedback.twitter-title"
-msgstr "Twtter支持帐号"
+msgstr "X(原Twitter)支持帐号"
 
 #: src/app/main/ui/settings/password.cljs
 msgid "generic.error"
@@ -1440,7 +1422,8 @@ msgstr "已安装字体"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.desc-message"
-msgstr "发生了一些不妙的事。请尝试重新操作。如果问题仍然存在，请联系我们以取得支持。"
+msgstr ""
+"发生了一些不妙的事。请尝试重新操作。如果问题仍然存在，请联系我们以取得支持。"
 
 #: src/app/main/ui/static.cljs
 msgid "labels.internal-error.main-message"
@@ -1502,8 +1485,8 @@ msgstr "哎呀！"
 #: src/app/main/ui/dashboard/team.cljs
 msgid "labels.num-of-files"
 msgid_plural "labels.num-of-files"
-msgstr[0] "1 个文档"
-msgstr[1] "共 %s 个文档"
+msgstr[0] "共1个文档"
+msgstr[1] "共%s个文档"
 
 msgid "labels.num-of-frames"
 msgid_plural "labels.num-of-frames"
@@ -1713,7 +1696,9 @@ msgid "media.solid"
 msgstr "纯色"
 
 msgid "modals.add-shared-confirm-empty.hint"
-msgstr "你的库是空白的。一旦添加为共享库，此文档库中的素材就可被用于你的其他文档中。你确定要发布它吗？"
+msgstr ""
+"你的库是空白的。一旦添加为共享库，此文档库中的素材就可被用于你的其他文档中。"
+"你确定要发布它吗？"
 
 #: src/app/main/ui/workspace/header.cljs,
 #: src/app/main/ui/dashboard/file_menu.cljs
@@ -1899,13 +1884,15 @@ msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "删除文件"
 msgstr[1] "批量删除文件"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.activated.no-files-message"
 msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "没有文件引用它。"
+msgstr[1] "没有文件引用它们。"
 
-#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
 msgid "modals.delete-shared-confirm.activated.scd-message"
 msgid_plural "modals.delete-shared-confirm.activated.scd-message"
 msgstr[0] "该库被以下文档使用： "
@@ -1987,7 +1974,9 @@ msgid "modals.leave-and-close-confirm.message"
 msgstr "您确定要离开 %s 团队吗？"
 
 msgid "modals.leave-and-reassign.forbidden"
-msgstr "如果不能推选另一个成员作为团队所有者，你就无法离开团队。你或许想要删除该团队。"
+msgstr ""
+"如果不能推选另一个成员作为团队所有者，你就无法离开团队。你或许想要删除该团"
+"队。"
 
 #: src/app/main/ui/dashboard/sidebar.cljs
 msgid "modals.leave-and-reassign.hint1"
@@ -2168,22 +2157,28 @@ msgid "onboarding-v2.newsletter.privacy1"
 msgstr "我们关心隐私，您可在此阅读我们的 "
 
 msgid "onboarding-v2.newsletter.privacy2"
-msgstr "我们将仅发送与您有关的邮件，您可以随时在其中任意一封邮件中点击取消订阅。"
+msgstr ""
+"我们将仅发送与您有关的邮件，您可以随时在其中任意一封邮件中点击取消订阅。"
 
 msgid "onboarding-v2.newsletter.updates"
 msgstr "向我发送一些产品更新（新功能，新版本，新修复等）。"
 
 msgid "onboarding-v2.welcome.desc1"
-msgstr "Penpot是由Kaleidos及社区共同开发的开源软件，许多人已经在社区中互相帮助。每个人都可以通过以下方式进行协作："
+msgstr ""
+"Penpot是由Kaleidos及社区共同开发的开源软件，许多人已经在社区中互相帮助。每个"
+"人都可以通过以下方式进行协作："
 
 msgid "onboarding-v2.welcome.desc2"
-msgstr "一个与整个社区和Penpot核心团队学习、分享和讨论Penpot及其现在和未来的公共空间。"
+msgstr ""
+"一个与整个社区和Penpot核心团队学习、分享和讨论Penpot及其现在和未来的公共空"
+"间。"
 
 msgid "onboarding-v2.welcome.desc2.title"
 msgstr "参与到社区中"
 
 msgid "onboarding-v2.welcome.desc3"
-msgstr "在这里，您将了解如何协作进行翻译、功能需求提出、核心代码贡献、BUG修复等…"
+msgstr ""
+"在这里，您将了解如何协作进行翻译、功能需求提出、核心代码贡献、BUG修复等…"
 
 msgid "onboarding-v2.welcome.desc3.title"
 msgstr "贡献指南"
@@ -2280,156 +2275,96 @@ msgid "profile.recovery.go-to-login"
 msgstr "去登录"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "question.design-tool-more-experienced-with"
-msgstr "你最熟悉哪个设计工具？"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.11-30"
+msgid "onboarding.questions.team-size.11-30"
 msgstr "11-30"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.2-10"
+msgid "onboarding.questions.team-size.2-10"
 msgstr "2-10"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.31-50"
+msgid "onboarding.questions.team-size.31-50"
 msgstr "31-50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.a-lot"
-msgstr "非常多"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.adobe-xd"
+msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.canva"
+msgid "labels.canva"
 msgstr "Canva"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.designer"
-msgstr "设计师"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.developer"
+msgid "labels.developer"
 msgstr "开发者"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.discover-more-about-penpot"
-msgstr "深入了解Penpot的精彩之处"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.figma"
+msgid "labels.figma"
 msgstr "Figma"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.founder"
+msgid "labels.founder"
 msgstr "创始人/副总裁"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.freelancer"
+msgid "labels.freelancer"
 msgstr "我是一名自由职业者"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.get-the-code-from-my-team-project"
-msgstr "从我的团队项目获得邀请码 "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.interface-design-visual-assets-design-systems"
-msgstr "...界面设计，视觉素材，设计系统等。"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.invision"
+msgid "labels.invision"
 msgstr "InVision"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.leave-feedback-for-my-team-project"
-msgstr "给我的团队项目做反馈"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.lets-get-started"
+msgid "onboarding.questions.lets-get-started"
 msgstr "让我们开始吧！"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.manager"
+msgid "labels.product-management"
 msgstr "产品经理/项目经理"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.marketing"
+msgid "labels.marketing"
 msgstr "市场营销"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.more-than-50"
+msgid "onboarding.questions.team-size.more-than-50"
 msgstr "50以上"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.next"
+msgid "labels.next"
 msgstr "下一项"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.none"
-msgstr "无"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.other"
+msgid "labels.other"
 msgstr "其他（请注明）"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.personal-project"
+msgid "onboarding.questions.team-size.personal-project"
 msgstr "我在做个人项目"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.previous"
+msgid "labels.previous"
 msgstr "前一项"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.questions-how-are-you-planning-to-use-penpot"
-msgstr "你计划用Penpot做什么？"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.role"
+msgid "onboarding.questions.step3.question2"
 msgstr "你是哪种身份？"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.sketch"
+msgid "labels.sketch"
 msgstr "Sketch"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start"
+msgid "labels.start"
 msgstr "开始"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start-to-work-on-my-project"
-msgstr "开始着手我的项目"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.student-teacher"
+msgid "labels.student-teacher"
 msgstr "学生/教师"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.team-size"
+msgid "onboarding.questions.step3.question3"
 msgstr "你的团队有多少人？"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
-msgstr "试用Penpot，来看它是否适合团队 "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.try-out-before-using-penpot-on-premise"
-msgstr "在本地部署Penpot前进行试用"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.wireframes-user-journeys-flows-navigation-trees"
-msgstr "...线框图，用户轨迹和用户流程，导航树等。"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.work-in-concept-ideas"
-msgstr "从事概念构想的工作"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.your-feedback-will-help-us"
-msgstr "你的反馈将帮助我们更好地理解你的习惯和偏好，以便我们不断改进Penpot，使其成为一个有用且好用的工具。"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs,
@@ -2914,10 +2849,6 @@ msgstr "变焦镜头放大"
 msgid "shortcuts.zoom-selected"
 msgstr "缩放到选定对象"
 
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "Webhook的名称最多包含2048个字符。"
-
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"
 msgstr "%s - Penpot"
@@ -3040,7 +2971,6 @@ msgstr "点击时显示交互"
 msgid "viewer.header.sitemap"
 msgstr "站点地图"
 
-#, fuzzy
 msgid "webhooks.last-delivery.success"
 msgstr "上次交付成功。"
 
@@ -4959,3 +4889,177 @@ msgstr "更新"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "单击以闭合路径"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "登录我的账号"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.library-updates"
+msgstr "共享库更新"
+
+msgid "workspace.options.component.swap"
+msgstr "交换组件"
+
+msgid "workspace.options.guides.title"
+msgstr "参考线"
+
+#: src/app/main/ui/workspace/header.cljs,
+#: src/app/main/ui/dashboard/file_menu.cljs
+msgid "modals.delete-unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
+msgstr[0] ""
+"这个文件中被其他文件引用的素材依然在那（其他文件的现有设计不会被破坏）。"
+msgstr[1] ""
+"这些文件中被其他文件引用的素材依然在那（其他文件的现有设计不会被破坏）。"
+
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr "文件已启用“组件v2”功能，但这个团队尚未支持该功能。"
+
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "切换到深色主题"
+
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "切换到浅色主题"
+
+msgid "media.keep-aspect-ratio"
+msgstr "保持宽高比"
+
+msgid "onboarding.team-modal.team-definition"
+msgstr "团队是什么？"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "settings.select-this-color"
+msgstr "选择使用此样式的项目"
+
+msgid "shortcuts.toggle-snap-guides"
+msgstr "吸附到参考线"
+
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "吸附到标尺参考线"
+
+msgid "shortcuts.toggle-theme"
+msgstr "更改主题"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "1个组件"
+msgstr[1] "%s个组件"
+
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "新建区域"
+
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "新建画板"
+
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "合并网格"
+
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "在右侧添加一列"
+
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "删除此列及其内容"
+
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "复制此列"
+
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "在下方添加一行"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-ruler-guides"
+msgstr "启用“吸附到标尺参考线”"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.show-guides"
+msgstr "显示参考线"
+
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "定位网格布局"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "断开共享库"
+
+msgid "workspace.top-bar.view-only"
+msgstr "**检查代码**(仅查看)"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-tagline"
+msgstr "Penpot是一款自由开源的设计工具，用于「设计」和「开发」协同"
+
+msgid "modals.move-shared-confirm.accept"
+msgid_plural "modals.move-shared-confirm.accept"
+msgstr[0] "移动"
+msgstr[1] "移动"
+
+#: src/app/main/data/users.cljs
+msgid "errors.email-domain-not-allowed"
+msgstr "不允许使用此域名"
+
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "你确定要移动这个共享库吗？"
+msgstr[1] "你确定要移动这些共享库吗？"
+
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "移动共享库"
+msgstr[1] "移动共享库"
+
+msgid "shortcuts.toggle-guides"
+msgstr "显示/隐藏参考线"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.filter"
+msgstr "过滤器"
+
+msgid "shortcuts.toggle-layout-grid"
+msgstr "添加/移除网格布局"
+
+msgid "shortcuts.toggle-rulers"
+msgstr "显示/隐藏标尺"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+msgid "workspace.assets.sort"
+msgstr "排序"
+
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "在左侧添加一列"
+
+#: src/app/main/ui/workspace/context_menu.cljs
+msgid "workspace.shape.menu.remove-grid"
+msgstr "移除网格布局"
+
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "删除此列"
+
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "复制此行"
+
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "在上方添加一行"
+
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "删除此行"
+
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "删除此行及其内容"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-ruler-guides"
+msgstr "禁用“吸附到标尺参考线”"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.hide-guides"
+msgstr "隐藏参考线"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.loading"
+msgstr "加载中…"
+
+#: src/app/main/ui/workspace/libraries.cljs
+msgid "workspace.libraries.shared-library-btn"
+msgstr "连接共享库"

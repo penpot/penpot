@@ -10,6 +10,8 @@
    [app.common.logging :as l]
    [app.db :as db]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.profile :as profile]
+   [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
@@ -20,8 +22,15 @@
 
 (defmethod delete-object :file
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
-  (l/trc :hint "marking for deletion" :rel "file" :id (str id))
   (when-let [file (db/get* conn :file {:id id} {::db/remove-deleted false})]
+    (l/trc :hint "marking for deletion" :rel "file" :id (str id)
+           :deleted-at (dt/format-instant deleted-at))
+
+    (db/update! conn :file
+                {:deleted-at deleted-at}
+                {:id id}
+                {::db/return-keys false})
+
     (when (and (:is-shared file)
                (not *team-deletion*))
       ;; NOTE: we don't prevent file deletion on absorb operation failure
@@ -48,28 +57,57 @@
 
 (defmethod delete-object :project
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
-  (l/trc :hint "marking for deletion" :rel "project" :id (str id))
-  (doseq [file (db/update! conn :file
-                           {:deleted-at deleted-at}
-                           {:project-id id}
-                           {::db/return-keys [:id :deleted-at]
-                            ::db/many true})]
-    (delete-object cfg (assoc file :object :file))))
+  (l/trc :hint "marking for deletion" :rel "project" :id (str id)
+         :deleted-at (dt/format-instant deleted-at))
+
+  (db/update! conn :project
+              {:deleted-at deleted-at}
+              {:id id}
+              {::db/return-keys false})
+
+  (doseq [file (db/query conn :file
+                         {:project-id id}
+                         {::db/columns [:id :deleted-at]})]
+    (delete-object cfg (assoc file
+                              :object :file
+                              :deleted-at deleted-at))))
 
 (defmethod delete-object :team
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
-  (l/trc :hint "marking for deletion" :rel "team" :id (str id))
+  (l/trc :hint "marking for deletion" :rel "team" :id (str id)
+         :deleted-at (dt/format-instant deleted-at))
+  (db/update! conn :team
+              {:deleted-at deleted-at}
+              {:id id}
+              {::db/return-keys false})
+
   (db/update! conn :team-font-variant
               {:deleted-at deleted-at}
-              {:team-id id})
+              {:team-id id}
+              {::db/return-keys false})
 
   (binding [*team-deletion* true]
-    (doseq [project (db/update! conn :project
-                                {:deleted-at deleted-at}
-                                {:team-id id}
-                                {::db/return-keys [:id :deleted-at]
-                                 ::db/many true})]
-      (delete-object cfg (assoc project :object :project)))))
+    (doseq [project (db/query conn :project
+                              {:team-id id}
+                              {::db/columns [:id :deleted-at]})]
+      (delete-object cfg (assoc project
+                                :object :project
+                                :deleted-at deleted-at)))))
+
+(defmethod delete-object :profile
+  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
+  (l/trc :hint "marking for deletion" :rel "profile" :id (str id)
+         :deleted-at (dt/format-instant deleted-at))
+
+  (db/update! conn :profile
+              {:deleted-at deleted-at}
+              {:id id}
+              {::db/return-keys false})
+
+  (doseq [team (profile/get-owned-teams conn id)]
+    (delete-object cfg (assoc team
+                              :object :team
+                              :deleted-at deleted-at))))
 
 (defmethod delete-object :default
   [_cfg props]
@@ -80,5 +118,5 @@
 
 (defmethod ig/init-key ::handler
   [_ cfg]
-  (fn [{:keys [props] :as params}]
+  (fn [{:keys [props] :as task}]
     (db/tx-run! cfg delete-object props)))

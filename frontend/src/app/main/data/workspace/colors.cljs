@@ -15,15 +15,16 @@
    [app.main.broadcast :as mbc]
    [app.main.data.events :as ev]
    [app.main.data.modal :as md]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.layout :as layout]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.util.color :as uc]
    [app.util.storage :refer [storage]]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 ;; A set of keys that are used for shared state identifiers
@@ -116,7 +117,7 @@
     (rx/concat
      (rx/of (dwu/start-undo-transaction undo-id))
      (rx/from (map #(dwt/update-text-with-function % transform-attrs) text-ids))
-     (rx/of (dch/update-shapes shape-ids transform-attrs))
+     (rx/of (dwsh/update-shapes shape-ids transform-attrs))
      (rx/of (dwu/commit-undo-transaction undo-id)))))
 
 (defn swap-attrs [shape attr index new-index]
@@ -140,7 +141,7 @@
 
         (rx/concat
          (rx/from (map #(dwt/update-text-with-function % transform-attrs) text-ids))
-         (rx/of (dch/update-shapes shape-ids transform-attrs)))))))
+         (rx/of (dwsh/update-shapes shape-ids transform-attrs)))))))
 
 (defn change-fill
   [ids color position]
@@ -203,10 +204,10 @@
             is-text?  #(= :text (:type (get objects %)))
             shape-ids (filter (complement is-text?) ids)
             attrs {:hide-fill-on-export hide-fill-on-export}]
-        (rx/of (dch/update-shapes shape-ids (fn [shape]
-                                              (if (= (:type shape) :frame)
-                                                (d/merge shape attrs)
-                                                shape))))))))
+        (rx/of (dwsh/update-shapes shape-ids (fn [shape]
+                                               (if (= (:type shape) :frame)
+                                                 (d/merge shape attrs)
+                                                 shape))))))))
 (defn change-stroke
   [ids attrs index]
   (ptk/reify ::change-stroke
@@ -236,7 +237,7 @@
                    (dissoc :image)
                    (dissoc :gradient))]
 
-        (rx/of (dch/update-shapes
+        (rx/of (dwsh/update-shapes
                 ids
                 (fn [shape]
                   (let [new-attrs (merge (get-in shape [:strokes index]) attrs)
@@ -248,7 +249,7 @@
                                     (assoc :stroke-style :solid)
 
                                     (not (contains? new-attrs :stroke-alignment))
-                                    (assoc :stroke-alignment :inner)
+                                    (assoc :stroke-alignment :center)
 
                                     :always
                                     (d/without-nils))]
@@ -264,7 +265,7 @@
   (ptk/reify ::change-shadow
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dch/update-shapes
+      (rx/of (dwsh/update-shapes
               ids
               (fn [shape]
                 (let [;; If we try to set a gradient to a shadow (for
@@ -288,7 +289,7 @@
     (watch [_ _ _]
       (let [add-shadow (fn [shape]
                          (update shape :shadow #(into [shadow] %)))]
-        (rx/of (dch/update-shapes ids add-shadow))))))
+        (rx/of (dwsh/update-shapes ids add-shadow))))))
 
 (defn add-stroke
   [ids stroke]
@@ -296,7 +297,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [add-stroke (fn [shape] (update shape :strokes #(into [stroke] %)))]
-        (rx/of (dch/update-shapes ids add-stroke))))))
+        (rx/of (dwsh/update-shapes ids add-stroke))))))
 
 (defn remove-stroke
   [ids position]
@@ -309,7 +310,7 @@
                      (mapv second)))
               (remove-stroke [shape]
                 (update shape :strokes remove-fill-by-index position))]
-        (rx/of (dch/update-shapes ids remove-stroke))))))
+        (rx/of (dwsh/update-shapes ids remove-stroke))))))
 
 (defn remove-all-strokes
   [ids]
@@ -317,14 +318,14 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [remove-all #(assoc % :strokes [])]
-        (rx/of (dch/update-shapes ids remove-all))))))
+        (rx/of (dwsh/update-shapes ids remove-all))))))
 
 (defn reorder-shadows
   [ids index new-index]
   (ptk/reify ::reorder-shadow
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dch/update-shapes
+      (rx/of (dwsh/update-shapes
               ids
               #(swap-attrs % :shadow index new-index))))))
 
@@ -333,7 +334,7 @@
   (ptk/reify ::reorder-strokes
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dch/update-shapes
+      (rx/of (dwsh/update-shapes
               ids
               #(swap-attrs % :strokes index new-index))))))
 
@@ -377,7 +378,7 @@
 
 (defn color-att->text
   [color]
-  {:fill-color (:color color)
+  {:fill-color (when (:color color) (str/lower (:color color)))
    :fill-opacity (:opacity color)
    :fill-color-ref-id (:id color)
    :fill-color-ref-file (:file-id color)
@@ -590,7 +591,7 @@
     (update [_ state]
       (update state :colorpicker
               (fn [state]
-                (let [type  (:type state)
+                (let [type (:type state)
                       state (-> state
                                 (update :current-color merge changes)
                                 (update :current-color materialize-color-components)
@@ -605,12 +606,17 @@
 
                     (-> state
                         (dissoc :gradient :stops :editing-stop)
-                        (cond-> (not= :image (:type state))
+                        (cond-> (not= :image type)
                           (assoc :type :color))))))))
     ptk/WatchEvent
     (watch [_ state _]
-      (when add-recent?
-        (let [formated-color  (get-color-from-colorpicker-state (:colorpicker state))]
+      (let [selected-type  (-> state
+                               :colorpicker
+                               :type)
+            formated-color  (get-color-from-colorpicker-state (:colorpicker state))
+            ;; Type is set to color on closing the colorpicker, but we can can close it while still uploading an image fill
+            ignore-color?   (and (= selected-type :color) (nil? (:color formated-color)))]
+        (when (and add-recent? (not ignore-color?))
           (rx/of (dwl/add-recent-color formated-color)))))))
 
 (defn update-colorpicker-gradient

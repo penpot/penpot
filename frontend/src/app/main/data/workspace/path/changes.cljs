@@ -8,7 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
-   [app.main.data.workspace.changes :as dch]
+   [app.main.data.changes :as dch]
    [app.main.data.workspace.path.common :refer [check-path-content!]]
    [app.main.data.workspace.path.helpers :as helpers]
    [app.main.data.workspace.path.state :as st]

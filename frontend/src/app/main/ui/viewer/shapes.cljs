@@ -44,9 +44,17 @@
     (or (empty? overlays-ids) (nil? shape) (cfh/root? shape)) base-frame
     :else (find-relative-to-base-frame (cfh/get-parent objects (:id shape)) objects overlays-ids base-frame)))
 
+(defn- ignore-frame-shape
+  [shape objects manual?]
+  (let [shape (cond-> shape ;; When the the interaction is not manual and its origin is a frame,
+                            ;; we need to ignore it on all the find-frame calculations
+                (and (:frame-id shape) (not manual?))
+                (assoc :type :rect))
+        objects (assoc objects (:id shape) shape)]
+    [shape objects]))
+
 (defn- activate-interaction
   [interaction shape base-frame frame-offset objects overlays]
-
   (case (:action-type interaction)
     :navigate
     (when-let [frame-id (:destination interaction)]
@@ -58,9 +66,11 @@
                   (dv/go-to-frame frame-id (:animation interaction)))))
 
     :open-overlay
-    (let [dest-frame-id              (:destination interaction)
+    (let [manual?                    (= :manual (:overlay-pos-type interaction))
+          [shape objects]            (ignore-frame-shape shape objects manual?)
+          dest-frame-id              (:destination interaction)
           dest-frame                 (get objects dest-frame-id)
-          relative-to-id             (if (= :manual (:overlay-pos-type interaction))
+          relative-to-id             (if manual?
                                        (if (= (:type shape) :frame) ;; manual interactions are always from "self"
                                          (:frame-id shape)
                                          (:id shape))
@@ -88,7 +98,9 @@
                                    fixed-base?))))
 
     :toggle-overlay
-    (let [dest-frame-id              (:destination interaction)
+    (let [manual?                    (= :manual (:overlay-pos-type interaction))
+          [shape objects]            (ignore-frame-shape shape objects manual?)
+          dest-frame-id              (:destination interaction)
           dest-frame                 (get objects dest-frame-id)
           relative-to-id             (if (= :manual (:overlay-pos-type interaction))
                                        (if (= (:type shape) :frame) ;; manual interactions are always from "self"
@@ -146,7 +158,9 @@
       (st/emit! (dv/close-overlay frame-id)))
 
     :toggle-overlay
-    (let [dest-frame-id              (:destination interaction)
+    (let [manual?                    (= :manual (:overlay-pos-type interaction))
+          [shape objects]            (ignore-frame-shape shape objects manual?)
+          dest-frame-id              (:destination interaction)
           dest-frame                 (get objects dest-frame-id)
           relative-to-id             (if (= :manual (:overlay-pos-type interaction))
                                        (if (= (:type shape) :frame) ;; manual interactions are always from "self"
@@ -178,7 +192,9 @@
 
 
     :close-overlay
-    (let [dest-frame-id              (:destination interaction)
+    (let [manual?                    (= :manual (:overlay-pos-type interaction))
+          [shape objects]            (ignore-frame-shape shape objects manual?)
+          dest-frame-id              (:destination interaction)
           dest-frame                 (get objects dest-frame-id)
           relative-to-id             (if (= :manual (:overlay-pos-type interaction))
                                        (if (= (:type shape) :frame) ;; manual interactions are always from "self"

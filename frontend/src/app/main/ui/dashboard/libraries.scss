@@ -12,7 +12,7 @@
   margin-right: $s-16;
   overflow-y: auto;
   width: 100%;
-  border-top: $s-1 solid $db-quaternary;
+  border-top: $s-1 solid var(--color-background-quaternary);
 
   &.dashboard-projects {
     user-select: none;

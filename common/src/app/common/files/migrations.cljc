@@ -22,6 +22,7 @@
    [app.common.schema :as sm]
    [app.common.svg :as csvg]
    [app.common.text :as txt]
+   [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
@@ -923,6 +924,99 @@
     (-> data
         (update :pages-index update-vals update-page))))
 
+(defn migrate-up-48
+  [data]
+  (letfn [(fix-shape [shape]
+            (let [swap-slot (ctk/get-swap-slot shape)]
+              (if (and (some? swap-slot)
+                       (not (ctk/subcopy-head? shape)))
+                (ctk/remove-swap-slot shape)
+                shape)))
+
+          (update-page [page]
+            (d/update-when page :objects update-vals fix-shape))]
+    (-> data
+        (update :pages-index update-vals update-page))))
+
+(defn migrate-up-49
+  "Remove hide-in-viewer for shapes that are origin or destination of an interaction"
+  [data]
+  (letfn [(update-object [destinations object]
+            (cond-> object
+              (or (:interactions object)
+                  (contains? destinations (:id object)))
+              (dissoc object :hide-in-viewer)))
+
+          (update-page [page]
+            (let [destinations (->> page
+                                    :objects
+                                    (vals)
+                                    (mapcat :interactions)
+                                    (map :destination)
+                                    (set))]
+              (update page :objects update-vals (partial update-object destinations))))]
+
+    (update data :pages-index update-vals update-page)))
+
+(defn migrate-up-50
+  "This migration mainly fixes paths with curve-to segments
+  without :c1x :c1y :c2x :c2y properties. Additionally, we found a
+  case where the params instead to be plain hash-map, is a points
+  instance. This migration normalizes all params to plain map."
+
+  [data]
+  (let [update-segment
+        (fn [{:keys [command params] :as segment}]
+          (let [params (into {} params)
+                params (cond
+                         (= :curve-to command)
+                         (let [x (get params :x)
+                               y (get params :y)]
+
+                           (cond-> params
+                             (nil? (:c1x params))
+                             (assoc :c1x x)
+
+                             (nil? (:c1y params))
+                             (assoc :c1y y)
+
+                             (nil? (:c2x params))
+                             (assoc :c2x x)
+
+                             (nil? (:c2y params))
+                             (assoc :c2y y)))
+
+                         :else
+                         params)]
+
+            (assoc segment :params params)))
+
+        update-shape
+        (fn [shape]
+          (if (cfh/path-shape? shape)
+            (d/update-when shape :content (fn [content] (mapv update-segment content)))
+            shape))
+
+        update-container
+        (fn [page]
+          (d/update-when page :objects update-vals update-shape))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+(def ^:private valid-color?
+  (sm/lazy-validator ::ctc/color))
+
+(defn migrate-up-51
+  "This migration fixes library invalid colors"
+
+  [data]
+  (let [update-colors
+        (fn [colors]
+          (into {} (filter #(-> % val valid-color?) colors)))]
+    (update data :colors update-colors)))
+
 (def migrations
   "A vector of all applicable migrations"
   [{:id 2 :migrate-up migrate-up-2}
@@ -961,4 +1055,8 @@
    {:id 44 :migrate-up migrate-up-44}
    {:id 45 :migrate-up migrate-up-45}
    {:id 46 :migrate-up migrate-up-46}
-   {:id 47 :migrate-up migrate-up-47}])
+   {:id 47 :migrate-up migrate-up-47}
+   {:id 48 :migrate-up migrate-up-48}
+   {:id 49 :migrate-up migrate-up-49}
+   {:id 50 :migrate-up migrate-up-50}
+   {:id 51 :migrate-up migrate-up-51}])

@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 13:04+0000\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Yoruba "
-"<https://hosted.weblate.org/projects/penpot/frontend/yo/>\n"
+"Language-Team: Yoruba <https://hosted.weblate.org/projects/penpot/frontend/"
+"yo/>\n"
 "Language: yo\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.check-your-email"
@@ -35,10 +35,6 @@ msgstr ""
 "\"\"This is a DEMO service, DO NOT USE for real work, the projects will be  "
 "parẹ́ lóòrèkóòrè."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "ímeèlì"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "gbàgbé ọ̀rọ̀-ìgbaniwọlé ?"
@@ -48,6 +44,7 @@ msgid "auth.fullname"
 msgstr "orúkọ lẹ́kùnn-ún-rẹ́rẹ́"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "wọlé síbí"
 
@@ -75,16 +72,12 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "ṣílẹ̀kuǹ ìdánimọ̀"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "orúkọ kò gbọdọ̀ ju àádọ́jọ́ lẹ́tà lọ."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "tẹ ọ̀rọ̀ ìgbaniwọlé tuntun"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "àmì àtúnwárí ti díbàjẹ́."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -113,10 +106,6 @@ msgstr "ọ̀rọ̀- ìgbaniwọlé"
 msgid "auth.password-length-hint"
 msgstr "kò gbọdọ̀ ju ohun kíkọ mẹ́jọ lọ"
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "ọ̀rọ̀-ìgbaniwọlé gbọ́dọ̀ ní nǹkan kíkọ láìsí àlàfo."
-
 msgid "auth.privacy-policy"
 msgstr "ìpamọ ètò ìmúló"
 
@@ -143,10 +132,6 @@ msgstr "kò tí ì sí àkáùntì?"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.register-submit"
 msgstr "ṣẹ̀dá àkáùntì"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "ọ̀fẹ́ ni,orísun rẹ̀ ṣí lẹ"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
@@ -259,7 +244,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "ṣe ìpilẹ̀sẹ̀ àmì tókìnnì"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "ṣe àyẹ̀wò àmì tókìnnì tí o ṣẹ̀dá bó ṣeyẹ."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -269,10 +254,6 @@ msgstr "tẹ bọ́tìnnì \" ṣe ìpilẹ̀sẹ̀ àmì tókìnnì tuntun\"  l
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "o kò tí ì ní àmì tókínnì títí di ìsinsìn yìí."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "a nílò orúkọ"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -364,11 +345,11 @@ msgid "dashboard.duplicate-multi"
 msgstr "ṣe ẹ̀dà %s fáìlì"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, markdown
+#, fuzzy, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
-"\"\" fáìlí tí a dàpọ̀ mọ yàrá ìkàwé á hàn níbí yìí.   gbìyànjú láti má a "
-"pín àwon fáìlì rẹ̀ tàbí ṣàfikún láti ibi [yàrá ìkàwé wa àti  àwòṣe "
+"\"\" fáìlí tí a dàpọ̀ mọ yàrá ìkàwé á hàn níbí yìí.   gbìyànjú láti má a pín "
+"àwon fáìlì rẹ̀ tàbí ṣàfikún láti ibi [yàrá ìkàwé wa àti  àwòṣe "
 "](https://penpot.app/libraries-templates.html)."
 
 msgid "dashboard.export-binary-multi"
@@ -800,11 +781,11 @@ msgid "errors.email-has-permanent-bounces"
 msgstr "Ímeèlì  «%s» ti ní ìjábọ̀ ọ̀pọ̀ọlọpọ̀ ìta-bọn-ọ̀n ti pẹ́."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Tẹ àti wọlé pẹ̀lú ímeèlì tó wúlo jọ̀wọ́"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "Ímeèlì tí a ti mọ̀dájú gbọ́dọ̀ báramu"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -2120,169 +2101,96 @@ msgid "profile.recovery.go-to-login"
 msgstr "Lọ láti wọlé"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "question.design-tool-more-experienced-with"
-msgstr "Èwo ni ohun èlò irin iṣẹ́ tí o ní ìmọ̀ kíkún nínú pẹ̀lú rẹ̀?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.11-30"
+msgid "onboarding.questions.team-size.11-30"
 msgstr "Mọ́kànlá-Ọgbọ̀n"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.2-10"
+msgid "onboarding.questions.team-size.2-10"
 msgstr "Méjì – mẹ́wàá"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.31-50"
+msgid "onboarding.questions.team-size.31-50"
 msgstr "Mọ́kànlélọ́gbọ̀n-Àádọ́ta"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.a-lot"
-msgstr "O ´ pọ̀jù"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.adobe-xd"
+msgid "labels.adobe-xd"
 msgstr "Àdòbí XD"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.canva"
+msgid "labels.canva"
 msgstr "Káńfà"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.describe-your-experience-working-on"
-msgstr ""
-"Báwo ni ó ti le ṣe àpèjúwe bó ṣe dára tó lórí ìrírí rẹ lórí iṣẹ́ tí o ń ṣe "
-"lọ́wọ́..."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.designer"
-msgstr "Olùyà nǹkan"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.developer"
+msgid "labels.developer"
 msgstr "Olùdásílẹ̀"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.discover-more-about-penpot"
-msgstr "Ṣàwárí sí i nípa pẹ́ńpọtì"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.figma"
+msgid "labels.figma"
 msgstr "Fígímà"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.founder"
+msgid "labels.founder"
 msgstr "Olùdásílẹ̀/VP"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.freelancer"
+msgid "labels.freelancer"
 msgstr "Oníṣẹ́ ni mí"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.get-the-code-from-my-team-project"
-msgstr "Gba kóòdù láti inú iṣẹ́ àgbéṣe mi "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.interface-design-visual-assets-design-systems"
-msgstr "... wíwò ètò ọnà , ìrírí àwọn ohun ìní, àwọn ètò ọnà, abbl."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.invision"
+msgid "labels.invision"
 msgstr "Ìkógun wọ̀lú"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.leave-feedback-for-my-team-project"
-msgstr "Fi èsì sílẹ̀ fún iṣẹ́ àgbéṣe ẹgbẹ́ mi"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.lets-get-started"
+msgid "onboarding.questions.lets-get-started"
 msgstr "Ẹjẹ́ 'ká bẹ̀rẹ̀ !"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.manager"
+msgid "labels.product-management"
 msgstr "Ohun títà tàbí iṣẹ́ àgbéṣe Olùṣàkóso"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.marketing"
+msgid "labels.marketing"
 msgstr "Títajà"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.more-than-50"
+msgid "onboarding.questions.team-size.more-than-50"
 msgstr "Ju àádọ́ta lọ"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.next"
+msgid "labels.next"
 msgstr "Èyí tó kàn"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.none"
-msgstr "Kòsí"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.other"
+msgid "labels.other"
 msgstr "Òmíìràn(ní pàtó)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.personal-project"
+msgid "onboarding.questions.team-size.personal-project"
 msgstr "Mò ń siṣẹ́ àgbéṣẹ ti ara mi ni"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.previous"
+msgid "labels.previous"
 msgstr "Tàtẹ̀yìn wá"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.questions-how-are-you-planning-to-use-penpot"
-msgstr "Báwo lo ṣe ń gbèrò lórí bí o ṣe lo pẹ́ńpọtì?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.select-option"
+msgid "labels.select-option"
 msgstr "Ṣe àṣàyàn"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.sketch"
+msgid "labels.sketch"
 msgstr "Yàwòrán"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.some"
-msgstr "Díẹ̀"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start"
+msgid "labels.start"
 msgstr "Bẹ̀rẹ̀"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start-to-work-on-my-project"
-msgstr "Bẹ̀rẹ̀ láti lórí iṣẹ́ àgbéṣe mi"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.student-teacher"
+msgid "labels.student-teacher"
 msgstr "Akẹ́kọ̀ọ́ tàbí olùkọ̀ọ́"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.team-size"
+msgid "onboarding.questions.step3.question3"
 msgstr "kín ni ìwọ̀n ẹgbẹ́ rẹ ?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
-msgstr "Ṣàyẹ̀wọ̀ pẹ́ńpọtì láti rí pé ó bẹ́gbẹ́ mu "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.try-out-before-using-penpot-on-premise"
-msgstr "Gbìyànjú láti mọ̀ kí o tó bẹ̀rẹ̀ sí lo pẹ́ńpọtì ní àyíká"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.wireframes-user-journeys-flows-navigation-trees"
-msgstr "... wáyà-fèrèsé, ìrìàjò àwọn onílò & sísàn, àwọn igi ìyíkiri, abbl."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.work-in-concept-ideas"
-msgstr "Iṣẹ́ lórí èròǹgbà àti àwọn èrò"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.your-feedback-will-help-us"
-msgstr ""
-"Èsì rẹ yó ràn wá lọ́wọ́ láti jẹ́ kó yé wa lórí kín ni ìhùwàsí rẹ àti àwọn "
-"ohun tí o fẹ́ràn jù èyí yó jẹ́ kí á má ṣàmúlò pẹ́ńpọtì gẹ́gẹ́ bí èyí tí ó "
-"wúlò àti ohun èlò fun ìgbáládùn."
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 msgid "settings.detach"
@@ -2722,10 +2630,6 @@ msgstr "Lílọ̀soké lẹnsi sisun"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Yiyan pelu sun-un"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "Orúkọ̀ webhook kò gbọ́dọ̀ kọjà awọ́n óhun kíkọ́ 2048."
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"

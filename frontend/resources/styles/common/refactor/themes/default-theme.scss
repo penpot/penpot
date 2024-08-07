@@ -7,40 +7,9 @@
 @use "sass:meta";
 
 :root {
-  --color-background-primary: var(--db-primary);
-  --color-background-secondary: var(--db-secondary);
-  --color-background-tertiary: var(--db-tertiary);
-  --color-background-quaternary: var(--db-quaternary);
-  --color-background-subtle: var(--db-secondary-30);
   --color-background-disabled: var(--df-secondary);
-  --color-foreground-primary: var(--df-primary);
-  --color-foreground-secondary: var(--df-secondary);
   --color-foreground-disabled: var(--df-secondary-40);
-  --color-accent-primary: var(--da-primary);
-  --color-accent-primary-muted: var(--da-primary-muted);
-  --color-accent-secondary: var(--da-secondary);
-  --color-accent-tertiary: var(--da-tertiary);
-  --color-accent-tertiary-muted: var(--da-tertiary-10);
-  --color-accent-quaternary: var(--da-quaternary);
-  --color-component-highlight: var(--da-secondary);
-
-  --color-success-background: var(--status-color-success-950);
-  --color-success-foreground: var(--status-color-success-500);
-
-  --color-warning-background: var(--status-color-warning-950);
-  --color-warning-foreground: var(--status-color-warning-500);
-
-  --color-error-background: var(--status-color-error-950);
-  --color-error-foreground: var(--status-color-error-500);
-
-  --color-info-background: var(--status-color-info-950);
-  --color-info-foreground: var(--status-color-info-500);
+  --color-accent-tertiary-muted: var(--da-tertiary-10); // selection rect
 
   --overlay-color: var(--db-primary-60);
-  --overlay-color-onboarding-a-b-test: var(--db-primary-90);
-
-  --shadow-color: var(--db-secondary-30);
-  --radio-button-box-shadow: 0 0 0 1px var(--db-secondary-30) inset;
-
-  @include meta.load-css("hljs-dark-theme");
 }

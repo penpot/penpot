@@ -14,6 +14,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
@@ -287,7 +288,7 @@
            (when (< @retry 3)
              (inc retry))))]
 
-    (if (some? thumbnail-uri)
+    (if (and (some? thumbnail-uri) (contains? cf/flags :component-thumbnails))
       [:& component-svg-thumbnail
        {:thumbnail-uri thumbnail-uri
         :class class
@@ -402,9 +403,11 @@
              (st/emit! (dwl/nav-to-component-file library-id comp))))
 
         do-show-component
-        #(if local-component?
-           (do-show-local-component)
-           (do-show-remote-component))
+        (fn []
+          (st/emit! dw/hide-context-menu)
+          (if local-component?
+            (do-show-local-component)
+            (do-show-remote-component)))
 
         do-restore-component
         #(let [;; Extract a map of component-id -> component-file in order to avoid duplicates
@@ -418,27 +421,27 @@
              (ts/schedule 1000 do-show-component)))
 
         menu-entries [(when (and (not multi) main-instance?)
-                        {:msg "workspace.shape.menu.show-in-assets"
+                        {:title (tr "workspace.shape.menu.show-in-assets")
                          :action do-show-in-assets})
                       (when (and (not multi) main-instance? local-component? lacks-annotation? components-v2)
-                        {:msg "workspace.shape.menu.create-annotation"
+                        {:title (tr "workspace.shape.menu.create-annotation")
                          :action do-create-annotation})
                       (when can-detach?
-                        {:msg (if (> (count copies) 1)
-                                "workspace.shape.menu.detach-instances-in-bulk"
-                                "workspace.shape.menu.detach-instance")
+                        {:title (if (> (count copies) 1)
+                                  (tr "workspace.shape.menu.detach-instances-in-bulk")
+                                  (tr "workspace.shape.menu.detach-instance"))
                          :action do-detach-component
                          :shortcut :detach-component})
                       (when can-reset-overrides?
-                        {:msg "workspace.shape.menu.reset-overrides"
+                        {:title (tr "workspace.shape.menu.reset-overrides")
                          :action do-reset-component})
                       (when (and (seq restorable-copies) components-v2)
-                        {:msg "workspace.shape.menu.restore-main"
+                        {:title (tr "workspace.shape.menu.restore-main")
                          :action do-restore-component})
                       (when can-show-component?
-                        {:msg "workspace.shape.menu.show-main"
+                        {:title (tr "workspace.shape.menu.show-main")
                          :action do-show-component})
                       (when can-update-main?
-                        {:msg "workspace.shape.menu.update-main"
+                        {:title (tr "workspace.shape.menu.update-main")
                          :action do-update-component})]]
     (filter (complement nil?) menu-entries)))

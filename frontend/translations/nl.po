@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-25 13:07+0000\n"
-"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
-"Language-Team: Dutch "
-"<https://hosted.weblate.org/projects/penpot/frontend/nl/>\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
+">\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -39,11 +39,6 @@ msgstr ""
 "Dit is een DEMO-service, GEBRUIK DIT NIET voor echt werk, de projecten "
 "worden regelmatig gewist."
 
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "E-mail"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Wachtwoord vergeten?"
@@ -57,6 +52,7 @@ msgid "auth.login-account-title"
 msgstr "Log in op mijn account"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Hier inloggen"
 
@@ -90,32 +86,12 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/dashboard/team_form.cljs,
-#: src/app/main/ui/onboarding/team_choice.cljs,
-#: src/app/main/ui/settings/access_tokens.cljs,
-#: src/app/main/ui/settings/feedback.cljs,
-#: src/app/main/ui/settings/profile.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "De naam mag geen spatie bevatten."
-
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/dashboard/team_form.cljs,
-#: src/app/main/ui/onboarding/team_choice.cljs,
-#: src/app/main/ui/settings/access_tokens.cljs,
-#: src/app/main/ui/settings/feedback.cljs,
-#: src/app/main/ui/settings/profile.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "De naam mag maximaal 250 tekens bevatten."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Typ een nieuw wachtwoord"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "De herstelbewijsstuk is ongeldig."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -141,10 +117,6 @@ msgstr "Wachtwoord"
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.password-length-hint"
 msgstr "Minimaal 8 tekens"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "Het wachtwoord mag geen spatie bevatten."
 
 msgid "auth.privacy-policy"
 msgstr "Privacybeleid"
@@ -174,10 +146,6 @@ msgid "auth.register-submit"
 msgstr "Account aanmaken"
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "Het is gratis, het is open source"
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
 msgstr "Account aanmaken"
 
@@ -193,13 +161,6 @@ msgid "auth.terms-privacy-agreement"
 msgstr ""
 "Met het aanmaken van een nieuw account ga je akkoord met onze "
 "gebruiksvoorwaarden en ons privacybeleid."
-
-#: src/app/main/ui/auth/register.cljs
-#, markdown
-msgid "auth.terms-privacy-agreement-md"
-msgstr ""
-"Met het aanmaken van een nieuw account ga je akkoord met onze "
-"[servicevoorwaarden] (%s) en [privacybeleid] (%s)."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"
@@ -316,7 +277,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "Nieuw toegangsbewijs aanmaken"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "Toegangsbewijs is succesvol aangemaakt."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -326,10 +287,6 @@ msgstr "Klik op de knop \"Nieuw toegangsbewijs aanmaken\" om er een aan te maken
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "Je hebt nog geen toegangsbewijzen."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "De naam is verplicht"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"
@@ -924,11 +881,11 @@ msgstr "Het emailadres «%s» heeft veel permanente bounce-rapporten."
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "Voer een geldig e-mailadres in"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "Bevestigingsmail moet overeenkomen"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -2488,176 +2445,76 @@ msgid "profile.recovery.go-to-login"
 msgstr "Ga naar inlogscherm"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "question.design-tool-more-experienced-with"
-msgstr "Met welke ontwerptool heb je meer ervaring?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.11-30"
+msgid "onboarding.questions.team-size.11-30"
 msgstr "11-30"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.2-10"
+msgid "onboarding.questions.team-size.2-10"
 msgstr "2-10"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.31-50"
+msgid "onboarding.questions.team-size.31-50"
 msgstr "31-50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.a-lot"
-msgstr "Veel"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.adobe-xd"
+msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.canva"
+msgid "labels.canva"
 msgstr "Canva"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.describe-your-experience-working-on"
-msgstr "Hoe zou je je ervaring omschrijven voor het werken aan..."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.designer"
-msgstr "Ontwerper"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.developer"
-msgstr "Ontwikkelaar"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.discover-more-about-penpot"
-msgstr "Meer over Penpot ontdekken"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.figma"
+msgid "labels.figma"
 msgstr "Figma"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.founder"
-msgstr "Oprichter/VP"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.freelancer"
+msgid "labels.freelancer"
 msgstr "Ik ben een freelancer"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.get-the-code-from-my-team-project"
-msgstr "Haal de code op van mijn teamproject "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.interface-design-visual-assets-design-systems"
-msgstr "... interfaceontwerp, visuel assets, design systems, enz."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.invision"
+msgid "labels.invision"
 msgstr "InVision"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.leave-feedback-for-my-team-project"
-msgstr "Laat feedback achter voor mijn teamproject"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.lets-get-started"
+msgid "onboarding.questions.lets-get-started"
 msgstr "Laten we beginnen!"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.manager"
-msgstr "Product- of projectmanager"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.marketing"
-msgstr "Marketing"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.more-than-50"
+msgid "onboarding.questions.team-size.more-than-50"
 msgstr "Meer dan 50"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.never-used-one"
-msgstr "Geen"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.next"
+msgid "labels.next"
 msgstr "Volgende"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.none"
-msgstr "Geen"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.other"
+msgid "labels.other"
 msgstr "Anders (namelijk…)"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.personal-project"
+msgid "onboarding.questions.team-size.personal-project"
 msgstr "Ik werk aan een persoonlijk project"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.previous"
+msgid "labels.previous"
 msgstr "Vorige"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.questions-how-are-you-planning-to-use-penpot"
-msgstr "Hoe ben je van plan Penpot te gebruiken?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.role"
-msgstr "Wat is je rol?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.select-option"
+msgid "labels.select-option"
 msgstr "Selecteer een optie"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.sketch"
+msgid "labels.sketch"
 msgstr "Sketch"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.some"
-msgstr "Sommige"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start"
+msgid "labels.start"
 msgstr "Starten"
 
 #: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.start-to-work-on-my-project"
-msgstr "Begin aan mijn project te werken"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.student-teacher"
+msgid "labels.student-teacher"
 msgstr "Student of docent"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.team-size"
-msgstr "Hoe groot is je team?"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.test-penpot-to-see-if-its-a-fit-for-team"
-msgstr "Penpot testen om te zien of het geschikt is voor het team "
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.try-out-before-using-penpot-on-premise"
-msgstr "Probeer uit voordat je Penpot on-premise gebruikt"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.wireframes-user-journeys-flows-navigation-trees"
-msgstr ""
-"… draadmodellen, gebruikers journeys en stroomdiagrammen, navigatiebomen, "
-"etc."
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.work-in-concept-ideas"
-msgstr "Werken in conceptideeën"
-
-#: src/app/main/ui/onboarding/questions.cljs
-msgid "questions.your-feedback-will-help-us"
-msgstr ""
-"Jouw feedback helpt ons te begrijpen wat je gewoonten en voorkeuren zijn, "
-"zodat we van Penpot een nuttig en plezierig hulpmiddel kunnen blijven maken."
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
 msgid "settings.detach"
@@ -3170,10 +3027,6 @@ msgstr "Zoomlens vergroten"
 
 msgid "shortcuts.zoom-selected"
 msgstr "Zoomen naar selectie"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "De webhooknaam mag maximaal 2048 tekens bevatten."
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"
@@ -5333,3 +5186,36 @@ msgstr "Bijwerken"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik om het pad te sluiten"
+
+msgid "workspace.plugins.error.url"
+msgstr "De plug-in bestaat niet of de URL is niet correct."
+
+msgid "workspace.plugins.success"
+msgstr "Plug-in met succes geladen."
+
+msgid "workspace.plugins.title"
+msgstr "Plug-ins"
+
+msgid "workspace.plugins.search-placeholder"
+msgstr "De URL van een plug-in invoeren"
+
+msgid "workspace.plugins.installed-plugins"
+msgstr "Geïnstalleerde plug-ins"
+
+msgid "workspace.plugins.install"
+msgstr "Installeren"
+
+msgid "workspace.plugins.empty-plugins"
+msgstr "Nog geen plug-ins geïnstalleerd"
+
+msgid "workspace.plugins.plugin-list-link"
+msgstr "Plug-in-lijst"
+
+msgid "workspace.plugins.button-open"
+msgstr "Openen"
+
+msgid "workspace.plugins.menu.plugins-manager"
+msgstr "Plug-in-beheer"
+
+msgid "workspace.plugins.menu.title"
+msgstr "Plug-ins"

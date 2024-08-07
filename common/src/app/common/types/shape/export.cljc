@@ -8,8 +8,10 @@
   (:require
    [app.common.schema :as sm]))
 
-(sm/def! ::export
+(def export-types #{:png :jpeg :svg :pdf})
+
+(sm/register! ::export
   [:map {:title "ShapeExport"}
-   [:type :keyword]
+   [:type [::sm/one-of export-types]]
    [:scale ::sm/safe-number]
    [:suffix :string]])

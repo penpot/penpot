@@ -50,6 +50,7 @@ Penpot’s latest [huge release 2.0](https://penpot.app/dev-diaries), takes the 
 - [Why Penpot](#why-penpot)
 - [Getting Started](#getting-started)
 - [Community](#community)
+- [Contributing](#contributing)
 - [Resources](#resources)
 - [License](#license)
 

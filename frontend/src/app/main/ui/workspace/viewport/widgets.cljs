@@ -40,7 +40,7 @@
                :pattern-units "userSpaceOnUse"}
      [:path {:d "M 1 0 L 0 0 0 1"
              :style {:fill "none"
-                     :stroke (if (dbg/enabled? :pixel-grid) "red" "var(--color-info)")
+                     :stroke (if (dbg/enabled? :pixel-grid) "red" "var(--status-color-info-500)")
                      :stroke-opacity (if (dbg/enabled? :pixel-grid) 1 "0.2")
                      :stroke-width (str (/ 1 zoom))}}]]]
    [:rect {:x (:x vbox)
@@ -67,6 +67,7 @@
     [:rect.selection-rect
      {:x (:x data)
       :y (:y data)
+      :data-testid "workspace-selection-rect"
       :width (:width data)
       :height (:height data)
       :style {;; Primary with 0.1 opacity
@@ -86,7 +87,7 @@
 
         color (if selected?
                 (if (ctn/in-any-component? objects frame)
-                  "var(--color-component-highlight)"
+                  "var(--assets-component-hightlight)"
                   "var(--color-accent-tertiary)")
                 "#8f9da3") ;; TODO: Set this color on the DS
 

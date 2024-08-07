@@ -8,7 +8,7 @@
 @use "common/refactor/common-dashboard";
 
 .dashboard-fonts {
-  border-top: $s-1 solid $db-quaternary;
+  border-top: $s-1 solid var(--color-background-quaternary);
   display: flex;
   flex-direction: column;
   padding-left: $s-120;
@@ -31,18 +31,18 @@
 
   h3 {
     font-size: $fs-14;
-    color: $df-secondary;
+    color: var(--color-foreground-secondary);
     margin: $s-4;
   }
 
   .font-item {
-    color: $db-secondary;
+    color: var(--color-background-secondary);
   }
 }
 
 .installed-fonts-header {
   align-items: center;
-  color: $df-secondary;
+  color: var(--color-foreground-secondary);
   display: flex;
   font-size: $fs-12;
   height: $s-40;
@@ -65,11 +65,11 @@
   justify-content: flex-end;
 
   input {
-    background-color: $db-tertiary;
+    background-color: var(--color-background-tertiary);
     border-color: transparent;
     border-radius: $br-8;
     border: $s-1 solid transparent;
-    color: $df-primary;
+    color: var(--color-foreground-primary);
     font-size: $fs-14;
     height: $s-32;
     margin: 0;
@@ -77,19 +77,19 @@
     width: $s-152;
 
     &:focus {
-      outline: $s-1 solid $da-primary;
+      outline: $s-1 solid var(--color-accent-primary);
     }
     &::placeholder {
-      color: $df-secondary;
+      color: var(--color-foreground-secondary);
     }
   }
 }
 
 .font-item {
   align-items: center;
-  background-color: $db-tertiary;
+  background-color: var(--color-background-tertiary);
   border-radius: $br-4;
-  color: $df-secondary;
+  color: var(--color-foreground-secondary);
   display: flex;
   font-size: $fs-14;
   justify-content: space-between;
@@ -103,13 +103,13 @@
     margin: 0;
     padding: $s-8;
 
-    background-color: $db-tertiary;
+    background-color: var(--color-background-tertiary);
     border-radius: $br-8;
-    color: $df-primary;
+    color: var(--color-foreground-primary);
     font-size: $fs-14;
 
     &:focus {
-      outline: $s-1 solid $da-primary;
+      outline: $s-1 solid var(--color-accent-primary);
     }
   }
 
@@ -152,16 +152,16 @@
 
       &:hover {
         .icon svg {
-          stroke: $df-secondary;
+          stroke: var(--color-foreground-secondary);
         }
       }
     }
   }
 
   .table-field {
-    color: $df-primary;
+    color: var(--color-foreground-primary);
     .variant {
-      background-color: $db-quaternary;
+      background-color: var(--color-background-quaternary);
       border-radius: $br-8;
       margin-right: $s-4;
       padding-right: $s-4;
@@ -189,7 +189,7 @@
       svg {
         width: $s-16;
         height: $s-16;
-        stroke: $df-secondary;
+        stroke: var(--color-foreground-secondary);
         fill: none;
       }
 
@@ -204,7 +204,7 @@
         background: none;
         border: none;
         svg {
-          stroke: $df-secondary;
+          stroke: var(--color-foreground-secondary);
         }
       }
     }
@@ -242,15 +242,15 @@
     display: flex;
     flex-direction: column;
     gap: $s-24;
-    color: $db-secondary;
+    color: var(--color-background-secondary);
     width: $s-500;
 
     h2 {
-      color: $df-primary;
+      color: var(--color-foreground-primary);
       font-weight: 400;
     }
     p {
-      color: $df-secondary;
+      color: var(--color-foreground-secondary);
       font-size: $fs-16;
     }
   }
@@ -263,7 +263,7 @@
 .fonts-placeholder {
   align-items: center;
   border-radius: $br-8;
-  border: $s-1 solid $db-quaternary;
+  border: $s-1 solid var(--color-background-quaternary);
   display: flex;
   flex-direction: column;
   height: $s-160;
@@ -273,14 +273,14 @@
   width: 100%;
 
   .icon svg {
-    stroke: $df-secondary;
+    stroke: var(--color-foreground-secondary);
     fill: none;
     width: $s-32;
     height: $s-32;
   }
 
   .label {
-    color: $df-secondary;
+    color: var(--color-foreground-secondary);
     font-size: $fs-14;
   }
 }

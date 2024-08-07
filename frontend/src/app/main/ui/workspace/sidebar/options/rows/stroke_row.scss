@@ -12,6 +12,7 @@
     @include flexRow;
     .stroke-width-input-element {
       @extend .input-element;
+      @include bodySmallTypography;
       width: $s-60;
     }
     .select-wrapper {

@@ -47,7 +47,7 @@
    ::mf/private true}
   [{:keys [section team]}]
   (use-page-title team section)
-  [:header {:class (stl/css :dashboard-header)}
+  [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
    [:div#dashboard-fonts-title {:class (stl/css :dashboard-title)}
     [:h1 (tr "labels.fonts")]]])
 
@@ -167,7 +167,7 @@
      [:div {:class (stl/css :dashboard-fonts-hero)}
       [:div {:class (stl/css :desc)}
        [:h2 (tr "labels.upload-custom-fonts")]
-       [:& i18n/tr-html {:label "dashboard.fonts.hero-text1"}]
+       [:> i18n/tr-html* {:content (tr "dashboard.fonts.hero-text1")}]
 
        [:button {:class (stl/css :btn-primary)
                  :on-click on-click
@@ -197,12 +197,12 @@
                             :btn-primary true
                             :disabled disable-upload-all?)
                     :on-click on-upload-all
-                    :data-test "upload-all"
+                    :data-testid "upload-all"
                     :disabled disable-upload-all?}
            [:span (tr "dashboard.fonts.upload-all")]]
           [:button {:class (stl/css :btn-secondary)
                     :on-click on-dismis-all
-                    :data-test "dismiss-all"}
+                    :data-testid "dismiss-all"}
            [:span (tr "dashboard.fonts.dismiss-all")]]]])
 
       (for [{:keys [id] :as item} (sort-by :font-family font-vals)]

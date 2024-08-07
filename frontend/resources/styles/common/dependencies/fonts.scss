@@ -4,104 +4,51 @@
 //
 // Copyright (c) KALEIDOS INC
 
-// Font sizes
-$fs8: 0.5rem;
-$fs9: 0.5625rem;
-$fs10: 0.625rem;
-$fs11: 0.6875rem;
-$fs12: 0.75rem;
-$fs13: 0.8125rem;
-$fs14: 0.875rem;
-$fs15: 0.9375rem;
-$fs16: 1rem;
-$fs17: 1.0625rem;
-$fs18: 1.125rem;
-$fs19: 1.1875rem;
-$fs20: 1.25rem;
-$fs21: 1.315rem;
-$fs22: 1.375rem;
-$fs23: 1.4375rem;
-$fs24: 1.5rem;
-$fs26: 1.625rem;
-$fs30: 1.875rem;
-$fs32: 2rem;
-$fs34: 2.125rem;
-$fs36: 2.25rem;
-$fs38: 2.375rem;
-$fs40: 2.5rem;
-$fs42: 2.675rem;
-$fs44: 2.75rem;
-$fs80: 5rem;
+@mixin font-face($style-name, $file, $unicode-range, $weight: unquote("normal"), $style: unquote("normal")) {
+  $filepath: "/fonts/" + $file;
 
-// Font weight
-// Taken from https://fonts.google.com/specimen/Work+Sans
-$fw100: 100; // Thin
-$fw200: 200; // Extra Light
-$fw300: 300; // Light
-$fw400: 400; // Regular (CSS value: 'normal')
-$fw500: 500; // Medium
-$fw600: 600; // Semi Bold
-$fw700: 700; // Bold (CSS value: 'bold')
-$fw800: 800; // Extra Bold
-$fw900: 900; // Black
+  @font-face {
+    font-family: "#{$style-name}";
+    src:
+      url($filepath + ".woff2") format("woff2"),
+      url($filepath + ".ttf") format("truetype");
+    font-weight: unquote($weight);
+    font-style: unquote($style);
+    @if $unicode-range {
+      unicode-range: $unicode-range;
+    }
+  }
+}
 
-// Line height
-// Value are predefined as unitless (ratio to font size in %), because that is the best approach for browsers according to https://developer.mozilla.org/en-US/docs/Web/CSS/line-height#values
-$lh-normal: normal; // line-height depends of font-family, font-size, your browser, maybe your OS http://meyerweb.com/eric/thoughts/2008/05/06/line-height-abnormal/
-$lh-088: 0.88;
-$lh-100: 1;
-$lh-115: 1.15; // original $title-lh-sm
-$lh-125: 1.25; // original $title-lh
-$lh-128: 1.28;
-$lh-133: 1.33; // original $base-lh-sm
-$lh-143: 1.43; // original $base-lh
-$lh-145: 1.45;
-$lh-150: 1.5;
-$lh-188: 1.88;
-$lh-192: 1.92;
-$lh-200: 2;
-$lh-236: 2.36;
-$lh-500: 5;
+@mixin font-face-variable($style-name, $file, $unicode-range) {
+  $filepath: "/fonts/" + $file;
 
-// Work Sans
-@include font-face("worksans", "WorkSans-Thin", "100");
-@include font-face("worksans", "WorkSans-ThinItalic", "100", italic);
-@include font-face("worksans", "WorkSans-ExtraLight", "200");
-@include font-face("worksans", "WorkSans-ExtraLightitalic", "200", italic);
-@include font-face("worksans", "WorkSans-Light", "300");
-@include font-face("worksans", "WorkSans-LightItalic", "300", italic);
-@include font-face("worksans", "WorkSans-Regular", normal);
-@include font-face("worksans", "WorkSans-Italic", normal, italic);
-@include font-face("worksans", "WorkSans-Medium", "500");
-@include font-face("worksans", "WorkSans-MediumItalic", "500", italic);
-@include font-face("worksans", "WorkSans-SemiBold", "600");
-@include font-face("worksans", "WorkSans-SemiBoldItalic", "600", italic);
-@include font-face("worksans", "WorkSans-Bold", bold);
-@include font-face("worksans", "WorkSans-BoldItalic", bold, italic);
-@include font-face("worksans", "WorkSans-Black", "900");
-@include font-face("worksans", "WorkSans-BlackItalic", "900", italic);
+  @font-face {
+    font-family: "#{$style-name}";
+    src: url($filepath + ".ttf") format("truetype");
+    unicode-range: $unicode-range;
+  }
+}
+
+$_arabic-unicode-list: "U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0898-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB, U+10E60-10E7E, U+10EFD-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24, U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B, U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62, U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89, U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1";
+$_latin-unicode-list: "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD, U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF";
+
+@include font-face-variable("worksans", "WorkSans-VariableFont", $_latin-unicode-list);
+@include font-face-variable("vazirmatn", "Vazirmatn-VariableFont", $_arabic-unicode-list);
 
 // Source Sans Pro
-@include font-face("sourcesanspro", "sourcesanspro-extralight", "200");
-@include font-face("sourcesanspro", "sourcesanspro-extralightitalic", "200", italic);
-@include font-face("sourcesanspro", "sourcesanspro-light", "300");
-@include font-face("sourcesanspro", "sourcesanspro-lightitalic", "300", italic);
-@include font-face("sourcesanspro", "sourcesanspro-regular", normal);
-@include font-face("sourcesanspro", "sourcesanspro-italic", normal, italic);
-@include font-face("sourcesanspro", "sourcesanspro-semibold", "600");
-@include font-face("sourcesanspro", "sourcesanspro-semibolditalic", "600", italic);
-@include font-face("sourcesanspro", "sourcesanspro-bold", bold);
-@include font-face("sourcesanspro", "sourcesanspro-bolditalic", bold, italic);
-@include font-face("sourcesanspro", "sourcesanspro-black", "900");
-@include font-face("sourcesanspro", "sourcesanspro-blackitalic", "900", italic);
+@include font-face("sourcesanspro", "sourcesanspro-extralight", null, "200");
+@include font-face("sourcesanspro", "sourcesanspro-extralightitalic", null, "200", italic);
+@include font-face("sourcesanspro", "sourcesanspro-light", null, "300");
+@include font-face("sourcesanspro", "sourcesanspro-lightitalic", null, "300", italic);
+@include font-face("sourcesanspro", "sourcesanspro-regular", null, normal);
+@include font-face("sourcesanspro", "sourcesanspro-italic", null, normal, italic);
+@include font-face("sourcesanspro", "sourcesanspro-semibold", null, "600");
+@include font-face("sourcesanspro", "sourcesanspro-semibolditalic", null, "600", italic);
+@include font-face("sourcesanspro", "sourcesanspro-bold", null, bold);
+@include font-face("sourcesanspro", "sourcesanspro-bolditalic", null, bold, italic);
+@include font-face("sourcesanspro", "sourcesanspro-black", null, "900");
+@include font-face("sourcesanspro", "sourcesanspro-blackitalic", null, "900", italic);
 
-// Vazirmatn
-@include font-face("vazirmatn", "Vazirmatn-Thin", "100");
-@include font-face("vazirmatn", "Vazirmatn-ExtraLight", "200");
-@include font-face("vazirmatn", "Vazirmatn-Light", "300");
-@include font-face("vazirmatn", "Vazirmatn-Regular", normal);
-@include font-face("vazirmatn", "Vazirmatn-Medium", "500");
-@include font-face("vazirmatn", "Vazirmatn-SemiBold", "600");
-@include font-face("vazirmatn", "Vazirmatn-Bold", bold);
-@include font-face("vazirmatn", "Vazirmatn-ExtraBold", "800");
-@include font-face("vazirmatn", "Vazirmatn-Black", "900");
+// Roboto mono
+@include font-face("robotomono", "RobotoMono-Regular", $_latin-unicode-list, normal);

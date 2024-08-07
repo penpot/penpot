@@ -28,7 +28,7 @@
   margin-right: $s-16;
   overflow-y: auto;
   width: 100%;
-  border-top: $s-1 solid $db-quaternary;
+  border-top: $s-1 solid var(--color-background-quaternary);
 
   &.dashboard-projects {
     user-select: none;
@@ -49,7 +49,7 @@
   justify-content: center;
   align-items: center;
   a {
-    color: $df-secondary;
+    color: var(--color-foreground-secondary);
   }
 }
 
@@ -79,41 +79,41 @@
       label {
         position: relative;
         text-transform: uppercase;
-        color: $df-primary;
+        color: var(--color-foreground-primary);
         font-size: $fs-11;
         margin-bottom: $s-12;
         margin-left: calc(-1 * $s-4);
       }
       input,
       select {
-        background-color: $db-tertiary;
+        background-color: var(--color-background-tertiary);
         border-radius: $s-8;
         border-color: transparent;
-        color: $df-primary;
+        color: var(--color-foreground-primary);
         padding: 0 $s-16;
         &:focus {
-          outline: $s-1 solid $da-primary;
+          outline: $s-1 solid var(--color-accent-primary);
         }
         ::placeholder {
-          color: $df-secondary;
+          color: var(--color-foreground-secondary);
         }
       }
       .help-icon {
         bottom: $s-12;
         top: auto;
         svg {
-          fill: $df-secondary;
+          fill: var(--color-foreground-secondary);
         }
       }
       &.disabled {
         input {
           background-color: var(--input-background-color-disabled);
-          border-color: $db-quaternary;
-          color: $df-secondary;
+          border-color: var(--color-background-quaternary);
+          color: var(--color-foreground-secondary);
         }
       }
       .input-container {
-        background-color: $db-tertiary;
+        background-color: var(--color-background-tertiary);
         border-radius: $s-8;
         border-color: transparent;
         margin-top: $s-24;
@@ -123,45 +123,45 @@
             top: calc(-1 * $s-24);
           }
           span {
-            color: $df-primary;
+            color: var(--color-foreground-primary);
           }
         }
         &:focus {
-          border: $s-1 solid $da-primary;
+          border: $s-1 solid var(--color-accent-primary);
         }
       }
       textarea {
         border-radius: $s-8;
         padding: $s-12 $s-16;
-        background-color: $db-tertiary;
-        color: $df-primary;
+        background-color: var(--color-background-tertiary);
+        color: var(--color-foreground-primary);
         border: none;
         &:focus {
-          outline: $s-1 solid $da-primary;
+          outline: $s-1 solid var(--color-accent-primary);
         }
       }
     }
 
     .field-title {
-      color: $df-primary;
+      color: var(--color-foreground-primary);
     }
     .field-title:not(:first-child) {
       margin-top: $s-64;
     }
 
     .field-text {
-      color: $df-secondary;
+      color: var(--color-foreground-secondary);
     }
     button,
     .btn-secondary {
       width: 100%;
       font-size: $fs-11;
       text-transform: uppercase;
-      background-color: $db-tertiary;
-      color: $df-primary;
+      background-color: var(--color-background-tertiary);
+      color: var(--color-foreground-primary);
       &:hover {
-        color: $da-primary;
-        background-color: $db-quaternary;
+        color: var(--color-accent-primary);
+        background-color: var(--color-background-quaternary);
       }
     }
     hr {
@@ -180,28 +180,28 @@
   width: 100%;
 
   .newsletter-subs {
-    border-bottom: $s-1 solid $df-secondary;
-    border-top: $s-1 solid $df-secondary;
+    border-bottom: $s-1 solid var(--color-foreground-secondary);
+    border-top: $s-1 solid var(--color-foreground-secondary);
     padding: $s-32 0;
     margin-bottom: $s-32;
 
     .newsletter-title {
-      font-family: "worksans", sans-serif;
-      color: $df-secondary;
+      font-family: "worksans", "vazirmatn", sans-serif;
+      color: var(--color-foreground-secondary);
       font-size: $fs-14;
     }
 
     label {
-      font-family: "worksans", sans-serif;
-      color: $db-primary;
+      font-family: "worksans", "vazirmatn", sans-serif;
+      color: var(--color-background-primary);
       font-size: $fs-12;
       margin-right: calc(-1 * $s-16);
       margin-bottom: $s-12;
     }
 
     .info {
-      font-family: "worksans", sans-serif;
-      color: $df-secondary;
+      font-family: "worksans", "vazirmatn", sans-serif;
+      color: var(--color-foreground-secondary);
       font-size: $fs-12;
       margin-bottom: $s-8;
     }
@@ -239,10 +239,10 @@
       height: $s-120;
       border-radius: 50%;
       font-size: $fs-24;
-      color: $df-primary;
+      color: var(--color-foreground-primary);
       line-height: 5;
       text-align: center;
-      background: $da-tertiary;
+      background: var(--color-accent-tertiary);
       z-index: 14;
     }
 

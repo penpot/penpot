@@ -22,6 +22,7 @@
     (or (= type ::common/finish-path)
         (= type :app.main.data.workspace.path.shortcuts/esc-pressed)
         (= type :app.main.data.workspace.common/clear-edition-mode)
+        (= type :app.main.data.workspace.edition/clear-edition-mode)
         (= type :app.main.data.workspace/finalize-page)
         (= event :interrupt) ;; ESC
         (and ^boolean (mse/mouse-event? event)

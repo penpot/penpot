@@ -1,0 +1,47 @@
+{
+  "~#set":[
+     {
+        "~:name":"Testing library 1",
+        "~:revn":2,
+        "~:modified-at":"~m1717512948250",
+        "~:thumbnail-uri":"http://localhost:3000/assets/by-id/5ad7a7a7-c64e-4bb8-852d-15708d125905",
+        "~:id":"~uc1249a66-fce0-8175-8004-7433fe4be8bc",
+        "~:is-shared":true,
+        "~:project-id":"~uc7ce0794-0992-8105-8004-38e630f7920b",
+        "~:created-at":"~m1717512934704",
+        "~:library-summary":{
+           "~:components":{
+              "~:count":0,
+              "~:sample":[
+                 
+              ]
+           },
+           "~:media":{
+              "~:count":0,
+              "~:sample":[
+                 
+              ]
+           },
+           "~:colors":{
+              "~:count":1,
+              "~:sample":[
+                 {
+                    "~:path":"",
+                    "~:color":"#187cd5",
+                    "~:name":"test-color",
+                    "~:modified-at":"~m1717512945259",
+                    "~:opacity":1,
+                    "~:id":"~uc70224ec-c410-807b-8004-74340616cffb"
+                 }
+              ]
+           },
+           "~:typographies":{
+              "~:count":0,
+              "~:sample":[
+                 
+              ]
+           }
+        }
+     }
+  ]
+}

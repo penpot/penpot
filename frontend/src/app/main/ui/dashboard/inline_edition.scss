@@ -17,7 +17,7 @@
 input.element-title {
   background-color: var(--input-background-color-active);
   border-radius: $br-8;
-  color: $df-primary;
+  color: var(--color-foreground-primary);
   font-size: $fs-16;
   height: $s-32;
   margin: 0;
@@ -26,7 +26,7 @@ input.element-title {
   width: 100%;
 
   &:focus-visible {
-    border: $s-1 solid $da-primary;
+    border: $s-1 solid var(--color-accent-primary);
     outline: none;
   }
 }
@@ -39,7 +39,7 @@ input.element-title {
   right: calc(-1 * $s-8);
 
   svg {
-    fill: $df-secondary;
+    fill: var(--color-foreground-secondary);
     height: $s-16;
     transform: rotate(45deg) translateY(7px);
     width: $s-16;

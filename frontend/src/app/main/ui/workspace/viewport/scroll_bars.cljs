@@ -196,7 +196,8 @@
 
     [:*
      (when show-v-scroll?
-       [:g.v-scroll {:fill clr/black}
+       [:g.v-scroll {:fill clr/black
+                     :data-testid "vertical-scrollbar"}
         [:rect {:on-pointer-move #(on-pointer-move % :y)
                 :on-pointer-down #(on-pointer-down % :y)
                 :on-pointer-up   on-pointer-up
@@ -210,7 +211,8 @@
                 :style {:stroke "white"
                         :stroke-width (/ 0.15 zoom)}}]])
      (when show-h-scroll?
-       [:g.h-scroll {:fill clr/black}
+       [:g.h-scroll {:fill clr/black
+                     :data-testid "horizontal-scrollbar"}
         [:rect {:on-pointer-move #(on-pointer-move % :x)
                 :on-pointer-down #(on-pointer-down % :x)
                 :on-pointer-up  on-pointer-up

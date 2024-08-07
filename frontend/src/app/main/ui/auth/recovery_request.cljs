@@ -7,8 +7,7 @@
 (ns app.main.ui.auth.recovery-request
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.main.data.messages :as msg]
    [app.main.data.users :as du]
    [app.main.store :as st]
@@ -17,30 +16,24 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [beicon.v2.core :as rx]
-   [cljs.spec.alpha :as s]
    [rumext.v2 :as mf]))
 
-(s/def ::email ::us/email)
-(s/def ::recovery-request-form (s/keys :req-un [::email]))
-(defn handle-error-messages
-  [errors _data]
-  (d/update-when errors :email
-                 (fn [{:keys [code] :as error}]
-                   (cond-> error
-                     (= code :missing)
-                     (assoc :message (tr "errors.email-invalid"))))))
+(def ^:private schema:recovery-request-form
+  [:map {:title "RecoverRequestForm"}
+   [:email ::sm/email]])
 
 (mf/defc recovery-form
   [{:keys [on-success-callback] :as props}]
-  (let [form      (fm/use-form :spec ::recovery-request-form
-                               :validators [handle-error-messages]
+  (let [form      (fm/use-form :schema schema:recovery-request-form
                                :initial {})
         submitted (mf/use-state false)
 
-        default-success-finish #(st/emit! (msg/info (tr "auth.notifications.recovery-token-sent")))
+        default-success-finish
+        (mf/use-fn
+         #(st/emit! (msg/info (tr "auth.notifications.recovery-token-sent"))))
 
         on-success
-        (mf/use-callback
+        (mf/use-fn
          (fn [cdata _]
            (reset! submitted false)
            (if (nil? on-success-callback)
@@ -48,7 +41,7 @@
              (on-success-callback (:email cdata)))))
 
         on-error
-        (mf/use-callback
+        (mf/use-fn
          (fn [data cause]
            (reset! submitted false)
            (let [code (-> cause ex-data :code)]
@@ -59,13 +52,14 @@
                :profile-is-muted
                (rx/of (msg/error (tr "errors.profile-is-muted")))
 
-               :email-has-permanent-bounces
+               (:email-has-permanent-bounces
+                :email-has-complaints)
                (rx/of (msg/error (tr "errors.email-has-permanent-bounces" (:email data))))
 
                (rx/throw cause)))))
 
         on-submit
-        (mf/use-callback
+        (mf/use-fn
          (fn []
            (reset! submitted true)
            (let [cdata  (:clean-data @form)
@@ -80,13 +74,13 @@
                  :form form}
      [:div {:class (stl/css :fields-row)}
       [:& fm/input {:name :email
-                    :label (tr "auth.email")
+                    :label (tr "auth.work-email")
                     :type "text"
                     :class (stl/css :form-field)}]]
 
      [:> fm/submit-button*
       {:label (tr "auth.recovery-request-submit")
-       :data-test "recovery-resquest-submit"
+       :data-testid "recovery-resquest-submit"
        :class (stl/css :recover-btn)}]]))
 
 
@@ -106,5 +100,5 @@
      [:div {:class (stl/css :go-back)}
       [:& lk/link {:action go-back
                    :class (stl/css :go-back-link)
-                   :data-test "go-back-link"}
+                   :data-testid "go-back-link"}
        (tr "labels.go-back")]]]))

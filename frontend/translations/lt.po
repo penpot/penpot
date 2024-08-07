@@ -1,17 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-08-09 07:04+0000\n"
-"Last-Translator: Vincas Dundzys <dundzys.vincas@gmail.com>\n"
-"Language-Team: Lithuanian "
-"<https://hosted.weblate.org/projects/penpot/frontend/lt/>\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Lithuanian <https://hosted.weblate.org/projects/penpot/"
+"frontend/lt/>\n"
 "Language: lt\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n % 10 == 1 && (n % 100 < 11 || n % 100 > "
-"19)) ? 0 : ((n % 10 >= 2 && n % 10 <= 9 && (n % 100 < 11 || n % 100 > 19)) "
-"? 1 : 2);\n"
-"X-Generator: Weblate 5.0-dev\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && ("
+"n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -41,10 +40,6 @@ msgstr ""
 "Tai yra DEMONSTRACINĖ versija, NEKURKITE tikrų darbų, nes projektai "
 "periodiškai - šalinami."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "El. paštas"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Pamiršote slaptažodį?"
@@ -54,6 +49,7 @@ msgid "auth.fullname"
 msgstr "Vardas ir Pavardė"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Prisijungimas čia"
 
@@ -87,7 +83,7 @@ msgstr "Įveskite naują slaptažodį"
 
 #: src/app/main/ui/auth/recovery.cljs
 #, fuzzy
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Atkūrimo prieigos raktas neteisingas."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -142,10 +138,6 @@ msgid "auth.register-submit"
 msgstr "Sukurti paskyrą"
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "Tai - nemokama, tai - atviras kodas"
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
 msgstr "Sukurti paskyrą"
 
@@ -155,12 +147,6 @@ msgstr "Atviro kodo dizaino ir prototipų kūrimo sprendimas."
 
 msgid "auth.terms-of-service"
 msgstr "Paslaugų teikimo sąlygos"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement"
-msgstr ""
-"Kurdami naują paskyrą sutinkate su mūsų paslaugų teikimo sąlygomis ir "
-"privatumo politika."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"

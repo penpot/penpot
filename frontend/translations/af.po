@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2023-10-13 18:01+0000\n"
-"Last-Translator: Hugo Vermaak <hugo@colossal.co.za>\n"
-"Language-Team: Afrikaans "
-"<https://hosted.weblate.org/projects/penpot/frontend/af/>\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Afrikaans <https://hosted.weblate.org/projects/penpot/"
+"frontend/af/>\n"
 "Language: af\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.1-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -39,10 +39,6 @@ msgstr ""
 "Dit is 'n DEMO-diens, MOENIE vir werklike werk gebruik nie, die projekte "
 "sal periodiek uitgevee word."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "E-pos"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Wagwoord vergeet?"
@@ -52,6 +48,7 @@ msgid "auth.fullname"
 msgstr "Volle naam"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Meld hier aan"
 
@@ -79,20 +76,12 @@ msgstr "LDAP"
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID"
 
-#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.not-all-space"
-msgstr "Die naam moet 'n ander karakter as spasie bevat."
-
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-msgid "auth.name.too-long"
-msgstr "Die naam moet hoogstens 250 karakters bevat."
-
 #: src/app/main/ui/auth/recovery.cljs
 msgid "auth.new-password"
 msgstr "Tik 'n nuwe wagwoord in"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "Die hersteltoken is ongeldig."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -121,10 +110,6 @@ msgstr "Wagwoord"
 msgid "auth.password-length-hint"
 msgstr "Ten minste 8 karakters"
 
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.password-not-empty"
-msgstr "Wagwoord moet 'n ander karakter as spasie bevat."
-
 msgid "auth.privacy-policy"
 msgstr "Privaatheidsbeleid"
 
@@ -151,10 +136,6 @@ msgstr "Nog nie 'n rekening nie?"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.register-submit"
 msgstr "Skep 'n rekening"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "Dit is gratis, dit is oopbron"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
@@ -282,7 +263,7 @@ msgid "dashboard.access-tokens.create"
 msgstr "Genereer nuwe token"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.create.success"
+msgid "dashboard.access-tokens.create-success"
 msgstr "Toegangstoken is suksesvol geskep."
 
 #: src/app/main/ui/settings/access-tokens.cljs
@@ -292,10 +273,6 @@ msgstr "Druk die knoppie \"Genereer nuwe token\" om een te genereer."
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "Jy het tot dusver geen tokens nie."
-
-#: src/app/main/ui/settings/access-tokens.cljs
-msgid "dashboard.access-tokens.errors-required-name"
-msgstr "Die naam word vereis"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 msgid "dashboard.access-tokens.expiration-180-days"

@@ -8,7 +8,7 @@ networks:
         - subnet: 172.177.9.0/24
 
 volumes:
-  postgres_data_pg15:
+  postgres_data_pg16:
   user_data:
   minio_data:
   redis_data:
@@ -86,7 +86,7 @@ services:
       - 9001:9001
 
   postgres:
-    image: postgres:15
+    image: postgres:16
     command: postgres -c config_file=/etc/postgresql.conf
     restart: always
     stop_signal: SIGINT
@@ -98,7 +98,7 @@ services:
     volumes:
       - ./files/postgresql.conf:/etc/postgresql.conf:z
       - ./files/postgresql_init.sql:/docker-entrypoint-initdb.d/init.sql:z
-      - postgres_data_pg15:/var/lib/postgresql/data
+      - postgres_data_pg16:/var/lib/postgresql/data
 
   redis:
     image: redis:7

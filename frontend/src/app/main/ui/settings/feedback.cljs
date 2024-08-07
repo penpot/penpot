@@ -8,7 +8,7 @@
   "Feedback form."
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.main.data.messages :as msg]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
@@ -17,25 +17,22 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
-   [cljs.spec.alpha :as s]
    [rumext.v2 :as mf]))
 
-(s/def ::content ::us/not-empty-string)
-(s/def ::subject ::us/not-empty-string)
-
-(s/def ::feedback-form
-  (s/keys :req-un [::subject ::content]))
+(def ^:private schema:feedback-form
+  [:map {:title "FeedbackForm"}
+   [:subject [::sm/text {:max 250}]]
+   [:content [::sm/text {:max 5000}]]])
 
 (mf/defc feedback-form
+  {::mf/private true}
   []
   (let [profile (mf/deref refs/profile)
-        form    (fm/use-form :spec ::feedback-form
-                             :validators [(fm/validate-length :subject fm/max-length-allowed (tr "auth.name.too-long"))
-                                          (fm/validate-not-empty :subject (tr "auth.name.not-all-space"))])
+        form    (fm/use-form :schema schema:feedback-form)
         loading (mf/use-state false)
 
         on-succes
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps profile)
          (fn [_]
            (reset! loading false)
@@ -43,7 +40,7 @@
            (swap! form assoc :data {} :touched {} :errors {})))
 
         on-error
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps profile)
          (fn [{:keys [code] :as error}]
            (reset! loading false)
@@ -52,7 +49,7 @@
              (st/emit! (msg/error (tr "errors.generic"))))))
 
         on-submit
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps profile)
          (fn [form _]
            (reset! loading true)
@@ -106,8 +103,8 @@
 
 (mf/defc feedback-page
   []
-  (mf/use-effect
-   #(dom/set-html-title (tr "title.settings.feedback")))
+  (mf/with-effect []
+    (dom/set-html-title (tr "title.settings.feedback")))
 
   [:div {:class (stl/css :dashboard-settings)}
    [:div {:class (stl/css :form-container)}

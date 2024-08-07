@@ -1,0 +1,21 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+$z-index-auto: auto;
+$z-index-100: 100;
+$z-index-200: 200;
+$z-index-300: 300;
+$z-index-400: 400;
+$z-index-500: 500;
+
+:global(:root) {
+  --z-index-auto: #{$z-index-auto}; // Index for elements such as workspace, rulers ...
+  --z-index-panels: #{$z-index-100}; // Index for elements such as toolbars, palettes ...
+  --z-index-guides: #{$z-index-200}; // Index for guides
+  --z-index-set: #{$z-index-300}; // Index for configuration elements like modals, color picker, grid edition elements
+  --z-index-dropdown: #{$z-index-400}; // Index for dropdown like elements, selects, menus, dropdowns
+  --z-index-notifications: #{$z-index-500}; // Index for notification
+}

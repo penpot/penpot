@@ -17,7 +17,6 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -96,7 +95,7 @@
   (let [show-buttons? (mf/use-state false)
         content       (mf/use-state "")
 
-        disabled? (or (fm/all-spaces? @content)
+        disabled? (or (str/blank? @content)
                       (str/empty-or-nil? @content))
 
         on-focus
@@ -155,7 +154,7 @@
         pos-x    (* (:x position) zoom)
         pos-y    (* (:y position) zoom)
 
-        disabled? (or (fm/all-spaces? content)
+        disabled? (or (str/blank? content)
                       (str/empty-or-nil? content))
 
         on-esc
@@ -181,6 +180,7 @@
     [:*
      [:div
       {:class (stl/css :floating-thread-bubble)
+       :data-testid "floating-thread-bubble"
        :style {:top (str pos-y "px")
                :left (str pos-x "px")}
        :on-click dom/stop-propagation}
@@ -224,7 +224,7 @@
          (mf/deps @content)
          (fn [] (on-submit @content)))
 
-        disabled? (or (fm/all-spaces? @content)
+        disabled? (or (str/blank? @content)
                       (str/empty-or-nil? @content))]
 
     [:div {:class (stl/css :edit-form)}
@@ -435,9 +435,9 @@
           [:* {:key (dm/str (:id item))}
            [:& comment-item {:comment item
                              :users users
-                             :origin origin}]])
-        [:div {:ref ref}]]
-       [:& reply-form {:thread thread}]])))
+                             :origin origin}]])]
+       [:& reply-form {:thread thread}]
+       [:div {:ref ref}]])))
 
 (defn use-buble
   [zoom {:keys [position frame-id]}]
@@ -558,6 +558,7 @@
            :on-pointer-move on-pointer-move*
            :on-click on-click*
            :on-lost-pointer-capture on-lost-pointer-capture
+           :data-testid "floating-thread-bubble"
            :class (stl/css-case
                    :floating-thread-bubble true
                    :resolved (:is-resolved thread)

@@ -48,7 +48,7 @@
                 (dd/clear-selected-files)))
 
     [:*
-     [:header {:class (stl/css :dashboard-header)}
+     [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
       [:div#dashboard-libraries-title {:class (stl/css :dashboard-title)}
        [:h1 (tr "dashboard.libraries-title")]]]
      [:section {:class (stl/css :dashboard-container :no-bg :dashboard-shared)  :ref rowref}

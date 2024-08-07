@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-12-06 21:48+0000\n"
-"Last-Translator: María Ozámiz <ozamiz.m@gmail.com>\n"
-"Language-Team: Galician "
-"<https://hosted.weblate.org/projects/penpot/frontend/gl/>\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Galician <https://hosted.weblate.org/projects/penpot/frontend/"
+"gl/>\n"
 "Language: gl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.15-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -39,11 +39,6 @@ msgstr ""
 "Este é un servizo de DEMOSTRACIÓN. NON O UTILICES para traballos reais, os "
 "proxectos eliminanse periódicamente."
 
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "Correo electrónico"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "Esqueciches o teu contrasinal?"
@@ -53,6 +48,7 @@ msgid "auth.fullname"
 msgstr "Nome completo"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "Entra aquí"
 
@@ -85,7 +81,7 @@ msgid "auth.new-password"
 msgstr "Escribe un contrasinal novo"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "O código de recuperación non é correcto."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -140,10 +136,6 @@ msgid "auth.register-submit"
 msgstr "Crea unha conta"
 
 #: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "É libre, é Open Source"
-
-#: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
 msgstr "Crea unha conta"
 
@@ -153,12 +145,6 @@ msgstr "A solución de código aberto para deseñar e crear prototipos."
 
 msgid "auth.terms-of-service"
 msgstr "Condicións de servizo"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.terms-privacy-agreement"
-msgstr ""
-"Ao crear unha nova conta, aceptas as nosas condicións de servizo e a "
-"política de privacidade."
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.verification-email-sent"

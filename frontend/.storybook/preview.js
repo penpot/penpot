@@ -1,15 +1,27 @@
-import "../resources/public/css/main.css";
+import { withThemeByClassName } from "@storybook/addon-themes";
+
+export const decorators = [
+  withThemeByClassName({
+    themes: {
+      light: "light",
+      dark: "default",
+    },
+    defaultTheme: "dark",
+    parentSelector: "body",
+  }),
+];
 
 /** @type { import('@storybook/react').Preview } */
 const preview = {
+  decorators: decorators,
   parameters: {
-    actions: { argTypesRegex: "^on[A-Z].*" },
     controls: {
       matchers: {
         color: /(background|color)$/i,
         date: /Date$/i,
       },
     },
+    backgrounds: { disable: true },
   },
 };
 

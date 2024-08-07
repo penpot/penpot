@@ -9,7 +9,6 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.spec :as us]
-   [app.config :as cf]
    [clj-ldap.client :as ldap]
    [clojure.spec.alpha :as s]
    [clojure.string]
@@ -104,17 +103,17 @@
         nil))))
 
 (s/def ::enabled? ::us/boolean)
-(s/def ::host ::cf/ldap-host)
-(s/def ::port ::cf/ldap-port)
-(s/def ::ssl ::cf/ldap-ssl)
-(s/def ::tls ::cf/ldap-starttls)
-(s/def ::query ::cf/ldap-user-query)
-(s/def ::base-dn ::cf/ldap-base-dn)
-(s/def ::bind-dn ::cf/ldap-bind-dn)
-(s/def ::bind-password ::cf/ldap-bind-password)
-(s/def ::attrs-email ::cf/ldap-attrs-email)
-(s/def ::attrs-fullname ::cf/ldap-attrs-fullname)
-(s/def ::attrs-username ::cf/ldap-attrs-username)
+(s/def ::host ::us/string)
+(s/def ::port ::us/integer)
+(s/def ::ssl ::us/boolean)
+(s/def ::tls ::us/boolean)
+(s/def ::query ::us/string)
+(s/def ::base-dn ::us/string)
+(s/def ::bind-dn ::us/string)
+(s/def ::bind-password ::us/string)
+(s/def ::attrs-email ::us/string)
+(s/def ::attrs-fullname ::us/string)
+(s/def ::attrs-username ::us/string)
 
 (s/def ::provider-params
   (s/keys :opt-un [::host ::port
@@ -126,6 +125,7 @@
                    ::attrs-email
                    ::attrs-username
                    ::attrs-fullname]))
+
 (s/def ::provider
   (s/nilable ::provider-params))
 

@@ -1,0 +1,28 @@
+import { Canvas, Meta } from "@storybook/blocks";
+import * as RawSvgStories from "./raw_svg.stories";
+
+<Meta of={RawSvgStories} />
+
+# SVG Assets
+
+## Technical notes
+
+There are some SVG assets that are not icons or cursors, and that are mostly
+meant to be used as is (although depending on the context, some will be required
+to be used with a specific color or size).
+
+The assets are located in the `frontend/resources/images/assets` folder.
+
+### Using asset IDs
+
+For convenience, asset IDs are available in the component namespace.
+
+```clj
+(ns app.main.ui.foo
+  (:require
+   [app.main.ui.ds.foundations.assets.raw-svg :as svg]))
+```
+
+```clj
+[:> svg/raw-svg* {:asset svg/logo}]
+```

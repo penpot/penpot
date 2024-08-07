@@ -11,15 +11,15 @@
   textarea {
     border-radius: $br-8;
     padding: $br-12;
-    background-color: $db-tertiary;
-    color: $df-primary;
+    background-color: var(--color-background-tertiary);
+    color: var(--color-foreground-primary);
     border: none;
 
     ::placeholder {
-      color: $db-disabled;
+      color: var(--color-background-disabled);
     }
     &:focus {
-      outline: $s-1 solid $da-primary;
+      outline: $s-1 solid var(--color-accent-primary);
     }
   }
 }

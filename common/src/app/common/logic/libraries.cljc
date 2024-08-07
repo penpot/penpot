@@ -266,7 +266,11 @@
         (pcb/update-shapes [shape-id] #(assoc % :component-root true))
 
         :always
-        ; Near shape-refs need to be advanced one level
+        ; First level subinstances of a detached component can't have swap-slot
+        (pcb/update-shapes [shape-id] ctk/remove-swap-slot)
+
+        (nil? (ctk/get-swap-slot shape))
+        ; Near shape-refs need to be advanced one level (except if the head is already swapped)
         (generate-advance-nesting-level nil container libraries (:id shape)))
 
       ;; Otherwise, detach the shape and all children
@@ -280,9 +284,27 @@
   (let [children (cfh/get-children-with-self (:objects container) shape-id)
         skip-near (fn [changes shape]
                     (let [ref-shape (ctf/find-ref-shape file container libraries shape {:include-deleted? true})]
-                      (if (some? (:shape-ref ref-shape))
-                        (pcb/update-shapes changes [(:id shape)] #(assoc % :shape-ref (:shape-ref ref-shape)))
-                        changes)))]
+                      (cond-> changes
+                        (some? (:shape-ref ref-shape))
+                        (pcb/update-shapes [(:id shape)] #(assoc % :shape-ref (:shape-ref ref-shape)))
+
+                        ;; When advancing level, the normal touched groups (not swap slots) of the
+                        ;; ref-shape must be merged into the current shape, because they refer to
+                        ;; the new referenced shape.
+                        (some? ref-shape)
+                        (pcb/update-shapes
+                         [(:id shape)]
+                         #(assoc % :touched
+                                 (clojure.set/union (:touched shape)
+                                                    (ctk/normal-touched-groups ref-shape))))
+
+                        ;; Swap slot must also be copied if the current shape has not any,
+                        ;; except if this is the first level subcopy.
+                        (and (some? (ctk/get-swap-slot ref-shape))
+                             (nil? (ctk/get-swap-slot shape))
+                             (not= (:id shape) shape-id))
+                        (pcb/update-shapes [(:id shape)] #(ctk/set-swap-slot % (ctk/get-swap-slot ref-shape))))))]
+
     (reduce skip-near changes children)))
 
 (defn prepare-restore-component
@@ -1190,7 +1212,7 @@
                                                        :shapes all-parents}))
         changes' (reduce del-obj-change changes' new-shapes)]
 
-    (if (and (cfh/touched-group? parent-shape :shapes-group) omit-touched?)
+    (if (and (ctk/touched-group? parent-shape :shapes-group) omit-touched?)
       changes
       changes')))
 
@@ -1345,7 +1367,7 @@
                          changes'
                          ids)]
 
-    (if (and (cfh/touched-group? parent :shapes-group) omit-touched?)
+    (if (and (ctk/touched-group? parent :shapes-group) omit-touched?)
       changes
       changes')))
 
@@ -1381,7 +1403,7 @@
                                                   :ignore-touched true
                                                   :syncing true})))]
 
-    (if (and (cfh/touched-group? parent :shapes-group) omit-touched?)
+    (if (and (ctk/touched-group? parent :shapes-group) omit-touched?)
       changes
       changes')))
 
@@ -1842,12 +1864,11 @@
                     ;; if the shape isn't inside a main component, it shouldn't have a swap slot
                     (and (nil? (ctk/get-swap-slot new-shape))
                          inside-comp?)
-                    (update :touched cfh/set-touched-group (-> (ctf/find-swap-slot shape
-                                                                                   page
-                                                                                   {:id (:id file)
-                                                                                    :data file}
-                                                                                   libraries)
-                                                               (ctk/build-swap-slot-group))))]
+                    (ctk/set-swap-slot (ctf/find-swap-slot shape
+                                                           page
+                                                           {:id (:id file)
+                                                            :data file}
+                                                           libraries)))]
 
     [new-shape (-> changes
                    ;; Restore the properties

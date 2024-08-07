@@ -357,15 +357,6 @@
 ;; COMPONENTS HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn set-touched-group
-  [touched group]
-  (when group
-    (conj (or touched #{}) group)))
-
-(defn touched-group?
-  [shape group]
-  ((or (:touched shape) #{}) group))
-
 (defn make-container
   [page-or-component type]
   (assoc page-or-component :type type))

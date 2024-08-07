@@ -5,13 +5,12 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.auth.verify-token
-  (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.messages :as msg]
    [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.main.ui.icons :as i]
+   [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.static :as static]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -70,29 +69,30 @@
            (rx/subs!
             (fn [tdata]
               (handle-token tdata))
-            (fn [{:keys [type code] :as error}]
-              (cond
-                (or (= :validation type)
-                    (= :invalid-token code)
-                    (= :token-expired (:reason error)))
-                (reset! bad-token true)
+            (fn [cause]
+              (let [{:keys [type code] :as error} (ex-data cause)]
+                (cond
+                  (or (= :validation type)
+                      (= :invalid-token code)
+                      (= :token-expired (:reason error)))
+                  (reset! bad-token true)
 
-                (= :email-already-exists code)
-                (let [msg (tr "errors.email-already-exists")]
-                  (ts/schedule 100 #(st/emit! (msg/error msg)))
-                  (st/emit! (rt/nav :auth-login)))
+                  (= :email-already-exists code)
+                  (let [msg (tr "errors.email-already-exists")]
+                    (ts/schedule 100 #(st/emit! (msg/error msg)))
+                    (st/emit! (rt/nav :auth-login)))
 
-                (= :email-already-validated code)
-                (let [msg (tr "errors.email-already-validated")]
-                  (ts/schedule 100 #(st/emit! (msg/warn msg)))
-                  (st/emit! (rt/nav :auth-login)))
+                  (= :email-already-validated code)
+                  (let [msg (tr "errors.email-already-validated")]
+                    (ts/schedule 100 #(st/emit! (msg/warn msg)))
+                    (st/emit! (rt/nav :auth-login)))
 
-                :else
-                (let [msg (tr "errors.generic")]
-                  (ts/schedule 100 #(st/emit! (msg/error msg)))
-                  (st/emit! (rt/nav :auth-login))))))))
+                  :else
+                  (let [msg (tr "errors.generic")]
+                    (ts/schedule 100 #(st/emit! (msg/error msg)))
+                    (st/emit! (rt/nav :auth-login)))))))))
 
     (if @bad-token
       [:> static/invalid-token {}]
-      [:div {:class (stl/css :verify-token)}
-       i/loader-pencil])))
+      [:> loader*  {:title (tr "labels.loading")
+                    :overlay true}])))

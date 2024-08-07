@@ -1,0 +1,129 @@
+import { Canvas, Meta } from "@storybook/blocks";
+import Components from "@target/components";
+import * as TextStories from "../typography/text.stories";
+
+<Meta title="Foundations/Typography" />
+
+# Typography
+
+We currently work with 3 scales depending on whether the typography
+is applied in the workspace, in the dashboard and access areas
+and in the communication modalities.
+
+This situation is something to be corrected in future improvements.
+
+## Usage
+
+### Standard text colours
+
+Typographic colours are used in text elements such as headers
+and body and in the various components that make up the tool...
+
+The colours used in typography are the Foreground colours such
+`--color-foreground-primary` or `--color-foreground-secondary`
+but different colours can be applied in specific component
+applications with their own styles, such as buttons.
+
+As far as possible and as long as accessibility is not affected,
+we will use colour in typography as a way of hierarchising
+the content displayed using tone, built in luminance changes and
+size as differentiating elements between main and secondary text.
+
+### Status text colous
+
+Another possible application of colour is semantic, when we use text to convey some system state.
+
+Use the tokens:
+
+`--color-accent-success` - Use as text colour to indicate success.
+
+`--color-accent-warning` - Use as text colour to indicate a warning or caution.
+
+`--color-accent-error` - Use as text colour to indicate an error.
+
+
+## Accesibility
+
+Typefaces should be sized for legibility and accessibility.
+The minimum size for texts in Penpot will be 14px except
+for exceptions based on the size of the components.
+
+## Title
+
+### Display `display`
+
+Hero style text for transitional pages (Login). If too large use large title in narrow windows.
+
+<Canvas of={TextStories.Display} />
+
+### Title Large `title-large`
+
+Page headers for main pages (dashboard, Profiles...). If too big use title
+(medium) in narrow windows.
+
+<Canvas of={TextStories.TitleLarge} />
+
+### Title Medium `title-medium`
+
+Default page title. Equivalent line height of 32px matches the height
+of buttons and other medium controls. Ideal for page header layout.
+
+<Canvas of={TextStories.TitleMedium} />
+
+### Title Small `title-small`
+
+Uses the same size as body (large).
+
+<Canvas of={TextStories.TitleSmall} />
+
+## Headline
+
+Page sections/subtitles, or names of less important objects in page titles
+(automated action titles, for example). Same line height as title (medium).
+
+### Headline Large `headline-large`
+
+<Canvas of={TextStories.HeadlineLarge} />
+
+### Headline Medium `headline-medium`
+
+<Canvas of={TextStories.HeadlineMedium} />
+
+### Headline small `headline-small`
+
+<Canvas of={TextStories.HeadlineSmall} />
+
+## Body
+
+### Body large `body-large`
+
+Generic content.
+
+<Canvas of={TextStories.BodyLarge} />
+
+### Body medium `body-medium`
+
+Default UI font. Most commonly used for body text.
+
+<Canvas of={TextStories.BodyMedium} />
+
+### Body small `body-small`
+
+Small compact font with a line height of less than 16px.
+Use for single line scenarios, as the small size does not meet accessibility requirements.
+
+<Canvas of={TextStories.BodySmall} />
+
+## Code font `code-font`
+
+Default style for rendering code blocks.
+
+<Canvas of={TextStories.CodeFont} />
+
+## Fonts
+
+We are using 3 fonts
+
+- The default font family is `Work Sans`. It was chosen for its efficiency and legibility.
+- In case of having the interface in Farsi or Arabic this font will be replaced by `Vazirmatn`.
+- For code blocks we are useng `Roboto Mono`.

@@ -126,7 +126,7 @@
                     :element-list-body true
                     :hover hovering?
                     :selected selected?)
-            :data-test (dm/str "page-" id)
+            :data-testid (dm/str "page-" id)
             :tab-index "0"
             :on-click navigate-fn
             :on-double-click on-double-click
@@ -205,7 +205,6 @@
                         (fn [event]
                           (st/emit! (dw/create-page {:file-id file-id :project-id project-id}))
                           (-> event dom/get-current-target dom/blur!)))
-        size           (if show-pages? size 32)
         read-only?     (mf/use-ctx ctx/workspace-read-only?)]
 
     [:div {:class (stl/css :sitemap)

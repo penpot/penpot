@@ -86,8 +86,8 @@
 .big-text {
   @include inspectValue;
   @include twoLineTextEllipsis;
+  line-height: 1;
   color: var(--palette-text-color);
-  height: $s-28;
   text-align: center;
 }
 

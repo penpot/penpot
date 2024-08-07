@@ -146,6 +146,7 @@
 
        (when (and (not disable-remove?) (not (= :multiple fills)))
          [:button {:class (stl/css :add-fill)
+                   :data-testid "add-fill"
                    :on-click on-add} i/add])]]
 
      (when open?

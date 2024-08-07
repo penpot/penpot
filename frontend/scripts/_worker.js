@@ -17,18 +17,21 @@ async function compileFile(path) {
   const name = ph.basename(path, ".scss");
   const dest = `${dir}${ph.sep}${name}.css`;
 
-
   return new Promise(async (resolve, reject) => {
     try {
       const result = await compiler.compileAsync(path, {
-        loadPaths: ["node_modules/animate.css", "resources/styles/common/", "resources/styles"],
-        sourceMap: false
+        loadPaths: [
+          "node_modules/animate.css",
+          "resources/styles/common/",
+          "resources/styles",
+        ],
+        sourceMap: false,
       });
       // console.dir(result);
       resolve({
         inputPath: path,
         outputPath: dest,
-        css: result.css
+        css: result.css,
       });
     } catch (cause) {
       // console.error(cause);
@@ -56,7 +59,7 @@ function configureModulesProcessor(options) {
   });
 }
 
-function configureProcessor(options={}) {
+function configureProcessor(options = {}) {
   const processors = [];
 
   if (options.modules) {
@@ -78,7 +81,7 @@ async function postProcessFile(data, options) {
   });
 
   return Object.assign(data, {
-    css: result.css
+    css: result.css,
   });
 }
 
@@ -87,11 +90,14 @@ async function compile(path, options) {
   return await postProcessFile(result, options);
 }
 
-wpool.worker({
-  compileSass: compile
-}, {
-  onTerminate: async (code) => {
-    // log.info("worker: terminate");
-    await compiler.dispose();
-  }
-});
+wpool.worker(
+  {
+    compileSass: compile,
+  },
+  {
+    onTerminate: async (code) => {
+      // log.info("worker: terminate");
+      await compiler.dispose();
+    },
+  },
+);

@@ -243,10 +243,10 @@
         is-group?  (and single? has-group?)
         is-bool?   (and single? has-bool?)
 
-        do-create-group #(st/emit! dw/group-selected)
-        do-mask-group   #(st/emit! dw/mask-group)
-        do-remove-group #(st/emit! dw/ungroup-selected)
-        do-unmask-group #(st/emit! dw/unmask-group)
+        do-create-group #(st/emit! (dw/group-selected))
+        do-remove-group #(st/emit! (dw/ungroup-selected))
+        do-mask-group   #(st/emit! (dw/mask-group))
+        do-unmask-group #(st/emit! (dw/unmask-group))
         do-create-artboard-from-selection
         #(st/emit! (dwsh/create-artboard-from-selection))]
 
@@ -474,7 +474,7 @@
         [:& menu-separator]
         (for [entry components-menu-entries :when (not (nil? entry))]
           [:& menu-entry {:key (uuid/next)
-                          :title (tr (:msg entry))
+                          :title (:title entry)
                           :shortcut (when (contains? entry :shortcut) (sc/get-tooltip (:shortcut entry)))
                           :on-click (:action entry)}])])]))
 

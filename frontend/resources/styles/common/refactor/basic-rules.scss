@@ -291,9 +291,7 @@
 // INPUTS
 .input-base {
   @include removeInputStyle;
-  @include bodySmallTypography;
   @include textEllipsis;
-  // @include focusInput;
   height: $s-28;
   width: 100%;
   flex-grow: 1;
@@ -326,7 +324,6 @@
 }
 
 .input-element {
-  @include bodySmallTypography;
   @include focusInput;
   display: flex;
   align-items: center;
@@ -593,9 +590,6 @@
   width: 100%;
   z-index: $z-index-modal;
   background-color: var(--overlay-color);
-  &.onboarding-a-b-test {
-    background-color: var(--overlay-color-onboarding-a-b-test);
-  }
 }
 
 .modal-container-base {
@@ -665,22 +659,6 @@
   color: var(--modal-button-foreground-color-error);
 }
 
-.loader-base {
-  @include flexCenter;
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  width: 100vw;
-  z-index: $z-index-alert;
-  background-color: var(--loader-background);
-  :global(svg#loader-pencil) {
-    height: $s-100;
-    width: $s-100;
-    animation: loaderColor 5s infinite ease;
-    fill: var(--icon-foreground);
-  }
-}
 // UI ELEMENTS
 .asset-element {
   @include bodySmallTypography;

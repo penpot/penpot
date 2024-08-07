@@ -30,7 +30,7 @@
   event occurs, and then call the function with the final state at
   this point."
   [state done completed-cb]
-  (let [store (ptk/store {:state state :on-error on-error})
+  (let [store  (ptk/store {:state state :on-error on-error})
         stream (ptk/input-stream store)
         stream (->> stream
                     (rx/take-until (rx/filter #(= :the/end %) stream))

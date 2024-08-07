@@ -17,11 +17,11 @@
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.changes :as dwc]
    [app.main.data.dashboard.shortcuts]
    [app.main.data.preview :as dp]
    [app.main.data.viewer.shortcuts]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.path.shortcuts]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shortcuts]
@@ -52,8 +52,6 @@
 (def debug-exclude-events
   #{:app.main.data.workspace.notifications/handle-pointer-update
     :app.main.data.workspace.notifications/handle-pointer-send
-    :app.main.data.workspace.persistence/update-persistence-status
-    :app.main.data.workspace.changes/update-indices
     :app.main.data.websocket/send-message
     :app.main.data.workspace.selection/change-hover-state})
 
@@ -279,15 +277,23 @@
    (let [page-id    (get state :current-page-id)
          file       (assoc (get state :workspace-file)
                            :data (get state :workspace-data))
-         libraries  (get state :workspace-libraries)]
-     (ctf/dump-subtree file page-id shape-id libraries {:show-ids show-ids
-                                                        :show-touched show-touched
-                                                        :show-modified show-modified}))))
+         libraries  (get state :workspace-libraries)
+         shape-id   (if (some? shape-id)
+                      (uuid/uuid shape-id)
+                      (let [objects (get-in state [:workspace-data :pages-index page-id :objects])
+                            selected (get-in state [:workspace-local :selected])]
+                        (->> selected (map (d/getf objects)) first :id)))]
+     (if (some? shape-id)
+       (ctf/dump-subtree file page-id shape-id libraries {:show-ids show-ids
+                                                          :show-touched show-touched
+                                                          :show-modified show-modified})
+       (println "no selected shape")))))
+
 (defn ^:export dump-subtree
-  ([shape-id] (dump-subtree' @st/state (uuid/uuid shape-id)))
-  ([shape-id show-ids] (dump-subtree' @st/state (uuid/uuid shape-id) show-ids false false))
-  ([shape-id show-ids show-touched] (dump-subtree' @st/state (uuid/uuid shape-id) show-ids show-touched false))
-  ([shape-id show-ids show-touched show-modified] (dump-subtree' @st/state (uuid/uuid shape-id) show-ids show-touched show-modified)))
+  ([shape-id] (dump-subtree' @st/state shape-id))
+  ([shape-id show-ids] (dump-subtree' @st/state shape-id show-ids false false))
+  ([shape-id show-ids show-touched] (dump-subtree' @st/state shape-id show-ids show-touched false))
+  ([shape-id show-ids show-touched show-modified] (dump-subtree' @st/state shape-id show-ids show-touched show-modified)))
 
 (when *assert*
   (defonce debug-subscription
@@ -303,7 +309,7 @@
 
   (let [file-id (:current-file-id @st/state)
         changes (t/decode-str changes*)]
-    (st/emit! (dch/commit-changes {:redo-changes changes
+    (st/emit! (dwc/commit-changes {:redo-changes changes
                                    :undo-changes []
                                    :save-undo? true
                                    :file-id file-id}))))

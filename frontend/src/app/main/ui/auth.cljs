@@ -44,6 +44,9 @@
   {::mf/props :obj}
   [{:keys [route]}]
   (let [section (dm/get-in route [:data :name])
+        show-login-icon (and
+                         (not= section :auth-register-validate)
+                         (not= section :auth-register-success))
         params  (:query-params route)
         error   (:error params)]
 
@@ -55,8 +58,9 @@
         (st/emit! (du/show-redirect-error error))))
 
     [:main {:class (stl/css :auth-section)}
-     [:h1 {:class (stl/css :logo-container)}
-      [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} i/logo]]
+     (when show-login-icon
+       [:h1 {:class (stl/css :logo-container)}
+        [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} i/logo]])
      [:div {:class (stl/css :login-illustration)}
       i/login-illustration]
 

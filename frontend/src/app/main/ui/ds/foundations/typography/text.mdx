@@ -1,0 +1,31 @@
+import { Canvas, Meta } from "@storybook/blocks";
+import * as TextStories from "./text.stories";
+
+<Meta of={TextStories} />
+
+# Texts
+This component will add a text element to our code that will match the tag prop.
+
+## Technical notes
+
+### Using typography IDs
+
+There are typography ID definitions you can use in your code rather than typing the
+typography ID by hand.
+
+**Using these IDs is recommended**.
+
+Assuming the namespace of the typography is required as `t`:
+
+```clj
+(ns app.main.ui.foo
+  (:require
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.text :refer [text*]]))
+```
+
+You can now use the typography IDs defined in the namespace:
+
+```clj
+[:> text* {:typography t/title-large :as "p"} "Welcome to Penpot"]
+```

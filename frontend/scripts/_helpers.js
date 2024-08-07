@@ -27,6 +27,8 @@ export function startWorker() {
   });
 }
 
+export const isDebug = process.env.NODE_ENV !== "production";
+
 async function findFiles(basePath, predicate, options = {}) {
   predicate =
     predicate ??
@@ -34,7 +36,9 @@ async function findFiles(basePath, predicate, options = {}) {
       return true;
     };
 
-  let files = await fs.readdir(basePath, { recursive: options.recursive ?? false });
+  let files = await fs.readdir(basePath, {
+    recursive: options.recursive ?? false,
+  });
   files = files.map((path) => ph.join(basePath, path));
 
   return files;
@@ -73,28 +77,28 @@ export async function compileSass(worker, path, options) {
   return worker.exec("compileSass", [path, options]);
 }
 
-export async function compileSassAll(worker) {
+export async function compileSassDebug(worker) {
+  const result = await compileSass(worker, "resources/styles/debug.scss", {});
+  return `${result.css}\n`;
+}
+
+export async function compileSassStorybook(worker) {
   const limitFn = pLimit(4);
-  const sourceDir = "src";
+  const sourceDir = ph.join("src", "app", "main", "ui", "ds");
 
-  let files = await fs.readdir(sourceDir, { recursive: true });
-  files = files.filter((path) => path.endsWith(".scss"));
-  files = files.map((path) => ph.join(sourceDir, path));
+  const dsFiles = (await fs.readdir(sourceDir, { recursive: true }))
+    .filter(isSassFile)
+    .map((filename) => ph.join(sourceDir, filename));
+  const procs = [compileSass(worker, "resources/styles/main-default.scss", {})];
 
-  const procs = [
-    compileSass(worker, "resources/styles/main-default.scss", {}),
-    compileSass(worker, "resources/styles/debug.scss", {}),
-  ];
-
-  for (let path of files) {
+  for (let path of dsFiles) {
     const proc = limitFn(() => compileSass(worker, path, { modules: true }));
     procs.push(proc);
   }
 
   const result = await Promise.all(procs);
-
   return result.reduce(
-    (acc, item, index) => {
+    (acc, item) => {
       acc.index[item.outputPath] = item.css;
       acc.items.push(item.outputPath);
       return acc;
@@ -103,14 +107,42 @@ export async function compileSassAll(worker) {
   );
 }
 
-function compare(a, b) {
-  if (a < b) {
-    return -1;
-  } else if (a > b) {
-    return 1;
-  } else {
-    return 0;
+export async function compileSassAll(worker) {
+  const limitFn = pLimit(4);
+  const sourceDir = "src";
+
+  const isDesignSystemFile = (path) => {
+    return path.startsWith("app/main/ui/ds/");
+  };
+
+  let files = (await fs.readdir(sourceDir, { recursive: true })).filter(
+    isSassFile,
+  );
+
+  const appFiles = files
+    .filter((path) => !isDesignSystemFile(path))
+    .map((path) => ph.join(sourceDir, path));
+  const dsFiles = files
+    .filter(isDesignSystemFile)
+    .map((path) => ph.join(sourceDir, path));
+
+  const procs = [compileSass(worker, "resources/styles/main-default.scss", {})];
+
+  for (let path of [...dsFiles, ...appFiles]) {
+    const proc = limitFn(() => compileSass(worker, path, { modules: true }));
+    procs.push(proc);
   }
+
+  const result = await Promise.all(procs);
+
+  return result.reduce(
+    (acc, item) => {
+      acc.index[item.outputPath] = item.css;
+      acc.items.push(item.outputPath);
+      return acc;
+    },
+    { index: {}, items: [] },
+  );
 }
 
 export function concatSass(data) {
@@ -173,7 +205,7 @@ async function renderTemplate(path, context = {}, partials = {}) {
 
   context = Object.assign({}, context, {
     ts: ts,
-    isDebug: process.env.NODE_ENV !== "production",
+    isDebug,
   });
 
   return mustache.render(content, context, partials);
@@ -232,7 +264,9 @@ async function readTranslations() {
       lang = lang[0];
     }
 
-    const content = await fs.readFile(`./translations/${filename}`, { encoding: "utf-8" });
+    const content = await fs.readFile(`./translations/${filename}`, {
+      encoding: "utf-8",
+    });
 
     lang = lang.toLowerCase();
 
@@ -291,15 +325,30 @@ async function generateSvgSprite(files, prefix) {
 }
 
 async function generateSvgSprites() {
-  await fs.mkdir("resources/public/images/sprites/symbol/", { recursive: true });
+  await fs.mkdir("resources/public/images/sprites/symbol/", {
+    recursive: true,
+  });
 
   const icons = await findFiles("resources/images/icons/", isSvgFile);
   const iconsSprite = await generateSvgSprite(icons, "icon-");
-  await fs.writeFile("resources/public/images/sprites/symbol/icons.svg", iconsSprite);
+  await fs.writeFile(
+    "resources/public/images/sprites/symbol/icons.svg",
+    iconsSprite,
+  );
 
   const cursors = await findFiles("resources/images/cursors/", isSvgFile);
-  const cursorsSprite = await generateSvgSprite(icons, "cursor-");
-  await fs.writeFile("resources/public/images/sprites/symbol/cursors.svg", cursorsSprite);
+  const cursorsSprite = await generateSvgSprite(cursors, "cursor-");
+  await fs.writeFile(
+    "resources/public/images/sprites/symbol/cursors.svg",
+    cursorsSprite,
+  );
+
+  const assets = await findFiles("resources/images/assets/", isSvgFile);
+  const assetsSprite = await generateSvgSprite(assets, "asset-");
+  await fs.writeFile(
+    "resources/public/images/sprites/assets.svg",
+    assetsSprite,
+  );
 }
 
 async function generateTemplates() {
@@ -310,15 +359,28 @@ async function generateTemplates() {
   const manifest = await readShadowManifest();
   let content;
 
-  const iconsSprite = await fs.readFile("resources/public/images/sprites/symbol/icons.svg", "utf8");
-  const cursorsSprite = await fs.readFile("resources/public/images/sprites/symbol/cursors.svg", "utf8");
+  const iconsSprite = await fs.readFile(
+    "resources/public/images/sprites/symbol/icons.svg",
+    "utf8",
+  );
+  const cursorsSprite = await fs.readFile(
+    "resources/public/images/sprites/symbol/cursors.svg",
+    "utf8",
+  );
+  const assetsSprite = await fs.readFile(
+    "resources/public/images/sprites/assets.svg",
+    "utf-8",
+  );
   const partials = {
     "../public/images/sprites/symbol/icons.svg": iconsSprite,
     "../public/images/sprites/symbol/cursors.svg": cursorsSprite,
+    "../public/images/sprites/assets.svg": assetsSprite,
   };
 
   const pluginRuntimeUri =
-    process.env.PENPOT_PLUGIN_DEV === "true" ? "http://localhost:4200" : "./plugins-runtime";
+    process.env.PENPOT_PLUGIN_DEV === "true"
+      ? "http://localhost:4200"
+      : "./plugins-runtime";
 
   content = await renderTemplate(
     "resources/templates/index.mustache",
@@ -333,12 +395,23 @@ async function generateTemplates() {
 
   await fs.writeFile("./resources/public/index.html", content);
 
-  content = await renderTemplate("resources/templates/preview-body.mustache", {
-    manifest: manifest,
-    translations: JSON.stringify(translations),
-  });
-
+  content = await renderTemplate(
+    "resources/templates/preview-body.mustache",
+    {
+      manifest: manifest,
+    },
+    partials,
+  );
   await fs.writeFile("./.storybook/preview-body.html", content);
+
+  content = await renderTemplate(
+    "resources/templates/preview-head.mustache",
+    {
+      manifest: manifest,
+    },
+    partials,
+  );
+  await fs.writeFile("./.storybook/preview-head.html", content);
 
   content = await renderTemplate("resources/templates/render.mustache", {
     manifest: manifest,
@@ -355,6 +428,22 @@ async function generateTemplates() {
   await fs.writeFile("./resources/public/rasterizer.html", content);
 }
 
+export async function compileStorybookStyles() {
+  const worker = startWorker();
+  const start = process.hrtime();
+
+  log.info("init: compile storybook styles");
+  let result = await compileSassStorybook(worker);
+  result = concatSass(result);
+
+  await fs.mkdir("./resources/public/css", { recursive: true });
+  await fs.writeFile("./resources/public/css/ds.css", result);
+
+  const end = process.hrtime(start);
+  log.info("done: compile storybook styles", `(${ppt(end)})`);
+  worker.terminate();
+}
+
 export async function compileStyles() {
   const worker = startWorker();
   const start = process.hrtime();
@@ -365,6 +454,11 @@ export async function compileStyles() {
 
   await fs.mkdir("./resources/public/css", { recursive: true });
   await fs.writeFile("./resources/public/css/main.css", result);
+
+  if (isDebug) {
+    let debugCSS = await compileSassDebug(worker);
+    await fs.writeFile("./resources/public/css/debug.css", debugCSS);
+  }
 
   const end = process.hrtime(start);
   log.info("done: compile styles", `(${ppt(end)})`);
@@ -411,7 +505,10 @@ export async function copyAssets() {
 
   await syncDirs("resources/images/", "resources/public/images/");
   await syncDirs("resources/fonts/", "resources/public/fonts/");
-  await syncDirs("resources/plugins-runtime/", "resources/public/plugins-runtime/");
+  await syncDirs(
+    "resources/plugins-runtime/",
+    "resources/public/plugins-runtime/",
+  );
 
   const end = process.hrtime(start);
   log.info("done: copy assets", `(${ppt(end)})`);
