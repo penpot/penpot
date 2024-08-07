@@ -13,6 +13,7 @@
   flex: 1;
   width: 100%;
   height: var(--height, $s-200);
+  overflow-y: auto;
 }
 
 .sidebar-header {
@@ -23,7 +24,7 @@
   color: var(--layer-row-foreground-color);
 }
 
-.add-button {
+.add-set {
   @extend .button-tertiary;
   height: $s-32;
   width: $s-28;
@@ -32,13 +33,14 @@
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);
+    transform: rotate(90deg);
   }
 }
 
 .sets-list {
   width: 100%;
-  max-height: $s-152;
   margin-bottom: $s-12;
+  overflow-y: auto;
 }
 
 .set-item {
@@ -57,14 +59,13 @@
   }
   .set-icon {
     @include flexCenter;
-    height: $s-32;
-    width: $s-24;
+    height: $s-20; 
+    width: $s-20;   
     padding: 0 $s-4 0 $s-8;
     svg {
-      @extend .button-icon-small;
-      height: $s-12;
-      width: $s-12;
-      color: transparent;
+      height: $s-20;  
+      width: $s-20;  
+      color: white;
       fill: none;
       stroke: var(--icon-foreground);
     }

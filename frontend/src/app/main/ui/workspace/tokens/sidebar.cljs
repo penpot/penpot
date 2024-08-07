@@ -172,8 +172,10 @@
    ::mf/wrap-props false}
   [_props]
   [:div {:class (stl/css :sidebar-tab-wrapper)}
-   [:& sets-sidebar]  ;; Add sets sidebar here
-   [:& tokens-explorer]
+   [:& sets-sidebar]
+   ;;[:div {:class (stl/css :divider)}]
+   [:div {:class (stl/css :tokens-section-wrapper)} 
+    [:& tokens-explorer]]
    [:button {:class (stl/css :download-json-button)
              :on-click wtc/download-tokens-as-json}
     download-icon

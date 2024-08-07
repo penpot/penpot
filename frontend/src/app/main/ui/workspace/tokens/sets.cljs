@@ -20,7 +20,7 @@
                                                          :name "Set A / 1"}
            #uuid "d1754e56-3510-493f-8287-5ef3417d4141" {:type :group
                                                          :name "Group A / B"
-                                                         :children [#uuid "d608877b-842a-473b-83ca-b5f8305caf83"
+                                                         :children [#uuid "f608877b-842a-473b-83ca-b5f8305caf83"
                                                                     #uuid "7cc05389-9391-426e-bc0e-ba5cb8f425eb"]}
            #uuid "f608877b-842a-473b-83ca-b5f8305caf83" {:type :set
                                                          :name "Set A / B / 1"}
@@ -38,7 +38,7 @@
   (let [set (get sets set-id)]
     (when set
       (let [{:keys [type name children]} set
-            icon (if (= type :group) i/document i/document)] ;; Correct icon for groups
+            icon (if (= type :group) i/document i/document)]
         [:div {:class (stl/css-case :set-item true :group (= type :group))}
          [:div {:class (stl/css :set-icon)}
           [:svg {:class (stl/css :set-icon-svg)} icon]]
@@ -54,7 +54,7 @@
   {::mf/wrap-props false}
   []
   (println "Rendering Sets List with root order:" sets-root-order)
-  [:div.assets-bar
+  [:div {:class (stl/css :sets-list)}
    (for [set-id sets-root-order]
      ^{:key (str set-id)}
      [:& sets-tree {:key (str set-id) :set-id set-id}])])
@@ -66,7 +66,7 @@
   [:div {:class (stl/css :sets-sidebar)}
    [:div {:class (stl/css :sidebar-header)}
     "SETS"
-    [:button {:class (stl/css :add-button)
+    [:button {:class (stl/css :add-set)
               :on-click #(println "Add Set")} 
-     "Add"]]
+     i/add]]
    [:& sets-list]])

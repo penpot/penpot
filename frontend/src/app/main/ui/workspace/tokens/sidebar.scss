@@ -5,11 +5,33 @@
 // Copyright (c) KALEIDOS INC
 
 @import "refactor/common-refactor.scss";
-
 @import "./common.scss";
 
 .sidebar-tab-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
   padding: $s-12;
+  //justify-content: space-evenly;
+//  align-items: flex-start;
+}
+
+.sets-sidebar {
+  flex-shrink: 0;
+  overflow-y: auto;
+  max-height: 40%;  // Adjust this value as needed
+}
+
+.tokens-section-wrapper {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: $s-8 0;
 }
 
 .token-pills-wrapper {
