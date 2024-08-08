@@ -104,7 +104,7 @@ Token names should only contain letters and digits separated by . characters.")}
               (-> (sd/resolve-tokens+ new-tokens #_ {:debug? true})
                   (p/then
                    (fn [resolved-tokens]
-                     (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-id)]
+                     (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
                        (cond
                          resolved-value (p/resolved resolved-token)
                          (sd/missing-reference-error? errors) (p/rejected :error/token-missing-reference)
