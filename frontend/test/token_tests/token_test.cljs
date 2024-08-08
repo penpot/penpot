@@ -11,14 +11,19 @@
 
 (t/deftest test-parse-token-value
   (t/testing "parses double from a token value"
-    (t/is (= 100.1 (wtt/parse-token-value "100.1")))
-    (t/is (= -9 (wtt/parse-token-value "-9")))
-    (t/testing "trims white-space"
-      (t/is (= -1.3 (wtt/parse-token-value "     -1.3   "))))
-    (t/testing "returns nil for any invalid characters"
-      (t/is (nil? (wtt/parse-token-value "     -1.3a   "))))
-    (t/testing "doesnt accept invalid double"
-      (t/is (nil? (wtt/parse-token-value ".3"))))))
+    (t/is (= {:value 100.1 :unit nil} (wtt/parse-token-value "100.1")))
+    (t/is (= {:value -9 :unit nil} (wtt/parse-token-value "-9"))))
+  (t/testing "trims white-space"
+    (t/is (= {:value -1.3 :unit nil} (wtt/parse-token-value "     -1.3   "))))
+  (t/testing "parses unit: px"
+    (t/is (= {:value 70.3 :unit "px"} (wtt/parse-token-value "     70.3px   "))))
+  (t/testing "parses unit: %"
+    (t/is (= {:value -10 :unit "%"} (wtt/parse-token-value "-10%"))))
+  (t/testing "parses unit: px")
+  (t/testing "returns nil for any invalid characters"
+    (t/is (nil? (wtt/parse-token-value "     -1.3a   "))))
+  (t/testing "doesnt accept invalid double"
+    (t/is (nil? (wtt/parse-token-value ".3")))))
 
 (t/deftest find-token-references
   (t/testing "finds references inside curly braces in a string"

@@ -5,14 +5,15 @@
    [cuerdas.core :as str]))
 
 (def parseable-token-value-regexp
-  #"^\s*(-?[0-9]+\.?[0-9]*)\s*$")
+  #"^\s*(-?[0-9]+\.?[0-9]*)(px|%)?\s*$")
 
 (defn parse-token-value [value]
   (cond
-    (number? value) value
-    (string? value) (when-let [double-str (-> (re-find parseable-token-value-regexp value)
-                                              (last))]
-                      (d/parse-double double-str))))
+    (number? value) {:value value}
+    (string? value) (when-let [[_ value unit] (re-find parseable-token-value-regexp value)]
+                      (when-let [parsed-value (d/parse-double value)]
+                        {:value parsed-value
+                         :unit unit}))))
 
 (defn find-token-references
   "Finds token reference values in `value-string` and returns a set with all contained namespaces."

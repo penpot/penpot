@@ -6,8 +6,7 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [cuerdas.core :as str]
    [promesa.core :as p]
-   [rumext.v2 :as mf]
-   [shadow.resource]))
+   [rumext.v2 :as mf]))
 
 (def StyleDictionary
   "The global StyleDictionary instance used as an external library for now,
@@ -82,10 +81,12 @@
                            (fn [acc ^js cur]
                              (let [id (uuid (.-uuid (.-id cur)))
                                    origin-token (get tokens id)
-                                   resolved-value (wtt/parse-token-value (.-value cur))
-                                   resolved-token (if (not resolved-value)
+                                   parsed-value (wtt/parse-token-value (.-value cur))
+                                   resolved-token (if (not parsed-value)
                                                     (assoc origin-token :errors [:style-dictionary/missing-reference])
-                                                    (assoc origin-token :resolved-value resolved-value))]
+                                                    (assoc origin-token
+                                                           :resolved-value (:value parsed-value)
+                                                           :resolved-unit (:unit parsed-value)))]
                                (assoc acc (wtt/token-identifier resolved-token) resolved-token)))
                            {} sd-tokens)]
       (when debug?
@@ -157,9 +158,12 @@
 
    (#(resolve-sd-tokens+ % {:debug? true})))
 
+  (defonce output (atom nil))
+  (require '[shadow.resource])
   (let [example (-> (shadow.resource/inline "./data/example-tokens-set.json")
                     (js/JSON.parse)
                     .-core)]
-    (resolve-sd-tokens+ example {:debug? true}))
+    (.then (resolve-sd-tokens+ example {:debug? true})
+           #(reset! output %)))
 
   nil)
