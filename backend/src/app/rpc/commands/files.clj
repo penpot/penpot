@@ -327,9 +327,9 @@
    [:share-id {:optional true} ::sm/uuid]])
 
 (defn- get-file-fragment
-  [conn file-id fragment-id]
-  (some-> (db/get conn :file-data-fragment {:file-id file-id :id fragment-id})
-          (update :content blob/decode)))
+  [cfg file-id fragment-id]
+  (some-> (db/get cfg :file-data-fragment {:file-id file-id :id fragment-id})
+          (update :data blob/decode)))
 
 (sv/defmethod ::get-file-fragment
   "Retrieve a file fragment by its ID. Only authenticated users."
@@ -337,12 +337,12 @@
    ::rpc/auth false
    ::sm/params schema:get-file-fragment
    ::sm/result schema:file-fragment}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id fragment-id share-id]}]
-  (dm/with-open [conn (db/open pool)]
-    (let [perms (get-permissions conn profile-id file-id share-id)]
-      (check-read-permissions! perms)
-      (-> (get-file-fragment conn file-id fragment-id)
-          (rph/with-http-cache long-cache-duration)))))
+  [cfg {:keys [::rpc/profile-id file-id fragment-id share-id]}]
+  (db/run! cfg (fn [cfg]
+                 (let [perms (get-permissions cfg profile-id file-id share-id)]
+                   (check-read-permissions! perms)
+                   (-> (get-file-fragment cfg file-id fragment-id)
+                       (rph/with-http-cache long-cache-duration))))))
 
 ;; --- COMMAND QUERY: get-project-files
 
