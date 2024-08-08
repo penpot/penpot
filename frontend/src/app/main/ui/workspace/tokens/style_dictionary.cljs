@@ -2,7 +2,6 @@
   (:require
    ["@tokens-studio/sd-transforms" :as sd-transforms]
    ["style-dictionary$default" :as sd]
-   [app.common.data :as d]
    [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.token :as wtt]
    [cuerdas.core :as str]
