@@ -39,10 +39,13 @@
     (when set
       (let [{:keys [type name children]} set
             icon i/document
-            visible? (mf/use-state (contains? active-sets set-id))]
+            visible? (mf/use-state (contains? active-sets set-id))
+            collapsed? (mf/use-state false)]
         [:div {:class (stl/css :set-item-container)}
-          [:div {:class (stl/css :set-item)}
-         [:span {:class (stl/css :icon)} icon]
+          [:div {:class (stl/css-case :set-item-group (= type :group)
+                                      :set-item-set (= type :set))}
+         [:span {:class (stl/css :icon)
+                 :on-click #(when (= type :group) (swap! collapsed? not))} icon]
          [:div {:class (stl/css :set-name)} name]
          (when (= type :set)
          [:span {:class (stl/css :action-btn)
@@ -50,7 +53,7 @@
            (if @visible?
                i/shown
                i/hide)])]
-         (when children
+          (when (and children (not @collapsed?))
            [:div {:class (stl/css :set-children)}
             (for [child-id children]
               (do

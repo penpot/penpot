@@ -50,18 +50,14 @@
   padding-left: 20px;
 }
 
-.set-item {
+.set-item-set, .set-item-group {
+  @include bodySmallTypography;
   display: flex;
   align-items: center;
   min-height: $s-32;
   width: 100%;
   cursor: pointer;
   color: var(--layer-row-foreground-color);
-
-  &.group {
-    padding-left: $s-12;
-  }
-
   .set-name {
     @include textEllipsis;
     flex-grow: 1;
@@ -85,10 +81,16 @@
   }
 }
 
+.set-item-set{
+  &:hover {
+    background-color: var(--layer-row-background-color-hover);
+    color: var(--layer-row-foreground-color-hover);
+  }
+}
 .action-btn {
   @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
+  height: $s-20;
+  width: $s-20;
   svg {
     @extend .button-icon;
   }
