@@ -8,9 +8,10 @@
   #"^\s*(-?[0-9]+\.?[0-9]*)\s*$")
 
 (defn parse-token-value [value]
-  (when-let [double-str (-> (re-find parseable-token-value-regexp value)
-                            (last))]
-    (d/parse-double double-str)))
+  (when (string? value)
+    (when-let [double-str (-> (re-find parseable-token-value-regexp value)
+                              (last))]
+      (d/parse-double double-str))))
 
 (defn find-token-references
   "Finds token reference values in `value-string` and returns a set with all contained namespaces."
