@@ -31,40 +31,44 @@
                                                          :name "Set Root 1"}
            #uuid "0381446e-1f1d-423f-912c-ab577d61b79b" {:type :set
                                                          :name "Set Root 2"}})
-
-
-(mf/defc set-item
-  [{:keys [icon name]}]
-  [:div {:class (stl/css :set-item)}
-   [:span {:class (stl/css :icon)} icon]
-   [:span {:class (stl/css :set-name)} name]])
    
 (mf/defc sets-tree
-  [{:keys [set-id]}]
+  [{:keys [set-id toggle-visibility]}]
   ;;(println "Rendering set with ID:" set-id)
   (let [set (get sets set-id)]
     (when set
       (let [{:keys [type name children]} set
-            icon i/document]
+            icon i/document
+            visible? (mf/use-state (contains? active-sets set-id))]
         [:div {:class (stl/css :set-item-container)}
           [:div {:class (stl/css :set-item)}
          [:span {:class (stl/css :icon)} icon]
-         [:div {:class (stl/css :set-name)} name]]
+         [:div {:class (stl/css :set-name)} name]
+         (when (= type :set)
+         [:span {:class (stl/css :action-btn)
+           :on-click #(swap! visible? not)}
+           (if @visible?
+               i/shown
+               i/hide)])]
          (when children
            [:div {:class (stl/css :set-children)}
             (for [child-id children]
               (do
                 ;;(println "Rendering child ID:" child-id)
-                ^{:key (str child-id)} [:& sets-tree {:key (str child-id) :set-id child-id}]))])]))))
+                ^{:key (str child-id)} [:& sets-tree {:key (str child-id) :set-id child-id :toggle-visibility toggle-visibility }]))])]))))
 
 (mf/defc sets-list
   {::mf/wrap-props false}
   []
   ;;(println "Rendering Sets List with root order:" sets-root-order)
+  (let [toggle-visibility (fn [set-id]
+                            (if (contains? active-sets set-id)
+                              (swap! active-sets disj set-id)
+                              (swap! active-sets conj set-id)))]
   [:div {:class (stl/css :sets-list)}
    (for [set-id sets-root-order]
      ^{:key (str set-id)}
-     [:& sets-tree {:key (str set-id) :set-id set-id}])])
+     [:& sets-tree {:key (str set-id) :set-id set-id}])]))
 
 (mf/defc sets-sidebar
   {::mf/wrap-props false}
