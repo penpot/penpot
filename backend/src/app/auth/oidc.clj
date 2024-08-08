@@ -592,7 +592,8 @@
 
     :else
     (let [info (assoc info :is-active (provider-has-email-verified? cfg info))]
-      (if (contains? cf/flags :registration)
+      (if (or (contains? cf/flags :registration)
+              (contains? cf/flags :oidc-registration))
         (redirect-to-register cfg info request)
         (redirect-with-error "registration-disabled")))))
 

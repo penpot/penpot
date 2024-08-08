@@ -304,6 +304,8 @@
       (let [session (create-smtp-session cfg)]
         (with-open [transport (.getTransport session (if (::ssl cfg) "smtps" "smtp"))]
           (.connect ^Transport transport
+                    ^String (::host cfg)
+                    ^String (::port cfg)
                     ^String (::username cfg)
                     ^String (::password cfg))
 
