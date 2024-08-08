@@ -9,6 +9,16 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [cljs.test :as t :include-macros true]))
 
+(t/deftest find-token-references
+  ;; Return references
+  (t/is (= #{"foo" "bar"} (wtt/find-token-references "{foo} + {bar}")))
+  ;; Ignore non reference text
+  (t/is (= #{"foo.bar.baz"} (wtt/find-token-references "{foo.bar.baz} + something")))
+  ;; No references found
+  (t/is (nil? (wtt/find-token-references "1 + 2")))
+  ;; Edge-case: Ignore unmatched closing parens
+  (t/is (= #{"foo" "bar"} (wtt/find-token-references "{foo}} + {bar}"))))
+
 (t/deftest remove-attributes-for-token-id
   (t/testing "removes attributes matching the `token`, keeps other attributes"
     (t/is (= {:ry "b"}

@@ -23,13 +23,6 @@
 
 ;; Functions -------------------------------------------------------------------
 
-(defn find-token-references
-  "Finds token reference values in `value-string` and returns a set with all contained namespaces."
-  [value-string]
-  (some->> (re-seq #"\{([^}]*)\}" value-string)
-           (map second)
-           (into #{})))
-
 (defn tokens->style-dictionary+
   "Resolves references and math expressions using StyleDictionary.
   Returns a promise with the resolved dictionary."
