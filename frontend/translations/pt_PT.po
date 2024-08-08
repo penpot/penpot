@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-07-11 20:09+0000\n"
-"Last-Translator: TheScientistPT <joao.ed.reis.gomes@gmail.com>\n"
+"PO-Revision-Date: 2024-08-09 02:09+0000\n"
+"Last-Translator: Dário <dariogomes@gmail.com>\n"
 "Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_PT/>\n"
 "Language: pt_PT\n"
@@ -5463,3 +5463,23 @@ msgstr ""
 #: src/app/main/ui/workspace/libraries.cljs
 msgid "workspace.libraries.shared-library-btn"
 msgstr "Conectar biblioteca"
+
+msgid "shortcuts.scale"
+msgstr "Redimensionar"
+
+msgid "shortcuts.toggle-snap-guides"
+msgstr "Ajustar às guias"
+
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "Ajustar às guias de régua"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.disable-snap-ruler-guides"
+msgstr "Desativar ajuste às guias de régua"
+
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "Mostrar 4 opções de preenchimento de lados"
+
+#: src/app/main/ui/workspace/header.cljs
+msgid "workspace.header.menu.enable-snap-ruler-guides"
+msgstr "Ajustar às guias de régua"
