@@ -79,19 +79,16 @@
   [tokens & {:keys [debug?] :as config}]
   (p/let [sd-tokens (-> (wtt/token-names-tree tokens)
                         (resolve-sd-tokens+ config))]
-    (let [tokens-by-name (wtt/token-names-map tokens)
-          resolved-tokens (reduce
+    (let [resolved-tokens (reduce
                            (fn [acc ^js cur]
-                             (let [value (.-value cur)
-                                   resolved-value (d/parse-double (.-value cur))
-                                   original-value (-> cur .-original .-value)
-                                   id (.-name cur)
-                                   missing-reference? (and (not resolved-value)
-                                                           (re-find #"\{" value)
-                                                           (= value original-value))]
-                               (cond-> (assoc-in acc [id :resolved-value] resolved-value)
-                                 missing-reference? (update-in [id :errors] (fnil conj #{}) :style-dictionary/missing-reference))))
-                           tokens-by-name sd-tokens)]
+                             (let [id (uuid (.-uuid (.-id cur)))
+                                   origin-token (get tokens id)
+                                   resolved-value (wtt/parse-token-value (.-value cur))
+                                   resolved-token (if (not resolved-value)
+                                                    (assoc origin-token :errors [:style-dictionary/missing-reference])
+                                                    (assoc origin-token :resolved-value resolved-value))]
+                               (assoc acc (wtt/token-identifier resolved-token) resolved-token)))
+                           {} sd-tokens)]
       (when debug?
         (js/console.log "Resolved tokens" resolved-tokens))
       resolved-tokens)))
@@ -142,11 +139,18 @@
 (comment
   (defonce !output (atom nil))
 
+  (-> @refs/workspace-tokens
+      (resolve-tokens+ {:debug? false})
+      (.then js/console.log))
+
   (-> (resolve-workspace-tokens+ {:debug? true})
       (p/then #(reset! !output %)))
 
+  @!output
+
   (->> @refs/workspace-tokens
-       (resolve-tokens+))
+       (resolve-tokens+)
+       (#(doto % js/console.log)))
 
   (->
    (clj->js {"a" {:name "a" :value "5"}

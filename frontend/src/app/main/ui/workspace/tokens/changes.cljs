@@ -34,10 +34,9 @@
     (watch [_ state _]
       (->> (rx/from (sd/resolve-tokens+ (get-in state [:workspace-data :tokens])))
            (rx/mapcat
-            (fn [sd-tokens]
+            (fn [resolved-tokens]
               (let [undo-id (js/Symbol)
-                    resolved-value (-> (get sd-tokens (:id token))
-                                       (wtt/resolve-token-value))
+                    resolved-value (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value])
                     tokenized-attributes (wtt/attributes-map attributes token)]
                 (rx/of
                  (dwu/start-undo-transaction undo-id)
