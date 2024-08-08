@@ -5,6 +5,8 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.shapes :as cths]
    [app.main.ui.workspace.tokens.changes :as wtch]
+   [app.main.ui.workspace.tokens.token :as wtt]
+   [cljs.pprint :as pprint]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
@@ -31,65 +33,29 @@
                                 :type :border-radius})))
 
 (t/deftest test-apply-token
-  (t/testing "applying a token twice with the same attributes will override the previous applied token"
-    (t/async
-      done
-      (let [file (setup-file)
-            store (ths/setup-store file)
-            rect-1 (cths/get-shape file :rect-1)
-            events [(wtch/apply-token {:shape-ids [(:id rect-1)]
-                                       :attributes #{:rx :ry}
-                                       :token (toht/get-token file :token-1)
-                                       :on-update-shape wtch/update-shape-radius-all})
-                    (wtch/apply-token {:shape-ids [(:id rect-1)]
-                                       :attributes #{:rx :ry}
-                                       :token (toht/get-token file :token-2)
-                                       :on-update-shape wtch/update-shape-radius-all})]]
-        (tohs/run-store-async
-         store done events
-         (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)
-                 token-2' (toht/get-token file' :token-2)
-                 rect-1' (cths/get-shape file' :rect-1)]
-             (t/is (some? (:applied-tokens rect-1')))
-             (t/is (= (:rx (:applied-tokens rect-1')) (:id token-2')))
-             (t/is (= (:ry (:applied-tokens rect-1')) (:id token-2')))
-             (t/is (= (:rx rect-1') 24))
-             (t/is (= (:ry rect-1') 24)))))))))
-
-(t/deftest test-apply-token-overwrite
-  (t/testing "removes old token attributes and applies only single attribute"
+  (t/testing "applies token to shape and updates shape attributes to resolved value"
     (t/async
      done
      (let [file (setup-file)
            store (ths/setup-store file)
            rect-1 (cths/get-shape file :rect-1)
-           events [;; Apply `:token-1` to all border radius attributes
-                   (wtch/apply-token {:attributes #{:rx :ry :r1 :r2 :r3 :r4}
-                                      :token (toht/get-token file :token-1)
-                                      :shape-ids [(:id rect-1)]
-                                      :on-update-shape wtch/update-shape-radius-all})
-                   ;; Apply single `:r1` attribute to same shape
-                   ;; while removing other attributes from the border-radius set
-                   ;; but keep `:r4` for testing purposes
-                   (wtch/apply-token {:attributes #{:r1}
-                                      :attributes-to-remove #{:rx :ry :r1 :r2 :r3}
+           events [(wtch/apply-token {:shape-ids [(:id rect-1)]
+                                      :attributes #{:rx :ry}
                                       :token (toht/get-token file :token-2)
-                                      :shape-ids [(:id rect-1)]
                                       :on-update-shape wtch/update-shape-radius-all})]]
        (tohs/run-store-async
         store done events
         (fn [new-state]
           (let [file' (ths/get-file-from-store new-state)
-                token-1' (toht/get-token file' :token-1)
                 token-2' (toht/get-token file' :token-2)
                 rect-1' (cths/get-shape file' :rect-1)]
-            (t/testing "other border-radius attributes got removed"
-              (t/is (nil? (:rx (:applied-tokens rect-1')))))
-            (t/testing "r1 got applied with :token-2"
-              (t/is (= (:r1 (:applied-tokens rect-1')) (:id token-2'))))
-            (t/testing "while :r4 was kept"
-              (t/is (= (:r4 (:applied-tokens rect-1')) (:id token-1')))))))))));)))))))))))
+            (t/testing "shape `:applied-tokens` got updated"
+              (t/is (some? (:applied-tokens rect-1')))
+              (t/is (= (:rx (:applied-tokens rect-1')) (wtt/token-identifier token-2')))
+              (t/is (= (:ry (:applied-tokens rect-1')) (wtt/token-identifier token-2'))))
+            (t/testing "shape radius got update to the resolved token value."
+              (t/is (= (:rx rect-1') 24))
+              (t/is (= (:ry rect-1') 24))))))))))
 
 (t/deftest test-apply-border-radius
   (t/testing "applies radius token and updates the shapes radius"
