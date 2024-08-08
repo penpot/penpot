@@ -14,8 +14,8 @@
    [app.config :as cfg]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -162,7 +162,7 @@
         on-success
         (fn [_form {:keys [total]}]
           (when (pos? total)
-            (st/emit! (msg/success (tr "notifications.invitation-email-sent"))))
+            (st/emit! (ntf/success (tr "notifications.invitation-email-sent"))))
 
           (st/emit! (modal/hide)
                     (dd/fetch-team-invitations)))
@@ -173,7 +173,7 @@
             (cond
               (and (= :validation type)
                    (= :profile-is-muted code))
-              (st/emit! (msg/error (tr "errors.profile-is-muted"))
+              (st/emit! (ntf/error (tr "errors.profile-is-muted"))
                         (modal/hide))
 
               (or (= :member-is-muted code)
@@ -182,7 +182,7 @@
               (swap! error-text (tr "errors.email-spam-or-permanent-bounces" (:email error)))
 
               :else
-              (st/emit! (msg/error (tr "errors.generic"))
+              (st/emit! (ntf/error (tr "errors.generic"))
                         (modal/hide)))))
 
         on-submit
@@ -203,11 +203,11 @@
 
       (when-not (= "" @error-text)
         [:& context-notification {:content  @error-text
-                                  :type :error}])
+                                  :level :error}])
 
       (when (some current-data-emails current-members-emails)
         [:& context-notification {:content  (tr "modals.invite-member.repeated-invitation")
-                                  :type :warning}])
+                                  :level :warning}])
 
       [:div {:class (stl/css :role-select)}
        [:p {:class (stl/css :role-title)}
@@ -368,13 +368,13 @@
            (condp = code
 
              :no-enough-members-for-leave
-             (rx/of (msg/error (tr "errors.team-leave.insufficient-members")))
+             (rx/of (ntf/error (tr "errors.team-leave.insufficient-members")))
 
              :member-does-not-exist
-             (rx/of (msg/error (tr "errors.team-leave.member-does-not-exists")))
+             (rx/of (ntf/error (tr "errors.team-leave.member-does-not-exists")))
 
              :owner-cant-leave-team
-             (rx/of (msg/error (tr "errors.team-leave.owner-cant-leave")))
+             (rx/of (ntf/error (tr "errors.team-leave.owner-cant-leave")))
 
              (rx/throw error))))
 
@@ -580,16 +580,16 @@
              (cond
                (and (= :validation type)
                     (= :profile-is-muted code))
-               (rx/of (msg/error (tr "errors.profile-is-muted")))
+               (rx/of (ntf/error (tr "errors.profile-is-muted")))
 
                (and (= :validation type)
                     (= :member-is-muted code))
-               (rx/of (msg/error (tr "errors.member-is-muted")))
+               (rx/of (ntf/error (tr "errors.member-is-muted")))
 
                (and (= :restriction type)
                     (or (= :email-has-permanent-bounces code)
                         (= :email-has-complaints code)))
-               (rx/of (msg/error (tr "errors.email-has-permanent-bounces" email)))
+               (rx/of (ntf/error (tr "errors.email-has-permanent-bounces" email)))
 
                :else
                (rx/throw cause)))))
@@ -605,7 +605,7 @@
         on-resend-success
         (mf/use-fn
          (fn []
-           (st/emit! (msg/success (tr "notifications.invitation-email-sent"))
+           (st/emit! (ntf/success (tr "notifications.invitation-email-sent"))
                      (modal/hide)
                      (dd/fetch-team-invitations))))
 
@@ -626,7 +626,7 @@
         on-copy-success
         (mf/use-fn
          (fn []
-           (st/emit! (msg/success (tr "notifications.invitation-link-copied"))
+           (st/emit! (ntf/success (tr "notifications.invitation-link-copied"))
                      (modal/hide))))
 
         on-copy
@@ -788,7 +788,7 @@
          (fn [_]
            (let [message (tr "dashboard.webhooks.create.success")]
              (st/emit! (dd/fetch-team-webhooks)
-                       (msg/success message)
+                       (ntf/success message)
                        (modal/hide)))))
 
         on-error

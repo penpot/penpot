@@ -8,8 +8,8 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.schema :as sm]
-   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
@@ -64,7 +64,7 @@
          (fn [_]
            (let [message (tr "dashboard.access-tokens.create.success")]
              (st/emit! (du/fetch-access-tokens)
-                       (msg/success message)
+                       (ntf/success message)
                        (reset! created? true)))))
 
         on-close
@@ -77,7 +77,7 @@
         on-error
         (mf/use-fn
          (fn [_]
-           (st/emit! (msg/error (tr "errors.generic"))
+           (st/emit! (ntf/error (tr "errors.generic"))
                      (modal/hide))))
 
         on-submit
@@ -99,7 +99,7 @@
          (fn [event]
            (dom/prevent-default event)
            (wapi/write-to-clipboard (:token created))
-           (st/emit! (msg/show {:type :info
+           (st/emit! (ntf/show {:type :info
                                 :notification-type :toast
                                 :content (tr "dashboard.access-tokens.copied-success")
                                 :timeout 7000}))))]

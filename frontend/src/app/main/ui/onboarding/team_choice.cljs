@@ -11,7 +11,7 @@
    [app.common.schema :as sm]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as msg]
+   [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
@@ -90,7 +90,7 @@
         on-error
         (mf/use-fn
          (fn [_]
-           (st/emit! (msg/error (tr "errors.generic")))))
+           (st/emit! (ntf/error (tr "errors.generic")))))
 
         on-invite-later
         (mf/use-fn

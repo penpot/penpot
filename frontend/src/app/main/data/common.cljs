@@ -9,8 +9,8 @@
   (:require
    [app.common.types.components-list :as ctkl]
    [app.config :as cf]
-   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -61,7 +61,7 @@
 
 (defn hide-notifications!
   []
-  (st/emit! msg/hide))
+  (st/emit! (ntf/hide)))
 
 (defn handle-notification
   [{:keys [message code level] :as params}]
@@ -72,7 +72,7 @@
         :upgrade-version
         (when (or (not= (:version params) (:full cf/version))
                   (true? (:force params)))
-          (rx/of (msg/dialog
+          (rx/of (ntf/dialog
                   :content (tr "notifications.by-code.upgrade-version")
                   :controls :inline-actions
                   :notification-type :inline
@@ -81,7 +81,7 @@
                   :tag :notification)))
 
         :maintenance
-        (rx/of (msg/dialog
+        (rx/of (ntf/dialog
                 :content (tr "notifications.by-code.maintenance")
                 :controls :inline-actions
                 :type level
@@ -89,7 +89,7 @@
                            :callback hide-notifications!}]
                 :tag :notification))
 
-        (rx/of (msg/dialog
+        (rx/of (ntf/dialog
                 :content message
                 :controls :close
                 :type level

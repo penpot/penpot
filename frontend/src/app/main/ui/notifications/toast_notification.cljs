@@ -28,9 +28,9 @@
 (def ^:private close-icon
   (i/icon-xref :close (stl/css :close-icon)))
 
-(defn get-icon-by-type
-  [type]
-  (case type
+(defn get-icon-by-level
+  [level]
+  (case level
     :warning neutral-icon
     :error error-icon
     :success success-icon
@@ -44,15 +44,15 @@
   error messages that require user interaction."
 
   {::mf/props :obj}
-  [{:keys [type content on-close links] :as props}]
+  [{:keys [level content on-close links] :as props}]
 
   [:aside {:class (stl/css-case :toast-notification true
-                                :warning  (= type :warning)
-                                :error    (= type :error)
-                                :success  (= type :success)
-                                :info     (= type :info))}
+                                :warning  (= level :warning)
+                                :error    (= level :error)
+                                :success  (= level :success)
+                                :info     (= level :info))}
 
-   (get-icon-by-type type)
+   (get-icon-by-level level)
 
    [:div {:class (stl/css :text)}
     content

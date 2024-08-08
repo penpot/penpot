@@ -10,8 +10,8 @@
    [app.common.schema :as sm]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
@@ -29,22 +29,22 @@
 (defn- on-create-success
   [_form response]
   (let [msg "Team created successfully"]
-    (st/emit! (msg/success msg)
+    (st/emit! (ntf/success msg)
               (modal/hide)
               (rt/nav :dashboard-projects {:team-id (:id response)}))))
 
 (defn- on-update-success
   [_form _response]
   (let [msg "Team created successfully"]
-    (st/emit! (msg/success msg)
+    (st/emit! (ntf/success msg)
               (modal/hide))))
 
 (defn- on-error
   [form _response]
   (let [id  (get-in @form [:clean-data :id])]
     (if id
-      (rx/of (msg/error "Error on updating team."))
-      (rx/of (msg/error "Error on creating team.")))))
+      (rx/of (ntf/error "Error on updating team."))
+      (rx/of (ntf/error "Error on creating team.")))))
 
 (defn- on-create-submit
   [form]

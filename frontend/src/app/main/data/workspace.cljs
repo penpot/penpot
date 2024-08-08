@@ -39,8 +39,8 @@
    [app.main.data.comments :as dcm]
    [app.main.data.events :as ev]
    [app.main.data.fonts :as df]
-   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
    [app.main.data.users :as du]
    [app.main.data.workspace.bool :as dwb]
@@ -347,7 +347,7 @@
       (log/debug :hint "initialize-file" :file-id file-id)
       (let [stoper-s (rx/filter (ptk/type? ::finalize-file) stream)]
         (rx/merge
-         (rx/of msg/hide
+         (rx/of (ntf/hide)
                 (features/initialize)
                 (dcm/retrieve-comment-threads file-id)
                 (fetch-bundle project-id file-id))
@@ -1595,7 +1595,7 @@
           (on-error [cause]
             (let [data (ex-data cause)]
               (if (:not-implemented data)
-                (rx/of (msg/warn (tr "errors.clipboard-not-implemented")))
+                (rx/of (ntf/warn (tr "errors.clipboard-not-implemented")))
                 (js/console.error "Clipboard error:" cause))
               (rx/empty)))]
 

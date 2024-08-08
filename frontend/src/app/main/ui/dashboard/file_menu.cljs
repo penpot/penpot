@@ -9,8 +9,8 @@
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
@@ -88,12 +88,12 @@
         on-duplicate
         (fn [_]
           (apply st/emit! (map dd/duplicate-file files))
-          (st/emit! (msg/success (tr "dashboard.success-duplicate-file" (i18n/c (count files))))))
+          (st/emit! (ntf/success (tr "dashboard.success-duplicate-file" (i18n/c (count files))))))
 
         on-delete-accept
         (fn [_]
           (apply st/emit! (map dd/delete-file files))
-          (st/emit! (msg/success (tr "dashboard.success-delete-file" (i18n/c (count files))))
+          (st/emit! (ntf/success (tr "dashboard.success-delete-file" (i18n/c (count files))))
                     (dd/clear-selected-files)))
 
         on-delete
@@ -126,8 +126,8 @@
         on-move-success
         (fn [team-id project-id]
           (if multi?
-            (st/emit! (msg/success (tr "dashboard.success-move-files")))
-            (st/emit! (msg/success (tr "dashboard.success-move-file"))))
+            (st/emit! (ntf/success (tr "dashboard.success-move-files")))
+            (st/emit! (ntf/success (tr "dashboard.success-move-file"))))
           (if (or navigate? (not= team-id current-team-id))
             (st/emit! (dd/go-to-files team-id project-id))
             (st/emit! (dd/fetch-recent-files team-id)
