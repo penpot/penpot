@@ -9,15 +9,26 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [cljs.test :as t :include-macros true]))
 
+(t/deftest test-parse-token-value
+  (t/testing "parses double from a token value"
+    (t/is (= 100.1 (wtt/parse-token-value "100.1")))
+    (t/is (= -9 (wtt/parse-token-value "-9")))
+    (t/testing "trims white-space"
+      (t/is (= -1.3 (wtt/parse-token-value "     -1.3   "))))
+    (t/testing "returns nil for any invalid characters"
+      (t/is (nil? (wtt/parse-token-value "     -1.3a   "))))
+    (t/testing "doesnt accept invalid double"
+      (t/is (nil? (wtt/parse-token-value ".3"))))))
+
 (t/deftest find-token-references
-  ;; Return references
-  (t/is (= #{"foo" "bar"} (wtt/find-token-references "{foo} + {bar}")))
-  ;; Ignore non reference text
-  (t/is (= #{"foo.bar.baz"} (wtt/find-token-references "{foo.bar.baz} + something")))
-  ;; No references found
-  (t/is (nil? (wtt/find-token-references "1 + 2")))
-  ;; Edge-case: Ignore unmatched closing parens
-  (t/is (= #{"foo" "bar"} (wtt/find-token-references "{foo}} + {bar}"))))
+  (t/testing "finds references inside curly braces in a string"
+    (t/is (= #{"foo" "bar"} (wtt/find-token-references "{foo} + {bar}")))
+    (t/testing "ignores extra text"
+      (t/is (= #{"foo.bar.baz"} (wtt/find-token-references "{foo.bar.baz} + something"))))
+    (t/testing "ignores string without references"
+      (t/is (nil? (wtt/find-token-references "1 + 2"))))
+    (t/testing "handles edge-case for extra curly braces"
+      (t/is (= #{"foo" "bar"} (wtt/find-token-references "{foo}} + {bar}"))))))
 
 (t/deftest remove-attributes-for-token-id
   (t/testing "removes attributes matching the `token`, keeps other attributes"
