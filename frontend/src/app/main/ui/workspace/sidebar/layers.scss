@@ -91,6 +91,7 @@
   @include buttonStyle;
   display: grid;
   grid-template-columns: auto 1fr auto;
+  align-items: center;
   width: 100%;
   padding: 0;
 }
@@ -108,10 +109,8 @@
 }
 
 .focus-name {
+  @include textEllipsis;
   @include bodySmallTypography;
-  display: flex;
-  align-items: center;
-  height: 100%;
   padding-left: $s-4;
   color: var(--title-foreground-color);
 }
