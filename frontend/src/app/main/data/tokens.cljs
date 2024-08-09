@@ -80,17 +80,6 @@
     (apply-token-to-shape props)
     shape))
 
-(defn update-token-from-attributes
-  [{:keys [token-id shape-id attributes]}]
-  (ptk/reify ::update-token-from-attributes
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [shape (get-shape-from-state shape-id state)
-            applied-tokens (apply-token-id-to-attributes {:shape shape
-                                                          :token-id token-id
-                                                          :attributes attributes})]
-        (rx/of (update-shape shape-id {:applied-tokens applied-tokens}))))))
-
 (defn get-token-data-from-token-id
   [id]
   (let [workspace-data (deref refs/workspace-data)]
