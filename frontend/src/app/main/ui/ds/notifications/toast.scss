@@ -1,0 +1,75 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../_sizes.scss" as *;
+@use "../_borders.scss" as *;
+@use "../typography.scss" as *;
+
+.toast {
+  @include use-typography("body-small");
+
+  --toast-bg-color: var(--color-background-primary);
+  --toast-fg-color: var(--color-foreground-primary);
+  --toast-border-color: var(--color-background-quaternary);
+  --toast-icon-color: var(--color-foreground-secondary);
+
+  min-width: $sz-224;
+  height: $sz-32;
+  background-color: var(--toast-bg-color);
+  border: $b-1 solid var(--toast-border-color);
+  border-radius: $br-8;
+  padding: 0 var(--sp-s);
+
+  display: inline-grid;
+  grid-template-columns: auto 1fr auto;
+  column-gap: var(--sp-s);
+  align-items: center;
+
+  color: var(--toast-fg-color);
+}
+
+.toast-info {
+  --toast-bg-color: var(--color-background-info);
+  --toast-fg-color: var(--color-foreground-primary);
+  --toast-border-color: var(--color-accent-info);
+  --toast-icon-color: var(--color-accent-info);
+}
+
+.toast-error {
+  --toast-bg-color: var(--color-background-error);
+  --toast-fg-color: var(--color-foreground-primary);
+  --toast-border-color: var(--color-accent-error);
+  --toast-icon-color: var(--color-accent-error);
+}
+
+.toast-warning {
+  --toast-bg-color: var(--color-background-warning);
+  --toast-fg-color: var(--color-foreground-primary);
+  --toast-border-color: var(--color-accent-warning);
+  --toast-icon-color: var(--color-accent-warning);
+}
+
+.toast-success {
+  --toast-bg-color: var(--color-background-success);
+  --toast-fg-color: var(--color-foreground-primary);
+  --toast-border-color: var(--color-accent-success);
+  --toast-icon-color: var(--color-accent-success);
+}
+
+.icon {
+  color: var(--toast-icon-color);
+}
+
+.close-button {
+  appearance: none;
+  width: $sz-16;
+  height: $sz-16;
+  display: inline-grid;
+  place-content: center;
+  border: none;
+  background: var(--toast-bg-color);
+  color: var(--toast-icon-color);
+}

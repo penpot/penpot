@@ -1,0 +1,43 @@
+import { Canvas, Meta } from '@storybook/blocks';
+import * as ToastStories from "./toast.stories";
+
+<Meta title="Notifications/Docs" />
+
+# Notifications
+
+`toast*` and `context-notification` accept a `level` prop to indicate the type of message. If this prop is `nil`,
+the default variant will be shown:
+
+<Canvas of={ToastStories.Default} />
+
+Info:
+
+<Canvas of={ToastStories.Info} />
+
+Warning:
+
+<Canvas of={ToastStories.Warning} />
+
+Error:
+
+<Canvas of={ToastStories.Error} />
+
+Success:
+
+<Canvas of={ToastStories.Success} />
+
+## Toasts
+
+Toast notifications are temporary floating elements that provide information
+that requires user acknowledgement.
+
+### Usage guidelines (design)
+
+#### Where to use
+
+Displayed in the top right corner of the page, in absolute position.
+
+#### When to use
+
+When the notification is temporary and is related or affects the whole context
+of the page the user is viewing or interacting with.
