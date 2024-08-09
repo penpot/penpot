@@ -5,9 +5,14 @@
    [cuerdas.core :as str]))
 
 (def parseable-token-value-regexp
+  "Regexp that can be used to parse a number value out of resolved token value.
+  This regexp also trims whitespace around the value."
   #"^\s*(-?[0-9]+\.?[0-9]*)(px|%)?\s*$")
 
-(defn parse-token-value [value]
+(defn parse-token-value
+  "Parses a resolved value and separates the unit from the value.
+  Returns a map of {:value `number` :unit `string`}."
+  [value]
   (cond
     (number? value) {:value value}
     (string? value) (when-let [[_ value unit] (re-find parseable-token-value-regexp value)]
