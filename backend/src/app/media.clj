@@ -313,17 +313,3 @@
               (= stype :ttf)
               (-> (assoc "font/otf" (ttf->otf sfnt))
                   (assoc "font/ttf" sfnt)))))))))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Utility functions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn configure-assets-storage
-  "Given storage map, returns a storage configured with the appropriate
-  backend for assets and optional connection attached."
-  ([storage]
-   (assoc storage ::sto/backend (cf/get :assets-storage-backend :assets-fs)))
-  ([storage pool-or-conn]
-   (-> (configure-assets-storage storage)
-       (assoc ::db/pool-or-conn pool-or-conn))))

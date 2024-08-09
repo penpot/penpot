@@ -145,7 +145,7 @@
       (t/is (nil? (:result out))))
 
     (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
-      (t/is (= 6 (:freeze res)))
+      (t/is (= 0 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
     (let [res (th/run-task! :objects-gc {:min-age 0})]
@@ -207,7 +207,7 @@
       (t/is (nil? (:result out))))
 
     (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
-      (t/is (= 3 (:freeze res)))
+      (t/is (= 0 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
     (let [res (th/run-task! :objects-gc {:min-age 0})]
@@ -268,7 +268,7 @@
       (t/is (nil? (:result out))))
 
     (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
-      (t/is (= 3 (:freeze res)))
+      (t/is (= 0 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
     (let [res (th/run-task! :objects-gc {:min-age 0})]

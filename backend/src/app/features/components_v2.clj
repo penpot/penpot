@@ -62,6 +62,7 @@
    [datoteka.io :as io]
    [promesa.util :as pu]))
 
+
 (def ^:dynamic *stats*
   "A dynamic var for setting up state for collect stats globally."
   nil)
@@ -1742,7 +1743,7 @@
                :validate validate?
                :skip-on-graphic-error skip-on-graphic-error?)
 
-        (db/tx-run! (update system ::sto/storage media/configure-assets-storage)
+        (db/tx-run! system
                     (fn [system]
                       (binding [*system* system]
                         (when (string? label)

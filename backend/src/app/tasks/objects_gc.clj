@@ -11,7 +11,6 @@
    [app.common.logging :as l]
    [app.config :as cf]
    [app.db :as db]
-   [app.media :as media]
    [app.storage :as sto]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -126,7 +125,7 @@
                0)))
 
 (def ^:private sql:get-files
-  "SELECT id, deleted_at, project_id
+  "SELECT id, deleted_at, project_id, data_ref_id
      FROM file
     WHERE deleted_at IS NOT NULL
       AND deleted_at < now() - ?::interval
@@ -136,14 +135,16 @@
      SKIP LOCKED")
 
 (defn- delete-files!
-  [{:keys [::db/conn ::min-age ::chunk-size] :as cfg}]
+  [{:keys [::db/conn ::sto/storage ::min-age ::chunk-size] :as cfg}]
   (->> (db/cursor conn [sql:get-files min-age chunk-size] {:chunk-size 1})
-       (reduce (fn [total {:keys [id deleted-at project-id]}]
+       (reduce (fn [total {:keys [id deleted-at project-id data-ref-id]}]
                  (l/trc :hint "permanently delete"
                         :rel "file"
                         :id (str id)
                         :project-id (str project-id)
                         :deleted-at (dt/format-instant deleted-at))
+
+                 (some->> data-ref-id (sto/touch-object! storage))
 
                  ;; And finally, permanently delete the file.
                  (db/delete! conn :file {:id id})
@@ -210,7 +211,7 @@
                0)))
 
 (def ^:private sql:get-file-data-fragments
-  "SELECT file_id, id, deleted_at
+  "SELECT file_id, id, deleted_at, data_ref_id
      FROM file_data_fragment
     WHERE deleted_at IS NOT NULL
       AND deleted_at < now() - ?::interval
@@ -220,15 +221,16 @@
      SKIP LOCKED")
 
 (defn- delete-file-data-fragments!
-  [{:keys [::db/conn ::min-age ::chunk-size] :as cfg}]
+  [{:keys [::db/conn ::sto/storage ::min-age ::chunk-size] :as cfg}]
   (->> (db/cursor conn [sql:get-file-data-fragments min-age chunk-size] {:chunk-size 1})
-       (reduce (fn [total {:keys [file-id id deleted-at]}]
+       (reduce (fn [total {:keys [file-id id deleted-at data-ref-id]}]
                  (l/trc :hint "permanently delete"
                         :rel "file-data-fragment"
                         :id (str id)
                         :file-id (str file-id)
                         :deleted-at (dt/format-instant deleted-at))
 
+                 (some->> data-ref-id (sto/touch-object! storage))
                  (db/delete! conn :file-data-fragment {:file-id file-id :id id})
 
                  (inc total))
@@ -299,9 +301,7 @@
   [_ cfg]
   (fn [{:keys [props] :as task}]
     (let [min-age (dt/duration (or (:min-age props) (::min-age cfg)))
-          cfg     (-> cfg
-                      (assoc ::min-age (db/interval min-age))
-                      (update ::sto/storage media/configure-assets-storage))]
+          cfg     (assoc cfg ::min-age (db/interval min-age))]
 
       (loop [procs (map deref deletion-proc-vars)
              total 0]

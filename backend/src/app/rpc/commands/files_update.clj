@@ -227,8 +227,12 @@
 (defn- update-file*
   [{:keys [::db/conn ::wrk/executor] :as cfg}
    {:keys [profile-id file changes session-id ::created-at skip-validate] :as params}]
-  (let [;; Process the file data on separated thread for avoid to do
+  (let [;; Retrieve the file data
+        file     (feat.fdata/resolve-file-data cfg file {:touch true})
+
+        ;; Process the file data on separated thread for avoid to do
         ;; the CPU intensive operation on vthread.
+
         file     (px/invoke! executor (partial update-file-data cfg file changes skip-validate))
         features (db/create-array conn "text" (:features file))]
 
@@ -254,6 +258,7 @@
                  :version (:version file)
                  :features features
                  :data-backend nil
+                 :data-ref-id nil
                  :modified-at created-at
                  :has-media-trimmed false}
                 {:id (:id file)})

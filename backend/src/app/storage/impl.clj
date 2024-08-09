@@ -207,15 +207,13 @@
     (str "blake2b:" result)))
 
 (defn resolve-backend
-  [{:keys [::db/pool] :as storage} backend-id]
+  [storage backend-id]
   (let [backend (get-in storage [::sto/backends backend-id])]
     (when-not backend
       (ex/raise :type :internal
                 :code :backend-not-configured
                 :hint (dm/fmt "backend '%' not configured" backend-id)))
-    (-> backend
-        (assoc ::sto/id backend-id)
-        (assoc ::db/pool pool))))
+    (assoc backend ::sto/id backend-id)))
 
 (defrecord StorageObject [id size created-at expired-at touched-at backend])
 

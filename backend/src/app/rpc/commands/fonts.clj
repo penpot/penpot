@@ -95,12 +95,11 @@
   [cfg {:keys [::rpc/profile-id team-id] :as params}]
   (db/tx-run! cfg
               (fn [{:keys [::db/conn] :as cfg}]
-                (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
-                  (teams/check-edition-permissions! conn profile-id team-id)
-                  (quotes/check-quote! conn {::quotes/id ::quotes/font-variants-per-team
-                                             ::quotes/profile-id profile-id
-                                             ::quotes/team-id team-id})
-                  (create-font-variant cfg (assoc params :profile-id profile-id))))))
+                (teams/check-edition-permissions! conn profile-id team-id)
+                (quotes/check-quote! conn {::quotes/id ::quotes/font-variants-per-team
+                                           ::quotes/profile-id profile-id
+                                           ::quotes/team-id team-id})
+                (create-font-variant cfg (assoc params :profile-id profile-id)))))
 
 (defn create-font-variant
   [{:keys [::sto/storage ::db/conn ::wrk/executor]} {:keys [data] :as params}]
@@ -203,14 +202,13 @@
    ::sm/params schema:delete-font}
   [cfg {:keys [::rpc/profile-id id team-id]}]
   (db/tx-run! cfg
-              (fn [{:keys [::db/conn ::sto/storage] :as cfg}]
+              (fn [{:keys [::db/conn] :as cfg}]
                 (teams/check-edition-permissions! conn profile-id team-id)
                 (let [fonts   (db/query conn :team-font-variant
                                         {:team-id team-id
                                          :font-id id
                                          :deleted-at nil}
                                         {::sql/for-update true})
-                      storage (media/configure-assets-storage storage conn)
                       tnow    (dt/now)]
 
                   (when-not (seq fonts)
@@ -220,11 +218,7 @@
                   (doseq [font fonts]
                     (db/update! conn :team-font-variant
                                 {:deleted-at tnow}
-                                {:id (:id font)})
-                    (some->> (:woff1-file-id font) (sto/touch-object! storage))
-                    (some->> (:woff2-file-id font) (sto/touch-object! storage))
-                    (some->> (:ttf-file-id font) (sto/touch-object! storage))
-                    (some->> (:otf-file-id font) (sto/touch-object! storage)))
+                                {:id (:id font)}))
 
                   (rph/with-meta (rph/wrap)
                     {::audit/props {:id id
@@ -245,21 +239,15 @@
    ::sm/params schema:delete-font-variant}
   [cfg {:keys [::rpc/profile-id id team-id]}]
   (db/tx-run! cfg
-              (fn [{:keys [::db/conn ::sto/storage] :as cfg}]
+              (fn [{:keys [::db/conn] :as cfg}]
                 (teams/check-edition-permissions! conn profile-id team-id)
                 (let [variant (db/get conn :team-font-variant
                                       {:id id :team-id team-id}
-                                      {::sql/for-update true})
-                      storage (media/configure-assets-storage storage conn)]
+                                      {::sql/for-update true})]
 
                   (db/update! conn :team-font-variant
                               {:deleted-at (dt/now)}
                               {:id (:id variant)})
-
-                  (some->> (:woff1-file-id variant) (sto/touch-object! storage))
-                  (some->> (:woff2-file-id variant) (sto/touch-object! storage))
-                  (some->> (:ttf-file-id variant) (sto/touch-object! storage))
-                  (some->> (:otf-file-id variant) (sto/touch-object! storage))
 
                   (rph/with-meta (rph/wrap)
                     {::audit/props {:font-family (:font-family variant)

@@ -674,8 +674,7 @@
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
-  (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
-    (update-team-photo cfg (assoc params :profile-id profile-id))))
+  (update-team-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-team-photo
   [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id team-id] :as params}]

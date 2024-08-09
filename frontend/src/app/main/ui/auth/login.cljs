@@ -53,14 +53,15 @@
                      (.replace js/location redirect-uri)
                      (log/error :hint "unexpected response from OIDC method"
                                 :resp (pr-str rsp))))
-                 (fn [{:keys [type code] :as error}]
-                   (cond
-                     (and (= type :restriction)
-                          (= code :provider-not-configured))
-                     (st/emit! (ntf/error (tr "errors.auth-provider-not-configured")))
+                 (fn [cause]
+                   (let [{:keys [type code] :as error} (ex-data cause)]
+                     (cond
+                       (and (= type :restriction)
+                            (= code :provider-not-configured))
+                       (st/emit! (ntf/error (tr "errors.auth-provider-not-configured")))
 
-                     :else
-                     (st/emit! (ntf/error (tr "errors.generic"))))))))
+                       :else
+                       (st/emit! (ntf/error (tr "errors.generic")))))))))
 
 (def ^:private schema:login-form
   [:map {:title "LoginForm"}

@@ -121,5 +121,3 @@
                                  :total total)
 
                           {:deleted total}))))))
-
-

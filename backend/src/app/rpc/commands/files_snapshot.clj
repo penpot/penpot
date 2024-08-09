@@ -14,7 +14,6 @@
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.main :as-alias main]
-   [app.media :as media]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
@@ -63,8 +62,8 @@
   (db/run! cfg get-file-snapshots params))
 
 (defn restore-file-snapshot!
-  [{:keys [::db/conn ::sto/storage] :as cfg} {:keys [file-id id]}]
-  (let [storage  (media/configure-assets-storage storage conn)
+  [{:keys [::db/conn] :as cfg} {:keys [file-id id]}]
+  (let [storage  (sto/resolve cfg {::db/reuse-conn true})
         file     (files/get-minimal-file conn file-id {::db/for-update true})
         snapshot (db/get* conn :file-change
                           {:file-id file-id

@@ -62,19 +62,25 @@
   [conn]
   (-> (db/exec-one! conn ["SELECT count(*) AS count FROM file"]) :count))
 
+(def ^:private sql:num-file-changes
+  "SELECT count(*) AS count
+     FROM file_change
+    WHERE created_at < date_trunc('day', now()) + '24 hours'::interval
+      AND created_at > date_trunc('day', now())")
+
 (defn- get-num-file-changes
   [conn]
-  (let [sql (str "SELECT count(*) AS count "
-                 "  FROM file_change "
-                 " where date_trunc('day', created_at) = date_trunc('day', now())")]
-    (-> (db/exec-one! conn [sql]) :count)))
+  (-> (db/exec-one! conn [sql:num-file-changes]) :count))
+
+(def ^:private sql:num-touched-files
+  "SELECT count(distinct file_id) AS count
+     FROM file_change
+    WHERE created_at < date_trunc('day', now()) + '24 hours'::interval
+      AND created_at > date_trunc('day', now())")
 
 (defn- get-num-touched-files
   [conn]
-  (let [sql (str "SELECT count(distinct file_id) AS count "
-                 "  FROM file_change "
-                 " where date_trunc('day', created_at) = date_trunc('day', now())")]
-    (-> (db/exec-one! conn [sql]) :count)))
+  (-> (db/exec-one! conn [sql:num-touched-files]) :count))
 
 (defn- get-num-users
   [conn]

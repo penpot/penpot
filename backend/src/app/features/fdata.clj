@@ -12,6 +12,7 @@
    [app.common.logging :as l]
    [app.db :as db]
    [app.db.sql :as-alias sql]
+   [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]))
@@ -55,12 +56,28 @@
 ;; POINTER-MAP
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn get-file-data
+  "Get file data given a file instance."
+  [system {:keys [data-backend data-ref-id] :as file} & {:keys [touch]}]
+  (if (= data-backend "objects-storage")
+    (let [storage (sto/resolve system ::db/reuse-conn true)
+          object  (sto/get-object storage data-ref-id)]
+
+      (when touch (sto/touch-object! storage data-ref-id))
+      (sto/get-object-bytes storage object))
+    (:data file)))
+
+(defn resolve-file-data
+  [system file & {:as opts}]
+  (let [data (get-file-data system file opts)]
+    (assoc file :data data)))
+
 (defn load-pointer
   "A database loader pointer helper"
   [system file-id id]
   (let [fragment (db/get* system :file-data-fragment
                           {:id id :file-id file-id}
-                          {::sql/columns [:data]})]
+                          {::sql/columns [:data :data-backend :data-ref-id :id]})]
 
     (l/trc :hint "load pointer"
            :file-id (str file-id)
@@ -74,7 +91,9 @@
                 :file-id file-id
                 :fragment-id id))
 
-    (blob/decode (:data fragment))))
+    (let [data (get-file-data system fragment)]
+      ;; FIXME: conditional thread scheduling for decoding big objects
+      (blob/decode data))))
 
 (defn persist-pointers!
   "Persist all currently tracked pointer objects"

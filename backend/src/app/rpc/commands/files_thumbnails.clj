@@ -295,8 +295,7 @@
 
   (db/run! cfg files/check-edition-permissions! profile-id file-id)
 
-  (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
-    (create-file-object-thumbnail! cfg file-id object-id media (or tag "frame"))))
+  (create-file-object-thumbnail! cfg file-id object-id media (or tag "frame")))
 
 ;; --- MUTATION COMMAND: delete-file-object-thumbnail
 
@@ -327,7 +326,7 @@
   (files/check-edition-permissions! cfg profile-id file-id)
   (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
                     (-> cfg
-                        (update ::sto/storage media/configure-assets-storage conn)
+                        (update ::sto/storage sto/configure conn)
                         (delete-file-object-thumbnail! file-id object-id))
                     nil)))
 
@@ -405,7 +404,6 @@
   (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
                     (files/check-edition-permissions! conn profile-id file-id)
                     (when-not (db/read-only? conn)
-                      (let [cfg   (update cfg ::sto/storage media/configure-assets-storage)
-                            media (create-file-thumbnail! cfg params)]
+                      (let [media (create-file-thumbnail! cfg params)]
                         {:uri (files/resolve-public-uri (:id media))
                          :id (:id media)})))))
