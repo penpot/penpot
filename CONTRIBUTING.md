@@ -48,7 +48,7 @@ quick win.
 If is going to be your first pull request, You can learn how from this
 free video series:
 
-https://egghead.io/series/how-to-contribute-to-an-open-source-project-on-github
+https://egghead.io/courses/how-to-contribute-to-an-open-source-project-on-github
 
 We will use the `easy fix` mark for tag for indicate issues that are
 easy for beginners.
