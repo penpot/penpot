@@ -48,6 +48,11 @@
   cursor: pointer;
   color: var(--layer-row-foreground-color);
   padding-left: 20px;
+  
+  /*&:hover{
+    box-shadow: 20px 0 0 0 var(--layer-row-background-color-hover);
+  }*/
+
 }
 
 .set-item-set, .set-item-group {
@@ -57,7 +62,7 @@
   min-height: $s-32;
   width: 100%;
   cursor: pointer;
-  color: var(--layer-row-foreground-color);
+  color: var(--layer-row-foreground-color); 
   .set-name {
     @include textEllipsis;
     flex-grow: 1;
@@ -85,6 +90,8 @@
   &:hover {
     background-color: var(--layer-row-background-color-hover);
     color: var(--layer-row-foreground-color-hover);
+    box-shadow: -100px 0 0 0 var(--layer-row-background-color-hover);
+
   }
 }
 .action-btn {
