@@ -355,16 +355,22 @@
 
         profile    (if-let [profile-id (:profile-id claims)]
                      (profile/get-profile conn profile-id)
-                     (let [is-active (or (boolean (:is-active claims))
-                                         (not (contains? cf/flags :email-verification)))
-                           params    (-> params
-                                         (assoc :is-active is-active)
-                                         (update :password #(profile/derive-password cfg %)))]
-                       (->> (create-profile! conn params)
-                            (create-profile-rels! conn))))
+                     ;; NOTE: we first try to match existing profile
+                     ;; by email, that in normal circumstances will
+                     ;; not return anything, but when a user tries to
+                     ;; reuse the same token multiple times, we need
+                     ;; to detect if the profile is already registered
+                     (or (profile/get-profile-by-email conn (:email claims))
+                         (let [is-active (or (boolean (:is-active claims))
+                                             (not (contains? cf/flags :email-verification)))
+                               params    (-> params
+                                             (assoc :is-active is-active)
+                                             (update :password #(profile/derive-password cfg %)))
+                               profile   (->> (create-profile! conn params)
+                                              (create-profile-rels! conn))]
+                           (vary-meta profile assoc :created true))))
 
-        ;; When no profile-id comes on claims means a new register
-        created?   (not (:profile-id claims))
+        created?   (-> profile meta :created true?)
 
         invitation (when-let [token (:invitation-token params)]
                      (tokens/verify (::setup/props cfg) {:token token :iss :team-invitation}))
@@ -422,13 +428,13 @@
              ::audit/profile-id (:id profile)})))
 
       :else
-      (let [elapsed?    (elapsed-verify-threshold? profile)
-            complaints? (eml/has-reports? conn (:email profile))
-            action      (if complaints?
-                          "ignore-because-complaints"
-                          (if elapsed?
-                            "resend-email-verification"
-                            "ignore"))]
+      (let [elapsed? (elapsed-verify-threshold? profile)
+            reports? (eml/has-reports? conn (:email profile))
+            action   (if reports?
+                       "ignore-because-complaints"
+                       (if elapsed?
+                         "resend-email-verification"
+                         "ignore"))]
 
         (l/wrn :hint "repeated registry detected"
                :profile-id (str (:id profile))
