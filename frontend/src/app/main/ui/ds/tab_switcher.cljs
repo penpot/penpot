@@ -27,7 +27,7 @@
                                       :role "tab"
                                       :aria-selected selected
                                       :title (or label aria-label)
-                                      :tab-index  (if selected 0 -1)
+                                      :tab-index  (if selected nil -1)
                                       :ref tab-ref
                                       :data-id id})]
 
@@ -155,6 +155,6 @@
                     :on-click handle-click
                     :tabs-refs tabs-refs}]]
 
-     [:> tab-panel* {}
+     [:> tab-panel* {:tab-index 0}
       panel-content]]))
 
