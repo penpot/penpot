@@ -50,12 +50,6 @@
   (let [[shape-leftover token-leftover _matching] (data/diff (:applied-tokens shape) token)]
     (merge {} shape-leftover token-leftover)))
 
-(defn get-shape-from-state [shape-id state]
-  (let [current-page-id (get state :current-page-id)
-        shape (-> (workspace-shapes (:workspace-data state) current-page-id #{shape-id})
-                  (first))]
-    shape))
-
 (defn token-from-attributes [token attributes]
   (->> (map (fn [attr] [attr (wtt/token-identifier token)]) attributes)
        (into {})))
