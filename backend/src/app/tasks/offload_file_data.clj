@@ -8,6 +8,7 @@
   "A maintenance task responsible of moving file data from hot
   storage (the database row) to a cold storage (fs or s3)."
   (:require
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.db :as db]
    [app.db.sql :as-alias sql]
@@ -18,26 +19,31 @@
 (defn- offload-file-data!
   [{:keys [::db/conn ::sto/storage ::file-id] :as cfg}]
   (let [file (db/get conn :file {:id file-id}
-                     {::sql/for-update true})
+                     {::sql/for-update true})]
+    (when (nil? (:data file))
+      (ex/raise :hint "file already offloaded"
+                :type :internal
+                :code :file-already-offloaded
+                :file-id file-id))
 
-        data (sto/content (:data file))
-        sobj (sto/put-object! storage
-                              {::sto/content data
-                               ::sto/touch true
-                               :bucket "file-data"
-                               :content-type "application/octet-stream"
-                               :file-id file-id})]
+    (let [data (sto/content (:data file))
+          sobj (sto/put-object! storage
+                                {::sto/content data
+                                 ::sto/touch true
+                                 :bucket "file-data"
+                                 :content-type "application/octet-stream"
+                                 :file-id file-id})]
 
-    (l/trc :hint "offload file data"
-           :file-id (str file-id)
-           :storage-id (str (:id sobj)))
+      (l/trc :hint "offload file data"
+             :file-id (str file-id)
+             :storage-id (str (:id sobj)))
 
-    (db/update! conn :file
-                {:data-backend "objects-storage"
-                 :data-ref-id (:id sobj)
-                 :data nil}
-                {:id file-id}
-                {::db/return-keys false})))
+      (db/update! conn :file
+                  {:data-backend "objects-storage"
+                   :data-ref-id (:id sobj)
+                   :data nil}
+                  {:id file-id}
+                  {::db/return-keys false}))))
 
 (defn- offload-file-data-fragments!
   [{:keys [::db/conn ::sto/storage ::file-id] :as cfg}]

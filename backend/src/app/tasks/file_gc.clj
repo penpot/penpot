@@ -301,16 +301,15 @@
 
       (try
         (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                          (let [cfg (update cfg ::sto/storage sto/configure conn)
-                                res (process-file! cfg)]
-
-                            (when (contains? cf/flags :tiered-file-data-storage)
+                          (let [cfg        (update cfg ::sto/storage sto/configure conn)
+                                processed? (process-file! cfg)]
+                            (when (and processed? (contains? cf/flags :tiered-file-data-storage))
                               (wrk/submit! (-> cfg
                                                (assoc ::wrk/task :offload-file-data)
                                                (assoc ::wrk/params props)
                                                (assoc ::wrk/priority 10)
                                                (assoc ::wrk/delay 1000))))
-                            res)))
+                            processed?)))
 
         (catch Throwable cause
           (l/err :hint "error on cleaning file"

@@ -407,6 +407,7 @@
       (ex/raise :type :not-found
                 :code :object-not-found
                 :table table
+                :params params
                 :hint "database object not found"))
     row))
 
