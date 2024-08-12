@@ -344,6 +344,8 @@
     {:sendmail           (ig/ref ::email/handler)
      :objects-gc         (ig/ref :app.tasks.objects-gc/handler)
      :file-gc            (ig/ref :app.tasks.file-gc/handler)
+     :file-gc-scheduler  (ig/ref :app.tasks.file-gc-scheduler/handler)
+     :offload-file-data  (ig/ref :app.tasks.offload-file-data/handler)
      :file-xlog-gc       (ig/ref :app.tasks.file-xlog-gc/handler)
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
@@ -391,6 +393,13 @@
    {::db/pool (ig/ref ::db/pool)}
 
    :app.tasks.file-gc/handler
+   {::db/pool     (ig/ref ::db/pool)
+    ::sto/storage (ig/ref ::sto/storage)}
+
+   :app.tasks.file-gc-scheduler/handler
+   {::db/pool (ig/ref ::db/pool)}
+
+   :app.tasks.offload-file-data/handler
    {::db/pool     (ig/ref ::db/pool)
     ::sto/storage (ig/ref ::sto/storage)}
 
@@ -448,17 +457,28 @@
    ::sto/storage
    {::db/pool      (ig/ref ::db/pool)
     ::sto/backends
-    {:assets-s3 (ig/ref [::assets :app.storage.s3/backend])
-     :assets-fs (ig/ref [::assets :app.storage.fs/backend])}}
+    {:s3 (ig/ref :app.storage.s3/backend)
+     :fs (ig/ref :app.storage.fs/backend)
 
-   [::assets :app.storage.s3/backend]
-   {::sto.s3/region     (cf/get :storage-assets-s3-region)
-    ::sto.s3/endpoint   (cf/get :storage-assets-s3-endpoint)
-    ::sto.s3/bucket     (cf/get :storage-assets-s3-bucket)
-    ::sto.s3/io-threads (cf/get :storage-assets-s3-io-threads)}
+     ;; LEGACY (should not be removed, can only be removed after an
+     ;; explicit migration because the database objects/rows will
+     ;; still reference the old names).
+     :assets-s3 (ig/ref :app.storage.s3/backend)
+     :assets-fs (ig/ref :app.storage.fs/backend)}}
 
-   [::assets :app.storage.fs/backend]
-   {::sto.fs/directory (cf/get :storage-assets-fs-directory)}})
+   :app.storage.s3/backend
+   {::sto.s3/region     (or (cf/get :storage-assets-s3-region)
+                            (cf/get :objects-storage-s3-region))
+    ::sto.s3/endpoint   (or (cf/get :storage-assets-s3-endpoint)
+                            (cf/get :objects-storage-s3-endpoint))
+    ::sto.s3/bucket     (or (cf/get :storage-assets-s3-bucket)
+                            (cf/get :objects-storage-s3-bucket))
+    ::sto.s3/io-threads (or (cf/get :storage-assets-s3-io-threads)
+                            (cf/get :objects-storage-s3-io-threads))}
+
+   :app.storage.fs/backend
+   {::sto.fs/directory (or (cf/get :storage-assets-fs-directory)
+                           (cf/get :objects-storage-fs-directory))}})
 
 
 (def worker-config
@@ -485,7 +505,7 @@
       :task :tasks-gc}
 
      {:cron #app/cron "0 0 2 * * ?" ;; daily
-      :task :file-gc}
+      :task :file-gc-scheduler}
 
      {:cron #app/cron "0 30 */3,23 * * ?"
       :task :telemetry}

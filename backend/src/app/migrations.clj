@@ -382,7 +382,22 @@
     :fn (mg/resource "app/migrations/sql/0120-mod-audit-log-table.sql")}
 
    {:name "0121-mod-file-data-fragment-table"
-    :fn (mg/resource "app/migrations/sql/0121-mod-file-data-fragment-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0121-mod-file-data-fragment-table.sql")}
+
+   {:name "0122-mod-file-table"
+    :fn (mg/resource "app/migrations/sql/0122-mod-file-table.sql")}
+
+   {:name "0122-mod-file-data-fragment-table"
+    :fn (mg/resource "app/migrations/sql/0122-mod-file-data-fragment-table.sql")}
+
+   {:name "0123-mod-file-change-table"
+    :fn (mg/resource "app/migrations/sql/0123-mod-file-change-table.sql")}
+
+   {:name "0124-mod-profile-table"
+    :fn (mg/resource "app/migrations/sql/0124-mod-profile-table.sql")}
+
+   {:name "0125-mod-file-table"
+    :fn (mg/resource "app/migrations/sql/0125-mod-file-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

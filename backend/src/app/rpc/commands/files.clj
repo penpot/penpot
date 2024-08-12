@@ -68,6 +68,9 @@
                 :max-version fmg/version))
     file))
 
+
+;; --- FILE DATA
+
 ;; --- FILE PERMISSIONS
 
 (def ^:private sql:file-permissions
@@ -258,11 +261,12 @@
   (let [params (merge {:id id}
                       (when (some? project-id)
                         {:project-id project-id}))
-        file   (-> (db/get conn :file params
-                           {::db/check-deleted (not include-deleted?)
-                            ::db/remove-deleted (not include-deleted?)
-                            ::sql/for-update lock-for-update?})
-                   (decode-row))]
+        file   (->> (db/get conn :file params
+                            {::db/check-deleted (not include-deleted?)
+                             ::db/remove-deleted (not include-deleted?)
+                             ::sql/for-update lock-for-update?})
+                    (feat.fdata/resolve-file-data cfg)
+                    (decode-row))]
     (if (and migrate? (fmg/need-migration? file))
       (migrate-file cfg file)
       file)))
@@ -328,8 +332,10 @@
 
 (defn- get-file-fragment
   [cfg file-id fragment-id]
-  (some-> (db/get cfg :file-data-fragment {:file-id file-id :id fragment-id})
-          (update :data blob/decode)))
+  (let [resolve-file-data (partial feat.fdata/resolve-file-data cfg)]
+    (some-> (db/get cfg :file-data-fragment {:file-id file-id :id fragment-id})
+            (resolve-file-data)
+            (update :data blob/decode))))
 
 (sv/defmethod ::get-file-fragment
   "Retrieve a file fragment by its ID. Only authenticated users."
@@ -802,7 +808,8 @@
       (db/update! cfg :file
                   {:revn (inc (:revn file))
                    :data (blob/encode (:data file))
-                   :modified-at (dt/now)}
+                   :modified-at (dt/now)
+                   :has-media-trimmed false}
                   {:id file-id})
 
       (feat.fdata/persist-pointers! cfg file-id))))
