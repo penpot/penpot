@@ -92,7 +92,7 @@
                             (if (contains? active-sets set-id)
                               (swap! active-sets disj set-id)
                               (swap! active-sets conj set-id)))]
-  [:div {:class (stl/css :sets-list)}
+  [:ul {:class (stl/css :sets-list)}
    (for [set-id sets-root-order]
      ^{:key (str set-id)}
      [:& sets-tree {:key (str set-id) :set-id set-id :current-set-id current-set-id}])]))
