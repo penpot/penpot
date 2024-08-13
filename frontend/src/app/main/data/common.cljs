@@ -75,8 +75,8 @@
           (rx/of (ntf/dialog
                   :content (tr "notifications.by-code.upgrade-version")
                   :controls :inline-actions
-                  :notification-type :inline
-                  :type level
+                  :type :inline
+                  :level level
                   :actions [{:label "Refresh" :callback force-reload!}]
                   :tag :notification)))
 

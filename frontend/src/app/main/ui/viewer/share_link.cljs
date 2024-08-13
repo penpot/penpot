@@ -134,8 +134,8 @@
         copy-link
         (fn [_]
           (wapi/write-to-clipboard current-link)
-          (st/emit! (ntf/show {:type :info
-                               :notification-type :toast
+          (st/emit! (ntf/show {:level :info
+                               :type :toast
                                :content (tr "common.share-link.link-copied-success")
                                :timeout 1000})))
 

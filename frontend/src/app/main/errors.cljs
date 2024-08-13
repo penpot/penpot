@@ -124,8 +124,8 @@
     (let [message (tr "errors.paste-data-validation")]
       (st/async-emit!
        (ntf/show {:content message
-                  :notification-type :toast
-                  :type :error
+                  :type :toast
+                  :level :error
                   :timeout 3000})))
 
     :else
@@ -139,8 +139,8 @@
   [error]
   (ts/schedule
    #(st/emit! (ntf/show {:content "Internal Assertion Error"
-                         :notification-type :toast
-                         :type :error
+                         :type :toast
+                         :level :error
                          :timeout 3000})))
 
   (print-group! "Internal Assertion Error"
@@ -155,8 +155,8 @@
   (ts/schedule
    #(st/emit!
      (ntf/show {:content "Something wrong has happened (on worker)."
-                :notification-type :toast
-                :type :error
+                :type :toast
+                :level :error
                 :timeout 3000})))
 
   (print-group! "Internal Worker Error"
@@ -169,8 +169,8 @@
   [_]
   (ts/schedule
    #(st/emit! (ntf/show {:content "SVG is invalid or malformed"
-                         :notification-type :toast
-                         :type :error
+                         :type :toast
+                         :level :error
                          :timeout 3000}))))
 
 ;; TODO: should be handled in the event and not as general error handler
@@ -178,8 +178,8 @@
   [_]
   (ts/schedule
    #(st/emit! (ntf/show {:content "There was an error with the comment"
-                         :notification-type :toast
-                         :type :error
+                         :type :toast
+                         :level :error
                          :timeout 3000}))))
 
 ;; That are special case server-errors that should be treated
