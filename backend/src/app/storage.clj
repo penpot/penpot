@@ -27,7 +27,7 @@
 ;; Storage Module State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::id #{:assets-fs :assets-s3})
+(s/def ::id #{:assets-fs :assets-s3 :s3 :fs})
 (s/def ::s3 ::ss3/backend)
 (s/def ::fs ::sfs/backend)
 (s/def ::type #{:fs :s3})
