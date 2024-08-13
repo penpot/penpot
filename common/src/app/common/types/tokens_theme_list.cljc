@@ -23,7 +23,7 @@
                 (let [exists? (some (partial = id) token-set-groups)]
                   (cond
                     exists?      token-set-groups
-                    (nil? index) (conj token-set-groups id)
+                    (nil? index) (conj (or token-set-groups []) id)
                     :else        (d/insert-at-index token-set-groups index [id])))))
       (update :token-sets-index assoc id token-set)))
 
