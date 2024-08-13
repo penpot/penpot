@@ -7,7 +7,6 @@
 (ns app.common.types.tokens-theme-list
   (:require
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
    [app.common.time :as dt]))
 
 (defn- touch
@@ -28,11 +27,9 @@
       (update :token-sets-index assoc id token-set)))
 
 (defn update-token-set
-  [file-data token-id f & args]
-  #_(ex/raise :type :not-implemented)
-  file-data)
+  [file-data token-set-id f & args]
+  (d/update-in-when file-data [:token-sets-index token-set-id] #(-> (apply f % args) (touch))))
 
 (defn delete-token-set
   [file-data token-id]
-  #_(ex/raise :type :not-implemented)
   file-data)

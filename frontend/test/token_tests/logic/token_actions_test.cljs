@@ -59,10 +59,30 @@
             (t/testing "selects created workspace set and adds token to it"
               (t/is (some? selected-token-set))
               (t/is (= 1 (count (:tokens selected-token-set))))
-              (t/is (= (list border-radius-token) (map #(dissoc % :id :modified-at) set-tokens))))
+              (t/is (= (list border-radius-token) (map #(dissoc % :id :modified-at) set-tokens)))))))))))
+
+(t/deftest test-create-multiple-tokens
+  (t/testing "uses selected tokens set when creating multiple tokens"
+    (t/async
+     done
+     (let [file (setup-file)
+           store (ths/setup-store file)
+           events [(wdt/update-create-token border-radius-token)
+                   (wdt/update-create-token reference-border-radius-token)]]
+       (tohs/run-store-async
+        store done events
+        (fn [new-state]
+          (let [selected-token-set (wdt/get-selected-token-set new-state)
+                file' (ths/get-file-from-store new-state)
+                set-tokens (wdt/get-token-set-tokens selected-token-set file')]
+            (t/testing "selects created workspace set and adds token to it"
+              (t/is (some? selected-token-set))
+              (t/is (= 2 (count (:tokens selected-token-set))))
+              (t/is (= (list border-radius-token reference-border-radius-token) (map #(dissoc % :id :modified-at) set-tokens))))
             (reset! a new-state))))))))
 
 (comment
+  (wdt/get-selected-token-set @a)
   @a
   (t/run-tests)
   nil)

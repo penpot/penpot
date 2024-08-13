@@ -131,6 +131,9 @@
               new-token-set {:id (uuid/next)
                              :name "Global"
                              :tokens [(:id token)]}
+              selected-token-set-id (if create-set?
+                                      (:id new-token-set)
+                                      (:id token-set))
               changes (cond
                         create-set? (-> token-changes
                                         (pcb/add-token-set new-token-set))
@@ -138,9 +141,9 @@
                                                         token-set
                                                         (update token-set :tokens conj (:id token)))]
                                 (-> token-changes
-                                    (pcb/update-token-set token-set updated-token-set))))]
+                                    (pcb/update-token-set updated-token-set token-set))))]
           (rx/of
-           (set-selected-token-set-id (:id new-token-set))
+           (set-selected-token-set-id selected-token-set-id)
            (dch/commit-changes changes)))))))
 
 (defn delete-token
