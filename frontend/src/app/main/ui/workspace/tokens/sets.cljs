@@ -1,14 +1,14 @@
 (ns app.main.ui.workspace.tokens.sets
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.main.ui.icons :as i]
+   [app.common.data.macros :as dm]
+   [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
-   [app.main.store :as st]
-   [app.common.data.macros :as dm]
+   [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [potok.v2.core :as ptk]
    [okulary.core :as l]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 
@@ -43,11 +43,11 @@
 
 (defn set-current-set
   [set-id]
-  (dm/assert! (uuid? set-id))  
-  (ptk/reify ::set-current-set  
+  (dm/assert! (uuid? set-id))
+  (ptk/reify ::set-current-set
     ptk/UpdateEvent
-    (update [_ state] 
-              (assoc state :current-set-id set-id)))) 
+    (update [_ state]
+      (assoc state :current-set-id set-id))))
 
 (mf/defc sets-tree
   [{:keys [current-set-id set-id toggle-visibility]}]
@@ -59,29 +59,28 @@
             icon (cond
                    (= type :set) i/document
                    (and (= type :group) @collapsed?) i/group
-                       :else i/folder-open)
+                   :else i/folder-open)
             selected? (mf/use-state (= set-id current-set-id))
 
-          on-click
-          (mf/use-fn
-          (mf/deps type set-id)
-           #(st/emit! (set-current-set set-id))
-          )]
+            on-click
+            (mf/use-fn
+             (mf/deps type set-id)
+             #(st/emit! (set-current-set set-id)))]
         [:div {:class (stl/css :set-item-container)
                :on-click on-click}
-          [:div {:class (stl/css-case :set-item-group (= type :group)
-                                      :set-item-set-selected  @selected?
-                                      :set-item-set (and (= type :set ) (not @selected?)))}
-         [:span {:class (stl/css :icon)
-                 :on-click #(when (= type :group) (swap! collapsed? not))} icon]
-         [:div {:class (stl/css :set-name)} name]
-         (when (= type :set)
-         [:span {:class (stl/css :action-btn)
-           :on-click #(swap! visible? not)}
-           (if @visible?
+         [:div {:class (stl/css-case :set-item-group (= type :group)
+                                     :set-item-set-selected  @selected?
+                                     :set-item-set (and (= type :set) (not @selected?)))}
+          [:span {:class (stl/css :icon)
+                  :on-click #(when (= type :group) (swap! collapsed? not))} icon]
+          [:div {:class (stl/css :set-name)} name]
+          (when (= type :set)
+            [:span {:class (stl/css :action-btn)
+                    :on-click #(swap! visible? not)}
+             (if @visible?
                i/shown
                i/hide)])]
-          (when (and children (not @collapsed?))
+         (when (and children (not @collapsed?))
            [:div {:class (stl/css :set-children)}
             (for [child-id children]
               (do
@@ -93,24 +92,24 @@
                             (if (contains? active-sets set-id)
                               (swap! active-sets disj set-id)
                               (swap! active-sets conj set-id)))]
-  [:ul {:class (stl/css :sets-list)}
-   (for [set-id sets-root-order]
-     ^{:key (str set-id)}
-     [:& sets-tree {:key (str set-id) :set-id set-id :current-set-id current-set-id}])]))
+    [:ul {:class (stl/css :sets-list)}
+     (for [set-id sets-root-order]
+       ^{:key (str set-id)}
+       [:& sets-tree {:key (str set-id) :set-id set-id :current-set-id current-set-id}])]))
 
 (mf/defc sets-sidebar
   []
   (let [current-set-id (mf/deref current-set-id)
         open? (mf/use-state true)]
-  [:div {:key (str "sidebar-" current-set-id) 
-        :class (stl/css :sets-sidebar)}
-   [:div {:class (stl/css :sidebar-header)}
-   [:& title-bar {:collapsable true
-                  :collapsed (not @open?)
-                  :title "SETS"
-                  :on-collapsed #(swap! open? not)}]
-    [:button {:class (stl/css :add-set)
-              :on-click #(println "Add Set")} 
-     i/add]]
+    [:div {:key (str "sidebar-" current-set-id)
+           :class (stl/css :sets-sidebar)}
+     [:div {:class (stl/css :sidebar-header)}
+      [:& title-bar {:collapsable true
+                     :collapsed (not @open?)
+                     :title "SETS"
+                     :on-collapsed #(swap! open? not)}]
+      [:button {:class (stl/css :add-set)
+                :on-click #(println "Add Set")}
+       i/add]]
      (when @open?
-   [:& sets-list {:current-set-id current-set-id}])]))
+       [:& sets-list {:current-set-id current-set-id}])]))
