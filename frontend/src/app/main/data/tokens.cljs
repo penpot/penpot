@@ -15,7 +15,6 @@
    [app.main.data.changes :as dch]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.refs :as refs]
-   [app.main.ui.workspace.tokens.common :refer [workspace-shapes]]
    [app.main.ui.workspace.tokens.token :as wtt]
    [beicon.v2.core :as rx]
    [clojure.data :as data]
