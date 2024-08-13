@@ -449,7 +449,9 @@
    {::db/pool      (ig/ref ::db/pool)
     ::sto/backends
     {:assets-s3 (ig/ref [::assets :app.storage.s3/backend])
-     :assets-fs (ig/ref [::assets :app.storage.fs/backend])}}
+     :assets-fs (ig/ref [::assets :app.storage.fs/backend])
+     :s3        (ig/ref [::assets :app.storage.s3/backend])
+     :fs        (ig/ref [::assets :app.storage.fs/backend])}}
 
    [::assets :app.storage.s3/backend]
    {::sto.s3/region     (cf/get :storage-assets-s3-region)
