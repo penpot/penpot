@@ -18,12 +18,12 @@
 
 (sm/register! ::token-set-group-ref
   [:map
-   [:id :sm/uuid]
+   [:id ::sm/uuid]
    [:type [:= :group]]])
 
 (sm/register! ::token-set-ref
   [:map
-   [:id :sm/uuid]
+   [:id ::sm/uuid]
    [:type [:= :set]]])
 
 (sm/register! ::token-set-group
