@@ -328,7 +328,7 @@
          (update :redo-changes conj add-change)
          (cond->
           (and (ctk/in-component-copy? parent) (not ignore-touched))
-           (update :undo-changes conj restore-touched-change))
+          (update :undo-changes conj restore-touched-change))
          (update :undo-changes conj del-change)
          (apply-changes-local)))))
 
@@ -389,7 +389,7 @@
          (update :redo-changes conj set-parent-change)
          (cond->
           (ctk/in-component-copy? parent)
-           (update :undo-changes conj restore-touched-change))
+          (update :undo-changes conj restore-touched-change))
          (update :undo-changes #(reduce mk-undo-change % shapes))
          (apply-changes-local)))))
 
