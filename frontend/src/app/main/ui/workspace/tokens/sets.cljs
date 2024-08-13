@@ -4,13 +4,11 @@
    [app.common.data.macros :as dm]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
-   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
-
 
 (def current-set-id
   (l/derived :current-set-id st/state))
