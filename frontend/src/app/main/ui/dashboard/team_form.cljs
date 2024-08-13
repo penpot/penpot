@@ -7,8 +7,9 @@
 (ns app.main.ui.dashboard.team-form
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.main.data.dashboard :as dd]
+   [app.main.data.events :as ev]
    [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
@@ -19,12 +20,11 @@
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
    [beicon.v2.core :as rx]
-   [cljs.spec.alpha :as s]
    [rumext.v2 :as mf]))
 
-(s/def ::name ::us/not-empty-string)
-(s/def ::team-form
-  (s/keys :req-un [::name]))
+(def ^:private schema:team-form
+  [:map {:title "TeamForm"}
+   [:name [::sm/text {:max 250}]]])
 
 (defn- on-create-success
   [_form response]
@@ -51,7 +51,8 @@
   (let [mdata  {:on-success (partial on-create-success form)
                 :on-error   (partial on-error form)}
         params {:name (get-in @form [:clean-data :name])}]
-    (st/emit! (dd/create-team (with-meta params mdata)))))
+    (st/emit! (-> (dd/create-team (with-meta params mdata))
+                  (with-meta {::ev/origin :dashboard})))))
 
 (defn- on-update-submit
   [form]
@@ -68,24 +69,23 @@
       (on-update-submit form)
       (on-create-submit form))))
 
-(mf/defc team-form-modal {::mf/register modal/components
-                          ::mf/register-as :team-form}
+(mf/defc team-form-modal
+  {::mf/register modal/components
+   ::mf/register-as :team-form}
   [{:keys [team] :as props}]
   (let [initial (mf/use-memo (fn [] (or team {})))
-        form    (fm/use-form :spec ::team-form
-                             :validators [(fm/validate-not-empty :name (tr "auth.name.not-all-space"))
-                                          (fm/validate-length :name fm/max-length-allowed (tr "auth.name.too-long"))]
+        form    (fm/use-form :schema schema:team-form
                              :initial initial)
         handle-keydown
-        (mf/use-callback
-         (mf/deps)
+        (mf/use-fn
          (fn [e]
            (when (kbd/enter? e)
              (dom/prevent-default e)
              (dom/stop-propagation e)
              (on-submit form e))))
 
-        on-close #(st/emit! (modal/hide))]
+        on-close
+        (mf/use-fn #(st/emit! (modal/hide)))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}

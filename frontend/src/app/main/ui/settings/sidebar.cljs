@@ -89,19 +89,19 @@
        [:li {:class (stl/css-case :current options?
                                   :settings-item true)
              :on-click go-settings-options
-             :data-test "settings-profile"}
+             :data-testid "settings-profile"}
         [:span {:class (stl/css :element-title)} (tr "labels.settings")]]
 
        (when (contains? cf/flags :access-tokens)
          [:li {:class (stl/css-case :current access-tokens?
                                     :settings-item true)
                :on-click go-settings-access-tokens
-               :data-test "settings-access-tokens"}
+               :data-testid "settings-access-tokens"}
           [:span {:class (stl/css :element-title)} (tr "labels.access-tokens")]])
 
        [:hr {:class (stl/css :sidebar-separator)}]
 
-       [:li {:on-click show-release-notes :data-test "release-notes"
+       [:li {:on-click show-release-notes :data-testid "release-notes"
              :class (stl/css :settings-item)}
         [:span {:class (stl/css :element-title)} (tr "labels.release-notes")]]
 
@@ -115,10 +115,9 @@
 (mf/defc sidebar
   {::mf/wrap [mf/memo]
    ::mf/props :obj}
-  [{:keys [profile locale section]}]
+  [{:keys [profile section]}]
   [:div {:class (stl/css :dashboard-sidebar :settings)}
    [:& sidebar-content {:profile profile
                         :section section}]
-   [:& profile-section {:profile profile
-                        :locale locale}]])
+   [:& profile-section {:profile profile}]])
 

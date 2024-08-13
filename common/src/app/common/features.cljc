@@ -84,7 +84,7 @@
         "plugins/runtime"}
       (into frontend-only-features)))
 
-(sm/def! ::features
+(sm/register! ::features
   [:schema
    {:title "FileFeatures"
     ::smdj/inline true

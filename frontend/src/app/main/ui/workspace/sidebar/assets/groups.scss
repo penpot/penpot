@@ -49,6 +49,7 @@
 }
 .input-wrapper {
   @extend .input-with-label;
+  @include bodySmallTypography;
   margin-bottom: $s-8;
 }
 .action-buttons {

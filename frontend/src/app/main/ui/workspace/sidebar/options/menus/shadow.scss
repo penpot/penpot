@@ -114,6 +114,7 @@
   .spread-input,
   .offset-y-input {
     @extend .input-element;
+    @include bodySmallTypography;
     width: $s-60;
     min-width: $s-60;
     align-items: baseline;

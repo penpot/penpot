@@ -81,6 +81,7 @@
     }
     .file-name-edit {
       @extend .input-element;
+      @include bodySmallTypography;
       flex-grow: 1;
     }
     .file-name-label {
@@ -142,13 +143,6 @@
   &.loading {
     .file-name {
       color: var(--modal-text-foreground-color);
-      .file-icon {
-        :global(#loader-pencil) {
-          color: var(--modal-text-foreground-color);
-          stroke: var(--modal-text-foreground-color);
-          fill: var(--modal-text-foreground-color);
-        }
-      }
     }
   }
   &.warning {

@@ -9,8 +9,7 @@
   (:require-macros [app.main.ui.icons :refer [icon-xref collect-icons]])
   (:require
    [app.common.data :as d]
-   [cuerdas.core :as str]
-   [rumext.v2 :as mf]))
+   [cuerdas.core :as str]))
 
 ;; Keep the list of icons sorted
 (def ^:icon icon-verify (icon-xref :icon-verify))
@@ -179,6 +178,9 @@
 (def ^:icon msg-success (icon-xref :msg-success))
 (def ^:icon msg-warning (icon-xref :msg-warning))
 (def ^:icon open-link (icon-xref :open-link))
+(def ^:icon oauth-1 (icon-xref :oauth-1))
+(def ^:icon oauth-2 (icon-xref :oauth-2))
+(def ^:icon oauth-3 (icon-xref :oauth-3))
 (def ^:icon padding-bottom (icon-xref :padding-bottom))
 (def ^:icon padding-extended (icon-xref :padding-extended))
 (def ^:icon padding-left (icon-xref :padding-left))
@@ -191,12 +193,12 @@
 (def ^:icon picker (icon-xref :picker))
 (def ^:icon pin (icon-xref :pin))
 (def ^:icon play (icon-xref :play))
+(def ^:icon puzzle (icon-xref :puzzle))
 (def ^:icon rectangle (icon-xref :rectangle))
 (def ^:icon reload (icon-xref :reload))
 (def ^:icon remove-icon (icon-xref :remove))
 (def ^:icon rgba (icon-xref :rgba))
 (def ^:icon rgba-complementary (icon-xref :rgba-complementary))
-(def ^:icon rocket (icon-xref :rocket))
 (def ^:icon rotation (icon-xref :rotation))
 (def ^:icon row (icon-xref :row))
 (def ^:icon row-reverse (icon-xref :row-reverse))
@@ -261,39 +263,9 @@
 (def ^:icon view-as-list (icon-xref :view-as-list))
 (def ^:icon wrap (icon-xref :wrap))
 
-(def ^:icon loader-pencil
-  (mf/html
-   [:svg
-    {:viewBox "0 0 677.34762 182.15429"
-     :height "182"
-     :width "667"
-     :id "loader-pencil"}
-    [:g
-     [:path
-      {:id "body-body"
-       :d
-       "M128.273 0l-3.9 2.77L0 91.078l128.273 91.076 549.075-.006V.008L128.273 0zm20.852 30l498.223.006V152.15l-498.223.007V30zm-25 9.74v102.678l-49.033-34.813-.578-32.64 49.61-35.225z"}]
-     [:path
-      {:id "loader-line"
-       :d
-       "M134.482 157.147v25l518.57.008.002-25-518.572-.008z"}]]]))
-
 (def default
   "A collection of all icons"
   (collect-icons))
-
-(mf/defc debug-icons-preview
-  {::mf/wrap-props false}
-  []
-  (let [entries   (->> (seq (js/Object.entries default))
-                       (sort-by first))]
-    [:section.debug-icons-preview
-     [:h2 "icons"]
-     (for [[key val] entries]
-       [:div.icon-item-old {:key key
-                            :title key}
-        val
-        [:span key]])]))
 
 (defn key->icon
   [icon-key]

@@ -18,10 +18,7 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [buddy.core.codecs :as bc]
-   [buddy.core.nonce :as bn]
-   [clojure.spec.alpha :as s]))
-
-(s/def ::create-demo-profile any?)
+   [buddy.core.nonce :as bn]))
 
 (sv/defmethod ::create-demo-profile
   "A command that is responsible of creating a demo purpose
@@ -48,7 +45,7 @@
         params   {:email email
                   :fullname fullname
                   :is-active true
-                  :deleted-at (dt/in-future cf/deletion-delay)
+                  :deleted-at (dt/in-future (cf/get-deletion-delay))
                   :password (profile/derive-password cfg password)
                   :props {}}]
 

@@ -5,26 +5,15 @@
 // Copyright (c) KALEIDOS INC
 
 //#################################################
-// Import libraries
-//#################################################
-
-@use "sass:color";
-
-//#################################################
 // MAIN STYLES
 //#################################################
 
-@import "common/dependencies/colors";
-@import "common/dependencies/helpers";
-@import "common/dependencies/mixin";
-@import "common/dependencies/fonts";
 @import "common/dependencies/reset";
-@import "common/dependencies/animations";
-@import "common/dependencies/z-index";
-@import "common/dependencies/highlightjs-theme";
-
-@import "animate";
 @import "common/refactor/color-defs.scss";
+@import "common/dependencies/fonts";
+@import "common/dependencies/animations";
+@import "common/dependencies/highlight.scss";
+
 @import "common/refactor/themes.scss";
 @import "common/refactor/design-tokens.scss";
 
@@ -33,20 +22,11 @@
 //#################################################
 
 @import "common/base";
-@import "main/layouts/main-layout";
-@import "main/layouts/not-found";
 
 //#################################################
 // Commons
 //#################################################
 
-@import "common/framework";
+// TODO: remove this stylesheet once the new text editor is in place
+//       https: //tree.taiga.io/project/penpot/us/8165
 @import "main/partials/texts";
-
-//#################################################
-// Partials
-//#################################################
-
-@import "main/partials/debug-icons-preview";
-@import "main/partials/loader";
-@import "main/partials/workspace";

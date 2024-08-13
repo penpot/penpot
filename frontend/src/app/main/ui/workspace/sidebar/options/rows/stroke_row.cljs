@@ -176,7 +176,7 @@
          :on-blur on-blur}]]
 
       [:div {:class (stl/css :select-wrapper)
-             :data-test "stroke.alignment"}
+             :data-testid "stroke.alignment"}
        [:& select
         {:default-value stroke-alignment
          :options stroke-alignment-options
@@ -184,7 +184,7 @@
 
       (when-not disable-stroke-style
         [:div {:class (stl/css :select-wrapper)
-               :data-test "stroke.style"}
+               :data-testid "stroke.style"}
          [:& select
           {:default-value stroke-style
            :options stroke-style-options

@@ -1,4 +1,4 @@
-Hello {{name}}!
+Hello {{name|abbreviate:25}}!
 
 We received a request to change your current email to {{ pending-email }}.
 

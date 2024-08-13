@@ -66,7 +66,7 @@
                      (dd/clear-selected-files))))]
 
 
-    [:header {:class (stl/css :dashboard-header)}
+    [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
      (if (:is-default project)
        [:div#dashboard-drafts-title {:class (stl/css :dashboard-title)}
         [:h1 (tr "labels.drafts")]]
@@ -82,7 +82,7 @@
                        (swap! local assoc :edition false)))}]
          [:div {:class (stl/css :dashboard-title)}
           [:h1 {:on-double-click on-edit
-                :data-test "project-title"
+                :data-testid "project-title"
                 :id (:id project)}
            (:name project)]]))
 
@@ -98,7 +98,7 @@
       [:a {:class (stl/css :btn-secondary :btn-small :new-file)
            :tab-index "0"
            :on-click on-create-click
-           :data-test "new-file"
+           :data-testid "new-file"
            :on-key-down (fn [event]
                           (when (kbd/enter? event)
                             (on-create-click event)))}

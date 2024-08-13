@@ -32,12 +32,11 @@
 
 (def ^:private
   schema:export-binfile
-  (sm/define
-    [:map {:title "export-binfile"}
-     [:name :string]
-     [:file-id ::sm/uuid]
-     [:include-libraries :boolean]
-     [:embed-assets :boolean]]))
+  [:map {:title "export-binfile"}
+   [:name [:string {:max 250}]]
+   [:file-id ::sm/uuid]
+   [:include-libraries :boolean]
+   [:embed-assets :boolean]])
 
 (sv/defmethod ::export-binfile
   "Export a penpot file in a binary format."
@@ -78,11 +77,10 @@
 
 (def ^:private
   schema:import-binfile
-  (sm/define
-    [:map {:title "import-binfile"}
-     [:name :string]
-     [:project-id ::sm/uuid]
-     [:file ::media/upload]]))
+  [:map {:title "import-binfile"}
+   [:name [:string {:max 250}]]
+   [:project-id ::sm/uuid]
+   [:file ::media/upload]])
 
 (sv/defmethod ::import-binfile
   "Import a penpot file in a binary format."

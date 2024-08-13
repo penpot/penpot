@@ -10,7 +10,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
-   [app.main.data.workspace.changes :as dch]
+   [app.main.data.changes :as dch]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -51,8 +52,8 @@
             grid    {:type :square
                      :params params
                      :display true}]
-        (rx/of (dch/update-shapes [frame-id]
-                                  (fn [obj] (update obj :grids (fnil #(conj % grid) [])))))))))
+        (rx/of (dwsh/update-shapes [frame-id]
+                                   (fn [obj] (update obj :grids (fnil #(conj % grid) [])))))))))
 
 
 (defn remove-frame-grid
@@ -60,14 +61,14 @@
   (ptk/reify ::remove-frame-grid
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dch/update-shapes [frame-id] (fn [o] (update o :grids (fnil #(d/remove-at-index % index) []))))))))
+      (rx/of (dwsh/update-shapes [frame-id] (fn [o] (update o :grids (fnil #(d/remove-at-index % index) []))))))))
 
 (defn set-frame-grid
   [frame-id index data]
   (ptk/reify ::set-frame-grid
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dch/update-shapes [frame-id] #(assoc-in % [:grids index] data))))))
+      (rx/of (dwsh/update-shapes [frame-id] #(assoc-in % [:grids index] data))))))
 
 (defn set-default-grid
   [type params]

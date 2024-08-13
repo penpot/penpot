@@ -8,7 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.main.data.workspace.changes :as dch]
+   [app.main.data.changes :as dch]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -82,9 +83,9 @@
                             :objects (-> component migrate-component :objects)}))
                     components)]
 
-          (rx/of (dch/update-shapes ids #(update-shape % objects) {:reg-objects? false
-                                                                   :save-undo? false
-                                                                   :ignore-tree true}))
+          (rx/of (dwsh/update-shapes ids #(update-shape % objects) {:reg-objects? false
+                                                                    :save-undo? false
+                                                                    :ignore-tree true}))
 
           (if (empty? component-changes)
             (rx/empty)

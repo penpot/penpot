@@ -34,16 +34,14 @@
 
 .home-link {
   padding: 0;
+  display: grid;
+  place-content: center;
 }
 
 .logo-icon {
-  @include flexCenter;
-  width: $s-32;
-  height: $s-32;
-  svg {
-    width: $s-28;
-    fill: var(--icon-foreground-hover);
-  }
+  width: $s-28;
+  height: $s-28;
+  fill: var(--icon-foreground-hover);
 }
 
 .sitemap-zone {

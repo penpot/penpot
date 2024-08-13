@@ -168,7 +168,9 @@
            (if (and (some? (:color color)) (some? (:gradient data)))
              (handle-change-color {:hex (:color color) :alpha (:opacity color)})
              (do
-               (st/emit! (dc/apply-color-from-colorpicker color))
+               (st/emit!
+                (dwl/add-recent-color color)
+                (dc/apply-color-from-colorpicker color))
                (on-change color)))))
 
         on-add-library-color

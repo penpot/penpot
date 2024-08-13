@@ -31,7 +31,7 @@
                                      (->> (http/fetch-data-uri uri true)
                                           ;; If fetching give an error we store the URI as its `data-uri`
                                           (rx/catch #(rx/of (hash-map uri uri)))))))
-                             (rx/map identity obs)))
+                             (rx/map (fn [uri] {uri uri}) obs)))
 
              sub (->> (rx/from urls)
                       (rx/filter some?)

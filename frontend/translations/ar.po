@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-04-24 12:55+0000\n"
+"PO-Revision-Date: 2024-06-17 08:07+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Arabic "
-"<https://hosted.weblate.org/projects/penpot/frontend/ar/>\n"
+"Language-Team: Arabic <https://hosted.weblate.org/projects/penpot/frontend/"
+"ar/>\n"
 "Language: ar\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
-"X-Generator: Weblate 5.5.1-dev\n"
+"X-Generator: Weblate 5.6-dev\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -36,11 +36,6 @@ msgstr "ترغب في التجربة فحسب؟"
 msgid "auth.demo-warning"
 msgstr "هذه خدمة تجريبية ، لا تستخدمها للعمل الحقيقي ، سيتم مسح المشاريع بشكل دوري."
 
-#: src/app/main/ui/auth/register.cljs,
-#: src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
-msgid "auth.email"
-msgstr "البريد الالكتروني"
-
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.forgot-password"
 msgstr "هل نسيت كلمة السر؟"
@@ -50,6 +45,7 @@ msgid "auth.fullname"
 msgstr "الاسم الكامل"
 
 #: src/app/main/ui/auth/register.cljs
+#, fuzzy
 msgid "auth.login-here"
 msgstr "تسجيل الدخول هنا"
 
@@ -82,7 +78,7 @@ msgid "auth.new-password"
 msgstr "اكتب كلمة مرور جديدة"
 
 #: src/app/main/ui/auth/recovery.cljs
-msgid "auth.notifications.invalid-token-error"
+msgid "errors.invalid-recovery-token"
 msgstr "رمز الاسترداد غير صالح."
 
 #: src/app/main/ui/auth/recovery.cljs
@@ -135,10 +131,6 @@ msgstr "لا تملك حساب بعد؟"
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
 msgid "auth.register-submit"
 msgstr "إنشاء حساب"
-
-#: src/app/main/ui/auth/register.cljs
-msgid "auth.register-subtitle"
-msgstr "إنه مجاني ، مفتوح المصدر"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.register-title"
@@ -751,11 +743,11 @@ msgstr "يحتوي البريد الإلكتروني «%s» على العديد 
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs,
 #: src/app/main/ui/auth/recovery_request.cljs
-msgid "errors.email-invalid"
+msgid "errors.invalid-email"
 msgstr "أدخل بريدًا إلكترونيًا صالحًا من فضلك"
 
 #: src/app/main/ui/settings/change_email.cljs
-msgid "errors.email-invalid-confirmation"
+msgid "errors.invalid-email-confirmation"
 msgstr "يجب أن يتطابق البريد الإلكتروني للتأكيد"
 
 msgid "errors.email-spam-or-permanent-bounces"
@@ -2299,10 +2291,6 @@ msgstr "زيادة عدسة التكبير"
 
 msgid "shortcuts.zoom-selected"
 msgstr "كبر المحدد"
-
-#: src/app/main/ui/dashboard/team.cljs
-msgid "team.webhooks.max-length"
-msgstr "يجب الا يزيد اسم الويبهوك على 2048 حرفا"
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "title.dashboard.files"
@@ -4303,3 +4291,34 @@ msgstr "تحديث"
 
 msgid "workspace.viewport.click-to-close-path"
 msgstr "انقر لتغلق المسار"
+
+msgid "workspace.top-bar.read-only.done"
+msgstr "تم"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.copied-success"
+msgstr "الرمز منسوخ"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-tagline"
+msgstr "Penpot هو أداة تصميم مجانية ومفتوحة المصدر للتعاون بين التصميم والبرمجة"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "اضغط على الزر \"إنشاء رمز جديد\" لإنشاء واحد."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "branding-illustrations-marketing-pieces"
+msgstr "...علامة تجارية، رسوم توضيحية، قطع تسويقية، إلخ."
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.login-account-title"
+msgstr "قم بتسجيل الدخول إلى حسابي"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create"
+msgstr "قم بإنشاء رمز جديد"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+msgid "dashboard.access-tokens.create-success"
+msgstr "تم إنشاء رمز الوصول بنجاح."

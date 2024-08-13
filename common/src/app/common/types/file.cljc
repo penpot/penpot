@@ -24,6 +24,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
+   [app.common.types.plugins :as ctpg]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.token :as cto]
    [app.common.types.typographies-list :as ctyl]
@@ -35,7 +36,7 @@
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(sm/define! ::media-object
+(sm/register! ::media-object
   [:map {:title "FileMediaObject"}
    [:id ::sm/uuid]
    [:name :string]
@@ -44,7 +45,7 @@
    [:mtype :string]
    [:path {:optional true} [:maybe :string]]])
 
-(sm/define! ::data
+(sm/register! ::data
   [:map {:title "FileData"}
    [:pages [:vector ::sm/uuid]]
    [:pages-index
@@ -60,7 +61,9 @@
    [:tokens {:optional true}
     [:map-of {:gen/max 100} ::sm/uuid ::cto/token]]
    [:media {:optional true}
-    [:map-of {:gen/max 5} ::sm/uuid ::media-object]]])
+    [:map-of {:gen/max 5} ::sm/uuid ::media-object]]
+   [:plugin-data {:optional true}
+    [:map-of {:gen/max 5} :keyword ::ctpg/plugin-data]]])
 
 (def check-file-data!
   (sm/check-fn ::data))
@@ -636,19 +639,24 @@
   "Find all assets of a library that are used in the file, and
   move them to the file local library."
   [file-data library-data]
-  (let [used-components (find-asset-type-usages file-data library-data :component)
-        used-colors (find-asset-type-usages file-data library-data :color)
-        used-typographies (find-asset-type-usages file-data library-data :typography)]
+  (let [used-components   (find-asset-type-usages file-data library-data :component)
+        file-data         (cond-> file-data
+                            (d/not-empty? used-components)
+                            (absorb-components used-components library-data))
+                            ;; Note that absorbed components may also be using colors
+                            ;; and typographies. This is the reason of doing this first
+                            ;; and accumulating file data for the next ones.
 
-    (cond-> file-data
-      (d/not-empty? used-components)
-      (absorb-components used-components library-data)
+        used-colors       (find-asset-type-usages file-data library-data :color)
+        file-data         (cond-> file-data
+                            (d/not-empty? used-colors)
+                            (absorb-colors used-colors))
 
-      (d/not-empty? used-colors)
-      (absorb-colors used-colors)
-
-      (d/not-empty? used-typographies)
-      (absorb-typographies used-typographies))))
+        used-typographies (find-asset-type-usages file-data library-data :typography)
+        file-data         (cond-> file-data
+                            (d/not-empty? used-typographies)
+                            (absorb-typographies used-typographies))]
+    file-data))
 
 ;; Debug helpers
 

@@ -46,12 +46,12 @@
   {::mf/wrap [mf/memo]}
   []
   (let [on-click (mf/use-fn #(st/emit! (dd/create-project)))]
-    [:header {:class (stl/css :dashboard-header)}
+    [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
      [:div#dashboard-projects-title {:class (stl/css :dashboard-title)}
       [:h1 (tr "dashboard.projects-title")]]
      [:button {:class (stl/css :btn-secondary :btn-small)
                :on-click on-click
-               :data-test "new-project-button"}
+               :data-testid "new-project-button"}
       (tr "dashboard.new-project")]]))
 
 (mf/defc team-hero
@@ -251,7 +251,7 @@
                    :on-click on-create-click
                    :title (tr "dashboard.new-file")
                    :aria-label (tr "dashboard.new-file")
-                   :data-test "project-new-file"
+                   :data-testid "project-new-file"
                    :on-key-down handle-create-click}
           add-icon]
 
@@ -259,7 +259,7 @@
                    :on-click on-menu-click
                    :title (tr "dashboard.options")
                    :aria-label  (tr "dashboard.options")
-                   :data-test "project-options"
+                   :data-testid "project-options"
                    :on-key-down handle-menu-click}
           menu-icon]]]]]
 

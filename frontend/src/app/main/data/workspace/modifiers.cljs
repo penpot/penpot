@@ -23,9 +23,9 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.constants :refer [zoom-half-pixel-precision]]
-   [app.main.data.workspace.changes :as dch]
    [app.main.data.workspace.comments :as-alias dwcm]
    [app.main.data.workspace.guides :as-alias dwg]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [beicon.v2.core :as rx]
@@ -438,28 +438,28 @@
 ;; - It consideres the center for everyshape instead of the center of the total selrect
 ;; - The angle param is the desired final value, not a delta
 (defn set-delta-rotation-modifiers
-  ([angle shapes]
-   (ptk/reify ::set-delta-rotation-modifiers
-     ptk/UpdateEvent
-     (update [_ state]
-       (let [objects     (wsh/lookup-page-objects state)
-             ids
-             (->> shapes
-                  (remove #(get % :blocked false))
-                  (filter #(contains? (get editable-attrs (:type %)) :rotation))
-                  (map :id))
+  [angle shapes {:keys [center delta?] :or {center nil delta? false}}]
+  (ptk/reify ::set-delta-rotation-modifiers
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [objects (wsh/lookup-page-objects state)
+            ids
+            (->> shapes
+                 (remove #(get % :blocked false))
+                 (filter #(contains? (get editable-attrs (:type %)) :rotation))
+                 (map :id))
 
-             get-modifier
-             (fn [shape]
-               (let [delta  (- angle (:rotation shape))
-                     center (gsh/shape->center shape)]
-                 (ctm/rotation-modifiers shape center delta)))
+            get-modifier
+            (fn [shape]
+              (let [delta  (if delta? angle (- angle (:rotation shape)))
+                    center (or center (gsh/shape->center shape))]
+                (ctm/rotation-modifiers shape center delta)))
 
-             modif-tree
-             (-> (build-modif-tree ids objects get-modifier)
-                 (gm/set-objects-modifiers objects))]
+            modif-tree
+            (-> (build-modif-tree ids objects get-modifier)
+                (gm/set-objects-modifiers objects))]
 
-         (assoc state :workspace-modifiers modif-tree))))))
+        (assoc state :workspace-modifiers modif-tree)))))
 
 (defn apply-modifiers
   ([]
@@ -497,9 +497,9 @@
           (if undo-transation?
             (rx/of (dwu/start-undo-transaction undo-id))
             (rx/empty))
-          (rx/of (ptk/event ::dwg/move-frame-guides ids-with-children)
+          (rx/of (ptk/event ::dwg/move-frame-guides {:ids ids-with-children :modifiers object-modifiers})
                  (ptk/event ::dwcm/move-frame-comment-threads ids-with-children)
-                 (dch/update-shapes
+                 (dwsh/update-shapes
                   ids
                   (fn [shape]
                     (let [modif (get-in object-modifiers [(:id shape) :modifiers])
@@ -559,8 +559,10 @@
                            :layout-grid-rows]})
                  ;; We've applied the text-modifier so we can dissoc the temporary data
                  (fn [state]
-                   (update state :workspace-text-modifier #(apply dissoc % ids)))
-                 (clear-local-transform))
+                   (update state :workspace-text-modifier #(apply dissoc % ids))))
+          (if (nil? modifiers)
+            (rx/of (clear-local-transform))
+            (rx/empty))
           (if undo-transation?
             (rx/of (dwu/commit-undo-transaction undo-id))
             (rx/empty))))))))

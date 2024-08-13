@@ -12,22 +12,6 @@
   display: grid;
   padding: $s-12 0;
 
-  &.loader {
-    justify-items: center;
-  }
-
-  .icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    svg {
-      width: $s-64;
-      height: $s-64;
-      stroke: $df-secondary;
-      fill: none;
-    }
-  }
-
   &.libs {
     background-image: url(/images/ph-left.svg), url(/images/ph-right.svg);
     background-position:
@@ -35,7 +19,7 @@
       85% top;
     background-repeat: no-repeat;
     align-items: center;
-    border: $s-1 solid $db-quaternary;
+    border: $s-1 solid var(--color-background-quaternary);
     border-radius: $br-4;
     display: flex;
     flex-direction: column;
@@ -46,7 +30,7 @@
 
     .text {
       a {
-        color: $df-primary;
+        color: var(--color-foreground-primary);
       }
       p {
         max-width: $s-360;
@@ -57,9 +41,9 @@
   }
 
   .create-new {
-    background-color: $db-tertiary;
+    background-color: var(--color-background-tertiary);
     border-radius: $br-8;
-    color: $df-primary;
+    color: var(--color-foreground-primary);
     cursor: pointer;
     height: $s-160;
     margin: $s-8;
@@ -71,23 +55,37 @@
     svg {
       width: $s-32;
       height: $s-32;
-      stroke: $df-secondary;
+      stroke: var(--color-foreground-secondary);
     }
 
     &:hover {
-      border: $s-2 solid $da-tertiary;
-      background-color: $db-quaternary;
-      color: $da-primary;
+      border: $s-2 solid var(--color-accent-tertiary);
+      background-color: var(--color-background-quaternary);
+      color: var(--color-accent-primary);
 
       svg {
-        stroke: $da-tertiary;
+        stroke: var(--color-accent-tertiary);
       }
     }
   }
 
   .text {
     margin-top: $s-12;
-    color: $df-secondary;
+    color: var(--color-foreground-secondary);
     font-size: $fs-16;
   }
+}
+
+.placeholder-loader {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  row-gap: var(--sp-xxxl);
+  margin: var(--sp-xxxl) 0 var(--sp-m) 0;
+}
+
+.placeholder-text {
+  color: var(--color-foreground-secondary);
+  font-size: $fs-16;
+  text-align: center;
 }

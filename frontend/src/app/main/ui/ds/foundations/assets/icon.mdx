@@ -1,0 +1,101 @@
+import { Canvas, Meta } from '@storybook/blocks';
+import * as IconStories from "./icon.stories"
+
+<Meta of={IconStories} />
+
+# Iconography
+
+See the [list of all available icons](?path=/story/foundations-icons--all-icons).
+
+## Variants
+
+### Medium (default)
+
+- Used in the majority of the interface, and **it is the default variant**.
+- Displayed within a box of 16×16 pixels.
+- 1 px stroke (centered).
+
+This is enabled with `size` prop set to `"m"`.
+
+### Small
+
+- Displayed within a box of 16×16 pixels.
+- Bigger padding (4 pixels)
+- Best used when the space is limited. Use in components such text inputs os in
+dense interfaces such layers or chevrons to indicate a collapsible element.
+
+This is enabled with `size` prop set to `"s"`.
+
+## Technical notes
+
+### Using icons IDs
+
+There are icon ID definitions you can use in your code rather than typing the
+icon ID by hand.
+
+**Using these IDs is recommended**, since they are invariant to the icon asset
+filename.
+
+Assuming the namespace is required as `i`:
+
+```clj
+(ns app.main.ui.foo
+  (:require
+   [app.main.ui.ds.foundations.assets.icon :as i]))
+```
+
+You can now use the icon IDs defined in the namespace:
+
+```clj
+[:> i/icon* {:id i/pin}]
+```
+
+### Customizing colors
+
+Icon color is set internally with the `stroke` property and it's set to
+`currentColor` by default.
+
+If you need to override this behavior, you can use a `class` in the `<Icon>`
+component and set `color` to whatever value you prefer:
+
+```clj
+[:> i/icon* {:id i/add :class (stl/css :toolbar-icon)}]
+```
+
+```scss
+.toolbar-icon {
+  color: var(--component-toolbar-icon-color);
+}
+```
+
+### Accessibility
+
+By default, icons do not have any accessible text attached to them. You should
+add an `aria-label` attribute to set a proper text:
+
+```clj
+[:> i/icon* {:id i/add :aria-label (tr "foo.bar")}]
+```
+
+## Usage guidelines for design
+
+### Layout
+
+Icon content should remain inside of the live area. In specific icons that need
+to adjust visual weight, content may extend into the padding between live area
+and trim area, never outside the trim area.
+
+### Color
+
+Icons are normally displayed with the chromatic characteristics of the component
+in which they are included. They are normally based on foreground and neutral
+colours, but may also, in some cases, be displayed in semantic colours when
+their function is to accompany system status messages.
+
+### Accessibility
+
+Icons must meet the contrast requirement.
+
+They should be designed with the correct transmission of the concept they
+communicate in mind, reviewing cultural and generational differences to avoid
+comprehension problems.

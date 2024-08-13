@@ -13,11 +13,6 @@
   grid-template-columns: $s-40 $s-256 1fr;
   grid-template-rows: $s-52 1fr;
   height: 100vh;
-
-  :global(svg#loader-pencil) {
-    fill: $df-secondary;
-    width: $s-32;
-  }
 }
 
 .dashboard-content {

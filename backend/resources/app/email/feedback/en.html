@@ -11,7 +11,7 @@
       {% if profile %}
         <span>
           <span>Name: </span>
-          <span><code>{{profile.fullname}}</code></span>
+          <span><code>{{profile.fullname|abbreviate:25}}</code></span>
         </span>
         <br />
 
@@ -34,7 +34,7 @@
     </p>
     <p>
       <strong>Subject:</strong><br />
-      <span>{{subject}}</span>
+      <span>{{subject|abbreviate:300}}</span>
     </p>
 
     <p>

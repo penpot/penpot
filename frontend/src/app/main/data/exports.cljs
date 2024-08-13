@@ -8,7 +8,7 @@
   (:require
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
-   [app.main.data.workspace.persistence :as dwp]
+   [app.main.data.persistence :as dwp]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.refs :as refs]
    [app.main.repo :as rp]

@@ -69,7 +69,8 @@
    ;;:enable-onboarding-questions
    ;;:enable-onboarding-newsletter
    :enable-dashboard-templates-section
-   :enable-google-fonts-provider])
+   :enable-google-fonts-provider
+   :enable-component-thumbnails])
 
 (defn- parse-flags
   [global]
@@ -109,6 +110,7 @@
 (def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI" "https://penpot.app/privacy"))
 (def flex-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
 (def grid-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
+(def plugins-list-uri     (obj/get global "penpotPluginsListUri" "https://penpot-docs-plugins.pages.dev/technical-guide/plugins/getting-started/#examples"))
 
 (defn- normalize-uri
   [uri-str]
@@ -130,9 +132,16 @@
 (def worker-uri
   (obj/get global "penpotWorkerURI" "/js/worker.js"))
 
-(defn external-feature-flag [flag value]
-  (when-let [fn (obj/get global "externalFeatureFlag")]
-    (fn flag value)))
+(defn external-feature-flag
+  [flag value]
+  (let [f (obj/get global "externalFeatureFlag")]
+    (when (fn? f)
+      (f flag value))))
+
+(defn external-session-id
+  []
+  (let [f (obj/get global "externalSessionId")]
+    (when (fn? f) (f))))
 
 ;; --- Helper Functions
 
@@ -157,6 +166,10 @@
   (if (nil? photo-id)
     (avatars/generate {:name name})
     (dm/str (u/join public-uri "assets/by-id/" photo-id))))
+
+(defn resolve-media
+  [id]
+  (dm/str (u/join public-uri "assets/by-id/" (str id))))
 
 (defn resolve-file-media
   ([media]

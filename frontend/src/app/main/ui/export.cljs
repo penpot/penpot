@@ -15,6 +15,7 @@
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.shapes :refer [shape-wrapper]]
    [app.main.worker :as uw]
@@ -317,10 +318,12 @@
                               :error    (:export-error? file))}
 
    [:div {:class (stl/css :file-name)}
-    [:span {:class (stl/css :file-icon)}
-     (cond (:export-success? file) i/tick
-           (:export-error? file)   i/close
-           (:loading? file)        i/loader-pencil)]
+    (if (:loading? file)
+      [:> loader*  {:width 16
+                    :title (tr "labels.loading")}]
+      [:span {:class (stl/css :file-icon)}
+       (cond (:export-success? file) i/tick
+             (:export-error? file)   i/close)])
 
     [:div {:class (stl/css :file-name-label)}
      (:name file)]]])
@@ -432,12 +435,12 @@
              [:label {:for (str "export-" type)
                       :class (stl/css-case :global/checked (= selected type))}
                                 ;; Execution time translation strings:
-                                ;;   dashboard.export.options.all.message
-                                ;;   dashboard.export.options.all.title
-                                ;;   dashboard.export.options.detach.message
-                                ;;   dashboard.export.options.detach.title
-                                ;;   dashboard.export.options.merge.message
-                                ;;   dashboard.export.options.merge.title
+                                ;;   (tr "dashboard.export.options.all.message")
+                                ;;   (tr "dashboard.export.options.all.title")
+                                ;;   (tr "dashboard.export.options.detach.message")
+                                ;;   (tr "dashboard.export.options.detach.title")
+                                ;;   (tr "dashboard.export.options.merge.message")
+                                ;;   (tr "dashboard.export.options.merge.title")
               [:span {:class (stl/css-case :global/checked (= selected type))}
                (when (= selected type)
                  i/status-tick)]

@@ -115,6 +115,7 @@
 .height,
 .width {
   @extend .input-element;
+  @include bodySmallTypography;
   width: $s-108;
   .icon-text {
     padding-top: $s-1;
@@ -146,6 +147,7 @@
 .x-position,
 .y-position {
   @extend .input-element;
+  @include bodySmallTypography;
   width: $s-108;
   .icon-text {
     padding-top: $s-1;
@@ -164,6 +166,7 @@
 
 .rotation {
   @extend .input-element;
+  @include bodySmallTypography;
   width: $s-108;
   .icon-text {
     padding-top: $s-1;
@@ -182,6 +185,7 @@
 
 .radius-1 {
   @extend .input-element;
+  @include bodySmallTypography;
   width: $s-108;
   position: relative;
 }
@@ -192,6 +196,7 @@
   gap: $s-4;
   .small-input {
     @extend .input-element;
+    @include bodySmallTypography;
     width: $s-52;
   }
 }

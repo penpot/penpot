@@ -12,7 +12,8 @@
    [app.common.geom.point :as gpt]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace.changes :as dch]
+   [app.main.data.changes :as dch]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.common :refer [workspace-shapes]]
    [beicon.v2.core :as rx]
@@ -35,7 +36,7 @@
   (ptk/reify ::update-shape
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dch/update-shapes [id] #(merge % attrs))))))
+      (rx/of (dwsh/update-shapes [id] #(merge % attrs))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions

@@ -1,7 +1,31 @@
 (ns token-tests.helpers.state
   (:require
+   [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
+
+(defn end
+  "Apply `attributes` that match `token` for `shape-ids`.
+
+  Optionally remove attributes from `attributes-to-remove`,
+  this is useful for applying a single attribute from an attributes set
+  while removing other applied tokens from this set."
+  []
+  (ptk/reify ::end
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/empty))))
+
+(defn end+
+  []
+  (ptk/reify ::end+
+    ptk/WatchEvent
+    (watch [_ state _]
+           (->> (rx/from (sd/resolve-tokens+ (get-in state [:workspace-data :tokens])))
+                (rx/mapcat
+                 (fn [_]
+                   (rx/of
+                    (end))))))))
 
 (defn stop-on
   "Helper function to be used with async version of run-store.
@@ -15,7 +39,7 @@
 
 (def stop-on-send-update-indices
   "Stops on `send-update-indices` function being called, which should be the last function of an event chain."
-  (stop-on :app.main.data.workspace.changes/send-update-indices))
+  (stop-on ::end))
 
 ;; Support for async events in tests
 ;; https://chat.kaleidos.net/penpot-partners/pl/tz1yoes3w3fr9qanxqpuhoz3ch
@@ -24,21 +48,22 @@
   ([store done events completed-cb]
    (run-store store done events completed-cb nil))
   ([store done events completed-cb stopper]
-   (let [stream (ptk/input-stream store)]
+   (let [stream (ptk/input-stream store)
+         stopper-s (if (fn? stopper)
+                     (stopper stream)
+                     (rx/filter #(= :the/end %) stream))]
      (->> stream
-          (rx/take-until (if stopper
-                           (stopper stream)
-                           (rx/filter #(= :the/end %) stream)))
+          (rx/take-until stopper-s)
           (rx/last)
-          (rx/tap (fn []
+          (rx/tap (fn [_]
                     (completed-cb @store)))
           (rx/subs! (fn [_] (done))
                     (fn [cause]
                       (js/console.log "[error]:" cause))
                     (fn [_]
                       #_(js/console.log "[complete]"))))
-     (doall (for [event events]
-              (ptk/emit! store event)))
+     (doseq [event (concat events [(end+)])]
+       (ptk/emit! store event))
      (ptk/emit! store :the/end))))
 
 (defn run-store-async

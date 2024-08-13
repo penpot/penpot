@@ -130,7 +130,6 @@
   (.writeLong output (long data))
   (swap! *position* + 8))
 
-
 (defn read-long!
   [^DataInputStream input]
   (let [v (.readLong input)]

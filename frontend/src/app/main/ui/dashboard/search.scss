@@ -13,7 +13,7 @@
   margin-right: $s-16;
   overflow-y: auto;
   width: 100%;
-  border-top: $s-1 solid $db-quaternary;
+  border-top: $s-1 solid var(--color-background-quaternary);
 
   &.dashboard-projects {
     user-select: none;
@@ -35,14 +35,14 @@
   flex-direction: column;
   height: $s-200;
   background: transparent;
-  border: $s-1 solid $db-quaternary;
+  border: $s-1 solid var(--color-background-quaternary);
   border-radius: $br-8;
 
   .text {
-    color: $df-primary;
+    color: var(--color-foreground-primary);
   }
   .icon svg {
-    stroke: $df-secondary;
+    stroke: var(--color-foreground-secondary);
     width: $s-32;
     height: $s-32;
   }

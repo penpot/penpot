@@ -192,8 +192,10 @@
            on-drag-start do-rename cancel-rename on-rename-group on-group on-ungroup on-context-menu
            selected-full local]}]
 
-  (let [group-open?    (or ^boolean force-open?
-                           ^boolean (get open-groups prefix (if (= prefix "") true false)))
+  (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
+                         false
+                         (or ^boolean force-open?
+                             ^boolean (get open-groups prefix (if (= prefix "") true false))))
         dragging*      (mf/use-state false)
         dragging?      (deref dragging*)
 
@@ -239,14 +241,9 @@
 
      (when group-open?
        [:*
-        (when-let [components (not-empty (get groups "" []))]
+        (let [components (not-empty (get groups "" []))]
           [:div {:class-name (stl/css-case :asset-grid listing-thumbs?
-                                           :asset-enum (not listing-thumbs?)
-                                           :drop-space (and
-                                                        (empty? components)
-                                                        (some? groups)
-                                                        (not dragging?)
-                                                        local))
+                                           :asset-enum (not listing-thumbs?))
                  :on-drag-enter on-drag-enter
                  :on-drag-leave on-drag-leave
                  :on-drag-over dom/prevent-default
@@ -259,7 +256,8 @@
            (when (and (empty? components)
                       (some? groups)
                       local)
-             [:div {:class (stl/css :drop-space)}])
+             [:div {:class (stl/css-case :drop-space true
+                                         :drop-space-small (not dragging?))}])
 
            (for [component components]
              [:& components-item
@@ -520,9 +518,11 @@
                             :name "listing-style"}
           [:& radio-button {:icon i/view-as-list
                             :value "list"
+                            :title (tr "workspace.assets.list-view")
                             :id "opt-list"}]
           [:& radio-button {:icon i/flex-grid
                             :value "grid"
+                            :title (tr "workspace.assets.grid-view")
                             :id "opt-grid"}]]])
 
       (when (and components-v2 (not read-only?) local?)

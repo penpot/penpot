@@ -20,6 +20,7 @@
    [app.common.transit :as t]
    [app.common.types.color :as ctc]
    [app.common.types.grid :as ctg]
+   [app.common.types.plugins :as ctpg]
    [app.common.types.shape.attrs :refer [default-color]]
    [app.common.types.shape.blur :as ctsb]
    [app.common.types.shape.export :as ctse]
@@ -80,10 +81,16 @@
 (def text-align-types
   #{"left" "right" "center" "justify"})
 
-(sm/define! ::points
+(def bool-types
+  #{:union
+    :difference
+    :exclude
+    :intersection})
+
+(sm/register! ::points
   [:vector {:gen/max 4 :gen/min 4} ::gpt/point])
 
-(sm/define! ::fill
+(sm/register! ::fill
   [:map {:title "Fill"}
    [:fill-color {:optional true} ::ctc/rgb-color]
    [:fill-opacity {:optional true} ::sm/safe-number]
@@ -92,7 +99,7 @@
    [:fill-color-ref-id {:optional true} [:maybe ::sm/uuid]]
    [:fill-image {:optional true} ::ctc/image-color]])
 
-(sm/define! ::stroke
+(sm/register! ::stroke
   [:map {:title "Stroke"}
    [:stroke-color {:optional true} :string]
    [:stroke-color-ref-file {:optional true} ::sm/uuid]
@@ -110,7 +117,7 @@
    [:stroke-color-gradient {:optional true} ::ctc/gradient]
    [:stroke-image {:optional true} ::ctc/image-color]])
 
-(sm/define! ::shape-base-attrs
+(sm/register! ::shape-base-attrs
   [:map {:title "ShapeMinimalRecord"}
    [:id ::sm/uuid]
    [:name :string]
@@ -122,14 +129,14 @@
    [:parent-id ::sm/uuid]
    [:frame-id ::sm/uuid]])
 
-(sm/define! ::shape-geom-attrs
+(sm/register! ::shape-geom-attrs
   [:map {:title "ShapeGeometryAttrs"}
    [:x ::sm/safe-number]
    [:y ::sm/safe-number]
    [:width ::sm/safe-number]
    [:height ::sm/safe-number]])
 
-(sm/define! ::shape-attrs
+(sm/register! ::shape-attrs
   [:map {:title "ShapeAttrs"}
    [:name {:optional true} :string]
    [:component-id {:optional true}  ::sm/uuid]
@@ -181,15 +188,17 @@
     [:vector {:gen/max 1} ::ctss/shadow]]
    [:blur {:optional true} ::ctsb/blur]
    [:grow-type {:optional true}
-    [::sm/one-of #{:auto-width :auto-height :fixed}]]
-   [:applied-tokens {:optional true} ::cto/applied-tokens]])
+    [::sm/one-of #{:auto-width :auto-height :fixed}]]])
+   [:applied-tokens {:optional true} ::cto/applied-tokens]
+   [:plugin-data {:optional true}
+    [:map-of {:gen/max 5} :keyword ::ctpg/plugin-data]]
 
-(sm/define! ::group-attrs
+(sm/register! ::group-attrs
   [:map {:title "GroupAttrs"}
    [:type [:= :group]]
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]])
 
-(sm/define! ::frame-attrs
+(sm/register! ::frame-attrs
   [:map {:title "FrameAttrs"}
    [:type [:= :frame]]
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
@@ -197,13 +206,15 @@
    [:show-content {:optional true} :boolean]
    [:hide-in-viewer {:optional true} :boolean]])
 
-(sm/define! ::bool-attrs
+(sm/register! ::bool-attrs
   [:map {:title "BoolAttrs"}
    [:type [:= :bool]]
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
 
-   ;; FIXME: improve this schema
    [:bool-type :keyword]
+   ;; FIXME: This should be the spec but we need to create a migration
+   ;; to make this transition safely
+   ;; [:bool-type [::sm/one-of bool-types]]
 
    [:bool-content
     [:vector {:gen/max 2}
@@ -215,19 +226,19 @@
        [:maybe
         [:map-of {:gen/max 5} :keyword ::sm/safe-number]]]]]]])
 
-(sm/define! ::rect-attrs
+(sm/register! ::rect-attrs
   [:map {:title "RectAttrs"}
    [:type [:= :rect]]])
 
-(sm/define! ::circle-attrs
+(sm/register! ::circle-attrs
   [:map {:title "CircleAttrs"}
    [:type [:= :circle]]])
 
-(sm/define! ::svg-raw-attrs
+(sm/register! ::svg-raw-attrs
   [:map {:title "SvgRawAttrs"}
    [:type [:= :svg-raw]]])
 
-(sm/define! ::image-attrs
+(sm/register! ::image-attrs
   [:map {:title "ImageAttrs"}
    [:type [:= :image]]
    [:metadata
@@ -237,17 +248,17 @@
      [:mtype {:optional true} [:maybe :string]]
      [:id ::sm/uuid]]]])
 
-(sm/define! ::path-attrs
+(sm/register! ::path-attrs
   [:map {:title "PathAttrs"}
    [:type [:= :path]]
    [:content ::ctsp/content]])
 
-(sm/define! ::text-attrs
+(sm/register! ::text-attrs
   [:map {:title "TextAttrs"}
    [:type [:= :text]]
    [:content {:optional true} [:maybe ::ctsx/content]]])
 
-(sm/define! ::shape-map
+(sm/register! ::shape-map
   [:multi {:dispatch :type :title "Shape"}
    [:group
     [:and {:title "GroupShape"}
@@ -319,7 +330,7 @@
      ::text-attrs
      ::ctsl/layout-child-attrs]]])
 
-(sm/define! ::shape
+(sm/register! ::shape
   [:and
    {:title "Shape"
     :gen/gen (->> (sg/generator ::shape-base-attrs)
@@ -465,9 +476,14 @@
 
 (defn setup-rect
   "Initializes the selrect and points for a shape."
-  [{:keys [selrect points] :as shape}]
-  (let [selrect (or selrect (gsh/shape->rect shape))
-        points  (or points  (grc/rect->points selrect))]
+  [{:keys [selrect points transform] :as shape}]
+  (let [selrect   (or selrect (gsh/shape->rect shape))
+        center    (grc/rect->center selrect)
+        transform (or transform (gmt/matrix))
+        points    (or points
+                      (->  selrect
+                           (grc/rect->points)
+                           (gsh/transform-points center transform)))]
     (-> shape
         (assoc :selrect selrect)
         (assoc :points points))))
@@ -490,8 +506,8 @@
       (assoc :proportion-lock true)))
 
 (defn setup-shape
-  "A function that initializes the geometric data of
-  the shape. The props must have :x :y :width :height."
+  "A function that initializes the geometric data of the shape. The props must
+  contain at least :x :y :width :height."
   [{:keys [type] :as props}]
   (let [shape (make-minimal-shape type)
 

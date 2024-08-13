@@ -128,7 +128,9 @@
   [{:keys [file-id prefix groups open-groups force-open? file local? selected local-data
            editing-id renaming-id on-asset-click handle-change apply-typography on-rename-group
            on-ungroup on-context-menu selected-full]}]
-  (let [group-open?   (get open-groups prefix true)
+  (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
+                         false
+                         (get open-groups prefix true))
         dragging*      (mf/use-state false)
         dragging?      (deref dragging*)
         selected-paths (mf/with-memo [selected-full]

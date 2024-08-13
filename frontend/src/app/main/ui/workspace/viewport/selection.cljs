@@ -32,7 +32,7 @@
 (def resize-point-rect-size 8)
 (def resize-side-height 8)
 (def selection-rect-color-normal "var(--color-accent-tertiary)")
-(def selection-rect-color-component "var(--color-component-highlight)")
+(def selection-rect-color-component "var(--assets-component-hightlight)")
 (def selection-rect-width 1)
 (def min-selrect-side 10)
 (def small-selrect-side 30)

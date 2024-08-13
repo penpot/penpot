@@ -4,6 +4,7 @@
  :remove-consecutive-blank-lines? false
  :extra-indents {rumext.v2/fnc [[:inner 0]]
                  cljs.test/async [[:inner 0]]
+                 app.common.schema/register! [[:inner 0] [:inner 1]]
                  promesa.exec/thread [[:inner 0]]
                  specify! [[:inner 0] [:inner 1]]}
  }

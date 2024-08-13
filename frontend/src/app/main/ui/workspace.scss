@@ -6,21 +6,9 @@
 
 @import "refactor/common-refactor.scss";
 
-// Work Sans
-@include font-face("worksans", "WorkSans-Regular", normal);
-@include font-face("worksans", "WorkSans-Medium", "500");
-@include font-face("worksans", "WorkSans-Bold", bold);
-
-// Space mono
-@include font-face("robotomono", "RobotoMono-Regular", normal);
-
-:global(:root) {
-  --s-4: 0.25rem;
-  --layer-indentation-size: calc(var(--s-4) * 6);
-}
-
 .workspace {
   @extend .new-scrollbar;
+  --layer-indentation-size: calc(#{$s-4} * 6);
   width: 100vw;
   height: 100vh;
   max-height: 100vh;
@@ -30,18 +18,17 @@
   grid-template-rows: 1fr;
   grid-template-columns: auto 1fr auto;
   overflow: hidden;
+}
 
-  .workspace-loader {
-    @include flexCenter;
-    grid-area: viewport;
-    background-color: var(--loader-background);
-    :global(svg#loader-pencil) {
-      fill: var(--icon-foreground);
-    }
-  }
+.workspace-loader {
+  grid-area: viewport;
 }
 
 .workspace-content {
+  background-color: var(--color-canvas);
+  display: flex;
+  padding: 0;
+  margin: 0;
   grid-area: viewport;
 }
 

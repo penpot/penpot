@@ -6,6 +6,7 @@
 
 (ns app.common.test-helpers.components
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
@@ -64,13 +65,12 @@
   [file id]
   (ctkl/get-component (:data file) id))
 
-(defn set-child-label
-  [file shape-label child-idx label]
-  (let [id (-> (ths/get-shape file shape-label)
-               :shapes
-               (nth child-idx))]
-    (when id
-      (thi/set-id! label id))))
+(defn- set-children-labels!
+  [file shape-label children-labels]
+  (doseq [[label id]
+          (d/zip children-labels (cfh/get-children-ids (-> (thf/current-page file) :objects)
+                                                       (thi/id shape-label)))]
+    (thi/set-id! label id)))
 
 (defn instantiate-component
   [file component-label copy-root-label & {:keys [parent-label library children-labels] :as params}]
@@ -103,6 +103,7 @@
 
                      (and (some? parent) (ctn/in-any-component? (:objects page) parent))
                      (dissoc :component-root))
+
         file'      (ctf/update-file-data
                     file
                     (fn [file-data]
@@ -128,14 +129,14 @@
                                                                      true)))
                                 $
                                 (remove #(= (:id %) (:id copy-root')) copy-shapes)))))]
+
     (when children-labels
-      (dotimes [idx (count children-labels)]
-        (set-child-label file' copy-root-label idx (nth children-labels idx))))
+      (set-children-labels! file' copy-root-label children-labels))
 
     file'))
 
 (defn component-swap
-  [file shape-label new-component-label new-shape-label & {:keys [library] :as params}]
+  [file shape-label new-component-label new-shape-label & {:keys [library children-labels] :as params}]
   (let [shape            (ths/get-shape file shape-label)
         library          (or library file)
         libraries        {(:id library) library}
@@ -147,10 +148,15 @@
         ;; Store the properties that need to be maintained when the component is swapped
         keep-props-values (select-keys shape ctk/swap-keep-attrs)
 
-
         [new_shape _ changes]
         (-> (pcb/empty-changes nil (:id page))
-            (cll/generate-component-swap objects shape (:data file) page libraries id-new-component 0 nil keep-props-values))]
+            (cll/generate-component-swap objects shape (:data file) page libraries id-new-component 0 nil keep-props-values))
+
+        file' (thf/apply-changes file changes)]
 
     (thi/set-id! new-shape-label (:id new_shape))
-    (thf/apply-changes file changes)))
+
+    (when children-labels
+      (set-children-labels! file' new-shape-label children-labels))
+
+    file'))

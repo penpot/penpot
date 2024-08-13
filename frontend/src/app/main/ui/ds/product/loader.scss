@@ -1,0 +1,43 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@keyframes line-pencil {
+  0% {
+    transform: translateY(0);
+  }
+
+  100% {
+    transform: translateY(-150px);
+  }
+}
+
+.wrapper {
+  --loader-color-foreground: var(--color-foreground-secondary);
+  --loader-icon-width: unset;
+
+  display: inline-flex;
+  column-gap: var(--sp-s);
+  align-items: center;
+
+  color: var(--loader-color-foreground);
+}
+
+.wrapper-overlay {
+  display: grid;
+  place-content: center;
+  height: 100%;
+  width: 100%;
+  row-gap: var(--sp-s);
+}
+
+.loader {
+  fill: currentColor;
+  width: var(--icon-width);
+}
+
+.loader-line {
+  animation: line-pencil 0.8s infinite linear;
+}

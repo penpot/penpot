@@ -12,10 +12,12 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.types.color :as ctc]
    [app.common.types.colors-list :as ctcl]
+   [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.interactions :as ctsi]
    [app.common.types.typographies-list :as cttl]
    [app.common.types.typography :as ctt]))
 
@@ -68,6 +70,19 @@
                (thf/current-page file))]
     (ctst/get-shape page id)))
 
+(defn update-shape
+  [file shape-label attr val & {:keys [page-label]}]
+  (let [page (if page-label
+               (thf/get-page file page-label)
+               (thf/current-page file))
+        shape (ctst/get-shape page (thi/id shape-label))]
+    (ctf/update-file-data
+     file
+     (fn [file-data]
+       (ctpl/update-page file-data
+                         (:id page)
+                         #(ctst/set-shape % (ctn/set-shape-attr shape attr val)))))))
+
 (defn sample-color
   [label & {:keys [] :as params}]
   (ctc/make-color (assoc params :id (thi/new-id! label))))
@@ -99,3 +114,19 @@
   [file label & {:keys [] :as params}]
   (let [typography (sample-typography label params)]
     (ctf/update-file-data file #(cttl/add-typography % typography))))
+
+(defn add-interaction
+  [file origin-label dest-label]
+  (let [page         (thf/current-page file)
+        origin       (get-shape file origin-label)
+        dest         (get-shape file dest-label)
+        interaction  (-> ctsi/default-interaction
+                         (ctsi/set-destination (:id dest))
+                         (assoc :position-relative-to (:id origin)))
+        interactions (ctsi/add-interaction (:interactions origin) interaction)]
+    (ctf/update-file-data
+     file
+     (fn [file-data]
+       (ctpl/update-page file-data
+                         (:id page)
+                         #(ctst/set-shape % (assoc origin :interactions interactions)))))))

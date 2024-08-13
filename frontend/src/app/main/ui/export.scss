@@ -309,11 +309,6 @@
   &.loading {
     .file-name {
       color: var(--modal-text-foreground-color);
-      .file-icon svg:global(#loader-pencil) {
-        color: var(--modal-text-foreground-color);
-        stroke: var(--modal-text-foreground-color);
-        fill: var(--modal-text-foreground-color);
-      }
     }
   }
   &.error {

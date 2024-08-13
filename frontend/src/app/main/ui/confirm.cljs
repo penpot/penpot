@@ -11,7 +11,7 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [tr t]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as k]
    [goog.events :as events]
    [rumext.v2 :as mf])
@@ -30,15 +30,13 @@
            cancel-label
            accept-label
            accept-style] :as props}]
-  (let [locale       (mf/deref i18n/locale)
-
-        on-accept    (or on-accept identity)
+  (let [on-accept    (or on-accept identity)
         on-cancel    (or on-cancel identity)
-        message      (or message (t locale "ds.confirm-title"))
+        message      (or message (tr "ds.confirm-title"))
         cancel-label (or cancel-label (tr "ds.confirm-cancel"))
         accept-label (or accept-label (tr "ds.confirm-ok"))
         accept-style (or accept-style :danger)
-        title        (or title (t locale "ds.confirm-title"))
+        title        (or title (tr "ds.confirm-title"))
 
         accept-fn
         (mf/use-callback

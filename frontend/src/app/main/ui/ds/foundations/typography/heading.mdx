@@ -1,0 +1,43 @@
+import { Canvas, Meta } from "@storybook/blocks";
+import * as HeadingStories from "./heading.stories";
+
+<Meta of={HeadingStories} />
+
+# Headings
+
+This component will add a heading tag element (ie. `<h1>`, `<h2>`, etc.) to our code.
+
+## Technical notes
+
+### Using typography IDs
+
+This component accepts any [typography IDs](?path=/docs/foundations-typography--docs).
+
+There are typography ID definitions you can use in your code rather than typing the
+typography ID by hand.
+
+**Using these IDs is recommended**.
+
+Assuming the namespace of the typography is required as `t`:
+
+```clj
+(ns app.main.ui.foo
+  (:require
+   [app.main.ui.ds.foundations.typography :as t]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]))
+```
+
+You can now use the typography IDs defined in the namespace:
+
+```clj
+[:> heading* {:typography t/title-large} "Welcome to Penpot"]
+```
+
+## Accesibility
+
+There should only be one level 1 heading `<h1>` per page.
+
+Headings are used to navigate the page and must follow the `<h1>` → `<h2>` → `<h3>` → `<h4>` → `<h5>` → `<h6>` hierarchy.
+For example, do not skip levels in the `<h1>` → `<h3>` hierarchy if there is no `<h2>` in between.
+
+We should not choose the heading level by its visual aspect.

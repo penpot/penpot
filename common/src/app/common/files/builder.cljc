@@ -38,18 +38,22 @@
                         fail-on-spec?]
                  :or   {add-container? false
                         fail-on-spec? false}}]
-   (let [component-id (:current-component-id file)
-         change       (cond-> change
-                        (and add-container? (some? component-id))
-                        (-> (assoc :component-id component-id)
-                            (cond-> (some? (:current-frame-id file))
-                              (assoc :frame-id (:current-frame-id file))))
+   (let [components-v2 (dm/get-in file [:data :options :components-v2])
+         component-id  (:current-component-id file)
+         change        (cond-> change
+                         (and add-container? (some? component-id) (not components-v2))
+                         (-> (assoc :component-id component-id)
+                             (cond-> (some? (:current-frame-id file))
+                               (assoc :frame-id (:current-frame-id file))))
 
-                        (and add-container? (nil? component-id))
-                        (assoc :page-id  (:current-page-id file)
-                               :frame-id (:current-frame-id file)))
+                         (and add-container? (or (nil? component-id) components-v2))
+                         (assoc :page-id  (:current-page-id file)
+                                :frame-id (:current-frame-id file)))
 
-         valid? (ch/check-change! change)]
+         valid? (or (and components-v2
+                         (nil? (:component-id change))
+                         (nil? (:page-id change)))
+                    (ch/check-change! change))]
 
      (when-not valid?
        (let [explain (sm/explain ::ch/change change)]
@@ -61,12 +65,12 @@
                      ::sm/explain explain))))
 
      (cond-> file
-       valid?
-       (-> (update :changes conjv change)
-           (update :data ch/process-changes [change] false))
+       (and valid? (or (not add-container?) (some? (:component-id change)) (some? (:page-id change))))
+       (-> (update :changes conjv change)                      ;; In components-v2 we do not add shapes
+           (update :data ch/process-changes [change] false))   ;; inside a component
 
        (not valid?)
-       (update :errors conjv change)))))
+       (update :errors conjv change)))));)
 
 (defn- lookup-objects
   ([file]
@@ -181,10 +185,11 @@
         (update :parent-stack conjv (:id obj)))))
 
 (defn close-artboard [file]
-  (let [parent-id (-> file :parent-stack peek)
+  (let [components-v2 (dm/get-in file [:data :options :components-v2])
+        parent-id (-> file :parent-stack peek)
         parent (lookup-shape file parent-id)
         current-frame-id (or (:frame-id parent)
-                             (when (nil? (:current-component-id file))
+                             (when (or (nil? (:current-component-id file)) components-v2)
                                root-id))]
     (-> file
         (assoc :current-frame-id current-frame-id)
@@ -515,12 +520,18 @@
 
   ([file data root-type]
    ;; FIXME: data probably can be a shape instance, then we can use gsh/shape->rect
-   (let [selrect (or (grc/make-rect (:x data) (:y data) (:width data) (:height data))
+   (let [components-v2 (dm/get-in file [:data :options :components-v2])
+         selrect (or (grc/make-rect (:x data) (:y data) (:width data) (:height data))
                      grc/empty-rect)
          name               (:name data)
          path               (:path data)
          main-instance-id   (:main-instance-id data)
          main-instance-page (:main-instance-page data)
+
+         ;; In components v1 we must create the root shape and set it inside
+         ;; the :objects attribute of the component. When in components-v2,
+         ;; this will be ignored as the root shape has already been created
+         ;; in its page, by the normal page import.
          attrs (-> data
                    (assoc :type root-type)
                    (assoc :x (:x selrect))
@@ -542,18 +553,42 @@
 
      (-> file
          (commit-change
-          {:type :add-component
-           :id (:id obj)
-           :name name
-           :path path
-           :main-instance-id main-instance-id
-           :main-instance-page main-instance-page
-           :shapes [obj]})
+          (cond-> {:type :add-component
+                   :id (:id obj)
+                   :name name
+                   :path path
+                   :main-instance-id main-instance-id
+                   :main-instance-page main-instance-page}
+            (not components-v2)
+            (assoc :shapes [obj])))
 
          (assoc :last-id (:id obj))
          (assoc :parent-stack [(:id obj)])
          (assoc :current-component-id (:id obj))
          (assoc :current-frame-id (if (= (:type obj) :frame) (:id obj) uuid/zero))))))
+
+(defn start-deleted-component
+  [file data]
+  (let [attrs (-> data
+                  (assoc :id (:main-instance-id data))
+                  (assoc :component-file (:id file))
+                  (assoc :component-id (:id data))
+                  (assoc :x (:main-instance-x data))
+                  (assoc :y (:main-instance-y data))
+                  (dissoc :path)
+                  (dissoc :main-instance-id)
+                  (dissoc :main-instance-page)
+                  (dissoc :main-instance-x)
+                  (dissoc :main-instance-y)
+                  (dissoc :main-instance-parent)
+                  (dissoc :main-instance-frame))]
+    ;; To create a deleted component, first we add all shapes of the main instance
+    ;; in the main instance page, and in the finish event we delete it.
+    (-> file
+        (update :parent-stack conjv (:main-instance-parent data))
+        (assoc :current-page-id (:main-instance-page data))
+        (assoc :current-frame-id (:main-instance-frame data))
+        (add-artboard attrs))))
 
 (defn finish-component
   [file]
@@ -619,43 +654,18 @@
         (update :parent-stack pop))))
 
 (defn finish-deleted-component
-  [component-id page-id main-instance-x main-instance-y file]
+  [component-id file]
   (let [file             (assoc file :current-component-id component-id)
-        page             (ctpl/get-page (:data file) page-id)
-        component        (ctkl/get-component (:data file) component-id)
-        main-instance-id (:main-instance-id component)
-
-        ; To obtain a deleted component, we first create the component
-        ; and the main instance in the workspace, and then delete them.
-        [_ shapes]
-        (ctn/make-component-instance page
-                                     component
-                                     (:data file)
-                                     (gpt/point main-instance-x
-                                                main-instance-y)
-                                     true
-                                     {:main-instance true
-                                      :force-id main-instance-id})]
-    (as-> file $
-      (reduce #(commit-change %1
-                              {:type :add-obj
-                               :id (:id %2)
-                               :page-id (:id page)
-                               :parent-id (:parent-id %2)
-                               :frame-id (:frame-id %2)
-                               :ignore-touched true
-                               :obj %2})
-              $
-              shapes)
-      (commit-change $ {:type :del-component
+        component        (ctkl/get-component (:data file) component-id)]
+    (-> file
+        (close-artboard)
+        (commit-change {:type :del-component
                         :id component-id})
-      (reduce #(commit-change %1 {:type :del-obj
-                                  :page-id page-id
-                                  :ignore-touched true
-                                  :id (:id %2)})
-              $
-              shapes)
-      (dissoc $ :current-component-id))))
+        (commit-change {:type :del-obj
+                        :page-id (:main-instance-page component)
+                        :id (:main-instance-id component)
+                        :ignore-touched true})
+        (dissoc :current-page-id))))
 
 (defn create-component-instance
   [file data]
@@ -666,7 +676,6 @@
         page-id          (:current-page-id file)
         page             (ctpl/get-page (:data file) page-id)
         component        (ctkl/get-component (:data file) component-id)
-        ;; main-instance-id (:main-instance-id component)
 
         components-v2    (dm/get-in file [:options :components-v2])
 

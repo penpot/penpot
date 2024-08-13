@@ -10,9 +10,7 @@
    [app.common.data :as d]
    [app.common.logging :as log]
    [app.config :as cfg]
-   [app.util.dom :as dom]
    [app.util.globals :as globals]
-   [app.util.object :as obj]
    [app.util.storage :refer [storage]]
    [cuerdas.core :as str]
    [goog.object :as gobj]
@@ -107,23 +105,6 @@
       (swap! storage assoc ::locale lname)
       (reset! locale lname))))
 
-(defn reset-locale
-  "Set the current locale to the browser detected one if it is
-  supported or default locale if not."
-  []
-  (swap! storage dissoc ::locale)
-  (reset! locale (autodetect)))
-
-(add-watch locale "browser-font"
-           (fn [_ _ _ locale]
-             (log/info :hint "locale changed" :locale locale)
-             (dom/set-html-lang! locale)
-             (let [node  (dom/get-body)]
-               (if (or (= locale "fa")
-                       (= locale "ar"))
-                 (dom/set-css-property! node "--font-family" "'vazirmatn', 'worksans', sans-serif")
-                 (dom/unset-css-property! node "--font-family")))))
-
 (deftype C [val]
   IDeref
   (-deref [_] val))
@@ -173,16 +154,13 @@
   ([code] (t @locale code))
   ([code & args] (apply t @locale code args)))
 
-(mf/defc tr-html
-  {::mf/wrap-props false}
-  [props]
-  (let [label    (obj/get props "label")
-        class    (obj/get props "class")
-        tag-name (obj/get props "tag-name" "p")
-        params   (obj/get props "params" [])
-        html (apply tr (d/concat-vec [label] params))]
-    [:> tag-name {:dangerouslySetInnerHTML #js {:__html html}
-                  :className class}]))
+(mf/defc tr-html*
+  {::mf/props :obj}
+  [{:keys [content class tag-name on-click]}]
+  (let [tag-name (d/nilv tag-name "p")]
+    [:> tag-name {:dangerouslySetInnerHTML #js {:__html content}
+                  :className class
+                  :on-click on-click}]))
 
 ;; DEPRECATED
 (defn use-locale

@@ -8,7 +8,7 @@
 ;; ------------------------------------------------
 
 (def font-size 11)
-(def distance-color "var(--da-quaternary)")
+(def distance-color "var(--color-accent-quaternary)")
 (def distance-text-color "var(--app-white)")
 (def warning-color "var(--status-color-warning-500)")
 (def flex-display-pill-width 40)

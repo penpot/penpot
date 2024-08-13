@@ -130,6 +130,15 @@
   (and (some? (:component-id shape))
        (nil? (:component-root shape))))
 
+(defn subcopy-head?
+  "Check if this shape is the head of a subinstance that is a copy."
+  [shape]
+  ;; This is redundant with the previous one, but may give more security
+  ;; in case of bugs.
+  (and (some? (:component-id shape))
+       (nil? (:component-root shape))
+       (some? (:shape-ref shape))))
+
 (defn instance-of?
   [shape file-id component-id]
   (and (some? (:component-id shape))
@@ -174,20 +183,47 @@
   (and (= shape-id (:main-instance-id component))
        (= page-id (:main-instance-page component))))
 
+(defn set-touched-group
+  [touched group]
+  (when group
+    (conj (or touched #{}) group)))
+
+(defn touched-group?
+  [shape group]
+  ((or (:touched shape) #{}) group))
+
 (defn build-swap-slot-group
   "Convert a swap-slot into a :touched group"
   [swap-slot]
   (when swap-slot
     (keyword (str "swap-slot-" swap-slot))))
 
+(defn swap-slot?
+  [group]
+  (str/starts-with? (name group) "swap-slot-"))
+
+(defn normal-touched-groups
+  "Gets all touched groups that are not swap slots."
+  [shape]
+  (into #{} (remove swap-slot? (:touched shape))))
+
+(defn group->swap-slot
+  [group]
+  (uuid/uuid (subs (name group) 10)))
+
 (defn get-swap-slot
   "If the shape has a :touched group in the form :swap-slot-<uuid>, get the id."
   [shape]
-  (let [group (->> (:touched shape)
-                   (map name)
-                   (d/seek #(str/starts-with? % "swap-slot-")))]
+  (let [group (d/seek swap-slot? (:touched shape))]
     (when group
-      (uuid/uuid (subs group 10)))))
+      (group->swap-slot group))))
+
+(defn set-swap-slot
+  "Add a touched group with a form :swap-slot-<uuid>."
+  [shape swap-slot]
+  (cond-> shape
+    (some? swap-slot)
+    (update :touched set-touched-group (build-swap-slot-group swap-slot))))
 
 (defn match-swap-slot?
   [shape-main shape-inst]
@@ -227,7 +263,6 @@
           :shape-ref
           :touched))
 
-
 (defn- extract-ids [shape]
   (if (map? shape)
     (let [current-id (:id shape)
@@ -256,3 +291,16 @@
          ;; Non instance, non copy. We allow
          (or (not (instance-head? shape))
              (not (in-component-copy? parent))))))
+
+(defn all-touched-groups
+  []
+  (into #{} (vals sync-attrs)))
+
+(defn valid-touched-group?
+  [group]
+  (try
+    (or ((all-touched-groups) group)
+        (and (swap-slot? group)
+             (some? (group->swap-slot group))))
+    (catch #?(:clj Throwable :cljs :default) _
+      false)))

@@ -8,10 +8,11 @@
   (:require
    [app.common.svg.path.shapes-to-path :as upsp]
    [app.common.svg.path.subpath :as ups]
-   [app.main.data.workspace.changes :as dch]
+   [app.main.data.changes :as dch]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.state :as st]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.util.path.tools :as upt]
    [beicon.v2.core :as rx]
@@ -37,7 +38,7 @@
                  changes (changes/generate-path-changes it objects page-id shape (:content shape) new-content)]
 
              (rx/concat
-              (rx/of (dch/update-shapes [id] upsp/convert-to-path))
+              (rx/of (dwsh/update-shapes [id] upsp/convert-to-path))
               (rx/of (dch/commit-changes changes)
                      (when (empty? new-content)
                        (dwe/clear-edition-mode)))))))))))

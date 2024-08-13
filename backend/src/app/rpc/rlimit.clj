@@ -51,12 +51,12 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.http :as-alias http]
-   [app.loggers.audit :refer [parse-client-ip]]
    [app.redis :as rds]
    [app.redis.script :as-alias rscript]
    [app.rpc :as-alias rpc]
    [app.rpc.helpers :as rph]
    [app.rpc.rlimit.result :as-alias lresult]
+   [app.util.inet :as inet]
    [app.util.services :as-alias sv]
    [app.util.time :as dt]
    [app.worker :as wrk]
@@ -215,7 +215,7 @@
   [{:keys [::rpc/profile-id] :as params}]
   (let [request (-> params meta ::http/request)]
     (or profile-id
-        (some-> request parse-client-ip)
+        (some-> request inet/parse-request)
         uuid/zero)))
 
 (defn process-request!

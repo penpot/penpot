@@ -9,20 +9,25 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.config :as cf]
+   [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
+   [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.icons :as i]
+   [app.plugins.register :as preg]
    [app.util.avatars :as avatars]
+   [app.util.dom :as dom]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.object :as obj]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private close-icon
   (i/icon-xref :close (stl/css :close-icon)))
-
 
 (mf/defc plugin-entry
   [{:keys [index manifest on-open-plugin on-remove-plugin]}]
@@ -54,42 +59,34 @@
      [:button {:class (stl/css :trash-button)
                :on-click handle-delete-click} i/delete]]))
 
-(defn load-from-store
-  []
-  (let [ls (.-localStorage js/window)
-        plugins-val (.getItem ls "plugins")]
-    (when plugins-val
-      (let [plugins-js (.parse js/JSON plugins-val)]
-        (js->clj plugins-js {:keywordize-keys true})))))
-
-(defn save-to-store
-  [plugins]
-  (let [ls (.-localStorage js/window)
-        plugins-js (clj->js plugins)
-        plugins-val (.stringify js/JSON plugins-js)]
-    (.setItem ls "plugins" plugins-val)))
 
 (defn open-plugin!
-  [{:keys [name description host code icon permissions]}]
-  (.ɵloadPlugin
-   js/window #js
-              {:name name
-               :description description
-               :host host
-               :code code
-               :icon icon
-               :permissions (apply array permissions)}))
+  [{:keys [plugin-id name description host code icon permissions]}]
+  (try
+    (.ɵloadPlugin
+     js/window
+     #js {:pluginId plugin-id
+          :name name
+          :description description
+          :host host
+          :code code
+          :icon icon
+          :permissions (apply array permissions)})
+    (catch :default e
+      (.error js/console "Error" e))))
 
 (mf/defc plugin-management-dialog
   {::mf/register modal/components
    ::mf/register-as :plugin-management}
   []
 
-  (let [plugins-state* (mf/use-state [])
+  (let [plugins-state* (mf/use-state #(preg/plugins-list))
         plugins-state @plugins-state*
 
         plugin-url* (mf/use-state "")
         plugin-url  @plugin-url*
+
+        fetching-manifest? (mf/use-state false)
 
         input-status* (mf/use-state nil) ;; :error-url :error-manifest :success
         input-status  @input-status*
@@ -111,6 +108,7 @@
         (mf/use-callback
          (mf/deps plugins-state plugin-url)
          (fn []
+           (reset! fetching-manifest? true)
            (->> (http/send! {:method :get
                              :uri plugin-url
                              :omit-default-headers true
@@ -118,31 +116,29 @@
                 (rx/map :body)
                 (rx/subs!
                  (fn [body]
-                   (let [name (obj/get body "name")
-                         desc (obj/get body "description")
-                         code (obj/get body "code")
-                         icon (obj/get body "icon")
-                         permissions (obj/get body "permissions")
-                         origin (obj/get (js/URL. plugin-url) "origin")
-
-                         new-state
-                         (conj plugins-state
-                               {:name name
-                                :description desc
-                                :host origin
-                                :code code
-                                :icon icon
-                                :permissions (->> permissions (mapv str))})]
+                   (reset! fetching-manifest? false)
+                   (let [plugin (preg/parse-manifest plugin-url body)]
+                     (st/emit! (ptk/event ::ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
+                     (modal/show!
+                      :plugin-permissions
+                      {:plugin plugin
+                       :on-accept
+                       #(do
+                          (preg/install-plugin! plugin)
+                          (modal/show! :plugin-management {}))})
                      (reset! input-status* :success)
-                     (reset! plugin-url* "")
-                     (reset! plugins-state* new-state)
-                     (save-to-store new-state)))
+                     (reset! plugin-url* "")))
                  (fn [_]
+                   (reset! fetching-manifest? false)
                    (reset! input-status* :error-url))))))
 
         handle-open-plugin
         (mf/use-callback
          (fn [manifest]
+           (st/emit! (ptk/event ::ev/event {::ev/name "start-plugin"
+                                            ::ev/origin "workspace:plugins"
+                                            :name (:name manifest)
+                                            :host (:host manifest)}))
            (open-plugin! manifest)
            (modal/hide!)))
 
@@ -150,21 +146,16 @@
         (mf/use-callback
          (mf/deps plugins-state)
          (fn [plugin-index]
-           (let [new-state
-                 (into []
-                       (keep-indexed (fn [idx item]
-                                       (when (not= idx plugin-index) item)))
-                       plugins-state)]
-
-             (reset! plugins-state* new-state)
-             (save-to-store new-state))))]
-
-    (mf/use-effect
-     (fn []
-       (reset! plugins-state* (d/nilv (load-from-store) []))))
+           (let [plugins-list (preg/plugins-list)
+                 plugin (nth plugins-list plugin-index)]
+             (st/emit! (ptk/event ::ev/event {::ev/name "remove-plugin"
+                                              :name (:name plugin)
+                                              :host (:host plugin)}))
+             (preg/remove-plugin! plugin)
+             (reset! plugins-state* (preg/plugins-list)))))]
 
     [:div {:class (stl/css :modal-overlay)}
-     [:div {:class (stl/css :modal-dialog)}
+     [:div {:class (stl/css :modal-dialog :plugin-management)}
       [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} close-icon]
       [:div {:class (stl/css :modal-title)} (tr "workspace.plugins.title")]
 
@@ -176,20 +167,28 @@
                         :class (stl/css-case :input-error error?)}]
 
         [:button {:class (stl/css :primary-button)
-                  :disabled (empty? plugin-url)
+                  :disabled @fetching-manifest?
                   :on-click handle-install-click} (tr "workspace.plugins.install")]]
 
        (when error?
          [:div {:class (stl/css-case :info true :error error?)}
           (tr "workspace.plugins.error.url")])
 
+       [:> i18n/tr-html*
+        {:class (stl/css :discover)
+         :on-click #(st/emit! (ptk/event ::ev/event {::ev/name "open-plugins-list"}))
+         :content (tr "workspace.plugins.discover" cf/plugins-list-uri)}]
+
        [:hr]
 
        (if (empty? plugins-state)
          [:div {:class (stl/css :plugins-empty)}
-          [:div {:class (stl/css :plugins-empty-logo)} i/rocket]
+          [:div {:class (stl/css :plugins-empty-logo)} i/puzzle]
           [:div {:class (stl/css :plugins-empty-text)} (tr "workspace.plugins.empty-plugins")]
-          [:a {:class (stl/css :plugins-link) :href "#"}
+          [:a {:class (stl/css :plugins-link)
+               :href cf/plugins-list-uri
+               :target "_blank"
+               :on-click #(st/emit! (ptk/event ::ev/event {::ev/name "open-plugins-list"}))}
            (tr "workspace.plugins.plugin-list-link") i/external-link]]
 
          [:*
@@ -197,10 +196,93 @@
                          :title (tr "workspace.plugins.installed-plugins")}]
 
           [:div {:class (stl/css :plugins-list)}
-
            (for [[idx manifest] (d/enumerate plugins-state)]
              [:& plugin-entry {:key (dm/str "plugin-" idx)
                                :index idx
                                :manifest manifest
                                :on-open-plugin handle-open-plugin
                                :on-remove-plugin handle-remove-plugin}])]])]]]))
+
+(mf/defc plugins-permissions-dialog
+  {::mf/register modal/components
+   ::mf/register-as :plugin-permissions}
+  [{:keys [plugin on-accept]}]
+
+  (let [{:keys [host permissions]} plugin
+        permissions (set permissions)
+
+        handle-accept-dialog
+        (mf/use-callback
+         (fn [event]
+           (dom/prevent-default event)
+           (st/emit! (modal/hide))
+           (ptk/event ::ev/event {::ev/name "allow-plugin-permissions"
+                                  :host host
+                                  :permissions (->> permissions (str/join ", "))})
+           (on-accept)))
+
+        handle-close-dialog
+        (mf/use-callback
+         (fn [event]
+           (dom/prevent-default event)
+           (ptk/event ::ev/event {::ev/name "reject-plugin-permissions"
+                                  :host host
+                                  :permissions (->> permissions (str/join ", "))})
+           (st/emit! (modal/hide))))]
+
+    [:div {:class (stl/css :modal-overlay)}
+     [:div {:class (stl/css :modal-dialog :plugin-permissions)}
+      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} close-icon]
+      [:div {:class (stl/css :modal-title)} (tr "workspace.plugins.permissions.title")]
+
+      [:div {:class (stl/css :modal-content)}
+       [:div {:class (stl/css :permissions-list)}
+        (cond
+          (contains? permissions "content:write")
+          [:div {:class (stl/css :permissions-list-entry)}
+           i/oauth-1
+           [:p {:class (stl/css :permissions-list-text)}
+            (tr "workspace.plugins.permissions.content-write")]]
+
+          (contains? permissions "content:read")
+          [:div {:class (stl/css :permissions-list-entry)}
+           i/oauth-1
+           [:p {:class (stl/css :permissions-list-text)}
+            (tr "workspace.plugins.permissions.content-read")]])
+
+        (cond
+          (contains? permissions "user:read")
+          [:div {:class (stl/css :permissions-list-entry)}
+           i/oauth-2
+           [:p {:class (stl/css :permissions-list-text)}
+            (tr "workspace.plugins.permissions.user-read")]])
+
+        (cond
+          (contains? permissions "library:write")
+          [:div {:class (stl/css :permissions-list-entry)}
+           i/oauth-3
+           [:p {:class (stl/css :permissions-list-text)}
+            (tr "workspace.plugins.permissions.library-write")]]
+
+          (contains? permissions "library:read")
+          [:div {:class (stl/css :permissions-list-entry)}
+           i/oauth-3
+           [:p {:class (stl/css :permissions-list-text)}
+            (tr "workspace.plugins.permissions.library-read")]])]
+
+       [:div {:class (stl/css :permissions-disclaimer)}
+        (tr "workspace.plugins.permissions.disclaimer")]]
+
+      [:div {:class (stl/css :modal-footer)}
+       [:div {:class (stl/css :action-buttons)}
+        [:input
+         {:class (stl/css :cancel-button :button-expand)
+          :type "button"
+          :value (tr "ds.confirm-cancel")
+          :on-click handle-close-dialog}]
+
+        [:input
+         {:class (stl/css :primary-button :button-expand)
+          :type "button"
+          :value (tr "ds.confirm-allow")
+          :on-click handle-accept-dialog}]]]]]))

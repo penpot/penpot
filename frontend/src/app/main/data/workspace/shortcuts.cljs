@@ -14,7 +14,6 @@
    [app.main.data.users :as du]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
-   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.layers :as dwly]
    [app.main.data.workspace.libraries :as dwl]
@@ -28,7 +27,8 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.hooks.resize :as r]
-   [app.util.dom :as dom]))
+   [app.util.dom :as dom]
+   [potok.v2.core :as ptk]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts
@@ -51,12 +51,12 @@
    :undo                 {:tooltip (ds/meta "Z")
                           :command (ds/c-mod "z")
                           :subsections [:edit]
-                          :fn #(emit-when-no-readonly dwc/undo)}
+                          :fn #(emit-when-no-readonly dwu/undo)}
 
    :redo                 {:tooltip (ds/meta "Y")
                           :command [(ds/c-mod "shift+z") (ds/c-mod "y")]
                           :subsections [:edit]
-                          :fn #(emit-when-no-readonly dwc/redo)}
+                          :fn #(emit-when-no-readonly dwu/redo)}
 
    :clear-undo           {:tooltip (ds/alt "Q")
                           :command "alt+q"
@@ -120,22 +120,22 @@
    :group                {:tooltip (ds/meta "G")
                           :command (ds/c-mod "g")
                           :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly dw/group-selected)}
+                          :fn #(emit-when-no-readonly (dw/group-selected))}
 
    :ungroup              {:tooltip (ds/shift "G")
                           :command "shift+g"
                           :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly dw/ungroup-selected)}
+                          :fn #(emit-when-no-readonly (dw/ungroup-selected))}
 
    :mask                 {:tooltip (ds/meta "M")
                           :command (ds/c-mod "m")
                           :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly dw/mask-group)}
+                          :fn #(emit-when-no-readonly (dw/mask-group))}
 
    :unmask               {:tooltip (ds/meta-shift "M")
                           :command (ds/c-mod "shift+m")
                           :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly dw/unmask-group)}
+                          :fn #(emit-when-no-readonly (dw/unmask-group))}
 
    :create-component     {:tooltip (ds/meta "K")
                           :command (ds/c-mod "k")
@@ -437,14 +437,16 @@
                           :command (ds/a-mod "p")
                           :subsections [:panels]
                           :fn #(do (r/set-resize-type! :bottom)
-                                   (emit-when-no-readonly (dw/remove-layout-flag :textpalette)
+                                   (emit-when-no-readonly (dw/remove-layout-flag :hide-palettes)
+                                                          (dw/remove-layout-flag :textpalette)
                                                           (toggle-layout-flag :colorpalette)))}
 
    :toggle-textpalette   {:tooltip (ds/alt "T")
                           :command (ds/a-mod "t")
                           :subsections [:panels]
                           :fn #(do (r/set-resize-type! :bottom)
-                                   (emit-when-no-readonly (dw/remove-layout-flag :colorpalette)
+                                   (emit-when-no-readonly (dw/remove-layout-flag :hide-palettes)
+                                                          (dw/remove-layout-flag :colorpalette)
                                                           (toggle-layout-flag :textpalette)))}
 
    :hide-ui              {:tooltip "\\"
@@ -562,7 +564,9 @@
                            :command (ds/c-mod "alt+p")
                            :subsections [:basics]
                            :fn #(when (features/active-feature? @st/state "plugins/runtime")
-                                  (st/emit! (modal/show :plugin-management {})))}})
+                                  (st/emit!
+                                   (ptk/event ::ev/event {::ev/name "open-plugins-manager" ::ev/origin "workspace:shortcuts"})
+                                   (modal/show :plugin-management {})))}})
 
 (def debug-shortcuts
   ;; PREVIEW

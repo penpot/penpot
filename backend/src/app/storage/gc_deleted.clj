@@ -110,8 +110,8 @@
 
 (defmethod ig/init-key ::handler
   [_ {:keys [::min-age] :as cfg}]
-  (fn [params]
-    (let [min-age (dt/duration (or (:min-age params) min-age))]
+  (fn [{:keys [props] :as task}]
+    (let [min-age (dt/duration (or (:min-age props) min-age))]
       (db/tx-run! cfg (fn [cfg]
                         (let [cfg   (assoc cfg ::min-age min-age)
                               total (clean-deleted! cfg)]

@@ -33,7 +33,7 @@
         ;; NOTE: that we don't use mf/deref to avoid a repaint dependency here
         objects   (deref refs/workspace-page-objects)
         color     (if (ctn/in-any-component? objects shape)
-                    "var(--color-component-highlight)"
+                    "var(--assets-component-hightlight)"
                     "var(--color-accent-tertiary)")
 
         x         (dm/get-prop shape :x)

@@ -14,12 +14,17 @@ export class MockWebSocketHelper extends EventTarget {
       }
       this.#mocks.get(url).dispatchEvent(new MessageEvent("message", { data }));
     });
-    await page.exposeFunction("onMockWebSocketSpyClose", (url, code, reason) => {
-      if (!this.#mocks.has(url)) {
-        throw new Error(`WebSocket with URL ${url} not found`);
-      }
-      this.#mocks.get(url).dispatchEvent(new CloseEvent("close", { code, reason }));
-    });
+    await page.exposeFunction(
+      "onMockWebSocketSpyClose",
+      (url, code, reason) => {
+        if (!this.#mocks.has(url)) {
+          throw new Error(`WebSocket with URL ${url} not found`);
+        }
+        this.#mocks
+          .get(url)
+          .dispatchEvent(new CloseEvent("close", { code, reason }));
+      },
+    );
     await page.addInitScript({ path: "playwright/scripts/MockWebSocket.js" });
   }
 

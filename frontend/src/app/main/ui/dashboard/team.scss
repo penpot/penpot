@@ -92,7 +92,7 @@
   width: 100%;
   z-index: $z-index-modal;
   border-radius: $br-circle;
-  background-color: $da-primary;
+  background-color: var(--color-accent-primary);
 }
 
 .image-icon {
@@ -378,7 +378,7 @@
 }
 
 .hero-desc {
-  color: $df-secondary;
+  color: var(--color-foreground-secondary);
   margin-bottom: 0;
   font-size: $fs-16;
   max-width: $s-512;
@@ -540,5 +540,6 @@
 
 .email-input {
   @extend .input-base;
+  @include bodySmallTypography;
   height: auto;
 }

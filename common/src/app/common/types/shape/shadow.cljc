@@ -11,7 +11,7 @@
 
 (def styles #{:drop-shadow :inner-shadow})
 
-(sm/def! ::shadow
+(sm/register! ::shadow
   [:map {:title "Shadow"}
    [:id [:maybe ::sm/uuid]]
    [:style [::sm/one-of styles]]

@@ -43,7 +43,7 @@
   margin-right: $s-32;
   position: relative;
   z-index: $z-index-1;
-  background-color: $db-quaternary;
+  background-color: var(--color-background-quaternary);
 }
 
 .title-text {
@@ -53,7 +53,7 @@
   font-size: $fs-16;
   margin-left: $s-16;
   margin-right: $s-8;
-  color: $df-primary;
+  color: var(--color-foreground-primary);
   font-weight: $fw400;
 }
 
@@ -62,7 +62,7 @@
   vertical-align: middle;
   margin-left: $s-16;
   margin-right: $s-8;
-  color: $df-primary;
+  color: var(--color-foreground-primary);
   margin-left: $s-16;
   margin-right: $s-16;
   transform: rotate(90deg);
@@ -80,20 +80,20 @@
 .move-button {
   position: absolute;
   top: $s-136;
-  border: $s-2 solid $df-secondary;
+  border: $s-2 solid var(--color-foreground-secondary);
   border-radius: 50%;
   text-align: center;
   width: $s-36;
   height: $s-36;
   cursor: pointer;
-  background-color: $df-primary;
+  background-color: var(--color-foreground-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: all;
 
   &:hover {
-    border: $s-2 solid $da-tertiary;
+    border: $s-2 solid var(--color-accent-tertiary);
   }
 }
 
@@ -116,7 +116,7 @@
   height: $s-228;
   margin-left: $s-6;
   border-top-left-radius: $s-8;
-  background-color: $db-quaternary;
+  background-color: var(--color-background-quaternary);
   overflow: scroll hidden;
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
@@ -139,12 +139,12 @@
   width: $s-256;
   font-size: $fs-16;
   cursor: pointer;
-  color: $df-primary;
+  color: var(--color-foreground-primary);
   padding: $s-3 $s-6 $s-16 $s-6;
   border-radius: $br-8;
 
   &:hover {
-    background-color: $db-tertiary;
+    background-color: var(--color-background-tertiary);
   }
 }
 
@@ -188,12 +188,12 @@
 
 .template-link-title {
   font-size: $fs-14;
-  color: $df-primary;
+  color: var(--color-foreground-primary);
   font-weight: $fw400;
 }
 
 .template-link-text {
   font-size: $fs-12;
   margin-top: $s-8;
-  color: $df-secondary;
+  color: var(--color-foreground-secondary);
 }

@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
+   [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as msg]
    [app.main.features :as features]
@@ -25,6 +26,7 @@
    [app.main.ui.dashboard.import :refer [use-import-file]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.placeholder :refer [empty-placeholder loading-placeholder]]
+   [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.worker :as wrk]
@@ -47,7 +49,7 @@
   [file-id revn blob]
   (let [params {:file-id file-id :revn revn :media blob}]
     (->> (rp/cmd! :create-file-thumbnail params)
-         (rx/map :uri))))
+         (rx/map :id))))
 
 (defn render-thumbnail
   [file-id revn]
@@ -71,15 +73,15 @@
 
 (mf/defc grid-item-thumbnail
   {::mf/wrap-props false}
-  [{:keys [file-id revn thumbnail-uri background-color]}]
+  [{:keys [file-id revn thumbnail-id background-color]}]
   (let [container (mf/use-ref)
         visible?  (h/use-visible container :once? true)]
 
-    (mf/with-effect [file-id revn visible? thumbnail-uri]
-      (when (and visible? (not thumbnail-uri))
+    (mf/with-effect [file-id revn visible? thumbnail-id]
+      (when (and visible? (not thumbnail-id))
         (->> (ask-for-thumbnail file-id revn)
-             (rx/subs! (fn [url]
-                         (st/emit! (dd/set-file-thumbnail file-id url)))
+             (rx/subs! (fn [thumbnail-id]
+                         (st/emit! (dd/set-file-thumbnail file-id thumbnail-id)))
                        (fn [cause]
                          (log/error :hint "unable to render thumbnail"
                                     :file-if file-id
@@ -90,12 +92,14 @@
            :style {:background-color background-color}
            :ref container}
      (when visible?
-       (if thumbnail-uri
+       (if thumbnail-id
          [:img {:class (stl/css :grid-item-thumbnail-image)
-                :src thumbnail-uri
+                :src (cf/resolve-media thumbnail-id)
                 :loading "lazy"
                 :decoding "async"}]
-         i/loader-pencil))]))
+         [:> loader* {:class (stl/css :grid-loader)
+                      :overlay true
+                      :title (tr "labels.loading")}]))]))
 
 ;; --- Grid Item Library
 
@@ -113,7 +117,9 @@
 
   [:div {:class (stl/css :grid-item-th :library)}
    (if (nil? file)
-     i/loader-pencil
+     [:> loader* {:class (stl/css :grid-loader)
+                  :overlay true
+                  :title (tr "labels.loading")}]
      (let [summary (:library-summary file)
            components (:components summary)
            colors (:colors summary)
@@ -365,7 +371,7 @@
         [:& grid-item-thumbnail
          {:file-id (:id file)
           :revn (:revn file)
-          :thumbnail-uri (:thumbnail-uri file)
+          :thumbnail-id (:thumbnail-id file)
           :background-color (dm/get-in file [:data :options :background])}])
 
       (when (and (:is-shared file) (not library-view?))
@@ -458,7 +464,6 @@
            :on-drag-leave on-drag-leave
            :on-drop on-drop
            :ref node-ref}
-
      (cond
        (nil? files)
        [:& loading-placeholder]

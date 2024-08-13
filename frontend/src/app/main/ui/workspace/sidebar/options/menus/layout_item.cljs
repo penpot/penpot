@@ -250,7 +250,7 @@
       [:& radio-button
        {:value "auto"
         :icon  i/hug-content
-        :title "Fit content"
+        :title "Fit content (Horizontal)"
         :id    "behaviour-h-auto"}])]])
 
 (mf/defc element-behaviour-vertical
@@ -288,7 +288,7 @@
        {:value      "auto"
         :icon       i/hug-content
         :icon-class (stl/css :rotated)
-        :title      "Fit content"
+        :title      "Fit content (Vertical)"
         :id         "behaviour-v-auto"}])]])
 
 (mf/defc align-self-row

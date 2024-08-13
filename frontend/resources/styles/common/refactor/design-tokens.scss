@@ -215,7 +215,7 @@
   --menu-shortcut-foreground-color: var(--color-foreground-secondary);
   --menu-shortcut-foreground-color-selected: var(--color-foreground-primary);
   --menu-shortcut-foreground-color-hover: var(--color-foreground-primary);
-  --menu-shadow-color: var(--shadow-color);
+  --menu-shadow-color: var(--color-shadow);
   --menu-background-color-disabled: var(--color-background-primary);
   --menu-foreground-color-disabled: var(--color-foreground-secondary);
   --menu-border-color-disabled: var(--color-background-quaternary);
@@ -238,10 +238,11 @@
   --assets-item-background-color-drag: transparent;
   --assets-item-border-color-drag: var(--color-accent-primary-muted);
   --assets-component-background-color: var(--color-canvas);
-  --assets-component-background-color-disabled: var(--df-secondary;);
+  --assets-component-background-color-disabled: var(--color-foreground-secondary);
   --assets-component-border-color: var(--color-background-tertiary);
   --assets-component-border-selected: var(--color-accent-tertiary);
   --assets-component-second-border-selected: var(--color-background-primary);
+  --assets-component-hightlight: var(--color-accent-secondary);
 
   --radio-btns-background-color: var(--color-background-tertiary);
   --radio-btn-background-color-selected: var(--color-background-quaternary);
@@ -323,25 +324,25 @@
   --alert-icon-foreground-color-default: var(--color-foreground-primary);
   --alert-border-color-default: var(--color-background-quaternary);
 
-  --alert-background-color-success: var(--color-success-background);
+  --alert-background-color-success: var(--color-background-success);
   --alert-text-foreground-color-success: var(--color-foreground-primary);
-  --alert-icon-foreground-color-success: var(--color-success-foreground);
-  --alert-border-color-success: var(--color-success-foreground);
+  --alert-icon-foreground-color-success: var(--color-accent-success);
+  --alert-border-color-success: var(--color-accent-success);
 
-  --alert-background-color-warning: var(--color-warning-background);
+  --alert-background-color-warning: var(--color-background-warning);
   --alert-text-foreground-color-warning: var(--color-foreground-primary);
-  --alert-icon-foreground-color-warning: var(--color-warning-foreground);
-  --alert-border-color-warning: var(--color-warning-foreground);
+  --alert-icon-foreground-color-warning: var(--color-accent-warning);
+  --alert-border-color-warning: var(--color-accent-warning);
 
-  --alert-background-color-error: var(--color-error-background);
+  --alert-background-color-error: var(--color-background-error);
   --alert-text-foreground-color-error: var(--color-foreground-primary);
-  --alert-icon-foreground-color-error: var(--color-error-foreground);
-  --alert-border-color-error: var(--color-error-foreground);
+  --alert-icon-foreground-color-error: var(--color-accent-error);
+  --alert-border-color-error: var(--color-accent-error);
 
-  --alert-background-color-info: var(--color-info-background);
+  --alert-background-color-info: var(--color-background-info);
   --alert-text-foreground-color-info: var(--color-foreground-primary);
-  --alert-icon-foreground-color-info: var(--color-info-foreground);
-  --alert-border-color-info: var(--color-info-foreground);
+  --alert-icon-foreground-color-info: var(--color-accent-info);
+  --alert-border-color-info: var(--color-accent-info);
 
   --alert-text-foreground-color-focus: var(--color-accent-primary);
   --alert-border-color-focus: var(--color-accent-primary);
@@ -354,7 +355,7 @@
   // STATUS WIDGET
   --status-widget-background-color-success: var(--status-color-success-500);
   --status-widget-background-color-warning: var(--status-color-warning-500);
-  --status-widget-background-color-pending: var(--status-color-pending-500);
+  --status-widget-background-color-pending: var(--status-color-info-500);
   --status-widget-background-color-error: var(--status-color-error-500);
   --status-widget-icon-foreground-color: var(--color-background-primary);
 
@@ -372,6 +373,7 @@
   --pill-foreground-color: var(--color-foreground-primary);
 
   --link-foreground-color: var(--color-accent-primary);
+  --register-confirmation-color: var(--status-color-success-200); //TODO: review this color
 
   --resize-area-background-color: var(--color-background-primary);
   --resize-area-border-color: var(--color-background-quaternary);

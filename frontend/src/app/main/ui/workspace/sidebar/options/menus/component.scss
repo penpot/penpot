@@ -260,7 +260,7 @@
 .component-list-empty {
   @include bodySmallTypography;
   margin: 0 $s-4 0 $s-8;
-  color: $df-secondary;
+  color: var(--color-foreground-secondary);
 }
 
 .component-item {
@@ -419,7 +419,7 @@
   align-items: center;
   height: $s-32;
   border-radius: $br-8;
-  font-family: "worksans", sans-serif;
+  font-family: "worksans", "vazirmatn", sans-serif;
   background-color: var(--input-background-color);
 }
 
