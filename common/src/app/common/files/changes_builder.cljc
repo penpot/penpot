@@ -716,7 +716,7 @@
         prev-token-set (get-in library-data [:token-set token-set-id])]
     (-> changes
         (update :redo-changes conj {:type :del-token-set :id token-set-id})
-        (update :undo-changes conj {:type :add-token-set :token prev-token-set})
+        (update :undo-changes conj {:type :add-token-set :token-set prev-token-set})
         (apply-changes-local))))
 
 (defn add-token

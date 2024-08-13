@@ -26,6 +26,7 @@
    [app.common.types.token :as cto]
    [app.common.types.token-theme :as ctot]
    [app.common.types.tokens-list :as ctol]
+   [app.common.types.tokens-theme-list :as ctotl]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as ctt]
    [clojure.set :as set]))
@@ -256,7 +257,8 @@
     [:mod-token-set
      [:map {:title "ModTokenSetChange"}
       [:type [:= :mod-token-set]]
-      [:id ::ctot/token-set]]]
+      [:id ::sm/uuid]
+      [:token-set ::ctot/token-set]]]
 
     [:del-token-set
      [:map {:title "DelTokenSetChange"}
@@ -757,6 +759,18 @@
 (defmethod process-change :del-token
   [data {:keys [id]}]
   (ctol/delete-token data id))
+
+(defmethod process-change :add-token-set
+  [data {:keys [token-set]}]
+  (ctotl/add-token-set data token-set))
+
+(defmethod process-change :mod-token-set
+  [data {:keys [id token-set]}]
+  (ctotl/update-token-set data id merge token-set))
+
+(defmethod process-change :del-token-set
+  [data {:keys [id]}]
+  (ctotl/delete-token-set data id))
 
 ;; === Operations
 (defmethod process-operation :set

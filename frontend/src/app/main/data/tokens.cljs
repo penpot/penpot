@@ -113,12 +113,13 @@
                         create-set? (-> token-changes
                                         (pcb/add-token-set {:id (uuid/next)
                                                             :name "Global"
-                                                            :items [(:id token)]}))
+                                                            :tokens [(:id token)]}))
                         :else (let [updated-token-set (if (contains? token-set (:id token))
                                                         token-set
-                                                        (update token-set :items conj (:id token)))]
+                                                        (update token-set :tokens conj (:id token)))]
                                   (-> token-changes
                                       (pcb/update-token-set token-set updated-token-set))))]
+          (js/console.log "changes" changes)
           (rx/of (dch/commit-changes changes)))))))
 
 (defn delete-token
