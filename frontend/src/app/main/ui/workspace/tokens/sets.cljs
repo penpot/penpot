@@ -10,7 +10,6 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-;; Sample data
 (def active-sets #{#uuid "2858b330-828e-4131-86ed-e4d1c0f4b3e3"
                    #uuid "d608877b-842a-473b-83ca-b5f8305caf83"})
 
@@ -85,12 +84,10 @@
            [:div {:class (stl/css :set-children)}
             (for [child-id children]
               (do
-                ;;(println "Rendering child ID:" child-id)
                 ^{:key (str child-id)} [:& sets-tree {:key (str child-id) :set-id child-id :current-set-id current-set-id :toggle-visibility toggle-visibility}]))])]))))
 
 (mf/defc sets-list
   [{:keys [current-set-id]}]
-  ;;(println "Rendering Sets List with root order:" sets-root-order)
   (let [toggle-visibility (fn [set-id]
                             (if (contains? active-sets set-id)
                               (swap! active-sets disj set-id)
@@ -103,9 +100,7 @@
 (mf/defc sets-sidebar
   []
   (let [current-set-id (:current-set-id @st/state)
-        ;;current-set-id (deref current-set-id*)
     open? (mf/use-state true)]
-  (println "Rendering sets sidebar" open?)
   [:div {:class (stl/css :sets-sidebar)}
    [:div {:class (stl/css :sidebar-header)}
    [:& title-bar {:collapsable true
