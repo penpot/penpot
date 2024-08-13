@@ -8,7 +8,12 @@
    [app.common.data.macros :as dm]
    [app.util.dom :as dom]
    [potok.v2.core :as ptk]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
+
+
+(def current-set-id
+  (l/derived :current-set-id st/state))
 
 (def active-sets #{#uuid "2858b330-828e-4131-86ed-e4d1c0f4b3e3"
                    #uuid "d608877b-842a-473b-83ca-b5f8305caf83"})
@@ -38,17 +43,14 @@
 
 (defn set-current-set
   [set-id]
-  (println "here")
   (dm/assert! (uuid? set-id))  
   (ptk/reify ::set-current-set  
     ptk/UpdateEvent
     (update [_ state] 
               (assoc state :current-set-id set-id)))) 
 
-   
 (mf/defc sets-tree
   [{:keys [current-set-id set-id toggle-visibility]}]
-  (println "Rendering set with ID:" set-id)  
   (let [set (get sets set-id)]
     (when set
       (let [{:keys [type name children]} set
@@ -65,7 +67,6 @@
           (mf/deps type set-id)
            #(st/emit! (set-current-set set-id))
           )]
-         (println "current set id is" current-set-id @selected?)
         [:div {:class (stl/css :set-item-container)
                :on-click on-click}
           [:div {:class (stl/css-case :set-item-group (= type :group)
@@ -99,9 +100,10 @@
 
 (mf/defc sets-sidebar
   []
-  (let [current-set-id (:current-set-id @st/state)
-    open? (mf/use-state true)]
-  [:div {:class (stl/css :sets-sidebar)}
+  (let [current-set-id (mf/deref current-set-id)
+        open? (mf/use-state true)]
+  [:div {:key (str "sidebar-" current-set-id) 
+        :class (stl/css :sets-sidebar)}
    [:div {:class (stl/css :sidebar-header)}
    [:& title-bar {:collapsable true
                   :collapsed (not @open?)
