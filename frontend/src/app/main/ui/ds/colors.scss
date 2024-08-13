@@ -9,6 +9,8 @@
 $mint-150: #7efff5;
 $mint-250: #00d1b8;
 $mint-700: #426158;
+$mint-150-60: #7efff599;
+$mint-250-10: #00d1b81a;
 
 $green-200: #a7e8d9;
 $green-500: #2d9f8f;
@@ -29,6 +31,8 @@ $purple-200: #e1d2f5;
 $purple-400: #bb97d8;
 $purple-600: #8c33eb;
 $purple-700: #6911d4;
+$purple-600-10: #8c33eb1a;
+$purple-700-60: #6911d499;
 
 $blue-200: #bae3fd;
 $blue-500: #0e9be9;
@@ -38,15 +42,21 @@ $cobalt-700: #1345aa;
 
 $black: #000;
 $gray-950: #18181a;
+$gray-950-60: #18181a99;
+$gray-950-90: #18181ae6;
 $gray-900: #212426;
 $gray-800: #2e3434;
 $gray-200: #e8eaee;
 $gray-100: #eef0f2;
 $gray-50: #f3f4f6;
 $white: #fff;
+$white-60: #ffffff99;
+$white-90: #ffffffe6;
 
 $blue-teal-700: #495e74;
 $grayish-blue-500: #8f9da3;
+
+$grayish-red: #bfbfbf;
 
 :global(.light) {
   --color-accent-primary: #{$purple-700};
@@ -54,6 +64,8 @@ $grayish-blue-500: #8f9da3;
   --color-accent-secondary: #{$cobalt-700};
   --color-accent-tertiary: #{$purple-600};
   --color-accent-quaternary: #{$pink-400};
+  --color-accent-overlay: #{$purple-600-10};
+  --color-accent-select: #{$purple-700-60};
 
   --color-accent-success: #{$green-500};
   --color-background-success: #{$green-200};
@@ -73,6 +85,9 @@ $grayish-blue-500: #8f9da3;
   --color-foreground-secondary: #{$blue-teal-700};
 
   --color-shadow: #{color.change($blue-teal-700, $alpha: 0.2)};
+  --color-overlay-default: #{$white-60};
+  --color-overlay-onboarding: #{$white-90};
+  --color-canvas: #{$grayish-red};
 }
 
 :global(.default) {
@@ -81,6 +96,8 @@ $grayish-blue-500: #8f9da3;
   --color-accent-secondary: #{$purple-400};
   --color-accent-tertiary: #{$mint-250};
   --color-accent-quaternary: #{$pink-400};
+  --color-accent-overlay: #{$mint-250-10};
+  --color-accent-select: #{$mint-150-60};
 
   --color-accent-success: #{$green-500};
   --color-background-success: #{$green-950};
@@ -100,4 +117,7 @@ $grayish-blue-500: #8f9da3;
   --color-foreground-secondary: #{$grayish-blue-500};
 
   --color-shadow: #{color.change($black, $alpha: 0.6)};
+  --color-overlay-default: #{$gray-950-60};
+  --color-overlay-onboarding: #{$gray-950-90};
+  --color-canvas: #{$grayish-red};
 }
