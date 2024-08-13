@@ -146,5 +146,7 @@
   width: $s-20;
   svg {
     @extend .button-icon;
+    width: 12px;
+    height: 12px;
   }
 }
