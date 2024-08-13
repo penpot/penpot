@@ -93,9 +93,15 @@
 (defn add-token-to-token-set [token token-set]
   (update token-set :items conj (:id token)))
 
+(defn get-selected-token-set-id [state]
+  (get-in state [:workspace-local :selected-token-set-id]))
+
 (defn get-selected-token-set [state]
-  (when-let [id (get-in state [:workspace-local :selected-token-set-id])]
-    (get-token-set state id)))
+  (when-let [id (get-selected-token-set-id state)]
+    (get-token-set id state)))
+
+(defn get-token-set-tokens [{:keys [tokens] :as token-set} file]
+  (map #(get-in file [:data :tokens %]) tokens))
 
 (defn assoc-selected-token-set-id [state id]
   (assoc-in state [:workspace-local :selected-token-set-id] id))
