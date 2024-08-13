@@ -24,6 +24,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.token :as cto]
+   [app.common.types.token-theme :as ctot]
    [app.common.types.tokens-list :as ctol]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as ctt]
@@ -245,6 +246,21 @@
     [:del-typography
      [:map {:title "DelTypogrphyChange"}
       [:type [:= :del-typography]]
+      [:id ::sm/uuid]]]
+
+    [:add-token-set
+     [:map {:title "AddTokenSetChange"}
+      [:type [:= :add-token-set]]
+      [:token-set ::ctot/token-set]]]
+
+    [:mod-token-set
+     [:map {:title "ModTokenSetChange"}
+      [:type [:= :mod-token-set]]
+      [:id ::ctot/token-set]]]
+
+    [:del-token-set
+     [:map {:title "DelTokenSetChange"}
+      [:type [:= :del-token-set]]
       [:id ::sm/uuid]]]
 
     [:add-token

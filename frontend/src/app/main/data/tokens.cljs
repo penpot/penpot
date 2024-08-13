@@ -80,18 +80,45 @@
   (let [workspace-data (deref refs/workspace-data)]
     (get (:tokens workspace-data) id)))
 
+(defn get-workspace-sets [state]
+  (get-in state [:workspace-data :token-sets-index]))
+
+(defn get-token-set [set-id state]
+  (some-> (get-workspace-sets state)
+          (get set-id)))
+
+(def default-token-set-name "Global")
+
+(defn create-global-set [])
+
+(defn add-token-to-token-set [token token-set]
+  (update token-set :items conj (:id token)))
+
 (defn update-create-token
-  [token]
+  [token set-id]
   (let [token (update token :id #(or % (uuid/next)))]
     (ptk/reify ::add-token
       ptk/WatchEvent
-      (watch [it _ _]
+      (watch [it state _]
         (let [prev-token (get-token-data-from-token-id (:id token))
-              changes (if prev-token
-                        (-> (pcb/empty-changes it)
-                            (pcb/update-token token prev-token))
-                        (-> (pcb/empty-changes it)
-                            (pcb/add-token token)))]
+              create-token? (not prev-token)
+              token-changes (if create-token?
+                              (-> (pcb/empty-changes it)
+                                  (pcb/add-token token))
+                              (-> (pcb/empty-changes it)
+                                  (pcb/update-token token prev-token)))
+              token-set (get-token-set state set-id)
+              create-set? (not token-set)
+              changes (cond
+                        create-set? (-> token-changes
+                                        (pcb/add-token-set {:id (uuid/next)
+                                                            :name "Global"
+                                                            :items [(:id token)]}))
+                        :else (let [updated-token-set (if (contains? token-set (:id token))
+                                                        token-set
+                                                        (update token-set :items conj (:id token)))]
+                                  (-> token-changes
+                                      (pcb/update-token-set token-set updated-token-set))))]
           (rx/of (dch/commit-changes changes)))))))
 
 (defn delete-token
@@ -107,11 +134,11 @@
         (rx/of (dch/commit-changes changes))))))
 
 (defn duplicate-token
-  [id]
+  [id set-id]
   (let [new-token (-> (get-token-data-from-token-id id)
                       (dissoc :id)
                       (update :name #(str/concat % "-copy")))]
-    (update-create-token new-token)))
+    (update-create-token new-token set-id)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TEMP (Move to test)
