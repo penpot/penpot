@@ -94,8 +94,22 @@
 (defn add-token-to-token-set [token token-set]
   (update token-set :items conj (:id token)))
 
+(defn get-selected-token-set [state]
+  (when-let [id (get-in state [:workspace-local :selected-token-set-id])]
+    (get-token-set state id)))
+
+(defn assoc-selected-token-set-id [state id]
+  (assoc-in state [:workspace-local :selected-token-set-id] id))
+
+(defn set-selected-token-set-id
+  [id]
+  (ptk/reify ::set-selected-token-set-id
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-selected-token-set-id state id))))
+
 (defn update-create-token
-  [token set-id]
+  [token]
   (let [token (update token :id #(or % (uuid/next)))]
     (ptk/reify ::add-token
       ptk/WatchEvent
@@ -107,20 +121,22 @@
                                   (pcb/add-token token))
                               (-> (pcb/empty-changes it)
                                   (pcb/update-token token prev-token)))
-              token-set (get-token-set state set-id)
+              token-set (get-selected-token-set state)
               create-set? (not token-set)
+              new-token-set {:id (uuid/next)
+                             :name "Global"
+                             :tokens [(:id token)]}
               changes (cond
                         create-set? (-> token-changes
-                                        (pcb/add-token-set {:id (uuid/next)
-                                                            :name "Global"
-                                                            :tokens [(:id token)]}))
+                                        (pcb/add-token-set new-token-set))
                         :else (let [updated-token-set (if (contains? token-set (:id token))
                                                         token-set
                                                         (update token-set :tokens conj (:id token)))]
-                                  (-> token-changes
-                                      (pcb/update-token-set token-set updated-token-set))))]
-          (js/console.log "changes" changes)
-          (rx/of (dch/commit-changes changes)))))))
+                                (-> token-changes
+                                    (pcb/update-token-set token-set updated-token-set))))]
+          (rx/of
+           (set-selected-token-set-id (:id new-token-set))
+           (dch/commit-changes changes)))))))
 
 (defn delete-token
   [id]
@@ -135,11 +151,12 @@
         (rx/of (dch/commit-changes changes))))))
 
 (defn duplicate-token
-  [id set-id]
+  [id]
   (let [new-token (-> (get-token-data-from-token-id id)
                       (dissoc :id)
                       (update :name #(str/concat % "-copy")))]
-    (update-create-token new-token set-id)))
+    (update-create-token new-token)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TEMP (Move to test)
