@@ -221,8 +221,8 @@
     (watch [_ _ _]
       (rx/concat
        (rx/of (ntf/show {:content (tr "media.loading")
-                         :notification-type :toast
-                         :type :info
+                         :type :toast
+                         :level :info
                          :timeout nil
                          :tag :media-loading}))
        (->> (if (seq uris)
@@ -449,8 +449,8 @@
 
         (rx/concat
          (rx/of (ntf/show {:content (tr "media.loading")
-                           :notification-type :toast
-                           :type :info
+                           :type :toast
+                           :level :info
                            :timeout nil
                            :tag :media-loading}))
          (->> (rp/cmd! :clone-file-media-object params)

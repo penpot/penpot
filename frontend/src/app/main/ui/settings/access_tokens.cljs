@@ -99,8 +99,8 @@
          (fn [event]
            (dom/prevent-default event)
            (wapi/write-to-clipboard (:token created))
-           (st/emit! (ntf/show {:type :info
-                                :notification-type :toast
+           (st/emit! (ntf/show {:level :info
+                                :type :toast
                                 :content (tr "dashboard.access-tokens.copied-success")
                                 :timeout 7000}))))]
 

@@ -47,8 +47,8 @@
 (defn notify-start-loading
   []
   (st/emit! (ntf/show {:content (tr "media.loading")
-                       :notification-type :toast
-                       :type :info
+                       :type :toast
+                       :level :info
                        :timeout nil})))
 
 (defn notify-finished-loading
