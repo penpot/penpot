@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" stroke-linecap="round" stroke-linejoin="round">
+  <g data-testid="Icons / Tools + Layers / S / Open folder S">
+    <g class="frame-children" data-testid="svg-path">
+      <path d="m3.5 12.339 1.652-5.363a.75.75 0 0 1 .717-.53h7.074a.75.75 0 0 1 .708.998l-1.538 4.393a.75.75 0 0 1-.708.502H3.5Za.75.75 0 0 1-.75-.75V4.622c0-.297.112-.582.314-.793.201-.211.473-.329.757-.329h2.143l.804 1.263h4.071a.75.75 0 0 1 .75.75v.933" fill="none" stroke-width="1" stroke="#8f9da3" stroke-opacity="1"/>
+    </g>
+  </g>
+</svg>

@@ -53,9 +53,12 @@
   (let [set (get sets set-id)]
     (when set
       (let [{:keys [type name children]} set
-            icon i/document
             visible? (mf/use-state (contains? active-sets set-id))
             collapsed? (mf/use-state false)
+            icon (cond
+                   (= type :set) i/document
+                   (and (= type :group) @collapsed?) i/group
+                       :else i/folder-open)
             selected? (mf/use-state (= set-id current-set-id))
 
           on-click

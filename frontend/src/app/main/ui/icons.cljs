@@ -121,6 +121,7 @@
 (def ^:icon flex (icon-xref :flex))
 (def ^:icon flip-horizontal (icon-xref :flip-horizontal))
 (def ^:icon flip-vertical (icon-xref :flip-vertical))
+(def ^:icon folder-open (icon-xref :folder-open))
 (def ^:icon gap-horizontal (icon-xref :gap-horizontal))
 (def ^:icon gap-vertical (icon-xref :gap-vertical))
 (def ^:icon graphics (icon-xref :graphics))
