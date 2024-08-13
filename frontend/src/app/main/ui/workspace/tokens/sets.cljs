@@ -3,6 +3,11 @@
   (:require
    [app.main.ui.icons :as i]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.context :as ctx]
+   [app.main.store :as st]
+   [app.common.data.macros :as dm]
+   [app.util.dom :as dom]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 ;; Sample data
@@ -31,19 +36,39 @@
                                                          :name "Set Root 1"}
            #uuid "0381446e-1f1d-423f-912c-ab577d61b79b" {:type :set
                                                          :name "Set Root 2"}})
+
+(defn set-current-set
+  [set-id]
+  (println "here")
+  (dm/assert! (uuid? set-id))  
+  (ptk/reify ::set-current-set  
+    ptk/UpdateEvent
+    (update [_ state] 
+              (assoc state :current-set-id set-id)))) 
+
    
 (mf/defc sets-tree
-  [{:keys [set-id toggle-visibility]}]
-  ;;(println "Rendering set with ID:" set-id)
+  [{:keys [current-set-id set-id toggle-visibility]}]
+  (println "Rendering set with ID:" set-id)  
   (let [set (get sets set-id)]
     (when set
       (let [{:keys [type name children]} set
             icon i/document
             visible? (mf/use-state (contains? active-sets set-id))
-            collapsed? (mf/use-state false)]
-        [:div {:class (stl/css :set-item-container)}
+            collapsed? (mf/use-state false)
+            selected? (mf/use-state (= set-id current-set-id))
+
+          on-click
+          (mf/use-fn
+          (mf/deps type set-id)
+           #(st/emit! (set-current-set set-id))
+          )]
+         (println "current set id is" current-set-id @selected?)
+        [:div {:class (stl/css :set-item-container)
+               :on-click on-click}
           [:div {:class (stl/css-case :set-item-group (= type :group)
-                                      :set-item-set (= type :set))}
+                                      :set-item-set-selected  @selected?
+                                      :set-item-set (and (= type :set ) (not @selected?)))}
          [:span {:class (stl/css :icon)
                  :on-click #(when (= type :group) (swap! collapsed? not))} icon]
          [:div {:class (stl/css :set-name)} name]
@@ -58,11 +83,10 @@
             (for [child-id children]
               (do
                 ;;(println "Rendering child ID:" child-id)
-                ^{:key (str child-id)} [:& sets-tree {:key (str child-id) :set-id child-id :toggle-visibility toggle-visibility }]))])]))))
+                ^{:key (str child-id)} [:& sets-tree {:key (str child-id) :set-id child-id :current-set-id current-set-id :toggle-visibility toggle-visibility}]))])]))))
 
 (mf/defc sets-list
-  {::mf/wrap-props false}
-  []
+  [{:keys [current-set-id]}]
   ;;(println "Rendering Sets List with root order:" sets-root-order)
   (let [toggle-visibility (fn [set-id]
                             (if (contains? active-sets set-id)
@@ -71,13 +95,13 @@
   [:div {:class (stl/css :sets-list)}
    (for [set-id sets-root-order]
      ^{:key (str set-id)}
-     [:& sets-tree {:key (str set-id) :set-id set-id}])]))
+     [:& sets-tree {:key (str set-id) :set-id set-id :current-set-id current-set-id}])]))
 
 (mf/defc sets-sidebar
-  {::mf/wrap-props false}
   []
-  
-  (let [open? (mf/use-state true)]
+  (let [current-set-id (:current-set-id @st/state)
+        ;;current-set-id (deref current-set-id*)
+    open? (mf/use-state true)]
   (println "Rendering sets sidebar" open?)
   [:div {:class (stl/css :sets-sidebar)}
    [:div {:class (stl/css :sidebar-header)}
@@ -89,4 +113,4 @@
               :on-click #(println "Add Set")} 
      i/add]]
      (when @open?
-   [:& sets-list])]))
+   [:& sets-list {:current-set-id current-set-id}])]))
