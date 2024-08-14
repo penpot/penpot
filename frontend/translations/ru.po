@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-30 19:10+0000\n"
-"Last-Translator: The_BadUser <vanjavs41@gmail.com>\n"
+"PO-Revision-Date: 2024-08-15 15:09+0000\n"
+"Last-Translator: Црнобог <68vuletic@gmail.com>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ru/>\n"
 "Language: ru\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 5.7-dev\n"
+"X-Generator: Weblate 5.7\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
