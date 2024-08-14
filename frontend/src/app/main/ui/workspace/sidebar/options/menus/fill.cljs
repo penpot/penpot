@@ -54,7 +54,7 @@
         has-fills?           (or (= :multiple fills) (some? (seq fills)))
 
 
-        state*               (mf/use-state true)
+        state*               (mf/use-state has-fills?)
         open?                (deref state*)
 
         toggle-content       (mf/use-fn #(swap! state* not))
@@ -94,7 +94,7 @@
             (st/emit! (dc/remove-fill ids {:color default-color
                                            :opacity 1} index))
             (when (or (= :multiple fills)
-                      (= 1 (count (seq fills))))
+                      (= 0 (count (seq fills))))
               (close-content))))
 
         on-remove-all
@@ -149,7 +149,7 @@
                    :data-testid "add-fill"
                    :on-click on-add} i/add])]]
 
-     (when (and open? has-fills?)
+     (when open?
        [:div {:class (stl/css :element-content)}
         (cond
           (= :multiple fills)
