@@ -99,7 +99,8 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (features/initialize (:features team #{}))))
+      (rx/of (features/initialize (:features team #{}))
+             (ptk/data-event ::ev/event {::ev/name "set-current-team" :id (:id team)})))
 
     ptk/EffectEvent
     (effect [_ _ _]

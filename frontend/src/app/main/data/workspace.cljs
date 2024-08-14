@@ -204,7 +204,9 @@
                        (->> (rp/cmd! :get-file-object-thumbnails {:file-id id :tag "component"})
                             (rx/map #(assoc file :thumbnails %)))))
                     (rx/reduce conj [])
-                    (rx/map libraries-fetched)))
+                    (rx/map libraries-fetched))
+
+               (rx/of (ptk/data-event ::ev/event {::ev/name "file-accessed" :id (:id file)})))
 
               (rx/of (with-meta (workspace-initialized)
                        {:file-id file-id})))
