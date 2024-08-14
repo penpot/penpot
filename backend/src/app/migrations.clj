@@ -397,7 +397,10 @@
     :fn (mg/resource "app/migrations/sql/0124-mod-profile-table.sql")}
 
    {:name "0125-mod-file-table"
-    :fn (mg/resource "app/migrations/sql/0125-mod-file-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0125-mod-file-table.sql")}
+
+   {:name "0126-add-team-access-request-table"
+    :fn (mg/resource "app/migrations/sql/0126-add-team-access-request-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
