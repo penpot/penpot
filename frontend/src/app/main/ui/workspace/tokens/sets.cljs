@@ -63,7 +63,9 @@
             on-click
             (mf/use-fn
              (mf/deps type set-id)
-             #(st/emit! (set-current-set set-id)))]
+             (fn [event]
+               (dom/stop-propagation event)
+               (st/emit! (set-current-set set-id))))]
         [:div {:class (stl/css :set-item-container)
                :on-click on-click}
          [:div {:class (stl/css-case :set-item-group (= type :group)
