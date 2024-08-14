@@ -394,7 +394,7 @@
   (when (some? command)
     (d/without-nils
      {:command (-> (obj/get command "command") parse-command-type)
-      :params (-> (obj/get command "paras") parse-command-params)})))
+      :params (-> (obj/get command "params") parse-command-params)})))
 
 (defn parse-path-content
   [^js content]
