@@ -29,6 +29,8 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.editable-select :refer [editable-select]]
+   [app.main.ui.workspace.tokens.token :as wtt]
+   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -985,18 +987,25 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [type prop value]
-           (let [token-value (wtc/maybe-resolve-token-value value)
-                 val (or token-value (mth/finite value 0))]
+           (let [token-identifier (wtt/token-identifier value)
+                 val (or token-identifier (mth/finite value 0))
+                 on-update-shape wtch/update-layout-padding]
              (cond
                (and (= type :simple) (= prop :p1))
-               (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}
-                                                  :applied-tokens {:padding-p1 (if token-value (:id value) nil)
-                                                                   :padding-p3 (if token-value (:id value) nil)}}))
+               (if token-identifier
+                 (st/emit! (wtch/apply-token {:shape-ids ids
+                                              :attributes #{:p1 :p3}
+                                              :token value
+                                              :on-update-shape on-update-shape}))
+                 (st/emit! (on-update-shape value ids #{:p1 :p3})))
 
                (and (= type :simple) (= prop :p2))
-               (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}
-                                                  :applied-tokens {:padding-p2 (if token-value (:id value) nil)
-                                                                   :padding-p4 (if token-value (:id value) nil)}}))
+               (if token-identifier
+                 (st/emit! (wtch/apply-token {:shape-ids ids
+                                              :attributes #{:p2 :p4}
+                                              :token value
+                                              :on-update-shape on-update-shape}))
+                 (st/emit! (on-update-shape value ids #{:p2 :p4})))
 
                (some? prop)
                (st/emit! (dwsl/update-layout ids {:layout-padding {prop val}}))))))
