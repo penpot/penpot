@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.time
-  "A new cross-platform date and time API. It should be prefered over
+  "A new cross-platform date and time API. It should be preferred over
   a platform specific implementation found on `app.util.time`."
   #?(:cljs
      (:require
