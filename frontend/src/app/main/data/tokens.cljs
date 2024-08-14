@@ -116,7 +116,7 @@
 (defn update-create-token
   [token]
   (let [token (update token :id #(or % (uuid/next)))]
-    (ptk/reify ::add-token
+    (ptk/reify ::update-create-token
       ptk/WatchEvent
       (watch [it state _]
         (let [prev-token (get-token-data-from-token-id (:id token))
