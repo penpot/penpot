@@ -92,7 +92,7 @@ Token names should only contain letters and digits separated by . characters.")}
         ;; When creating a new token we dont have a token name yet,
         ;; so we use a temporary token name that hopefully doesn't clash with any of the users token names.
         token-name (if (str/empty? name-value) "__TOKEN_STUDIO_SYSTEM.TEMP" name-value)
-        token-references (sd/find-token-references input)
+        token-references (wtt/find-token-references input)
         direct-self-reference? (get token-references token-name)]
     (cond
       empty-input? (p/rejected nil)
@@ -104,7 +104,7 @@ Token names should only contain letters and digits separated by . characters.")}
               (-> (sd/resolve-tokens+ new-tokens #_ {:debug? true})
                   (p/then
                    (fn [resolved-tokens]
-                     (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-id)]
+                     (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
                        (cond
                          resolved-value (p/resolved resolved-token)
                          (sd/missing-reference-error? errors) (p/rejected :error/token-missing-reference)

@@ -4,6 +4,32 @@
    [clojure.set :as set]
    [cuerdas.core :as str]))
 
+(def parseable-token-value-regexp
+  "Regexp that can be used to parse a number value out of resolved token value.
+  This regexp also trims whitespace around the value."
+  #"^\s*(-?[0-9]+\.?[0-9]*)(px|%)?\s*$")
+
+(defn parse-token-value
+  "Parses a resolved value and separates the unit from the value.
+  Returns a map of {:value `number` :unit `string`}."
+  [value]
+  (cond
+    (number? value) {:value value}
+    (string? value) (when-let [[_ value unit] (re-find parseable-token-value-regexp value)]
+                      (when-let [parsed-value (d/parse-double value)]
+                        {:value parsed-value
+                         :unit unit}))))
+
+(defn find-token-references
+  "Finds token reference values in `value-string` and returns a set with all contained namespaces."
+  [value-string]
+  (some->> (re-seq #"\{([^}]*)\}" value-string)
+           (map second)
+           (into #{})))
+
+(defn token-identifier [{:keys [name] :as _token}]
+  name)
+
 (defn resolve-token-value [{:keys [value resolved-value] :as _token}]
   (or
    resolved-value
@@ -11,17 +37,17 @@
 
 (defn attributes-map
   "Creats an attributes map using collection of `attributes` for `id`."
-  [attributes id]
-  (->> (map (fn [attr] {attr id}) attributes)
+  [attributes token]
+  (->> (map (fn [attr] [attr (token-identifier token)]) attributes)
        (into {})))
 
-(defn remove-attributes-for-token-id
+(defn remove-attributes-for-token
   "Removes applied tokens with `token-id` for the given `attributes` set from `applied-tokens`."
-  [attributes token-id applied-tokens]
+  [attributes token applied-tokens]
   (let [attr? (set attributes)]
     (->> (remove (fn [[k v]]
                    (and (attr? k)
-                        (= v token-id)))
+                        (= v (token-identifier token))))
                  applied-tokens)
         (into {}))))
 
@@ -29,7 +55,7 @@
   "Test if `token` is applied to a `shape` on single `token-attribute`."
   [token shape token-attribute]
   (when-let [id (get-in shape [:applied-tokens token-attribute])]
-    (= (:id token) id)))
+    (= (token-identifier token) id)))
 
 (defn token-applied?
   "Test if `token` is applied to a `shape` with at least one of the one of the given `token-attributes`."

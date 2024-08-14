@@ -2,13 +2,11 @@
   (:require
    ["@tokens-studio/sd-transforms" :as sd-transforms]
    ["style-dictionary$default" :as sd]
-   [app.common.data :as d]
    [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.token :as wtt]
    [cuerdas.core :as str]
    [promesa.core :as p]
-   [rumext.v2 :as mf]
-   [shadow.resource]))
+   [rumext.v2 :as mf]))
 
 (def StyleDictionary
   "The global StyleDictionary instance used as an external library for now,
@@ -22,13 +20,6 @@
     sd))
 
 ;; Functions -------------------------------------------------------------------
-
-(defn find-token-references
-  "Finds token reference values in `value-string` and returns a set with all contained namespaces."
-  [value-string]
-  (some->> (re-seq #"\{([^}]*)\}" value-string)
-           (map second)
-           (into #{})))
 
 (defn tokens->style-dictionary+
   "Resolves references and math expressions using StyleDictionary.
@@ -88,16 +79,16 @@
                         (resolve-sd-tokens+ config))]
     (let [resolved-tokens (reduce
                            (fn [acc ^js cur]
-                             (let [value (.-value cur)
-                                   resolved-value (d/parse-double (.-value cur))
-                                   original-value (-> cur .-original .-value)
-                                   id (uuid (.-uuid (.-id cur)))
-                                   missing-reference? (and (not resolved-value)
-                                                           (re-find #"\{" value)
-                                                           (= value original-value))]
-                               (cond-> (assoc-in acc [id :resolved-value] resolved-value)
-                                 missing-reference? (update-in [id :errors] (fnil conj #{}) :style-dictionary/missing-reference))))
-                           tokens sd-tokens)]
+                             (let [id (uuid (.-uuid (.-id cur)))
+                                   origin-token (get tokens id)
+                                   parsed-value (wtt/parse-token-value (.-value cur))
+                                   resolved-token (if (not parsed-value)
+                                                    (assoc origin-token :errors [:style-dictionary/missing-reference])
+                                                    (assoc origin-token
+                                                           :resolved-value (:value parsed-value)
+                                                           :resolved-unit (:unit parsed-value)))]
+                               (assoc acc (wtt/token-identifier resolved-token) resolved-token)))
+                           {} sd-tokens)]
       (when debug?
         (js/console.log "Resolved tokens" resolved-tokens))
       resolved-tokens)))
@@ -148,20 +139,31 @@
 (comment
   (defonce !output (atom nil))
 
+  (-> @refs/workspace-tokens
+      (resolve-tokens+ {:debug? false})
+      (.then js/console.log))
+
   (-> (resolve-workspace-tokens+ {:debug? true})
       (p/then #(reset! !output %)))
 
+  @!output
+
   (->> @refs/workspace-tokens
-       (resolve-tokens+))
+       (resolve-tokens+)
+       (#(doto % js/console.log)))
 
   (->
    (clj->js {"a" {:name "a" :value "5"}
              "b" {:name "b" :value "{a} * 2"}})
+
    (#(resolve-sd-tokens+ % {:debug? true})))
 
+  (defonce output (atom nil))
+  (require '[shadow.resource])
   (let [example (-> (shadow.resource/inline "./data/example-tokens-set.json")
                     (js/JSON.parse)
                     .-core)]
-    (resolve-sd-tokens+ example {:debug? true}))
+    (.then (resolve-sd-tokens+ example {:debug? true})
+           #(reset! output %)))
 
   nil)

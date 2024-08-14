@@ -16,6 +16,7 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.common :refer [workspace-shapes]]
+   [app.main.ui.workspace.tokens.token :as wtt]
    [beicon.v2.core :as rx]
    [clojure.data :as data]
    [cuerdas.core :as str]
@@ -55,22 +56,22 @@
                   (first))]
     shape))
 
-(defn token-from-attributes [token-id attributes]
-  (->> (map (fn [attr] [attr token-id]) attributes)
+(defn token-from-attributes [token attributes]
+  (->> (map (fn [attr] [attr (wtt/token-identifier token)]) attributes)
        (into {})))
 
 (defn unapply-token-id [shape attributes]
   (update shape :applied-tokens d/without-keys attributes))
 
-(defn apply-token-id-to-attributes [{:keys [shape token-id attributes]}]
-  (let [token (token-from-attributes token-id attributes)]
+(defn apply-token-to-attributes [{:keys [shape token attributes]}]
+  (let [token (token-from-attributes token attributes)]
     (toggle-or-apply-token shape token)))
 
 (defn apply-token-to-shape
   [{:keys [shape token attributes] :as _props}]
-  (let [applied-tokens (apply-token-id-to-attributes {:shape shape
-                                                      :token-id (:id token)
-                                                      :attributes attributes})]
+  (let [applied-tokens (apply-token-to-attributes {:shape shape
+                                                   :token token
+                                                   :attributes attributes})]
     (update shape :applied-tokens #(merge % applied-tokens))))
 
 (defn maybe-apply-token-to-shape
@@ -79,17 +80,6 @@
   (if token
     (apply-token-to-shape props)
     shape))
-
-(defn update-token-from-attributes
-  [{:keys [token-id shape-id attributes]}]
-  (ptk/reify ::update-token-from-attributes
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [shape (get-shape-from-state shape-id state)
-            applied-tokens (apply-token-id-to-attributes {:shape shape
-                                                          :token-id token-id
-                                                          :attributes attributes})]
-        (rx/of (update-shape shape-id {:applied-tokens applied-tokens}))))))
 
 (defn get-token-data-from-token-id
   [id]

@@ -15,8 +15,8 @@
 (defn apply-token-to-shape [file shape-label token-label attributes]
   (let [first-page-id (get-in file [:data :pages 0])
         shape-id (thi/id shape-label)
-        token-id (thi/id token-label)
-        applied-attributes (wtt/attributes-map attributes token-id)]
+        token (get-token file token-label)
+        applied-attributes (wtt/attributes-map attributes token)]
     (update-in file [:data
                      :pages-index first-page-id
                      :objects shape-id
