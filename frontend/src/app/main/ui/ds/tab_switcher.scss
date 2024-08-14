@@ -99,3 +99,9 @@
 .tab-text-and-icon {
   padding-inline: var(--sp-xxs);
 }
+
+.tab-panel {
+  display: grid;
+  width: 100%;
+  height: 100%;
+}

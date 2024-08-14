@@ -9,9 +9,12 @@
 .element-options {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: calc(100vh - #{$s-128}); // TODO: Fix this hardcoded value
   overflow: hidden;
   padding-bottom: $s-16;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
 }
 
 .download-button {
