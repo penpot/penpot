@@ -10,7 +10,6 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
-   [app.main.ui.debug.components-preview :as cm]
    [app.main.ui.debug.icons-preview :refer [icons-preview]]
    [app.main.ui.frame-preview :as frame-preview]
    [app.main.ui.icons :as i]
@@ -168,12 +167,6 @@
                               :page-id page-id
                               :layout-name layout
                               :key file-id}]])
-
-
-       :debug-components-preview
-       [:div.debug-preview
-        [:h1 "Components preview"]
-        [:& cm/components-preview]]
 
        :frame-preview
        [:& frame-preview/frame-preview]

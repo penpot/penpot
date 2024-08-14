@@ -60,8 +60,6 @@
    (when *assert*
      ["/debug/icons-preview" :debug-icons-preview])
 
-   ["/debug/components-preview" :debug-components-preview]
-
    ;; Used for export
    ["/render-sprite/:file-id" :render-sprite]
 
