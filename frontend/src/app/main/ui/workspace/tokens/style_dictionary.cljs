@@ -9,9 +9,8 @@
    [rumext.v2 :as mf]))
 
 (def StyleDictionary
-  "The global StyleDictionary instance used as an external library for now,
-  as the package would need webpack to be bundled,
-  because shadow-cljs doesn't support some of the more modern bundler features."
+  "Initiates the global StyleDictionary instance with transforms
+  from tokens-studio used to parse and resolved token values."
   (do
     (sd-transforms/registerTransforms sd)
     (.registerFormat sd #js {:name "custom/json"
