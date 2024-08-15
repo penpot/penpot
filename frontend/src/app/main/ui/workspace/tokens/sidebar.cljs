@@ -144,6 +144,29 @@
     {:empty (sort-by :token-key empty)
      :filled (sort-by :token-key filled)}))
 
+(mf/defc token-sets
+  [_props]
+  (let [selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)
+        token-sets (mf/deref refs/workspace-token-sets)]
+    (js/console.log "token-sets" token-sets)
+    [:div
+     {:style {:display "flex"
+              :flex-direction "column"
+              :gap "10px"}}
+
+     "Token Sets"
+     [:div
+      {:style {:display "flex" :gap "10px"}}
+      [:button "Create"]
+      [:button "Delete"]]
+     [:ul
+      {:style {:list-style "disk"
+               :margin-left "20px"}}
+      (for [[_ {:keys [id name]}] token-sets]
+        [:li {:style {:font-weight (when (= selected-token-set-id id) "bold")}}
+         name])]
+     [:hr]]))
+
 (mf/defc tokens-explorer
   [_props]
   (let [objects (mf/deref refs/workspace-page-objects)
@@ -156,6 +179,7 @@
         token-groups (mf/with-memo [tokens]
                        (sorted-token-groups tokens))]
     [:article
+     [:& token-sets]
      [:& token-context-menu]
      [:div.assets-bar
       (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
