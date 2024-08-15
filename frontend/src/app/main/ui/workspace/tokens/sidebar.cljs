@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
+   [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
@@ -20,6 +21,7 @@
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.token-types :as wtty]
+   [app.main.ui.workspace.tokens.update :as wtu]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -148,7 +150,6 @@
   [_props]
   (let [selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)
         token-sets (mf/deref refs/workspace-token-sets)]
-    (js/console.log "token-sets" token-sets)
     [:div
      {:style {:display "flex"
               :flex-direction "column"
@@ -157,13 +158,19 @@
      "Token Sets"
      [:div
       {:style {:display "flex" :gap "10px"}}
-      [:button "Create"]
+      [:button
+       {:on-click #(st/emit! (wdt/create-token-set nil))}
+       "Create"]
       [:button "Delete"]]
      [:ul
       {:style {:list-style "disk"
                :margin-left "20px"}}
       (for [[_ {:keys [id name]}] token-sets]
-        [:li {:style {:font-weight (when (= selected-token-set-id id) "bold")}}
+        [:li {:style {:font-weight (when (= selected-token-set-id id) "bold")}
+              :on-click (fn []
+                          (st/emit!
+                           (wdt/set-selected-token-set-id id)
+                           (wtu/update-workspace-tokens)))}
          name])]
      [:hr]]))
 
