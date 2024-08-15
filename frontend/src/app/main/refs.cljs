@@ -14,6 +14,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
+   [app.main.ui.workspace.tokens.token-set :as wtts]
    [okulary.core :as l]))
 
 ;; ---- Global refs
@@ -234,10 +235,11 @@
   (l/derived :workspace-data st/state))
 
 (def workspace-tokens
-  (l/derived (fn [data]
-               (get data :tokens {}))
-             workspace-data
-             =))
+  (l/derived
+   (fn [data]
+     (or (wtts/get-selected-token-set-tokens data) {}))
+   st/state
+   =))
 
 (def workspace-file-colors
   (l/derived (fn [data]
