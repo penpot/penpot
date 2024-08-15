@@ -8,14 +8,15 @@
   (:require-macros [app.main.style :as stl])
   (:require
    ["lodash.debounce" :as debounce]
-   [app.main.ui.workspace.tokens.update :as wtu]
    [app.common.data :as d]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.workspace.tokens.common :as tokens.common]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
+   [app.main.ui.workspace.tokens.update :as wtu]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [malli.core :as m]
@@ -141,14 +142,15 @@ Token names should only contain letters and digits separated by . characters.")}
 (mf/defc form
   {::mf/wrap-props false}
   [{:keys [token token-type] :as _args}]
-  (let [tokens (sd/use-resolved-workspace-tokens)
+  (let [tokens (mf/deref refs/workspace-tokens)
+        resolved-tokens (sd/use-resolved-tokens tokens)
         token-path (mf/use-memo
                     (mf/deps (:name token))
                     #(wtt/token-name->path (:name token)))
         tokens-tree (mf/use-memo
-                     (mf/deps token-path tokens)
+                     (mf/deps token-path resolved-tokens)
                      (fn []
-                       (-> (wtt/token-names-tree tokens)
+                       (-> (wtt/token-names-tree resolved-tokens)
                            ;; Allow setting editing token to it's own path
                            (d/dissoc-in token-path))))
 
@@ -219,7 +221,7 @@ Token names should only contain letters and digits separated by . characters.")}
                       (not valid-description-field?))
 
         on-submit (mf/use-callback
-                   (mf/deps validate-name validate-descripion token tokens)
+                   (mf/deps validate-name validate-descripion token resolved-tokens)
                    (fn [e]
                      (dom/prevent-default e)
                      ;; We have to re-validate the current form values before submitting
@@ -236,7 +238,7 @@ Token names should only contain letters and digits separated by . characters.")}
                                    (validate-token-value+ {:input final-value
                                                            :name-value final-name
                                                            :token token
-                                                           :tokens tokens})])
+                                                           :tokens resolved-tokens})])
                            (p/finally (fn [result err]
                                         ;; The result should be a vector of all resolved validations
                                         ;; We do not handle the error case as it will be handled by the components validations
