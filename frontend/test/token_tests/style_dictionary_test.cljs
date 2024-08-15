@@ -6,7 +6,7 @@
 
 (def border-radius-token
   {:id #uuid "8c868278-7c8d-431b-bbc9-7d8f15c8edb9"
-   :value "12"
+   :value "12px"
    :name "borderRadius.sm"
    :type :border-radius})
 
@@ -28,10 +28,10 @@
                        (let [expected-tokens {"borderRadius.sm"
                                               (assoc border-radius-token
                                                      :resolved-value 12
-                                                     :resolved-unit nil)
+                                                     :resolved-unit "px")
                                               "borderRadius.md-with-dashes"
                                               (assoc reference-border-radius-token
                                                      :resolved-value 24
-                                                     :resolved-unit nil)}]
+                                                     :resolved-unit "px")}]
                          (t/is (= expected-tokens resolved-tokens))
                          (done))))))))
