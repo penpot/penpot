@@ -177,7 +177,7 @@ Token names should only contain letters and digits separated by . characters.")}
 
         ;; Value
         value-ref (mf/use-var (:value token))
-        token-resolve-result (mf/use-state (get-in tokens [(:id token) :resolved-value]))
+        token-resolve-result (mf/use-state (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value]))
         set-resolve-value (mf/use-callback
                            (fn [token-or-err]
                              (let [v (cond
