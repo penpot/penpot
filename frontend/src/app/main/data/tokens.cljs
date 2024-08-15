@@ -20,6 +20,7 @@
    [clojure.data :as data]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]
+   [app.main.ui.workspace.tokens.changes :as wdt]
    [app.main.ui.workspace.tokens.token-set :as wtts]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -86,6 +87,20 @@
     ptk/UpdateEvent
     (update [_ state]
       (wtts/assoc-selected-token-set-id state id))))
+
+(defn create-token-set [token-set]
+  (let [new-token-set (merge
+                       {:id (uuid/next)
+                        :name "Token Set"
+                        :tokens []}
+                       token-set)]
+    (ptk/reify ::update-create-token
+      ptk/WatchEvent
+      (watch [it _ _]
+        (let [changes (-> (pcb/empty-changes it)
+                          (pcb/add-token-set new-token-set))]
+          (rx/of
+           (dch/commit-changes changes)))))))
 
 (defn update-create-token
   [token]
