@@ -21,6 +21,7 @@
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
+   [app.main.ui.workspace.tokens.token-set :as wtts]
    [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.main.ui.workspace.tokens.update :as wtu]
    [app.util.dom :as dom]
@@ -166,15 +167,19 @@
 
 (mf/defc token-sets
   [_props]
-  (let [themes (mf/deref refs/workspace-ordered-token-themes)
+  (let [selected-theme-id (mf/deref refs/workspace-active-theme-id)
+        themes (mf/deref refs/workspace-ordered-token-themes)
+        themes-index (mf/deref refs/workspace-token-themes)
+        selected-theme (get themes-index selected-theme-id)
         selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)
         token-sets (mf/deref refs/workspace-token-sets)]
+    (js/console.log "selected-theme" selected-theme)
     [:div
      {:style {:display "flex"
               :flex-direction "column"
               :gap "10px"}}
 
-     "Themes"
+     (str "Themes (selected: " selected-theme-id ")")
      [:div
       [:ul {:style {:list-style "disk"}}
        [:& tokene-theme-create]
@@ -210,11 +215,17 @@
          [:div {:style {:display "flex"
                         :justify-content "space-between"}}
           name
-          [:button {:on-click (fn [e]
-                                (dom/prevent-default e)
-                                (dom/stop-propagation e)
-                                (st/emit! (wdt/delete-token-set id)))}
-           "Delete"]]])]
+          [:div {:style {:display "flex"
+                         :gap "5px"}}
+           [:button
+            (if (wtts/token-set-enabled-in-theme? id selected-theme)
+              "👁️"
+              " ")]
+           [:button {:on-click (fn [e]
+                                 (dom/prevent-default e)
+                                 (dom/stop-propagation e)
+                                 (st/emit! (wdt/delete-token-set id)))}
+            "🗑️"]]]])]
      [:hr]]))
 
 (mf/defc tokens-explorer

@@ -240,6 +240,12 @@
    st/state
    =))
 
+(def workspace-active-theme-id
+  (l/derived wtts/update-theme-id st/state))
+
+(def workspace-token-themes
+  (l/derived wtts/get-workspace-themes-index st/state))
+
 (def workspace-ordered-token-themes
   (l/derived wtts/get-workspace-ordered-themes st/state))
 

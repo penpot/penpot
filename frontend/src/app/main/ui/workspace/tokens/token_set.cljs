@@ -38,6 +38,9 @@
 (defn add-token-set-to-token-theme [token-set-id token-theme]
   (update token-theme :sets conj token-set-id))
 
+(defn token-set-enabled-in-theme? [set-id theme]
+  (some? (get-in theme [:sets set-id])))
+
  ;; Sets ------------------------------------------------------------------------
 
 (defn get-workspace-tokens [state]
