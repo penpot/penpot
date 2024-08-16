@@ -16,6 +16,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.changes :as wtch]
+   [app.main.ui.workspace.tokens.common :refer [labeled-input]]
    [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
@@ -146,22 +147,50 @@
     {:empty (sort-by :token-key empty)
      :filled (sort-by :token-key filled)}))
 
+(mf/defc tokene-theme-create
+  [_props]
+  (let [group (mf/use-state "")
+        name (mf/use-state "")]
+    [:div {:style {:display "flex"
+                   :flex-direction "column"
+                   :gap "10px"}}
+     [:& labeled-input {:label "Group name"
+                        :input-props {:value @group}}]
+     [:& labeled-input {:label "Theme name"
+                        :input-props {:value @name}}]
+     [:button "Create"]]))
+
 (mf/defc token-sets
   [_props]
-  (let [selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)
+  (let [themes (mf/deref refs/workspace-ordered-token-themes)
+        selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)
         token-sets (mf/deref refs/workspace-token-sets)]
     [:div
      {:style {:display "flex"
               :flex-direction "column"
               :gap "10px"}}
 
-     "Token Sets"
+     "Themes"
+     [:div
+      [:ul {:style {:list-style "disk"}}
+       [:& tokene-theme-create]
+       (for [[group themes] themes]
+         [:li
+          {:key (str "token-theme-group" group)}
+          group
+          #_[:ul {:style {:list-style "disk"
+                          :margin-left "20px"}}
+             (for [{:keys [id] :as theme} themes]
+               [:li {:key (str "tokene-theme-" id)}
+                [:input {:type "checkbox"
+                         :checked (wtts/theme-selected? theme)}]])]])]]
+     "Sets"
      [:div
       {:style {:display "flex" :gap "10px"}}
       [:button
        {:on-click #(st/emit! (wdt/create-token-set nil))}
        "Create"]
-      [:button "Delete"]]
+      #_[:button "Delete"]]
      [:ul
       {:style {:list-style "disk"
                :margin-left "20px"}}

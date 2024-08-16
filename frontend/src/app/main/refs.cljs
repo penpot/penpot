@@ -240,6 +240,9 @@
    st/state
    =))
 
+(def workspace-ordered-token-themes
+  (l/derived wtts/get-workspace-ordered-themes st/state))
+
 (def workspace-token-sets
   (l/derived
    (fn [data]
