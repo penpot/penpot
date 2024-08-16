@@ -77,14 +77,11 @@
 
 (defn word-string
   []
-  (as-> tg/string-alphanumeric $$
-    (tg/such-that (fn [v] (re-matches #"\w+" v)) $$ 50)
-    (tg/such-that (fn [v]
-                    (and (not (str/blank? v))
-                         (not (re-matches #"^\d+.*" v))))
-                  $$
-                  50)))
-
+  (as-> tg/string-ascii $$
+    (tg/resize 10 $$)
+    (tg/fmap (fn [v] (apply str (re-seq #"[A-Za-z]+" v))) $$)
+    (tg/such-that (fn [v] (>= (count v) 4)) $$ 100)
+    (tg/fmap str/lower $$)))
 
 (defn email
   []
