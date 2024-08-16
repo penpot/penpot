@@ -6,6 +6,7 @@
 
 (ns user
   (:require
+   [app.common.json :as json]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as smdj]
