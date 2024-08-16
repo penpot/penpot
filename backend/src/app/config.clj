@@ -91,25 +91,25 @@
     [:public-uri {:optional false} :string]
     [:host {:optional false} :string]
 
-    [:http-server-port {:optional true} :int]
+    [:http-server-port {:optional true} ::sm/int]
     [:http-server-host {:optional true} :string]
-    [:http-server-max-body-size {:optional true} :int]
-    [:http-server-max-multipart-body-size {:optional true} :int]
-    [:http-server-io-threads {:optional true} :int]
-    [:http-server-worker-threads {:optional true} :int]
+    [:http-server-max-body-size {:optional true} ::sm/int]
+    [:http-server-max-multipart-body-size {:optional true} ::sm/int]
+    [:http-server-io-threads {:optional true} ::sm/int]
+    [:http-server-worker-threads {:optional true} ::sm/int]
 
     [:telemetry-uri {:optional true} :string]
-    [:telemetry-with-taiga {:optional true} :boolean] ;; DELETE
+    [:telemetry-with-taiga {:optional true} ::sm/boolean] ;; DELETE
 
-    [:file-snapshot-total {:optional true} :int]
-    [:file-snapshot-every {:optional true} :int]
+    [:file-snapshot-total {:optional true} ::sm/int]
+    [:file-snapshot-every {:optional true} ::sm/int]
     [:file-snapshot-timeout {:optional true} ::dt/duration]
 
-    [:media-max-file-size {:optional true} :int]
+    [:media-max-file-size {:optional true} ::sm/int]
     [:deletion-delay {:optional true} ::dt/duration] ;; REVIEW
-    [:telemetry-enabled {:optional true} :boolean]
-    [:default-blob-version {:optional true} :int]
-    [:allow-demo-users {:optional true} :boolean]
+    [:telemetry-enabled {:optional true} ::sm/boolean]
+    [:default-blob-version {:optional true} ::sm/int]
+    [:allow-demo-users {:optional true} ::sm/boolean]
     [:error-report-webhook {:optional true} :string]
     [:user-feedback-destination {:optional true} :string]
 
@@ -118,30 +118,30 @@
     [:rpc-climit-config {:optional true} ::fs/path]
 
     [:audit-log-archive-uri {:optional true} :string]
-    [:audit-log-http-handler-concurrency {:optional true} :int]
+    [:audit-log-http-handler-concurrency {:optional true} ::sm/int]
 
-    [:default-executor-parallelism {:optional true} :int] ;; REVIEW
-    [:scheduled-executor-parallelism {:optional true} :int] ;; REVIEW
-    [:worker-default-parallelism {:optional true} :int]
-    [:worker-webhook-parallelism {:optional true} :int]
+    [:default-executor-parallelism {:optional true} ::sm/int] ;; REVIEW
+    [:scheduled-executor-parallelism {:optional true} ::sm/int] ;; REVIEW
+    [:worker-default-parallelism {:optional true} ::sm/int]
+    [:worker-webhook-parallelism {:optional true} ::sm/int]
 
     [:database-password {:optional true} [:maybe :string]]
     [:database-uri {:optional true} :string]
     [:database-username {:optional true} [:maybe :string]]
-    [:database-readonly {:optional true} :boolean]
-    [:database-min-pool-size {:optional true} :int]
-    [:database-max-pool-size {:optional true} :int]
+    [:database-readonly {:optional true} ::sm/boolean]
+    [:database-min-pool-size {:optional true} ::sm/int]
+    [:database-max-pool-size {:optional true} ::sm/int]
 
-    [:quotes-teams-per-profile {:optional true} :int]
-    [:quotes-access-tokens-per-profile {:optional true} :int]
-    [:quotes-projects-per-team {:optional true} :int]
-    [:quotes-invitations-per-team {:optional true} :int]
-    [:quotes-profiles-per-team {:optional true} :int]
-    [:quotes-files-per-project {:optional true} :int]
-    [:quotes-files-per-team {:optional true} :int]
-    [:quotes-font-variants-per-team {:optional true} :int]
-    [:quotes-comment-threads-per-file {:optional true} :int]
-    [:quotes-comments-per-file {:optional true} :int]
+    [:quotes-teams-per-profile {:optional true} ::sm/int]
+    [:quotes-access-tokens-per-profile {:optional true} ::sm/int]
+    [:quotes-projects-per-team {:optional true} ::sm/int]
+    [:quotes-invitations-per-team {:optional true} ::sm/int]
+    [:quotes-profiles-per-team {:optional true} ::sm/int]
+    [:quotes-files-per-project {:optional true} ::sm/int]
+    [:quotes-files-per-team {:optional true} ::sm/int]
+    [:quotes-font-variants-per-team {:optional true} ::sm/int]
+    [:quotes-comment-threads-per-file {:optional true} ::sm/int]
+    [:quotes-comments-per-file {:optional true} ::sm/int]
 
     [:auth-data-cookie-domain {:optional true} :string]
     [:auth-token-cookie-name {:optional true} :string]
@@ -178,15 +178,15 @@
     [:ldap-bind-dn {:optional true} :string]
     [:ldap-bind-password {:optional true} :string]
     [:ldap-host {:optional true} :string]
-    [:ldap-port {:optional true} :int]
-    [:ldap-ssl {:optional true} :boolean]
-    [:ldap-starttls {:optional true} :boolean]
+    [:ldap-port {:optional true} ::sm/int]
+    [:ldap-ssl {:optional true} ::sm/boolean]
+    [:ldap-starttls {:optional true} ::sm/boolean]
     [:ldap-user-query {:optional true} :string]
 
     [:profile-bounce-max-age {:optional true} ::dt/duration]
-    [:profile-bounce-threshold {:optional true} :int]
+    [:profile-bounce-threshold {:optional true} ::sm/int]
     [:profile-complaint-max-age {:optional true} ::dt/duration]
-    [:profile-complaint-threshold {:optional true} :int]
+    [:profile-complaint-threshold {:optional true} ::sm/int]
 
     [:redis-uri {:optional true} :string]
 
@@ -197,15 +197,15 @@
     [:smtp-default-reply-to {:optional true} :string]
     [:smtp-host {:optional true} :string]
     [:smtp-password {:optional true} [:maybe :string]]
-    [:smtp-port {:optional true} :int]
-    [:smtp-ssl {:optional true} :boolean]
-    [:smtp-tls {:optional true} :boolean]
+    [:smtp-port {:optional true} ::sm/int]
+    [:smtp-ssl {:optional true} ::sm/boolean]
+    [:smtp-tls {:optional true} ::sm/boolean]
     [:smtp-username {:optional true} [:maybe :string]]
 
     [:urepl-host {:optional true} :string]
-    [:urepl-port {:optional true} :int]
+    [:urepl-port {:optional true} ::sm/int]
     [:prepl-host {:optional true} :string]
-    [:prepl-port {:optional true} :int]
+    [:prepl-port {:optional true} ::sm/int]
 
     [:media-directory {:optional true} :string] ;; REVIEW
     [:media-uri {:optional true} :string]
@@ -217,14 +217,14 @@
     [:storage-assets-s3-bucket {:optional true} :string]
     [:storage-assets-s3-region {:optional true} :keyword]
     [:storage-assets-s3-endpoint {:optional true} :string]
-    [:storage-assets-s3-io-threads {:optional true} :int]
+    [:storage-assets-s3-io-threads {:optional true} ::sm/int]
 
     [:objects-storage-backend {:optional true} :keyword]
     [:objects-storage-fs-directory {:optional true} :string]
     [:objects-storage-s3-bucket {:optional true} :string]
     [:objects-storage-s3-region {:optional true} :keyword]
     [:objects-storage-s3-endpoint {:optional true} :string]
-    [:objects-storage-s3-io-threads {:optional true} :int]]))
+    [:objects-storage-s3-io-threads {:optional true} ::sm/int]]))
 
 (def default-flags
   [:enable-backend-api-doc
@@ -253,7 +253,7 @@
      env)))
 
 (def decode-config
-  (sm/decoder schema:config sm/default-transformer))
+  (sm/decoder schema:config sm/string-transformer))
 
 (def validate-config
   (sm/validator schema:config))

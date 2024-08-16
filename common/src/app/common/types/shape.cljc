@@ -86,10 +86,15 @@
     :exclude
     :intersection})
 
-(sm/register! ::points
+(def grow-types
+  #{:auto-width
+    :auto-height
+    :fixed})
+
+(def schema:points
   [:vector {:gen/max 4 :gen/min 4} ::gpt/point])
 
-(sm/register! ::fill
+(def schema:fill
   [:map {:title "Fill"}
    [:fill-color {:optional true} ::ctc/rgb-color]
    [:fill-opacity {:optional true} ::sm/safe-number]
@@ -98,7 +103,9 @@
    [:fill-color-ref-id {:optional true} [:maybe ::sm/uuid]]
    [:fill-image {:optional true} ::ctc/image-color]])
 
-(sm/register! ::stroke
+(sm/register! ::fill schema:fill)
+
+(def ^:private schema:stroke
   [:map {:title "Stroke"}
    [:stroke-color {:optional true} :string]
    [:stroke-color-ref-file {:optional true} ::sm/uuid]
@@ -116,43 +123,42 @@
    [:stroke-color-gradient {:optional true} ::ctc/gradient]
    [:stroke-image {:optional true} ::ctc/image-color]])
 
-(sm/register! ::shape-base-attrs
+(sm/register! ::stroke schema:stroke)
+
+(def ^:private schema:shape-base-attrs
   [:map {:title "ShapeMinimalRecord"}
    [:id ::sm/uuid]
    [:name :string]
    [:type [::sm/one-of shape-types]]
    [:selrect ::grc/rect]
-   [:points ::points]
+   [:points schema:points]
    [:transform ::gmt/matrix]
    [:transform-inverse ::gmt/matrix]
    [:parent-id ::sm/uuid]
    [:frame-id ::sm/uuid]])
 
-(sm/register! ::shape-geom-attrs
+(def ^:private schema:shape-geom-attrs
   [:map {:title "ShapeGeometryAttrs"}
    [:x ::sm/safe-number]
    [:y ::sm/safe-number]
    [:width ::sm/safe-number]
    [:height ::sm/safe-number]])
 
-(sm/register! ::shape-attrs
+(def schema:shape-attrs
   [:map {:title "ShapeAttrs"}
-   [:name {:optional true} :string]
    [:component-id {:optional true}  ::sm/uuid]
    [:component-file {:optional true} ::sm/uuid]
    [:component-root {:optional true} :boolean]
    [:main-instance {:optional true} :boolean]
    [:remote-synced {:optional true} :boolean]
    [:shape-ref {:optional true} ::sm/uuid]
-   [:selrect {:optional true} ::grc/rect]
-   [:points {:optional true} ::points]
    [:blocked {:optional true} :boolean]
    [:collapsed {:optional true} :boolean]
    [:locked {:optional true} :boolean]
    [:hidden {:optional true} :boolean]
    [:masked-group {:optional true} :boolean]
    [:fills {:optional true}
-    [:vector {:gen/max 2} ::fill]]
+    [:vector {:gen/max 2} schema:fill]]
    [:hide-fill-on-export {:optional true} :boolean]
    [:proportion {:optional true} ::sm/safe-number]
    [:proportion-lock {:optional true} :boolean]
@@ -167,36 +173,30 @@
    [:r2 {:optional true} ::sm/safe-number]
    [:r3 {:optional true} ::sm/safe-number]
    [:r4 {:optional true} ::sm/safe-number]
-   [:x {:optional true} [:maybe ::sm/safe-number]]
-   [:y {:optional true} [:maybe ::sm/safe-number]]
-   [:width {:optional true} [:maybe ::sm/safe-number]]
-   [:height {:optional true} [:maybe ::sm/safe-number]]
    [:opacity {:optional true} ::sm/safe-number]
    [:grids {:optional true}
     [:vector {:gen/max 2} ::ctg/grid]]
    [:exports {:optional true}
     [:vector {:gen/max 2} ::ctse/export]]
    [:strokes {:optional true}
-    [:vector {:gen/max 2} ::stroke]]
-   [:transform {:optional true} ::gmt/matrix]
-   [:transform-inverse {:optional true} ::gmt/matrix]
-   [:blend-mode {:optional true} [::sm/one-of blend-modes]]
+    [:vector {:gen/max 2} schema:stroke]]
+   [:blend-mode {:optional true}
+    [::sm/one-of blend-modes]]
    [:interactions {:optional true}
     [:vector {:gen/max 2} ::ctsi/interaction]]
    [:shadow {:optional true}
     [:vector {:gen/max 1} ::ctss/shadow]]
    [:blur {:optional true} ::ctsb/blur]
    [:grow-type {:optional true}
-    [::sm/one-of #{:auto-width :auto-height :fixed}]]
-   [:plugin-data {:optional true}
-    [:map-of {:gen/max 5} :keyword ::ctpg/plugin-data]]])
+    [::sm/one-of grow-types]]
+   [:plugin-data {:optional true} ::ctpg/plugin-data]])
 
-(sm/register! ::group-attrs
+(def schema:group-attrs
   [:map {:title "GroupAttrs"}
    [:type [:= :group]]
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]])
 
-(sm/register! ::frame-attrs
+(def ^:private schema:frame-attrs
   [:map {:title "FrameAttrs"}
    [:type [:= :frame]]
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
@@ -204,166 +204,169 @@
    [:show-content {:optional true} :boolean]
    [:hide-in-viewer {:optional true} :boolean]])
 
-(sm/register! ::bool-attrs
+(def ^:private schema:bool-attrs
   [:map {:title "BoolAttrs"}
    [:type [:= :bool]]
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
+   [:bool-type [::sm/one-of bool-types]]
+   [:bool-content ::ctsp/content]])
 
-   [:bool-type :keyword]
-   ;; FIXME: This should be the spec but we need to create a migration
-   ;; to make this transition safely
-   ;; [:bool-type [::sm/one-of bool-types]]
-
-   [:bool-content
-    [:vector {:gen/max 2}
-     [:map
-      [:command :keyword]
-      [:relative {:optional true} :boolean]
-      [:prev-pos {:optional true} ::gpt/point]
-      [:params {:optional true}
-       [:maybe
-        [:map-of {:gen/max 5} :keyword ::sm/safe-number]]]]]]])
-
-(sm/register! ::rect-attrs
+(def ^:private schema:rect-attrs
   [:map {:title "RectAttrs"}
    [:type [:= :rect]]])
 
-(sm/register! ::circle-attrs
+(def ^:private schema:circle-attrs
   [:map {:title "CircleAttrs"}
    [:type [:= :circle]]])
 
-(sm/register! ::svg-raw-attrs
+(def ^:private schema:svg-raw-attrs
   [:map {:title "SvgRawAttrs"}
    [:type [:= :svg-raw]]])
 
-(sm/register! ::image-attrs
+(def schema:image-attrs
   [:map {:title "ImageAttrs"}
    [:type [:= :image]]
    [:metadata
     [:map
-     [:width :int]
-     [:height :int]
-     [:mtype {:optional true} [:maybe :string]]
+     [:width {:gen/gen (sg/small-int :min 1)} :int]
+     [:height {:gen/gen (sg/small-int :min 1)} :int]
+     [:mtype {:optional true
+              :gen/gen (sg/elements ["image/jpeg"
+                                     "image/png"])}
+      [:maybe :string]]
      [:id ::sm/uuid]]]])
 
-(sm/register! ::path-attrs
+(def ^:private schema:path-attrs
   [:map {:title "PathAttrs"}
    [:type [:= :path]]
    [:content ::ctsp/content]])
 
-(sm/register! ::text-attrs
+(def ^:private schema:text-attrs
   [:map {:title "TextAttrs"}
    [:type [:= :text]]
    [:content {:optional true} [:maybe ::ctsx/content]]])
 
-(sm/register! ::shape-map
-  [:multi {:dispatch :type :title "Shape"}
-   [:group
-    [:and {:title "GroupShape"}
-     ::shape-base-attrs
-     ::shape-geom-attrs
-     ::shape-attrs
-     ::group-attrs
-     ::ctsl/layout-child-attrs]]
+(defn- decode-shape
+  [o]
+  (if (map? o)
+    (map->Shape o)
+    o))
 
-   [:frame
-    [:and {:title "FrameShape"}
-     ::shape-base-attrs
-     ::shape-geom-attrs
-     ::frame-attrs
-     ::ctsl/layout-attrs
-     ::ctsl/layout-child-attrs]]
+(defn- shape-generator
+  "Get the shape generator."
+  []
+  (->> (sg/generator schema:shape-base-attrs)
+       (sg/mcat (fn [{:keys [type] :as shape}]
+                  (sg/let [attrs1 (sg/generator schema:shape-attrs)
+                           attrs2 (sg/generator schema:shape-geom-attrs)
+                           attrs3 (case type
+                                    :text    (sg/generator schema:text-attrs)
+                                    :path    (sg/generator schema:path-attrs)
+                                    :svg-raw (sg/generator schema:svg-raw-attrs)
+                                    :image   (sg/generator schema:image-attrs)
+                                    :circle  (sg/generator schema:circle-attrs)
+                                    :rect    (sg/generator schema:rect-attrs)
+                                    :bool    (sg/generator schema:bool-attrs)
+                                    :group   (sg/generator schema:group-attrs)
+                                    :frame   (sg/generator schema:frame-attrs))]
+                    (if (or (= type :path)
+                            (= type :bool))
+                      (merge attrs1 shape attrs3)
+                      (merge attrs1 shape attrs2 attrs3)))))
+       (sg/fmap map->Shape)))
 
-   [:bool
-    [:and {:title "BoolShape"}
-     ::shape-base-attrs
-     ::shape-attrs
-     ::bool-attrs
-     ::ctsl/layout-child-attrs]]
+(def schema:shape
+  [:and {:title "Shape"
+         :gen/gen (shape-generator)
+         :decode/json {:leave decode-shape}}
+   [:fn shape?]
+   [:multi {:dispatch :type
+            :decode/json (fn [shape]
+                           (update shape :type keyword))
+            :title "Shape"}
+    [:group
+     [:merge {:title "GroupShape"}
+      ::ctsl/layout-child-attrs
+      schema:group-attrs
+      schema:shape-attrs
+      schema:shape-geom-attrs
+      schema:shape-base-attrs]]
 
-   [:rect
-    [:and {:title "RectShape"}
-     ::shape-base-attrs
-     ::shape-geom-attrs
-     ::shape-attrs
-     ::rect-attrs
-     ::ctsl/layout-child-attrs]]
+    [:frame
+     [:merge {:title "FrameShape"}
+      ::ctsl/layout-child-attrs
+      ::ctsl/layout-attrs
+      schema:frame-attrs
+      schema:shape-attrs
+      schema:shape-geom-attrs
+      schema:shape-base-attrs]]
 
-   [:circle
-    [:and {:title "CircleShape"}
-     ::shape-base-attrs
-     ::shape-geom-attrs
-     ::shape-attrs
-     ::circle-attrs
-     ::ctsl/layout-child-attrs]]
+    [:bool
+     [:merge {:title "BoolShape"}
+      ::ctsl/layout-child-attrs
+      schema:bool-attrs
+      schema:shape-attrs
+      schema:shape-base-attrs]]
 
-   [:image
-    [:and {:title "ImageShape"}
-     ::shape-base-attrs
-     ::shape-geom-attrs
-     ::shape-attrs
-     ::image-attrs
-     ::ctsl/layout-child-attrs]]
+    [:rect
+     [:merge {:title "RectShape"}
+      ::ctsl/layout-child-attrs
+      schema:rect-attrs
+      schema:shape-attrs
+      schema:shape-geom-attrs
+      schema:shape-base-attrs]]
 
-   [:svg-raw
-    [:and {:title "SvgRawShape"}
-     ::shape-base-attrs
-     ::shape-geom-attrs
-     ::shape-attrs
-     ::svg-raw-attrs
-     ::ctsl/layout-child-attrs]]
+    [:circle
+     [:merge {:title "CircleShape"}
+      ::ctsl/layout-child-attrs
+      schema:circle-attrs
+      schema:shape-attrs
+      schema:shape-geom-attrs
+      schema:shape-base-attrs]]
 
-   [:path
-    [:and {:title "PathShape"}
-     ::shape-base-attrs
-     ::shape-attrs
-     ::path-attrs
-     ::ctsl/layout-child-attrs]]
+    [:image
+     [:merge {:title "ImageShape"}
+      ::ctsl/layout-child-attrs
+      schema:image-attrs
+      schema:shape-attrs
+      schema:shape-geom-attrs
+      schema:shape-base-attrs]]
 
-   [:text
-    [:and {:title "TextShape"}
-     ::shape-base-attrs
-     ::shape-geom-attrs
-     ::shape-attrs
-     ::text-attrs
-     ::ctsl/layout-child-attrs]]])
+    [:svg-raw
+     [:merge {:title "SvgRawShape"}
+      ::ctsl/layout-child-attrs
+      schema:svg-raw-attrs
+      schema:shape-attrs
+      schema:shape-geom-attrs
+      schema:shape-base-attrs]]
 
-(sm/register! ::shape
-  [:and
-   {:title "Shape"
-    :gen/gen (->> (sg/generator ::shape-base-attrs)
-                  (sg/mcat (fn [{:keys [type] :as shape}]
-                             (sg/let [attrs1 (sg/generator ::shape-attrs)
-                                      attrs2 (sg/generator ::shape-geom-attrs)
-                                      attrs3 (case type
-                                               :text    (sg/generator ::text-attrs)
-                                               :path    (sg/generator ::path-attrs)
-                                               :svg-raw (sg/generator ::svg-raw-attrs)
-                                               :image   (sg/generator ::image-attrs)
-                                               :circle  (sg/generator ::circle-attrs)
-                                               :rect    (sg/generator ::rect-attrs)
-                                               :bool    (sg/generator ::bool-attrs)
-                                               :group   (sg/generator ::group-attrs)
-                                               :frame   (sg/generator ::frame-attrs))]
-                               (if (or (= type :path)
-                                       (= type :bool))
-                                 (merge attrs1 shape attrs3)
-                                 (merge attrs1 shape attrs2 attrs3)))))
-                  (sg/fmap map->Shape))}
-   ::shape-map
-   [:fn shape?]])
+    [:path
+     [:merge {:title "PathShape"}
+      ::ctsl/layout-child-attrs
+      schema:path-attrs
+      schema:shape-attrs
+      schema:shape-base-attrs]]
+
+    [:text
+     [:merge {:title "TextShape"}
+      ::ctsl/layout-child-attrs
+      schema:text-attrs
+      schema:shape-attrs
+      schema:shape-geom-attrs
+      schema:shape-base-attrs]]]])
+
+(sm/register! ::shape schema:shape)
 
 (def check-shape-attrs!
-  (sm/check-fn ::shape-attrs))
+  (sm/check-fn schema:shape-attrs))
 
 (def check-shape!
-  (sm/check-fn ::shape))
+  (sm/check-fn schema:shape))
 
 (defn has-images?
   [{:keys [fills strokes]}]
-  (or
-   (some :fill-image fills)
-   (some :stroke-image strokes)))
+  (or (some :fill-image fills)
+      (some :stroke-image strokes)))
 
 ;; --- Initialization
 

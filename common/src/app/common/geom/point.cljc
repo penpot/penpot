@@ -51,41 +51,55 @@
 (s/def ::point
   (s/and ::point-attrs point?))
 
-
 (def ^:private schema:point-attrs
   [:map {:title "PointAttrs"}
    [:x ::sm/safe-number]
    [:y ::sm/safe-number]])
 
 (def valid-point?
-  (sm/lazy-validator
+  (sm/validator
    [:and [:fn point?] schema:point-attrs]))
 
-(sm/register! ::point
-  (letfn [(decode [p]
-            (if (map? p)
-              (map->Point p)
-              (if (string? p)
-                (let [[x y] (->> (str/split p #",") (mapv parse-double))]
-                  (pos->Point x y))
-                p)))
+(defn decode-point
+  [p]
+  (if (map? p)
+    (map->Point p)
+    (if (string? p)
+      (let [[x y] (->> (str/split p #",") (mapv parse-double))]
+        (pos->Point x y))
+      p)))
 
-          (encode [p]
-            (dm/str (dm/get-prop p :x) ","
-                    (dm/get-prop p :y)))]
+(defn point->str
+  [p]
+  (if (point? p)
+    (dm/str (dm/get-prop p :x) ","
+            (dm/get-prop p :y))
+    p))
 
-    {:type ::point
-     :pred valid-point?
-     :type-properties
-     {:title "point"
-      :description "Point"
-      :error/message "expected a valid point"
-      :gen/gen (->> (sg/tuple (sg/small-int) (sg/small-int))
-                    (sg/fmap #(apply pos->Point %)))
-      ::oapi/type "string"
-      ::oapi/format "point"
-      ::oapi/decode decode
-      ::oapi/encode encode}}))
+(defn point->json
+  [p]
+  (if (point? p)
+    (into {} p)
+    p))
+
+;; FIXME: make like matrix
+(def schema:point
+  {:type :map
+   :pred valid-point?
+   :type-properties
+   {:title "point"
+    :description "Point"
+    :error/message "expected a valid point"
+    :gen/gen (->> (sg/tuple (sg/small-int) (sg/small-int))
+                  (sg/fmap #(apply pos->Point %)))
+    ::oapi/type "string"
+    ::oapi/format "point"
+    :decode/json decode-point
+    :decode/string decode-point
+    :encode/json point->json
+    :encode/string point->str}})
+
+(sm/register! ::point schema:point)
 
 (defn point-like?
   [{:keys [x y] :as v}]

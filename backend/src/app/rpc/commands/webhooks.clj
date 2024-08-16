@@ -111,7 +111,7 @@
    [:id ::sm/uuid]
    [:uri ::sm/uri]
    [:mtype [::sm/one-of {:format "string"} valid-mtypes]]
-   [:is-active :boolean]])
+   [:is-active ::sm/boolean]])
 
 (sv/defmethod ::update-webhook
   {::doc/added "1.17"

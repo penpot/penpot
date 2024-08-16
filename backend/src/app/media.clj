@@ -49,7 +49,7 @@
 (sm/register! ::upload
   [:map {:title "Upload"}
    [:filename :string]
-   [:size :int]
+   [:size ::sm/int]
    [:path ::fs/path]
    [:mtype {:optional true} :string]
    [:headers {:optional true}

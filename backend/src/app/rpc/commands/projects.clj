@@ -208,7 +208,7 @@
 (def ^:private schema:update-project-pin
   [:map {:title "update-project-pin"}
    [:team-id ::sm/uuid]
-   [:is-pinned :boolean]
+   [:is-pinned ::sm/boolean]
    [:id ::sm/uuid]])
 
 (sv/defmethod ::update-project-pin

@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.schema.generators
-  (:refer-clojure :exclude [set subseq uuid for filter map let])
+  (:refer-clojure :exclude [set subseq uuid for filter map let boolean])
   #?(:cljs (:require-macros [app.common.schema.generators]))
   (:require
    [app.common.schema.registry :as sr]
@@ -121,6 +121,9 @@
                           (c/filter first)
                           (c/map second))
                          (c/map list bools elements)))))))
+
+(def any tg/any)
+(def boolean tg/boolean)
 
 (defn set
   [g]

@@ -13,7 +13,6 @@
    [clojure.pprint :as pprint]
    [datoteka.fs :as fs]))
 
-
 (prefer-method print-method
                clojure.lang.IRecord
                clojure.lang.IDeref)
@@ -26,7 +25,6 @@
                clojure.lang.IPersistentMap
                clojure.lang.IDeref)
 
-
 (sm/register! ::fs/path
   {:type ::fs/path
    :pred fs/path?
@@ -36,6 +34,6 @@
     :error/message "expected a valid fs path instance"
     :error/code "errors.invalid-path"
     :gen/gen (sg/generator :string)
+    :decode/string fs/path
     ::oapi/type "string"
-    ::oapi/format "unix-path"
-    ::oapi/decode fs/path}})
+    ::oapi/format "unix-path"}})

@@ -374,7 +374,10 @@
    :type-properties
    {:error/message "should be an instant"
     :title "instant"
-    ::sm/decode instant
+    :decode/string instant
+    :encode/string format-instant
+    :decode/json instant
+    :encode/json format-instant
     :gen/gen (tgen/fmap (fn [i] (in-past i))  tgen/pos-int)
     ::oapi/type "string"
     ::oapi/format "iso"}})
@@ -386,6 +389,9 @@
    {:error/message "should be a duration"
     :gen/gen (tgen/fmap duration tgen/pos-int)
     :title "duration"
-    ::sm/decode duration
+    :decode/string duration
+    :encode/string format-duration
+    :decode/json duration
+    :encode/json format-duration
     ::oapi/type "string"
     ::oapi/format "duration"}})

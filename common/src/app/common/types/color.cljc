@@ -9,48 +9,51 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
+   [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
    [app.common.text :as txt]
-   [app.common.types.color.generic :as-alias color-generic]
-   [app.common.types.color.gradient :as-alias color-gradient]
-   [app.common.types.color.gradient.stop :as-alias color-gradient-stop]
    [app.common.types.plugins :as ctpg]
    [app.common.uuid :as uuid]
-   [clojure.test.check.generators :as tgen]
    [cuerdas.core :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; SCHEMAS
+;; SCHEMAS & TYPES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def rgb-color-re
   #"^#(?:[0-9a-fA-F]{3}){1,2}$")
 
-(defn- random-rgb-color
+(defn- generate-rgb-color
   []
-  #?(:clj (format "#%06x" (rand-int 16rFFFFFF))
-     :cljs
-     (let [r (rand-int 255)
-           g (rand-int 255)
-           b (rand-int 255)]
-       (str "#"
-            (.. r (toString 16) (padStart 2 "0"))
-            (.. g (toString 16) (padStart 2 "0"))
-            (.. b (toString 16) (padStart 2 "0"))))))
+  (sg/fmap (fn [_]
+             #?(:clj (format "#%06x" (rand-int 16rFFFFFF))
+                :cljs
+                (let [r (rand-int 255)
+                      g (rand-int 255)
+                      b (rand-int 255)]
+                  (str "#"
+                       (.. r (toString 16) (padStart 2 "0"))
+                       (.. g (toString 16) (padStart 2 "0"))
+                       (.. b (toString 16) (padStart 2 "0"))))))
+           sg/any))
 
-(sm/register! ::rgb-color
-  {:type ::rgb-color
-   :pred #(and (string? %) (some? (re-matches rgb-color-re %)))
+(defn rgb-color-string?
+  [o]
+  (and (string? o) (some? (re-matches rgb-color-re o))))
+
+(def ^:private type:rgb-color
+  {:type :string
+   :pred rgb-color-string?
    :type-properties
    {:title "rgb-color"
     :description "RGB Color String"
     :error/message "expected a valid RGB color"
-    :gen/gen (->> tgen/any (tgen/fmap (fn [_] (random-rgb-color))))
-
+    :error/code "errors.invalid-rgb-color"
+    :gen/gen (generate-rgb-color)
     ::oapi/type "integer"
     ::oapi/format "int64"}})
 
-(sm/register! ::image-color
+(def schema:image-color
   [:map {:title "ImageColor"}
    [:name {:optional true} :string]
    [:width :int]
@@ -59,7 +62,10 @@
    [:id ::sm/uuid]
    [:keep-aspect-ratio {:optional true} :boolean]])
 
-(sm/register! ::gradient
+(def gradient-types
+  #{:linear :radial})
+
+(def schema:gradient
   [:map {:title "Gradient"}
    [:type [::sm/one-of #{:linear :radial}]]
    [:start-x ::sm/safe-number]
@@ -74,7 +80,7 @@
       [:opacity {:optional true} [:maybe ::sm/safe-number]]
       [:offset ::sm/safe-number]]]]])
 
-(sm/register! ::color
+(def schema:color
   [:and
    [:map {:title "Color"}
     [:id {:optional true} ::sm/uuid]
@@ -86,26 +92,32 @@
     [:modified-at {:optional true} ::sm/inst]
     [:ref-id {:optional true} ::sm/uuid]
     [:ref-file {:optional true} ::sm/uuid]
-    [:gradient {:optional true} [:maybe ::gradient]]
-    [:image {:optional true} [:maybe ::image-color]]
-    [:plugin-data {:optional true}
-     [:map-of {:gen/max 5} :keyword ::ctpg/plugin-data]]]
+    [:gradient {:optional true} [:maybe schema:gradient]]
+    [:image {:optional true} [:maybe schema:image-color]]
+    [:plugin-data {:optional true} ::ctpg/plugin-data]]
    [::sm/contains-any {:strict true} [:color :gradient :image]]])
 
-(sm/register! ::recent-color
+(def schema:recent-color
   [:and
    [:map {:title "RecentColor"}
     [:opacity {:optional true} [:maybe ::sm/safe-number]]
     [:color {:optional true} [:maybe ::rgb-color]]
-    [:gradient {:optional true} [:maybe ::gradient]]
-    [:image {:optional true} [:maybe ::image-color]]]
+    [:gradient {:optional true} [:maybe schema:gradient]]
+    [:image {:optional true} [:maybe schema:image-color]]]
    [::sm/contains-any {:strict true} [:color :gradient :image]]])
 
+(sm/register! ::rgb-color type:rgb-color)
+
+(sm/register! ::color schema:color)
+(sm/register! ::gradient schema:gradient)
+(sm/register! ::image-color schema:image-color)
+(sm/register! ::recent-color schema:recent-color)
+
 (def check-color!
-  (sm/check-fn ::color))
+  (sm/check-fn schema:color))
 
 (def check-recent-color!
-  (sm/check-fn ::recent-color))
+  (sm/check-fn schema:recent-color))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS

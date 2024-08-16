@@ -89,7 +89,7 @@
    {:title "FileFeatures"
     ::smdj/inline true
     :gen/gen (smg/subseq supported-features)}
-   ::sm/set-of-strings])
+   [::sm/set :string]])
 
 (defn- flag->feature
   "Translate a flag to a feature name"

@@ -7,8 +7,8 @@
 (ns app.common.json
   (:refer-clojure :exclude [read])
   (:require
-   [cuerdas.core :as str]
-   #?(:clj [clojure.data.json :as j])))
+   #?(:clj [clojure.data.json :as j])
+   [cuerdas.core :as str]))
 
 
 #?(:clj

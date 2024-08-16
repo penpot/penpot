@@ -13,47 +13,54 @@
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(sm/register! ::grid-color
+(def schema:grid-color
   [:map {:title "PageGridColor"}
    [:color ::ctc/rgb-color]
    [:opacity ::sm/safe-number]])
 
-(sm/register! ::column-params
+(def schema:column-params
   [:map
-   [:color ::grid-color]
+   [:color schema:grid-color]
    [:type {:optional true} [::sm/one-of #{:stretch :left :center :right}]]
    [:size {:optional true} [:maybe ::sm/safe-number]]
    [:margin {:optional true} [:maybe ::sm/safe-number]]
    [:item-length {:optional true} [:maybe ::sm/safe-number]]
    [:gutter {:optional true} [:maybe ::sm/safe-number]]])
 
-(sm/register! ::square-params
+(def schema:square-params
   [:map
    [:size {:optional true} [:maybe ::sm/safe-number]]
-   [:color ::grid-color]])
+   [:color schema:grid-color]])
 
-(sm/register! ::grid
-  [:multi {:dispatch :type}
+(def schema:grid
+  [:multi {:title "Grid"
+           :dispatch :type
+           :decode/json #(update % :type keyword)}
    [:column
     [:map
      [:type [:= :column]]
      [:display :boolean]
-     [:params ::column-params]]]
+     [:params schema:column-params]]]
 
    [:row
     [:map
      [:type [:= :row]]
      [:display :boolean]
-     [:params ::column-params]]]
+     [:params schema:column-params]]]
 
    [:square
     [:map
      [:type [:= :square]]
      [:display :boolean]
-     [:params ::square-params]]]])
+     [:params schema:square-params]]]])
 
-(sm/register! ::saved-grids
+(def schema:saved-grids
   [:map {:title "PageGrid"}
    [:square {:optional true} ::square-params]
    [:row {:optional true} ::column-params]
    [:column {:optional true} ::column-params]])
+
+(sm/register! ::square-params schema:square-params)
+(sm/register! ::column-params schema:column-params)
+(sm/register! ::grid schema:grid)
+(sm/register! ::saved-grids schema:saved-grids)

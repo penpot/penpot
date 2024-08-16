@@ -15,11 +15,11 @@
 (sm/register! ::permissions
   [:map {:title "Permissions"}
    [:type {:gen/elements [:membership :share-link]} :keyword]
-   [:is-owner :boolean]
-   [:is-admin :boolean]
-   [:can-edit :boolean]
-   [:can-read :boolean]
-   [:is-logged :boolean]])
+   [:is-owner ::sm/boolean]
+   [:is-admin ::sm/boolean]
+   [:can-edit ::sm/boolean]
+   [:can-read ::sm/boolean]
+   [:is-logged ::sm/boolean]])
 
 
 (s/def ::role #{:admin :owner :editor :viewer})

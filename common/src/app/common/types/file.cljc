@@ -59,8 +59,7 @@
     [:map-of {:gen/max 2} ::sm/uuid ::cty/typography]]
    [:media {:optional true}
     [:map-of {:gen/max 5} ::sm/uuid ::media-object]]
-   [:plugin-data {:optional true}
-    [:map-of {:gen/max 5} :keyword ::ctpg/plugin-data]]])
+   [:plugin-data {:optional true} ::ctpg/plugin-data]])
 
 (def check-file-data!
   (sm/check-fn ::data))

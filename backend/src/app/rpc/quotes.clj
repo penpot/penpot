@@ -31,7 +31,7 @@
      [::team-id {:optional true} ::sm/uuid]
      [::project-id {:optional true} ::sm/uuid]
      [::file-id {:optional true} ::sm/uuid]
-     [::incr {:optional true} [:int {:min 0}]]
+     [::incr {:optional true} [::sm/int {:min 0}]]
      [::id :keyword]
      [::profile-id ::sm/uuid]]))
 

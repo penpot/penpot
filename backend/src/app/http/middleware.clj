@@ -7,11 +7,13 @@
 (ns app.http.middleware
   (:require
    [app.common.exceptions :as ex]
+   [app.common.json :as json]
    [app.common.logging :as l]
+   [app.common.schema :as-alias sm]
    [app.common.transit :as t]
    [app.config :as cf]
    [app.http.errors :as errors]
-   [clojure.data.json :as json]
+   [app.util.pointer-map :as pmap]
    [cuerdas.core :as str]
    [ring.request :as rreq]
    [ring.response :as rres]
@@ -39,16 +41,6 @@
     (java.io.BufferedReader.
      (java.io.InputStreamReader. body))))
 
-(defn- read-json-key
-  [k]
-  (-> k str/kebab keyword))
-
-(defn- write-json-key
-  [k]
-  (if (or (keyword? k) (symbol? k))
-    (str/camel k)
-    (str k)))
-
 (defn wrap-parse-request
   [handler]
   (letfn [(process-request [request]
@@ -63,7 +55,7 @@
 
                 (str/starts-with? header "application/json")
                 (with-open [reader (get-reader request)]
-                  (let [params (json/read reader :key-fn read-json-key)]
+                  (let [params (json/read reader :key-fn json/read-kebab-key)]
                     (-> request
                         (assoc :body-params params)
                         (update :params merge params))))
@@ -113,6 +105,12 @@
 
 (def ^:const buffer-size (:xnio/buffer-size yt/defaults))
 
+(defn- write-json-value
+  [_ val]
+  (if (pmap/pointer-map? val)
+    [(pmap/get-id val) (meta val)]
+    val))
+
 (defn wrap-format-response
   [handler]
   (letfn [(transit-streamable-body [data opts]
@@ -134,10 +132,11 @@
             (reify rres/StreamableResponseBody
               (-write-body-to-stream [_ _ output-stream]
                 (try
-                  (with-open [^OutputStream bos (buffered-output-stream output-stream buffer-size)]
-                    (with-open [^java.io.OutputStreamWriter writer (java.io.OutputStreamWriter. bos)]
-                      (json/write data writer :key-fn write-json-key)))
-
+                  (let [encode (or (-> data meta :encode/json) identity)
+                        data   (encode data)]
+                    (with-open [^OutputStream bos (buffered-output-stream output-stream buffer-size)]
+                      (with-open [^java.io.OutputStreamWriter writer (java.io.OutputStreamWriter. bos)]
+                        (json/write writer data :key-fn json/write-camel-key :value-fn write-json-value))))
                   (catch java.io.IOException _)
                   (catch Throwable cause
                     (binding [l/*context* {:value data}]
