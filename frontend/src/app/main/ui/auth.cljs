@@ -49,10 +49,15 @@
                          (not= section :auth-register-success))
         params  (:query-params route)
         error   (:error params)
-        hide-image-auth? (cf/external-feature-flag "signup-01" "test")]
+        hide-image-auth? (cf/external-feature-flag "signup-01" "test")
+        default-light?   (cf/external-feature-flag "onboarding-02" "test")]
 
     (mf/with-effect []
       (dom/set-html-title (tr "title.default")))
+
+    (mf/with-effect [default-light?]
+      (when default-light?
+        (dom/set-html-theme-color "light")))
 
     (mf/with-effect [error]
       (when error
