@@ -217,7 +217,7 @@
                   "🗑️"]]]])]])]]
       [:div.spaced
        [:b "Sets"]
-       [:button {:on-click #(st/emit! (wdt/create-token-set nil))} "Create"]]
+       [:button {:on-click #(st/emit! (wdt/create-token-set {:name (js/window.prompt "Set name")}))} "Create"]]
       [:ul.spaced-y
        (for [[_ {:keys [id name]}] token-sets]
          [:li {:class [(when (= selected-token-set-id id) "selected")]
