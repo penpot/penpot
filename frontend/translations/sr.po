@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-08-15 15:09+0000\n"
+"PO-Revision-Date: 2024-08-17 11:09+0000\n"
 "Last-Translator: Црнобог <68vuletic@gmail.com>\n"
 "Language-Team: Serbian <https://hosted.weblate.org/projects/penpot/frontend/"
 "sr/>\n"
@@ -4906,9 +4906,8 @@ msgid "workspace.options.grid.params.size"
 msgstr "Величина"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-#, fuzzy
 msgid "workspace.options.grid.params.gutter"
-msgstr "Gutter"
+msgstr "Гутер (Gutter)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 msgid "workspace.options.grid.params.height"
