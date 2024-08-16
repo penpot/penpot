@@ -177,7 +177,11 @@
     [:div
      {:style {:display "flex"
               :flex-direction "column"
-              :gap "10px"}}
+              :gap "10px"
+              :max-height "350px"
+              :overflow "auto"
+              :border-bottom "2px solid grey"
+              :padding "10px"}}
 
      (str "Themes (selected: " selected-theme-id ")")
      [:div
