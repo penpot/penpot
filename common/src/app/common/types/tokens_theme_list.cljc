@@ -14,6 +14,26 @@
   [token-set]
   (assoc token-set :modified-at (dt/now)))
 
+(defn add-token-theme
+  [file-data {:keys [index id] :as token-theme}]
+  (-> file-data
+      (update :token-themes
+              (fn [token-themes]
+                (let [exists? (some (partial = id) token-themes)]
+                  (cond
+                    exists?      token-themes
+                    (nil? index) (conj (or token-themes []) id)
+                    :else        (d/insert-at-index token-themes index [id])))))
+      (update :token-themes-index assoc id token-theme)))
+
+(defn update-token-theme
+  [file-data token-theme-id f & args]
+  (d/update-in-when file-data [:token-themes-index token-theme-id] #(-> (apply f % args) (touch))))
+
+(defn delete-token-theme
+  [file-data token-id]
+  file-data)
+
 (defn add-token-set
   [file-data {:keys [index id] :as token-set}]
   (-> file-data

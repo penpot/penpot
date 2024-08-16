@@ -88,6 +88,20 @@
     (update [_ state]
       (wtts/assoc-selected-token-set-id state id))))
 
+(defn create-token-theme [token-theme]
+  (let [new-token-theme (merge
+                         {:id (uuid/next)
+                          :sets #{}
+                          :selected :enabled}
+                         token-theme)]
+    (ptk/reify ::create-token-theme
+      ptk/WatchEvent
+      (watch [it _ _]
+        (let [changes (-> (pcb/empty-changes it)
+                          (pcb/add-token-theme new-token-theme))]
+          (rx/of
+           (dch/commit-changes changes)))))))
+
 (defn create-token-set [token-set]
   (let [new-token-set (merge
                        {:id (uuid/next)

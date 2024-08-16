@@ -695,6 +695,30 @@
         (update :undo-changes conj {:type :add-typography :typography prev-typography})
         (apply-changes-local))))
 
+(defn add-token-theme
+  [changes token-theme]
+  (-> changes
+      (update :redo-changes conj {:type :add-token-theme :token-theme token-theme})
+      (update :undo-changes conj {:type :del-token-theme :id (:id token-theme)})
+      (apply-changes-local)))
+
+(defn update-token-theme
+  [changes token-theme prev-token-theme]
+  (-> changes
+      (update :redo-changes conj {:type :mod-token-theme :id (:id token-theme) :token-theme token-theme})
+      (update :undo-changes conj {:type :mod-token-theme :id (:id token-theme) :token-theme (or prev-token-theme token-theme)})
+      (apply-changes-local)))
+
+(defn delete-token-theme
+  [changes token-theme-id]
+  (assert-library! changes)
+  (let [library-data (::library-data (meta changes))
+        prev-token-theme (get-in library-data [:token-theme token-theme-id])]
+    (-> changes
+        (update :redo-changes conj {:type :del-token-theme :id token-theme-id})
+        (update :undo-changes conj {:type :add-token-theme :token-theme prev-token-theme})
+        (apply-changes-local))))
+
 (defn add-token-set
   [changes token-set]
   (-> changes
