@@ -167,7 +167,8 @@
 
 (mf/defc token-sets
   [_props]
-  (let [selected-theme-id (mf/deref refs/workspace-active-theme-id)
+  (let [active-theme-ids (mf/deref refs/workspace-active-theme-ids)
+        selected-theme-id (mf/deref refs/workspace-active-theme-id)
         themes (mf/deref refs/workspace-ordered-token-themes)
         themes-index (mf/deref refs/workspace-token-themes)
         selected-theme (get themes-index selected-theme-id)
@@ -177,7 +178,7 @@
      [:style
       (str "@scope {"
            (str/join "\n"
-                     ["ul { list-style-type: disk; margin-left: 20px; }"
+                     ["ul { list-style-type: circle; margin-left: 20px; }"
                       ".spaced { display: flex; gap: 10px; justify-content: space-between;  }"
                       ".spaced-y { display: flex; flex-direction: column; gap: 10px }"
                       ".selected { font-weight: 600; }"
@@ -190,17 +191,30 @@
                :padding "10px"
                :margin-bottom "50px"}}
 
-      [:ul
-       [:& tokene-theme-create]
-       (for [[group themes] themes]
-         [:li
-          {:key (str "token-theme-group" group)}
-          group
-          #_[:ul
-             (for [{:keys [id] :as theme} themes]
-               [:li {:key (str "tokene-theme-" id)}
-                [:input {:type "checkbox"
-                         :checked (wtts/theme-selected? theme)}]])]])]
+      [:& tokene-theme-create]
+      [:div.spaced-y
+       [:b "Themes"]
+       [:ul
+        (for [[group themes] themes]
+          [:li
+           {:key (str "token-theme-group" group)}
+           group
+           [:ul
+            (for [{:keys [id name] :as theme} themes]
+              [:li {:key (str "tokene-theme-" id)}
+               [:div.spaced
+                name
+                [:div.spaced
+                 [:button
+                  {:on-click (fn [e]
+                               (dom/prevent-default e)
+                               (dom/stop-propagation e))}
+                  (if (some-> active-theme-ids (get id)) "✅" "❎")]
+                 [:button {:on-click (fn [e]
+                                       (dom/prevent-default e)
+                                       (dom/stop-propagation e)
+                                       (st/emit! (wdt/delete-token-set id)))}
+                  "🗑️"]]]])]])]]
       [:div.spaced
        [:b "Sets"]
        [:button {:on-click #(st/emit! (wdt/create-token-set nil))} "Create"]]
@@ -219,9 +233,7 @@
                           (dom/prevent-default e)
                           (dom/stop-propagation e)
                           (st/emit! (wdt/toggle-token-set id)))}
-             (if (wtts/token-set-enabled-in-theme? id selected-theme)
-               "👁️"
-               "")]
+             (when (wtts/token-set-enabled-in-theme? id selected-theme) "👁️")]
             [:button {:on-click (fn [e]
                                   (dom/prevent-default e)
                                   (dom/stop-propagation e)
