@@ -102,6 +102,22 @@
           (rx/of
            (dch/commit-changes changes)))))))
 
+(defn ensure-token-theme-changes [changes state {:keys [id new-set?]}]
+  (let [theme-id (wtts/update-theme-id state)
+        theme (some-> theme-id (wtts/get-workspace-token-theme state))]
+    (cond
+     (not theme-id) (-> changes
+                        (pcb/add-temporary-token-theme
+
+                         {:id (uuid/next)
+                          :name ""
+                          :sets #{id}}))
+     new-set? (-> changes
+                  (pcb/update-token-theme
+                   (wtts/add-token-set-to-token-theme id theme)
+                   theme))
+     :else changes)))
+
 (defn create-token-set [token-set]
   (let [new-token-set (merge
                        {:id (uuid/next)
@@ -110,9 +126,11 @@
                        token-set)]
     (ptk/reify ::create-token-set
       ptk/WatchEvent
-      (watch [it _ _]
+      (watch [it state _]
         (let [changes (-> (pcb/empty-changes it)
-                          (pcb/add-token-set new-token-set))]
+                          (pcb/add-token-set new-token-set)
+                          (ensure-token-theme-changes state {:id (:id new-token-set)
+                                                             :new-set? true}))]
           (rx/of
            (dch/commit-changes changes)))))))
 
@@ -155,20 +173,9 @@
                                                             (update token-set :tokens conj (:id token)))]
                                     (-> token-changes
                                         (pcb/update-token-set updated-token-set token-set))))
-              theme-id (wtts/update-theme-id state)
-              theme (some-> theme-id (wtts/get-workspace-token-theme state))
-              theme-changes (cond
-                              (not theme-id) (-> set-changes
-                                                 (pcb/add-temporary-token-theme
-
-                                                  {:id (uuid/next)
-                                                   :name ""
-                                                   :sets #{selected-token-set-id}}))
-                              create-set? (-> set-changes
-                                              (pcb/update-token-theme
-                                               (wtts/add-token-set-to-token-theme selected-token-set-id theme)
-                                               theme))
-                              :else set-changes)]
+              theme-changes (-> set-changes
+                                (ensure-token-theme-changes state {:new-set? create-set?
+                                                                   :set-id selected-token-set-id}))]
           (rx/of
            (set-selected-token-set-id selected-token-set-id)
            (dch/commit-changes theme-changes)))))))
