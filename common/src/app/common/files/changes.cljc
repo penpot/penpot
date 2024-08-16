@@ -25,6 +25,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.token :as cto]
    [app.common.types.token-theme :as ctot]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-list :as ctol]
    [app.common.types.tokens-theme-list :as ctotl]
    [app.common.types.typographies-list :as ctyl]
@@ -289,28 +290,36 @@
      [:map {:title "ModTokenSetChange"}
       [:type [:= :mod-token-set]]
       [:id ::sm/uuid]
+      [:name :string]
       [:token-set ::ctot/token-set]]]
 
     [:del-token-set
      [:map {:title "DelTokenSetChange"}
       [:type [:= :del-token-set]]
-      [:id ::sm/uuid]]]
+      [:id ::sm/uuid]
+      [:name :string]]]
 
     [:add-token
      [:map {:title "AddTokenChange"}
       [:type [:= :add-token]]
+      [:set-id ::sm/uuid]
+      [:set-name :string]
       [:token ::cto/token]]]
 
     [:mod-token
      [:map {:title "ModTokenChange"}
       [:type [:= :mod-token]]
+      [:set-id ::sm/uuid]
+      [:set-name :string]
       [:id ::sm/uuid]
       [:token ::cto/token]]]
 
     [:del-token
      [:map {:title "DelTokenChange"}
       [:type [:= :del-token]]
-      [:id ::sm/uuid]]]]])
+      [:set-name :string]
+      [:id ::sm/uuid]
+      [:name :string]]]]])
 
 (sm/register! ::changes
   [:sequential {:gen/max 2} ::change])
@@ -780,16 +789,37 @@
 ;; -- Tokens
 
 (defmethod process-change :add-token
-  [data {:keys [token]}]
-  (ctol/add-token data token))
+  [data {:keys [set-id set-name token]}]
+  (-> data
+      (ctol/add-token set-id token)
+      (update :tokens-lib
+              #(-> %
+                   (ctob/ensure-tokens-lib)
+                   (ctob/add-token-in-set set-name (ctob/make-token token))))))
 
 (defmethod process-change :mod-token
-  [data {:keys [id token]}]
-  (ctol/update-token data id merge token))
+  [data {:keys [set-id set-name id token]}]
+  (-> data
+      (ctol/update-token data set-id id merge token)
+      (update :tokens-lib
+              #(-> %
+                   (ctob/ensure-tokens-lib)
+                   (ctob/update-token-in-set
+                    set-name
+                    (:name token)
+                    (fn [old-token]
+                      (ctob/make-token (merge old-token token))))))))
 
 (defmethod process-change :del-token
-  [data {:keys [id]}]
-  (ctol/delete-token data id))
+  [data {:keys [set-name id name]}]
+  (-> data
+      (ctol/delete-token id)
+      (update :tokens-lib
+              #(-> %
+                   (ctob/ensure-tokens-lib)
+                   (ctob/delete-token-from-set
+                    set-name
+                    name)))))
 
 (defmethod process-change :add-temporary-token-theme
   [data {:keys [token-theme]}]
@@ -817,15 +847,32 @@
 
 (defmethod process-change :add-token-set
   [data {:keys [token-set]}]
-  (ctotl/add-token-set data token-set))
+  (-> data
+      (ctotl/add-token-set token-set)
+      (update :tokens-lib
+              #(-> %
+                   (ctob/ensure-tokens-lib)
+                   (ctob/add-set (ctob/make-token-set token-set))))))
 
 (defmethod process-change :mod-token-set
-  [data {:keys [id token-set]}]
-  (ctotl/update-token-set data id merge token-set))
+  [data {:keys [id name token-set]}]
+  (-> data
+      (ctotl/update-token-set id merge token-set)
+      (update :tokens-lib
+              #(-> %
+                   (ctob/ensure-tokens-lib)
+                   (ctob/update-set name (fn [prev-set]
+                                           (merge prev-set
+                                                  (dissoc token-set :tokens))))))))
 
 (defmethod process-change :del-token-set
-  [data {:keys [id]}]
-  (ctotl/delete-token-set data id))
+  [data {:keys [id name]}]
+  (-> data
+      (ctotl/delete-token-set id)
+      (update :tokens-lib
+              #(-> %
+                   (ctob/ensure-tokens-lib)
+                   (ctob/delete-set name)))))
 
 ;; === Operations
 (defmethod process-operation :set
@@ -980,5 +1027,3 @@
 (defmethod frames-changed :default
   [_ _]
   nil)
-
-

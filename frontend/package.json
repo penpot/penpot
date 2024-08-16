@@ -96,6 +96,7 @@
   },
   "dependencies": {
     "@tokens-studio/sd-transforms": "^0.16.1",
+    "bun": "^1.1.25",
     "compression": "^1.7.4",
     "date-fns": "^3.6.0",
     "eventsource-parser": "^1.1.2",

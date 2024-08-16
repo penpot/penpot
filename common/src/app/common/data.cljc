@@ -44,8 +44,8 @@
 
 (defn ordered-map
   ([] lkm/empty-linked-map)
-  ([a] (conj lkm/empty-linked-map a))
-  ([a & xs] (apply conj lkm/empty-linked-map a xs)))
+  ([k a] (assoc lkm/empty-linked-map k a))
+  ([k a & xs] (apply assoc lkm/empty-linked-map k a xs)))
 
 (defn ordered-set?
   [o]

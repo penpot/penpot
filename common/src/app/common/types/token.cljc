@@ -47,7 +47,15 @@
     :string
     :typography})
 
+(defn valid-token-type?
+  [t]
+  (token-types t))
+
 (def token-name-ref :string)
+
+(defn valid-token-name-ref?
+  [n]
+  (string? n))
 
 (sm/register! ::token
   [:map {:title "Token"}

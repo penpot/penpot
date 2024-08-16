@@ -81,12 +81,21 @@
   (let [workspace-data (deref refs/workspace-data)]
     (get (:tokens workspace-data) id)))
 
+(defn get-token-set-data-from-token-set-id
+  [id]
+  (let [workspace-data (deref refs/workspace-data)]
+    (get (:token-sets-index workspace-data) id)))
+
 (defn set-selected-token-set-id
   [id]
   (ptk/reify ::set-selected-token-set-id
     ptk/UpdateEvent
     (update [_ state]
       (wtts/assoc-selected-token-set-id state id))))
+
+(defn get-token-set-tokens
+  [token-set file]
+  (map #(get-in file [:tokens %]) (:tokens token-set)))
 
 (defn create-token-theme [token-theme]
   (let [new-token-theme (merge
@@ -120,7 +129,7 @@
      (not theme-id) (-> changes
                         (pcb/add-temporary-token-theme
                          {:id (uuid/next)
-                          :name ""
+                          :name "Test theme"
                           :sets #{id}}))
      new-set? (-> changes
                   (pcb/update-token-theme
@@ -196,14 +205,14 @@
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
 
-(defn delete-token-set [token-set-id]
+(defn delete-token-set [token-set-id token-set-name]
   (ptk/reify ::delete-token-set
     ptk/WatchEvent
     (watch [it state _]
       (let [data (get state :workspace-data)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/delete-token-set token-set-id))]
+                        (pcb/delete-token-set token-set-id token-set-name))]
         (rx/of
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
@@ -214,46 +223,43 @@
     (ptk/reify ::update-create-token
       ptk/WatchEvent
       (watch [it state _]
-        (let [prev-token (get-token-data-from-token-id (:id token))
+        (let [token-set     (wtts/get-selected-token-set state)
+              create-set?   (not token-set)
+              token-set     (or token-set
+                                {:id (uuid/next)
+                                 :name "Global"
+                                 :tokens []})
+
+              changes       (cond-> (pcb/empty-changes it)
+                              create-set?
+                              (pcb/add-token-set token-set))
+
+              prev-token    (d/seek #(= (:id %) (:id token)) (:tokens token-set))   ; TODO
               create-token? (not prev-token)
-              token-changes (if create-token?
-                              (-> (pcb/empty-changes it)
-                                  (pcb/add-token token))
-                              (-> (pcb/empty-changes it)
-                                  (pcb/update-token token prev-token)))
-              token-set (wtts/get-selected-token-set state)
-              create-set? (not token-set)
-              new-token-set {:id (uuid/next)
-                             :name "Global"
-                             :tokens [(:id token)]}
-              selected-token-set-id (if create-set?
-                                      (:id new-token-set)
-                                      (:id token-set))
-              set-changes (cond
-                            create-set? (-> token-changes
-                                            (pcb/add-token-set new-token-set))
-                            :else (let [updated-token-set (if (contains? token-set (:id token))
-                                                            token-set
-                                                            (update token-set :tokens conj (:id token)))]
-                                    (-> token-changes
-                                        (pcb/update-token-set updated-token-set token-set))))
-              theme-changes (-> set-changes
+
+              changes       (if create-token?
+                              (pcb/add-token changes (:id token-set) (:name token-set) token)
+                              (pcb/update-token changes (:id token-set) (:name token-set) token prev-token))
+
+              changes       (-> changes
                                 (ensure-token-theme-changes state {:new-set? create-set?
-                                                                   :id selected-token-set-id}))]
+                                                                   :id (:id token-set)}))]
           (rx/of
-           (set-selected-token-set-id selected-token-set-id)
-           (dch/commit-changes theme-changes)))))))
+           (set-selected-token-set-id (:id token-set))
+           (dch/commit-changes changes)))))))
 
 (defn delete-token
-  [id]
+  [set-name id name]
+  (dm/assert! (string? set-name))
   (dm/assert! (uuid? id))
+  (dm/assert! (string? name))
   (ptk/reify ::delete-token
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (get state :workspace-data)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/delete-token id))]
+                        (pcb/delete-token set-name id name))]
         (rx/of (dch/commit-changes changes))))))
 
 (defn duplicate-token
