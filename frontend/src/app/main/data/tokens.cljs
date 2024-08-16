@@ -108,7 +108,7 @@
                         :name "Token Set"
                         :tokens []}
                        token-set)]
-    (ptk/reify ::update-create-token
+    (ptk/reify ::create-token-set
       ptk/WatchEvent
       (watch [it _ _]
         (let [changes (-> (pcb/empty-changes it)

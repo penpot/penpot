@@ -155,10 +155,14 @@
                    :flex-direction "column"
                    :gap "10px"}}
      [:& labeled-input {:label "Group name"
-                        :input-props {:value @group}}]
+                        :input-props {:value @group
+                                      :on-change #(reset! group (dom/event->value %))}}]
      [:& labeled-input {:label "Theme name"
-                        :input-props {:value @name}}]
-     [:button "Create"]]))
+                        :input-props {:value @name
+                                      :on-change #(reset! name (dom/event->value %))}}]
+     [:button {:on-click #(st/emit! (wdt/create-token-theme {:group @group
+                                                             :name @name}))}
+      "Create"]]))
 
 (mf/defc token-sets
   [_props]
