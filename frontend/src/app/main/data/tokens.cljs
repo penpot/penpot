@@ -116,6 +116,16 @@
           (rx/of
            (dch/commit-changes changes)))))))
 
+(defn delete-token-set [token-set-id]
+  (ptk/reify ::delete-token-set
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data (get state :workspace-data)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/delete-token-set token-set-id))]
+        (rx/of (dch/commit-changes changes))))))
+
 (defn update-create-token
   [token]
   (let [token (update token :id #(or % (uuid/next)))]

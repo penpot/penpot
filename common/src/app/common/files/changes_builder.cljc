@@ -737,7 +737,7 @@
   [changes token-set-id]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
-        prev-token-set (get-in library-data [:token-set token-set-id])]
+        prev-token-set (get-in library-data [:token-sets-index token-set-id])]
     (-> changes
         (update :redo-changes conj {:type :del-token-set :id token-set-id})
         (update :undo-changes conj {:type :add-token-set :token-set prev-token-set})

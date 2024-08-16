@@ -51,5 +51,8 @@
   (d/update-in-when file-data [:token-sets-index token-set-id] #(-> (apply f % args) (touch))))
 
 (defn delete-token-set
-  [file-data token-id]
-  file-data)
+  [file-data token-set-id]
+  (-> file-data
+      (update :token-set-groups (fn [xs] (into [] (remove #(= (:id %) token-set-id) xs))))
+      (update :token-sets-index dissoc token-set-id)
+      (update :token-themes-index (fn [xs] (update-vals xs #(update % :sets disj token-set-id))))))

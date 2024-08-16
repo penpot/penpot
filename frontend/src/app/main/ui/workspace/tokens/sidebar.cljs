@@ -197,14 +197,24 @@
       #_[:button "Delete"]]
      [:ul
       {:style {:list-style "disk"
-               :margin-left "20px"}}
+               :margin-left "20px"
+               :display "flex"
+               :flex-direction "column"
+               :gap "10px"}}
       (for [[_ {:keys [id name]}] token-sets]
         [:li {:style {:font-weight (when (= selected-token-set-id id) "bold")}
               :on-click (fn []
                           (st/emit!
                            (wdt/set-selected-token-set-id id)
                            (wtu/update-workspace-tokens)))}
-         name])]
+         [:div {:style {:display "flex"
+                        :justify-content "space-between"}}
+          name
+          [:button {:on-click (fn [e]
+                                (dom/prevent-default e)
+                                (dom/stop-propagation e)
+                                (st/emit! (wdt/delete-token-set id)))}
+           "Delete"]]])]
      [:hr]]))
 
 (mf/defc tokens-explorer
