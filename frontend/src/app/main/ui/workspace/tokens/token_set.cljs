@@ -1,5 +1,27 @@
 (ns app.main.ui.workspace.tokens.token-set)
 
+;; Themes ----------------------------------------------------------------------
+
+(defn get-theme-group [theme]
+  (:group theme))
+
+(defn get-workspace-themes [state]
+  (get-in state [:workspace-data :token-themes] []))
+
+(defn get-workspace-themes-index [state]
+  (get-in state [:workspace-data :token-themes-index] {}))
+
+(defn get-workspace-ordered-themes [state]
+  (let [themes (get-workspace-themes state)
+        themes-index (get-workspace-themes-index state)]
+    (->> (map #(get themes-index (:id %)) themes)
+         (group-by :group))))
+
+(defn theme-selected? [theme]
+  (= :enabled (:selected theme)))
+
+ ;; Sets ------------------------------------------------------------------------
+
 (defn get-workspace-tokens [state]
   (get-in state [:workspace-data :tokens]))
 
