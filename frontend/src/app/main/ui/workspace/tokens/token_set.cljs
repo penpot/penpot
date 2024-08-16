@@ -14,7 +14,7 @@
 (defn get-workspace-ordered-themes [state]
   (let [themes (get-workspace-themes state)
         themes-index (get-workspace-themes-index state)]
-    (->> (map #(get themes-index (:id %)) themes)
+    (->> (map #(get themes-index %) themes)
          (group-by :group))))
 
 (defn theme-selected? [theme]
