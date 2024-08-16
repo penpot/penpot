@@ -14,6 +14,19 @@
   [token-set]
   (assoc token-set :modified-at (dt/now)))
 
+(defn add-temporary-token-theme
+  [file-data {:keys [id] :as token-theme}]
+  (-> file-data
+      (d/dissoc-in [:token-themes-index (:token-theme-temporary-id file-data)])
+      (assoc :token-theme-temporary-id id)
+      (update :token-themes-index assoc id token-theme)))
+
+(defn delete-temporary-token-theme
+  [file-data token-theme-id]
+  (cond-> file-data
+    (= (:token-theme-temporary-id file-data) token-theme-id) (dissoc :token-theme-temporary-id)
+    :always (d/dissoc-in [:token-themes-index (:token-theme-temporary-id file-data)])))
+
 (defn add-token-theme
   [file-data {:keys [index id] :as token-theme}]
   (-> file-data

@@ -65,6 +65,9 @@
     [:map-of {:gen/max 5} :keyword ::ctpg/plugin-data]]
    [:token-theme-temporary-id {:optional true}
     ::sm/uuid]
+   [:token-active-themes {:optional true
+                          :default #{}}
+    [:set ::sm/uuid]]
    [:token-themes {:optional true}
     [:vector ::sm/uuid]]
    [:token-themes-index {:optional true}

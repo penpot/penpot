@@ -17,8 +17,26 @@
     (->> (map #(get themes-index %) themes)
          (group-by :group))))
 
-(defn theme-selected? [theme]
-  (= :enabled (:selected theme)))
+(defn get-active-theme-ids [state]
+  (:token-active-themes state))
+
+(defn get-temp-theme-id [state]
+  (:token-theme-temporary-id state))
+
+(defn update-theme-id
+  [state]
+  (let [active-themes (get-active-theme-ids state)
+        temporary-theme-id (get-temp-theme-id state)]
+    (cond
+      (empty? active-themes) temporary-theme-id
+      (= 1 (count active-themes)) (first active-themes)
+      :else temporary-theme-id)))
+
+(defn get-workspace-token-theme [id state]
+  (get-in state (get-in state [:workspace-data :token-sets-index id])))
+
+(defn add-token-set-to-token-theme [token-set-id token-theme]
+  (update token-theme :sets conj token-set-id))
 
  ;; Sets ------------------------------------------------------------------------
 

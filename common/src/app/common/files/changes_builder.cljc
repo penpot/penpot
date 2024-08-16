@@ -695,6 +695,13 @@
         (update :undo-changes conj {:type :add-typography :typography prev-typography})
         (apply-changes-local))))
 
+(defn add-temporary-token-theme
+  [changes token-theme]
+  (-> changes
+      (update :redo-changes conj {:type :add-temporary-token-theme :token-theme token-theme})
+      (update :undo-changes conj {:type :delete-temporary-token-theme :id (:id token-theme)})
+      (apply-changes-local)))
+
 (defn add-token-theme
   [changes token-theme]
   (-> changes

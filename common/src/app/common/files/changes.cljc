@@ -249,6 +249,16 @@
       [:type [:= :del-typography]]
       [:id ::sm/uuid]]]
 
+    [:add-temporary-token-theme
+     [:map {:title "AddTemporaryTokenThemeChange"}
+      [:type [:= :add-temporary-token-theme]]
+      [:token-theme ::ctot/token-theme]]]
+
+    [:delete-temporary-token-theme
+     [:map {:title "DeleteTemporaryTokenThemeChange"}
+      [:type [:= :delete-temporary-token-theme]]
+      [:id ::sm/uuid]]]
+
     [:add-token-theme
      [:map {:title "AddTokenThemeChange"}
       [:type [:= :add-token-theme]]
@@ -775,6 +785,14 @@
 (defmethod process-change :del-token
   [data {:keys [id]}]
   (ctol/delete-token data id))
+
+(defmethod process-change :add-temporary-token-theme
+  [data {:keys [token-theme]}]
+  (ctotl/add-temporary-token-theme data token-theme))
+
+(defmethod process-change :delete-temporary-token-theme
+  [data {:keys [id]}]
+  (ctotl/delete-temporary-token-theme data id))
 
 (defmethod process-change :add-token-theme
   [data {:keys [token-theme]}]

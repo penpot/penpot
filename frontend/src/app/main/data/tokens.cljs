@@ -147,17 +147,31 @@
               selected-token-set-id (if create-set?
                                       (:id new-token-set)
                                       (:id token-set))
-              changes (cond
-                        create-set? (-> token-changes
-                                        (pcb/add-token-set new-token-set))
-                        :else (let [updated-token-set (if (contains? token-set (:id token))
-                                                        token-set
-                                                        (update token-set :tokens conj (:id token)))]
-                                (-> token-changes
-                                    (pcb/update-token-set updated-token-set token-set))))]
+              set-changes (cond
+                            create-set? (-> token-changes
+                                            (pcb/add-token-set new-token-set))
+                            :else (let [updated-token-set (if (contains? token-set (:id token))
+                                                            token-set
+                                                            (update token-set :tokens conj (:id token)))]
+                                    (-> token-changes
+                                        (pcb/update-token-set updated-token-set token-set))))
+              theme-id (wtts/update-theme-id state)
+              theme (some-> theme-id (wtts/get-workspace-token-theme state))
+              theme-changes (cond
+                              (not theme-id) (-> set-changes
+                                                 (pcb/add-temporary-token-theme
+
+                                                  {:id (uuid/next)
+                                                   :name ""
+                                                   :sets #{selected-token-set-id}}))
+                              create-set? (-> set-changes
+                                              (pcb/update-token-theme
+                                               (wtts/add-token-set-to-token-theme selected-token-set-id theme)
+                                               theme))
+                              :else set-changes)]
           (rx/of
            (set-selected-token-set-id selected-token-set-id)
-           (dch/commit-changes changes)))))))
+           (dch/commit-changes theme-changes)))))))
 
 (defn delete-token
   [id]
