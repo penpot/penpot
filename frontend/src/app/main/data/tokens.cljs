@@ -134,6 +134,18 @@
           (rx/of
            (dch/commit-changes changes)))))))
 
+(defn toggle-token-set [token-set-id]
+  (ptk/reify ::toggle-token-set
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [theme (some-> (wtts/update-theme-id state)
+                          (wtts/get-workspace-token-theme state))
+            changes (-> (pcb/empty-changes it)
+                        (pcb/update-token-theme
+                         (wtts/toggle-token-set-to-token-theme token-set-id theme)
+                         theme))]
+        (rx/of (dch/commit-changes changes))))))
+
 (defn delete-token-set [token-set-id]
   (ptk/reify ::delete-token-set
     ptk/WatchEvent

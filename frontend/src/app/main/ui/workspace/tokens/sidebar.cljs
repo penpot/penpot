@@ -178,10 +178,11 @@
      {:style {:display "flex"
               :flex-direction "column"
               :gap "10px"
-              :max-height "350px"
+              :max-height "60vh"
               :overflow "auto"
               :border-bottom "2px solid grey"
-              :padding "10px"}}
+              :padding "10px"
+              :margin-bottom "50px"}}
 
      (str "Themes (selected: " selected-theme-id ")")
      [:div
@@ -222,6 +223,10 @@
           [:div {:style {:display "flex"
                          :gap "5px"}}
            [:button
+            {:on-click (fn [e]
+                         (dom/prevent-default e)
+                         (dom/stop-propagation e)
+                         (st/emit! (wdt/toggle-token-set id)))}
             (if (wtts/token-set-enabled-in-theme? id selected-theme)
               "👁️"
               " ")]
