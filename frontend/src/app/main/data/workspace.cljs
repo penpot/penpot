@@ -47,7 +47,6 @@
    [app.main.data.workspace.collapse :as dwco]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.edition :as dwe]
-   [app.main.data.workspace.fix-bool-contents :as fbc]
    [app.main.data.workspace.fix-broken-shapes :as fbs]
    [app.main.data.workspace.fix-deleted-fonts :as fdf]
    [app.main.data.workspace.groups :as dwg]
@@ -129,7 +128,6 @@
        (when (and (not (boolean (-> state :profile :props :v2-info-shown)))
                   (features/active-feature? state "components/v2"))
          (modal/show :v2-info {}))
-       (fbc/fix-bool-contents)
        (fdf/fix-deleted-fonts)
        (fbs/fix-broken-shapes)))))
 
