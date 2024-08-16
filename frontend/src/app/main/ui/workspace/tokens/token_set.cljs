@@ -18,10 +18,10 @@
          (group-by :group))))
 
 (defn get-active-theme-ids [state]
-  (:token-active-themes state))
+  (get-in state [:workspace-data :token-active-themes]))
 
 (defn get-temp-theme-id [state]
-  (:token-theme-temporary-id state))
+  (get-in state [:workspace-data :token-theme-temporary-id]))
 
 (defn update-theme-id
   [state]
@@ -33,7 +33,7 @@
       :else temporary-theme-id)))
 
 (defn get-workspace-token-theme [id state]
-  (get-in state (get-in state [:workspace-data :token-sets-index id])))
+  (get-in state [:workspace-data :token-themes-index id]))
 
 (defn add-token-set-to-token-theme [token-set-id token-theme]
   (update token-theme :sets conj token-set-id))
