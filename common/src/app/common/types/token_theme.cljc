@@ -11,7 +11,8 @@
 (sm/register! ::token-theme
   [:map {:title "TokenTheme"}
    [:id ::sm/uuid]
-   [:name :string]
+   [:group {:optional true} :string]
+   [:selected [:enum :enabled :disabled #_:source]]
    [:description {:optional true} :string]
    [:modified-at {:optional true} ::sm/inst]
    [:sets [:set {:gen/max 10 :gen/min 1} ::sm/uuid]]])
