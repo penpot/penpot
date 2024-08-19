@@ -39,7 +39,8 @@
         form    (fm/use-form :schema schema:register-form
                              :initial initial)
 
-        submitted? (mf/use-state false)
+        submitted?
+        (mf/use-state false)
 
         on-error
         (mf/use-fn
@@ -176,7 +177,9 @@
    ::mf/private true}
   [{:keys [params on-success-callback]}]
   (let [form       (fm/use-form :schema schema:register-validate-form :initial params)
-        submitted? (mf/use-state false)
+
+        submitted?
+        (mf/use-state false)
 
         on-success
         (mf/use-fn
@@ -208,7 +211,13 @@
          (mf/deps on-success on-error)
          (fn [form _]
            (reset! submitted? true)
-           (let [params (:clean-data @form)]
+           (let [create-welcome-file?
+                 (cf/external-feature-flag "onboarding-03" "test")
+
+                 params
+                 (cond-> (:clean-data @form)
+                   create-welcome-file? (assoc :create-welcome-file true))]
+
              (->> (rp/cmd! :register-profile params)
                   (rx/finalize #(reset! submitted? false))
                   (rx/subs! on-success on-error)))))]

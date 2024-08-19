@@ -44,7 +44,30 @@
 (mf/defc main-page
   {::mf/props :obj}
   [{:keys [route profile]}]
-  (let [{:keys [data params]} route]
+  (let [{:keys [data params]} route
+        props (get profile :props)
+        show-question-modal?
+        (and (contains? cf/flags :onboarding)
+             (not (:onboarding-viewed props))
+             (not (contains? props :onboarding-questions)))
+
+        show-newsletter-modal?
+        (and (contains? cf/flags :onboarding)
+             (not (:onboarding-viewed props))
+             (not (contains? props :newsletter-updates))
+             (contains? props :onboarding-questions))
+
+        show-team-modal?
+        (and (contains? cf/flags :onboarding)
+             (not (:onboarding-viewed props))
+             (not (contains? props :onboarding-team-id))
+             (contains? props :newsletter-updates))
+
+        show-release-modal?
+        (and (contains? cf/flags :onboarding)
+             (:onboarding-viewed props)
+             (not= (:release-notes-viewed props) (:main cf/version))
+             (not= "0.0" (:main cf/version)))]
     [:& (mf/provider ctx/current-route) {:value route}
      (case (:name data)
        (:auth-login
@@ -84,42 +107,19 @@
         #_[:& app.main.ui.onboarding/onboarding-templates-modal]
         #_[:& app.main.ui.onboarding/onboarding-modal]
         #_[:& app.main.ui.onboarding.team-choice/onboarding-team-modal]
-        (when-let [props (get profile :props)]
-          (let [show-question-modal?
-                (and (contains? cf/flags :onboarding)
-                     (not (:onboarding-viewed props))
-                     (not (contains? props :onboarding-questions)))
 
-                show-newsletter-modal?
-                (and (contains? cf/flags :onboarding)
-                     (not (:onboarding-viewed props))
-                     (not (contains? props :newsletter-updates))
-                     (contains? props :onboarding-questions))
+        (cond
+          show-question-modal?
+          [:& questions-modal]
 
-                show-team-modal?
-                (and (contains? cf/flags :onboarding)
-                     (not (:onboarding-viewed props))
-                     (not (contains? props :onboarding-team-id))
-                     (contains? props :newsletter-updates))
+          show-newsletter-modal?
+          [:& onboarding-newsletter]
 
-                show-release-modal?
-                (and (contains? cf/flags :onboarding)
-                     (:onboarding-viewed props)
-                     (not= (:release-notes-viewed props) (:main cf/version))
-                     (not= "0.0" (:main cf/version)))]
+          show-team-modal?
+          [:& onboarding-team-modal {:go-to-team? true}]
 
-            (cond
-              show-question-modal?
-              [:& questions-modal]
-
-              show-newsletter-modal?
-              [:& onboarding-newsletter]
-
-              show-team-modal?
-              [:& onboarding-team-modal]
-
-              show-release-modal?
-              [:& release-notes-modal {:version (:main cf/version)}])))
+          show-release-modal?
+          [:& release-notes-modal {:version (:main cf/version)}])
 
         [:& dashboard-page {:route route :profile profile}]]
        :viewer
@@ -154,6 +154,20 @@
              page-id    (some-> params :query :page-id uuid)
              layout     (some-> params :query :layout keyword)]
          [:? {}
+          (when (cf/external-feature-flag "onboarding-03" "test")
+            (cond
+              show-question-modal?
+              [:& questions-modal]
+
+              show-newsletter-modal?
+              [:& onboarding-newsletter]
+
+              show-team-modal?
+              [:& onboarding-team-modal {:go-to-team? false}]
+
+              show-release-modal?
+              [:& release-notes-modal {:version (:main cf/version)}]))
+
           [:& workspace-page {:project-id project-id
                               :file-id file-id
                               :page-id page-id

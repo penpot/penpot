@@ -36,4 +36,7 @@
   :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Open-Color-Scheme.penpot"}
  {:id "flex-layout-playground"
   :name "Flex Layout Playground"
-  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Flex-Layout-Playground.penpot"}]
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/Flex-Layout-Playground.penpot"}
+ {:id "welcome"
+  :name "Welcome"
+  :file-uri "https://github.com/penpot/penpot-files/raw/binary-files/welcome.penpot"}]
