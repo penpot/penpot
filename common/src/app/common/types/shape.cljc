@@ -125,7 +125,7 @@
 
 (sm/register! ::stroke schema:stroke)
 
-(def ^:private schema:shape-base-attrs
+(def schema:shape-base-attrs
   [:map {:title "ShapeMinimalRecord"}
    [:id ::sm/uuid]
    [:name :string]
@@ -137,13 +137,14 @@
    [:parent-id ::sm/uuid]
    [:frame-id ::sm/uuid]])
 
-(def ^:private schema:shape-geom-attrs
+(def schema:shape-geom-attrs
   [:map {:title "ShapeGeometryAttrs"}
    [:x ::sm/safe-number]
    [:y ::sm/safe-number]
    [:width ::sm/safe-number]
    [:height ::sm/safe-number]])
 
+;; FIXME: rename to shape-generic-attrs
 (def schema:shape-attrs
   [:map {:title "ShapeAttrs"}
    [:component-id {:optional true}  ::sm/uuid]
@@ -159,7 +160,6 @@
    [:masked-group {:optional true} :boolean]
    [:fills {:optional true}
     [:vector {:gen/max 2} schema:fill]]
-   [:hide-fill-on-export {:optional true} :boolean]
    [:proportion {:optional true} ::sm/safe-number]
    [:proportion-lock {:optional true} :boolean]
    [:constraints-h {:optional true}
@@ -193,12 +193,10 @@
 
 (def schema:group-attrs
   [:map {:title "GroupAttrs"}
-   [:type [:= :group]]
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]])
 
 (def ^:private schema:frame-attrs
   [:map {:title "FrameAttrs"}
-   [:type [:= :frame]]
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
    [:hide-fill-on-export {:optional true} :boolean]
    [:show-content {:optional true} :boolean]
@@ -206,26 +204,21 @@
 
 (def ^:private schema:bool-attrs
   [:map {:title "BoolAttrs"}
-   [:type [:= :bool]]
    [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
    [:bool-type [::sm/one-of bool-types]]
    [:bool-content ::ctsp/content]])
 
 (def ^:private schema:rect-attrs
-  [:map {:title "RectAttrs"}
-   [:type [:= :rect]]])
+  [:map {:title "RectAttrs"}])
 
 (def ^:private schema:circle-attrs
-  [:map {:title "CircleAttrs"}
-   [:type [:= :circle]]])
+  [:map {:title "CircleAttrs"}])
 
 (def ^:private schema:svg-raw-attrs
-  [:map {:title "SvgRawAttrs"}
-   [:type [:= :svg-raw]]])
+  [:map {:title "SvgRawAttrs"}])
 
 (def schema:image-attrs
   [:map {:title "ImageAttrs"}
-   [:type [:= :image]]
    [:metadata
     [:map
      [:width {:gen/gen (sg/small-int :min 1)} :int]
@@ -238,12 +231,10 @@
 
 (def ^:private schema:path-attrs
   [:map {:title "PathAttrs"}
-   [:type [:= :path]]
    [:content ::ctsp/content]])
 
 (def ^:private schema:text-attrs
   [:map {:title "TextAttrs"}
-   [:type [:= :text]]
    [:content {:optional true} [:maybe ::ctsx/content]]])
 
 (defn- decode-shape
