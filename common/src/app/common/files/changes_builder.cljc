@@ -702,6 +702,13 @@
       (update :undo-changes conj {:type :delete-temporary-token-theme :id (:id token-theme)})
       (apply-changes-local)))
 
+(defn update-active-token-themes
+  [changes token-active-theme-ids prev-token-active-theme-ids]
+  (-> changes
+      (update :redo-changes conj {:type :update-active-token-themes :theme-ids token-active-theme-ids})
+      (update :undo-changes conj {:type :update-active-token-themes :theme-ids prev-token-active-theme-ids})
+      (apply-changes-local)))
+
 (defn add-token-theme
   [changes token-theme]
   (-> changes

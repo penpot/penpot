@@ -208,8 +208,9 @@
                  [:button
                   {:on-click (fn [e]
                                (dom/prevent-default e)
-                               (dom/stop-propagation e))}
-                  (if (some-> active-theme-ids (get id)) "✅" "❎")]
+                               (dom/stop-propagation e)
+                               (st/emit! (wdt/toggle-token-theme id)))}
+                  (if (get active-theme-ids id) "✅" "❎")]
                  [:button {:on-click (fn [e]
                                        (dom/prevent-default e)
                                        (dom/stop-propagation e)

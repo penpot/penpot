@@ -14,6 +14,10 @@
   [token-set]
   (assoc token-set :modified-at (dt/now)))
 
+(defn assoc-active-token-themes
+  [file-data theme-ids]
+  (assoc file-data :token-active-themes theme-ids))
+
 (defn add-temporary-token-theme
   [file-data {:keys [id] :as token-theme}]
   (-> file-data

@@ -18,10 +18,21 @@
          (group-by :group))))
 
 (defn get-active-theme-ids [state]
-  (get-in state [:workspace-data :token-active-themes]))
+  (get-in state [:workspace-data :token-active-themes] #{}))
 
 (defn get-temp-theme-id [state]
   (get-in state [:workspace-data :token-theme-temporary-id]))
+
+(defn toggle-active-theme-id [theme-id state]
+  (let [temp-theme-id (get-temp-theme-id state)
+        themes (get-active-theme-ids state)
+        theme-without-temp (disj themes temp-theme-id)
+        new-themes (if (get theme-without-temp theme-id)
+                     (disj theme-without-temp theme-id)
+                     (conj theme-without-temp theme-id))]
+    (if (empty? new-themes)
+      #{temp-theme-id}
+      new-themes)))
 
 (defn update-theme-id
   [state]

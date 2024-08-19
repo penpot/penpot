@@ -254,6 +254,11 @@
       [:type [:= :add-temporary-token-theme]]
       [:token-theme ::ctot/token-theme]]]
 
+    [:update-active-token-themes
+     [:map {:title "UpdateActiveTokenThemes"}
+      [:type [:= :update-active-token-themes]]
+      [:theme-ids [:set ::sm/uuid]]]]
+
     [:delete-temporary-token-theme
      [:map {:title "DeleteTemporaryTokenThemeChange"}
       [:type [:= :delete-temporary-token-theme]]
@@ -789,6 +794,10 @@
 (defmethod process-change :add-temporary-token-theme
   [data {:keys [token-theme]}]
   (ctotl/add-temporary-token-theme data token-theme))
+
+(defmethod process-change :update-active-token-themes
+  [data {:keys [theme-ids]}]
+  (ctotl/assoc-active-token-themes data theme-ids))
 
 (defmethod process-change :delete-temporary-token-theme
   [data {:keys [id]}]

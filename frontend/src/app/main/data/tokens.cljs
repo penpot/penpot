@@ -118,6 +118,16 @@
                    theme))
      :else changes)))
 
+(defn toggle-token-theme [token-theme-id]
+  (ptk/reify ::toggle-token-theme
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [themes (wtts/get-active-theme-ids state)
+            new-themes (wtts/toggle-active-theme-id token-theme-id state)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/update-active-token-themes new-themes themes))]
+        (rx/of (dch/commit-changes changes))))))
+
 (defn create-token-set [token-set]
   (let [new-token-set (merge
                        {:id (uuid/next)
