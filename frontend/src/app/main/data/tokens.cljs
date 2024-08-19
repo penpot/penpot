@@ -16,12 +16,12 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.token :as wtt]
+   [app.main.ui.workspace.tokens.token-set :as wtts]
+   [app.main.ui.workspace.tokens.update :as wtu]
    [beicon.v2.core :as rx]
    [clojure.data :as data]
    [cuerdas.core :as str]
-   [potok.v2.core :as ptk]
-   [app.main.ui.workspace.tokens.changes :as wdt]
-   [app.main.ui.workspace.tokens.token-set :as wtts]))
+   [potok.v2.core :as ptk]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
@@ -126,7 +126,9 @@
             new-themes (wtts/toggle-active-theme-id token-theme-id state)
             changes (-> (pcb/empty-changes it)
                         (pcb/update-active-token-themes new-themes themes))]
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of
+         (dch/commit-changes changes)
+         (wtu/update-workspace-tokens))))))
 
 (defn delete-token-theme [token-theme-id]
   (ptk/reify ::delete-token-theme
@@ -136,7 +138,9 @@
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/delete-token-theme token-theme-id))]
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of
+         (dch/commit-changes changes)
+         (wtu/update-workspace-tokens))))))
 
 (defn create-token-set [token-set]
   (let [new-token-set (merge
@@ -165,7 +169,9 @@
                          (wtts/toggle-token-set-to-token-theme token-set-id theme)
                          theme)
                         (pcb/update-active-token-themes #{(wtts/update-theme-id state)} (wtts/get-active-theme-ids state)))]
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of
+         (dch/commit-changes changes)
+         (wtu/update-workspace-tokens))))))
 
 (defn delete-token-set [token-set-id]
   (ptk/reify ::delete-token-set
@@ -175,7 +181,9 @@
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/delete-token-set token-set-id))]
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of
+         (dch/commit-changes changes)
+         (wtu/update-workspace-tokens))))))
 
 (defn update-create-token
   [token]

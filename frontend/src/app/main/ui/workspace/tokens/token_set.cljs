@@ -1,6 +1,8 @@
 (ns app.main.ui.workspace.tokens.token-set
   (:require
-    [clojure.set :as set]))
+   [app.common.data :refer [ordered-map]]
+   [app.main.ui.workspace.tokens.token :as wtt]
+   [clojure.set :as set]))
 
 ;; Themes ----------------------------------------------------------------------
 
@@ -102,15 +104,16 @@
 
  ;; Sets ------------------------------------------------------------------------
 
-(defn get-workspace-tokens [state]
-  (get-in state [:workspace-data :tokens]))
-
 (defn get-workspace-sets [state]
   (get-in state [:workspace-data :token-sets-index]))
 
 (defn get-token-set [set-id state]
   (some-> (get-workspace-sets state)
           (get set-id)))
+
+(defn get-workspace-token-set-tokens [set-id state]
+  (-> (get-token-set set-id state)
+      :tokens))
 
 (def default-token-set-name "Global")
 
@@ -129,11 +132,22 @@
 
 (defn get-selected-token-set-tokens [state]
   (when-let [token-set (get-selected-token-set state)]
-    (let [tokens (or (get-workspace-tokens state) {})]
+    (let [tokens (or (wtt/get-workspace-tokens state) {})]
+      (js/console.log "token-set" token-set (select-keys tokens (:tokens token-set)))
       (select-keys tokens (:tokens token-set)))))
-
-(defn get-token-set-tokens [{:keys [tokens] :as token-set} file]
-  (map #(get-in file [:data :tokens %]) tokens))
 
 (defn assoc-selected-token-set-id [state id]
   (assoc-in state [:workspace-local :selected-token-set-id] id))
+
+(defn get-active-theme-sets-tokens-names-map [state]
+  (let [active-set-ids (get-active-set-ids state)]
+    (reduce
+     (fn [names-map-acc set-id]
+       (let [token-ids (get-workspace-token-set-tokens set-id state)]
+         (reduce
+          (fn [acc token-id]
+            (if-let [token (wtt/get-workspace-token token-id state)]
+              (assoc acc (wtt/token-identifier token) token)
+              acc))
+          names-map-acc token-ids)))
+     (ordered-map) active-set-ids)))

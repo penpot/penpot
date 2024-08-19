@@ -101,7 +101,7 @@
         selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         selection-parents     (mf/deref selection-parents-ref)
 
-        tokens (-> (mf/deref refs/workspace-tokens)
+        tokens (-> (mf/deref refs/get-active-theme-sets-tokens)
                    (sd/use-resolved-tokens))
         tokens-by-type (mf/use-memo (mf/deps tokens) #(wtc/group-tokens-by-type tokens))
 

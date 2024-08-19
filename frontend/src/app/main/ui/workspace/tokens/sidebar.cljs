@@ -21,15 +21,12 @@
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
-   [app.main.ui.workspace.tokens.token-set :as wtts]
    [app.main.ui.workspace.tokens.token-types :as wtty]
-   [app.main.ui.workspace.tokens.update :as wtu]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]
-   [shadow.resource]
-   [clojure.set :as set]))
+   [shadow.resource]))
 
 (def lens:token-type-open-status
   (l/derived (l/in [:workspace-tokens :open-status]) st/state))
@@ -223,8 +220,7 @@
          [:li {:class [(when (= selected-token-set-id id) "selected")]
                :on-click (fn []
                            (st/emit!
-                            (wdt/set-selected-token-set-id id)
-                            (wtu/update-workspace-tokens)))}
+                            (wdt/set-selected-token-set-id id)))}
           [:div.spaced
            name
            [:div.spaced
@@ -248,9 +244,9 @@
         selected (mf/deref refs/selected-shapes)
         selected-shapes (into [] (keep (d/getf objects)) selected)
 
-        tokens (-> (mf/deref refs/workspace-tokens)
-                   (sd/use-resolved-tokens))
+        tokens (sd/use-resolved-workspace-tokens)
         token-groups (mf/with-memo [tokens]
+                       (js/console.log "tokens" tokens)
                        (sorted-token-groups tokens))]
     [:article
      [:& token-sets]

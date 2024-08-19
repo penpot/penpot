@@ -121,7 +121,10 @@
     ptk/WatchEvent
     (watch [_ state _]
       (->>
-       (rx/from (wtsd/resolve-tokens+ (wtts/get-selected-token-set-tokens state)))
+       (rx/from
+        (->
+          (wtts/get-active-theme-sets-tokens-names-map state)
+          (wtsd/resolve-tokens+)))
        (rx/mapcat
         (fn [sd-tokens]
           (let [undo-id (js/Symbol)]

@@ -259,6 +259,9 @@
    st/state
    =))
 
+(def get-active-theme-sets-tokens
+  (l/derived wtts/get-active-theme-sets-tokens-names-map st/state =))
+
 (def workspace-tokens
   (l/derived
    (fn [data]
