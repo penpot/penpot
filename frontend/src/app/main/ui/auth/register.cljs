@@ -136,7 +136,8 @@
    (when login/show-alt-login-buttons?
      [:& login/login-buttons {:params params}])
    [:hr {:class (stl/css :separator)}]
-   [:& register-form {:params params :on-success-callback on-success-callback}]])
+   (when (contains? cf/flags :login-with-password)
+     [:& register-form {:params params :on-success-callback on-success-callback}])])
 
 (mf/defc register-page
   {::mf/props :obj}

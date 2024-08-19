@@ -505,6 +505,54 @@
           (t/is (nil? (:error out)))
           (t/is (= 0 (:call-count @mock))))))))
 
+(t/deftest prepare-and-register-with-invitation-and-enabled-registration-1
+  (let [sprops (:app.setup/props th/*system*)
+        itoken (tokens/generate sprops
+                                {:iss :team-invitation
+                                 :exp (dt/in-future "48h")
+                                 :role :editor
+                                 :team-id uuid/zero
+                                 :member-email "user@example.com"})
+        data  {::th/type :prepare-register-profile
+               :invitation-token itoken
+               :email "user@example.com"
+               :password "foobar"}
+
+        {:keys [result error] :as out} (th/command! data)]
+    (t/is (nil? error))
+    (t/is (map? result))
+    (t/is (string? (:token result)))
+
+    (let [rtoken (:token result)
+          data   {::th/type :register-profile
+                  :token rtoken
+                  :fullname "foobar"}
+
+          {:keys [result error] :as out} (th/command! data)]
+        ;; (th/print-result! out)
+      (t/is (nil? error))
+      (t/is (map? result))
+      (t/is (string? (:invitation-token result))))))
+
+(t/deftest prepare-and-register-with-invitation-and-enabled-registration-2
+  (let [sprops (:app.setup/props th/*system*)
+        itoken (tokens/generate sprops
+                                {:iss :team-invitation
+                                 :exp (dt/in-future "48h")
+                                 :role :editor
+                                 :team-id uuid/zero
+                                 :member-email "user2@example.com"})
+
+        data  {::th/type :prepare-register-profile
+               :invitation-token itoken
+               :email "user@example.com"
+               :password "foobar"}
+        out   (th/command! data)]
+
+    (t/is (not (th/success? out)))
+    (let [edata (-> out :error ex-data)]
+      (t/is (= :restriction (:type edata)))
+      (t/is (= :email-does-not-match-invitation (:code edata))))))
 
 (t/deftest prepare-and-register-with-invitation-and-disabled-registration-1
   (with-redefs [app.config/flags [:disable-registration]]
@@ -519,22 +567,12 @@
                  :invitation-token itoken
                  :email "user@example.com"
                  :password "foobar"}
+          out (th/command! data)]
 
-          {:keys [result error] :as out} (th/command! data)]
-      (t/is (nil? error))
-      (t/is (map? result))
-      (t/is (string? (:token result)))
-
-      (let [rtoken (:token result)
-            data   {::th/type :register-profile
-                    :token rtoken
-                    :fullname "foobar"}
-
-            {:keys [result error] :as out} (th/command! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? error))
-        (t/is (map? result))
-        (t/is (string? (:invitation-token result)))))))
+      (t/is (not (th/success? out)))
+      (let [edata (-> out :error ex-data)]
+        (t/is (= :restriction (:type edata)))
+        (t/is (= :registration-disabled (:code edata)))))))
 
 (t/deftest prepare-and-register-with-invitation-and-disabled-registration-2
   (with-redefs [app.config/flags [:disable-registration]]
@@ -555,7 +593,28 @@
       (t/is (not (th/success? out)))
       (let [edata (-> out :error ex-data)]
         (t/is (= :restriction (:type edata)))
-        (t/is (= :email-does-not-match-invitation (:code edata)))))))
+        (t/is (= :registration-disabled (:code edata)))))))
+
+(t/deftest prepare-and-register-with-invitation-and-disabled-login-with-password
+  (with-redefs [app.config/flags [:disable-login-with-password]]
+    (let [sprops (:app.setup/props th/*system*)
+          itoken (tokens/generate sprops
+                                  {:iss :team-invitation
+                                   :exp (dt/in-future "48h")
+                                   :role :editor
+                                   :team-id uuid/zero
+                                   :member-email "user2@example.com"})
+
+          data  {::th/type :prepare-register-profile
+                 :invitation-token itoken
+                 :email "user@example.com"
+                 :password "foobar"}
+          out   (th/command! data)]
+
+      (t/is (not (th/success? out)))
+      (let [edata (-> out :error ex-data)]
+        (t/is (= :restriction (:type edata)))
+        (t/is (= :registration-disabled (:code edata)))))))
 
 (t/deftest prepare-register-with-registration-disabled
   (with-redefs [app.config/flags #{}]
