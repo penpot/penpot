@@ -171,7 +171,7 @@
               :id "right-sidebar-aside"
               :data-testid "right-sidebar"
               :data-size (str size)
-              :style #js {"--width" (if can-be-expanded? (dm/str size "px") 276)}}
+              :style #js {"--width" (if can-be-expanded? (dm/str size "px") "276px")}}
       (when can-be-expanded?
         [:div {:class (stl/css :resize-area)
                :on-pointer-down on-pointer-down

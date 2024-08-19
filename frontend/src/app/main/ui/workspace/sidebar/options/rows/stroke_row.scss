@@ -8,48 +8,50 @@
 
 .stroke-data {
   @include flexColumn;
-  .stroke-options {
-    @include flexRow;
-    .stroke-width-input-element {
-      @extend .input-element;
-      @include bodySmallTypography;
-      width: $s-60;
-    }
-    .select-wrapper {
-      width: $s-124;
-    }
-  }
-  .stroke-caps-options {
-    @include flexRow;
-    .cap-select {
-      width: $s-124;
-    }
-    .stroke-cap-dropdown,
-    .stroke-cap-dropdown-start {
-      min-width: $s-124;
-      width: fit-content;
-      max-width: $s-252;
-      right: 0;
-      left: unset;
-    }
 
-    .stroke-cap-dropdown-start {
-      left: 0;
-      right: unset;
-    }
-    .swap-caps-btn {
-      @extend .button-secondary;
-      height: $s-32;
-      width: $s-28;
-      svg {
-        @extend .button-icon;
-      }
-    }
-  }
   &.dnd-over-top {
     border-top: $s-1 solid var(--layer-row-foreground-color-drag);
   }
   &.dnd-over-bot {
     border-bottom: $s-1 solid var(--layer-row-foreground-color-drag);
+  }
+}
+
+.stroke-options {
+  @include flexRow;
+  display: grid;
+  grid-template-columns: 1fr 2fr 2fr;
+
+  .stroke-width-input-element {
+    @extend .input-element;
+    @include bodySmallTypography;
+  }
+}
+.stroke-caps-options {
+  @include flexRow;
+}
+
+.cap-select {
+  width: $s-124;
+}
+.stroke-cap-dropdown,
+.stroke-cap-dropdown-start {
+  min-width: $s-124;
+  width: fit-content;
+  max-width: $s-252;
+  right: 0;
+  left: unset;
+}
+
+.stroke-cap-dropdown-start {
+  left: 0;
+  right: unset;
+}
+.swap-caps-btn {
+  @extend .button-secondary;
+  height: $s-32;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
   }
 }

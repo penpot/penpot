@@ -59,11 +59,11 @@ $width-settings-bar-max: $s-500;
 
 .right-settings-bar {
   grid-area: right-sidebar;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100vh;
   width: $width-settings-bar;
   background-color: var(--panel-background-color);
-  height: 100%;
-  display: flex;
-  flex-direction: column;
   z-index: 0;
   &.not-expand {
     max-width: $width-settings-bar;

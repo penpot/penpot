@@ -17,3 +17,7 @@
   overflow-x: hidden;
   scrollbar-gutter: stable;
 }
+
+.workspace-element-options {
+  height: calc(100vh - #{$s-164}); // TODO: Fix this hardcoded value
+}
