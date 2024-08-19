@@ -163,7 +163,8 @@
             changes (-> (pcb/empty-changes it)
                         (pcb/update-token-theme
                          (wtts/toggle-token-set-to-token-theme token-set-id theme)
-                         theme))]
+                         theme)
+                        (pcb/update-active-token-themes #{(wtts/update-theme-id state)} (wtts/get-active-theme-ids state)))]
         (rx/of (dch/commit-changes changes))))))
 
 (defn delete-token-set [token-set-id]

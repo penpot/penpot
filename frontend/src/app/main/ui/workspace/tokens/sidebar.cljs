@@ -28,7 +28,8 @@
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]
-   [shadow.resource]))
+   [shadow.resource]
+   [clojure.set :as set]))
 
 (def lens:token-type-open-status
   (l/derived (l/in [:workspace-tokens :open-status]) st/state))
@@ -168,10 +169,14 @@
 (mf/defc token-sets
   [_props]
   (let [active-theme-ids (mf/deref refs/workspace-active-theme-ids)
-        selected-theme-id (mf/deref refs/workspace-active-theme-id)
         themes (mf/deref refs/workspace-ordered-token-themes)
         themes-index (mf/deref refs/workspace-token-themes)
-        selected-theme (get themes-index selected-theme-id)
+        active-set-ids (reduce
+                        (fn [acc cur]
+                          (if-let [sets (get-in themes-index [cur :sets])]
+                            (set/union acc sets)
+                            acc))
+                        #{} active-theme-ids)
         selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)
         token-sets (mf/deref refs/workspace-token-sets)]
     [:div
@@ -234,7 +239,7 @@
                           (dom/prevent-default e)
                           (dom/stop-propagation e)
                           (st/emit! (wdt/toggle-token-set id)))}
-             (when (wtts/token-set-enabled-in-theme? id selected-theme) "👁️")]
+             (when (get active-set-ids id) "👁️")]
             [:button {:on-click (fn [e]
                                   (dom/prevent-default e)
                                   (dom/stop-propagation e)

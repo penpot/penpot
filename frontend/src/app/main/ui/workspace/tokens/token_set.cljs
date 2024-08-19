@@ -59,6 +59,13 @@
       (or temp-theme-id-set #{})
       new-themes)))
 
+(defn get-active-theme-ids-or-temp-theme-id
+  [state]
+  (let [active-theme-ids (get-active-theme-ids state)]
+    (if (seq active-theme-ids)
+      active-theme-ids
+      (get-temp-theme-id state))))
+
 (defn update-theme-id
   [state]
   (let [active-themes (get-active-theme-ids state)
