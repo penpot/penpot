@@ -170,14 +170,8 @@
   [_props]
   (let [active-theme-ids (mf/deref refs/workspace-active-theme-ids)
         themes (mf/deref refs/workspace-ordered-token-themes)
-        themes-index (mf/deref refs/workspace-token-themes)
-        active-set-ids (reduce
-                        (fn [acc cur]
-                          (if-let [sets (get-in themes-index [cur :sets])]
-                            (set/union acc sets)
-                            acc))
-                        #{} active-theme-ids)
         selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)
+        active-set-ids (mf/deref refs/workspace-active-set-ids)
         token-sets (mf/deref refs/workspace-token-sets)]
     [:div
      [:style
