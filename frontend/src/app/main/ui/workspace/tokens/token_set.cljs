@@ -1,4 +1,6 @@
-(ns app.main.ui.workspace.tokens.token-set)
+(ns app.main.ui.workspace.tokens.token-set
+  (:require
+    [clojure.set :as set]))
 
 ;; Themes ----------------------------------------------------------------------
 
@@ -23,16 +25,49 @@
 (defn get-temp-theme-id [state]
   (get-in state [:workspace-data :token-theme-temporary-id]))
 
+(defn theme-ids-with-group [theme-id state]
+  (let [themes (get-workspace-themes-index state)
+        theme-group (get-in themes [theme-id :group])
+        same-group-theme-ids (->> themes
+                                  (eduction
+                                   (map val)
+                                   (filter #(= (:group %) theme-group))
+                                   (map :id))
+                                  (into #{}))]
+    same-group-theme-ids))
+
 (defn toggle-active-theme-id [theme-id state]
-  (let [temp-theme-id (get-temp-theme-id state)
-        themes (get-active-theme-ids state)
-        theme-without-temp (disj themes temp-theme-id)
-        new-themes (if (get theme-without-temp theme-id)
-                     (disj theme-without-temp theme-id)
-                     (conj theme-without-temp theme-id))]
+  (let [temp-theme-id-set (some->> (get-temp-theme-id state) (conj #{}))
+        active-theme-ids (get-active-theme-ids state)
+        add? (not (get active-theme-ids theme-id))
+        ;; Deactivate themes with the same group when activating a theme
+        same-group-ids (when add? (theme-ids-with-group theme-id state))
+        theme-ids-without-same-group (set/difference active-theme-ids
+                                                     same-group-ids
+                                                     temp-theme-id-set)
+        new-themes (if add?
+                     (conj theme-ids-without-same-group theme-id)
+                     (disj theme-ids-without-same-group theme-id))]
     (if (empty? new-themes)
-      #{temp-theme-id}
+      (or temp-theme-id-set #{})
       new-themes)))
+
+(comment
+  (let [state {:workspace-data {:token-themes-index {1 {:id 1}}}}]
+    (toggle-active-theme-id 1 state))
+
+  (let [state {:workspace-data {:token-active-themes #{1}
+                                :token-themes-index {1 {:id 1}}}}]
+    (toggle-active-theme-id 1 state))
+
+  (let [state {:workspace-data {:token-active-themes #{2 3 4}
+                                :token-themes-index {1 {:id 1}
+                                                     2 {:id 2}
+                                                     3 {:id 3}
+                                                     4 {:id 4 :group :different}}}}]
+    (toggle-active-theme-id 1 state))
+  nil)
+
 
 (defn update-theme-id
   [state]
