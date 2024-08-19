@@ -727,7 +727,7 @@
   [changes token-theme-id]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
-        prev-token-theme (get-in library-data [:token-theme token-theme-id])]
+        prev-token-theme (get-in library-data [:token-themes-index token-theme-id])]
     (-> changes
         (update :redo-changes conj {:type :del-token-theme :id token-theme-id})
         (update :undo-changes conj {:type :add-token-theme :token-theme prev-token-theme})

@@ -214,7 +214,7 @@
                  [:button {:on-click (fn [e]
                                        (dom/prevent-default e)
                                        (dom/stop-propagation e)
-                                       (st/emit! (wdt/delete-token-set id)))}
+                                       (st/emit! (wdt/delete-token-theme id)))}
                   "🗑️"]]]])]])]]
       [:div.spaced
        [:b "Sets"]

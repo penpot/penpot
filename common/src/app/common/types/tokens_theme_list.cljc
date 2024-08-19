@@ -48,8 +48,11 @@
   (d/update-in-when file-data [:token-themes-index token-theme-id] #(-> (apply f % args) (touch))))
 
 (defn delete-token-theme
-  [file-data token-id]
-  file-data)
+  [file-data theme-id]
+  (-> file-data
+      (update :token-themes (fn [ids] (d/removev #(= % theme-id) ids)))
+      (update :token-themes-index dissoc theme-id)
+      (update :token-active-themes disj theme-id)))
 
 (defn add-token-set
   [file-data {:keys [index id] :as token-set}]
