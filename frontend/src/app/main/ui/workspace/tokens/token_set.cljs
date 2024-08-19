@@ -25,7 +25,10 @@
 (defn get-temp-theme-id [state]
   (get-in state [:workspace-data :token-theme-temporary-id]))
 
-(defn theme-ids-with-group [theme-id state]
+(defn theme-ids-with-group
+  "Returns set of theme-ids that share the same `:group` property as the theme with `theme-id`.
+  Will also return matching theme-ids without a `:group` property."
+  [theme-id state]
   (let [themes (get-workspace-themes-index state)
         theme-group (get-in themes [theme-id :group])
         same-group-theme-ids (->> themes
@@ -36,7 +39,11 @@
                                   (into #{}))]
     same-group-theme-ids))
 
-(defn toggle-active-theme-id [theme-id state]
+(defn toggle-active-theme-id
+  "Toggle a `theme-id` by checking `:token-active-themes`.
+  De-activate all theme-ids that have the same group as `theme-id` when activating `theme-id`.
+  Ensures that the temporary theme id is selected when the resulting set is empty."
+  [theme-id state]
   (let [temp-theme-id-set (some->> (get-temp-theme-id state) (conj #{}))
         active-theme-ids (get-active-theme-ids state)
         add? (not (get active-theme-ids theme-id))
