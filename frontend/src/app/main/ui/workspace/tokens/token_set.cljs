@@ -59,23 +59,6 @@
       (or temp-theme-id-set #{})
       new-themes)))
 
-(comment
-  (let [state {:workspace-data {:token-themes-index {1 {:id 1}}}}]
-    (toggle-active-theme-id 1 state))
-
-  (let [state {:workspace-data {:token-active-themes #{1}
-                                :token-themes-index {1 {:id 1}}}}]
-    (toggle-active-theme-id 1 state))
-
-  (let [state {:workspace-data {:token-active-themes #{2 3 4}
-                                :token-themes-index {1 {:id 1}
-                                                     2 {:id 2}
-                                                     3 {:id 3}
-                                                     4 {:id 4 :group :different}}}}]
-    (toggle-active-theme-id 1 state))
-  nil)
-
-
 (defn update-theme-id
   [state]
   (let [active-themes (get-active-theme-ids state)
