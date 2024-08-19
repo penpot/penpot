@@ -127,7 +127,5 @@
           (let [undo-id (js/Symbol)]
             (rx/concat
              (rx/of (dwu/start-undo-transaction undo-id))
-             (rx/concat
-              (->> (update-tokens sd-tokens)
-                   (rx/concat)))
+             (update-tokens sd-tokens)
              (rx/of (dwu/commit-undo-transaction undo-id))))))))))
