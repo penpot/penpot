@@ -90,12 +90,12 @@
          (when (and children (not @collapsed?))
            [:div {:class (stl/css :set-children)}
             (for [child-id children]
-                [:& sets-tree {:key child-id :set-id child-id :selected-set-id selected-set-id}])])]))))
+              [:& sets-tree {:key child-id :set-id child-id :selected-set-id selected-set-id}])])]))))
 
 (mf/defc sets-list
   [{:keys [selected-set-id]}]
-    [:ul {:class (stl/css :sets-list)}
-     (for [set-id sets-root-order]
-	       [:& sets-tree {:key set-id
-	                      :set-id set-id
-	                      :selected-set-id selected-set-id}])])
+  [:ul {:class (stl/css :sets-list)}
+   (for [set-id sets-root-order]
+     [:& sets-tree {:key set-id
+                    :set-id set-id
+                    :selected-set-id selected-set-id}])])

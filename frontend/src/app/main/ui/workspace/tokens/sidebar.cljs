@@ -193,13 +193,13 @@
    ::mf/wrap-props false}
   [_props]
   (let [show-sets-section? false] ;; temporarily added this variable to see/hide the sets section till we have it working end to end
-  [:div {:class (stl/css :sidebar-tab-wrapper)}
-  (when show-sets-section?
-   [:div {:class (stl/css :sets-section-wrapper)}
-    [:& sets-sidebar]])
-   [:div {:class (stl/css :tokens-section-wrapper)}
-    [:& tokens-explorer]]
-   [:button {:class (stl/css :download-json-button)
-             :on-click wtc/download-tokens-as-json}
-    download-icon
-    "Export JSON"]]))
+    [:div {:class (stl/css :sidebar-tab-wrapper)}
+     (when show-sets-section?
+       [:div {:class (stl/css :sets-section-wrapper)}
+        [:& sets-sidebar]])
+     [:div {:class (stl/css :tokens-section-wrapper)}
+      [:& tokens-explorer]]
+     [:button {:class (stl/css :download-json-button)
+               :on-click wtc/download-tokens-as-json}
+      download-icon
+      "Export JSON"]]))
