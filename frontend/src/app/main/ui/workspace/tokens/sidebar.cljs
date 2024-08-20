@@ -12,11 +12,13 @@
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.core :as wtc]
+   [app.main.ui.workspace.tokens.sets :refer [sets-list]]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.token-types :as wtty]
@@ -31,6 +33,9 @@
 
 (def ^:private download-icon
   (i/icon-xref :download (stl/css :download-icon)))
+
+(def selected-set-id
+  (l/derived :selected-set-id st/state))
 
 (mf/defc token-pill
   {::mf/wrap-props false}
@@ -166,13 +171,35 @@
                              :tokens tokens
                              :token-type-props token-type-props}])]]))
 
+(mf/defc sets-sidebar
+  []
+  (let [selected-set-id (mf/deref selected-set-id)
+        open? (mf/use-state true)]
+    [:div {:class (stl/css :sets-sidebar)}
+     [:div {:class (stl/css :sidebar-header)}
+      [:& title-bar {:collapsable true
+                     :collapsed (not @open?)
+                     :all-clickable true
+                     :title "SETS"
+                     :on-collapsed #(swap! open? not)}]
+      [:button {:class (stl/css :add-set)
+                :on-click #(println "Add Set")}
+       i/add]]
+     (when @open?
+       [:& sets-list {:selected-set-id selected-set-id}])]))
+
 (mf/defc tokens-sidebar-tab
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [_props]
-  [:div {:class (stl/css :sidebar-tab-wrapper)}
-   [:& tokens-explorer]
-   [:button {:class (stl/css :download-json-button)
-             :on-click wtc/download-tokens-as-json}
-    download-icon
-    "Export JSON"]])
+  (let [show-sets-section? false] ;; temporarily added this variable to see/hide the sets section till we have it working end to end
+    [:div {:class (stl/css :sidebar-tab-wrapper)}
+     (when show-sets-section?
+       [:div {:class (stl/css :sets-section-wrapper)}
+        [:& sets-sidebar]])
+     [:div {:class (stl/css :tokens-section-wrapper)}
+      [:& tokens-explorer]]
+     [:button {:class (stl/css :download-json-button)
+               :on-click wtc/download-tokens-as-json}
+      download-icon
+      "Export JSON"]]))

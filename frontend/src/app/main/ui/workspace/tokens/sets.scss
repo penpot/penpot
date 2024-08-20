@@ -1,0 +1,101 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.sets-list {
+  width: 100%;
+  margin-bottom: $s-12;
+  overflow-y: auto;
+}
+
+.set-item-container {
+  width: 100%;
+  cursor: pointer;
+  color: var(--layer-row-foreground-color);
+  padding-left: $s-20;
+}
+
+.set-item-set,
+.set-item-group {
+  @include bodySmallTypography;
+  display: flex;
+  align-items: center;
+  min-height: $s-32;
+  width: 100%;
+  cursor: pointer;
+  color: var(--layer-row-foreground-color);
+  .set-name {
+    @include textEllipsis;
+    flex-grow: 1;
+    padding-left: $s-2;
+  }
+
+  .icon {
+    display: flex;
+    align-items: center;
+    width: $s-20;
+    height: $s-20;
+    padding-right: $s-4;
+
+    svg {
+      height: $s-20;
+      width: $s-20;
+      color: white;
+      fill: none;
+      stroke: var(--icon-foreground);
+    }
+  }
+}
+
+.set-item-set {
+  &:hover {
+    background-color: var(--layer-row-background-color-hover);
+    color: var(--layer-row-foreground-color-hover);
+    box-shadow: -100px 0 0 0 var(--layer-row-background-color-hover);
+  }
+}
+
+.selected-set {
+  background-color: var(--layer-row-background-color-selected);
+  color: var(--layer-row-foreground-color-selected);
+  box-shadow: -100px 0 0 0 var(--layer-row-background-color-selected);
+}
+
+.action-btn {
+  @extend .button-tertiary;
+  height: $s-28;
+  width: $s-28;
+  svg {
+    @extend .button-icon;
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.collapsabled-icon {
+  @include buttonStyle;
+  @include flexCenter;
+  height: $s-24;
+  border-radius: $br-8;
+
+  --chevron-icon-rotation: 90deg;
+
+  &.collapsed {
+    --chevron-icon-rotation: 0deg;
+  }
+
+  &:hover {
+    --chevron-icon-color: var(--title-foreground-color-hover);
+  }
+}
+
+.chevron-icon {
+  @extend .button-icon-small;
+  margin-right: $s-6;
+  transform: rotate(var(--chevron-icon-rotation));
+  stroke: var(--icon-foreground);
+}
