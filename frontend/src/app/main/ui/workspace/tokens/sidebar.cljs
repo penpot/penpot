@@ -34,8 +34,8 @@
 (def ^:private download-icon
   (i/icon-xref :download (stl/css :download-icon)))
 
-(def current-set-id
-  (l/derived :current-set-id st/state))
+(def selected-set-id
+  (l/derived :selected-set-id st/state))
 
 (mf/defc token-pill
   {::mf/wrap-props false}
@@ -173,9 +173,9 @@
 
 (mf/defc sets-sidebar
   []
-  (let [current-set-id (mf/deref current-set-id)
+  (let [selected-set-id (mf/deref selected-set-id)
         open? (mf/use-state true)]
-    [:div {:key (str "sidebar-" current-set-id)
+    [:div {:key (str "sidebar-" selected-set-id)
            :class (stl/css :sets-sidebar)}
      [:div {:class (stl/css :sidebar-header)}
       [:& title-bar {:collapsable true
@@ -186,7 +186,7 @@
                 :on-click #(println "Add Set")}
        i/add]]
      (when @open?
-       [:& sets-list {:current-set-id current-set-id}])]))
+       [:& sets-list {:selected-set-id selected-set-id}])]))
 
 (mf/defc tokens-sidebar-tab
   {::mf/wrap [mf/memo]

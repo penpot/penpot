@@ -44,30 +44,30 @@
 (def ^:private chevron-icon
   (i/icon-xref :arrow (stl/css :chevron-icon)))
 
-(defn set-current-set
+(defn set-selected-set
   [set-id]
   (dm/assert! (uuid? set-id))
-  (ptk/reify ::set-current-set
+  (ptk/reify ::set-selected-set
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :current-set-id set-id))))
+      (assoc state :selected-set-id set-id))))
 
 (mf/defc sets-tree
-  [{:keys [current-set-id set-id toggle-visibility]}]
+  [{:keys [selected-set-id set-id toggle-visibility]}]
   (let [set (get sets set-id)]
     (when set
       (let [{:keys [type name children]} set
             visible? (mf/use-state (contains? active-sets set-id))
             collapsed? (mf/use-state false)
             icon (if (= type :set) i/document i/group)
-            selected? (mf/use-state (= set-id current-set-id))
+            selected? (mf/use-state (= set-id selected-set-id))
 
             on-click
             (mf/use-fn
              (mf/deps type set-id)
              (fn [event]
                (dom/stop-propagation event)
-               (st/emit! (set-current-set set-id))))]
+               (st/emit! (set-selected-set set-id))))]
         [:div {:class (stl/css :set-item-container)
                :on-click on-click}
          [:div {:class (stl/css-case :set-item-group (= type :group)
@@ -91,10 +91,10 @@
            [:div {:class (stl/css :set-children)}
             (for [child-id children]
               (do
-                ^{:key (str child-id)} [:& sets-tree {:key (str child-id) :set-id child-id :current-set-id current-set-id :toggle-visibility toggle-visibility}]))])]))))
+                ^{:key (str child-id)} [:& sets-tree {:key (str child-id) :set-id child-id :selected-set-id selected-set-id :toggle-visibility toggle-visibility}]))])]))))
 
 (mf/defc sets-list
-  [{:keys [current-set-id]}]
+  [{:keys [selected-set-id]}]
   (let [toggle-visibility (fn [set-id]
                             (if (contains? active-sets set-id)
                               (swap! active-sets disj set-id)
@@ -102,4 +102,4 @@
     [:ul {:class (stl/css :sets-list)}
      (for [set-id sets-root-order]
        ^{:key (str set-id)}
-       [:& sets-tree {:key (str set-id) :set-id set-id :current-set-id current-set-id}])]))
+       [:& sets-tree {:key (str set-id) :set-id set-id :selected-set-id selected-set-id}])]))
