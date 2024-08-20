@@ -6,37 +6,6 @@
 
 @import "refactor/common-refactor.scss";
 
-.sets-sidebar {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  width: 100%;
-  height: var(--height, $s-200);
-  overflow-y: auto;
-}
-
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-left: $s-2;
-  color: var(--layer-row-foreground-color);
-}
-
-.add-set {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  padding: 0;
-  margin-right: $s-12;
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-    transform: rotate(90deg);
-  }
-}
-
 .sets-list {
   width: 100%;
   margin-bottom: $s-12;
@@ -105,4 +74,29 @@
     width: 12px;
     height: 12px;
   }
+}
+
+.collapsabled-icon {
+  @include buttonStyle;
+  @include flexCenter;
+  height: $s-24;
+  border-radius: $br-8;
+
+  --chevron-icon-rotation: 90deg;
+
+  &.collapsed {
+    --chevron-icon-rotation: 0deg;
+  }
+
+  &:hover {
+    --chevron-icon-color: var(--title-foreground-color-hover);
+  }
+}
+
+.chevron-icon {
+  @extend .button-icon-small;
+  //color: var(--icon-foreground);
+  margin-right: 5px;
+  transform: rotate(var(--chevron-icon-rotation));
+  stroke: var(--icon-foreground);
 }
