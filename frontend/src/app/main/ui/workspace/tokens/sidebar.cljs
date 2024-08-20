@@ -179,6 +179,7 @@
      [:div {:class (stl/css :sidebar-header)}
       [:& title-bar {:collapsable true
                      :collapsed (not @open?)
+                     :all-clickable true
                      :title "SETS"
                      :on-collapsed #(swap! open? not)}]
       [:button {:class (stl/css :add-set)

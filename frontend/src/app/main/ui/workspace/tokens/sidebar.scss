@@ -28,8 +28,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-left: $s-2;
-  padding-top: $s-2;
+  margin-left: $s-8;
+  padding-top: $s-12;
   color: var(--layer-row-foreground-color);
 }
 
@@ -49,12 +49,6 @@
 .tokens-section-wrapper {
   flex: 1;
   overflow-y: auto;
-}
-
-.divider {
-  height: 1px;
-  background-color: var(--border-color);
-  margin: $s-8 0;
 }
 
 .token-pills-wrapper {
