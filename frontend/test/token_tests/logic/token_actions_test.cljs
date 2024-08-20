@@ -4,9 +4,10 @@
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.shapes :as cths]
-   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.data.tokens :as wdt]
+   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.token :as wtt]
+   [app.main.ui.workspace.tokens.token-set :as wtts]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
@@ -41,8 +42,6 @@
       (toht/add-token :token-1 border-radius-token)
       (toht/add-token :token-2 reference-border-radius-token)))
 
-(defonce a (atom nil))
-
 (t/deftest test-create-token
   (t/testing "creates token in new token set"
     (t/async
@@ -53,9 +52,9 @@
        (tohs/run-store-async
         store done events
         (fn [new-state]
-          (let [selected-token-set (wdt/get-selected-token-set new-state)
+          (let [selected-token-set (wtts/get-selected-token-set-id new-state)
                 file' (ths/get-file-from-store new-state)
-                set-tokens (wdt/get-token-set-tokens selected-token-set file')]
+                set-tokens (wtts/get-workspace-token-set-tokens selected-token-set file')]
             (t/testing "selects created workspace set and adds token to it"
               (t/is (some? selected-token-set))
               (t/is (= 1 (count (:tokens selected-token-set))))
@@ -72,20 +71,13 @@
        (tohs/run-store-async
         store done events
         (fn [new-state]
-          (let [selected-token-set (wdt/get-selected-token-set new-state)
+          (let [selected-token-set (wtts/get-selected-token-set new-state)
                 file' (ths/get-file-from-store new-state)
-                set-tokens (wdt/get-token-set-tokens selected-token-set file')]
+                set-tokens (wtts/get-workspace-token-set-tokens selected-token-set file')]
             (t/testing "selects created workspace set and adds token to it"
               (t/is (some? selected-token-set))
               (t/is (= 2 (count (:tokens selected-token-set))))
-              (t/is (= (list border-radius-token reference-border-radius-token) (map #(dissoc % :id :modified-at) set-tokens))))
-            (reset! a new-state))))))))
-
-(comment
-  (wdt/get-selected-token-set @a)
-  @a
-  (t/run-tests)
-  nil)
+              (t/is (= (list border-radius-token reference-border-radius-token) (map #(dissoc % :id :modified-at) set-tokens)))))))))))
 
 (t/deftest test-apply-token
   (t/testing "applies token to shape and updates shape attributes to resolved value"
