@@ -180,10 +180,11 @@
 (defn- validate-register-attempt!
   [cfg params]
 
-  (when-not (contains? cf/flags :registration)
-    (when-not (contains? params :invitation-token)
-      (ex/raise :type :restriction
-                :code :registration-disabled)))
+  (when (or
+         (not (contains? cf/flags :registration))
+         (not (contains? cf/flags :login-with-password)))
+    (ex/raise :type :restriction
+              :code :registration-disabled))
 
   (when (contains? params :invitation-token)
     (let [invitation (tokens/verify (::setup/props cfg)
