@@ -9,7 +9,7 @@
   (:require
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
-   [app.main.ui.icons :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -22,6 +22,8 @@
            :class (stl/css :collapsed-sidebar)}
      [:div {:class (stl/css :collapsed-title)}
       [:button {:class (stl/css :collapsed-button)
-                :on-click on-click
-                :aria-label (tr "workspace.sidebar.expand")}
-       i/arrow]]]))
+                :title (tr "workspace.sidebar.expand")
+                :on-click on-click}
+       [:& icon* {:id "arrow"
+                  :size "s"
+                  :aria-label (tr "workspace.sidebar.expand")}]]]]))
