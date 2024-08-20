@@ -20,7 +20,8 @@
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.token-types :as wtty]
-   [app.main.ui.workspace.tokens.sets :refer [sets-sidebar]]
+   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.workspace.tokens.sets :refer [sets-list]]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -32,6 +33,9 @@
 
 (def ^:private download-icon
   (i/icon-xref :download (stl/css :download-icon)))
+
+(def current-set-id
+  (l/derived :current-set-id st/state))
 
 (mf/defc token-pill
   {::mf/wrap-props false}
@@ -167,13 +171,29 @@
                              :tokens tokens
                              :token-type-props token-type-props}])]]))
 
+(mf/defc sets-sidebar
+  []
+  (let [current-set-id (mf/deref current-set-id)
+        open? (mf/use-state true)]
+    [:div {:key (str "sidebar-" current-set-id)
+           :class (stl/css :sets-sidebar)}
+     [:div {:class (stl/css :sidebar-header)}
+      [:& title-bar {:collapsable true
+                     :collapsed (not @open?)
+                     :title "SETS"
+                     :on-collapsed #(swap! open? not)}]
+      [:button {:class (stl/css :add-set)
+                :on-click #(println "Add Set")}
+       i/add]]
+     (when @open?
+       [:& sets-list {:current-set-id current-set-id}])]))
+
 (mf/defc tokens-sidebar-tab
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [_props]
   [:div {:class (stl/css :sidebar-tab-wrapper)}
    [:& sets-sidebar]
-   ;;[:div {:class (stl/css :divider)}]
    [:div {:class (stl/css :tokens-section-wrapper)} 
     [:& tokens-explorer]]
    [:button {:class (stl/css :download-json-button)

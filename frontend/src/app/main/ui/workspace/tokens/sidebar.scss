@@ -15,10 +15,38 @@
 }
 
 .sets-sidebar {
-  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  height: var(--height, $s-200);
   overflow-y: auto;
-  max-height: 40%;
 }
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-left: $s-2;
+  padding-top: $s-2;
+  color: var(--layer-row-foreground-color);
+}
+
+.add-set {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  padding: 0;
+  margin-right: $s-12;
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+    transform: rotate(90deg);
+  }
+}
+
+
 
 .tokens-section-wrapper {
   flex: 1;
