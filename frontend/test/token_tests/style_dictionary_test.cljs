@@ -1,20 +1,37 @@
-;; This Source Code Form is subject to the terms of the Mozilla Public
-;; License, v. 2.0. If a copy of the MPL was not distributed with this
-;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
-;;
-;; Copyright (c) KALEIDOS INC
-
 (ns token-tests.style-dictionary-test
   (:require
-   [app.main.ui.workspace.tokens.style-dictionary :as wtsd]
-   [cljs.test :as t :include-macros true]))
+   [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [cljs.test :as t :include-macros true]
+   [promesa.core :as p]))
 
-(t/deftest test-find-token-references
-  ;; Return references
-  (t/is (= #{"foo" "bar"} (wtsd/find-token-references "{foo} + {bar}")))
-  ;; Ignore non reference text
-  (t/is (= #{"foo.bar.baz"} (wtsd/find-token-references "{foo.bar.baz} + something")))
-  ;; No references found
-  (t/is (nil? (wtsd/find-token-references "1 + 2")))
-  ;; Edge-case: Ignore unmatched closing parens
-  (t/is (= #{"foo" "bar"} (wtsd/find-token-references "{foo}} + {bar}"))))
+(def border-radius-token
+  {:id #uuid "8c868278-7c8d-431b-bbc9-7d8f15c8edb9"
+   :value "12px"
+   :name "borderRadius.sm"
+   :type :border-radius})
+
+(def reference-border-radius-token
+  {:id #uuid "b9448d78-fd5b-4e3d-aa32-445904063f5b"
+   :value "{borderRadius.sm} * 2"
+   :name "borderRadius.md-with-dashes"
+   :type :border-radius})
+
+(def tokens {(:id border-radius-token) border-radius-token
+             (:id reference-border-radius-token) reference-border-radius-token})
+
+(t/deftest resolve-tokens-test
+  (t/async
+    done
+    (t/testing "resolves tokens using style-dictionary"
+      (-> (sd/resolve-tokens+ tokens)
+          (p/finally (fn [resolved-tokens]
+                       (let [expected-tokens {"borderRadius.sm"
+                                              (assoc border-radius-token
+                                                     :resolved-value 12
+                                                     :resolved-unit "px")
+                                              "borderRadius.md-with-dashes"
+                                              (assoc reference-border-radius-token
+                                                     :resolved-value 24
+                                                     :resolved-unit "px")}]
+                         (t/is (= expected-tokens resolved-tokens))
+                         (done))))))))

@@ -300,7 +300,7 @@
                                    (update-fn shape)
                                    shape))
                                {:reg-objects? true
-                                :attrs [:rx :ry :r1 :r2 :r3 :r4]})))
+                                :attrs [:rx :ry :r1 :r2 :r3 :r4 :applied-tokens]})))
 
         on-switch-to-radius-1
         (mf/use-fn

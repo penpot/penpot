@@ -34,11 +34,10 @@
     (watch [_ state _]
       (->> (rx/from (sd/resolve-tokens+ (get-in state [:workspace-data :tokens])))
            (rx/mapcat
-            (fn [sd-tokens]
+            (fn [resolved-tokens]
               (let [undo-id (js/Symbol)
-                    resolved-value (-> (get sd-tokens (:id token))
-                                       (wtt/resolve-token-value))
-                    tokenized-attributes (wtt/attributes-map attributes (:id token))]
+                    resolved-value (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value])
+                    tokenized-attributes (wtt/attributes-map attributes token)]
                 (rx/of
                  (dwu/start-undo-transaction undo-id)
                  (dwsh/update-shapes shape-ids (fn [shape]
@@ -58,7 +57,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of
-       (let [remove-token #(when % (wtt/remove-attributes-for-token-id attributes (:id token) %))]
+       (let [remove-token #(when % (wtt/remove-attributes-for-token attributes token %))]
          (dwsh/update-shapes
           shape-ids
           (fn [shape]
@@ -137,6 +136,9 @@
                        (zipmap (repeat value)))]
     {:layout-gap layout-gap}))
 
+(defn update-layout-padding [value shape-ids attrs]
+  (dwsl/update-layout shape-ids {:layout-padding (zipmap attrs (repeat value))}))
+
 (defn update-layout-spacing [value shape-ids attributes]
   (ptk/reify ::update-layout-spacing
     ptk/WatchEvent
@@ -148,15 +150,6 @@
             layout-attributes (attributes->layout-gap attributes value)]
         (rx/of
          (dwsl/update-layout layout-shape-ids layout-attributes))))))
-
-(defn update-layout-spacing-column [value shape-ids]
-  (ptk/reify ::update-layout-spacing-column
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/concat
-       (for [shape-id shape-ids]
-         (let [layout-update {:layout-gap {:column-gap value :row-gap value}}]
-           (dwsl/update-layout [shape-id] layout-update)))))))
 
 (defn update-shape-position [value shape-ids attributes]
   (ptk/reify ::update-shape-position
