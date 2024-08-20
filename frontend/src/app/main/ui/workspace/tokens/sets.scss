@@ -16,7 +16,7 @@
   width: 100%;
   cursor: pointer;
   color: var(--layer-row-foreground-color);
-  padding-left: 20px;
+  padding-left: $s-20;
 }
 
 .set-item-set,
@@ -95,8 +95,7 @@
 
 .chevron-icon {
   @extend .button-icon-small;
-  //color: var(--icon-foreground);
-  margin-right: 5px;
+  margin-right: $s-6;
   transform: rotate(var(--chevron-icon-rotation));
   stroke: var(--icon-foreground);
 }
