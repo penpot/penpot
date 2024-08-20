@@ -68,11 +68,11 @@
                                      :set-item-set  (= type :set)
                                      :selected-set  (and (= type :set) @selected?))}
           (when (= type :group)
-          [:span {:class (stl/css-case
-                           :collapsabled-icon true
-                           :collapsed @collapsed?)
-                  :on-click #(when (= type :group) (swap! collapsed? not))}
-            chevron-icon])
+            [:span {:class (stl/css-case
+                            :collapsabled-icon true
+                            :collapsed @collapsed?)
+                    :on-click #(when (= type :group) (swap! collapsed? not))}
+             chevron-icon])
           [:span {:class (stl/css :icon)} icon]
           [:div {:class (stl/css :set-name)} name]
           (when (= type :set)
@@ -97,4 +97,4 @@
      (for [set-id sets-root-order]
        ^{:key (str set-id)}
        [:& sets-tree {:key (str set-id) :set-id set-id :current-set-id current-set-id}])]))
-       
+

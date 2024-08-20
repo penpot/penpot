@@ -12,16 +12,16 @@
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.core :as wtc]
+   [app.main.ui.workspace.tokens.sets :refer [sets-list]]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.token-types :as wtty]
-   [app.main.ui.components.title-bar :refer [title-bar]]
-   [app.main.ui.workspace.tokens.sets :refer [sets-list]]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -194,7 +194,7 @@
   [_props]
   [:div {:class (stl/css :sidebar-tab-wrapper)}
    [:& sets-sidebar]
-   [:div {:class (stl/css :tokens-section-wrapper)} 
+   [:div {:class (stl/css :tokens-section-wrapper)}
     [:& tokens-explorer]]
    [:button {:class (stl/css :download-json-button)
              :on-click wtc/download-tokens-as-json}
