@@ -93,48 +93,9 @@
 .selected-set {
   background-color: var(--layer-row-background-color-selected);
   color: var(--layer-row-foreground-color-selected);
-  box-shadow: -20px 0 0 0 var(--layer-row-background-color-selected);
+  box-shadow: -100px 0 0 0 var(--layer-row-background-color-selected);
 }
 
-.set-item-set-selected {
-  @include bodySmallTypography;
-  display: flex;
-  align-items: center;
-  min-height: $s-32;
-  width: 100%;
-  cursor: pointer;
-  //color: var(--layer-row-foreground-color);
-  background-color: var(--layer-row-background-color-selected);
-  color: var(--layer-row-foreground-color-selected);
-  box-shadow: -20px 0 0 0 var(--layer-row-background-color-selected);
-
-  .set-name {
-    @include textEllipsis;
-    flex-grow: 1;
-    padding-left: $s-2;
-  }
-
-  .icon {
-    display: flex;
-    align-items: center;
-    width: $s-20;
-    height: $s-20;
-    padding-right: $s-4;
-
-    svg {
-      height: $s-20;
-      width: $s-20;
-      color: white;
-      fill: none;
-      stroke: var(--icon-foreground);
-    }
-  }
-  &:hover {
-    background-color: var(--layer-row-background-color-hover);
-    color: var(--layer-row-foreground-color-hover);
-    box-shadow: -100px 0 0 0 var(--layer-row-background-color-hover);
-  }
-}
 .action-btn {
   @extend .button-tertiary;
   height: $s-20;

@@ -69,8 +69,8 @@
         [:div {:class (stl/css :set-item-container)
                :on-click on-click}
          [:div {:class (stl/css-case :set-item-group (= type :group)
-                                     :set-item-set-selected  @selected?
-                                     :set-item-set (and (= type :set) (not @selected?)))}
+                                     :set-item-set  (= type :set)
+                                     :selected-set  (and (= type :set) @selected?))}
           [:span {:class (stl/css :icon)
                   :on-click #(when (= type :group) (swap! collapsed? not))} icon]
           [:div {:class (stl/css :set-name)} name]
