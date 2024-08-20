@@ -1,3 +1,9 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
 (ns app.main.ui.workspace.tokens.sets
   (:require-macros [app.main.style :as stl])
   (:require
@@ -97,4 +103,3 @@
      (for [set-id sets-root-order]
        ^{:key (str set-id)}
        [:& sets-tree {:key (str set-id) :set-id set-id :current-set-id current-set-id}])]))
-
