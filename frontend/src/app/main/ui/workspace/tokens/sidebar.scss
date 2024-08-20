@@ -14,14 +14,14 @@
   overflow: hidden;
 }
 
-.sets-sidebar {
-  position: relative;
+.sets-section-wrapper {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  width: 100%;
-  height: var(--height, $s-200);
-  overflow-y: auto;
+  margin-bottom: $s-8;
+}
+
+.sets-sidebar {
+  position: relative;
 }
 
 .sidebar-header {

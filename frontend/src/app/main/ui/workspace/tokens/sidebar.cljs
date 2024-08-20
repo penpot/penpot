@@ -193,10 +193,11 @@
    ::mf/wrap-props false}
   [_props]
   [:div {:class (stl/css :sidebar-tab-wrapper)}
-   [:& sets-sidebar]
-   [:div {:class (stl/css :tokens-section-wrapper)}
-    [:& tokens-explorer]]
-   [:button {:class (stl/css :download-json-button)
-             :on-click wtc/download-tokens-as-json}
-    download-icon
-    "Export JSON"]])
+    [:div {:class (stl/css :sets-section-wrapper)}
+    [:& sets-sidebar]]
+    [:div {:class (stl/css :tokens-section-wrapper)}
+      [:& tokens-explorer]]
+    [:button {:class (stl/css :download-json-button)
+              :on-click wtc/download-tokens-as-json}
+      download-icon
+      "Export JSON"]])
