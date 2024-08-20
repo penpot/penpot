@@ -78,26 +78,6 @@
      (when (= button-position "end")
        action-button)]))
 
-(defn- valid-tabs?
-  [tabs]
-  (every? (fn [tab]
-            (let [icon (obj/get tab "icon")
-                  label (obj/get tab "label")
-                  aria-label (obj/get tab "aria-label")]
-              (and  (or (not icon) (contains? icon-list icon))
-                    (not (and icon (nil? label) (nil? aria-label)))
-                    (not (and aria-label (or (nil? icon) label))))))
-          (seq tabs)))
-
-(def ^:private positions
-  #{"start" "end"})
-
-(defn- valid-button-position?
-  [position button]
-  (or (nil? position)
-      (and (contains? positions position)
-           (some? button))))
-
 (defn- get-tab
   [tabs id]
   (or (array/find #(= id (obj/get % "id")) tabs)
@@ -108,13 +88,33 @@
   (let [tab (get-tab tabs default)]
     (obj/get tab "id")))
 
-(mf/defc tab-switcher*
-  {::mf/props :obj}
-  [{:keys [class tabs on-change-tab default-selected action-button-position action-button] :rest props}]
-  ;; TODO: Use a schema to assert the tabs prop -> https://tree.taiga.io/project/penpot/task/8521
-  (assert (valid-tabs? tabs) "unexpected props for tab-switcher")
-  (assert (valid-button-position? action-button-position action-button) "invalid action-button-position")
+(def ^:private schema:tab
+  [:and
+   [:map {:title "tab"}
+    [:icon {:optional true}
+     [:and :string [:fn #(contains? icon-list %)]]]
+    [:label {:optional true} :string]
+    [:aria-label {:optional true} :string]
+    [:content some?]]
+   [:fn {:error/message "invalid data: missing required props"}
+    (fn [tab]
+      (or (and (contains? tab :icon)
+               (or (contains? tab :label)
+                   (contains? tab :aria-label)))
+          (contains? tab :label)))]])
 
+(def ^:private schema:tab-switcher
+  [:map
+   [:class {:optional true} :string]
+   [:action-button-position {:optional true}
+    [:enum "start" "end"]]
+   [:default-selected {:optional true} :string]
+   [:tabs [:vector {:min 1} schema:tab]]])
+
+(mf/defc tab-switcher*
+  {::mf/props :obj
+   ::mf/schema schema:tab-switcher}
+  [{:keys [class tabs on-change-tab default-selected action-button-position action-button] :rest props}]
   (let [selected*        (mf/use-state #(get-selected-tab-id tabs default-selected))
         selected         (deref selected*)
 
