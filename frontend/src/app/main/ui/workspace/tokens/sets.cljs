@@ -53,7 +53,7 @@
       (assoc state :selected-set-id set-id))))
 
 (mf/defc sets-tree
-  [{:keys [selected-set-id set-id toggle-visibility]}]
+  [{:keys [selected-set-id set-id]}]
   (let [set (get sets set-id)]
     (when set
       (let [{:keys [type name children]} set
@@ -90,16 +90,12 @@
          (when (and children (not @collapsed?))
            [:div {:class (stl/css :set-children)}
             (for [child-id children]
-              (do
-                ^{:key (str child-id)} [:& sets-tree {:key (str child-id) :set-id child-id :selected-set-id selected-set-id :toggle-visibility toggle-visibility}]))])]))))
+                [:& sets-tree {:key child-id :set-id child-id :selected-set-id selected-set-id}])])]))))
 
 (mf/defc sets-list
   [{:keys [selected-set-id]}]
-  (let [toggle-visibility (fn [set-id]
-                            (if (contains? active-sets set-id)
-                              (swap! active-sets disj set-id)
-                              (swap! active-sets conj set-id)))]
     [:ul {:class (stl/css :sets-list)}
      (for [set-id sets-root-order]
-       ^{:key (str set-id)}
-       [:& sets-tree {:key (str set-id) :set-id set-id :selected-set-id selected-set-id}])]))
+	       [:& sets-tree {:key set-id
+	                      :set-id set-id
+	                      :selected-set-id selected-set-id}])])

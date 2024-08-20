@@ -175,8 +175,7 @@
   []
   (let [selected-set-id (mf/deref selected-set-id)
         open? (mf/use-state true)]
-    [:div {:key (str "sidebar-" selected-set-id)
-           :class (stl/css :sets-sidebar)}
+    [:div {:class (stl/css :sets-sidebar)}
      [:div {:class (stl/css :sidebar-header)}
       [:& title-bar {:collapsable true
                      :collapsed (not @open?)
