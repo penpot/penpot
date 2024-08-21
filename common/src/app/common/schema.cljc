@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.schema
-  (:refer-clojure :exclude [deref merge parse-uuid])
+  (:refer-clojure :exclude [deref merge parse-uuid parse-long parse-double parse-boolean])
   #?(:cljs (:require-macros [app.common.schema :refer [ignoring]]))
   (:require
    [app.common.data :as d]
@@ -113,34 +113,49 @@
   [schema]
   (mu/optional-keys schema default-options))
 
-(def default-transformer
-  (let [default-decoder
-        {:compile (fn [s _registry]
-                    (let [props (m/type-properties s)]
-                      (or (::oapi/decode props)
-                          (::decode props))))}
+(defn transformer
+  [& transformers]
+  (apply mt/transformer transformers))
 
-        default-encoder
-        {:compile (fn [s _]
-                    (let [props (m/type-properties s)]
-                      (or (::oapi/encode props)
-                          (::encode props))))}
+;; (defn key-transformer
+;;   [& {:as opts}]
+;;   (mt/key-transformer opts))
 
-        coders {:vector mt/-sequential-or-set->vector
-                :sequential mt/-sequential-or-set->seq
-                :set mt/-sequential->set
-                :tuple mt/-sequential->vector}]
+;; (defn- transform-map-keys
+;;   [f o]
+;;   (cond
+;;     (record? o)
+;;     (reduce-kv (fn [res k v]
+;;                  (let [k' (f k)]
+;;                    (if (= k k')
+;;                      res
+;;                      (-> res
+;;                          (assoc k' v)
+;;                          (dissoc k)))))
+;;                o
+;;                o)
 
-    (mt/transformer
-     {:name :penpot
-      :default-decoder default-decoder
-      :default-encoder default-encoder}
-     {:name :string
-      :decoders (mt/-string-decoders)
-      :encoders (mt/-string-encoders)}
-     {:name :collections
-      :decoders coders
-      :encoders coders})))
+;;     (map? o)
+;;     (persistent!
+;;      (reduce-kv (fn [res k v]
+;;                   (assoc! res (f k) v))
+;;                 (transient {})
+;;                 o))
+
+;;     :else
+;;     o))
+
+(defn json-transformer
+  []
+  (mt/transformer
+   (mt/json-transformer)
+   (mt/collection-transformer)))
+
+(defn string-transformer
+  []
+  (mt/transformer
+   (mt/string-transformer)
+   (mt/collection-transformer)))
 
 (defn encode
   ([s val transformer]
@@ -149,8 +164,6 @@
    (m/encode s val options transformer)))
 
 (defn decode
-  ([s val]
-   (m/decode s val default-options default-transformer))
   ([s val transformer]
    (m/decode s val default-options transformer))
   ([s val options transformer]
@@ -170,9 +183,8 @@
 
 (defn encoder
   ([s]
-   (if (lazy-schema? s)
-     (-get-decoder s)
-     (encoder s default-options default-transformer)))
+   (assert (lazy-schema? s) "expected lazy schema")
+   (-get-decoder s))
   ([s transformer]
    (m/encoder s default-options transformer))
   ([s options transformer]
@@ -180,9 +192,8 @@
 
 (defn decoder
   ([s]
-   (if (lazy-schema? s)
-     (-get-decoder s)
-     (decoder s default-options default-transformer)))
+   (assert (lazy-schema? s) "expected lazy schema")
+   (-get-decoder s))
   ([s transformer]
    (m/decoder s default-options transformer))
   ([s options transformer]
@@ -199,10 +210,9 @@
     (fn [v] (@vfn v))))
 
 (defn lazy-decoder
-  ([s] (lazy-decoder s default-transformer))
-  ([s transformer]
-   (let [vfn (delay (decoder (if (delay? s) (deref s) s) transformer))]
-     (fn [v] (@vfn v)))))
+  [s transformer]
+  (let [vfn (delay (decoder (if (delay? s) (deref s) s) transformer))]
+    (fn [v] (@vfn v))))
 
 (defn humanize-explain
   "Returns a string representation of the explain data structure"
@@ -243,27 +253,6 @@
   (if (:ns &env)
     `(try ~expr (catch :default e# nil))
     `(try ~expr (catch Throwable e# nil))))
-
-(defn simple-schema
-  [& {:keys [pred] :as options}]
-  (cond-> options
-    (contains? options :type-properties)
-    (update :type-properties (fn [props]
-                               (cond-> props
-                                 (contains? props :decode/string)
-                                 (update :decode/string (fn [decode-fn]
-                                                          (fn [s]
-                                                            (if (pred s)
-                                                              s
-                                                              (or (ignoring (decode-fn s)) s)))))
-                                 (contains? props ::decode)
-                                 (update ::decode (fn [decode-fn]
-                                                    (fn [s]
-                                                      (if (pred s)
-                                                        s
-                                                        (or (ignoring (decode-fn s)) s))))))))
-    :always
-    (m/-simple-schema)))
 
 (defn lookup
   "Lookups schema from registry."
@@ -307,7 +296,6 @@
                                 :hint hint
                                 ::explain explain}))))
       true)))
-
 
 (defn fast-validate!
   "A fast path for validation process, assumes the ILazySchema protocol
@@ -353,19 +341,18 @@
     params))
 
 (defn register! [type s]
-  (let [s (if (map? s) (simple-schema s) s)]
+  (let [s (if (map? s) (m/-simple-schema s) s)]
     (swap! sr/registry assoc type s)
     nil))
 
 (defn define
   "Create ans instance of ILazySchema"
-  [s & {:keys [transformer] :as options}]
+  [s & {:keys [transformer] :or {transformer json-transformer} :as options}]
   (let [schema      (delay (schema s))
         validator   (delay (m/validator @schema))
         explainer   (delay (m/explainer @schema))
 
         options     (c/merge default-options (dissoc options :transformer))
-        transformer (or transformer default-transformer)
         decoder     (delay (m/decoder @schema options transformer))
         encoder     (delay (m/encoder @schema options transformer))]
 
@@ -449,9 +436,12 @@
     :description "UUID formatted string"
     :error/message "should be an uuid"
     :gen/gen (sg/uuid)
+    :decode/string parse-uuid
+    :decode/json parse-uuid
+    :encode/string str
+    :encode/json str
     ::oapi/type "string"
-    ::oapi/format "uuid"
-    ::oapi/decode parse-uuid}})
+    ::oapi/format "uuid"}})
 
 (def email-re #"[a-zA-Z0-9_.+-\\\\]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+")
 
@@ -481,11 +471,10 @@
     :description "string with valid email address"
     :error/code "errors.invalid-email"
     :gen/gen (sg/email)
+    :decode/string (fn [v] (or (parse-email v) v))
+    :decode/json (fn [v] (or (parse-email v) v))
     ::oapi/type "string"
-    ::oapi/format "email"
-    ::oapi/decode
-    (fn [v]
-      (or (parse-email v) v))}})
+    ::oapi/format "email"}})
 
 (def non-empty-strings-xf
   (comp
@@ -505,36 +494,59 @@
                    (comp non-empty-strings-xf (map coerce))
                    non-empty-strings-xf)
            kind  (or (last children) kind)
-           pred  (cond
-                   (fn? kind)  kind
-                   (nil? kind) any?
-                   :else       (validator kind))
 
-           pred (cond
-                  (and max min)
-                  (fn [value]
-                    (let [size (count value)]
-                      (and (set? value)
-                           (<= min size max)
-                           (every? pred value))))
+           pred
+           (cond
+             (fn? kind)  kind
+             (nil? kind) any?
+             :else       (validator kind))
 
-                  min
-                  (fn [value]
-                    (let [size (count value)]
-                      (and (set? value)
-                           (<= min size)
-                           (every? pred value))))
+           encode-child
+           (encoder kind string-transformer)
 
-                  max
-                  (fn [value]
-                    (let [size (count value)]
-                      (and (set? value)
-                           (<= size max)
-                           (every? pred value))))
+           pred
+           (cond
+             (and max min)
+             (fn [value]
+               (let [size (count value)]
+                 (and (set? value)
+                      (<= min size max)
+                      (every? pred value))))
 
-                  :else
-                  (fn [value]
-                    (every? pred value)))]
+             min
+             (fn [value]
+               (let [size (count value)]
+                 (and (set? value)
+                      (<= min size)
+                      (every? pred value))))
+
+             max
+             (fn [value]
+               (let [size (count value)]
+                 (and (set? value)
+                      (<= size max)
+                      (every? pred value))))
+
+             :else
+             (fn [value]
+               (every? pred value)))
+
+           decode
+           (fn [v]
+             (let [v (if (string? v) (str/split v #"[\s,]+") v)]
+               (into #{} xform v)))
+
+           encode-json
+           (fn [o]
+             (if (set? o)
+               (vec o)
+               o))
+
+           encode-string
+           (fn [o]
+             (if (set? o)
+               (str/join ", " (map encode-child o))
+               o))]
 
        {:pred pred
         :type-properties
@@ -542,13 +554,14 @@
          :description "Set of Strings"
          :error/message "should be a set of strings"
          :gen/gen (-> kind sg/generator sg/set)
+         :decode/string decode
+         :decode/json decode
+         :encode/string encode-string
+         :encode/json encode-json
          ::oapi/type "array"
          ::oapi/format "set"
          ::oapi/items {:type "string"}
-         ::oapi/unique-items true
-         ::oapi/decode (fn [v]
-                         (let [v (if (string? v) (str/split v #"[\s,]+") v)]
-                           (into #{} xform v)))}}))})
+         ::oapi/unique-items true}}))})
 
 
 (register! ::vec
@@ -562,36 +575,52 @@
                    non-empty-strings-xf)
 
            kind  (or (last children) kind)
-           pred  (cond
-                   (fn? kind)  kind
-                   (nil? kind) any?
-                   :else       (validator kind))
+           pred
+           (cond
+             (fn? kind)  kind
+             (nil? kind) any?
+             :else       (validator kind))
 
-           pred (cond
-                  (and max min)
-                  (fn [value]
-                    (let [size (count value)]
-                      (and (set? value)
-                           (<= min size max)
-                           (every? pred value))))
+           encode-child
+           (encoder kind string-transformer)
 
-                  min
-                  (fn [value]
-                    (let [size (count value)]
-                      (and (set? value)
-                           (<= min size)
-                           (every? pred value))))
+           pred
+           (cond
+             (and max min)
+             (fn [value]
+               (let [size (count value)]
+                 (and (set? value)
+                      (<= min size max)
+                      (every? pred value))))
 
-                  max
-                  (fn [value]
-                    (let [size (count value)]
-                      (and (set? value)
-                           (<= size max)
-                           (every? pred value))))
+             min
+             (fn [value]
+               (let [size (count value)]
+                 (and (set? value)
+                      (<= min size)
+                      (every? pred value))))
 
-                  :else
-                  (fn [value]
-                    (every? pred value)))]
+             max
+             (fn [value]
+               (let [size (count value)]
+                 (and (set? value)
+                      (<= size max)
+                      (every? pred value))))
+
+             :else
+             (fn [value]
+               (every? pred value)))
+
+           decode
+           (fn [v]
+             (let [v (if (string? v) (str/split v #"[\s,]+") v)]
+               (into [] xform v)))
+
+           encode-string
+           (fn [o]
+             (if (vector? o)
+               (str/join ", " (map encode-child o))
+               o))]
 
        {:pred pred
         :type-properties
@@ -599,14 +628,13 @@
          :description "Set of Strings"
          :error/message "should be a set of strings"
          :gen/gen (-> kind sg/generator sg/set)
+         :decode/string decode
+         :decode/json decode
+         :encode/string encode-string
          ::oapi/type "array"
          ::oapi/format "set"
          ::oapi/items {:type "string"}
-         ::oapi/unique-items true
-         ::oapi/decode (fn [v]
-                         (let [v (if (string? v) (str/split v #"[\s,]+") v)]
-                           (into [] xform v)))}}))})
-
+         ::oapi/unique-items true}}))})
 
 (register! ::set-of-strings
   {:type ::set-of-strings
@@ -616,13 +644,13 @@
     :description "Set of Strings"
     :error/message "should be a set of strings"
     :gen/gen (-> :string sg/generator sg/set)
+    :decode/string (fn [v]
+                     (let [v (if (string? v) (str/split v #"[\s,]+") v)]
+                       (into #{} non-empty-strings-xf v)))
     ::oapi/type "array"
     ::oapi/format "set"
     ::oapi/items {:type "string"}
-    ::oapi/unique-items true
-    ::oapi/decode (fn [v]
-                    (let [v (if (string? v) (str/split v #"[\s,]+") v)]
-                      (into #{} non-empty-strings-xf v)))}})
+    ::oapi/unique-items true}})
 
 (register! ::set-of-keywords
   {:type ::set-of-keywords
@@ -632,29 +660,13 @@
     :description "Set of Strings"
     :error/message "should be a set of strings"
     :gen/gen (-> :keyword sg/generator sg/set)
+    :decode/string (fn [v]
+                     (let [v (if (string? v) (str/split v #"[\s,]+") v)]
+                       (into #{} (comp non-empty-strings-xf (map keyword)) v)))
     ::oapi/type "array"
     ::oapi/format "set"
     ::oapi/items {:type "string" :format "keyword"}
-    ::oapi/unique-items true
-    ::oapi/decode (fn [v]
-                    (let [v (if (string? v) (str/split v #"[\s,]+") v)]
-                      (into #{} (comp non-empty-strings-xf (map keyword)) v)))}})
-
-(register! ::set-of-emails
-  {:type ::set-of-emails
-   :pred #(and (set? %) (every? string? %))
-   :type-properties
-   {:title "set[email]"
-    :description "Set of Emails"
-    :error/message "should be a set of emails"
-    :gen/gen (-> ::email sg/generator sg/set)
-    ::oapi/type "array"
-    ::oapi/format "set"
-    ::oapi/items {:type "string" :format "email"}
-    ::oapi/unique-items true
-    ::decode (fn [v]
-               (let [v (if (string? v) (str/split v #"[\s,]+") v)]
-                 (into #{} (keep parse-email) v)))}})
+    ::oapi/unique-items true}})
 
 (register! ::set-of-uuid
   {:type ::set-of-uuid
@@ -664,13 +676,13 @@
     :description "Set of UUID"
     :error/message "should be a set of UUID instances"
     :gen/gen (-> ::uuid sg/generator sg/set)
+    :decode/string (fn [v]
+                     (let [v (if (string? v) (str/split v #"[\s,]+") v)]
+                       (into #{} (keep parse-uuid) v)))
     ::oapi/type "array"
     ::oapi/format "set"
     ::oapi/items {:type "string" :format "uuid"}
-    ::oapi/unique-items true
-    ::oapi/decode (fn [v]
-                    (let [v (if (string? v) (str/split v #"[\s,]+") v)]
-                      (into #{} (keep parse-uuid) v)))}})
+    ::oapi/unique-items true}})
 
 (register! ::coll-of-uuid
   {:type ::set-of-uuid
@@ -680,13 +692,13 @@
     :description "Coll of UUID"
     :error/message "should be a coll of UUID instances"
     :gen/gen (-> ::uuid sg/generator sg/set)
+    :decode/string (fn [v]
+                     (let [v (if (string? v) (str/split v #"[\s,]+") v)]
+                       (into [] (keep parse-uuid) v)))
     ::oapi/type "array"
     ::oapi/format "array"
     ::oapi/items {:type "string" :format "uuid"}
-    ::oapi/unique-items false
-    ::oapi/decode (fn [v]
-                    (let [v (if (string? v) (str/split v #"[\s,]+") v)]
-                      (into [] (keep parse-uuid) v)))}})
+    ::oapi/unique-items false}})
 
 (register! ::one-of
   {:type ::one-of
@@ -694,70 +706,168 @@
    :max 1
    :compile (fn [props children _]
               (let [options (into #{} (last children))
-                    format  (:format props "keyword")]
+                    format  (:format props "keyword")
+                    decode  (if (= format "keyword")
+                              keyword
+                              identity)]
                 {:pred #(contains? options %)
                  :type-properties
                  {:title "one-of"
                   :description "One of the Set"
                   :gen/gen (sg/elements options)
+                  :decode/string decode
+                  :decode/json decode
                   ::oapi/type "string"
-                  ::oapi/format (:format props "keyword")
-                  ::oapi/decode (if (= format "keyword")
-                                  keyword
-                                  identity)}}))})
+                  ::oapi/format (:format props "keyword")}}))})
 
 ;; Integer/MAX_VALUE
 (def max-safe-int 2147483647)
 ;; Integer/MIN_VALUE
 (def min-safe-int -2147483648)
 
-(register! ::safe-int
-  {:type ::safe-int
-   :pred #(and (int? %) (>= max-safe-int %) (>= % min-safe-int))
-   :type-properties
-   {:title "int"
-    :description "Safe Integer"
-    :error/message "expected to be int in safe range"
-    :gen/gen (sg/small-int)
-    ::oapi/type "integer"
-    ::oapi/format "int64"
-    ::oapi/decode (fn [s]
-                    (if (string? s)
-                      (parse-long s)
-                      s))}})
+(defn parse-long
+  [v]
+  (or (ignoring
+       (if (string? v)
+         (c/parse-long v)
+         v))
+      v))
 
-(register! ::safe-number
-  {:type ::safe-number
-   :pred #(and (number? %) (>= max-safe-int %) (>= % min-safe-int))
-   :type-properties
-   {:title "number"
-    :description "Safe Number"
-    :error/message "expected to be number in safe range"
-    :gen/gen (sg/one-of (sg/small-int)
-                        (sg/small-double))
-    ::oapi/type "number"
-    ::oapi/format "double"
-    ::oapi/decode (fn [s]
-                    (if (string? s)
-                      (parse-double s)
-                      s))}})
+(def type:int
+  {:type :int
+   :min 0
+   :max 0
+   :compile
+   (fn [{:keys [max min] :as props} _ _]
+     (let [pred int?
+           pred (if (some? min)
+                  (fn [v]
+                    (and (>= v min)
+                         (pred v)))
+                  pred)
+           pred (if (some? max)
+                  (fn [v]
+                    (and (>= max v)
+                         (pred v)))
+                  pred)]
 
-(register! ::safe-double
-  {:type ::safe-double
-   :pred #(and (double? %) (>= max-safe-int %) (>= % min-safe-int))
-   :type-properties
-   {:title "number"
-    :description "Safe Number"
-    :error/message "expected to be number in safe range"
-    :gen/gen (sg/small-double)
-    ::oapi/type "number"
-    ::oapi/format "double"
-    ::oapi/decode (fn [s]
-                    (if (string? s)
-                      (parse-double s)
-                      s))}})
+       {:pred pred
+        :type-properties
+        {:title "int"
+         :description "int"
+         :error/message "expected to be int/long"
+         :error/code "errors.invalid-integer"
+         :gen/gen (sg/small-int :max max :min min)
+         :decode/string parse-long
+         :decode/json parse-long
+         ::oapi/type "integer"
+         ::oapi/format "int64"}}))})
 
-(register! ::contains-any
+(defn parse-double
+  [v]
+  (or (ignoring
+       (if (string? v)
+         (c/parse-double v)
+         v))
+      v))
+
+(def type:double
+  {:type :double
+   :min 0
+   :max 0
+   :compile
+   (fn [{:keys [max min] :as props} _ _]
+     (let [pred double?
+           pred (if (some? min)
+                  (fn [v]
+                    (and (>= v min)
+                         (pred v)))
+                  pred)
+           pred (if (some? max)
+                  (fn [v]
+                    (and (>= max v)
+                         (pred v)))
+                  pred)]
+
+       {:pred pred
+        :type-properties
+        {:title "doble"
+         :description "double number"
+         :error/message "expected to be double"
+         :error/code "errors.invalid-double"
+         :gen/gen (sg/small-double :max max :min min)
+         :decode/string parse-double
+         :decode/json parse-double
+         ::oapi/type "number"
+         ::oapi/format "double"}}))})
+
+(def type:number
+  {:type :number
+   :min 0
+   :max 0
+   :compile
+   (fn [{:keys [max min] :as props} _ _]
+     (let [pred number?
+           pred (if (some? min)
+                  (fn [v]
+                    (and (>= v min)
+                         (pred v)))
+                  pred)
+           pred (if (some? max)
+                  (fn [v]
+                    (and (>= max v)
+                         (pred v)))
+                  pred)
+
+           gen  (sg/one-of
+                 (sg/small-int :max max :min min)
+                 (sg/small-double :max max :min min))]
+
+       {:pred pred
+        :type-properties
+        {:title "int"
+         :description "int"
+         :error/message "expected to be number"
+         :error/code "errors.invalid-number"
+         :gen/gen gen
+         :decode/string parse-double
+         :decode/json parse-double
+         ::oapi/type "number"}}))})
+
+(register! ::int type:int)
+(register! ::double type:double)
+(register! ::number type:number)
+
+(register! ::safe-int [::int {:max max-safe-int :min min-safe-int}])
+(register! ::safe-double [::double {:max max-safe-int :min min-safe-int}])
+(register! ::safe-number [::number {:max max-safe-int :min min-safe-int}])
+
+(defn parse-boolean
+  [v]
+  (if (string? v)
+    (case v
+      ("true" "t" "1") true
+      ("false" "f" "0") false
+      v)
+    v))
+
+(def type:boolean
+  {:type :boolean
+   :pred boolean?
+   :type-properties
+   {:title "boolean"
+    :description "boolean"
+    :error/message "expected boolean"
+    :error/code "errors.invalid-boolean"
+    :gen/gen sg/boolean
+    :decode/string parse-boolean
+    :decode/json parse-boolean
+    :encode/string str
+    ::oapi/type "boolean"}})
+
+(register! ::boolean type:boolean)
+
+(def type:contains-any
   {:type ::contains-any
    :min 1
    :max 1
@@ -775,17 +885,26 @@
                  {:title "contains"
                   :description "contains predicate"}}))})
 
-(register! ::inst
+(register! ::contains-any type:contains-any)
+
+(def type:inst
   {:type ::inst
    :pred inst?
    :type-properties
    {:title "inst"
     :description "Satisfies Inst protocol"
-    :error/message "expected to be number in safe range"
+    :error/message "should be an instant"
     :gen/gen (->> (sg/small-int)
                   (sg/fmap (fn [v] (tm/instant v))))
-    ::oapi/type "number"
-    ::oapi/format "int64"}})
+
+    :decode/string tm/instant
+    :encode/string tm/format-instant
+    :decode/json tm/instant
+    :encode/json tm/format-instant
+    ::oapi/type "string"
+    ::oapi/format "iso"}})
+
+(register! ::inst type:inst)
 
 (register! ::fn
   [:schema fn?])
@@ -803,6 +922,13 @@
     :gen/gen (sg/word-string)
     ::oapi/type "string"
     ::oapi/format "string"}})
+
+
+(defn decode-uri
+  [val]
+  (if (u/uri? val)
+    val
+    (-> val str/trim u/uri)))
 
 (register! ::uri
   {:type ::uri
@@ -839,13 +965,10 @@
     :description "URI formatted string"
     :error/code "errors.invalid-uri"
     :gen/gen (sg/uri)
+    :decode/string decode-uri
+    :decode/json decode-uri
     ::oapi/type "string"
-    ::oapi/format "uri"
-    ::oapi/decode
-    (fn [val]
-      (if (u/uri? val)
-        val
-        (-> val str/trim u/uri)))}})
+    ::oapi/format "uri"}})
 
 (register! ::text
   {:type :string
@@ -926,4 +1049,4 @@
   (check-fn ::set-of-uuid))
 
 (def check-set-of-emails!
-  (check-fn ::set-of-emails))
+  (check-fn [::set ::email]))

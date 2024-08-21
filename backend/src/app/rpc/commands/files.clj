@@ -178,12 +178,12 @@
     [:map {:title "File"}
      [:id ::sm/uuid]
      [:features ::cfeat/features]
-     [:has-media-trimmed :boolean]
-     [:comment-thread-seqn {:min 0} :int]
+     [:has-media-trimmed ::sm/boolean]
+     [:comment-thread-seqn [::sm/int {:min 0}]]
      [:name [:string {:max 250}]]
-     [:revn {:min 0} :int]
+     [:revn [::sm/int {:min 0}]]
      [:modified-at ::dt/instant]
-     [:is-shared :boolean]
+     [:is-shared ::sm/boolean]
      [:project-id ::sm/uuid]
      [:created-at ::dt/instant]
      [:data {:optional true} :any]]))
@@ -408,7 +408,7 @@
   "Checks if the file has libraries. Returns a boolean"
   {::doc/added "1.15.1"
    ::sm/params schema:has-file-libraries
-   ::sm/result :boolean}
+   ::sm/result ::sm/boolean}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id]}]
   (dm/with-open [conn (db/open pool)]
     (check-read-permissions! pool profile-id file-id)
@@ -917,7 +917,7 @@
   (sm/define
     [:map {:title "set-file-shared"}
      [:id ::sm/uuid]
-     [:is-shared :boolean]]))
+     [:is-shared ::sm/boolean]]))
 
 (sv/defmethod ::set-file-shared
   {::doc/added "1.17"

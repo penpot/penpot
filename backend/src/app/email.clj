@@ -157,10 +157,10 @@
   [:map
    [::username {:optional true} :string]
    [::password {:optional true} :string]
-   [::tls {:optional true} :boolean]
-   [::ssl {:optional true} :boolean]
+   [::tls {:optional true} ::sm/boolean]
+   [::ssl {:optional true} ::sm/boolean]
    [::host {:optional true} :string]
-   [::port {:optional true} :int]
+   [::port {:optional true} ::sm/int]
    [::default-from {:optional true} :string]
    [::default-reply-to {:optional true} :string]])
 

@@ -189,7 +189,7 @@
   (sm/define
     [:map {:title "PartialFile"}
      [:id ::sm/uuid]
-     [:revn {:min 0} :int]
+     [:revn {:min 0} ::sm/int]
      [:page :any]]))
 
 (sv/defmethod ::get-file-data-for-thumbnail
@@ -385,7 +385,7 @@
   schema:create-file-thumbnail
   [:map {:title "create-file-thumbnail"}
    [:file-id ::sm/uuid]
-   [:revn :int]
+   [:revn ::sm/int]
    [:media ::media/upload]])
 
 (sv/defmethod ::create-file-thumbnail

@@ -37,8 +37,7 @@
    [:modified-at {:optional true} ::sm/inst]
    [:objects {:optional true}
     [:map-of {:gen/max 10} ::sm/uuid :map]]
-   [:plugin-data {:optional true}
-    [:map-of {:gen/max 5} :keyword ::ctpg/plugin-data]]])
+   [:plugin-data {:optional true} ::ctpg/plugin-data]])
 
 (def check-container!
   (sm/check-fn ::container))

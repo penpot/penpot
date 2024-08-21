@@ -382,10 +382,9 @@
 
 (def ^:private
   schema:move-project
-  (sm/define
-    [:map {:title "move-project"}
-     [:team-id ::sm/uuid]
-     [:project-id ::sm/uuid]]))
+  [:map {:title "move-project"}
+   [:team-id ::sm/uuid]
+   [:project-id ::sm/uuid]])
 
 (sv/defmethod ::move-project
   "Move projects between teams"
@@ -425,10 +424,9 @@
 
 (def ^:private
   schema:clone-template
-  (sm/define
-    [:map {:title "clone-template"}
-     [:project-id ::sm/uuid]
-     [:template-id ::sm/word-string]]))
+  [:map {:title "clone-template"}
+   [:project-id ::sm/uuid]
+   [:template-id ::sm/word-string]])
 
 (sv/defmethod ::clone-template
   "Clone into the specified project the template by its id."

@@ -260,6 +260,7 @@
         (th/reset-mock! mock)
         (let [data (assoc data :emails [(:email profile2)])
               out  (th/command! data)]
+          ;; (th/print-result! out)
           (t/is (th/success? out))
           (t/is (= 0 (:call-count (deref mock)))))
 

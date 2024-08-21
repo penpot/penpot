@@ -25,6 +25,20 @@
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
+(defn- update-file!
+  [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
+  (let [params {::th/type :update-file
+                ::rpc/profile-id profile-id
+                :id file-id
+                :session-id (uuid/random)
+                :revn revn
+                :features cfeat/supported-features
+                :changes changes}
+        out    (th/command! params)]
+    ;; (th/print-result! out)
+    (t/is (nil? (:error out)))
+    (:result out)))
+
 (t/deftest files-crud
   (let [prof    (th/create-profile* 1 {:is-active true})
         team-id (:default-team-id prof)
@@ -569,18 +583,18 @@
               (t/is (nil? (:error out)))
               (:result out)))
 
-          (update-file! [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
-            (let [params {::th/type :update-file
-                          ::rpc/profile-id profile-id
-                          :id file-id
-                          :session-id (uuid/random)
-                          :revn revn
-                          :features cfeat/supported-features
-                          :changes changes}
-                  out    (th/command! params)]
+          #_(update-file! [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
+                          (let [params {::th/type :update-file
+                                        ::rpc/profile-id profile-id
+                                        :id file-id
+                                        :session-id (uuid/random)
+                                        :revn revn
+                                        :features cfeat/supported-features
+                                        :changes changes}
+                                out    (th/command! params)]
               ;; (th/print-result! out)
-              (t/is (nil? (:error out)))
-              (:result out)))]
+                            (t/is (nil? (:error out)))
+                            (:result out)))]
 
     (let [storage  (:app.storage/storage th/*system*)
           profile  (th/create-profile* 1)
@@ -604,7 +618,6 @@
                                                     :frame-id frame-id-2)]
 
       ;; Add a two frames
-
       (update-file!
        :file-id (:id file)
        :profile-id (:id profile)
@@ -1213,21 +1226,6 @@
 
       (let [rows (th/db-query :file-thumbnail {:file-id (:id file)})]
         (t/is (= 1 (count rows)))))))
-
-
-(defn- update-file!
-  [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
-  (let [params {::th/type :update-file
-                ::rpc/profile-id profile-id
-                :id file-id
-                :session-id (uuid/random)
-                :revn revn
-                :features cfeat/supported-features
-                :changes changes}
-        out    (th/command! params)]
-    ;; (th/print-result! out)
-    (t/is (nil? (:error out)))
-    (:result out)))
 
 (t/deftest file-tiered-storage
   (let [profile (th/create-profile* 1)

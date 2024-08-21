@@ -129,6 +129,8 @@
       :else
       (transform-prop-key k))))
 
+
+;; FIXME: REPEATED from app.common.json
 (defn map->obj
   "A simplified version of clj->js with focus on performance"
   ([x] (map->obj x identity))

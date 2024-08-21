@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.schema.generators
-  (:refer-clojure :exclude [set subseq uuid for filter map let])
+  (:refer-clojure :exclude [set subseq uuid for filter map let boolean])
   #?(:cljs (:require-macros [app.common.schema.generators]))
   (:require
    [app.common.schema.registry :as sr]
@@ -77,14 +77,11 @@
 
 (defn word-string
   []
-  (as-> tg/string-alphanumeric $$
-    (tg/such-that (fn [v] (re-matches #"\w+" v)) $$ 50)
-    (tg/such-that (fn [v]
-                    (and (not (str/blank? v))
-                         (not (re-matches #"^\d+.*" v))))
-                  $$
-                  50)))
-
+  (as-> tg/string-ascii $$
+    (tg/resize 10 $$)
+    (tg/fmap (fn [v] (apply str (re-seq #"[A-Za-z]+" v))) $$)
+    (tg/such-that (fn [v] (>= (count v) 4)) $$ 100)
+    (tg/fmap str/lower $$)))
 
 (defn email
   []
@@ -124,6 +121,9 @@
                           (c/filter first)
                           (c/map second))
                          (c/map list bools elements)))))))
+
+(def any tg/any)
+(def boolean tg/boolean)
 
 (defn set
   [g]

@@ -46,7 +46,7 @@
   [:map {:title "upload-file-media-object"}
    [:id {:optional true} ::sm/uuid]
    [:file-id ::sm/uuid]
-   [:is-local :boolean]
+   [:is-local ::sm/boolean]
    [:name [:string {:max 250}]]
    [:content ::media/upload]])
 
@@ -172,7 +172,7 @@
 (def ^:private schema:create-file-media-object-from-url
   [:map {:title "create-file-media-object-from-url"}
    [:file-id ::sm/uuid]
-   [:is-local :boolean]
+   [:is-local ::sm/boolean]
    [:url ::sm/uri]
    [:id {:optional true} ::sm/uuid]
    [:name {:optional true} [:string {:max 250}]]])
@@ -253,7 +253,7 @@
 (def ^:private schema:clone-file-media-object
   [:map {:title "clone-file-media-object"}
    [:file-id ::sm/uuid]
-   [:is-local :boolean]
+   [:is-local ::sm/boolean]
    [:id ::sm/uuid]])
 
 (sv/defmethod ::clone-file-media-object

@@ -5,13 +5,14 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.time
-  "A new cross-platform date and time API. It should be preferred over
-  a platform specific implementation found on `app.util.time`."
+  "Minimal cross-platoform date time api for specific use cases on types
+  definition and other common code."
   #?(:cljs
      (:require
       ["luxon" :as lxn])
      :clj
      (:import
+      java.time.format.DateTimeFormatter
       java.time.Instant
       java.time.Duration)))
 
@@ -28,8 +29,16 @@
 
 (defn instant
   [s]
-  #?(:clj  (Instant/ofEpochMilli s)
-     :cljs (.fromMillis ^js DateTime s #js {:zone "local" :setZone false})))
+  (if (int? s)
+    #?(:clj  (Instant/ofEpochMilli s)
+       :cljs (.fromMillis ^js DateTime s #js {:zone "local" :setZone false}))
+    #?(:clj (Instant/parse s)
+       :cljs (.fromISO ^js DateTime s))))
+
+(defn format-instant
+  [v]
+  #?(:clj (.format DateTimeFormatter/ISO_INSTANT ^Instant v)
+     :cljs (.toISO ^js v)))
 
 #?(:cljs
    (extend-protocol IComparable
@@ -44,7 +53,6 @@
        (if ^boolean (.equals it other)
          0
          (if (< (inst-ms it) (inst-ms other)) -1 1)))))
-
 
 #?(:cljs
    (extend-type DateTime

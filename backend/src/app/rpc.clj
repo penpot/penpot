@@ -178,36 +178,19 @@
   (if-let [schema (::sm/params mdata)]
     (let [validate (sm/validator schema)
           explain  (sm/explainer schema)
-          decode   (sm/decoder schema)]
+          decode   (sm/decoder schema sm/json-transformer)
+          encode   (sm/encoder schema sm/json-transformer)]
       (fn [cfg params]
         (let [params (decode params)]
           (if (validate params)
-            (f cfg params)
-
+            (let [result (f cfg params)]
+              (if (instance? clojure.lang.IObj result)
+                (vary-meta result assoc :encode/json encode)
+                result))
             (let [params (d/without-qualified params)]
               (ex/raise :type :validation
                         :code :params-validation
                         ::sm/explain (explain params)))))))
-    f))
-
-(defn- wrap-output-validation
-  [_ f mdata]
-  (if (contains? cf/flags :rpc-output-validation)
-    (or (when-let [schema (::sm/result mdata)]
-          (let [schema   (if (sm/lazy-schema? schema)
-                           schema
-                           (sm/define schema))
-                validate (sm/validator schema)
-                explain  (sm/explainer schema)]
-            (fn [cfg params]
-              (let [response (f cfg params)]
-                (when (map? response)
-                  (when-not (validate response)
-                    (ex/raise :type :validation
-                              :code :data-validation
-                              ::sm/explain (explain response))))
-                response))))
-        f)
     f))
 
 (defn- wrap-all
@@ -220,7 +203,6 @@
     (rlimit/wrap cfg $ mdata)
     (wrap-audit cfg $ mdata)
     (wrap-spec-conform cfg $ mdata)
-    (wrap-output-validation cfg $ mdata)
     (wrap-params-validation cfg $ mdata)
     (wrap-authentication cfg $ mdata)))
 

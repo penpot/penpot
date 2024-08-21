@@ -44,7 +44,7 @@
   [:map {:title "update-file"}
    [:id ::sm/uuid]
    [:session-id ::sm/uuid]
-   [:revn {:min 0} :int]
+   [:revn {:min 0} ::sm/int]
    [:features {:optional true} ::cfeat/features]
    [:changes {:optional true} [:vector ::cpc/change]]
    [:changes-with-metadata {:optional true}
@@ -52,7 +52,7 @@
               [:changes [:vector ::cpc/change]]
               [:hint-origin {:optional true} :keyword]
               [:hint-events {:optional true} [:vector [:string {:max 250}]]]]]]
-   [:skip-validate {:optional true} :boolean]])
+   [:skip-validate {:optional true} ::sm/boolean]])
 
 (def ^:private
   schema:update-file-result
@@ -61,7 +61,7 @@
     [:changes [:vector ::cpc/change]]
     [:file-id ::sm/uuid]
     [:id ::sm/uuid]
-    [:revn {:min 0} :int]
+    [:revn {:min 0} ::sm/int]
     [:session-id ::sm/uuid]]])
 
 ;; --- HELPERS

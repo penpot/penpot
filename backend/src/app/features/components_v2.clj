@@ -114,7 +114,7 @@
   (sm/lazy-validator ::ctc/color))
 
 (def valid-fill?
-  (sm/lazy-validator ::cts/fill))
+  (sm/lazy-validator cts/schema:fill))
 
 (def valid-stroke?
   (sm/lazy-validator ::cts/stroke))
@@ -135,10 +135,10 @@
   (sm/lazy-validator ::ctc/rgb-color))
 
 (def valid-shape-points?
-  (sm/lazy-validator ::cts/points))
+  (sm/lazy-validator cts/schema:points))
 
 (def valid-image-attrs?
-  (sm/lazy-validator ::cts/image-attrs))
+  (sm/lazy-validator cts/schema:image-attrs))
 
 (def valid-column-grid-params?
   (sm/lazy-validator ::ctg/column-params))
