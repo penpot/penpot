@@ -12,6 +12,7 @@
    [app.main.data.tokens :as dt]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
+   [app.util.storage :refer [storage]]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.icons :as i]
@@ -282,11 +283,21 @@
      (when @open?
        [:& sets-list {:selected-set-id selected-set-id}])]))
 
+(defn temp-use-themes-flag []
+  (let [show? (mf/use-state (get @storage ::show-token-themes-sets? false))]
+    (mf/use-effect
+     (fn []
+       (letfn [(toggle! []
+                 (swap! storage update ::show-token-themes-sets? not)
+                 (reset! show? (get @storage ::show-token-themes-sets?)))]
+         (set! js/window.toggleThemes toggle!))))
+    show?))
+
 (mf/defc tokens-sidebar-tab
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [_props]
-  (let [show-sets-section? false] ;; temporarily added this variable to see/hide the sets section till we have it working end to end
+  (let [show-sets-section? (deref (temp-use-themes-flag))]
     [:div {:class (stl/css :sidebar-tab-wrapper)}
      (when show-sets-section?
        [:div {:class (stl/css :sets-section-wrapper)}
