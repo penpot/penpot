@@ -79,13 +79,6 @@
       (or temp-theme-id-set #{})
       new-themes)))
 
-(defn get-active-theme-ids-or-temp-theme-id
-  [state]
-  (let [active-theme-ids (get-active-theme-ids state)]
-    (if (seq active-theme-ids)
-      active-theme-ids
-      (get-temp-theme-id state))))
-
 (defn update-theme-id
   [state]
   (let [active-themes (get-active-theme-ids state)
@@ -106,9 +99,6 @@
                                (disj % token-set-id)
                                (conj % token-set-id))))
 
-(defn token-set-enabled-in-theme? [set-id theme]
-  (some? (get-in theme [:sets set-id])))
-
  ;; Sets ------------------------------------------------------------------------
 
 (defn get-workspace-sets [state]
@@ -122,13 +112,6 @@
   (-> (get-token-set set-id state)
       :tokens))
 
-(def default-token-set-name "Global")
-
-(defn create-global-set [])
-
-(defn add-token-to-token-set [token token-set]
-  (update token-set :items conj (:id token)))
-
 (defn get-selected-token-set-id [state]
   (or (get-in state [:workspace-local :selected-token-set-id])
       (get-in state [:workspace-data :token-set-groups 0])))
@@ -136,11 +119,6 @@
 (defn get-selected-token-set [state]
   (when-let [id (get-selected-token-set-id state)]
     (get-token-set id state)))
-
-(defn get-token-set-tokens [state]
-  (when-let [token-set (get-selected-token-set state)]
-    (let [tokens (or (wtt/get-workspace-tokens state) {})]
-      (select-keys tokens (:tokens token-set)))))
 
 (defn get-selected-token-set-tokens [state]
   (when-let [token-set (get-selected-token-set state)]
