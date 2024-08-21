@@ -8,9 +8,9 @@
   (:require
    [app.config :as cf]
    [app.main.refs :as refs]
-   [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.debug.icons-preview :refer [icons-preview]]
+   [app.main.ui.error-boundary :refer [error-boundary*]]
    [app.main.ui.frame-preview :as frame-preview]
    [app.main.ui.icons :as i]
    [app.main.ui.notifications :as notifications]
@@ -21,7 +21,6 @@
    [app.main.ui.static :as static]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
-   [app.util.router :as rt]
    [rumext.v2 :as mf]))
 
 (def auth-page
@@ -42,15 +41,8 @@
 (def workspace-page
   (mf/lazy-component app.main.ui.workspace/workspace))
 
-(mf/defc on-main-error
-  [{:keys [error] :as props}]
-  (mf/with-effect
-    (st/emit! (rt/assign-exception error)))
-  [:span "Internal application error"])
-
 (mf/defc main-page
-  {::mf/wrap [#(mf/catch % {:fallback on-main-error})]
-   ::mf/props :obj}
+  {::mf/props :obj}
   [{:keys [route profile]}]
   (let [{:keys [data params]} route]
     [:& (mf/provider ctx/current-route) {:value route}
@@ -137,7 +129,7 @@
              {:keys [file-id]} path-params]
          [:? {}
           (if (:token query-params)
-            [:> static/error-container {}
+            [:> static/error-container* {}
              [:div.image i/detach]
              [:div.main-message (tr "viewer.breaking-change.message")]
              [:div.desc-message (tr "viewer.breaking-change.description")]]
@@ -186,8 +178,8 @@
     [:& (mf/provider ctx/current-route) {:value route}
      [:& (mf/provider ctx/current-profile) {:value profile}
       (if edata
-        [:& static/exception-page {:data edata :route route}]
-        [:*
+        [:> static/exception-page* {:data edata :route route}]
+        [:> error-boundary* {:fallback static/internal-error*}
          [:& notifications/current-notification]
          (when route
            [:& main-page {:route route :profile profile}])])]]))

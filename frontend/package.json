@@ -103,6 +103,7 @@
     "randomcolor": "^0.6.2",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "react-error-boundary": "^4.0.13",
     "react-virtualized": "^9.22.5",
     "rxjs": "8.0.0-alpha.14",
     "sax": "^1.4.1",
