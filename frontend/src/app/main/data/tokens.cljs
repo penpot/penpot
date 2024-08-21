@@ -108,7 +108,6 @@
     (cond
      (not theme-id) (-> changes
                         (pcb/add-temporary-token-theme
-
                          {:id (uuid/next)
                           :name ""
                           :sets #{id}}))
@@ -216,7 +215,7 @@
                                         (pcb/update-token-set updated-token-set token-set))))
               theme-changes (-> set-changes
                                 (ensure-token-theme-changes state {:new-set? create-set?
-                                                                   :set-id selected-token-set-id}))]
+                                                                   :id selected-token-set-id}))]
           (rx/of
            (set-selected-token-set-id selected-token-set-id)
            (dch/commit-changes theme-changes)))))))
