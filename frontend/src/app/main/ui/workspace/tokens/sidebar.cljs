@@ -254,7 +254,6 @@
         token-groups (mf/with-memo [tokens]
                        (sorted-token-groups tokens))]
     [:article
-     [:& token-sets]
      [:& token-context-menu]
      [:div.assets-bar
       (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
@@ -300,7 +299,8 @@
     [:div {:class (stl/css :sidebar-tab-wrapper)}
      (when show-sets-section?
        [:div {:class (stl/css :sets-section-wrapper)}
-        [:& sets-sidebar]])
+        [:& sets-sidebar]
+        [:& token-sets]])
      [:div {:class (stl/css :tokens-section-wrapper)}
       [:& tokens-explorer]]
      [:button {:class (stl/css :download-json-button)
