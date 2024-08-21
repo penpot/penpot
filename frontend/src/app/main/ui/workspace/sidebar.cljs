@@ -51,7 +51,6 @@
         mode-inspect?  (= options-mode :inspect)
         project        (mf/deref refs/workspace-project)
 
-
         section        (cond (or mode-inspect? (contains? layout :layers)) :layers
                              (contains? layout :assets) :assets)
 
@@ -148,38 +147,7 @@
                             :on-change-tab on-tab-change
                             :class (stl/css :left-sidebar-tabs)
                             :action-button-position "start"
-                            :action-button (mf/html [:& collapse-button {:on-click handle-collapse}])}]
-
-         #_[:& tab-container
-            {:on-change-tab on-tab-change
-             :selected section
-             :collapsable true
-             :handle-collapse handle-collapse
-             :header-class (stl/css :tab-spacing)}
-
-            [:& tab-element {:id :layers
-                             :title (tr "workspace.sidebar.layers")}
-             [:article {:class (stl/css :layers-tab)
-                        :style #js {"--height" (str size-pages "px")}}
-
-              [:& sitemap {:layout layout
-                           :toggle-pages toggle-pages
-                           :show-pages? @show-pages?
-                           :size size-pages}]
-
-              (when @show-pages?
-                [:div {:class (stl/css :resize-area-horiz)
-                       :on-pointer-down on-pointer-down-pages
-                       :on-lost-pointer-capture on-lost-pointer-capture-pages
-                       :on-pointer-move on-pointer-move-pages}])
-
-              [:& layers-toolbox {:size-parent size
-                                  :size size-pages}]]]
-
-            (when-not ^boolean mode-inspect?
-              [:& tab-element {:id :assets
-                               :title (tr "workspace.toolbar.assets")}
-               [:& assets-toolbox {:size (- size 58)}]])]])]]))
+                            :action-button (mf/html [:& collapse-button {:on-click handle-collapse}])}]])]]))
 
 ;; --- Right Sidebar (Component)
 
@@ -192,9 +160,6 @@
         is-comments?     (= drawing-tool :comments)
         is-history?      (contains? layout :document-history)
         is-inspect?      (= section :inspect)
-
-        ;;expanded?      (mf/deref refs/inspect-expanded)
-        ;;prev-expanded? (hooks/use-previous expanded?)
 
         current-section* (mf/use-state :info)
         current-section  (deref current-section*)

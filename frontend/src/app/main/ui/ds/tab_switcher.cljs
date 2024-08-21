@@ -30,7 +30,9 @@
                                 :tab-index  (if selected nil -1)
                                 :ref (fn [node]
                                        (on-ref node id))
-                                :data-id id})]
+                                :data-id id
+                                ;; This prop is to be used for accessibility purposes only.
+                                :id id})]
 
     [:li
      [:> :button props
@@ -188,9 +190,11 @@
                     :selected selected
                     :on-click on-click}]]
 
-
-     [:section {:class (stl/css :tab-panel)
-                :tab-index 0
-                :role "tabpanel"}
-      (let [active-tab (get-tab tabs selected)]
-        (obj/get active-tab "content"))]]))
+     (let [active-tab (get-tab tabs selected)
+           content    (obj/get active-tab "content")
+           id         (obj/get active-tab "id")]
+       [:section {:class (stl/css :tab-panel)
+                  :tab-index 0
+                  :role "tabpanel"
+                  :aria-labelledby id}
+        content])]))
