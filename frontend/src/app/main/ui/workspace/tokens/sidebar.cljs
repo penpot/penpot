@@ -252,7 +252,6 @@
 
         tokens (sd/use-resolved-workspace-tokens)
         token-groups (mf/with-memo [tokens]
-                       (js/console.log "tokens" tokens)
                        (sorted-token-groups tokens))]
     [:article
      [:& token-sets]
