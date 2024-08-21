@@ -27,8 +27,15 @@
 (defn get-temp-theme-id [state]
   (get-in state [:workspace-data :token-theme-temporary-id]))
 
-(defn get-active-set-ids [state]
+(defn get-active-theme-ids-or-fallback [state]
   (let [active-theme-ids (get-active-theme-ids state)
+        temp-theme-id (get-temp-theme-id state)]
+    (cond
+      (seq active-theme-ids) active-theme-ids
+      temp-theme-id #{temp-theme-id})))
+
+(defn get-active-set-ids [state]
+  (let [active-theme-ids (get-active-theme-ids-or-fallback state)
         themes-index (get-workspace-themes-index state)
         active-set-ids (reduce
                         (fn [acc cur]
@@ -130,10 +137,14 @@
   (when-let [id (get-selected-token-set-id state)]
     (get-token-set id state)))
 
+(defn get-token-set-tokens [state]
+  (when-let [token-set (get-selected-token-set state)]
+    (let [tokens (or (wtt/get-workspace-tokens state) {})]
+      (select-keys tokens (:tokens token-set)))))
+
 (defn get-selected-token-set-tokens [state]
   (when-let [token-set (get-selected-token-set state)]
     (let [tokens (or (wtt/get-workspace-tokens state) {})]
-      (js/console.log "token-set" token-set (select-keys tokens (:tokens token-set)))
       (select-keys tokens (:tokens token-set)))))
 
 (defn assoc-selected-token-set-id [state id]
