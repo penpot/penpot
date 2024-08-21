@@ -61,24 +61,23 @@
               (t/is (= (list border-radius-token) (->> (vals set-tokens)
                                                        (map #(dissoc % :id :modified-at)))))))))))))
 
-;; (t/deftest test-create-multiple-tokens
-;;   (t/testing "uses selected tokens set when creating multiple tokens"
-;;     (t/async
-;;      done
-;;      (let [file (setup-file)
-;;            store (ths/setup-store file)
-;;            events [(wdt/update-create-token border-radius-token)
-;;                    (wdt/update-create-token reference-border-radius-token)]]
-;;        (tohs/run-store-async
-;;         store done events
-;;         (fn [new-state]
-;;           (let [selected-token-set (wtts/get-selected-token-set new-state)
-;;                 file' (ths/get-file-from-store new-state)
-;;                 set-tokens (wtts/get-selected-token-set-tokens file')]
-;;             (t/testing "selects created workspace set and adds token to it"
-;;               (t/is (some? selected-token-set))
-;;               (t/is (= 2 (count (:tokens selected-token-set))))
-;;               (t/is (= (list border-radius-token reference-border-radius-token) (map #(dissoc % :id :modified-at) set-tokens)))))))))))
+(t/deftest test-create-multiple-tokens
+  (t/testing "uses selected tokens set when creating multiple tokens"
+    (t/async
+     done
+     (let [file (setup-file)
+           store (ths/setup-store file)
+           events [(wdt/update-create-token border-radius-token)
+                   (wdt/update-create-token reference-border-radius-token)]]
+       (tohs/run-store-async
+        store done events
+        (fn [new-state]
+          (let [set-tokens (wtts/get-active-theme-sets-tokens-names-map new-state)]
+            (t/testing "selects created workspace set and adds token to it"
+              (t/is (= 2 (count set-tokens)))
+              (t/is (= (list border-radius-token reference-border-radius-token)
+                       (->> (vals set-tokens)
+                            (map #(dissoc % :id :modified-at)))))))))))))
 
 (t/deftest test-apply-token
   (t/testing "applies token to shape and updates shape attributes to resolved value"
