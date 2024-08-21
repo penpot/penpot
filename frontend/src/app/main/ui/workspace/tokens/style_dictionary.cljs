@@ -74,14 +74,14 @@
        (get errors :style-dictionary/missing-reference)))
 
 (defn resolve-tokens+
-  [tokens & {:keys [debug?] :as config}]
+  [tokens & {:keys [names-map? debug?] :as config}]
   (p/let [sd-tokens (-> (wtt/token-names-tree tokens)
                         (resolve-sd-tokens+ config))]
     (let [resolved-tokens (reduce
                            (fn [acc ^js cur]
-                             (let [identifier (if (uuid? (ffirst tokens))
-                                                (uuid (.-uuid (.-id cur)))
-                                                (.. cur -original -name))
+                             (let [identifier (if names-map?
+                                                (.. cur -original -name)
+                                                (uuid (.-uuid (.-id cur))))
                                    origin-token (get tokens identifier)
                                    parsed-value (wtt/parse-token-value (.-value cur))
                                    resolved-token (if (not parsed-value)

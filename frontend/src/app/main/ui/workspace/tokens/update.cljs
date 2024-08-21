@@ -124,7 +124,7 @@
        (rx/from
         (->
           (wtts/get-active-theme-sets-tokens-names-map state)
-          (wtsd/resolve-tokens+)))
+          (wtsd/resolve-tokens+ {:names-map? true})))
        (rx/mapcat
         (fn [sd-tokens]
           (let [undo-id (js/Symbol)]
