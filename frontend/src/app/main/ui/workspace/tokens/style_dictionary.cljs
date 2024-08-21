@@ -99,6 +99,8 @@
 
 (defonce !tokens-cache (atom nil))
 
+(defonce !theme-tokens-cache (atom nil))
+
 (defn get-cached-tokens [tokens]
   (get @!tokens-cache tokens tokens))
 
@@ -129,5 +131,10 @@
     @tokens-state))
 
 (defn use-resolved-workspace-tokens [& {:as config}]
-  (-> (mf/deref refs/workspace-tokens)
+  (-> (mf/deref refs/workspace-selected-token-set-tokens)
       (use-resolved-tokens config)))
+
+(defn use-active-theme-sets-tokens [& {:as config}]
+  (-> (mf/deref refs/get-active-theme-sets-tokens)
+      (use-resolved-tokens {:cache-atom !theme-tokens-cache
+                            :names-map? true})))

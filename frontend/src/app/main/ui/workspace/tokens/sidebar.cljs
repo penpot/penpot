@@ -12,7 +12,6 @@
    [app.main.data.tokens :as dt]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
-   [app.util.storage :refer [storage]]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.icons :as i]
@@ -26,6 +25,7 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
+   [app.util.storage :refer [storage]]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]
@@ -42,9 +42,9 @@
 
 (mf/defc token-pill
   {::mf/wrap-props false}
-  [{:keys [on-click token highlighted? on-context-menu]}]
+  [{:keys [on-click token theme-token highlighted? on-context-menu] :as props}]
   (let [{:keys [name value resolved-value errors]} token
-        errors? (seq errors)]
+        errors? (and (seq errors) (seq (:errors theme-token)))]
     [:button {:class (stl/css-case :token-pill true
                                    :token-pill-highlighted highlighted?
                                    :token-pill-invalid errors?)
@@ -78,7 +78,7 @@
     i/add))
 
 (mf/defc token-component
-  [{:keys [type tokens selected-shapes token-type-props]}]
+  [{:keys [type tokens selected-shapes token-type-props active-theme-tokens]}]
   (let [open? (mf/deref (-> (l/key type)
                             (l/derived lens:token-type-open-status)))
         {:keys [modal attributes all-attributes title]} token-type-props
@@ -130,12 +130,14 @@
         [:& cmm/asset-section-block {:role :content}
          [:div {:class (stl/css :token-pills-wrapper)}
           (for [token (sort-by :modified-at tokens)]
-            [:& token-pill
-             {:key (:id token)
-              :token token
-              :highlighted? (wtt/shapes-token-applied? token selected-shapes (or all-attributes attributes))
-              :on-click #(on-token-pill-click % token)
-              :on-context-menu #(on-context-menu % token)}])]])]]))
+            (let [theme-token (get active-theme-tokens (wtt/token-identifier token))]
+              [:& token-pill
+               {:key (:id token)
+                :token token
+                :theme-token theme-token
+                :highlighted? (wtt/shapes-token-applied? token selected-shapes (or all-attributes attributes))
+                :on-click #(on-token-pill-click % token)
+                :on-context-menu #(on-context-menu % token)}]))]])]]))
 
 (defn sorted-token-groups
   "Separate token-types into groups of `:empty` or `:filled` depending if tokens exist for that type.
@@ -187,11 +189,8 @@
                       "b { font-weight: 600; }"])
            "}")]
      [:div.spaced-y
-      {:style {:max-height "60vh"
-               :overflow "auto"
-               :border-bottom "2px solid grey"
-               :padding "10px"
-               :margin-bottom "50px"}}
+      {:style {:border-bottom "2px solid grey"
+               :padding "10px"}}
 
       [:& tokene-theme-create]
       [:div.spaced-y
@@ -240,8 +239,7 @@
                                   (dom/prevent-default e)
                                   (dom/stop-propagation e)
                                   (st/emit! (wdt/delete-token-set id)))}
-             "🗑️"]]]])]
-      [:hr]]]))
+             "🗑️"]]]])]]]))
 
 (mf/defc tokens-explorer
   [_props]
@@ -249,6 +247,9 @@
 
         selected (mf/deref refs/selected-shapes)
         selected-shapes (into [] (keep (d/getf objects)) selected)
+
+
+        active-theme-tokens (sd/use-active-theme-sets-tokens)
 
         tokens (sd/use-resolved-workspace-tokens)
         token-groups (mf/with-memo [tokens]
@@ -261,6 +262,7 @@
         [:& token-component {:key token-key
                              :type token-key
                              :selected-shapes selected-shapes
+                             :active-theme-tokens active-theme-tokens
                              :tokens tokens
                              :token-type-props token-type-props}])]]))
 
