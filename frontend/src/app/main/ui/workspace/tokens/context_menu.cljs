@@ -81,8 +81,7 @@
     (concat [all-action] single-actions)))
 
 (defn spacing-attribute-actions [{:keys [token selected-shapes] :as context-data}]
-  (let [on-update-shape (fn [resolved-value shape-ids attrs]
-                          (dwsl/update-layout shape-ids {:layout-padding (zipmap attrs (repeat resolved-value))}))
+  (let [on-update-shape-padding wtch/update-layout-padding
         padding-attrs {:p1 "Top"
                        :p2 "Right"
                        :p3 "Bottom"
@@ -105,7 +104,7 @@
                                                :shape-ids shape-ids}]
                                     (if all-selected?
                                       (st/emit! (wtch/unapply-token props))
-                                      (st/emit! (wtch/apply-token (assoc props :on-update-shape on-update-shape))))))}
+                                      (st/emit! (wtch/apply-token (assoc props :on-update-shape on-update-shape-padding))))))}
                        {:title "Horizontal"
                         :selected? horizontal-padding-selected?
                         :action (fn []
@@ -116,7 +115,7 @@
                                                 horizontal-padding-selected? (wtch/apply-token (assoc props :attributes-to-remove horizontal-attributes))
                                                 :else (wtch/apply-token (assoc props
                                                                                :attributes horizontal-attributes
-                                                                               :on-update-shape on-update-shape)))]
+                                                                               :on-update-shape on-update-shape-padding)))]
                                     (st/emit! event)))}
                        {:title "Vertical"
                         :selected? vertical-padding-selected?
@@ -128,7 +127,7 @@
                                                 vertical-padding-selected? (wtch/apply-token (assoc props :attributes-to-remove vertical-attributes))
                                                 :else (wtch/apply-token (assoc props
                                                                                :attributes vertical-attributes
-                                                                               :on-update-shape on-update-shape)))]
+                                                                               :on-update-shape on-update-shape-padding)))]
                                     (st/emit! event)))}]
         single-padding-items (->> padding-attrs
                                   (map (fn [[attr title]]
@@ -149,7 +148,7 @@
                                                                    all-selected? (-> (assoc props :attributes-to-remove all-padding-attrs)
                                                                                      (wtch/apply-token))
                                                                    selected? (wtch/unapply-token props)
-                                                                   :else (-> (assoc props :on-update-shape on-update-shape)
+                                                                   :else (-> (assoc props :on-update-shape on-update-shape-padding)
                                                                              (wtch/apply-token)))]
                                                        (st/emit! event))}))))
         gap-items (all-or-sepearate-actions {:attribute-labels {:column-gap "Column Gap"

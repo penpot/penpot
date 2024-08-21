@@ -5,11 +5,57 @@
 // Copyright (c) KALEIDOS INC
 
 @import "refactor/common-refactor.scss";
-
 @import "./common.scss";
 
 .sidebar-tab-wrapper {
-  padding: $s-12;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.sets-section-wrapper {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: $s-8;
+}
+
+.sets-sidebar {
+  position: relative;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-left: $s-8;
+  padding-top: $s-12;
+  color: var(--layer-row-foreground-color);
+}
+
+.add-set {
+  @extend .button-tertiary;
+  height: $s-32;
+  width: $s-28;
+  padding: 0;
+  margin-right: $s-12;
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+    transform: rotate(90deg);
+  }
+}
+
+.tokens-section-wrapper {
+  flex: 1;
+  padding-top: $s-12;
+  padding-left: $s-12;
+  overflow-y: auto;
+}
+
+// TODO Remove once sets are available to public
+.sets-section-wrapper + .tokens-section-wrapper {
+  padding-top: 0;
 }
 
 .token-pills-wrapper {

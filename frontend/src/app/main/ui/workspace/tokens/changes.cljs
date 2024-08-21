@@ -136,6 +136,9 @@
                        (zipmap (repeat value)))]
     {:layout-gap layout-gap}))
 
+(defn update-layout-padding [value shape-ids attrs]
+  (dwsl/update-layout shape-ids {:layout-padding (zipmap attrs (repeat value))}))
+
 (defn update-layout-spacing [value shape-ids attributes]
   (ptk/reify ::update-layout-spacing
     ptk/WatchEvent
@@ -147,15 +150,6 @@
             layout-attributes (attributes->layout-gap attributes value)]
         (rx/of
          (dwsl/update-layout layout-shape-ids layout-attributes))))))
-
-(defn update-layout-spacing-column [value shape-ids]
-  (ptk/reify ::update-layout-spacing-column
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/concat
-       (for [shape-id shape-ids]
-         (let [layout-update {:layout-gap {:column-gap value :row-gap value}}]
-           (dwsl/update-layout [shape-id] layout-update)))))))
 
 (defn update-shape-position [value shape-ids attributes]
   (ptk/reify ::update-shape-position
