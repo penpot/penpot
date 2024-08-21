@@ -15,6 +15,9 @@
 (defn get-workspace-themes-index [state]
   (get-in state [:workspace-data :token-themes-index] {}))
 
+(defn get-workspace-token-set-groups [state]
+  (get-in state [:workspace-data :token-set-groups]))
+
 (defn get-workspace-ordered-themes [state]
   (let [themes (get-workspace-themes state)
         themes-index (get-workspace-themes-index state)]
@@ -44,6 +47,11 @@
                             acc))
                         #{} active-theme-ids)]
     active-set-ids))
+
+(defn get-ordered-active-set-ids [state]
+  (let [active-set-ids (get-active-set-ids state)
+        token-set-groups (get-workspace-token-set-groups state)]
+    (filter active-set-ids token-set-groups)))
 
 (defn theme-ids-with-group
   "Returns set of theme-ids that share the same `:group` property as the theme with `theme-id`.
@@ -129,7 +137,7 @@
   (assoc-in state [:workspace-local :selected-token-set-id] id))
 
 (defn get-active-theme-sets-tokens-names-map [state]
-  (let [active-set-ids (get-active-set-ids state)]
+  (let [active-set-ids (get-ordered-active-set-ids state)]
     (reduce
      (fn [names-map-acc set-id]
        (let [token-ids (get-workspace-token-set-tokens set-id state)]
