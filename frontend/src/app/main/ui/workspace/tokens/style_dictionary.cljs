@@ -107,11 +107,12 @@
 
   This hook will return the unresolved tokens as state until they are processed,
   then the state will be updated with the resolved tokens."
-  [tokens & {:keys [cache-atom]
-             :or {cache-atom !tokens-cache}}]
+  [tokens & {:keys [cache-atom _names-map?]
+             :or {cache-atom !tokens-cache}
+             :as config}]
   (let [tokens-state (mf/use-state (get @cache-atom tokens))]
     (mf/use-effect
-     (mf/deps tokens)
+     (mf/deps tokens config)
      (fn []
        (let [cached (get @cache-atom tokens)]
          (cond
@@ -120,7 +121,7 @@
            ;; Get the cached entry
            (some? cached) (reset! tokens-state cached)
            ;; No cached entry, start processing
-           :else (let [promise+ (resolve-tokens+ tokens)]
+           :else (let [promise+ (resolve-tokens+ tokens config)]
                    (swap! cache-atom assoc tokens promise+)
                    (p/then promise+ (fn [resolved-tokens]
                                       (swap! cache-atom assoc tokens resolved-tokens)

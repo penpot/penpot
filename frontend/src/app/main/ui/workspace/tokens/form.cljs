@@ -99,10 +99,10 @@ Token names should only contain letters and digits separated by . characters.")}
       empty-input? (p/rejected nil)
       direct-self-reference? (p/rejected :error/token-direct-self-reference)
       :else (let [token-id (or (:id token) (random-uuid))
-                  new-tokens (update tokens token-id merge {:id token-id
-                                                            :value input
-                                                            :name token-name})]
-              (-> (sd/resolve-tokens+ new-tokens #_ {:debug? true})
+                  new-tokens (update tokens token-name merge {:id token-id
+                                                              :value input
+                                                              :name token-name})]
+              (-> (sd/resolve-tokens+ new-tokens {:names-map? true})
                   (p/then
                    (fn [resolved-tokens]
                      (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
@@ -139,11 +139,15 @@ Token names should only contain letters and digits separated by . characters.")}
               timeout))))]
     debounced-resolver-callback))
 
+(defonce form-token-cache-atom (atom nil))
+
 (mf/defc form
   {::mf/wrap-props false}
   [{:keys [token token-type] :as _args}]
-  (let [tokens (mf/deref refs/workspace-tokens)
-        resolved-tokens (sd/use-resolved-tokens tokens)
+  (let [tokens (mf/deref refs/get-active-theme-sets-tokens)
+        resolved-tokens (sd/use-resolved-tokens tokens {:names-map? true
+                                                        :cache-atom form-token-cache-atom})
+        _ (js/console.log "resolved-tokens" resolved-tokens)
         token-path (mf/use-memo
                     (mf/deps (:name token))
                     #(wtt/token-name->path (:name token)))
