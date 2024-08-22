@@ -283,8 +283,22 @@
      (when @open?
        [:& sets-list {:selected-set-id selected-set-id}])]))
 
+
+(defn dev-or-preview-url? [url]
+  (let [host (-> url js/URL. .-host)
+        pure-host (first (str/split host #":"))
+        domain (second (str/split pure-host #"\."))]
+    (or (= domain "penpot.tokens.studio")
+        (= pure-host "localhost"))))
+
+(defn location-url-dev-or-preview-url!? []
+  (dev-or-preview-url? js/window.location.href))
+
 (defn temp-use-themes-flag []
-  (let [show? (mf/use-state (get @storage ::show-token-themes-sets? false))]
+  (let [show? (mf/use-state (or
+                             (location-url-dev-or-preview-url!?)
+                             (get @storage ::show-token-themes-sets?)
+                             false))]
     (mf/use-effect
      (fn []
        (letfn [(toggle! []
