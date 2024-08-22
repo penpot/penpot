@@ -64,24 +64,25 @@
   [{:keys [grow-type id migrate] :as shape} node]
   ;; Check if we need to update the size because it's auto-width or auto-height
   ;; Update the position-data of every text fragment
-  (p/let [position-data (tsp/calc-position-data id)]
-    ;; At least one paragraph needs to be inside the bounding box
-    (when (gsht/overlaps-position-data? shape position-data)
-      (st/emit! (dwt/update-position-data id position-data)))
+  (->> (tsp/calc-position-data id)
+       (p/fmap (fn [position-data]
+                 ;; At least one paragraph needs to be inside the bounding box
+                 (when (gsht/overlaps-position-data? shape position-data)
+                   (st/emit! (dwt/update-position-data id position-data)))
 
-    (when (contains? #{:auto-height :auto-width} grow-type)
-      (let [{:keys [width height]}
-            (-> (dom/query node ".paragraph-set")
-                (dom/get-bounding-rect))
+                 (when (contains? #{:auto-height :auto-width} grow-type)
+                   (let [{:keys [width height]}
+                         (-> (dom/query node ".paragraph-set")
+                             (dom/get-bounding-rect))
 
-            width (mth/ceil width)
-            height (mth/ceil height)]
-        (when (and (not (mth/almost-zero? width))
-                   (not (mth/almost-zero? height))
-                   (not migrate))
-          (st/emit! (dwt/resize-text id width height)))))
+                         width (mth/ceil width)
+                         height (mth/ceil height)]
+                     (when (and (not (mth/almost-zero? width))
+                                (not (mth/almost-zero? height))
+                                (not migrate))
+                       (st/emit! (dwt/resize-text id width height)))))
 
-    (st/emit! (dwt/clean-text-modifier id))))
+                 (st/emit! (dwt/clean-text-modifier id))))))
 
 (defn- update-text-modifier
   [{:keys [grow-type id] :as shape} node]
