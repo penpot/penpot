@@ -11,8 +11,9 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.ui.context :as muc]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.workspace.comments :refer [comments-sidebar]]
    [app.main.ui.workspace.left-header :refer [left-header]]
@@ -31,6 +32,17 @@
 
 ;; --- Left Sidebar (Component)
 
+(mf/defc collapse-button
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
+  [{:keys [on-click] :as props}]
+  ;; NOTE: This custom button may be replace by an action button when this variant is designed
+  [:button {:class (stl/css :collapse-sidebar-button)
+            :on-click on-click}
+   [:& icon* {:id "arrow"
+              :size "s"
+              :aria-label (tr "workspace.sidebar.collapse")}]])
+
 (mf/defc left-sidebar
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
@@ -38,7 +50,6 @@
   (let [options-mode   (mf/deref refs/options-mode-global)
         mode-inspect?  (= options-mode :inspect)
         project        (mf/deref refs/workspace-project)
-
 
         section        (cond (or mode-inspect? (contains? layout :layers)) :layers
                              (contains? layout :assets) :assets)
@@ -60,7 +71,49 @@
         (mf/use-fn #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
 
         on-tab-change
-        (mf/use-fn #(st/emit! (dw/go-to-layout %)))]
+        (mf/use-fn #(st/emit! (dw/go-to-layout (keyword %))))
+
+        tabs (if ^boolean mode-inspect?
+               #js [#js {:label (tr "workspace.sidebar.layers")
+                         :id "layers"
+                         :content (mf/html [:article {:class (stl/css :layers-tab)
+                                                      :style #js {"--height" (str size-pages "px")}}
+
+                                            [:& sitemap {:layout layout
+                                                         :toggle-pages toggle-pages
+                                                         :show-pages? @show-pages?
+                                                         :size size-pages}]
+
+                                            (when @show-pages?
+                                              [:div {:class (stl/css :resize-area-horiz)
+                                                     :on-pointer-down on-pointer-down-pages
+                                                     :on-lost-pointer-capture on-lost-pointer-capture-pages
+                                                     :on-pointer-move on-pointer-move-pages}])
+
+                                            [:& layers-toolbox {:size-parent size
+                                                                :size size-pages}]])}]
+               #js [#js {:label (tr "workspace.sidebar.layers")
+                         :id "layers"
+                         :content (mf/html [:article {:class (stl/css :layers-tab)
+                                                      :style #js {"--height" (str size-pages "px")}}
+
+                                            [:& sitemap {:layout layout
+                                                         :toggle-pages toggle-pages
+                                                         :show-pages? @show-pages?
+                                                         :size size-pages}]
+
+                                            (when @show-pages?
+                                              [:div {:class (stl/css :resize-area-horiz)
+                                                     :on-pointer-down on-pointer-down-pages
+                                                     :on-lost-pointer-capture on-lost-pointer-capture-pages
+                                                     :on-pointer-move on-pointer-move-pages}])
+
+                                            [:& layers-toolbox {:size-parent size
+                                                                :size size-pages}]])}
+                    #js {:label (tr "workspace.toolbar.assets")
+                         :id "assets"
+                         :content (mf/html [:& assets-toolbox {:size (- size 58)}])}])]
+
 
     [:& (mf/provider muc/sidebar) {:value :left}
      [:aside {:ref parent-ref
@@ -89,36 +142,12 @@
 
         :else
         [:div {:class (stl/css  :settings-bar-content)}
-         [:& tab-container
-          {:on-change-tab on-tab-change
-           :selected section
-           :collapsable true
-           :handle-collapse handle-collapse
-           :header-class (stl/css :tab-spacing)}
-
-          [:& tab-element {:id :layers
-                           :title (tr "workspace.sidebar.layers")}
-           [:article {:class (stl/css :layers-tab)
-                      :style #js {"--height" (str size-pages "px")}}
-
-            [:& sitemap {:layout layout
-                         :toggle-pages toggle-pages
-                         :show-pages? @show-pages?
-                         :size size-pages}]
-
-            (when @show-pages?
-              [:div {:class (stl/css :resize-area-horiz)
-                     :on-pointer-down on-pointer-down-pages
-                     :on-lost-pointer-capture on-lost-pointer-capture-pages
-                     :on-pointer-move on-pointer-move-pages}])
-
-            [:& layers-toolbox {:size-parent size
-                                :size size-pages}]]]
-
-          (when-not ^boolean mode-inspect?
-            [:& tab-element {:id :assets
-                             :title (tr "workspace.toolbar.assets")}
-             [:& assets-toolbox {:size (- size 58)}]])]])]]))
+         [:> tab-switcher* {:tabs tabs
+                            :default-selected (dm/str section)
+                            :on-change-tab on-tab-change
+                            :class (stl/css :left-sidebar-tabs)
+                            :action-button-position "start"
+                            :action-button (mf/html [:& collapse-button {:on-click handle-collapse}])}]])]]))
 
 ;; --- Right Sidebar (Component)
 
@@ -131,9 +160,6 @@
         is-comments?     (= drawing-tool :comments)
         is-history?      (contains? layout :document-history)
         is-inspect?      (= section :inspect)
-
-        ;;expanded?      (mf/deref refs/inspect-expanded)
-        ;;prev-expanded? (hooks/use-previous expanded?)
 
         current-section* (mf/use-state :info)
         current-section  (deref current-section*)
@@ -171,7 +197,7 @@
               :id "right-sidebar-aside"
               :data-testid "right-sidebar"
               :data-size (str size)
-              :style #js {"--width" (if can-be-expanded? (dm/str size "px") 276)}}
+              :style #js {"--width" (if can-be-expanded? (dm/str size "px") "276px")}}
       (when can-be-expanded?
         [:div {:class (stl/css :resize-area)
                :on-pointer-down on-pointer-down

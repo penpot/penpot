@@ -11,7 +11,7 @@
    [app.common.types.component :as ctk]
    [app.main.refs :as refs]
    [app.main.ui.components.shape-icon :as sir]
-   [app.main.ui.components.tab-container :refer [tab-container tab-element]]
+   [app.main.ui.ds.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.icons :as i]
    [app.main.ui.viewer.inspect.attributes :refer [attributes]]
    [app.main.ui.viewer.inspect.code :refer [code]]
@@ -61,9 +61,9 @@
         (mf/use-fn
          (mf/deps from on-change-section)
          (fn [new-section]
-           (reset! section new-section)
+           (reset! section (keyword new-section))
            (when on-change-section
-             (on-change-section new-section))))
+             (on-change-section (keyword new-section)))))
 
         handle-expand
         (mf/use-fn
@@ -74,7 +74,33 @@
         navigate-to-help
         (mf/use-fn
          (fn []
-           (dom/open-new-window "https://help.penpot.app/user-guide/inspect/")))]
+           (dom/open-new-window "https://help.penpot.app/user-guide/inspect/")))
+
+        info-content
+        (mf/html [:& attributes {:page-id page-id
+                                 :objects objects
+                                 :file-id file-id
+                                 :frame frame
+                                 :shapes shapes
+                                 :from from
+                                 :libraries libraries
+                                 :share-id share-id}])
+
+        code-content
+        (mf/html [:& code {:frame frame
+                           :shapes shapes
+                           :on-expand handle-expand
+                           :from from}])
+
+        tabs
+        #js [#js {:label (tr "inspect.tabs.info")
+                  :id "info"
+                  :content info-content}
+
+             #js {:label (tr "inspect.tabs.code")
+                  :data-testid "code"
+                  :id "code"
+                  :content code-content}]]
 
     (mf/use-effect
      (mf/deps shapes handle-change-tab)
@@ -108,25 +134,11 @@
             ;;   (tr "inspect.tabs.code.selected.text")
             [:span {:class (stl/css :layer-title)} (:name first-shape)]])]
         [:div {:class (stl/css :inspect-content)}
-         [:& tab-container {:on-change-tab handle-change-tab
-                            :selected @section
-                            :content-class (stl/css :tab-content)
-                            :header-class (stl/css :tab-header)}
-          [:& tab-element {:id :info :title (tr "inspect.tabs.info")}
-           [:& attributes {:page-id page-id
-                           :objects objects
-                           :file-id file-id
-                           :frame frame
-                           :shapes shapes
-                           :from from
-                           :libraries libraries
-                           :share-id share-id}]]
 
-          [:& tab-element {:id :code :title (tr "inspect.tabs.code")}
-           [:& code {:frame frame
-                     :shapes shapes
-                     :on-expand handle-expand
-                     :from from}]]]]]
+         [:> tab-switcher* {:tabs tabs
+                            :default-selected "info"
+                            :on-change-tab handle-change-tab
+                            :class (stl/css :viewer-tab-switcher)}]]]
        [:div {:class (stl/css :empty)}
         [:div {:class (stl/css :code-info)}
          [:span {:class (stl/css :placeholder-icon)}

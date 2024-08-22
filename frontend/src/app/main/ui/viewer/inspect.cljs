@@ -43,7 +43,7 @@
   [{:keys [local file page frame index viewer-pagination size share-id]}]
   (let [inspect-svg-container-ref (mf/use-ref nil)
         current-section* (mf/use-state :info)
-        current-section (deref current-section*)
+        current-section  (deref current-section*)
 
         can-be-expanded? (= current-section :code)
 
