@@ -23,7 +23,7 @@
 (t/deftest resolve-tokens-test
   (t/async
     done
-    (t/testing "resolves tokens using style-dictionary"
+    (t/testing "resolves tokens using style-dictionary from a ids map"
       (-> (sd/resolve-tokens+ tokens)
           (p/finally (fn [resolved-tokens]
                        (let [expected-tokens {"borderRadius.sm"
@@ -40,7 +40,7 @@
 (t/deftest resolve-tokens-names-map-test
   (t/async
     done
-    (t/testing "resolves tokens using style-dictionary in a names-map"
+    (t/testing "resolves tokens using style-dictionary from a names map"
       (-> (vals tokens)
           (wtt/token-names-map)
           (sd/resolve-tokens+ {:names-map? true})
