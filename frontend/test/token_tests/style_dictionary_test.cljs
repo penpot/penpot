@@ -37,7 +37,7 @@
                          (t/is (= expected-tokens resolved-tokens))
                          (done))))))))
 
-(t/deftest resolve-tokens-test
+(t/deftest resolve-tokens-names-map-test
   (t/async
     done
     (t/testing "resolves tokens using style-dictionary in a names-map"
