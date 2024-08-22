@@ -144,27 +144,28 @@ Token names should only contain letters and digits separated by . characters.")}
 (mf/defc form
   {::mf/wrap-props false}
   [{:keys [token token-type] :as _args}]
-  (let [tokens (mf/deref refs/workspace-active-theme-sets-tokens)
-        resolved-tokens (sd/use-resolved-tokens tokens {:names-map? true
-                                                        :cache-atom form-token-cache-atom})
+  (let [selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
+        active-theme-tokens (mf/deref refs/workspace-active-theme-sets-tokens)
+        resolved-tokens (sd/use-resolved-tokens active-theme-tokens {:names-map? true
+                                                                     :cache-atom form-token-cache-atom})
         token-path (mf/use-memo
                     (mf/deps (:name token))
                     #(wtt/token-name->path (:name token)))
-        tokens-tree (mf/use-memo
-                     (mf/deps token-path resolved-tokens)
-                     (fn []
-                       (-> (wtt/token-names-tree resolved-tokens)
-                           ;; Allow setting editing token to it's own path
-                           (d/dissoc-in token-path))))
+        selected-set-tokens-tree (mf/use-memo
+                                  (mf/deps token-path selected-set-tokens)
+                                  (fn []
+                                    (-> (wtt/token-names-tree selected-set-tokens)
+                                        ;; Allow setting editing token to it's own path
+                                        (d/dissoc-in token-path))))
 
         ;; Name
         name-ref (mf/use-var (:name token))
         name-errors (mf/use-state nil)
         validate-name (mf/use-callback
-                       (mf/deps tokens-tree)
+                       (mf/deps selected-set-tokens-tree)
                        (fn [value]
                          (let [schema (token-name-schema {:token token
-                                                          :tokens-tree tokens-tree})]
+                                                          :tokens-tree selected-set-tokens-tree})]
                            (m/explain schema (finalize-name value)))))
         on-update-name-debounced (mf/use-callback
                                   (debounce (fn [e]
@@ -190,7 +191,7 @@ Token names should only contain letters and digits separated by . characters.")}
                                        (= token-or-err :error/token-missing-reference) token-or-err
                                        (:resolved-value token-or-err) (:resolved-value token-or-err))]
                                (reset! token-resolve-result v))))
-        on-update-value-debounced (use-debonced-resolve-callback name-ref token tokens set-resolve-value)
+        on-update-value-debounced (use-debonced-resolve-callback name-ref token active-theme-tokens set-resolve-value)
         on-update-value (mf/use-callback
                          (mf/deps on-update-value-debounced)
                          (fn [e]
