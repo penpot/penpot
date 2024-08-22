@@ -135,6 +135,6 @@
       (use-resolved-tokens config)))
 
 (defn use-active-theme-sets-tokens [& {:as config}]
-  (-> (mf/deref refs/get-active-theme-sets-tokens)
+  (-> (mf/deref refs/workspace-active-theme-sets-tokens)
       (use-resolved-tokens {:cache-atom !theme-tokens-cache
                             :names-map? true})))

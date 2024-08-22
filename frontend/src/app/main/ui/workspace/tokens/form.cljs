@@ -144,10 +144,9 @@ Token names should only contain letters and digits separated by . characters.")}
 (mf/defc form
   {::mf/wrap-props false}
   [{:keys [token token-type] :as _args}]
-  (let [tokens (mf/deref refs/get-active-theme-sets-tokens)
+  (let [tokens (mf/deref refs/workspace-active-theme-sets-tokens)
         resolved-tokens (sd/use-resolved-tokens tokens {:names-map? true
                                                         :cache-atom form-token-cache-atom})
-        _ (js/console.log "resolved-tokens" resolved-tokens)
         token-path (mf/use-memo
                     (mf/deps (:name token))
                     #(wtt/token-name->path (:name token)))
