@@ -10,7 +10,7 @@ export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
 export CURRENT_HASH=$(git rev-parse --short HEAD);
 export CURRENT_COMMITS=$(git rev-list --count HEAD)
 
-set -ex
+set -e
 
 function print-current-version {
     echo -n "$CURRENT_VERSION-$CURRENT_COMMITS-g$CURRENT_HASH"
