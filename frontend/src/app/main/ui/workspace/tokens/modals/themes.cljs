@@ -111,9 +111,12 @@
     [:div {:class (stl/css :sets-list-wrapper)}
      [:& wts/controlled-sets-list
       {:token-sets token-sets
-       :selected-token-set-id selected-token-set-id
-       :token-set-selected? token-set-selected?
-       :token-set-active? token-set-active?}]]))
+       :token-set-selected? (constantly false)
+       :token-set-active? token-set-active?
+       :on-select (fn [id]
+                    (js/console.log "id" id))
+       :on-toggle (fn [id]
+                    (js/console.log "id" id))}]]))
 
 (mf/defc themes
   [{:keys [] :as _args}]

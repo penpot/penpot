@@ -17,11 +17,10 @@
 (def ^:private chevron-icon
   (i/icon-xref :arrow (stl/css :chevron-icon)))
 
-(defn on-toggle-token-set-click [id event]
-  (dom/stop-propagation event)
+(defn on-toggle-token-set-click [id]
   (st/emit! (wdt/toggle-token-set id)))
 
-(defn on-select-token-set-click [id event]
+(defn on-select-token-set-click [id]
   (st/emit! (wdt/set-selected-token-set-id id)))
 
 (defn on-delete-token-set-click [id event]
@@ -29,7 +28,7 @@
   (st/emit! (wdt/delete-token-set id)))
 
 (mf/defc sets-tree
-  [{:keys [token-set token-set-active? token-set-selected?] :as _props}]
+  [{:keys [token-set token-set-active? token-set-selected? on-select on-toggle] :as _props}]
   (let [{:keys [id name _children]} token-set
         selected? (and set? (token-set-selected? id))
         visible? (token-set-active? id)
@@ -37,7 +36,9 @@
         set? true #_(= type :set)
         group? false #_(= type :group)]
     [:div {:class (stl/css :set-item-container)
-           :on-click #(on-select-token-set-click id %)}
+           :on-click (fn [event]
+                       (dom/stop-propagation event)
+                       (on-select id))}
      [:div {:class (stl/css-case :set-item-group group?
                                  :set-item-set set?
                                  :selected-set selected?)}
@@ -54,7 +55,9 @@
         i/delete]]
       (when set?
         [:span {:class (stl/css :action-btn)
-                :on-click #(on-toggle-token-set-click id %)}
+                :on-click (fn [event]
+                            (dom/stop-propagation event)
+                            (on-toggle id))}
          (if visible? i/shown i/hide)])]
      #_(when (and children (not @collapsed?))
          [:div {:class (stl/css :set-children)}
@@ -90,4 +93,6 @@
      {:token-sets token-sets
       :selected-token-set-id selected-token-set-id
       :token-set-selected? token-set-selected?
-      :token-set-active? token-set-active?}]))
+      :token-set-active? token-set-active?
+      :on-select on-select-token-set-click
+      :on-toggle on-toggle-token-set-click}]))
