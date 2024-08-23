@@ -125,7 +125,7 @@
                0)))
 
 (def ^:private sql:get-files
-  "SELECT id, deleted_at, project_id, data_ref_id
+  "SELECT id, deleted_at, project_id, data_backend, data_ref_id
      FROM file
     WHERE deleted_at IS NOT NULL
       AND deleted_at < now() - ?::interval
@@ -137,14 +137,15 @@
 (defn- delete-files!
   [{:keys [::db/conn ::sto/storage ::min-age ::chunk-size] :as cfg}]
   (->> (db/cursor conn [sql:get-files min-age chunk-size] {:chunk-size 1})
-       (reduce (fn [total {:keys [id deleted-at project-id data-ref-id]}]
+       (reduce (fn [total {:keys [id deleted-at project-id] :as file}]
                  (l/trc :hint "permanently delete"
                         :rel "file"
                         :id (str id)
                         :project-id (str project-id)
                         :deleted-at (dt/format-instant deleted-at))
 
-                 (some->> data-ref-id (sto/touch-object! storage))
+                 (when (= "objects-storage" (:data-backend file))
+                   (sto/touch-object! storage (:data-ref-id file)))
 
                  ;; And finally, permanently delete the file.
                  (db/delete! conn :file {:id id})

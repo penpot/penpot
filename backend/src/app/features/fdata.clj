@@ -18,6 +18,14 @@
    [app.util.pointer-map :as pmap]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; OFFLOAD
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn offloaded?
+  [file]
+  (= "objects-storage" (:data-backend file)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OBJECTS-MAP
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -58,18 +66,16 @@
 
 (defn get-file-data
   "Get file data given a file instance."
-  [system {:keys [data-backend data-ref-id] :as file} & {:keys [touch]}]
-  (if (= data-backend "objects-storage")
-    (let [storage (sto/resolve system ::db/reuse-conn true)
-          object  (sto/get-object storage data-ref-id)]
-
-      (when touch (sto/touch-object! storage data-ref-id))
-      (sto/get-object-bytes storage object))
+  [system file]
+  (if (offloaded? file)
+    (let [storage (sto/resolve system ::db/reuse-conn true)]
+      (->> (sto/get-object storage (:data-ref-id file))
+           (sto/get-object-bytes storage)))
     (:data file)))
 
 (defn resolve-file-data
-  [system file & {:as opts}]
-  (let [data (get-file-data system file opts)]
+  [system file]
+  (let [data (get-file-data system file)]
     (assoc file :data data)))
 
 (defn load-pointer

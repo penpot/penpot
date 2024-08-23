@@ -11,6 +11,7 @@
   inactivity (the default threshold is 72h)."
   (:require
    [app.binfile.common :as bfc]
+   [app.common.exceptions :as ex]
    [app.common.files.migrations :as fmg]
    [app.common.files.validate :as cfv]
    [app.common.logging :as l]
@@ -235,6 +236,16 @@
 
 (defn- decode-file
   [cfg {:keys [id] :as file}]
+  ;; NOTE: a preventive check that does not allow proceed the gc for
+  ;; already offloaded file; if this exception happens, means that
+  ;; something external modified the file flag without preloading the
+  ;; file back again to the table
+  (when (feat.fdata/offloaded? file)
+    (ex/raise :hint "unable to run file-gc on an already offloaded file"
+              :type :internal
+              :code :file-already-offloaded
+              :file-id id))
+
   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
     (-> file
         (update :features db/decode-pgarray #{})

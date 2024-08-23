@@ -404,7 +404,8 @@
     ::sto/storage (ig/ref ::sto/storage)}
 
    :app.tasks.file-xlog-gc/handler
-   {::db/pool (ig/ref ::db/pool)}
+   {::db/pool     (ig/ref ::db/pool)
+    ::sto/storage (ig/ref ::sto/storage)}
 
    :app.tasks.telemetry/handler
    {::db/pool            (ig/ref ::db/pool)

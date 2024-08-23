@@ -29,6 +29,7 @@
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
+   [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
@@ -228,13 +229,20 @@
   [{:keys [::db/conn ::wrk/executor] :as cfg}
    {:keys [profile-id file changes session-id ::created-at skip-validate] :as params}]
   (let [;; Retrieve the file data
-        file     (feat.fdata/resolve-file-data cfg file {:touch true})
+        file     (feat.fdata/resolve-file-data cfg file)
 
         ;; Process the file data on separated thread for avoid to do
         ;; the CPU intensive operation on vthread.
 
         file     (px/invoke! executor (partial update-file-data cfg file changes skip-validate))
         features (db/create-array conn "text" (:features file))]
+
+    ;; NOTE: if file was offloaded, we need to touch the referenced
+    ;; storage object because on this update operation the data will
+    ;; be overwritted.
+    (when (= "objects-storage" (:data-backend file))
+      (let [storage (sto/resolve cfg ::db/reuse-conn true)]
+        (sto/touch-object! storage (:data-ref-id file))))
 
     (db/insert! conn :file-change
                 {:id (uuid/next)
@@ -406,7 +414,7 @@
   "UPDATE file_change
       SET label = NULL
     WHERE file_id = ?
-      AND label IS NOT NULL
+      AND label LIKE 'internal/%'
       AND created_at < ?")
 
 (defn- delete-old-snapshots!

@@ -499,17 +499,16 @@
                      (js/console.log "EE:" cause))))))
 
 (defn ^:export restore-snapshot
-  [id file-id]
+  [label file-id]
   (when-let [file-id (or (d/parse-uuid file-id)
                          (:current-file-id @st/state))]
-    (when-let [id (d/parse-uuid id)]
-      (->> (http/send! {:method :post
-                        :uri (u/join cf/public-uri "api/rpc/command/restore-file-snapshot")
-                        :body (http/transit-data {:file-id file-id :id id})})
-           (rx/map http/conditional-decode-transit)
-           (rx/mapcat rp/handle-response)
-           (rx/subs! (fn [_]
-                       (println "Snapshot restored " id)
-                       #_(.reload js/location))
-                     (fn [cause]
-                       (js/console.log "EE:" cause)))))))
+    (->> (http/send! {:method :post
+                      :uri (u/join cf/public-uri "api/rpc/command/restore-file-snapshot")
+                      :body (http/transit-data {:file-id file-id :label label})})
+         (rx/map http/conditional-decode-transit)
+         (rx/mapcat rp/handle-response)
+         (rx/subs! (fn [_]
+                     (println "Snapshot restored " label)
+                     #_(.reload js/location))
+                   (fn [cause]
+                     (js/console.log "EE:" cause))))))
