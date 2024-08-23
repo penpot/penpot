@@ -40,6 +40,14 @@
 (def selected-set-id
   (l/derived :selected-set-id st/state))
 
+ ;; Event Functions -------------------------------------------------------------
+
+(defn on-set-add-click [_event]
+  (when-let [set-name (js/window.prompt "Set name")]
+    (st/emit! (wdt/create-token-set {:name set-name}))))
+
+;; Components ------------------------------------------------------------------
+
 (mf/defc token-pill
   {::mf/wrap-props false}
   [{:keys [on-click token theme-token highlighted? on-context-menu] :as props}]
@@ -174,10 +182,7 @@
 (mf/defc token-sets
   [_props]
   (let [active-theme-ids (mf/deref refs/workspace-active-theme-ids)
-        themes (mf/deref refs/workspace-ordered-token-themes)
-        selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)
-        active-set-ids (mf/deref refs/workspace-active-set-ids)
-        token-sets (mf/deref refs/workspace-token-sets)]
+        themes (mf/deref refs/workspace-ordered-token-themes)]
     [:div
      [:style
       (str "@scope {"
@@ -189,9 +194,7 @@
                       "b { font-weight: 600; }"])
            "}")]
      [:div.spaced-y
-      {:style {:border-bottom "2px solid grey"
-               :padding "10px"}}
-
+      {:style {:padding "10px"}}
       [:& tokene-theme-create]
       [:div.spaced-y
        [:b "Themes"]
@@ -216,31 +219,7 @@
                                        (dom/prevent-default e)
                                        (dom/stop-propagation e)
                                        (st/emit! (wdt/delete-token-theme id)))}
-                  "🗑️"]]]])]])]]
-      [:div.spaced
-       [:b "Sets"]
-       [:button {:on-click #(when-let [set-name (js/window.prompt "Set name")]
-                              (st/emit! (wdt/create-token-set {:name set-name})))} "Create"]]
-      [:ul.spaced-y
-       (for [[_ {:keys [id name]}] token-sets]
-         [:li {:class [(when (= selected-token-set-id id) "selected")]
-               :on-click (fn []
-                           (st/emit!
-                            (wdt/set-selected-token-set-id id)))}
-          [:div.spaced
-           name
-           [:div.spaced
-            [:button
-             {:on-click (fn [e]
-                          (dom/prevent-default e)
-                          (dom/stop-propagation e)
-                          (st/emit! (wdt/toggle-token-set id)))}
-             (when (get active-set-ids id) "👁️")]
-            [:button {:on-click (fn [e]
-                                  (dom/prevent-default e)
-                                  (dom/stop-propagation e)
-                                  (st/emit! (wdt/delete-token-set id)))}
-             "🗑️"]]]])]]]))
+                  "🗑️"]]]])]])]]]]))
 
 (mf/defc tokens-explorer
   [_props]
@@ -269,8 +248,7 @@
 
 (mf/defc sets-sidebar
   []
-  (let [selected-set-id (mf/deref selected-set-id)
-        open? (mf/use-state true)]
+  (let [open? (mf/use-state true)]
     [:div {:class (stl/css :sets-sidebar)}
      [:div {:class (stl/css :sidebar-header)}
       [:& title-bar {:collapsable true
@@ -279,10 +257,10 @@
                      :title "SETS"
                      :on-collapsed #(swap! open? not)}]
       [:button {:class (stl/css :add-set)
-                :on-click #(println "Add Set")}
+                :on-click on-set-add-click}
        i/add]]
      (when @open?
-       [:& sets-list {:selected-set-id selected-set-id}])]))
+       [:& sets-list])]))
 
 (defn dev-or-preview-url? [url]
   (let [host (-> url js/URL. .-host)
