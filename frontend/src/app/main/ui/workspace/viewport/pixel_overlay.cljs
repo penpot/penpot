@@ -5,7 +5,9 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.ui.workspace.viewport.pixel-overlay
+  (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.config :as cfg]
    [app.main.data.modal :as modal]
@@ -186,11 +188,9 @@
          ;; Disconnect on unmount
          #(.disconnect observer))))
 
-    [:*
-     [:div.pixel-overlay
-      {:id "pixel-overlay"
-       :tab-index 0
-       :class (cur/get-static "picker")
-       :on-pointer-down handle-pointer-down-picker
-       :on-pointer-up handle-pointer-up-picker
-       :on-pointer-move handle-pointer-move-picker}]]))
+    [:div {:id "pixel-overlay"
+           :tab-index 0
+           :class (dm/str (cur/get-static "picker") " " (stl/css :pixel-overlay))
+           :on-pointer-down handle-pointer-down-picker
+           :on-pointer-up handle-pointer-up-picker
+           :on-pointer-move handle-pointer-move-picker}]))
