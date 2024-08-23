@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.ds.forms.input
+(ns app.main.ui.ds.controls.input
   (:require-macros
    [app.common.data.macros :as dm]
    [app.main.style :as stl])
