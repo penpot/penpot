@@ -241,7 +241,9 @@
                      :title "SETS"
                      :on-collapsed #(swap! open? not)}]
       [:button {:class (stl/css :add-set)
-                :on-click on-set-add-click}
+                :on-click #(do
+                             (reset! open? true)
+                             (on-set-add-click %))}
        i/add]]
      (when @open?
        [:& sets-list])]))
