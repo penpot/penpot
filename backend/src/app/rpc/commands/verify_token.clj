@@ -8,6 +8,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
+   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.http.session :as session]
@@ -156,11 +157,12 @@
               :code :invalid-invitation-token
               :hint "invitation token contains unexpected data"))
 
-  (let [invitation (db/get* conn :team-invitation
-                            {:team-id team-id :email-to member-email})
-        profile    (db/get* conn :profile
-                            {:id profile-id}
-                            {:columns [:id :email]})]
+  (let [invitation             (db/get* conn :team-invitation
+                                        {:team-id team-id :email-to member-email})
+        profile                (db/get* conn :profile
+                                        {:id profile-id}
+                                        {:columns [:id :email]})
+        registration-disabled? (not (contains? cf/flags :registration))]
     (when (nil? invitation)
       (ex/raise :type :validation
                 :code :invalid-token
@@ -189,12 +191,12 @@
                   :hint "logged-in user does not matches the invitation"))
 
       ;; If we have not logged-in user, and invitation comes with member-id we
-      ;; redirect user to login, if no memeber-id is present in the invitation
-      ;; token, we redirect user the the register page.
+      ;; redirect user to login, if no memeber-id is present and  in the invitation
+      ;; token and registration is enabled, we redirect user the the register page.
 
       {:invitation-token token
        :iss :team-invitation
-       :redirect-to (if member-id :auth-login :auth-register)
+       :redirect-to (if (or member-id registration-disabled?) :auth-login :auth-register)
        :state :pending})))
 
 ;; --- Default

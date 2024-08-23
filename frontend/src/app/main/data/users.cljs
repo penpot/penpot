@@ -19,6 +19,7 @@
    [app.main.data.websocket :as ws]
    [app.main.features :as features]
    [app.main.repo :as rp]
+   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.storage :refer [storage]]
@@ -135,7 +136,8 @@
           (swap! storage assoc :profile profile)
           (i18n/set-locale! (:lang profile))
           (when (not= previous-email email)
-            (set-current-team! nil)))))))
+            (set-current-team! nil))
+          (dom/set-html-theme-color (or (:theme profile) "default")))))))
 
 (defn fetch-profile
   []

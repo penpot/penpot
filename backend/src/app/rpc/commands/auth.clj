@@ -180,10 +180,11 @@
 (defn- validate-register-attempt!
   [cfg params]
 
-  (when-not (contains? cf/flags :registration)
-    (when-not (contains? params :invitation-token)
-      (ex/raise :type :restriction
-                :code :registration-disabled)))
+  (when (or
+         (not (contains? cf/flags :registration))
+         (not (contains? cf/flags :login-with-password)))
+    (ex/raise :type :restriction
+              :code :registration-disabled))
 
   (when (contains? params :invitation-token)
     (let [invitation (tokens/verify (::setup/props cfg)
@@ -282,6 +283,7 @@
         is-demo   (:is-demo params false)
         is-muted  (:is-muted params false)
         is-active (:is-active params false)
+        theme     (:theme params nil)
         email     (str/lower email)
 
         params    {:id id
@@ -292,6 +294,7 @@
                    :password password
                    :deleted-at (:deleted-at params)
                    :props props
+                   :theme theme
                    :is-active is-active
                    :is-muted is-muted
                    :is-demo is-demo}]
@@ -347,11 +350,13 @@
                 :extra-data ptoken})))
 
 (defn register-profile
-  [{:keys [::db/conn] :as cfg} {:keys [token fullname] :as params}]
-  (let [claims     (tokens/verify (::setup/props cfg) {:token token :iss :prepared-register})
+  [{:keys [::db/conn] :as cfg} {:keys [token fullname theme] :as params}]
+  (let [theme      (when (= theme "light") theme)
+        claims     (tokens/verify (::setup/props cfg) {:token token :iss :prepared-register})
         params     (-> claims
                        (into params)
-                       (assoc :fullname fullname))
+                       (assoc :fullname fullname)
+                       (assoc :theme theme))
 
         profile    (if-let [profile-id (:profile-id claims)]
                      (profile/get-profile conn profile-id)
@@ -456,7 +461,8 @@
 (def schema:register-profile
   [:map {:title "register-profile"}
    [:token schema:token]
-   [:fullname [::sm/word-string {:max 100}]]])
+   [:fullname [::sm/word-string {:max 100}]]
+   [:theme {:optional true} [:string {:max 10}]]])
 
 (sv/defmethod ::register-profile
   {::rpc/auth false

@@ -30,26 +30,27 @@
                          (not= section :auth-register-success))
         params  (:query-params route)
         error   (:error params)
-        hide-image-auth? (cf/external-feature-flag "signup-01" "test")]
+        default-light?   (cf/external-feature-flag "onboarding-02" "test")]
 
     (mf/with-effect []
       (dom/set-html-title (tr "title.default")))
+
+    (mf/with-effect [default-light?]
+      (when default-light?
+        (dom/set-html-theme-color "light")))
 
     (mf/with-effect [error]
       (when error
         (st/emit! (du/show-redirect-error error))))
 
-    [:main {:class (stl/css-case :auth-section (not hide-image-auth?)
-                                 :auth-section-hide-image hide-image-auth?)}
+    [:main {:class (stl/css :auth-section)}
      (when show-login-icon
        [:h1 {:class (stl/css :logo-container)}
         [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} i/logo]])
-     (when (not hide-image-auth?)
-       [:div {:class (stl/css :login-illustration)}
-        i/login-illustration])
+     [:div {:class (stl/css :login-illustration)}
+      i/login-illustration]
 
-     [:section {:class (stl/css-case :auth-content (not hide-image-auth?)
-                                     :auth-content-hide-image hide-image-auth?)}
+     [:section {:class (stl/css :auth-content)}
 
       (case section
         :auth-register

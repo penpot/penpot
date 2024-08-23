@@ -110,7 +110,8 @@
      [:& login/login-buttons {:params params}])
    (when (or login/show-alt-login-buttons? (false? hide-separator))
      [:hr {:class (stl/css :separator)}])
-   [:& register-form {:params params :on-success-callback on-success-callback}]])
+   (when (contains? cf/flags :login-with-password)
+     [:& register-form {:params params :on-success-callback on-success-callback}])])
 
 (mf/defc register-page
   {::mf/props :obj}
@@ -176,6 +177,7 @@
   [{:keys [params on-success-callback]}]
   (let [form       (fm/use-form :schema schema:register-validate-form :initial params)
         submitted? (mf/use-state false)
+        theme      (when (cf/external-feature-flag "onboarding-02" "test") "light")
 
         on-success
         (mf/use-fn
@@ -207,7 +209,8 @@
          (mf/deps on-success on-error)
          (fn [form _]
            (reset! submitted? true)
-           (let [params (:clean-data @form)]
+           (let [params (cond-> (:clean-data @form)
+                          (some? theme) (assoc :theme theme))]
              (->> (rp/cmd! :register-profile params)
                   (rx/finalize #(reset! submitted? false))
                   (rx/subs! on-success on-error)))))]
