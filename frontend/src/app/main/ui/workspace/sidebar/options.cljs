@@ -146,25 +146,30 @@
               (st/emit! :interrupt (udw/set-workspace-read-only true))
               (st/emit! :interrupt (udw/set-workspace-read-only false)))))
 
-        design-content (mf/html [:& design-menu {:selected selected
-                                                 :objects objects
-                                                 :page-id page-id
-                                                 :file-id file-id
-                                                 :selected-shapes selected-shapes
-                                                 :shapes-with-children shapes-with-children}])
+        design-content
+        (mf/html [:& design-menu {:selected selected
+                                  :objects objects
+                                  :page-id page-id
+                                  :file-id file-id
+                                  :selected-shapes selected-shapes
+                                  :shapes-with-children shapes-with-children}])
 
-        inspect-content (mf/html [:div {:class (stl/css :element-options :inspect-options)}
-                                  [:& hrs/right-sidebar {:page-id           page-id
-                                                         :objects           objects
-                                                         :file-id           file-id
-                                                         :frame             shape-parent-frame
-                                                         :shapes            selected-shapes
-                                                         :on-change-section on-change-section
-                                                         :on-expand         on-expand
-                                                         :from              :workspace}]])
+        inspect-content
+        (mf/html [:div {:class (stl/css :element-options :inspect-options)}
+                  [:& hrs/right-sidebar {:page-id           page-id
+                                         :objects           objects
+                                         :file-id           file-id
+                                         :frame             shape-parent-frame
+                                         :shapes            selected-shapes
+                                         :on-change-section on-change-section
+                                         :on-expand         on-expand
+                                         :from              :workspace}]])
 
-        interactions-content (mf/html [:div {:class (stl/css :element-options :interaction-options)}
-                                       [:& interactions-menu {:shape (first shapes)}]])
+        interactions-content
+        (mf/html [:div {:class (stl/css :element-options :interaction-options)}
+                  [:& interactions-menu {:shape (first shapes)}]])
+
+
         tabs
         #js [#js {:label (tr "workspace.options.design")
                   :id "design"
