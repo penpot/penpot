@@ -10,6 +10,10 @@
   @extend .modal-overlay-base;
 }
 
+hr {
+  border-color: var(--color-background-tertiary);
+}
+
 .modal-dialog {
   @extend .modal-container-base;
   display: grid;
@@ -28,6 +32,22 @@
 .modal-content {
   display: flex;
   flex-direction: column;
+}
+
+.button-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.create-theme-button {
+  @extend .button-secondary;
+  padding: $s-6;
+  padding-right: $s-8;
+  svg {
+    margin-right: $s-6;
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
 }
 
 .close-btn {
@@ -63,11 +83,41 @@
 .theme-row-left {
   display: flex;
   align-items: center;
-  gap: $s-12;
+  gap: $s-16;
+}
+
+.theme-row-right {
+  display: flex;
+  align-items: center;
+  gap: $s-6;
+}
+
+.sets-count-button {
+  @extend .button-secondary;
+  padding: $s-6;
+  padding-left: $s-12;
+  svg {
+    margin-left: $s-6;
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.sets-count-empty-button {
+  @extend .button-secondary;
+  padding: $s-6;
+  padding-left: $s-12;
+  svg {
+    margin-left: $s-6;
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
 }
 
 .theme-row-label {
   @include bodyMediumTypography;
+  font-weight: 500;
+  color: var(--color-foreground-primary);
 }
 
 .delete-theme-button {

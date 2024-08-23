@@ -17,6 +17,8 @@
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
+(def ^:private chevron-icon
+  (i/icon-xref :arrow (stl/css :chevron-icon)))
 
 (def ^:private close-icon
   (i/icon-xref :close (stl/css :close-icon)))
@@ -45,28 +47,42 @@
   [{:keys []}]
   (let [active-theme-ids (mf/deref refs/workspace-active-theme-ids)
         themes (mf/deref refs/workspace-ordered-token-themes)]
-    [:ul {:class (stl/css :theme-group-wrapper)}
-     (for [[group themes] themes]
-       [:li {:key (str "token-theme-group" group)}
-        [:span {:class (stl/css :theme-group-label)} group]
-        [:ul {:class (stl/css :theme-group-rows-wrapper)}
-         (for [{:keys [id name] :as _theme} themes]
-           [:li {:key (str "token-theme-" id)
-                 :class (stl/css :theme-row)}
-            [:div {:class (stl/css :theme-row-left)}
-             [:div {:on-click (fn [e]
-                                (dom/stop-propagation e)
-                                (st/emit! (wdt/toggle-token-theme id)))}
-              [:& switch {:name (str "Theme" name)
-                          :on-change (constantly nil)
-                          :selected? (get active-theme-ids id)}]]
-             [:span {:class (stl/css :theme-row-label)} name]]
-            [:div {:class (stl/css :delete-theme-button)}
-             [:button {:on-click (fn [e]
-                                   (dom/prevent-default e)
-                                   (dom/stop-propagation e)
-                                   (st/emit! (wdt/delete-token-theme id)))}
-              i/delete]]])]])]))
+    [:div
+     [:ul {:class (stl/css :theme-group-wrapper)}
+      (for [[group themes] themes]
+        [:li {:key (str "token-theme-group" group)}
+         (when (seq group)
+           [:span {:class (stl/css :theme-group-label)} group])
+         [:ul {:class (stl/css :theme-group-rows-wrapper)}
+          (for [{:keys [id name] :as theme} themes]
+            [:li {:key (str "token-theme-" id)
+                  :class (stl/css :theme-row)}
+             [:div {:class (stl/css :theme-row-left)}
+              [:div {:on-click (fn [e]
+                                 (dom/stop-propagation e)
+                                 (st/emit! (wdt/toggle-token-theme id)))}
+               [:& switch {:name (str "Theme" name)
+                           :on-change (constantly nil)
+                           :selected? (get active-theme-ids id)}]]
+              [:span {:class (stl/css :theme-row-label)} name]]
+             [:div {:class (stl/css :theme-row-right)}
+              (if-let [sets-count (some-> theme :sets seq count)]
+                [:button {:class (stl/css :sets-count-button)}
+                 (str sets-count " sets")
+                 chevron-icon]
+                [:button {:class (stl/css :sets-count-empty-button)}
+                 "No sets defined"
+                 chevron-icon])
+              [:div {:class (stl/css :delete-theme-button)}
+               [:button {:on-click (fn [e]
+                                     (dom/prevent-default e)
+                                     (dom/stop-propagation e)
+                                     (st/emit! (wdt/delete-token-theme id)))}
+                i/delete]]]])]])]
+     [:div {:class (stl/css :button-footer)}
+      [:button {:class (stl/css :create-theme-button)}
+       i/add
+       "Create theme"]]]))
 
 (mf/defc edit-theme
   [{:keys []}]
