@@ -96,9 +96,24 @@
 
 (mf/defc edit-theme
   [{:keys [state]}]
-  (let [{:keys [theme]} @state]
+  (let [{:keys [theme]} @state
+        token-sets (mf/deref refs/workspace-token-sets)
+        selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)
+        token-set-selected? (mf/use-callback
+                             (mf/deps selected-token-set-id)
+                             (fn [id]
+                               (= id selected-token-set-id)))
+        active-token-set-ids (mf/deref refs/workspace-active-set-ids)
+        token-set-active? (mf/use-callback
+                           (mf/deps active-token-set-ids)
+                           (fn [id]
+                             (get active-token-set-ids id)))]
     [:div {:class (stl/css :sets-list-wrapper)}
-     [:& wts/sets-list]]))
+     [:& wts/controlled-sets-list
+      {:token-sets token-sets
+       :selected-token-set-id selected-token-set-id
+       :token-set-selected? token-set-selected?
+       :token-set-active? token-set-active?}]]))
 
 (mf/defc themes
   [{:keys [] :as _args}]

@@ -64,6 +64,15 @@
                                  :set-id child-id
                                  :selected-set-id selected-token-set-id)])])]))
 
+(mf/defc controlled-sets-list
+  [{:keys [token-sets] :as props}]
+  [:ul {:class (stl/css :sets-list)}
+   (for [[id token-set] token-sets]
+     [:& sets-tree (-> (assoc props
+                              :key id
+                              :token-set token-set)
+                       (dissoc :token-sets))])])
+
 (mf/defc sets-list
   [{:keys []}]
   (let [token-sets (mf/deref refs/workspace-token-sets)
@@ -77,11 +86,8 @@
                            (mf/deps active-token-set-ids)
                            (fn [id]
                              (get active-token-set-ids id)))]
-    [:ul {:class (stl/css :sets-list)}
-     (for [[id token-set] token-sets]
-       [:& sets-tree
-        {:key id
-         :token-set token-set
-         :selected-token-set-id selected-token-set-id
-         :token-set-selected? token-set-selected?
-         :token-set-active? token-set-active?}])]))
+    [:& controlled-sets-list
+     {:token-sets token-sets
+      :selected-token-set-id selected-token-set-id
+      :token-set-selected? token-set-selected?
+      :token-set-active? token-set-active?}]))
