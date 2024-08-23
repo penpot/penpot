@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-08-23 09:16+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-08-24 15:09+0000\n"
+"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
 "Language: nl\n"
@@ -856,7 +856,7 @@ msgstr "Contenttype"
 
 #: src/app/main/ui/dashboard/team.cljs:906
 msgid "dashboard.webhooks.create"
-msgstr "Maak webhook"
+msgstr "Webhook aanmaken"
 
 #: src/app/main/ui/dashboard/team.cljs:796
 msgid "dashboard.webhooks.create.success"
@@ -871,7 +871,7 @@ msgstr ""
 
 #: src/app/main/ui/dashboard/team.cljs:1026
 msgid "dashboard.webhooks.empty.add-one"
-msgstr "Druk op de knop \"Maak webhook\" om er een aan te maken."
+msgstr "Druk op de knop \"Webhook aanmaken\" om er een toe te voegen."
 
 #: src/app/main/ui/dashboard/team.cljs:1025
 msgid "dashboard.webhooks.empty.no-webhooks"
@@ -2746,12 +2746,10 @@ msgid "onboarding.questions.reasons.testing"
 msgstr "Testen voor zelf hosten"
 
 #: src/app/main/ui/onboarding/questions.cljs:349
-#, fuzzy
 msgid "onboarding.questions.start-with.code"
-msgstr "Echte codeontwerpen genereren"
+msgstr "Echte code genereren vanuit ontwerpen"
 
 #: src/app/main/ui/onboarding/questions.cljs:347
-#, fuzzy
 msgid "onboarding.questions.start-with.ds"
 msgstr "Design Systems creëren"
 
@@ -5928,3 +5926,203 @@ msgstr "Bijwerken"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik om het pad te sluiten"
+
+#: src/app/main/ui/workspace/plugins.cljs:287
+msgid "ds.confirm-allow"
+msgstr "Toestaan"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-max-length"
+msgstr "Moet maximaal 1 tekens bevatten."
+
+#, unused
+msgid "errors.field-min-length"
+msgstr "Moet minimaal 1 teken bevatten."
+
+#: src/app/main/ui/auth/verify_token.cljs:97, src/app/main/ui/dashboard/grid.cljs:102, src/app/main/ui/dashboard/grid.cljs:122, src/app/main/ui/dashboard/import.cljs:272, src/app/main/ui/dashboard/placeholder.cljs:45, src/app/main/ui/export.cljs:323, src/app/main/ui/viewer.cljs:637, src/app/main/ui/workspace.cljs:127
+msgid "labels.loading"
+msgstr "Laden…"
+
+#: src/app/main/ui/static.cljs:48, src/app/main/ui/static.cljs:120
+msgid "labels.login"
+msgstr "Inloggen"
+
+#, unused
+msgid "labels.ok"
+msgstr "Oké"
+
+#: src/app/main/ui/static.cljs:121
+msgid "not-found.login.free"
+msgstr ""
+"Penpot is de gratis en open source ontwerptool voor samenwerking tussen "
+"Design en Code"
+
+#: src/app/main/ui/static.cljs:133
+msgid "not-found.login.signup-free"
+msgstr "Gratis aanmelden"
+
+#: src/app/main/ui/static.cljs:134
+msgid "not-found.login.start-using"
+msgstr "En begin binnen enkele seconden met Penpot!"
+
+#: src/app/main/ui/static.cljs:56
+msgid "not-found.made-with-love"
+msgstr "Gemaakt met LIEFDE en Open Source"
+
+#: src/app/main/ui/static.cljs:250
+msgid "not-found.no-permission.already-requested.file"
+msgstr "Je hebt al toegang tot dit bestand aangevraagd."
+
+#: src/app/main/ui/static.cljs:253
+msgid "not-found.no-permission.already-requested.or-others.project"
+msgstr ""
+"Je hebt al toegang gevraagd tot dit project of andere projecten of bestanden "
+"van dit team."
+
+#: src/app/main/ui/static.cljs:217, src/app/main/ui/static.cljs:222
+msgid "not-found.no-permission.penpot-file"
+msgstr "Penpot-bestand"
+
+#: src/app/main/ui/static.cljs:247, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.project"
+msgstr "Je hebt geen toegang tot dit project."
+
+#: src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.you-can-ask.project"
+msgstr ""
+"Om toegang te krijgen tot dit project, kun je dit aan de teameigenaar vragen."
+
+#: src/app/main/data/common.cljs:85
+msgid "notifications.by-code.maintenance"
+msgstr ""
+"Onderhoudsonderbreking: we zullen binnen 5 minuten een kort onderhoud "
+"ondergaan."
+
+#: src/app/main/ui/onboarding/questions.cljs:408
+msgid "onboarding.questions.referer.article"
+msgstr "Artikel (Blog, Bericht, Nieuwsbrief)"
+
+#: src/app/main/ui/onboarding/questions.cljs:406
+msgid "onboarding.questions.referer.search"
+msgstr "Zoekmachine (Google, Yahoo, Bing)"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:525
+msgid "workspace.assets.grid-view"
+msgstr "Rasterweergave"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:521
+msgid "workspace.assets.list-view"
+msgstr "Lijstweergave"
+
+#: src/app/main/ui/workspace/plugins.cljs:271
+msgid "workspace.plugins.permissions.library-read"
+msgstr "Jouw bibliotheken en middelen bekijken."
+
+#: src/app/main/ui/workspace/plugins.cljs:245
+msgid "workspace.plugins.permissions.content-write"
+msgstr ""
+"Lees en wijzig de inhoud van bestanden waartoe gebruikers toegang hebben."
+
+#: src/app/main/ui/workspace/plugins.cljs:274
+msgid "workspace.plugins.permissions.disclaimer"
+msgstr "Merk op dat deze plug-in is gemaakt door een externe partij."
+
+#: src/app/main/ui/workspace/plugins.cljs:236
+msgid "workspace.plugins.permissions.title"
+msgstr "DEZE PLUGIN WIL TOEGANG TOT:"
+
+#: src/app/main/ui/static.cljs:216, src/app/main/ui/static.cljs:220
+msgid "not-found.no-permission.project-name"
+msgstr "PROJECT"
+
+#: src/app/main/ui/static.cljs:259
+msgid "not-found.no-permission.you-can-ask.file"
+msgstr ""
+"Om toegang te krijgen tot dit bestand, kun je dit aan de teameigenaar vragen."
+
+#: src/app/main/ui/workspace/plugins.cljs:180
+#, markdown
+msgid "workspace.plugins.discover"
+msgstr "Ontdekken [meer plug-ins](%s)"
+
+#: src/app/main/ui/static.cljs:54
+msgid "labels.copyright"
+msgstr "Kaleidos @2024"
+
+#: src/app/main/ui/workspace/plugins.cljs:251
+msgid "workspace.plugins.permissions.content-read"
+msgstr "Lees de inhoud van bestanden waartoe gebruikers toegang hebben."
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-not-all-whitespace"
+msgstr "De naam moet een ander teken bevatten dan een spatie."
+
+#: src/app/main/ui/workspace/plugins.cljs:265
+msgid "workspace.plugins.permissions.library-write"
+msgstr "Jouw bibliotheken en middelen lezen en aanpassen."
+
+#: src/app/main/ui/workspace/plugins.cljs:258
+msgid "workspace.plugins.permissions.user-read"
+msgstr "Lees de profielinformatie van de huidige gebruiker."
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:201, src/app/main/ui/workspace/top_toolbar.cljs:202
+msgid "workspace.toolbar.plugins"
+msgstr "Plug-ins (%s)"
+
+#: src/app/main/ui/static.cljs:271
+msgid "not-found.desc-message.doesnt-exist"
+msgstr "Deze pagina bestaat niet"
+
+#: src/app/main/ui/static.cljs:270
+msgid "not-found.desc-message.error"
+msgstr "404 fout"
+
+#: src/app/main/ui/auth/recovery_request.cljs:114
+msgid "not-found.login.sent-recovery"
+msgstr "We hebben een herstel-e-mail gestuurd naar"
+
+#: src/app/main/ui/auth/recovery_request.cljs:116
+msgid "not-found.login.sent-recovery-check"
+msgstr ""
+"Controleer je e-mail en klik op de link om een nieuw wachtwoord te maken."
+
+#: src/app/main/ui/static.cljs:250
+msgid "not-found.no-permission.already-requested.or-others.file"
+msgstr ""
+"Je hebt al toegang gevraagd tot dit bestand of andere bestanden of projecten "
+"van dit team."
+
+#: src/app/main/ui/static.cljs:253
+msgid "not-found.no-permission.already-requested.project"
+msgstr "Je hebt al toegang tot dit project aangevraagd."
+
+#: src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.ask"
+msgstr "TOEGANG VRAGEN"
+
+#: src/app/main/ui/static.cljs:256
+msgid "not-found.no-permission.done.remember"
+msgstr ""
+"Onthoud dat als de eigenaar het toestaat, je wordt uitgenodigd voor het team."
+
+#: src/app/main/ui/static.cljs:256
+msgid "not-found.no-permission.done.success"
+msgstr "Jouw verzoek is correct verzonden!"
+
+#: src/app/main/ui/static.cljs:259
+msgid "not-found.no-permission.file"
+msgstr "Je hebt geen toegang tot dit bestand."
+
+#: src/app/main/ui/static.cljs:43, src/app/main/ui/static.cljs:247, src/app/main/ui/static.cljs:250, src/app/main/ui/static.cljs:253, src/app/main/ui/static.cljs:256, src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.go-dashboard"
+msgstr "Ga naar je Penpot"
+
+#: src/app/main/ui/onboarding/questions.cljs:407
+msgid "onboarding.questions.referer.social"
+msgstr "Social Media (X, Linkedin, FB, etc.)"
+
+#: src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.if-approves"
+msgstr "Als de eigenaar het toestaat, word je uitgenodigd voor het team."
