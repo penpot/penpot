@@ -134,8 +134,7 @@
 
 (mf/defc themes
   [{:keys [] :as _args}]
-  (let [active-theme-ids (mf/deref refs/workspace-active-theme-ids)
-        themes (mf/deref refs/workspace-ordered-token-themes)
+  (let [themes (mf/deref refs/workspace-ordered-token-themes)
         state (mf/use-state (if (empty? themes)
                               {:type :empty-themes}
                               {:type :themes-overview}))
