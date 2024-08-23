@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-08-23 09:16+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-08-24 15:09+0000\n"
+"Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
 "Language: he\n"
@@ -2693,12 +2693,10 @@ msgid "onboarding.questions.reasons.testing"
 msgstr "אפשר לבדוק לפני שפונים לאירוח עצמי"
 
 #: src/app/main/ui/onboarding/questions.cljs:349
-#, fuzzy
 msgid "onboarding.questions.start-with.code"
-msgstr "מייצר עיצובים עם קוד אמיתי"
+msgstr "מייצר קוד אמיתי מעיצובים"
 
 #: src/app/main/ui/onboarding/questions.cljs:347
-#, fuzzy
 msgid "onboarding.questions.start-with.ds"
 msgstr "יצירת מערכות עיצוב"
 
@@ -5879,3 +5877,186 @@ msgstr "עדכון"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
+
+#, unused
+msgid "labels.ok"
+msgstr "אישור"
+
+#: src/app/main/ui/static.cljs:270
+msgid "not-found.desc-message.error"
+msgstr "שגיאת 404"
+
+#: src/app/main/ui/auth/recovery_request.cljs:114
+msgid "not-found.login.sent-recovery"
+msgstr "שלחנו הודעת שחזור בדוא״ל אל"
+
+#: src/app/main/ui/static.cljs:121
+msgid "not-found.login.free"
+msgstr "Penpot הוא כלי עיצוב חופשי בקוד פתוח לתיאום בין עיצוב לקוד"
+
+#: src/app/main/ui/static.cljs:134
+msgid "not-found.login.start-using"
+msgstr "ולהתחיל להשתמש ב־Penpot תוך שניות!"
+
+#: src/app/main/ui/static.cljs:250
+msgid "not-found.no-permission.already-requested.file"
+msgstr "כבר ביקשת גישה לקובץ הזה."
+
+#: src/app/main/ui/static.cljs:253
+msgid "not-found.no-permission.already-requested.project"
+msgstr "כבר ביקשת לגשת למיזם הזה."
+
+#: src/app/main/ui/static.cljs:250
+msgid "not-found.no-permission.already-requested.or-others.file"
+msgstr "כבר ביקשת לגשת לקובץ הזה או לקבצים או מיזמים אחרים של הצוות הזה."
+
+#: src/app/main/ui/static.cljs:259
+msgid "not-found.no-permission.file"
+msgstr "אין לך גישה לקובץ הזה."
+
+#: src/app/main/ui/static.cljs:256
+msgid "not-found.no-permission.done.success"
+msgstr "הבקשה שלך נשלחה כראוי!"
+
+#: src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.ask"
+msgstr "בקשת גישה"
+
+#: src/app/main/ui/static.cljs:256
+msgid "not-found.no-permission.done.remember"
+msgstr "חשוב לזכור שכתלות בהרשאת הבעלים תישלח אליך הזמנה לצוות."
+
+#: src/app/main/ui/static.cljs:43, src/app/main/ui/static.cljs:247, src/app/main/ui/static.cljs:250, src/app/main/ui/static.cljs:253, src/app/main/ui/static.cljs:256, src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.go-dashboard"
+msgstr "מעבר ל־Penpot שלך"
+
+#: src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.if-approves"
+msgstr "כתלות בהרשאת הבעלים, תישלח אליך הזמנה לצוות."
+
+#: src/app/main/ui/static.cljs:247, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.project"
+msgstr "אין לך גישה למיזם הזה."
+
+#: src/app/main/ui/static.cljs:217, src/app/main/ui/static.cljs:222
+msgid "not-found.no-permission.penpot-file"
+msgstr "קובץ Penpot"
+
+#: src/app/main/ui/static.cljs:259
+msgid "not-found.no-permission.you-can-ask.file"
+msgstr "כדי לגשת לקובץ הזה, אפשר לבקש מבעלי הקבוצה."
+
+#: src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.you-can-ask.project"
+msgstr "כדי לגשת למיזם הזה, אפשר לבקש מבעלי הצוות."
+
+#: src/app/main/data/common.cljs:85
+msgid "notifications.by-code.maintenance"
+msgstr "הפסקת תחזוקה: המערכת תושבת לעבודת תחזוקה קצרה תוך 5 דקות."
+
+#: src/app/main/ui/onboarding/questions.cljs:408
+msgid "onboarding.questions.referer.article"
+msgstr "מאמר (בלוג, רשומה, הודעת דיוור)"
+
+#: src/app/main/ui/onboarding/questions.cljs:407
+msgid "onboarding.questions.referer.social"
+msgstr "רשתות חברתיות (X,‏ Linkedin‏, FB ועוד)"
+
+#: src/app/main/ui/onboarding/questions.cljs:406
+msgid "onboarding.questions.referer.search"
+msgstr "מנוע חיפוש (Google,‏ Yahoo,‏ Bing)"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:521
+msgid "workspace.assets.list-view"
+msgstr "תצוגת רשימה"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:525
+msgid "workspace.assets.grid-view"
+msgstr "תצוגת טבלה"
+
+#: src/app/main/ui/workspace/plugins.cljs:180
+#, markdown
+msgid "workspace.plugins.discover"
+msgstr "חשיפת [תוספים נוספים](%s)"
+
+#: src/app/main/ui/workspace/plugins.cljs:251
+msgid "workspace.plugins.permissions.content-read"
+msgstr "קריאת התוכן של קבצים שלמשתמשים יש גישה אליהם."
+
+#: src/app/main/ui/workspace/plugins.cljs:245
+msgid "workspace.plugins.permissions.content-write"
+msgstr "קריאה ושינוי התוכן של קבצים שלמשתמשים יש גישה אליהם."
+
+#: src/app/main/ui/workspace/plugins.cljs:271
+msgid "workspace.plugins.permissions.library-read"
+msgstr "קריאת הספריות והמשאבים שלך."
+
+#: src/app/main/ui/workspace/plugins.cljs:258
+msgid "workspace.plugins.permissions.user-read"
+msgstr "קריאת פרטי הפרופיל של המשתמש הנוכחי."
+
+#: src/app/main/ui/workspace/plugins.cljs:236
+msgid "workspace.plugins.permissions.title"
+msgstr "התוסף הזה רוצה לגשת אל:"
+
+#: src/app/main/ui/workspace/plugins.cljs:265
+msgid "workspace.plugins.permissions.library-write"
+msgstr "קריאה ושינוי הספריות והמשאבים שלך."
+
+#: src/app/main/ui/static.cljs:271
+msgid "not-found.desc-message.doesnt-exist"
+msgstr "העמוד לא קיים"
+
+#: src/app/main/ui/auth/recovery_request.cljs:116
+msgid "not-found.login.sent-recovery-check"
+msgstr "נא לבדוק בתיבת הדוא״ל שלך וללחוץ על הקישור כדי ליצור סיסמה חדשה."
+
+#: src/app/main/ui/static.cljs:133
+msgid "not-found.login.signup-free"
+msgstr "הרשמה בחינם"
+
+#: src/app/main/ui/static.cljs:56
+msgid "not-found.made-with-love"
+msgstr "נוצר באהבה ובקוד פתוח"
+
+#: src/app/main/ui/static.cljs:216, src/app/main/ui/static.cljs:220
+msgid "not-found.no-permission.project-name"
+msgstr "מיזם"
+
+#: src/app/main/ui/static.cljs:48, src/app/main/ui/static.cljs:120
+msgid "labels.login"
+msgstr "כניסה"
+
+#: src/app/main/ui/auth/verify_token.cljs:97, src/app/main/ui/dashboard/grid.cljs:102, src/app/main/ui/dashboard/grid.cljs:122, src/app/main/ui/dashboard/import.cljs:272, src/app/main/ui/dashboard/placeholder.cljs:45, src/app/main/ui/export.cljs:323, src/app/main/ui/viewer.cljs:637, src/app/main/ui/workspace.cljs:127
+msgid "labels.loading"
+msgstr "בטעינה…"
+
+#: src/app/main/ui/workspace/plugins.cljs:274
+msgid "workspace.plugins.permissions.disclaimer"
+msgstr "נא לשים לב שהתוסף הזה נוצר על ידי גוף חיצוני."
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:201, src/app/main/ui/workspace/top_toolbar.cljs:202
+msgid "workspace.toolbar.plugins"
+msgstr "תוספים (%s)"
+
+#: src/app/main/ui/workspace/plugins.cljs:287
+msgid "ds.confirm-allow"
+msgstr "לאפשר"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-max-length"
+msgstr "חייב להיות באורך של תו אחד לכל היותר."
+
+#, unused
+msgid "errors.field-min-length"
+msgstr "חייב להיות באורך של תו אחד לפחות."
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-not-all-whitespace"
+msgstr "השם חייב לכלול כמה אותיות למעט רווח."
+
+#: src/app/main/ui/static.cljs:253
+msgid "not-found.no-permission.already-requested.or-others.project"
+msgstr "כבר ביקשת לגשת למיזם הזה או למיזמים או קבצים אחרים של הצוות הזה."
