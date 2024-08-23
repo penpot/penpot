@@ -8,6 +8,8 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.modal :as modal]
+   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
+   [cuerdas.core :as str]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -15,12 +17,29 @@
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
+
 (def ^:private close-icon
   (i/icon-xref :close (stl/css :close-icon)))
 
 (mf/defc empty-themes
   [{:keys []}]
   "Empty")
+
+
+(mf/defc switch
+  [{:keys [selected? name on-change]}]
+  (let [selected (if selected? :on :off)]
+    [:& radio-buttons {:selected selected
+                       :on-change on-change
+                       :name name}
+     [:& radio-button {:id :on
+                       :value :on
+                       :icon i/tick
+                       :label ""}]
+     [:& radio-button {:id :off
+                       :value :off
+                       :icon i/close
+                       :label ""}]]))
 
 (mf/defc themes-overview
   [{:keys []}]
@@ -37,12 +56,9 @@
             [:div.spaced
              name
              [:div.spaced
-              [:button
-               {:on-click (fn [e]
-                            (dom/prevent-default e)
-                            (dom/stop-propagation e)
-                            (st/emit! (wdt/toggle-token-theme id)))}
-               (if (get active-theme-ids id) "✅" "❎")]
+              [:& switch {:name (str "Theme" name)
+                          :on-change #(st/emit! (wdt/toggle-token-theme id))
+                          :selected? (get active-theme-ids id)}]
               [:button {:on-click (fn [e]
                                     (dom/prevent-default e)
                                     (dom/stop-propagation e)
