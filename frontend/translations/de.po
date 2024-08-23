@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-06-22 08:09+0000\n"
+"Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.6-dev\n"
+"X-Generator: Weblate 5.6-rc\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -52,9 +52,8 @@ msgid "auth.login-account-title"
 msgstr "In mein Konto einloggen"
 
 #: src/app/main/ui/auth/register.cljs
-#, fuzzy
 msgid "auth.login-here"
-msgstr "Hier anmelden"
+msgstr "Hier anmelden."
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
@@ -386,12 +385,11 @@ msgid "dashboard.duplicate-multi"
 msgstr "%s Dateien duplizieren"
 
 #: src/app/main/ui/dashboard/grid.cljs
-#, fuzzy
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "Zu Bibliotheken hinzugefügte Dateien werden hier angezeigt. Versuchen Sie, "
 "Ihre Dateien zu teilen oder fügen Sie sie aus unseren [Bibliotheken & "
-"Vorlagen](https://penpot.app/libraries-Vorlagen.html) hinzu."
+"Vorlagen](https://penpot.app/libraries-templates) hinzu."
 
 msgid "dashboard.export-binary-multi"
 msgstr "%s Penpot-Dateien herunterladen (.penpot)"
@@ -5269,3 +5267,170 @@ msgstr "Plugins"
 
 msgid "workspace.plugins.success"
 msgstr "Plugin wurde korrekt geladen."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.work"
+msgstr "Arbeit"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.education"
+msgstr "Bildung"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.personal"
+msgstr "Persönlich"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.alternative"
+msgstr "Suche nach einer Alternative zu Figma, XD, usw."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step2.title"
+msgstr "Welches dieser Tools verwenden Sie am meisten?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.product-design"
+msgstr "Produkt- oder UX-Design"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step3.title"
+msgstr "Erzählen Sie uns von Ihrem Job"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step3.question1"
+msgstr "Was machen Sie beruflich?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.team-member"
+msgstr "Teammitglied"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.team-size.freelancer"
+msgstr "Ich bin ein Freelancer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.wireframing"
+msgstr "Wireframing"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.prototyping"
+msgstr "Prototyping"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.ds"
+msgstr "Erstellung von Design-Systemen"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.social"
+msgstr "Soziale Netzwerke (X, LinkedIn, FB, usw.)"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.toggle-toolbar"
+msgstr "Werkzeugleiste ein- und ausblenden"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.exploring"
+msgstr "Nur zum Ausprobieren"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.graphic-design"
+msgstr "Grafikdesign"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.team-leader"
+msgstr "Teamleiter"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.director"
+msgstr "Geschäftsführer"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.youtube"
+msgstr "YouTube"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.article"
+msgstr "Artikel (Blog, Post, Newsletter)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.code"
+msgstr "Generierung echter Code-Entwürfe"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.work-email"
+msgstr "Geschäftliche E-Mail-Adresse"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-mail"
+msgstr "Überprüfen Sie Ihre E-Mail"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-account-tagline"
+msgstr ""
+"Teilen Sie uns mit, wie wir Sie auf dem Dashboard und in den E-Mails nennen "
+"sollen."
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-account-title"
+msgstr "Ihr Name"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.question1"
+msgstr "Wofür werden Sie Penpot verwenden?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step4.title"
+msgstr "Wo möchten Sie gerne anfangen?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.event"
+msgstr "Veranstaltung"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.other-short"
+msgstr "Sonstiges"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.title"
+msgstr "Helfen Sie uns, Sie kennen zu lernen"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step5.title"
+msgstr "Wie haben Sie von Penpot erfahren?"
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr ""
+"Ich stimme den [Nutzungsbedingungen](%s) und der [Datenschutzrichtlinie](%s) "
+"zu."
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.question2"
+msgstr "Was führt Sie heute zu Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.fit"
+msgstr "Prüfen, ob Penpot für mein Team geeignet ist"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.testing"
+msgstr "Vor dem Selbst-Hosting, testen"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.ui"
+msgstr "UI/UX-Design einer App"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-tagline"
+msgstr ""
+"Mit einem kostenlosen Penpot-Konto können Sie unbegrenzt viele Teams "
+"erstellen und mit anderen Designern und Entwicklern an beliebig vielen "
+"Projekten zusammenarbeiten. "
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.subtitle"
+msgstr ""
+"Lassen Sie uns ein wenig über Sie erfahren, damit wir Penpot für Sie "
+"optimieren können. Ihre Antworten werden helfen uns, neue Funktionen zu "
+"priorisieren und Ihnen den richtigen Einstieg zu erleichtern."

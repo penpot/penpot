@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-06-19 20:09+0000\n"
+"Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
 "Language: he\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.6-dev\n"
+"X-Generator: Weblate 5.6-rc\n"
 
 #: src/app/main/ui/auth/register.cljs
 msgid "auth.already-have-account"
@@ -51,9 +51,8 @@ msgid "auth.login-account-title"
 msgstr "כניסה לחשבון שלי"
 
 #: src/app/main/ui/auth/register.cljs
-#, fuzzy
 msgid "auth.login-here"
-msgstr "כניסה מכאן"
+msgstr "כניסה מכאן."
 
 #: src/app/main/ui/auth/login.cljs
 msgid "auth.login-submit"
@@ -5154,3 +5153,214 @@ msgstr "חיבור ספרייה"
 #: src/app/main/ui/workspace/context_menu.cljs
 msgid "workspace.shape.menu.remove-grid"
 msgstr "הסרת פריסת רשת"
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.check-mail"
+msgstr "נא לבדוק את תיבת הדוא״ל שלך"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.title"
+msgstr "נשמח להכיר אותך"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.exploring"
+msgstr "סתם לראות במה מדובר"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.question2"
+msgstr "מה הביא אותך ל־Penpot היום?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.personal"
+msgstr "אישי"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.question1"
+msgstr "לאיזו מטרה ישמש אותך Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.testing"
+msgstr "אפשר לבדוק לפני שפונים לאירוח עצמי"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.alternative"
+msgstr "למחפשים חלופה ל־Figma,‏ XD וכו׳"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step2.title"
+msgstr "איזה מהכלים האלה הכי משמש אותך?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.product-design"
+msgstr "עיצוב מוצר או חוויית לקוח"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step3.title"
+msgstr "נשמח לשמוע על העבודה שלך"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.marketing"
+msgstr "שיווק"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.team-member"
+msgstr "חבר או חברת צוות"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step3.question2"
+msgstr "מה התפקיד שלך?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.product-management"
+msgstr "ניהול מוצר"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.director"
+msgstr "הנהלה בכירה"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.prototyping"
+msgstr "יצירת אבטיפוס"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.ui"
+msgstr "עיצוב ממשק/חוויית משתמש של יישום"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step4.title"
+msgstr "איפה כדאי להתחיל?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.team-size.freelancer"
+msgstr "עצמאי או עצמאית"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step5.title"
+msgstr "איך שמעת על Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.ds"
+msgstr "יצירת מערכות עיצוב"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.social"
+msgstr "רשתות חברתיות (X,‏ Linkedin, ‏FB וכו׳)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.youtube"
+msgstr "YouTube"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.article"
+msgstr "כתבה (בלוג, רשומה, הודעת דיוור)"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.other-short"
+msgstr "אחר"
+
+msgid "workspace.plugins.menu.plugins-manager"
+msgstr "מנהל תוספים"
+
+msgid "workspace.plugins.menu.title"
+msgstr "תוספים"
+
+msgid "workspace.plugins.success"
+msgstr "התוסף נטען כראוי."
+
+msgid "workspace.plugins.error.url"
+msgstr "התוסף לא קיים או שהכתובת שגויה."
+
+msgid "workspace.plugins.install"
+msgstr "התקנה"
+
+msgid "workspace.plugins.search-placeholder"
+msgstr "נא למלא כתובת תוסף"
+
+msgid "workspace.plugins.title"
+msgstr "תוספים"
+
+msgid "workspace.plugins.plugin-list-link"
+msgstr "רשימת תוספים"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/recovery_request.cljs, src/app/main/ui/auth/login.cljs
+msgid "auth.work-email"
+msgstr "דוא״ל עבודה"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-account-tagline"
+msgstr "איך נפנה אליך בלוח הבקרה ובהודעות בדוא״ל."
+
+msgid "workspace.plugins.button-open"
+msgstr "פתיחה"
+
+msgid "workspace.plugins.empty-plugins"
+msgstr "עדיין לא מותקן אף תוסף"
+
+#: src/app/main/ui/auth/login.cljs
+msgid "auth.register-tagline"
+msgstr ""
+"עם חשבון חינמי ב־Penpot אפשר ליצור כמות בלתי מוגבלת של צוותים ולשתף פעולה עם "
+"מעצבים ומפתחים נוספים על כמה מיזמים שצריך. "
+
+#: src/app/main/ui/auth/register.cljs
+msgid "auth.register-account-title"
+msgstr "השם שלך"
+
+#: src/app/main/ui/auth/register.cljs
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr "[תנאי השירות](%s) ו[מדיניות הפרטיות](%s) מקובלים עליי."
+
+msgid "workspace.plugins.installed-plugins"
+msgstr "תוספים מותקנים"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+msgid "workspace.toolbar.toggle-toolbar"
+msgstr "הצגת/הסתרת סרגל כלים"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.event"
+msgstr "אירוע"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.code"
+msgstr "מייצר עיצובים עם קוד אמיתי"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.team-leader"
+msgstr "מוביל או מובילת צוות"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.graphic-design"
+msgstr "עיצוב גרפי"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "labels.developer"
+msgstr "פיתוח"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.start-with.wireframing"
+msgstr "ציור קווי מתאר"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step3.question1"
+msgstr "מה אופי העבודה שלך?"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.reasons.fit"
+msgstr "לבחון האם Penpot עונה על דרישות הצוות שלי"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.education"
+msgstr "חינוכי"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.use.work"
+msgstr "עבודה"
+
+#: src/app/main/ui/onboarding/questions.cljs
+msgid "onboarding.questions.step1.subtitle"
+msgstr ""
+"נשמח לדעת לאילו מטרות משמש אותך Penpot כדי שנוכל להמשיך ולשפר אותו למענך. "
+"התשובות שלך יסייעו לנו לתעדף את היכולות החדשות ולהכווין אותך לדרך שהכי נכון "
+"לך להתחיל בה."
