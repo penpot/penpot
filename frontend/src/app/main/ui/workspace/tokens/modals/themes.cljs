@@ -7,13 +7,64 @@
 (ns app.main.ui.workspace.tokens.modals.themes
   (:require-macros [app.main.style :as stl])
   (:require
-   [rumext.v2 :as mf]
    [app.main.data.modal :as modal]
+   [app.main.data.tokens :as wdt]
+   [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.icons :as i]))
+   [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
+   [rumext.v2 :as mf]))
 
 (def ^:private close-icon
   (i/icon-xref :close (stl/css :close-icon)))
+
+(mf/defc empty-themes
+  [{:keys []}]
+  "Empty")
+
+(mf/defc themes-overview
+  [{:keys []}]
+  (let [active-theme-ids (mf/deref refs/workspace-active-theme-ids)
+        themes (mf/deref refs/workspace-ordered-token-themes)]
+    [:ul
+     (for [[group themes] themes]
+       [:li
+        {:key (str "token-theme-group" group)}
+        group
+        [:ul
+         (for [{:keys [id name] :as _theme} themes]
+           [:li {:key (str "tokene-theme-" id)}
+            [:div.spaced
+             name
+             [:div.spaced
+              [:button
+               {:on-click (fn [e]
+                            (dom/prevent-default e)
+                            (dom/stop-propagation e)
+                            (st/emit! (wdt/toggle-token-theme id)))}
+               (if (get active-theme-ids id) "✅" "❎")]
+              [:button {:on-click (fn [e]
+                                    (dom/prevent-default e)
+                                    (dom/stop-propagation e)
+                                    (st/emit! (wdt/delete-token-theme id)))}
+               "🗑️"]]]])]])]))
+
+(mf/defc edit-theme
+  [{:keys []}]
+  "Edit Theme")
+
+(mf/defc themes
+  [{:keys [] :as _args}]
+  (let [active-theme-ids (mf/deref refs/workspace-active-theme-ids)
+        themes (mf/deref refs/workspace-ordered-token-themes)
+        _ (js/console.log "themes" themes)
+        state (mf/use-state (if (empty? themes)
+                              :empty-themes
+                              :themes-overview))]
+    (case @state
+      :empty-themes [:& empty-themes]
+      :themes-overview [:& themes-overview]
+      :edit-theme [:& edit-theme])))
 
 (mf/defc modal
   {::mf/wrap-props false}
@@ -23,6 +74,5 @@
      [:div {:class (stl/css :modal-dialog)}
       [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} close-icon]
       [:div {:class (stl/css :modal-title)} "Themes"]
-
       [:div {:class (stl/css :modal-content)}
-       "Themes"]]]))
+       [:& themes]]]]))
