@@ -69,7 +69,7 @@
 
 (defn toggle-active-theme-id
   "Toggle a `theme-id` by checking `:token-active-themes`.
-  De-activate all theme-ids that have the same group as `theme-id` when activating `theme-id`.
+  Deactivate all theme-ids that have the same group as `theme-id` when activating `theme-id`.
   Ensures that the temporary theme id is selected when the resulting set is empty."
   [theme-id state]
   (let [temp-theme-id-set (some->> (get-temp-theme-id state) (conj #{}))
