@@ -10,6 +10,7 @@
    [app.main.data.modal :as modal]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [cuerdas.core :as str]
+   [app.main.ui.workspace.tokens.common :refer [labeled-input]]
    [app.main.ui.workspace.tokens.sets :as wts]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
@@ -108,13 +109,24 @@
                              (fn [token-set-id]
                                (st/emit! (wdt/toggle-token-set {:token-set-id token-set-id
                                                                 :token-theme-id (:id theme)}))))]
-    [:div {:class (stl/css :sets-list-wrapper)}
-     [:& wts/controlled-sets-list
-      {:token-sets token-sets
-       :token-set-selected? (constantly false)
-       :token-set-active? token-set-active?
-       :on-select on-toggle-token-set
-       :on-toggle on-toggle-token-set}]]))
+    [:div {:class (stl/css :edit-theme-wrapper)}
+     [:div {:class (stl/css :edit-theme-inputs-wrapper)}
+      [:& labeled-input {:label "Group"
+                         :input-props {:value (:group theme)}}]
+      [:& labeled-input {:label "Theme"
+                         :input-props {:value (:name theme)}}]]
+     [:div {:class (stl/css :sets-list-wrapper)}
+      [:& wts/controlled-sets-list
+       {:token-sets token-sets
+        :token-set-selected? (constantly false)
+        :token-set-active? token-set-active?
+        :on-select on-toggle-token-set
+        :on-toggle on-toggle-token-set}]]
+     [:div {:class (stl/css :edit-theme-footer)}
+      [:button {:class (stl/css :button-secondary)} "Delete"]
+      [:div {:class (stl/css :button-footer)}
+       [:button {:class (stl/css :button-secondary)} "Cancel"]
+       [:button {:class (stl/css :button-primary)} "Save theme"]]]]))
 
 (mf/defc themes
   [{:keys [] :as _args}]

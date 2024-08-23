@@ -37,6 +37,22 @@ hr {
 .button-footer {
   display: flex;
   justify-content: flex-end;
+  gap: $s-6;
+}
+
+.edit-theme-footer {
+  display: flex;
+  justify-content: space-between;
+}
+
+.button-primary {
+  @extend .button-primary;
+  padding: $s-6;
+}
+
+.button-secondary {
+  @extend .button-secondary;
+  padding: $s-6;
 }
 
 .create-theme-button {
@@ -101,6 +117,17 @@ hr {
     @extend .button-icon;
     stroke: var(--icon-foreground);
   }
+}
+
+.edit-theme-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $s-12;
+}
+
+.edit-theme-inputs-wrapper {
+  display: flex;
+  gap: $s-12;
 }
 
 .sets-list-wrapper {

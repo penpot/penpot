@@ -192,7 +192,6 @@
 
     [:& (mf/provider ctx/current-route) {:value route}
      [:& (mf/provider ctx/current-profile) {:value profile}
-      [:& wtmt/modal]
       (if edata
         [:& static/exception-page {:data edata :route route}]
         [:*
