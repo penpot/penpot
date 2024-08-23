@@ -15,13 +15,14 @@
   display: grid;
   grid-template-rows: auto 1fr auto;
   width: 100%;
-  max-width: $s-640;
+  max-width: $s-468;
 }
 
 .modal-title {
   @include headlineMediumTypography;
-  margin-block-end: $s-32;
-  color: var(--modal-title-foreground-color);
+  font-weight: 500;
+  margin-block-end: $s-16;
+  color: var(--color-foreground-secondary);
 }
 
 .modal-content {
@@ -31,4 +32,60 @@
 
 .close-btn {
   @extend .modal-close-btn-base;
+}
+
+.theme-group-label {
+  display: block;
+  @include headlineMediumTypography;
+  color: var(--color-foreground-secondary);
+  margin-bottom: $s-8;
+}
+
+.theme-group-rows-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $s-6;
+}
+
+.theme-group-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $s-8;
+}
+
+.theme-row {
+  display: flex;
+  align-items: center;
+  gap: $s-12;
+  justify-content: space-between;
+}
+
+.theme-row-left {
+  display: flex;
+  align-items: center;
+  gap: $s-12;
+}
+
+.theme-row-label {
+  @include bodyMediumTypography;
+}
+
+.delete-theme-button {
+  @extend .button-tertiary;
+  height: $s-28;
+  width: $s-28;
+  button {
+    @include buttonStyle;
+    @include flexCenter;
+    width: $s-24;
+    height: 100%;
+    svg {
+      @extend .button-icon-small;
+      height: $s-12;
+      width: $s-12;
+      color: transparent;
+      fill: none;
+      stroke: var(--icon-foreground);
+    }
+  }
 }
