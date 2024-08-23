@@ -204,7 +204,7 @@
            {:key (str "token-theme-group" group)}
            group
            [:ul
-            (for [{:keys [id name] :as theme} themes]
+            (for [{:keys [id name] :as _theme} themes]
               [:li {:key (str "tokene-theme-" id)}
                [:div.spaced
                 name
@@ -220,6 +220,22 @@
                                        (dom/stop-propagation e)
                                        (st/emit! (wdt/delete-token-theme id)))}
                   "🗑️"]]]])]])]]]]))
+
+(mf/defc sets-sidebar
+  []
+  (let [open? (mf/use-state true)]
+    [:div {:class (stl/css :sets-sidebar)}
+     [:div {:class (stl/css :sidebar-header)}
+      [:& title-bar {:collapsable true
+                     :collapsed (not @open?)
+                     :all-clickable true
+                     :title "SETS"
+                     :on-collapsed #(swap! open? not)}]
+      [:button {:class (stl/css :add-set)
+                :on-click on-set-add-click}
+       i/add]]
+     (when @open?
+       [:& sets-list])]))
 
 (mf/defc tokens-explorer
   [_props]
@@ -245,22 +261,6 @@
                              :active-theme-tokens active-theme-tokens
                              :tokens tokens
                              :token-type-props token-type-props}])]]))
-
-(mf/defc sets-sidebar
-  []
-  (let [open? (mf/use-state true)]
-    [:div {:class (stl/css :sets-sidebar)}
-     [:div {:class (stl/css :sidebar-header)}
-      [:& title-bar {:collapsable true
-                     :collapsed (not @open?)
-                     :all-clickable true
-                     :title "SETS"
-                     :on-collapsed #(swap! open? not)}]
-      [:button {:class (stl/css :add-set)
-                :on-click on-set-add-click}
-       i/add]]
-     (when @open?
-       [:& sets-list])]))
 
 (defn dev-or-preview-url? [url]
   (let [host (-> url js/URL. .-host)
