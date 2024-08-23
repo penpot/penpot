@@ -248,7 +248,8 @@
 
 (mf/defc tokens-explorer
   [_props]
-  (let [objects (mf/deref refs/workspace-page-objects)
+  (let [open? (mf/use-state true)
+        objects (mf/deref refs/workspace-page-objects)
 
         selected (mf/deref refs/selected-shapes)
         selected-shapes (into [] (keep (d/getf objects)) selected)
@@ -261,15 +262,21 @@
                        (sorted-token-groups tokens))]
     [:article
      [:& token-context-menu]
-     [:div.assets-bar
-      (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
-                                                                (:empty token-groups))]
-        [:& token-component {:key token-key
-                             :type token-key
-                             :selected-shapes selected-shapes
-                             :active-theme-tokens active-theme-tokens
-                             :tokens tokens
-                             :token-type-props token-type-props}])]]))
+     [:& title-bar {:collapsable true
+                    :collapsed (not @open?)
+                    :all-clickable true
+                    :title "TOKENS"
+                    :on-collapsed #(swap! open? not)}]
+     (when @open?
+       [:div.assets-bar
+        (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
+                                                                  (:empty token-groups))]
+          [:& token-component {:key token-key
+                               :type token-key
+                               :selected-shapes selected-shapes
+                               :active-theme-tokens active-theme-tokens
+                               :tokens tokens
+                               :token-type-props token-type-props}])])]))
 
 (defn dev-or-preview-url? [url]
   (let [host (-> url js/URL. .-host)
