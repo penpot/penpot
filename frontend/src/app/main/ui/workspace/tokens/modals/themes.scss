@@ -126,7 +126,8 @@ hr {
 }
 
 .edit-theme-inputs-wrapper {
-  display: flex;
+  display: grid;
+  grid-template-columns: 0.6fr 1fr;
   gap: $s-12;
 }
 
