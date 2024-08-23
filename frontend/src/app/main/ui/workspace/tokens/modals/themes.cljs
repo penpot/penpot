@@ -52,7 +52,7 @@
                         (dom/prevent-default e)
                         (dom/stop-propagation e)
                         (set-state (fn [_] {:type :edit-theme
-                                            :theme theme})))]
+                                            :theme-id (:id theme)})))]
     [:div
      [:ul {:class (stl/css :theme-group-wrapper)}
       (for [[group themes] themes]
@@ -96,27 +96,25 @@
 
 (mf/defc edit-theme
   [{:keys [state]}]
-  (let [{:keys [theme]} @state
+  (let [{:keys [theme-id]} @state
         token-sets (mf/deref refs/workspace-token-sets)
-        selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)
-        token-set-selected? (mf/use-callback
-                             (mf/deps selected-token-set-id)
-                             (fn [id]
-                               (= id selected-token-set-id)))
-        active-token-set-ids (mf/deref refs/workspace-active-set-ids)
+        theme (mf/deref (refs/workspace-token-theme theme-id))
         token-set-active? (mf/use-callback
-                           (mf/deps active-token-set-ids)
+                           (mf/deps (:sets theme))
                            (fn [id]
-                             (get active-token-set-ids id)))]
+                             (get-in theme [:sets id])))
+        on-toggle-token-set (mf/use-callback
+                             (mf/deps (:id theme))
+                             (fn [token-set-id]
+                               (st/emit! (wdt/toggle-token-set {:token-set-id token-set-id
+                                                                :token-theme-id (:id theme)}))))]
     [:div {:class (stl/css :sets-list-wrapper)}
      [:& wts/controlled-sets-list
       {:token-sets token-sets
        :token-set-selected? (constantly false)
        :token-set-active? token-set-active?
-       :on-select (fn [id]
-                    (js/console.log "id" id))
-       :on-toggle (fn [id]
-                    (js/console.log "id" id))}]]))
+       :on-select on-toggle-token-set
+       :on-toggle on-toggle-token-set}]]))
 
 (mf/defc themes
   [{:keys [] :as _args}]

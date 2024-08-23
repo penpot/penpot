@@ -17,8 +17,8 @@
 (def ^:private chevron-icon
   (i/icon-xref :arrow (stl/css :chevron-icon)))
 
-(defn on-toggle-token-set-click [id]
-  (st/emit! (wdt/toggle-token-set id)))
+(defn on-toggle-token-set-click [token-set-id]
+  (st/emit! (wdt/toggle-token-set {:token-set-id token-set-id})))
 
 (defn on-select-token-set-click [id]
   (st/emit! (wdt/set-selected-token-set-id id)))

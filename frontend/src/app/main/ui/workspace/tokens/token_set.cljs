@@ -12,6 +12,9 @@
 (defn get-workspace-themes [state]
   (get-in state [:workspace-data :token-themes] []))
 
+(defn get-workspace-theme [id state]
+  (get-in state [:workspace-data :token-themes-index id]))
+
 (defn get-workspace-themes-index [state]
   (get-in state [:workspace-data :token-themes-index] {}))
 

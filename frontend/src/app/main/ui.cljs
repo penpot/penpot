@@ -6,6 +6,7 @@
 
 (ns app.main.ui
   (:require
+   [app.main.ui.workspace.tokens.modals.themes :as wtmt]
    [app.config :as cf]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -191,6 +192,7 @@
 
     [:& (mf/provider ctx/current-route) {:value route}
      [:& (mf/provider ctx/current-profile) {:value profile}
+      [:& wtmt/modal]
       (if edata
         [:& static/exception-page {:data edata :route route}]
         [:*
