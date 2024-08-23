@@ -106,6 +106,7 @@
                                (fn [event]
                                  (let [{:keys [key fields]} modal]
                                    (dom/stop-propagation event)
+                                   (st/emit! (dt/set-token-type-section-open type true))
                                    (modal/show! key {:x (.-clientX ^js event)
                                                      :y (.-clientY ^js event)
                                                      :position :right
@@ -126,7 +127,6 @@
      [:& cmm/asset-section {:icon (mf/fnc icon-wrapper [_]
                                     [:div {:class (stl/css :section-icon)}
                                      [:& token-section-icon {:type type}]])
-
                             :title title
                             :assets-count tokens-count
                             :open? open?}
