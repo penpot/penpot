@@ -56,6 +56,10 @@
     background-color: var(--layer-row-background-color-hover);
     color: var(--layer-row-foreground-color-hover);
     box-shadow: -100px 0 0 0 var(--layer-row-background-color-hover);
+
+    .delete-set {
+      visibility: visible;
+    }
   }
 }
 
@@ -63,6 +67,27 @@
   background-color: var(--layer-row-background-color-selected);
   color: var(--layer-row-foreground-color-selected);
   box-shadow: -100px 0 0 0 var(--layer-row-background-color-selected);
+}
+
+.delete-set {
+  @extend .button-tertiary;
+  height: $s-28;
+  width: $s-28;
+  visibility: hidden;
+  button {
+    @include buttonStyle;
+    @include flexCenter;
+    width: $s-24;
+    height: 100%;
+    svg {
+      @extend .button-icon-small;
+      height: $s-12;
+      width: $s-12;
+      color: transparent;
+      fill: none;
+      stroke: var(--icon-foreground);
+    }
+  }
 }
 
 .action-btn {

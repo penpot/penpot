@@ -18,14 +18,15 @@
   (i/icon-xref :arrow (stl/css :chevron-icon)))
 
 (defn on-toggle-token-set-click [id event]
-  (dom/prevent-default event)
   (dom/stop-propagation event)
   (st/emit! (wdt/toggle-token-set id)))
 
 (defn on-select-token-set-click [id event]
-  (dom/prevent-default event)
-  (dom/stop-propagation event)
   (st/emit! (wdt/set-selected-token-set-id id)))
+
+(defn on-delete-token-set-click [id event]
+  (dom/stop-propagation event)
+  (st/emit! (wdt/delete-token-set id)))
 
 (mf/defc sets-tree
   [{:keys [token-set token-set-active? token-set-selected?] :as _props}]
@@ -34,7 +35,7 @@
         visible? (token-set-active? id)
         collapsed? (mf/use-state false)
         set? true #_(= type :set)
-        group? false #_ (= type :group)]
+        group? false #_(= type :group)]
     [:div {:class (stl/css :set-item-container)
            :on-click #(on-select-token-set-click id %)}
      [:div {:class (stl/css-case :set-item-group group?
@@ -48,6 +49,9 @@
       [:span {:class (stl/css :icon)}
        (if set? i/document i/group)]
       [:div {:class (stl/css :set-name)} name]
+      [:div {:class (stl/css :delete-set)}
+       [:button {:on-click #(on-delete-token-set-click id %)}
+        i/delete]]
       (when set?
         [:span {:class (stl/css :action-btn)
                 :on-click #(on-toggle-token-set-click id %)}
