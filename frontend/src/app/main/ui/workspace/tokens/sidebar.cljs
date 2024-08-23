@@ -11,6 +11,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.data.tokens :as wdt]
+   [app.main.ui.components.select :refer [select]]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
@@ -180,61 +181,32 @@
                                                              :name @name}))}
       "Create"]]))
 
+(mf/defc edit-button
+  [{:keys []}]
+  [:button {:class (stl/css :themes-button)
+            :on-click (fn [e]
+                        (dom/stop-propagation e)
+                        (modal/show! :tokens/themes {}))}
+   "Edit"])
+
 (mf/defc themes-sidebar
   [_props]
   (let [open? (mf/use-state true)
         active-theme-ids (mf/deref refs/workspace-active-theme-ids)
         themes (mf/deref refs/workspace-ordered-token-themes)]
-    [:div {:class (stl/css :sets-sidebar)}
-     [:div {:class (stl/css :sidebar-header)}
-      [:& title-bar {:collapsable true
-                     :collapsed (not @open?)
-                     :all-clickable true
-                     :title "THEMES"
-                     :on-collapsed #(swap! open? not)}]
-      [:button {:class (stl/css :add-set)
-                :on-click (fn [event]
-                            (modal/show! :tokens/themes {:x (.-clientX ^js event)
-                                                         :y (.-clientY ^js event)}))}
-       i/add]]
-     (when @open?
-       [:div
-        [:style
-         (str "@scope {"
-              (str/join "\n"
-                        ["ul { list-style-type: circle; margin-left: 20px; }"
-                         ".spaced { display: flex; gap: 10px; justify-content: space-between;  }"
-                         ".spaced-y { display: flex; flex-direction: column; gap: 10px }"
-                         ".selected { font-weight: 600; }"
-                         "b { font-weight: 600; }"])
-              "}")]
-        [:div.spaced-y
-         {:style {:padding "10px"}}
-         [:& tokene-theme-create]
-         [:div.spaced-y
-          [:b "Themes"]
-          [:ul
-           (for [[group themes] themes]
-             [:li
-              {:key (str "token-theme-group" group)}
-              group
-              [:ul
-               (for [{:keys [id name] :as _theme} themes]
-                 [:li {:key (str "tokene-theme-" id)}
-                  [:div.spaced
-                   name
-                   [:div.spaced
-                    [:button
-                     {:on-click (fn [e]
-                                  (dom/prevent-default e)
-                                  (dom/stop-propagation e)
-                                  (st/emit! (wdt/toggle-token-theme id)))}
-                     (if (get active-theme-ids id) "✅" "❎")]
-                    [:button {:on-click (fn [e]
-                                          (dom/prevent-default e)
-                                          (dom/stop-propagation e)
-                                          (st/emit! (wdt/delete-token-theme id)))}
-                     "🗑️"]]]])]])]]]])]))
+   [:div {:class (stl/css :theme-sidebar)}
+    [:span {:class (stl/css :themes-header)} "Themes"]
+    [:div {:class (stl/css :theme-select-wrapper)}
+     [:& select
+      {:default-value (some-> active-theme-ids first)
+       :class (stl/css :select-format-wrapper)
+       :options (mapcat (fn [[_ xs]]
+                          (map (fn [{:keys [id name] :as f}]
+                                 (js/console.log "f" f)
+                                 {:value id :label name})
+                               xs))
+                        themes)}]
+     [:& edit-button]]]))
 
 (mf/defc sets-sidebar
   []

@@ -24,6 +24,11 @@
   position: relative;
 }
 
+.theme-sidebar {
+  padding: $s-12;
+  padding-bottom: 0;
+}
+
 .sidebar-header {
   display: flex;
   align-items: center;
@@ -113,4 +118,23 @@
     width: 20px;
     height: 20px;
   }
+}
+
+.theme-select-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 0.28fr;
+  gap: $s-6;
+}
+
+.themes-button {
+  @extend .button-secondary;
+  width: auto;
+}
+
+.themes-header {
+  display: block;
+  @include headlineSmallTypography;
+  margin-bottom: $s-8;
+  padding-left: $s-8;
+  color: var(--title-foreground-color);
 }
