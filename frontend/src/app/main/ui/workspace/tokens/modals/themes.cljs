@@ -96,7 +96,7 @@
        "Create theme"]]]))
 
 (mf/defc edit-theme
-  [{:keys [state]}]
+  [{:keys [state set-state]}]
   (let [{:keys [theme-id]} @state
         token-sets (mf/deref refs/workspace-token-sets)
         theme (mf/deref (refs/workspace-token-theme theme-id))
@@ -110,6 +110,10 @@
                                (st/emit! (wdt/toggle-token-set {:token-set-id token-set-id
                                                                 :token-theme-id (:id theme)}))))]
     [:div {:class (stl/css :edit-theme-wrapper)}
+     [:div
+      [:button {:class (stl/css :back-button)
+                :on-click #(set-state (constantly {:type :themes-overview}))}
+       chevron-icon "Back"]]
      [:div {:class (stl/css :edit-theme-inputs-wrapper)}
       [:& labeled-input {:label "Group"
                          :input-props {:value (:group theme)}}]

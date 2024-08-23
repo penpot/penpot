@@ -108,6 +108,19 @@ hr {
   gap: $s-6;
 }
 
+.back-button {
+  @extend .button-tertiary;
+  padding: $s-6;
+  padding-left: 0;
+  display: flex;
+  svg {
+    scale: -1 1;
+    margin-left: 0;
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
+
 .sets-count-button {
   @extend .button-secondary;
   padding: $s-6;
