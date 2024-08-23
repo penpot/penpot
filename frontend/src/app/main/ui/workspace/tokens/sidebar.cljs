@@ -179,47 +179,56 @@
                                                              :name @name}))}
       "Create"]]))
 
-(mf/defc token-sets
+(mf/defc themes-sidebar
   [_props]
-  (let [active-theme-ids (mf/deref refs/workspace-active-theme-ids)
+  (let [open? (mf/use-state true)
+        active-theme-ids (mf/deref refs/workspace-active-theme-ids)
         themes (mf/deref refs/workspace-ordered-token-themes)]
-    [:div
-     [:style
-      (str "@scope {"
-           (str/join "\n"
-                     ["ul { list-style-type: circle; margin-left: 20px; }"
-                      ".spaced { display: flex; gap: 10px; justify-content: space-between;  }"
-                      ".spaced-y { display: flex; flex-direction: column; gap: 10px }"
-                      ".selected { font-weight: 600; }"
-                      "b { font-weight: 600; }"])
-           "}")]
-     [:div.spaced-y
-      {:style {:padding "10px"}}
-      [:& tokene-theme-create]
-      [:div.spaced-y
-       [:b "Themes"]
-       [:ul
-        (for [[group themes] themes]
-          [:li
-           {:key (str "token-theme-group" group)}
-           group
-           [:ul
-            (for [{:keys [id name] :as _theme} themes]
-              [:li {:key (str "tokene-theme-" id)}
-               [:div.spaced
-                name
-                [:div.spaced
-                 [:button
-                  {:on-click (fn [e]
-                               (dom/prevent-default e)
-                               (dom/stop-propagation e)
-                               (st/emit! (wdt/toggle-token-theme id)))}
-                  (if (get active-theme-ids id) "✅" "❎")]
-                 [:button {:on-click (fn [e]
-                                       (dom/prevent-default e)
-                                       (dom/stop-propagation e)
-                                       (st/emit! (wdt/delete-token-theme id)))}
-                  "🗑️"]]]])]])]]]]))
+    [:div {:class (stl/css :sets-sidebar)}
+     [:div {:class (stl/css :sidebar-header)}
+      [:& title-bar {:collapsable true
+                     :collapsed (not @open?)
+                     :all-clickable true
+                     :title "THEMES"
+                     :on-collapsed #(swap! open? not)}]]
+     (when @open?
+       [:div
+        [:style
+         (str "@scope {"
+              (str/join "\n"
+                        ["ul { list-style-type: circle; margin-left: 20px; }"
+                         ".spaced { display: flex; gap: 10px; justify-content: space-between;  }"
+                         ".spaced-y { display: flex; flex-direction: column; gap: 10px }"
+                         ".selected { font-weight: 600; }"
+                         "b { font-weight: 600; }"])
+              "}")]
+        [:div.spaced-y
+         {:style {:padding "10px"}}
+         [:& tokene-theme-create]
+         [:div.spaced-y
+          [:b "Themes"]
+          [:ul
+           (for [[group themes] themes]
+             [:li
+              {:key (str "token-theme-group" group)}
+              group
+              [:ul
+               (for [{:keys [id name] :as _theme} themes]
+                 [:li {:key (str "tokene-theme-" id)}
+                  [:div.spaced
+                   name
+                   [:div.spaced
+                    [:button
+                     {:on-click (fn [e]
+                                  (dom/prevent-default e)
+                                  (dom/stop-propagation e)
+                                  (st/emit! (wdt/toggle-token-theme id)))}
+                     (if (get active-theme-ids id) "✅" "❎")]
+                    [:button {:on-click (fn [e]
+                                          (dom/prevent-default e)
+                                          (dom/stop-propagation e)
+                                          (st/emit! (wdt/delete-token-theme id)))}
+                     "🗑️"]]]])]])]]]])]))
 
 (mf/defc sets-sidebar
   []
@@ -292,8 +301,8 @@
     [:div {:class (stl/css :sidebar-tab-wrapper)}
      (when show-sets-section?
        [:div {:class (stl/css :sets-section-wrapper)}
-        [:& sets-sidebar]
-        [:& token-sets]])
+        [:& themes-sidebar]
+        [:& sets-sidebar]])
      [:div {:class (stl/css :tokens-section-wrapper)}
       [:& tokens-explorer]]
      [:button {:class (stl/css :download-json-button)
