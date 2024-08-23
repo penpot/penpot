@@ -73,47 +73,40 @@
         on-tab-change
         (mf/use-fn #(st/emit! (dw/go-to-layout (keyword %))))
 
-        tabs (if ^boolean mode-inspect?
-               #js [#js {:label (tr "workspace.sidebar.layers")
-                         :id "layers"
-                         :content (mf/html [:article {:class (stl/css :layers-tab)
-                                                      :style #js {"--height" (str size-pages "px")}}
+        layers-tab
+        (mf/html
+         [:article {:class (stl/css :layers-tab)
+                    :style #js {"--height" (str size-pages "px")}}
 
-                                            [:& sitemap {:layout layout
-                                                         :toggle-pages toggle-pages
-                                                         :show-pages? @show-pages?
-                                                         :size size-pages}]
+          [:& sitemap {:layout layout
+                       :toggle-pages toggle-pages
+                       :show-pages? @show-pages?
+                       :size size-pages}]
 
-                                            (when @show-pages?
-                                              [:div {:class (stl/css :resize-area-horiz)
-                                                     :on-pointer-down on-pointer-down-pages
-                                                     :on-lost-pointer-capture on-lost-pointer-capture-pages
-                                                     :on-pointer-move on-pointer-move-pages}])
+          (when @show-pages?
+            [:div {:class (stl/css :resize-area-horiz)
+                   :on-pointer-down on-pointer-down-pages
+                   :on-lost-pointer-capture on-lost-pointer-capture-pages
+                   :on-pointer-move on-pointer-move-pages}])
 
-                                            [:& layers-toolbox {:size-parent size
-                                                                :size size-pages}]])}]
-               #js [#js {:label (tr "workspace.sidebar.layers")
-                         :id "layers"
-                         :content (mf/html [:article {:class (stl/css :layers-tab)
-                                                      :style #js {"--height" (str size-pages "px")}}
+          [:& layers-toolbox {:size-parent size
+                              :size size-pages}]])
 
-                                            [:& sitemap {:layout layout
-                                                         :toggle-pages toggle-pages
-                                                         :show-pages? @show-pages?
-                                                         :size size-pages}]
 
-                                            (when @show-pages?
-                                              [:div {:class (stl/css :resize-area-horiz)
-                                                     :on-pointer-down on-pointer-down-pages
-                                                     :on-lost-pointer-capture on-lost-pointer-capture-pages
-                                                     :on-pointer-move on-pointer-move-pages}])
+        assets-tab
+        (mf/html [:& assets-toolbox {:size (- size 58)}])
 
-                                            [:& layers-toolbox {:size-parent size
-                                                                :size size-pages}]])}
-                    #js {:label (tr "workspace.toolbar.assets")
-                         :id "assets"
-                         :content (mf/html [:& assets-toolbox {:size (- size 58)}])}])]
-
+        tabs
+        (if ^boolean mode-inspect?
+          #js [#js {:label (tr "workspace.sidebar.layers")
+                    :id "layers"
+                    :content layers-tab}]
+          #js [#js {:label (tr "workspace.sidebar.layers")
+                    :id "layers"
+                    :content layers-tab}
+               #js {:label (tr "workspace.toolbar.assets")
+                    :id "assets"
+                    :content assets-tab}])]
 
     [:& (mf/provider muc/sidebar) {:value :left}
      [:aside {:ref parent-ref
