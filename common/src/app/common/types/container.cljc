@@ -540,38 +540,51 @@
 ;; --- SHAPE UPDATE
 
 (defn set-shape-attr
-  [shape attr val & {:keys [on-changed ignore-touched ignore-geometry]}]
-  (let [group           (get ctk/sync-attrs attr)
-        shape-val       (get shape attr)
-        ignore          (or ignore-touched (= attr :position-data)) ;; position-data is a derived attribute and
-        is-geometry?    (and (or (= group :geometry-group)          ;; never triggers touched by itself
-                                 (and (= group :content-group) (= (:type shape) :path)))
-                             (not (#{:width :height} attr))) ;; :content in paths are also considered geometric
-                        ;; TODO: the check of :width and :height probably may be removed
-                        ;;       after the check added in data/workspace/modifiers/check-delta
-                        ;;       function. Better check it and test toroughly when activating
-                        ;;       components-v2 mode.
-        in-copy?        (ctk/in-component-copy? shape)
+  "Assign attribute to shape with touched logic.
+
+  The returned shape will contain a metadata associated with it
+  indicating if shape is touched or not."
+  [shape attr val & {:keys [ignore-touched ignore-geometry]}]
+  (let [group     (get ctk/sync-attrs attr)
+        shape-val (get shape attr)
+
+        ignore?
+        (or ignore-touched
+            ;; position-data is a derived attribute
+            (= attr :position-data))
+
+        is-geometry?
+        (and (or (= group :geometry-group)   ;; never triggers touched by itself
+                 (and (= group :content-group)
+                      (= (:type shape) :path)))
+             ;; :content in paths are also considered geometric
+             (not (#{:width :height} attr)))
+
+        ;; TODO: the check of :width and :height probably may be
+        ;; removed after the check added in
+        ;; data/workspace/modifiers/check-delta function. Better check
+        ;; it and test toroughly when activating components-v2 mode.
+        in-copy?
+        (ctk/in-component-copy? shape)
 
         ;; For geometric attributes, there are cases in that the value changes
         ;; slightly (e.g. when rounding to pixel, or when recalculating text
         ;; positions in different zoom levels). To take this into account, we
         ;; ignore geometric changes smaller than 1 pixel.
-        equal? (if is-geometry?
-                 (gsh/close-attrs? attr val shape-val 1)
-                 (gsh/close-attrs? attr val shape-val))]
+        equal?
+        (if is-geometry?
+          (gsh/close-attrs? attr val shape-val 1)
+          (gsh/close-attrs? attr val shape-val))
 
-    ;; Notify when value has changed, except when it has not moved relative to the
-    ;; component head.
-    (when (and on-changed group (not equal?) (not (and ignore-geometry is-geometry?)))
-      (on-changed shape))
+        touched?
+        (and group (not equal?) (not (and ignore-geometry is-geometry?)))]
 
     (cond-> shape
       ;; Depending on the origin of the attribute change, we need or not to
       ;; set the "touched" flag for the group the attribute belongs to.
       ;; In some cases we need to ignore touched only if the attribute is
       ;; geometric (position, width or transformation).
-      (and in-copy? group (not ignore) (not equal?)
+      (and in-copy? group (not ignore?) (not equal?)
            (not (and ignore-geometry is-geometry?)))
       (-> (update :touched ctk/set-touched-group group)
           (dissoc :remote-synced))
@@ -580,4 +593,7 @@
       (dissoc attr)
 
       (some? val)
-      (assoc attr val))))
+      (assoc attr val)
+
+      :always
+      (vary-meta assoc ::touched touched?))))
