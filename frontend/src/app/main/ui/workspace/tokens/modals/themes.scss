@@ -103,6 +103,12 @@ hr {
   }
 }
 
+.sets-list-wrapper {
+  border: 1px solid color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);
+  border-radius: $s-8;
+  overflow: hidden;
+}
+
 .sets-count-empty-button {
   @extend .button-secondary;
   padding: $s-6;

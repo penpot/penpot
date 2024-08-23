@@ -10,6 +10,7 @@
    [app.main.data.modal :as modal]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [cuerdas.core :as str]
+   [app.main.ui.workspace.tokens.sets :as wts]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -44,9 +45,14 @@
                        :label ""}]]))
 
 (mf/defc themes-overview
-  [{:keys []}]
+  [{:keys [set-state]}]
   (let [active-theme-ids (mf/deref refs/workspace-active-theme-ids)
-        themes (mf/deref refs/workspace-ordered-token-themes)]
+        themes (mf/deref refs/workspace-ordered-token-themes)
+        on-edit-theme (fn [theme e]
+                        (dom/prevent-default e)
+                        (dom/stop-propagation e)
+                        (set-state (fn [_] {:type :edit-theme
+                                            :theme theme})))]
     [:div
      [:ul {:class (stl/css :theme-group-wrapper)}
       (for [[group themes] themes]
@@ -54,23 +60,27 @@
          (when (seq group)
            [:span {:class (stl/css :theme-group-label)} group])
          [:ul {:class (stl/css :theme-group-rows-wrapper)}
-          (for [{:keys [id name] :as theme} themes]
+          (for [{:keys [id name] :as theme} themes
+                :let [selected? (some? (get active-theme-ids id))]]
             [:li {:key (str "token-theme-" id)
                   :class (stl/css :theme-row)}
              [:div {:class (stl/css :theme-row-left)}
               [:div {:on-click (fn [e]
+                                 (dom/prevent-default e)
                                  (dom/stop-propagation e)
                                  (st/emit! (wdt/toggle-token-theme id)))}
                [:& switch {:name (str "Theme" name)
                            :on-change (constantly nil)
-                           :selected? (get active-theme-ids id)}]]
+                           :selected? selected?}]]
               [:span {:class (stl/css :theme-row-label)} name]]
              [:div {:class (stl/css :theme-row-right)}
               (if-let [sets-count (some-> theme :sets seq count)]
-                [:button {:class (stl/css :sets-count-button)}
+                [:button {:class (stl/css :sets-count-button)
+                          :on-click #(on-edit-theme theme %)}
                  (str sets-count " sets")
                  chevron-icon]
-                [:button {:class (stl/css :sets-count-empty-button)}
+                [:button {:class (stl/css :sets-count-empty-button)
+                          :on-click #(on-edit-theme theme %)}
                  "No sets defined"
                  chevron-icon])
               [:div {:class (stl/css :delete-theme-button)}
@@ -85,21 +95,32 @@
        "Create theme"]]]))
 
 (mf/defc edit-theme
-  [{:keys []}]
-  "Edit Theme")
+  [{:keys [state]}]
+  (let [{:keys [theme]} @state]
+    [:div {:class (stl/css :sets-list-wrapper)}
+     [:& wts/sets-list]]))
 
 (mf/defc themes
   [{:keys [] :as _args}]
   (let [active-theme-ids (mf/deref refs/workspace-active-theme-ids)
         themes (mf/deref refs/workspace-ordered-token-themes)
-        _ (js/console.log "themes" themes)
         state (mf/use-state (if (empty? themes)
-                              :empty-themes
-                              :themes-overview))]
-    (case @state
-      :empty-themes [:& empty-themes]
-      :themes-overview [:& themes-overview]
-      :edit-theme [:& edit-theme])))
+                              {:type :empty-themes}
+                              {:type :themes-overview}))
+        set-state (mf/use-callback #(swap! state %))
+        title (case (:type @state)
+                :edit-theme "Edit Theme"
+                "Themes")
+        component (case (:type @state)
+                    :empty-themes empty-themes
+                    :themes-overview themes-overview
+                    :edit-theme edit-theme)]
+    [:div
+
+     [:div {:class (stl/css :modal-title)} title]
+     [:div {:class (stl/css :modal-content)}
+      [:& component {:state state
+                     :set-state set-state}]]]))
 
 (mf/defc modal
   {::mf/wrap-props false}
@@ -108,6 +129,4 @@
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
       [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} close-icon]
-      [:div {:class (stl/css :modal-title)} "Themes"]
-      [:div {:class (stl/css :modal-content)}
-       [:& themes]]]]))
+      [:& themes]]]))
