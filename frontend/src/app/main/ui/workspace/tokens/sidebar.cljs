@@ -107,6 +107,7 @@
                                  (let [{:keys [key fields]} modal]
                                    (dom/stop-propagation event)
                                    (st/emit! (dt/set-token-type-section-open type true))
+                                   (js/console.log "key" key)
                                    (modal/show! key {:x (.-clientX ^js event)
                                                      :y (.-clientY ^js event)
                                                      :position :right
@@ -190,7 +191,12 @@
                      :collapsed (not @open?)
                      :all-clickable true
                      :title "THEMES"
-                     :on-collapsed #(swap! open? not)}]]
+                     :on-collapsed #(swap! open? not)}]
+      [:button {:class (stl/css :add-set)
+                :on-click (fn [event]
+                            (modal/show! :tokens/themes {:x (.-clientX ^js event)
+                                                         :y (.-clientY ^js event)}))}
+       i/add]]
      (when @open?
        [:div
         [:style

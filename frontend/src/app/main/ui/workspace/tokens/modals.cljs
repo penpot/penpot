@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.modal :as modal]
+   [app.main.ui.workspace.tokens.modals.themes :as wtmt]
    [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.form :refer [form]]
    [okulary.core :as l]
@@ -37,7 +38,7 @@
     (-> (calculate-position vport position x y)
         (clj->js))))
 
-(mf/defc modal
+(mf/defc token-update-create-modal
   {::mf/wrap-props false}
   [{:keys [x y position token token-type] :as _args}]
   (let [wrapper-style (use-viewport-position-style x y position)]
@@ -47,82 +48,88 @@
      [:& form {:token token
                :token-type token-type}]]))
 
+(mf/defc token-themes-modal
+  {::mf/register modal/components
+   ::mf/register-as :tokens/themes}
+  [args]
+  [:& wtmt/modal args])
+
 ;; Modals ----------------------------------------------------------------------
 
 (mf/defc boolean-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/boolean}
   [properties]
-  [:& modal properties])
+  [:& token-update-create-modal properties])
 
 (mf/defc border-radius-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/border-radius}
   [properties]
-  [:& modal properties])
+  [:& token-update-create-modal properties])
 
 (mf/defc stroke-width-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/stroke-width}
   [properties]
-  [:& modal properties])
+  [:& token-update-create-modal properties])
 
 (mf/defc box-shadow-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/box-shadow}
   [properties]
-  [:& modal properties])
+  [:& token-update-create-modal properties])
 
 (mf/defc sizing-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/sizing}
   [properties]
-  [:& modal properties])
+  [:& token-update-create-modal properties])
 
 (mf/defc dimensions-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/dimensions}
   [properties]
-  [:& modal properties])
+  [:& token-update-create-modal properties])
 
 (mf/defc numeric-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/numeric}
   [properties]
-  [:& modal properties])
+  [:& token-update-create-modal properties])
 
 (mf/defc opacity-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/opacity}
   [properties]
-  [:& modal properties])
+  [:& token-update-create-modal properties])
 
 (mf/defc other-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/other}
   [properties]
-  [:& modal properties])
+  [:& token-update-create-modal properties])
 
 (mf/defc rotation-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/rotation}
   [properties]
-  [:& modal properties])
+  [:& token-update-create-modal properties])
 
 (mf/defc spacing-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/spacing}
   [properties]
-  [:& modal properties])
+  [:& token-update-create-modal properties])
 
 (mf/defc string-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/string}
   [properties]
-  [:& modal properties])
+  [:& token-update-create-modal properties])
 
 (mf/defc typography-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/typography}
   [properties]
-  [:& modal properties])
+  [:& token-update-create-modal properties])
