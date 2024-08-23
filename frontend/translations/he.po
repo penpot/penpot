@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-19 20:09+0000\n"
-"Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"PO-Revision-Date: 2024-08-23 09:16+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.6-rc\n"
+"X-Generator: Weblate 5.7.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:132, src/app/main/ui/static.cljs:139, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -2693,10 +2693,12 @@ msgid "onboarding.questions.reasons.testing"
 msgstr "אפשר לבדוק לפני שפונים לאירוח עצמי"
 
 #: src/app/main/ui/onboarding/questions.cljs:349
+#, fuzzy
 msgid "onboarding.questions.start-with.code"
 msgstr "מייצר עיצובים עם קוד אמיתי"
 
 #: src/app/main/ui/onboarding/questions.cljs:347
+#, fuzzy
 msgid "onboarding.questions.start-with.ds"
 msgstr "יצירת מערכות עיצוב"
 
