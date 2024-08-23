@@ -162,6 +162,14 @@
      (when (and (some? root-shape)
                 (some? container))
        [:*
+        (when visible?
+          [:& cmm/component-item-thumbnail {:file-id file-id
+                                            :class (stl/css-case :thumbnail true
+                                                                 :asset-list-thumbnail (not listing-thumbs?))
+                                            :root-shape root-shape
+                                            :component component
+                                            :container container}])
+
         [:*
          [:& editable-label
           {:class (stl/css-case :cell-name listing-thumbs?
@@ -176,15 +184,7 @@
            :on-cancel cancel-rename}]
 
          (when ^boolean dragging?
-           [:div {:class (stl/css :dragging)}])]
-
-        (when visible?
-          [:& cmm/component-item-thumbnail {:file-id file-id
-                                            :class (stl/css-case :thumbnail true
-                                                                 :asset-list-thumbnail (not listing-thumbs?))
-                                            :root-shape root-shape
-                                            :component component
-                                            :container container}])])]))
+           [:div {:class (stl/css :dragging)}])]])]))
 
 (mf/defc components-group
   {::mf/wrap-props false}

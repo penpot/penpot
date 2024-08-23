@@ -18,10 +18,10 @@
     .grid-cell {
       @include flexCenter;
       position: relative;
-      padding: $s-8;
       border: $s-2 solid transparent;
       border-radius: $br-8;
-      aspect-ratio: 1/1;
+      width: 100%;
+      padding-top: 100%;
       background-color: var(--color-foreground-secondary);
       overflow: hidden;
       cursor: pointer;
@@ -33,6 +33,15 @@
         pointer-events: none;
       }
       svg {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: $s-8;
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
         height: 10vh;
       }
       .cell-name {
