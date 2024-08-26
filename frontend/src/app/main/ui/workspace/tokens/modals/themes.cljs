@@ -9,6 +9,7 @@
   (:require
    [app.main.data.modal :as modal]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
+   [app.main.ui.workspace.tokens.token-set :as wtts]
    [cuerdas.core :as str]
    [app.main.ui.workspace.tokens.common :refer [labeled-input]]
    [app.main.ui.workspace.tokens.sets :as wts]
@@ -96,23 +97,22 @@
        "Create theme"]]]))
 
 (mf/defc edit-theme
-  [{:keys [state set-state]}]
-  (let [{:keys [theme-id]} @state
-        token-sets (mf/deref refs/workspace-token-sets)
-        theme (mf/deref (refs/workspace-token-theme theme-id))
+  [{:keys [token-sets theme on-back] :as props}]
+  (let [theme-state (mf/use-state {:token-sets token-sets
+                                   :theme theme})
         token-set-active? (mf/use-callback
-                           (mf/deps (:sets theme))
+                           (mf/deps theme-state)
                            (fn [id]
-                             (get-in theme [:sets id])))
+                             (get-in @theme-state [:theme :sets id])))
         on-toggle-token-set (mf/use-callback
-                             (mf/deps (:id theme))
+                             (mf/deps theme-state)
                              (fn [token-set-id]
-                               (st/emit! (wdt/toggle-token-set {:token-set-id token-set-id
-                                                                :token-theme-id (:id theme)}))))]
+                               (swap! theme-state (fn [st]
+                                                    (update st :theme #(wtts/toggle-token-set-to-token-theme token-set-id %))))))]
     [:div {:class (stl/css :edit-theme-wrapper)}
      [:div
       [:button {:class (stl/css :back-button)
-                :on-click #(set-state (constantly {:type :themes-overview}))}
+                :on-click on-back}
        chevron-icon "Back"]]
      [:div {:class (stl/css :edit-theme-inputs-wrapper)}
       [:& labeled-input {:label "Group"
@@ -132,6 +132,16 @@
        [:button {:class (stl/css :button-secondary)} "Cancel"]
        [:button {:class (stl/css :button-primary)} "Save theme"]]]]))
 
+(mf/defc controlled-edit-theme
+  [{:keys [state set-state]}]
+  (let [{:keys [theme-id]} @state
+        token-sets (mf/deref refs/workspace-token-sets)
+        theme (mf/deref (refs/workspace-token-theme theme-id))]
+    [:& edit-theme
+     {:token-sets token-sets
+      :theme theme
+      :on-back #(set-state (constantly {:type :themes-overview}))}]))
+
 (mf/defc themes
   [{:keys [] :as _args}]
   (let [themes (mf/deref refs/workspace-ordered-token-themes)
@@ -145,7 +155,7 @@
         component (case (:type @state)
                     :empty-themes empty-themes
                     :themes-overview themes-overview
-                    :edit-theme edit-theme)]
+                    :edit-theme controlled-edit-theme)]
     [:div
 
      [:div {:class (stl/css :modal-title)} title]
