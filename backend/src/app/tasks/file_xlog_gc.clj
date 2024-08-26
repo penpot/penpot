@@ -16,29 +16,37 @@
 
 (def ^:private
   sql:delete-files-xlog
-  "delete from file_change
-    where created_at < now() - ?::interval
-      and label is NULL")
+  "DELETE FROM file_change
+    WHERE id IN (SELECT id FROM file_change
+                  WHERE label IS NULL
+                    AND created_at < ?
+                  ORDER BY created_at LIMIT ?)")
+
+(defn- delete-in-chunks
+  [{:keys [::chunk-size ::threshold] :as cfg}]
+  (loop [total 0]
+    (let [result (-> (db/exec-one! cfg [sql:delete-files-xlog threshold chunk-size])
+                     (db/get-update-count))]
+      (if (pos? result)
+        (recur (+ total result))
+        total))))
 
 (defmethod ig/pre-init-spec ::handler [_]
   (s/keys :req [::db/pool]))
 
-(defmethod ig/prep-key ::handler
-  [_ cfg]
-  (assoc cfg ::min-age (dt/duration {:hours 72})))
-
 (defmethod ig/init-key ::handler
   [_ {:keys [::db/pool] :as cfg}]
   (fn [{:keys [props] :as task}]
-    (let [min-age (or (:min-age props) (::min-age cfg))]
-      (db/with-atomic [conn pool]
-        (let [interval (db/interval min-age)
-              result   (db/exec-one! conn [sql:delete-files-xlog interval])
-              result   (db/get-update-count result)]
+    (let [min-age    (or (:min-age props)
+                         (dt/duration "72h"))
+          chunk-size (:chunk-size props 5000)
+          threshold  (dt/minus (dt/now) min-age)]
 
-          (l/info :hint "task finished" :min-age (dt/format-duration min-age) :total result)
-
-          (when (:rollback? props)
-            (db/rollback! conn))
-
-          result)))))
+      (-> cfg
+          (assoc ::db/rollback (:rollback? props false))
+          (assoc ::threshold threshold)
+          (assoc ::chunk-size chunk-size)
+          (db/tx-run! (fn [cfg]
+                        (let [total (delete-in-chunks cfg)]
+                          (l/trc :hint "file xlog cleaned" :total total)
+                          total)))))))
