@@ -97,10 +97,33 @@
   top: auto;
 }
 
+.sub-item {
+  padding-left: $s-16;
+}
+
+.checked-element-button {
+  @extend .dropdown-element-base;
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  padding-right: 0;
+}
+
+li + .checked-element-button {
+  margin-top: $s-8;
+  &:before {
+    content: "";
+    position: absolute;
+    top: -$s-4;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: color-mix(in hsl, var(--color-foreground-secondary) 20%, transparent);
+  }
+}
+
 .checked-element {
   @extend .dropdown-element-base;
-
-  padding-left: $s-16;
 
   .icon {
     @include flexCenter;

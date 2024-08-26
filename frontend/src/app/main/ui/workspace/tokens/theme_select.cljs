@@ -28,9 +28,14 @@
            [:li {:key id
                  :class (stl/css-case
                          :checked-element true
+                         :sub-item true
                          :is-selected selected?)}
             [:span {:class (stl/css :label)} name]
-            [:span {:class (stl/css :check-icon)} i/tick]])]])]))
+            [:span {:class (stl/css :check-icon)} i/tick]])]])
+     [:li {:class (stl/css-case :checked-element true
+                                :checked-element-button true)}
+      [:span "Edit themes"]
+      [:span {:class (stl/css :icon)} i/arrow]]]))
 
 (mf/defc theme-select
   [{:keys []}]
