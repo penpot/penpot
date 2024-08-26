@@ -56,6 +56,14 @@
                           (print-explain! cause)
                           (print-trace! cause))))
 
+(defn exception->error-data
+  [cause]
+  (let [data (ex-data cause)]
+    (-> data
+        (assoc :hint (or (:hint data) (ex-message cause)))
+        (assoc ::instance cause)
+        (assoc ::trace (.-stack cause)))))
+
 (defn print-error!
   [cause]
   (cond
@@ -66,22 +74,14 @@
     (print-cause! (ex-message cause) (ex-data cause))
 
     :else
-    (let [trace (.-stack cause)]
-      (print-cause! (ex-message cause)
-                    {:hint (ex-message cause)
-                     ::trace trace
-                     ::instance cause}))))
+    (print-cause! (ex-message cause) (exception->error-data cause))))
 
 (defn on-error
   "A general purpose error handler."
   [error]
   (if (map? error)
     (ptk/handle-error error)
-    (let [data (ex-data error)
-          data (-> data
-                   (assoc :hint (or (:hint data) (ex-message error)))
-                   (assoc ::instance error)
-                   (assoc ::trace (.-stack error)))]
+    (let [data (exception->error-data error)]
       (ptk/handle-error data))))
 
 ;; Set the main potok error handler
@@ -285,6 +285,7 @@
             (let [message (ex-message cause)]
               (or (= message "Possible side-effect in debug-evaluate")
                   (= message "Unexpected end of input")
+                  (str/starts-with? message "invalid props on component")
                   (str/starts-with? message "Unexpected token "))))
 
           (on-unhandled-error [event]

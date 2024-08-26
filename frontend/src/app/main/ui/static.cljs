@@ -29,8 +29,8 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-(mf/defc error-container
-  {::mf/wrap-props false}
+(mf/defc error-container*
+  {::mf/props :obj}
   [{:keys [children]}]
   (let [profile-id (:profile-id @st/state)]
     [:section {:class (stl/css :exception-layout)}
@@ -57,11 +57,9 @@
 
 (mf/defc invalid-token
   []
-  [:> error-container {}
+  [:> error-container* {}
    [:div {:class (stl/css :main-message)} (tr "errors.invite-invalid")]
    [:div {:class (stl/css :desc-message)} (tr "errors.invite-invalid.info")]])
-
-
 
 (mf/defc login-dialog
   {::mf/props :obj}
@@ -247,37 +245,49 @@
          [:& request-dialog {:title (tr "not-found.no-permission.project") :button-text (tr "not-found.no-permission.go-dashboard")}]
 
          (and (some? file-id) (:already-requested requested))
-         [:& request-dialog {:title (tr "not-found.no-permission.already-requested.file") :content [(tr "not-found.no-permission.already-requested.or-others.file")] :button-text (tr "not-found.no-permission.go-dashboard")}]
+         [:& request-dialog {:title (tr "not-found.no-permission.already-requested.file")
+                             :content [(tr "not-found.no-permission.already-requested.or-others.file")]
+                             :button-text (tr "not-found.no-permission.go-dashboard")}]
 
          (:already-requested requested)
-         [:& request-dialog {:title (tr "not-found.no-permission.already-requested.project") :content [(tr "not-found.no-permission.already-requested.or-others.project")] :button-text (tr "not-found.no-permission.go-dashboard")}]
+         [:& request-dialog {:title (tr "not-found.no-permission.already-requested.project")
+                             :content [(tr "not-found.no-permission.already-requested.or-others.project")]
+                             :button-text (tr "not-found.no-permission.go-dashboard")}]
 
          (:sent requested)
-         [:& request-dialog {:title (tr "not-found.no-permission.done.success") :content [(tr "not-found.no-permission.done.remember")] :button-text (tr "not-found.no-permission.go-dashboard")}]
+         [:& request-dialog {:title (tr "not-found.no-permission.done.success")
+                             :content [(tr "not-found.no-permission.done.remember")]
+                             :button-text (tr "not-found.no-permission.go-dashboard")}]
 
          (some? file-id)
-         [:& request-dialog {:title (tr "not-found.no-permission.file") :content [(tr "not-found.no-permission.you-can-ask.file") (tr "not-found.no-permission.if-approves")] :button-text (tr "not-found.no-permission.ask") :on-button-click on-request-access :cancel-text (tr "not-found.no-permission.go-dashboard")}]
+         [:& request-dialog {:title (tr "not-found.no-permission.file")
+                             :content [(tr "not-found.no-permission.you-can-ask.file")
+                                       (tr "not-found.no-permission.if-approves")]
+                             :button-text (tr "not-found.no-permission.ask")
+                             :on-button-click on-request-access
+                             :cancel-text (tr "not-found.no-permission.go-dashboard")}]
 
          (some? team-id)
-         [:& request-dialog {:title (tr "not-found.no-permission.project") :content [(tr "not-found.no-permission.you-can-ask.project") (tr "not-found.no-permission.if-approves")] :button-text (tr "not-found.no-permission.ask") :on-button-click on-request-access :cancel-text (tr "not-found.no-permission.go-dashboard")}]))]))
+         [:& request-dialog {:title (tr "not-found.no-permission.project")
+                             :content [(tr "not-found.no-permission.you-can-ask.project")
+                                       (tr "not-found.no-permission.if-approves")]
+                             :button-text (tr "not-found.no-permission.ask")
+                             :on-button-click on-request-access
+                             :cancel-text (tr "not-found.no-permission.go-dashboard")}]))]))
 
-
-
-(mf/defc not-found
+(mf/defc not-found*
   []
-  [:> error-container {}
+  [:> error-container* {}
    [:div {:class (stl/css :main-message)} (tr "labels.not-found.main-message")]
    [:div {:class (stl/css :desc-message)} (tr "not-found.desc-message.error")]
    [:div {:class (stl/css :desc-message)} (tr "not-found.desc-message.doesnt-exist")]])
 
-
-
-(mf/defc bad-gateway
+(mf/defc bad-gateway*
   []
   (let [handle-retry
         (mf/use-fn
          (fn [] (st/emit! (rt/assign-exception nil))))]
-    [:> error-container {}
+    [:> error-container* {}
      [:div {:class (stl/css :main-message)} (tr "labels.bad-gateway.main-message")]
      [:div {:class (stl/css :desc-message)} (tr "labels.bad-gateway.desc-message")]
      [:div {:class (stl/css :sign-info)}
@@ -286,12 +296,11 @@
 (mf/defc service-unavailable
   []
   (let [on-click (mf/use-fn #(st/emit! (rt/assign-exception nil)))]
-    [:> error-container {}
+    [:> error-container* {}
      [:div {:class (stl/css :main-message)} (tr "labels.service-unavailable.main-message")]
      [:div {:class (stl/css :desc-message)} (tr "labels.service-unavailable.desc-message")]
      [:div {:class (stl/css :sign-info)}
       [:button {:on-click on-click} (tr "labels.retry")]]]))
-
 
 (defn generate-report
   [data]
@@ -336,17 +345,16 @@
 
                        (println))]
       (wapi/create-blob content "text/plain"))
-    (catch :default err
-      (.error js/console err)
+    (catch :default cause
+      (.error js/console "error on generating report.txt" cause)
       nil)))
 
-
-(mf/defc internal-error
+(mf/defc internal-error*
   {::mf/props :obj}
-  [{:keys [data]}]
-  (let [on-click   (mf/use-fn #(st/emit! (rt/assign-exception nil)))
-        report-uri (mf/use-ref nil)
+  [{:keys [data on-reset] :as props}]
+  (let [report-uri (mf/use-ref nil)
         report     (mf/use-memo (mf/deps data) #(generate-report data))
+        on-reset   (or on-reset #(st/emit! (rt/assign-exception nil)))
 
         on-download
         (mf/use-fn
@@ -357,22 +365,24 @@
 
     (mf/with-effect [report]
       (when (some? report)
+
         (let [uri    (wapi/create-uri report)]
           (mf/set-ref-val! report-uri uri)
           (fn []
             (wapi/revoke-uri uri)))))
 
-    [:> error-container {}
+    [:> error-container* {}
      [:div {:class (stl/css :main-message)} (tr "labels.internal-error.main-message")]
      [:div {:class (stl/css :desc-message)} (tr "labels.internal-error.desc-message")]
      (when (some? report)
        [:a {:on-click on-download} "Download report.txt"])
      [:div {:class (stl/css :sign-info)}
-      [:button {:on-click on-click} (tr "labels.retry")]]]))
+      [:button {:on-click on-reset} (tr "labels.retry")]]]))
 
-(mf/defc exception-page
+(mf/defc exception-page*
   {::mf/props :obj}
   [{:keys [data route] :as props}]
+
   (let [file-info    (mf/use-state {:pending true})
         team-info    (mf/use-state {:pending true})
         type         (:type data)
@@ -409,18 +419,24 @@
     (case (:type data)
       :not-found
       (if request-access?
-        [:& request-access {:file-id (:file-id @file-info) :team-id  (:team-id @team-info) :is-default (:is-default @team-info) :workspace? workspace?}]
-        [:& not-found])
+        [:& request-access {:file-id (:file-id @file-info)
+                            :team-id  (:team-id @team-info)
+                            :is-default (:is-default @team-info)
+                            :workspace? workspace?}]
+        [:> not-found* {}])
 
       :authentication
       (if request-access?
-        [:& request-access {:file-id (:file-id @file-info) :team-id  (:team-id @team-info) :is-default (:is-default @team-info) :workspace? workspace?}]
-        [:& not-found])
+        [:& request-access {:file-id (:file-id @file-info)
+                            :team-id  (:team-id @team-info)
+                            :is-default (:is-default @team-info)
+                            :workspace? workspace?}]
+        [:> not-found* {}])
 
       :bad-gateway
-      [:& bad-gateway]
+      [:> bad-gateway* props]
 
       :service-unavailable
       [:& service-unavailable]
 
-      [:> internal-error props])))
+      [:> internal-error* props])))
