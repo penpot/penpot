@@ -202,7 +202,6 @@
        :class (stl/css :select-format-wrapper)
        :options (mapcat (fn [[_ xs]]
                           (map (fn [{:keys [id name] :as f}]
-                                 (js/console.log "f" f)
                                  {:value id :label name})
                                xs))
                         themes)}]
