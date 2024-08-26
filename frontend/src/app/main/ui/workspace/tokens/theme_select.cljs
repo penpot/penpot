@@ -17,29 +17,42 @@
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
+(mf/defc list-items
+  [{:keys [themes active-theme-ids on-close grouped?]}]
+  (when (seq themes)
+    [:ul
+     (for [{:keys [id name]} themes
+           :let [selected? (get active-theme-ids id)]]
+       [:li {:key id
+             :class (stl/css-case
+                     :checked-element true
+                     :sub-item grouped?
+                     :is-selected selected?)
+             :on-click (fn [e]
+                         (dom/stop-propagation e)
+                         (st/emit! (wdt/toggle-token-theme id))
+                         (on-close))}
+        [:span {:class (stl/css :label)} name]
+        [:span {:class (stl/css :check-icon)} i/tick]])]))
+
 (mf/defc theme-options
   [{:keys [on-close]}]
   (let [active-theme-ids (mf/deref refs/workspace-active-theme-ids)
-        ordered-themes (mf/deref refs/workspace-ordered-token-themes)]
+        ordered-themes (mf/deref refs/workspace-ordered-token-themes)
+        grouped-themes (dissoc ordered-themes nil)
+        ungrouped-themes (get ordered-themes nil)]
     [:ul
-     (for [[group themes] ordered-themes]
+     [:& list-items {:themes ungrouped-themes
+                     :active-theme-ids active-theme-ids
+                     :on-close on-close}]
+     (for [[group themes] grouped-themes]
        [:li {:key group}
         (when group
           [:span {:class (stl/css :group)} group])
-        [:ul
-         (for [{:keys [id name]} themes
-               :let [selected? (get active-theme-ids id)]]
-           [:li {:key id
-                 :class (stl/css-case
-                         :checked-element true
-                         :sub-item true
-                         :is-selected selected?)
-                 :on-click (fn [e]
-                             (dom/stop-propagation e)
-                             (st/emit! (wdt/toggle-token-theme id))
-                             (on-close))}
-            [:span {:class (stl/css :label)} name]
-            [:span {:class (stl/css :check-icon)} i/tick]])]])
+        [:& list-items {:themes themes
+                        :active-theme-ids active-theme-ids
+                        :on-close on-close
+                        :grouped? true}]])
      [:li {:class (stl/css-case :checked-element true
                                 :checked-element-button true)
            :on-click #(modal/show! :tokens/themes {})}
