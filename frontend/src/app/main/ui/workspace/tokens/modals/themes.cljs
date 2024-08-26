@@ -98,7 +98,8 @@
 
 (mf/defc edit-theme
   [{:keys [token-sets theme on-back] :as props}]
-  (let [theme-state (mf/use-state {:token-sets token-sets
+  (let [edit? (some? (:id theme))
+        theme-state (mf/use-state {:token-sets token-sets
                                    :theme theme})
         token-set-active? (mf/use-callback
                            (mf/deps theme-state)
@@ -134,7 +135,8 @@
         :on-select on-toggle-token-set
         :on-toggle on-toggle-token-set}]]
      [:div {:class (stl/css :edit-theme-footer)}
-      [:button {:class (stl/css :button-secondary)} "Delete"]
+      (when edit?
+        [:button {:class (stl/css :button-secondary)} "Delete"])
       [:div {:class (stl/css :button-footer)}
        [:button {:class (stl/css :button-secondary)} "Cancel"]
        [:button {:class (stl/css :button-primary)} "Save theme"]]]]))
