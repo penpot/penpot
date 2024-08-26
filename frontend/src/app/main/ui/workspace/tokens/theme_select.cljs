@@ -8,13 +8,17 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.uuid :as uuid]
+   [app.main.data.modal :as modal]
+   [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
 (mf/defc theme-options
-  [{:keys []}]
+  [{:keys [on-close]}]
   (let [active-theme-ids (mf/deref refs/workspace-active-theme-ids)
         ordered-themes (mf/deref refs/workspace-ordered-token-themes)]
     [:ul
@@ -29,11 +33,16 @@
                  :class (stl/css-case
                          :checked-element true
                          :sub-item true
-                         :is-selected selected?)}
+                         :is-selected selected?)
+                 :on-click (fn [e]
+                             (dom/stop-propagation e)
+                             (st/emit! (wdt/toggle-token-theme id))
+                             (on-close))}
             [:span {:class (stl/css :label)} name]
             [:span {:class (stl/css :check-icon)} i/tick]])]])
      [:li {:class (stl/css-case :checked-element true
-                                :checked-element-button true)}
+                                :checked-element-button true)
+           :on-click #(modal/show! :tokens/themes {})}
       [:span "Edit themes"]
       [:span {:class (stl/css :icon)} i/arrow]]]))
 
@@ -70,4 +79,4 @@
      [:& dropdown {:show is-open? :on-close on-close-dropdown}
       [:div {:ref dropdown-element*
              :class (stl/css :custom-select-dropdown)}
-       [:& theme-options]]]]))
+       [:& theme-options {:on-close on-close-dropdown}]]]]))
