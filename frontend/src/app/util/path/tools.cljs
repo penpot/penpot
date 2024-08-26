@@ -30,7 +30,7 @@
                      (= cur-point handler-c2)
                      (= pre-point handler-c1))
               (assoc content index {:command :line-to
-                                    :params cur-point})
+                                    :params (into {} cur-point)})
               content)))]
 
     (reduce process-command content with-prev)))
@@ -71,10 +71,13 @@
         h2 (gpt/add to-p dv2)]
     (-> cmd
         (assoc :command :curve-to)
-        (assoc-in [:params :c1x] (:x h1))
-        (assoc-in [:params :c1y] (:y h1))
-        (assoc-in [:params :c2x] (:x h2))
-        (assoc-in [:params :c2y] (:y h2)))))
+        (update :params (fn [params]
+                          ;; ensure plain map
+                          (-> (into {} params)
+                              (assoc :c1x (:x h1))
+                              (assoc :c1y (:y h1))
+                              (assoc :c2x (:x h2))
+                              (assoc :c2y (:y h2))))))))
 
 (defn is-curve?
   [content point]
