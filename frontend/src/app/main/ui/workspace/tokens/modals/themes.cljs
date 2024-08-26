@@ -108,7 +108,12 @@
                              (mf/deps theme-state)
                              (fn [token-set-id]
                                (swap! theme-state (fn [st]
-                                                    (update st :theme #(wtts/toggle-token-set-to-token-theme token-set-id %))))))]
+                                                    (update st :theme #(wtts/toggle-token-set-to-token-theme token-set-id %))))))
+        on-update-field (fn [field]
+                          (fn [e]
+                            (swap! theme-state (fn [st] (assoc-in st field (dom/get-target-val e))))))
+        on-update-group (on-update-field [:theme :group])
+        on-update-name (on-update-field [:theme :name])]
     [:div {:class (stl/css :edit-theme-wrapper)}
      [:div
       [:button {:class (stl/css :back-button)
@@ -116,9 +121,11 @@
        chevron-icon "Back"]]
      [:div {:class (stl/css :edit-theme-inputs-wrapper)}
       [:& labeled-input {:label "Group"
-                         :input-props {:value (:group theme)}}]
+                         :input-props {:default-value (:group theme)
+                                       :on-change on-update-group}}]
       [:& labeled-input {:label "Theme"
-                         :input-props {:value (:name theme)}}]]
+                         :input-props {:default-value (:name theme)
+                                       :on-change on-update-name}}]]
      [:div {:class (stl/css :sets-list-wrapper)}
       [:& wts/controlled-sets-list
        {:token-sets token-sets
