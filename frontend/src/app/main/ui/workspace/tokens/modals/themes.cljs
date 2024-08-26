@@ -92,7 +92,11 @@
                                      (st/emit! (wdt/delete-token-theme id)))}
                 i/delete]]]])]])]
      [:div {:class (stl/css :button-footer)}
-      [:button {:class (stl/css :create-theme-button)}
+      [:button {:class (stl/css :create-theme-button)
+                :on-click (fn [e]
+                            (dom/prevent-default e)
+                            (dom/stop-propagation e)
+                            (set-state (fn [_] {:type :create-theme})))}
        i/add
        "Create theme"]]]))
 
@@ -176,6 +180,16 @@
       :on-back #(set-state (constantly {:type :themes-overview}))
       :on-submit #(st/emit! (wdt/update-token-theme %))}]))
 
+(mf/defc create-theme
+  [{:keys [set-state]}]
+  (let [token-sets (mf/deref refs/workspace-token-sets)
+        theme {:name "Theme" :sets #{}}]
+    [:& edit-theme
+     {:token-sets token-sets
+      :theme theme
+      :on-back #(set-state (constantly {:type :themes-overview}))
+      :on-submit #(st/emit! (wdt/create-token-theme %))}]))
+
 (mf/defc themes
   [{:keys [] :as _args}]
   (let [themes (mf/deref refs/workspace-ordered-token-themes)
@@ -189,7 +203,8 @@
         component (case (:type @state)
                     :empty-themes empty-themes
                     :themes-overview themes-overview
-                    :edit-theme controlled-edit-theme)]
+                    :edit-theme controlled-edit-theme
+                    :create-theme create-theme)]
     [:div
 
      [:div {:class (stl/css :modal-title)} title]
