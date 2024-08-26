@@ -10,8 +10,8 @@
    [app.common.data.macros :as dm]
    [app.common.files.repair :as cfr]
    [app.common.files.validate :as cfv]
+   [app.common.json :as json]
    [app.common.logging :as l]
-   [app.common.math :as mth]
    [app.common.transit :as t]
    [app.common.types.file :as ctf]
    [app.common.uri :as u]
@@ -97,26 +97,14 @@
        (effect-fn input)
        (rf result input)))))
 
-(defn prettify
-  "Prepare x for cleaner output when logged."
-  [x]
-  (cond
-    (map? x) (d/mapm #(prettify %2) x)
-    (vector? x) (mapv prettify x)
-    (seq? x) (map prettify x)
-    (set? x) (into #{} (map prettify) x)
-    (number? x) (mth/precision x 4)
-    (uuid? x) (str/concat "#uuid " x)
-    :else x))
-
 (defn ^:export logjs
   ([str] (tap (partial logjs str)))
   ([str val]
-   (js/console.log str (clj->js (prettify val) :keyword-fn (fn [v] (str/concat v))))
+   (js/console.log str (json/->js val))
    val))
 
 (when (exists? js/window)
-  (set! (.-dbg ^js js/window) clj->js)
+  (set! (.-dbg ^js js/window) json/->js)
   (set! (.-pp ^js js/window) pprint))
 
 (defonce widget-style "
@@ -479,7 +467,7 @@
                      (let [result (map (fn [row]
                                          (update row :id str))
                                        result)]
-                       (js/console.table (clj->js result))))
+                       (js/console.table (json/->js result))))
                    (fn [cause]
                      (js/console.log "EE:" cause))))
     nil))
