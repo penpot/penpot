@@ -184,18 +184,22 @@
            cur-cmd     (first content)
            content     (rest content)]
 
-      (let [;; Close-path makes a segment from the last point to the initial path point
-            cur-point (if (= :close-path (:command cur-cmd))
+      (let [command     (:command cur-cmd)
+            close-path? (= command :close-path)
+            move-to?    (= command :move-to)
+
+            ;; Close-path makes a segment from the last point to the initial path point
+            cur-point (if close-path?
                         start-point
                         (upc/command->point cur-cmd))
 
             ;; If there is a move-to we don't have a segment
-            prev-point (if (= :move-to (:command cur-cmd))
+            prev-point (if move-to?
                          nil
                          prev-point)
 
             ;; We update the start point
-            start-point (if (= :move-to (:command cur-cmd))
+            start-point (if move-to?
                           cur-point
                           start-point)
 
