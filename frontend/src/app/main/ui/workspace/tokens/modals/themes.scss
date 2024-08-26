@@ -20,6 +20,7 @@ hr {
   grid-template-rows: auto 1fr auto;
   width: 100%;
   max-width: $s-468;
+  user-select: none;
 }
 
 .modal-title {
