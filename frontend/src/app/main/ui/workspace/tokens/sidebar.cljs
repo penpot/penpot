@@ -9,9 +9,9 @@
   (:require
    [app.common.data :as d]
    [app.main.data.modal :as modal]
+   [app.main.ui.workspace.tokens.theme-select :refer [theme-select]]
    [app.main.data.tokens :as dt]
    [app.main.data.tokens :as wdt]
-   [app.main.ui.components.select :refer [select]]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
@@ -197,7 +197,7 @@
    [:div {:class (stl/css :theme-sidebar)}
     [:span {:class (stl/css :themes-header)} "Themes"]
     [:div {:class (stl/css :theme-select-wrapper)}
-     [:& select
+     [:& theme-select
       {:default-value (some-> active-theme-ids first)
        :class (stl/css :select-format-wrapper)
        :options (mapcat (fn [[_ xs]]
