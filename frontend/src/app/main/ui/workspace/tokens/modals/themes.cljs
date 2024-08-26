@@ -8,15 +8,14 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.modal :as modal]
-   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-   [app.main.ui.workspace.tokens.token-set :as wtts]
-   [cuerdas.core :as str]
-   [app.main.ui.workspace.tokens.common :refer [labeled-input]]
-   [app.main.ui.workspace.tokens.sets :as wts]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.tokens.common :refer [labeled-input]]
+   [app.main.ui.workspace.tokens.sets :as wts]
+   [app.main.ui.workspace.tokens.token-set :as wtts]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
@@ -97,7 +96,7 @@
        "Create theme"]]]))
 
 (mf/defc edit-theme
-  [{:keys [token-sets theme on-back] :as props}]
+  [{:keys [token-sets theme on-back on-submit] :as props}]
   (let [edit? (some? (:id theme))
         theme-state (mf/use-state {:token-sets token-sets
                                    :theme theme})
@@ -110,36 +109,52 @@
                              (fn [token-set-id]
                                (swap! theme-state (fn [st]
                                                     (update st :theme #(wtts/toggle-token-set-to-token-theme token-set-id %))))))
-        on-update-field (fn [field]
+        on-change-field (fn [field]
                           (fn [e]
                             (swap! theme-state (fn [st] (assoc-in st field (dom/get-target-val e))))))
-        on-update-group (on-update-field [:theme :group])
-        on-update-name (on-update-field [:theme :name])]
-    [:div {:class (stl/css :edit-theme-wrapper)}
-     [:div
-      [:button {:class (stl/css :back-button)
-                :on-click on-back}
-       chevron-icon "Back"]]
-     [:div {:class (stl/css :edit-theme-inputs-wrapper)}
-      [:& labeled-input {:label "Group"
-                         :input-props {:default-value (:group theme)
-                                       :on-change on-update-group}}]
-      [:& labeled-input {:label "Theme"
-                         :input-props {:default-value (:name theme)
-                                       :on-change on-update-name}}]]
-     [:div {:class (stl/css :sets-list-wrapper)}
-      [:& wts/controlled-sets-list
-       {:token-sets token-sets
-        :token-set-selected? (constantly false)
-        :token-set-active? token-set-active?
-        :on-select on-toggle-token-set
-        :on-toggle on-toggle-token-set}]]
-     [:div {:class (stl/css :edit-theme-footer)}
-      (when edit?
-        [:button {:class (stl/css :button-secondary)} "Delete"])
-      [:div {:class (stl/css :button-footer)}
-       [:button {:class (stl/css :button-secondary)} "Cancel"]
-       [:button {:class (stl/css :button-primary)} "Save theme"]]]]))
+        on-update-group (on-change-field [:theme :group])
+        on-update-name (on-change-field [:theme :name])
+        on-save-form (mf/use-callback
+                      (mf/deps theme-state on-submit)
+                      (fn [e]
+                        (dom/prevent-default e)
+                        (on-submit (:theme @theme-state))
+                        (on-back)))]
+    [:form {:on-submit on-save-form}
+     [:div {:class (stl/css :edit-theme-wrapper)}
+      [:div
+       [:button {:class (stl/css :back-button)
+                 :type "button"
+                 :on-click on-back}
+        chevron-icon "Back"]]
+      [:div {:class (stl/css :edit-theme-inputs-wrapper)}
+       [:& labeled-input {:label "Group"
+                          :input-props {:default-value (:group theme)
+                                        :on-change on-update-group}}]
+       [:& labeled-input {:label "Theme"
+                          :input-props {:default-value (:name theme)
+                                        :on-change on-update-name}}]]
+      [:div {:class (stl/css :sets-list-wrapper)}
+       [:& wts/controlled-sets-list
+        {:token-sets token-sets
+         :token-set-selected? (constantly false)
+         :token-set-active? token-set-active?
+         :on-select on-toggle-token-set
+         :on-toggle on-toggle-token-set}]]
+      [:div {:class (stl/css :edit-theme-footer)}
+       (when edit?
+         [:button {:class (stl/css :button-secondary)
+                   :type "button"}
+          "Delete"])
+       [:div {:class (stl/css :button-footer)}
+        [:button {:class (stl/css :button-secondary)
+                  :type "button"
+                  :on-click #(st/emit! (modal/hide))}
+         "Cancel"]
+        [:button {:class (stl/css :button-primary)
+                  :type "submit"
+                  :on-click on-save-form}
+         "Save theme"]]]]]))
 
 (mf/defc controlled-edit-theme
   [{:keys [state set-state]}]
@@ -149,7 +164,8 @@
     [:& edit-theme
      {:token-sets token-sets
       :theme theme
-      :on-back #(set-state (constantly {:type :themes-overview}))}]))
+      :on-back #(set-state (constantly {:type :themes-overview}))
+      :on-submit #(st/emit! (wdt/update-token-theme %))}]))
 
 (mf/defc themes
   [{:keys [] :as _args}]

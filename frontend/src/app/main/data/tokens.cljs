@@ -102,6 +102,17 @@
           (rx/of
            (dch/commit-changes changes)))))))
 
+(defn update-token-theme [token-theme]
+  (ptk/reify ::update-token-theme
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [prev-token-theme (wtts/get-workspace-token-theme state (:id token-theme))
+            changes (-> (pcb/empty-changes it)
+                        (pcb/update-token-theme token-theme prev-token-theme))]
+        (js/console.log "changes" changes)
+        (rx/of
+         (dch/commit-changes changes))))))
+
 (defn ensure-token-theme-changes [changes state {:keys [id new-set?]}]
   (let [theme-id (wtts/update-theme-id state)
         theme (some-> theme-id (wtts/get-workspace-token-theme state))]
