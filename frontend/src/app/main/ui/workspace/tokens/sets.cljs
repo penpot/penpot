@@ -51,7 +51,8 @@
        (if set? i/document i/group)]
       [:div {:class (stl/css :set-name)} name]
       [:div {:class (stl/css :delete-set)}
-       [:button {:on-click #(on-delete-token-set-click id %)}
+       [:button {:on-click #(on-delete-token-set-click id %)
+                 :type "button"}
         i/delete]]
       (when set?
         [:span {:class (stl/css :action-btn)
