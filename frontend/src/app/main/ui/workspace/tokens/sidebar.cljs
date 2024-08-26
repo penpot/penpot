@@ -182,12 +182,12 @@
       "Create"]]))
 
 (mf/defc edit-button
-  [{:keys []}]
+  [{:keys [create?]}]
   [:button {:class (stl/css :themes-button)
             :on-click (fn [e]
                         (dom/stop-propagation e)
                         (modal/show! :tokens/themes {}))}
-   "Edit"])
+   (if create? "Create" "Edit")])
 
 (mf/defc themes-sidebar
   [_props]
@@ -205,7 +205,7 @@
                                  {:value id :label name})
                                xs))
                         themes)}]
-     [:& edit-button]]]))
+     [:& edit-button {:create? (empty? themes)}]]]))
 
 (mf/defc sets-sidebar
   []
