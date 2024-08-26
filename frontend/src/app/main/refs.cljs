@@ -247,6 +247,9 @@
 (def workspace-active-theme-ids
   (l/derived wtts/get-active-theme-ids st/state))
 
+(def workspace-temp-theme-id
+  (l/derived wtts/get-temp-theme-id st/state))
+
 (def workspace-active-set-ids
   (l/derived wtts/get-active-set-ids st/state))
 

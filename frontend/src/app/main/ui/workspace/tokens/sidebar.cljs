@@ -191,21 +191,12 @@
 
 (mf/defc themes-sidebar
   [_props]
-  (let [open? (mf/use-state true)
-        active-theme-ids (mf/deref refs/workspace-active-theme-ids)
-        themes (mf/deref refs/workspace-ordered-token-themes)]
+  (let [ordered-themes (mf/deref refs/workspace-ordered-token-themes)]
    [:div {:class (stl/css :theme-sidebar)}
     [:span {:class (stl/css :themes-header)} "Themes"]
     [:div {:class (stl/css :theme-select-wrapper)}
-     [:& theme-select
-      {:default-value (some-> active-theme-ids first)
-       :class (stl/css :select-format-wrapper)
-       :options (mapcat (fn [[_ xs]]
-                          (map (fn [{:keys [id name] :as f}]
-                                 {:value id :label name})
-                               xs))
-                        themes)}]
-     [:& edit-button {:create? (empty? themes)}]]]))
+     [:& theme-select]
+     [:& edit-button {:create? (empty? ordered-themes)}]]]))
 
 (mf/defc sets-sidebar
   []

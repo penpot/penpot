@@ -27,6 +27,18 @@
   color: var(--text-color);
   cursor: pointer;
 
+  ul {
+    margin-bottom: 0;
+  }
+
+  .group {
+    display: block;
+    @include headlineSmallTypography;
+    padding: $s-8;
+    color: var(--color-foreground-secondary);
+    font-weight: 600;
+  }
+
   &.icon {
     grid-template-columns: auto 1fr auto;
   }
@@ -87,6 +99,9 @@
 
 .checked-element {
   @extend .dropdown-element-base;
+
+  padding-left: $s-16;
+
   .icon {
     @include flexCenter;
     height: $s-24;
