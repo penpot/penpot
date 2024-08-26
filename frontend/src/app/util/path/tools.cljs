@@ -86,36 +86,40 @@
         handler-points (map #(upc/handler->point content (first %) (second %)) handlers)]
     (some #(not= point %) handler-points)))
 
+(def ^:private xf:mapcat-points
+  (comp
+   (mapcat #(vector (:next-p %) (:prev-p %)))
+   (remove nil?)))
+
 (defn make-curve-point
   "Changes the content to make the point a 'curve'. The handlers will be positioned
   in the same vector that results from the previous->next points but with fixed length."
   [content point]
 
   (let [indices (upc/point-indices content point)
-        vectors (->> indices (mapv (fn [index]
-                                     (let [cmd (nth content index)
-                                           prev-i (dec index)
-                                           prev (when (not (= :move-to (:command cmd)))
-                                                  (get content prev-i))
-                                           next-i (inc index)
-                                           next (get content next-i)
+        vectors (map (fn [index]
+                       (let [cmd (nth content index)
+                             prev-i (dec index)
+                             prev (when (not (= :move-to (:command cmd)))
+                                    (get content prev-i))
+                             next-i (inc index)
+                             next (get content next-i)
 
-                                           next (when (not (= :move-to (:command next)))
-                                                  next)]
-                                       (hash-map :index index
-                                                 :prev-i (when (some? prev) prev-i)
-                                                 :prev-c prev
-                                                 :prev-p (upc/command->point prev)
-                                                 :next-i (when (some? next) next-i)
-                                                 :next-c next
-                                                 :next-p (upc/command->point next)
-                                                 :command cmd)))))
+                             next (when (not (= :move-to (:command next)))
+                                    next)]
+                         {:index index
+                          :prev-i (when (some? prev) prev-i)
+                          :prev-c prev
+                          :prev-p (upc/command->point prev)
+                          :next-i (when (some? next) next-i)
+                          :next-c next
+                          :next-p (upc/command->point next)
+                          :command cmd}))
+                     indices)
 
-        points (->> vectors (mapcat #(vector (:next-p %) (:prev-p %))) (remove nil?) (into #{}))]
+        points (into #{} xf:mapcat-points vectors)]
 
-    (cond
-      (= (count points) 2)
-      ;;
+    (if (= (count points) 2)
       (let [v1 (gpt/to-vec (first points) point)
             v2 (gpt/to-vec (first points) (second points))
             vp (gpt/project v1 v2)
@@ -148,9 +152,9 @@
 
                   (and (= :curve-to (:command next-cmd)) (some? next-p))
                   (update next-i upc/update-handler :c1 next-h))))]
-        (->> vectors (reduce add-curve content)))
 
-      :else
+        (reduce add-curve content vectors))
+
       (let [add-curve
             (fn [content {:keys [index command prev-p next-c next-i]}]
               (cond-> content
@@ -165,7 +169,7 @@
 
                 (= :curve-to (:command next-c))
                 (update next-i #(line->curve point %))))]
-        (->> vectors (reduce add-curve content))))))
+        (reduce add-curve content vectors)))))
 
 (defn get-segments
   "Given a content and a set of points return all the segments in the path
