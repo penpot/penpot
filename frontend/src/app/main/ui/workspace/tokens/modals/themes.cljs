@@ -206,7 +206,6 @@
                     :edit-theme controlled-edit-theme
                     :create-theme create-theme)]
     [:div
-
      [:div {:class (stl/css :modal-title)} title]
      [:div {:class (stl/css :modal-content)}
       [:& component {:state state
