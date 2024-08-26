@@ -155,10 +155,14 @@
          :on-select on-toggle-token-set
          :on-toggle on-toggle-token-set}]]
       [:div {:class (stl/css :edit-theme-footer)}
-       (when edit?
+       (if edit?
          [:button {:class (stl/css :button-secondary)
-                   :type "button"}
-          "Delete"])
+                   :type "button"
+                   :on-click (fn []
+                               (st/emit! (wdt/delete-token-theme (:id theme)))
+                               (on-back))}
+          "Delete"]
+         [:div])
        [:div {:class (stl/css :button-footer)}
         [:button {:class (stl/css :button-secondary)
                   :type "button"
