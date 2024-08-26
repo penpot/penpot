@@ -619,20 +619,27 @@
                  {:title "contains"
                   :description "contains predicate"}}))})
 
-(define! ::inst
+(def type:inst
   {:type ::inst
    :pred inst?
    :type-properties
    {:title "inst"
     :description "Satisfies Inst protocol"
-    :error/message "expected to be number in safe range"
+    :error/message "should be an instant"
     :gen/gen (->> (sg/small-int)
-                  (sg/fmap (fn [v] (tm/instant v))))
-    ::oapi/type "number"
-    ::oapi/format "int64"}})
+                  (sg/fmap (fn [v] (tm/parse-instant v))))
 
-(define! ::fn
-  [:schema fn?])
+    :decode/string tm/parse-instant
+    :encode/string tm/format-instant
+    :decode/json tm/parse-instant
+    :encode/json tm/format-instant
+    ::oapi/type "string"
+    ::oapi/format "iso"}})
+
+(register! ::inst type:inst)
+
+(register! ::fn
+           [:schema fn?])
 
 (define! ::word-string
   {:type ::word-string
