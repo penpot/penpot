@@ -17,7 +17,8 @@
    [app.main.ui.workspace.tokens.sets :as wts]
    [app.main.ui.workspace.tokens.token-set :as wtts]
    [app.util.dom :as dom]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [cuerdas.core :as str]))
 
 (def ^:private chevron-icon
   (i/icon-xref :arrow (stl/css :chevron-icon)))
@@ -118,7 +119,15 @@
                       (mf/deps theme-state on-submit)
                       (fn [e]
                         (dom/prevent-default e)
-                        (on-submit (:theme @theme-state))
+                        (let [theme (:theme @theme-state)
+                              final-name (str/trim (:name theme))
+                              final-group (-> (:group theme)
+                                              (str/trim)
+                                              (str/lower))]
+                          (cond-> theme
+                            (empty final-name) (assoc :name "Theme")
+                            (empty final-group) (dissoc :group)
+                            :always on-submit))
                         (on-back)))]
     [:form {:on-submit on-save-form}
      [:div {:class (stl/css :edit-theme-wrapper)}
