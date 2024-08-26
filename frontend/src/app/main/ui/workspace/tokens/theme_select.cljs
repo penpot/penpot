@@ -17,7 +17,7 @@
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
-(mf/defc list-items
+(mf/defc themes-list
   [{:keys [themes active-theme-ids on-close grouped?]}]
   (when (seq themes)
     [:ul
@@ -42,17 +42,17 @@
         grouped-themes (dissoc ordered-themes nil)
         ungrouped-themes (get ordered-themes nil)]
     [:ul
-     [:& list-items {:themes ungrouped-themes
-                     :active-theme-ids active-theme-ids
-                     :on-close on-close}]
+     [:& themes-list {:themes ungrouped-themes
+                      :active-theme-ids active-theme-ids
+                      :on-close on-close}]
      (for [[group themes] grouped-themes]
        [:li {:key group}
         (when group
           [:span {:class (stl/css :group)} group])
-        [:& list-items {:themes themes
-                        :active-theme-ids active-theme-ids
-                        :on-close on-close
-                        :grouped? true}]])
+        [:& themes-list {:themes themes
+                         :active-theme-ids active-theme-ids
+                         :on-close on-close
+                         :grouped? true}]])
      [:li {:class (stl/css-case :checked-element true
                                 :checked-element-button true)
            :on-click #(modal/show! :tokens/themes {})}
