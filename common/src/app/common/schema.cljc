@@ -895,11 +895,11 @@
     :description "Satisfies Inst protocol"
     :error/message "should be an instant"
     :gen/gen (->> (sg/small-int)
-                  (sg/fmap (fn [v] (tm/instant v))))
+                  (sg/fmap (fn [v] (tm/parse-instant v))))
 
-    :decode/string tm/instant
+    :decode/string tm/parse-instant
     :encode/string tm/format-instant
-    :decode/json tm/instant
+    :decode/json tm/parse-instant
     :encode/json tm/format-instant
     ::oapi/type "string"
     ::oapi/format "iso"}})
