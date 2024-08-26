@@ -27,9 +27,15 @@
   (i/icon-xref :close (stl/css :close-icon)))
 
 (mf/defc empty-themes
-  [{:keys []}]
-  "Empty")
-
+  [{:keys [set-state]}]
+  [:div {:class (stl/css :empty-themes-wrapper)}
+   [:div {:class (stl/css :empty-themes-message)}
+    [:h1 "You currently have no themes."]
+    [:p "Create your first theme now."]]
+   [:div {:class (stl/css :button-footer)}
+    [:button {:class (stl/css :button-primary)
+              :on-click #(set-state (fn [_] {:type :create-theme}))}
+     "New theme"]]])
 
 (mf/defc switch
   [{:keys [selected? name on-change]}]
@@ -198,7 +204,7 @@
   [{:keys [] :as _args}]
   (let [themes (mf/deref refs/workspace-ordered-token-themes)
         state (mf/use-state (if (empty? themes)
-                              {:type :empty-themes}
+                              {:type :create-theme}
                               {:type :themes-overview}))
         set-state (mf/use-callback #(swap! state %))
         title (case (:type @state)
@@ -206,7 +212,7 @@
                 "Themes")
         component (case (:type @state)
                     :empty-themes empty-themes
-                    :themes-overview themes-overview
+                    :themes-overview (if (empty? themes) empty-themes themes-overview)
                     :edit-theme controlled-edit-theme
                     :create-theme create-theme)]
     [:div
