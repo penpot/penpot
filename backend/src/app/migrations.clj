@@ -400,7 +400,16 @@
     :fn (mg/resource "app/migrations/sql/0125-mod-file-table.sql")}
 
    {:name "0126-add-team-access-request-table"
-    :fn (mg/resource "app/migrations/sql/0126-add-team-access-request-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0126-add-team-access-request-table.sql")}
+
+   {:name "0127-mod-storage-object-table"
+    :fn (mg/resource "app/migrations/sql/0127-mod-storage-object-table.sql")}
+
+   {:name "0128-mod-task-table"
+    :fn (mg/resource "app/migrations/sql/0128-mod-task-table.sql")}
+
+   {:name "0129-mod-file-change-table"
+    :fn (mg/resource "app/migrations/sql/0129-mod-file-change-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

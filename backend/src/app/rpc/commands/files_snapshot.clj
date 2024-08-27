@@ -13,12 +13,15 @@
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
+   [app.features.fdata :as feat.fdata]
    [app.main :as-alias main]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.storage :as sto]
+   [app.util.blob :as blob]
+   [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [cuerdas.core :as str]))
@@ -33,20 +36,22 @@
               :code :authentication-required
               :hint "only admins allowed")))
 
+(def sql:get-file-snapshots
+  "SELECT id, label, revn, created_at
+     FROM file_change
+    WHERE file_id = ?
+      AND created_at < ?
+      AND label is not null
+    ORDER BY created_at desc
+    LIMIT ?")
+
 (defn get-file-snapshots
   [{:keys [::db/conn]} {:keys [file-id limit start-at]
                         :or {limit Long/MAX_VALUE}}]
-  (let [query    (str "select id, label, revn, created_at "
-                      "  from file_change "
-                      " where file_id = ? "
-                      "   and created_at < ? "
-                      "   and data is not null "
-                      " order by created_at desc "
-                      " limit ?")
-        start-at (or start-at (dt/now))
+  (let [start-at (or start-at (dt/now))
         limit    (min limit 20)]
 
-    (->> (db/exec! conn [query file-id start-at limit])
+    (->> (db/exec! conn [sql:get-file-snapshots file-id start-at limit])
          (mapv (fn [row]
                  (update row :created-at dt/format-instant :rfc1123))))))
 
@@ -77,43 +82,52 @@
                 :id id
                 :file-id file-id))
 
-    (when-not (:data snapshot)
-      (ex/raise :type :precondition
-                :code :snapshot-without-data
-                :hint "snapshot has no data"
-                :label (:label snapshot)
-                :file-id file-id))
+    (let [snapshot (feat.fdata/resolve-file-data cfg snapshot)]
+      (when-not (:data snapshot)
+        (ex/raise :type :precondition
+                  :code :snapshot-without-data
+                  :hint "snapshot has no data"
+                  :label (:label snapshot)
+                  :file-id file-id))
 
-    (l/dbg :hint "restoring snapshot"
-           :file-id (str file-id)
-           :label (:label snapshot)
-           :snapshot-id (str (:id snapshot)))
+      (l/dbg :hint "restoring snapshot"
+             :file-id (str file-id)
+             :label (:label snapshot)
+             :snapshot-id (str (:id snapshot)))
 
-    (db/update! conn :file
-                {:data (:data snapshot)
-                 :revn (inc (:revn file))
-                 :features (:features snapshot)}
-                {:id file-id})
+      ;; If the file was already offloaded, on restring the snapshot
+      ;; we are going to replace the file data, so we need to touch
+      ;; the old referenced storage object and avoid possible leaks
+      (when (feat.fdata/offloaded? file)
+        (sto/touch-object! storage (:data-ref-id file)))
 
-    ;; clean object thumbnails
-    (let [sql (str "update file_tagged_object_thumbnail "
-                   "   set deleted_at = now() "
-                   " where file_id=? returning media_id")
-          res (db/exec! conn [sql file-id])]
+      (db/update! conn :file
+                  {:data (:data snapshot)
+                   :revn (inc (:revn file))
+                   :data-backend nil
+                   :data-ref-id nil
+                   :has-media-trimmed false
+                   :features (:features snapshot)}
+                  {:id file-id})
 
-      (doseq [media-id (into #{} (keep :media-id) res)]
-        (sto/touch-object! storage media-id)))
+      ;; clean object thumbnails
+      (let [sql (str "update file_tagged_object_thumbnail "
+                     "   set deleted_at = now() "
+                     " where file_id=? returning media_id")
+            res (db/exec! conn [sql file-id])]
+        (doseq [media-id (into #{} (keep :media-id) res)]
+          (sto/touch-object! storage media-id)))
 
-    ;; clean object thumbnails
-    (let [sql (str "update file_thumbnail "
-                   "   set deleted_at = now() "
-                   " where file_id=? returning media_id")
-          res (db/exec! conn [sql file-id])]
-      (doseq [media-id (into #{} (keep :media-id) res)]
-        (sto/touch-object! storage media-id)))
+      ;; clean file thumbnails
+      (let [sql (str "update file_thumbnail "
+                     "   set deleted_at = now() "
+                     " where file_id=? returning media_id")
+            res (db/exec! conn [sql file-id])]
+        (doseq [media-id (into #{} (keep :media-id) res)]
+          (sto/touch-object! storage media-id)))
 
-    {:id (:id snapshot)
-     :label (:label snapshot)}))
+      {:id (:id snapshot)
+       :label (:label snapshot)})))
 
 (defn- resolve-snapshot-by-label
   [conn file-id label]
@@ -145,17 +159,27 @@
                                    (merge (resolve-snapshot-by-label conn file-id label)))]
                       (restore-file-snapshot! cfg params)))))
 
+(defn- get-file
+  [cfg file-id]
+  (let [file (->> (db/get cfg :file {:id file-id})
+                  (feat.fdata/resolve-file-data cfg))]
+    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+      (-> file
+          (update :data blob/decode)
+          (update :data feat.fdata/process-pointers deref)
+          (update :data feat.fdata/process-objects (partial into {}))
+          (update :data blob/encode)))))
+
 (defn take-file-snapshot!
   [cfg {:keys [file-id label]}]
-  (let [conn  (db/get-connection cfg)
-        file  (db/get conn :file {:id file-id})
+  (let [file  (get-file cfg file-id)
         id    (uuid/next)]
 
     (l/debug :hint "creating file snapshot"
              :file-id (str file-id)
              :label label)
 
-    (db/insert! conn :file-change
+    (db/insert! cfg :file-change
                 {:id id
                  :revn (:revn file)
                  :data (:data file)

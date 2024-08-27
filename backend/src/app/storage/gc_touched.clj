@@ -94,6 +94,15 @@
   (-> (db/exec-one! conn [sql:has-file-data-fragment-refs id])
       (get :has-refs)))
 
+(def ^:private
+  sql:has-file-change-refs
+  "SELECT EXISTS (SELECT 1 FROM file_change WHERE data_ref_id = ?) AS has_refs")
+
+(defn- has-file-change-refs?
+  [conn id]
+  (-> (db/exec-one! conn [sql:has-file-change-refs id])
+      (get :has-refs)))
+
 (def ^:private sql:mark-freeze-in-bulk
   "UPDATE storage_object
       SET touched_at = NULL
@@ -168,6 +177,7 @@
     "profile"               (process-objects! conn has-profile-refs? ids bucket)
     "file-data"             (process-objects! conn has-file-data-refs? ids bucket)
     "file-data-fragment"    (process-objects! conn has-file-data-fragment-refs? ids bucket)
+    "file-change"           (process-objects! conn has-file-change-refs? ids bucket)
     (ex/raise :type :internal
               :code :unexpected-unknown-reference
               :hint (dm/fmt "unknown reference '%'" bucket))))

@@ -73,6 +73,38 @@
                   {:id (:id fragment)}
                   {::db/return-keys false}))))
 
+(def sql:get-snapshots
+  "SELECT fc.*
+     FROM file_change AS fc
+    WHERE fc.file_id = ?
+      AND fc.label IS NOT NULL
+      AND fc.data IS NOT NULL
+      AND fc.data_backend IS NULL")
+
+(defn- offload-file-snapshots!
+  [{:keys [::db/conn ::sto/storage ::file-id] :as cfg}]
+  (doseq [snapshot (db/exec! conn [sql:get-snapshots file-id])]
+    (let [data (sto/content (:data snapshot))
+          sobj (sto/put-object! storage
+                                {::sto/content data
+                                 ::sto/touch true
+                                 :bucket "file-change"
+                                 :content-type "application/octet-stream"
+                                 :file-id file-id
+                                 :file-change-id (:id snapshot)})]
+
+      (l/trc :hint "offload file change"
+             :file-id (str file-id)
+             :file-change-id (str (:id snapshot))
+             :storage-id (str (:id sobj)))
+
+      (db/update! conn :file-change
+                  {:data-backend "objects-storage"
+                   :data-ref-id (:id sobj)
+                   :data nil}
+                  {:id (:id snapshot)}
+                  {::db/return-keys false}))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -88,4 +120,5 @@
         (assoc ::file-id (:file-id props))
         (db/tx-run! (fn [cfg]
                       (offload-file-data! cfg)
-                      (offload-file-data-fragments! cfg))))))
+                      (offload-file-data-fragments! cfg)
+                      (offload-file-snapshots! cfg))))))
