@@ -163,7 +163,7 @@
          :token-set-selected? (constantly false)
          :token-set-active? token-set-active?
          :on-select on-toggle-token-set
-         :on-toggle on-toggle-token-set
+         :on-toggle-token-set on-toggle-token-set
          :context sets-context/static-context}]]
       [:div {:class (stl/css :edit-theme-footer)}
        (if edit?

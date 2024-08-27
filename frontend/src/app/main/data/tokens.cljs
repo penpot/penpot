@@ -179,18 +179,19 @@
         (rx/of
          (dch/commit-changes changes))))))
 
-(defn toggle-token-set [{:keys [token-set-id token-theme-id]}]
+(defn toggle-token-set [{:keys [token-set-id]}]
   (ptk/reify ::toggle-token-set
     ptk/WatchEvent
     (watch [it state _]
-      (js/console.log "token-set-id token-theme-id" token-set-id token-theme-id)
-      (let [theme (some-> (or token-theme-id (wtts/update-theme-id state))
-                          (wtts/get-workspace-token-theme state))
+      (let [target-theme-id (wtts/get-temp-theme-id state)
+            active-set-ids (wtts/get-active-set-ids state)
+            theme (-> (wtts/get-workspace-token-theme target-theme-id state)
+                      (assoc :sets active-set-ids))
             changes (-> (pcb/empty-changes it)
                         (pcb/update-token-theme
                          (wtts/toggle-token-set-to-token-theme token-set-id theme)
                          theme)
-                        (pcb/update-active-token-themes #{(wtts/update-theme-id state)} (wtts/get-active-theme-ids state)))]
+                        (pcb/update-active-token-themes #{target-theme-id} (wtts/get-active-theme-ids state)))]
         (rx/of
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))

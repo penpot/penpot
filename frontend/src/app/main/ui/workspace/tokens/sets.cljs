@@ -128,6 +128,7 @@
            token-set-selected?
            token-set-active?
            on-create-token-set
+           on-toggle-token-set
            on-select
            context]
     :as _props}]
@@ -141,6 +142,7 @@
                       :editing? editing?
                       :on-select on-select
                       :on-edit on-edit
+                      :on-toggle on-toggle-token-set
                       :on-submit #(do
                                     (on-update-token-set %)
                                     (on-reset))
@@ -175,6 +177,6 @@
       :token-set-selected? token-set-selected?
       :token-set-active? token-set-active?
       :on-select on-select-token-set-click
-      :on-toggle on-toggle-token-set-click
+      :on-toggle-token-set on-toggle-token-set-click
       :on-update-token-set on-update-token-set
       :on-create-token-set on-create-token-set}]))
