@@ -182,7 +182,7 @@
 (mf/defc controlled-edit-theme
   [{:keys [state set-state]}]
   (let [{:keys [theme-id]} @state
-        token-sets (mf/deref refs/workspace-token-sets)
+        token-sets (mf/deref refs/workspace-ordered-token-sets)
         theme (mf/deref (refs/workspace-token-theme theme-id))]
     [:& edit-theme
      {:token-sets token-sets
@@ -192,7 +192,7 @@
 
 (mf/defc create-theme
   [{:keys [set-state]}]
-  (let [token-sets (mf/deref refs/workspace-token-sets)
+  (let [token-sets (mf/deref refs/workspace-ordered-token-sets)
         theme {:name "Theme" :sets #{}}]
     [:& edit-theme
      {:token-sets token-sets

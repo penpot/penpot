@@ -259,10 +259,10 @@
 (def workspace-ordered-token-themes
   (l/derived wtts/get-workspace-ordered-themes st/state))
 
-(def workspace-token-sets
+(def workspace-ordered-token-sets
   (l/derived
    (fn [data]
-     (or (wtts/get-workspace-sets data) {}))
+     (or (wtts/get-workspace-ordered-sets data) {}))
    st/state
    =))
 

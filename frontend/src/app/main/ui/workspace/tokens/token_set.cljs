@@ -115,6 +115,13 @@
 (defn get-workspace-sets [state]
   (get-in state [:workspace-data :token-sets-index]))
 
+(defn get-workspace-ordered-sets [state]
+  ;; TODO Include groups
+  (let [top-level-set-ids (get-in state [:workspace-data :token-set-groups])
+        token-sets (get-workspace-sets state)]
+    (->> (map (fn [id] [id (get token-sets id)]) top-level-set-ids)
+         (into (ordered-map)))))
+
 (defn get-token-set [set-id state]
   (some-> (get-workspace-sets state)
           (get set-id)))

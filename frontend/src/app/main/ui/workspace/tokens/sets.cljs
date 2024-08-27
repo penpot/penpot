@@ -135,7 +135,7 @@
 
 (mf/defc sets-list
   [{:keys []}]
-  (let [token-sets (mf/deref refs/workspace-token-sets)
+  (let [token-sets (mf/deref refs/workspace-ordered-token-sets)
         selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)
         token-set-selected? (mf/use-callback
                              (mf/deps selected-token-set-id)
