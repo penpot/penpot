@@ -112,6 +112,9 @@
   (let [edit? (some? (:id theme))
         theme-state (mf/use-state {:token-sets token-sets
                                    :theme theme})
+        disabled? (-> (get-in @theme-state [:theme :name])
+                      (str/trim)
+                      (str/empty?))
         token-set-active? (mf/use-callback
                            (mf/deps theme-state)
                            (fn [id]
@@ -135,10 +138,10 @@
                               final-group (-> (:group theme)
                                               (str/trim)
                                               (str/lower))]
-                          (cond-> theme
-                            (empty final-name) (assoc :name "Theme")
-                            (empty final-group) (dissoc :group)
-                            :always on-submit))
+                          (when-not (str/empty? final-name)
+                            (cond-> theme
+                              (empty final-group) (dissoc :group)
+                              :always on-submit)))
                         (on-back)))]
     [:form {:on-submit on-save-form}
      [:div {:class (stl/css :edit-theme-wrapper)}
@@ -178,7 +181,8 @@
          "Cancel"]
         [:button {:class (stl/css :button-primary)
                   :type "submit"
-                  :on-click on-save-form}
+                  :on-click on-save-form
+                  :disabled disabled?}
          "Save theme"]]]]]))
 
 (mf/defc controlled-edit-theme
@@ -195,7 +199,7 @@
 (mf/defc create-theme
   [{:keys [set-state]}]
   (let [token-sets (mf/deref refs/workspace-ordered-token-sets)
-        theme {:name "Theme" :sets #{}}]
+        theme {:name "" :sets #{}}]
     [:& edit-theme
      {:token-sets token-sets
       :theme theme
