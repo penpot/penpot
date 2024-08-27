@@ -126,3 +126,21 @@
   transform: rotate(var(--chevron-icon-rotation));
   stroke: var(--icon-foreground);
 }
+
+.editing-node {
+  @include textEllipsis;
+  color: var(--layer-row-foreground-color-focus);
+}
+
+input.editing-node {
+  @include textEllipsis;
+  @include bodySmallTypography;
+  @include removeInputStyle;
+  flex-grow: 1;
+  height: $s-28;
+  padding-left: $s-6;
+  margin: 0;
+  border-radius: $br-8;
+  border: $s-1 solid var(--input-border-color-focus);
+  color: var(--layer-row-foreground-color);
+}

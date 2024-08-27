@@ -12,6 +12,8 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
+   [app.util.keyboard :as kbd]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (def ^:private chevron-icon
@@ -27,18 +29,57 @@
   (dom/stop-propagation event)
   (st/emit! (wdt/delete-token-set id)))
 
+(defn on-rename-token-set [name token-set]
+  (let [new-token-set (assoc token-set :name name)]
+    (st/emit! (wdt/update-token-set new-token-set))))
+
+(mf/defc editing-node
+  [{:keys [default-value on-cancel on-submit]}]
+  (let [ref (mf/use-ref)
+        on-submit-valid (mf/use-fn
+                         (fn [event]
+                           (let [value (str/trim (dom/get-target-val event))]
+                             (if (or (str/empty? value)
+                                     (= value default-value))
+                               (on-cancel)
+                               (on-submit value)))))
+        on-key-down (mf/use-fn
+                     (fn [event]
+                       (cond
+                         (kbd/enter? event) (on-submit-valid event)
+                         (kbd/esc? event) (on-cancel))))]
+    [:input
+     {:class (stl/css :editing-node)
+      :type "text"
+      :ref ref
+      :on-blur on-submit-valid
+      :on-key-down on-key-down
+      :auto-focus true
+      :default-value default-value}]))
+
 (mf/defc sets-tree
-  [{:keys [token-set token-set-active? token-set-selected? on-select on-toggle] :as _props}]
+  [{:keys [token-set token-set-active? token-set-selected? on-select on-toggle editing? set-editing-node on-rename] :as _props}]
   (let [{:keys [id name _children]} token-set
         selected? (and set? (token-set-selected? id))
         visible? (token-set-active? id)
         collapsed? (mf/use-state false)
         set? true #_(= type :set)
-        group? false #_(= type :group)]
+        group? false #_(= type :group)
+        editing-node? (editing? id)
+        on-select (mf/use-callback
+                   (mf/deps editing-node?)
+                   (fn [event]
+                     (dom/stop-propagation event)
+                     (when-not editing-node?
+                       (on-select id))))
+        on-edit (mf/use-callback
+                 (mf/deps editing-node?)
+                 (fn [event]
+                   (dom/stop-propagation event)
+                   (set-editing-node id)))]
     [:div {:class (stl/css :set-item-container)
-           :on-click (fn [event]
-                       (dom/stop-propagation event)
-                       (on-select id))}
+           :on-click on-select
+           :on-double-click on-edit}
      [:div {:class (stl/css-case :set-item-group group?
                                  :set-item-set set?
                                  :selected-set selected?)}
@@ -49,33 +90,48 @@
          chevron-icon])
       [:span {:class (stl/css :icon)}
        (if set? i/document i/group)]
-      [:div {:class (stl/css :set-name)} name]
-      [:div {:class (stl/css :delete-set)}
-       [:button {:on-click #(on-delete-token-set-click id %)
-                 :type "button"}
-        i/delete]]
-      (when set?
-        [:span {:class (stl/css :action-btn)
-                :on-click (fn [event]
-                            (dom/stop-propagation event)
-                            (on-toggle id))}
-         (if visible? i/shown i/hide)])]
-     #_(when (and children (not @collapsed?))
-         [:div {:class (stl/css :set-children)}
-          (for [child-id children]
-            [:& sets-tree (assoc props :key child-id
-                                 {:key child-id}
-                                 :set-id child-id
-                                 :selected-set-id selected-token-set-id)])])]))
+      (if editing-node?
+        [:& editing-node {:default-value name
+                          :on-submit #(do
+                                        (on-rename % token-set)
+                                        (set-editing-node nil))
+                          :on-cancel #(set-editing-node nil)}]
+        [:*
+         [:div {:class (stl/css :set-name)} name]
+         [:div {:class (stl/css :delete-set)}
+          [:button {:on-click #(on-delete-token-set-click id %)
+                    :type "button"}
+           i/delete]]
+         (if set?
+           [:span {:class (stl/css :action-btn)
+                   :on-click (fn [event]
+                               (dom/stop-propagation event)
+                               (on-toggle id))}
+            (if visible? i/shown i/hide)]
+           nil
+           #_(when (and children (not @collapsed?))
+               [:div {:class (stl/css :set-children)}
+                (for [child-id children]
+                  [:& sets-tree (assoc props :key child-id
+                                       {:key child-id}
+                                       :set-id child-id
+                                       :selected-set-id selected-token-set-id)])]))])]]))
 
 (mf/defc controlled-sets-list
   [{:keys [token-sets] :as props}]
-  [:ul {:class (stl/css :sets-list)}
-   (for [[id token-set] token-sets]
-     [:& sets-tree (-> (assoc props
-                              :key id
-                              :token-set token-set)
-                       (dissoc :token-sets))])])
+  (let [editing-id (mf/use-state nil)
+        editing? (mf/use-callback
+                  (mf/deps editing-id)
+                  #(= @editing-id %))
+        set-editing-node #(reset! editing-id %)]
+    [:ul {:class (stl/css :sets-list)}
+     (for [[id token-set] token-sets]
+       [:& sets-tree (-> (assoc props
+                                :key id
+                                :token-set token-set
+                                :editing? editing?
+                                :set-editing-node set-editing-node)
+                         (dissoc :token-sets))])]))
 
 (mf/defc sets-list
   [{:keys []}]
@@ -96,4 +152,5 @@
       :token-set-selected? token-set-selected?
       :token-set-active? token-set-active?
       :on-select on-select-token-set-click
-      :on-toggle on-toggle-token-set-click}]))
+      :on-toggle on-toggle-token-set-click
+      :on-rename on-rename-token-set}]))

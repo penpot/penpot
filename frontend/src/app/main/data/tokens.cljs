@@ -168,6 +168,16 @@
           (rx/of
            (dch/commit-changes changes)))))))
 
+(defn update-token-set [token-set]
+  (ptk/reify ::update-token-set
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [prev-token-set (wtts/get-token-set (:id token-set) state)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/update-token-set token-set prev-token-set))]
+        (rx/of
+         (dch/commit-changes changes))))))
+
 (defn toggle-token-set [{:keys [token-set-id token-theme-id]}]
   (ptk/reify ::toggle-token-set
     ptk/WatchEvent
