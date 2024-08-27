@@ -166,6 +166,7 @@
                           (ensure-token-theme-changes state {:id (:id new-token-set)
                                                              :new-set? true}))]
           (rx/of
+           (set-selected-token-set-id (:id new-token-set))
            (dch/commit-changes changes)))))))
 
 (defn update-token-set [token-set]
