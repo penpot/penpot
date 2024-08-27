@@ -73,7 +73,6 @@
                  (str x)))]
        (f x))))
 
-
 #?(:cljs
    (defn ->clj
      [o & {:keys [key-fn val-fn] :or {key-fn read-kebab-key val-fn identity}}]
