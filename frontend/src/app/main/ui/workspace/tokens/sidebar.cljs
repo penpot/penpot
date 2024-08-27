@@ -14,7 +14,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
-   [app.main.ui.context :as muc]
+   [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.changes :as wtch]
@@ -283,13 +283,24 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [_props]
-  (let [show-sets-section? (deref (temp-use-themes-flag))]
+  (let [show-sets-section? (deref (temp-use-themes-flag))
+        {on-pointer-down-pages :on-pointer-down
+         on-lost-pointer-capture-pages :on-lost-pointer-capture
+         on-pointer-move-pages :on-pointer-move
+         size-pages-opened :size}
+        (use-resize-hook :sitemap 200 38 400 :y false nil)]
     [:div {:class (stl/css :sidebar-tab-wrapper)}
      (when show-sets-section?
-       [:div {:class (stl/css :sets-section-wrapper)}
+       [:div {:class (stl/css :sets-section-wrapper)
+              :style {:height (str size-pages-opened "px")}}
         [:& themes-sidebar]
         [:& sets-sidebar]])
      [:div {:class (stl/css :tokens-section-wrapper)}
+      (when show-sets-section?
+        [:div {:class (stl/css :resize-area-horiz)
+               :on-pointer-down on-pointer-down-pages
+               :on-lost-pointer-capture on-lost-pointer-capture-pages
+               :on-pointer-move on-pointer-move-pages}])
       [:& tokens-explorer]]
      [:button {:class (stl/css :download-json-button)
                :on-click wtc/download-tokens-as-json}

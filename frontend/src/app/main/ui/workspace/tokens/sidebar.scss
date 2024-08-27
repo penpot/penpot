@@ -18,6 +18,7 @@
   display: flex;
   flex-direction: column;
   margin-bottom: $s-8;
+  overflow-y: auto;
 }
 
 .sets-sidebar {
@@ -137,4 +138,12 @@
   margin-bottom: $s-8;
   padding-left: $s-8;
   color: var(--title-foreground-color);
+}
+
+.resize-area-horiz {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  border-bottom: $s-2 solid var(--resize-area-border-color);
+  cursor: ns-resize;
 }
