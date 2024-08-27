@@ -14,6 +14,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
+   [app.main.ui.workspace.tokens.token-set :as wtts]
    [okulary.core :as l]))
 
 ;; ---- Global refs
@@ -233,11 +234,40 @@
 (def workspace-data
   (l/derived :workspace-data st/state))
 
-(def workspace-tokens
-  (l/derived (fn [data]
-               (get data :tokens {}))
-             workspace-data
-             =))
+(def workspace-selected-token-set-id
+  (l/derived
+   wtts/get-selected-token-set-id
+   st/state
+   =))
+
+(def workspace-active-theme-ids
+  (l/derived wtts/get-active-theme-ids st/state))
+
+(def workspace-active-set-ids
+  (l/derived wtts/get-active-set-ids st/state))
+
+(def workspace-token-themes
+  (l/derived wtts/get-workspace-themes-index st/state))
+
+(def workspace-ordered-token-themes
+  (l/derived wtts/get-workspace-ordered-themes st/state))
+
+(def workspace-token-sets
+  (l/derived
+   (fn [data]
+     (or (wtts/get-workspace-sets data) {}))
+   st/state
+   =))
+
+(def workspace-active-theme-sets-tokens
+  (l/derived wtts/get-active-theme-sets-tokens-names-map st/state =))
+
+(def workspace-selected-token-set-tokens
+  (l/derived
+   (fn [data]
+     (or (wtts/get-selected-token-set-tokens data) {}))
+   st/state
+   =))
 
 (def workspace-file-colors
   (l/derived (fn [data]

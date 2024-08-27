@@ -6,6 +6,7 @@
    [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.style-dictionary :as wtsd]
+   [app.main.ui.workspace.tokens.token-set :as wtts]
    [beicon.v2.core :as rx]
    [clojure.data :as data]
    [clojure.set :as set]
@@ -120,13 +121,14 @@
     ptk/WatchEvent
     (watch [_ state _]
       (->>
-       (rx/from (wtsd/resolve-tokens+ (get-in state [:workspace-data :tokens])))
+       (rx/from
+        (->
+          (wtts/get-active-theme-sets-tokens-names-map state)
+          (wtsd/resolve-tokens+ {:names-map? true})))
        (rx/mapcat
         (fn [sd-tokens]
           (let [undo-id (js/Symbol)]
             (rx/concat
              (rx/of (dwu/start-undo-transaction undo-id))
-             (rx/concat
-              (->> (update-tokens sd-tokens)
-                   (rx/concat)))
+             (update-tokens sd-tokens)
              (rx/of (dwu/commit-undo-transaction undo-id))))))))))

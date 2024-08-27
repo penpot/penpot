@@ -856,7 +856,7 @@
 
         shape (when-not multiple
                 (first (deref (refs/objects-by-id ids))))
-        tokens (mf/deref refs/workspace-tokens)
+        tokens (mf/deref refs/workspace-selected-token-set-tokens)
         spacing-tokens (mf/use-memo (mf/deps tokens) #(:spacing (wtc/group-tokens-by-type tokens)))
 
         spacing-column-options (mf/use-memo

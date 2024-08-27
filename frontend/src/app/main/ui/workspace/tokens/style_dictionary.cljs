@@ -2,6 +2,7 @@
   (:require
    ["@tokens-studio/sd-transforms" :as sd-transforms]
    ["style-dictionary$default" :as sd]
+   [app.common.data :refer [ordered-map]]
    [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.token :as wtt]
    [cuerdas.core :as str]
@@ -73,13 +74,15 @@
        (get errors :style-dictionary/missing-reference)))
 
 (defn resolve-tokens+
-  [tokens & {:keys [debug?] :as config}]
+  [tokens & {:keys [names-map? debug?] :as config}]
   (p/let [sd-tokens (-> (wtt/token-names-tree tokens)
                         (resolve-sd-tokens+ config))]
     (let [resolved-tokens (reduce
                            (fn [acc ^js cur]
-                             (let [id (uuid (.-uuid (.-id cur)))
-                                   origin-token (get tokens id)
+                             (let [identifier (if names-map?
+                                                (.. cur -original -name)
+                                                (uuid (.-uuid (.-id cur))))
+                                   origin-token (get tokens identifier)
                                    parsed-value (wtt/parse-token-value (.-value cur))
                                    resolved-token (if (not parsed-value)
                                                     (assoc origin-token :errors [:style-dictionary/missing-reference])
@@ -92,14 +95,11 @@
         (js/console.log "Resolved tokens" resolved-tokens))
       resolved-tokens)))
 
-(defn resolve-workspace-tokens+
-  [& {:keys [debug?] :as config}]
-  (when-let [workspace-tokens @refs/workspace-tokens]
-    (resolve-tokens+ workspace-tokens)))
-
 ;; Hooks -----------------------------------------------------------------------
 
 (defonce !tokens-cache (atom nil))
+
+(defonce !theme-tokens-cache (atom nil))
 
 (defn get-cached-tokens [tokens]
   (get @!tokens-cache tokens tokens))
@@ -109,11 +109,12 @@
 
   This hook will return the unresolved tokens as state until they are processed,
   then the state will be updated with the resolved tokens."
-  [tokens & {:keys [cache-atom]
-             :or {cache-atom !tokens-cache}}]
-  (let [tokens-state (mf/use-state (get @cache-atom tokens tokens))]
+  [tokens & {:keys [cache-atom _names-map?]
+             :or {cache-atom !tokens-cache}
+             :as config}]
+  (let [tokens-state (mf/use-state (get @cache-atom tokens))]
     (mf/use-effect
-     (mf/deps tokens)
+     (mf/deps tokens config)
      (fn []
        (let [cached (get @cache-atom tokens)]
          (cond
@@ -122,7 +123,7 @@
            ;; Get the cached entry
            (some? cached) (reset! tokens-state cached)
            ;; No cached entry, start processing
-           :else (let [promise+ (resolve-tokens+ tokens)]
+           :else (let [promise+ (resolve-tokens+ tokens config)]
                    (swap! cache-atom assoc tokens promise+)
                    (p/then promise+ (fn [resolved-tokens]
                                       (swap! cache-atom assoc tokens resolved-tokens)
@@ -130,39 +131,11 @@
     @tokens-state))
 
 (defn use-resolved-workspace-tokens [& {:as config}]
-  (-> (mf/deref refs/workspace-tokens)
+  (-> (mf/deref refs/workspace-selected-token-set-tokens)
       (use-resolved-tokens config)))
 
-;; Testing ---------------------------------------------------------------------
-
-(comment
-  (defonce !output (atom nil))
-
-  (-> @refs/workspace-tokens
-      (resolve-tokens+ {:debug? false})
-      (.then js/console.log))
-
-  (-> (resolve-workspace-tokens+ {:debug? true})
-      (p/then #(reset! !output %)))
-
-  @!output
-
-  (->> @refs/workspace-tokens
-       (resolve-tokens+)
-       (#(doto % js/console.log)))
-
-  (->
-   (clj->js {"a" {:name "a" :value "5"}
-             "b" {:name "b" :value "{a} * 2"}})
-
-   (#(resolve-sd-tokens+ % {:debug? true})))
-
-  (defonce output (atom nil))
-  (require '[shadow.resource])
-  (let [example (-> (shadow.resource/inline "./data/example-tokens-set.json")
-                    (js/JSON.parse)
-                    .-core)]
-    (.then (resolve-sd-tokens+ example {:debug? true})
-           #(reset! output %)))
-
-  nil)
+(defn use-active-theme-sets-tokens [& {:as config}]
+  (-> (mf/deref refs/workspace-active-theme-sets-tokens)
+      (use-resolved-tokens (merge {:cache-atom !theme-tokens-cache
+                                   :names-map? true}
+                                  config))))
