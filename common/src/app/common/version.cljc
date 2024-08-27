@@ -9,7 +9,7 @@
   (:require
    [cuerdas.core :as str]))
 
-(def version-re #"^(([A-Za-z]+)\-?)?((\d+)\.(\d+)\.(\d+))(\-?((alpha|prealpha|beta|rc|dev)(\d+)?))?(\-?(\d+))?(\-?g(\w+))$")
+(def version-re #"^(([A-Za-z]+)\-?)?((\d+)\.(\d+)\.(\d+))(\-?((RC|DEV)(\d+)?))?(\-?(\d+))?(\-?g(\w+))?$")
 
 (defn parse
   [data]

@@ -5,15 +5,12 @@ export DEVENV_IMGNAME="$ORGANIZATION/devenv";
 export DEVENV_PNAME="penpotdev";
 
 export CURRENT_USER_ID=$(id -u);
-export CURRENT_VERSION=$(cat ./version.txt);
 export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
-export CURRENT_HASH=$(git rev-parse --short HEAD);
-export CURRENT_COMMITS=$(git rev-list --count HEAD)
 
 set -ex
 
 function print-current-version {
-    echo -n "$CURRENT_VERSION-$CURRENT_COMMITS-g$CURRENT_HASH"
+    echo -n "$(git describe --tags --match "*.*.*")";
 }
 
 function build-devenv {
