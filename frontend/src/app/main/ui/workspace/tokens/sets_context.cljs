@@ -7,6 +7,13 @@
 
 (def context (mf/create-context initial))
 
+(def static-context
+  {:editing? (constantly false)
+   :new? false
+   :on-edit (constantly nil)
+   :on-create (constantly nil)
+   :on-reset (constantly nil)})
+
 (mf/defc provider
   {::mf/wrap-props false}
   [props]

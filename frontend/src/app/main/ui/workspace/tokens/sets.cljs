@@ -128,9 +128,10 @@
            token-set-selected?
            token-set-active?
            on-create-token-set
-           on-select]
+           on-select
+           context]
     :as _props}]
-  (let [{:keys [editing? new? on-edit on-create on-reset]} (sets-context/use-context)]
+  (let [{:keys [editing? new? on-edit on-create on-reset]} (or context (sets-context/use-context))]
     [:ul {:class (stl/css :sets-list)}
      (for [[id token-set] token-sets]
        [:& sets-tree {:key id

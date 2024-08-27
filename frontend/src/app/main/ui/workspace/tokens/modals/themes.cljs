@@ -18,7 +18,8 @@
    [app.main.ui.workspace.tokens.token-set :as wtts]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [app.main.ui.workspace.tokens.sets-context :as sets-context]))
 
 (def ^:private chevron-icon
   (i/icon-xref :arrow (stl/css :chevron-icon)))
@@ -159,7 +160,8 @@
          :token-set-selected? (constantly false)
          :token-set-active? token-set-active?
          :on-select on-toggle-token-set
-         :on-toggle on-toggle-token-set}]]
+         :on-toggle on-toggle-token-set
+         :context sets-context/static-context}]]
       [:div {:class (stl/css :edit-theme-footer)}
        (if edit?
          [:button {:class (stl/css :button-secondary)
