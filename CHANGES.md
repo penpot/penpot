@@ -10,6 +10,14 @@
 
 ### :sparkles: New features
 
+- **Replace Draft.js completely with a custom editor** [Taiga #7706](https://tree.taiga.io/project/penpot/us/7706)
+
+  This refactor adds better IME support, more performant text editing
+  experience and a better clipboard support while keeping full
+  retrocompatibility with previous editor.
+
+  You can enable it with the `enable-feature-text-editor-v2` configuration flag.
+
 ### :bug: Bugs fixed
 
 ## 2.2.0

@@ -26,6 +26,7 @@
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
    [app.util.text-svg-position :as tsp]
+   [app.util.text.content :as content]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
@@ -46,6 +47,12 @@
           (dissoc :modifiers)))
     shape))
 
+(defn- update-shape-with-content
+  [shape content editor-content]
+  (cond-> shape
+    (and (some? shape) (some? editor-content))
+    (assoc :content (d/txt-merge content editor-content))))
+
 (defn- update-with-editor-state
   "Updates the shape with the current state in the editor"
   [shape editor-state]
@@ -56,9 +63,15 @@
               (ted/get-editor-current-content)
               (ted/export-content)))]
 
-    (cond-> shape
-      (and (some? shape) (some? editor-content))
-      (assoc :content (d/txt-merge content editor-content)))))
+    (update-shape-with-content shape content editor-content)))
+
+(defn- update-with-editor-v2
+  "Updates the shape with the current editor"
+  [shape editor]
+  (let [content (:content shape)
+        editor-content (content/dom->cljs (.-root editor))]
+
+    (update-shape-with-content shape content editor-content)))
 
 (defn- update-text-shape
   [{:keys [grow-type id migrate] :as shape} node]
@@ -219,22 +232,28 @@
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
-
   (let [shape   (obj/get props "shape")
+        shape-id (:id shape)
 
         workspace-editor-state (mf/deref refs/workspace-editor-state)
+        workspace-v2-editor-state (mf/deref refs/workspace-v2-editor-state)
+        workspace-editor (mf/deref refs/workspace-editor)
 
-        editor-state (get workspace-editor-state (:id shape))
+        editor-state (get workspace-editor-state shape-id)
+        v2-editor-state (get workspace-v2-editor-state shape-id)
 
         text-modifier-ref
-        (mf/use-memo (mf/deps (:id shape)) #(refs/workspace-text-modifier-by-id (:id shape)))
+        (mf/use-memo (mf/deps shape-id) #(refs/workspace-text-modifier-by-id shape-id))
 
         text-modifier
         (mf/deref text-modifier-ref)
 
         shape (cond-> shape
                 (some? editor-state)
-                (update-with-editor-state editor-state))
+                (update-with-editor-state editor-state)
+
+                (and (some? v2-editor-state) (some? workspace-editor))
+                (update-with-editor-v2 workspace-editor))
 
         ;; When we have a text with grow-type :auto-height or :auto-height we need to check the correct height
         ;; otherwise the center alignment will break

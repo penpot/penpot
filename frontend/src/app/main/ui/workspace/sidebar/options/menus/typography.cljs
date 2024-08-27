@@ -15,6 +15,7 @@
    [app.main.data.fonts :as fts]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
+   [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -399,10 +400,11 @@
   {::mf/wrap-props false}
   [{:keys [values on-change on-blur]}]
   (let [text-transform (or (:text-transform values) "none")
+        unset-value    (if (features/active-feature? @st/state "text-editor/v2") "none" "unset")
         handle-change
         (fn [type]
           (if (= text-transform type)
-            (on-change {:text-transform "unset"})
+            (on-change {:text-transform unset-value})
             (on-change {:text-transform type}))
           (when (some? on-blur) (on-blur)))]
 

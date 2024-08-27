@@ -78,6 +78,12 @@
 
 (def text-all-attrs (d/concat-set shape-attrs root-attrs paragraph-attrs text-node-attrs))
 
+(def text-style-attrs
+  (d/concat-vec root-attrs paragraph-attrs text-node-attrs))
+
+(def default-root-attrs
+  {:vertical-align "top"})
+
 (def default-text-attrs
   {:typography-ref-file nil
    :typography-ref-id nil
@@ -92,8 +98,12 @@
    :text-transform "none"
    :text-align "left"
    :text-decoration "none"
+   :text-direction "ltr"
    :fills [{:fill-color clr/black
             :fill-opacity 1}]})
+
+(def default-attrs
+  (merge default-root-attrs default-text-attrs))
 
 (def typography-fields
   [:font-id

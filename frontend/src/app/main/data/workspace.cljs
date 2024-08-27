@@ -85,6 +85,7 @@
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
+   [clojure.set :as set]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]
    [promesa.core :as p]))
@@ -1543,7 +1544,8 @@
             (let [objects  (wsh/lookup-page-objects state)
                   selected (->> (wsh/lookup-selected state)
                                 (cfh/clean-loops objects))
-                  features (features/get-team-enabled-features state)
+                  features (-> (features/get-team-enabled-features state)
+                               (set/difference cfeat/frontend-only-features))
 
                   file-id  (:current-file-id state)
                   frame-id (cfh/common-parent-frame objects selected)
