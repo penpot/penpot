@@ -9,12 +9,12 @@
   (:require
    [app.common.data :as d]
    [app.main.data.modal :as modal]
-   [app.main.ui.workspace.tokens.theme-select :refer [theme-select]]
    [app.main.data.tokens :as dt]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.context :as muc]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.changes :as wtch]
@@ -22,7 +22,9 @@
    [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.sets :refer [sets-list]]
+   [app.main.ui.workspace.tokens.sets-context :as sets-context]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [app.main.ui.workspace.tokens.theme-select :refer [theme-select]]
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
@@ -198,23 +200,30 @@
      [:& theme-select]
      [:& edit-button {:create? (empty? ordered-themes)}]]]))
 
+(mf/defc add-set-button
+  [{:keys [on-open]}]
+  (let [{:keys [on-create]} (sets-context/use-context)]
+    [:button {:class (stl/css :add-set)
+              :on-click #(do
+                           (on-open)
+                           (on-create))}
+     i/add]))
+
 (mf/defc sets-sidebar
   []
-  (let [open? (mf/use-state true)]
-    [:div {:class (stl/css :sets-sidebar)}
-     [:div {:class (stl/css :sidebar-header)}
-      [:& title-bar {:collapsable true
-                     :collapsed (not @open?)
-                     :all-clickable true
-                     :title "SETS"
-                     :on-collapsed #(swap! open? not)}]
-      [:button {:class (stl/css :add-set)
-                :on-click #(do
-                             (reset! open? true)
-                             (on-set-add-click %))}
-       i/add]]
-     (when @open?
-       [:& sets-list])]))
+  (let [open? (mf/use-state true)
+        on-open (mf/use-fn #(reset! open? true))]
+    [:& sets-context/provider {}
+     [:div {:class (stl/css :sets-sidebar)}
+      [:div {:class (stl/css :sidebar-header)}
+       [:& title-bar {:collapsable true
+                      :collapsed (not @open?)
+                      :all-clickable true
+                      :title "SETS"
+                      :on-collapsed #(swap! open? not)}
+        [:& add-set-button {:on-open on-open}]]]
+      (when @open?
+        [:& sets-list])]]))
 
 (mf/defc tokens-explorer
   [_props]

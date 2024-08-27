@@ -14,7 +14,8 @@
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [app.main.ui.workspace.tokens.sets-context :as sets-context]))
 
 (def ^:private chevron-icon
   (i/icon-xref :arrow (stl/css :chevron-icon)))
@@ -29,9 +30,8 @@
   (dom/stop-propagation event)
   (st/emit! (wdt/delete-token-set id)))
 
-(defn on-rename-token-set [name token-set]
-  (let [new-token-set (assoc token-set :name name)]
-    (st/emit! (wdt/update-token-set new-token-set))))
+(defn on-update-token-set [token-set]
+  (st/emit! (wdt/update-token-set token-set)))
 
 (mf/defc editing-node
   [{:keys [default-value on-cancel on-submit]}]
@@ -58,7 +58,7 @@
       :default-value default-value}]))
 
 (mf/defc sets-tree
-  [{:keys [token-set token-set-active? token-set-selected? on-select on-toggle editing? set-editing-node on-rename] :as _props}]
+  [{:keys [token-set token-set-active? token-set-selected? editing? on-select on-toggle on-edit on-submit on-cancel] :as _props}]
   (let [{:keys [id name _children]} token-set
         selected? (and set? (token-set-selected? id))
         visible? (token-set-active? id)
@@ -71,15 +71,10 @@
                    (fn [event]
                      (dom/stop-propagation event)
                      (when-not editing-node?
-                       (on-select id))))
-        on-edit (mf/use-callback
-                 (mf/deps editing-node?)
-                 (fn [event]
-                   (dom/stop-propagation event)
-                   (set-editing-node id)))]
+                       (on-select id))))]
     [:div {:class (stl/css :set-item-container)
            :on-click on-select
-           :on-double-click on-edit}
+           :on-double-click #(on-edit id)}
      [:div {:class (stl/css-case :set-item-group group?
                                  :set-item-set set?
                                  :selected-set selected?)}
@@ -92,10 +87,8 @@
        (if set? i/document i/group)]
       (if editing-node?
         [:& editing-node {:default-value name
-                          :on-submit #(do
-                                        (on-rename % token-set)
-                                        (set-editing-node nil))
-                          :on-cancel #(set-editing-node nil)}]
+                          :on-submit #(on-submit (assoc token-set :name %))
+                          :on-cancel on-cancel}]
         [:*
          [:div {:class (stl/css :set-name)} name]
          [:div {:class (stl/css :delete-set)}
@@ -118,20 +111,29 @@
                                        :selected-set-id selected-token-set-id)])]))])]]))
 
 (mf/defc controlled-sets-list
-  [{:keys [token-sets] :as props}]
-  (let [editing-id (mf/use-state nil)
-        editing? (mf/use-callback
-                  (mf/deps editing-id)
-                  #(= @editing-id %))
-        set-editing-node #(reset! editing-id %)]
+  [{:keys [token-sets on-rename] :as props}]
+  (let [{:keys [editing? new? on-edit on-reset]} (sets-context/use-context)]
     [:ul {:class (stl/css :sets-list)}
      (for [[id token-set] token-sets]
        [:& sets-tree (-> (assoc props
                                 :key id
                                 :token-set token-set
                                 :editing? editing?
-                                :set-editing-node set-editing-node)
-                         (dissoc :token-sets))])]))
+                                :set-editing-node on-edit
+                                :on-edit on-edit
+                                :on-submit #(do
+                                              (on-rename %)
+                                              (on-reset))
+                                :on-cancel on-reset)
+                         (dissoc :token-sets))])
+     (when new?
+       [:& sets-tree {:token-set {}
+                      :token-set-active? (constantly true)
+                      :token-set-selected? (constantly true)
+                      :on-select identity
+                      :editing? (constantly true)
+                      :set-editing-node on-edit}])]))
+
 
 (mf/defc sets-list
   [{:keys []}]
@@ -153,4 +155,4 @@
       :token-set-active? token-set-active?
       :on-select on-select-token-set-click
       :on-toggle on-toggle-token-set-click
-      :on-rename on-rename-token-set}]))
+      :on-rename on-update-token-set}]))
