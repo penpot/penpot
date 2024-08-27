@@ -132,21 +132,22 @@
            on-select
            context]
     :as _props}]
-  (let [{:keys [editing? new? on-edit on-create on-reset]} (or context (sets-context/use-context))]
+  (let [{:keys [editing? new? on-edit on-create on-reset] :as ctx} (or context (sets-context/use-context))]
     [:ul {:class (stl/css :sets-list)}
      (for [[id token-set] token-sets]
-       [:& sets-tree {:key id
-                      :token-set token-set
-                      :token-set-selected? (if new? (constantly false) token-set-selected?)
-                      :token-set-active? token-set-active?
-                      :editing? editing?
-                      :on-select on-select
-                      :on-edit on-edit
-                      :on-toggle on-toggle-token-set
-                      :on-submit #(do
-                                    (on-update-token-set %)
-                                    (on-reset))
-                      :on-cancel on-reset}])
+       (when token-set
+         [:& sets-tree {:key id
+                        :token-set token-set
+                        :token-set-selected? (if new? (constantly false) token-set-selected?)
+                        :token-set-active? token-set-active?
+                        :editing? editing?
+                        :on-select on-select
+                        :on-edit on-edit
+                        :on-toggle on-toggle-token-set
+                        :on-submit #(do
+                                      (on-update-token-set %)
+                                      (on-reset))
+                        :on-cancel on-reset}]))
      (when new?
        [:& sets-tree {:token-set {:name ""}
                       :token-set-selected? (constantly true)
