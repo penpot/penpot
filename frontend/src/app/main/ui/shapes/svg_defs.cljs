@@ -12,8 +12,8 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.bounds :as gsb]
+   [app.common.json :as json]
    [app.common.svg :as csvg]
-   [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
 (defn add-matrix [attrs transform-key transform-matrix]
@@ -79,12 +79,16 @@
                     :data-old-width (:width attrs)
                     :data-old-height (:height attrs)}))
 
-          [wrapper wrapper-props] (if (= tag :mask)
-                                    ["g" #js {:className "svg-mask-wrapper"
-                                              :transform (str transform)}]
-                                    [mf/Fragment #js {}])]
+          [wrapper wrapper-props]
+          (if (= tag :mask)
+            ["g" #js {:className "svg-mask-wrapper"
+                      :transform (str transform)}]
+            [mf/Fragment #js {}])
 
-      [:> (name tag) (obj/map->obj attrs)
+          props
+          (json/->js attrs :key-fn name)]
+
+      [:> (name tag) props
        [:> wrapper wrapper-props
         (for [[index node] (d/enumerate content)]
           [:& svg-node {:key (dm/str "node-" index)

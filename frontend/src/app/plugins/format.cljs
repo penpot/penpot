@@ -35,7 +35,7 @@
 (defn format-point
   [{:keys [x y] :as point}]
   (when (some? point)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:x x :y y})))
 
 ;;export type PenpotBounds = {
@@ -47,7 +47,7 @@
 (defn format-bounds
   [{:keys [x y width height] :as bounds}]
   (when (some? bounds)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:x x :y y :width width :height height})))
 
 ;; export interface PenpotColorShapeInfoEntry {
@@ -58,7 +58,7 @@
 (defn format-shape-info
   [{:keys [prop shape-id index] :as info}]
   (when (some? info)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:property (d/name prop)
           :index index
           :shapeId (dm/str shape-id)})))
@@ -75,12 +75,12 @@
 (defn format-stop
   [{:keys [color opacity offset] :as stop}]
   (when (some? stop)
-    (obj/clear-empty #js {:color color :opacity opacity :offset offset})))
+    (obj/without-empty #js {:color color :opacity opacity :offset offset})))
 
 (defn format-gradient
   [{:keys [type start-x start-y end-x end-y width stops] :as gradient}]
   (when (some? gradient)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:type (format-key type)
           :startX start-x
           :startY start-y
@@ -100,7 +100,7 @@
 (defn format-image
   [{:keys [name width height mtype id keep-aspect-ratio] :as image}]
   (when (some? image)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:name name
           :width width
           :height height
@@ -122,7 +122,7 @@
 (defn format-color
   [{:keys [id name path color opacity ref-id ref-file gradient image] :as color-data}]
   (when (some? color-data)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:id (format-id id)
           :name name
           :path path
@@ -155,7 +155,7 @@
 (defn format-shadow
   [{:keys [id style offset-x offset-y blur spread hidden color] :as shadow}]
   (when (some? shadow)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:id (-> id format-id)
           :style (-> style format-key)
           :offsetX offset-x
@@ -181,7 +181,7 @@
 (defn format-fill
   [{:keys [fill-color fill-opacity fill-color-gradient fill-color-ref-file fill-color-ref-id fill-image] :as fill}]
   (when (some? fill)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:fillColor fill-color
           :fillOpacity fill-opacity
           :fillColorGradient (format-gradient fill-color-gradient)
@@ -219,7 +219,7 @@
            stroke-cap-start stroke-cap-end stroke-color-gradient] :as stroke}]
 
   (when (some? stroke)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:strokeColor stroke-color
           :strokeColorRefFile (format-id stroke-color-ref-file)
           :strokeColorRefId (format-id stroke-color-ref-id)
@@ -245,7 +245,7 @@
 (defn format-blur
   [{:keys [id type value hidden] :as blur}]
   (when (some? blur)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:id (format-id id)
           :type (format-key type)
           :value value
@@ -259,7 +259,7 @@
 (defn format-export
   [{:keys [type scale suffix] :as export}]
   (when (some? export)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:type (format-key type)
           :scale scale
           :suffix suffix})))
@@ -280,7 +280,7 @@
 (defn format-frame-guide-column-params
   [{:keys [color type size margin item-length gutter] :as params}]
   (when (some? params)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:color (format-color color)
           :type (format-key type)
           :size size
@@ -296,7 +296,7 @@
 (defn format-frame-guide-column
   [{:keys [type display params] :as guide}]
   (when (some? guide)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:type (format-key type)
           :display display
           :params (format-frame-guide-column-params params)})))
@@ -309,7 +309,7 @@
 (defn format-frame-guide-row
   [{:keys [type display params] :as guide}]
   (when (some? guide)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:type (format-key type)
           :display display
           :params (format-frame-guide-column-params params)})))
@@ -321,7 +321,7 @@
 (defn format-frame-guide-square-params
   [{:keys [color size] :as params}]
   (when (some? params)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:color (format-color color)
           :size size})))
 
@@ -334,7 +334,7 @@
 (defn format-frame-guide-square
   [{:keys [type display params] :as guide}]
   (when (some? guide)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:type (format-key type)
           :display display
           :params (format-frame-guide-column-params params)})))
@@ -382,7 +382,7 @@
 (defn format-command-params
   [{:keys [x y c1x c1y c2x c2y rx ry x-axis-rotation large-arc-flag sweep-flag] :as props}]
   (when (some? props)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:x x
           :y y
           :c1x c1x
@@ -398,7 +398,7 @@
 (defn format-command
   [{:keys [command params] :as props}]
   (when (some? props)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:command (format-key command)
           :params (format-command-params params)})))
 
@@ -416,7 +416,7 @@
 (defn format-track
   [{:keys [type value] :as track}]
   (when (some? track)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:type (-> type format-key)
           :value value})))
 
@@ -462,7 +462,7 @@
 (defn format-animation
   [animation]
   (when animation
-    (obj/clear-empty
+    (obj/without-empty
      (case (:animation-type animation)
 
        :dissolve
@@ -543,7 +543,7 @@
 (defn format-action
   [interaction plugin file-id page-id]
   (when interaction
-    (obj/clear-empty
+    (obj/without-empty
      (case (:action-type interaction)
        :navigate
        #js {:type "navigate-to"

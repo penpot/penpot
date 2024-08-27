@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
+   [app.common.json :as json]
    [app.common.svg :as csvg]
    [app.common.types.shape :refer [stroke-caps-line stroke-caps-marker]]
    [app.common.types.shape.radius :as ctsr]
@@ -154,6 +155,7 @@
   [shape render-id]
   (let [attrs (get shape :svg-attrs {})
         defs  (get shape :svg-defs {})]
+
     (if (and (empty? defs)
              (empty? attrs))
       #js {}
@@ -164,7 +166,7 @@
                (dm/str render-id "-" id)
                id)))
           (dissoc :id)
-          (obj/map->obj)))))
+          (json/->js :key-fn name)))))
 
 (defn get-fill-style
   ([fill-data index render-id type]

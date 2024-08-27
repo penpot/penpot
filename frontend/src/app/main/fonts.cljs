@@ -242,8 +242,8 @@
 
 (defn ready
   [cb]
-  (-> (obj/get-in js/document ["fonts" "ready"])
-      (p/then cb)))
+  (let [fonts (obj/get js/document "fonts")]
+    (p/then (obj/get fonts "ready") cb)))
 
 (defn get-default-variant
   [{:keys [variants]}]
