@@ -7,6 +7,7 @@
 (ns app.worker.export
   (:require
    [app.common.data :as d]
+   [app.common.json :as json]
    [app.common.media :as cm]
    [app.common.text :as ct]
    [app.common.types.components-list :as ctkl]
@@ -16,7 +17,6 @@
    [app.main.render :as r]
    [app.main.repo :as rp]
    [app.util.http :as http]
-   [app.util.json :as json]
    [app.util.webapi :as wapi]
    [app.util.zip :as uz]
    [app.worker.impl :as impl]

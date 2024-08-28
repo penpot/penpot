@@ -176,12 +176,12 @@
     [:add-color
      [:map {:title "AddColorChange"}
       [:type [:= :add-color]]
-      [:color :any]]]
+      [:color ::ctc/color]]]
 
     [:mod-color
      [:map {:title "ModColorChange"}
       [:type [:= :mod-color]]
-      [:color :any]]]
+      [:color ::ctc/color]]]
 
     [:del-color
      [:map {:title "DelColorChange"}
@@ -608,8 +608,7 @@
   (when (and (= object-type :shape) (nil? page-id))
     (ex/raise :type :internal :hint "update for shapes needs a page-id"))
 
-  (letfn [(update-fn
-            [data]
+  (letfn [(update-fn [data]
             (if (some? value)
               (assoc-in data [:plugin-data namespace key] value)
               (update-in data [:plugin-data namespace] (fnil dissoc {}) key)))]

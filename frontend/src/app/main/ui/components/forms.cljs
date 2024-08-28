@@ -16,10 +16,10 @@
    [app.util.forms :as fm]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.object :as obj]
    [cljs.core :as c]
    [cuerdas.core :as str]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [rumext.v2.util :as mfu]))
 
 (def form-ctx (mf/create-context nil))
 (def use-form fm/use-form)
@@ -102,7 +102,7 @@
                   (cond-> (and value is-checkbox?) (assoc :default-checked value))
                   (cond-> (and touched? (:message error)) (assoc "aria-invalid" "true"
                                                                  "aria-describedby" (dm/str "error-" input-name)))
-                  (obj/map->obj obj/prop-key-fn))
+                  (mfu/map->props))
 
         checked? (and is-checkbox? (= value true))
         show-valid? (and show-success? touched? (not error))
@@ -205,7 +205,7 @@
                          :on-blur on-blur
                          ;; :placeholder label
                          :on-change on-change)
-                  (obj/map->obj obj/prop-key-fn))]
+                  (mfu/map->props))]
 
     [:div {:class (dm/str klass " " (stl/css :textarea-wrapper))}
      [:label {:class (stl/css :textarea-label)} label]

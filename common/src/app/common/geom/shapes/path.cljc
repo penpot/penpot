@@ -893,6 +893,7 @@
          (reduce +)
          (not= 0))))
 
+;; FIXME: this should be on upc/ namespace
 (defn split-line-to
   "Given a point and a line-to command will create a two new line-to commands
   that will split the original line into two given a value between 0-1"
@@ -901,6 +902,7 @@
         sp (gpt/lerp from-p to-p t-val)]
     [(upc/make-line-to sp) cmd]))
 
+;; FIXME: this should be on upc/ namespace
 (defn split-curve-to
   "Given the point and a curve-to command will split the curve into two new
   curve-to commands given a value between 0-1"

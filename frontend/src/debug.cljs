@@ -10,8 +10,9 @@
    [app.common.data.macros :as dm]
    [app.common.files.repair :as cfr]
    [app.common.files.validate :as cfv]
+   [app.common.json :as json]
    [app.common.logging :as l]
-   [app.common.math :as mth]
+   [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.types.file :as ctf]
    [app.common.uri :as u]
@@ -97,26 +98,14 @@
        (effect-fn input)
        (rf result input)))))
 
-(defn prettify
-  "Prepare x for cleaner output when logged."
-  [x]
-  (cond
-    (map? x) (d/mapm #(prettify %2) x)
-    (vector? x) (mapv prettify x)
-    (seq? x) (map prettify x)
-    (set? x) (into #{} (map prettify) x)
-    (number? x) (mth/precision x 4)
-    (uuid? x) (str/concat "#uuid " x)
-    :else x))
-
 (defn ^:export logjs
   ([str] (tap (partial logjs str)))
   ([str val]
-   (js/console.log str (clj->js (prettify val) :keyword-fn (fn [v] (str/concat v))))
+   (js/console.log str (json/->js val))
    val))
 
 (when (exists? js/window)
-  (set! (.-dbg ^js js/window) clj->js)
+  (set! (.-dbg ^js js/window) json/->js)
   (set! (.-pp ^js js/window) pprint))
 
 (defonce widget-style "
@@ -479,7 +468,7 @@
                      (let [result (map (fn [row]
                                          (update row :id str))
                                        result)]
-                       (js/console.table (clj->js result))))
+                       (js/console.table (json/->js result))))
                    (fn [cause]
                      (js/console.log "EE:" cause))))
     nil))
@@ -494,7 +483,7 @@
          (rx/map http/conditional-decode-transit)
          (rx/mapcat rp/handle-response)
          (rx/subs! (fn [{:keys [id]}]
-                     (println "Snapshot saved:" (str id)))
+                     (println "Snapshot saved:" (str id) label))
                    (fn [cause]
                      (js/console.log "EE:" cause))))))
 
@@ -502,13 +491,21 @@
   [label file-id]
   (when-let [file-id (or (d/parse-uuid file-id)
                          (:current-file-id @st/state))]
-    (->> (http/send! {:method :post
-                      :uri (u/join cf/public-uri "api/rpc/command/restore-file-snapshot")
-                      :body (http/transit-data {:file-id file-id :label label})})
-         (rx/map http/conditional-decode-transit)
-         (rx/mapcat rp/handle-response)
-         (rx/subs! (fn [_]
-                     (println "Snapshot restored " label)
+    (let [snapshot-id (sm/parse-uuid label)
+          label       (if snapshot-id nil label)
+          params      (cond-> {:file-id file-id}
+                        (uuid? snapshot-id)
+                        (assoc :id snapshot-id)
+
+                        (string? label)
+                        (assoc :label label))]
+      (->> (http/send! {:method :post
+                        :uri (u/join cf/public-uri "api/rpc/command/restore-file-snapshot")
+                        :body (http/transit-data params)})
+           (rx/map http/conditional-decode-transit)
+           (rx/mapcat rp/handle-response)
+           (rx/subs! (fn [_]
+                       (println "Snapshot restored " (or snapshot-id label)))
                      #_(.reload js/location))
-                   (fn [cause]
-                     (js/console.log "EE:" cause))))))
+           (fn [cause]
+             (js/console.log "EE:" cause))))))

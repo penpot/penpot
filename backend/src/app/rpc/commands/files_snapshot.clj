@@ -41,8 +41,8 @@
      FROM file_change
     WHERE file_id = ?
       AND created_at < ?
-      AND label is not null
-    ORDER BY created_at desc
+      AND label IS NOT NULL
+    ORDER BY created_at DESC
     LIMIT ?")
 
 (defn get-file-snapshots
@@ -50,7 +50,6 @@
                         :or {limit Long/MAX_VALUE}}]
   (let [start-at (or start-at (dt/now))
         limit    (min limit 20)]
-
     (->> (db/exec! conn [sql:get-file-snapshots file-id start-at limit])
          (mapv (fn [row]
                  (update row :created-at dt/format-instant :rfc1123))))))
