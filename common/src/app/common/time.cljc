@@ -12,6 +12,7 @@
       ["luxon" :as lxn])
      :clj
      (:import
+      java.time.format.DateTimeFormatter
       java.time.Instant
       java.time.Duration)))
 
@@ -26,10 +27,29 @@
   #?(:clj (Instant/now)
      :cljs (.local ^js DateTime)))
 
-(defn instant
+(defn instant?
+  [o]
+  #?(:clj (instance? Instant o)
+     :cljs (instance? DateTime o)))
+
+(defn parse-instant
   [s]
-  #?(:clj  (Instant/ofEpochMilli s)
-     :cljs (.fromMillis ^js DateTime s #js {:zone "local" :setZone false})))
+  (cond
+    (instant? s)
+    s
+
+    (int? s)
+    #?(:clj  (Instant/ofEpochMilli s)
+       :cljs (.fromMillis ^js DateTime s #js {:zone "local" :setZone false}))
+
+    (string? s)
+    #?(:clj (Instant/parse s)
+       :cljs (.fromISO ^js DateTime s))))
+
+(defn format-instant
+  [v]
+  #?(:clj (.format DateTimeFormatter/ISO_INSTANT ^Instant v)
+     :cljs (.toISO ^js v)))
 
 #?(:cljs
    (extend-protocol IComparable

@@ -154,12 +154,12 @@
     [:add-color
      [:map {:title "AddColorChange"}
       [:type [:= :add-color]]
-      [:color :any]]]
+      [:color ::ctc/color]]]
 
     [:mod-color
      [:map {:title "ModColorChange"}
       [:type [:= :mod-color]]
-      [:color :any]]]
+      [:color ::ctc/color]]]
 
     [:del-color
      [:map {:title "DelColorChange"}
