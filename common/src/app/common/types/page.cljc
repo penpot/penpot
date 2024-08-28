@@ -33,7 +33,7 @@
    [:id ::sm/uuid]
    [:axis [::sm/one-of #{:x :y}]]
    [:position ::sm/safe-number]
-   ;; FIXME: remove maybe?
+   ;; FIXME: remove the maybe?
    [:frame-id {:optional true} [:maybe ::sm/uuid]]])
 
 (def schema:guides
@@ -65,6 +65,7 @@
     ;; DEPERECATED: remove after 2.3 release
     [:map {:title "PageOptions"}]]])
 
+(sm/register! ::objects schema:objects)
 (sm/register! ::page schema:page)
 (sm/register! ::guide schema:guide)
 (sm/register! ::flow schema:flow)
@@ -72,7 +73,6 @@
 (def valid-guide?
   (sm/lazy-validator schema:guide))
 
-;; FIXME: convert to validator
 (def check-page!
   (sm/check-fn schema:page))
 
