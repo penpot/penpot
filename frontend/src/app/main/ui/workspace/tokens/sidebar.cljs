@@ -13,6 +13,7 @@
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as i]
@@ -57,18 +58,23 @@
   [{:keys [on-click token theme-token highlighted? on-context-menu] :as props}]
   (let [{:keys [name value resolved-value errors]} token
         errors? (and (seq errors) (seq (:errors theme-token)))]
-    [:button {:class (stl/css-case :token-pill true
-                                   :token-pill-highlighted highlighted?
-                                   :token-pill-invalid errors?)
-              :title (cond
-                       errors? (sd/humanize-errors token)
-                       :else (->> [(str "Token: " name)
-                                   (str "Original value: " value)
-                                   (str "Resolved value: " resolved-value)]
-                                  (str/join "\n")))
-              :on-click on-click
-              :on-context-menu on-context-menu
-              :disabled errors?}
+    [:button
+     {:class (stl/css-case :token-pill true
+                           :token-pill-highlighted highlighted?
+                           :token-pill-invalid errors?)
+      :title (cond
+               errors? (sd/humanize-errors token)
+               :else (->> [(str "Token: " name)
+                           (str "Original value: " value)
+                           (str "Resolved value: " resolved-value)]
+                          (str/join "\n")))
+      :on-click on-click
+      :on-context-menu on-context-menu
+      :disabled errors?}
+     (js/console.log "resolved-value" resolved-value)
+     (when (wtt/color-token? token)
+       [:& color-bullet {:color (wtt/resolved-value-hex token)
+                         :mini? true}])
      name]))
 
 (mf/defc token-section-icon

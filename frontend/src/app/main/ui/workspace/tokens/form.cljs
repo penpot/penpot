@@ -13,6 +13,8 @@
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.workspace.colorpicker :refer [colorpicker]]
+   [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
    [app.main.ui.workspace.tokens.common :as tokens.common]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
@@ -145,10 +147,20 @@ Token names should only contain letters and digits separated by . characters.")}
 
 (defonce form-token-cache-atom (atom nil))
 
+(mf/defc ramp
+  [{:keys [color on-change]}]
+  (let [value (mf/use-state nil)]
+    (js/console.log "@value" @value)
+    [:& ramp-selector {:color @value
+                       :on-start-drag js/console.log
+                       :on-finish-drag js/console.log
+                       :on-change #(reset! value (:hex %))}]))
+
 (mf/defc form
   {::mf/wrap-props false}
   [{:keys [token token-type]}]
   (let [token (or token {:type token-type})
+        color? (wtt/color-token? token)
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
         active-theme-tokens (mf/deref refs/workspace-active-theme-sets-tokens)
         resolved-tokens (sd/use-resolved-tokens active-theme-tokens {:names-map? true
@@ -201,6 +213,7 @@ Token names should only contain letters and digits separated by . characters.")}
                          (mf/deps on-update-value-debounced)
                          (fn [e]
                            (reset! value-ref (dom/get-target-val e))
+                           (js/console.log "e" e (dom/get-target-val e))
                            (on-update-value-debounced e)))
         value-error? (when (keyword? @token-resolve-result)
                        (= (namespace @token-resolve-result) "error"))
@@ -276,10 +289,14 @@ Token names should only contain letters and digits separated by . characters.")}
          [:p {:key error
               :class (stl/css :error)}
           error])]
+      ;; (when color?
+      ;;   [:& ramp {:color @value-ref
+      ;;             :on-change on-update-value}])
       [:& tokens.common/labeled-input {:label "Value"
                                        :input-props {:default-value @value-ref
                                                      :on-blur on-update-value
-                                                     :on-change on-update-value}}]
+                                                     :on-change on-update-value
+                                                     :type (when color? "color")}}]
       [:div {:class (stl/css-case :resolved-value true
                                   :resolved-value-placeholder (nil? @token-resolve-result)
                                   :resolved-value-error value-error?)}

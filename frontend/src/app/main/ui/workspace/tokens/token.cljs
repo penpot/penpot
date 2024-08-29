@@ -193,3 +193,10 @@
       :else (-> (get path-target selector)
                 (seq)
                 (boolean)))))
+
+(defn color-token? [token]
+  (= (:type token) :color))
+
+(defn resolved-value-hex [{:keys [resolved-value] :as token}]
+  (when (and resolved-value (color-token? token))
+    (str "#" resolved-value)))
