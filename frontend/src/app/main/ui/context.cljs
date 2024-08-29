@@ -31,5 +31,3 @@
 (def workspace-read-only? (mf/create-context nil))
 (def is-component?        (mf/create-context false))
 (def sidebar (mf/create-context nil))
-
-(def token-sets (mf/create-context nil))
