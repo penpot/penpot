@@ -137,7 +137,9 @@
           (st/emit! (msg/show {:type :info
                                :notification-type :toast
                                :content (tr "common.share-link.link-copied-success")
-                               :timeout 1000})))
+                               :timeout 1000})
+                    (ptk/event ::ev/event {::ev/name "copy-share-link"
+                                           ::ev/origin "viewer"})))
 
         try-delete-link
         (fn [_]
