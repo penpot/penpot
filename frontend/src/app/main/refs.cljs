@@ -269,6 +269,9 @@
 (def workspace-active-theme-sets-tokens
   (l/derived wtts/get-active-theme-sets-tokens-names-map st/state =))
 
+(def workspace-ordered-token-sets-tokens
+  (l/derived wtts/get-workspace-ordered-sets-tokens st/state =))
+
 (def workspace-selected-token-set-tokens
   (l/derived
    (fn [data]

@@ -122,6 +122,17 @@
     (->> (map (fn [id] [id (get token-sets id)]) top-level-set-ids)
          (into (ordered-map)))))
 
+(defn get-workspace-ordered-sets-tokens [state]
+  (let [sets (get-workspace-ordered-sets state)]
+    (reduce
+     (fn [acc [_ {:keys [tokens] :as sets}]]
+       (reduce (fn [acc' token-id]
+                 (if-let [token (wtt/get-workspace-token token-id state)]
+                   (assoc acc' (wtt/token-identifier token) token)
+                   acc'))
+            acc tokens))
+     {} sets)))
+
 (defn get-token-set [set-id state]
   (some-> (get-workspace-sets state)
           (get set-id)))
