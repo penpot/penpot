@@ -9,6 +9,7 @@
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list]]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg* raw-svg-list]]
    [app.main.ui.ds.foundations.typography :refer [typography-list]]
@@ -28,6 +29,7 @@
        :Input input*
        :Loader loader*
        :RawSvg raw-svg*
+       :Select select*
        :Text text*
        :TabSwitcher tab-switcher*
        :Toast toast*

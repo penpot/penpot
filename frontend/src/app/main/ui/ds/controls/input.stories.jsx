@@ -11,7 +11,7 @@ const { Input } = Components;
 const { icons } = Components.meta;
 
 export default {
-  title: "Forms/Input",
+  title: "Controls/Input",
   component: Components.Input,
   argTypes: {
     icon: {
