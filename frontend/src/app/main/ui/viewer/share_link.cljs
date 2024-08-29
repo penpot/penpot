@@ -126,7 +126,7 @@
           (let [params (prepare-params options)
                 params (assoc params :file-id (:id file))]
             (st/emit! (dc/create-share-link params)
-                      (ptk/event ::ev/event {::ev/name "create-shared-link"
+                      (ptk/event ::ev/event {::ev/name "create-share-link"
                                              ::ev/origin "viewer"
                                              :can-comment (:who-comment params)
                                              :can-inspect-code (:who-inspect params)}))))
