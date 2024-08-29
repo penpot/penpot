@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.main.ui.icons :as i]
    [rumext.v2 :as mf]))
+
 (def ^:private chevron-icon
   (i/icon-xref :arrow (stl/css :chevron-icon)))
 
