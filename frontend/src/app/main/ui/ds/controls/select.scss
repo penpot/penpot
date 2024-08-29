@@ -21,6 +21,7 @@
   }
 
   @include use-typography("body-small");
+  position: relative;
   display: grid;
   grid-template-rows: auto;
   gap: var(--sp-xxs);
@@ -83,6 +84,10 @@
 
 .option-list {
   --options-dropdown-bg-color: var(--color-background-tertiary);
+  position: absolute;
+  right: 0;
+  top: $sz-36;
+  width: 100%;
   background-color: var(--options-dropdown-bg-color);
   border-radius: $br-8;
   border: $b-1 solid var(--select-dropdown-border-color);

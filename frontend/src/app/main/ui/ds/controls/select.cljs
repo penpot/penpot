@@ -19,7 +19,7 @@
 (mf/defc option*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [id label icon aria-label on-click selected on-ref focused] :rest props}]
+  [{:keys [id label icon aria-label on-click selected set-ref focused] :rest props}]
   [:> :li {:value id
            :class (stl/css-case :option true
                                 :option-with-icon (some? icon)
@@ -27,7 +27,7 @@
            :aria-selected selected
 
            :ref (fn [node]
-                  (on-ref node id))
+                  (set-ref node id))
            :role "option"
            :id id
            :on-click on-click
@@ -52,7 +52,7 @@
 (mf/defc options-dropdown*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [on-ref on-click options selected focused] :rest props}]
+  [{:keys [set-ref on-click options selected focused] :rest props}]
   (let [props (mf/spread-props props
                                {:class (stl/css :option-list)
                                 :tab-index "-1"
@@ -69,7 +69,7 @@
                       :label label
                       :icon icon
                       :aria-label aria-label
-                      :on-ref on-ref
+                      :set-ref set-ref
                       :focused (= id focused)
                       :on-click on-click}]))]))
 
@@ -158,7 +158,7 @@
         options-nodes-refs  (mf/use-ref nil)
         options-ref         (mf/use-ref nil)
 
-        on-ref
+        set-ref
         (mf/use-fn
          (fn [node id]
            (let [refs (or (mf/ref-val options-nodes-refs) #js {})
@@ -225,8 +225,8 @@
 
     [:div {:class (stl/css :select-wrapper)}
      [:> :button props
-      [:div {:class (stl/css-case :select-header true
-                                  :header-icon (some? icon))}
+      [:span {:class (stl/css-case :select-header true
+                                   :header-icon (some? icon))}
        (when icon
          [:> icon* {:id icon
                     :size "s"
@@ -242,4 +242,4 @@
                               :options options
                               :selected selected
                               :focused focused
-                              :on-ref on-ref}])]))
+                              :set-ref set-ref}])]))

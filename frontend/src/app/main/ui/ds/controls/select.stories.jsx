@@ -59,7 +59,6 @@ export const WithIcons = {
       {
         label: "Menu",
         id: "option-menu",
-        icon: "mask",
       },
     ],
   },

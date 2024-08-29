@@ -81,8 +81,6 @@
            (reset! palete-size size)))
 
         node-ref (use-resize-observer on-resize)]
-
-
     [:*
      (when (not hide-ui?)
        [:& palette {:layout layout
