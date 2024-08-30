@@ -10,6 +10,7 @@
    [app.main.style :as stl])
   (:require
    [app.common.math :as mth]
+   [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 (mf/defc loader-icon*
@@ -40,10 +41,8 @@
         h (or height (when (some? width) (mth/ceil (* width (/ 27 100)))) 27)
         class (dm/str (or class "") " " (stl/css-case :wrapper true
                                                       :wrapper-overlay overlay))
+        title (or title (tr "labels.loading"))
         props (mf/spread-props props {:class class})]
-
-    (assert title
-            (dm/str "You must provide an accesible name for the component"))
 
     [:> "div" props
      [:> loader-icon* {:title title

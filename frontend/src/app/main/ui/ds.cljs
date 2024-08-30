@@ -6,6 +6,7 @@
 
 (ns app.main.ui.ds
   (:require
+   [app.config :as cf]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.forms.input :refer [input*]]
@@ -17,7 +18,11 @@
    [app.main.ui.ds.notifications.toast :refer [toast*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.ds.storybook :as sb]
-   [app.main.ui.ds.tab-switcher :refer [tab-switcher*]]))
+   [app.main.ui.ds.tab-switcher :refer [tab-switcher*]]
+   [app.util.i18n :as i18n]))
+
+
+(i18n/init! cf/translations)
 
 (def default
   "A export used for storybook"
