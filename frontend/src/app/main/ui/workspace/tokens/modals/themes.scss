@@ -1,0 +1,213 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+hr {
+  border-color: var(--color-background-tertiary);
+}
+
+.modal-dialog {
+  @extend .modal-container-base;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  width: 100%;
+  max-width: $s-468;
+  user-select: none;
+}
+
+.modal-title {
+  @include headlineMediumTypography;
+  font-weight: 500;
+  margin-block-end: $s-16;
+  color: var(--color-foreground-secondary);
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.button-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $s-6;
+}
+
+.edit-theme-footer {
+  display: flex;
+  justify-content: space-between;
+}
+
+.button-primary {
+  @extend .button-primary;
+  padding: $s-6;
+}
+
+.button-secondary {
+  @extend .button-secondary;
+  padding: $s-6;
+}
+
+.empty-themes-wrapper {
+  display: flex;
+  flex-direction: column;
+
+  .empty-themes-message {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: $s-12;
+    padding: $s-72 0;
+
+    h1 {
+      @include headlineLargeTypography;
+    }
+
+    p {
+      @include bodyMediumTypography;
+      font-weight: 500;
+      color: var(--color-foreground-secondary);
+    }
+  }
+}
+
+.create-theme-button {
+  @extend .button-secondary;
+  padding: $s-6;
+  padding-right: $s-8;
+  svg {
+    margin-right: $s-6;
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.theme-group-label {
+  display: block;
+  @include headlineMediumTypography;
+  color: var(--color-foreground-secondary);
+  margin-bottom: $s-8;
+}
+
+.theme-group-rows-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $s-6;
+}
+
+.theme-group-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $s-8;
+}
+
+.theme-row {
+  display: flex;
+  align-items: center;
+  gap: $s-12;
+  justify-content: space-between;
+}
+
+.theme-row-left {
+  display: flex;
+  align-items: center;
+  gap: $s-16;
+}
+
+.theme-row-right {
+  display: flex;
+  align-items: center;
+  gap: $s-6;
+}
+
+.back-button {
+  @extend .button-tertiary;
+  padding: $s-6;
+  padding-left: 0;
+  display: flex;
+  svg {
+    scale: -1 1;
+    margin-left: 0;
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.sets-count-button {
+  @extend .button-secondary;
+  padding: $s-6;
+  padding-left: $s-12;
+  svg {
+    margin-left: $s-6;
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.edit-theme-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $s-12;
+}
+
+.edit-theme-inputs-wrapper {
+  display: grid;
+  grid-template-columns: 0.6fr 1fr;
+  gap: $s-12;
+}
+
+.sets-list-wrapper {
+  border: 1px solid color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);
+  border-radius: $s-8;
+  overflow: hidden;
+}
+
+.sets-count-empty-button {
+  @extend .button-secondary;
+  padding: $s-6;
+  padding-left: $s-12;
+  svg {
+    margin-left: $s-6;
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
+
+.theme-row-label {
+  @include bodyMediumTypography;
+  font-weight: 500;
+  color: var(--color-foreground-primary);
+}
+
+.delete-theme-button {
+  @extend .button-tertiary;
+  height: $s-28;
+  width: $s-28;
+  button {
+    @include buttonStyle;
+    @include flexCenter;
+    width: $s-24;
+    height: 100%;
+    svg {
+      @extend .button-icon-small;
+      height: $s-12;
+      width: $s-12;
+      color: transparent;
+      fill: none;
+      stroke: var(--icon-foreground);
+    }
+  }
+}

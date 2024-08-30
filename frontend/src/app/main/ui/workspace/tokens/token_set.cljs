@@ -12,6 +12,9 @@
 (defn get-workspace-themes [state]
   (get-in state [:workspace-data :token-themes] []))
 
+(defn get-workspace-theme [id state]
+  (get-in state [:workspace-data :token-themes-index id]))
+
 (defn get-workspace-themes-index [state]
   (get-in state [:workspace-data :token-themes-index] {}))
 
@@ -69,7 +72,7 @@
 
 (defn toggle-active-theme-id
   "Toggle a `theme-id` by checking `:token-active-themes`.
-  De-activate all theme-ids that have the same group as `theme-id` when activating `theme-id`.
+  Deactivate all theme-ids that have the same group as `theme-id` when activating `theme-id`.
   Ensures that the temporary theme id is selected when the resulting set is empty."
   [theme-id state]
   (let [temp-theme-id-set (some->> (get-temp-theme-id state) (conj #{}))
@@ -111,6 +114,24 @@
 
 (defn get-workspace-sets [state]
   (get-in state [:workspace-data :token-sets-index]))
+
+(defn get-workspace-ordered-sets [state]
+  ;; TODO Include groups
+  (let [top-level-set-ids (get-in state [:workspace-data :token-set-groups])
+        token-sets (get-workspace-sets state)]
+    (->> (map (fn [id] [id (get token-sets id)]) top-level-set-ids)
+         (into (ordered-map)))))
+
+(defn get-workspace-ordered-sets-tokens [state]
+  (let [sets (get-workspace-ordered-sets state)]
+    (reduce
+     (fn [acc [_ {:keys [tokens] :as sets}]]
+       (reduce (fn [acc' token-id]
+                 (if-let [token (wtt/get-workspace-token token-id state)]
+                   (assoc acc' (wtt/token-identifier token) token)
+                   acc'))
+            acc tokens))
+     {} sets)))
 
 (defn get-token-set [set-id state]
   (some-> (get-workspace-sets state)

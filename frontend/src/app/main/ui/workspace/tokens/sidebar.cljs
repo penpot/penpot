@@ -14,6 +14,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.changes :as wtch]
@@ -21,7 +22,9 @@
    [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.sets :refer [sets-list]]
+   [app.main.ui.workspace.tokens.sets-context :as sets-context]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [app.main.ui.workspace.tokens.theme-select :refer [theme-select]]
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
@@ -107,6 +110,7 @@
                                  (let [{:keys [key fields]} modal]
                                    (dom/stop-propagation event)
                                    (st/emit! (dt/set-token-type-section-open type true))
+                                   (js/console.log "key" key)
                                    (modal/show! key {:x (.-clientX ^js event)
                                                      :y (.-clientY ^js event)
                                                      :position :right
@@ -179,74 +183,47 @@
                                                              :name @name}))}
       "Create"]]))
 
+(mf/defc edit-button
+  [{:keys [create?]}]
+  [:button {:class (stl/css :themes-button)
+            :on-click (fn [e]
+                        (dom/stop-propagation e)
+                        (modal/show! :tokens/themes {}))}
+   (if create? "Create" "Edit")])
+
 (mf/defc themes-sidebar
   [_props]
-  (let [open? (mf/use-state true)
-        active-theme-ids (mf/deref refs/workspace-active-theme-ids)
-        themes (mf/deref refs/workspace-ordered-token-themes)]
-    [:div {:class (stl/css :sets-sidebar)}
-     [:div {:class (stl/css :sidebar-header)}
-      [:& title-bar {:collapsable true
-                     :collapsed (not @open?)
-                     :all-clickable true
-                     :title "THEMES"
-                     :on-collapsed #(swap! open? not)}]]
-     (when @open?
-       [:div
-        [:style
-         (str "@scope {"
-              (str/join "\n"
-                        ["ul { list-style-type: circle; margin-left: 20px; }"
-                         ".spaced { display: flex; gap: 10px; justify-content: space-between;  }"
-                         ".spaced-y { display: flex; flex-direction: column; gap: 10px }"
-                         ".selected { font-weight: 600; }"
-                         "b { font-weight: 600; }"])
-              "}")]
-        [:div.spaced-y
-         {:style {:padding "10px"}}
-         [:& tokene-theme-create]
-         [:div.spaced-y
-          [:b "Themes"]
-          [:ul
-           (for [[group themes] themes]
-             [:li
-              {:key (str "token-theme-group" group)}
-              group
-              [:ul
-               (for [{:keys [id name] :as _theme} themes]
-                 [:li {:key (str "tokene-theme-" id)}
-                  [:div.spaced
-                   name
-                   [:div.spaced
-                    [:button
-                     {:on-click (fn [e]
-                                  (dom/prevent-default e)
-                                  (dom/stop-propagation e)
-                                  (st/emit! (wdt/toggle-token-theme id)))}
-                     (if (get active-theme-ids id) "✅" "❎")]
-                    [:button {:on-click (fn [e]
-                                          (dom/prevent-default e)
-                                          (dom/stop-propagation e)
-                                          (st/emit! (wdt/delete-token-theme id)))}
-                     "🗑️"]]]])]])]]]])]))
+  (let [ordered-themes (mf/deref refs/workspace-ordered-token-themes)]
+   [:div {:class (stl/css :theme-sidebar)}
+    [:span {:class (stl/css :themes-header)} "Themes"]
+    [:div {:class (stl/css :theme-select-wrapper)}
+     [:& theme-select]
+     [:& edit-button {:create? (empty? ordered-themes)}]]]))
+
+(mf/defc add-set-button
+  [{:keys [on-open]}]
+  (let [{:keys [on-create]} (sets-context/use-context)]
+    [:button {:class (stl/css :add-set)
+              :on-click #(do
+                           (on-open)
+                           (on-create))}
+     i/add]))
 
 (mf/defc sets-sidebar
   []
-  (let [open? (mf/use-state true)]
-    [:div {:class (stl/css :sets-sidebar)}
-     [:div {:class (stl/css :sidebar-header)}
-      [:& title-bar {:collapsable true
-                     :collapsed (not @open?)
-                     :all-clickable true
-                     :title "SETS"
-                     :on-collapsed #(swap! open? not)}]
-      [:button {:class (stl/css :add-set)
-                :on-click #(do
-                             (reset! open? true)
-                             (on-set-add-click %))}
-       i/add]]
-     (when @open?
-       [:& sets-list])]))
+  (let [open? (mf/use-state true)
+        on-open (mf/use-fn #(reset! open? true))]
+    [:& sets-context/provider {}
+     [:div {:class (stl/css :sets-sidebar)}
+      [:div {:class (stl/css :sidebar-header)}
+       [:& title-bar {:collapsable true
+                      :collapsed (not @open?)
+                      :all-clickable true
+                      :title "SETS"
+                      :on-collapsed #(swap! open? not)}
+        [:& add-set-button {:on-open on-open}]]]
+      (when @open?
+        [:& sets-list])]]))
 
 (mf/defc tokens-explorer
   [_props]
@@ -306,13 +283,24 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [_props]
-  (let [show-sets-section? (deref (temp-use-themes-flag))]
+  (let [show-sets-section? (deref (temp-use-themes-flag))
+        {on-pointer-down-pages :on-pointer-down
+         on-lost-pointer-capture-pages :on-lost-pointer-capture
+         on-pointer-move-pages :on-pointer-move
+         size-pages-opened :size}
+        (use-resize-hook :sitemap 200 38 400 :y false nil)]
     [:div {:class (stl/css :sidebar-tab-wrapper)}
      (when show-sets-section?
-       [:div {:class (stl/css :sets-section-wrapper)}
+       [:div {:class (stl/css :sets-section-wrapper)
+              :style {:height (str size-pages-opened "px")}}
         [:& themes-sidebar]
         [:& sets-sidebar]])
      [:div {:class (stl/css :tokens-section-wrapper)}
+      (when show-sets-section?
+        [:div {:class (stl/css :resize-area-horiz)
+               :on-pointer-down on-pointer-down-pages
+               :on-lost-pointer-capture on-lost-pointer-capture-pages
+               :on-pointer-move on-pointer-move-pages}])
       [:& tokens-explorer]]
      [:button {:class (stl/css :download-json-button)
                :on-click wtc/download-tokens-as-json}

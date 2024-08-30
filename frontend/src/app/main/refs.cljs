@@ -240,8 +240,15 @@
    st/state
    =))
 
+(defn workspace-token-theme
+  [id]
+  (l/derived #(wtts/get-workspace-theme id %) st/state))
+
 (def workspace-active-theme-ids
   (l/derived wtts/get-active-theme-ids st/state))
+
+(def workspace-temp-theme-id
+  (l/derived wtts/get-temp-theme-id st/state))
 
 (def workspace-active-set-ids
   (l/derived wtts/get-active-set-ids st/state))
@@ -252,15 +259,18 @@
 (def workspace-ordered-token-themes
   (l/derived wtts/get-workspace-ordered-themes st/state))
 
-(def workspace-token-sets
+(def workspace-ordered-token-sets
   (l/derived
    (fn [data]
-     (or (wtts/get-workspace-sets data) {}))
+     (or (wtts/get-workspace-ordered-sets data) {}))
    st/state
    =))
 
 (def workspace-active-theme-sets-tokens
   (l/derived wtts/get-active-theme-sets-tokens-names-map st/state =))
+
+(def workspace-ordered-token-sets-tokens
+  (l/derived wtts/get-workspace-ordered-sets-tokens st/state =))
 
 (def workspace-selected-token-set-tokens
   (l/derived

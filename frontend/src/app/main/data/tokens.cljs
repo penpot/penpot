@@ -102,6 +102,17 @@
           (rx/of
            (dch/commit-changes changes)))))))
 
+(defn update-token-theme [token-theme]
+  (ptk/reify ::update-token-theme
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [prev-token-theme (wtts/get-workspace-token-theme state (:id token-theme))
+            changes (-> (pcb/empty-changes it)
+                        (pcb/update-token-theme token-theme prev-token-theme))]
+        (js/console.log "changes" changes)
+        (rx/of
+         (dch/commit-changes changes))))))
+
 (defn ensure-token-theme-changes [changes state {:keys [id new-set?]}]
   (let [theme-id (wtts/update-theme-id state)
         theme (some-> theme-id (wtts/get-workspace-token-theme state))]
@@ -155,19 +166,32 @@
                           (ensure-token-theme-changes state {:id (:id new-token-set)
                                                              :new-set? true}))]
           (rx/of
+           (set-selected-token-set-id (:id new-token-set))
            (dch/commit-changes changes)))))))
 
-(defn toggle-token-set [token-set-id]
+(defn update-token-set [token-set]
+  (ptk/reify ::update-token-set
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [prev-token-set (wtts/get-token-set (:id token-set) state)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/update-token-set token-set prev-token-set))]
+        (rx/of
+         (dch/commit-changes changes))))))
+
+(defn toggle-token-set [{:keys [token-set-id]}]
   (ptk/reify ::toggle-token-set
     ptk/WatchEvent
     (watch [it state _]
-      (let [theme (some-> (wtts/update-theme-id state)
-                          (wtts/get-workspace-token-theme state))
+      (let [target-theme-id (wtts/get-temp-theme-id state)
+            active-set-ids (wtts/get-active-set-ids state)
+            theme (-> (wtts/get-workspace-token-theme target-theme-id state)
+                      (assoc :sets active-set-ids))
             changes (-> (pcb/empty-changes it)
                         (pcb/update-token-theme
                          (wtts/toggle-token-set-to-token-theme token-set-id theme)
                          theme)
-                        (pcb/update-active-token-themes #{(wtts/update-theme-id state)} (wtts/get-active-theme-ids state)))]
+                        (pcb/update-active-token-themes #{target-theme-id} (wtts/get-active-theme-ids state)))]
         (rx/of
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
