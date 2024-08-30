@@ -303,7 +303,20 @@ async function readTranslations() {
     }
   }
 
-  return JSON.stringify(result);
+  return result;
+}
+
+function filterTranslations(translations, langs = [], keyFilter) {
+  const filteredEntries = Object.entries(translations)
+    .filter(([translationKey, _]) => keyFilter(translationKey))
+    .map(([translationKey, value]) => {
+      const langEntries = Object.entries(value).filter(([lang, _]) =>
+        langs.includes(lang),
+      );
+      return [translationKey, Object.fromEntries(langEntries)];
+    });
+
+  return Object.fromEntries(filteredEntries);
 }
 
 async function generateSvgSprite(files, prefix) {
@@ -355,7 +368,14 @@ async function generateTemplates() {
   const isDebug = process.env.NODE_ENV !== "production";
   await fs.mkdir("./resources/public/", { recursive: true });
 
-  const translations = await readTranslations();
+  let translations = await readTranslations();
+  const storybookTranslations = JSON.stringify(
+    filterTranslations(translations, ["en"], (key) =>
+      key.startsWith("labels."),
+    ),
+  );
+  translations = JSON.stringify(translations);
+
   const manifest = await readShadowManifest();
   let content;
 
@@ -408,6 +428,7 @@ async function generateTemplates() {
     "resources/templates/preview-head.mustache",
     {
       manifest: manifest,
+      translations: JSON.stringify(storybookTranslations),
     },
     partials,
   );
