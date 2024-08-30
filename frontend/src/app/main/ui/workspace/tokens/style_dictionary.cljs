@@ -52,6 +52,7 @@
         (.buildAllPlatforms "json")
         (.catch js/console.error)
         (.then (fn [^js resp]
+                 (js/console.log "resp" resp)
                  (let [performance-end (js/performance.now)
                        duration-ms (- performance-end performance-start)
                        resolved-tokens (.-allTokens resp)]
@@ -82,8 +83,11 @@
                              (let [identifier (if names-map?
                                                 (.. cur -original -name)
                                                 (uuid (.-uuid (.-id cur))))
-                                   origin-token (get tokens identifier)
-                                   parsed-value (wtt/parse-token-value (.-value cur))
+                                   {:keys [type] :as origin-token} (get tokens identifier)
+                                   value (.-value cur)
+                                   parsed-value (case type
+                                                  :color (wtt/parse-token-color-value value)
+                                                  (wtt/parse-token-value value))
                                    resolved-token (if (not parsed-value)
                                                     (assoc origin-token :errors [:style-dictionary/missing-reference])
                                                     (assoc origin-token
@@ -132,6 +136,7 @@
 
 (defn use-resolved-workspace-tokens [& {:as config}]
   (-> (mf/deref refs/workspace-selected-token-set-tokens)
+      (doto js/console.log)
       (use-resolved-tokens config)))
 
 (defn use-active-theme-sets-tokens [& {:as config}]

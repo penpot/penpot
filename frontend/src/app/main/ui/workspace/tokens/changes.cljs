@@ -8,6 +8,7 @@
   (:require
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
+   [app.main.data.workspace.colors :as wdc]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
@@ -122,6 +123,10 @@
                          (assoc-in shape [:strokes 0 :stroke-width] value)))
                      {:reg-objects? true
                       :attrs [:strokes]}))
+
+(defn update-color
+  [value shape-ids]
+  (wdc/change-fill shape-ids {:color (str "#" value)} 0))
 
 (defn update-shape-dimensions [value shape-ids attributes]
   (ptk/reify ::update-shape-dimensions

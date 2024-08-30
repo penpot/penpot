@@ -222,10 +222,10 @@
 
 (defn selection-actions [{:keys [type token] :as context-data}]
   (let [with-actions (get shape-attribute-actions-map (or type (:type token)))
-        attribute-actions (with-actions context-data)]
+        attribute-actions (if with-actions (with-actions context-data) [])]
     (concat
      attribute-actions
-     [:separator]
+     (when (seq attribute-actions) [:separator])
      (default-actions context-data))))
 
 ;; Components ------------------------------------------------------------------

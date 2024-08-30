@@ -35,8 +35,8 @@
 (def token-types
   #{:boolean
     :border-radius
-    :stroke-width
     :box-shadow
+    :color
     :dimensions
     :numeric
     :opacity
@@ -45,6 +45,7 @@
     :sizing
     :spacing
     :string
+    :stroke-width
     :typography})
 
 (defn valid-token-type?
@@ -65,6 +66,12 @@
    [:value :any]
    [:description {:optional true} :string]
    [:modified-at {:optional true} ::sm/inst]])
+
+(sm/register! ::color
+  [:map
+   [:color {:optional true} token-name-ref]])
+
+(def color-keys (schema-keys ::color))
 
 (sm/register! ::border-radius
   [:map

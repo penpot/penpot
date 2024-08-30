@@ -77,6 +77,7 @@
   (case type
     :border-radius i/corner-radius
     :numeric [:span {:class (stl/css :section-text-icon)} "123"]
+    :color i/drop-icon
     :boolean i/boolean-difference
     :opacity [:span {:class (stl/css :section-text-icon)} "%"]
     :rotation i/rotation

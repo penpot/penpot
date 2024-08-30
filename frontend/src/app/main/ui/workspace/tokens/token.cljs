@@ -12,6 +12,15 @@
   [token-id state]
   (get-in state [:workspace-data :tokens token-id]))
 
+(def parseable-token-color-value-regexp
+  "Regexp that can be used to parse a hex value out of resolved token value.
+  This regexp also trims whitespace around the value."
+  #"^\s*#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})\s*$")
+
+(defn parse-token-color-value [value]
+  (when-let [[_ hex] (re-find parseable-token-color-value-regexp value)]
+    {:value hex :unit :hex}))
+
 (def parseable-token-value-regexp
   "Regexp that can be used to parse a number value out of resolved token value.
   This regexp also trims whitespace around the value."

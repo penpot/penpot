@@ -101,15 +101,19 @@ Token names should only contain letters and digits separated by . characters.")}
       :else (let [token-id (or (:id token) (random-uuid))
                   new-tokens (update tokens token-name merge {:id token-id
                                                               :value input
-                                                              :name token-name})]
-              (-> (sd/resolve-tokens+ new-tokens {:names-map? true})
+                                                              :name token-name
+                                                              :type (:type token)})]
+              (-> (sd/resolve-tokens+ new-tokens {:names-map? true
+                                                  :debug? true})
                   (p/then
                    (fn [resolved-tokens]
+                     (js/console.log "resolved-tokens" resolved-tokens)
                      (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
                        (cond
                          resolved-value (p/resolved resolved-token)
                          (sd/missing-reference-error? errors) (p/rejected :error/token-missing-reference)
-                         :else (p/rejected :error/unknown-error))))))))))
+                         :else (p/rejected :error/unknown-error)))))
+                  (p/catch js/console.log))))))
 
 (defn use-debonced-resolve-callback
   "Resolves a token values using `StyleDictionary`.
@@ -143,8 +147,8 @@ Token names should only contain letters and digits separated by . characters.")}
 
 (mf/defc form
   {::mf/wrap-props false}
-  [{:keys [token token-type] :as _args}]
-  (let [tokens (mf/deref refs/workspace-ordered-token-sets-tokens)
+  [{:keys [token token-type]}]
+  (let [token (or token {:type token-type})
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
         active-theme-tokens (mf/deref refs/workspace-active-theme-sets-tokens)
         resolved-tokens (sd/use-resolved-tokens active-theme-tokens {:names-map? true
@@ -153,7 +157,7 @@ Token names should only contain letters and digits separated by . characters.")}
                     (mf/deps (:name token))
                     #(wtt/token-name->path (:name token)))
         selected-set-tokens-tree (mf/use-memo
-                                  (mf/deps token-path tokens)
+                                  (mf/deps token-path selected-set-tokens)
                                   (fn []
                                     (-> (wtt/token-names-tree selected-set-tokens)
                                         ;; Allow setting editing token to it's own path

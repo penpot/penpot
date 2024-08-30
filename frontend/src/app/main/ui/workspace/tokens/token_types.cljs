@@ -20,6 +20,14 @@
     :modal {:key :tokens/border-radius
             :fields [{:label "Border Radius"
                       :key :border-radius}]}}
+
+   :color
+   {:title "Color"
+    :attributes ctt/color-keys
+    :on-update-shape wtch/update-color
+    :modal {:key :tokens/color
+            :fields [{:label "Color" :key :color}]}}
+
    :stroke-width
    {:title "Stroke Width"
     :attributes ctt/stroke-width-keys
