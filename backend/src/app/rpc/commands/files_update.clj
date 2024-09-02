@@ -388,9 +388,9 @@
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."
   [{:keys [revn modified-at] :as file}]
-  (when (contains? cf/flags :file-snapshot)
-    (let [freq    (or (cf/get :file-snapshot-every) 20)
-          timeout (or (cf/get :file-snapshot-timeout)
+  (when (contains? cf/flags :auto-file-snapshot)
+    (let [freq    (or (cf/get :auto-file-snapshot-every) 20)
+          timeout (or (cf/get :auto-file-snapshot-timeout)
                       (dt/duration {:hours 1}))]
 
       (or (= 1 freq)
@@ -420,7 +420,7 @@
 (defn- delete-old-snapshots!
   [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
   (when-let [snapshots (not-empty (db/exec! conn [sql:get-latest-snapshots id
-                                                  (cf/get :file-snapshot-total 10)]))]
+                                                  (cf/get :auto-file-snapshot-total 10)]))]
     (let [last-date (-> snapshots peek :created-at)
           result    (db/exec-one! conn [sql:delete-snapshots id last-date])]
       (l/trc :hint "delete old snapshots" :file-id (str id) :total (db/get-update-count result)))))
