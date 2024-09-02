@@ -91,7 +91,6 @@
    :modules
    {:base
     {:entries []}
-
     :components
     {:exports {default app.main.ui.ds/default}
      :depends-on #{:base}}}
