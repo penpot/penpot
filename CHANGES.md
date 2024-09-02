@@ -10,12 +10,63 @@
 
 ### :sparkles: New features
 
+- **Tiered File Data Storage** [Taiga #8376](https://tree.taiga.io/project/penpot/us/8376)
+
+  This feature allows offloading file data that is not actively used
+  from the database to object storage (e.g., filesystem, S3), thereby
+  freeing up space in the database. It can be enabled with the
+  `enable-enable-tiered-file-data-storage` flag.
+
+  *(On-Premise feature, EXPERIMENTAL).*
+
+- **JSON Interoperability for HTTP API** [Taiga #8372](https://tree.taiga.io/project/penpot/us/8372)
+
+  Enables full JSON interoperability for our HTTP API. Previously,
+  JSON was only barely supported for output when the
+  `application/json` media type was specified in the `Accept` header,
+  or when `_fmt=json` was passed as a query parameter. With this
+  update, we now offer proper bi-directional support for using our API
+  with plain JSON, instead of Transit.
+
+- **Automatic File Snapshotting**
+
+  Adds the ability to automatically take and maintain a limited set of
+  snapshots of active files without explicit user intervention. This
+  feature allows on-premise administrators to recover the state of a
+  file from a past point in time in a limited manner.
+
+  It can be enabled with the `enable-auto-file-snapshot` flag and
+  configured with the following settings:
+
+  ```bash
+  # Take snapshots every 10 update operations
+  PENPOT_AUTO_FILE_SNAPSHOT_EVERY=10
+
+  # Take a snapshot if it has been more than 3 hours since the file was last modified
+  PENPOT_AUTO_FILE_SNAPSHOT_TIMEOUT=3h
+
+  # The total number of snapshots to keep
+  PENPOT_AUTO_FILE_SNAPSHOT_TOTAL=10
+  ```
+
+  Snapshots are only taken during update operations; there is NO
+  active background process for this.
+
+- Add separated flag `enable-oidc-registration` for enable the
+  registration only for OIDC authentication backend [Github
+  #4882](https://github.com/penpot/penpot/issues/4882)
+
 ### :bug: Bugs fixed
 
 - Fix wrong props on padding input [Taiga #8254](https://tree.taiga.io/project/penpot/issue/8254)
 - Fix fill collapsed options [Taiga #8351](https://tree.taiga.io/project/penpot/issue/8351)
 - Fix scroll on color picker modal [Taiga #8353](https://tree.taiga.io/project/penpot/issue/8353)
 - Fix components are not dragged from the group to the assets tab [Taiga #8273](https://tree.taiga.io/project/penpot/issue/8273)
+
+
+## 2.1.3
+
+- Don't allow registration when registration is disabled and invitation token is used [Github #4975](https://github.com/penpot/penpot/issues/4975)
 
 ## 2.1.2
 
