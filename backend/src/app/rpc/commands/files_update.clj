@@ -251,6 +251,7 @@
                  :created-at created-at
                  :file-id (:id file)
                  :revn (:revn file)
+                 :version (:version file)
                  :label (::snapshot-label file)
                  :data (::snapshot-data file)
                  :features (db/create-array conn "text" (:features file))

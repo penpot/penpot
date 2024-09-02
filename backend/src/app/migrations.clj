@@ -409,7 +409,10 @@
     :fn (mg/resource "app/migrations/sql/0128-mod-task-table.sql")}
 
    {:name "0129-mod-file-change-table"
-    :fn (mg/resource "app/migrations/sql/0129-mod-file-change-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0129-mod-file-change-table.sql")}
+
+   {:name "0130-mod-file-change-table"
+    :fn (mg/resource "app/migrations/sql/0130-mod-file-change-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

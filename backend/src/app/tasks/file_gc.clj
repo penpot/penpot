@@ -11,7 +11,6 @@
   inactivity (the default threshold is 72h)."
   (:require
    [app.binfile.common :as bfc]
-   [app.common.exceptions :as ex]
    [app.common.files.migrations :as fmg]
    [app.common.files.validate :as cfv]
    [app.common.logging :as l]
@@ -35,16 +34,36 @@
 (declare ^:private decode-file)
 (declare ^:private persist-file!)
 
+(def ^:private sql:get-snapshots
+  "SELECT f.file_id AS id,
+          f.data,
+          f.revn,
+          f.version,
+          f.features,
+          f.data_backend,
+          f.data_ref_id
+     FROM file_change AS f
+    WHERE f.file_id = ?
+      AND f.label IS NOT NULL
+    ORDER BY f.created_at ASC")
+
 (def ^:private sql:mark-file-media-object-deleted
   "UPDATE file_media_object
       SET deleted_at = now()
     WHERE file_id = ? AND id != ALL(?::uuid[])
    RETURNING id")
 
+(def ^:private xf:collect-used-media
+  (comp (map :data) (mapcat bfc/collect-used-media)))
+
 (defn- clean-file-media!
   "Performs the garbage collection of file media objects."
-  [{:keys [::db/conn]} {:keys [id data] :as file}]
-  (let [used   (bfc/collect-used-media data)
+  [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
+  (let [used   (into #{}
+                     xf:collect-used-media
+                     (cons file
+                           (->> (db/cursor conn [sql:get-snapshots id])
+                                (map (partial decode-file cfg)))))
         ids    (db/create-array conn "uuid" used)
         unused (->> (db/exec! conn [sql:mark-file-media-object-deleted id ids])
                     (into #{} (map :id)))]
@@ -170,11 +189,6 @@
     (l/dbg :hint "clean" :rel "components" :file-id (str file-id) :total (count unused))
     file))
 
-(def ^:private sql:get-changes
-  "SELECT id, data FROM file_change
-    WHERE file_id = ? AND data IS NOT NULL
-    ORDER BY created_at ASC")
-
 (def ^:private sql:mark-deleted-data-fragments
   "UPDATE file_data_fragment
       SET deleted_at = now()
@@ -190,8 +204,7 @@
 
 (defn- clean-data-fragments!
   [{:keys [::db/conn]} {:keys [id] :as file}]
-  (let [used   (into #{} xf:collect-pointers
-                     (cons file (db/cursor conn [sql:get-changes id])))
+  (let [used   (into #{} xf:collect-pointers [file])
 
         unused (let [ids (db/create-array conn "uuid" used)]
                  (->> (db/exec! conn [sql:mark-deleted-data-fragments id ids])
@@ -220,7 +233,9 @@
           f.revn,
           f.version,
           f.features,
-          f.modified_at
+          f.modified_at,
+          f.data_backend,
+          f.data_ref_id
      FROM file AS f
     WHERE f.has_media_trimmed IS false
       AND f.modified_at < now() - ?::interval
@@ -236,18 +251,8 @@
 
 (defn- decode-file
   [cfg {:keys [id] :as file}]
-  ;; NOTE: a preventive check that does not allow proceed the gc for
-  ;; already offloaded file; if this exception happens, means that
-  ;; something external modified the file flag without preloading the
-  ;; file back again to the table
-  (when (feat.fdata/offloaded? file)
-    (ex/raise :hint "unable to run file-gc on an already offloaded file"
-              :type :internal
-              :code :file-already-offloaded
-              :file-id id))
-
   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
-    (-> file
+    (-> (feat.fdata/resolve-file-data cfg file)
         (update :features db/decode-pgarray #{})
         (update :data blob/decode)
         (update :data feat.fdata/process-pointers deref)
@@ -256,7 +261,7 @@
         (fmg/migrate-file))))
 
 (defn- persist-file!
-  [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
+  [{:keys [::db/conn ::sto/storage] :as cfg} {:keys [id] :as file}]
   (let [file (if (contains? (:features file) "fdata/objects-map")
                (feat.fdata/enable-objects-map file)
                file)
@@ -272,11 +277,18 @@
                  (update :features db/encode-pgarray conn "text")
                  (update :data blob/encode))]
 
+    ;; If file was already offloaded, we touch the underlying storage
+    ;; object for properly trigger storage-gc-touched task
+    (when (feat.fdata/offloaded? file)
+      (some->> (:data-ref-id file) (sto/touch-object! storage)))
+
     (db/update! conn :file
                 {:has-media-trimmed true
                  :features (:features file)
                  :version (:version file)
-                 :data (:data file)}
+                 :data (:data file)
+                 :data-backend nil
+                 :data-ref-id nil}
                 {:id id}
                 {::db/return-keys true})))
 

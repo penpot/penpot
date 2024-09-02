@@ -103,6 +103,7 @@
       (db/update! conn :file
                   {:data (:data snapshot)
                    :revn (inc (:revn file))
+                   :version (:version snapshot)
                    :data-backend nil
                    :data-ref-id nil
                    :has-media-trimmed false
@@ -170,7 +171,7 @@
           (update :data blob/encode)))))
 
 (defn take-file-snapshot!
-  [cfg {:keys [file-id label]}]
+  [cfg {:keys [file-id label ::rpc/profile-id]}]
   (let [file  (get-file cfg file-id)
         id    (uuid/next)]
 
@@ -182,7 +183,9 @@
                 {:id id
                  :revn (:revn file)
                  :data (:data file)
+                 :version (:version file)
                  :features (:features file)
+                 :profile-id profile-id
                  :file-id (:id file)
                  :label label}
                 {::db/return-keys false})
