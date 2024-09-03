@@ -509,7 +509,7 @@
              (on-add-shared event))))
 
         on-export-shapes
-        (mf/use-fn #(st/emit! (de/show-workspace-export-dialog)))
+        (mf/use-fn #(st/emit! (de/show-workspace-export-dialog {:origin "workspace:menu"})))
 
         on-export-shapes-key-down
         (mf/use-fn

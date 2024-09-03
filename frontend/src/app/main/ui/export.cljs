@@ -11,6 +11,7 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.data.events :as ev]
    [app.main.data.exports :as de]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
@@ -24,6 +25,7 @@
    [app.util.strings :as ust]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private neutral-icon
@@ -36,10 +38,9 @@
   (i/icon-xref :close (stl/css :close-icon)))
 
 (mf/defc export-multiple-dialog
-  [{:keys [exports title cmd no-selection]}]
+  [{:keys [exports title cmd no-selection origin]}]
   (let [lstate          (mf/deref refs/export)
         in-progress?    (:in-progress lstate)
-
         exports         (mf/use-state exports)
 
         all-exports     (deref exports)
@@ -62,7 +63,11 @@
           (st/emit! (modal/hide)
                     (de/request-multiple-export
                      {:exports enabled-exports
-                      :cmd cmd})))
+                      :cmd cmd})
+                    (ptk/event
+                     ::ev/event {::ev/name "export-shapes"
+                                 ::ev/origin origin
+                                 :num-shapes (count enabled-exports)})))
 
         on-toggle-enabled
         (mf/use-fn
@@ -187,23 +192,25 @@
 (mf/defc export-shapes-dialog
   {::mf/register modal/components
    ::mf/register-as :export-shapes}
-  [{:keys [exports]}]
+  [{:keys [exports origin]}]
   (let [title (tr "dashboard.export-shapes.title")]
     [:& export-multiple-dialog
      {:exports exports
       :title title
       :cmd :export-shapes
-      :no-selection shapes-no-selection}]))
+      :no-selection shapes-no-selection
+      :origin origin}]))
 
 (mf/defc export-frames
   {::mf/register modal/components
    ::mf/register-as :export-frames}
-  [{:keys [exports]}]
+  [{:keys [exports origin]}]
   (let [title (tr "dashboard.export-frames.title")]
     [:& export-multiple-dialog
      {:exports exports
       :title title
-      :cmd :export-frames}]))
+      :cmd :export-frames
+      :origin origin}]))
 
 (mf/defc export-progress-widget
   {::mf/wrap [mf/memo]}

@@ -397,7 +397,7 @@
                           :command (ds/c-mod "shift+e")
                           :subsections [:basics :main-menu]
                           :fn #(st/emit!
-                                (de/show-workspace-export-dialog))}
+                                (de/show-workspace-export-dialog {:origin "workspace:shortcuts"}))}
 
    :toggle-snap-ruler-guide {:tooltip (ds/meta-shift "G")
                              :command (ds/c-mod "shift+g")
