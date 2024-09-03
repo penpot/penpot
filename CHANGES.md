@@ -1,6 +1,14 @@
 # CHANGELOG
 
-## 2.1.2
+## 2.1.4
+
+### :bug: Bugs fixed
+
+- Fix json encoding on zip encoding decoding.
+- Add schema validation for color changes.
+- Fix render of some texts without position data.
+
+## 2.1.3
 
 ### :bug: Bugs fixed
 
