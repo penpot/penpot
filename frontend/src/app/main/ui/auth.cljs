@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.config :as cf]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.auth.login :refer [login-page]]
