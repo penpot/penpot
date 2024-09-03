@@ -282,6 +282,7 @@
         on-frame-leave  (unchecked-get props "on-frame-leave")
         on-frame-select (unchecked-get props "on-frame-select")]
     [:g.frame-flows
+     ;; FIXME: enumerate is not necessary here
      (for [[index flow] (d/enumerate flows)]
        (let [frame (get objects (:starting-frame flow))]
          [:& frame-flow {:key (dm/str (:id frame) "-" index)

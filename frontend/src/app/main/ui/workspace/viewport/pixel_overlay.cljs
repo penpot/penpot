@@ -53,10 +53,10 @@
 (mf/defc pixel-overlay
   {::mf/wrap-props false}
   [props]
-  (let [vport          (unchecked-get props "vport")
+  (let [vport             (unchecked-get props "vport")
 
-        viewport-ref   (unchecked-get props "viewport-ref")
-        viewport-node  (mf/ref-val viewport-ref)
+        viewport-ref      (unchecked-get props "viewport-ref")
+        viewport-node     (mf/ref-val viewport-ref)
 
         canvas            (get-offscreen-canvas (:width vport) (:height vport))
         canvas-context    (.getContext canvas "2d" #js {:willReadFrequently true})

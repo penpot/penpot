@@ -211,11 +211,11 @@
 
 (defn add-page
   "Adds page information"
-  [snap-data {:keys [objects options] :as page}]
+  [snap-data {:keys [objects guides] :as page}]
   (let [frames     (ctst/get-frames objects)
         shapes     (->> (vals (:objects page))
                         (remove cfh/frame-shape?))
-        guides     (vals (:guides options))
+        guides     (vals guides)
 
         page-data
         (as-> {} $

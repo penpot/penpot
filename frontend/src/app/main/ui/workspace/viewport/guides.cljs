@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.viewport.guides
   (:require
    [app.common.colors :as colors]
+   [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -21,6 +22,7 @@
    [app.main.ui.formats :as fmt]
    [app.main.ui.workspace.viewport.rulers :as rulers]
    [app.util.dom :as dom]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (def guide-width 1)
@@ -256,14 +258,15 @@
     (and (>= (:position guide) (:y frame))
          (<= (:position guide) (+ (:y frame) (:height frame))))))
 
-(mf/defc guide
-  {::mf/wrap [mf/memo]}
-  [{:keys [guide hover? on-guide-change get-hover-frame vbox zoom hover-frame disabled-guides? frame-modifier]}]
+(mf/defc guide*
+  {::mf/wrap [mf/memo]
+   ::mf/props :obj}
+  [{:keys [guide is-hover on-guide-change get-hover-frame vbox zoom hover-frame disabled-guides frame-modifier]}]
 
   (let [axis (:axis guide)
 
         handle-change-position
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-guide-change)
          (fn [changes]
            (when on-guide-change
@@ -296,7 +299,7 @@
               (and (cfh/root-frame? frame)
                    (not (ctst/rotated-frame? frame))))
       [:g.guide-area {:opacity (when frame-guide-outside? 0)}
-       (when-not disabled-guides?
+       (when-not disabled-guides
          (let [{:keys [x y width height]} (guide-area-axis pos vbox zoom frame axis)]
            [:rect {:x x
                    :y y
@@ -318,7 +321,7 @@
                        l3-x1 l3-y1 l3-x2 l3-y2]}
                (guide-line-axis pos vbox frame axis)]
            [:g
-            (when (or hover? (:hover @state))
+            (when (or is-hover (:hover @state))
               [:line {:x1 l1-x1
                       :y1 l1-y1
                       :x2 l1-x2
@@ -334,10 +337,10 @@
                     :y2 l2-y2
                     :style {:stroke guide-color
                             :stroke-width guide-width
-                            :stroke-opacity (if (or hover? (:hover @state))
+                            :stroke-opacity (if (or is-hover (:hover @state))
                                               guide-opacity-hover
                                               guide-opacity)}}]
-            (when (or hover? (:hover @state))
+            (when (or is-hover (:hover @state))
               [:line {:x1 l3-x1
                       :y1 l3-y1
                       :x2 l3-x2
@@ -355,11 +358,11 @@
                    :y2 y2
                    :style {:stroke guide-color
                            :stroke-width guide-width
-                           :stroke-opacity (if (or hover? (:hover @state))
+                           :stroke-opacity (if (or is-hover (:hover @state))
                                              guide-opacity-hover
                                              guide-opacity)}}]))
 
-       (when (or hover? (:hover @state))
+       (when (or is-hover (:hover @state))
          (let [{:keys [rect-x rect-y rect-width rect-height text-x text-y]}
                (guide-pill-axis pos vbox zoom axis)]
            [:g.guide-pill
@@ -382,16 +385,17 @@
              ;; If the guide is associated to a frame we show the position relative to the frame
              (fmt/format-number (- pos (if (= axis :x) (:x frame) (:y frame))))]]))])))
 
-(mf/defc new-guide-area
-  [{:keys [vbox zoom axis get-hover-frame disabled-guides?]}]
+(mf/defc new-guide-area*
+  {::mf/props :obj}
+  [{:keys [vbox zoom axis get-hover-frame disabled-guides]}]
 
   (let [on-guide-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps vbox)
          (fn [guide]
            (let [guide (-> guide
-                           (assoc :id (uuid/next)
-                                  :axis axis))]
+                           (assoc :id (uuid/next))
+                           (assoc :axis axis))]
              (when (guide-inside-vbox? zoom vbox guide)
                (st/emit! (dw/update-guides guide))))))
 
@@ -402,10 +406,11 @@
                 on-lost-pointer-capture
                 on-pointer-move
                 state
-                frame]} (use-guide on-guide-change get-hover-frame zoom {:axis axis})]
+                frame]}
+        (use-guide on-guide-change get-hover-frame zoom {:axis axis})]
 
     [:g.new-guides
-     (when-not disabled-guides?
+     (when-not disabled-guides
        (let [{:keys [x y width height]} (guide-creation-area vbox zoom axis)]
          [:rect {:x x
                  :y y
@@ -422,25 +427,25 @@
                          :pointer-events "fill"}}]))
 
      (when (:new-position @state)
-       [:& guide {:guide {:axis axis
-                          :position (:new-position @state)}
-                  :get-hover-frame get-hover-frame
-                  :vbox vbox
-                  :zoom zoom
-                  :hover? true
-                  :hover-frame frame}])]))
+       [:& guide* {:guide {:axis axis :position (:new-position @state)}
+                   :get-hover-frame get-hover-frame
+                   :vbox vbox
+                   :zoom zoom
+                   :is-hover true
+                   :hover-frame frame}])]))
 
-(mf/defc viewport-guides
-  {::mf/wrap [mf/memo]}
-  [{:keys [zoom vbox hover-frame disabled-guides? modifiers]}]
+(def ^:private lens:workspace-guides
+  (-> (l/key :guides)
+      (l/derived refs/workspace-page)))
 
-  (let [page (mf/deref refs/workspace-page)
-
-        guides (mf/use-memo
-                (mf/deps page vbox)
-                #(->> (get-in page [:options :guides] {})
-                      (vals)
-                      (filter (guide-inside-vbox? zoom vbox))))
+(mf/defc viewport-guides*
+  {::mf/wrap [mf/memo]
+   ::mf/props :obj}
+  [{:keys [zoom vbox hover-frame disabled-guides modifiers]}]
+  (let [guides (mf/deref lens:workspace-guides)
+        guides (mf/with-memo [guides vbox]
+                 (->> (vals guides)
+                      (filter (partial guide-inside-vbox? zoom vbox))))
 
         focus (mf/deref refs/workspace-focus-selected)
 
@@ -449,46 +454,42 @@
         ;; We use the ref to not redraw every guide everytime the hovering frame change
         ;; we're only interested to get the frame in the guide we're moving
         get-hover-frame
-        (mf/use-callback
-         (fn []
-           (mf/ref-val hover-frame-ref)))
+        (mf/use-fn
+         #(mf/ref-val hover-frame-ref))
 
         on-guide-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps vbox)
          (fn [guide]
            (if (guide-inside-vbox? zoom vbox guide)
              (st/emit! (dw/update-guides guide))
              (st/emit! (dw/remove-guide guide)))))]
 
-    (mf/use-effect
-     (mf/deps hover-frame)
-     (fn []
-       (mf/set-ref-val! hover-frame-ref hover-frame)))
+    (mf/with-effect [hover-frame]
+      (mf/set-ref-val! hover-frame-ref hover-frame))
 
     [:g.guides {:pointer-events "none"}
-     [:& new-guide-area {:vbox vbox
-                         :zoom zoom
-                         :axis :x
-                         :get-hover-frame get-hover-frame
-                         :disabled-guides? disabled-guides?}]
+     [:> new-guide-area* {:vbox vbox
+                          :zoom zoom
+                          :axis :x
+                          :get-hover-frame get-hover-frame
+                          :disabled-guides disabled-guides}]
 
-     [:& new-guide-area {:vbox vbox
-                         :zoom zoom
-                         :axis :y
-                         :get-hover-frame get-hover-frame
-                         :disabled-guides? disabled-guides?}]
+     [:> new-guide-area* {:vbox vbox
+                          :zoom zoom
+                          :axis :y
+                          :get-hover-frame get-hover-frame
+                          :disabled-guides disabled-guides}]
 
      (for [current guides]
        (when (or (nil? (:frame-id current))
                  (empty? focus)
                  (contains? focus (:frame-id current)))
-         [:& guide  {:key (str "guide-" (:id current))
+         [:> guide* {:key (dm/str "guide-" (:id current))
                      :guide current
                      :vbox vbox
                      :zoom zoom
-                     :frame-modifier (get-in modifiers [(:frame-id current) :modifiers])
+                     :frame-modifier (dm/get-in modifiers [(:frame-id current) :modifiers])
                      :get-hover-frame get-hover-frame
                      :on-guide-change on-guide-change
-                     :disabled-guides? disabled-guides?}]))]))
-
+                     :disabled-guides disabled-guides}]))]))

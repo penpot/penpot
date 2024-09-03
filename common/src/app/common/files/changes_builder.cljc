@@ -135,12 +135,6 @@
    (or (contains? (meta changes) ::page-id)
        (contains? (meta changes) ::component-id))))
 
-(defn- assert-page!
-  [changes]
-  (dm/assert!
-   "Call (with-page) before using this function"
-   (contains? (meta changes) ::page)))
-
 (defn- assert-objects!
   [changes]
   (dm/assert!
@@ -195,11 +189,30 @@
       (apply-changes-local)))
 
 (defn mod-page
-  [changes page new-name]
-  (-> changes
-      (update :redo-changes conj {:type :mod-page :id (:id page) :name new-name})
-      (update :undo-changes conj {:type :mod-page :id (:id page) :name (:name page)})
-      (apply-changes-local)))
+  ([changes options]
+   (let [page (::page (meta changes))]
+     (mod-page changes page options)))
+
+  ([changes page {:keys [name background]}]
+   (let [change {:type :mod-page :id (:id page)}
+         redo   (cond-> change
+                  (some? name)
+                  (assoc :name name)
+
+                  (some? background)
+                  (assoc :background background))
+
+         undo   (cond-> change
+                  (some? name)
+                  (assoc :name (:name page))
+
+                  (some? background)
+                  (assoc :background (:background page)))]
+
+     (-> changes
+         (update :redo-changes conj redo)
+         (update :undo-changes conj undo)
+         (apply-changes-local)))))
 
 (defn mod-plugin-data
   ([changes namespace key value]
@@ -246,42 +259,77 @@
       (update :undo-changes conj {:type :mov-page :id page-id :index prev-index})
       (apply-changes-local)))
 
-(defn set-page-option
-  [changes option-key option-val]
-  (assert-page! changes)
+
+(defn set-guide
+  [changes id guide]
   (let [page-id (::page-id (meta changes))
-        page (::page (meta changes))
-        old-val (get-in page [:options option-key])]
+        page    (::page (meta changes))
+        old-val (dm/get-in page [:guides id])]
 
     (-> changes
-        (update :redo-changes conj {:type :set-option
+        (update :redo-changes conj {:type :set-guide
                                     :page-id page-id
-                                    :option option-key
-                                    :value option-val})
-        (update :undo-changes conj {:type :set-option
+                                    :id id
+                                    :params guide})
+        (update :undo-changes conj {:type :set-guide
                                     :page-id page-id
-                                    :option option-key
-                                    :value old-val})
-        (apply-changes-local))))
-
-(defn update-page-option
-  [changes option-key update-fn & args]
-  (assert-page! changes)
+                                    :id id
+                                    :params old-val}))))
+(defn set-flow
+  [changes id flow]
   (let [page-id (::page-id (meta changes))
-        page (::page (meta changes))
-        old-val (get-in page [:options option-key])
-        new-val (apply update-fn old-val args)]
+        page    (::page (meta changes))
+        old-val (dm/get-in page [:flows id])
 
-    (-> changes
-        (update :redo-changes conj {:type :set-option
-                                    :page-id page-id
-                                    :option option-key
-                                    :value new-val})
-        (update :undo-changes conj {:type :set-option
-                                    :page-id page-id
-                                    :option option-key
-                                    :value old-val})
-        (apply-changes-local))))
+        changes (-> changes
+                    (update :redo-changes conj {:type :set-flow
+                                                :page-id page-id
+                                                :id id
+                                                :params flow})
+                    (update :undo-changes conj {:type :set-flow
+                                                :page-id page-id
+                                                :id id
+                                                :params old-val}))]
+    ;; FIXME: not sure if we need this
+    (apply-changes-local changes)))
+
+(defn set-comment-thread-position
+  [changes {:keys [id frame-id position] :as thread}]
+  (let [page-id (::page-id (meta changes))
+        page    (::page (meta changes))
+
+        old-val (dm/get-in page [:comment-thread-positions id])
+
+        changes (-> changes
+                    (update :redo-changes conj {:type :set-comment-thread-position
+                                                :comment-thread-id id
+                                                :page-id page-id
+                                                :frame-id frame-id
+                                                :position position})
+                    (update :undo-changes conj {:type :set-comment-thread-position
+                                                :page-id page-id
+                                                :comment-thread-id id
+                                                :frame-id (:frame-id old-val)
+                                                :position (:position old-val)}))]
+    ;; FIXME: not sure if we need this
+    (apply-changes-local changes)))
+
+(defn set-default-grid
+  [changes type params]
+  (let [page-id (::page-id (meta changes))
+        page    (::page (meta changes))
+        old-val (dm/get-in page [:grids type])
+
+        changes (update changes :redo-changes conj {:type :set-default-grid
+                                                    :page-id page-id
+                                                    :grid-type type
+                                                    :params params})
+        changes (update changes :undo-changes conj {:type :set-default-grid
+                                                    :page-id page-id
+                                                    :grid-type type
+                                                    :params old-val})]
+    ;; FIXME: not sure if we need this
+    (apply-changes-local changes)))
 
 ;; Shape tree changes
 

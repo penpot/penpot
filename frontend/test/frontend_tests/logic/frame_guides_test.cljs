@@ -46,7 +46,6 @@
                page'         (cthf/current-page file')
 
                guide'        (-> page'
-                                 :options
                                  :guides
                                  (vals)
                                  (first))]

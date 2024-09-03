@@ -7,7 +7,6 @@
 (ns app.worker.thumbnails
   (:require
    ["react-dom/server" :as rds]
-   [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.uri :as u]
    [app.config :as cf]
@@ -63,7 +62,7 @@
     (binding [fonts/loaded-hints (l/atom #{})]
       (let [objects  (:objects page)
             frame    (some->> page :thumbnail-frame-id (get objects))
-            background-color (dm/get-in page [:options :background])
+            background-color (:background page)
             element  (if frame
                        (mf/element render/frame-svg #js
                                                      {:objects objects

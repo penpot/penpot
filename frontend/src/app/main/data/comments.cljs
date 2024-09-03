@@ -65,7 +65,7 @@
        (let [position (select-keys thread [:position :frame-id])]
          (-> state
              (update :comment-threads assoc id (dissoc thread :comment))
-             (update-in [:workspace-data :pages-index page-id :options :comment-threads-position] assoc id position)
+             (update-in [:workspace-data :pages-index page-id :comment-thread-positions] assoc id position)
              (cond-> open?
                (update :comments-local assoc :open id))
              (update :comments-local assoc :options nil)
@@ -122,7 +122,7 @@
       (let [position (select-keys thread [:position :frame-id])]
         (-> state
             (update :comment-threads assoc id (dissoc thread :comment))
-            (update-in [:viewer :pages page-id :options :comment-threads-position] assoc id position)
+            (update-in [:viewer :pages page-id :comment-thread-positions] assoc id position)
             (update :comments-local assoc :open id)
             (update :comments-local assoc :options nil)
             (update :comments-local dissoc :draft)
@@ -273,7 +273,7 @@
      (update [_ state]
        (let [page-id (:current-page-id state)]
          (-> state
-             (update-in [:workspace-data :pages-index page-id :options :comment-threads-position] dissoc id)
+             (update-in [:workspace-data :pages-index page-id :comment-thread-positions] dissoc id)
              (update :comments dissoc id)
              (update :comment-threads dissoc id))))
 
@@ -299,7 +299,7 @@
     (update [_ state]
       (let [page-id (:current-page-id state)]
         (-> state
-            (update-in [:viewer :pages page-id :options :comment-threads-position] dissoc id)
+            (update-in [:viewer :pages page-id :comment-thread-positions] dissoc id)
             (update :comments dissoc id)
             (update :comment-threads dissoc id))))
 
@@ -356,7 +356,7 @@
   [file-id]
   (dm/assert! (uuid? file-id))
   (letfn [(set-comment-threds [state comment-thread]
-            (let [path [:workspace-data :pages-index (:page-id comment-thread) :options :comment-threads-position (:id comment-thread)]
+            (let [path [:workspace-data :pages-index (:page-id comment-thread) :comment-thread-positions (:id comment-thread)]
                   thread-position (get-in state path)]
               (cond-> state
                 (nil? thread-position)

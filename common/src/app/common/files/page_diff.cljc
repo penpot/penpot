@@ -15,10 +15,10 @@
   [old-page page check-attrs]
 
   (let [old-objects (get old-page :objects)
-        old-guides (or (get-in old-page [:options :guides]) [])
+        old-guides (or (get old-page :guides) [])
 
         new-objects (get page :objects)
-        new-guides (or (get-in page [:options :guides]) [])
+        new-guides (or (get page :guides) [])
 
         changed-object?
         (fn [id]

@@ -564,7 +564,7 @@
     (watch [it state _]
       (let [page    (get-in state [:workspace-data :pages-index id])
             changes (-> (pcb/empty-changes it)
-                        (pcb/mod-page page name))]
+                        (pcb/mod-page page {:name name}))]
 
         (rx/of (dch/commit-changes changes))))))
 
@@ -2067,7 +2067,7 @@
              page    (wsh/lookup-page state page-id)
              changes (-> (pcb/empty-changes it)
                          (pcb/with-page page)
-                         (pcb/set-page-option :background (:color color)))]
+                         (pcb/mod-page {:background (:color color)}))]
          (rx/of (dch/commit-changes changes)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
