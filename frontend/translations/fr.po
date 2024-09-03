@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-08-23 09:16+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-09-04 10:09+0000\n"
+"Last-Translator: Unreal Vision <unrealvisionyt@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 5.7.1-dev\n"
+"X-Generator: Weblate 5.7.2-rc\n"
 
 #: src/app/main/ui/auth/register.cljs:132, src/app/main/ui/static.cljs:139, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -2758,9 +2758,8 @@ msgid "onboarding.questions.start-with.code"
 msgstr "Générer du vrai code pour les designs"
 
 #: src/app/main/ui/onboarding/questions.cljs:347
-#, fuzzy
 msgid "onboarding.questions.start-with.ds"
-msgstr "Créer des Design Systems"
+msgstr "Création des Design Systems"
 
 #: src/app/main/ui/onboarding/questions.cljs:345
 msgid "onboarding.questions.start-with.prototyping"
@@ -5939,3 +5938,9 @@ msgstr "Actualiser"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
+
+#: src/app/main/ui/dashboard/import.cljs:497
+msgid "dashboard.import.import-message"
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "1 fichier a été importé avec succès."
+msgstr[1] "%s fichiers ont été importés avec succès."
