@@ -765,10 +765,10 @@
       (apply-changes-local)))
 
 (defn update-token
-  [changes set-id set-name {:keys [id] :as token} prev-token]
+  [changes set-id set-name {:keys [id name] :as token} {prev-name :name :as prev-token}]
   (-> changes
-      (update :redo-changes conj {:type :mod-token :set-id set-id :set-name set-name :id id :token token})
-      (update :undo-changes conj {:type :mod-token :set-id set-id :set-name set-name :id id :token (or prev-token token)})
+      (update :redo-changes conj {:type :mod-token :set-id set-id :set-name set-name :id id :name prev-name :token token})
+      (update :undo-changes conj {:type :mod-token :set-id set-id :set-name set-name :id id :name name :token (or prev-token token)})
       (apply-changes-local)))
 
 (defn delete-token

@@ -312,6 +312,7 @@
       [:set-id ::sm/uuid]
       [:set-name :string]
       [:id ::sm/uuid]
+      [:name :string]
       [:token ::cto/token]]]
 
     [:del-token
@@ -798,15 +799,15 @@
                    (ctob/add-token-in-set set-name (ctob/make-token token))))))
 
 (defmethod process-change :mod-token
-  [data {:keys [set-id set-name id token]}]
+  [data {:keys [set-name id name token]}]
   (-> data
-      (ctol/update-token data set-id id merge token)
+      (ctol/update-token id merge token)
       (update :tokens-lib
               #(-> %
                    (ctob/ensure-tokens-lib)
                    (ctob/update-token-in-set
                     set-name
-                    (:name token)
+                    name
                     (fn [old-token]
                       (ctob/make-token (merge old-token token))))))))
 

@@ -6,6 +6,7 @@
 
 (ns common-tests.types.tokens-lib-test
   (:require
+   [app.common.data :as d]
    [app.common.fressian :as fres]
    [app.common.time :as dt]
    [app.common.transit :as tr]
@@ -143,18 +144,21 @@
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
                         (ctob/add-set (ctob/make-token-set :name "test-token-set"))
                         (ctob/add-token-in-set "test-token-set"
-                                               (ctob/make-token :name "test-token"
+                                               (ctob/make-token :name "test-token-1"
+                                                                :type :boolean
+                                                                :value true))
+                        (ctob/add-token-in-set "test-token-set"
+                                               (ctob/make-token :name "test-token-2"
                                                                 :type :boolean
                                                                 :value true)))
 
         tokens-lib' (-> tokens-lib
-                        (ctob/update-token-in-set "test-token-set" "test-token"
+                        (ctob/update-token-in-set "test-token-set" "test-token-1"
                                                   (fn [token]
                                                     (assoc token
-                                                           :name "updated-name"
                                                            :description "some description"
                                                            :value false)))
-                        (ctob/update-token-in-set "not-existing-set" "test-token"
+                        (ctob/update-token-in-set "not-existing-set" "test-token-1"
                                                   (fn [token]
                                                     (assoc token
                                                            :name "no-effect")))
@@ -165,14 +169,47 @@
 
         token-set   (ctob/get-set tokens-lib "test-token-set")
         token-set'  (ctob/get-set tokens-lib' "test-token-set")
-        token       (get-in token-set [:tokens "test-token"])
+        token       (get-in token-set [:tokens "test-token-1"])
+        token'      (get-in token-set' [:tokens "test-token-1"])]
+
+    (t/is (= (ctob/set-count tokens-lib') 1))
+    (t/is (= (count (:tokens token-set')) 2))
+    (t/is (= (d/index-of (keys (:tokens token-set')) "test-token-1") 0))
+    (t/is (= (:name token') "test-token-1"))
+    (t/is (= (:description token') "some description"))
+    (t/is (= (:value token') false))
+    (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set)))
+    (t/is (dt/is-after? (:modified-at token') (:modified-at token)))))
+
+(t/deftest rename-token
+  (let [tokens-lib  (-> (ctob/make-tokens-lib)
+                        (ctob/add-set (ctob/make-token-set :name "test-token-set"))
+                        (ctob/add-token-in-set "test-token-set"
+                                               (ctob/make-token :name "test-token-1"
+                                                                :type :boolean
+                                                                :value true))
+                        (ctob/add-token-in-set "test-token-set"
+                                               (ctob/make-token :name "test-token-2"
+                                                                :type :boolean
+                                                                :value true)))
+
+        tokens-lib' (-> tokens-lib
+                        (ctob/update-token-in-set "test-token-set" "test-token-1"
+                                                  (fn [token]
+                                                    (assoc token
+                                                           :name "updated-name"))))
+
+        token-set   (ctob/get-set tokens-lib "test-token-set")
+        token-set'  (ctob/get-set tokens-lib' "test-token-set")
+        token       (get-in token-set [:tokens "test-token-1"])
         token'      (get-in token-set' [:tokens "updated-name"])]
 
     (t/is (= (ctob/set-count tokens-lib') 1))
-    (t/is (= (count (:tokens token-set')) 1))
+    (t/is (= (count (:tokens token-set')) 2))
+    (t/is (= (d/index-of (keys (:tokens token-set')) "updated-name") 0))
     (t/is (= (:name token') "updated-name"))
-    (t/is (= (:description token') "some description"))
-    (t/is (= (:value token') false))
+    (t/is (= (:description token') nil))
+    (t/is (= (:value token') true))
     (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set)))
     (t/is (dt/is-after? (:modified-at token') (:modified-at token)))))
 

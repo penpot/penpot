@@ -75,13 +75,13 @@
         (TokenSet. name
                    description
                    (dt/now)
-                   (cond-> tokens
-                      (not= (:name token) (:name token'))
-                      (dissoc (:name token))
-
-                      :always                          ; TODO: if token is renamed,
-                      (assoc (:name token') token')))) ;       it sould remain in
-      this))                                           ;       the same position
+                   (if (= (:name token) (:name token'))
+                     (assoc tokens (:name token') token')
+                     (let [index (d/index-of (keys tokens) (:name token))]
+                       (-> tokens
+                           (dissoc (:name token))
+                           (d/addm-at-index index (:name token') token'))))))
+      this))
 
   (delete-token [_ token-name]
     (TokenSet. name
@@ -180,13 +180,13 @@
       (let [set' (-> (make-token-set (f set))
                      (assoc :modified-at (dt/now)))]
         (check-token-set! set')
-        (TokensLib. (cond-> sets
-                      (not= (:name set) (:name set'))
-                      (dissoc (:name set))
-
-                      :always                    ; TODO: if set is renamed,
-                      (assoc (:name set') set')) ;       it sould remain in
-                    themes))                     ;       the same position
+        (TokensLib. (if (= (:name set) (:name set'))
+                      (assoc sets (:name set') set')
+                      (let [index (d/index-of (keys sets) (:name set))]
+                        (-> sets
+                            (dissoc (:name set))
+                            (d/addm-at-index index (:name set') set'))))
+                    themes))
       this))
 
   (delete-set [_ set-name]
@@ -220,7 +220,7 @@
                           #(update-token % token-name f))
                   themes)
       this))
-  
+
   (delete-token-from-set [this set-name token-name]
     (if (contains? sets set-name)
       (TokensLib. (update sets set-name

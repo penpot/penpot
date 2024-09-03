@@ -234,7 +234,8 @@
                               create-set?
                               (pcb/add-token-set token-set))
 
-              prev-token    (d/seek #(= (:id %) (:id token)) (:tokens token-set))   ; TODO
+              prev-token-id (d/seek #(= % (:id token)) (:tokens token-set))
+              prev-token    (get-token-data-from-token-id prev-token-id)
               create-token? (not prev-token)
 
               changes       (if create-token?
