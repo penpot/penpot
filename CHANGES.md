@@ -8,6 +8,9 @@
 
 ### :heart: Community contributions (Thank you!)
 
+- Set proper default tenant on exporter (by @june128) [#4946](https://github.com/penpot/penpot/pull/4946)
+- Correct a spelling in onboarding.edn (by @n-stha) [#4936](https://github.com/penpot/penpot/pull/4936)
+
 ### :sparkles: New features
 
 - **Tiered File Data Storage** [Taiga #8376](https://tree.taiga.io/project/penpot/us/8376)
@@ -55,6 +58,10 @@
 - Add separated flag `enable-oidc-registration` for enable the
   registration only for OIDC authentication backend [Github
   #4882](https://github.com/penpot/penpot/issues/4882)
+
+- https://tree.taiga.io/project/penpot/us/8145
+
+- Update templates in libraries & templates in dashboard modal [Taiga #8145](https://tree.taiga.io/project/penpot/us/8145)
 
 ### :bug: Bugs fixed
 
