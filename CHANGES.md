@@ -59,9 +59,15 @@
   registration only for OIDC authentication backend [Github
   #4882](https://github.com/penpot/penpot/issues/4882)
 
-- https://tree.taiga.io/project/penpot/us/8145
-
 - Update templates in libraries & templates in dashboard modal [Taiga #8145](https://tree.taiga.io/project/penpot/us/8145)
+
+- **Design System**
+
+  We implemented and subbed in new components from our Design System: `loader*` ([Taiga #8355](https://tree.taiga.io/project/penpot/task/8355))  and `tab-switcher*` ([Taiga #8518](https://tree.taiga.io/project/penpot/task/8518)).
+
+- **Storybook** [Taiga #6329](https://tree.taiga.io/project/penpot/us/6329)
+
+  The Design System components are now published in a Storybook, available at `/storybook`.
 
 ### :bug: Bugs fixed
 
