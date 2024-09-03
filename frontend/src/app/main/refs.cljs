@@ -236,9 +236,10 @@
              =))
 
 (def workspace-recent-colors
-  (l/derived (fn [data]
-               (get data :recent-colors []))
-             workspace-data))
+  (l/derived (fn [state]
+               (when-let [file-id (:current-file-id state)]
+                 (dm/get-in state [:recent-colors file-id])))
+             st/state))
 
 (def workspace-recent-fonts
   (l/derived (fn [data]
