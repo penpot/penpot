@@ -452,22 +452,28 @@
 
 (defn import-page
   [context file [page-id page-name content]]
-  (let [nodes (->> content parser/node-seq)
-        file-id (:id file)
-        resolve (:resolve context)
+  (let [nodes     (parser/node-seq content)
+        file-id   (:id file)
+        resolve   (:resolve context)
         page-data (-> (parser/parse-page-data content)
                       (assoc :name page-name)
                       (assoc :id (resolve page-id)))
-        flows     (->> (get-in page-data [:options :flows])
-                       (mapv #(update % :starting-frame resolve)))
+        flows     (->> (get page-data :flows)
+                       (update-vals #(update % :starting-frame resolve))
+                       (not-empty))
 
-        guides    (-> (get-in page-data [:options :guides])
-                      (update-vals #(update % :frame-id resolve)))
+        guides    (-> (get page-data :guides)
+                      (update-vals #(update % :frame-id resolve))
+                      (not-empty))
 
-        page-data (-> page-data
-                      (d/assoc-in-when [:options :flows] flows)
-                      (d/assoc-in-when [:options :guides] guides))
-        file      (-> file (fb/add-page page-data))
+        page-data (cond-> page-data
+                    flows
+                    (assoc :flows flows)
+
+                    guides
+                    (assoc :guides guides))
+
+        file      (fb/add-page file page-data)
 
         ;; Preprocess nodes to parallel upload the images. Store the result in a table
         ;; old-node => node with image

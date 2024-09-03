@@ -221,13 +221,14 @@
 (mf/defc flows-menu
   {::mf/wrap [mf/memo]}
   [{:keys [page index]}]
-  (let [flows        (dm/get-in page [:options :flows])
-        frames       (:frames page)
-        frame        (get frames index)
-        current-flow* (mf/use-state
-                       #(ctp/get-frame-flow flows (:id frame)))
+  (let [flows            (:flows page)
+        frames           (:frames page)
 
-        current-flow  (deref current-flow*)
+        frame            (get frames index)
+        current-flow*    (mf/use-state
+                          #(ctp/get-frame-flow flows (:id frame)))
+
+        current-flow     (deref current-flow*)
 
         show-dropdown?*  (mf/use-state false)
         show-dropdown?   (deref show-dropdown?*)

@@ -17,18 +17,12 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
-(defn make-update-guide
-  [guide]
-  (fn [other]
-    (cond-> other
-      (= (:id other) (:id guide))
-      (merge guide))))
-
 (defn update-guides
-  [guide]
+  [{:keys [id] :as guide}]
+
   (dm/assert!
    "expected valid guide"
-   (ctp/check-page-guide! guide))
+   (ctp/valid-guide? guide))
 
   (ptk/reify ::update-guides
     ev/Event
@@ -41,14 +35,15 @@
             changes
             (-> (pcb/empty-changes it)
                 (pcb/with-page page)
-                (pcb/update-page-option :guides assoc (:id guide) guide))]
+                (pcb/set-guide id guide))]
         (rx/of (dwc/commit-changes changes))))))
 
 (defn remove-guide
-  [guide]
+  [{:keys [id] :as guide}]
+
   (dm/assert!
    "expected valid guide"
-   (ctp/check-page-guide! guide))
+   (ctp/valid-guide? guide))
 
   (ptk/reify ::remove-guide
     ev/Event
@@ -57,7 +52,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [sdisj (fnil disj #{})]
-        (update-in state [:workspace-guides :hover] sdisj (:id guide))))
+        (update-in state [:workspace-guides :hover] sdisj id)))
 
     ptk/WatchEvent
     (watch [it state _]
@@ -65,18 +60,22 @@
             changes
             (-> (pcb/empty-changes it)
                 (pcb/with-page page)
-                (pcb/update-page-option :guides dissoc (:id guide)))]
+                (pcb/set-guide id nil))]
         (rx/of (dwc/commit-changes changes))))))
 
 (defn remove-guides
   [ids]
+
+  (dm/assert!
+   "expected a set of ids"
+   (every? uuid? ids))
+
   (ptk/reify ::remove-guides
     ptk/WatchEvent
     (watch [_ state _]
-      (let [page       (wsh/lookup-page state)
-            guides     (get-in page [:options :guides] {})
+      (let [{:keys [guides] :as page} (wsh/lookup-page state)
             guides (-> (select-keys guides ids) (vals))]
-        (rx/from (->> guides (mapv #(remove-guide %))))))))
+        (rx/from (mapv remove-guide guides))))))
 
 (defmethod ptk/resolve ::move-frame-guides
   [_ args]
@@ -105,7 +104,7 @@
                     guide (update guide :position + (get moved (:axis guide)))]
                 (update-guides guide)))
 
-            guides (-> state wsh/lookup-page-options :guides vals)]
+            guides (-> state wsh/lookup-page :guides vals)]
 
         (->> guides
              (filter (comp frame-ids? :frame-id))

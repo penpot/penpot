@@ -10,21 +10,25 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.schema :as sm]
    [app.common.schema.desc-native :as smd]
+   [app.common.schema.generators :as sg]
    [app.common.types.color :as ctc]
    [app.common.types.colors-list :as ctcl]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.grid :as ctg]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as ctt]
+   [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -60,6 +64,44 @@
      [:type [:= :set-remote-synced]]
      [:remote-synced {:optional true} [:maybe :boolean]]]]])
 
+(defn- set-default-grid-change-generator
+  []
+  (->> (sg/elements #{:square :column :row})
+       (sg/mcat (fn [type]
+                  (sg/fmap (fn [params]
+                             {:page-id (uuid/next)
+                              :type :mod-grid
+                              :grid-type type
+                              :params params})
+
+                           (case type
+                             :square (sg/generator ctg/schema:square-params)
+                             :column (sg/generator ctg/schema:column-params)
+                             :row    (sg/generator ctg/schema:column-params)))))))
+
+(def schema:set-default-grid-change
+  [:multi {:decode/json #(update % :grid-type keyword)
+           :gen/gen (set-default-grid-change-generator)
+           :dispatch :grid-type
+           ::smd/simplified true}
+   [:square
+    [:map
+     [:page-id ::sm/uuid]
+     [:grid-type [:and :keyword [:= :square]]]
+     [:params [:maybe ctg/schema:square-params]]]]
+
+   [:column
+    [:map
+     [:page-id ::sm/uuid]
+     [:grid-type [:and :keyword [:= :column]]]
+     [:params [:maybe ctg/schema:column-params]]]]
+
+   [:row
+    [:map
+     [:page-id ::sm/uuid]
+     [:grid-type [:and :keyword [:= :row]]]
+     [:params [:maybe ctg/schema:column-params]]]]])
+
 (def schema:change
   [:schema
    [:multi {:dispatch :type
@@ -67,13 +109,18 @@
             :decode/json #(update % :type keyword)
             ::smd/simplified true}
     [:set-option
-     [:map {:title "SetOptionChange"}
-      [:type [:= :set-option]]
+
+     ;; DEPRECATED: remove before 2.3 release
+     ;;
+     ;; Is still there for not cause error when event is received
+     [:map {:title "SetOptionChange"}]]
+
+    [:set-comment-thread-position
+     [:map
+      [:comment-thread-id ::sm/uuid]
       [:page-id ::sm/uuid]
-      [:option [:union
-                [:keyword]
-                [:vector {:gen/max 10} :keyword]]]
-      [:value :any]]]
+      [:frame-id [:maybe ::sm/uuid]]
+      [:position [:maybe ::gpt/point]]]]
 
     [:add-obj
      [:map {:title "AddObjChange"}
@@ -102,6 +149,22 @@
       [:page-id {:optional true} ::sm/uuid]
       [:component-id {:optional true} ::sm/uuid]
       [:ignore-touched {:optional true} :boolean]]]
+
+    [:set-guide
+     [:map {:title "SetGuideChange"}
+      [:page-id ::sm/uuid]
+      [:id ::sm/uuid]
+      [:params [:maybe ::ctp/guide]]]]
+
+    [:set-flow
+     [:map {:title "SetFlowChange"}
+      [:page-id ::sm/uuid]
+      [:id ::sm/uuid]
+      [:params [:maybe ::ctp/flow]]]]
+
+    ;; Change used for all crud operation on persisted grid options on
+    ;; the page.
+    [:set-default-grid schema:set-default-grid-change]
 
     [:fix-obj
      [:map {:title "FixObjChange"}
@@ -143,7 +206,10 @@
      [:map {:title "ModPageChange"}
       [:type [:= :mod-page]]
       [:id ::sm/uuid]
-      [:name :string]]]
+      ;; All props are optional, background can be nil because is the
+      ;; way to remove already set background
+      [:background {:optional true} [:maybe ::ctc/rgb-color]]
+      [:name {:optional true} :string]]]
 
     [:mod-plugin-data
      [:map {:title "ModPagePluginData"}
@@ -356,14 +422,49 @@
        #?(:clj (validate-shapes! data result items))
        result))))
 
+;; DEPRECATED: remove before 2.3 release
 (defmethod process-change :set-option
-  [data {:keys [page-id option value]}]
+  [data _]
+  data)
+
+;; --- Comment Threads
+
+(defmethod process-change :set-comment-thread-position
+  [data {:keys [page-id comment-thread-id position frame-id]}]
   (d/update-in-when data [:pages-index page-id]
-                    (fn [data]
-                      (let [path (if (seqable? option) option [option])]
-                        (if value
-                          (assoc-in data (into [:options] path) value)
-                          (assoc data :options (d/dissoc-in (:options data) path)))))))
+                    (fn [page]
+                      (if (and position frame-id)
+                        (update page :comment-thread-positions assoc
+                                comment-thread-id {:frame-id frame-id
+                                                   :position position})
+                        (update page :comment-thread-positions dissoc
+                                comment-thread-id)))))
+
+;; --- Guides
+
+(defmethod process-change :set-guide
+  [data {:keys [page-id id params]}]
+  (if (nil? params)
+    (d/update-in-when data [:pages-index page-id] update :guides dissoc id)
+    (d/update-in-when data [:pages-index page-id] update :guides assoc id params)))
+
+;; --- Flows
+
+(defmethod process-change :set-flow
+  [data {:keys [page-id id params]}]
+  (if (nil? params)
+    (d/update-in-when data [:pages-index page-id] update :flows dissoc id)
+    (d/update-in-when data [:pages-index page-id] update :flows assoc id params)))
+
+;; --- Grids
+
+(defmethod process-change :set-default-grid
+  [data {:keys [page-id grid-type params]}]
+  (if (nil? params)
+    (d/update-in-when data [:pages-index page-id] update :default-grids dissoc grid-type)
+    (d/update-in-when data [:pages-index page-id] update :default-grids assoc grid-type params)))
+
+;; --- Shape / Obj
 
 (defmethod process-change :add-obj
   [data {:keys [id obj page-id component-id frame-id parent-id index ignore-touched]}]
@@ -603,8 +704,20 @@
     (ctpl/add-page data page)))
 
 (defmethod process-change :mod-page
-  [data {:keys [id name]}]
-  (d/update-in-when data [:pages-index id] assoc :name name))
+  [data {:keys [id] :as params}]
+  (d/update-in-when data [:pages-index id]
+                    (fn [page]
+                      (let [name (get params :name)
+                            bg   (get params :background :not-found)]
+                        (cond-> page
+                          (string? name)
+                          (assoc :name name)
+
+                          (string? bg)
+                          (assoc :background bg)
+
+                          (nil? bg)
+                          (dissoc :background))))))
 
 (defmethod process-change :mod-plugin-data
   [data {:keys [object-type object-id page-id namespace key value]}]
@@ -659,6 +772,7 @@
 (defmethod process-change :add-recent-color
   [data _]
   data)
+
 
 ;; -- Media
 

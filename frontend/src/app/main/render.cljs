@@ -211,7 +211,7 @@
         shapes  (cfh/get-immediate-children objects)
         dim     (calculate-dimensions objects aspect-ratio)
         vbox    (format-viewbox dim)
-        bgcolor (dm/get-in data [:options :background] default-color)
+        bgcolor (get data :background default-color)
 
         shape-wrapper
         (mf/use-memo
@@ -232,7 +232,7 @@
               :fill "none"}
 
         (when include-metadata
-          [:& export/export-page {:id (:id data) :options (:options data)}])
+          [:& export/export-page {:page data}])
 
         (let [shapes (->> shapes
                           (remove cfh/frame-shape?)

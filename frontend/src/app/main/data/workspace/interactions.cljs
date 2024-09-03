@@ -43,18 +43,20 @@
                        (wsh/lookup-page state page-id)
                        (wsh/lookup-page state))
 
-             flows   (get-in page [:options :flows] [])
-             unames  (cfh/get-used-names flows)
+             flows   (get page :flows)
+             unames  (cfh/get-used-names (vals flows))
              name    (or name (cfh/generate-unique-name unames "Flow 1"))
 
-             new-flow {:id (or flow-id (uuid/next))
-                       :name name
-                       :starting-frame starting-frame}]
+             flow-id (or flow-id (uuid/next))
+
+             flow    {:id flow-id
+                      :name name
+                      :starting-frame starting-frame}]
 
          (rx/of (dch/commit-changes
                  (-> (pcb/empty-changes it)
                      (pcb/with-page page)
-                     (pcb/update-page-option :flows ctp/add-flow new-flow)))))))))
+                     (pcb/set-flow flow-id flow)))))))))
 
 (defn add-flow-selected-frame
   []
@@ -79,35 +81,40 @@
          (rx/of (dch/commit-changes
                  (-> (pcb/empty-changes it)
                      (pcb/with-page page)
-                     (pcb/update-page-option :flows ctp/remove-flow flow-id)))))))))
+                     (pcb/set-flow flow-id nil)))))))))
 
 (defn update-flow
   [page-id flow-id update-fn]
-  (dm/assert! (uuid? flow-id))
+
+  (assert (uuid? flow-id) "expect valid flow-id")
+  (assert (uuid? page-id) "expect valid page-id")
+
   (ptk/reify ::update-flow
     ptk/WatchEvent
     (watch [it state _]
       (let [page (if page-id
                    (wsh/lookup-page state page-id)
-                   (wsh/lookup-page state))]
-        (rx/of (dch/commit-changes
-                (-> (pcb/empty-changes it)
-                    (pcb/with-page page)
-                    (pcb/update-page-option :flows ctp/update-flow flow-id update-fn))))))))
+                   (wsh/lookup-page state))
+            flow (dm/get-in page [:flows flow-id])
+            flow (some-> flow update-fn)]
+
+        (when (some? flow)
+          (rx/of (dch/commit-changes
+                  (-> (pcb/empty-changes it)
+                      (pcb/with-page page)
+                      (pcb/set-flow flow-id flow)))))))))
 
 (defn rename-flow
   [flow-id name]
-  (dm/assert! (uuid? flow-id))
-  (dm/assert! (string? name))
+
+  (assert (uuid? flow-id) "expected valid flow-id")
+  (assert (string? name) "expected valid name")
+
   (ptk/reify ::rename-flow
     ptk/WatchEvent
-    (watch [it state _]
+    (watch [_ state _]
       (let [page (wsh/lookup-page state)]
-        (rx/of (dch/commit-changes
-                (-> (pcb/empty-changes it)
-                    (pcb/with-page page)
-                    (pcb/update-page-option :flows ctp/update-flow flow-id
-                                            #(ctp/rename-flow % name)))))))))
+        (rx/of (update-flow (:id page) flow-id #(assoc % :name name)))))))
 
 (defn start-rename-flow
   [id]
@@ -153,13 +160,11 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [page-id  (:current-page-id state)
-             objects  (wsh/lookup-page-objects state page-id)
+             page     (wsh/lookup-page state page-id)
+             objects  (get page :objects)
              frame    (cfh/get-root-frame objects (:id shape))
-             flows    (get-in state [:workspace-data
-                                     :pages-index
-                                     page-id
-                                     :options
-                                     :flows] [])
+
+             flows    (get page :objects)
              flow     (ctp/get-frame-flow flows (:id frame))]
          (rx/concat
           (rx/of (dwsh/update-shapes [(:id shape)]

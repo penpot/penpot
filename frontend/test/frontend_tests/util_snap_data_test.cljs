@@ -391,9 +391,9 @@
 
   (t/testing "Update global guide"
     (let [guide {:position 50 :axis :x}
-          file (-> (fb/create-file "Test")
-                   (fb/add-page {:name "Page 1"})
-                   (fb/add-guide guide))
+          file  (-> (fb/create-file "Test")
+                    (fb/add-page {:name "Page 1"})
+                    (fb/add-guide guide))
 
           guide-id (:last-id file)
           guide (assoc guide :id guide-id)
@@ -403,7 +403,7 @@
 
           frame-id (:last-id file)
           page     (fb/get-current-page file)
-          data (-> (sd/make-snap-data) (sd/add-page page))
+          data     (-> (sd/make-snap-data) (sd/add-page page))
 
           new-page (-> (fb/update-guide file (assoc guide :position 150))
                        (fb/get-current-page))

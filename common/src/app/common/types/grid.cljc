@@ -6,6 +6,7 @@
 
 (ns app.common.types.grid
   (:require
+   [app.common.colors :as clr]
    [app.common.schema :as sm]
    [app.common.types.color :as ctc]))
 
@@ -54,7 +55,7 @@
      [:display :boolean]
      [:params schema:square-params]]]])
 
-(def schema:saved-grids
+(def schema:default-grids
   [:map {:title "PageGrid"}
    [:square {:optional true} ::square-params]
    [:row {:optional true} ::column-params]
@@ -63,4 +64,24 @@
 (sm/register! ::square-params schema:square-params)
 (sm/register! ::column-params schema:column-params)
 (sm/register! ::grid schema:grid)
-(sm/register! ::saved-grids schema:saved-grids)
+(sm/register! ::default-grids schema:default-grids)
+
+(def ^:private default-square-params
+  {:size 16
+   :color {:color clr/info
+           :opacity 0.4}})
+
+(def ^:private default-layout-params
+  {:size 12
+   :type :stretch
+   :item-length nil
+   :gutter 8
+   :margin 0
+   :color {:color clr/default-layout
+           :opacity 0.1}})
+
+(def default-grid-params
+  {:square default-square-params
+   :column default-layout-params
+   :row    default-layout-params})
+

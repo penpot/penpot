@@ -741,46 +741,36 @@
 
 (defn add-guide
   [file guide]
-
   (let [guide (cond-> guide
                 (nil? (:id guide))
                 (assoc :id (uuid/next)))
-        page-id (:current-page-id file)
-        old-guides (or (dm/get-in file [:data :pages-index page-id :options :guides]) {})
-        new-guides (assoc old-guides (:id guide) guide)]
+        page-id (:current-page-id file)]
     (-> file
         (commit-change
-         {:type :set-option
+         {:type :set-guide
           :page-id page-id
-          :option :guides
-          :value new-guides})
+          :id (:id guide)
+          :params guide})
         (assoc :last-id (:id guide)))))
 
 (defn delete-guide
   [file id]
 
-  (let [page-id (:current-page-id file)
-        old-guides (or (dm/get-in file [:data :pages-index page-id :options :guides]) {})
-        new-guides (dissoc old-guides id)]
-    (-> file
-        (commit-change
-         {:type :set-option
-          :page-id page-id
-          :option :guides
-          :value new-guides}))))
+  (let [page-id (:current-page-id file)]
+    (commit-change file
+                   {:type :set-guide
+                    :page-id page-id
+                    :id id
+                    :params nil})))
 
 (defn update-guide
   [file guide]
-
-  (let [page-id (:current-page-id file)
-        old-guides (or (dm/get-in file [:data :pages-index page-id :options :guides]) {})
-        new-guides (assoc old-guides (:id guide) guide)]
-    (-> file
-        (commit-change
-         {:type :set-option
-          :page-id page-id
-          :option :guides
-          :value new-guides}))))
+  (let [page-id (:current-page-id file)]
+    (commit-change file
+                   {:type :set-guide
+                    :page-id page-id
+                    :id (:id guide)
+                    :params guide})))
 
 (defn strip-image-extension [filename]
   (let [image-extensions-re #"(\.png)|(\.jpg)|(\.jpeg)|(\.webp)|(\.gif)|(\.svg)$"]

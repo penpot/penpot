@@ -41,7 +41,8 @@
 
         positions-ref
         (mf/with-memo [page-id]
-          (-> (l/in [:workspace-data :pages-index page-id :options :comment-threads-position])
+          ;; FIXME: use lookup helpers here
+          (-> (l/in [:workspace-data :pages-index page-id :comment-thread-positions])
               (l/derived st/state)))
 
         positions   (mf/deref positions-ref)

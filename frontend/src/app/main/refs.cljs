@@ -281,6 +281,9 @@
                  (dm/get-in data [:pages-index page-id])))
              st/state))
 
+(def workspace-page-flows
+  (l/derived #(-> % :flows not-empty) workspace-page))
+
 (defn workspace-page-objects-by-id
   [page-id]
   (l/derived #(wsh/lookup-page-objects % page-id) st/state =))
@@ -342,9 +345,6 @@
      (let [children-ids (cph/get-children-ids objects id)]
        (into [] (keep (d/getf objects)) children-ids)))
    workspace-page-objects =))
-
-(def workspace-page-options
-  (l/derived :options workspace-page))
 
 (def workspace-frames
   (l/derived ctt/get-frames workspace-page-objects =))

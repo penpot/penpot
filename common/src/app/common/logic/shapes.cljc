@@ -7,13 +7,11 @@
 (ns app.common.logic.shapes
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
-   [app.common.types.page :as ctp]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]))
@@ -85,7 +83,9 @@
                     (pcb/with-page page)
                     (pcb/with-objects objects)
                     (pcb/with-library-data file))
+
         lookup  (d/getf objects)
+
         groups-to-unmask
         (reduce (fn [group-ids id]
                   ;; When the shape to delete is the mask of a masked group,
@@ -110,23 +110,14 @@
                           interactions)))
                 (vals objects))
 
-        ids-set (set ids-to-delete)
-        guides-to-remove
-        (->> (dm/get-in page [:options :guides])
-             (vals)
-             (filter #(contains? ids-set (:frame-id %)))
-             (map :id))
+        changes
+        (reduce (fn [changes {:keys [id] :as flow}]
+                  (if (contains? ids-to-delete (:starting-frame flow))
+                    (pcb/set-flow changes id nil)
+                    changes))
+                changes
+                (:flows page))
 
-        guides
-        (->> guides-to-remove
-             (reduce dissoc (dm/get-in page [:options :guides])))
-
-        starting-flows
-        (filter (fn [flow]
-                  ;; If any of the deleted is a frame that starts a flow,
-                  ;; this must be deleted, too.
-                  (contains? ids-to-delete (:starting-frame flow)))
-                (-> page :options :flows))
 
         all-parents
         (reduce (fn [res id]
@@ -172,8 +163,18 @@
                   (into ids-to-delete all-children))
           [])
 
-        changes (-> changes
-                    (pcb/set-page-option :guides guides))
+        ids-set (set ids-to-delete)
+
+        guides-to-delete
+        (->> (:guides page)
+             (vals)
+             (filter #(contains? ids-set (:frame-id %)))
+             (map :id))
+
+        changes (reduce (fn [changes guide-id]
+                          (pcb/set-flow changes guide-id nil))
+                        changes
+                        guides-to-delete)
 
         changes (reduce (fn [changes component-id]
                           ;; It's important to delete the component before the main instance, because we
@@ -181,6 +182,7 @@
                           (pcb/delete-component changes component-id (:id page)))
                         changes
                         components-to-delete)
+
         changes (-> changes
                     (generate-update-shape-flags ids-to-hide objects {:hidden true})
                     (pcb/remove-objects all-children {:ignore-touched true})
@@ -197,11 +199,7 @@
                                                           (into []
                                                                 (remove #(and (ctsi/has-destination %)
                                                                               (contains? ids-to-delete (:destination %))))
-                                                                interactions)))))
-                    (cond-> (seq starting-flows)
-                      (pcb/update-page-option :flows (fn [flows]
-                                                       (->> (map :id starting-flows)
-                                                            (reduce ctp/remove-flow flows))))))]
+                                                                interactions))))))]
     [all-parents changes]))
 
 
