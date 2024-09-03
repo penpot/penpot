@@ -193,7 +193,7 @@
         :set
         (fn [self value]
           (let [font    (fonts/get-font-data (obj/get self "fontId"))
-                variant (fonts/find-variant font {:weight (dm/str value)})]
+                variant (fonts/find-variant font {:style (dm/str value)})]
             (cond
               (nil? variant)
               (u/display-not-valid :fontStyle (dm/str "Font style '" value "' not supported for the current font"))
@@ -456,7 +456,7 @@
     (fn [self value]
       (let [id (obj/get self "$id")
             font    (fonts/get-font-data (obj/get self "fontId"))
-            variant (fonts/find-variant font {:weight (dm/str value)})]
+            variant (fonts/find-variant font {:style (dm/str value)})]
         (cond
           (nil? variant)
           (u/display-not-valid :fontStyle (dm/str "Font style '" value "' not supported for the current font"))
