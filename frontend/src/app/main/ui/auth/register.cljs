@@ -177,7 +177,6 @@
   [{:keys [params on-success-callback]}]
   (let [form       (fm/use-form :schema schema:register-validate-form :initial params)
         submitted? (mf/use-state false)
-        theme      (when (cf/external-feature-flag "onboarding-02" "test") "light")
 
         on-success
         (mf/use-fn
@@ -209,8 +208,7 @@
          (mf/deps on-success on-error)
          (fn [form _]
            (reset! submitted? true)
-           (let [params (cond-> (:clean-data @form)
-                          (some? theme) (assoc :theme theme))]
+           (let [params (:clean-data @form)]
              (->> (rp/cmd! :register-profile params)
                   (rx/finalize #(reset! submitted? false))
                   (rx/subs! on-success on-error)))))]

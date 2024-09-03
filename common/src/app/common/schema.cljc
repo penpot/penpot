@@ -906,8 +906,7 @@
 
 (register! ::inst type:inst)
 
-(register! ::fn
-  [:schema fn?])
+(register! ::fn [:schema fn?])
 
 ;; FIXME: deprecated, replace with ::text
 

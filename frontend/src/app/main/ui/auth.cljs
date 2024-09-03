@@ -29,15 +29,10 @@
                          (not= section :auth-register-validate)
                          (not= section :auth-register-success))
         params  (:query-params route)
-        error   (:error params)
-        default-light?   (cf/external-feature-flag "onboarding-02" "test")]
+        error   (:error params)]
 
     (mf/with-effect []
       (dom/set-html-title (tr "title.default")))
-
-    (mf/with-effect [default-light?]
-      (when default-light?
-        (dom/set-html-theme-color "light")))
 
     (mf/with-effect [error]
       (when error
