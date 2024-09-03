@@ -576,12 +576,6 @@
 (defn shape-proxy? [p]
   (instance? ShapeProxy p))
 
-;; Prevent circular dependency
-(do (set! flex/shape-proxy? shape-proxy?)
-    (set! grid/shape-proxy? shape-proxy?))
-
-(set! format/shape-proxy shape-proxy)
-
 (crc/define-properties!
   ShapeProxy
   {:name js/Symbol.toStringTag
