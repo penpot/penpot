@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.1.5
+
+### :bug: Bugs fixed
+
+- Fix broken webhooks [Taiga #8370](https://tree.taiga.io/project/penpot/issue/8370)
+
 ## 2.1.4
 
 ### :bug: Bugs fixed

@@ -263,6 +263,8 @@
                          (assoc ::wrk/dedupe dedupe?)
                          (assoc ::wrk/label label)
                          (assoc ::wrk/params (-> params
+                                                 (dissoc :source)
+                                                 (dissoc :context)
                                                  (dissoc :ip-addr)
                                                  (dissoc :type)))))))
     params))
