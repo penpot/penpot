@@ -29,17 +29,26 @@
     {:x (obj/get point "x")
      :y (obj/get point "y")}))
 
+(defn parse-shape-type
+  [type]
+  (case type
+    "board"     :frame
+    "boolean"   :bool
+    "rectangle" :rect
+    "ellipse"   :circle
+    (parse-keyword type)))
+
 ;; {
 ;;    name?: string;
 ;;    nameLike?: string;
 ;;    type?:
-;;      | 'frame'
+;;      | 'board'
 ;;      | 'group'
-;;      | 'bool'
-;;      | 'rect'
+;;      | 'boolean'
+;;      | 'rectangle'
 ;;      | 'path'
 ;;      | 'text'
-;;      | 'circle'
+;;      | 'ellipse'
 ;;      | 'svg-raw'
 ;;      | 'image';
 ;;  }
@@ -49,9 +58,9 @@
     (d/without-nils
      {:name (obj/get criteria "name")
       :name-like (obj/get criteria "nameLike")
-      :type (-> (obj/get criteria "type") parse-keyword)})))
+      :type (-> (obj/get criteria "type") parse-shape-type)})))
 
-;;export type PenpotImageData = {
+;;export type ImageData = {
 ;;  name?: string;
 ;;  width: number;
 ;;  height: number;
@@ -70,7 +79,7 @@
       :mtype (obj/get image-data "mtype")
       :keep-aspect-ratio (obj/get image-data "keepApectRatio")})))
 
-;; export type PenpotGradient = {
+;; export type Gradient = {
 ;;   type: 'linear' | 'radial';
 ;;   startX: number;
 ;;   startY: number;
@@ -100,7 +109,7 @@
       :stops (->> (obj/get gradient "stops")
                   (mapv parse-gradient-stop))})))
 
-;; export interface PenpotColor {
+;; export interface Color {
 ;;   id?: string;
 ;;   name?: string;
 ;;   path?: string;
@@ -108,8 +117,8 @@
 ;;   opacity?: number;
 ;;   refId?: string;
 ;;   refFile?: string;
-;;   gradient?: PenpotGradient;
-;;   image?: PenpotImageData;
+;;   gradient?: Gradient;
+;;   image?: ImageData;
 ;; }
 (defn parse-color
   [^js color]
@@ -125,7 +134,7 @@
       :gradient (-> (obj/get color "gradient") parse-gradient)
       :image (-> (obj/get color "image") parse-image-data)})))
 
-;; export interface PenpotShadow {
+;; export interface Shadow {
 ;;   id?: string;
 ;;   style?: 'drop-shadow' | 'inner-shadow';
 ;;   offsetX?: number;
@@ -133,7 +142,7 @@
 ;;   blur?: number;
 ;;   spread?: number;
 ;;   hidden?: boolean;
-;;   color?: PenpotColor;
+;;   color?: Color;
 ;; }
 (defn parse-shadow
   [^js shadow]
@@ -153,13 +162,13 @@
   (when (some? shadows)
     (into [] (map parse-shadow) shadows)))
 
-;;export interface PenpotFill {
+;;export interface Fill {
 ;;  fillColor?: string;
 ;;  fillOpacity?: number;
-;;  fillColorGradient?: PenpotGradient;
+;;  fillColorGradient?: Gradient;
 ;;  fillColorRefFile?: string;
 ;;  fillColorRefId?: string;
-;;  fillImage?: PenpotImageData;
+;;  fillImage?: ImageData;
 ;;}
 (defn parse-fill
   [^js fill]
@@ -177,7 +186,7 @@
   (when (some? fills)
     (into [] (map parse-fill) fills)))
 
-;; export interface PenpotStroke {
+;; export interface Stroke {
 ;;   strokeColor?: string;
 ;;   strokeColorRefFile?: string;
 ;;   strokeColorRefId?: string;
@@ -185,9 +194,9 @@
 ;;   strokeStyle?: 'solid' | 'dotted' | 'dashed' | 'mixed' | 'none' | 'svg';
 ;;   strokeWidth?: number;
 ;;   strokeAlignment?: 'center' | 'inner' | 'outer';
-;;   strokeCapStart?: PenpotStrokeCap;
-;;   strokeCapEnd?: PenpotStrokeCap;
-;;   strokeColorGradient?: PenpotGradient;
+;;   strokeCapStart?: StrokeCap;
+;;   strokeCapEnd?: StrokeCap;
+;;   strokeColorGradient?: Gradient;
 ;; }
 (defn parse-stroke
   [^js stroke]
@@ -209,7 +218,7 @@
   (when (some? strokes)
     (into [] (map parse-stroke) strokes)))
 
-;; export interface PenpotBlur {
+;; export interface Blur {
 ;;   id?: string;
 ;;   type?: 'layer-blur';
 ;;   value?: number;
@@ -225,7 +234,7 @@
       :hidden (obj/get blur "hidden")})))
 
 
-;; export interface PenpotExport {
+;; export interface Export {
 ;;   type: 'png' | 'jpeg' | 'svg' | 'pdf';
 ;;   scale: number;
 ;;   suffix: string;
@@ -243,7 +252,7 @@
   (when (some? exports)
     (into [] (map parse-export) exports)))
 
-;; export interface PenpotFrameGuideColumnParams {
+;; export interface GuideColumnParams {
 ;;   color: { color: string; opacity: number };
 ;;   type?: 'stretch' | 'left' | 'center' | 'right';
 ;;   size?: number;
@@ -262,10 +271,10 @@
       :item-length (obj/get params "itemLength")
       :gutter (obj/get params "gutter")})))
 
-;; export interface PenpotFrameGuideColumn {
+;; export interface GuideColumn {
 ;;   type: 'column';
 ;;   display: boolean;
-;;   params: PenpotFrameGuideColumnParams;
+;;   params: GuideColumnParams;
 ;; }
 (defn parse-frame-guide-column
   [^js guide]
@@ -275,10 +284,10 @@
       :display (obj/get guide "display")
       :params (-> (obj/get guide "params") parse-frame-guide-column-params)})))
 
-;; export interface PenpotFrameGuideRow {
+;; export interface GuideRow {
 ;;   type: 'row';
 ;;   display: boolean;
-;;   params: PenpotFrameGuideColumnParams;
+;;   params: GuideColumnParams;
 ;; }
 
 (defn parse-frame-guide-row
@@ -289,7 +298,7 @@
       :display (obj/get guide "display")
       :params (-> (obj/get guide "params") parse-frame-guide-column-params)})))
 
-;;export interface PenpotFrameGuideSquareParams {
+;;export interface GuideSquareParams {
 ;;  color: { color: string; opacity: number };
 ;;  size?: number;
 ;;}
@@ -300,10 +309,10 @@
      {:color (-> (obj/get params "color") parse-color)
       :size (obj/get params "size")})))
 
-;; export interface PenpotFrameGuideSquare {
+;; export interface GuideSquare {
 ;;   type: 'square';
 ;;   display: boolean;
-;;   params: PenpotFrameGuideSquareParams;
+;;   params: GuideSquareParams;
 ;; }
 (defn parse-frame-guide-square
   [^js guide]
@@ -331,7 +340,7 @@
   (when (some? guides)
     (into [] (map parse-frame-guide) guides)))
 
-;;interface PenpotPathCommand {
+;;interface PathCommand {
 ;;  command:
 ;;    | 'M' | 'move-to'
 ;;    | 'Z' | 'close-path'
@@ -401,13 +410,13 @@
   (when (some? content)
     (into [] (map parse-command) content)))
 
-;; export interface PenpotDissolve {
+;; export interface Dissolve {
 ;;   type: 'dissolve';
 ;;   duration: number;
 ;;   easing?: 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out';
 ;; }
 ;;
-;; export interface PenpotSlide {
+;; export interface Slide {
 ;;   type: 'slide';
 ;;   way: 'in' | 'out';
 ;;   direction?:
@@ -420,7 +429,7 @@
 ;;   easing?: 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out';
 ;; }
 ;;
-;; export interface PenpotPush {
+;; export interface Push {
 ;;   type: 'push';
 ;;   direction?:
 ;;     | 'right'
@@ -432,7 +441,7 @@
 ;;   easing?: 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out';
 ;; }
 ;;
-;; export type PenpotAnimation = PenpotDissolve | PenpotSlide | PenpotPush;
+;; export type Animation = Dissolve | Slide | Push;
 
 (defn parse-animation
   [^js animation]
@@ -461,24 +470,24 @@
 
          nil)))))
 
-;;export type PenpotAction =
-;;  | PenpotNavigateTo
-;;  | PenpotOpenOverlay
-;;  | PenpotToggleOverlay
-;;  | PenpotCloseOverlay
-;;  | PenpotPreviousScreen
-;;  | PenpotOpenUrl;
+;;export type Action =
+;;  | NavigateTo
+;;  | OpenOverlay
+;;  | ToggleOverlay
+;;  | CloseOverlay
+;;  | PreviousScreen
+;;  | OpenUrl;
 ;;
-;;export interface PenpotNavigateTo {
+;;export interface NavigateTo {
 ;;  type: 'navigate-to';
-;;  destination: PenpotFrame;
+;;  destination: Board;
 ;;  preserveScrollPosition?: boolean;
-;;  animation: PenpotAnimation;
+;;  animation: Animation;
 ;;}
 ;;
-;;export interface PenpotOverlayAction {
-;;  destination: PenpotFrame;
-;;  relativeTo?: PenpotShape;
+;;export interface OverlayAction {
+;;  destination: Board;
+;;  relativeTo?: Shape;
 ;;  position?:
 ;;    | 'manual'
 ;;    | 'center'
@@ -488,31 +497,31 @@
 ;;    | 'bottom-left'
 ;;    | 'bottom-right'
 ;;    | 'bottom-center';
-;;  manualPositionLocation?: PenpotPoint;
+;;  manualPositionLocation?: Point;
 ;;  closeWhenClickOutside?: boolean;
 ;;  addBackgroundOverlay?: boolean;
-;;  animation: PenpotAnimation;
+;;  animation: Animation;
 ;;}
 ;;
-;;export interface PenpotOpenOverlay extends PenpotOverlayAction {
+;;export interface OpenOverlay extends OverlayAction {
 ;;  type: 'open-overlay';
 ;;}
 ;;
-;;export interface PenpotToggleOverlay extends PenpotOverlayAction {
+;;export interface ToggleOverlay extends OverlayAction {
 ;;  type: 'toggle-overlay';
 ;;}
 ;;
-;;export interface PenpotCloseOverlay {
+;;export interface CloseOverlay {
 ;;  type: 'close-overlay';
-;;  destination?: PenpotFrame;
-;;  animation: PenpotAnimation;
+;;  destination?: Board;
+;;  animation: Animation;
 ;;}
 ;;
-;;export interface PenpotPreviousScreen {
+;;export interface PreviousScreen {
 ;;  type: 'previous-screen';
 ;;}
 ;;
-;;export interface PenpotOpenUrl {
+;;export interface OpenUrl {
 ;;  type: 'open-url';
 ;;  url: string;
 ;;}

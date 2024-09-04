@@ -605,7 +605,7 @@
            :get #(-> % u/proxy->shape :id str)}
 
           {:name "type"
-           :get #(-> % u/proxy->shape :type d/name)}
+           :get #(-> % u/proxy->shape :type format/shape-type)}
 
           {:name "name"
            :get #(-> % u/proxy->shape :name)
@@ -655,6 +655,21 @@
                :else
                (let [id (obj/get self "$id")]
                  (st/emit! (dwsh/update-shapes [id] #(assoc % :hidden value))))))}
+
+          {:name "visible"
+           :get #(-> % u/proxy->shape :hidden boolean not)
+           :set
+           (fn [self value]
+             (cond
+               (not (boolean? value))
+               (u/display-not-valid :visible value)
+
+               (not (r/check-permission plugin-id "content:write"))
+               (u/display-not-valid :visible "Plugin doesn't have 'content:write' permission")
+
+               :else
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwsh/update-shapes [id] #(assoc % :hidden (not value)))))))}
 
           {:name "proportionLock"
            :get #(-> % u/proxy->shape :proportion-lock boolean)
@@ -972,7 +987,7 @@
                      parent-y (:y parent)]
                  (st/emit! (dw/update-position id {:y (+ parent-y value)})))))}
 
-          {:name "frameX"
+          {:name "boardX"
            :get (fn [self]
                   (let [shape (u/proxy->shape self)
                         frame-id (:parent-id shape)
@@ -995,7 +1010,7 @@
                      frame-x (:x frame)]
                  (st/emit! (dw/update-position id {:x (+ frame-x value)})))))}
 
-          {:name "frameY"
+          {:name "boardY"
            :get (fn [self]
                   (let [shape (u/proxy->shape self)
                         frame-id (:parent-id shape)

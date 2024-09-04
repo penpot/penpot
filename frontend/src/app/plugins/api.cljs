@@ -227,7 +227,7 @@
             ids (into #{} (map #(obj/get % "$id")) shapes)]
         (st/emit! (dwg/ungroup-shapes ids)))))
 
-  (createFrame
+  (createBoard
     [_]
     (create-shape $plugin :frame))
 

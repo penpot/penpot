@@ -223,22 +223,22 @@
         (t/is (= (-> (. shape -strokes) (aget 0) (aget "strokeWidth")) 5))))
 
     (t/testing "Relative properties"
-      (let [frame (.createFrame context)]
-        (set! (.-x frame) 100)
-        (set! (.-y frame) 200)
-        (t/is (= (.-x frame) 100))
-        (t/is (= (.-y frame) 200))
-        (.appendChild frame shape)
+      (let [board (.createBoard context)]
+        (set! (.-x board) 100)
+        (set! (.-y board) 200)
+        (t/is (= (.-x board) 100))
+        (t/is (= (.-y board) 200))
+        (.appendChild board shape)
 
-        (t/testing " - frameX"
-          (set! (.-frameX shape) 10)
-          (t/is (m/close? (.-frameX shape) 10))
+        (t/testing " - boardX"
+          (set! (.-boardX shape) 10)
+          (t/is (m/close? (.-boardX shape) 10))
           (t/is (m/close? (.-x shape) 110))
           (t/is (m/close? (get-in @store (get-shape-path :x)) 110)))
 
-        (t/testing " - frameY"
-          (set! (.-frameY shape) 20)
-          (t/is (m/close? (.-frameY shape) 20))
+        (t/testing " - boardY"
+          (set! (.-boardY shape) 20)
+          (t/is (m/close? (.-boardY shape) 20))
           (t/is (m/close? (.-y shape) 220))
           (t/is (m/close? (get-in @store (get-shape-path :y)) 220)))
 
