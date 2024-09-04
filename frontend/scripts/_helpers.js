@@ -115,20 +115,30 @@ export async function compileSassAll(worker) {
     return path.startsWith("app/main/ui/ds/");
   };
 
+  const isOldComponentSystemFile = (path) => {
+    return path.startsWith("app/main/ui/components/");
+  };
+
   let files = (await fs.readdir(sourceDir, { recursive: true })).filter(
     isSassFile,
   );
 
   const appFiles = files
     .filter((path) => !isDesignSystemFile(path))
+    .filter((path) => !isOldComponentSystemFile(path))
     .map((path) => ph.join(sourceDir, path));
+
   const dsFiles = files
     .filter(isDesignSystemFile)
     .map((path) => ph.join(sourceDir, path));
 
+  const oldComponentsFiles = files
+    .filter(isOldComponentSystemFile)
+    .map((path) => ph.join(sourceDir, path));
+
   const procs = [compileSass(worker, "resources/styles/main-default.scss", {})];
 
-  for (let path of [...dsFiles, ...appFiles]) {
+  for (let path of [...oldComponentsFiles, ...dsFiles, ...appFiles]) {
     const proc = limitFn(() => compileSass(worker, path, { modules: true }));
     procs.push(proc);
   }
