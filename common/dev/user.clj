@@ -6,6 +6,8 @@
 
 (ns user
   (:require
+   [app.common.data :as d]
+   [app.common.fressian :as fres]
    [app.common.json :as json]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
