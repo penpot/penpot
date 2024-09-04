@@ -235,7 +235,7 @@
                    :file-id (:id file)
                    :revn (:revn file)
                    :version (:version file)
-                   :features (db/create-array conn "text" (:features file))
+                   :features features
                    :label (::snapshot-label file)
                    :data (::snapshot-data file)
                    :changes (blob/encode changes)}
