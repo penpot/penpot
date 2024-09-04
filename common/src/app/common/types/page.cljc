@@ -18,20 +18,20 @@
 ;; SCHEMAS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(sm/register! ::flow
-  [:map {:title "PageFlow"}
+(def schema:flow
+  [:map {:title "Flow"}
    [:id ::sm/uuid]
    [:name :string]
    [:starting-frame ::sm/uuid]])
 
-(sm/register! ::guide
-  [:map {:title "PageGuide"}
+(def schema:guide
+  [:map {:title "Guide"}
    [:id ::sm/uuid]
    [:axis [::sm/one-of #{:x :y}]]
    [:position ::sm/safe-number]
    [:frame-id {:optional true} [:maybe ::sm/uuid]]])
 
-(sm/register! ::page
+(def schema:page
   [:map {:title "FilePage"}
    [:id ::sm/uuid]
    [:name :string]
@@ -42,10 +42,14 @@
      [:background {:optional true} ::ctc/rgb-color]
      [:saved-grids {:optional true} ::ctg/saved-grids]
      [:flows {:optional true}
-      [:vector {:gen/max 2} ::flow]]
+      [:vector {:gen/max 2} schema:flow]]
      [:guides {:optional true}
-      [:map-of {:gen/max 2} ::sm/uuid ::guide]]
+      [:map-of {:gen/max 2} ::sm/uuid schema:guide]]
      [:plugin-data {:optional true} ::ctpg/plugin-data]]]])
+
+(sm/register! ::page schema:page)
+(sm/register! ::guide schema:guide)
+(sm/register! ::flow schema:flow)
 
 (def check-page-guide!
   (sm/check-fn ::guide))
