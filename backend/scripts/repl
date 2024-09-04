@@ -24,7 +24,7 @@ export PENPOT_FLAGS="\
        enable-rpc-climit \
        enable-rpc-rlimit \
        enable-soft-rpc-rlimit \
-       enable-file-snapshot \
+       enable-auto-file-snapshot \
        enable-webhooks \
        enable-access-tokens \
        enable-tiered-file-data-storage \
