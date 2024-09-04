@@ -88,6 +88,12 @@
 - Fix scroll on color picker modal [Taiga #8353](https://tree.taiga.io/project/penpot/issue/8353)
 - Fix components are not dragged from the group to the assets tab [Taiga #8273](https://tree.taiga.io/project/penpot/issue/8273)
 
+## 2.1.5
+
+### :bug: Bugs fixed
+
+- Fix broken webhooks [Taiga #8370](https://tree.taiga.io/project/penpot/issue/8370)
+
 ## 2.1.4
 
 ### :bug: Bugs fixed

@@ -66,21 +66,18 @@
 (defmethod ig/init-key ::process-event-handler
   [_ cfg]
   (fn [{:keys [props] :as task}]
-    (let [event (:event props)]
-      (l/dbg :hint "process webhook event" :name (:name event))
+    (l/dbg :hint "process webhook event" :name (:name props))
 
-      (when-let [items (lookup-webhooks cfg event)]
-        (l/trc :hint "webhooks found for event" :total (count items))
-
-        (db/tx-run! cfg (fn [cfg]
-                          (doseq [item items]
-                            (wrk/submit! (-> cfg
-                                             (assoc ::wrk/task :run-webhook)
-                                             (assoc ::wrk/queue :webhooks)
-                                             (assoc ::wrk/max-retries 3)
-                                             (assoc ::wrk/params {:event event
-                                                                  :config item}))))))))))
-
+    (when-let [items (lookup-webhooks cfg props)]
+      (l/trc :hint "webhooks found for event" :total (count items))
+      (db/tx-run! cfg (fn [cfg]
+                        (doseq [item items]
+                          (wrk/submit! (-> cfg
+                                           (assoc ::wrk/task :run-webhook)
+                                           (assoc ::wrk/queue :webhooks)
+                                           (assoc ::wrk/max-retries 3)
+                                           (assoc ::wrk/params {:event props
+                                                                :config item})))))))))
 ;; --- RUN
 
 (declare interpret-exception)
