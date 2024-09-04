@@ -699,7 +699,7 @@
   [changes token-theme]
   (-> changes
       (update :redo-changes conj {:type :add-temporary-token-theme :token-theme token-theme})
-      (update :undo-changes conj {:type :delete-temporary-token-theme :id (:id token-theme)})
+      (update :undo-changes conj {:type :delete-temporary-token-theme :id (:id token-theme) :name (:name token-theme)})
       (apply-changes-local)))
 
 (defn update-active-token-themes
@@ -713,14 +713,14 @@
   [changes token-theme]
   (-> changes
       (update :redo-changes conj {:type :add-token-theme :token-theme token-theme})
-      (update :undo-changes conj {:type :del-token-theme :id (:id token-theme)})
+      (update :undo-changes conj {:type :del-token-theme :id (:id token-theme) :name (:name token-theme)})
       (apply-changes-local)))
 
 (defn update-token-theme
   [changes token-theme prev-token-theme]
   (-> changes
-      (update :redo-changes conj {:type :mod-token-theme :id (:id token-theme) :token-theme token-theme})
-      (update :undo-changes conj {:type :mod-token-theme :id (:id token-theme) :token-theme (or prev-token-theme token-theme)})
+      (update :redo-changes conj {:type :mod-token-theme :id (:id token-theme) :name (:name prev-token-theme) :token-theme token-theme})
+      (update :undo-changes conj {:type :mod-token-theme :id (:id token-theme) :name (:name token-theme) :token-theme (or prev-token-theme token-theme)})
       (apply-changes-local)))
 
 (defn delete-token-theme
@@ -729,7 +729,7 @@
   (let [library-data (::library-data (meta changes))
         prev-token-theme (get-in library-data [:token-themes-index token-theme-id])]
     (-> changes
-        (update :redo-changes conj {:type :del-token-theme :id token-theme-id})
+        (update :redo-changes conj {:type :del-token-theme :id token-theme-id :name (:name prev-token-theme)})
         (update :undo-changes conj {:type :add-token-theme :token-theme prev-token-theme})
         (apply-changes-local))))
 

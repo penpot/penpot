@@ -263,7 +263,8 @@
     [:delete-temporary-token-theme
      [:map {:title "DeleteTemporaryTokenThemeChange"}
       [:type [:= :delete-temporary-token-theme]]
-      [:id ::sm/uuid]]]
+      [:id ::sm/uuid]
+      [:name :string]]]
 
     [:add-token-theme
      [:map {:title "AddTokenThemeChange"}
@@ -274,12 +275,14 @@
      [:map {:title "ModTokenThemeChange"}
       [:type [:= :mod-token-theme]]
       [:id ::sm/uuid]
+      [:name :string]
       [:token-theme ::ctot/token-theme]]]
 
     [:del-token-theme
      [:map {:title "DelTokenThemeChange"}
       [:type [:= :del-token-theme]]
-      [:id ::sm/uuid]]]
+      [:id ::sm/uuid]
+      [:name :string]]]
 
     [:add-token-set
      [:map {:title "AddTokenSetChange"}
@@ -822,29 +825,69 @@
                     set-name
                     name)))))
 
+(defn- set-ids->names
+  [data sets]
+  (let [lib-sets (:token-sets-index data)
+        set-id->name
+        (fn [set-id]
+          (dm/get-in lib-sets [set-id :name]))]
+    (map set-id->name sets)))
+
 (defmethod process-change :add-temporary-token-theme
   [data {:keys [token-theme]}]
-  (ctotl/add-temporary-token-theme data token-theme))
+  (-> data
+      (ctotl/add-temporary-token-theme token-theme)
+      (update :tokens-lib
+              #(-> %
+                   (ctob/ensure-tokens-lib)
+                   (ctob/add-theme (-> token-theme
+                                       (update :sets (partial set-ids->names data))
+                                       (ctob/make-token-theme)))))))
 
 (defmethod process-change :update-active-token-themes
   [data {:keys [theme-ids]}]
   (ctotl/assoc-active-token-themes data theme-ids))
 
 (defmethod process-change :delete-temporary-token-theme
-  [data {:keys [id]}]
-  (ctotl/delete-temporary-token-theme data id))
+  [data {:keys [id name]}]
+  (-> data
+      (ctotl/delete-temporary-token-theme id)
+      (update :tokens-lib
+              #(-> %
+                   (ctob/ensure-tokens-lib)
+                   (ctob/delete-theme name)))))
 
 (defmethod process-change :add-token-theme
   [data {:keys [token-theme]}]
-  (ctotl/add-token-theme data token-theme))
+  (-> data
+      (ctotl/add-token-theme token-theme)
+      (update :tokens-lib
+              #(-> %
+                   (ctob/ensure-tokens-lib)
+                   (ctob/add-theme (-> token-theme
+                                       (update :sets (partial set-ids->names data))
+                                       (ctob/make-token-theme)))))))
 
 (defmethod process-change :mod-token-theme
-  [data {:keys [id token-theme]}]
-  (ctotl/update-token-theme data id merge token-theme))
+  [data {:keys [id name token-theme]}]
+  (-> data
+      (ctotl/update-token-theme id merge token-theme)
+      (update :tokens-lib
+              #(-> %
+                   (ctob/ensure-tokens-lib)
+                   (ctob/update-theme name (fn [prev-theme]
+                                             (merge prev-theme
+                                                    (-> token-theme
+                                                        (update :sets (partial set-ids->names data))))))))))
 
 (defmethod process-change :del-token-theme
-  [data {:keys [id]}]
-  (ctotl/delete-token-theme data id))
+  [data {:keys [id name]}]
+  (-> data
+      (ctotl/delete-token-theme id)
+      (update :tokens-lib
+              #(-> %
+                   (ctob/ensure-tokens-lib)
+                   (ctob/delete-theme name)))))
 
 (defmethod process-change :add-token-set
   [data {:keys [token-set]}]

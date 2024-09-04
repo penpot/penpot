@@ -16,6 +16,7 @@
    java.time.OffsetDateTime
    java.util.List
    linked.map.LinkedMap
+   linked.set.LinkedSet
    org.fressian.Reader
    org.fressian.StreamingWriter
    org.fressian.Writer
@@ -275,7 +276,12 @@
  {:name "clj/seq"
   :class clojure.lang.ISeq
   :wfn write-list-like
-  :rfn (comp sequence read-object!)})
+  :rfn (comp sequence read-object!)}
+ 
+ {:name "linked/set"
+  :class LinkedSet
+  :wfn write-list-like
+  :rfn (comp #(into (d/ordered-set) %) read-object!)})
 
 ;; --- PUBLIC API
 

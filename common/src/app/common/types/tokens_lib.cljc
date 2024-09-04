@@ -94,7 +94,8 @@
          [:name :string]
          [:description [:maybe :string]]
          [:modified-at ::sm/inst]
-         [:tokens [:map-of {:gen/max 5} :string ::token]]]
+         [:tokens [:and [:map-of {:gen/max 5} :string ::token]
+                   [:fn d/ordered-map?]]]]
    [:fn (partial instance? TokenSet)]])
 
 (sm/register! ::token-set schema:token-set)
@@ -127,8 +128,7 @@
   (delete-set [_ set-name] "delete a set in the library")
   (set-count [_] "get the total number if sets in the library")
   (get-sets [_] "get an ordered sequence of all sets in the library")
-  (get-set [_ set-name] "get one set looking for name")
-  (validate [_]))
+  (get-set [_ set-name] "get one set looking for name"))
 
 (def schema:token-sets
   [:and
@@ -144,10 +144,79 @@
 (def check-token-sets!
   (sm/check-fn ::token-sets))
 
+;; === TokenTheme
+
+(defprotocol ITokenTheme
+  (toggle-set [_ set-name] "togle a set used / not used in the theme"))
+
+(defrecord TokenTheme [name description is-source modified-at sets]
+  ITokenTheme
+  (toggle-set [_ set-name]
+    (TokenTheme. name
+                 description
+                 is-source
+                 (dt/now)
+                 (if (sets set-name)
+                   (disj sets set-name)
+                   (conj sets set-name)))))
+
+(def schema:token-theme
+  [:and [:map {:title "TokenTheme"}
+         [:name :string]
+         [:description [:maybe :string]]
+         [:is-source :boolean]
+         [:modified-at ::sm/inst]
+         [:sets [:and [:set {:gen/max 5} :string]
+                 [:fn d/ordered-set?]]]]
+   [:fn (partial instance? TokenTheme)]])
+
+(sm/register! ::token-theme schema:token-theme)
+
+(def valid-token-theme?
+  (sm/validator schema:token-theme))
+
+(def check-token-theme!
+  (sm/check-fn ::token-theme))
+
+(defn make-token-theme
+  [& {:keys [] :as params}]
+  (let [params    (-> params
+                      (dissoc :id)
+                      (dissoc :group)
+                      (update :is-source #(or % false))
+                      (update :modified-at #(or % (dt/now)))
+                      (update :sets #(into (d/ordered-set) %)))
+        token-theme (map->TokenTheme params)]
+
+    (dm/assert!
+     "expected valid token theme"
+     (check-token-theme! token-theme))
+
+    token-theme))
+
 ;; === TokenThemes (collection)
 
+(defprotocol ITokenThemes
+  (add-theme [_ token-theme] "add a theme to the library, at the end")
+  (update-theme [_ theme-name f] "modify a theme in the ilbrary")
+  (delete-theme [_ theme-name] "delete a theme in the library")
+  (theme-count [_] "get the total number if themes in the library")
+  (get-themes [_] "get an ordered sequence of all themes in the library")
+  (get-theme [_ theme-name] "get one theme looking for name"))
+
+(def schema:token-themes
+  [:and
+   [:map-of {:title "TokenThemes"}
+    :string ::token-theme]
+   [:fn d/ordered-map?]])
+
+(sm/register! ::token-themes schema:token-themes)
+
 (def valid-token-themes?
-  (constantly true))
+  (sm/validator schema:token-themes))
+
+(def check-token-themes!
+  (sm/check-fn ::token-themes))
 
 ;; === Tokens Lib
 
@@ -155,7 +224,9 @@
   "A library of tokens, sets and themes."
   (add-token-in-set [_ set-name token] "add token to a set")
   (update-token-in-set [_ set-name token-name f] "update a token in a set")
-  (delete-token-from-set [_ set-name token-name] "delete a token from a set"))
+  (delete-token-from-set [_ set-name token-name] "delete a token from a set")
+  (toggle-set-in-theme [_ theme-name set-name] "toggle a set used / not used in a theme")
+  (validate [_]))
 
 (deftype TokensLib [sets themes]
   ;; NOTE: This is only for debug purposes, pending to properly
@@ -188,14 +259,10 @@
                             (d/addm-at-index index (:name set') set'))))
                     themes))
       this))
-
+  
   (delete-set [_ set-name]
     (TokensLib. (dissoc sets set-name)
                 themes))
-
-  (validate [_]
-    (and (valid-token-sets? sets)
-         (valid-token-themes? themes)))
 
   (set-count [_]
     (count sets))
@@ -205,6 +272,39 @@
 
   (get-set [_ set-name]
     (get sets set-name))
+
+  ITokenThemes
+  (add-theme [_ token-theme]
+    (dm/assert! "expected valid token theme" (check-token-theme! token-theme))
+    (TokensLib. sets
+                (assoc themes (:name token-theme) token-theme)))
+
+  (update-theme [this theme-name f]
+    (if-let [theme (get themes theme-name)]
+      (let [theme' (-> (make-token-theme (f theme))
+                       (assoc :modified-at (dt/now)))]
+        (check-token-theme! theme')
+        (TokensLib. sets
+                    (if (= (:name theme) (:name theme'))
+                      (assoc themes (:name theme') theme')
+                      (let [index (d/index-of (keys themes) (:name theme))]
+                        (-> themes
+                            (dissoc (:name theme))
+                            (d/addm-at-index index (:name theme') theme'))))))
+      this))
+
+  (delete-theme [_ theme-name]
+    (TokensLib. sets
+                (dissoc themes theme-name)))
+
+  (theme-count [_]
+    (count themes))
+
+  (get-themes [_]
+    (vals themes))
+
+  (get-theme [_ theme-name]
+    (get themes theme-name))
 
   ITokensLib
   (add-token-in-set [this set-name token]
@@ -226,7 +326,18 @@
       (TokensLib. (update sets set-name
                           #(delete-token % token-name))
                   themes)
-      this)))
+      this))
+
+  (toggle-set-in-theme [this theme-name set-name]
+    (if (contains? themes theme-name)
+      (TokensLib. sets
+                  (update themes theme-name
+                          #(toggle-set % set-name)))
+      this))
+
+  (validate [_]
+    (and (valid-token-sets? sets)
+         (valid-token-themes? themes))))
 
 (defn valid-tokens-lib?
   [o]
@@ -269,7 +380,7 @@
 
 (sm/register! ::tokens-lib type:tokens-lib)
 
-;; === Serialization handlers for RPC API and database
+;; === Serialization handlers for RPC API (transit) and database (fressian)
 
 (t/add-handlers!
  {:id "penpot/tokens-lib"
@@ -281,6 +392,11 @@
   :class TokenSet
   :wfn #(into {} %)
   :rfn #(make-token-set %)} 
+ 
+ {:id "penpot/token-theme"
+  :class TokenTheme
+  :wfn #(into {} %)
+  :rfn #(make-token-theme %)} 
 
  {:id "penpot/token"
   :class Token
@@ -306,6 +422,15 @@
      :rfn (fn [r]
             (let [obj (fres/read-object! r)]
               (map->TokenSet obj)))}
+
+    {:name "penpot/token-theme/v1"
+     :class TokenTheme
+     :wfn (fn [n w o]
+            (fres/write-tag! w n 1)
+            (fres/write-object! w (into {} o)))
+     :rfn (fn [r]
+            (let [obj (fres/read-object! r)]
+              (map->TokenTheme obj)))}
 
     {:name "penpot/tokens-lib/v1"
      :class TokensLib
