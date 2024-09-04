@@ -31,8 +31,7 @@
 ;; SCHEMAS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private
-  schema:operation
+(def schema:operation
   [:multi {:dispatch :type
            :title "Operation"
            :decode/json #(update % :type keyword)
@@ -61,9 +60,12 @@
      [:type [:= :set-remote-synced]]
      [:remote-synced {:optional true} [:maybe :boolean]]]]])
 
-(sm/register! ::change
+(def schema:change
   [:schema
-   [:multi {:dispatch :type :title "Change" ::smd/simplified true}
+   [:multi {:dispatch :type
+            :title "Change"
+            :decode/json #(update % :type keyword)
+            ::smd/simplified true}
     [:set-option
      [:map {:title "SetOptionChange"}
       [:type [:= :set-option]]
@@ -256,8 +258,11 @@
       [:type [:= :del-typography]]
       [:id ::sm/uuid]]]]])
 
-(sm/register! ::changes
-  [:sequential {:gen/max 2} ::change])
+(def schema:changes
+  [:sequential {:gen/max 5 :gen/min 1} schema:change])
+
+(sm/register! ::change schema:change)
+(sm/register! ::changes schema:changes)
 
 (def check-change!
   (sm/check-fn ::change))

@@ -506,6 +506,6 @@
            (rx/mapcat rp/handle-response)
            (rx/subs! (fn [_]
                        (println "Snapshot restored " (or snapshot-id label)))
-                     #_(.reload js/location))
-           (fn [cause]
-             (js/console.log "EE:" cause))))))
+                     #_(.reload js/location)
+                     (fn [cause]
+                       (js/console.log "EE:" cause)))))))

@@ -10,6 +10,7 @@
   (:require
    [app.common.logging :as l]
    [app.db :as db]
+   [app.features.fdata :as feat.fdata]
    [app.storage :as sto]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -26,8 +27,8 @@
 
 (def xf:filter-offloded
   (comp
-   (filter #(= "objects-storage" (:data-backend %)))
-   (map :data-ref-id)))
+   (filter feat.fdata/offloaded?)
+   (keep :data-ref-id)))
 
 (defn- delete-in-chunks
   [{:keys [::chunk-size ::threshold] :as cfg}]
