@@ -727,13 +727,15 @@
                    deleted 0
                    total   0]
               (if-let [email (first emails)]
-                (if-let [profile (db/get* system :profile
-                                          {:email (str/lower email)}
-                                          {::db/remove-deleted false})]
+                (if-let [profile (some-> (db/get* system :profile
+                                                  {:email (str/lower email)}
+                                                  {::db/remove-deleted false})
+                                         (profile/decode-row))]
                   (do
                     (audit/insert! system
                                    {::audit/name "delete-profile"
                                     ::audit/type "action"
+                                    ::audit/profile-id (:id profile)
                                     ::audit/tracked-at deleted-at
                                     ::audit/props (audit/profile->props profile)
                                     ::audit/context {:triggered-by "srepl"
