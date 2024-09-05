@@ -27,9 +27,11 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.setup :as-alias setup]
+   [app.setup.welcome-file :refer [create-welcome-file]]
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as wrk]
    [cuerdas.core :as str]))
 
 (def schema:password
@@ -241,6 +243,7 @@
 
         params (d/without-nils params)
         token  (tokens/generate (::setup/props cfg) params)]
+
     (with-meta {:token token}
       {::audit/profile-id uuid/zero})))
 
@@ -350,7 +353,7 @@
                 :extra-data ptoken})))
 
 (defn register-profile
-  [{:keys [::db/conn] :as cfg} {:keys [token fullname theme] :as params}]
+  [{:keys [::db/conn ::wrk/executor] :as cfg} {:keys [token fullname theme] :as params}]
   (let [theme      (when (= theme "light") theme)
         claims     (tokens/verify (::setup/props cfg) {:token token :iss :prepared-register})
         params     (-> claims
@@ -380,8 +383,13 @@
         invitation (when-let [token (:invitation-token params)]
                      (tokens/verify (::setup/props cfg) {:token token :iss :team-invitation}))
 
-        props      (audit/profile->props profile)]
+        props      (audit/profile->props profile)
 
+        create-welcome-file-when-needed
+        (fn []
+          (when (:create-welcome-file params)
+            (let [cfg (dissoc cfg ::db/conn)]
+              (wrk/submit! executor (create-welcome-file cfg profile)))))]
     (cond
       ;; When profile is blocked, we just ignore it and return plain data
       (:is-blocked profile)
@@ -418,6 +426,7 @@
       (if (:is-active profile)
         (-> (profile/strip-private-attrs profile)
             (rph/with-transform (session/create-fn cfg (:id profile)))
+            (rph/with-defer create-welcome-file-when-needed)
             (rph/with-meta
               {::audit/replace-props props
                ::audit/context {:action "login"}
@@ -427,10 +436,12 @@
           (when-not (eml/has-reports? conn (:email profile))
             (send-email-verification! cfg profile))
 
-          (rph/with-meta {:email (:email profile)}
-            {::audit/replace-props props
-             ::audit/context {:action "email-verification"}
-             ::audit/profile-id (:id profile)})))
+          (-> {:email (:email profile)}
+              (rph/with-defer create-welcome-file-when-needed)
+              (rph/with-meta
+                {::audit/replace-props props
+                 ::audit/context {:action "email-verification"}
+                 ::audit/profile-id (:id profile)}))))
 
       :else
       (let [elapsed? (elapsed-verify-threshold? profile)
@@ -462,7 +473,8 @@
   [:map {:title "register-profile"}
    [:token schema:token]
    [:fullname [::sm/word-string {:max 100}]]
-   [:theme {:optional true} [:string {:max 10}]]])
+   [:theme {:optional true} [:string {:max 10}]]
+   [:create-welcome-file {:optional true} :boolean]])
 
 (sv/defmethod ::register-profile
   {::rpc/auth false
