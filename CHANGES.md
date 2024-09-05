@@ -83,6 +83,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix webhook checkbox position [Taiga #8634](https://tree.taiga.io/project/penpot/issue/8634)
 - Fix wrong props on padding input [Taiga #8254](https://tree.taiga.io/project/penpot/issue/8254)
 - Fix fill collapsed options [Taiga #8351](https://tree.taiga.io/project/penpot/issue/8351)
 - Fix scroll on color picker modal [Taiga #8353](https://tree.taiga.io/project/penpot/issue/8353)

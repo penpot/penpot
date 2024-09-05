@@ -168,7 +168,9 @@
   [{:keys [default-project-id profile project-id team-id]}]
   (let [templates      (mf/deref builtin-templates)
         templates      (mf/with-memo [templates]
-                         (filterv #(not= (:id %) "tutorial-for-beginners") templates))
+                         (filterv #(and
+                                    (not= (:id %) "welcome")
+                                    (not= (:id %) "tutorial-for-beginners")) templates))
 
         route          (mf/deref refs/route)
         route-name     (get-in route [:data :name])

@@ -360,27 +360,31 @@
     [:map {:title "update-profile-props"}
      [:props [:map-of :keyword :any]]]))
 
+(defn update-profile-props
+  [{:keys [::db/conn] :as cfg} profile-id props]
+  (let [profile (get-profile conn profile-id ::sql/for-update true)
+        props   (reduce-kv (fn [props k v]
+                             ;; We don't accept namespaced keys
+                             (if (simple-ident? k)
+                               (if (nil? v)
+                                 (dissoc props k)
+                                 (assoc props k v))
+                               props))
+                           (:props profile)
+                           props)]
+
+    (db/update! conn :profile
+                {:props (db/tjson props)}
+                {:id profile-id})
+
+    (filter-props props)))
+
 (sv/defmethod ::update-profile-props
   {::doc/added "1.0"
    ::sm/params schema:update-profile-props}
-  [{:keys [::db/pool]} {:keys [::rpc/profile-id props]}]
-  (db/with-atomic [conn pool]
-    (let [profile (get-profile conn profile-id ::sql/for-update true)
-          props   (reduce-kv (fn [props k v]
-                               ;; We don't accept namespaced keys
-                               (if (simple-ident? k)
-                                 (if (nil? v)
-                                   (dissoc props k)
-                                   (assoc props k v))
-                                 props))
-                             (:props profile)
-                             props)]
-
-      (db/update! conn :profile
-                  {:props (db/tjson props)}
-                  {:id profile-id})
-
-      (filter-props props))))
+  [cfg {:keys [::rpc/profile-id props]}]
+  (db/tx-run! cfg (fn [cfg]
+                    (update-profile-props cfg profile-id props))))
 
 ;; --- MUTATION: Delete Profile
 

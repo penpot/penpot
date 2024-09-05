@@ -21,9 +21,11 @@
    [app.main.repo :as rp]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
-   [app.util.storage :refer [storage]]
+   [app.util.storage :as s]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
+
+(declare update-profile-props)
 
 ;; --- SCHEMAS
 
@@ -49,14 +51,14 @@
 
 (defn get-current-team-id
   [profile]
-  (let [team-id (::current-team-id @storage)]
+  (let [team-id (::current-team-id @s/storage)]
     (or team-id (:default-team-id profile))))
 
 (defn set-current-team!
   [team-id]
   (if (nil? team-id)
-    (swap! storage dissoc ::current-team-id)
-    (swap! storage assoc ::current-team-id team-id)))
+    (swap! s/storage dissoc ::current-team-id)
+    (swap! s/storage assoc ::current-team-id team-id)))
 
 ;; --- EVENT: fetch-teams
 
@@ -76,9 +78,9 @@
       ;; if not, dissoc it from storage.
 
       (let [ids (into #{} (map :id) teams)]
-        (when-let [ctid (::current-team-id @storage)]
+        (when-let [ctid (::current-team-id @s/storage)]
           (when-not (contains? ids ctid)
-            (swap! storage dissoc ::current-team-id)))))))
+            (swap! s/storage dissoc ::current-team-id)))))))
 
 (defn fetch-teams
   []
@@ -129,10 +131,10 @@
     (effect [_ state _]
       (let [profile          (:profile state)
             email            (:email profile)
-            previous-profile (:profile @storage)
+            previous-profile (:profile @s/storage)
             previous-email   (:email previous-profile)]
         (when profile
-          (swap! storage assoc :profile profile)
+          (swap! s/storage assoc :profile profile)
           (i18n/set-locale! (:lang profile))
           (when (not= previous-email email)
             (set-current-team! nil)))))))
@@ -152,9 +154,15 @@
   profile. The profile can proceed from standard login or from
   accepting invitation, or third party auth signup or singin."
   [profile]
-  (letfn [(get-redirect-event []
-            (let [team-id (get-current-team-id profile)]
-              (rt/nav' :dashboard-projects {:team-id team-id})))]
+  (letfn [(get-redirect-events []
+            (let [team-id (get-current-team-id profile)
+                  welcome-file-id (get-in profile [:props :welcome-file-id])]
+              (if (some? welcome-file-id)
+                (rx/of
+                 (rt/nav' :workspace {:project-id (:default-project-id profile)
+                                      :file-id welcome-file-id})
+                 (update-profile-props {:welcome-file-id nil}))
+                (rx/of (rt/nav' :dashboard-projects {:team-id team-id})))))]
 
     (ptk/reify ::logged-in
       ev/Event
@@ -171,10 +179,11 @@
       ptk/WatchEvent
       (watch [_ _ _]
         (when (is-authenticated? profile)
-          (->> (rx/of (profile-fetched profile)
-                      (fetch-teams)
-                      (get-redirect-event)
-                      (ws/initialize))
+          (->> (rx/concat
+                (rx/of (profile-fetched profile)
+                       (fetch-teams)
+                       (ws/initialize))
+                (get-redirect-events))
                (rx/observe-on :async)))))))
 
 (declare login-from-register)
@@ -311,7 +320,7 @@
      ptk/EffectEvent
      (effect [_ _ _]
        ;; We prefer to keek some stuff in the storage like the current-team-id and the profile
-       (set-current-team! nil)))))
+       (swap! s/storage (constantly {}))))))
 
 (defn logout
   ([] (logout {}))
