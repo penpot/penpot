@@ -12,9 +12,8 @@
    [app.common.time :as dt]
    [app.common.transit :as t]
    [app.common.types.token :as cto]
+   [cuerdas.core :as str]
    #?(:clj [app.common.fressian :as fres])))
-
-;; #?(:clj (set! *warn-on-reflection* true))
 
 ;; === Token
 
@@ -56,7 +55,8 @@
 (defprotocol ITokenSet
   (add-token [_ token] "add a token at the end of the list")
   (update-token [_ token-name f] "update a token in the list")
-  (delete-token [_ token-name] "delete a token from the list"))
+  (delete-token [_ token-name] "delete a token from the list")
+  (get-tokens [_] "return an ordered sequence of all tokens in the set"))
 
 (defrecord TokenSet [name description modified-at tokens]
   ITokenSet
@@ -87,7 +87,10 @@
     (TokenSet. name
                description
                (dt/now)
-               (dissoc tokens token-name))))
+               (dissoc tokens token-name)))
+
+  (get-tokens [_]
+    (vals tokens)))
 
 (def schema:token-set
   [:and [:map {:title "TokenSet"}
@@ -442,3 +445,90 @@
             (let [sets   (fres/read-object! r)
                   themes (fres/read-object! r)]
               (->TokensLib sets themes)))}))
+
+;; === Groups handling
+
+(def schema:groupable-item
+  [:map {:title "Groupable item"}
+   [:name :string]])
+
+(def valid-groupable-item?
+  (sm/validator schema:groupable-item))
+
+(defn split-path
+  "Decompose a string in the form 'one.two.three' into a vector of strings, removing spaces."
+  [path]
+  (let [xf (comp (map str/trim)
+                 (remove str/empty?))]
+    (->> (str/split path ".")
+         (into [] xf))))
+
+(defn join-path
+  "Regenerate a path as a string, from a vector."
+  [path-vec]
+  (str/join "." path-vec))
+
+(defn group-item
+  "Add a group to the item name, in the form group.name."
+  [item group-name]
+  (dm/assert!
+   "expected groupable item"
+   (valid-groupable-item? item))
+  (update item :name #(str group-name "." %)))
+
+(defn ungroup-item
+  "Remove the first group from the item name."
+  [item]
+  (dm/assert!
+   "expected groupable item"
+   (valid-groupable-item? item))
+  (update item :name #(-> %
+                          (split-path)
+                          (rest)
+                          (join-path))))
+
+(defn get-path
+  "Get the groups part of the name. E.g. group.subgroup.name -> group.subrgoup"
+  [item]
+  (dm/assert!
+   "expected groupable item"
+   (valid-groupable-item? item))
+  (-> (:name item)
+      (split-path)
+      (butlast)
+      (join-path)))
+
+(defn get-final-name
+  "Get the final part of the name. E.g. group.subgroup.name -> name"
+  [item]
+  (dm/assert!
+   "expected groupable item"
+   (valid-groupable-item? item))
+  (-> (:name item)
+      (split-path)
+      (last)))
+
+(defn group-items
+  "Convert a sequence of items in a nested structure like this:
+
+    {'': [itemA itemB]
+     'group1': {'': [item1A item1B]
+                'subgroup11': {'': [item11A item11B item11C]}
+                'subgroup12': {'': [item12A]}}
+     'group2': {'subgroup21': {'': [item21A]}}}
+  "
+  [items & {:keys [reverse-sort?]}]
+  (when (seq items)
+    (reduce (fn [groups item]
+              (let [pathv (split-path (:name item))]
+                (update-in groups
+                           pathv
+                           (fn [group]
+                             (if group
+                               (cons group item)
+                               item)))))
+            (sorted-map-by (fn [key1 key2]               ;; TODO: this does not work well with ordered-map
+                             (if reverse-sort?           ;;       we need to think a bit more of this
+                               (compare key2 key1)
+                               (compare key1 key2))))
+            items)))
