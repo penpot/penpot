@@ -450,20 +450,20 @@
       (d/without-nils
        (case animation-type
          :dissolve
-         {:type animation-type
+         {:animation-type animation-type
           :duration (obj/get animation "duration")
           :easing (-> (obj/get animation "easing") parse-keyword)}
 
          :slide
-         {:type animation-type
+         {:animation-type animation-type
           :way (-> (obj/get animation "way") parse-keyword)
           :direction (-> (obj/get animation "direction") parse-keyword)
           :duration (obj/get animation "duration")
           :easing (-> (obj/get animation "easing") parse-keyword)
-          :offset-effect (obj/get animation "offsetEffect")}
+          :offset-effect (boolean (obj/get animation "offsetEffect"))}
 
          :push
-         {:type animation-type
+         {:animation-type animation-type
           :direction (-> (obj/get animation "direction") parse-keyword)
           :duration (obj/get animation "duration")
           :easing (-> (obj/get animation "easing") parse-keyword)}
@@ -563,10 +563,9 @@
          nil)))))
 
 (defn parse-interaction
-  [^js interaction]
-  (when interaction
-    (let [trigger (-> (obj/get interaction "trigger") parse-keyword)
-          delay (obj/get interaction "trigger")
-          action (-> (obj/get interaction "action") parse-action)]
+  [trigger ^js action delay]
+  (when (and (string? trigger) (some? action))
+    (let [trigger (parse-keyword trigger)
+          action  (parse-action action)]
       (d/without-nils
        (d/patch-object {:event-type trigger :delay delay}  action)))))
