@@ -416,6 +416,13 @@ async function generateTemplates() {
   await fs.writeFile("./resources/public/index.html", content);
 
   content = await renderTemplate(
+    "resources/templates/challenge.mustache",
+    {},
+    partials,
+  );
+  await fs.writeFile("./resources/public/challenge.html", content);
+
+  content = await renderTemplate(
     "resources/templates/preview-body.mustache",
     {
       manifest: manifest,
