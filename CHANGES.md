@@ -79,6 +79,7 @@
 - Fix problem with SVG import [Github #4888](https://github.com/penpot/penpot/issues/4888)
 - Fix problem with overlay positions in viewer [Taiga #8464](https://tree.taiga.io/project/penpot/issue/8464)
 - Fix layer panel overflowing [Taiga #8665](https://tree.taiga.io/project/penpot/issue/8665)
+- Fix problem when creating a component instance from grid layout [Github #4881](https://github.com/penpot/penpot/issues/4881)
 
 ## 2.1.5
 
