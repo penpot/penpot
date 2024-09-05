@@ -519,10 +519,8 @@
   @include bodySmallTypography;
   color: var(--modal-title-foreground-color);
 }
-// TODO: This fix is temporary, the error is caused by the
-// cascading order of the compiled css files.
-// https://tree.taiga.io/project/penpot/task/8658
-.custom-input-checkbox.custom-input-checkbox {
+
+.custom-input-checkbox {
   align-items: flex-start;
 }
 
