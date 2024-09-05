@@ -551,10 +551,10 @@
 
   ;; Interactions
   (addInteraction
-    [self interaction]
+    [self trigger action delay]
     (let [interaction
           (-> ctsi/default-interaction
-              (d/patch-object (parser/parse-interaction interaction)))]
+              (d/patch-object (parser/parse-interaction trigger action delay)))]
       (cond
         (not (sm/validate ::ctsi/interaction interaction))
         (u/display-not-valid :addInteraction interaction)
