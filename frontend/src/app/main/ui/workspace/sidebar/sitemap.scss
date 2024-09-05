@@ -55,6 +55,7 @@
   overflow-x: hidden;
   overflow-y: overlay;
   scrollbar-gutter: stable;
+  max-width: var(--width);
 }
 
 .pages-list {
