@@ -607,13 +607,6 @@
     (reduce resize-parent changes all-parents)))
 
 ;; Library changes
-
-(defn add-recent-color
-  [changes color]
-  (-> changes
-      (update :redo-changes conj {:type :add-recent-color :color color})
-      (apply-changes-local)))
-
 (defn add-color
   [changes color]
   (-> changes

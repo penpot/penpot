@@ -107,17 +107,16 @@
    [::sm/contains-any {:strict true} [:color :gradient :image]]])
 
 (sm/register! ::rgb-color type:rgb-color)
-
 (sm/register! ::color schema:color)
 (sm/register! ::gradient schema:gradient)
 (sm/register! ::image-color schema:image-color)
 (sm/register! ::recent-color schema:recent-color)
 
-(def check-color!
-  (sm/check-fn schema:color))
+(def valid-color?
+  (sm/lazy-validator schema:color))
 
-(def check-recent-color!
-  (sm/check-fn schema:recent-color))
+(def valid-recent-color?
+  (sm/lazy-validator schema:recent-color))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
@@ -392,13 +391,22 @@
 
     (process-shape-colors shape sync-color)))
 
-(defn eq-recent-color?
+(defn- eq-recent-color?
   [c1 c2]
   (or (= c1 c2)
       (and (some? (:color c1))
            (some? (:color c2))
            (= (:color c1) (:color c2)))))
 
+(defn add-recent-color
+  "Moves the color to the top of the list and then truncates up to 15"
+  [state file-id color]
+  (update state file-id (fn [colors]
+                          (let [colors (d/removev (partial eq-recent-color? color) colors)
+                                colors (conj colors color)]
+                            (cond-> colors
+                              (> (count colors) 15)
+                              (subvec 1))))))
 
 (defn stroke->color-att
   [stroke file-id shared-libs]

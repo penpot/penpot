@@ -48,6 +48,7 @@
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
+   [app.util.storage :as s]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -132,16 +133,21 @@
 
 (defn add-recent-color
   [color]
+
   (dm/assert!
    "expected valid recent color map"
-   (ctc/check-recent-color! color))
+   (ctc/valid-recent-color? color))
 
   (ptk/reify ::add-recent-color
-    ptk/WatchEvent
-    (watch [it _ _]
-      (let [changes (-> (pcb/empty-changes it)
-                        (pcb/add-recent-color color))]
-        (rx/of (dch/commit-changes changes))))))
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [file-id (:current-file-id state)]
+        (update state :recent-colors ctc/add-recent-color file-id color)))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [recent-colors (:recent-colors state)]
+        (swap! s/storage assoc :recent-colors recent-colors)))))
 
 (def clear-color-for-rename
   (ptk/reify ::clear-color-for-rename
@@ -168,8 +174,11 @@
 
   (dm/assert!
    "expected valid parameters"
-   (and (ctc/check-color! color)
-        (uuid? file-id)))
+   (ctc/valid-color? color))
+
+  (dm/assert!
+   "expected file-id"
+   (uuid? file-id))
 
   (ptk/reify ::update-color
     ptk/WatchEvent
