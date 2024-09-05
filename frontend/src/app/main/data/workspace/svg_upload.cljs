@@ -73,7 +73,6 @@
          (let [id              (d/nilv id (uuid/next))
                page-id         (:current-page-id state)
                objects         (wsh/lookup-page-objects state page-id)
-               frame-id        (ctst/top-nested-frame objects position)
                selected        (if ignore-selection? #{} (wsh/lookup-selected state))
                base            (cfh/get-base-shape objects selected)
 
@@ -81,9 +80,16 @@
                selected-frame? (and (= 1 (count selected))
                                     (= :frame (dm/get-in objects [selected-id :type])))
 
+               base-id         (:parent-id base)
+
+               frame-id        (if (or selected-frame? (empty? selected)
+                                       (not= :frame (dm/get-in objects [base-id :type])))
+                                 (ctst/top-nested-frame objects position)
+                                 base-id)
+
                parent-id       (if (or selected-frame? (empty? selected))
                                  frame-id
-                                 (:parent-id base))
+                                 base-id)
 
                [new-shape new-children]
                (csvg.shapes-builder/create-svg-shapes id svg-data position objects frame-id parent-id selected true)

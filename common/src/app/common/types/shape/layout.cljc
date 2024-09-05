@@ -1622,13 +1622,17 @@
 (defn remap-grid-cells
   "Remaps the shapes ids inside the cells"
   [shape ids-map]
-  (let [do-remap-cells
+  (let [remap-shape
+        (fn [id]
+          (get ids-map id id))
+
+        remap-cell
         (fn [cell]
           (-> cell
-              (update :shapes #(into [] (keep ids-map) %))))
+              (update :shapes #(into [] (keep remap-shape) %))))
         shape
         (-> shape
-            (update :layout-grid-cells update-vals do-remap-cells))]
+            (update :layout-grid-cells update-vals remap-cell))]
     shape))
 
 (defn merge-cells

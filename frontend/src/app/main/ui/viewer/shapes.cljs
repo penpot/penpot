@@ -427,7 +427,8 @@
       (let [childs   (mapv #(get objects %) (:shapes (unchecked-get props "shape")))
             props    (obj/merge! #js {} props
                                  #js {:childs childs
-                                      :objects objects})]
+                                      :objects objects
+                                      :all-objects all-objects})]
         (when (not-empty childs)
           [:> group-wrapper props])))))
 
