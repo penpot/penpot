@@ -128,6 +128,16 @@
       (t/is (= (first token-sets') token-set))
       (t/is (= token-set' token-set))))
 
+  (t/deftest add-token-set-with-group
+    (let [tokens-lib  (ctob/make-tokens-lib)
+          token-set   (ctob/make-token-set :name "test-group.test-token-set")
+          tokens-lib' (ctob/add-set tokens-lib token-set)
+
+          set-group (ctob/get-set-group tokens-lib' "test-group")]
+
+      (t/is (= (:attr1 set-group) "one"))
+      (t/is (= (:attr2 set-group) "two"))))
+
   (t/deftest update-token-set
     (let [tokens-lib  (-> (ctob/make-tokens-lib)
                           (ctob/add-set (ctob/make-token-set :name "test-token-set")))

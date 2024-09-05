@@ -123,6 +123,16 @@
 
     token-set))
 
+;; === TokenSetGroup
+
+(defrecord TokenSetGroup [attr1 attr2])
+
+;; TODO schema, validators, etc.
+
+(defn make-token-set-group
+  []
+  (TokenSetGroup. "one" "two"))
+
 ;; === TokenSets (collection)
 
 (defprotocol ITokenSets
@@ -131,7 +141,8 @@
   (delete-set [_ set-name] "delete a set in the library")
   (set-count [_] "get the total number if sets in the library")
   (get-sets [_] "get an ordered sequence of all sets in the library")
-  (get-set [_ set-name] "get one set looking for name"))
+  (get-set [_ set-name] "get one set looking for name")
+  (get-set-group [_ set-group-path] "get the attributes of a set group"))
 
 (def schema:token-sets
   [:and
@@ -231,23 +242,30 @@
   (toggle-set-in-theme [_ theme-name set-name] "toggle a set used / not used in a theme")
   (validate [_]))
 
-(deftype TokensLib [sets themes]
+(declare get-path)
+
+(deftype TokensLib [sets set-groups themes]
   ;; NOTE: This is only for debug purposes, pending to properly
   ;; implement the toString and alternative printing.
   #?@(:clj  [clojure.lang.IDeref
-             (deref [_] {:sets sets :themes themes})]
+             (deref [_] {:sets sets :set-groups set-groups :themes themes})]
       :cljs [cljs.core/IDeref
-             (-deref [_] {:sets sets :themes themes})])
+             (-deref [_] {:sets sets :set-groups set-groups :themes themes})])
 
   #?@(:cljs [cljs.core/IEncodeJS
              (-clj->js [_] (js-obj "sets" (clj->js sets)
+                                   "set-groups" (clj->js set-groups)
                                    "themes" (clj->js themes)))])
 
   ITokenSets
   (add-set [_ token-set]
     (dm/assert! "expected valid token set" (check-token-set! token-set))
-    (TokensLib. (assoc sets (:name token-set) token-set)
-                themes))
+    (let [path (get-path token-set)]
+      (TokensLib. (assoc sets (:name token-set) token-set)
+                  (cond-> set-groups
+                    (seq path)
+                    (assoc path (make-token-set-group)))
+                  themes)))
 
   (update-set [this set-name f]
     (if-let [set (get sets set-name)]
@@ -260,11 +278,13 @@
                         (-> sets
                             (dissoc (:name set))
                             (d/addm-at-index index (:name set') set'))))
+                    set-groups  ;; TODO update set-groups as needed
                     themes))
       this))
-  
+
   (delete-set [_ set-name]
     (TokensLib. (dissoc sets set-name)
+                set-groups  ;; TODO remove set-group if needed
                 themes))
 
   (set-count [_]
@@ -276,10 +296,14 @@
   (get-set [_ set-name]
     (get sets set-name))
 
+  (get-set-group [_ set-group-path]
+    (get set-groups set-group-path))
+
   ITokenThemes
   (add-theme [_ token-theme]
     (dm/assert! "expected valid token theme" (check-token-theme! token-theme))
     (TokensLib. sets
+                set-groups
                 (assoc themes (:name token-theme) token-theme)))
 
   (update-theme [this theme-name f]
@@ -288,6 +312,7 @@
                        (assoc :modified-at (dt/now)))]
         (check-token-theme! theme')
         (TokensLib. sets
+                    set-groups
                     (if (= (:name theme) (:name theme'))
                       (assoc themes (:name theme') theme')
                       (let [index (d/index-of (keys themes) (:name theme))]
@@ -298,6 +323,7 @@
 
   (delete-theme [_ theme-name]
     (TokensLib. sets
+                set-groups
                 (dissoc themes theme-name)))
 
   (theme-count [_]
@@ -314,6 +340,7 @@
     (dm/assert! "expected valid token instance" (check-token! token))
     (if (contains? sets set-name)
       (TokensLib. (update sets set-name add-token token)
+                  set-groups
                   themes)
       this))
 
@@ -321,6 +348,7 @@
     (if (contains? sets set-name)
       (TokensLib. (update sets set-name
                           #(update-token % token-name f))
+                  set-groups
                   themes)
       this))
 
@@ -328,18 +356,20 @@
     (if (contains? sets set-name)
       (TokensLib. (update sets set-name
                           #(delete-token % token-name))
+                  set-groups
                   themes)
       this))
 
   (toggle-set-in-theme [this theme-name set-name]
     (if (contains? themes theme-name)
       (TokensLib. sets
+                  set-groups
                   (update themes theme-name
                           #(toggle-set % set-name)))
       this))
 
   (validate [_]
-    (and (valid-token-sets? sets)
+    (and (valid-token-sets? sets)  ;; TODO: validate set-groups
          (valid-token-themes? themes))))
 
 (defn valid-tokens-lib?
@@ -362,10 +392,11 @@
    ;; structure the data and the order separately as we already do
    ;; with pages and pages-index.
    (make-tokens-lib :sets (d/ordered-map)
+                    :set-groups {}
                     :themes (d/ordered-map)))
 
-  ([& {:keys [sets themes]}]
-   (let [tokens-lib (TokensLib. sets themes)]
+  ([& {:keys [sets set-groups themes]}]
+   (let [tokens-lib (TokensLib. sets set-groups themes)]
 
      (dm/assert!
       "expected valid tokens lib"
@@ -438,13 +469,15 @@
     {:name "penpot/tokens-lib/v1"
      :class TokensLib
      :wfn (fn [n w o]
-            (fres/write-tag! w n 2)
+            (fres/write-tag! w n 3)
             (fres/write-object! w (.-sets o))
+            (fres/write-object! w (.-set-groups o))
             (fres/write-object! w (.-themes o)))
      :rfn (fn [r]
-            (let [sets   (fres/read-object! r)
-                  themes (fres/read-object! r)]
-              (->TokensLib sets themes)))}))
+            (let [sets       (fres/read-object! r)
+                  set-groups (fres/read-object! r)
+                  themes     (fres/read-object! r)]
+              (->TokensLib sets set-groups themes)))}))
 
 ;; === Groups handling
 
