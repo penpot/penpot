@@ -19,6 +19,7 @@
    [app.main.data.websocket :as ws]
    [app.main.features :as features]
    [app.main.repo :as rp]
+   [app.plugins.register :as register]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.storage :as s]
@@ -137,7 +138,9 @@
           (swap! s/storage assoc :profile profile)
           (i18n/set-locale! (:lang profile))
           (when (not= previous-email email)
-            (set-current-team! nil)))))))
+            (set-current-team! nil))
+
+          (register/init))))))
 
 (defn- on-fetch-profile-exception
   [cause]
