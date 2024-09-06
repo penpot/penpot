@@ -6647,6 +6647,7 @@ __metadata:
     js-beautify: "npm:^1.15.1"
     jsdom: "npm:^24.1.0"
     jszip: "npm:^3.10.1"
+    lodash: "npm:^4.17.21"
     luxon: "npm:^3.4.4"
     map-stream: "npm:0.0.7"
     marked: "npm:^12.0.2"
