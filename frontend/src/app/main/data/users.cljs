@@ -152,16 +152,6 @@
         (rx/of (rt/nav-raw href)))
       (rx/throw cause))))
 
-(defn- on-fetch-profile-exception
-  [cause]
-  (let [data (ex-data cause)]
-    (if (and (= :authorization (:type data))
-             (= :challenge-required (:code data)))
-      (let [path (rt/get-current-path)
-            href (str "/challenge.html?redirect=" path)]
-        (rx/of (rt/nav-raw href)))
-      (rx/throw cause))))
-
 (defn fetch-profile
   []
   (ptk/reify ::fetch-profile
