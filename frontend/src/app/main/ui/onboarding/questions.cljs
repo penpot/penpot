@@ -372,7 +372,6 @@
       [:& fm/image-radio-buttons {:options start-options
                                   :img-width "159px"
                                   :img-height "120px"
-                                  :class (stl/css :image-radio)
                                   :name :start-with
                                   :on-change on-start-change}]
 
