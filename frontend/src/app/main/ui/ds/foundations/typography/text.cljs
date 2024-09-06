@@ -15,12 +15,16 @@
 (defn- valid-typography? [value]
   (contains? t/typography-list value))
 
-(mf/defc text*
-  {::mf/props :obj}
-  [{:keys [as typography children class] :rest props}]
+(def ^:private schema:text
+  [:map
+   [:as {:optional true} :string]
+   [:class {:optional true} :string]
+   [:typography [:and :string [:fn #(valid-typography? (dm/str %))]]]])
 
-  (assert (valid-typography? (dm/str typography))
-          (dm/str typography " is an unknown typography"))
+(mf/defc text*
+  {::mf/props :obj
+   ::mf/schema schema:text}
+  [{:keys [as typography children class] :rest props}]
 
   (let [as (if (or (empty? as) (nil? as)) "p" as)
         class (dm/str (or class "") " " (stl/css-case :display-typography (= typography t/display)

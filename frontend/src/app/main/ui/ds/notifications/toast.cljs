@@ -20,11 +20,17 @@
    "error" i/delete-text
    "success" i/status-tick})
 
+(def ^:private schema:toast
+  [:map
+   [:class {:optional true} :string]
+   [:level {:optional true}
+    [:enum "info" "warning" "error" "success"]]
+   [:on-close {:optional true} fn?]])
+
 (mf/defc toast*
-  {::mf/props :obj}
+  {::mf/props :obj
+   ::mf/schema schema:toast}
   [{:keys [class level children on-close] :rest props}]
-  (assert (or (nil? level) (contains? levels level)) "expected valid level or nil")
-  (assert (or (nil? on-close) (fn? on-close)))
   (let [class (dm/str (stl/css-case :toast true
                                     :toast-info (= level "info")
                                     :toast-warning (= level "warning")

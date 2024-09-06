@@ -8,7 +8,6 @@ import * as React from "react";
 import Components from "@target/components";
 
 const { Toast } = Components;
-const { icons } = Components.meta;
 
 export default {
   title: "Notifications/Toast",

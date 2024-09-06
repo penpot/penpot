@@ -107,16 +107,18 @@
 
 (def ^:private schema:tab-switcher
   [:map
+   [:tabs [:vector {:min 1} schema:tab]]
    [:class {:optional true} :string]
-   [:action-button-position {:optional true}
-    [:enum "start" "end"]]
+   [:on-change-tab {:optional true} fn?]
    [:default-selected {:optional true} :string]
-   [:tabs [:vector {:min 1} schema:tab]]])
+   [:action-button {:optional true} some?]
+   [:action-button-position {:optional true}
+    [:enum "start" "end"]]])
 
 (mf/defc tab-switcher*
   {::mf/props :obj
    ::mf/schema schema:tab-switcher}
-  [{:keys [class tabs on-change-tab default-selected action-button-position action-button] :rest props}]
+  [{:keys [tabs class on-change-tab default-selected action-button-position action-button] :rest props}]
   (let [selected*        (mf/use-state #(get-selected-tab-id tabs default-selected))
         selected         (deref selected*)
 
