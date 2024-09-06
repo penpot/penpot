@@ -88,6 +88,11 @@
 - Fix fill collapsed options [Taiga #8351](https://tree.taiga.io/project/penpot/issue/8351)
 - Fix scroll on color picker modal [Taiga #8353](https://tree.taiga.io/project/penpot/issue/8353)
 - Fix components are not dragged from the group to the assets tab [Taiga #8273](https://tree.taiga.io/project/penpot/issue/8273)
+- Fix problem with SVG import [Github #4888](https://github.com/penpot/penpot/issues/4888)
+- Fix problem with overlay positions in viewer [Taiga #8464](https://tree.taiga.io/project/penpot/issue/8464)
+- Fix layer panel overflowing [Taiga #8665](https://tree.taiga.io/project/penpot/issue/8665)
+- Fix problem when creating a component instance from grid layout [Github #4881](https://github.com/penpot/penpot/issues/4881)
+- Fix problem when dismissing shared library update [Taiga #8669](https://tree.taiga.io/project/penpot/issue/8669)
 
 ## 2.1.5
 

@@ -6,9 +6,9 @@
 
 (ns app.util.storage
   (:require
-   ["lodash/debounce" :as ldebounce]
    [app.common.exceptions :as ex]
    [app.common.transit :as t]
+   [app.util.functions :as fns]
    [app.util.globals :as g]
    [cuerdas.core :as str]))
 
@@ -76,8 +76,7 @@
         (set! latest-state curr-state)))))
 
 (defonce on-change
-  (ldebounce on-change* 2000 #js {:leading false :trailing true}))
-
+  (fns/debounce on-change* 2000))
 
 (defonce storage (atom latest-state))
 (add-watch storage :persistence
