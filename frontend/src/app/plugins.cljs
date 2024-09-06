@@ -15,7 +15,6 @@
    [app.plugins.grid :as grid]
    [app.plugins.library :as library]
    [app.plugins.public-utils]
-   [app.plugins.register :as register]
    [app.plugins.shape :as shape]
    [app.util.globals :refer [global]]
    [app.util.object :as obj]
@@ -25,7 +24,6 @@
 (defn init-plugins-runtime!
   []
   (when-let [init-runtime (obj/get global "initPluginsRuntime")]
-    (register/init)
     (init-runtime (fn [plugin-id] (api/create-context plugin-id)))))
 
 (defn initialize

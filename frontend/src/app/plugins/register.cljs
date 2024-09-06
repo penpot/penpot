@@ -10,8 +10,10 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
+   [app.main.repo :as rp]
+   [app.main.store :as st]
    [app.util.object :as obj]
-   [app.util.storage :refer [storage]]))
+   [beicon.v2.core :as rx]))
 
 ;; Stores the installed plugins information
 (defonce ^:private registry (atom {}))
@@ -58,40 +60,14 @@
      :icon icon
      :permissions (into #{} (map str) permissions)}))
 
-;; FIXME: LEGACY version of the load from store
-;; can be removed before deploying plugins to production
-;; Needs to be preserved for the beta users
-(defn legacy-load-from-store
-  []
-  (let [parse-plugin-data
-        (fn [^js data]
-          {:plugin-id (obj/get data "plugin-id")
-           :name (obj/get data "name")
-           :description (obj/get data "description")
-           :host (obj/get data "host")
-           :code (obj/get data "code")
-           :icon (obj/get data "icon")
-           :permissions (into #{} (obj/get data "permissions"))})
-
-        ls (.-localStorage js/window)
-        plugins-val (.getItem ls "plugins")]
-    (when plugins-val
-      (let [stored (->> (.parse js/JSON plugins-val)
-                        (map parse-plugin-data))]
-        (reset! registry
-                {:ids (->> stored (map :plugin-id))
-                 :data (d/index-by :plugin-id stored)})))))
-
 (defn save-to-store
   []
-  (swap! storage assoc :plugins @registry))
+  (->> (rp/cmd! :update-profile-props {:props {:plugins @registry}})
+       (rx/subs! identity)))
 
 (defn load-from-store
   []
-  (if (:plugins @storage)
-    (reset! registry (:plugins @storage))
-    (do (legacy-load-from-store)
-        (save-to-store))))
+  (reset! registry (get-in @st/state [:profile :props :plugins] {})))
 
 (defn init
   []
