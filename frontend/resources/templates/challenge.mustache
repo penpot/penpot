@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Penpot - Challenge</title>
+    <link rel="icon" href="images/favicon.png" />
+
+    <script>
+     var params = new URL(document.location.toString()).searchParams;
+     var redirectPath = params.get("redirect");
+     setTimeout(() => {
+         location.href = "/#" + redirectPath;
+     }, 100);
+    </script>
+  </head>
+  <body>
+  </body>
+</html>
