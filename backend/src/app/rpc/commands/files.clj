@@ -1058,7 +1058,7 @@
 (def ^:private schema:ignore-file-library-sync-status
   [:map {:title "ignore-file-library-sync-status"}
    [:file-id ::sm/uuid]
-   [:date ::dt/duration]])
+   [:date ::dt/instant]])
 
 ;; TODO: improve naming
 (sv/defmethod ::ignore-file-library-sync-status

@@ -141,20 +141,21 @@
 
 ;; --- INSTANT
 
+(defn instant?
+  [v]
+  (instance? Instant v))
+
 (defn instant
   ([s]
-   (if (int? s)
-     (Instant/ofEpochMilli s)
-     (Instant/parse s)))
+   (cond
+     (instant? s) s
+     (int? s)    (Instant/ofEpochMilli s)
+     :else       (Instant/parse s)))
   ([s fmt]
    (case fmt
      :rfc1123 (Instant/from (.parse DateTimeFormatter/RFC_1123_DATE_TIME ^String s))
      :iso     (Instant/from (.parse DateTimeFormatter/ISO_INSTANT ^String s))
      :iso8601 (Instant/from (.parse DateTimeFormatter/ISO_INSTANT ^String s)))))
-
-(defn instant?
-  [v]
-  (instance? Instant v))
 
 (defn is-after?
   [da db]
