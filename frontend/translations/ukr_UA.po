@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-09-07 08:46+0000\n"
+"PO-Revision-Date: 2024-09-08 12:09+0000\n"
 "Last-Translator: Denys Kisil <denkisil@outlook.com>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
@@ -1421,7 +1421,7 @@ msgstr ""
 
 #: src/app/main/ui/onboarding/questions.cljs:169
 msgid "labels.adobe-xd"
-msgstr ""
+msgstr "Adobe ExpDesign"
 
 #: src/app/main/ui/static.cljs:282
 msgid "labels.bad-gateway.desc-message"
@@ -3430,7 +3430,7 @@ msgstr "Створити криву"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:134
 msgid "shortcuts.merge-nodes"
-msgstr "Об'єднати вузли"
+msgstr "Об'єднання вузлів"
 
 #: src/app/main/ui/workspace/viewport/path_actions.cljs:189
 msgid "workspace.path.actions.join-nodes"
@@ -3495,3 +3495,1381 @@ msgstr "Модифікувати шар"
 #: src/app/main/data/workspace/media.cljs:273, src/app/main/ui/components/color_bullet.cljs:32, src/app/main/ui/components/color_bullet.cljs:45, src/app/main/ui/viewer/inspect/attributes/common.cljs:66, src/app/main/ui/workspace/colorpicker.cljs:212, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:237
 msgid "media.image"
 msgstr "Зображення"
+
+#: src/app/main/ui/onboarding/questions.cljs:171
+msgid "labels.canva"
+msgstr "Канва"
+
+#: src/app/main/ui/onboarding/questions.cljs:404
+msgid "labels.youtube"
+msgstr "Ютуб"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:170
+msgid "shortcuts.select-next"
+msgstr "Обрати наступний шар"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:191
+msgid "shortcuts.toggle-guides"
+msgstr "Показати/приховати посібники"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:203
+msgid "shortcuts.toggle-theme"
+msgstr "Змінити тему"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:204
+msgid "shortcuts.toggle-visibility"
+msgstr "Показати / приховати"
+
+#: src/app/main/ui/settings/options.cljs:77
+msgid "title.settings.options"
+msgstr "Налаштування - Penpot"
+
+#: src/app/main/ui/viewer.cljs:420
+msgid "title.viewer"
+msgstr "%s - Режим перегляду - Penpot"
+
+#: src/app/main/ui/viewer.cljs:570
+msgid "viewer.empty-state"
+msgstr "На сторінці не знайдено дошок."
+
+#: src/app/main/ui/viewer/header.cljs:351
+msgid "viewer.header.inspect-section"
+msgstr "Дослідити (%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:221
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "%s компонент"
+msgstr[1] "%s компоненти"
+msgstr[2] "%s компонентів"
+
+#, unused
+msgid "workspace.assets.typography.text-styles"
+msgstr "Стилі тексту"
+
+#: src/app/main/ui/workspace/context_menu.cljs:595
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Видалити стовпець"
+
+#: src/app/main/ui/workspace/context_menu.cljs:599
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Дублювати рядок"
+
+#: src/app/main/ui/workspace/main_menu.cljs:238
+msgid "workspace.header.menu.disable-dynamic-alignment"
+msgstr "Вимкнути динамічне вирівнювання"
+
+#: src/app/main/ui/workspace/main_menu.cljs:432
+msgid "workspace.header.menu.select-all"
+msgstr "Обрати все"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:152
+msgid "workspace.path.actions.draw-nodes"
+msgstr "Намалювати вузли (%s)"
+
+#: src/app/main/ui/workspace/context_menu.cljs:469
+msgid "workspace.shape.menu.create-multiple-components"
+msgstr "Створити кілька компонентів"
+
+#: src/app/main/ui/workspace/context_menu.cljs:465
+msgid "workspace.shape.menu.create-component"
+msgstr "Створити компонент"
+
+#: src/app/main/ui/workspace/context_menu.cljs:139
+msgid "workspace.shape.menu.copy"
+msgstr "Копіювати"
+
+#: src/app/main/ui/workspace/context_menu.cljs:208
+msgid "workspace.shape.menu.flip-horizontal"
+msgstr "Перевернути по горизонталі"
+
+#: src/app/main/ui/workspace/context_menu.cljs:321
+msgid "workspace.shape.menu.edit"
+msgstr "Редагувати"
+
+#: src/app/main/ui/workspace/right_header.cljs:231, src/app/main/ui/workspace/right_header.cljs:232
+msgid "workspace.sidebar.history"
+msgstr "Історія (%s)"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:145
+msgid "workspace.undo.entry.new"
+msgstr "Новий %s"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:133, src/app/main/ui/workspace/top_toolbar.cljs:134
+msgid "workspace.toolbar.move"
+msgstr "Перемістити (%s)"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:127
+msgid "workspace.undo.entry.single.component"
+msgstr "компонент"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:126
+msgid "workspace.undo.entry.single.color"
+msgstr "колірний ресурс"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:138
+msgid "workspace.undo.entry.single.text"
+msgstr "текст"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:149
+msgid "workspace.undo.entry.unknown"
+msgstr "Операція над %s"
+
+#: src/app/main/data/workspace/libraries.cljs:1097
+msgid "workspace.updates.dismiss"
+msgstr "Відкинути"
+
+#: src/app/main/data/workspace/libraries.cljs:1095
+msgid "workspace.updates.more-info"
+msgstr "Більше про"
+
+#: src/app/main/ui/workspace/plugins.cljs:166
+msgid "workspace.plugins.search-placeholder"
+msgstr "Вкажіть посилання на плагін"
+
+#, unused
+msgid "workspace.plugins.success"
+msgstr "Плагін успішно завантажено."
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:187
+msgid "shortcuts.toggle-assets"
+msgstr "Обрати ресурси"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:188
+msgid "shortcuts.toggle-colorpalette"
+msgstr "Обрати палітру кольорів"
+
+#: src/app/main/ui/dashboard/team.cljs:1057
+msgid "title.team-settings"
+msgstr "Налаштування - %s - Penpot"
+
+#: src/app/util/color.cljs:34
+msgid "workspace.gradients.linear"
+msgstr "Лінійний градієнт"
+
+#: src/app/main/ui/workspace/context_menu.cljs:261
+msgid "workspace.shape.menu.group"
+msgstr "Група"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:112
+msgid "workspace.undo.entry.multiple.color"
+msgstr "колірні ресурси"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:113
+msgid "workspace.undo.entry.multiple.component"
+msgstr "компоненти"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:119
+msgid "workspace.undo.entry.multiple.page"
+msgstr "сторінки"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:120
+msgid "workspace.undo.entry.multiple.path"
+msgstr "шляхи"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:139
+msgid "workspace.undo.entry.single.typography"
+msgstr "ресурс типографіки"
+
+#, unused
+msgid "workspace.viewport.click-to-close-path"
+msgstr "Натисність щоб закінчити шлях"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:190
+msgid "shortcuts.toggle-fullscreen"
+msgstr "Перейти в повноекраний режим"
+
+#: src/app/main/ui/settings/password.cljs:103
+msgid "title.settings.password"
+msgstr "Пароль - Penpot"
+
+#: src/app/main/ui/viewer/header.cljs:194
+msgid "viewer.header.fullscreen"
+msgstr "Повноекранний режим"
+
+#: src/app/main/ui/viewer/share_link.cljs:187
+msgid "viewer.header.share.copy-link"
+msgstr "Копіювати посилання"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:134
+msgid "workspace.assets.box-filter-all"
+msgstr "Усі ресурси"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:567
+msgid "workspace.assets.duplicate-main"
+msgstr "Дублювати головний"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:523
+msgid "workspace.assets.typography.go-to-edit"
+msgstr "Перейти до файлу бібліотеки стилів для редагування"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:525
+msgid "workspace.focus.focus-mode"
+msgstr "Режим фокусування"
+
+#: src/app/main/ui/workspace/header.cljs
+#, unused
+msgid "workspace.header.menu.enable-scale-text"
+msgstr "Увімкнути масштабування тексту"
+
+#: src/app/main/ui/workspace/main_menu.cljs:395
+msgid "workspace.header.menu.show-pixel-grid"
+msgstr "Показати піксельну сітку"
+
+#: src/app/main/ui/workspace/main_menu.cljs:321
+msgid "workspace.header.menu.show-rules"
+msgstr "Показати лінійки"
+
+#: src/app/main/ui/workspace/right_header.cljs:123
+msgid "workspace.header.zoom-fit-all"
+msgstr "Збільшити щоб вмістити все"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:273, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:606
+msgid "workspace.layout_grid.editor.options.edit-grid"
+msgstr "Редагувати сітку"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:167
+msgid "workspace.path.actions.add-node"
+msgstr "Додати вузол (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:438
+msgid "workspace.options.y"
+msgstr "Вісь ординат (Y)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:204
+msgid "workspace.path.actions.make-corner"
+msgstr "В кут (%s)"
+
+#: src/app/main/ui/workspace/context_menu.cljs:445
+msgid "workspace.shape.menu.add-grid"
+msgstr "Додати макет сітки"
+
+#: src/app/main/ui/workspace/context_menu.cljs:441
+msgid "workspace.shape.menu.add-flex"
+msgstr "Додати гнучкий макет"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:432
+msgid "workspace.shape.menu.detach-instance"
+msgstr "Відокремити екземпляр"
+
+#: src/app/main/ui/workspace/context_menu.cljs:548, src/app/main/ui/workspace/main_menu.cljs:408
+msgid "workspace.shape.menu.hide-ui"
+msgstr "Показати / приховати інтерфейс"
+
+#: src/app/main/ui/workspace/context_menu.cljs:363, src/app/main/ui/workspace/sidebar/layer_item.cljs:145
+msgid "workspace.shape.menu.hide"
+msgstr "Приховати"
+
+#: src/app/main/ui/workspace/context_menu.cljs:266
+msgid "workspace.shape.menu.mask"
+msgstr "Маскувати"
+
+#: src/app/main/ui/workspace/context_menu.cljs:221
+msgid "workspace.shape.menu.thumbnail-remove"
+msgstr "Видалити мініатюру"
+
+#: src/app/main/ui/workspace/context_menu.cljs:368, src/app/main/ui/workspace/sidebar/layer_item.cljs:152
+msgid "workspace.shape.menu.unlock"
+msgstr "Розблокувати"
+
+#: src/app/main/ui/workspace/context_menu.cljs:271
+msgid "workspace.shape.menu.unmask"
+msgstr "Зняти маску"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:307, src/app/main/ui/workspace/sidebar/layers.cljs:366
+msgid "workspace.sidebar.layers.masks"
+msgstr "Маски"
+
+#: src/app/main/ui/workspace/left_toolbar.cljs
+#, unused
+msgid "workspace.toolbar.shortcuts"
+msgstr "Ярлики (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:190, src/app/main/ui/workspace/top_toolbar.cljs:191
+msgid "workspace.toolbar.path"
+msgstr "Шлях (%s)"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:342
+msgid "workspace.undo.empty"
+msgstr "Тут, поки що, немає історії редагувань"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:116
+msgid "workspace.undo.entry.multiple.group"
+msgstr "групи"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:115
+msgid "workspace.undo.entry.multiple.frame"
+msgstr "дошка"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:122
+msgid "workspace.undo.entry.multiple.shape"
+msgstr "фігури"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:132
+msgid "workspace.undo.entry.single.media"
+msgstr "графічний ресурс"
+
+#: src/app/main/data/workspace/libraries.cljs:1093
+msgid "workspace.updates.there-are-updates"
+msgstr "Є деякі оновлення в спільній бібліотеці"
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:38
+msgid "workspace.top-bar.read-only.done"
+msgstr "Виконано"
+
+#: src/app/main/ui/workspace/plugins.cljs:160
+msgid "workspace.plugins.title"
+msgstr "Плагіни"
+
+#: src/app/main/ui/workspace/plugins.cljs:171
+msgid "workspace.plugins.install"
+msgstr "Встановити"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:111
+msgid "workspace.undo.entry.multiple.circle"
+msgstr "кола"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:219, src/app/main/ui/workspace/top_toolbar.cljs:220
+msgid "workspace.toolbar.toggle-toolbar"
+msgstr "Перемкнути панель інструментів"
+
+#: src/app/main/ui/workspace/palette.cljs:173, src/app/main/ui/workspace/palette.cljs:174
+msgid "workspace.toolbar.text-palette"
+msgstr "Типографіки (%s)"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:193
+msgid "shortcuts.toggle-layers"
+msgstr "Обрати шари"
+
+#: src/app/main/ui/viewer/header.cljs:342
+msgid "viewer.header.comments-section"
+msgstr "Коментарі (%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:127
+msgid "workspace.assets.create-group"
+msgstr "Створити групу"
+
+#: src/app/main/ui/viewer/interactions.cljs:300
+msgid "viewer.header.show-interactions"
+msgstr "Показати взаємодії"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:142
+msgid "shortcuts.move-unit-left"
+msgstr "Перемістити ліворуч"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:179
+msgid "shortcuts.start-measure"
+msgstr "Почати вимірювання"
+
+#: src/app/main/ui/settings/profile.cljs:121
+msgid "title.settings.profile"
+msgstr "Профіль - Penpot"
+
+#: src/app/main/ui/workspace/main_menu.cljs:368
+msgid "workspace.header.menu.show-textpalette"
+msgstr "Показати палітру шрифтів"
+
+#: src/app/main/ui/workspace/main_menu.cljs:446
+msgid "workspace.header.menu.undo"
+msgstr "Відхилити зміни"
+
+#: src/app/main/ui/workspace/context_menu.cljs:331
+msgid "workspace.shape.menu.path"
+msgstr "Шлях"
+
+#: src/app/main/ui/viewer.cljs:575
+msgid "viewer.frame-not-found"
+msgstr "Дошку не знайдено."
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:162
+msgid "shortcuts.open-workspace"
+msgstr "Перейти до робочого простору"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:164
+msgid "shortcuts.prev-frame"
+msgstr "Попередня дошка"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:165
+msgid "shortcuts.redo"
+msgstr "Повернути внесені зміни"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:176
+msgid "shortcuts.snap-nodes"
+msgstr "Прив'язати до вузлів"
+
+#: src/app/main/ui/viewer/header.cljs:333
+msgid "viewer.header.interactions-section"
+msgstr "Взаємодії (%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "workspace.assets.selected-count"
+msgid_plural "workspace.assets.selected-count"
+msgstr[0] "%s елемент обрано"
+msgstr[1] "%s елементи обрано"
+msgstr[2] "%s елементів обрано"
+
+#: src/app/main/ui/dashboard/grid.cljs:205, src/app/main/ui/workspace/libraries.cljs:461, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:464, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:489, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:596, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:615
+msgid "workspace.assets.typography.sample"
+msgstr "Аа"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:509
+msgid "workspace.assets.typography.line-height"
+msgstr "Висота лінії"
+
+#: src/app/main/ui/workspace/main_menu.cljs:353
+msgid "workspace.header.menu.hide-palette"
+msgstr "Приховати палітру кольорів"
+
+#: src/app/main/ui/workspace/context_menu.cljs:257
+msgid "workspace.shape.menu.ungroup"
+msgstr "Дегрупувати"
+
+#: src/app/main/ui/workspace/context_menu.cljs:326
+msgid "workspace.shape.menu.transform-to-path"
+msgstr "Перетворити на шлях"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:147
+msgid "workspace.undo.entry.delete"
+msgstr "Видалено %s"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:137
+msgid "workspace.undo.entry.single.shape"
+msgstr "фігура"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:136
+msgid "workspace.undo.entry.single.rect"
+msgstr "прямокутник"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:150
+msgid "shortcuts.opacity-4"
+msgstr "Встановити непрозорість на 40%"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:50
+msgid "workspace.align.hleft"
+msgstr "Вирівняти по лівому краю (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:66
+msgid "workspace.align.hright"
+msgstr "Вирівняти по правому краю (%s)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:383
+msgid "workspace.header.menu.show-artboard-names"
+msgstr "Показати імена дошок"
+
+#: src/app/main/ui/workspace/main_menu.cljs:354
+msgid "workspace.header.menu.show-palette"
+msgstr "Показати палітру кольорів"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:154
+msgid "shortcuts.opacity-8"
+msgstr "Встановити непрозорість на 80%"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:155
+msgid "shortcuts.opacity-9"
+msgstr "Встановити непрозорість на 90%"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:99
+msgid "workspace.align.vbottom"
+msgstr "Вирівняти по низу (%s)"
+
+#: src/app/main/ui/workspace/context_menu.cljs:348, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:89
+msgid "workspace.shape.menu.flatten"
+msgstr "Вирівнювати"
+
+#: src/app/main/ui/workspace/context_menu.cljs:341
+msgid "workspace.shape.menu.exclude"
+msgstr "Виключити"
+
+#: src/app/main/ui/workspace/context_menu.cljs:432
+msgid "workspace.shape.menu.remove-flex"
+msgstr "Видалити гнучкий макет"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:445
+msgid "workspace.shape.menu.update-main"
+msgstr "Оновити головний компонент"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:161, src/app/main/ui/workspace/top_toolbar.cljs:162
+msgid "workspace.toolbar.ellipse"
+msgstr "Еліпс (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:181, src/app/main/ui/workspace/top_toolbar.cljs:182
+msgid "workspace.toolbar.curve"
+msgstr "Крива (%s)"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:123
+msgid "workspace.undo.entry.multiple.text"
+msgstr "тексти"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:124
+msgid "workspace.undo.entry.multiple.typography"
+msgstr "ресурси типографіки"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:335
+msgid "workspace.undo.title"
+msgstr "Історія"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:146
+msgid "shortcuts.opacity-0"
+msgstr "Встановити непрозорість на 100%"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:147
+msgid "shortcuts.opacity-1"
+msgstr "Встановити непрозорість на 10%"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:211
+msgid "shortcuts.zoom-lense-decrease"
+msgstr "Зменшити об'єктив лінзи"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:207
+msgid "shortcuts.undo"
+msgstr "Скасувати попередню дію"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:209
+msgid "shortcuts.unmask"
+msgstr "Зняти маску"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:212
+msgid "shortcuts.zoom-lense-increase"
+msgstr "Збільшити об'єктив лінзи"
+
+#: src/app/main/ui/dashboard/search.cljs:32
+msgid "title.dashboard.search"
+msgstr "Пошук - %s - Penpot"
+
+#: src/app/main/ui/dashboard/libraries.cljs:44
+msgid "title.dashboard.shared-libraries"
+msgstr "Спільні бібліотеки - %s - Penpot"
+
+#: src/app/main/ui/viewer/interactions.cljs:292
+msgid "viewer.header.dont-show-interactions"
+msgstr "Не показувати взаємодії"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:137
+msgid "workspace.assets.group-name"
+msgstr "Ім'я групи"
+
+#: src/app/main/ui/workspace/context_menu.cljs:486
+msgid "workspace.shape.menu.delete"
+msgstr "Видалити це"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:427
+msgid "workspace.shape.menu.create-annotation"
+msgstr "Створити анотацію"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#, unused
+msgid "workspace.shape.menu.update-components-in-bulk"
+msgstr "Оновити головні компоненти"
+
+#: src/app/main/ui/viewer/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:91
+msgid "workspace.sidebar.options.svg-attrs.title"
+msgstr "Імпортовані атрибути SVG"
+
+#: src/app/main/ui/workspace/sidebar.cljs:113
+msgid "workspace.toolbar.assets"
+msgstr "Ресурси"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:166
+msgid "shortcuts.reset-zoom"
+msgstr "Скинути збільшення"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:172
+msgid "shortcuts.select-prev"
+msgstr "Обрати попередній шар"
+
+#: src/app/main/ui/workspace/header.cljs
+#, unused
+msgid "workspace.header.menu.disable-scale-text"
+msgstr "Вимкнути масштабування тексту"
+
+#: src/app/main/ui/viewer/inspect/attributes/common.cljs:77
+msgid "media.image.short"
+msgstr ".img"
+
+#: src/app/main/ui/dashboard/team.cljs:871
+msgid "modals.create-webhook.url.placeholder"
+msgstr "https://savelife.in.ua/en"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:148
+msgid "shortcuts.opacity-2"
+msgstr "Встановити непрозорість на 20%"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:149
+msgid "shortcuts.opacity-3"
+msgstr "Встановити непрозорість на 30%"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:152
+msgid "shortcuts.opacity-6"
+msgstr "Встановити непрозорість на 60%"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:167
+msgid "shortcuts.scale"
+msgstr "Масштабувати"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:173
+msgid "shortcuts.separate-nodes"
+msgstr "Відокремити вузли"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:174
+msgid "shortcuts.show-pixel-grid"
+msgstr "Показати / приховати піксельну сітку"
+
+#: src/app/main/ui/dashboard/fonts.cljs:37
+msgid "title.dashboard.font-providers"
+msgstr "Постачальники шрифтів - %s - Penpot"
+
+#: src/app/main/ui/dashboard/fonts.cljs:36
+msgid "title.dashboard.fonts"
+msgstr "Шрифти - %s - Penpot"
+
+#: src/app/main/ui/dashboard/projects.cljs:320
+msgid "title.dashboard.projects"
+msgstr "Проєкти - %s - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs:747
+msgid "title.team-invitations"
+msgstr "Запрошення - %s - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs:512
+msgid "title.team-members"
+msgstr "Учасники - %s - Penpot"
+
+#: src/app/main/ui/dashboard/team.cljs:1010
+msgid "title.team-webhooks"
+msgstr "Вебхуки - %s - Penpot"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:58
+msgid "workspace.align.hcenter"
+msgstr "Виривняти по центру горизонтально (%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:138
+msgid "workspace.assets.create-group-hint"
+msgstr ""
+"Ваші елементи будуть автоматично названі як \"назва групи / назва елемента\""
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:176
+msgid "workspace.assets.filter"
+msgstr "Фільтрувати"
+
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:62, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:347
+msgid "workspace.assets.local-library"
+msgstr "локальна бібліотека"
+
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:295
+msgid "workspace.assets.not-found"
+msgstr "Не було знайдено ресурсів"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:193
+msgid "workspace.assets.sort"
+msgstr "Сортувати"
+
+#: src/app/main/ui/workspace/main_menu.cljs:278
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Перемкнутись на світлу тему"
+
+#: src/app/main/ui/workspace/right_header.cljs:42, src/app/main/ui/workspace/right_header.cljs:47
+msgid "workspace.header.unsaved"
+msgstr "Незбережені зміни"
+
+#: src/app/main/ui/viewer/header.cljs:109
+msgid "workspace.header.zoom-fill"
+msgstr "Заповнення - розширити щоб заповнити"
+
+#: src/app/main/ui/viewer/header.cljs:102
+msgid "workspace.header.zoom-fit"
+msgstr "Fit - зменшити масштаб до потрібного розміру"
+
+#: src/app/main/ui/workspace/right_header.cljs:130
+msgid "workspace.header.zoom-selected"
+msgstr "Збільшити до виділеного"
+
+#: src/app/main/ui/workspace/context_menu.cljs:335, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:75
+msgid "workspace.shape.menu.difference"
+msgstr "Різниця"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:431
+msgid "workspace.shape.menu.detach-instances-in-bulk"
+msgstr "Відокремити екземпляри"
+
+#: src/app/main/ui/workspace/context_menu.cljs:148
+msgid "workspace.shape.menu.duplicate"
+msgstr "Дублювати"
+
+#: src/app/main/ui/workspace/context_menu.cljs:204
+msgid "workspace.shape.menu.flip-vertical"
+msgstr "Перевернути по вертикалі"
+
+#: src/app/main/ui/workspace/context_menu.cljs:371, src/app/main/ui/workspace/sidebar/layer_item.cljs:153
+msgid "workspace.shape.menu.lock"
+msgstr "Заблокувати"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#, unused
+msgid "workspace.shape.menu.go-main"
+msgstr "Перейти до файлу головного компоненту"
+
+#: src/app/main/ui/workspace/context_menu.cljs:187
+msgid "workspace.shape.menu.front"
+msgstr "Висунути на перший план"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:439
+msgid "workspace.shape.menu.restore-main"
+msgstr "Відновити головний компонент"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:436
+msgid "workspace.shape.menu.reset-overrides"
+msgstr "Відкликати зміни"
+
+#: src/app/main/ui/workspace/context_menu.cljs:435
+msgid "workspace.shape.menu.remove-grid"
+msgstr "Видалити макет сітки"
+
+#: src/app/main/ui/components/tab_container.cljs:50, src/app/main/ui/workspace/sidebar.cljs:44
+msgid "workspace.sidebar.collapse"
+msgstr "Приховати панель інструментів"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:424
+msgid "workspace.shape.menu.show-in-assets"
+msgstr "Показати в панелі ресурсів"
+
+#: src/app/main/ui/workspace/sidebar/collapsable_button.cljs:25, src/app/main/ui/workspace/sidebar/collapsable_button.cljs:29
+msgid "workspace.sidebar.expand"
+msgstr "Розкрити панель інструментів"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:311, src/app/main/ui/workspace/sidebar/layers.cljs:422
+msgid "workspace.sidebar.layers.shapes"
+msgstr "Фігури"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:289
+msgid "workspace.sidebar.layers.search"
+msgstr "Пошук шарів"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:310, src/app/main/ui/workspace/sidebar/layers.cljs:408
+msgid "workspace.sidebar.layers.images"
+msgstr "Список зображень"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:306, src/app/main/ui/workspace/sidebar/layers.cljs:352
+msgid "workspace.sidebar.layers.groups"
+msgstr "Групи"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:305, src/app/main/ui/workspace/sidebar/layers.cljs:338
+msgid "workspace.sidebar.layers.frames"
+msgstr "Дошки"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:522, src/app/main/ui/workspace/sidebar.cljs:77, src/app/main/ui/workspace/sidebar.cljs:95
+msgid "workspace.sidebar.layers"
+msgstr "Шари"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:217
+msgid "workspace.sidebar.sitemap"
+msgstr "Сторінки"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:130
+msgid "workspace.undo.entry.single.group"
+msgstr "група"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:134
+msgid "workspace.undo.entry.single.page"
+msgstr "сторінка"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:131
+msgid "workspace.undo.entry.single.image"
+msgstr "зображення"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:129
+msgid "workspace.undo.entry.single.frame"
+msgstr "дошка"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:128
+msgid "workspace.undo.entry.single.curve"
+msgstr "крива"
+
+#: src/app/main/ui/dashboard/team.cljs:594
+msgid "errors.member-is-muted"
+msgstr ""
+"Електрона пошта профілю, який ви намагаєтесь запросити, має приглушення "
+"листів (скарги на спам або постійне пересилання)."
+
+#: src/app/main/ui/auth/recovery_request.cljs:53, src/app/main/ui/dashboard/team.cljs:181, src/app/main/ui/dashboard/team.cljs:590, src/app/main/ui/settings/change_email.cljs:33
+msgid "errors.profile-is-muted"
+msgstr ""
+"У вашому профілі приглушено листи (скарги на спам або постійне пересилання)."
+
+#: src/app/main/ui/static.cljs:54
+msgid "labels.copyright"
+msgstr "Калейдос @2024"
+
+#: src/app/main/ui/onboarding/questions.cljs:165
+msgid "labels.figma"
+msgstr "Фіґма"
+
+#: src/app/main/ui/onboarding/questions.cljs:173
+msgid "labels.invision"
+msgstr "ІнВіжн"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:207
+msgid "media.solid"
+msgstr "Суцільний"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:89
+msgid "shortcuts.bring-backward"
+msgstr "Відправити назад"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:90
+msgid "shortcuts.bring-forward"
+msgstr "Відправити вперед"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:91
+msgid "shortcuts.bring-front"
+msgstr "Відправити на передній план"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:120
+msgid "shortcuts.h-distribute"
+msgstr "Розподілити горизонтально"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:140
+msgid "shortcuts.move-nodes"
+msgstr "Перемістити вузол"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:144
+msgid "shortcuts.move-unit-up"
+msgstr "Перемістити вгору"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:145
+msgid "shortcuts.next-frame"
+msgstr "Наступна дошка"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:516
+msgid "shortcuts.not-found"
+msgstr "Ярликів не знайдено"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:151
+msgid "shortcuts.opacity-5"
+msgstr "Встановити непрозорість на 50%"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:141
+msgid "shortcuts.move-unit-down"
+msgstr "Перемістити вниз"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:143
+msgid "shortcuts.move-unit-right"
+msgstr "Перемістити праворуч"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:153
+msgid "shortcuts.opacity-7"
+msgstr "Встановити непрозорість на 70%"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:156
+msgid "shortcuts.open-color-picker"
+msgstr "Підбір кольору"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:158
+msgid "shortcuts.open-dashboard"
+msgstr "Перейти до панелі керування"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:168
+msgid "shortcuts.search-placeholder"
+msgstr "Пошук ярликів"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:169
+msgid "shortcuts.select-all"
+msgstr "Обрати все"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:171
+msgid "shortcuts.select-parent-layer"
+msgstr "Обрати батьківський шар"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:175
+msgid "shortcuts.show-shortcuts"
+msgstr "Показати / приховати ярлики"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:177
+msgid "shortcuts.snap-pixel-grid"
+msgstr "Прив'язати до піскельної сітки"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:178
+msgid "shortcuts.start-editing"
+msgstr "Почати редагування"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:180
+msgid "shortcuts.stop-measure"
+msgstr "Припинити вимірювання"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:181
+msgid "shortcuts.text-align-center"
+msgstr "Вирівняти по центру"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
+msgid "shortcuts.text-align-justify"
+msgstr "Вирівняти по ширині"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
+msgid "shortcuts.text-align-left"
+msgstr "Вирівняти по лівому краю"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
+msgid "shortcuts.text-align-right"
+msgstr "Вирявняти по правому краю"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
+msgid "shortcuts.thumbnail-set"
+msgstr "Встановити мініатюри"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:496, src/app/main/ui/workspace/sidebar/shortcuts.cljs:505
+msgid "shortcuts.title"
+msgstr "Клавіатурні скорочення"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:192
+msgid "shortcuts.toggle-history"
+msgstr "Обрати історію"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:194
+msgid "shortcuts.toggle-layout-flex"
+msgstr "Додати / вилучити гнучкий макет"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:195
+msgid "shortcuts.toggle-layout-grid"
+msgstr "Додати / вилучити макет сітки"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:189
+msgid "shortcuts.toggle-focus-mode"
+msgstr "Обрати режим фокусування"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:196
+msgid "shortcuts.toggle-lock"
+msgstr "Блокувати / розблокувати"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:197
+msgid "shortcuts.toggle-lock-size"
+msgstr "Заблокувати пропорції"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:186
+msgid "shortcuts.toggle-alignment"
+msgstr "Перемкнути динамічне вирівнювання"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:198
+msgid "shortcuts.toggle-rulers"
+msgstr "Показати / приховати лінійки"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:202
+msgid "shortcuts.toggle-textpalette"
+msgstr "Обрати палітру тексту"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:205
+msgid "shortcuts.toggle-zoom-style"
+msgstr "Обрати стиль збільшення"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:206
+msgid "shortcuts.underline"
+msgstr "Обрати нижнє підкреслення"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:200
+msgid "shortcuts.toggle-snap-guides"
+msgstr ""
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:201
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr ""
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:213
+msgid "shortcuts.zoom-selected"
+msgstr "Збільшити до обраного"
+
+#: src/app/main/ui/dashboard/files.cljs:158
+msgid "title.dashboard.files"
+msgstr "%s - Penpot"
+
+#: src/app/main/ui/auth/verify_token.cljs:67, src/app/main/ui/auth.cljs:36
+msgid "title.default"
+msgstr "Penpot - свобода дизайну для команд"
+
+#: src/app/main/ui/settings/access_tokens.cljs:281
+msgid "title.settings.access-tokens"
+msgstr "Профіль - токени доступу"
+
+#: src/app/main/ui/settings/feedback.cljs:107
+msgid "title.settings.feedback"
+msgstr "Надіслати відгук - Penpot"
+
+#: src/app/main/ui/workspace.cljs:190
+msgid "title.workspace"
+msgstr "%s - Penpot"
+
+#: src/app/main/ui.cljs:143
+msgid "viewer.breaking-change.description"
+msgstr ""
+"Це посилання для спільного використання більше не доступне. Створіть нове "
+"або попросіть у власника."
+
+#: src/app/main/ui/viewer/interactions.cljs:311
+msgid "viewer.header.show-interactions-on-click"
+msgstr "Показати взаємодії при натискані"
+
+#: src/app/main/ui/dashboard/team.cljs:969
+msgid "webhooks.last-delivery.success"
+msgstr "Остання доставка була успішною."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:91
+msgid "workspace.align.vcenter"
+msgstr "Вирівняти по центру вертикально (%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:83
+msgid "workspace.align.vtop"
+msgstr "Вирівняти по верху (%s)"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:525
+msgid "workspace.assets.grid-view"
+msgstr "Перегляд сіткою"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:521
+msgid "workspace.assets.list-view"
+msgstr "Перегляд списком"
+
+#, unused
+msgid "workspace.assets.open-library"
+msgstr "Відкрити файл бібліотеки"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:128
+msgid "workspace.assets.rename-group"
+msgstr "Перейменувати групу"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:173
+msgid "workspace.assets.search"
+msgstr "Пошук ресурсів"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "workspace.assets.shared-library"
+msgstr "Спільна бібліотека"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:513
+msgid "workspace.assets.typography.letter-spacing"
+msgstr "Міжлітеральний відступ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:517
+msgid "workspace.assets.typography.text-transform"
+msgstr "Перетворення тексту"
+
+#: src/app/main/ui/workspace/context_menu.cljs:594
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "Додати 1 стовпець праворуч"
+
+#: src/app/main/ui/workspace/context_menu.cljs:593
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "Додати 1 стовпець ліворуч"
+
+#: src/app/main/ui/workspace/context_menu.cljs:596
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "Видалити стовпець та фігури"
+
+#: src/app/main/ui/workspace/context_menu.cljs:592
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Дублювати стовпець"
+
+#: src/app/main/ui/workspace/context_menu.cljs:600
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "Додати 1 рядок вгорі"
+
+#: src/app/main/ui/workspace/context_menu.cljs:602
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Видалити рядок"
+
+#: src/app/main/ui/workspace/context_menu.cljs:603
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "Видалити рядок та фігури"
+
+#: src/app/main/ui/workspace/context_menu.cljs:287, src/app/main/ui/workspace/context_menu.cljs:553
+msgid "workspace.focus.focus-off"
+msgstr "Розфокосувати"
+
+#: src/app/main/ui/workspace/context_menu.cljs:286
+msgid "workspace.focus.focus-on"
+msgstr "Фокусувати"
+
+#: src/app/util/color.cljs:35
+msgid "workspace.gradients.radial"
+msgstr "Радіальний градієнт"
+
+#: src/app/main/ui/workspace/main_menu.cljs:192
+msgid "workspace.header.menu.disable-scale-content"
+msgstr "Вимкнути пропорційне масштабування"
+
+#: src/app/main/ui/workspace/main_menu.cljs:239
+msgid "workspace.header.menu.enable-dynamic-alignment"
+msgstr "Увімкнути динамічне вирівнювання"
+
+#: src/app/main/ui/workspace/main_menu.cljs:224
+msgid "workspace.header.menu.enable-snap-guides"
+msgstr ""
+
+#: src/app/main/ui/workspace/main_menu.cljs:193
+msgid "workspace.header.menu.enable-scale-content"
+msgstr "Увімкнути пропорційне масштабування"
+
+#: src/app/main/ui/workspace/main_menu.cljs:382
+msgid "workspace.header.menu.hide-artboard-names"
+msgstr "Приховати імена дошок"
+
+#: src/app/main/ui/workspace/main_menu.cljs:336
+msgid "workspace.header.menu.hide-guides"
+msgstr "Приховати посібники"
+
+#: src/app/main/ui/workspace/main_menu.cljs:394
+msgid "workspace.header.menu.hide-pixel-grid"
+msgstr "Приховати піксельну сітку"
+
+#: src/app/main/ui/workspace/main_menu.cljs:320
+msgid "workspace.header.menu.hide-rules"
+msgstr "Приховати лінійки"
+
+#: src/app/main/ui/workspace/main_menu.cljs:367
+msgid "workspace.header.menu.hide-textpalette"
+msgstr "Приховати палітру шрифтів"
+
+#: src/app/main/ui/workspace/main_menu.cljs:789
+msgid "workspace.header.menu.option.help-info"
+msgstr "Допомога та інформація"
+
+#: src/app/main/ui/workspace/main_menu.cljs:459
+msgid "workspace.header.menu.redo"
+msgstr "Повернутись до внесених змін"
+
+#: src/app/main/ui/workspace/main_menu.cljs:337
+msgid "workspace.header.menu.show-guides"
+msgstr "Показати вказівки"
+
+#: src/app/main/ui/workspace/main_menu.cljs:279
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Перемкнутись на темну тему"
+
+#: src/app/main/ui/workspace/header.cljs
+#, unused
+msgid "workspace.header.save-error"
+msgstr "Помилка при збереженні"
+
+#: src/app/main/ui/workspace/right_header.cljs:239
+msgid "workspace.header.viewer"
+msgstr "Режим перегляду (%s)"
+
+#: src/app/main/ui/viewer/header.cljs:79, src/app/main/ui/workspace/right_header.cljs:103
+msgid "workspace.header.zoom"
+msgstr "Збільшення"
+
+#: src/app/main/ui/viewer/header.cljs:116
+msgid "workspace.header.zoom-full-screen"
+msgstr "Повноекранний"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1274
+msgid "workspace.layout_grid.editor.options.exit"
+msgstr "Вихід"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:427
+msgid "workspace.options.x"
+msgstr "Вісь абсцис (X)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:174
+msgid "workspace.path.actions.delete-node"
+msgstr "Видалити вузол (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:211
+msgid "workspace.path.actions.make-curve"
+msgstr "В криву (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:182
+msgid "workspace.path.actions.merge-nodes"
+msgstr "Об'єднати вузли (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:159
+msgid "workspace.path.actions.move-nodes"
+msgstr "Перемістити вузли (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:196
+msgid "workspace.path.actions.separate-nodes"
+msgstr "Розділити вузли (%s)"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:218
+msgid "workspace.path.actions.snap-nodes"
+msgstr "Прив'язати вузли (%s)"
+
+#: src/app/main/ui/workspace/plugins.cljs:180
+#, markdown
+msgid "workspace.plugins.discover"
+msgstr "Дослідіть [більше плагінів](%s)"
+
+#: src/app/main/ui/workspace/plugins.cljs:196
+msgid "workspace.plugins.installed-plugins"
+msgstr "Встановлені плагіни"
+
+#: src/app/main/ui/workspace/plugins.cljs:187
+msgid "workspace.plugins.empty-plugins"
+msgstr "У вас ще немає жодного плагіну"
+
+#: src/app/main/ui/workspace/plugins.cljs:58
+msgid "workspace.plugins.button-open"
+msgstr "Відкрити"
+
+#: src/app/main/ui/workspace/main_menu.cljs:777
+msgid "workspace.plugins.menu.title"
+msgstr "Плагіни"
+
+#: src/app/main/ui/workspace/main_menu.cljs:624
+msgid "workspace.plugins.menu.plugins-manager"
+msgstr "Керування плагінами"
+
+#: src/app/main/ui/workspace/plugins.cljs:274
+msgid "workspace.plugins.permissions.disclaimer"
+msgstr "Зауважте, що плагін створено третьою особою."
+
+#: src/app/main/ui/workspace/plugins.cljs:236
+msgid "workspace.plugins.permissions.title"
+msgstr "ЦЕЙ ПЛАГІН ЗАПИТУЄ ДОСТУП НА:"
+
+#: src/app/main/ui/workspace/plugins.cljs:192
+msgid "workspace.plugins.plugin-list-link"
+msgstr "Список плагінів"
+
+#: src/app/main/ui/workspace/plugins.cljs:258
+msgid "workspace.plugins.permissions.user-read"
+msgstr "Прочитати інформацію профілю поточного користувача."
+
+#: src/app/main/ui/workspace/context_menu.cljs:174
+msgid "workspace.shape.menu.select-layer"
+msgstr "Обрати шар"
+
+#: src/app/main/ui/workspace/context_menu.cljs:145, src/app/main/ui/workspace/context_menu.cljs:545
+msgid "workspace.shape.menu.paste"
+msgstr "Вставити"
+
+#: src/app/main/ui/workspace/context_menu.cljs:338
+msgid "workspace.shape.menu.intersection"
+msgstr "Перехрестя"
+
+#: src/app/main/ui/workspace/context_menu.cljs:184
+msgid "workspace.shape.menu.forward"
+msgstr "Відсунути на задній план"
+
+#: src/app/main/ui/workspace/context_menu.cljs:142
+msgid "workspace.shape.menu.cut"
+msgstr "Вирізати"
+
+#: src/app/main/ui/workspace/context_menu.cljs:360, src/app/main/ui/workspace/sidebar/layer_item.cljs:144
+msgid "workspace.shape.menu.show"
+msgstr "Показати"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:442, src/app/main/ui/workspace/sidebar/assets/components.cljs:582
+msgid "workspace.shape.menu.show-main"
+msgstr "Показати головний компонент"
+
+#: src/app/main/ui/workspace/context_menu.cljs:332, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:70
+msgid "workspace.shape.menu.union"
+msgstr "Об'єднання"
+
+#: src/app/main/ui/workspace/context_menu.cljs:223
+msgid "workspace.shape.menu.thumbnail-set"
+msgstr "Встановити як мініатюру"
+
+#: src/app/main/ui/workspace/palette.cljs:165, src/app/main/ui/workspace/palette.cljs:166
+msgid "workspace.toolbar.color-palette"
+msgstr "Палітра кольорів (%s)"
+
+#: src/app/main/ui/workspace/left_header.cljs:91
+msgid "workspace.sitemap"
+msgstr "Мапа сайту"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:309, src/app/main/ui/workspace/sidebar/layers.cljs:394
+msgid "workspace.sidebar.layers.texts"
+msgstr "Тексти"
+
+#: src/app/main/ui/workspace/sidebar/layers.cljs:308, src/app/main/ui/workspace/sidebar/layers.cljs:380
+msgid "workspace.sidebar.layers.components"
+msgstr "Компоненти"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:201, src/app/main/ui/workspace/top_toolbar.cljs:202
+msgid "workspace.toolbar.plugins"
+msgstr "Плагіни (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:60, src/app/main/ui/workspace/top_toolbar.cljs:61
+msgid "workspace.toolbar.image"
+msgstr "Зображення (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:143, src/app/main/ui/workspace/top_toolbar.cljs:144
+msgid "workspace.toolbar.frame"
+msgstr "Дошка (%s)"
+
+#: src/app/main/ui/workspace/right_header.cljs:220, src/app/main/ui/workspace/right_header.cljs:221
+msgid "workspace.toolbar.comments"
+msgstr "Коментарі (%s)"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:148
+msgid "workspace.undo.entry.move"
+msgstr "Переміщені об'єкти"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:146
+msgid "workspace.undo.entry.modify"
+msgstr "Модифіковано %s"
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:35
+#, markdown
+msgid "workspace.top-bar.view-only"
+msgstr "**Інспектувати код** (Лише перегляд)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:170, src/app/main/ui/workspace/top_toolbar.cljs:171
+msgid "workspace.toolbar.text"
+msgstr "Текст (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:152, src/app/main/ui/workspace/top_toolbar.cljs:153
+msgid "workspace.toolbar.rect"
+msgstr "Прямокутник (%s)"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:114
+msgid "workspace.undo.entry.multiple.curve"
+msgstr "криві"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:135
+msgid "workspace.undo.entry.single.path"
+msgstr "шлях"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:133
+msgid "workspace.undo.entry.single.multiple"
+msgstr "об'єкт"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:125
+msgid "workspace.undo.entry.single.circle"
+msgstr "коло"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:121
+msgid "workspace.undo.entry.multiple.rect"
+msgstr "прямокутники"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:118
+msgid "workspace.undo.entry.multiple.multiple"
+msgstr "об'єкти"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:117
+msgid "workspace.undo.entry.multiple.media"
+msgstr "графічні ресурси"
+
+#: src/app/main/data/workspace/libraries.cljs:1100
+msgid "workspace.updates.update"
+msgstr "Оновити"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:271
+msgid "settings.select-this-color"
+msgstr "Оберіть елементи, використовуючи цей стиль"
+
+#: src/app/main/ui/workspace/context_menu.cljs:634
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Створити ділянку"
+
+#: src/app/main/ui/workspace/context_menu.cljs:637
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Створити дошку"
+
+#: src/app/main/ui/workspace/context_menu.cljs:629
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Об'єднати клітинки"
+
+#: src/app/main/ui/workspace/context_menu.cljs:601
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "Додати 1 рядок знизу"
