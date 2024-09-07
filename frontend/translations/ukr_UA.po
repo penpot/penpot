@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Ukrainian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ukr_UA/>\n"
+"PO-Revision-Date: 2024-09-07 08:46+0000\n"
+"Last-Translator: Denys Kisil <denkisil@outlook.com>\n"
+"Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
+"frontend/ukr_UA/>\n"
 "Language: ukr_UA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 5.6-dev\n"
+"X-Generator: Weblate 5.8-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:132, src/app/main/ui/static.cljs:139, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -26,7 +26,7 @@ msgstr "Повне ім'я"
 
 #: src/app/main/ui/auth/register.cljs:136, src/app/main/ui/static.cljs:142, src/app/main/ui/viewer/login.cljs:101
 msgid "auth.login-here"
-msgstr "Ввійдіть тут"
+msgstr "Увійти тут."
 
 #: src/app/main/ui/auth/login.cljs:186
 msgid "auth.login-submit"
@@ -102,7 +102,7 @@ msgstr "Створити дублікат"
 
 #, unused
 msgid "dashboard.export-multi"
-msgstr "Експорт файлів Penpot (%s)"
+msgstr "Експорт (%s) файлів Penpot"
 
 #: src/app/main/ui/workspace/main_menu.cljs:578
 msgid "dashboard.export-shapes"
@@ -130,7 +130,7 @@ msgstr "Перенести в іншу команду"
 
 #: src/app/main/ui/dashboard/files.cljs:117, src/app/main/ui/dashboard/projects.cljs:260, src/app/main/ui/dashboard/projects.cljs:261
 msgid "dashboard.options"
-msgstr "Опції"
+msgstr "Параметри"
 
 #: src/app/main/ui/dashboard/pin_button.cljs:24, src/app/main/ui/dashboard/project_menu.cljs:95
 msgid "dashboard.pin-unpin"
@@ -138,7 +138,7 @@ msgstr "Закріпити/Відчепити"
 
 #: src/app/main/ui/dashboard/projects.cljs:51
 msgid "dashboard.projects-title"
-msgstr "Проекти"
+msgstr "Проєкти"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 #, unused
@@ -155,11 +155,11 @@ msgstr "Введіть для пошуку"
 
 #: src/app/main/ui/settings/profile.cljs:67
 msgid "dashboard.your-email"
-msgstr "Електронна пошта"
+msgstr "Електрона адреса"
 
 #: src/app/main/ui/alert.cljs:32
 msgid "ds.alert-ok"
-msgstr "Ок"
+msgstr "Добре"
 
 #: src/app/main/ui/alert.cljs:31, src/app/main/ui/alert.cljs:34
 msgid "ds.alert-title"
@@ -167,11 +167,11 @@ msgstr "Увага"
 
 #: src/app/main/ui/confirm.cljs:36, src/app/main/ui/workspace/plugins.cljs:281
 msgid "ds.confirm-cancel"
-msgstr "Відміна"
+msgstr "Скасувати"
 
 #: src/app/main/ui/confirm.cljs:37, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:141
 msgid "ds.confirm-ok"
-msgstr "Ок"
+msgstr "Добре"
 
 #: src/app/main/ui/auth/login.cljs:61
 msgid "errors.auth-provider-not-configured"
@@ -179,7 +179,7 @@ msgstr "Провайдер для автентифікації не налашт
 
 #: src/app/main/ui/auth/recovery.cljs:32
 msgid "errors.invalid-recovery-token"
-msgstr "Невірний код відновлення."
+msgstr "Неправильний код відновлення."
 
 #: src/app/main/ui/settings/feedback.cljs:74
 msgid "feedback.description"
@@ -191,11 +191,11 @@ msgstr "Тема"
 
 #: src/app/main/ui/settings/feedback.cljs:65
 msgid "feedback.title"
-msgstr "Електронна пошта"
+msgstr "Електрона адреса"
 
 #: src/app/main/ui/viewer/inspect/attributes/blur.cljs:26
 msgid "inspect.attributes.blur"
-msgstr "Розмивання"
+msgstr "Розмиття"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:115
 msgid "inspect.attributes.blur.value"
@@ -228,7 +228,7 @@ msgstr "Ширина"
 #: src/app/main/ui/inspect/attributes/layout.cljs
 #, unused
 msgid "inspect.attributes.layout"
-msgstr "Розміщення"
+msgstr "Макет"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
 #, unused
@@ -299,7 +299,7 @@ msgstr "Товщина"
 
 #: src/app/main/ui/viewer/inspect/attributes/text.cljs:81, src/app/main/ui/viewer/inspect/attributes/text.cljs:194
 msgid "inspect.attributes.typography"
-msgstr "Текст"
+msgstr "Типографія"
 
 #: src/app/main/ui/viewer/inspect/attributes/text.cljs:145
 msgid "inspect.attributes.typography.text-decoration.none"
@@ -307,11 +307,11 @@ msgstr "Немає"
 
 #: src/app/main/ui/viewer/inspect/attributes/text.cljs:146
 msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "Перечеркнутий"
+msgstr "Закреслений"
 
 #: src/app/main/ui/viewer/inspect/attributes/text.cljs:147
 msgid "inspect.attributes.typography.text-decoration.underline"
-msgstr "Підчеркнутий"
+msgstr "Підкреслений"
 
 #: src/app/main/ui/viewer/inspect/attributes/text.cljs:159
 msgid "inspect.attributes.typography.text-transform.none"
@@ -396,7 +396,7 @@ msgstr "Назад"
 
 #: src/app/main/data/common.cljs:126, src/app/main/ui/dashboard/change_owner.cljs:68, src/app/main/ui/dashboard/import.cljs:518, src/app/main/ui/dashboard/team.cljs:889, src/app/main/ui/delete_shared.cljs:35, src/app/main/ui/export.cljs:165, src/app/main/ui/export.cljs:463, src/app/main/ui/settings/access_tokens.cljs:177, src/app/main/ui/viewer/share_link.cljs:203, src/app/main/ui/workspace/sidebar/assets/groups.cljs:145
 msgid "labels.cancel"
-msgstr "Відміна"
+msgstr "Скасувати"
 
 #: src/app/main/ui/dashboard/projects.cljs:93, src/app/main/ui/export.cljs:481, src/app/main/ui/settings/access_tokens.cljs:172, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:174, src/app/main/ui/workspace/libraries.cljs:530
 msgid "labels.close"
@@ -420,7 +420,7 @@ msgstr "Створити"
 
 #: src/app/main/ui/settings/sidebar.cljs:73
 msgid "labels.dashboard"
-msgstr "Панель управління"
+msgstr "Панель керування"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:306, src/app/main/ui/dashboard/fonts.cljs:255, src/app/main/ui/dashboard/fonts.cljs:332, src/app/main/ui/dashboard/fonts.cljs:346, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:925, src/app/main/ui/settings/access_tokens.cljs:198, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:209
 msgid "labels.delete"
@@ -428,7 +428,7 @@ msgstr "Видалити"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:28, src/app/main/ui/dashboard/files.cljs:72, src/app/main/ui/dashboard/files.cljs:156, src/app/main/ui/dashboard/projects.cljs:220, src/app/main/ui/dashboard/projects.cljs:224, src/app/main/ui/dashboard/sidebar.cljs:791
 msgid "labels.drafts"
-msgstr "Чорновики"
+msgstr "Чернетки"
 
 #: src/app/main/ui/comments.cljs:349, src/app/main/ui/dashboard/fonts.cljs:252, src/app/main/ui/dashboard/team.cljs:923, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:205
 msgid "labels.edit"
@@ -440,7 +440,7 @@ msgstr "Редактор"
 
 #: src/app/main/ui/dashboard/team.cljs:681
 msgid "labels.expired-invitation"
-msgstr "Протерміновано"
+msgstr "Сплинув термін дії"
 
 #: src/app/main/ui/export.cljs:174
 msgid "labels.export"
@@ -468,15 +468,15 @@ msgstr "Вийти"
 
 #: src/app/main/ui/dashboard/team.cljs:487
 msgid "labels.member"
-msgstr "Учасник"
+msgstr "Член"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:510, src/app/main/ui/dashboard/team.cljs:92, src/app/main/ui/dashboard/team.cljs:100
 msgid "labels.members"
-msgstr "Учасники"
+msgstr "Члени"
 
 #: src/app/main/ui/static.cljs:269
 msgid "labels.not-found.main-message"
-msgstr "Халепа!"
+msgstr "Отакої!"
 
 #, unused
 msgid "labels.or"
@@ -500,7 +500,7 @@ msgstr "Профіль"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:784
 msgid "labels.projects"
-msgstr "Проекти"
+msgstr "Проєкти"
 
 #: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
 #, unused
@@ -553,11 +553,11 @@ msgstr "Оновити"
 
 #: src/app/main/ui/dashboard/fonts.cljs:241
 msgid "labels.upload"
-msgstr "Завантаження"
+msgstr "Вивантажити"
 
 #: src/app/main/ui/dashboard/fonts.cljs:240
 msgid "labels.uploading"
-msgstr "Завантажую…"
+msgstr "Вивантажую…"
 
 #: src/app/main/ui/dashboard/team.cljs:128, src/app/main/ui/dashboard/team.cljs:301, src/app/main/ui/dashboard/team.cljs:540
 msgid "labels.viewer"
@@ -567,17 +567,13 @@ msgstr "Спостерігач"
 msgid "labels.you"
 msgstr "(ви)"
 
-#: src/app/main/ui/delete_shared.cljs:52
-msgid "modals.unpublish-shared-confirm.accept"
-msgstr "Зняти з публікації"
-
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:380
 msgid "modals.update-remote-component.accept"
 msgstr "Оновити"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:379
 msgid "modals.update-remote-component.cancel"
-msgstr "Відмінити"
+msgstr "Скасувати"
 
 #, unused
 msgid "onboarding.welcome.alt"
@@ -878,3 +874,2624 @@ msgstr "Розмиття"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:600, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:605
 msgid "workspace.options.component"
 msgstr "Компонент"
+
+#: src/app/main/ui/auth/register.cljs:247
+msgid "auth.register-account-tagline"
+msgstr "Дайте нам знати як вас називати в панелі керування та у листах."
+
+#: src/app/main/ui/auth/register.cljs:291
+msgid "auth.privacy-policy"
+msgstr "Політика конфіденційності"
+
+#: src/app/main/ui/auth/recovery_request.cljs:82
+msgid "auth.recovery-request-submit"
+msgstr "Відновити пароль"
+
+#: src/app/main/ui/auth/recovery.cljs:71
+msgid "auth.recovery-submit"
+msgstr "Змініть свій пароль"
+
+#: src/app/main/ui/auth/register.cljs:246
+msgid "auth.register-account-title"
+msgstr "Ваше ім'я"
+
+#: src/app/main/ui/auth/login.cljs:289, src/app/main/ui/static.cljs:126, src/app/main/ui/viewer/login.cljs:87
+msgid "auth.register"
+msgstr "Ще не маєте акаунта?"
+
+#: src/app/main/ui/settings/access_tokens.cljs:191
+msgid "dashboard.access-tokens.create"
+msgstr "Згенерувати новий токен"
+
+#: src/app/main/ui/settings/access_tokens.cljs:136
+msgid "dashboard.access-tokens.expiration-180-days"
+msgstr "180 днів"
+
+#: src/app/main/ui/dashboard/fonts.cljs:202
+msgid "dashboard.fonts.upload-all"
+msgstr "Вивантажити усе"
+
+#: src/app/main/ui/dashboard/import.cljs:139
+msgid "dashboard.import.progress.upload-media"
+msgstr "Вивантаження файлу: %s"
+
+#: src/app/main/ui/dashboard/team.cljs:114
+msgid "dashboard.invite-profile"
+msgstr "Запросити людей"
+
+#: src/app/main/data/users.cljs:698, src/app/main/ui/auth/login.cljs:86, src/app/main/ui/auth/login.cljs:94
+msgid "errors.profile-blocked"
+msgstr "Профіль заблоковано"
+
+#: src/app/main/ui/dashboard/team.cljs:811
+msgid "errors.webhooks.invalid-uri"
+msgstr "Адреса не пройшла перевірку."
+
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:89
+msgid "inspect.attributes.typography.font-family"
+msgstr "Сімейство шрифта"
+
+#: src/app/main/ui/viewer/login.cljs:69
+msgid "labels.continue-with-penpot"
+msgstr "Ви можете продовжувати з акаунтом Penpot"
+
+#, unused
+msgid "labels.continue-with"
+msgstr "Продовжити з"
+
+#: src/app/main/ui/dashboard/team.cljs:714
+msgid "labels.no-invitations"
+msgstr "У вас, поки що, немає запрошень."
+
+#: src/app/main/ui/workspace.cljs
+#, unused
+msgid "labels.reload-file"
+msgstr "Перезавантажити файл"
+
+#: src/app/main/ui/dashboard/fonts.cljs:344
+msgid "modals.delete-font-variant.title"
+msgstr "Видалення стилю шрифта"
+
+#: src/app/main/ui/workspace/libraries.cljs:186
+msgid "modals.publish-empty-library.title"
+msgstr "Опублікувати пусту бібліотеку"
+
+#: src/app/main/ui/onboarding/newsletter.cljs:63
+msgid "onboarding-v2.newsletter.desc"
+msgstr ""
+"Підпішиться на розсилку Penpot щоб бути у курсі подій розробки та останніх "
+"новин."
+
+#: src/app/main/ui/onboarding/team_choice.cljs:237
+msgid "onboarding.choice.team-up.continue-without-a-team"
+msgstr "Продовжити без команди"
+
+#: src/app/main/ui/onboarding/newsletter.cljs:40
+msgid "onboarding.newsletter.acceptance-message"
+msgstr ""
+"Ваш запит на підписку був надісланий, ми надішлемо вам лист для "
+"підтвердження запиту."
+
+#: src/app/main/ui/onboarding/questions.cljs:268
+msgid "onboarding.questions.team-size.11-30"
+msgstr "11-30"
+
+#: src/app/main/ui/onboarding/questions.cljs:405
+msgid "labels.event"
+msgstr "Подія"
+
+#: src/app/main/ui/dashboard/team_form.cljs:113
+msgid "labels.create-team.placeholder"
+msgstr "Введіть ім'я нової команди"
+
+#: src/app/main/ui/dashboard/team_form.cljs:101, src/app/main/ui/dashboard/team_form.cljs:121
+msgid "labels.create-team"
+msgstr "Створити нову команду"
+
+#: src/app/main/ui/settings/change_email.cljs:111
+msgid "modals.change-email.confirm-email"
+msgstr "Підтвердьте нову електрону адресу"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:433
+msgid "modals.delete-team-confirm.title"
+msgstr "Видалення команди"
+
+#: src/app/main/ui/dashboard/team.cljs:444
+msgid "modals.delete-team-member-confirm.title"
+msgstr "Видалити члена команди"
+
+#: src/app/main/ui/dashboard/team.cljs:231, src/app/main/ui/onboarding/team_choice.cljs:156
+msgid "modals.invite-member.emails"
+msgstr "Електроні адреси, розділені комами"
+
+#: src/app/main/ui/dashboard/change_owner.cljs:48
+msgid "modals.leave-and-reassign.title"
+msgstr "Перед тим як ви покинете"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:87
+msgid "shortcuts.bool-union"
+msgstr "Булеве об'єднання"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:125
+msgid "shortcuts.join-nodes"
+msgstr "Приєднати вузли"
+
+#: src/app/main/ui/export.cljs:110
+msgid "dashboard.export-multiple.selected"
+msgstr "Було виділено %s з %s елементів"
+
+#: src/app/main/ui/settings/profile.cljs:72
+msgid "dashboard.change-email"
+msgstr "Змінити пошту"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:571
+msgid "dashboard.delete-team"
+msgstr "Видалити команду"
+
+#: src/app/main/ui/dashboard/fonts.cljs:194
+msgid "dashboard.fonts.fonts-added"
+msgid_plural "dashboard.fonts.fonts-added"
+msgstr[0] "%s шрифт було додано"
+msgstr[1] "%s шрифта було додано"
+msgstr[2] "% s шрифтів було додано"
+
+#: src/app/main/ui/dashboard/import.cljs:485, src/app/main/ui/dashboard/import.cljs:492
+msgid "dashboard.import.import-warning"
+msgstr "Деякі файли містили недійсні об'єкти, які було вилучено."
+
+#: src/app/main/ui/dashboard/import.cljs:312
+msgid "dashboard.import.import-error"
+msgstr "Виникла проблема при спробі імпортувати файл. Його не було імпортовано."
+
+#: src/app/main/ui/dashboard/import.cljs:136
+msgid "dashboard.import.progress.upload-data"
+msgstr "Вивантаження даних на сервер (%s/%s)"
+
+#: src/app/main/ui/dashboard/import.cljs:148
+msgid "dashboard.import.progress.process-typographies"
+msgstr "Обробка типографіки"
+
+#: src/app/main/ui/settings/password.cljs:36
+msgid "dashboard.notifications.password-saved"
+msgstr "Пароль успішно збережено!"
+
+#: src/app/main/ui/settings/password.cljs:94, src/app/main/ui/settings/password.cljs:107
+msgid "dashboard.password-change"
+msgstr "Змінити пароль"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:33
+msgid "dashboard.success-duplicate-project"
+msgstr "Ваш проєкт успішно дубліковано"
+
+#: src/app/main/ui/settings/options.cljs:68
+msgid "dashboard.update-settings"
+msgstr "Оновити налаштування"
+
+#: src/app/main/ui/dashboard/team.cljs:796
+msgid "dashboard.webhooks.create.success"
+msgstr "Вебхук успішно створено."
+
+#: src/app/main/ui/confirm.cljs:35, src/app/main/ui/confirm.cljs:39
+msgid "ds.confirm-title"
+msgstr "Ви впевнені?"
+
+#: src/app/main/data/fonts.cljs:188
+msgid "errors.bad-font-plural"
+msgstr "Шрифти %s не можна завантажити"
+
+#: src/app/main/ui/settings/password.cljs
+#, unused
+msgid "errors.password-too-short"
+msgstr "Пароль повинен мати, принаймні, 8 символів"
+
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:107
+msgid "inspect.attributes.typography.font-size"
+msgstr "Розмір шрифта"
+
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:116
+msgid "inspect.attributes.typography.font-weight"
+msgstr "Товщина шрифта"
+
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:143
+msgid "inspect.attributes.typography.text-decoration"
+msgstr "Оформлення тексту"
+
+#: src/app/main/ui/settings/password.cljs:91
+msgid "labels.confirm-password"
+msgstr "Підтвердити пароль"
+
+#: src/app/main/ui/static.cljs:281
+msgid "labels.bad-gateway.main-message"
+msgstr "Поганий шлюз"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1015, src/app/main/ui/workspace/main_menu.cljs:142
+msgid "labels.github-repo"
+msgstr "Репозиторій Github"
+
+#: src/app/main/ui/dashboard/team.cljs:335
+msgid "labels.remove-member"
+msgstr "Вилучити члена"
+
+#: src/app/main/ui/viewer/header.cljs:205
+msgid "labels.share"
+msgstr "Поділитись"
+
+#: src/app/main/ui/static.cljs:291
+msgid "labels.service-unavailable.desc-message"
+msgstr "Ми проводимо програмне обслуговування наших систем."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:968
+msgid "labels.your-account"
+msgstr "Ваш акаунт"
+
+#: src/app/main/ui/settings/change_email.cljs:92
+msgid "modals.change-email.title"
+msgstr "Змінити свою електрону адресу"
+
+#: src/app/main/ui/settings/delete_account.cljs:46
+msgid "modals.delete-account.title"
+msgstr "Ви впевнені, що хочете видалити акаунт?"
+
+#: src/app/main/ui/workspace/context_menu.cljs:522, src/app/main/ui/workspace/sidebar/sitemap.cljs:45
+msgid "modals.delete-page.body"
+msgstr "Ви впевнені, що хочете видалити цю сторінку?"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:377
+msgid "modals.update-remote-component.message"
+msgstr "Оновити компонент спільної бібліотеки"
+
+#: src/app/main/ui/settings/delete_account.cljs:24
+msgid "notifications.profile-deletion-not-allowed"
+msgstr ""
+"Ви не можете видалити свій профіль. Перш ніж продовжити, перепризначте свої "
+"команди."
+
+#: src/app/main/ui/settings/options.cljs:26, src/app/main/ui/settings/profile.cljs:33
+msgid "notifications.profile-saved"
+msgstr "Профіль успішно збережено!"
+
+#: src/app/main/ui/onboarding/newsletter.cljs:97
+msgid "onboarding-v2.newsletter.privacy2"
+msgstr ""
+"Ми надсилатимемо вам лише ревеланті листи. Ви можете відписатись у будь-який "
+"час через посилання для відписки в листах розсилки."
+
+#: src/app/main/ui/onboarding/team_choice.cljs:227
+msgid "onboarding.choice.team-up.continue-creating-team"
+msgstr "Продовжити створення команди"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:230
+msgid "onboarding.choice.team-up.start-without-a-team"
+msgstr "Почати без команди"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:232
+msgid "onboarding.choice.team-up.start-without-a-team-description"
+msgstr "Ви зможете створити команду пізніше."
+
+#: src/app/main/ui/onboarding/team_choice.cljs:167
+msgid "onboarding.choice.team-up.create-team-and-invite"
+msgstr "Створити команду та запросити"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:124
+msgid "shortcuts.italic"
+msgstr "Виділити курсивом"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:209
+msgid "media.linear"
+msgstr "Лінійний"
+
+#: src/app/main/ui/delete_shared.cljs:42
+msgid "modals.unpublish-shared-confirm.title"
+msgid_plural "modals.unpublish-shared-confirm.title"
+msgstr[0] "Зняти бібліотеку з публікації"
+msgstr[1] "Зняти бібліотеки з публікації"
+msgstr[2] "Зняти бібліотеки з публікації"
+
+#: src/app/main/ui/auth/register.cljs:123
+msgid "auth.register-tagline"
+msgstr ""
+"З безкоштовний аккаунтом Penpot ви зможете створювати необмежену кількість "
+"команд та співпрацювати з іншими дизайнерами та розробниками над будь-якою "
+"кількістю проєктів. "
+
+#: src/app/main/ui/viewer/share_link.cljs:241
+msgid "common.share-link.permissions-pages"
+msgstr "Сторінок поширено"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.walkthrough-hero.info"
+msgstr "Ознайомтесь з Penpot та дізнайтесь про його основні можливості."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:33
+#, markdown
+msgid "dashboard.empty-placeholder-drafts"
+msgstr ""
+"Файли, додані до Бібліотек, з'являться тут. Спробуйте поділитись своїми "
+"файлами або додайте їх з наших [Бібліотек та шаблонів](https://penpot.app/"
+"libraries-templates)."
+
+#: src/app/main/ui/export.cljs:441
+msgid "dashboard.export.options.detach.title"
+msgstr "Поводитись з ресурсами спільної бібліотеки як з базовими об'єктами"
+
+#: src/app/main/ui/dashboard/import.cljs:154
+msgid "dashboard.import.progress.process-components"
+msgstr "Обробка компонентів"
+
+#: src/app/main/ui/dashboard/import.cljs:497
+msgid "dashboard.import.import-message"
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "%s файл успішно імпортовано."
+msgstr[1] "%s файли успішно імпортовано."
+msgstr[2] "%s файлів успішно імпортовано."
+
+#: src/app/main/ui/dashboard/import.cljs:151
+msgid "dashboard.import.progress.process-media"
+msgstr "Обробка медіа"
+
+#: src/app/main/ui/dashboard/import.cljs:369
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr ""
+"Виникла проблема під час імпортування шаблону. Його не було імпортовано."
+
+#: src/app/main/ui/dashboard/projects.cljs:55
+msgid "dashboard.new-project"
+msgstr "+ Новий проєкт"
+
+#: src/app/main/data/dashboard.cljs:727, src/app/main/data/dashboard.cljs:1184
+msgid "dashboard.new-project-prefix"
+msgstr "Новий проєкт"
+
+#: src/app/main/ui/dashboard/team.cljs:1106
+msgid "dashboard.team-projects"
+msgstr "Проєкти команди"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#, unused
+msgid "modals.update-remote-component-in-bulk.message"
+msgstr "Оновити компоненти в спільній бібліотеці"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-max-length"
+msgstr "Має містити не більше 1 символу."
+
+#: src/app/main/ui/auth/verify_token.cljs:59
+msgid "errors.unexpected-token"
+msgstr "Невідомий токен"
+
+#, unused
+msgid "errors.validation"
+msgstr "Помилка під час перевірки"
+
+#: src/app/main/ui/viewer/inspect/attributes/geometry.cljs:40
+msgid "inspect.attributes.size"
+msgstr "Розмір та розміщення"
+
+#: src/app/main/ui/workspace/main_menu.cljs:158
+msgid "label.shortcuts"
+msgstr "Ярлики"
+
+#: src/app/main/ui/onboarding/questions.cljs:246
+msgid "labels.developer"
+msgstr "Розробка"
+
+#: src/app/main/ui/dashboard/templates.cljs:269, src/app/main/ui/onboarding/questions.cljs:55
+msgid "labels.next"
+msgstr "Далі"
+
+#: src/app/main/ui/static.cljs
+#, unused
+msgid "labels.not-found.desc-message"
+msgstr ""
+"Здається, що цієї сторінки не існує або у вас немає дозволу на доступ до неї."
+
+#: src/app/main/ui/onboarding/questions.cljs:140, src/app/main/ui/onboarding/questions.cljs:209, src/app/main/ui/onboarding/questions.cljs:298, src/app/main/ui/onboarding/questions.cljs:312, src/app/main/ui/onboarding/questions.cljs:384, src/app/main/ui/onboarding/questions.cljs:440
+msgid "labels.other"
+msgstr "Інше (вкажіть)"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:998, src/app/main/ui/settings/sidebar.cljs:106, src/app/main/ui/workspace/main_menu.cljs:126
+msgid "labels.release-notes"
+msgstr "Примітки до випуску"
+
+#: src/app/main/ui/onboarding/questions.cljs:247
+msgid "labels.student-teacher"
+msgstr "Студент або викладач"
+
+#: src/app/main/ui/dashboard/team_form.cljs:120
+msgid "labels.update-team"
+msgstr "Оновити команду"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:210
+msgid "media.radial"
+msgstr "Круговий"
+
+#: src/app/main/data/common.cljs:124
+msgid "modals.add-shared-confirm.message"
+msgstr "Додати \"%s\" як Спільну Бібліотеку"
+
+#: src/app/main/ui/settings/change_email.cljs:99
+msgid "modals.change-email.info"
+msgstr ""
+"Ми надішлемо вам лист на вашу поточну електрону адресу \"%s\" для "
+"підтвердження вашої особи."
+
+#: src/app/main/ui/delete_shared.cljs:55
+msgid "modals.delete-shared-confirm.activated.no-files-message"
+msgid_plural "modals.delete-shared-confirm.activated.no-files-message"
+msgstr[0] "Це не було активовано у жодному з файлів."
+msgstr[1] "Вони не були активовані у жодному з файлів."
+msgstr[2] "Вони не були активовані у жодному з файлів."
+
+#: src/app/main/ui/static.cljs:247, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.project"
+msgstr "Ви не маєте доступу до цього проєкту."
+
+#: src/app/main/ui/onboarding/questions.cljs:81
+msgid "onboarding.questions.use.personal"
+msgstr "Особисте"
+
+#: src/app/main/ui/dashboard/team.cljs:893
+msgid "modals.edit-webhook.submit-label"
+msgstr "Змінити вебхук"
+
+#: src/app/main/ui/dashboard/team.cljs:858
+msgid "modals.edit-webhook.title"
+msgstr "Змінити вебхук"
+
+#, unused
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr ""
+"Файли з компонентами версії 2 активовані але ця команда, поки що, не "
+"підтримує їх."
+
+#: src/app/main/ui/onboarding/questions.cljs:267
+msgid "onboarding.questions.team-size.31-50"
+msgstr "31-50"
+
+#: src/app/main/ui/onboarding/questions.cljs:79
+msgid "onboarding.questions.use.work"
+msgstr "Робоче"
+
+#: src/app/main/ui/onboarding/questions.cljs:370
+msgid "onboarding.questions.step4.title"
+msgstr "Звідки ви б хотіли почати?"
+
+#: src/app/main/ui/onboarding/questions.cljs:429
+msgid "onboarding.questions.step5.title"
+msgstr "Як дізнались про Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs:270
+msgid "onboarding.questions.team-size.freelancer"
+msgstr "Я фрилансер"
+
+#: src/app/main/ui/onboarding/questions.cljs:271
+msgid "onboarding.questions.team-size.personal-project"
+msgstr "Я працюю над власним проєктом"
+
+#: src/app/main/ui/onboarding/questions.cljs:266
+msgid "onboarding.questions.team-size.more-than-50"
+msgstr "Більш ніж 50"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:211
+msgid "onboarding.team-modal.create-team"
+msgstr "Створіть команду"
+
+#: src/app/main/ui/onboarding/questions.cljs:80
+msgid "onboarding.questions.use.education"
+msgstr "Навчання"
+
+#: src/app/main/ui/dashboard/fonts.cljs:182
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"Ви повинні завантажувати лише ті шрифти, якими ви володієте або маєте "
+"ліцензію на використання в Penpot. Дізнайтеся більше в розділі \"Права на "
+"контент\" в [Умовах користування Penpot](https://penpot.app/terms.html). Ви "
+"також можете прочитати про [ліцензування шрифтів](https://www.typography.com/"
+"faq)."
+
+#: src/app/main/ui/dashboard/fonts.cljs:170
+#, markdown
+msgid "dashboard.fonts.hero-text1"
+msgstr ""
+"Будь-який веб-шрифт, який ви завантажите сюди, буде додано до списку "
+"сімейств шрифтів, доступного у текстових властивостях файлів цієї команди. "
+"Шрифти з однаковою назвою сімейства будуть згруповані в **одне сімейство "
+"шрифтів**. Ви можете завантажувати шрифти у таких форматах: **TTF, OTF і "
+"WOFF** (потрібен лише один)."
+
+#: src/app/main/errors.cljs:229
+msgid "errors.file-feature-mismatch"
+msgstr ""
+"Здається, існує невідповідність між увімкненими функціями та функціями "
+"файлу, який ви намагаєтеся відкрити. Перш ніж відкрити файл, потрібно "
+"застосувати міграції для \"%s\"."
+
+#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:147
+msgid "inspect.empty.select"
+msgstr "Оберіть фігуру, дошку або групу, щоб переглянути їх властивості та код"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:365, src/app/main/ui/dashboard/team.cljs:378
+msgid "errors.team-leave.insufficient-members"
+msgstr ""
+"Недостатньо учасників, щоб покинути команду, ви, ймовірно, хочете видалити "
+"її."
+
+#: src/app/main/ui/onboarding/questions.cljs:169
+msgid "labels.adobe-xd"
+msgstr ""
+
+#: src/app/main/ui/static.cljs:282
+msgid "labels.bad-gateway.desc-message"
+msgstr ""
+"Схоже, вам потрібно трохи почекати і спробувати ще раз; ми проводимо "
+"невелике технічне обслуговування наших серверів."
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:122
+msgid "shortcuts.increase-zoom"
+msgstr "Збільшити"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:123
+msgid "shortcuts.insert-image"
+msgstr "Вставити зображення"
+
+#: src/app/main/ui/auth/recovery_request.cljs:94
+msgid "auth.recovery-request-title"
+msgstr "Забули пароль?"
+
+#: src/app/main/ui/auth/register.cljs:121
+msgid "auth.register-title"
+msgstr "Створити акаунт"
+
+#: src/app/main/ui/auth.cljs
+#, unused
+msgid "auth.sidebar-tagline"
+msgstr "Відкрите рішення для дизайну та прототипування."
+
+#: src/app/main/ui/viewer/share_link.cljs:183
+msgid "common.share-link.placeholder"
+msgstr "Посилання для спільного використання з'явиться тут"
+
+#: src/app/main/ui/viewer/share_link.cljs:303, src/app/main/ui/viewer/share_link.cljs:313
+msgid "common.share-link.team-members"
+msgstr "Лише члени команди"
+
+#: src/app/main/ui/viewer/share_link.cljs:171
+msgid "common.share-link.title"
+msgstr "Поділитись прототипами"
+
+#: src/app/main/ui/dashboard/projects.cljs:82
+msgid "dasboard.team-hero.title"
+msgstr "Об'єднуйтесь!"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.tutorial-hero.info"
+msgstr ""
+"Вивчайте основи Penpot, отримуючи задоволення від цього практичного "
+"посібника."
+
+#: src/app/main/ui/settings/access_tokens.cljs:288
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "У вас, поки що, немає токенів."
+
+#: src/app/main/ui/settings/access_tokens.cljs:289
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "Натисніть на кнопку \"Згенерувати новий токен\" щоб створити його."
+
+#: src/app/main/ui/settings/access_tokens.cljs:125
+msgid "modals.create-access-token.name.label"
+msgstr "Ім'я"
+
+#: src/app/main/ui/settings/access_tokens.cljs:112
+msgid "modals.create-access-token.title"
+msgstr "Згенерувати токен доступу"
+
+#: src/app/main/ui/export.cljs:202
+msgid "dashboard.export-frames.title"
+msgstr "Експортувати у PDF"
+
+#: src/app/main/ui/export.cljs:439
+msgid "dashboard.export.options.all.title"
+msgstr "Експортувати спільні бібліотеки"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:267
+msgid "dashboard.open-in-new-tab"
+msgstr "Відкрити файл у новій вкладці"
+
+#: src/app/main/ui/settings/options.cljs:58
+msgid "dashboard.theme-change"
+msgstr "Тема інтерфейсу"
+
+#: src/app/main/ui/dashboard/team.cljs:882
+msgid "dashboard.webhooks.active"
+msgstr "Активний"
+
+#: src/app/main/ui/settings/feedback.cljs:86
+msgid "feedback.discourse-subtitle1"
+msgstr ""
+"Ми раді вас бачити. Якщо потрібна допомога, спешру спробуйте знайти перш ніж "
+"публікувати."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:262
+msgid "labels.delete-multi-files"
+msgstr "Видалити %s файлів"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1008, src/app/main/ui/workspace/main_menu.cljs:134
+msgid "labels.libraries-and-templates"
+msgstr "Бібліотеки та Шаблони"
+
+#: src/app/main/ui/viewer/header.cljs:209
+msgid "labels.log-or-sign"
+msgstr "Увійти або зареєструватись"
+
+#: src/app/main/ui/dashboard/team.cljs:716
+#, markdown
+msgid "labels.no-invitations-hint"
+msgstr ""
+"Натисніть на кнопку **Запросити людей** щоб запросити людей до цієї команди."
+
+#: src/app/main/ui/settings/sidebar.cljs:100
+msgid "labels.access-tokens"
+msgstr "Токени доступу"
+
+#: src/app/main/ui/dashboard/team_form.cljs:99
+msgid "labels.rename-team"
+msgstr "Перейменувати команду"
+
+#, unused
+msgid "labels.share-prototype"
+msgstr "Поділитись прототипом"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:223
+msgid "labels.view-only"
+msgstr "Лише для перегляду"
+
+#: src/app/main/data/common.cljs:127
+msgid "modals.add-shared-confirm.accept"
+msgstr "Додати як Спільну Бібліотеку"
+
+#: src/app/main/data/media.cljs:49, src/app/main/data/workspace/media.cljs:223, src/app/main/data/workspace/media.cljs:451
+msgid "media.loading"
+msgstr "Завантаження зображення…"
+
+#: src/app/main/ui/dashboard/team.cljs:894
+msgid "modals.create-webhook.submit-label"
+msgstr "Створити вебхук"
+
+#: src/app/main/ui/dashboard/team.cljs:870
+msgid "modals.create-webhook.url.label"
+msgstr "Адреса майданчику"
+
+#: src/app/main/ui/comments.cljs:296
+msgid "modals.delete-comment-thread.message"
+msgstr ""
+"Ви впевнені, що хочете видалити цю бесіду? Всі коментарі в цій гілці буде "
+"видалено."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:423, src/app/main/ui/dashboard/team.cljs:412
+msgid "modals.leave-and-close-confirm.hint"
+msgstr ""
+"Так як ви єдиний член цієї команди, її буде видалено разом з проєктами та "
+"файлами команди."
+
+#: src/app/main/ui/workspace/libraries.cljs:188
+msgid "modals.publish-empty-library.accept"
+msgstr "Опублікувати"
+
+#, unused
+msgid "onboarding-v2.welcome.desc2.title"
+msgstr "Участь у спільноті"
+
+#: src/app/main/ui/dashboard/team.cljs:220, src/app/main/ui/onboarding/team_choice.cljs:146
+msgid "onboarding.choice.team-up.roles"
+msgstr "Запросити у якості:"
+
+#: src/app/main/ui/auth/recovery.cljs:88
+msgid "profile.recovery.go-to-login"
+msgstr "Повернутись на сторінку входу"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
+msgid "shortcut-subsection.main-menu"
+msgstr "Головне меню"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:75
+msgid "shortcuts.align-center"
+msgstr "Вирівняти по центру"
+
+#: src/app/main/ui/auth/recovery_request.cljs:50
+msgid "auth.notifications.profile-not-verified"
+msgstr ""
+"Профіль не підтверджено, будь ласка, спершу підтвердіть його перш ніж "
+"продовжити."
+
+#: src/app/main/ui/auth/recovery_request.cljs:33
+msgid "auth.notifications.recovery-token-sent"
+msgstr "На вашу скриньку надіслано лист з посиланням на відновлення паролю."
+
+#: src/app/main/ui/auth/verify_token.cljs:46
+msgid "auth.notifications.team-invitation-accepted"
+msgstr "Успішно приєднано до команди"
+
+#, unused
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"Створюючи аккаунт, ви погоджуєтеся з нашими умовами користування та "
+"політикою конфіденційності."
+
+#: src/app/main/ui/auth/register.cljs:268
+msgid "auth.verification-email-sent"
+msgstr "Ми надіслали лист для підтвердження акаунту на"
+
+#: src/app/main/ui/export.cljs:181
+msgid "dashboard.export-shapes.how-to"
+msgstr ""
+"Ви можете додати налаштування експорту до елементів у властивостях дизайну ("
+"внизу правої панелі)."
+
+#: src/app/main/ui/dashboard/import.cljs:308, src/app/worker/import.cljs:753, src/app/worker/import.cljs:755
+msgid "dashboard.import.analyze-error"
+msgstr "Отакої! Ми не можемо імпортувати цей файл"
+
+#: src/app/main/ui/dashboard/team.cljs:883
+msgid "dashboard.webhooks.active.explain"
+msgstr "Після спрацювання хуку дані події будуть надіслані"
+
+#: src/app/main/ui/dashboard/team.cljs:873
+msgid "dashboard.webhooks.content-type"
+msgstr "Тип вмісту"
+
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:161
+msgid "inspect.attributes.typography.text-transform.uppercase"
+msgstr "Верхній регістр"
+
+#: src/app/main/ui/dashboard/team.cljs:665
+msgid "labels.resend-invitation"
+msgstr "Повторно надіслати запрошення"
+
+#: src/app/main/ui/dashboard/fonts.cljs:415
+msgid "labels.search-font"
+msgstr "Пошук шрифта"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:73
+msgid "shortcuts.add-node"
+msgstr "Додати вузол"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:74
+msgid "shortcuts.align-bottom"
+msgstr "Вирівняти по низу"
+
+#: src/app/main/ui/settings/profile.cljs:83
+msgid "dashboard.remove-account"
+msgstr "Ви хочете видалити свій акаунт?"
+
+#, unused
+msgid "onboarding-v2.welcome.desc3.title"
+msgstr "Посібник з внесення змін"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:30
+msgid "onboarding-v2.welcome.title"
+msgstr "Вітаємо в Penpot!"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+msgid "shortcuts.create-component"
+msgstr "Створити компонент"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:127
+msgid "shortcuts.letter-spacing-inc"
+msgstr "Збільшити відступ між літерами на 1"
+
+#: src/app/main/ui/settings.cljs:31
+msgid "dashboard.your-account-title"
+msgstr "Ваш аккаунт"
+
+#: src/app/main/ui/settings/profile.cljs:59
+msgid "dashboard.your-name"
+msgstr "Ваше ім'я"
+
+#: src/app/main/ui/confirm.cljs:83
+msgid "ds.component-subtitle"
+msgstr "Компоненти для оновлення:"
+
+#: src/app/main/ui/static.cljs:62
+msgid "errors.invite-invalid.info"
+msgstr "Це запрошення могло бути відкликане або його термін дії минув."
+
+#: src/app/main/ui/dashboard/team.cljs:809
+msgid "errors.webhooks.unexpected"
+msgstr "Неочікувана помилка під час перевірки"
+
+#: src/app/main/ui/auth/login.cljs:98, src/app/main/ui/auth/login.cljs:102
+msgid "errors.wrong-credentials"
+msgstr "Електрона адреса або пароль неправильні."
+
+#: src/app/main/ui/settings/password.cljs
+#, unused
+msgid "errors.wrong-old-password"
+msgstr "Старий пароль неправильний"
+
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:98
+msgid "inspect.attributes.typography.font-style"
+msgstr "Стиль шрифта"
+
+#: src/app/main/ui/dashboard/fonts.cljs:410
+msgid "labels.installed-fonts"
+msgstr "Встановлені шрифти"
+
+#: src/app/main/ui/dashboard/team.cljs:1111
+msgid "labels.num-of-projects"
+msgid_plural "labels.num-of-projects"
+msgstr[0] "%s проєкт"
+msgstr[1] "%s проєкти"
+msgstr[2] "%s проєктів"
+
+#: src/app/main/ui/settings/password.cljs:77
+msgid "labels.old-password"
+msgstr "Старий пароль"
+
+#: src/app/main/ui/viewer/comments.cljs:115
+msgid "labels.show-comments-list"
+msgstr "Показати список коментарів"
+
+#: src/app/main/ui/viewer/comments.cljs:91, src/app/main/ui/workspace/comments.cljs:61, src/app/main/ui/workspace/comments.cljs:136
+msgid "labels.show-your-comments"
+msgstr "Показати лише ваші коментарі"
+
+#: src/app/main/ui/dashboard/fonts.cljs:169
+msgid "labels.upload-custom-fonts"
+msgstr "Вивантажити користувацькі шрифти"
+
+#: src/app/main/ui/settings/access_tokens.cljs:127
+msgid "modals.create-access-token.name.placeholder"
+msgstr "Ім'я допоможе зрозуміти для чого призначений токен"
+
+#: src/app/main/ui/settings/access_tokens.cljs:259
+msgid "modals.delete-acces-token.message"
+msgstr "Ви впевнені що хочете видалити цей токен?"
+
+#: src/app/main/ui/settings/access_tokens.cljs:258
+msgid "modals.delete-acces-token.title"
+msgstr "Видалити токен"
+
+#: src/app/main/ui/viewer/share_link.cljs:198
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr ""
+"Ви впевнені, що хочете видалити це посилання? Якщо так, воно стане "
+"недоступним назавжди"
+
+#: src/app/main/ui/viewer/share_link.cljs:207, src/app/main/ui/viewer/share_link.cljs:214
+msgid "common.share-link.destroy-link"
+msgstr "Знищити посилання"
+
+#: src/app/main/ui/viewer/share_link.cljs:221
+msgid "common.share-link.get-link"
+msgstr "Отримати посилання"
+
+#: src/app/main/ui/viewer/share_link.cljs:139
+msgid "common.share-link.link-copied-success"
+msgstr "Посилання успішно скопійовано"
+
+#: src/app/main/ui/viewer/share_link.cljs:231
+msgid "common.share-link.manage-ops"
+msgstr "Керувати дозволами"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.walkthrough-hero.start"
+msgstr "Розпочати огляд"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.walkthrough-hero.title"
+msgstr "Ознайомлення з інтерфейсом"
+
+#: src/app/main/ui/settings/access_tokens.cljs:104
+msgid "dashboard.access-tokens.copied-success"
+msgstr "Токен скопійовано"
+
+#: src/app/main/ui/settings/access_tokens.cljs:133
+msgid "dashboard.access-tokens.expiration-30-days"
+msgstr "30 днів"
+
+#: src/app/main/ui/settings/access_tokens.cljs:134
+msgid "dashboard.access-tokens.expiration-60-days"
+msgstr "60 днів"
+
+#: src/app/main/ui/settings/access_tokens.cljs:135
+msgid "dashboard.access-tokens.expiration-90-days"
+msgstr "90 днів"
+
+#: src/app/main/ui/settings/access_tokens.cljs:132
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "Ніколи"
+
+#: src/app/main/ui/settings/access_tokens.cljs:271
+msgid "dashboard.access-tokens.expired-on"
+msgstr "Термін дії сплив %s"
+
+#: src/app/main/ui/settings/access_tokens.cljs:272
+msgid "dashboard.access-tokens.expires-on"
+msgstr "Термін дії сплине %s"
+
+#: src/app/main/ui/settings/access_tokens.cljs:270
+msgid "dashboard.access-tokens.no-expiration"
+msgstr "Без терміну дії"
+
+#: src/app/main/ui/settings/access_tokens.cljs:186
+msgid "dashboard.access-tokens.personal"
+msgstr "Персональні токени доступу"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:434
+msgid "modals.delete-team-confirm.message"
+msgstr ""
+"Ви впевнені, що хочете видалити цю команду? Всі проєкти та файли, які "
+"прив'язані до команди, будуть назавжди видалені."
+
+#: src/app/main/ui/dashboard/team.cljs:446
+msgid "modals.delete-team-member-confirm.accept"
+msgstr "Видалити члена"
+
+#: src/app/main/ui/settings/access_tokens.cljs:187
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"Персональні токени доступу виступають альтернативою нашій системі "
+"автентифікації \"логін/пароль\" та можуть бути використаними для надання "
+"застосунку доступу до внутрішнього API Penpot"
+
+#: src/app/main/ui/settings/access_tokens.cljs:143
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "Термін дії токену сплине %s"
+
+#: src/app/main/ui/settings/access_tokens.cljs:144
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "Токен не має терміну дії"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:240
+msgid "dashboard.duplicate-multi"
+msgstr "Створити дублікат % файлів"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:249
+msgid "dashboard.export-binary-multi"
+msgstr "Завантажити %s файлів Penpot (.penpot)"
+
+#: src/app/main/ui/export.cljs:180
+msgid "dashboard.export-shapes.no-elements"
+msgstr "У вас немає елементів з налаштуваннями експорту."
+
+#: src/app/main/ui/export.cljs:191
+msgid "dashboard.export-shapes.title"
+msgstr "Вибір експорту"
+
+#: src/app/main/ui/export.cljs:429
+msgid "dashboard.export.explain"
+msgstr ""
+"Файли, які ви хочете експортувати, використовують спільні бібліотеки. Що ви "
+"плануєте зробити з їхніми ресурсами?"
+
+#: src/app/main/ui/export.cljs:438
+msgid "dashboard.export.options.all.message"
+msgstr ""
+"файли з спільними бібліотеками буде включено до експорту зі збереженням "
+"з'язків між ними."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:252
+msgid "dashboard.export-standard-multi"
+msgstr "Завантажити %s стандартних файоів (.svg + .json)"
+
+#: src/app/main/ui/export.cljs:430
+msgid "dashboard.export.detail"
+msgstr "* Може міститикомпоненти, графіку, кольори та/або типографіку."
+
+#: src/app/main/ui/export.cljs:440
+msgid "dashboard.export.options.detach.message"
+msgstr ""
+"Спільні бібліотеки не буде включено до експорту, і до бібліотеки не буде "
+"додано ресурсів. "
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:309
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "Відсутній шрифт"
+
+#: src/app/main/ui/dashboard/fonts.cljs:206
+msgid "dashboard.fonts.dismiss-all"
+msgstr "Відхилити усе"
+
+#: src/app/main/ui/dashboard/fonts.cljs:436
+msgid "dashboard.fonts.empty-placeholder"
+msgstr "Користувацькі шрифти, які ви завантажите, з'являться тут."
+
+#: src/app/main/ui/export.cljs:421
+msgid "dashboard.export.title"
+msgstr "Експортувати файли"
+
+#: src/app/main/ui/dashboard/team.cljs:963
+msgid "modals.delete-webhook.accept"
+msgstr "Видалити вебхук"
+
+#: src/app/main/ui/dashboard/team.cljs:962
+msgid "modals.delete-webhook.message"
+msgstr "Ви впевнені, що хочете видалити цей вебхук?"
+
+#: src/app/main/ui/dashboard/team.cljs:961
+msgid "modals.delete-webhook.title"
+msgstr "Видалення вебхуку"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:400, src/app/main/ui/dashboard/sidebar.cljs:421, src/app/main/ui/dashboard/team.cljs:410, src/app/main/ui/dashboard/team.cljs:433
+msgid "modals.leave-confirm.title"
+msgstr "Покидання команди"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, unused
+msgid "modals.remove-shared-confirm.accept"
+msgstr "Видалити як Спільну Бібліотеку"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, unused
+msgid "modals.remove-shared-confirm.hint"
+msgstr ""
+"Після вилучення як спільної бібліотеки, бібліотека файлів цього файлу "
+"перестане бути доступною для використання серед інших ваших файлів."
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:378
+msgid "modals.update-remote-component.hint"
+msgstr ""
+"Ви збираєтесь оновити компонент у спільній бібліотеці. Це вплине також на "
+"файли, які її використовують."
+
+#: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:615
+msgid "notifications.invitation-email-sent"
+msgstr "Запрощення успішно надіслано"
+
+#: src/app/main/ui/settings/change_email.cljs:46
+msgid "notifications.validation-email-sent"
+msgstr "Лист для підтвердження надіслано на %s. Перевірте свою скриньку!"
+
+#, unused
+msgid "onboarding-v2.before-start.desc1"
+msgstr ""
+"Ви маєте знати, що тут є багато ресурсів, які допоможуть вам почати "
+"працювати з Penpot, до прикладу, Посібник Користувача та наш YouTube канал."
+
+#, unused
+msgid "onboarding-v2.welcome.desc3"
+msgstr ""
+"Тут ви дізнаєтеся, як співпрацювати з перекладами, запитами на покращення, "
+"внесками в основний код, пошуком помилок…"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:213
+msgid "onboarding.choice.team-up.create-team-desc"
+msgstr ""
+"Після того, як ви назвали свою команду, ви зможете запрошувати людей "
+"приєднатись до неї."
+
+#: src/app/main/ui/onboarding/team_choice.cljs:222
+msgid "onboarding.choice.team-up.create-team-placeholder"
+msgstr "Вкажіть ім'я команди"
+
+#: src/app/main/ui/dashboard/fonts.cljs:187
+#, markdown
+msgid "dashboard.fonts.warning-text"
+msgstr ""
+"Ми виявили можливу проблему у ваших шрифтах, пов'язану з вертикальною "
+"метрикою для різних операційних систем. Щоб перевірити її, ви можете "
+"скористатися сервісами вертикальної метрики шрифтів, наприклад, [цим](https"
+"://vertical-metrics.netlify.app/). Крім того, ми рекомендуємо "
+"використовувати [Transfonter](https://transfonter.org/) для генерації веб-"
+"шрифтів і виправлення помилок. "
+
+#: src/app/main/ui/dashboard/sidebar.cljs:547, src/app/main/ui/dashboard/sidebar.cljs:556, src/app/main/ui/dashboard/sidebar.cljs:563, src/app/main/ui/dashboard/team.cljs:331
+msgid "dashboard.leave-team"
+msgstr "Покинути команду"
+
+#: src/app/main/ui/dashboard/templates.cljs:88, src/app/main/ui/dashboard/templates.cljs:163
+msgid "dashboard.libraries-and-templates"
+msgstr "Бібліотеки та Шаблони"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:281, src/app/main/ui/dashboard/project_menu.cljs:100
+msgid "dashboard.move-to"
+msgstr "Перенести в"
+
+#: src/app/main/ui/dashboard/projects.cljs:89, src/app/main/ui/onboarding/team_choice.cljs:140
+msgid "onboarding.choice.team-up.invite-members"
+msgstr "Запристи учасників"
+
+#: src/app/main/ui/auth/verify_token.cljs:32
+msgid "dashboard.notifications.email-changed-successfully"
+msgstr "Адресу вашої пошти було успішно змінено"
+
+#: src/app/main/ui/auth/verify_token.cljs:26
+msgid "dashboard.notifications.email-verified-successfully"
+msgstr "Адресу вашої електронної пошти було успішно підтверджено"
+
+#: src/app/main/ui/dashboard/team.cljs:1102
+msgid "dashboard.num-of-members"
+msgstr "%s членів"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:141
+msgid "onboarding.choice.team-up.invite-members-info"
+msgstr ""
+"Не забувайте долучати всіх-всіх. Розробників, дизайнерів, менеджерів... та "
+"будь-кого іншого :)"
+
+#: src/app/main/ui/settings/profile.cljs:75
+msgid "dashboard.save-settings"
+msgstr "Зберегти налаштування"
+
+#: src/app/main/ui/dashboard/search.cljs:55
+msgid "dashboard.searching-for"
+msgstr "Пошук за \"%s\"…"
+
+#: src/app/main/ui/settings/options.cljs:53
+msgid "dashboard.select-ui-language"
+msgstr "Оберіть мову інтерфейсу"
+
+#: src/app/main/ui/settings/options.cljs:60
+msgid "dashboard.select-ui-theme"
+msgstr "Оберіть тему"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:129
+msgid "dashboard.success-move-files"
+msgstr "Файли було успішно переміщено"
+
+#: src/app/main/ui/delete_shared.cljs:46
+msgid "modals.delete-shared-confirm.message"
+msgid_plural "modals.delete-shared-confirm.message"
+msgstr[0] "Ви впевнені, що хочете видалити цей файл?"
+msgstr[1] "Ви впевнені, що хочете видалити ці файли?"
+msgstr[2] "Ви впевнені, що хочете видалити ці файли?"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:139
+msgid "modals.delete-component-annotation.title"
+msgstr "Видалити анотацію"
+
+#: src/app/main/ui/workspace/libraries.cljs:187
+msgid "modals.publish-empty-library.message"
+msgstr "Ваша бібліотека порожня. Ви впевнені, що хочете опублікувати її?"
+
+#: src/app/main/ui/onboarding/newsletter.cljs:91
+msgid "onboarding-v2.newsletter.privacy1"
+msgstr "Ми турбуємось про конфіденційність, тому ви можете прочитати наші "
+
+#: src/app/main/ui/onboarding/newsletter.cljs:71
+msgid "onboarding-v2.newsletter.updates"
+msgstr ""
+"Надсилати мені оновлення продуктів (нові можливості, випуски, "
+"виправлення...)."
+
+#: src/app/main/ui/onboarding/team_choice.cljs:47
+msgid "onboarding.team-modal.create-team-feature-3"
+msgstr "Керування ролями"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:51
+msgid "onboarding.team-modal.create-team-feature-4"
+msgstr "Необмежена кількість учасників"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:55
+msgid "onboarding.team-modal.create-team-feature-5"
+msgstr "100% безкоштовно!"
+
+#: src/app/main/ui/onboarding/templates.cljs:77
+msgid "onboarding.templates.title"
+msgstr "Почніть проєктувати"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:86
+msgid "shortcuts.bool-intersection"
+msgstr "Булева інтерсекція"
+
+#: src/app/main/ui/onboarding/questions.cljs
+#, unused
+msgid "branding-illustrations-marketing-pieces"
+msgstr "...брендинг, ілюстрації, маркетингові матеріали тощо."
+
+#: src/app/main/data/common.cljs:76
+msgid "notifications.by-code.upgrade-version"
+msgstr "Нова версія доступна, будь ласка, оновіть сторінку"
+
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:125
+msgid "inspect.attributes.typography.line-height"
+msgstr "Висота лінії"
+
+#: src/app/main/ui/auth/login.cljs:90
+msgid "errors.ldap-disabled"
+msgstr "Автентифікація через LDAP вимкнена."
+
+#: src/app/main/ui/dashboard/team.cljs:356
+msgid "modals.promote-owner-confirm.title"
+msgstr "Новий власник команди"
+
+#: src/app/main/ui/auth/login.cljs:273
+msgid "auth.login-account-title"
+msgstr "Увійти до мого аккаунту"
+
+#: src/app/main/ui/viewer/share_link.cljs:277
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "1 сторінку було поширено"
+msgstr[1] "%s сторінки було поширено"
+msgstr[2] "%s сторінок було поширено"
+
+#: src/app/main/errors.cljs:105
+msgid "errors.auth.unable-to-login"
+msgstr "Схоже, ви не автентифіковані, або термін дії сесії сплинув."
+
+#: src/app/main/data/users.cljs:700
+msgid "errors.auth-provider-not-allowed"
+msgstr "Провайдер автентифікації не дозволений для цього профілю"
+
+#: src/app/main/ui/auth/recovery_request.cljs:57, src/app/main/ui/auth/register.cljs:56, src/app/main/ui/auth/register.cljs:59, src/app/main/ui/dashboard/team.cljs:599, src/app/main/ui/settings/change_email.cljs:37
+msgid "errors.email-has-permanent-bounces"
+msgstr ""
+"Електрона адреса \"%s\" має багато скарг про постійне повернення повідомлень."
+
+#: src/app/main/ui/static.cljs:290
+msgid "labels.service-unavailable.main-message"
+msgstr "Сервіс недосяжний"
+
+#: src/app/main/ui/viewer/comments.cljs:82, src/app/main/ui/workspace/comments.cljs:55, src/app/main/ui/workspace/comments.cljs:135
+msgid "labels.show-all-comments"
+msgstr "Показати усі коментарі"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:256
+msgid "labels.unpublish-multi-files"
+msgstr "Скасувати публікування %s файлів"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:523, src/app/main/ui/dashboard/team.cljs:95, src/app/main/ui/dashboard/team.cljs:105, src/app/main/ui/dashboard/team.cljs:901
+msgid "labels.webhooks"
+msgstr "Вебхуки"
+
+#: src/app/main/ui/comments.cljs:193
+msgid "labels.write-new-comment"
+msgstr "Написати новий коментарій"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:341, src/app/main/ui/workspace/colorpicker.cljs:342, src/app/main/ui/workspace/colorpicker.cljs:344
+msgid "media.choose-image"
+msgstr "Обрати зображення"
+
+#, unused
+msgid "media.gradient"
+msgstr "Градієнт"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:334
+msgid "media.keep-aspect-ratio"
+msgstr "Зберігати співвідношення сторін"
+
+#: src/app/main/ui/settings/change_email.cljs:104
+msgid "modals.change-email.new-email"
+msgstr "Нова електрона адреса"
+
+#: src/app/main/ui/settings/access_tokens.cljs:260
+msgid "modals.delete-acces-token.accept"
+msgstr "Видалити токен"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:116
+msgid "modals.delete-file-multi-confirm.message"
+msgstr "Ви впевнені, що хочете видалити %s файлів?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:115
+msgid "modals.delete-file-multi-confirm.title"
+msgstr "Видалення %s файлів"
+
+#: src/app/main/ui/dashboard/fonts.cljs:345
+msgid "modals.delete-font-variant.message"
+msgstr ""
+"Ви впевнені, що хочете видалити стиль шрифта? Його не завантажиться, якщо "
+"буде використаний у файлі."
+
+#: src/app/main/ui/delete_shared.cljs:57
+msgid "modals.delete-shared-confirm.activated.scd-message"
+msgid_plural "modals.delete-shared-confirm.activated.scd-message"
+msgstr[0] "Цю білбіотеку активовано тут: "
+msgstr[1] "Ці білбіотеки активовано тут: "
+msgstr[2] "Ці білбіотеки активовано тут: "
+
+#: src/app/main/ui/dashboard/sidebar.cljs:435
+msgid "modals.delete-team-confirm.accept"
+msgstr "Видалити команду"
+
+#: src/app/main/ui/dashboard/team.cljs:445
+msgid "modals.delete-team-member-confirm.message"
+msgstr "Ви впевнені, що хочете видалити цього члена з команди?"
+
+#: src/app/main/ui/dashboard/team.cljs:237
+msgid "modals.invite-member-confirm.accept"
+msgstr "Надіслати запрошення"
+
+#: src/app/main/ui/delete_shared.cljs:59
+msgid "modals.delete-unpublish-shared-confirm.activated.hint"
+msgid_plural "modals.delete-unpublish-shared-confirm.activated.hint"
+msgstr[0] ""
+"Ресурси, які вже були використані в цьому файлі, залишаться там (дизайн не "
+"буде порушено)."
+msgstr[1] ""
+"Ресурси, які вже були використані в цих файлах, залишаться там (дизайн не "
+"буде порушено)."
+msgstr[2] ""
+"Ресурси, які вже були використані в цих файлах, залишаться там (дизайн не "
+"буде порушено)."
+
+#: src/app/main/ui/dashboard/team.cljs:636
+msgid "notifications.invitation-link-copied"
+msgstr "Посилання на запрошення скопійовано"
+
+#, unused
+msgid "onboarding-v2.before-start.desc2"
+msgstr ""
+"Детальна інформація про те, як користуватися Penpot. Від створення "
+"прототипів до організації та обміну дизайнами."
+
+#, unused
+msgid "onboarding-v2.before-start.desc2.title"
+msgstr "Посібник користувача"
+
+#, unused
+msgid "onboarding-v2.before-start.desc3"
+msgstr "Ви можете переглянути наші посібники та посібники нашої спільноти."
+
+#: src/app/main/ui/onboarding/newsletter.cljs:83
+msgid "onboarding-v2.newsletter.news"
+msgstr ""
+"Надсилати мені новини про Penpot (пости з блоґу, відео посібники, етери...)."
+
+#: src/app/main/ui/onboarding/team_choice.cljs:168
+msgid "onboarding.choice.team-up.create-team-without-invite"
+msgstr "Створити команду"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:32
+msgid "onboarding.team-modal.team-definition"
+msgstr "Що таке команда?"
+
+#: src/app/main/ui/onboarding/templates.cljs:78
+msgid "onboarding.templates.subtitle"
+msgstr "Тут є деякі шаблони."
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:76
+msgid "shortcuts.align-hcenter"
+msgstr "Вирівняти по центру горизонтально"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:77
+msgid "shortcuts.align-justify"
+msgstr "Вирівняти по ширині"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:82
+msgid "shortcuts.artboard-selection"
+msgstr "Створити дошку з вибраного"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:83
+msgid "shortcuts.bold"
+msgstr "Виділити жирним шрифтом"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:84
+msgid "shortcuts.bool-difference"
+msgstr "Булева різниця"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:85
+msgid "shortcuts.bool-exclude"
+msgstr "Булеве виключення"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:88
+msgid "shortcuts.bring-back"
+msgstr "Відправити на задній план"
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:267
+msgid "auth.check-mail"
+msgstr "Перевірте свою електронну пошту"
+
+#: src/app/main/ui/auth/register.cljs:270
+msgid "auth.check-your-email"
+msgstr ""
+"Підтвердіть акаунт за посиланням в листі та почніть користування Penpot."
+
+#: src/app/main/ui/auth/recovery.cljs:67
+msgid "auth.confirm-password"
+msgstr "Підтвердіть пароль"
+
+#: src/app/main/ui/auth/register.cljs:144
+msgid "auth.create-demo-account"
+msgstr "Створити демомнстраційний аккаунт"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+#, unused
+msgid "auth.create-demo-profile"
+msgstr "Бажаєте просто спробувати?"
+
+#: src/app/main/ui/auth/login.cljs:41
+msgid "auth.demo-warning"
+msgstr ""
+"Це демонстраційний варіант сервісу, не використовувати для реальної роботи, "
+"проєкти періодично стиратимуться."
+
+#: src/app/main/ui/auth/recovery_request.cljs:95
+msgid "auth.recovery-request-subtitle"
+msgstr "Ми надішлемо вам електронний лист з інструкціями"
+
+#: src/app/main/ui/auth/login.cljs:293, src/app/main/ui/auth/register.cljs:100, src/app/main/ui/auth/register.cljs:233, src/app/main/ui/static.cljs:129, src/app/main/ui/viewer/login.cljs:91
+msgid "auth.register-submit"
+msgstr "Створити акаунт"
+
+#: src/app/main/ui/auth/register.cljs:156
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr ""
+"Я погоджуюсь із [умовами користування](%s) та [політикою "
+"конфіденційності](%s)."
+
+#: src/app/main/ui/auth/register.cljs:283, src/app/main/ui/dashboard/sidebar.cljs:1022, src/app/main/ui/workspace/main_menu.cljs:150
+msgid "auth.terms-of-service"
+msgstr "Умови користування"
+
+#: src/app/main/ui/auth/login.cljs:163, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:87
+msgid "auth.work-email"
+msgstr "Робоча пошта"
+
+#: src/app/main/ui/viewer/share_link.cljs:304, src/app/main/ui/viewer/share_link.cljs:314
+msgid "common.share-link.all-users"
+msgstr "Усі користувачі Penpot"
+
+#: src/app/main/ui/viewer/share_link.cljs:298
+msgid "common.share-link.permissions-can-comment"
+msgstr "Можна коментувати"
+
+#: src/app/main/ui/viewer/share_link.cljs:308
+msgid "common.share-link.permissions-can-inspect"
+msgstr "Можна переглядати код"
+
+#: src/app/main/ui/viewer/share_link.cljs:193
+msgid "common.share-link.permissions-hint"
+msgstr "Будь-хто з посиланням матиме доступ"
+
+#: src/app/main/ui/dashboard/projects.cljs:85
+msgid "dasboard.team-hero.management"
+msgstr "Керування командою"
+
+#: src/app/main/ui/viewer/share_link.cljs:269
+msgid "common.share-link.view-all"
+msgstr "Вибрати все"
+
+#: src/app/main/ui/dashboard/projects.cljs:84
+msgid "dasboard.team-hero.text"
+msgstr ""
+"Penpot призначений для командної роботи. Запрошуйте учасників до спільної "
+"роботи над проєктами та файлами"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.tutorial-hero.start"
+msgstr "Почати навчання"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.tutorial-hero.title"
+msgstr "Навчальний посібник"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+#, unused
+msgid "dashboard.access-tokens.create-success"
+msgstr "Токен доступу успішно створено."
+
+#: src/app/main/ui/components/context_menu_a11y.cljs:256, src/app/main/ui/dashboard/sidebar.cljs:646
+msgid "dashboard.default-team-name"
+msgstr "Ваш Penpot"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:300, src/app/main/ui/workspace/main_menu.cljs:597
+msgid "dashboard.download-standard-file"
+msgstr "Завантажити стандартний файл (.svg +.json)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:605
+msgid "dashboard.export-frames"
+msgstr "Експортувати дошки у PDF"
+
+#: src/app/main/ui/export.cljs:185
+msgid "dashboard.export-shapes.how-to-link"
+msgstr "Інформація про те, як налаштувати експроти в Penpot."
+
+#: src/app/main/ui/export.cljs:442
+msgid "dashboard.export.options.merge.message"
+msgstr ""
+"Ваш файл буде експортовано зі всіма зовнішніми ресурсами, об'єднаними у файл "
+"бібліотеки."
+
+#: src/app/main/ui/export.cljs:443
+msgid "dashboard.export.options.merge.title"
+msgstr "Додати ресурси спільної бібліотеки до файлу бібліотеки"
+
+#: src/app/main/ui/dashboard/import.cljs:145
+msgid "dashboard.import.progress.process-colors"
+msgstr "Обробка кольорів"
+
+#: src/app/main/ui/dashboard/import.cljs:142
+msgid "dashboard.import.progress.process-page"
+msgstr "Обробка сторінки: %s"
+
+#: src/app/main/ui/dashboard/templates.cljs:164
+msgid "dashboard.libraries-and-templates.explore"
+msgstr "Дізнайтесь більше про них та як зробити внесок"
+
+#: src/app/main/ui/dashboard/files.cljs:105, src/app/main/ui/dashboard/projects.cljs:252, src/app/main/ui/dashboard/projects.cljs:253
+msgid "dashboard.new-file"
+msgstr "+ Новий файл"
+
+#: src/app/main/data/dashboard.cljs:958, src/app/main/data/dashboard.cljs:1181
+msgid "dashboard.new-file-prefix"
+msgstr "Новий файл"
+
+#: src/app/main/ui/dashboard/search.cljs:60
+msgid "dashboard.no-matches-for"
+msgstr "Жодних відповідностей для \"%s\" не знайдено"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:827
+msgid "dashboard.no-projects-placeholder"
+msgstr "Закріплені проєкти з'являться тут"
+
+#: src/app/main/ui/dashboard/projects.cljs:282
+msgid "dashboard.show-all-files"
+msgstr "Показати усі файли"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:96
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Файл було успішно вилучено"
+msgstr[1] "Файли було успішно вилучено"
+msgstr[2] "Файли було успішно вилучено"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:59
+msgid "dashboard.success-delete-project"
+msgstr "Ваш проєкт було успішно видалено"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:91
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Файл було успішно дубліковано"
+msgstr[1] "Файли були успішно дубліковані"
+msgstr[2] "Файли були успішно дубліковані"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:130, src/app/main/ui/dashboard/grid.cljs:563, src/app/main/ui/dashboard/sidebar.cljs:152
+msgid "dashboard.success-move-file"
+msgstr "Файл було успішно переміщено"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:54
+msgid "dashboard.success-move-project"
+msgstr "Ваш проєкт було успішно переміщено"
+
+#: src/app/main/ui/dashboard/team.cljs:1073
+msgid "dashboard.team-info"
+msgstr "Відомості про команду"
+
+#: src/app/main/ui/dashboard/team.cljs:1091
+msgid "dashboard.team-members"
+msgstr "Члени команди"
+
+#: src/app/main/ui/dashboard/search.cljs:42
+msgid "dashboard.title-search"
+msgstr "Результати пошуку"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:287, src/app/main/ui/workspace/main_menu.cljs:566
+msgid "dashboard.unpublish-shared"
+msgstr "Вилучити бібліотеку з публікації"
+
+#: src/app/main/ui/dashboard/team.cljs:906
+msgid "dashboard.webhooks.create"
+msgstr "Створити вебхук"
+
+#: src/app/main/ui/dashboard/team.cljs:903
+msgid "dashboard.webhooks.description"
+msgstr ""
+"Веб-хуки - це простий спосіб дозволити іншим веб-сайтам і додаткам "
+"отримувати сповіщення про певні події в Penpot. Ми надішлемо POST-запит на "
+"кожну з вказаних вами URL-адрес."
+
+#: src/app/main/ui/dashboard/team.cljs:1026
+msgid "dashboard.webhooks.empty.add-one"
+msgstr "Натисніть кнопку \"Додати вебхук\" щоб створити його."
+
+#: src/app/main/ui/dashboard/team.cljs:1025
+msgid "dashboard.webhooks.empty.no-webhooks"
+msgstr "У вас поки що немає вебхуків."
+
+#, unused
+msgid "dashboard.webhooks.update.success"
+msgstr "Вебхук успішно оновлено."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:38, src/app/main/ui/dashboard/fonts.cljs:33, src/app/main/ui/dashboard/libraries.cljs:42, src/app/main/ui/dashboard/projects.cljs:318, src/app/main/ui/dashboard/search.cljs:30, src/app/main/ui/dashboard/sidebar.cljs:312, src/app/main/ui/dashboard/team.cljs:514, src/app/main/ui/dashboard/team.cljs:749, src/app/main/ui/dashboard/team.cljs:1012, src/app/main/ui/dashboard/team.cljs:1059
+msgid "dashboard.your-penpot"
+msgstr "Ваш Penpot"
+
+#: src/app/main/ui/workspace/plugins.cljs:287
+msgid "ds.confirm-allow"
+msgstr "Дозволити"
+
+#: src/app/main/data/fonts.cljs:189
+msgid "errors.bad-font"
+msgstr "Шрифт %s не можна завантажити"
+
+#: src/app/main/data/workspace/media.cljs:198
+msgid "errors.cannot-upload"
+msgstr "Не можу вивантажити медіа."
+
+#: src/app/main/data/workspace.cljs:1596
+msgid "errors.clipboard-not-implemented"
+msgstr "Ваш браузер не може зробити це"
+
+#: src/app/main/ui/auth/verify_token.cljs:81, src/app/main/ui/settings/change_email.cljs:29
+msgid "errors.email-already-exists"
+msgstr "Електронна адреса вже використовується"
+
+#: src/app/main/ui/auth/verify_token.cljs:86
+msgid "errors.email-already-validated"
+msgstr "Електронна адреса вже підтверджена."
+
+#, unused
+msgid "errors.email-as-password"
+msgstr "Ви не можете використати електронну адресу як пароль"
+
+#: src/app/main/data/users.cljs:702, src/app/main/ui/auth/register.cljs:53
+msgid "errors.email-domain-not-allowed"
+msgstr "Цей домен не дозволений"
+
+#: src/app/main/ui/dashboard/team.cljs:187
+msgid "errors.email-spam-or-permanent-bounces"
+msgstr ""
+"Електронну адресу «%s» позначено як спам або вона постійно повертає "
+"повідомлення."
+
+#: src/app/main/errors.cljs:233
+msgid "errors.feature-mismatch"
+msgstr ""
+"Схоже, ви намагаєтесь відкрити файл, який має активовану функцію \"%s\", але "
+"поточна версія Penpot наразі не підтримує її або вона вимкнена."
+
+#, unused
+msgid "errors.field-min-length"
+msgstr "Має містити принаймні 1 символ."
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-not-all-whitespace"
+msgstr "Ім'я повинно містити якийсь символ, окрім пробілу."
+
+#: src/app/main/data/users.cljs:708, src/app/main/ui/auth/login.cljs:64, src/app/main/ui/auth/login.cljs:105, src/app/main/ui/auth/register.cljs:65, src/app/main/ui/auth/register.cljs:205, src/app/main/ui/auth/verify_token.cljs:91, src/app/main/ui/dashboard/team.cljs:190, src/app/main/ui/onboarding/team_choice.cljs:93, src/app/main/ui/settings/access_tokens.cljs:80, src/app/main/ui/settings/feedback.cljs:49
+msgid "errors.generic"
+msgstr "Виникла якась неполадка."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
+#, unused
+msgid "errors.invalid-email"
+msgstr "Будь ласка, вкажіть дійсну електрону адресу"
+
+#: src/app/main/ui/settings/change_email.cljs
+#, unused
+msgid "errors.invalid-email-confirmation"
+msgstr "Підтвердження має відповідати електронній пошті"
+
+#: src/app/main/data/media.cljs:68, src/app/main/data/workspace/media.cljs:187
+msgid "errors.media-type-mismatch"
+msgstr "Схоже, вміст зображення не відповідає розширеню файлу."
+
+#: src/app/main/ui/settings/password.cljs
+#, unused
+msgid "errors.password-invalid-confirmation"
+msgstr "Підтвердження має відповідати паролю"
+
+#: src/app/main/errors.cljs:130
+msgid "errors.paste-data-validation"
+msgstr "Недійсні дані в буфері обміну"
+
+#: src/app/main/data/users.cljs:696, src/app/main/ui/auth/register.cljs:50
+msgid "errors.registration-disabled"
+msgstr "Реєстрація наразі вимкнена."
+
+#: src/app/main/errors.cljs:224
+msgid "errors.team-feature-mismatch"
+msgstr "Виявлено несумісну функцію \"%s\""
+
+#: src/app/main/ui/dashboard/team.cljs:817
+msgid "errors.webhooks.connection"
+msgstr "Помилка під'єднання, адреса недосяжна"
+
+#: src/app/main/errors.cljs:241
+msgid "errors.version-not-supported"
+msgstr "Файл має несумісний номер версії"
+
+#: src/app/main/ui/dashboard/team.cljs:970
+msgid "errors.webhooks.last-delivery"
+msgstr "Остання спроба доставки була невдалою."
+
+#: src/app/main/ui/dashboard/team.cljs:813, src/app/main/ui/dashboard/team.cljs:973
+msgid "errors.webhooks.ssl-validation"
+msgstr "Помилка під час перевірки SSL."
+
+#: src/app/main/ui/dashboard/team.cljs:815
+msgid "errors.webhooks.timeout"
+msgstr "Час вичерпано"
+
+#: src/app/main/ui/dashboard/team.cljs:819, src/app/main/ui/dashboard/team.cljs:976
+msgid "errors.webhooks.unexpected-status"
+msgstr "Неочікуваний статус %s"
+
+#: src/app/main/ui/settings/feedback.cljs:92
+msgid "feedback.discourse-go-to"
+msgstr "Відвідати форум Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs:85
+msgid "feedback.discourse-title"
+msgstr "Спільнота Penpot"
+
+#: src/app/main/ui/settings/feedback.cljs:66
+msgid "feedback.subtitle"
+msgstr ""
+"Будь ласка, опишіть причину вашого листа, вказавши чи є це проблемою, ідеєю "
+"або сумнів. Член нашої команди відповість якомогашвидше."
+
+#: src/app/main/ui/settings/feedback.cljs:102
+msgid "feedback.twitter-go-to"
+msgstr "Відвідати X"
+
+#: src/app/main/ui/settings/feedback.cljs:95
+msgid "feedback.twitter-title"
+msgstr "Аккаунт служби підтримки в X"
+
+#: src/app/main/ui/settings/password.cljs:29
+msgid "generic.error"
+msgstr "Виникла помилка"
+
+#: src/app/main/ui/settings/feedback.cljs:96
+msgid "feedback.twitter-subtitle1"
+msgstr "Ми готові допомогти з вашими технічними питаннями."
+
+#: src/app/main/ui/viewer/inspect/attributes/common.cljs:99, src/app/main/ui/viewer/inspect/attributes/image.cljs:51
+msgid "inspect.attributes.image.download"
+msgstr "Завантажити вихідне зображення"
+
+#: src/app/main/ui/viewer/inspect/attributes/stroke.cljs:52
+msgid "inspect.attributes.stroke"
+msgstr "Обведення"
+
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:134
+msgid "inspect.attributes.typography.letter-spacing"
+msgstr "Відступ між літерами"
+
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:156
+msgid "inspect.attributes.typography.text-transform"
+msgstr "Видозміна тексту"
+
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:158
+msgid "inspect.attributes.typography.text-transform.lowercase"
+msgstr "Нижній регістр"
+
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:160
+msgid "inspect.attributes.typography.text-transform.titlecase"
+msgstr "Титульний відмінок"
+
+#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:152
+msgid "inspect.empty.help"
+msgstr ""
+"Якщо ви хочете дізнатися більше про інспекцію дизайну, відвідайте довідковий "
+"центр Penpot"
+
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:162
+msgid "inspect.attributes.typography.text-transform.unset"
+msgstr "Не встановлено"
+
+#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:155
+msgid "inspect.empty.more-info"
+msgstr "Більше інформації про інспекцію"
+
+#: src/app/main/ui/dashboard/team.cljs:989
+msgid "labels.active"
+msgstr "Активне"
+
+#: src/app/main/ui/onboarding/questions.cljs:260
+msgid "labels.director"
+msgstr "Директор"
+
+#: src/app/main/ui/dashboard/fonts.cljs:175
+msgid "labels.add-custom-font"
+msgstr "Додати користувацькі шрифти"
+
+#: src/app/main/ui/dashboard/team.cljs:662
+msgid "labels.copy-invitation-link"
+msgstr "Копіювати посилання"
+
+#, unused
+msgid "labels.custom-fonts"
+msgstr "Користувацькі шрифти"
+
+#: src/app/main/ui/comments.cljs:356
+msgid "labels.delete-comment"
+msgstr "Видалити коментарій"
+
+#: src/app/main/ui/comments.cljs:353
+msgid "labels.delete-comment-thread"
+msgstr "Видалити гілку"
+
+#: src/app/main/ui/dashboard/team.cljs:668
+msgid "labels.delete-invitation"
+msgstr "Видалити запрошення"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:199
+msgid "labels.discard"
+msgstr "Відхилити"
+
+#, unused
+msgid "labels.edit-file"
+msgstr "Редагувати файл"
+
+#: src/app/main/ui/settings/feedback.cljs:48
+msgid "labels.feedback-disabled"
+msgstr "Відгук не доступний"
+
+#: src/app/main/ui/settings/feedback.cljs:39
+msgid "labels.feedback-sent"
+msgstr "Відгук надіслано"
+
+#: src/app/main/ui/dashboard/fonts.cljs:412
+msgid "labels.font-family"
+msgstr "Сімейство шрифтів"
+
+#, unused
+msgid "labels.font-providers"
+msgstr "Постачальники шрифтів"
+
+#: src/app/main/ui/onboarding/questions.cljs:259
+msgid "labels.founder"
+msgstr "Генеральний директор або Засновник"
+
+#: src/app/main/ui/onboarding/questions.cljs:258
+msgid "labels.freelancer"
+msgstr "Фрилансер"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1032, src/app/main/ui/settings/sidebar.cljs:113, src/app/main/ui/workspace/main_menu.cljs:171
+msgid "labels.give-feedback"
+msgstr "Надішліть відгук"
+
+#: src/app/main/ui/auth/recovery_request.cljs:104, src/app/main/ui/auth/register.cljs:255, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:111
+msgid "labels.go-back"
+msgstr "Повернутись назад"
+
+#: src/app/main/ui/onboarding/questions.cljs:248
+msgid "labels.graphic-design"
+msgstr "Графічний дизайн"
+
+#: src/app/main/ui/viewer/comments.cljs:103, src/app/main/ui/workspace/comments.cljs:67
+msgid "labels.hide-resolved-comments"
+msgstr "Приховати вирішені коментарі"
+
+#: src/app/main/ui/dashboard/team.cljs:990
+msgid "labels.inactive"
+msgstr "Не активний"
+
+#: src/app/main/ui/static.cljs:367
+msgid "labels.internal-error.desc-message"
+msgstr ""
+"Сталось дещо погане. Будь ласка, спробуйте ще раз, і якщо проблема продовжує "
+"з'являтись, зв'яжіться із службою підтримки."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:978, src/app/main/ui/workspace/main_menu.cljs:102
+msgid "labels.help-center"
+msgstr "Центр Допомоги"
+
+#: src/app/main/ui/static.cljs:366
+msgid "labels.internal-error.main-message"
+msgstr "Внутрішня помилка"
+
+#: src/app/main/ui/auth/verify_token.cljs:97, src/app/main/ui/dashboard/grid.cljs:102, src/app/main/ui/dashboard/grid.cljs:122, src/app/main/ui/dashboard/import.cljs:272, src/app/main/ui/dashboard/placeholder.cljs:45, src/app/main/ui/export.cljs:323, src/app/main/ui/viewer.cljs:637, src/app/main/ui/workspace.cljs:127
+msgid "labels.loading"
+msgstr "Завантаження…"
+
+#: src/app/main/ui/static.cljs:48, src/app/main/ui/static.cljs:120
+msgid "labels.login"
+msgstr "Увійти"
+
+#: src/app/main/ui/onboarding/questions.cljs:249
+msgid "labels.marketing"
+msgstr "Маркетинг"
+
+#: src/app/main/ui/settings/password.cljs:84
+msgid "labels.new-password"
+msgstr "Новий пароль"
+
+#: src/app/main/ui/dashboard/projects.cljs:239, src/app/main/ui/dashboard/team.cljs:1116
+msgid "labels.num-of-files"
+msgid_plural "labels.num-of-files"
+msgstr[0] "%s файл"
+msgstr[1] "%s файли"
+msgstr[2] "%s файлів"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:80
+msgid "labels.num-of-frames"
+msgid_plural "labels.num-of-frames"
+msgstr[0] "%s дошка"
+msgstr[1] "%s дошок"
+msgstr[2] "%s дошок"
+
+#, unused
+msgid "labels.ok"
+msgstr "Добре"
+
+#: src/app/main/ui/workspace/comments.cljs
+#, unused
+msgid "labels.only-yours"
+msgstr "Лише ваші"
+
+#: src/app/main/ui/dashboard/comments.cljs:128, src/app/main/ui/workspace/comments.cljs:161
+msgid "labels.no-comments-available"
+msgstr "Ви все наздогнали! Нові повідомлення про коментарі з’являться тут."
+
+#: src/app/main/ui/onboarding/questions.cljs:100, src/app/main/ui/onboarding/questions.cljs:175, src/app/main/ui/onboarding/questions.cljs:251, src/app/main/ui/onboarding/questions.cljs:261, src/app/main/ui/onboarding/questions.cljs:351, src/app/main/ui/onboarding/questions.cljs:409
+msgid "labels.other-short"
+msgstr "Інше"
+
+#: src/app/main/ui/onboarding/questions.cljs:51
+msgid "labels.previous"
+msgstr "Попередній"
+
+#: src/app/main/ui/onboarding/questions.cljs:245
+msgid "labels.product-design"
+msgstr "Розробка продуктів чи UX"
+
+#: src/app/main/ui/onboarding/questions.cljs:250
+msgid "labels.product-management"
+msgstr "Керування продуктами"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:436
+msgid "labels.search"
+msgstr "Пошук"
+
+#: src/app/main/ui/onboarding/questions.cljs:85, src/app/main/ui/onboarding/questions.cljs:244, src/app/main/ui/onboarding/questions.cljs:255, src/app/main/ui/onboarding/questions.cljs:265
+msgid "labels.select-option"
+msgstr "Обрати варіант"
+
+#: src/app/main/ui/onboarding/questions.cljs:167
+msgid "labels.sketch"
+msgstr "Ескіз"
+
+#: src/app/main/ui/onboarding/questions.cljs:56
+msgid "labels.start"
+msgstr "Початок"
+
+#: src/app/main/ui/onboarding/questions.cljs:256
+msgid "labels.team-leader"
+msgstr "Керівник команди"
+
+#: src/app/main/ui/onboarding/questions.cljs:257
+msgid "labels.team-member"
+msgstr "Член команди"
+
+#: src/app/main/data/common.cljs:125
+msgid "modals.add-shared-confirm-empty.hint"
+msgstr ""
+"Ваша бібліотека порожня. Після додавання до спільної бібліотеки створені "
+"вами ресурси стануть доступними для використання серед інших ваших файлів. "
+"Ви впевнені, що хочете опублікувати його?"
+
+#: src/app/main/ui/settings/change_email.cljs:119
+msgid "modals.change-email.submit"
+msgstr "Змінити електрону адресу"
+
+#: src/app/main/data/common.cljs:125
+msgid "modals.add-shared-confirm.hint"
+msgstr ""
+"Після додавання як спільної бібліотеки ресурси цієї файлової бібліотеки "
+"будуть доступні для використання серед решти ваших файлів."
+
+#: src/app/main/ui/settings/access_tokens.cljs:154, src/app/main/ui/settings/access_tokens.cljs:160
+msgid "modals.create-access-token.copy-token"
+msgstr "Скопіювати токен"
+
+#: src/app/main/ui/settings/access_tokens.cljs:131
+msgid "modals.create-access-token.expiration-date.label"
+msgstr "Термін придатності"
+
+#: src/app/main/ui/settings/access_tokens.cljs:180
+msgid "modals.create-access-token.submit-label"
+msgstr "Створити токен"
+
+#: src/app/main/ui/dashboard/team.cljs:859
+msgid "modals.create-webhook.title"
+msgstr "Створити вебхук"
+
+#: src/app/main/ui/settings/delete_account.cljs:59
+msgid "modals.delete-account.cancel"
+msgstr "Скасувати та лишити мій аккаунт"
+
+#: src/app/main/ui/settings/delete_account.cljs:64
+msgid "modals.delete-account.confirm"
+msgstr "Так, видалити мій аккаунт"
+
+#: src/app/main/ui/settings/delete_account.cljs:53
+msgid "modals.delete-account.info"
+msgstr "Видаливши аккаунт, ви втратите усі свої проєкти та архіви."
+
+#: src/app/main/ui/comments.cljs:297
+msgid "modals.delete-comment-thread.accept"
+msgstr "Видалити бесіду"
+
+#: src/app/main/ui/comments.cljs:295
+msgid "modals.delete-comment-thread.title"
+msgstr "Видалити бесіду"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:140
+msgid "modals.delete-component-annotation.message"
+msgstr "Ви впевнені, що хочете видалити цю анотацію?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:123
+msgid "modals.delete-file-confirm.accept"
+msgstr "Видалити файл"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:122
+msgid "modals.delete-file-confirm.message"
+msgstr "Ви впевнені, що хочете видалити цей файл?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:121
+msgid "modals.delete-file-confirm.title"
+msgstr "Видалення файлу"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:117
+msgid "modals.delete-file-multi-confirm.accept"
+msgstr "Видалити файли"
+
+#: src/app/main/ui/dashboard/fonts.cljs:331
+msgid "modals.delete-font.message"
+msgstr ""
+"Ви впевнені, що хочете видалити цей шрифт? Він не завантажиться якщо буде "
+"використаний у файлі."
+
+#: src/app/main/ui/dashboard/fonts.cljs:330
+msgid "modals.delete-font.title"
+msgstr "Видалення шрифта"
+
+#: src/app/main/ui/workspace/context_menu.cljs:521, src/app/main/ui/workspace/sidebar/sitemap.cljs:44
+msgid "modals.delete-page.title"
+msgstr "Видалити сторінку"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:69
+msgid "modals.delete-project-confirm.accept"
+msgstr "Видалити проєкт"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:68
+msgid "modals.delete-project-confirm.message"
+msgstr "Ви впевнені, що хочете видалити цей проєкт?"
+
+#: src/app/main/ui/dashboard/project_menu.cljs:67
+msgid "modals.delete-project-confirm.title"
+msgstr "Видалити проєкт"
+
+#: src/app/main/ui/delete_shared.cljs:51
+msgid "modals.delete-shared-confirm.accept"
+msgid_plural "modals.delete-shared-confirm.accept"
+msgstr[0] "Видалити файл"
+msgstr[1] "Видалити файли"
+msgstr[2] "Видалити файли"
+
+#: src/app/main/ui/delete_shared.cljs:41
+msgid "modals.delete-shared-confirm.title"
+msgid_plural "modals.delete-shared-confirm.title"
+msgstr[0] "Видалення файлу"
+msgstr[1] "Видалення файлів"
+msgstr[2] "Видалення файлів"
+
+#: src/app/main/ui/dashboard/team.cljs:215
+msgid "modals.invite-member.repeated-invitation"
+msgstr ""
+"Деякі електроні адреси належать поточним членам команди. Запрошення не "
+"надсилатимуться."
+
+#: src/app/main/ui/dashboard/team.cljs:208
+msgid "modals.invite-team-member.title"
+msgstr "Запросити учасників до команди"
+
+#: src/app/main/ui/dashboard/change_owner.cljs:54
+msgid "modals.leave-and-reassign.hint1"
+msgstr ""
+"Ви власник цієї команди. Будь ласка, оберіть іншого члена, щоб підвищити "
+"його до власника перш ніж ви покинете команду."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:422, src/app/main/ui/dashboard/team.cljs:411
+msgid "modals.leave-and-close-confirm.message"
+msgstr "Ви впевнені, що хочете покинути команду \"%s\"?"
+
+#: src/app/main/ui/dashboard/change_owner.cljs:77
+msgid "modals.leave-and-reassign.promote-and-leave"
+msgstr "Підвищити та покинути"
+
+#: src/app/main/ui/dashboard/change_owner.cljs:58
+msgid "modals.leave-and-reassign.forbidden"
+msgstr ""
+"Ви не можете покинути команду, якщо немає іншого учасника, якого можна було "
+"б підвищити до власника. Ви можете видалити команду."
+
+#: src/app/main/ui/dashboard/change_owner.cljs:33
+msgid "modals.leave-and-reassign.select-member-to-promote"
+msgstr "Виберіть члена для підвищення"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:402, src/app/main/ui/dashboard/sidebar.cljs:424, src/app/main/ui/dashboard/team.cljs:413, src/app/main/ui/dashboard/team.cljs:435
+msgid "modals.leave-confirm.accept"
+msgstr "Покинути команду"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:401, src/app/main/ui/dashboard/team.cljs:434
+msgid "modals.leave-confirm.message"
+msgstr "Ви впевнені, що хочете покинути цю команду?"
+
+#: src/app/main/ui/delete_shared.cljs:53
+msgid "modals.move-shared-confirm.accept"
+msgid_plural "modals.move-shared-confirm.accept"
+msgstr[0] "Перемістити його"
+msgstr[1] "Перемістити їх"
+msgstr[2] "Перемістити їх"
+
+#: src/app/main/ui/delete_shared.cljs:48
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "Ви впевнені, що хочете перемістити цю білбліотеку?"
+msgstr[1] "Ви впевнені, що хочете перемістити ці бібліотеки?"
+msgstr[2] "Ви впевнені, що хочете перемістити цю білбліотеку?"
+
+#: src/app/main/ui/delete_shared.cljs:43
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "Перемістити бібліотеку"
+msgstr[1] "Перемістити бібліотеки"
+msgstr[2] "Перемістити бібліотеки"
+
+#: src/app/main/ui/dashboard/team.cljs:358
+msgid "modals.promote-owner-confirm.hint"
+msgstr ""
+"Якщо ви передасте права власності, ви зміните свою роль на Admin, втративши "
+"деякі повноваження над цією командою. "
+
+#: src/app/main/ui/dashboard/team.cljs:359
+msgid "modals.promote-owner-confirm.accept"
+msgstr "Передати права власності"
+
+#: src/app/main/ui/dashboard/team.cljs:357
+msgid "modals.promote-owner-confirm.message"
+msgstr ""
+"Ви поточний власник цієї команди. Ви впевнені, що хочете призначити %s новим "
+"власником цієї команди?"
+
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, unused
+msgid "modals.remove-shared-confirm.message"
+msgstr "Видалити \"%s\" як Спільну Бібліотеку"
+
+#: src/app/main/ui/delete_shared.cljs:47
+msgid "modals.unpublish-shared-confirm.message"
+msgid_plural "modals.unpublish-shared-confirm.message"
+msgstr[0] "Ви впевнені, що хочете зняти бібліотеку з публікації?"
+msgstr[1] "Ви впевнені, що хочете зняти бібліотеки з публікації?"
+msgstr[2] "Ви впевнені, що хочете зняти бібліотеки з публікації?"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#, unused
+msgid "modals.update-remote-component-in-bulk.hint"
+msgstr ""
+"Ви збираєтесь оновити компоненти спільної бібліотеки. Це вплине також на "
+"інші файли, які її використовують."
+
+#: src/app/main/ui/static.cljs:271
+msgid "not-found.desc-message.doesnt-exist"
+msgstr "Цієї сторінки не існує :/"
+
+#: src/app/main/ui/static.cljs:270
+msgid "not-found.desc-message.error"
+msgstr "Сторінка 404"
+
+#: src/app/main/ui/static.cljs:121
+msgid "not-found.login.free"
+msgstr ""
+"Penpot - відкритий та вільний інструмент для спільної роботи над Дизайном та "
+"Кодом"
+
+#: src/app/main/ui/auth/recovery_request.cljs:114
+msgid "not-found.login.sent-recovery"
+msgstr "Ми надіслали лист для відновлення на"
+
+#: src/app/main/ui/auth/recovery_request.cljs:116
+msgid "not-found.login.sent-recovery-check"
+msgstr ""
+"Перевірте вхідні листи та натисніть на посилання для створення нового паролю."
+
+#: src/app/main/ui/static.cljs:133
+msgid "not-found.login.signup-free"
+msgstr "Зареєструватись безкоштовно"
+
+#: src/app/main/ui/static.cljs:134
+msgid "not-found.login.start-using"
+msgstr "І почати використовувати Penpot у ту ж мить!"
+
+#: src/app/main/ui/static.cljs:56
+msgid "not-found.made-with-love"
+msgstr "Створено з ЛЮБОВ'Ю та Open Source"
+
+#: src/app/main/ui/static.cljs:250
+msgid "not-found.no-permission.already-requested.file"
+msgstr "Ви вже запитували дозвіл на доступ до цього файлу."
+
+#: src/app/main/ui/static.cljs:250
+msgid "not-found.no-permission.already-requested.or-others.file"
+msgstr ""
+"Ви вже запитували доступ до цього файлу або інших файлів чи проєктів цієї "
+"команди."
+
+#: src/app/main/ui/static.cljs:253
+msgid "not-found.no-permission.already-requested.or-others.project"
+msgstr ""
+"Ви вже запитували доступ до цього проєкту або інших проєктів чи файлів цієї "
+"команди."
+
+#: src/app/main/ui/static.cljs:253
+msgid "not-found.no-permission.already-requested.project"
+msgstr "Ви вже запитували дозвіл на доступ до цього проєкту."
+
+#: src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.ask"
+msgstr "ЗАПИТ НА ДОЗВІЛ"
+
+#: src/app/main/ui/static.cljs:259
+msgid "not-found.no-permission.file"
+msgstr "Ви не маєте доступу до цього файлу."
+
+#: src/app/main/ui/static.cljs:256
+msgid "not-found.no-permission.done.success"
+msgstr "Ваш запит надіслано правильно!"
+
+#: src/app/main/ui/static.cljs:43, src/app/main/ui/static.cljs:247, src/app/main/ui/static.cljs:250, src/app/main/ui/static.cljs:253, src/app/main/ui/static.cljs:256, src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.go-dashboard"
+msgstr "Відвідати ваш Penpot"
+
+#: src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.if-approves"
+msgstr "Якщо власник погодить, ви будете запрошені до команди."
+
+#: src/app/main/ui/static.cljs:256
+msgid "not-found.no-permission.done.remember"
+msgstr "Запам'ятайте - якщо власник погодить, ви будете запрошені до команди."
+
+#: src/app/main/ui/static.cljs:217, src/app/main/ui/static.cljs:222
+msgid "not-found.no-permission.penpot-file"
+msgstr "Файл Penpot"
+
+#: src/app/main/ui/static.cljs:216, src/app/main/ui/static.cljs:220
+msgid "not-found.no-permission.project-name"
+msgstr "ПРОЄКТ"
+
+#: src/app/main/ui/static.cljs:259
+msgid "not-found.no-permission.you-can-ask.file"
+msgstr "Щоб мати доступ до файлу, спершу запитайте власника команди."
+
+#: src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.you-can-ask.project"
+msgstr "Щоб мати доступ до цього проєкту, запитайте у власника команди."
+
+#, unused
+msgid "onboarding-v2.before-start.desc3.title"
+msgstr "Відео посібники"
+
+#, unused
+msgid "onboarding-v2.before-start.title"
+msgstr "Перш ніж почати"
+
+#: src/app/main/data/common.cljs:85
+msgid "notifications.by-code.maintenance"
+msgstr ""
+"Перерва на технічне обслуговування: ми закінчимо технічне обслуговування "
+"протягом 5 хвилин."
+
+#, unused
+msgid "onboarding-v2.welcome.desc1"
+msgstr ""
+"Penpot має відкритий вихідний код і розробляється Kaleidos, а також "
+"спільнотою, де багато людей вже допомагають один одному. Кожен може "
+"долучитися до співпраці:"
+
+#, unused
+msgid "onboarding.choice.team-up.create-team-and-send-invites"
+msgstr "Створити команду та надіслати запрошення"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:170
+msgid "onboarding.choice.team-up.create-team-and-send-invites-description"
+msgstr "Ви зможете запрошувати пізніше"
+
+#, unused
+msgid "onboarding.choice.team-up.create-team-without-inviting"
+msgstr "Створити команду без запрошення"
+
+#, unused
+msgid "onboarding.newsletter.accept"
+msgstr "Так, підписати"
+
+#: src/app/main/ui/onboarding/newsletter.cljs:95
+msgid "onboarding.newsletter.policy"
+msgstr "Потіика Конфіденційності."
+
+#: src/app/main/ui/onboarding/newsletter.cljs:60
+msgid "onboarding.newsletter.title"
+msgstr "Бажаєте отримувати новити від Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs:113
+msgid "onboarding.questions.lets-get-started"
+msgstr "Тож почнімо!"
+
+#, unused
+msgid "onboarding-v2.welcome.desc2"
+msgstr ""
+"Публічний простір, де можна дізнатися, поділитися та обговорити про Penpot, "
+"його сьогодення та майбутнє з усією спільнотою та основною командою Penpot."
+
+#: src/app/main/ui/onboarding/questions.cljs:94
+msgid "onboarding.questions.reasons.alternative"
+msgstr "Шукаю альтернативу Figma, XD тощо"
+
+#: src/app/main/ui/onboarding/questions.cljs:88
+msgid "onboarding.questions.reasons.exploring"
+msgstr "Просто досліджую"
+
+#: src/app/main/ui/onboarding/questions.cljs:91
+msgid "onboarding.questions.reasons.fit"
+msgstr "Розглядою чи підійде Penpot для потреб моєї команди"
+
+#: src/app/main/ui/onboarding/questions.cljs:97
+msgid "onboarding.questions.reasons.testing"
+msgstr "Тестування перед самостійним розміщенням"
+
+#: src/app/main/ui/onboarding/questions.cljs:408
+msgid "onboarding.questions.referer.article"
+msgstr "Стаття (Блоґ, Публікація, Бюлетень)"
+
+#: src/app/main/ui/onboarding/questions.cljs:406
+msgid "onboarding.questions.referer.search"
+msgstr "Пошуковий рушій (Google, Yahoo, Bing)"
+
+#: src/app/main/ui/onboarding/questions.cljs:407
+msgid "onboarding.questions.referer.social"
+msgstr "Соціальні мережі (X, Linkedin, FB, etc)"
+
+#: src/app/main/ui/onboarding/questions.cljs:347
+msgid "onboarding.questions.start-with.ds"
+msgstr "Створення дизайнерських систем"
+
+#: src/app/main/ui/onboarding/questions.cljs:345
+msgid "onboarding.questions.start-with.prototyping"
+msgstr "Прототипування"
+
+#: src/app/main/ui/onboarding/questions.cljs:349
+msgid "onboarding.questions.start-with.code"
+msgstr "Генерування реального коду з дизайнів"
+
+#: src/app/main/ui/onboarding/questions.cljs:341
+msgid "onboarding.questions.start-with.ui"
+msgstr "Розробка UI/UX для застосунків"
+
+#: src/app/main/ui/onboarding/questions.cljs:343
+msgid "onboarding.questions.start-with.wireframing"
+msgstr "Фреймворкінг"
+
+#: src/app/main/ui/onboarding/questions.cljs:121
+msgid "onboarding.questions.step1.question1"
+msgstr "Для чого плануєте використовувати Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs:128
+msgid "onboarding.questions.step1.question2"
+msgstr "Що саме вас привело до Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs:117
+msgid "onboarding.questions.step1.subtitle"
+msgstr ""
+"Розкажіть нам трохи про себе, щоб допомогти нам зробити Penpot зручним для "
+"вас. Ваші відповіді допоможуть нам визначити пріоритетність нових функцій і "
+"вказати вам правильний напрямок для початку роботи."
+
+#: src/app/main/ui/onboarding/questions.cljs:196
+msgid "onboarding.questions.step2.title"
+msgstr "Який з цих інструментів ви використовуєте найчастіше?"
+
+#: src/app/main/ui/onboarding/questions.cljs:289
+msgid "onboarding.questions.step3.question1"
+msgstr "Чим ви займаєтесь?"
+
+#: src/app/main/ui/onboarding/questions.cljs:303
+msgid "onboarding.questions.step3.question2"
+msgstr "Яка ваша роль?"
+
+#: src/app/main/ui/onboarding/questions.cljs:317
+msgid "onboarding.questions.step3.question3"
+msgstr "Скільки у вашій компанії співробітників?"
+
+#: src/app/main/ui/onboarding/questions.cljs:287
+msgid "onboarding.questions.step3.title"
+msgstr "Розкажіть про вашу роботу"
+
+#: src/app/main/ui/onboarding/questions.cljs:269
+msgid "onboarding.questions.team-size.2-10"
+msgstr "2-10"
+
+#: src/app/main/ui/onboarding/questions.cljs:115
+msgid "onboarding.questions.step1.title"
+msgstr "Допоможіть нам познайомитися з вами ближче"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:34
+msgid "onboarding.team-modal.create-team-desc"
+msgstr ""
+"Команда дозволяє вам співпрацювати з іншими користувачами Penpot, які "
+"працюють з тими ж файлами і проєктами."
+
+#: src/app/main/ui/onboarding/team_choice.cljs:39
+msgid "onboarding.team-modal.create-team-feature-1"
+msgstr "Необмежена кількість файлів та проєктів"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:43
+msgid "onboarding.team-modal.create-team-feature-2"
+msgstr "Багатокористувацьке видання"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:68
+msgid "shortcut-subsection.text-editor"
+msgstr "Тексти"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:78
+msgid "shortcuts.align-left"
+msgstr "Вирівняти по лівому краю"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:80
+msgid "shortcuts.align-top"
+msgstr "Вирівняти по верху"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:79
+msgid "shortcuts.align-right"
+msgstr "Вирівняти по правому краю"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:81
+msgid "shortcuts.align-vcenter"
+msgstr "Вирівняти по центру вертикально"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:92
+msgid "shortcuts.clear-undo"
+msgstr "Скасувати відміну"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:95
+msgid "shortcuts.create-new-project"
+msgstr "Створити новий"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:97
+msgid "shortcuts.decrease-zoom"
+msgstr "Зменшити"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:99
+msgid "shortcuts.delete-node"
+msgstr "Видалити вузол"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:100
+msgid "shortcuts.detach-component"
+msgstr "Від'єднати компонент"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:104
+msgid "shortcuts.draw-nodes"
+msgstr "Намалювати шлях"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:110
+msgid "shortcuts.export-shapes"
+msgstr "Експортувати фігури"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:111
+msgid "shortcuts.fit-all"
+msgstr "Збільшити, щоб вмістити все"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:112
+msgid "shortcuts.flip-horizontal"
+msgstr "Перевернути горизонтально"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:113
+msgid "shortcuts.flip-vertical"
+msgstr "Перевернути вертикально"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:114
+msgid "shortcuts.font-size-dec"
+msgstr "Зменшити розмір шрифту на 1"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:115
+msgid "shortcuts.font-size-inc"
+msgstr "Збільшити розмір шрифту на 1"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:116
+msgid "shortcuts.go-to-drafts"
+msgstr "Відвідати чернетки"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:117
+msgid "shortcuts.go-to-libs"
+msgstr "Відвідати спільні бібліотеки"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:126
+msgid "shortcuts.letter-spacing-dec"
+msgstr "Зменшити відступ між літерами на 1"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:121
+msgid "shortcuts.hide-ui"
+msgstr "Показати/приховати інтерфейс"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:128
+msgid "shortcuts.line-height-dec"
+msgstr "Зменшити висоту лінії на 1"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:129
+msgid "shortcuts.line-height-inc"
+msgstr "Збільшити вистоу лінії на 1"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:130
+msgid "shortcuts.line-through"
+msgstr "Перемкнути рядок через"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:131
+msgid "shortcuts.make-corner"
+msgstr "Створити кут"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:132
+msgid "shortcuts.make-curve"
+msgstr "Створити криву"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:134
+msgid "shortcuts.merge-nodes"
+msgstr "Об'єднати вузли"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:189
+msgid "workspace.path.actions.join-nodes"
+msgstr "Приєднати вузли (%s)"
+
+#: src/app/main/ui/auth/login.cljs:276
+msgid "auth.login-tagline"
+msgstr ""
+"Penpot це вільний інструмент з відкритим сирцевим кодом для спільної роботи "
+"над дизайном та кодом"
+
+#: src/app/main/ui/dashboard/import.cljs:476, src/app/main/ui/dashboard/project_menu.cljs:108
+msgid "dashboard.import"
+msgstr "Імпортувати файли Penpot"
+
+#: src/app/main/errors.cljs:237, src/app/main/errors.cljs:251
+msgid "errors.feature-not-supported"
+msgstr "Функція '%s' не підтримується."
+
+#: src/app/main/ui/components/color_input.cljs:57
+msgid "errors.invalid-color"
+msgstr "Хибний колір"
+
+#: src/app/main/ui/static.cljs:61
+msgid "errors.invite-invalid"
+msgstr "Хибне запрошення"
+
+#: src/app/main/errors.cljs:245
+msgid "errors.max-quote-reached"
+msgstr "Ви досягли квоти \"%s\". Зв'яжіться із службою підтримки."
+
+#: src/app/main/data/workspace/media.cljs:184
+msgid "errors.media-too-large"
+msgstr "Це зображення завелике для вставки."
+
+#: src/app/main/data/media.cljs:65, src/app/main/data/workspace/media.cljs:172, src/app/main/data/workspace/media.cljs:175, src/app/main/data/workspace/media.cljs:178, src/app/main/data/workspace/media.cljs:181
+msgid "errors.media-type-not-allowed"
+msgstr "Схоже, це зображення є недійсним."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:371, src/app/main/ui/dashboard/team.cljs:384
+msgid "errors.team-leave.owner-cant-leave"
+msgstr ""
+"Власник не може покинути команду, тому ви повинні спершу призначити нового "
+"власника."
+
+#: src/app/main/data/media.cljs:71
+msgid "errors.unexpected-error"
+msgstr "Виникла неочікувана помилка."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:368, src/app/main/ui/dashboard/team.cljs:381
+msgid "errors.team-leave.member-does-not-exists"
+msgstr "Учасник, якого ви намагаєтеся призначити, не існує."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:221
+msgid "settings.detach"
+msgstr "Від'єднати"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:61
+msgid "shortcut-subsection.modify-layers"
+msgstr "Модифікувати шар"
+
+#: src/app/main/data/workspace/media.cljs:273, src/app/main/ui/components/color_bullet.cljs:32, src/app/main/ui/components/color_bullet.cljs:45, src/app/main/ui/viewer/inspect/attributes/common.cljs:66, src/app/main/ui/workspace/colorpicker.cljs:212, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:237
+msgid "media.image"
+msgstr "Зображення"
