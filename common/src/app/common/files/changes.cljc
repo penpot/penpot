@@ -371,7 +371,7 @@
                          (not= shape-old shape-new))
                 (dm/verify!
                  "expected valid shape"
-                 (and (cts/check-shape! shape-new)
+                 (and (cts/valid-shape? shape-new)
                       (cts/shape? shape-new))))))]
 
     (->> (into #{} (map :page-id) items)
