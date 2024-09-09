@@ -56,7 +56,7 @@
              gradient-3 (decode gradient-2)]
          ;; (app.common.pprint/pprint gradient)
          ;; (app.common.pprint/pprint gradient-3)
-         (t/is (= gradient gradient-3))))
+         (= gradient gradient-3)))
      {:num 500})))
 
 (t/deftest color-json-roundtrip
@@ -69,7 +69,7 @@
              color-3 (decode color-2)]
          ;; (app.common.pprint/pprint color)
          ;; (app.common.pprint/pprint color-3)
-         (t/is (= color color-3))))
+         (= color color-3)))
      {:num 500})))
 
 (t/deftest shape-shadow-json-roundtrip
@@ -82,7 +82,7 @@
              shadow-3 (decode shadow-2)]
          ;; (app.common.pprint/pprint shadow)
          ;; (app.common.pprint/pprint shadow-3)
-         (t/is (= shadow shadow-3))))
+         (= shadow shadow-3)))
      {:num 500})))
 
 (t/deftest shape-animation-json-roundtrip
@@ -95,7 +95,7 @@
              animation-3 (decode animation-2)]
          ;; (app.common.pprint/pprint animation)
          ;; (app.common.pprint/pprint animation-3)
-         (t/is (= animation animation-3))))
+         (= animation animation-3)))
      {:num 500})))
 
 (t/deftest shape-interaction-json-roundtrip
@@ -108,7 +108,7 @@
              interaction-3 (decode interaction-2)]
          ;; (app.common.pprint/pprint interaction)
          ;; (app.common.pprint/pprint interaction-3)
-         (t/is (= interaction interaction-3))))
+         (= interaction interaction-3)))
      {:num 500})))
 
 
@@ -122,7 +122,7 @@
              path-content-3 (decode path-content-2)]
          ;; (app.common.pprint/pprint path-content)
          ;; (app.common.pprint/pprint path-content-3)
-         (t/is (= path-content path-content-3))))
+         (= path-content path-content-3)))
      {:num 500})))
 
 (t/deftest plugin-data-json-roundtrip
@@ -133,7 +133,7 @@
        (let [data-1 (encode data)
              data-2 (json-roundtrip data-1)
              data-3 (decode data-2)]
-         (t/is (= data data-3))))
+         (= data data-3)))
      {:num 500})))
 
 (t/deftest shape-json-roundtrip
@@ -146,5 +146,5 @@
              shape-3 (decode shape-2)]
          ;; (app.common.pprint/pprint shape)
          ;; (app.common.pprint/pprint shape-3)
-         (t/is (= shape shape-3))))
+         (= shape shape-3)))
      {:num 1000})))
