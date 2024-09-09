@@ -214,35 +214,60 @@
          (update :undo-changes conj undo)
          (apply-changes-local)))))
 
-(defn mod-plugin-data
+(defn set-plugin-data
   ([changes namespace key value]
-   (mod-plugin-data changes :file nil nil namespace key value))
+   (set-plugin-data changes :file nil nil namespace key value))
   ([changes type id namespace key value]
-   (mod-plugin-data changes type id nil namespace key value))
+   (set-plugin-data changes type id nil namespace key value))
   ([changes type id page-id namespace key value]
    (let [data (::file-data (meta changes))
          old-val
          (case type
            :file
-           (get-in data [:plugin-data namespace key])
+           (dm/get-in data [:plugin-data namespace key])
 
            :page
-           (get-in data [:pages-index id :options :plugin-data namespace key])
+           (dm/get-in data [:pages-index id :options :plugin-data namespace key])
 
            :shape
-           (get-in data [:pages-index page-id :objects id :plugin-data namespace key])
+           (dm/get-in data [:pages-index page-id :objects id :plugin-data namespace key])
 
            :color
-           (get-in data [:colors id :plugin-data namespace key])
+           (dm/get-in data [:colors id :plugin-data namespace key])
 
            :typography
-           (get-in data [:typographies id :plugin-data namespace key])
+           (dm/get-in data [:typographies id :plugin-data namespace key])
 
            :component
-           (get-in data [:components id :plugin-data namespace key]))]
+           (dm/get-in data [:components id :plugin-data namespace key]))
+
+         redo-change
+         (cond-> {:type :set-plugin-data
+                  :object-type type
+                  :namespace namespace
+                  :key key
+                  :value value}
+           (uuid? id)
+           (assoc :object-id id)
+
+           (uuid? page-id)
+           (assoc :page-id page-id))
+
+         undo-change
+         (cond-> {:type :set-plugin-data
+                  :object-type type
+                  :namespace namespace
+                  :key key
+                  :value old-val}
+           (uuid? id)
+           (assoc :object-id id)
+
+           (uuid? page-id)
+           (assoc :page-id page-id))]
+
      (-> changes
-         (update :redo-changes conj {:type :mod-plugin-data :object-type type :object-id id :page-id page-id :namespace namespace :key key :value value})
-         (update :undo-changes conj {:type :mod-plugin-data :object-type type :object-id id :page-id page-id :namespace namespace :key key :value old-val})
+         (update :redo-changes conj redo-change)
+         (update :undo-changes conj undo-change)
          (apply-changes-local)))))
 
 (defn del-page
@@ -258,7 +283,6 @@
       (update :redo-changes conj {:type :mov-page :id page-id :index index})
       (update :undo-changes conj {:type :mov-page :id page-id :index prev-index})
       (apply-changes-local)))
-
 
 (defn set-guide
   [changes id guide]

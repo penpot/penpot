@@ -149,7 +149,6 @@
        (tg/fmap (fn [v]
                   (str v "@example.net")))))
 
-
 (defn uri
   []
   (tg/let [scheme (tg/elements ["http" "https"])
@@ -161,8 +160,8 @@
 
 (defn uuid
   []
-  (->> tg/small-integer
-       (tg/fmap (fn [_] (uuid/next)))))
+  (->> (small-int :min 1 :max 100000000)
+       (tg/fmap (fn [i] (uuid/custom 100 i)))))
 
 (defn subseq
   "Given a collection, generates \"subsequences\" which are sequences
