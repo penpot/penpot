@@ -9,6 +9,9 @@ alias ls='ls --color -F'
 alias lsd='ls -d *(/)'
 alias lsf='ls -h *(.)'
 
+# init Cargo / Rust env
+. "/usr/local/cargo/env"
+
 # include .bashrc if it exists
 if [ -f "$HOME/.bashrc.local" ]; then
     . "$HOME/.bashrc.local"
