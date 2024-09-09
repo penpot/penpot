@@ -476,7 +476,7 @@
     ::oapi/type "string"
     ::oapi/format "email"}})
 
-(def non-empty-strings-xf
+(def xf:filter-word-strings
   (comp
    (filter string?)
    (remove str/empty?)
@@ -489,20 +489,14 @@
    :min 0
    :max 1
    :compile
-   (fn [{:keys [coerce kind max min] :as props} children _]
-     (let [xform (if coerce
-                   (comp non-empty-strings-xf (map coerce))
-                   non-empty-strings-xf)
-           kind  (or (last children) kind)
+   (fn [{:keys [kind max min] :as props} children _]
+     (let [kind  (or (last children) kind)
 
            pred
            (cond
              (fn? kind)  kind
              (nil? kind) any?
              :else       (validator kind))
-
-           encode-child
-           (encoder kind string-transformer)
 
            pred
            (cond
@@ -531,22 +525,40 @@
              (fn [value]
                (every? pred value)))
 
-           decode
+
+           decode-string-child
+           (decoder kind string-transformer)
+
+           decode-string
            (fn [v]
-             (let [v (if (string? v) (str/split v #"[\s,]+") v)]
-               (into #{} xform v)))
+             (let [v (if (string? v) (str/split v #"[\s,]+") v)
+                   x (comp xf:filter-word-strings (map decode-string-child))]
+               (into #{} x v)))
+
+           decode-json-child
+           (decoder kind json-transformer)
+
+           decode-json
+           (fn [v]
+             (let [v (if (string? v) (str/split v #"[\s,]+") v)
+                   x (comp xf:filter-word-strings (map decode-json-child))]
+               (into #{} x v)))
+
+           encode-string-child
+           (encoder kind string-transformer)
+
+           encode-string
+           (fn [o]
+             (if (set? o)
+               (str/join ", " (map encode-string-child o))
+               o))
 
            encode-json
            (fn [o]
              (if (set? o)
                (vec o)
-               o))
-
-           encode-string
-           (fn [o]
-             (if (set? o)
-               (str/join ", " (map encode-child o))
                o))]
+
 
        {:pred pred
         :type-properties
@@ -554,8 +566,8 @@
          :description "Set of Strings"
          :error/message "should be a set of strings"
          :gen/gen (-> kind sg/generator sg/set)
-         :decode/string decode
-         :decode/json decode
+         :decode/string decode-string
+         :decode/json decode-json
          :encode/string encode-string
          :encode/json encode-json
          ::oapi/type "array"
@@ -569,20 +581,13 @@
    :min 0
    :max 1
    :compile
-   (fn [{:keys [coerce kind max min] :as props} children _]
-     (let [xform (if coerce
-                   (comp non-empty-strings-xf (map coerce))
-                   non-empty-strings-xf)
-
-           kind  (or (last children) kind)
+   (fn [{:keys [kind max min] :as props} children _]
+     (let [kind  (or (last children) kind)
            pred
            (cond
              (fn? kind)  kind
              (nil? kind) any?
              :else       (validator kind))
-
-           encode-child
-           (encoder kind string-transformer)
 
            pred
            (cond
@@ -611,15 +616,31 @@
              (fn [value]
                (every? pred value)))
 
-           decode
+           decode-string-child
+           (decoder kind string-transformer)
+
+           decode-json-child
+           (decoder kind json-transformer)
+
+           decode-string
            (fn [v]
-             (let [v (if (string? v) (str/split v #"[\s,]+") v)]
-               (into [] xform v)))
+             (let [v (if (string? v) (str/split v #"[\s,]+") v)
+                   x (comp xf:filter-word-strings (map decode-string-child))]
+               (into #{} x v)))
+
+           decode-json
+           (fn [v]
+             (let [v (if (string? v) (str/split v #"[\s,]+") v)
+                   x (comp xf:filter-word-strings (map decode-json-child))]
+               (into #{} x v)))
+
+           encode-string-child
+           (encoder kind string-transformer)
 
            encode-string
            (fn [o]
              (if (vector? o)
-               (str/join ", " (map encode-child o))
+               (str/join ", " (map encode-string-child o))
                o))]
 
        {:pred pred
@@ -628,8 +649,8 @@
          :description "Set of Strings"
          :error/message "should be a set of strings"
          :gen/gen (-> kind sg/generator sg/set)
-         :decode/string decode
-         :decode/json decode
+         :decode/string decode-string
+         :decode/json decode-json
          :encode/string encode-string
          ::oapi/type "array"
          ::oapi/format "set"
@@ -646,7 +667,7 @@
     :gen/gen (-> :string sg/generator sg/set)
     :decode/string (fn [v]
                      (let [v (if (string? v) (str/split v #"[\s,]+") v)]
-                       (into #{} non-empty-strings-xf v)))
+                       (into #{} xf:filter-word-strings v)))
     ::oapi/type "array"
     ::oapi/format "set"
     ::oapi/items {:type "string"}
@@ -662,7 +683,7 @@
     :gen/gen (-> :keyword sg/generator sg/set)
     :decode/string (fn [v]
                      (let [v (if (string? v) (str/split v #"[\s,]+") v)]
-                       (into #{} (comp non-empty-strings-xf (map keyword)) v)))
+                       (into #{} (comp xf:filter-word-strings (map keyword)) v)))
     ::oapi/type "array"
     ::oapi/format "set"
     ::oapi/items {:type "string" :format "keyword"}
