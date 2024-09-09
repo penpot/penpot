@@ -594,7 +594,7 @@
              (-> (pcb/empty-changes it)
                  (pcb/with-file-data file-data)
                  (assoc :file-id file-id)
-                 (pcb/mod-plugin-data type id page-id namespace key value))]
+                 (pcb/set-plugin-data type id page-id namespace key value))]
          (rx/of (dch/commit-changes changes)))))))
 
 (declare purge-page)

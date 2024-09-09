@@ -735,3 +735,24 @@
               (nil? (get-in result2 [:pages-index page-id :guides])))))
 
      {:num 1000})))
+
+(t/deftest set-plugin-data-json-encode-decode
+  (let [schema ch/schema:set-plugin-data-change
+        encode (sm/encoder schema (sm/json-transformer))
+        decode (sm/decoder schema (sm/json-transformer))]
+    (sg/check!
+     (sg/for [data (sg/generator schema)]
+       (let [data-1 (encode data)
+             data-2 (json-roundtrip data-1)
+             data-3 (decode data-2)]
+         (= data data-3)))
+     {:num 1000})))
+
+(t/deftest set-plugin-data-gen-and-validate
+  (let [file-id (uuid/custom 2 2)
+        page-id (uuid/custom 1 1)
+        data    (make-file-data file-id page-id)]
+    (sg/check!
+     (sg/for [change (sg/generator ch/schema:set-plugin-data-change)]
+       (sm/validate ch/schema:set-plugin-data-change change))
+     {:num 1000})))
