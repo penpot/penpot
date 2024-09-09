@@ -697,7 +697,7 @@
              data-3 (decode data-2)]
          ;; (app.common.pprint/pprint data-2)
          ;; (app.common.pprint/pprint data-3)
-         (t/is (= data data-3))))
+         (= data data-3)))
      {:num 1000})))
 
 (t/deftest set-guide-1
@@ -709,8 +709,8 @@
      (sg/for [change (sg/generator ch/schema:set-guide-change)]
        (let [change (assoc change :page-id page-id)
              result (ch/process-changes data [change])]
-         (t/is (= (:params change)
-                  (get-in result [:pages-index page-id :guides (:id change)])))))
+         (= (:params change)
+            (get-in result [:pages-index page-id :guides (:id change)]))))
      {:num 1000})))
 
 (t/deftest set-guide-2
@@ -727,11 +727,11 @@
              change2 (assoc change1 :params nil)
              result2 (ch/process-changes result1 [change2])]
 
-         (t/is (some? (:params change1)))
-         (t/is (= (:params change1)
-                  (get-in result1 [:pages-index page-id :guides (:id change1)])))
+         (and (some? (:params change1))
+              (= (:params change1)
+                 (get-in result1 [:pages-index page-id :guides (:id change1)]))
 
-         (t/is (nil? (:params change2)))
-         (t/is (nil? (get-in result2 [:pages-index page-id :guides])))))
+              (nil? (:params change2))
+              (nil? (get-in result2 [:pages-index page-id :guides])))))
 
      {:num 1000})))

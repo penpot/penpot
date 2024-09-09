@@ -8,34 +8,82 @@
   (:refer-clojure :exclude [set subseq uuid for filter map let boolean])
   #?(:cljs (:require-macros [app.common.schema.generators]))
   (:require
+   [app.common.pprint :as pp]
    [app.common.schema.registry :as sr]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [clojure.core :as c]
+   [clojure.test :as ct]
    [clojure.test.check :as tc]
    [clojure.test.check.generators :as tg]
    [clojure.test.check.properties :as tp]
    [cuerdas.core :as str]
    [malli.generator :as mg]))
 
+(defn- get-testing-var
+  []
+  (c/let [testing-vars #?(:clj ct/*testing-vars*
+                          :cljs (:testing-vars ct/*current-env*))]
+    (first testing-vars)))
+
+(defn- get-testing-sym
+  [var]
+  (c/let [tmeta (meta var)]
+    (:name tmeta)))
+
 (defn default-reporter-fn
-  [{:keys [type result] :as args}]
+  "Default function passed as the :reporter-fn to clojure.test.check/quick-check.
+  Delegates to clojure.test/report."
+  [{:keys [type] :as args}]
   (case type
     :complete
-    (prn (select-keys args [:result :num-tests :seed "time-elapsed-ms"]))
+    (ct/report {:type ::complete ::params args})
+
+    :trial
+    (ct/report {:type ::trial ::params args})
 
     :failure
-    (do
-      (prn (select-keys args [:num-tests :seed :failed-after-ms]))
-      (when #?(:clj (instance? Throwable result)
-               :cljs (instance? js/Error result))
-        (throw result)))
+    (ct/report {:type ::fail ::params args})
+
+    :shrunk
+    (ct/report {:type ::thrunk ::params args})
 
     nil))
 
+(defmethod ct/report ::complete
+  [{:keys [::params] :as m}]
+  #?(:clj  (ct/inc-report-counter :pass)
+     :cljs (ct/inc-report-counter! :pass))
+  (c/let [tvar (get-testing-var)
+          tsym (get-testing-sym tvar)]
+    (println "Generative test:" (str "'" tsym "'")
+             (str "(pass=TRUE, tests=" (:num-tests params)  ", seed=" (:seed params)  ")"))))
+
+(defmethod ct/report ::thrunk
+  [{:keys [::params] :as m}]
+  (c/let [smallest (-> params :shrunk :smallest vec)]
+    (println)
+    (println "Failed with params:")
+    (pp/pprint smallest)))
+
+(defmethod ct/report ::trial
+  [_]
+  #?(:clj  (ct/inc-report-counter :pass)
+     :cljs (ct/inc-report-counter! :pass)))
+
+(defmethod ct/report ::fail
+  [{:keys [::params] :as m}]
+  #?(:clj  (ct/inc-report-counter :fail)
+     :cljs (ct/inc-report-counter! :fail))
+  (c/let [tvar (get-testing-var)
+          tsym (get-testing-sym tvar)]
+    (println)
+    (println "Generative test:" (str "'" tsym "'")
+             (str "(pass=FALSE, tests=" (:num-tests params)  ", seed=" (:seed params)  ")"))))
+
 (defmacro for
-  [& params]
-  `(tp/for-all ~@params))
+  [bindings & body]
+  `(tp/for-all ~bindings ~@body))
 
 (defmacro let
   [& params]
@@ -43,7 +91,12 @@
 
 (defn check!
   [p & {:keys [num] :or {num 20} :as options}]
-  (tc/quick-check num p (assoc options :reporter-fn default-reporter-fn :max-size 50)))
+  (c/let [result (tc/quick-check num p (assoc options :reporter-fn default-reporter-fn :max-size 50))
+          pass?        (:pass? result)
+          total-tests  (:num-tests result)]
+
+    (ct/is (= num total-tests))
+    (ct/is (true? pass?))))
 
 (defn sample
   ([g]
@@ -82,6 +135,11 @@
     (tg/fmap (fn [v] (apply str (re-seq #"[A-Za-z]+" v))) $$)
     (tg/such-that (fn [v] (>= (count v) 4)) $$ 100)
     (tg/fmap str/lower $$)))
+
+(defn word-keyword
+  []
+  (->> (word-string)
+       (tg/fmap keyword)))
 
 (defn email
   []

@@ -14,5 +14,5 @@
   (sg/check!
    (sg/for [uuid1 (sg/generator ::sm/uuid)
             uuid2 (sg/generator ::sm/uuid)]
-     (t/is (not= uuid1 uuid2)))
-   {:num 100}))
+     (not= uuid1 uuid2))
+   {:num 200}))
