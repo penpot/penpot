@@ -8,11 +8,14 @@
   (:require
    [app.common.features :as ffeat]
    [app.common.files.changes :as ch]
+   [app.common.schema :as sm]
+   [app.common.schema.generators :as sg]
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [clojure.pprint :refer [pprint]]
-   [clojure.test :as t]))
+   [clojure.test :as t]
+   [common-tests.types.shape-decode-encode-test :refer [json-roundtrip]]))
 
 (defn- make-file-data
   [file-id page-id]
@@ -682,3 +685,53 @@
 
         (t/is (not= nil
                     (get-in res [:pages-index page-id :objects group-1-id])))))))
+
+(t/deftest set-guide-json-encode-decode
+  (let [schema ch/schema:set-guide-change
+        encode (sm/encoder schema (sm/json-transformer))
+        decode (sm/decoder schema (sm/json-transformer))]
+    (sg/check!
+     (sg/for [data (sg/generator schema)]
+       (let [data-1 (encode data)
+             data-2 (json-roundtrip data-1)
+             data-3 (decode data-2)]
+         ;; (app.common.pprint/pprint data-2)
+         ;; (app.common.pprint/pprint data-3)
+         (t/is (= data data-3))))
+     {:num 1000})))
+
+(t/deftest set-guide-1
+  (let [file-id (uuid/custom 2 2)
+        page-id (uuid/custom 1 1)
+        data    (make-file-data file-id page-id)]
+
+    (sg/check!
+     (sg/for [change (sg/generator ch/schema:set-guide-change)]
+       (let [change (assoc change :page-id page-id)
+             result (ch/process-changes data [change])]
+         (t/is (= (:params change)
+                  (get-in result [:pages-index page-id :guides (:id change)])))))
+     {:num 1000})))
+
+(t/deftest set-guide-2
+  (let [file-id (uuid/custom 2 2)
+        page-id (uuid/custom 1 1)
+        data    (make-file-data file-id page-id)]
+
+    (sg/check!
+     (sg/for [change (->> (sg/generator ch/schema:set-guide-change)
+                          (sg/filter :params))]
+       (let [change1 (assoc change :page-id page-id)
+             result1 (ch/process-changes data [change1])
+
+             change2 (assoc change1 :params nil)
+             result2 (ch/process-changes result1 [change2])]
+
+         (t/is (some? (:params change1)))
+         (t/is (= (:params change1)
+                  (get-in result1 [:pages-index page-id :guides (:id change1)])))
+
+         (t/is (nil? (:params change2)))
+         (t/is (nil? (get-in result2 [:pages-index page-id :guides])))))
+
+     {:num 1000})))

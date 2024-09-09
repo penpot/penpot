@@ -53,7 +53,7 @@
          valid? (or (and components-v2
                          (nil? (:component-id change))
                          (nil? (:page-id change)))
-                    (ch/check-change! change))]
+                    (ch/valid-change? change))]
 
      (when-not valid?
        (let [explain (sm/explain ::ch/change change)]
