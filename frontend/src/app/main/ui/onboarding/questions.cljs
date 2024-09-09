@@ -217,9 +217,9 @@
     [:team-size
      [:enum "more-than-50" "31-50" "11-30" "2-10" "freelancer" "personal-project"]]
     [:role
-     [:enum "designer" "developer" "student-teacher" "graphic-design" "marketing" "manager" "other"]]
+     [:enum "ux" "developer" "student-teacher" "designer" "marketing" "manager" "other"]]
     [:responsability
-     [:enum "team-leader" "team-member" "freelancer" "ceo-founder" "director" "student-teacher" "other"]]
+     [:enum "team-leader" "team-member" "freelancer" "ceo-founder" "director" "other"]]
 
     [:role-other {:optional true} [::sm/text {:max 512}]]
     [:responsability-other {:optional true} [::sm/text {:max 512}]]]

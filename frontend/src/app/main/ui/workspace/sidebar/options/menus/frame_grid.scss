@@ -199,7 +199,6 @@
   .height {
     @extend .input-element;
     @include bodySmallTypography;
-    width: $s-108;
     .icon-text {
       padding-top: $s-1;
     }
@@ -208,7 +207,6 @@
   .margin {
     @extend .input-element;
     @include bodySmallTypography;
-    width: $s-108;
     .icon {
       &.rotated svg {
         transform: rotate(90deg);
