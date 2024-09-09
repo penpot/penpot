@@ -354,6 +354,9 @@
 (def check-shape!
   (sm/check-fn schema:shape))
 
+(def valid-shape?
+  (sm/lazy-validator schema:shape))
+
 (defn has-images?
   [{:keys [fills strokes]}]
   (or (some :fill-image fills)
