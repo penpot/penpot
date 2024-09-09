@@ -102,6 +102,19 @@
      [:grid-type [:and :keyword [:= :row]]]
      [:params [:maybe ctg/schema:column-params]]]]])
 
+(def schema:set-guide-change
+  (let [schema [:map {:title "SetGuideChange"}
+                [:type [:= :set-guide]]
+                [:page-id ::sm/uuid]
+                [:id ::sm/uuid]
+                [:params [:maybe ::ctp/guide]]]
+        gen    (->> (sg/generator schema)
+                    (sg/fmap (fn [change]
+                               (if (some? (:params change))
+                                 (update change :params assoc :id (:id change))
+                                 change))))]
+    [:schema {:gen/gen gen} schema]))
+
 (def schema:change
   [:schema
    [:multi {:dispatch :type
@@ -150,11 +163,7 @@
       [:component-id {:optional true} ::sm/uuid]
       [:ignore-touched {:optional true} :boolean]]]
 
-    [:set-guide
-     [:map {:title "SetGuideChange"}
-      [:page-id ::sm/uuid]
-      [:id ::sm/uuid]
-      [:params [:maybe ::ctp/guide]]]]
+    [:set-guide schema:set-guide-change]
 
     [:set-flow
      [:map {:title "SetFlowChange"}
@@ -329,11 +338,11 @@
 (sm/register! ::change schema:change)
 (sm/register! ::changes schema:changes)
 
-(def check-change!
-  (sm/check-fn ::change))
+(def valid-change?
+  (sm/lazy-validator schema:change))
 
-(def check-changes!
-  (sm/check-fn ::changes))
+(def valid-changes?
+  (sm/lazy-validator schema:changes))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specific helpers
@@ -405,12 +414,12 @@
    (process-changes data items true))
 
   ([data items verify?]
-   ;; When verify? false we spec the schema validation. Currently used to make just
-   ;; 1 validation even if the changes are applied twice
+   ;; When verify? false we spec the schema validation. Currently used
+   ;; to make just 1 validation even if the changes are applied twice
    (when verify?
      (dm/verify!
       "expected valid changes"
-      (check-changes! items)))
+      (valid-changes? items)))
 
    (binding [*touched-changes* (volatile! #{})]
      (let [result (reduce #(or (process-change %1 %2) %1) data items)
@@ -445,8 +454,16 @@
 (defmethod process-change :set-guide
   [data {:keys [page-id id params]}]
   (if (nil? params)
-    (d/update-in-when data [:pages-index page-id] update :guides dissoc id)
-    (d/update-in-when data [:pages-index page-id] update :guides assoc id params)))
+    (d/update-in-when data [:pages-index page-id]
+                      (fn [page]
+                        (let [guides (get page :guides)
+                              guides (dissoc guides id)]
+                          (if (empty? guides)
+                            (dissoc page :guides)
+                            (assoc page :guides guides)))))
+
+    (let [params (assoc params :id id)]
+      (d/update-in-when data [:pages-index page-id] update :guides assoc id params))))
 
 ;; --- Flows
 

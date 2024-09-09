@@ -110,8 +110,8 @@
 
   (dm/assert!
    "expect valid vector of changes"
-   (and (cpc/check-changes! redo-changes)
-        (cpc/check-changes! undo-changes)))
+   (and (cpc/valid-changes? redo-changes)
+        (cpc/valid-changes? undo-changes)))
 
   (let [commit-id (or commit-id (uuid/next))
         source    (d/nilv source :local)
