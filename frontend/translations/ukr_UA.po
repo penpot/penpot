@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-09-08 12:09+0000\n"
+"PO-Revision-Date: 2024-09-09 18:32+0000\n"
 "Last-Translator: Denys Kisil <denkisil@outlook.com>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
@@ -4873,3 +4873,425 @@ msgstr "Об'єднати клітинки"
 #: src/app/main/ui/workspace/context_menu.cljs:601
 msgid "workspace.context-menu.grid-track.row.add-after"
 msgstr "Додати 1 рядок знизу"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:610
+msgid "workspace.options.component.copy"
+msgstr "Копіювати"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163
+msgid "workspace.options.constraints"
+msgstr "Обмежити"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:149
+msgid "workspace.options.constraints.top"
+msgstr "Верх"
+
+#: src/app/main/ui/viewer/inspect/exports.cljs:139
+msgid "workspace.options.export"
+msgstr "Експортувати"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:674
+msgid "workspace.options.interaction-easing"
+msgstr "Плавний перехід"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:417
+msgid "workspace.options.interaction-easing-ease-in"
+msgstr "Плавно переходити всередину"
+
+#: src/app/main/ui/workspace/libraries.cljs:215
+msgid "workspace.libraries.file-library"
+msgstr "Бібліотека файлів"
+
+#: src/app/main/ui/workspace/libraries.cljs:77, src/app/main/ui/workspace/libraries.cljs:95
+msgid "workspace.libraries.graphics"
+msgstr "%s графіків"
+
+#: src/app/main/ui/workspace/libraries.cljs:380
+msgid "workspace.libraries.no-libraries-need-sync"
+msgstr "Тут ще немає спільних бібліотек, які потребують оновлення"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:229
+msgid "workspace.options.constraints.fix-when-scrolling"
+msgstr "Виправити при прокручуванні"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs, src/app/main/ui/inspect/exports.cljs
+#, unused
+msgid "workspace.options.export-multiple"
+msgstr "Експортувати обране"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
+msgid "workspace.options.grid.params.rows"
+msgstr "Рядки"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:42
+msgid "workspace.options.group-stroke"
+msgstr "Рамка групи"
+
+#: src/app/main/ui/workspace/sidebar/options.cljs:177
+msgid "workspace.options.inspect"
+msgstr "Дослідити"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:478
+msgid "workspace.options.interaction-destination"
+msgstr "Розташування"
+
+#: src/app/main/ui/workspace/libraries.cljs:299
+msgid "workspace.libraries.no-matches-for"
+msgstr "Не знайдено збігів для \"%s\""
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:85
+msgid "workspace.options.blur-options.title.group"
+msgstr "Групове розмиття"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:471
+msgid "workspace.options.component.swap.empty"
+msgstr "У цій бібліотеці, поки що, немає ресурсів"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:372
+msgid "workspace.options.interaction-close-overlay"
+msgstr "Закрити накладення"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:391
+msgid "workspace.options.interaction-auto"
+msgstr "автоматично"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:56
+msgid "workspace.options.interaction-close-overlay-dest"
+msgstr "Закрити накладення: %s"
+
+#: src/app/main/ui/viewer/inspect/exports.cljs:195, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:237
+msgid "workspace.options.export-object"
+msgid_plural "workspace.options.export-object"
+msgstr[0] "Експортувати %s елемент"
+msgstr[1] "Експортувати %s елементи"
+msgstr[2] "Експортувати %s елементів"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
+msgid "workspace.options.grid.params.columns"
+msgstr "Стопвці"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:737
+msgid "workspace.options.add-interaction"
+msgstr "Натисни на + щоб додати взаємодії."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:406
+msgid "workspace.options.height"
+msgstr "Висота"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:604
+msgid "workspace.options.interaction-background"
+msgstr "Додати накладання фону"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:407
+msgid "workspace.options.interaction-animation-slide"
+msgstr "Ковзати"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:590
+msgid "workspace.options.interaction-close-outside"
+msgstr "Закрити при натискані за межами"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:173
+msgid "workspace.options.component.create-annotation"
+msgstr "Створіть анотацію"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:216, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:290
+msgid "workspace.options.grid.params.set-default"
+msgstr "Встановити за вмовчанням"
+
+#: src/app/main/ui/workspace/color_palette.cljs:126
+msgid "workspace.libraries.colors.empty-palette"
+msgstr "У вашій бібліотеці, поки що, немає стилів кольорів"
+
+#: src/app/main/ui/workspace/text_palette.cljs:150
+msgid "workspace.libraries.colors.empty-typography-palette"
+msgstr "У вашій бібліотеці, поки що, немає стилів типографіки"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:229
+msgid "workspace.options.grid.params.type.center"
+msgstr "Центр"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:228
+msgid "workspace.options.grid.params.type.left"
+msgstr "Ліво"
+
+#: src/app/main/ui/workspace/color_palette_ctx_menu.cljs:60, src/app/main/ui/workspace/colorpicker/libraries.cljs:73, src/app/main/ui/workspace/text_palette_ctx_menu.cljs:50
+msgid "workspace.libraries.colors.file-library"
+msgstr "Файл бібліотеки"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+#, unused
+msgid "workspace.libraries.colors.rgb-complementary"
+msgstr "Додатковий RGB"
+
+#: src/app/main/ui/workspace/libraries.cljs:74, src/app/main/ui/workspace/libraries.cljs:91
+msgid "workspace.libraries.components"
+msgstr "%s компонентів"
+
+#: src/app/main/ui/workspace/libraries.cljs:209
+msgid "workspace.libraries.in-this-file"
+msgstr "БІБЛІОТЕКИ В ЦЬОМУ ФАЙЛІ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:311
+msgid "workspace.libraries.text.multiple-typography-tooltip"
+msgstr "Від'язати усі типографіки"
+
+#: src/app/main/ui/workspace/libraries.cljs:83, src/app/main/ui/workspace/libraries.cljs:103
+msgid "workspace.libraries.typography"
+msgstr "%s типографік"
+
+#: src/app/main/ui/workspace/libraries.cljs:296
+msgid "workspace.libraries.no-shared-libraries-available"
+msgstr "Немає доступних спільних бібліотек"
+
+#: src/app/main/ui/workspace/libraries.cljs:282
+msgid "workspace.libraries.shared-library-btn"
+msgstr "Під'єднати бібліотеку"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:308
+msgid "workspace.libraries.text.multiple-typography"
+msgstr "Кілька типографік"
+
+#: src/app/main/ui/workspace/libraries.cljs:249
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "Від'єднати бібліотеку"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:548
+msgid "workspace.options.clip-content"
+msgstr "Зміст кліпу"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:140
+msgid "workspace.options.constraints.leftright"
+msgstr "Ліворуч та Праворуч"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:139
+msgid "workspace.options.constraints.right"
+msgstr "Праворуч"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:142, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:153
+msgid "workspace.options.constraints.scale"
+msgstr "Масштаб"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:151
+msgid "workspace.options.constraints.topbottom"
+msgstr "Верх & низ"
+
+#: src/app/main/ui/workspace/sidebar/options.cljs:169
+msgid "workspace.options.design"
+msgstr "Дизайн"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:237
+msgid "workspace.options.grid.params.color"
+msgstr "Колір"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:29
+msgid "workspace.options.grid.auto"
+msgstr "Автоматично"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:157
+msgid "workspace.options.grid.column"
+msgstr "Стовпці"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:259
+msgid "workspace.options.grid.params.gutter"
+msgstr "Проміжок"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
+msgid "workspace.options.grid.grid-title"
+msgstr "Сітка"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:246
+msgid "workspace.options.grid.params.height"
+msgstr "Висота"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:270
+msgid "workspace.options.grid.params.margin"
+msgstr "Зовнішній відступ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:211, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:288
+msgid "workspace.options.grid.params.use-default"
+msgstr "Використовувати вмовчання"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
+msgid "workspace.options.grid.params.type"
+msgstr "Тип"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:232
+msgid "workspace.options.grid.params.type.right"
+msgstr "Право"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:225
+msgid "workspace.options.grid.params.type.stretch"
+msgstr "Розтягування"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:468
+msgid "workspace.options.interaction-action"
+msgstr "Дія"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:41, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:367
+msgid "workspace.options.interaction-after-delay"
+msgstr "Після затримки"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:614
+msgid "workspace.options.interaction-animation"
+msgstr "Анімація"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:405
+msgid "workspace.options.interaction-animation-none"
+msgstr "Жоден"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:416
+msgid "workspace.options.interaction-easing-ease"
+msgstr "Плавно переходити"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:412
+msgid "workspace.options.interaction-animation-push"
+msgstr "Штовхати"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:456
+msgid "workspace.options.interaction-delay"
+msgstr "Затримка"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:59
+msgid "workspace.layout_grid.editor.title"
+msgstr "Редагування сітки"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:65
+msgid "workspace.layout_grid.editor.top-bar.done"
+msgstr "Виконано"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:62
+msgid "workspace.layout_grid.editor.top-bar.locate"
+msgstr "Розмістити"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1300
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "Розмістити макет сітки"
+
+#: src/app/main/ui/workspace/libraries.cljs:80, src/app/main/ui/workspace/libraries.cljs:99
+msgid "workspace.libraries.colors"
+msgstr "%s кольорів"
+
+#: src/app/main/ui/workspace/color_palette_ctx_menu.cljs:82, src/app/main/ui/workspace/colorpicker/libraries.cljs:72
+msgid "workspace.libraries.colors.recent-colors"
+msgstr "Попередні кольори"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:379
+msgid "workspace.libraries.colors.save-color"
+msgstr "Зберегти стиль кольору"
+
+#: src/app/main/ui/workspace/libraries.cljs:382
+msgid "workspace.libraries.library-updates"
+msgstr "ОНОВЛЕННЯ БІБЛІОТЕКИ"
+
+#: src/app/main/ui/workspace/libraries.cljs:290
+msgid "workspace.libraries.loading"
+msgstr "Завантаження…"
+
+#: src/app/main/ui/workspace/libraries.cljs:260
+msgid "workspace.libraries.search-shared-libraries"
+msgstr "Пошук спільних бібліотек"
+
+#: src/app/main/ui/workspace/libraries.cljs:256
+msgid "workspace.libraries.shared-libraries"
+msgstr "СПІЛЬНІ БІБЛІОТЕКИ"
+
+#: src/app/main/ui/workspace/libraries.cljs:477
+msgid "workspace.libraries.update.see-all-changes"
+msgstr "побачити усі зміни"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:84
+msgid "workspace.options.blur-options.title.multiple"
+msgstr "Вибіркове розмиття"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:32, src/app/main/ui/workspace/sidebar/options/page.cljs:39
+msgid "workspace.options.canvas-background"
+msgstr "Фон полотна"
+
+#: src/app/main/ui/viewer/inspect/annotation.cljs:19, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:181
+msgid "workspace.options.component.annotation"
+msgstr "Анотація"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:172
+msgid "workspace.options.component.edit-annotation"
+msgstr "Редагуйте анотацію"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:609
+msgid "workspace.options.component.main"
+msgstr "Головний"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:427
+msgid "workspace.options.component.swap"
+msgstr "Замінити компонент"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:150
+msgid "workspace.options.constraints.bottom"
+msgstr "Низ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:141, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:152
+msgid "workspace.options.constraints.center"
+msgstr "Центр"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:138
+msgid "workspace.options.constraints.left"
+msgstr "Ліворуч"
+
+#: src/app/main/ui/viewer/inspect/exports.cljs:178, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:219
+msgid "workspace.options.export.suffix"
+msgstr "Суфікс"
+
+#: src/app/main/ui/export.cljs:241
+msgid "workspace.options.exporting-complete"
+msgstr "Експортування завершено"
+
+#: src/app/main/ui/export.cljs:173, src/app/main/ui/export.cljs:242, src/app/main/ui/viewer/inspect/exports.cljs:194, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:236
+msgid "workspace.options.exporting-object"
+msgstr "Експортую…"
+
+#: src/app/main/ui/export.cljs:240
+msgid "workspace.options.exporting-object-error"
+msgstr "Не вдалось експортувати"
+
+#: src/app/main/ui/export.cljs:243
+msgid "workspace.options.exporting-object-slow"
+msgstr "Експортування відбувається неочікувано повільно"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:49, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:174
+msgid "workspace.options.fill"
+msgstr "Заповнити"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
+msgid "workspace.options.grid.params.size"
+msgstr "Розмір"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:231
+msgid "workspace.options.grid.params.type.bottom"
+msgstr "Низ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:227
+msgid "workspace.options.grid.params.type.top"
+msgstr "Верх"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:247
+msgid "workspace.options.grid.params.width"
+msgstr "Ширина"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:158
+msgid "workspace.options.grid.row"
+msgstr "Рядки"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:156
+msgid "workspace.options.grid.square"
+msgstr "Квадрат"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:48
+msgid "workspace.options.group-fill"
+msgstr "Заповнити групу"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:661
+msgid "workspace.options.interaction-duration"
+msgstr "Тривалість"
