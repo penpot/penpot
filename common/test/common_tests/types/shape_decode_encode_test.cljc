@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns common-tests.types.decoder-test
+(ns common-tests.types.shape-decode-encode-test
   (:require
    [app.common.json :as json]
    [app.common.pprint :as pp]
