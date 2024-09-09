@@ -751,7 +751,7 @@
       (update-fn data)
 
       :page
-      (d/update-in-when data [:pages-index object-id :options] update-fn)
+      (d/update-in-when data [:pages-index object-id] update-fn)
 
       :shape
       (d/update-in-when data [:pages-index page-id :objects object-id] update-fn)
