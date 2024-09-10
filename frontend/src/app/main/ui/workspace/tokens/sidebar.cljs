@@ -23,6 +23,7 @@
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.sets :refer [sets-list]]
    [app.main.ui.workspace.tokens.sets-context :as sets-context]
+   [app.main.ui.workspace.tokens.sets-context-menu :refer [sets-context-menu]]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.theme-select :refer [theme-select]]
    [app.main.ui.workspace.tokens.token :as wtt]
@@ -214,6 +215,7 @@
   (let [open? (mf/use-state true)
         on-open (mf/use-fn #(reset! open? true))]
     [:& sets-context/provider {}
+     [:& sets-context-menu]
      [:div {:class (stl/css :sets-sidebar)}
       [:div {:class (stl/css :sidebar-header)}
        [:& title-bar {:collapsable true

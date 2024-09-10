@@ -309,7 +309,7 @@
 ;; Token Context Menu Functions -------------------------------------------------
 
 (defn show-token-context-menu
-  [{:keys [position token-id] :as params}]
+  [{:keys [position _token-id] :as params}]
   (dm/assert! (gpt/point? position))
   (ptk/reify ::show-token-context-menu
     ptk/UpdateEvent
@@ -321,3 +321,17 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-local :token-context-menu] nil))))
+
+(defn show-token-set-context-menu
+  [{:keys [position _token-set-id] :as params}]
+  (dm/assert! (gpt/point? position))
+  (ptk/reify ::show-token-set-context-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :token-set-context-menu] params))))
+
+(def hide-token-set-context-menu
+  (ptk/reify ::hide-token-set-context-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :token-set-context-menu] nil))))
