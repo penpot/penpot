@@ -14,7 +14,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
-   [app.util.storage :refer [storage]]
+   [app.util.storage :as storage]
    [rumext.v2 :as mf]))
 
 (log/set-level! :warn)
@@ -23,7 +23,7 @@
 
 (defn- get-initial-state
   [initial file-id key]
-  (let [saved (dm/get-in @storage [::state file-id key])]
+  (let [saved (dm/get-in storage/user [::state file-id key])]
     (d/nilv saved initial)))
 
 (defn- update-persistent-state
@@ -81,7 +81,7 @@
                     start-size (mf/ref-val start-size-ref)
                     new-size (-> (+ start-size delta) (max min-val) (min max-val))]
                 (reset! current-size* new-size)
-                (swap! storage update-persistent-state file-id key new-size)))))
+                (swap! storage/user update-persistent-state file-id key new-size)))))
 
          set-size
          (mf/use-fn
@@ -89,7 +89,7 @@
           (fn [new-size]
             (let [new-size (mth/clamp new-size min-val max-val)]
               (reset! current-size* new-size)
-              (swap! storage update-persistent-state file-id key new-size))))]
+              (swap! storage/user update-persistent-state file-id key new-size))))]
 
      (mf/with-effect [on-change-size current-size]
        (when on-change-size

@@ -16,7 +16,7 @@
    [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
-   [app.util.storage :refer [storage]]
+   [app.util.storage :as storage]
    [app.util.timers :as ts]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
@@ -294,7 +294,7 @@
   `key` for new values."
   [key default]
   (let [id     (mf/use-id)
-        state* (mf/use-state #(get @storage key default))
+        state* (mf/use-state #(get storage/user key default))
         state  (deref state*)
         stream (mf/with-memo [id]
                  (->> mbc/stream
@@ -304,7 +304,7 @@
 
     (mf/with-effect [state key id]
       (mbc/emit! id key state)
-      (swap! storage assoc key state))
+      (swap! storage/user assoc key state))
 
     (use-stream stream (partial reset! state*))
 

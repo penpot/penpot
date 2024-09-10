@@ -11,7 +11,7 @@
    [app.common.logging :as log]
    [app.config :as cfg]
    [app.util.globals :as globals]
-   [app.util.storage :refer [storage]]
+   [app.util.storage :as storage]
    [cuerdas.core :as str]
    [goog.object :as gobj]
    [okulary.core :as l]
@@ -76,7 +76,7 @@
         cfg/default-language))))
 
 (defonce translations #js {})
-(defonce locale (l/atom (or (get @storage ::locale)
+(defonce locale (l/atom (or (get storage/global ::locale)
                             (autodetect))))
 
 (defn init!
@@ -93,7 +93,7 @@
   (if (or (nil? lname)
           (str/empty? lname))
     (let [lname (autodetect)]
-      (swap! storage dissoc ::locale)
+      (swap! storage/global dissoc ::locale)
       (reset! locale lname))
     (let [supported (into #{} (map :value supported-locales))
           lname     (loop [locales (seq (parse-locale lname))]
@@ -102,7 +102,7 @@
                           locale
                           (recur (rest locales)))
                         cfg/default-language))]
-      (swap! storage assoc ::locale lname)
+      (swap! storage/global assoc ::locale lname)
       (reset! locale lname))))
 
 (deftype C [val]
