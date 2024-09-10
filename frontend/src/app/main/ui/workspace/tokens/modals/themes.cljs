@@ -13,13 +13,14 @@
    [app.main.store :as st]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.tokens.common :refer [labeled-input]]
+   [app.main.ui.workspace.tokens.common :refer [labeled-input] :as wtco]
    [app.main.ui.workspace.tokens.sets :as wts]
    [app.main.ui.workspace.tokens.token-set :as wtts]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]
    [cuerdas.core :as str]
-   [app.main.ui.workspace.tokens.sets-context :as sets-context]))
+   [app.main.ui.workspace.tokens.sets-context :as sets-context]
+   [app.main.ui.shapes.group :as group]))
 
 (def ^:private chevron-icon
   (i/icon-xref :arrow (stl/css :chevron-icon)))
@@ -109,7 +110,9 @@
 
 (mf/defc edit-theme
   [{:keys [token-sets theme theme-groups on-back on-submit]}]
-  (let [edit? (some? (:id theme))
+  (let [{:keys [dropdown-open? on-open-dropdown on-close-dropdown on-toggle-dropdown]} (wtco/use-dropdown-open-state)
+
+        edit? (some? (:id theme))
         theme-state (mf/use-state {:token-sets token-sets
                                    :theme theme})
         disabled? (-> (get-in @theme-state [:theme :name])
@@ -151,6 +154,15 @@
                  :on-click on-back}
         chevron-icon "Back"]]
       [:div {:class (stl/css :edit-theme-inputs-wrapper)}
+       (when dropdown-open?
+         [:& wtco/dropdown-select {:id ::groups-dropdown
+                                   :shortcuts-key ::groups-dropdown
+                                   :options (map (fn [group]
+                                                   {:label group
+                                                    :value group})
+                                                 theme-groups)
+                                   :on-select #(on-update-group (:value %))
+                                   :on-close on-close-dropdown}])
        [:& labeled-input {:label "Group"
                           :input-props {:default-value (:group theme)
                                         :on-change on-update-group}
@@ -158,7 +170,8 @@
                                           [:button {:class (stl/css :group-drop-down-button)
                                                     :type "button"
                                                     :on-click (fn [e]
-                                                                (dom/stop-propagation e))}
+                                                                (dom/stop-propagation e)
+                                                                (on-toggle-dropdown))}
                                            i/arrow])}]
        [:& labeled-input {:label "Theme"
                           :input-props {:default-value (:name theme)

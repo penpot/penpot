@@ -212,6 +212,10 @@ hr {
   }
 }
 
+.group-input-wrapper {
+  position: relative;
+}
+
 .group-drop-down-button {
   @include buttonStyle;
   width: $s-24;
