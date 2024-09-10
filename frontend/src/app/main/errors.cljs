@@ -9,7 +9,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.pprint :as pp]
-   [app.common.schema :as-alias sm]
+   [app.common.schema :as sm]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
@@ -32,8 +32,11 @@
 
 (defn- print-explain!
   [data]
-  (when-let [explain (or (ex/explain data)
-                         (:explain data))]
+  (when-let [{:keys [errors] :as explain} (::sm/explain data)]
+    (let [errors (mapv #(update % :schema sm/form) errors)]
+      (pp/pprint errors {:width 100 :level 15 :length 20})))
+
+  (when-let [explain (:explain data)]
     (js/console.log explain)))
 
 (defn- print-trace!
