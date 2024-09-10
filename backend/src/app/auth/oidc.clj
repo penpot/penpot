@@ -567,7 +567,6 @@
                         (tokens/generate (::setup/props cfg)
                                          {:iss :auth
                                           :exp (dt/in-future "15m")
-                                          :props (:props info)
                                           :profile-id (:id profile)}))
             props   (audit/profile->props profile)
             context (d/without-nils {:external-session-id (:external-session-id info)})]
