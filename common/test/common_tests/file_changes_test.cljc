@@ -10,6 +10,7 @@
    [app.common.files.changes :as ch]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
+   [app.common.schema.test :as smt]
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
@@ -690,8 +691,8 @@
   (let [schema ch/schema:set-guide-change
         encode (sm/encoder schema (sm/json-transformer))
         decode (sm/decoder schema (sm/json-transformer))]
-    (sg/check!
-     (sg/for [data (sg/generator schema)]
+    (smt/check!
+     (smt/for [data (sg/generator schema)]
        (let [data-1 (encode data)
              data-2 (json-roundtrip data-1)
              data-3 (decode data-2)]
@@ -705,8 +706,8 @@
         page-id (uuid/custom 1 1)
         data    (make-file-data file-id page-id)]
 
-    (sg/check!
-     (sg/for [change (sg/generator ch/schema:set-guide-change)]
+    (smt/check!
+     (smt/for [change (sg/generator ch/schema:set-guide-change)]
        (let [change (assoc change :page-id page-id)
              result (ch/process-changes data [change])]
          (= (:params change)
@@ -718,9 +719,9 @@
         page-id (uuid/custom 1 1)
         data    (make-file-data file-id page-id)]
 
-    (sg/check!
-     (sg/for [change (->> (sg/generator ch/schema:set-guide-change)
-                          (sg/filter :params))]
+    (smt/check!
+     (smt/for [change (->> (sg/generator ch/schema:set-guide-change)
+                           (sg/filter :params))]
        (let [change1 (assoc change :page-id page-id)
              result1 (ch/process-changes data [change1])
 
@@ -740,8 +741,8 @@
   (let [schema ch/schema:set-plugin-data-change
         encode (sm/encoder schema (sm/json-transformer))
         decode (sm/decoder schema (sm/json-transformer))]
-    (sg/check!
-     (sg/for [data (sg/generator schema)]
+    (smt/check!
+     (smt/for [data (sg/generator schema)]
        (let [data-1 (encode data)
              data-2 (json-roundtrip data-1)
              data-3 (decode data-2)]
@@ -752,7 +753,7 @@
   (let [file-id (uuid/custom 2 2)
         page-id (uuid/custom 1 1)
         data    (make-file-data file-id page-id)]
-    (sg/check!
-     (sg/for [change (sg/generator ch/schema:set-plugin-data-change)]
+    (smt/check!
+     (smt/for [change (sg/generator ch/schema:set-plugin-data-change)]
        (sm/validate ch/schema:set-plugin-data-change change))
      {:num 1000})))

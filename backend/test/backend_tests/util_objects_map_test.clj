@@ -8,6 +8,7 @@
   (:require
    [app.common.fressian :as fres]
    [app.common.schema.generators :as sg]
+   [app.common.schema.test :as smt]
    [app.common.transit :as transit]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
@@ -84,9 +85,9 @@
       (t/is (= (hash obj1) (hash obj2))))))
 
 (t/deftest internal-encode-decode
-  (sg/check!
-   (sg/for [data (->> (cg/map cg/uuid (sg/generator ::cts/shape))
-                      (cg/not-empty))]
+  (smt/check!
+   (smt/for [data (->> (cg/map cg/uuid (sg/generator ::cts/shape))
+                       (cg/not-empty))]
      (let [obj1 (omap/wrap data)
            obj2 (omap/create (deref obj1))
            obj3 (assoc obj2 uuid/zero 1)
@@ -101,11 +102,11 @@
    {:num 50}))
 
 (t/deftest fressian-encode-decode
-  (sg/check!
-   (sg/for [data (->> (cg/map cg/uuid (sg/generator ::cts/shape))
-                      (cg/not-empty)
-                      (cg/fmap omap/wrap)
-                      (cg/fmap (fn [o] {:objects o})))]
+  (smt/check!
+   (smt/for [data (->> (cg/map cg/uuid (sg/generator ::cts/shape))
+                       (cg/not-empty)
+                       (cg/fmap omap/wrap)
+                       (cg/fmap (fn [o] {:objects o})))]
 
      (let [res (-> data fres/encode fres/decode)]
        (and (contains? res :objects)
@@ -117,11 +118,11 @@
    {:num 50}))
 
 (t/deftest transit-encode-decode
-  (sg/check!
-   (sg/for [data (->> (cg/map cg/uuid (sg/generator ::cts/shape))
-                      (cg/not-empty)
-                      (cg/fmap omap/wrap)
-                      (cg/fmap (fn [o] {:objects o})))]
+  (smt/check!
+   (smt/for [data (->> (cg/map cg/uuid (sg/generator ::cts/shape))
+                       (cg/not-empty)
+                       (cg/fmap omap/wrap)
+                       (cg/fmap (fn [o] {:objects o})))]
      (let [res (-> data transit/encode transit/decode)]
        ;; (app.common.pprint/pprint data)
        ;; (app.common.pprint/pprint res)
