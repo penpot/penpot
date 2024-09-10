@@ -109,9 +109,12 @@
            file-id file-revn undo-group tags stack-undo? source]}]
 
   (dm/assert!
-   "expect valid vector of changes"
-   (and (cpc/valid-changes? redo-changes)
-        (cpc/valid-changes? undo-changes)))
+   "expect valid vector of changes for redo-changes"
+   (cpc/check-changes! redo-changes))
+
+  (dm/assert!
+   "expect valid vector of changes for undo-changes"
+   (cpc/check-changes! undo-changes))
 
   (let [commit-id (or commit-id (uuid/next))
         source    (d/nilv source :local)

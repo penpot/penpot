@@ -675,8 +675,15 @@
 
 (defn ext-library-changed
   [library-id modified-at revn changes]
-  (dm/assert! (uuid? library-id))
-  (dm/assert! (ch/valid-changes? changes))
+
+  (dm/assert!
+   "expected valid uuid for library-id"
+   (uuid? library-id))
+
+  (dm/assert!
+   "expected valid changes vector"
+   (ch/check-changes! changes))
+
   (ptk/reify ::ext-library-changed
     ptk/UpdateEvent
     (update [_ state]

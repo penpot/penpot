@@ -255,7 +255,6 @@
 
 (declare ^:private lazy-schema)
 
-;; DEPRECATED: should not be used for new code
 (defn check-fn
   "Create a predefined check function"
   [s]

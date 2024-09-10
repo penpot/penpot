@@ -370,8 +370,8 @@
 (def valid-change?
   (sm/lazy-validator schema:change))
 
-(def valid-changes?
-  (sm/lazy-validator schema:changes))
+(def check-changes!
+  (sm/check-fn schema:changes))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Specific helpers
@@ -446,9 +446,7 @@
    ;; When verify? false we spec the schema validation. Currently used
    ;; to make just 1 validation even if the changes are applied twice
    (when verify?
-     (dm/verify!
-      "expected valid changes"
-      (valid-changes? items)))
+     (check-changes! items))
 
    (binding [*touched-changes* (volatile! #{})]
      (let [result (reduce #(or (process-change %1 %2) %1) data items)
