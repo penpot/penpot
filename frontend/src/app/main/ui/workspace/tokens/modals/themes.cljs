@@ -130,6 +130,7 @@
         on-change-field (fn [field]
                           (fn [e]
                             (swap! theme-state (fn [st] (assoc-in st field (dom/get-target-val e))))))
+        group-input-ref (mf/use-ref)
         on-update-group (on-change-field [:theme :group])
         on-update-name (on-change-field [:theme :name])
         on-save-form (mf/use-callback
@@ -154,25 +155,29 @@
                  :on-click on-back}
         chevron-icon "Back"]]
       [:div {:class (stl/css :edit-theme-inputs-wrapper)}
-       (when dropdown-open?
-         [:& wtco/dropdown-select {:id ::groups-dropdown
-                                   :shortcuts-key ::groups-dropdown
-                                   :options (map (fn [group]
-                                                   {:label group
-                                                    :value group})
-                                                 theme-groups)
-                                   :on-select #(on-update-group (:value %))
-                                   :on-close on-close-dropdown}])
-       [:& labeled-input {:label "Group"
-                          :input-props {:default-value (:group theme)
-                                        :on-change on-update-group}
-                          :render-right (mf/fnc []
-                                          [:button {:class (stl/css :group-drop-down-button)
-                                                    :type "button"
-                                                    :on-click (fn [e]
-                                                                (dom/stop-propagation e)
-                                                                (on-toggle-dropdown))}
-                                           i/arrow])}]
+       [:div {:class (stl/css :group-input-wrapper)}
+        (when dropdown-open?
+          [:& wtco/dropdown-select {:id ::groups-dropdown
+                                    :shortcuts-key ::groups-dropdown
+                                    :options (map (fn [group]
+                                                    {:label group
+                                                     :value group})
+                                                  theme-groups)
+                                    :on-select (fn [{:keys [value]}]
+                                                 (set! (.-value (mf/ref-val group-input-ref)) value)
+                                                 (swap! theme-state assoc-in [:theme :group] value))
+                                    :on-close on-close-dropdown}])
+        [:& labeled-input {:label "Group"
+                           :input-props {:ref group-input-ref
+                                         :default-value (:group theme)
+                                         :on-change on-update-group}
+                           :render-right (mf/fnc []
+                                                 [:button {:class (stl/css :group-drop-down-button)
+                                                           :type "button"
+                                                           :on-click (fn [e]
+                                                                       (dom/stop-propagation e)
+                                                                       (on-toggle-dropdown))}
+                                                  i/arrow])}]]
        [:& labeled-input {:label "Theme"
                           :input-props {:default-value (:name theme)
                                         :on-change on-update-name}}]]
