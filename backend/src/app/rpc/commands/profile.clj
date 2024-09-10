@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
+   [app.common.types.plugins :refer [schema:plugin-data]]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -40,6 +41,33 @@
 (declare strip-private-attrs)
 (declare verify-password)
 
+(def schema:props
+  [:map {:title "ProfileProps"}
+   [:plugins {:optional true} schema:plugin-data]
+   [:newsletter-updates {:optional true} ::sm/boolean]
+   [:newsletter-news {:optional true} ::sm/boolean]
+   [:onboarding-team-id {:optional true} ::sm/uuid]
+   [:onboarding-viewed {:optional true} ::sm/boolean]
+   [:v2-info-shown {:optional true} ::sm/boolean]
+   [:welcome-file-id {:optional true} [:maybe ::sm/boolean]]
+   [:release-notes-viewed {:optional true}
+    [::sm/text {:max 100}]]])
+
+(def schema:profile
+  [:map {:title "Profile"}
+   [:id ::sm/uuid]
+   [:fullname [::sm/word-string {:max 250}]]
+   [:email ::sm/email]
+   [:is-active {:optional true} ::sm/boolean]
+   [:is-blocked {:optional true} ::sm/boolean]
+   [:is-demo {:optional true} ::sm/boolean]
+   [:is-muted {:optional true} ::sm/boolean]
+   [:created-at {:optional true} ::sm/inst]
+   [:modified-at {:optional true} ::sm/inst]
+   [:default-project-id {:optional true} ::sm/uuid]
+   [:default-team-id {:optional true} ::sm/uuid]
+   [:props {:optional true} schema:props]])
+
 (defn clean-email
   "Clean and normalizes email address string"
   [email]
@@ -52,24 +80,6 @@
                 (str/trim email "<>")
                 email)]
     email))
-
-(def ^:private
-  schema:profile
-  (sm/define
-    [:map {:title "Profile"}
-     [:id ::sm/uuid]
-     [:fullname [::sm/word-string {:max 250}]]
-     [:email ::sm/email]
-     [:is-active {:optional true} ::sm/boolean]
-     [:is-blocked {:optional true} ::sm/boolean]
-     [:is-demo {:optional true} ::sm/boolean]
-     [:is-muted {:optional true} ::sm/boolean]
-     [:created-at {:optional true} ::sm/inst]
-     [:modified-at {:optional true} ::sm/inst]
-     [:default-project-id {:optional true} ::sm/uuid]
-     [:default-team-id {:optional true} ::sm/uuid]
-     [:props {:optional true}
-      [:map-of {:title "ProfileProps"} :keyword :any]]]))
 
 ;; --- QUERY: Get profile (own)
 
@@ -351,14 +361,12 @@
                 :extra-data ptoken})
     nil))
 
-
 ;; --- MUTATION: Update Profile Props
 
 (def ^:private
   schema:update-profile-props
-  (sm/define
-    [:map {:title "update-profile-props"}
-     [:props [:map-of :keyword :any]]]))
+  [:map {:title "update-profile-props"}
+   [:props schema:props]])
 
 (defn update-profile-props
   [{:keys [::db/conn] :as cfg} profile-id props]
