@@ -757,3 +757,108 @@
      (smt/for [change (sg/generator ch/schema:set-plugin-data-change)]
        (sm/validate ch/schema:set-plugin-data-change change))
      {:num 1000})))
+
+(t/deftest set-flow-json-encode-decode
+  (let [schema ch/schema:set-flow-change
+        encode (sm/encoder schema (sm/json-transformer))
+        decode (sm/decoder schema (sm/json-transformer))]
+    (smt/check!
+     (smt/for [data (sg/generator schema)]
+       (let [data-1 (encode data)
+             data-2 (json-roundtrip data-1)
+             data-3 (decode data-2)]
+         ;; (app.common.pprint/pprint data-2)
+         ;; (app.common.pprint/pprint data-3)
+         (= data data-3)))
+     {:num 1000})))
+
+(t/deftest set-flow-1
+  (let [file-id (uuid/custom 2 2)
+        page-id (uuid/custom 1 1)
+        data    (make-file-data file-id page-id)]
+
+    (smt/check!
+     (smt/for [change (sg/generator ch/schema:set-flow-change)]
+       (let [change (assoc change :page-id page-id)
+             result (ch/process-changes data [change])]
+         (= (:params change)
+            (get-in result [:pages-index page-id :flows (:id change)]))))
+     {:num 1000})))
+
+(t/deftest set-flow-2
+  (let [file-id (uuid/custom 2 2)
+        page-id (uuid/custom 1 1)
+        data    (make-file-data file-id page-id)]
+
+    (smt/check!
+     (smt/for [change (->> (sg/generator ch/schema:set-flow-change)
+                           (sg/filter :params))]
+       (let [change1 (assoc change :page-id page-id)
+             result1 (ch/process-changes data [change1])
+
+             change2 (assoc change1 :params nil)
+             result2 (ch/process-changes result1 [change2])]
+
+         (and (some? (:params change1))
+              (= (:params change1)
+                 (get-in result1 [:pages-index page-id :flows (:id change1)]))
+
+              (nil? (:params change2))
+              (nil? (get-in result2 [:pages-index page-id :flows])))))
+
+     {:num 1000})))
+
+(t/deftest set-default-grid-json-encode-decode
+  (let [schema ch/schema:set-default-grid-change
+        encode (sm/encoder schema (sm/json-transformer))
+        decode (sm/decoder schema (sm/json-transformer))]
+    (smt/check!
+     (smt/for [data (sg/generator schema)]
+       (let [data-1 (encode data)
+             data-2 (json-roundtrip data-1)
+             data-3 (decode data-2)]
+         ;; (println "==========")
+         ;; (app.common.pprint/pprint data-2)
+         ;; (app.common.pprint/pprint data-3)
+         ;; (println "==========")
+         (= data data-3)))
+     {:num 1000})))
+
+(t/deftest set-default-grid-1
+  (let [file-id (uuid/custom 2 2)
+        page-id (uuid/custom 1 1)
+        data    (make-file-data file-id page-id)]
+
+    (smt/check!
+     (smt/for [change (sg/generator ch/schema:set-default-grid-change)]
+       (let [change (assoc change :page-id page-id)
+             result (ch/process-changes data [change])]
+         ;; (app.common.pprint/pprint change)
+         (= (:params change)
+            (get-in result [:pages-index page-id :default-grids (:grid-type change)]))))
+     {:num 1000})))
+
+(t/deftest set-default-grid-2
+  (let [file-id (uuid/custom 2 2)
+        page-id (uuid/custom 1 1)
+        data    (make-file-data file-id page-id)]
+
+    (smt/check!
+     (smt/for [change (->> (sg/generator ch/schema:set-default-grid-change)
+                           (sg/filter :params))]
+       (let [change1 (assoc change :page-id page-id)
+             result1 (ch/process-changes data [change1])
+
+             change2 (assoc change1 :params nil)
+             result2 (ch/process-changes result1 [change2])]
+
+         ;; (app.common.pprint/pprint change1)
+
+         (and (some? (:params change1))
+              (= (:params change1)
+                 (get-in result1 [:pages-index page-id :default-grids (:grid-type change1)]))
+
+              (nil? (:params change2))
+              (nil? (get-in result2 [:pages-index page-id :default-grids])))))
+
+     {:num 1000})))

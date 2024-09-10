@@ -64,43 +64,44 @@
      [:type [:= :set-remote-synced]]
      [:remote-synced {:optional true} [:maybe :boolean]]]]])
 
-(defn- set-default-grid-change-generator
-  []
-  (->> (sg/elements #{:square :column :row})
-       (sg/mcat (fn [type]
-                  (sg/fmap (fn [params]
-                             {:page-id (uuid/next)
-                              :type :mod-grid
-                              :grid-type type
-                              :params params})
-
-                           (case type
-                             :square (sg/generator ctg/schema:square-params)
-                             :column (sg/generator ctg/schema:column-params)
-                             :row    (sg/generator ctg/schema:column-params)))))))
-
 (def schema:set-default-grid-change
-  [:multi {:decode/json #(update % :grid-type keyword)
-           :gen/gen (set-default-grid-change-generator)
-           :dispatch :grid-type
-           ::smd/simplified true}
-   [:square
-    [:map
-     [:page-id ::sm/uuid]
-     [:grid-type [:and :keyword [:= :square]]]
-     [:params [:maybe ctg/schema:square-params]]]]
+  (let [gen (->> (sg/elements #{:square :column :row})
+                 (sg/mcat (fn [grid-type]
+                            (sg/fmap (fn [params]
+                                       {:page-id (uuid/next)
+                                        :type :set-default-grid
+                                        :grid-type grid-type
+                                        :params params})
 
-   [:column
-    [:map
-     [:page-id ::sm/uuid]
-     [:grid-type [:and :keyword [:= :column]]]
-     [:params [:maybe ctg/schema:column-params]]]]
+                                     (case grid-type
+                                       :square (sg/generator ctg/schema:square-params)
+                                       :column (sg/generator ctg/schema:column-params)
+                                       :row    (sg/generator ctg/schema:column-params))))))]
 
-   [:row
-    [:map
-     [:page-id ::sm/uuid]
-     [:grid-type [:and :keyword [:= :row]]]
-     [:params [:maybe ctg/schema:column-params]]]]])
+    [:multi {:decode/json #(update % :grid-type keyword)
+             :gen/gen gen
+             :dispatch :grid-type
+             ::smd/simplified true}
+     [:square
+      [:map
+       [:type [:= :set-default-grid]]
+       [:page-id ::sm/uuid]
+       [:grid-type [:= :square]]
+       [:params [:maybe ctg/schema:square-params]]]]
+
+     [:column
+      [:map
+       [:type [:= :set-default-grid]]
+       [:page-id ::sm/uuid]
+       [:grid-type [:= :column]]
+       [:params [:maybe ctg/schema:column-params]]]]
+
+     [:row
+      [:map
+       [:type [:= :set-default-grid]]
+       [:page-id ::sm/uuid]
+       [:grid-type [:= :row]]
+       [:params [:maybe ctg/schema:column-params]]]]]))
 
 (def schema:set-guide-change
   (let [schema [:map {:title "SetGuideChange"}
@@ -115,6 +116,20 @@
                                  change))))]
     [:schema {:gen/gen gen} schema]))
 
+(def schema:set-flow-change
+  (let [schema [:map {:title "SetFlowChange"}
+                [:type [:= :set-flow]]
+                [:page-id ::sm/uuid]
+                [:id ::sm/uuid]
+                [:params [:maybe ::ctp/flow]]]
+
+        gen    (->> (sg/generator schema)
+                    (sg/fmap (fn [change]
+                               (if (some? (:params change))
+                                 (update change :params assoc :id (:id change))
+                                 change))))]
+
+    [:schema {:gen/gen gen} schema]))
 
 (def schema:set-plugin-data-change
   (let [types  #{:file :page :shape :color :typography :component}
@@ -203,15 +218,7 @@
       [:ignore-touched {:optional true} :boolean]]]
 
     [:set-guide schema:set-guide-change]
-
-    [:set-flow
-     [:map {:title "SetFlowChange"}
-      [:page-id ::sm/uuid]
-      [:id ::sm/uuid]
-      [:params [:maybe ::ctp/flow]]]]
-
-    ;; Change used for all crud operation on persisted grid options on
-    ;; the page.
+    [:set-flow schema:set-flow-change]
     [:set-default-grid schema:set-default-grid-change]
 
     [:fix-obj
@@ -497,15 +504,29 @@
 (defmethod process-change :set-flow
   [data {:keys [page-id id params]}]
   (if (nil? params)
-    (d/update-in-when data [:pages-index page-id] update :flows dissoc id)
-    (d/update-in-when data [:pages-index page-id] update :flows assoc id params)))
+    (d/update-in-when data [:pages-index page-id]
+                      (fn [page]
+                        (let [flows (get page :flows)
+                              flows (dissoc flows id)]
+                          (if (empty? flows)
+                            (dissoc page :flows)
+                            (assoc page :flows flows)))))
+
+    (let [params (assoc params :id id)]
+      (d/update-in-when data [:pages-index page-id] update :flows assoc id params))))
 
 ;; --- Grids
 
 (defmethod process-change :set-default-grid
   [data {:keys [page-id grid-type params]}]
   (if (nil? params)
-    (d/update-in-when data [:pages-index page-id] update :default-grids dissoc grid-type)
+    (d/update-in-when data [:pages-index page-id]
+                      (fn [page]
+                        (let [default-grids (get page :default-grids)
+                              default-grids (dissoc default-grids grid-type)]
+                          (if (empty? default-grids)
+                            (dissoc page :default-grids)
+                            (assoc page :default-grids default-grids)))))
     (d/update-in-when data [:pages-index page-id] update :default-grids assoc grid-type params)))
 
 ;; --- Shape / Obj
