@@ -5,19 +5,22 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.plugins.page
-  "RPC for plugins runtime."
   (:require
    [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.record :as crc]
+   [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.guides :as dwgu]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.store :as st]
    [app.plugins.format :as format]
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
+   [app.plugins.ruler-guides :as rg]
    [app.plugins.shape :as shape]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
@@ -52,7 +55,7 @@
         :else
         (st/emit! (dwi/update-flow page-id id #(assoc % :name value)))))}
 
-   {:name "startingFrame"
+   {:name "startingBoard"
     :get
     (fn [self]
       (let [frame (-> self u/proxy->flow :starting-frame)]
@@ -61,7 +64,7 @@
     (fn [_ value]
       (cond
         (not (shape/shape-proxy? value))
-        (u/display-not-valid :startingFrame value)
+        (u/display-not-valid :startingBoard value)
 
         :else
         (st/emit! (dwi/update-flow page-id id #(assoc % :starting-frame (obj/get value "$id"))))))}))
@@ -209,7 +212,48 @@
       (u/display-not-valid :removeFlow-flow flow)
 
       :else
-      (st/emit! (dwi/remove-flow $id (obj/get flow "$id"))))))
+      (st/emit! (dwi/remove-flow $id (obj/get flow "$id")))))
+
+  (addRulerGuide
+    [self orientation value board]
+    (let [shape (u/proxy->shape board)]
+      (cond
+        (not (us/safe-number? value))
+        (u/display-not-valid :addRulerGuide "Value not a safe number")
+
+        (not (contains? #{"vertical" "horizontal"} orientation))
+        (u/display-not-valid :addRulerGuide "Orientation should be either 'vertical' or 'horizontal'")
+
+        (or (not (shape/shape-proxy? shape))
+            (not (cfh/frame-shape? shape)))
+        (u/display-not-valid :addRulerGuide "The shape is not a board")
+
+        (not (r/check-permission $plugin "content:write"))
+        (u/display-not-valid :addRulerGuide "Plugin doesn't have 'content:write' permission")
+
+        :ellse
+        (let [id (uuid/next)]
+          (st/emit!
+           (dwgu/update-guides
+            (d/without-nils
+             {:id       id
+              :axis     (parser/orientation->axis orientation)
+              :position value
+              :frame-id (when board (obj/get board "$id"))})))
+          (rg/ruler-guide-proxy $plugin $file $id id)))))
+
+  (removeRulerGuide
+    [_ value]
+    (cond
+      (not (rg/ruler-guide-proxy? value))
+      (u/display-not-valid :removeRulerGuide "Guide not provided")
+
+      (not (r/check-permission $plugin "content:write"))
+      (u/display-not-valid :removeRulerGuide "Plugin doesn't have 'content:write' permission")
+
+      :else
+      (let [guide (u/proxy->ruler-guide value)]
+        (st/emit! (dwgu/remove-guide guide))))))
 
 (crc/define-properties!
   PageProxy
@@ -267,4 +311,13 @@
     :get
     (fn [self]
       (let [flows (d/nilv (-> (u/proxy->page self) :options :flows) [])]
-        (format/format-array #(flow-proxy plugin-id file-id id (:id %)) flows)))}))
+        (format/format-array #(flow-proxy plugin-id file-id id (:id %)) flows)))}
+
+   {:name "rulerGuides"
+    :get
+    (fn [self]
+      (let [guides (-> (u/proxy->page self) :options :guides)]
+        (->> guides
+             (vals)
+             (filter #(nil? (:frame-id %)))
+             (format/format-array #(rg/ruler-guide-proxy plugin-id file-id id (:id %))))))}))

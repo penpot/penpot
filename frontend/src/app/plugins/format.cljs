@@ -592,3 +592,9 @@
             :url (:url interaction)}
 
        nil))))
+
+(defn axis->orientation
+  [axis]
+  (case axis
+    :y "horizontal"
+    :x "vertical"))
