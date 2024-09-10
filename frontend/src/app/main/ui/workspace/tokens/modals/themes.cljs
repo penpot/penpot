@@ -226,10 +226,12 @@
 (mf/defc create-theme
   [{:keys [set-state]}]
   (let [token-sets (mf/deref refs/workspace-ordered-token-sets)
-        theme {:name "" :sets #{}}]
+        theme {:name "" :sets #{}}
+        theme-groups (mf/deref refs/workspace-token-theme-groups)]
     [:& edit-theme
      {:token-sets token-sets
       :theme theme
+      :theme-groups theme-groups
       :on-back #(set-state (constantly {:type :themes-overview}))
       :on-submit #(st/emit! (wdt/create-token-theme %))}]))
 
