@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns common-tests.file-changes-test
+(ns common-tests.files-changes-test
   (:require
    [app.common.features :as ffeat]
    [app.common.files.changes :as ch]
