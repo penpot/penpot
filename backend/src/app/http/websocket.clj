@@ -282,9 +282,17 @@
   [:map {:title "params"}
    [:session-id ::sm/uuid]])
 
+(def ^:private decode-params
+  (sm/decoder schema:params sm/json-transformer))
+
+(def ^:private validate-params!
+  (sm/validate-fn schema:params))
+
 (defn- http-handler
   [cfg {:keys [params ::session/profile-id] :as request}]
-  (let [{:keys [session-id]} (sm/conform! schema:params params)]
+  (let [{:keys [session-id]} (-> params
+                                 decode-params
+                                 validate-params!)]
     (cond
       (not profile-id)
       (ex/raise :type :authentication

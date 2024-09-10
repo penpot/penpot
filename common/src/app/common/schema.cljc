@@ -29,11 +29,6 @@
    [malli.util :as mu]))
 
 (defprotocol ILazySchema
-  (-get-schema [_])
-  (-get-validator [_])
-  (-get-explainer [_])
-  (-get-decoder [_])
-  (-get-encoder [_])
   (-validate [_ o])
   (-explain [_ o])
   (-decode [_ o]))
@@ -53,27 +48,21 @@
   [s]
   (m/type-properties s))
 
-(defn lazy-schema?
+(defn- lazy-schema?
   [s]
   (satisfies? ILazySchema s))
 
 (defn schema
   [s]
-  (if (lazy-schema? s)
-    (-get-schema s)
-    (m/schema s default-options)))
+  (m/schema s default-options))
 
 (defn validate
   [s value]
-  (if (lazy-schema? s)
-    (-validate s value)
-    (m/validate s value default-options)))
+  (m/validate s value default-options))
 
 (defn explain
   [s value]
-  (if (lazy-schema? s)
-    (-explain s value)
-    (m/explain s value default-options)))
+  (m/explain s value default-options))
 
 (defn simplify
   "Given an explain data structure, return a simplified version of it"
@@ -171,29 +160,19 @@
 
 (defn validator
   [s]
-  (if (lazy-schema? s)
-    (-get-validator s)
-    (-> s schema m/validator)))
+  (-> s schema m/validator))
 
 (defn explainer
   [s]
-  (if (lazy-schema? s)
-    (-get-explainer s)
-    (-> s schema m/explainer)))
+  (-> s schema m/explainer))
 
 (defn encoder
-  ([s]
-   (assert (lazy-schema? s) "expected lazy schema")
-   (-get-decoder s))
   ([s transformer]
    (m/encoder s default-options transformer))
   ([s options transformer]
    (m/encoder s options transformer)))
 
 (defn decoder
-  ([s]
-   (assert (lazy-schema? s) "expected lazy schema")
-   (-get-decoder s))
   ([s transformer]
    (m/decoder s default-options transformer))
   ([s options transformer]
@@ -259,7 +238,7 @@
   ([s] (lookup sr/default-registry s))
   ([registry s] (schema (mr/schema registry s))))
 
-(defn fast-check!
+(defn- fast-check!
   "A fast path for checking process, assumes the ILazySchema protocol
   implemented on the provided `s` schema. Sould not be used directly."
   [s value]
@@ -272,12 +251,12 @@
                             ::explain explain}))))
   true)
 
-(declare define)
+(declare ^:private lazy-schema)
 
 (defn check-fn
   "Create a predefined check function"
   [s]
-  (let [schema (if (lazy-schema? s) s (define s))]
+  (let [schema (if (lazy-schema? s) s (lazy-schema s))]
     (partial fast-check! schema)))
 
 (defn check!
@@ -285,19 +264,10 @@
   schema over provided data. Raises an assertion exception, should be
   used together with `dm/assert!` or `dm/verify!`."
   [s value]
-  (if (lazy-schema? s)
-    (fast-check! s value)
-    (do
-      (when-not ^boolean (m/validate s value default-options)
-        (let [hint    (d/nilv dm/*assert-context* "check error")
-              explain (explain s value)]
-          (throw (ex-info hint {:type :assertion
-                                :code :data-validation
-                                :hint hint
-                                ::explain explain}))))
-      true)))
+  (let [s (if (lazy-schema? s) s (lazy-schema s))]
+    (fast-check! s value)))
 
-(defn fast-validate!
+(defn- fast-validate!
   "A fast path for validation process, assumes the ILazySchema protocol
   implemented on the provided `s` schema. Sould not be used directly."
   ([s value] (fast-validate! s value nil))
@@ -309,52 +279,33 @@
                           ::explain explain}
                          options)
            hint    (get options :hint "schema validation error")]
-       (throw (ex-info hint options))))))
+       (throw (ex-info hint options))))
+   value))
 
 (defn validate-fn
   "Create a predefined validate function that raises an expception"
   [s]
-  (let [schema (if (lazy-schema? s) s (define s))]
+  (let [schema (if (lazy-schema? s) s (lazy-schema s))]
     (partial fast-validate! schema)))
 
 (defn validate!
   "A generic validation function for predefined schemas."
   ([s value] (validate! s value nil))
   ([s value options]
-   (if (lazy-schema? s)
-     (fast-validate! s value options)
-     (when-not ^boolean (m/validate s value default-options)
-       (let [explain (explain s value)
-             options (into {:type :validation
-                            :code :data-validation
-                            ::explain explain}
-                           options)
-             hint    (get options :hint "schema validation error")]
-         (throw (ex-info hint options)))))))
-
-;; FIXME: revisit
-(defn conform!
-  [schema value]
-  (assert (lazy-schema? schema) "expected `schema` to satisfy ILazySchema protocol")
-  (let [params (-decode schema value)]
-    (fast-validate! schema params nil)
-    params))
+   (let [s (if (lazy-schema? s) s (lazy-schema s))]
+     (fast-validate! s value options))))
 
 (defn register! [type s]
   (let [s (if (map? s) (m/-simple-schema s) s)]
     (swap! sr/registry assoc type s)
     nil))
 
-(defn define
+(defn- lazy-schema
   "Create ans instance of ILazySchema"
-  [s & {:keys [transformer] :or {transformer json-transformer} :as options}]
+  [s]
   (let [schema      (delay (schema s))
         validator   (delay (m/validator @schema))
-        explainer   (delay (m/explainer @schema))
-
-        options     (c/merge default-options (dissoc options :transformer))
-        decoder     (delay (m/decoder @schema options transformer))
-        encoder     (delay (m/encoder @schema options transformer))]
+        explainer   (delay (m/explainer @schema))]
 
     (reify
       m/AST
@@ -397,16 +348,6 @@
         (m/-form @schema))
 
       ILazySchema
-      (-get-schema [_]
-        @schema)
-      (-get-validator [_]
-        @validator)
-      (-get-explainer [_]
-        @explainer)
-      (-get-encoder [_]
-        @encoder)
-      (-get-decoder [_]
-        @decoder)
       (-validate [_ o]
         (@validator o))
       (-explain [_ o]
