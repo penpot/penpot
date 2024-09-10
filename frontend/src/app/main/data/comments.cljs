@@ -19,33 +19,31 @@
    [potok.v2.core :as ptk]))
 
 (def ^:private schema:comment-thread
-  (sm/define
-    [:map {:title "CommentThread"}
-     [:id ::sm/uuid]
-     [:page-id ::sm/uuid]
-     [:file-id ::sm/uuid]
-     [:project-id ::sm/uuid]
-     [:owner-id ::sm/uuid]
-     [:page-name :string]
-     [:file-name :string]
-     [:seqn :int]
-     [:content :string]
-     [:participants ::sm/set-of-uuid]
-     [:created-at ::sm/inst]
-     [:modified-at ::sm/inst]
-     [:position ::gpt/point]
-     [:count-unread-comments {:optional true} :int]
-     [:count-comments {:optional true} :int]]))
+  [:map {:title "CommentThread"}
+   [:id ::sm/uuid]
+   [:page-id ::sm/uuid]
+   [:file-id ::sm/uuid]
+   [:project-id ::sm/uuid]
+   [:owner-id ::sm/uuid]
+   [:page-name :string]
+   [:file-name :string]
+   [:seqn :int]
+   [:content :string]
+   [:participants ::sm/set-of-uuid]
+   [:created-at ::sm/inst]
+   [:modified-at ::sm/inst]
+   [:position ::gpt/point]
+   [:count-unread-comments {:optional true} :int]
+   [:count-comments {:optional true} :int]])
 
 (def ^:private schema:comment
-  (sm/define
-    [:map {:title "Comment"}
-     [:id ::sm/uuid]
-     [:thread-id ::sm/uuid]
-     [:owner-id ::sm/uuid]
-     [:created-at ::sm/inst]
-     [:modified-at ::sm/inst]
-     [:content :string]]))
+  [:map {:title "Comment"}
+   [:id ::sm/uuid]
+   [:thread-id ::sm/uuid]
+   [:owner-id ::sm/uuid]
+   [:created-at ::sm/inst]
+   [:modified-at ::sm/inst]
+   [:content :string]])
 
 (def check-comment-thread!
   (sm/check-fn schema:comment-thread))
@@ -84,12 +82,11 @@
 
 (def ^:private
   schema:create-thread-on-workspace
-  (sm/define
-    [:map {:title "created-thread-on-workspace"}
-     [:page-id ::sm/uuid]
-     [:file-id ::sm/uuid]
-     [:position ::gpt/point]
-     [:content :string]]))
+  [:map {:title "created-thread-on-workspace"}
+   [:page-id ::sm/uuid]
+   [:file-id ::sm/uuid]
+   [:position ::gpt/point]
+   [:content :string]])
 
 (defn create-thread-on-workspace
   [params]
@@ -136,13 +133,12 @@
 
 (def ^:private
   schema:create-thread-on-viewer
-  (sm/define
-    [:map {:title "created-thread-on-viewer"}
-     [:page-id ::sm/uuid]
-     [:file-id ::sm/uuid]
-     [:frame-id ::sm/uuid]
-     [:position ::gpt/point]
-     [:content :string]]))
+  [:map {:title "created-thread-on-viewer"}
+   [:page-id ::sm/uuid]
+   [:file-id ::sm/uuid]
+   [:frame-id ::sm/uuid]
+   [:position ::gpt/point]
+   [:content :string]])
 
 (defn create-thread-on-viewer
   [params]
@@ -469,11 +465,10 @@
 
 (def ^:private
   schema:create-draft
-  (sm/define
-    [:map {:title "create-draft"}
-     [:page-id ::sm/uuid]
-     [:file-id ::sm/uuid]
-     [:position ::gpt/point]]))
+  [:map {:title "create-draft"}
+   [:page-id ::sm/uuid]
+   [:file-id ::sm/uuid]
+   [:position ::gpt/point]])
 
 (defn create-draft
   [params]

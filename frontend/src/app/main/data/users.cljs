@@ -32,14 +32,13 @@
 
 (def ^:private
   schema:profile
-  (sm/define
-    [:map {:title "Profile"}
-     [:id ::sm/uuid]
-     [:created-at {:optional true} :any]
-     [:fullname {:optional true} :string]
-     [:email {:optional true} :string]
-     [:lang {:optional true} :string]
-     [:theme {:optional true} :string]]))
+  [:map {:title "Profile"}
+   [:id ::sm/uuid]
+   [:created-at {:optional true} :any]
+   [:fullname {:optional true} :string]
+   [:email {:optional true} :string]
+   [:lang {:optional true} :string]
+   [:theme {:optional true} :string]])
 
 (def check-profile!
   (sm/check-fn schema:profile))
@@ -253,10 +252,9 @@
              (rx/catch on-error))))))
 
 (def ^:private schema:login-with-ldap
-  (sm/define
-    [:map
-     [:email ::sm/email]
-     [:password :string]]))
+  [:map {:title "login-with-ldap"}
+   [:email ::sm/email]
+   [:password :string]])
 
 (defn login-with-ldap
   [params]
@@ -486,6 +484,7 @@
 
     ;; TODO: for the release 1.13 we should skip fetching profile and just use
     ;; the response value of update-profile-props RPC call
+    ;; FIXME
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :update-profile-props {:props props})
@@ -595,9 +594,8 @@
 
 (def ^:private
   schema:request-profile-recovery
-  (sm/define
-    [:map {:title "request-profile-recovery" :closed true}
-     [:email ::sm/email]]))
+  [:map {:title "request-profile-recovery" :closed true}
+   [:email ::sm/email]])
 
 (defn request-profile-recovery
   [data]
@@ -621,10 +619,9 @@
 
 (def ^:private
   schema:recover-profile
-  (sm/define
-    [:map {:title "recover-profile" :closed true}
-     [:password :string]
-     [:token :string]]))
+  [:map {:title "recover-profile" :closed true}
+   [:password :string]
+   [:token :string]])
 
 (defn recover-profile
   [data]

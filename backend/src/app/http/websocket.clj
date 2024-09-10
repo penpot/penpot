@@ -279,9 +279,8 @@
   message)
 
 (def ^:private schema:params
-  (sm/define
-    [:map {:title "params"}
-     [:session-id ::sm/uuid]]))
+  [:map {:title "params"}
+   [:session-id ::sm/uuid]])
 
 (defn- http-handler
   [cfg {:keys [params ::session/profile-id] :as request}]

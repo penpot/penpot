@@ -27,20 +27,19 @@
 
 (def ^:private
   schema:path-content
-  (sm/define
-    [:vector {:title "PathContent"}
-     [:map {:title "PathContentEntry"}
-      [:command [::sm/one-of valid-commands]]
-      ;; FIXME: remove the `?` from prop name
-      [:relative? {:optional true} :boolean]
-      [:params {:optional true}
-       [:map {:title "PathContentEntryParams"}
-        [:x :double]
-        [:y :double]
-        [:c1x {:optional true} :double]
-        [:c1y {:optional true} :double]
-        [:c2x {:optional true} :double]
-        [:c2y {:optional true} :double]]]]]))
+  [:vector {:title "PathContent"}
+   [:map {:title "PathContentEntry"}
+    [:command [::sm/one-of valid-commands]]
+    ;; FIXME: remove the `?` from prop name
+    [:relative? {:optional true} :boolean]
+    [:params {:optional true}
+     [:map {:title "PathContentEntryParams"}
+      [:x :double]
+      [:y :double]
+      [:c1x {:optional true} :double]
+      [:c1y {:optional true} :double]
+      [:c2x {:optional true} :double]
+      [:c2y {:optional true} :double]]]]])
 
 (def check-path-content!
   (sm/check-fn schema:path-content))

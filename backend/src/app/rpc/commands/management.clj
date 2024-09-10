@@ -88,10 +88,9 @@
 
 (def ^:private
   schema:duplicate-file
-  (sm/define
-    [:map {:title "duplicate-file"}
-     [:file-id ::sm/uuid]
-     [:name {:optional true} [:string {:max 250}]]]))
+  [:map {:title "duplicate-file"}
+   [:file-id ::sm/uuid]
+   [:name {:optional true} [:string {:max 250}]]])
 
 (sv/defmethod ::duplicate-file
   "Duplicate a single file in the same team."
@@ -150,10 +149,9 @@
 
 (def ^:private
   schema:duplicate-project
-  (sm/define
-    [:map {:title "duplicate-project"}
-     [:project-id ::sm/uuid]
-     [:name {:optional true} [:string {:max 250}]]]))
+  [:map {:title "duplicate-project"}
+   [:project-id ::sm/uuid]
+   [:name {:optional true} [:string {:max 250}]]])
 
 (sv/defmethod ::duplicate-project
   "Duplicate an entire project with all the files"
@@ -327,10 +325,9 @@
 
 (def ^:private
   schema:move-files
-  (sm/define
-    [:map {:title "move-files"}
-     [:ids ::sm/set-of-uuid]
-     [:project-id ::sm/uuid]]))
+  [:map {:title "move-files"}
+   [:ids ::sm/set-of-uuid]
+   [:project-id ::sm/uuid]])
 
 (sv/defmethod ::move-files
   "Move a set of files from one project to other."

@@ -129,12 +129,11 @@
 
 (def ^:private
   schema:shortcuts
-  (sm/define
-    [:map-of :keyword
-     [:map
-      [:command [:or :string [:vector :any]]]
-      [:fn {:optional true} fn?]
-      [:tooltip {:optional true} :string]]]))
+  [:map-of :keyword
+   [:map
+    [:command [:or :string [:vector :any]]]
+    [:fn {:optional true} fn?]
+    [:tooltip {:optional true} :string]]])
 
 (def check-shortcuts!
   (sm/check-fn schema:shortcuts))

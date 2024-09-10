@@ -174,38 +174,34 @@
 ;; --- COMMAND QUERY: get-file (by id)
 
 (def schema:file
-  (sm/define
-    [:map {:title "File"}
-     [:id ::sm/uuid]
-     [:features ::cfeat/features]
-     [:has-media-trimmed ::sm/boolean]
-     [:comment-thread-seqn [::sm/int {:min 0}]]
-     [:name [:string {:max 250}]]
-     [:revn [::sm/int {:min 0}]]
-     [:modified-at ::dt/instant]
-     [:is-shared ::sm/boolean]
-     [:project-id ::sm/uuid]
-     [:created-at ::dt/instant]
-     [:data {:optional true} :any]]))
+  [:map {:title "File"}
+   [:id ::sm/uuid]
+   [:features ::cfeat/features]
+   [:has-media-trimmed ::sm/boolean]
+   [:comment-thread-seqn [::sm/int {:min 0}]]
+   [:name [:string {:max 250}]]
+   [:revn [::sm/int {:min 0}]]
+   [:modified-at ::dt/instant]
+   [:is-shared ::sm/boolean]
+   [:project-id ::sm/uuid]
+   [:created-at ::dt/instant]
+   [:data {:optional true} :any]])
 
 (def schema:permissions-mixin
-  (sm/define
-    [:map {:title "PermissionsMixin"}
-     [:permissions ::perms/permissions]]))
+  [:map {:title "PermissionsMixin"}
+   [:permissions ::perms/permissions]])
 
 (def schema:file-with-permissions
-  (sm/define
-    [:merge {:title "FileWithPermissions"}
-     schema:file
-     schema:permissions-mixin]))
+  [:merge {:title "FileWithPermissions"}
+   schema:file
+   schema:permissions-mixin])
 
 (def ^:private
   schema:get-file
-  (sm/define
-    [:map {:title "get-file"}
-     [:features {:optional true} ::cfeat/features]
-     [:id ::sm/uuid]
-     [:project-id {:optional true} ::sm/uuid]]))
+  [:map {:title "get-file"}
+   [:features {:optional true} ::cfeat/features]
+   [:id ::sm/uuid]
+   [:project-id {:optional true} ::sm/uuid]])
 
 (defn- migrate-file
   [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
@@ -914,10 +910,9 @@
 
 (def ^:private
   schema:set-file-shared
-  (sm/define
-    [:map {:title "set-file-shared"}
-     [:id ::sm/uuid]
-     [:is-shared ::sm/boolean]]))
+  [:map {:title "set-file-shared"}
+   [:id ::sm/uuid]
+   [:is-shared ::sm/boolean]])
 
 (sv/defmethod ::set-file-shared
   {::doc/added "1.17"
@@ -944,9 +939,8 @@
 
 (def ^:private
   schema:delete-file
-  (sm/define
-    [:map {:title "delete-file"}
-     [:id ::sm/uuid]]))
+  [:map {:title "delete-file"}
+   [:id ::sm/uuid]])
 
 (defn- delete-file
   [{:keys [::db/conn] :as cfg} {:keys [profile-id id] :as params}]
@@ -978,10 +972,9 @@
 
 (def ^:private
   schema:link-file-to-library
-  (sm/define
-    [:map {:title "link-file-to-library"}
-     [:file-id ::sm/uuid]
-     [:library-id ::sm/uuid]]))
+  [:map {:title "link-file-to-library"}
+   [:file-id ::sm/uuid]
+   [:library-id ::sm/uuid]])
 
 (sv/defmethod ::link-file-to-library
   {::doc/added "1.17"
