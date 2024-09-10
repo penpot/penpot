@@ -12,7 +12,6 @@
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
-   [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
@@ -20,6 +19,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
+   [app.util.storage :as storage]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -60,17 +60,11 @@
        :template template
        :on-finish-import on-finish}))))
 
-(mf/defc title
-  {::mf/wrap-props false}
-  [{:keys [collapsed]}]
-  (let [on-click
-        (mf/use-fn
-         (mf/deps collapsed)
-         (fn [_event]
-           (let [props {:builtin-templates-collapsed-status (not collapsed)}]
-             (st/emit! (du/update-profile-props props)))))
-
-        on-key-down
+(mf/defc title*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [on-click is-collapsed]}]
+  (let [on-key-down
         (mf/use-fn
          (mf/deps on-click)
          (fn [event]
@@ -86,7 +80,7 @@
                :on-key-down on-key-down}
       [:span {:class (stl/css :title-text)}
        (tr "dashboard.libraries-and-templates")]
-      (if ^boolean collapsed
+      (if ^boolean is-collapsed
         [:span {:class (stl/css :title-icon :title-icon-collapsed)}
          arrow-icon]
         [:span {:class (stl/css :title-icon)}
@@ -180,8 +174,12 @@
                            "dashboard-project")
                          (name route-name))
 
-        props          (:props profile)
-        collapsed      (:builtin-templates-collapsed-status props false)
+        collapsed*     (mf/use-state
+                        #(get storage/global ::collapsed))
+        collapsed      (deref collapsed*)
+
+
+
         can-move       (mf/use-state {:left false :right true})
 
         total          (count templates)
@@ -191,6 +189,11 @@
 
         move-left (fn [] (dom/scroll-by! (mf/ref-val content-ref) -300 0))
         move-right (fn [] (dom/scroll-by! (mf/ref-val content-ref) 300 0))
+
+        on-toggle-collapse
+        (mf/use-fn
+         (fn [_event]
+           (swap! collapsed* not)))
 
         update-can-move
         (fn [scroll-left scroll-available client-width]
@@ -231,12 +234,15 @@
           (.dispatchEvent content (js/Event. "scroll")))))
 
     (mf/with-effect [profile collapsed]
+      (swap! storage/global assoc ::collapsed collapsed)
+
       (when (and profile (not collapsed))
         (st/emit! (dd/fetch-builtin-templates))))
 
     [:div {:class (stl/css-case :dashboard-templates-section true
                                 :collapsed collapsed)}
-     [:& title {:collapsed collapsed}]
+     [:> title* {:on-click on-toggle-collapse
+                 :is-collapsed collapsed}]
 
      [:div {:class (stl/css :content)
             :on-scroll on-scroll

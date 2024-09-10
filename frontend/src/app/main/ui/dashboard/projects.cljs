@@ -11,7 +11,6 @@
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
-   [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [line-grid]]
@@ -24,6 +23,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
+   [app.util.storage :as storage]
    [app.util.time :as dt]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -54,24 +54,25 @@
                :data-testid "new-project-button"}
       (tr "dashboard.new-project")]]))
 
-(mf/defc team-hero
-  {::mf/wrap [mf/memo]}
-  [{:keys [team close-fn] :as props}]
+(mf/defc team-hero*
+  {::mf/wrap [mf/memo]
+   ::mf/props :obj}
+  [{:keys [team on-close]}]
   (let [on-nav-members-click (mf/use-fn #(st/emit! (dd/go-to-team-members)))
 
-        on-invite-click
+        on-invite
         (mf/use-fn
          (mf/deps team)
          (fn []
            (st/emit! (modal/show {:type :invite-members
                                   :team team
                                   :origin :hero}))))
-        on-close-click
+        on-close'
         (mf/use-fn
-         (mf/deps close-fn)
+         (mf/deps on-close)
          (fn [event]
            (dom/prevent-default event)
-           (close-fn)))]
+           (on-close event)))]
 
     [:div {:class (stl/css :team-hero)}
      [:div {:class (stl/css :img-wrapper)}
@@ -85,11 +86,11 @@
        [:a {:on-click on-nav-members-click} (tr "dasboard.team-hero.management")]]
       [:button
        {:class (stl/css :btn-primary :invite)
-        :on-click on-invite-click}
+        :on-click on-invite}
        (tr "onboarding.choice.team-up.invite-members")]]
 
      [:button {:class (stl/css :close)
-               :on-click on-close-click
+               :on-click on-close'
                :aria-label (tr "labels.close")}
       close-icon]]))
 
@@ -292,26 +293,27 @@
                                  (sort-by :modified-at)
                                  (reverse))
         recent-map          (mf/deref recent-files-ref)
-        props               (some-> profile (get :props {}))
         you-owner?          (get-in team [:permissions :is-owner])
         you-admin?          (get-in team [:permissions :is-admin])
         can-invite?         (or you-owner? you-admin?)
-        team-hero?          (and can-invite?
-                                 (:team-hero? props true)
-                                 (not (:is-default team)))
+
+        show-team-hero*     (mf/use-state #(get storage/global ::show-team-hero true))
+        show-team-hero?     (deref show-team-hero*)
 
         is-my-penpot        (= (:default-team-id profile) (:id team))
+        is-defalt-team?     (:is-default team)
 
         team-id             (:id team)
 
-        close-banner
+        on-close
         (mf/use-fn
          (fn []
-           (st/emit! (du/update-profile-props {:team-hero? false})
-                     (ptk/data-event ::ev/event {::ev/name "dont-show-team-up-hero"
-                                                 ::ev/origin "dashboard"}))))
+           (reset! show-team-hero* false)
+           (st/emit! (ptk/data-event ::ev/event {::ev/name "dont-show-team-up-hero"
+                                                 ::ev/origin "dashboard"}))))]
 
-        show-team-hero? (and (not is-my-penpot) team-hero?)]
+    (mf/with-effect [show-team-hero?]
+      (swap! storage/global assoc ::show-team-hero show-team-hero?))
 
     (mf/with-effect [team]
       (let [tname (if (:is-default team)
@@ -328,13 +330,18 @@
        [:& header]
        [:div {:class (stl/css :projects-container)}
         [:*
-         (when team-hero?
-           [:& team-hero {:team team :close-fn close-banner}])
+         (when (and show-team-hero?
+                    can-invite?
+                    (not is-defalt-team?))
+           [:> team-hero* {:team team :on-close on-close}])
 
          [:div {:class (stl/css-case :dashboard-container true
                                      :no-bg true
                                      :dashboard-projects true
-                                     :with-team-hero show-team-hero?)}
+                                     :with-team-hero (and (not is-my-penpot)
+                                                          (not is-defalt-team?)
+                                                          show-team-hero?
+                                                          can-invite?))}
           (for [{:keys [id] :as project} projects]
             (let [files (when recent-map
                           (->> (vals recent-map)
