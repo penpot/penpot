@@ -10,11 +10,11 @@
   (:require
    [app.config :as cfg]
    [app.util.dom :as dom]
-   [app.util.storage :refer [storage]]
+   [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
-(defonce theme (get @storage ::theme cfg/default-theme))
+(defonce theme (get storage/global ::theme cfg/default-theme))
 (defonce theme-sub (rx/subject))
 (defonce themes #js {})
 
@@ -27,7 +27,7 @@
   (when (not= theme v)
     (when-some [el (dom/get-element "theme")]
       (set! (.-href el) (str "css/main-" v ".css")))
-    (swap! storage assoc ::theme v)
+    (swap! storage/global assoc ::theme v)
     (set! theme v)
     (rx/push! theme-sub v)))
 

@@ -79,7 +79,7 @@
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
-   [app.util.storage :refer [storage]]
+   [app.util.storage :as storage]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
@@ -336,7 +336,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc state
-             :recent-colors (:recent-colors @storage)
+             :recent-colors (:recent-colors storage/user)
              :workspace-ready? false
              :current-file-id file-id
              :current-project-id project-id

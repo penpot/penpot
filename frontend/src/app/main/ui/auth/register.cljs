@@ -20,7 +20,7 @@
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
-   [app.util.storage :as sto]
+   [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
@@ -198,7 +198,7 @@
 
                :else
                (do
-                 (swap! sto/storage assoc ::email (:email params))
+                 (swap! storage/user assoc ::email (:email params))
                  (st/emit! (rt/nav :auth-register-success)))))))
 
         on-error
@@ -264,7 +264,7 @@
 (mf/defc register-success-page
   {::mf/props :obj}
   [{:keys [params]}]
-  (let [email (or (:email params) (::email @sto/storage))]
+  (let [email (or (:email params) (::email storage/user))]
     [:div {:class (stl/css :auth-form-wrapper :register-success)}
      (when-not (:hide-logo params)
        [:h1 {:class (stl/css :logo-container)}

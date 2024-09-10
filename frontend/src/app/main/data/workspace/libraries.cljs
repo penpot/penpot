@@ -48,7 +48,7 @@
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
-   [app.util.storage :as s]
+   [app.util.storage :as storage]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -147,7 +147,7 @@
     ptk/EffectEvent
     (effect [_ state _]
       (let [recent-colors (:recent-colors state)]
-        (swap! s/storage assoc :recent-colors recent-colors)))))
+        (swap! storage/user assoc :recent-colors recent-colors)))))
 
 (def clear-color-for-rename
   (ptk/reify ::clear-color-for-rename
