@@ -171,13 +171,14 @@
                            :input-props {:ref group-input-ref
                                          :default-value (:group theme)
                                          :on-change on-update-group}
-                           :render-right (mf/fnc []
-                                                 [:button {:class (stl/css :group-drop-down-button)
-                                                           :type "button"
-                                                           :on-click (fn [e]
-                                                                       (dom/stop-propagation e)
-                                                                       (on-toggle-dropdown))}
-                                                  i/arrow])}]]
+                           :render-right (when (seq theme-groups)
+                                           (mf/fnc []
+                                             [:button {:class (stl/css :group-drop-down-button)
+                                                       :type "button"
+                                                       :on-click (fn [e]
+                                                                   (dom/stop-propagation e)
+                                                                   (on-toggle-dropdown))}
+                                              i/arrow]))}]]
        [:& labeled-input {:label "Theme"
                           :input-props {:default-value (:name theme)
                                         :on-change on-update-name}}]]
