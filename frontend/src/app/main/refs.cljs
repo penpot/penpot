@@ -244,6 +244,9 @@
   [id]
   (l/derived #(wtts/get-workspace-theme id %) st/state))
 
+(def workspace-token-theme-groups
+  (l/derived wtts/get-workspace-theme-groups st/state))
+
 (def workspace-active-theme-ids
   (l/derived wtts/get-active-theme-ids st/state))
 

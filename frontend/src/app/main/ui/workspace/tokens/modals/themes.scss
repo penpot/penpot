@@ -211,3 +211,18 @@ hr {
     }
   }
 }
+
+.group-drop-down-button {
+  @include buttonStyle;
+  width: $s-24;
+  height: 100%;
+
+  padding: 0;
+  margin: 0 $s-6;
+
+  svg {
+    @extend .button-icon-small;
+    transform: rotate(90deg);
+    fill: var(--icon-foreground);
+  }
+}

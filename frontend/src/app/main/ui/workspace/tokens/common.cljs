@@ -34,7 +34,7 @@
 
 (mf/defc labeled-input
   {::mf/wrap-props false}
-  [{:keys [label input-props auto-complete? error?]}]
+  [{:keys [label input-props auto-complete? error? icon render-right]}]
   (let [input-props (cond-> input-props
                       :always camel-keys
                       ;; Disable auto-complete on form fields for proprietary password managers
@@ -45,4 +45,6 @@
     [:label {:class (stl/css-case :labeled-input true
                                   :labeled-input-error error?)}
      [:span {:class (stl/css :label)} label]
-     [:& :input input-props]]))
+     [:& :input input-props]
+     (when render-right
+       [:& render-right])]))

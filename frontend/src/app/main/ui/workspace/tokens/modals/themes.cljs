@@ -108,7 +108,7 @@
        "Create theme"]]]))
 
 (mf/defc edit-theme
-  [{:keys [token-sets theme on-back on-submit] :as props}]
+  [{:keys [token-sets theme theme-groups on-back on-submit]}]
   (let [edit? (some? (:id theme))
         theme-state (mf/use-state {:token-sets token-sets
                                    :theme theme})
@@ -153,7 +153,13 @@
       [:div {:class (stl/css :edit-theme-inputs-wrapper)}
        [:& labeled-input {:label "Group"
                           :input-props {:default-value (:group theme)
-                                        :on-change on-update-group}}]
+                                        :on-change on-update-group}
+                          :render-right (mf/fnc []
+                                          [:button {:class (stl/css :group-drop-down-button)
+                                                    :type "button"
+                                                    :on-click (fn [e]
+                                                                (dom/stop-propagation e))}
+                                           i/arrow])}]
        [:& labeled-input {:label "Theme"
                           :input-props {:default-value (:name theme)
                                         :on-change on-update-name}}]]
@@ -189,10 +195,12 @@
   [{:keys [state set-state]}]
   (let [{:keys [theme-id]} @state
         token-sets (mf/deref refs/workspace-ordered-token-sets)
-        theme (mf/deref (refs/workspace-token-theme theme-id))]
+        theme (mf/deref (refs/workspace-token-theme theme-id))
+        theme-groups (mf/deref refs/workspace-token-theme-groups)]
     [:& edit-theme
      {:token-sets token-sets
       :theme theme
+      :theme-groups theme-groups
       :on-back #(set-state (constantly {:type :themes-overview}))
       :on-submit #(st/emit! (wdt/update-token-theme %))}]))
 

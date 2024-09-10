@@ -18,6 +18,14 @@
 (defn get-workspace-themes-index [state]
   (get-in state [:workspace-data :token-themes-index] {}))
 
+(defn get-workspace-theme-groups [state]
+  (reduce
+   (fn [acc {:keys [group]}]
+     (if group
+       (conj acc group)
+       acc))
+   #{} (vals (get-workspace-themes-index state))))
+
 (defn get-workspace-token-set-groups [state]
   (get-in state [:workspace-data :token-set-groups]))
 
