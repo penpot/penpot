@@ -30,7 +30,7 @@
 
 (def ^:private schema:verify-token
   [:map {:title "verify-token"}
-   [:token [:string {:max 1000}]]])
+   [:token [:string {:max 5000}]]])
 
 (sv/defmethod ::verify-token
   {::rpc/auth false
