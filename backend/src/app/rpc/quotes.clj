@@ -26,14 +26,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private schema:quote
-  (sm/define
-    [:map {:title "Quote"}
-     [::team-id {:optional true} ::sm/uuid]
-     [::project-id {:optional true} ::sm/uuid]
-     [::file-id {:optional true} ::sm/uuid]
-     [::incr {:optional true} [::sm/int {:min 0}]]
-     [::id :keyword]
-     [::profile-id ::sm/uuid]]))
+  [:map {:title "Quote"}
+   [::team-id {:optional true} ::sm/uuid]
+   [::project-id {:optional true} ::sm/uuid]
+   [::file-id {:optional true} ::sm/uuid]
+   [::incr {:optional true} [::sm/int {:min 0}]]
+   [::id :keyword]
+   [::profile-id ::sm/uuid]])
 
 (def ^:private enabled (volatile! true))
 

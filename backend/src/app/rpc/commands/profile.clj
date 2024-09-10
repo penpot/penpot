@@ -109,11 +109,10 @@
 
 (def ^:private
   schema:update-profile
-  (sm/define
-    [:map {:title "update-profile"}
-     [:fullname [::sm/word-string {:max 250}]]
-     [:lang {:optional true} [:string {:max 8}]]
-     [:theme {:optional true} [:string {:max 250}]]]))
+  [:map {:title "update-profile"}
+   [:fullname [::sm/word-string {:max 250}]]
+   [:lang {:optional true} [:string {:max 8}]]
+   [:theme {:optional true} [:string {:max 250}]]])
 
 (sv/defmethod ::update-profile
   {::doc/added "1.0"
@@ -154,11 +153,10 @@
 
 (def ^:private
   schema:update-profile-password
-  (sm/define
-    [:map {:title "update-profile-password"}
-     [:password [::sm/word-string {:max 500}]]
-     ;; Social registered users don't have old-password
-     [:old-password {:optional true} [:maybe [::sm/word-string {:max 500}]]]]))
+  [:map {:title "update-profile-password"}
+   [:password [::sm/word-string {:max 500}]]
+   ;; Social registered users don't have old-password
+   [:old-password {:optional true} [:maybe [::sm/word-string {:max 500}]]]])
 
 (sv/defmethod ::update-profile-password
   {::doc/added "1.0"
@@ -209,9 +207,8 @@
 
 (def ^:private
   schema:update-profile-photo
-  (sm/define
-    [:map {:title "update-profile-photo"}
-     [:file ::media/upload]]))
+  [:map {:title "update-profile-photo"}
+   [:file ::media/upload]])
 
 (sv/defmethod ::update-profile-photo
   {:doc/added "1.1"
@@ -278,9 +275,8 @@
 
 (def ^:private
   schema:request-email-change
-  (sm/define
-    [:map {:title "request-email-change"}
-     [:email ::sm/email]]))
+  [:map {:title "request-email-change"}
+   [:email ::sm/email]])
 
 (sv/defmethod ::request-email-change
   {::doc/added "1.0"

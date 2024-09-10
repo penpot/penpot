@@ -21,16 +21,14 @@
 
 (def ^:private
   schema:template
-  (sm/define
-    [:map {:title "Template"}
-     [:id ::sm/word-string]
-     [:name ::sm/word-string]
-     [:file-uri ::sm/word-string]]))
+  [:map {:title "Template"}
+   [:id ::sm/word-string]
+   [:name ::sm/word-string]
+   [:file-uri ::sm/word-string]])
 
 (def ^:private
   schema:templates
-  (sm/define
-    [:vector schema:template]))
+  [:vector schema:template])
 
 (defmethod ig/init-key ::setup/templates
   [_ _]

@@ -198,21 +198,23 @@
 
 (def ^:private
   schema:handle-file-change
-  (sm/define
-    [:map {:title "handle-file-change"}
-     [:type :keyword]
-     [:profile-id ::sm/uuid]
-     [:file-id ::sm/uuid]
-     [:session-id ::sm/uuid]
-     [:revn :int]
-     [:changes ::cpc/changes]]))
+  [:map {:title "handle-file-change"}
+   [:type :keyword]
+   [:profile-id ::sm/uuid]
+   [:file-id ::sm/uuid]
+   [:session-id ::sm/uuid]
+   [:revn :int]
+   [:changes ::cpc/changes]])
+
+(def ^:private check-file-change-params!
+  (sm/check-fn schema:handle-file-change))
 
 (defn handle-file-change
   [{:keys [file-id changes revn] :as msg}]
 
   (dm/assert!
    "expected valid parameters"
-   (sm/check! schema:handle-file-change msg))
+   (check-file-change-params! msg))
 
   (ptk/reify ::handle-file-change
     IDeref
@@ -230,23 +232,24 @@
                           :redo-changes (vec changes)
                           :undo-changes []})))))
 
-(def ^:private
-  schema:handle-library-change
-  (sm/define
-    [:map {:title "handle-library-change"}
-     [:type :keyword]
-     [:profile-id ::sm/uuid]
-     [:file-id ::sm/uuid]
-     [:session-id ::sm/uuid]
-     [:revn :int]
-     [:modified-at ::sm/inst]
-     [:changes ::cpc/changes]]))
+(def ^:private schema:handle-library-change
+  [:map {:title "handle-library-change"}
+   [:type :keyword]
+   [:profile-id ::sm/uuid]
+   [:file-id ::sm/uuid]
+   [:session-id ::sm/uuid]
+   [:revn :int]
+   [:modified-at ::sm/inst]
+   [:changes ::cpc/changes]])
+
+(def ^:private check-library-change-params!
+  (sm/check-fn schema:handle-library-change))
 
 (defn handle-library-change
   [{:keys [file-id modified-at changes revn] :as msg}]
   (dm/assert!
    "expected valid arguments"
-   (sm/check! schema:handle-library-change msg))
+   (check-library-change-params! msg))
 
   (ptk/reify ::handle-library-change
     ptk/WatchEvent

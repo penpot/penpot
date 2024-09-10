@@ -200,14 +200,13 @@
 
 (def ^:private
   schema:process-media-objects
-  (sm/define
-    [:map {:title "process-media-objects"}
-     [:file-id ::sm/uuid]
-     [:local? :boolean]
-     [:name {:optional true} :string]
-     [:data {:optional true} :any] ; FIXME
-     [:uris {:optional true} [:sequential :string]]
-     [:mtype {:optional true} :string]]))
+  [:map {:title "process-media-objects"}
+   [:file-id ::sm/uuid]
+   [:local? :boolean]
+   [:name {:optional true} :string]
+   [:data {:optional true} :any] ; FIXME
+   [:uris {:optional true} [:sequential :string]]
+   [:mtype {:optional true} :string]])
 
 (defn- process-media-objects
   [{:keys [uris on-error] :as params}]
@@ -427,10 +426,9 @@
 
 (def ^:private
   schema:clone-media-object
-  (sm/define
-    [:map {:title "clone-media-object"}
-     [:file-id ::sm/uuid]
-     [:object-id ::sm/uuid]]))
+  [:map {:title "clone-media-object"}
+   [:file-id ::sm/uuid]
+   [:object-id ::sm/uuid]])
 
 (defn clone-media-object
   [{:keys [file-id object-id] :as params}]

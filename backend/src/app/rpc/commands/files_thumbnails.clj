@@ -179,18 +179,16 @@
 
 (def ^:private
   schema:get-file-data-for-thumbnail
-  (sm/define
-    [:map {:title "get-file-data-for-thumbnail"}
-     [:file-id ::sm/uuid]
-     [:features {:optional true} ::cfeat/features]]))
+  [:map {:title "get-file-data-for-thumbnail"}
+   [:file-id ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
 
 (def ^:private
   schema:partial-file
-  (sm/define
-    [:map {:title "PartialFile"}
-     [:id ::sm/uuid]
-     [:revn {:min 0} ::sm/int]
-     [:page :any]]))
+  [:map {:title "PartialFile"}
+   [:id ::sm/uuid]
+   [:revn {:min 0} ::sm/int]
+   [:page :any]])
 
 (sv/defmethod ::get-file-data-for-thumbnail
   "Retrieves the data for generate the thumbnail of the file. Used
