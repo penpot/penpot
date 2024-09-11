@@ -144,8 +144,8 @@
              (= :challenge-required (:code data)))
       (let [path (rt/get-current-path)
             href (->> path
-                      (str "/challenge.html?redirect=")
-                      (js/encodeURIComponent))]
+                      (js/encodeURIComponent)
+                      (str "/challenge.html?redirect="))]
         (rx/of (rt/nav-raw href)))
       (rx/throw cause))))
 
