@@ -28,6 +28,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.token :as cto]
    [app.common.types.token-theme :as ctt]
+   [app.common.types.tokens-lib :as ctl]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
@@ -78,7 +79,8 @@
    [:token-sets-index {:optional true}
     [:map-of {:gen/max 10} ::sm/uuid ::ctt/token-set]]
    [:tokens {:optional true}
-    [:map-of {:gen/max 100} ::sm/uuid ::cto/token]]])
+    [:map-of {:gen/max 100} ::sm/uuid ::cto/token]]
+   [:tokens-lib {:optional true} ::ctl/tokens-lib]])
 
 (def check-file-data!
   (sm/check-fn ::data))

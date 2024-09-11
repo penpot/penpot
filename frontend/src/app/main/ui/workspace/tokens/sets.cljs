@@ -26,9 +26,9 @@
 (defn on-select-token-set-click [id]
   (st/emit! (wdt/set-selected-token-set-id id)))
 
-(defn on-delete-token-set-click [id event]
+(defn on-delete-token-set-click [id name event]
   (dom/stop-propagation event)
-  (st/emit! (wdt/delete-token-set id)))
+  (st/emit! (wdt/delete-token-set id name)))
 
 (defn on-update-token-set [token-set]
   (st/emit! (wdt/update-token-set token-set)))
@@ -115,7 +115,7 @@
         [:*
          [:div {:class (stl/css :set-name)} name]
          [:div {:class (stl/css :delete-set)}
-          [:button {:on-click #(on-delete-token-set-click id %)
+          [:button {:on-click #(on-delete-token-set-click id name %)
                     :type "button"}
            i/delete]]
          (if set?

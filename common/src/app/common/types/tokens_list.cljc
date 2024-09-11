@@ -21,8 +21,12 @@
 
 (defn add-token
   "Adds a new token to the file data, setting its `modified-at` timestamp."
-  [file-data token]
-  (update file-data :tokens assoc (:id token) (touch token)))
+  [file-data token-set-id token]
+  (-> file-data
+      (update :tokens assoc (:id token) (touch token))
+      (d/update-in-when [:token-sets-index token-set-id] #(->
+                                                           (update % :tokens conj (:id token))
+                                                           (touch)))))
 
 (defn get-token
   "Retrieves a token by its ID from the file data."

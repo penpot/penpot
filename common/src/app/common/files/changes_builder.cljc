@@ -737,48 +737,48 @@
   [changes token-set]
   (-> changes
       (update :redo-changes conj {:type :add-token-set :token-set token-set})
-      (update :undo-changes conj {:type :del-token-set :id (:id token-set)})
+      (update :undo-changes conj {:type :del-token-set :id (:id token-set) :name (:name token-set)})
       (apply-changes-local)))
 
 (defn update-token-set
   [changes token-set prev-token-set]
   (-> changes
-      (update :redo-changes conj {:type :mod-token-set :id (:id token-set) :token-set token-set})
-      (update :undo-changes conj {:type :mod-token-set :id (:id token-set) :token-set (or prev-token-set token-set)})
+      (update :redo-changes conj {:type :mod-token-set :id (:id token-set) :name (:name prev-token-set) :token-set token-set})
+      (update :undo-changes conj {:type :mod-token-set :id (:id token-set) :name (:name prev-token-set) :token-set (or prev-token-set token-set)})
       (apply-changes-local)))
 
 (defn delete-token-set
-  [changes token-set-id]
+  [changes token-set-id token-set-name]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
         prev-token-set (get-in library-data [:token-sets-index token-set-id])]
     (-> changes
-        (update :redo-changes conj {:type :del-token-set :id token-set-id})
+        (update :redo-changes conj {:type :del-token-set :id token-set-id :name token-set-name})
         (update :undo-changes conj {:type :add-token-set :token-set prev-token-set})
         (apply-changes-local))))
 
 (defn add-token
-  [changes token]
+  [changes set-id set-name token]
   (-> changes
-      (update :redo-changes conj {:type :add-token :token token})
-      (update :undo-changes conj {:type :del-token :id (:id token)})
+      (update :redo-changes conj {:type :add-token :set-id set-id :set-name set-name :token token})
+      (update :undo-changes conj {:type :del-token :set-name set-name :id (:id token) :name (:name token)})
       (apply-changes-local)))
 
 (defn update-token
-  [changes {:keys [id] :as token} prev-token]
+  [changes set-id set-name {:keys [id name] :as token} {prev-name :name :as prev-token}]
   (-> changes
-      (update :redo-changes conj {:type :mod-token :id id :token token})
-      (update :undo-changes conj {:type :mod-token :id id :token (or prev-token token)})
+      (update :redo-changes conj {:type :mod-token :set-id set-id :set-name set-name :id id :name prev-name :token token})
+      (update :undo-changes conj {:type :mod-token :set-id set-id :set-name set-name :id id :name name :token (or prev-token token)})
       (apply-changes-local)))
 
 (defn delete-token
-  [changes token-id]
+  [changes set-name token-id token-name]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
         prev-token (get-in library-data [:tokens token-id])]
     (-> changes
-        (update :redo-changes conj {:type :del-token :id token-id})
-        (update :undo-changes conj {:type :add-token :token prev-token})
+        (update :redo-changes conj {:type :del-token :set-name set-name :id token-id :name token-name})
+        (update :undo-changes conj {:type :add-token :set-id uuid/zero :set-name set-name :token prev-token})
         (apply-changes-local))))
 
 (defn add-component

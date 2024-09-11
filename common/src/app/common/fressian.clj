@@ -15,6 +15,7 @@
    java.time.Instant
    java.time.OffsetDateTime
    java.util.List
+   linked.map.LinkedMap
    org.fressian.Reader
    org.fressian.StreamingWriter
    org.fressian.Writer
@@ -108,6 +109,13 @@
     (if (< (.size kvs) 16)
       (clojure.lang.PersistentArrayMap. (.toArray kvs))
       (clojure.lang.PersistentHashMap/create (seq kvs)))))
+
+(defn read-ordered-map
+  [^Reader rdr]
+  (let [kvs ^java.util.List (read-object! rdr)]
+    (reduce #(assoc %1 (first %2) (second %2))
+            (d/ordered-map)
+            (partition-all 2 (seq kvs)))))
 
 (def ^:dynamic *write-handler-lookup* nil)
 (def ^:dynamic *read-handler-lookup* nil)
@@ -224,6 +232,11 @@
   :class clojure.lang.IPersistentMap
   :wfn write-map-like
   :rfn read-map-like}
+
+ {:name "linked/map"
+  :class LinkedMap
+  :wfn write-map-like
+  :rfn read-ordered-map}
 
  {:name "clj/keyword"
   :class clojure.lang.Keyword

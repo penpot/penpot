@@ -308,7 +308,6 @@
                                 ::explain explain}))))
       true)))
 
-
 (defn fast-validate!
   "A fast path for validation process, assumes the ILazySchema protocol
   implemented on the provided `s` schema. Sould not be used directly."

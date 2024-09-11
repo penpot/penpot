@@ -201,10 +201,11 @@
                     (generic-attribute-actions #{:x} "X" (assoc context-data :on-update-shape wtch/update-shape-position))
                     (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape wtch/update-shape-position))))}))
 
-(defn default-actions [{:keys [token]}]
-  (let [{:keys [modal]} (wtty/get-token-properties token)]
+(defn default-actions [{:keys [token selected-token-set-id]}]
+  (let [{:keys [modal]} (wtty/get-token-properties token)
+        selected-token-set (dt/get-token-set-data-from-token-set-id selected-token-set-id)]
     [{:title "Delete Token"
-      :action #(st/emit! (dt/delete-token (:id token)))}
+      :action #(st/emit! (dt/delete-token (:name selected-token-set) (:id token) (:name token)))}
      {:title "Duplicate Token"
       :action #(st/emit! (dt/duplicate-token (:id token)))}
      {:title "Edit Token"
@@ -311,7 +312,8 @@
         selected (mf/deref refs/selected-shapes)
         selected-shapes (into [] (keep (d/getf objects)) selected)
         token-id (:token-id mdata)
-        token (get (mf/deref refs/workspace-selected-token-set-tokens) token-id)]
+        token (get (mf/deref refs/workspace-selected-token-set-tokens) token-id)
+        selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)]
     (mf/use-effect
      (mf/deps mdata)
      (fn []
@@ -327,4 +329,5 @@
         [:ul {:class (stl/css :context-list)}
          [:& menu-tree {:submenu-offset @width
                         :token token
+                        :selected-token-set-id selected-token-set-id
                         :selected-shapes selected-shapes}]])]]))
