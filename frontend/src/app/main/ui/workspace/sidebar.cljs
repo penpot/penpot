@@ -122,9 +122,10 @@
                              :title (tr "workspace.toolbar.assets")}
              [:& assets-toolbox {:size (- size 58)}]])
 
-          [:& tab-element {:id :tokens
-                           :title "Tokens"}
-           [:& tokens-sidebar-tab]]]])]]))
+          (when-not ^boolean mode-inspect?
+            [:& tab-element {:id :tokens
+                             :title "Tokens"}
+             [:& tokens-sidebar-tab]])]])]]))
 
 ;; --- Right Sidebar (Component)
 
