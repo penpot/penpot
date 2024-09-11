@@ -13,7 +13,7 @@
    [app.main.data.events :as ev]
    [app.util.browser-history :as bhistory]
    [app.util.dom :as dom]
-   [app.util.globals :as globals]   
+   [app.util.globals :as globals]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
