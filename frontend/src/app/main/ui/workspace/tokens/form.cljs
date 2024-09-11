@@ -145,6 +145,7 @@ Token names should only contain letters and digits separated by . characters.")}
   {::mf/wrap-props false}
   [{:keys [token token-type] :as _args}]
   (let [tokens (mf/deref refs/workspace-ordered-token-sets-tokens)
+        selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
         active-theme-tokens (mf/deref refs/workspace-active-theme-sets-tokens)
         resolved-tokens (sd/use-resolved-tokens active-theme-tokens {:names-map? true
                                                                      :cache-atom form-token-cache-atom})
@@ -154,7 +155,7 @@ Token names should only contain letters and digits separated by . characters.")}
         selected-set-tokens-tree (mf/use-memo
                                   (mf/deps token-path tokens)
                                   (fn []
-                                    (-> (wtt/token-names-tree tokens)
+                                    (-> (wtt/token-names-tree selected-set-tokens)
                                         ;; Allow setting editing token to it's own path
                                         (d/dissoc-in token-path))))
 
