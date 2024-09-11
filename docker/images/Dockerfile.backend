@@ -1,6 +1,6 @@
-FROM ubuntu:22.04
-
+FROM debian:bookworm
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
+
 ENV LANG='en_US.UTF-8' \
     LC_ALL='en_US.UTF-8' \
     JAVA_HOME="/opt/jdk" \
@@ -13,20 +13,16 @@ RUN set -ex; \
     apt-get -qq update; \
     apt-get -qq upgrade; \
     apt-get -qqy --no-install-recommends install \
-        nano \
-        curl \
-        tzdata \
-        locales \
         ca-certificates \
+        fontforge \
         imagemagick \
-        webp \
-        rlwrap \
-        fontconfig \
-        woff-tools \
-        woff2 \
+        locales \
         python3 \
         python3-tabulate \
-        fontforge \
+        rlwrap \
+        webp \
+        woff-tools \
+        woff2 \
     ; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
     locale-gen; \

@@ -16,27 +16,27 @@ RUN set -ex; \
     echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/tail; \
     apt-get -qq update; \
     apt-get -qqy install --no-install-recommends \
-        build-essential \
-        openssh-client \
-        redis-tools \
-        locales \
-        gnupg2 \
-        ca-certificates \
-        wget \
-        sudo \
-        tmux \
-        vim \
-        curl \
         bash \
-        git \
-        rlwrap \
-        unzip \
-        rsync \
+        build-essential \
+        ca-certificates \
         fakeroot \
         file \
-        less \
+        git \
+        gnupg2 \
         jq \
+        less \
+        locales \
         nginx \
+        openssh-client \
+        redis-tools \
+        rlwrap \
+        rsync \
+        sudo \
+        tmux \
+        unzip \
+        url \
+        vim \
+        wget \
     ; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
     locale-gen; \
@@ -50,32 +50,28 @@ RUN set -ex; \
 RUN set -ex; \
     apt-get -qq update; \
     apt-get -qqy install --no-install-recommends \
-        python3 \
-        python3-tabulate \
-        imagemagick \
-        ghostscript \
-        netpbm \
-        poppler-utils \
-        potrace \
-        webp \
-        woff-tools \
-        woff2 \
         fontforge \
+        fonts-liberation \
         gconf-service \
+        ghostscript \
+        imagemagick \
+        libappindicator1 \
         libasound2 \
-        libatk1.0-0 \
         libatk-bridge2.0-0 \
+        libatk1.0-0 \
         libcairo2 \
         libcups2 \
         libdbus-1-3 \
         libexpat1 \
         libfontconfig1 \
+        libgbm1 \
         libgcc1 \
         libgconf-2-4 \
         libgdk-pixbuf2.0-0 \
         libglib2.0-0 \
         libgtk-3-0 \
         libnspr4 \
+        libnss3 \
         libpango-1.0-0 \
         libpangocairo-1.0-0 \
         libx11-6 \
@@ -92,10 +88,14 @@ RUN set -ex; \
         libxshmfence1 \
         libxss1 \
         libxtst6 \
-        fonts-liberation \
-        libappindicator1 \
-        libnss3 \
-        libgbm1 \
+        netpbm \
+        poppler-utils \
+        potrace \
+        python3 \
+        python3-tabulate \
+        webp \
+        woff-tools \
+        woff2 \
         xvfb \
     ; \
     rm -rf /var/lib/apt/lists/*;
