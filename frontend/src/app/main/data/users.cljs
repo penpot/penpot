@@ -143,7 +143,9 @@
     (if (and (= :authorization (:type data))
              (= :challenge-required (:code data)))
       (let [path (rt/get-current-path)
-            href (str "/challenge.html?redirect=" path)]
+            href (-> path
+                     (str "/challenge.html?redirect=")
+                     (js/encodeURIComponent))]
         (rx/of (rt/nav-raw href)))
       (rx/throw cause))))
 
