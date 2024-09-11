@@ -11,11 +11,11 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.tokens.sets-context :as sets-context]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
-   [rumext.v2 :as mf]
-   [app.main.ui.workspace.tokens.sets-context :as sets-context]))
+   [rumext.v2 :as mf]))
 
 (def ^:private chevron-icon
   (i/icon-xref :arrow (stl/css :chevron-icon)))
@@ -83,10 +83,21 @@
                    (fn [event]
                      (dom/stop-propagation event)
                      (when-not editing-node?
-                       (on-select id))))]
+                       (on-select id))))
+        on-context-menu (mf/use-callback
+                         (mf/deps editing-node? id)
+                         (fn [event]
+                           (dom/prevent-default event)
+                           (dom/stop-propagation event)
+                           (when-not editing-node?
+                             (st/emit!
+                              (wdt/show-token-set-context-menu
+                               {:position (dom/get-client-position event)
+                                :token-set-id id})))))]
     [:div {:class (stl/css :set-item-container)
            :on-click on-select
-           :on-double-click #(on-edit id)}
+           :on-double-click #(on-edit id)
+           :on-context-menu on-context-menu}
      [:div {:class (stl/css-case :set-item-group group?
                                  :set-item-set set?
                                  :selected-set selected?)}
