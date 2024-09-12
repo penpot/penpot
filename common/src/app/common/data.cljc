@@ -57,6 +57,54 @@
   #?(:cljs (instance? lkm/LinkedMap o)
      :clj (instance? LinkedMap o)))
 
+(defn oassoc
+  [o & kvs]
+  (apply assoc (or o (ordered-map)) kvs))
+
+(defn oassoc-in
+  [o [k & ks] v]
+  (if ks
+    (oassoc o k (oassoc-in (get o k) ks v))
+    (oassoc o k v))) 
+
+#_(defn oupdate-in
+  [m ks f & args]
+  (let [up (fn up [m ks f args]
+             (let [[k & ks] ks]
+               (if ks
+                 (oassoc m k (up (get m k) ks f args))
+                 (oassoc m k (apply f (get m k) args)))))]
+    (up m ks f args)))
+
+(declare index-of)
+
+#_(defn oassoc-before
+  "Assoc a k v pair, in the order position just before the other key"
+  [o k v before-k]
+  (if-let [index (index-of (keys o) before-k)]
+    (-> (ordered-map)
+        (into (take index o))
+        (assoc k v)
+        (into (drop index o)))
+    (oassoc o k v)))
+
+(defn oassoc-in-before
+  [o [old-k & old-ks] [k & ks] v]
+  (if-let [index (index-of (keys o) old-k)]
+    (let [new-v (if ks
+                  (oassoc-in-before (get o k) old-ks ks v)
+                  v)]
+      (if (= k old-k)
+        (-> (ordered-map)
+            (into (take index o))
+            (assoc k new-v)
+            (into (drop (inc index) o)))
+        (-> (ordered-map)
+            (into (take index o))
+            (assoc k new-v)
+            (into (drop index o)))))
+    (oassoc-in o (cons k ks) v)))
+
 (defn vec2
   "Creates a optimized vector compatible type of length 2 backed
   internally with MapEntry impl because it has faster access method
@@ -564,6 +612,7 @@
                 new-elems
                 (remove p? after))))
 
+;; TODO: remove this
 (defn addm-at-index
   "Insert an element in an ordered map at an arbitrary index"
   [coll index key element]

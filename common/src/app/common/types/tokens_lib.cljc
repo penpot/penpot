@@ -15,6 +15,86 @@
    [cuerdas.core :as str]
    #?(:clj [app.common.fressian :as fres])))
 
+;; === Groups handling
+
+(def schema:groupable-item
+  [:map {:title "Groupable item"}
+   [:name :string]])
+
+(def valid-groupable-item?
+  (sm/validator schema:groupable-item))
+
+(defn split-path
+  "Decompose a string in the form 'one.two.three' into a vector of strings, removing spaces."
+  [path separator]
+  (let [xf (comp (map str/trim)
+                 (remove str/empty?))]
+    (->> (str/split path separator)
+         (into [] xf))))
+
+(defn join-path
+  "Regenerate a path as a string, from a vector."
+  [path separator]
+  (str/join separator path))
+
+(defn group-item
+  "Add a group to the item name, in the form group.name."
+  [item group-name separator]
+  (dm/assert!
+   "expected groupable item"
+   (valid-groupable-item? item))
+  (update item :name #(str group-name separator %)))
+
+(defn ungroup-item
+  "Remove the first group from the item name."
+  [item separator]
+  (dm/assert!
+   "expected groupable item"
+   (valid-groupable-item? item))
+  (update item :name #(-> %
+                          (split-path separator)
+                          (rest)
+                          (join-path separator))))
+
+(defn get-path
+  "Get the groups part of the name as a vector. E.g. group.subgroup.name -> ['group' 'subrgoup']"
+  [item separator]
+  (dm/assert!
+   "expected groupable item"
+   (valid-groupable-item? item))
+  (split-path (:name item) separator))
+
+(defn get-groups-str
+  "Get the groups part of the name. E.g. group.subgroup.name -> group.subrgoup"
+  [item separator]
+  (-> (get-path item separator)
+      (butlast)
+      (join-path  separator)))
+
+(defn get-final-name
+  "Get the final part of the name. E.g. group.subgroup.name -> name"
+  [item separator]
+  (dm/assert!
+   "expected groupable item"
+   (valid-groupable-item? item))
+  (-> (:name item)
+      (split-path separator)
+      (last)))
+
+(defn group?
+  "Check if a node of the grouping tree is a group or a final item."
+  [item]
+  (d/ordered-map? item))
+
+(defn get-children
+  "Get all children of a group of a grouping tree. Each child is
+   a tuple [name item], where item "
+  [group]
+  (dm/assert!
+   "expected group node"
+   (group? group))
+  (seq group))
+
 ;; === Token
 
 (defrecord Token [name type value description modified-at])
@@ -22,10 +102,10 @@
 (def schema:token
   [:and
    [:map {:title "Token"}
-    [:name cto/token-name-ref]                            ;; not necessary to have uuid
+    [:name cto/token-name-ref]            ;; not necessary to have uuid
     [:type [::sm/one-of cto/token-types]]
     [:value :any]
-    [:description [:maybe :string]]      ;; defrecord always have the attributes, even with nil value
+    [:description [:maybe :string]]       ;; defrecord always have the attributes, even with nil value
     [:modified-at ::sm/inst]]
    [:fn (partial instance? Token)]])
 
@@ -62,42 +142,56 @@
   ITokenSet
   (add-token [_ token]
     (dm/assert! "expected valid token" (check-token! token))
-    (TokenSet. name
-               description
-               (dt/now)
-               (assoc tokens (:name token) token)))
+    (let [path (split-path (:name token) ".")]
+      (TokenSet. name
+                 description
+                 (dt/now)
+                 (d/oassoc-in tokens path token))))
 
   (update-token [this token-name f]
-    (if-let [token (get tokens token-name)]
-      (let [token' (-> (make-token (f token))
-                       (assoc :modified-at (dt/now)))]
-        (check-token! token')
-        (TokenSet. name
-                   description
-                   (dt/now)
-                   (if (= (:name token) (:name token'))
-                     (assoc tokens (:name token') token')
-                     (let [index (d/index-of (keys tokens) (:name token))]
+    (let [path (split-path token-name ".")
+          token (get-in tokens path)]
+      (if token
+        (let [token' (-> (make-token (f token))
+                         (assoc :modified-at (dt/now)))
+              path'  (get-path token' ".")]
+          (check-token! token')
+          (TokenSet. name
+                     description
+                     (dt/now)
+                     (if (= (:name token) (:name token'))
+                       (d/oassoc-in tokens path token')
                        (-> tokens
-                           (dissoc (:name token))
-                           (d/addm-at-index index (:name token') token'))))))
-      this))
+                           (d/oassoc-in-before path path' token')
+                           (d/dissoc-in path)))))
+        this)))
 
   (delete-token [_ token-name]
-    (TokenSet. name
-               description
-               (dt/now)
-               (dissoc tokens token-name)))
+    (let [path (split-path token-name ".")]
+      (TokenSet. name
+                 description
+                 (dt/now)
+                 (d/dissoc-in tokens path))))
 
   (get-tokens [_]
-    (vals tokens)))
+    (->> (tree-seq d/ordered-map? vals tokens)
+         (filter (partial instance? Token)))))
+
+(def schema:token-node
+  [:schema {:registry {::node [:or ::token
+                               [:and
+                                [:map-of {:gen/max 5} :string [:ref ::node]]
+                                [:fn d/ordered-map?]]]}}
+   [:ref ::node]])
+
+(sm/register! ::token-node schema:token-node)
 
 (def schema:token-set
   [:and [:map {:title "TokenSet"}
          [:name :string]
          [:description [:maybe :string]]
          [:modified-at ::sm/inst]
-         [:tokens [:and [:map-of {:gen/max 5} :string ::token]
+         [:tokens [:and [:map-of {:gen/max 5} :string ::token-node]
                    [:fn d/ordered-map?]]]]
    [:fn (partial instance? TokenSet)]])
 
@@ -140,6 +234,7 @@
   (update-set [_ set-name f] "modify a set in the ilbrary")
   (delete-set [_ set-name] "delete a set in the library")
   (set-count [_] "get the total number if sets in the library")
+  (get-set-tree [_] "get a nested tree of all sets in the library")
   (get-sets [_] "get an ordered sequence of all sets in the library")
   (get-set [_ set-name] "get one set looking for name")
   (get-set-group [_ set-group-path] "get the attributes of a set group"))
@@ -215,6 +310,7 @@
   (update-theme [_ theme-name f] "modify a theme in the ilbrary")
   (delete-theme [_ theme-name] "delete a theme in the library")
   (theme-count [_] "get the total number if themes in the library")
+  (get-theme-tree [_] "get a nested tree of all themes in the library")
   (get-themes [_] "get an ordered sequence of all themes in the library")
   (get-theme [_ theme-name] "get one theme looking for name"))
 
@@ -242,8 +338,6 @@
   (toggle-set-in-theme [_ theme-name set-name] "toggle a set used / not used in a theme")
   (validate [_]))
 
-(declare get-path)
-
 (deftype TokensLib [sets set-groups themes]
   ;; NOTE: This is only for debug purposes, pending to properly
   ;; implement the toString and alternative printing.
@@ -260,41 +354,50 @@
   ITokenSets
   (add-set [_ token-set]
     (dm/assert! "expected valid token set" (check-token-set! token-set))
-    (let [path (get-path token-set)]
-      (TokensLib. (assoc sets (:name token-set) token-set)
+    (let [path       (get-path token-set "/")
+          groups-str (get-groups-str token-set "/")]
+      (TokensLib. (d/oassoc-in sets path token-set)
                   (cond-> set-groups
-                    (seq path)
-                    (assoc path (make-token-set-group)))
+                    (not (str/empty? groups-str))
+                    (assoc groups-str (make-token-set-group)))
                   themes)))
 
   (update-set [this set-name f]
-    (if-let [set (get sets set-name)]
-      (let [set' (-> (make-token-set (f set))
-                     (assoc :modified-at (dt/now)))]
-        (check-token-set! set')
-        (TokensLib. (if (= (:name set) (:name set'))
-                      (assoc sets (:name set') set')
-                      (let [index (d/index-of (keys sets) (:name set))]
+    (let [path (split-path set-name "/")
+          set  (get-in sets path)]
+      (if set
+        (let [set'  (-> (make-token-set (f set))
+                        (assoc :modified-at (dt/now)))
+              path' (get-path set' "/")]
+          (check-token-set! set')
+          (TokensLib. (if (= (:name set) (:name set'))
+                        (d/oassoc-in sets path set')
                         (-> sets
-                            (dissoc (:name set))
-                            (d/addm-at-index index (:name set') set'))))
-                    set-groups  ;; TODO update set-groups as needed
-                    themes))
-      this))
+                            (d/oassoc-in-before path path' set')
+                            (d/dissoc-in path)))
+                      set-groups  ;; TODO update set-groups as needed
+                      themes))
+        this)))
 
   (delete-set [_ set-name]
-    (TokensLib. (dissoc sets set-name)
-                set-groups  ;; TODO remove set-group if needed
-                themes))
+    (let [path (split-path set-name "/")]
+      (TokensLib. (d/dissoc-in sets path)
+                  set-groups  ;; TODO remove set-group if needed
+                  themes)))
 
-  (set-count [_]
-    (count sets))
+  (get-set-tree [_]
+    sets)
 
   (get-sets [_]
-    (vals sets))
+    (->> (tree-seq d/ordered-map? vals sets)
+         (filter (partial instance? TokenSet))))
+
+  (set-count [this]
+    (count (get-sets this)))
 
   (get-set [_ set-name]
-    (get sets set-name))
+    (let [path (split-path set-name "/")]
+      (get-in sets path)))
 
   (get-set-group [_ set-group-path]
     (get set-groups set-group-path))
@@ -302,38 +405,47 @@
   ITokenThemes
   (add-theme [_ token-theme]
     (dm/assert! "expected valid token theme" (check-token-theme! token-theme))
-    (TokensLib. sets
-                set-groups
-                (assoc themes (:name token-theme) token-theme)))
+    (let [path (get-path token-theme "/")]
+      (TokensLib. sets
+                  set-groups
+                  (d/oassoc-in themes path token-theme))))
 
   (update-theme [this theme-name f]
-    (if-let [theme (get themes theme-name)]
-      (let [theme' (-> (make-token-theme (f theme))
-                       (assoc :modified-at (dt/now)))]
-        (check-token-theme! theme')
-        (TokensLib. sets
-                    set-groups
-                    (if (= (:name theme) (:name theme'))
-                      (assoc themes (:name theme') theme')
-                      (let [index (d/index-of (keys themes) (:name theme))]
+    (let [path (split-path theme-name "/")
+          theme (get-in themes path)]
+      (if theme
+        (let [theme' (-> (make-token-theme (f theme))
+                         (assoc :modified-at (dt/now)))
+              path'  (get-path theme' "/")]
+          (check-token-theme! theme')
+          (TokensLib. sets
+                      set-groups
+                      (if (= (:name theme) (:name theme'))
+                        (d/oassoc-in themes path theme')
                         (-> themes
-                            (dissoc (:name theme))
-                            (d/addm-at-index index (:name theme') theme'))))))
-      this))
+                            (d/oassoc-in-before path path' theme')
+                            (d/dissoc-in path)))))
+        this)))
 
   (delete-theme [_ theme-name]
-    (TokensLib. sets
-                set-groups
-                (dissoc themes theme-name)))
+    (let [path (split-path theme-name "/")]
+      (TokensLib. sets
+                  set-groups
+                  (d/dissoc-in themes path))))
 
-  (theme-count [_]
-    (count themes))
+  (get-theme-tree [_]
+    themes)
 
   (get-themes [_]
-    (vals themes))
+    (->> (tree-seq d/ordered-map? vals themes)
+         (filter (partial instance? TokenTheme))))
+
+  (theme-count [this]
+    (count (get-themes this)))
 
   (get-theme [_ theme-name]
-    (get themes theme-name))
+    (let [path (split-path theme-name "/")]
+      (get-in themes path)))
 
   ITokensLib
   (add-token-in-set [this set-name token]
@@ -478,90 +590,3 @@
                   set-groups (fres/read-object! r)
                   themes     (fres/read-object! r)]
               (->TokensLib sets set-groups themes)))}))
-
-;; === Groups handling
-
-(def schema:groupable-item
-  [:map {:title "Groupable item"}
-   [:name :string]])
-
-(def valid-groupable-item?
-  (sm/validator schema:groupable-item))
-
-(defn split-path
-  "Decompose a string in the form 'one.two.three' into a vector of strings, removing spaces."
-  [path]
-  (let [xf (comp (map str/trim)
-                 (remove str/empty?))]
-    (->> (str/split path ".")
-         (into [] xf))))
-
-(defn join-path
-  "Regenerate a path as a string, from a vector."
-  [path-vec]
-  (str/join "." path-vec))
-
-(defn group-item
-  "Add a group to the item name, in the form group.name."
-  [item group-name]
-  (dm/assert!
-   "expected groupable item"
-   (valid-groupable-item? item))
-  (update item :name #(str group-name "." %)))
-
-(defn ungroup-item
-  "Remove the first group from the item name."
-  [item]
-  (dm/assert!
-   "expected groupable item"
-   (valid-groupable-item? item))
-  (update item :name #(-> %
-                          (split-path)
-                          (rest)
-                          (join-path))))
-
-(defn get-path
-  "Get the groups part of the name. E.g. group.subgroup.name -> group.subrgoup"
-  [item]
-  (dm/assert!
-   "expected groupable item"
-   (valid-groupable-item? item))
-  (-> (:name item)
-      (split-path)
-      (butlast)
-      (join-path)))
-
-(defn get-final-name
-  "Get the final part of the name. E.g. group.subgroup.name -> name"
-  [item]
-  (dm/assert!
-   "expected groupable item"
-   (valid-groupable-item? item))
-  (-> (:name item)
-      (split-path)
-      (last)))
-
-(defn group-items
-  "Convert a sequence of items in a nested structure like this:
-
-    {'': [itemA itemB]
-     'group1': {'': [item1A item1B]
-                'subgroup11': {'': [item11A item11B item11C]}
-                'subgroup12': {'': [item12A]}}
-     'group2': {'subgroup21': {'': [item21A]}}}
-  "
-  [items & {:keys [reverse-sort?]}]
-  (when (seq items)
-    (reduce (fn [groups item]
-              (let [pathv (split-path (:name item))]
-                (update-in groups
-                           pathv
-                           (fn [group]
-                             (if group
-                               (cons group item)
-                               item)))))
-            (sorted-map-by (fn [key1 key2]               ;; TODO: this does not work well with ordered-map
-                             (if reverse-sort?           ;;       we need to think a bit more of this
-                               (compare key2 key1)
-                               (compare key1 key2))))
-            items)))
