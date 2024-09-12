@@ -272,7 +272,7 @@
   (let [show? (mf/use-state (or
                              (location-url-dev-or-preview-url!?)
                              (get @storage ::show-token-themes-sets?)
-                             false))]
+                             true))]
     (mf/use-effect
      (fn []
        (letfn [(toggle! []
