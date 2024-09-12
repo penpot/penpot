@@ -6,9 +6,6 @@
 
 ;; Themes ----------------------------------------------------------------------
 
-(defn get-theme-group [theme]
-  (:group theme))
-
 (defn get-workspace-themes [state]
   (get-in state [:workspace-data :token-themes] []))
 
