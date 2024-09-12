@@ -81,6 +81,7 @@
    [app.util.router :as rt]
    [app.util.storage :refer [storage]]
    [app.util.timers :as tm]
+   [app.util.wasm :as wasm]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
@@ -349,6 +350,7 @@
         (rx/merge
          (rx/of (ntf/hide)
                 (features/initialize)
+                (when (contains? cf/flags :renderer-v2) (wasm/init))
                 (dcm/retrieve-comment-threads file-id)
                 (fetch-bundle project-id file-id))
 

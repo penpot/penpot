@@ -14,3 +14,6 @@ wasm-bindgen = "0.2.93"
 
 [profile.release]
 opt-level = "s"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.43"
