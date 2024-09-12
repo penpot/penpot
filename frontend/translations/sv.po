@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-09-11 20:09+0000\n"
+"PO-Revision-Date: 2024-09-13 21:09+0000\n"
 "Last-Translator: Henrik Allberg <henrik@thexorb.com>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
 "sv/>\n"
@@ -4636,7 +4636,7 @@ msgstr "Musmarkören kommer in"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:416
 msgid "workspace.options.interaction-easing-ease"
-msgstr "Rörelse"
+msgstr "Mjuk start snabb"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:369
 msgid "workspace.options.interaction-navigate-to"
@@ -4749,15 +4749,15 @@ msgstr "När du trycker"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:126
 msgid "workspace.options.layer-options.blend-mode.color-burn"
-msgstr "Färgbränna"
+msgstr "Efterbelys färg"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:133
 msgid "workspace.options.layer-options.blend-mode.difference"
-msgstr "Skillnad"
+msgstr "Differens"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:129
 msgid "workspace.options.layer-options.blend-mode.color-dodge"
-msgstr "Förstärka ljus"
+msgstr "Färgskugga"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:124
 msgid "workspace.options.layer-options.blend-mode.darken"
@@ -4765,11 +4765,11 @@ msgstr "Mörkare"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:134
 msgid "workspace.options.layer-options.blend-mode.exclusion"
-msgstr "Exkludering"
+msgstr "Uteslutning"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:132
 msgid "workspace.options.layer-options.blend-mode.hard-light"
-msgstr "Hårt ljus"
+msgstr "Skarpt ljus"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:135
 msgid "workspace.options.layer-options.blend-mode.hue"
@@ -4777,7 +4777,7 @@ msgstr "Nyans"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:127
 msgid "workspace.options.layer-options.blend-mode.lighten"
-msgstr "Ljusa upp"
+msgstr "Ljusare"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:123
 msgid "workspace.options.layer-options.blend-mode.normal"
@@ -4789,7 +4789,7 @@ msgstr "Multiplicera"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:130
 msgid "workspace.options.layer-options.blend-mode.overlay"
-msgstr "Överlagring"
+msgstr "Täcka över"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:131
 msgid "workspace.options.layer-options.blend-mode.soft-light"
@@ -4797,7 +4797,7 @@ msgstr "Mjukt ljus"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:138
 msgid "workspace.options.layer-options.blend-mode.luminosity"
-msgstr "Ljusstyrka"
+msgstr "Luminiscens"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:136
 msgid "workspace.options.layer-options.blend-mode.saturation"
@@ -4805,7 +4805,7 @@ msgstr "Mättnad"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:128
 msgid "workspace.options.layer-options.blend-mode.screen"
-msgstr "Överläggning"
+msgstr "Raster"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:531
 msgid "workspace.options.layout-item.layout-item-max-w"
@@ -5689,7 +5689,7 @@ msgstr "Lokalisera rutnätslayout"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:741
 msgid "workspace.options.select-a-shape"
 msgstr ""
-"Välj en form, karta eller grupp för att dra en anslutning till andra kartor."
+"Välj en form, tavla eller grupp för att dra en anslutning till andra kartor."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:504
 msgid "workspace.options.radius-top-right"
