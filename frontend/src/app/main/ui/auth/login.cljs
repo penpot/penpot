@@ -23,6 +23,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as k]
    [app.util.router :as rt]
+   [app.util.storage :as s]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
@@ -47,10 +48,21 @@
 (defn- login-with-oidc
   [event provider params]
   (dom/prevent-default event)
+
+  (binding [s/*sync* true]
+    (if (some? (:save-login-redirect params))
+    ;; Save the current login raw uri for later redirect user back to
+    ;; the same page, we need it to be synchronous because the user is
+    ;; going to be redirected instantly to the oidc provider uri
+      (swap! s/session assoc :login-redirect (rt/get-current-href))
+    ;; Clean the login redirect
+      (swap! s/session dissoc :login-redirect)))
+
+  ;; FIXME: this code should be probably moved outside of the UI
   (->> (rp/cmd! :login-with-oidc (assoc params :provider provider))
        (rx/subs! (fn [{:keys [redirect-uri] :as rsp}]
                    (if redirect-uri
-                     (.replace js/location redirect-uri)
+                     (st/emit! (rt/nav-raw :uri redirect-uri))
                      (log/error :hint "unexpected response from OIDC method"
                                 :resp (pr-str rsp))))
                  (fn [cause]
