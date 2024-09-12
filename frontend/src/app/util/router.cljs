@@ -151,11 +151,20 @@
   (set! (.-href globals/location) "/"))
 
 (defn nav-raw
-  [href]
+  [& {:keys [href uri]}]
   (ptk/reify ::nav-raw
     ptk/EffectEvent
     (effect [_ _ _]
-      (set! (.-href globals/location) href))))
+      (cond
+        (string? uri)
+        (.replace globals/location uri)
+
+        (string? href)
+        (set! (.-href globals/location) href)))))
+
+(defn get-current-href
+  []
+  (.-href globals/location))
 
 (defn get-current-path
   []
@@ -163,6 +172,7 @@
     (if (str/starts-with? hash "#")
       (subs hash 1)
       hash)))
+
 
 ;; --- History API
 

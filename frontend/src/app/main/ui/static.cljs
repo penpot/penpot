@@ -118,7 +118,8 @@
           [:div {:class (stl/css :logo-title)} (tr "labels.login")]
           [:div {:class (stl/css :logo-subtitle)} (tr "not-found.login.free")]
           [:& login-methods {:on-recovery-request set-section-recovery
-                             :on-success-callback success-login}]
+                             :on-success-callback success-login
+                             :params {:save-login-redirect true}}]
           [:hr {:class (stl/css :separator)}]
           [:div {:class (stl/css :change-section)}
            (tr "auth.register")
