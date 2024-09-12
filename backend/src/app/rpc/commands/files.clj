@@ -487,7 +487,7 @@
    [:file-id ::sm/uuid]
    [:page-id {:optional true} ::sm/uuid]
    [:share-id {:optional true} ::sm/uuid]
-   [:object-id {:optional true} [:or ::sm/uuid ::sm/coll-of-uuid]]
+   [:object-id {:optional true} [:or ::sm/uuid [::sm/set ::sm/uuid]]]
    [:features {:optional true} ::cfeat/features]])
 
 (sv/defmethod ::get-page
