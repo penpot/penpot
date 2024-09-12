@@ -20,6 +20,14 @@
 
 (deftype ViewportProxy [$plugin]
   Object
+  (zoomReset [_]
+    ;;TODO
+    )
+
+  (zoomToFitAll [_]
+    ;;TODO
+    )
+
   (zoomIntoView [_ shapes]
     (let [ids
           (->> shapes

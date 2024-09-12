@@ -17,8 +17,8 @@
    [app.plugins.utils :as u]
    [app.util.object :as obj]))
 
-(def shape-proxy)
-(def shape-proxy?)
+(def shape-proxy identity)
+(def shape-proxy? identity)
 
 (deftype RulerGuideProxy [$plugin $file $page $id]
   Object

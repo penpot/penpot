@@ -10,13 +10,17 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.point :as gpt]
    [app.common.record :as crc]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.main.data.comments :as dc]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.guides :as dwgu]
    [app.main.data.workspace.interactions :as dwi]
+   [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.plugins.comments :as pc]
    [app.plugins.format :as format]
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
@@ -24,7 +28,9 @@
    [app.plugins.shape :as shape]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
-   [cuerdas.core :as str]))
+   [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
+   [promesa.core :as p]))
 
 (deftype FlowProxy [$plugin $file $page $id]
   Object
@@ -78,8 +84,10 @@
       (u/display-not-valid :getShapeById shape-id)
 
       :else
-      (let [shape-id (uuid/uuid shape-id)]
-        (shape/shape-proxy $plugin $file $id shape-id))))
+      (let [shape-id (uuid/uuid shape-id)
+            shape (u/locate-shape $file $id shape-id)]
+        (when (some? shape)
+          (shape/shape-proxy $plugin $file $id shape-id)))))
 
   (getRoot
     [_]
@@ -215,7 +223,7 @@
       (st/emit! (dwi/remove-flow $id (obj/get flow "$id")))))
 
   (addRulerGuide
-    [self orientation value board]
+    [_ orientation value board]
     (let [shape (u/proxy->shape board)]
       (cond
         (not (us/safe-number? value))
@@ -224,14 +232,14 @@
         (not (contains? #{"vertical" "horizontal"} orientation))
         (u/display-not-valid :addRulerGuide "Orientation should be either 'vertical' or 'horizontal'")
 
-        (or (not (shape/shape-proxy? shape))
+        (or (not (shape/shape-proxy? board))
             (not (cfh/frame-shape? shape)))
         (u/display-not-valid :addRulerGuide "The shape is not a board")
 
         (not (r/check-permission $plugin "content:write"))
         (u/display-not-valid :addRulerGuide "Plugin doesn't have 'content:write' permission")
 
-        :ellse
+        :else
         (let [id (uuid/next)]
           (st/emit!
            (dwgu/update-guides
@@ -253,7 +261,82 @@
 
       :else
       (let [guide (u/proxy->ruler-guide value)]
-        (st/emit! (dwgu/remove-guide guide))))))
+        (st/emit! (dwgu/remove-guide guide)))))
+
+  (addCommentThread
+    [_ content position board]
+    (let [shape (when board (u/proxy->shape board))]
+      (cond
+        (or (not (string? content)) (empty? content))
+        (u/display-not-valid :addCommentThread "Content not valid")
+
+        (or (not (us/safe-number? (:x position))) (not (us/safe-number? (:y position))))
+        (u/display-not-valid :addCommentThread "Position not valid")
+
+        (and (some? board) (or (not (shape/shape-proxy? board)) (not (cfh/frame-shape? shape))))
+        (u/display-not-valid :addCommentThread "Board not valid")
+
+        (not (r/check-permission $plugin "content:write"))
+        (u/display-not-valid :addCommentThread "Plugin doesn't have 'content:write' permission")
+
+        :else
+        (p/create
+         (fn [resolve]
+           (st/emit!
+            (dc/create-thread-on-workspace
+             {:file-id $file
+              :page-id $id
+              :position (gpt/point (parser/parse-point position))
+              :content content}
+
+             (fn [data]
+               (->> (rp/cmd! :get-team-users {:file-id $file})
+                    (rx/subs!
+                     (fn [users]
+                       (let [users (d/index-by :id users)]
+                         (resolve (pc/comment-thread-proxy $plugin $file $id users data)))))))
+             false)))))))
+
+  (removeCommentThread
+    [_ thread]
+    (cond
+      (not (pc/comment-thread-proxy? thread))
+      (u/display-not-valid :removeCommentThread "Comment thread not valid")
+
+      (not (r/check-permission $plugin "content:write"))
+      (u/display-not-valid :removeCommentThread "Plugin doesn't have 'content:write' permission")
+
+      :else
+      (p/create
+       (fn [resolve]
+         (let [thread-id (obj/get thread "$id")]
+           (p/create
+            (st/emit! (dc/delete-comment-thread-on-workspace {:id thread-id} #(resolve)))))))))
+
+  (findCommentThreads
+    [_ criteria]
+    (let [only-yours    (boolean (obj/get criteria "onlyYours" false))
+          show-resolved (boolean (obj/get criteria "showResolved" true))
+          user-id      (-> @st/state :profile :id)]
+      (p/create
+       (fn [resolve reject]
+         (->> (rx/zip (rp/cmd! :get-team-users {:file-id $file})
+                      (rp/cmd! :get-comment-threads {:file-id $file}))
+              (rx/take 1)
+              (rx/subs!
+               (fn [[users comments]]
+                 (let [users (d/index-by :id users)]
+                   (let [comments
+                         (cond->> comments
+                           (not show-resolved)
+                           (filter (comp not :is-resolved))
+
+                           only-yours
+                           (filter #(contains? (:participants %) user-id)))]
+                     (resolve
+                      (format/format-array
+                       #(pc/comment-thread-proxy $plugin $file $id users %) comments)))))
+               reject)))))))
 
 (crc/define-properties!
   PageProxy

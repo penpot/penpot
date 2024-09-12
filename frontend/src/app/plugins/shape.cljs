@@ -591,7 +591,7 @@
         (not (r/check-permission $plugin "content:write"))
         (u/display-not-valid :addRulerGuide "Plugin doesn't have 'content:write' permission")
 
-        :ellse
+        :else
         (let [id        (uuid/next)
               axis      (parser/orientation->axis orientation)
               objects   (u/locate-objects $file $page)

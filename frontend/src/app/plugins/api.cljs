@@ -368,7 +368,33 @@
   (openPage
     [_ page]
     (let [id (obj/get page "$id")]
-      (st/emit! (dw/go-to-page id)))))
+      (st/emit! (dw/go-to-page id))))
+
+  (alignHorizontal
+    [_ _shapes _direction]
+    ;; TODO
+    )
+
+  (alignVertical
+    [_ _shapes _direction]
+    ;; TODO
+    )
+
+  (distributeHorizontal
+    [_ _shapes]
+    ;; TODO
+    )
+
+  (distributeVertical
+    [_ _shapes]
+    ;; TODO
+    )
+
+  (flatten
+    [_ _shapes]
+    ;; TODO
+    )
+  )
 
 (defn create-context
   [plugin-id]
