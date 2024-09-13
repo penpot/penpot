@@ -1010,12 +1010,24 @@
 
 (defn migrate-up-51
   "This migration fixes library invalid colors"
-
   [data]
   (let [update-colors
         (fn [colors]
           (into {} (filter #(-> % val valid-color?) colors)))]
     (update data :colors update-colors)))
+
+(defn migrate-up-52
+  "Fixes incorrect value on `layout-wrap-type` prop"
+  [data]
+  (letfn [(update-shape [shape]
+            (if (= :no-wrap (:layout-wrap-type shape))
+              (assoc shape :layout-wrap-type :nowrap)
+              shape))
+
+          (update-page [page]
+            (d/update-when page :objects update-vals update-shape))]
+
+    (update data :pages-index update-vals update-page)))
 
 (def migrations
   "A vector of all applicable migrations"
@@ -1059,4 +1071,5 @@
    {:id 48 :migrate-up migrate-up-48}
    {:id 49 :migrate-up migrate-up-49}
    {:id 50 :migrate-up migrate-up-50}
-   {:id 51 :migrate-up migrate-up-51}])
+   {:id 51 :migrate-up migrate-up-51}
+   {:id 52 :migrate-up migrate-up-52}])

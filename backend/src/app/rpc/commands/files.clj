@@ -273,7 +273,7 @@
 
 (defn get-minimal-file
   [cfg id & {:as opts}]
-  (let [opts (assoc opts ::sql/columns [:id :modified-at :revn :data-ref-id :data-backend])]
+  (let [opts (assoc opts ::sql/columns [:id :modified-at :deleted-at :revn :data-ref-id :data-backend])]
     (db/get cfg :file {:id id} opts)))
 
 (defn get-file-etag
