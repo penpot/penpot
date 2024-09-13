@@ -27,3 +27,6 @@
    [:color ::ctc/color]])
 
 (sm/register! ::shadow schema:shadow)
+
+(def check-shadow!
+  (sm/check-fn schema:shadow))

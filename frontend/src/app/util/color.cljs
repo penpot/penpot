@@ -80,9 +80,6 @@
       (= id :multiple)
       (= file-id :multiple)))
 
-(def empty-color
-  (into {} (map #(vector % nil)) [:color :id :file-id :gradient :opacity :image]))
-
 (defn get-color-name
   [color]
   (or (:color-library-name color)
