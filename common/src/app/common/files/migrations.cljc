@@ -1072,4 +1072,5 @@
    {:id 49 :migrate-up migrate-up-49}
    {:id 50 :migrate-up migrate-up-50}
    {:id 51 :migrate-up migrate-up-51}
-   {:id 52 :migrate-up migrate-up-52}])
+   {:id 52 :migrate-up migrate-up-52}
+   {:id 53 :migrate-up migrate-up-26}])
