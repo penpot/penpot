@@ -5,7 +5,6 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.plugins.viewport
-  "RPC for plugins runtime."
   (:require
    [app.common.data.macros :as dm]
    [app.common.record :as crc]
@@ -21,12 +20,10 @@
 (deftype ViewportProxy [$plugin]
   Object
   (zoomReset [_]
-    ;;TODO
-    )
+    (st/emit! dwz/reset-zoom))
 
   (zoomToFitAll [_]
-    ;;TODO
-    )
+    (st/emit! dwz/zoom-to-fit-all))
 
   (zoomIntoView [_ shapes]
     (let [ids
