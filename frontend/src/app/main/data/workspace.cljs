@@ -74,6 +74,7 @@
    [app.main.repo :as rp]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
+   [app.renderer-v2 :as renderer]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -81,7 +82,6 @@
    [app.util.router :as rt]
    [app.util.storage :refer [storage]]
    [app.util.timers :as tm]
-   [app.util.wasm :as wasm]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
@@ -350,9 +350,11 @@
         (rx/merge
          (rx/of (ntf/hide)
                 (features/initialize)
-                (when (contains? cf/flags :renderer-v2) (wasm/init))
                 (dcm/retrieve-comment-threads file-id)
                 (fetch-bundle project-id file-id))
+
+         (when (contains? cf/flags :renderer-v2)
+           (rx/of (renderer/init)))
 
          (->> stream
               (rx/filter dch/commit?)

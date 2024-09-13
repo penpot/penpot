@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
@@ -31,6 +32,7 @@
    [app.main.ui.workspace.sidebar.collapsable-button :refer [collapsed-button]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
    [app.main.ui.workspace.viewport :refer [viewport]]
+   [app.renderer-v2 :as renderer]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
@@ -198,6 +200,10 @@
                   (ntf/hide)
                   (dw/finalize-file project-id file-id))))
 
+    (mf/with-effect [file-ready?]
+      (when (and file-ready? (contains? cf/flags :renderer-v2))
+        (renderer/print-msg "hello from wasm fn!")))
+
     [:& (mf/provider ctx/current-file-id) {:value file-id}
      [:& (mf/provider ctx/current-project-id) {:value project-id}
       [:& (mf/provider ctx/current-team-id) {:value team-id}
@@ -208,7 +214,6 @@
                      :style {:background-color background-color
                              :touch-action "none"}}
            [:& context-menu]
-
            (if ^boolean file-ready?
              [:& workspace-page {:page-id page-id
                                  :file file

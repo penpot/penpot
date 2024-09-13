@@ -21,7 +21,7 @@
     "build:storybook": "yarn run build:storybook:assets && yarn run build:storybook:cljs && storybook build",
     "build:storybook:assets": "node ./scripts/build-storybook-assets.js",
     "build:storybook:cljs": "clojure -M:dev:shadow-cljs release storybook",
-    "build:renderer": "./scripts/build-renderer.sh",
+    "build:renderer": "yarn run wasm-pack build ./renderer --target web --out-dir ../resources/public/js/renderer --release",
     "e2e:server": "node ./scripts/e2e-server.js",
     "e2e:test": "playwright test --project default",
     "fmt:clj": "cljfmt fix --parallel=true src/ test/",

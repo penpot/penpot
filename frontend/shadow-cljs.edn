@@ -67,11 +67,6 @@
     :output-wrapper false
     :warnings {:fn-deprecated false}}
 
-   :js-options
-   {:entry-keys ["module" "browser" "main"]
-    :resolve {"renderer" {:target :file
-                          :file "resources/public/js/renderer/renderer.js"}}}
-
    :release
    {:closure-defines {goog.DEBUG false
                       goog.debug.LOGGING_ENABLED true}

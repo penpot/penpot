@@ -20,7 +20,6 @@ yarn install || exit 1;
 rm -rf resources/public;
 rm -rf target/dist;
 
-yarn run build:renderer
 clojure -M:dev:shadow-cljs release main --config-merge "{:release-version \"${CURRENT_HASH}-${TS}\"}" $EXTRA_PARAMS || exit 1
 
 yarn run build:app:assets || exit 1;
