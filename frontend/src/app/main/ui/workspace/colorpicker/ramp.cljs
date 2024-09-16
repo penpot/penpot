@@ -52,6 +52,7 @@
 
 
 (mf/defc ramp-selector [{:keys [color disable-opacity on-change on-start-drag on-finish-drag]}]
+  (js/console.log "color" color)
   (let [{hex :hex
          hue :h saturation :s value :v alpha :alpha} color
 

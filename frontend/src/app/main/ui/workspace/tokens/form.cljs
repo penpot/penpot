@@ -8,13 +8,13 @@
   (:require-macros [app.main.style :as stl])
   (:require
    ["lodash.debounce" :as debounce]
+   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
-   [app.main.ui.workspace.colorpicker :refer [colorpicker]]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
    [app.main.ui.workspace.tokens.common :as tokens.common]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
@@ -127,16 +127,15 @@ Token names should only contain letters and digits separated by . characters.")}
         debounced-resolver-callback
         (mf/use-callback
          (mf/deps token callback tokens)
-         (fn [event]
-           (let [input (dom/get-target-val event)
-                 timeout-id (js/Symbol)
+         (fn [value]
+           (let [timeout-id (js/Symbol)
                  ;; Dont execute callback when the timout-id-ref is outdated because this function got called again
                  timeout-outdated-cb? #(not= (mf/ref-val timeout-id-ref) timeout-id)]
              (mf/set-ref-val! timeout-id-ref timeout-id)
              (js/setTimeout
               (fn []
                 (when (not (timeout-outdated-cb?))
-                  (-> (validate-token-value+ {:input input
+                  (-> (validate-token-value+ {:input value
                                               :name-value @name-ref
                                               :token token
                                               :tokens tokens})
@@ -150,12 +149,22 @@ Token names should only contain letters and digits separated by . characters.")}
 
 (mf/defc ramp
   [{:keys [color on-change]}]
-  (let [value (mf/use-state nil)]
-    (js/console.log "@value" @value)
+  (js/console.log "color" color)
+  (let [dragging? (mf/use-state)
+        [r g b] (cc/hex->rgb color)
+        [h s v] (cc/hex->hsv color)
+        value (mf/use-state {:hex color
+                             :r r :g g :b b
+                             :h h :s s :v v})
+        on-change' (fn [color]
+                     (swap! value merge color)
+                     (when-not (and @dragging? (:hex color))
+                       (on-change (:hex color))))]
     [:& ramp-selector {:color @value
-                       :on-start-drag js/console.log
-                       :on-finish-drag js/console.log
-                       :on-change #(reset! value (:hex %))}]))
+                       :disable-opacity true
+                       :on-start-drag #(reset! dragging? true)
+                       :on-finish-drag #(reset! dragging? false)
+                       :on-change on-change'}]))
 
 (mf/defc form
   {::mf/wrap-props false}
@@ -201,6 +210,7 @@ Token names should only contain letters and digits separated by . characters.")}
 
         ;; Value
         color (mf/use-state (when color? (:value token)))
+        color-ramp-open? (mf/use-state false)
         value-ref (mf/use-var (:value token))
         token-resolve-result (mf/use-state (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value]))
         set-resolve-value (mf/use-callback
@@ -215,8 +225,14 @@ Token names should only contain letters and digits separated by . characters.")}
         on-update-value (mf/use-callback
                          (mf/deps on-update-value-debounced)
                          (fn [e]
-                           (reset! value-ref (dom/get-target-val e))
-                           (on-update-value-debounced e)))
+                           (let [value (dom/get-target-val e)]
+                             (reset! value-ref value)
+                             (on-update-value-debounced value))))
+        on-update-color (mf/use-callback
+                         (mf/deps on-update-value-debounced)
+                         (fn [hex-value]
+                           (reset! value-ref hex-value)
+                           (on-update-value-debounced hex-value)))
         value-error? (when (keyword? @token-resolve-result)
                        (= (namespace @token-resolve-result) "error"))
         valid-value-field? (and
@@ -291,20 +307,21 @@ Token names should only contain letters and digits separated by . characters.")}
          [:p {:key error
               :class (stl/css :error)}
           error])]
-      ;; (when color?
-      ;;   [:& ramp {:color @value-ref
-      ;;             :on-change on-update-value}])
       [:& tokens.common/labeled-input {:label "Value"
                                        :input-props {:default-value @value-ref
                                                      :on-blur on-update-value
                                                      :on-change on-update-value}
                                        :render-right (when color?
                                                        (mf/fnc []
-                                                         [:div {:class (stl/css :color-bullet)}
+                                                         [:div {:class (stl/css :color-bullet)
+                                                                :on-click #(swap! color-ramp-open? not)}
                                                           (if @color
                                                             [:& color-bullet {:color @color
                                                                               :mini? true}]
                                                             [:div {:class (stl/css :color-bullet-placeholder)}])]))}]
+      (when @color-ramp-open?
+        [:& ramp {:color (or @token-resolve-result (:value token))
+                  :on-change on-update-color}])
       [:div {:class (stl/css-case :resolved-value true
                                   :resolved-value-placeholder (nil? @token-resolve-result)
                                   :resolved-value-error value-error?)}
