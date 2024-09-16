@@ -267,7 +267,7 @@
    (delete-comment-thread-on-workspace params identity))
   ([{:keys [id] :as thread} on-delete]
    (dm/assert! (uuid? id))
-   
+
    (ptk/reify ::delete-comment-thread-on-workspace
      ptk/UpdateEvent
      (update [_ state]

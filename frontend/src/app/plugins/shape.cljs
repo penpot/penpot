@@ -617,7 +617,7 @@
 
       :else
       (let [guide (u/proxy->ruler-guide value)]
-       (st/emit! (dwgu/remove-guide guide))))))
+        (st/emit! (dwgu/remove-guide guide))))))
 
 (defn shape-proxy? [p]
   (instance? ShapeProxy p))

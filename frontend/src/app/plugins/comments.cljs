@@ -56,7 +56,7 @@
           (cond
             (or (not (string? content)) (empty? content))
             (u/display-not-valid :content "Not valid")
-            
+
             (not= (:id profile) (:owner-id data))
             (u/display-not-valid :content "Cannot change content from another user's comments")
 
@@ -130,7 +130,7 @@
      {:name "seqNumber" :get (fn [_] (:seqn data))}
      {:name "owner" :get (fn [_] (user/user-proxy plugin-id (get users (:owner-id data))))}
      {:name "board" :get (fn [_] (shape/shape-proxy plugin-id file-id page-id (:frame-id data)))}
-     
+
      {:name "position"
       :get (fn [_] (format/format-point (:position @data*)))
       :set
@@ -139,7 +139,7 @@
           (cond
             (or (not (us/safe-number? (:x position))) (not (us/safe-number? (:y position))))
             (u/display-not-valid :position "Not valid point")
-            
+
             (not (r/check-permission plugin-id "content:write"))
             (u/display-not-valid :content "Plugin doesn't have 'content:write' permission")
 
@@ -154,7 +154,7 @@
         (cond
           (not (boolean? is-resolved))
           (u/display-not-valid :resolved "Not a boolean type")
-          
+
           (not (r/check-permission plugin-id "content:write"))
           (u/display-not-valid :resolved "Plugin doesn't have 'content:write' permission")
 

@@ -325,17 +325,17 @@
               (rx/take 1)
               (rx/subs!
                (fn [[users comments]]
-                 (let [users (d/index-by :id users)]
-                   (let [comments
-                         (cond->> comments
-                           (not show-resolved)
-                           (filter (comp not :is-resolved))
+                 (let [users (d/index-by :id users)
+                       comments
+                       (cond->> comments
+                         (not show-resolved)
+                         (filter (comp not :is-resolved))
 
-                           only-yours
-                           (filter #(contains? (:participants %) user-id)))]
-                     (resolve
-                      (format/format-array
-                       #(pc/comment-thread-proxy $plugin $file $id users %) comments)))))
+                         only-yours
+                         (filter #(contains? (:participants %) user-id)))]
+                   (resolve
+                    (format/format-array
+                     #(pc/comment-thread-proxy $plugin $file $id users %) comments))))
                reject)))))))
 
 (crc/define-properties!
