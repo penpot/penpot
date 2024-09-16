@@ -78,18 +78,21 @@
     (let [now          (dt/now)
           token-theme1 (ctob/make-token-theme :name "test-token-theme-1")
           token-theme2 (ctob/make-token-theme :name "test-token-theme-2"
+                                              :group "group-1"
                                               :description "test description"
                                               :is-source true
                                               :modified-at now
                                               :sets #{})]
 
       (t/is (= (:name token-theme1) "test-token-theme-1"))
+      (t/is (= (:group token-theme1) ""))
       (t/is (nil? (:description token-theme1)))
       (t/is (false? (:is-source token-theme1)))
       (t/is (some? (:modified-at token-theme1)))
       (t/is (empty? (:sets token-theme1)))
 
       (t/is (= (:name token-theme2) "test-token-theme-2"))
+      (t/is (= (:group token-theme2) "group-1"))
       (t/is (= (:description token-theme2) "test description"))
       (t/is (true? (:is-source token-theme2)))
       (t/is (= (:modified-at token-theme2) now))
@@ -97,6 +100,7 @@
 
   (t/deftest invalid-token-theme
     (let [args {:name 777
+                :group nil
                 :description 999
                 :is-source 42}]
       (t/is (thrown-with-msg? Exception #"expected valid token theme"
@@ -313,9 +317,8 @@
           tokens-lib' (ctob/add-theme tokens-lib token-theme)
 
           token-themes' (ctob/get-themes tokens-lib')
-          token-theme'  (ctob/get-theme tokens-lib' "test-token-theme")]
+          token-theme'  (ctob/get-theme tokens-lib' "" "test-token-theme")]
 
-      (prn "lib" tokens-lib')
       (t/is (= (ctob/theme-count tokens-lib') 1))
       (t/is (= (first token-themes') token-theme))
       (t/is (= token-theme' token-theme))))
@@ -325,17 +328,17 @@
                           (ctob/add-theme (ctob/make-token-theme :name "test-token-theme")))
 
           tokens-lib' (-> tokens-lib
-                          (ctob/update-theme "test-token-theme"
+                          (ctob/update-theme "" "test-token-theme"
                                            (fn [token-theme]
                                              (assoc token-theme
                                                     :description "some description")))
-                          (ctob/update-theme "not-existing-theme"
+                          (ctob/update-theme "" "not-existing-theme"
                                            (fn [token-theme]
                                              (assoc token-theme
                                                     :description "no-effect"))))
 
-          token-theme   (ctob/get-theme tokens-lib "test-token-theme")
-          token-theme'  (ctob/get-theme tokens-lib' "test-token-theme")]
+          token-theme   (ctob/get-theme tokens-lib "" "test-token-theme")
+          token-theme'  (ctob/get-theme tokens-lib' "" "test-token-theme")]
 
       (t/is (= (ctob/theme-count tokens-lib') 1))
       (t/is (= (:name token-theme') "test-token-theme"))
@@ -347,13 +350,13 @@
                           (ctob/add-theme (ctob/make-token-theme :name "test-token-theme")))
 
           tokens-lib' (-> tokens-lib
-                          (ctob/update-theme "test-token-theme"
+                          (ctob/update-theme "" "test-token-theme"
                                              (fn [token-theme]
                                                (assoc token-theme
                                                       :name "updated-name"))))
 
-          token-theme   (ctob/get-theme tokens-lib "test-token-theme")
-          token-theme'  (ctob/get-theme tokens-lib' "updated-name")]
+          token-theme   (ctob/get-theme tokens-lib "" "test-token-theme")
+          token-theme'  (ctob/get-theme tokens-lib' "" "updated-name")]
 
       (t/is (= (ctob/theme-count tokens-lib') 1))
       (t/is (= (:name token-theme') "updated-name"))
@@ -364,10 +367,10 @@
                           (ctob/add-theme (ctob/make-token-theme :name "test-token-theme")))
 
           tokens-lib' (-> tokens-lib
-                          (ctob/delete-theme "test-token-theme")
-                          (ctob/delete-theme "not-existing-theme"))
+                          (ctob/delete-theme "" "test-token-theme")
+                          (ctob/delete-theme "" "not-existing-theme"))
 
-          token-theme'  (ctob/get-theme tokens-lib' "updated-name")]
+          token-theme'  (ctob/get-theme tokens-lib' "" "updated-name")]
 
       (t/is (= (ctob/theme-count tokens-lib') 0))
       (t/is (nil? token-theme'))))
@@ -379,12 +382,12 @@
                              (ctob/add-set (ctob/make-token-set :name "token-set-3"))
                              (ctob/add-theme (ctob/make-token-theme :name "test-token-theme")))
             tokens-lib'  (-> tokens-lib
-                             (ctob/toggle-set-in-theme "test-token-theme" "token-set-1")
-                             (ctob/toggle-set-in-theme "test-token-theme" "token-set-2")
-                             (ctob/toggle-set-in-theme "test-token-theme" "token-set-2"))
+                             (ctob/toggle-set-in-theme "" "test-token-theme" "token-set-1")
+                             (ctob/toggle-set-in-theme "" "test-token-theme" "token-set-2")
+                             (ctob/toggle-set-in-theme "" "test-token-theme" "token-set-2"))
 
-            token-theme  (ctob/get-theme tokens-lib "test-token-theme")
-            token-theme' (ctob/get-theme tokens-lib' "test-token-theme")]
+            token-theme  (ctob/get-theme tokens-lib "" "test-token-theme")
+            token-theme' (ctob/get-theme tokens-lib' "" "test-token-theme")]
 
         (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme))))))
 
@@ -397,7 +400,7 @@
                                                                                    :type :boolean
                                                                                    :value true))
                           (ctob/add-theme (ctob/make-token-theme :name "test-token-theme"))
-                          (ctob/toggle-set-in-theme "test-token-theme" "test-token-set"))
+                          (ctob/toggle-set-in-theme "" "test-token-theme" "test-token-set"))
           encoded-str (tr/encode-str tokens-lib)
           tokens-lib' (tr/decode-str encoded-str)]
 
@@ -412,7 +415,7 @@
                                                                                     :type :boolean
                                                                                     :value true))
                            (ctob/add-theme (ctob/make-token-theme :name "test-token-theme"))
-                           (ctob/toggle-set-in-theme "test-token-theme" "test-token-set"))
+                           (ctob/toggle-set-in-theme "" "test-token-theme" "test-token-set"))
           encoded-blob (fres/encode tokens-lib)
           tokens-lib'  (fres/decode encoded-blob)]
 
@@ -840,34 +843,40 @@
   (t/testing "grouped themes"
     (t/deftest grouped-themes
       (let [tokens-lib (-> (ctob/make-tokens-lib)
-                           (ctob/add-theme (ctob/make-token-theme :name "token-theme-1"))
-                           (ctob/add-theme (ctob/make-token-theme :name "group1/token-theme-2"))
-                           (ctob/add-theme (ctob/make-token-theme :name "group1/token-theme-3"))
-                           (ctob/add-theme (ctob/make-token-theme :name "group1/subgroup11/token-theme-4"))
-                           (ctob/add-theme (ctob/make-token-theme :name "group2/token-theme-5")))
+                           (ctob/add-theme (ctob/make-token-theme :group "" :name "token-theme-1"))
+                           (ctob/add-theme (ctob/make-token-theme :group "group1" :name "token-theme-2"))
+                           (ctob/add-theme (ctob/make-token-theme :group "group1" :name "token-theme-3"))
+                           (ctob/add-theme (ctob/make-token-theme :group "group2" :name "token-theme-4")))
 
             themes-list   (ctob/get-themes tokens-lib)
 
             themes-tree   (ctob/get-theme-tree tokens-lib)
 
-            [node-theme1 node-group1 node-group2]
+            [node-group0 node-group1 node-group2]
             (ctob/get-children themes-tree)
 
-            [node-theme2 node-theme3 node-subgroup11]
+            [node-theme1]
+            (ctob/get-children (second node-group0))
+
+            [node-theme2 node-theme3]
             (ctob/get-children (second node-group1))
 
             [node-theme4]
-            (ctob/get-children (second node-subgroup11))
-
-            [node-theme5]
             (ctob/get-children (second node-group2))]
 
-        (t/is (= (count themes-list) 5))
+        (t/is (= (count themes-list) 4))
         (t/is (= (:name (nth themes-list 0)) "token-theme-1"))
-        (t/is (= (:name (nth themes-list 1)) "group1/token-theme-2"))
-        (t/is (= (:name (nth themes-list 2)) "group1/token-theme-3"))
-        (t/is (= (:name (nth themes-list 3)) "group1/subgroup11/token-theme-4"))
-        (t/is (= (:name (nth themes-list 4)) "group2/token-theme-5"))
+        (t/is (= (:name (nth themes-list 1)) "token-theme-2"))
+        (t/is (= (:name (nth themes-list 2)) "token-theme-3"))
+        (t/is (= (:name (nth themes-list 3)) "token-theme-4"))
+        (t/is (= (:group (nth themes-list 0)) ""))
+        (t/is (= (:group (nth themes-list 1)) "group1"))
+        (t/is (= (:group (nth themes-list 2)) "group1"))
+        (t/is (= (:group (nth themes-list 3)) "group2"))
+
+        (t/is (= (first node-group0) ""))
+        (t/is (= (ctob/group? (second node-group0)) true))
+        (t/is (= (count (second node-group0)) 1))
 
         (t/is (= (first node-theme1) "token-theme-1"))
         (t/is (= (ctob/group? (second node-theme1)) false))
@@ -875,38 +884,29 @@
 
         (t/is (= (first node-group1) "group1"))
         (t/is (= (ctob/group? (second node-group1)) true))
-        (t/is (= (count (second node-group1)) 3))
+        (t/is (= (count (second node-group1)) 2))
 
         (t/is (= (first node-theme2) "token-theme-2"))
         (t/is (= (ctob/group? (second node-theme2)) false))
-        (t/is (= (:name (second node-theme2)) "group1/token-theme-2"))
+        (t/is (= (:name (second node-theme2)) "token-theme-2"))
 
         (t/is (= (first node-theme3) "token-theme-3"))
         (t/is (= (ctob/group? (second node-theme3)) false))
-        (t/is (= (:name (second node-theme3)) "group1/token-theme-3"))
-
-        (t/is (= (first node-subgroup11) "subgroup11"))
-        (t/is (= (ctob/group? (second node-subgroup11)) true))
-        (t/is (= (count (second node-subgroup11)) 1))
+        (t/is (= (:name (second node-theme3)) "token-theme-3"))
 
         (t/is (= (first node-theme4) "token-theme-4"))
         (t/is (= (ctob/group? (second node-theme4)) false))
-        (t/is (= (:name (second node-theme4)) "group1/subgroup11/token-theme-4"))
-
-        (t/is (= (first node-theme5) "token-theme-5"))
-        (t/is (= (ctob/group? (second node-theme5)) false))
-        (t/is (= (:name (second node-theme5)) "group2/token-theme-5"))))
+        (t/is (= (:name (second node-theme4)) "token-theme-4"))))
 
     (t/deftest update-theme-in-groups
       (let [tokens-lib   (-> (ctob/make-tokens-lib)
-                             (ctob/add-theme (ctob/make-token-theme :name "token-theme-1"))
-                             (ctob/add-theme (ctob/make-token-theme :name "group1/token-theme-2"))
-                             (ctob/add-theme (ctob/make-token-theme :name "group1/token-theme-3"))
-                             (ctob/add-theme (ctob/make-token-theme :name "group1/subgroup11/token-theme-4"))
-                             (ctob/add-theme (ctob/make-token-theme :name "group2/token-theme-5")))
+                             (ctob/add-theme (ctob/make-token-theme :group "" :name "token-theme-1"))
+                             (ctob/add-theme (ctob/make-token-theme :group "group1" :name "token-theme-2"))
+                             (ctob/add-theme (ctob/make-token-theme :group "group1" :name "token-theme-3"))
+                             (ctob/add-theme (ctob/make-token-theme :group "group2" :name "token-theme-4")))
 
             tokens-lib'  (-> tokens-lib
-                             (ctob/update-theme "group1/token-theme-2"
+                             (ctob/update-theme "group1" "token-theme-2"
                                                        (fn [token-theme]
                                                          (assoc token-theme :description "some description"))))
 
@@ -916,26 +916,26 @@
             token-theme  (get-in themes-tree ["group1" "token-theme-2"])
             token-theme' (get-in themes-tree' ["group1" "token-theme-2"])]
 
-        (t/is (= (ctob/theme-count tokens-lib') 5))
-        (t/is (= (count group1') 3))
+        (t/is (= (ctob/theme-count tokens-lib') 4))
+        (t/is (= (count group1') 2))
         (t/is (= (d/index-of (keys group1') "token-theme-2") 0))
-        (t/is (= (:name token-theme') "group1/token-theme-2"))
+        (t/is (= (:name token-theme') "token-theme-2"))
+        (t/is (= (:group token-theme') "group1"))
         (t/is (= (:description token-theme') "some description"))
         (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
 
     (t/deftest rename-theme-in-groups
       (let [tokens-lib   (-> (ctob/make-tokens-lib)
-                             (ctob/add-theme (ctob/make-token-theme :name "token-theme-1"))
-                             (ctob/add-theme (ctob/make-token-theme :name "group1/token-theme-2"))
-                             (ctob/add-theme (ctob/make-token-theme :name "group1/token-theme-3"))
-                             (ctob/add-theme (ctob/make-token-theme :name "group1/subgroup11/token-theme-4"))
-                             (ctob/add-theme (ctob/make-token-theme :name "group2/token-theme-5")))
+                             (ctob/add-theme (ctob/make-token-theme :group "" :name "token-theme-1"))
+                             (ctob/add-theme (ctob/make-token-theme :group "group1" :name "token-theme-2"))
+                             (ctob/add-theme (ctob/make-token-theme :group "group1" :name "token-theme-3"))
+                             (ctob/add-theme (ctob/make-token-theme :group "group2" :name "token-theme-4")))
 
             tokens-lib'  (-> tokens-lib
-                             (ctob/update-theme "group1/token-theme-2"
+                             (ctob/update-theme "group1" "token-theme-2"
                                                        (fn [token-theme]
                                                          (assoc token-theme
-                                                                :name "group1/updated-name"))))
+                                                                :name "updated-name"))))
 
             themes-tree  (ctob/get-theme-tree tokens-lib)
             themes-tree' (ctob/get-theme-tree tokens-lib')
@@ -943,26 +943,27 @@
             token-theme  (get-in themes-tree ["group1" "token-theme-2"])
             token-theme' (get-in themes-tree' ["group1" "updated-name"])]
 
-        (t/is (= (ctob/theme-count tokens-lib') 5))
-        (t/is (= (count group1') 3))
+        (t/is (= (ctob/theme-count tokens-lib') 4))
+        (t/is (= (count group1') 2))
         (t/is (= (d/index-of (keys group1') "updated-name") 0))
-        (t/is (= (:name token-theme') "group1/updated-name"))
+        (t/is (= (:name token-theme') "updated-name"))
+        (t/is (= (:group token-theme') "group1"))
         (t/is (= (:description token-theme') nil))
         (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
 
     (t/deftest move-theme-of-group
       (let [tokens-lib   (-> (ctob/make-tokens-lib)
-                             (ctob/add-theme (ctob/make-token-theme :name "token-theme-1"))
-                             (ctob/add-theme (ctob/make-token-theme :name "group1/token-theme-2"))
-                             (ctob/add-theme (ctob/make-token-theme :name "group1/token-theme-3"))
-                             (ctob/add-theme (ctob/make-token-theme :name "group1/subgroup11/token-theme-4"))
-                             #_(ctob/add-theme (ctob/make-token-theme :name "group2/token-theme-5")))
+                             (ctob/add-theme (ctob/make-token-theme :group "" :name "token-theme-1"))
+                             (ctob/add-theme (ctob/make-token-theme :group "group1" :name "token-theme-2"))
+                             (ctob/add-theme (ctob/make-token-theme :group "group1" :name "token-theme-3"))
+                             #_(ctob/add-theme (ctob/make-token-theme :group "group2" :name "token-theme-4")))
 
             tokens-lib'  (-> tokens-lib
-                             (ctob/update-theme "group1/token-theme-2"
+                             (ctob/update-theme "group1" "token-theme-2"
                                                        (fn [token-theme]
                                                          (assoc token-theme
-                                                                :name "group2/updated-name"))))
+                                                                :name "updated-name"
+                                                                :group "group2"))))
 
             themes-tree  (ctob/get-theme-tree tokens-lib)
             themes-tree' (ctob/get-theme-tree tokens-lib')
@@ -971,21 +972,22 @@
             token-theme  (get-in themes-tree ["group1" "token-theme-2"])
             token-theme' (get-in themes-tree' ["group2" "updated-name"])]
 
-        (t/is (= (ctob/theme-count tokens-lib') 4))
-        (t/is (= (count group1') 2))
+        (t/is (= (ctob/theme-count tokens-lib') 3))
+        (t/is (= (count group1') 1))
         (t/is (= (count group2') 1))
         (t/is (= (d/index-of (keys group2') "updated-name") 0))
-        (t/is (= (:name token-theme') "group2/updated-name"))
+        (t/is (= (:name token-theme') "updated-name"))
+        (t/is (= (:group token-theme') "group2"))
         (t/is (= (:description token-theme') nil))
         (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
 
     (t/deftest delete-theme-in-group
       (let [tokens-lib   (-> (ctob/make-tokens-lib)
-                             (ctob/add-theme (ctob/make-token-theme :name "token-theme-1"))
-                             (ctob/add-theme (ctob/make-token-theme :name "group1/token-theme-2")))
+                             (ctob/add-theme (ctob/make-token-theme :group "" :name "token-theme-1"))
+                             (ctob/add-theme (ctob/make-token-theme :group "group1" :name "token-theme-2")))
 
             tokens-lib'  (-> tokens-lib
-                             (ctob/delete-theme  "group1/token-theme-2"))
+                             (ctob/delete-theme "group1" "token-theme-2"))
 
             themes-tree' (ctob/get-theme-tree tokens-lib')
             token-theme' (get-in themes-tree' ["group1" "token-theme-2"])]

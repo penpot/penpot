@@ -67,7 +67,7 @@
     (oassoc o k (oassoc-in (get o k) ks v))
     (oassoc o k v))) 
 
-#_(defn oupdate-in
+(defn oupdate-in
   [m ks f & args]
   (let [up (fn up [m ks f args]
              (let [[k & ks] ks]

@@ -849,13 +849,13 @@
   (ctotl/assoc-active-token-themes data theme-ids))
 
 (defmethod process-change :delete-temporary-token-theme
-  [data {:keys [id name]}]
+  [data {:keys [id group name]}]
   (-> data
       (ctotl/delete-temporary-token-theme id)
       (update :tokens-lib
               #(-> %
                    (ctob/ensure-tokens-lib)
-                   (ctob/delete-theme name)))))
+                   (ctob/delete-theme group name)))))
 
 (defmethod process-change :add-token-theme
   [data {:keys [token-theme]}]
@@ -869,25 +869,26 @@
                                        (ctob/make-token-theme)))))))
 
 (defmethod process-change :mod-token-theme
-  [data {:keys [id name token-theme]}]
+  [data {:keys [id name group token-theme]}]
   (-> data
       (ctotl/update-token-theme id merge token-theme)
       (update :tokens-lib
               #(-> %
                    (ctob/ensure-tokens-lib)
-                   (ctob/update-theme name (fn [prev-theme]
-                                             (merge prev-theme
-                                                    (-> token-theme
-                                                        (update :sets (partial set-ids->names data))))))))))
+                   (ctob/update-theme name group
+                                      (fn [prev-theme]
+                                        (merge prev-theme
+                                               (-> token-theme
+                                                   (update :sets (partial set-ids->names data))))))))))
 
 (defmethod process-change :del-token-theme
-  [data {:keys [id name]}]
+  [data {:keys [id group name]}]
   (-> data
       (ctotl/delete-token-theme id)
       (update :tokens-lib
               #(-> %
                    (ctob/ensure-tokens-lib)
-                   (ctob/delete-theme name)))))
+                   (ctob/delete-theme group name)))))
 
 (defmethod process-change :add-token-set
   [data {:keys [token-set]}]

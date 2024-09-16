@@ -258,10 +258,11 @@
 (defprotocol ITokenTheme
   (toggle-set [_ set-name] "togle a set used / not used in the theme"))
 
-(defrecord TokenTheme [name description is-source modified-at sets]
+(defrecord TokenTheme [name group description is-source modified-at sets]
   ITokenTheme
   (toggle-set [_ set-name]
     (TokenTheme. name
+                 group
                  description
                  is-source
                  (dt/now)
@@ -272,6 +273,7 @@
 (def schema:token-theme
   [:and [:map {:title "TokenTheme"}
          [:name :string]
+         [:group :string]
          [:description [:maybe :string]]
          [:is-source :boolean]
          [:modified-at ::sm/inst]
@@ -291,7 +293,7 @@
   [& {:keys [] :as params}]
   (let [params    (-> params
                       (dissoc :id)
-                      (dissoc :group)
+                      (update :group #(or % ""))
                       (update :is-source #(or % false))
                       (update :modified-at #(or % (dt/now)))
                       (update :sets #(into (d/ordered-set) %)))
@@ -307,17 +309,18 @@
 
 (defprotocol ITokenThemes
   (add-theme [_ token-theme] "add a theme to the library, at the end")
-  (update-theme [_ theme-name f] "modify a theme in the ilbrary")
-  (delete-theme [_ theme-name] "delete a theme in the library")
+  (update-theme [_ group name f] "modify a theme in the ilbrary")
+  (delete-theme [_ group name] "delete a theme in the library")
   (theme-count [_] "get the total number if themes in the library")
   (get-theme-tree [_] "get a nested tree of all themes in the library")
   (get-themes [_] "get an ordered sequence of all themes in the library")
-  (get-theme [_ theme-name] "get one theme looking for name"))
+  (get-theme [_ group name] "get one theme looking for name"))
 
 (def schema:token-themes
   [:and
    [:map-of {:title "TokenThemes"}
-    :string ::token-theme]
+    :string [:and [:map-of :string ::token-theme]
+             [:fn d/ordered-map?]]]
    [:fn d/ordered-map?]])
 
 (sm/register! ::token-themes schema:token-themes)
@@ -335,7 +338,7 @@
   (add-token-in-set [_ set-name token] "add token to a set")
   (update-token-in-set [_ set-name token-name f] "update a token in a set")
   (delete-token-from-set [_ set-name token-name] "delete a token from a set")
-  (toggle-set-in-theme [_ theme-name set-name] "toggle a set used / not used in a theme")
+  (toggle-set-in-theme [_ group-name theme-name set-name] "toggle a set used / not used in a theme")
   (validate [_]))
 
 (deftype TokensLib [sets set-groups themes]
@@ -405,33 +408,31 @@
   ITokenThemes
   (add-theme [_ token-theme]
     (dm/assert! "expected valid token theme" (check-token-theme! token-theme))
-    (let [path (get-path token-theme "/")]
-      (TokensLib. sets
-                  set-groups
-                  (d/oassoc-in themes path token-theme))))
+    (TokensLib. sets
+                set-groups
+                (update themes (:group token-theme) d/oassoc (:name token-theme) token-theme)))
 
-  (update-theme [this theme-name f]
-    (let [path (split-path theme-name "/")
-          theme (get-in themes path)]
+  (update-theme [this group name f]
+    (let [theme (dm/get-in themes [group name])]
       (if theme
         (let [theme' (-> (make-token-theme (f theme))
                          (assoc :modified-at (dt/now)))
-              path'  (get-path theme' "/")]
+              group' (:group theme')
+              name'  (:name theme')]
           (check-token-theme! theme')
           (TokensLib. sets
                       set-groups
-                      (if (= (:name theme) (:name theme'))
-                        (d/oassoc-in themes path theme')
+                      (if (and (= group group') (= name name'))
+                        (update themes group' assoc name' theme')
                         (-> themes
-                            (d/oassoc-in-before path path' theme')
-                            (d/dissoc-in path)))))
+                            (d/oassoc-in-before [group name] [group' name'] theme')
+                            (d/dissoc-in [group name])))))
         this)))
 
-  (delete-theme [_ theme-name]
-    (let [path (split-path theme-name "/")]
-      (TokensLib. sets
-                  set-groups
-                  (d/dissoc-in themes path))))
+  (delete-theme [_ group name]
+    (TokensLib. sets
+                set-groups
+                (d/dissoc-in themes [group name])))
 
   (get-theme-tree [_]
     themes)
@@ -443,9 +444,8 @@
   (theme-count [this]
     (count (get-themes this)))
 
-  (get-theme [_ theme-name]
-    (let [path (split-path theme-name "/")]
-      (get-in themes path)))
+  (get-theme [_ group name]
+    (dm/get-in themes [group name]))
 
   ITokensLib
   (add-token-in-set [this set-name token]
@@ -472,12 +472,12 @@
                   themes)
       this))
 
-  (toggle-set-in-theme [this theme-name set-name]
-    (if (contains? themes theme-name)
+  (toggle-set-in-theme [this theme-group theme-name set-name]
+    (if-let [_theme (get-in themes theme-group theme-name)]
       (TokensLib. sets
                   set-groups
-                  (update themes theme-name
-                          #(toggle-set % set-name)))
+                  (d/oupdate-in themes [theme-group theme-name]
+                                #(toggle-set % set-name)))
       this))
 
   (validate [_]
