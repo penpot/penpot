@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-09-09 18:32+0000\n"
+"PO-Revision-Date: 2024-09-17 10:09+0000\n"
 "Last-Translator: Denys Kisil <denkisil@outlook.com>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
@@ -50,7 +50,7 @@ msgstr "LDAP"
 
 #: src/app/main/ui/auth/login.cljs:225, src/app/main/ui/auth/login.cljs:246
 msgid "auth.login-with-oidc-submit"
-msgstr "OpenID"
+msgstr ""
 
 #: src/app/main/ui/auth/recovery.cljs:60
 msgid "auth.new-password"
