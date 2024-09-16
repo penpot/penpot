@@ -48,3 +48,18 @@
 .resolved-value-error {
   color: var(--status-color-error-500);
 }
+
+.color-bullet {
+  margin-right: $s-8;
+}
+
+.color-bullet-placeholder {
+  width: var(--bullet-size, $s-16);
+  height: var(--bullet-size, $s-16);
+  min-width: var(--bullet-size, $s-16);
+  min-height: var(--bullet-size, $s-16);
+  margin-top: 0;
+  background-color: color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);
+  border-radius: $br-4;
+  cursor: pointer;
+}

@@ -13,6 +13,7 @@
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.workspace.colorpicker :refer [colorpicker]]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
    [app.main.ui.workspace.tokens.common :as tokens.common]
@@ -199,6 +200,7 @@ Token names should only contain letters and digits separated by . characters.")}
                            (valid-name? @name-ref))
 
         ;; Value
+        color (mf/use-state (when color? (:value token)))
         value-ref (mf/use-var (:value token))
         token-resolve-result (mf/use-state (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value]))
         set-resolve-value (mf/use-callback
@@ -207,13 +209,13 @@ Token names should only contain letters and digits separated by . characters.")}
                                        (= token-or-err :error/token-direct-self-reference) token-or-err
                                        (= token-or-err :error/token-missing-reference) token-or-err
                                        (:resolved-value token-or-err) (:resolved-value token-or-err))]
+                               (when color? (reset! color v))
                                (reset! token-resolve-result v))))
         on-update-value-debounced (use-debonced-resolve-callback name-ref token active-theme-tokens set-resolve-value)
         on-update-value (mf/use-callback
                          (mf/deps on-update-value-debounced)
                          (fn [e]
                            (reset! value-ref (dom/get-target-val e))
-                           (js/console.log "e" e (dom/get-target-val e))
                            (on-update-value-debounced e)))
         value-error? (when (keyword? @token-resolve-result)
                        (= (namespace @token-resolve-result) "error"))
@@ -295,8 +297,14 @@ Token names should only contain letters and digits separated by . characters.")}
       [:& tokens.common/labeled-input {:label "Value"
                                        :input-props {:default-value @value-ref
                                                      :on-blur on-update-value
-                                                     :on-change on-update-value
-                                                     :type (when color? "color")}}]
+                                                     :on-change on-update-value}
+                                       :render-right (when color?
+                                                       (mf/fnc []
+                                                         [:div {:class (stl/css :color-bullet)}
+                                                          (if @color
+                                                            [:& color-bullet {:color @color
+                                                                              :mini? true}]
+                                                            [:div {:class (stl/css :color-bullet-placeholder)}])]))}]
       [:div {:class (stl/css-case :resolved-value true
                                   :resolved-value-placeholder (nil? @token-resolve-result)
                                   :resolved-value-error value-error?)}
