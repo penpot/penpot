@@ -82,6 +82,7 @@
 - Fix problem when creating a component instance from grid layout [Github #4881](https://github.com/penpot/penpot/issues/4881)
 - Fix problem when dismissing shared library update [Taiga #8669](https://tree.taiga.io/project/penpot/issue/8669)
 - Fix visual problem with stroke cap menu [Taiga #8730](https://tree.taiga.io/project/penpot/issue/8730)
+- Fix issue when exporting libraries when merging libraries [Taiga #8758](https://tree.taiga.io/project/penpot/issue/8758)
 
 ## 2.1.5
 
