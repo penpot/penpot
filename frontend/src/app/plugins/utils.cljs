@@ -122,6 +122,15 @@
     (when (some? page)
       (d/seek #(= (:id %) flow-id) (-> page :options :flows)))))
 
+(defn proxy->ruler-guide
+  [proxy]
+  (let [file-id (obj/get proxy "$file")
+        page-id (obj/get proxy "$page")
+        ruler-id (obj/get proxy "$id")
+        page (locate-page file-id page-id)]
+    (when (some? page)
+      (d/seek #(= (:id %) ruler-id) (-> page :options :guides vals)))))
+
 (defn proxy->interaction
   [proxy]
   (let [file-id (obj/get proxy "$file")

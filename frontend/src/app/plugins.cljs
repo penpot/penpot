@@ -15,6 +15,7 @@
    [app.plugins.grid :as grid]
    [app.plugins.library :as library]
    [app.plugins.public-utils]
+   [app.plugins.ruler-guides :as rg]
    [app.plugins.shape :as shape]
    [app.util.globals :refer [global]]
    [app.util.object :as obj]
@@ -43,6 +44,8 @@
 (set! flex/shape-proxy? shape/shape-proxy?)
 (set! grid/shape-proxy? shape/shape-proxy?)
 (set! format/shape-proxy shape/shape-proxy)
+(set! rg/shape-proxy shape/shape-proxy)
+(set! rg/shape-proxy? shape/shape-proxy?)
 
 (set! shape/lib-typography-proxy? library/lib-typography-proxy?)
 (set! shape/lib-component-proxy library/lib-component-proxy)

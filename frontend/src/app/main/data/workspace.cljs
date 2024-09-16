@@ -970,25 +970,27 @@
     (map #(gal/align-to-rect % rect axis) selected-objs)))
 
 (defn align-objects
-  [axis]
-  (dm/assert!
-   "expected valid align axis value"
-   (contains? gal/valid-align-axis axis))
+  ([axis]
+   (align-objects axis nil))
+  ([axis selected]
+   (dm/assert!
+    "expected valid align axis value"
+    (contains? gal/valid-align-axis axis))
 
-  (ptk/reify ::align-objects
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects  (wsh/lookup-page-objects state)
-            selected (wsh/lookup-selected state)
-            moved    (if (= 1 (count selected))
-                       (align-object-to-parent objects (first selected) axis)
-                       (align-objects-list objects selected axis))
-            undo-id (js/Symbol)]
-        (when (can-align? selected objects)
-          (rx/of (dwu/start-undo-transaction undo-id)
-                 (dwt/position-shapes moved)
-                 (ptk/data-event :layout/update {:ids selected})
-                 (dwu/commit-undo-transaction undo-id)))))))
+   (ptk/reify ::align-objects
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [objects  (wsh/lookup-page-objects state)
+             selected (or selected (wsh/lookup-selected state))
+             moved    (if (= 1 (count selected))
+                        (align-object-to-parent objects (first selected) axis)
+                        (align-objects-list objects selected axis))
+             undo-id (js/Symbol)]
+         (when (can-align? selected objects)
+           (rx/of (dwu/start-undo-transaction undo-id)
+                  (dwt/position-shapes moved)
+                  (ptk/data-event :layout/update {:ids selected})
+                  (dwu/commit-undo-transaction undo-id))))))))
 
 (defn can-distribute? [selected]
   (cond
@@ -997,25 +999,27 @@
     :else true))
 
 (defn distribute-objects
-  [axis]
-  (dm/assert!
-   "expected valid distribute axis value"
-   (contains? gal/valid-dist-axis axis))
+  ([axis]
+   (distribute-objects axis nil))
+  ([axis ids]
+   (dm/assert!
+    "expected valid distribute axis value"
+    (contains? gal/valid-dist-axis axis))
 
-  (ptk/reify ::distribute-objects
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [page-id   (:current-page-id state)
-            objects   (wsh/lookup-page-objects state page-id)
-            selected  (wsh/lookup-selected state)
-            moved     (-> (map #(get objects %) selected)
-                          (gal/distribute-space axis))
-            undo-id  (js/Symbol)]
-        (when (can-distribute? selected)
-          (rx/of (dwu/start-undo-transaction undo-id)
-                 (dwt/position-shapes moved)
-                 (ptk/data-event :layout/update {:ids selected})
-                 (dwu/commit-undo-transaction undo-id)))))))
+   (ptk/reify ::distribute-objects
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [page-id   (:current-page-id state)
+             objects   (wsh/lookup-page-objects state page-id)
+             selected  (or ids (wsh/lookup-selected state))
+             moved     (-> (map #(get objects %) selected)
+                           (gal/distribute-space axis))
+             undo-id  (js/Symbol)]
+         (when (can-distribute? selected)
+           (rx/of (dwu/start-undo-transaction undo-id)
+                  (dwt/position-shapes moved)
+                  (ptk/data-event :layout/update {:ids selected})
+                  (dwu/commit-undo-transaction undo-id))))))))
 
 ;; --- Shape Proportions
 

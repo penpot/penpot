@@ -569,3 +569,9 @@
           action  (parse-action action)]
       (d/without-nils
        (d/patch-object {:event-type trigger :delay delay}  action)))))
+
+(defn orientation->axis
+  [axis]
+  (case axis
+    "horizontal" :y
+    "vertical"   :x))

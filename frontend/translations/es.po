@@ -5535,9 +5535,11 @@ msgstr "Descubre [más extensiones](%s)"
 msgid "workspace.plugins.empty-plugins"
 msgstr "No se encuentran extensiones"
 
-#: src/app/main/ui/workspace/plugins.cljs:175
 msgid "workspace.plugins.error.url"
 msgstr "La extensión no existe o la url no es correcta."
+
+msgid "workspace.plugins.error.manifest"
+msgstr "El manifiesto de la expansión es incorrecto."
 
 #: src/app/main/ui/workspace/plugins.cljs:171
 msgid "workspace.plugins.install"

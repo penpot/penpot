@@ -5548,9 +5548,11 @@ msgstr "Discover [more plugins](%s)"
 msgid "workspace.plugins.empty-plugins"
 msgstr "No plugins installed yet"
 
-#: src/app/main/ui/workspace/plugins.cljs:175
 msgid "workspace.plugins.error.url"
 msgstr "The plugin doesn't exist or the URL is not correct."
+
+msgid "workspace.plugins.error.manifest"
+msgstr "The plugin manifest is incorrect."
 
 #: src/app/main/ui/workspace/plugins.cljs:171
 msgid "workspace.plugins.install"

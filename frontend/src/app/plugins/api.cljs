@@ -368,7 +368,73 @@
   (openPage
     [_ page]
     (let [id (obj/get page "$id")]
-      (st/emit! (dw/go-to-page id)))))
+      (st/emit! (dw/go-to-page id))))
+
+  (alignHorizontal
+    [_ shapes direction]
+    (let [dir (case direction
+                "left"   :hleft
+                "center" :hcenter
+                "right"  :hright
+                nil)]
+      (cond
+        (nil? dir)
+        (u/display-not-valid :alignHorizontal-direction "Direction not valid")
+
+        (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+        (u/display-not-valid :alignHorizontal-shapes "Not valid shapes")
+
+        :else
+        (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
+          (st/emit! (dw/align-objects dir ids))))))
+
+  (alignVertical
+    [_ shapes direction]
+    (let [dir (case direction
+                "top"   :vtop
+                "center" :vcenter
+                "bottom"  :vbottom
+                nil)]
+      (cond
+        (nil? dir)
+        (u/display-not-valid :alignVertical-direction "Direction not valid")
+
+        (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+        (u/display-not-valid :alignVertical-shapes "Not valid shapes")
+
+        :else
+        (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
+          (st/emit! (dw/align-objects dir ids))))))
+
+  (distributeHorizontal
+    [_ shapes]
+    (cond
+      (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+      (u/display-not-valid :distributeHorizontal-shapes "Not valid shapes")
+
+      :else
+      (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
+        (st/emit! (dw/distribute-objects :horizontal ids)))))
+
+  (distributeVertical
+    [_ shapes]
+    (cond
+      (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+      (u/display-not-valid :distributeVertical-shapes "Not valid shapes")
+
+      :else
+      (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
+        (st/emit! (dw/distribute-objects :vertical ids)))))
+
+  (flatten
+    [_ shapes]
+    (cond
+      (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+      (u/display-not-valid :flatten-shapes "Not valid shapes")
+
+      :else
+      (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
+        (st/emit! (dw/convert-selected-to-path ids))))))
 
 (defn create-context
   [plugin-id]

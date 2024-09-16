@@ -29,3 +29,25 @@
     schema:string]])
 
 (sm/register! ::plugin-data schema:plugin-data)
+
+
+(def ^:private schema:registry-entry
+  [:map
+   [:plugin-id :string]
+   [:name :string]
+   [:description {:optional true} :string]
+   [:host :string]
+   [:code :string]
+   [:icon {:optional true} :string]
+   [:permissions [:set :string]]])
+
+(def schema:plugin-registry
+  [:map
+   [:ids [:vector :string]]
+   [:data
+    [:map-of {:gen/max 5}
+     :string
+     schema:registry-entry]]])
+
+(sm/register! ::plugin-registry schema:plugin-registry)
+(sm/register! ::registry-entry schema:registry-entry)
