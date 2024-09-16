@@ -148,7 +148,17 @@
 (defn nav-root
   "Navigate to the root page."
   []
-  (set! (.-href globals/location) "/"))
+  (ptk/reify ::nav-root
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (set! (.-href globals/location) "/"))))
+
+(defn reload
+  [force?]
+  (ptk/reify ::reload
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (ts/asap (partial dom/reload-current-window force?)))))
 
 (defn nav-raw
   [& {:keys [href uri]}]

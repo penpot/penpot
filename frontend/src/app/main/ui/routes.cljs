@@ -106,9 +106,9 @@
       (st/emit! (rt/navigated match))
 
       :else
-      ;; We just recheck with an additional profile request; this avoids
-      ;; some race conditions that causes unexpected redirects on
-      ;; invitations workflows (and probably other cases).
+      ;; We just recheck with an additional profile request; this
+      ;; avoids some race conditions that causes unexpected redirects
+      ;; on invitations workflows (and probably other cases).
       (->> (rp/cmd! :get-profile)
            (rx/subs! (fn [{:keys [id] :as profile}]
                        (cond
