@@ -425,49 +425,49 @@
 
 (t/testing "grouping"
   (t/deftest split-and-join
-    (let [name "group.subgroup.name"
-          path (ctob/split-path name ".")
-          name' (ctob/join-path path ".")]
+    (let [name "group/subgroup/name"
+          path (ctob/split-path name "/")
+          name' (ctob/join-path path "/")]
       (t/is (= (first path) "group"))
       (t/is (= (second path) "subgroup"))
       (t/is (= (nth path 2) "name"))
       (t/is (= name' name))))
 
   (t/deftest remove-spaces
-    (let [name "group . subgroup . name"
-          path (ctob/split-path name ".")]
+    (let [name "group / subgroup / name"
+          path (ctob/split-path name "/")]
       (t/is (= (first path) "group"))
       (t/is (= (second path) "subgroup"))
       (t/is (= (nth path 2) "name"))))
 
   (t/deftest group-and-ungroup
-    (let [token1   (ctob/make-token :name "token1" :type :boolean :value true)
-          token2   (ctob/make-token :name "some group.token2" :type :boolean :value true)
+    (let [token-set1   (ctob/make-token-set :name "token-set1")
+          token-set2   (ctob/make-token-set :name "some group/token-set2")
 
-          token1'  (ctob/group-item token1 "big group" ".")
-          token2'  (ctob/group-item token2 "big group" ".")
-          token1'' (ctob/ungroup-item token1' ".")
-          token2'' (ctob/ungroup-item token2' ".")]
-      (t/is (= (:name token1') "big group.token1"))
-      (t/is (= (:name token2') "big group.some group.token2"))
-      (t/is (= (:name token1'') "token1"))
-      (t/is (= (:name token2'') "some group.token2"))))
+          token-set1'  (ctob/group-item token-set1 "big group" "/")
+          token-set2'  (ctob/group-item token-set2 "big group" "/")
+          token-set1'' (ctob/ungroup-item token-set1' "/")
+          token-set2'' (ctob/ungroup-item token-set2' "/")]
+      (t/is (= (:name token-set1') "big group/token-set1"))
+      (t/is (= (:name token-set2') "big group/some group/token-set2"))
+      (t/is (= (:name token-set1'') "token-set1"))
+      (t/is (= (:name token-set2'') "some group/token-set2"))))
 
   (t/deftest get-groups-str
-    (let [token1 (ctob/make-token :name "token1" :type :boolean :value true)
-          token2 (ctob/make-token :name "some-group.token2" :type :boolean :value true)
-          token3 (ctob/make-token :name "some-group.some-subgroup.token3" :type :boolean :value true)]
-      (t/is (= (ctob/get-groups-str token1 ".") ""))
-      (t/is (= (ctob/get-groups-str token2 ".") "some-group"))
-      (t/is (= (ctob/get-groups-str token3 ".") "some-group.some-subgroup"))))
+    (let [token-set1 (ctob/make-token-set :name "token-set1")
+          token-set2 (ctob/make-token-set :name "some-group/token-set2")
+          token-set3 (ctob/make-token-set :name "some-group/some-subgroup/token-set3")]
+      (t/is (= (ctob/get-groups-str token-set1 "/") ""))
+      (t/is (= (ctob/get-groups-str token-set2 "/") "some-group"))
+      (t/is (= (ctob/get-groups-str token-set3 "/") "some-group/some-subgroup"))))
 
   (t/deftest get-final-name
-    (let [token1 (ctob/make-token :name "token1" :type :boolean :value true)
-          token2 (ctob/make-token :name "some-group.token2" :type :boolean :value true)
-          token3 (ctob/make-token :name "some-group.some-subgroup.token3" :type :boolean :value true)]
-      (t/is (= (ctob/get-final-name token1 ".") "token1"))
-      (t/is (= (ctob/get-final-name token2 ".") "token2"))
-      (t/is (= (ctob/get-final-name token3 ".") "token3"))))
+    (let [token-set1 (ctob/make-token-set :name "token-set1")
+          token-set2 (ctob/make-token-set :name "some-group/token-set2")
+          token-set3 (ctob/make-token-set :name "some-group/some-subgroup/token-set3")]
+      (t/is (= (ctob/get-final-name token-set1 "/") "token-set1"))
+      (t/is (= (ctob/get-final-name token-set2 "/") "token-set2"))
+      (t/is (= (ctob/get-final-name token-set3 "/") "token-set3"))))
 
   (t/testing "grouped tokens"
     (t/deftest grouped-tokens
@@ -495,56 +495,14 @@
                                                                    :value true)))
 
             set             (ctob/get-set tokens-lib "test-token-set")
-            tokens-list     (ctob/get-tokens set)
-
-            tokens-tree     (:tokens set)
-
-            [node-token1 node-group1 node-group2]
-            (ctob/get-children tokens-tree)
-
-            [node-token2 node-token3 node-subgroup11]
-            (ctob/get-children (second node-group1))
-
-            [node-token4]
-            (ctob/get-children (second node-subgroup11))
-
-            [node-token5]
-            (ctob/get-children (second node-group2))]
+            tokens-list     (vals (:tokens set))]
 
         (t/is (= (count tokens-list) 5))
         (t/is (= (:name (nth tokens-list 0)) "token1"))
         (t/is (= (:name (nth tokens-list 1)) "group1.token2"))
         (t/is (= (:name (nth tokens-list 2)) "group1.token3"))
         (t/is (= (:name (nth tokens-list 3)) "group1.subgroup11.token4"))
-        (t/is (= (:name (nth tokens-list 4)) "group2.token5"))
-
-        (t/is (= (first node-token1) "token1"))
-        (t/is (= (ctob/group? (second node-token1)) false))
-        (t/is (= (:name (second node-token1)) "token1"))
-
-        (t/is (= (first node-group1) "group1"))
-        (t/is (= (ctob/group? (second node-group1)) true))
-        (t/is (= (count (second node-group1)) 3))
-
-        (t/is (= (first node-token2) "token2"))
-        (t/is (= (ctob/group? (second node-token2)) false))
-        (t/is (= (:name (second node-token2)) "group1.token2"))
-
-        (t/is (= (first node-token3) "token3"))
-        (t/is (= (ctob/group? (second node-token3)) false))
-        (t/is (= (:name (second node-token3)) "group1.token3"))
-
-        (t/is (= (first node-subgroup11) "subgroup11"))
-        (t/is (= (ctob/group? (second node-subgroup11)) true))
-        (t/is (= (count (second node-subgroup11)) 1))
-
-        (t/is (= (first node-token4) "token4"))
-        (t/is (= (ctob/group? (second node-token4)) false))
-        (t/is (= (:name (second node-token4)) "group1.subgroup11.token4"))
-
-        (t/is (= (first node-token5) "token5"))
-        (t/is (= (ctob/group? (second node-token5)) false))
-        (t/is (= (:name (second node-token5)) "group2.token5"))))
+        (t/is (= (:name (nth tokens-list 4)) "group2.token5"))))
 
     (t/deftest update-token-in-groups
       (let [tokens-lib  (-> (ctob/make-tokens-lib)
@@ -571,13 +529,10 @@
 
             token-set   (ctob/get-set tokens-lib "test-token-set")
             token-set'  (ctob/get-set tokens-lib' "test-token-set")
-            group1'     (get-in token-set' [:tokens "group1"])
-            token       (get-in token-set [:tokens "group1" "test-token-2"])
-            token'      (get-in token-set' [:tokens "group1" "test-token-2"])]
+            token       (get-in token-set [:tokens "group1.test-token-2"])
+            token'      (get-in token-set' [:tokens "group1.test-token-2"])]
 
         (t/is (= (ctob/set-count tokens-lib') 1))
-        (t/is (= (count group1') 2))
-        (t/is (= (d/index-of (keys group1') "test-token-2") 0))
         (t/is (= (:name token') "group1.test-token-2"))
         (t/is (= (:description token') "some description"))
         (t/is (= (:value token') false))
@@ -608,13 +563,10 @@
 
             token-set   (ctob/get-set tokens-lib "test-token-set")
             token-set'  (ctob/get-set tokens-lib' "test-token-set")
-            group1'     (get-in token-set' [:tokens "group1"])
-            token       (get-in token-set [:tokens "group1" "test-token-2"])
-            token'      (get-in token-set' [:tokens "group1" "updated-name"])]
+            token       (get-in token-set [:tokens "group1.test-token-2"])
+            token'      (get-in token-set' [:tokens "group1.updated-name"])]
 
         (t/is (= (ctob/set-count tokens-lib') 1))
-        (t/is (= (count group1') 2))
-        (t/is (= (d/index-of (keys group1') "updated-name") 0))
         (t/is (= (:name token') "group1.updated-name"))
         (t/is (= (:description token') nil))
         (t/is (= (:value token') true))
@@ -645,15 +597,11 @@
 
             token-set   (ctob/get-set tokens-lib "test-token-set")
             token-set'  (ctob/get-set tokens-lib' "test-token-set")
-            group1'     (get-in token-set' [:tokens "group1"])
-            group2'     (get-in token-set' [:tokens "group2"])
-            token       (get-in token-set [:tokens "group1" "test-token-2"])
-            token'      (get-in token-set' [:tokens "group2" "updated-name"])]
+            token       (get-in token-set [:tokens "group1.test-token-2"])
+            token'      (get-in token-set' [:tokens "group2.updated-name"])]
 
         (t/is (= (ctob/set-count tokens-lib') 1))
-        (t/is (= (count group1') 1))
-        (t/is (= (count group2') 1))
-        (t/is (= (d/index-of (keys group2') "updated-name") 0))
+        (t/is (= (d/index-of (keys (:tokens token-set')) "group2.updated-name") 1))
         (t/is (= (:name token') "group2.updated-name"))
         (t/is (= (:description token') nil))
         (t/is (= (:value token') true))
@@ -676,7 +624,7 @@
 
             token-set   (ctob/get-set tokens-lib "test-token-set")
             token-set'  (ctob/get-set tokens-lib' "test-token-set")
-            token'      (get-in token-set' [:tokens "group1" "test-token-2"])]
+            token'      (get-in token-set' [:tokens "group1.test-token-2"])]
 
         (t/is (= (ctob/set-count tokens-lib') 1))
         (t/is (= (count (:tokens token-set')) 1))

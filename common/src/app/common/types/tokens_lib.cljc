@@ -142,56 +142,41 @@
   ITokenSet
   (add-token [_ token]
     (dm/assert! "expected valid token" (check-token! token))
-    (let [path (split-path (:name token) ".")]
-      (TokenSet. name
-                 description
-                 (dt/now)
-                 (d/oassoc-in tokens path token))))
+    (TokenSet. name
+               description
+               (dt/now)
+               (assoc tokens (:name token) token)))
 
   (update-token [this token-name f]
-    (let [path (split-path token-name ".")
-          token (get-in tokens path)]
-      (if token
-        (let [token' (-> (make-token (f token))
-                         (assoc :modified-at (dt/now)))
-              path'  (get-path token' ".")]
-          (check-token! token')
-          (TokenSet. name
-                     description
-                     (dt/now)
-                     (if (= (:name token) (:name token'))
-                       (d/oassoc-in tokens path token')
-                       (-> tokens
-                           (d/oassoc-in-before path path' token')
-                           (d/dissoc-in path)))))
-        this)))
+    (if-let [token (get tokens token-name)]
+      (let [token' (-> (make-token (f token))
+                       (assoc :modified-at (dt/now)))]
+        (check-token! token')
+        (TokenSet. name
+                   description
+                   (dt/now)
+                   (if (= (:name token) (:name token'))
+                     (assoc tokens (:name token') token')
+                     (-> tokens
+                         (d/oassoc-before (:name token) (:name token') token')
+                         (dissoc (:name token))))))
+      this))
 
   (delete-token [_ token-name]
-    (let [path (split-path token-name ".")]
-      (TokenSet. name
-                 description
-                 (dt/now)
-                 (d/dissoc-in tokens path))))
+    (TokenSet. name
+               description
+               (dt/now)
+               (dissoc tokens token-name)))
 
   (get-tokens [_]
-    (->> (tree-seq d/ordered-map? vals tokens)
-         (filter (partial instance? Token)))))
-
-(def schema:token-node
-  [:schema {:registry {::node [:or ::token
-                               [:and
-                                [:map-of {:gen/max 5} :string [:ref ::node]]
-                                [:fn d/ordered-map?]]]}}
-   [:ref ::node]])
-
-(sm/register! ::token-node schema:token-node)
+    (vals tokens)))
 
 (def schema:token-set
   [:and [:map {:title "TokenSet"}
          [:name :string]
          [:description [:maybe :string]]
          [:modified-at ::sm/inst]
-         [:tokens [:and [:map-of {:gen/max 5} :string ::token-node]
+         [:tokens [:and [:map-of {:gen/max 5} :string ::token]
                    [:fn d/ordered-map?]]]]
    [:fn (partial instance? TokenSet)]])
 
@@ -239,10 +224,19 @@
   (get-set [_ set-name] "get one set looking for name")
   (get-set-group [_ set-group-path] "get the attributes of a set group"))
 
+(def schema:token-set-node
+  [:schema {:registry {::node [:or ::token-set
+                               [:and
+                                [:map-of {:gen/max 5} :string [:ref ::node]]
+                                [:fn d/ordered-map?]]]}}
+   [:ref ::node]])
+
+(sm/register! ::token-set-node schema:token-set-node)
+
 (def schema:token-sets
   [:and
    [:map-of {:title "TokenSets"}
-    :string ::token-set]
+    :string ::token-set-node]
    [:fn d/ordered-map?]])
 
 (sm/register! ::token-sets schema:token-sets)

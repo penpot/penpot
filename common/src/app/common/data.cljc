@@ -78,9 +78,9 @@
 
 (declare index-of)
 
-#_(defn oassoc-before
+(defn oassoc-before
   "Assoc a k v pair, in the order position just before the other key"
-  [o k v before-k]
+  [o before-k k v]
   (if-let [index (index-of (keys o) before-k)]
     (-> (ordered-map)
         (into (take index o))
@@ -89,12 +89,12 @@
     (oassoc o k v)))
 
 (defn oassoc-in-before
-  [o [old-k & old-ks] [k & ks] v]
-  (if-let [index (index-of (keys o) old-k)]
+  [o [before-k & before-ks] [k & ks] v]
+  (if-let [index (index-of (keys o) before-k)]
     (let [new-v (if ks
-                  (oassoc-in-before (get o k) old-ks ks v)
+                  (oassoc-in-before (get o k) before-ks ks v)
                   v)]
-      (if (= k old-k)
+      (if (= k before-k)
         (-> (ordered-map)
             (into (take index o))
             (assoc k new-v)
