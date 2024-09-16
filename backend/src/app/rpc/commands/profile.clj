@@ -10,7 +10,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
-   [app.common.types.plugins :refer [schema:plugin-data]]
+   [app.common.types.plugins :refer [schema:plugin-registry]]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -43,7 +43,7 @@
 
 (def schema:props
   [:map {:title "ProfileProps"}
-   [:plugins {:optional true} schema:plugin-data]
+   [:plugins {:optional true} schema:plugin-registry]
    [:newsletter-updates {:optional true} ::sm/boolean]
    [:newsletter-news {:optional true} ::sm/boolean]
    [:onboarding-team-id {:optional true} ::sm/uuid]

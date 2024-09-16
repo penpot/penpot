@@ -9,6 +9,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.schema :as sm]
+   [app.common.types.plugins :as ctp]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -51,19 +53,26 @@
                        (and (= name (:name plugin))
                             (= origin (:host plugin))))))
 
-        plugin-id (d/nilv (:plugin-id prev-plugin) (str (uuid/next)))]
-    {:plugin-id plugin-id
-     :name name
-     :description desc
-     :host origin
-     :code code
-     :icon icon
-     :permissions (into #{} (map str) permissions)}))
+        plugin-id (d/nilv (:plugin-id prev-plugin) (str (uuid/next)))
+
+        manifest
+        (d/without-nils
+         {:plugin-id plugin-id
+          :name name
+          :description desc
+          :host origin
+          :code code
+          :icon icon
+          :permissions (into #{} (map str) permissions)})]
+    (when (sm/validate ::ctp/registry-entry manifest)
+      manifest)))
 
 (defn save-to-store
   []
-  (->> (rp/cmd! :update-profile-props {:props {:plugins @registry}})
-       (rx/subs! identity)))
+  ;; TODO: need this for the transition to the new schema. We can remove eventually
+  (let [registry (update @registry :data d/update-vals d/without-nils)]
+    (->> (rp/cmd! :update-profile-props {:props {:plugins registry}})
+         (rx/subs! identity))))
 
 (defn load-from-store
   []

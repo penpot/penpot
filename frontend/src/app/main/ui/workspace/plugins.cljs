@@ -91,7 +91,9 @@
         input-status* (mf/use-state nil) ;; :error-url :error-manifest :success
         input-status  @input-status*
 
-        error? (contains? #{:error-url :error-manifest} input-status)
+        error-url? (= :error-url input-status)
+        error-manifest? (= :error-manifest input-status)
+        error? (or error-url? error-manifest?)
 
         handle-close-dialog
         (mf/use-callback
@@ -117,17 +119,20 @@
                 (rx/subs!
                  (fn [body]
                    (reset! fetching-manifest? false)
-                   (let [plugin (preg/parse-manifest plugin-url body)]
-                     (st/emit! (ptk/event ::ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
-                     (modal/show!
-                      :plugin-permissions
-                      {:plugin plugin
-                       :on-accept
-                       #(do
-                          (preg/install-plugin! plugin)
-                          (modal/show! :plugin-management {}))})
-                     (reset! input-status* :success)
-                     (reset! plugin-url* "")))
+                   (if-let [plugin (preg/parse-manifest plugin-url body)]
+                     (do
+                       (st/emit! (ptk/event ::ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
+                       (modal/show!
+                        :plugin-permissions
+                        {:plugin plugin
+                         :on-accept
+                         #(do
+                            (preg/install-plugin! plugin)
+                            (modal/show! :plugin-management {}))})
+                       (reset! input-status* :success)
+                       (reset! plugin-url* ""))
+                     ;; Cannot get the manifest
+                     (reset! input-status* :error-manifest)))
                  (fn [_]
                    (reset! fetching-manifest? false)
                    (reset! input-status* :error-url))))))
@@ -170,9 +175,13 @@
                   :disabled @fetching-manifest?
                   :on-click handle-install-click} (tr "workspace.plugins.install")]]
 
-       (when error?
+       (when error-url?
          [:div {:class (stl/css-case :info true :error error?)}
           (tr "workspace.plugins.error.url")])
+
+       (when error-manifest?
+         [:div {:class (stl/css-case :info true :error error?)}
+          (tr "workspace.plugins.error.manifest")])
 
        [:> i18n/tr-html*
         {:class (stl/css :discover)
