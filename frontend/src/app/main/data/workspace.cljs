@@ -74,6 +74,7 @@
    [app.main.repo :as rp]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
+   [app.renderer-v2 :as renderer]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -351,6 +352,9 @@
                 (features/initialize)
                 (dcm/retrieve-comment-threads file-id)
                 (fetch-bundle project-id file-id))
+
+         (when (contains? cf/flags :renderer-v2)
+           (rx/of (renderer/init)))
 
          (->> stream
               (rx/filter dch/commit?)

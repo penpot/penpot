@@ -1,0 +1,19 @@
+[package]
+name = "renderer"
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/penpot/penpot"
+license-file = "../../../../LICENSE"
+description = "Wasm-based canvas renderer for Penpot"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2.93"
+
+[profile.release]
+opt-level = "s"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.43"
