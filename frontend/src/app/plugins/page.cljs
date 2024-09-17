@@ -232,8 +232,9 @@
         (not (contains? #{"vertical" "horizontal"} orientation))
         (u/display-not-valid :addRulerGuide "Orientation should be either 'vertical' or 'horizontal'")
 
-        (or (not (shape/shape-proxy? board))
-            (not (cfh/frame-shape? shape)))
+        (and (some? shape)
+             (or (not (shape/shape-proxy? board))
+                 (not (cfh/frame-shape? shape))))
         (u/display-not-valid :addRulerGuide "The shape is not a board")
 
         (not (r/check-permission $plugin "content:write"))
@@ -265,12 +266,14 @@
 
   (addCommentThread
     [_ content position board]
-    (let [shape (when board (u/proxy->shape board))]
+    (let [shape (when board (u/proxy->shape board))
+          position (parser/parse-point position)]
       (cond
         (or (not (string? content)) (empty? content))
         (u/display-not-valid :addCommentThread "Content not valid")
 
-        (or (not (us/safe-number? (:x position))) (not (us/safe-number? (:y position))))
+        (or (not (us/safe-number? (:x position)))
+            (not (us/safe-number? (:y position))))
         (u/display-not-valid :addCommentThread "Position not valid")
 
         (and (some? board) (or (not (shape/shape-proxy? board)) (not (cfh/frame-shape? shape))))
@@ -280,22 +283,27 @@
         (u/display-not-valid :addCommentThread "Plugin doesn't have 'content:write' permission")
 
         :else
-        (p/create
-         (fn [resolve]
-           (st/emit!
-            (dc/create-thread-on-workspace
-             {:file-id $file
-              :page-id $id
-              :position (gpt/point (parser/parse-point position))
-              :content content}
+        (let [position
+              (cond-> position
+                (some? board)
+                (->  (update :x - (:x board))
+                     (update :y - (:y board))))]
+          (p/create
+           (fn [resolve]
+             (st/emit!
+              (dc/create-thread-on-workspace
+               {:file-id $file
+                :page-id $id
+                :position (gpt/point position)
+                :content content}
 
-             (fn [data]
-               (->> (rp/cmd! :get-team-users {:file-id $file})
-                    (rx/subs!
-                     (fn [users]
-                       (let [users (d/index-by :id users)]
-                         (resolve (pc/comment-thread-proxy $plugin $file $id users data)))))))
-             false)))))))
+               (fn [data]
+                 (->> (rp/cmd! :get-team-users {:file-id $file})
+                      (rx/subs!
+                       (fn [users]
+                         (let [users (d/index-by :id users)]
+                           (resolve (pc/comment-thread-proxy $plugin $file $id users data)))))))
+               false))))))))
 
   (removeCommentThread
     [_ thread]
