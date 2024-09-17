@@ -480,7 +480,7 @@
          :focus focus}]
 
        (when show-prototypes?
-         [:& widgets/frame-flows
+         [:> widgets/frame-flows*
           {:flows (:flows page)
            :objects objects-modified
            :selected selected
