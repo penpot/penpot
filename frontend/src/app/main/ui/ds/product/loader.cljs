@@ -23,7 +23,6 @@
                                       :width width
                                       :height height
                                       :class class})]
-
     [:> "svg" props
      [:title title]
      [:g
@@ -33,8 +32,17 @@
               :d
               "M134.482 157.147v25l518.57.008.002-25-518.572-.008z"}]]]))
 
+(def ^:private schema:loader
+  [:map
+   [:class {:optional true} :string]
+   [:width {:optional true} :int]
+   [:height {:optional true} :int]
+   [:title {:optional true} :string]
+   [:overlay {:optional true} :boolean]])
+
 (mf/defc loader*
-  {::mf/props :obj}
+  {::mf/props :obj
+   ::mf/schema schema:loader}
   [{:keys [class width height title overlay children] :rest props}]
 
   (let [w (or width (when (some? height) (mth/ceil (* height (/ 100 27)))) 100)

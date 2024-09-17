@@ -12,13 +12,18 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list]]
    [rumext.v2 :as mf]))
 
-(def button-variants (set '("primary" "secondary" "ghost" "destructive")))
+(def ^:private schema:button
+  [:map
+   [:class {:optional true} :string]
+   [:icon {:optional true}
+    [:and :string [:fn #(contains? icon-list %)]]]
+   [:variant {:optional true}
+    [:maybe [:enum "primary" "secondary" "ghost" "destructive"]]]])
 
 (mf/defc button*
-  {::mf/props :obj}
+  {::mf/props :obj
+   ::mf/schema schema:button}
   [{:keys [variant icon children class] :rest props}]
-  (assert (or (nil? variant) (contains? button-variants variant) "expected valid variant"))
-  (assert (or (nil? icon) (contains? icon-list icon) "expected valid icon id"))
   (let [variant (or variant "primary")
         class (dm/str class " " (stl/css-case :button true
                                               :button-primary (= variant "primary")

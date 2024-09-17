@@ -88,15 +88,6 @@
                    (contains? option :aria-label)))
           (contains? option :label)))]])
 
-(def ^:private schema:select
-  [:map
-   [:disabled {:optional true} :boolean]
-   [:class {:optional true} :string]
-   [:icon {:optional true}
-    [:and :string [:fn #(contains? icon-list %)]]]
-   [:default-selected {:optional true} :string]
-   [:options [:vector {:min 1} schema:select-option]]])
-
 (defn- get-option
   [options id]
   (or (array/find #(= id (obj/get % "id")) options)
@@ -123,10 +114,18 @@
   (reset! open* false)
   (reset! focused* nil))
 
+(def ^:private schema:select
+  [:map
+   [:options [:vector {:min 1} schema:select-option]]
+   [:class {:optional true} :string]
+   [:disabled {:optional true} :boolean]
+   [:default-selected {:optional true} :string]
+   [:on-change {:optional true} fn?]])
+
 (mf/defc select*
   {::mf/props :obj
    ::mf/schema schema:select}
-  [{:keys [disabled default-selected on-change options class] :rest props}]
+  [{:keys [options class disabled default-selected on-change] :rest props}]
   (let [open* (mf/use-state false)
         open  (deref open*)
         on-click

@@ -13,10 +13,18 @@
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
+(def ^:private schema:input
+  [:map
+   [:class {:optional true} :string]
+   [:icon {:optional true}
+    [:and :string [:fn #(contains? icon-list %)]]]
+   [:type {:optional true} :string]
+   [:ref {:optional true} some?]])
+
 (mf/defc input*
-  {::mf/props :obj}
+  {::mf/props :obj
+   ::mf/schema schema:input}
   [{:keys [icon class type ref] :rest props}]
-  (assert (or (nil? icon) (contains? icon-list icon)))
   (let [ref (or ref (mf/use-ref))
         type (or type "text")
         icon-class (stl/css-case :input true
