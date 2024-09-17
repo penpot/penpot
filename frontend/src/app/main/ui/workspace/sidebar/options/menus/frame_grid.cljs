@@ -24,7 +24,7 @@
    [rumext.v2 :as mf]))
 
 (def lens:default-grids
-  (l/derived :default-grids refs/workspace-data))
+  (l/derived :default-grids refs/workspace-page))
 
 (defn- get-size-options []
   [{:value nil :label (tr "workspace.options.grid.auto")}

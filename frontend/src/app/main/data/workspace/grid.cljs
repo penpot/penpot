@@ -28,7 +28,7 @@
     (watch [_ state _]
       (let [page-id (:current-page-id state)
             page    (dm/get-in state [:workspace-data :pages-index page-id])
-            params  (or (dm/get-in page [:grids :square])
+            params  (or (dm/get-in page [:default-grids :square])
                         (:square ctg/default-grid-params))
             grid    {:type :square
                      :params params

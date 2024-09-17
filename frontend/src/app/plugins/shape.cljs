@@ -1251,7 +1251,7 @@
                 {:name "rulerGuides"
                  :get
                  (fn [_]
-                   (let [guides (-> (u/locate-page file-id page-id) :options :guides)]
+                   (let [guides (-> (u/locate-page file-id page-id) :guides)]
                      (->> guides
                           (vals)
                           (filter #(= id (:frame-id %)))
