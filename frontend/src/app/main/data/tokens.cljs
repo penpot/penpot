@@ -115,10 +115,9 @@
   (ptk/reify ::update-token-theme
     ptk/WatchEvent
     (watch [it state _]
-      (let [prev-token-theme (wtts/get-workspace-token-theme state (:id token-theme))
+      (let [prev-token-theme (wtts/get-workspace-token-theme (:id token-theme) state)
             changes (-> (pcb/empty-changes it)
                         (pcb/update-token-theme token-theme prev-token-theme))]
-        (js/console.log "changes" changes)
         (rx/of
          (dch/commit-changes changes))))))
 
