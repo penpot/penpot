@@ -18,7 +18,7 @@
    [app.main.ui.formats :as fmt]
    [app.main.ui.icons :as i]
    [app.main.ui.viewer.comments :refer [comments-menu]]
-   [app.main.ui.viewer.interactions :refer [flows-menu interactions-menu]]
+   [app.main.ui.viewer.interactions :refer [flows-menu* interactions-menu]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [okulary.core :as l]
@@ -172,7 +172,7 @@
      (case section
        :interactions [:*
                       (when index
-                        [:& flows-menu {:page page :index index}])
+                        [:> flows-menu* {:page page :index index}])
                       [:& interactions-menu {:interactions-mode interactions-mode}]]
        :comments [:& comments-menu]
        [:div {:class (stl/css :view-options)}])
