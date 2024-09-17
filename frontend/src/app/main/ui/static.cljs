@@ -7,19 +7,21 @@
 (ns app.main.ui.static
   (:require-macros [app.main.style :as stl])
   (:require
+   ["rxjs" :as rxjs]
    [app.common.data :as d]
    [app.common.pprint :as pp]
    [app.common.uri :as u]
    [app.main.data.common :as dc]
    [app.main.data.events :as ev]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.auth.login :refer [login-methods]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page recovery-sent-page]]
-   [app.main.ui.auth.register :refer [register-methods register-validate-form register-success-page terms-register]]
+   [app.main.ui.auth.register :as register]
    [app.main.ui.dashboard.sidebar :refer [sidebar]]
    [app.main.ui.icons :as i]
-   [app.main.ui.viewer.header :as header]
+   [app.main.ui.viewer.header :as viewer.header]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
@@ -29,10 +31,14 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
+;; FIXME: this is a workaround until we export this class on beicon library
+(def TimeoutError rxjs/TimeoutError)
+
 (mf/defc error-container*
   {::mf/props :obj}
   [{:keys [children]}]
-  (let [profile-id (:profile-id @st/state)]
+  (let [profile-id  (:profile-id @st/state)
+        on-nav-root (mf/use-fn #(st/emit! (rt/nav-root)))]
     [:section {:class (stl/css :exception-layout)}
      [:button
       {:class (stl/css :exception-header)
@@ -44,7 +50,7 @@
      [:div {:class (stl/css :deco-before)} i/logo-error-screen]
      (when-not profile-id
        [:button {:class (stl/css :login-header)
-                 :on-click rt/nav-root}
+                 :on-click on-nav-root}
         (tr "labels.login")])
 
      [:div {:class (stl/css :exception-content)}
@@ -65,8 +71,8 @@
   {::mf/props :obj}
   [{:keys [show-dialog]}]
   (let [current-section  (mf/use-state :login)
-        user-email (mf/use-state "")
-        register-token (mf/use-state "")
+        user-email       (mf/use-state "")
+        register-token   (mf/use-state "")
 
         set-section
         (mf/use-fn
@@ -85,29 +91,37 @@
          #(reset! current-section :login))
 
         success-login
-        (fn []
-          (reset! show-dialog false)
-          (.reload js/window.location true))
+        (mf/use-fn
+         (fn []
+           (reset! show-dialog false)
+           (st/emit! (rt/reload true))))
 
         success-register
-        (fn [data]
-          (reset! register-token (:token data))
-          (reset! current-section :register-validate))
+        (mf/use-fn
+         (fn [data]
+           (reset! register-token (:token data))
+           (reset! current-section :register-validate)))
 
         register-email-sent
-        (fn [email]
-          (reset! user-email email)
-          (reset! current-section :register-email-sent))
+        (mf/use-fn
+         (fn [email]
+           (reset! user-email email)
+           (reset! current-section :register-email-sent)))
 
         recovery-email-sent
-        (fn [email]
-          (reset! user-email email)
-          (reset! current-section :recovery-email-sent))]
+        (mf/use-fn
+         (fn [email]
+           (reset! user-email email)
+           (reset! current-section :recovery-email-sent)))
+
+        on-nav-root
+        (mf/use-fn #(st/emit! (rt/nav-root)))]
 
     [:div {:class (stl/css :overlay)}
      [:div {:class (stl/css :dialog-login)}
       [:div {:class (stl/css :modal-close)}
-       [:button {:class (stl/css :modal-close-button) :on-click rt/nav-root}
+       [:button {:class (stl/css :modal-close-button)
+                 :on-click on-nav-root}
         i/close]]
       [:div {:class (stl/css :login)}
        [:div {:class (stl/css :logo)} i/logo]
@@ -125,13 +139,14 @@
            (tr "auth.register")
            " "
            [:a {:data-section "register"
-                :on-click set-section} (tr "auth.register-submit")]]]
+                :on-click set-section}
+            (tr "auth.register-submit")]]]
 
          :register
          [:*
           [:div {:class (stl/css :logo-title)} (tr "not-found.login.signup-free")]
           [:div {:class (stl/css :logo-subtitle)} (tr "not-found.login.start-using")]
-          [:& register-methods {:on-success-callback success-register :hide-separator true}]
+          [:& register/register-methods {:on-success-callback success-register :hide-separator true}]
           #_[:hr {:class (stl/css :separator)}]
           [:div {:class (stl/css :separator)}]
           [:div {:class (stl/css :change-section)}
@@ -141,12 +156,13 @@
                 :on-click set-section} (tr "auth.login-here")]]
           [:div {:class (stl/css :links)}
            [:hr {:class (stl/css :separator)}]
-           [:& terms-register]]]
+           [:& register/terms-register]]]
 
          :register-validate
          [:div {:class (stl/css :form-container)}
-          [:& register-validate-form {:params {:token @register-token}
-                                      :on-success-callback register-email-sent}]
+          [:& register/register-validate-form
+           {:params {:token @register-token}
+            :on-success-callback register-email-sent}]
           [:div {:class (stl/css :links)}
            [:div {:class (stl/css :register)}
             [:a {:data-section "register"
@@ -155,7 +171,7 @@
 
          :register-email-sent
          [:div {:class (stl/css :form-container)}
-          [:& register-success-page {:params {:email @user-email :hide-logo true}}]]
+          [:& register/register-success-page {:params {:email @user-email :hide-logo true}}]]
 
          :recovery-request
          [:& recovery-request-page {:go-back-callback set-section-login
@@ -175,40 +191,49 @@
        [:button {:class (stl/css :modal-close-button) :on-click on-close}
         i/close]]
       [:div {:class (stl/css :dialog-title)} title]
-      (for [txt content]
-        [:div txt])
+      (for [[index content] (d/enumerate content)]
+        [:div {:key index} content])
       [:div {:class (stl/css :sign-info)}
        (when cancel-text
-         [:button {:class (stl/css :cancel-button) :on-click on-close} cancel-text])
+         [:button {:class (stl/css :cancel-button)
+                   :on-click on-close}
+          cancel-text])
        [:button {:on-click on-click} button-text]]]]))
-
 
 (mf/defc request-access
   {::mf/props :obj}
   [{:keys [file-id team-id is-default workspace?]}]
-  (let [profile     (:profile @st/state)
+  (let [profile     (mf/deref refs/profile)
         requested*  (mf/use-state {:sent false :already-requested false})
         requested   (deref requested*)
         show-dialog (mf/use-state true)
+
         on-close
         (mf/use-fn
          (mf/deps profile)
          (fn []
            (st/emit! (rt/nav :dashboard-projects {:team-id (:default-team-id profile)}))))
+
         on-success
         (mf/use-fn
          #(reset! requested* {:sent true :already-requested false}))
+
         on-error
         (mf/use-fn
          #(reset! requested* {:sent true :already-requested true}))
+
         on-request-access
         (mf/use-fn
          (mf/deps file-id team-id workspace?)
          (fn []
-           (let [params (if (some? file-id) {:file-id file-id :is-viewer (not workspace?)} {:team-id team-id})
-                 mdata  {:on-success on-success :on-error on-error}]
-             (st/emit! (dc/create-team-access-request (with-meta params mdata))))))]
-
+           (let [params (if (some? file-id)
+                          {:file-id file-id
+                           :is-viewer (not workspace?)}
+                          {:team-id team-id})
+                 mdata  {:on-success on-success
+                         :on-error on-error}]
+             (st/emit! (dc/create-team-access-request
+                        (with-meta params mdata))))))]
 
     [:*
      (if (some? file-id)
@@ -220,17 +245,24 @@
             [:div {:class (stl/css :project-name)} (tr "not-found.no-permission.project-name")]
             [:div {:class (stl/css :file-name)} (tr "not-found.no-permission.penpot-file")]]]
           [:div {:class (stl/css :workspace-right)}]]
+
          [:div {:class (stl/css :viewer)}
-          [:& header/header {:project {:name (tr "not-found.no-permission.project-name")}
-                             :index 0
-                             :file {:name (tr "not-found.no-permission.penpot-file")}
-                             :page nil
-                             :frame nil
-                             :permissions {:is-logged true}
-                             :zoom 1
-                             :section :interactions
-                             :shown-thumbnails false
-                             :interactions-mode nil}]])
+          ;; FIXME: the viewer header was never designed to be reused
+          ;; from other parts of the application, and this code looks
+          ;; like a fast workaround reusing it as-is without a proper
+          ;; component adaptation for be able to use it easily it on
+          ;; viewer context or static error page context
+          [:& viewer.header/header {:project
+                                    {:name (tr "not-found.no-permission.project-name")}
+                                    :index 0
+                                    :file {:name (tr "not-found.no-permission.penpot-file")}
+                                    :page nil
+                                    :frame nil
+                                    :permissions {:is-logged true}
+                                    :zoom 1
+                                    :section :interactions
+                                    :shown-thumbnails false
+                                    :interactions-mode nil}]])
 
        [:div {:class (stl/css :dashboard)}
         [:div {:class (stl/css :dashboard-sidebar)}
@@ -392,64 +424,92 @@
      [:div {:class (stl/css :sign-info)}
       [:button {:on-click on-reset} (tr "labels.retry")]]]))
 
+(defn- load-info
+  "Load exception page info"
+  [path-params]
+  (let [default {:loaded true}
+        stream  (cond
+                  (:file-id path-params)
+                  (->> (rp/cmd! :get-file-info {:id (:file-id path-params)})
+                       (rx/map (fn [info]
+                                 {:loaded true
+                                  :file-id (:id info)})))
+
+                  (:team-id path-params)
+                  (->> (rp/cmd! :get-team-info {:id (:team-id path-params)})
+                       (rx/map (fn [info]
+                                 {:loaded true
+                                  :team-id (:id info)
+                                  :team-default (:is-default info)})))
+
+                  :else
+                  (rx/of default))]
+
+    (->> stream
+         (rx/timeout 3000)
+         (rx/catch (fn [cause]
+                     (if (instance? TimeoutError cause)
+                       (rx/of default)
+                       (rx/throw cause)))))))
+
+
 (mf/defc exception-page*
   {::mf/props :obj}
   [{:keys [data route] :as props}]
 
-  (let [file-info    (mf/use-state {:pending true})
-        team-info    (mf/use-state {:pending true})
-        type         (:type data)
-        path         (:path route)
+  (let [type       (:type data)
+        path       (:path route)
 
-        workspace?   (str/includes? path "workspace")
-        dashboard?   (str/includes? path "dashboard")
-        view?        (str/includes? path "view")
+        query-params (:query-params route)
+        path-params  (:path-params route)
 
-        request-access? (and
-                         (or workspace? dashboard? view?)
-                         (or (not (str/empty? (:file-id @file-info))) (not (str/empty? (:team-id @team-info)))))
+        workspace? (str/includes? path "workspace")
+        dashboard? (str/includes? path "dashboard")
+        view?      (str/includes? path "view")
 
-        query-params (u/map->query-string (:query-params route))
-        pparams      (:path-params route)
-        on-file-info (mf/use-fn
-                      (fn [info]
-                        (reset! file-info {:file-id (:id info)})))
-        on-team-info (mf/use-fn
-                      (fn [info]
-                        (reset! team-info {:team-id (:id info) :is-default (:is-default info)})))]
+        ;; We stora the request access info int this state
+        info*      (mf/use-state nil)
+        info       (deref info*)
 
-    (mf/with-effect [type path query-params pparams @file-info @team-info]
-      (st/emit! (ptk/event ::ev/event {::ev/name "exception-page" :type type :path path :query-params query-params}))
+        loaded?    (get info :loaded false)
 
-      (when (and (:file-id pparams) (:pending @file-info))
-        (->> (rp/cmd! :get-file-info {:id (:file-id pparams)})
-             (rx/subs! on-file-info)))
+        request-access?
+        (and
+         (or workspace? dashboard? view?)
+         (or (:file-id info)
+             (:team-id info)))]
 
-      (when (and (:team-id pparams) (:pending @team-info))
-        (->> (rp/cmd! :get-team-info {:id (:team-id pparams)})
-             (rx/subs! on-team-info))))
+    (mf/with-effect [type path query-params path-params]
+      (let [query-params (u/map->query-string query-params)
+            event-params {::ev/name "exception-page"
+                          :type type
+                          :path path
+                          :query-params query-params}]
+        (st/emit! (ptk/event ::ev/event event-params))))
 
-    (case (:type data)
-      :not-found
+    (mf/with-effect [path-params info]
+      (when-not (:loaded info)
+        (->> (load-info path-params)
+             (rx/subs! (partial reset! info*)))))
+
+    (when loaded?
       (if request-access?
-        [:& request-access {:file-id (:file-id @file-info)
-                            :team-id  (:team-id @team-info)
-                            :is-default (:is-default @team-info)
+        [:& request-access {:file-id (:file-id info)
+                            :team-id  (:team-id info)
+                            :is-default (:team-default info)
                             :workspace? workspace?}]
-        [:> not-found* {}])
 
-      :authentication
-      (if request-access?
-        [:& request-access {:file-id (:file-id @file-info)
-                            :team-id  (:team-id @team-info)
-                            :is-default (:is-default @team-info)
-                            :workspace? workspace?}]
-        [:> not-found* {}])
+        (case (:type data)
+          :not-found
+          [:> not-found* {}]
 
-      :bad-gateway
-      [:> bad-gateway* props]
+          :authentication
+          [:> not-found* {}]
 
-      :service-unavailable
-      [:& service-unavailable]
+          :bad-gateway
+          [:> bad-gateway* props]
 
-      [:> internal-error* props])))
+          :service-unavailable
+          [:& service-unavailable]
+
+          [:> internal-error* props])))))

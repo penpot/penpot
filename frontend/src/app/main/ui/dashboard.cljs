@@ -42,9 +42,7 @@
   (let [search-term (get-in route [:params :query :search-term])
         team-id     (get-in route [:params :path :team-id])
         project-id  (get-in route [:params :path :project-id])]
-    (cond->
-     {:search-term search-term}
-
+    (cond-> {:search-term search-term}
       (uuid-str? team-id)
       (assoc :team-id (uuid team-id))
 
@@ -84,10 +82,10 @@
 
     (mf/use-effect on-resize)
 
-
     [:div {:class (stl/css :dashboard-content)
            :style {:pointer-events (when file-menu-open? "none")}
-           :on-click clear-selected-fn :ref container}
+           :on-click clear-selected-fn
+           :ref container}
      (case section
        :dashboard-projects
        [:*
@@ -146,7 +144,8 @@
   (l/derived :current-team-id st/state))
 
 (mf/defc dashboard
-  [{:keys [route profile] :as props}]
+  {::mf/props :obj}
+  [{:keys [route profile]}]
   (let [section        (get-in route [:data :name])
         params         (parse-params route)
 
@@ -181,13 +180,13 @@
 
     [:& (mf/provider ctx/current-team-id) {:value team-id}
      [:& (mf/provider ctx/current-project-id) {:value project-id}
-            ;; NOTE: dashboard events and other related functions assumes
-            ;; that the team is a implicit context variable that is
-            ;; available using react context or accessing
-            ;; the :current-team-id on the state. We set the key to the
-            ;; team-id because we want to completely refresh all the
-            ;; components on team change. Many components assumes that the
-            ;; team is already set so don't put the team into mf/deps.
+      ;; NOTE: dashboard events and other related functions assumes
+      ;; that the team is a implicit context variable that is
+      ;; available using react context or accessing
+      ;; the :current-team-id on the state. We set the key to the
+      ;; team-id because we want to completely refresh all the
+      ;; components on team change. Many components assumes that the
+      ;; team is already set so don't put the team into mf/deps.
       (when (and team initialized?)
         [:main {:class (stl/css :dashboard)
                 :key (:id team)}

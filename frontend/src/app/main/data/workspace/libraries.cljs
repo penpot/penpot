@@ -116,8 +116,13 @@
                    (update :id #(or % (uuid/next)))
                    (assoc :name (or (get-in color [:image :name])
                                     (:color color)
-                                    (uc/gradient-type->string (get-in color [:gradient :type])))))]
-     (dm/assert! ::ctc/color color)
+                                    (uc/gradient-type->string (get-in color [:gradient :type]))))
+                   (d/without-nils))]
+
+     (dm/assert!
+      "expect valid color structure"
+      (ctc/check-color! color))
+
      (ptk/reify ::add-color
        ev/Event
        (-data [_] color)
@@ -135,8 +140,8 @@
   [color]
 
   (dm/assert!
-   "expected valid recent color map"
-   (ctc/valid-recent-color? color))
+   "expected valid recent color structure"
+   (ctc/check-recent-color! color))
 
   (ptk/reify ::add-recent-color
     ptk/UpdateEvent
@@ -155,7 +160,7 @@
     (update [_ state]
       (assoc-in state [:workspace-local :color-for-rename] nil))))
 
-(defn- do-update-color
+(defn- update-color*
   [it state color file-id]
   (let [data        (get state :workspace-data)
         [path name] (cfh/parse-path-name (:name color))
@@ -171,19 +176,20 @@
 
 (defn update-color
   [color file-id]
+  (let [color (d/without-nils color)]
 
-  (dm/assert!
-   "expected valid parameters"
-   (ctc/valid-color? color))
+    (dm/assert!
+     "expected valid color data structure"
+     (ctc/check-color! color))
 
-  (dm/assert!
-   "expected file-id"
-   (uuid? file-id))
+    (dm/assert!
+     "expected file-id"
+     (uuid? file-id))
 
-  (ptk/reify ::update-color
-    ptk/WatchEvent
-    (watch [it state _]
-      (do-update-color it state color file-id))))
+    (ptk/reify ::update-color
+      ptk/WatchEvent
+      (watch [it state _]
+        (update-color* it state color file-id)))))
 
 (defn rename-color
   [file-id id new-name]
@@ -198,9 +204,10 @@
         (if (str/empty? new-name)
           (rx/empty)
           (let [data   (get state :workspace-data)
-                object (get-in data [:colors id])
-                object (assoc object :name new-name)]
-            (do-update-color it state object file-id)))))))
+                color  (get-in data [:colors id])
+                color  (assoc color :name new-name)
+                color  (d/without-nils color)]
+            (update-color* it state color file-id)))))))
 
 (defn delete-color
   [{:keys [id] :as params}]

@@ -260,6 +260,14 @@
          (when ^boolean obj
            (apply (.-f obj) args)))))))
 
+(defn use-ref-value
+  "Returns a ref that will be automatically updated when the value is changed"
+  [v]
+  (let [ref (mf/use-ref v)]
+    (mf/with-effect [v]
+      (mf/set-ref-val! ref v))
+    ref))
+
 (defn use-equal-memo
   [val]
   (let [ref (mf/use-ref nil)]

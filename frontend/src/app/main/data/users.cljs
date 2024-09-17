@@ -171,6 +171,7 @@
             (let [team-id         (get-current-team-id profile)
                   welcome-file-id (dm/get-in profile [:props :welcome-file-id])
                   redirect-href   (:login-redirect @s/session)]
+
               (cond
                 (some? redirect-href)
                 (binding [s/*sync* true]

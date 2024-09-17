@@ -863,11 +863,9 @@
               (assoc shadow :color color)))
 
           (update-object [object]
-            (d/update-when object :shadow
-                           #(into []
-                                  (comp (map fix-shadow)
-                                        (filter valid-shadow?))
-                                  %)))
+            (let [xform (comp (map fix-shadow)
+                              (filter valid-shadow?))]
+              (d/update-when object :shadow #(into [] xform %))))
 
           (update-container [container]
             (d/update-when container :objects update-vals update-object))]
@@ -1029,6 +1027,25 @@
 
     (update data :pages-index update-vals update-page)))
 
+(defn migrate-up-54
+  "Fixes shapes with invalid colors in shadow: it first tries a non
+  destructive fix, and if it is not possible, then, shadow is removed"
+  [data]
+  (letfn [(fix-shadow [shadow]
+            (update shadow :color d/without-nils))
+
+          (update-shape [shape]
+            (let [xform (comp (map fix-shadow)
+                              (filter valid-shadow?))]
+              (d/update-when shape :shadow #(into [] xform %))))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-shape))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
 (def migrations
   "A vector of all applicable migrations"
   [{:id 2 :migrate-up migrate-up-2}
@@ -1072,4 +1089,6 @@
    {:id 49 :migrate-up migrate-up-49}
    {:id 50 :migrate-up migrate-up-50}
    {:id 51 :migrate-up migrate-up-51}
-   {:id 52 :migrate-up migrate-up-52}])
+   {:id 52 :migrate-up migrate-up-52}
+   {:id 53 :migrate-up migrate-up-26}
+   {:id 54 :migrate-up migrate-up-54}])
