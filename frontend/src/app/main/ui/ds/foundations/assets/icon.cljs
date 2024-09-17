@@ -157,6 +157,7 @@
 (def ^:icon-id hug-content "hug-content")
 (def ^:icon-id icon "icon")
 (def ^:icon-id img "img")
+(def ^:icon-id info "info")
 (def ^:icon-id interaction "interaction")
 (def ^:icon-id join-nodes "join-nodes")
 (def ^:icon-id external-link "external-link")
