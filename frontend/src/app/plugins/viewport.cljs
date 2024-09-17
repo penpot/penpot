@@ -93,7 +93,7 @@
    {:name "bounds"
     :get
     (fn [_]
-      (let [vport (dm/get-in @st/state [:workspace-local :vport])]
-        (.freeze js/Object (format/format-bounds vport))))}))
+      (let [vbox (dm/get-in @st/state [:workspace-local :vbox])]
+        (.freeze js/Object (format/format-bounds vbox))))}))
 
 
