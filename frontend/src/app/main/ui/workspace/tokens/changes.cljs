@@ -8,6 +8,7 @@
   (:require
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
+   [app.main.data.workspace.colors :as wdc]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
@@ -18,7 +19,8 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
-   [potok.v2.core :as ptk]))
+   [potok.v2.core :as ptk]
+   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]))
 
 ;; Token Updates ---------------------------------------------------------------
 
@@ -122,6 +124,14 @@
                          (assoc-in shape [:strokes 0 :stroke-width] value)))
                      {:reg-objects? true
                       :attrs [:strokes]}))
+
+(defn update-color
+  [value shape-ids]
+  (let [color (some->> value
+                       (tinycolor/valid-color)
+                       (tinycolor/->hex)
+                       (str "#"))]
+    (wdc/change-fill shape-ids {:color color} 0)))
 
 (defn update-shape-dimensions [value shape-ids attributes]
   (ptk/reify ::update-shape-dimensions

@@ -125,7 +125,7 @@
 
 (mf/defc labeled-input
   {::mf/wrap-props false}
-  [{:keys [label input-props auto-complete? error? icon render-right]}]
+  [{:keys [label input-props auto-complete? error? render-right]}]
   (let [input-props (cond-> input-props
                       :always camel-keys
                       ;; Disable auto-complete on form fields for proprietary password managers

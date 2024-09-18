@@ -2,12 +2,16 @@
   (:require
    ["@tokens-studio/sd-transforms" :as sd-transforms]
    ["style-dictionary$default" :as sd]
-   [app.common.data :refer [ordered-map]]
+   [app.common.logging :as l]
    [app.main.refs :as refs]
+   [app.main.ui.workspace.tokens.errors :as wte]
+   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
    [cuerdas.core :as str]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
+
+(l/set-level! "app.main.ui.workspace.tokens.style-dictionary" :warn)
 
 (def StyleDictionary
   "Initiates the global StyleDictionary instance with transforms
@@ -24,7 +28,7 @@
 (defn tokens->style-dictionary+
   "Resolves references and math expressions using StyleDictionary.
   Returns a promise with the resolved dictionary."
-  [tokens {:keys [debug?]}]
+  [tokens]
   (let [data (cond-> {:tokens tokens
                       :platforms {:json {:transformGroup "tokens-studio"
                                          :files [{:format "custom/json"
@@ -33,66 +37,68 @@
                             :warnings "silent"
                             :errors {:brokenReferences "console"}}
                       :preprocessors ["tokens-studio"]}
-               debug? (update :log merge {:verbosity "verbose"
-                                          :warnings "warn"}))
+               (l/enabled? "app.main.ui.workspace.tokens.style-dictionary" :debug)
+               (update :log merge {:verbosity "verbose"
+                                   :warnings "warn"}))
         js-data (clj->js data)]
-    (when debug?
-      (js/console.log "Input Data" js-data))
+    (l/debug :hint "Input Data" :js/data js-data)
     (sd. js-data)))
 
 (defn resolve-sd-tokens+
   "Resolves references and math expressions using StyleDictionary.
   Returns a promise with the resolved dictionary."
-  [tokens & {:keys [debug?] :as config}]
+  [tokens]
   (let [performance-start (js/performance.now)
-        sd (tokens->style-dictionary+ tokens config)]
-    (when debug?
-      (js/console.log "StyleDictionary" sd))
+        sd (tokens->style-dictionary+ tokens)]
+    (l/debug :hint "StyleDictionary" :js/style-dictionary sd)
     (-> sd
         (.buildAllPlatforms "json")
-        (.catch js/console.error)
+        (.catch #(l/error :hint "Styledictionary build error" :js/error %))
         (.then (fn [^js resp]
                  (let [performance-end (js/performance.now)
                        duration-ms (- performance-end performance-start)
                        resolved-tokens (.-allTokens resp)]
-                   (when debug?
-                     (js/console.log "Time elapsed" duration-ms "ms")
-                     (js/console.log "Resolved tokens" resolved-tokens))
+                   (l/debug :hint (str "Time elapsed" duration-ms "ms") :duration duration-ms)
+                   (l/debug :hint "Resolved tokens" :js/tokens resolved-tokens)
                    resolved-tokens))))))
 
 (defn humanize-errors [{:keys [errors value] :as _token}]
   (->> (map (fn [err]
               (case err
-                :style-dictionary/missing-reference (str "Could not resolve reference token with the name: " value)
+                :error.style-dictionary/missing-reference (str "Could not resolve reference token with the name: " value)
                 nil))
             errors)
        (str/join "\n")))
 
-(defn missing-reference-error?
-  [errors]
-  (and (set? errors)
-       (get errors :style-dictionary/missing-reference)))
-
 (defn resolve-tokens+
-  [tokens & {:keys [names-map? debug?] :as config}]
+  [tokens & {:keys [names-map?] :as config}]
   (p/let [sd-tokens (-> (wtt/token-names-tree tokens)
-                        (resolve-sd-tokens+ config))]
+                        (resolve-sd-tokens+))]
     (let [resolved-tokens (reduce
                            (fn [acc ^js cur]
                              (let [identifier (if names-map?
                                                 (.. cur -original -name)
                                                 (uuid (.-uuid (.-id cur))))
-                                   origin-token (get tokens identifier)
-                                   parsed-value (wtt/parse-token-value (.-value cur))
-                                   resolved-token (if (not parsed-value)
-                                                    (assoc origin-token :errors [:style-dictionary/missing-reference])
-                                                    (assoc origin-token
-                                                           :resolved-value (:value parsed-value)
-                                                           :resolved-unit (:unit parsed-value)))]
-                               (assoc acc (wtt/token-identifier resolved-token) resolved-token)))
+                                   {:keys [type] :as origin-token} (get tokens identifier)
+                                   value (.-value cur)
+                                   token-or-err (case type
+                                                  :color (if-let [tc (tinycolor/valid-color value)]
+                                                           {:value value :unit (tinycolor/color-format tc)}
+                                                           {:errors [(wte/error-with-value :error.token/invalid-color value)]})
+                                                  (or (wtt/parse-token-value value)
+                                                      (if-let [references (-> (wtt/find-token-references value)
+                                                                              (seq))]
+                                                        {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
+                                                         :references references}
+                                                        {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
+                                   output-token (if (:errors token-or-err)
+                                                  (merge origin-token token-or-err)
+                                                  (assoc origin-token
+                                                         :resolved-value (:value token-or-err)
+                                                         :unit (:unit token-or-err)))]
+                               (assoc acc (wtt/token-identifier output-token) output-token)))
                            {} sd-tokens)]
-      (when debug?
-        (js/console.log "Resolved tokens" resolved-tokens))
+      (l/debug :hint "Resolved tokens" :js/tokens resolved-tokens)
       resolved-tokens)))
 
 ;; Hooks -----------------------------------------------------------------------

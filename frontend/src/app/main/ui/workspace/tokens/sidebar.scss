@@ -72,6 +72,7 @@
 
 .token-pill {
   @extend .button-secondary;
+  gap: $s-8;
   padding: $s-4 $s-8;
   border-radius: $br-6;
   font-size: $fs-14;

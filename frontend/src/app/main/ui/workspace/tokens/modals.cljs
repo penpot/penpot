@@ -68,6 +68,12 @@
   [properties]
   [:& token-update-create-modal properties])
 
+(mf/defc color-modal
+  {::mf/register modal/components
+   ::mf/register-as :tokens/color}
+  [properties]
+  [:& token-update-create-modal properties])
+
 (mf/defc stroke-width-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/stroke-width}

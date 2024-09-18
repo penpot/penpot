@@ -8,13 +8,19 @@
   (:require-macros [app.main.style :as stl])
   (:require
    ["lodash.debounce" :as debounce]
+   [app.common.colors :as c]
    [app.common.data :as d]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.color-bullet :refer [color-bullet]]
+   [app.main.ui.workspace.colorpicker :as colorpicker]
+   [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
    [app.main.ui.workspace.tokens.common :as tokens.common]
+   [app.main.ui.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.update :as wtu]
    [app.util.dom :as dom]
@@ -84,32 +90,39 @@ Token names should only contain letters and digits separated by . characters.")}
 
 ;; Component -------------------------------------------------------------------
 
+(defn token-self-reference?
+  [token-name input]
+  (let [token-references (wtt/find-token-references input)
+        self-reference? (get token-references token-name)]
+    self-reference?))
+
 (defn validate-token-value+
   "Validates token value by resolving the value `input` using `StyleDictionary`.
   Returns a promise of either resolved tokens or rejects with an error state."
   [{:keys [input name-value token tokens]}]
-  (let [empty-input? (empty? (str/trim input))
-        ;; Check if the given value contains a reference that is the current token-name
-        ;; When creating a new token we dont have a token name yet,
-        ;; so we use a temporary token name that hopefully doesn't clash with any of the users token names.
-        token-name (if (str/empty? name-value) "__TOKEN_STUDIO_SYSTEM.TEMP" name-value)
-        token-references (wtt/find-token-references input)
-        direct-self-reference? (get token-references token-name)]
+  (let [ ;; When creating a new token we dont have a token name yet,
+        ;; so we use a temporary token name that hopefully doesn't clash with any of the users token names
+        token-name (if (str/empty? name-value) "__TOKEN_STUDIO_SYSTEM.TEMP" name-value)]
     (cond
-      empty-input? (p/rejected nil)
-      direct-self-reference? (p/rejected :error/token-direct-self-reference)
-      :else (let [token-id (or (:id token) (random-uuid))
-                  new-tokens (update tokens token-name merge {:id token-id
-                                                              :value input
-                                                              :name token-name})]
-              (-> (sd/resolve-tokens+ new-tokens {:names-map? true})
-                  (p/then
-                   (fn [resolved-tokens]
-                     (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
-                       (cond
-                         resolved-value (p/resolved resolved-token)
-                         (sd/missing-reference-error? errors) (p/rejected :error/token-missing-reference)
-                         :else (p/rejected :error/unknown-error))))))))))
+      (empty? (str/trim input))
+      (p/rejected {:errors [{:error/code :error/empty-input}]})
+
+      (token-self-reference? token-name input)
+      (p/rejected {:errors [(wte/get-error-code :error.token/direct-self-reference)]})
+
+      :else
+      (let [token-id (or (:id token) (random-uuid))
+            new-tokens (update tokens token-name merge {:id token-id
+                                                        :value input
+                                                        :name token-name
+                                                        :type (:type token)})]
+        (-> (sd/resolve-tokens+ new-tokens {:names-map? true})
+            (p/then
+             (fn [resolved-tokens]
+               (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
+                 (cond
+                   resolved-value (p/resolved resolved-token)
+                   :else (p/rejected {:errors (or errors (wte/get-error-code :error/unknown-error))}))))))))))
 
 (defn use-debonced-resolve-callback
   "Resolves a token values using `StyleDictionary`.
@@ -120,31 +133,74 @@ Token names should only contain letters and digits separated by . characters.")}
         debounced-resolver-callback
         (mf/use-callback
          (mf/deps token callback tokens)
-         (fn [event]
-           (let [input (dom/get-target-val event)
-                 timeout-id (js/Symbol)
+         (fn [value]
+           (let [timeout-id (js/Symbol)
                  ;; Dont execute callback when the timout-id-ref is outdated because this function got called again
                  timeout-outdated-cb? #(not= (mf/ref-val timeout-id-ref) timeout-id)]
              (mf/set-ref-val! timeout-id-ref timeout-id)
              (js/setTimeout
               (fn []
                 (when (not (timeout-outdated-cb?))
-                  (-> (validate-token-value+ {:input input
+                  (-> (validate-token-value+ {:input value
                                               :name-value @name-ref
                                               :token token
                                               :tokens tokens})
-                      (p/finally (fn [x err]
-                                   (when-not (timeout-outdated-cb?)
-                                     (callback (or err x))))))))
+                      (p/finally
+                        (fn [x err]
+                          (when-not (timeout-outdated-cb?)
+                            (callback (or err x))))))))
               timeout))))]
     debounced-resolver-callback))
 
 (defonce form-token-cache-atom (atom nil))
 
+(mf/defc ramp
+  [{:keys [color on-change]}]
+  (let [wrapper-node-ref (mf/use-ref nil)
+        dragging? (mf/use-state)
+        hex->value (fn [hex]
+                     (when-let [tc (tinycolor/valid-color hex)]
+                       (let [hex (str "#" (tinycolor/->hex tc))
+                             [r g b] (c/hex->rgb hex)
+                             [h s v] (c/hex->hsv hex)]
+                         {:hex hex
+                          :r r :g g :b b
+                          :h h :s s :v v
+                          :alpha 1})))
+        value (mf/use-state (hex->value color))
+        on-change' (fn [{:keys [hex]}]
+                     (reset! value (hex->value hex))
+                     (when-not (and @dragging? hex)
+                       (on-change hex)))]
+    (colorpicker/use-color-picker-css-variables! wrapper-node-ref @value)
+    [:div {:ref wrapper-node-ref}
+     [:& ramp-selector
+      {:color @value
+       :disable-opacity true
+       :on-start-drag #(reset! dragging? true)
+       :on-finish-drag #(reset! dragging? false)
+       :on-change on-change'}]]))
+
+(mf/defc token-value-or-errors
+  [{:keys [result-or-errors]}]
+  (let [{:keys [errors]} result-or-errors
+        empty-message? (or (nil? result-or-errors)
+                           (wte/has-error-code? :error/empty-input errors))]
+    [:div {:class (stl/css-case :resolved-value true
+                                :resolved-value-placeholder empty-message?
+                                :resolved-value-error (seq errors))}
+     (cond
+       empty-message? "Enter token value"
+       errors (->> (wte/humanize-errors errors)
+                   (str/join "\n"))
+       :else [:p result-or-errors])]))
+
 (mf/defc form
   {::mf/wrap-props false}
-  [{:keys [token token-type] :as _args}]
-  (let [tokens (mf/deref refs/workspace-ordered-token-sets-tokens)
+  [{:keys [token token-type]}]
+  (let [validate-name? (mf/use-state (not (:id token)))
+        token (or token {:type token-type})
+        color? (wtt/color-token? token)
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
         active-theme-tokens (mf/deref refs/workspace-active-theme-sets-tokens)
         resolved-tokens (sd/use-resolved-tokens active-theme-tokens {:names-map? true
@@ -153,7 +209,7 @@ Token names should only contain letters and digits separated by . characters.")}
                     (mf/deps (:name token))
                     #(wtt/token-name->path (:name token)))
         selected-set-tokens-tree (mf/use-memo
-                                  (mf/deps token-path tokens)
+                                  (mf/deps token-path selected-set-tokens)
                                   (fn []
                                     (-> (wtt/token-names-tree selected-set-tokens)
                                         ;; Allow setting editing token to it's own path
@@ -172,7 +228,10 @@ Token names should only contain letters and digits separated by . characters.")}
                                   (debounce (fn [e]
                                               (let [value (dom/get-target-val e)
                                                     errors (validate-name value)]
-                                                (reset! name-errors errors)))))
+                                                ;; Prevent showing error when just going to another field on a new token
+                                                (when-not (and validate-name? (str/empty? value))
+                                                  (reset! validate-name? false)
+                                                  (reset! name-errors errors))))))
         on-update-name (mf/use-callback
                         (mf/deps on-update-name-debounced)
                         (fn [e]
@@ -183,23 +242,33 @@ Token names should only contain letters and digits separated by . characters.")}
                            (valid-name? @name-ref))
 
         ;; Value
+        color (mf/use-state (when color? (:value token)))
+        color-ramp-open? (mf/use-state false)
+        value-input-ref (mf/use-ref nil)
         value-ref (mf/use-var (:value token))
         token-resolve-result (mf/use-state (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value]))
         set-resolve-value (mf/use-callback
                            (fn [token-or-err]
-                             (let [v (cond
-                                       (= token-or-err :error/token-direct-self-reference) token-or-err
-                                       (= token-or-err :error/token-missing-reference) token-or-err
-                                       (:resolved-value token-or-err) (:resolved-value token-or-err))]
+                             (let [error? (:errors token-or-err)
+                                   v (if error?
+                                       token-or-err
+                                       (:resolved-value token-or-err))]
+                               (when color? (reset! color (if error? nil v)))
                                (reset! token-resolve-result v))))
         on-update-value-debounced (use-debonced-resolve-callback name-ref token active-theme-tokens set-resolve-value)
         on-update-value (mf/use-callback
                          (mf/deps on-update-value-debounced)
                          (fn [e]
-                           (reset! value-ref (dom/get-target-val e))
-                           (on-update-value-debounced e)))
-        value-error? (when (keyword? @token-resolve-result)
-                       (= (namespace @token-resolve-result) "error"))
+                           (let [value (dom/get-target-val e)]
+                             (reset! value-ref value)
+                             (on-update-value-debounced value))))
+        on-update-color (mf/use-callback
+                         (mf/deps on-update-value-debounced)
+                         (fn [hex-value]
+                           (reset! value-ref hex-value)
+                           (set! (.-value (mf/ref-val value-input-ref)) hex-value)
+                           (on-update-value-debounced hex-value)))
+        value-error? (seq (:errors @token-resolve-result))
         valid-value-field? (and
                             (not value-error?)
                             (valid-value? @token-resolve-result))
@@ -257,7 +326,8 @@ Token names should only contain letters and digits separated by . characters.")}
                                             (st/emit! (wtu/update-workspace-tokens))
                                             (modal/hide!)))))))))]
     [:form
-     {:on-submit on-submit}
+     {:class (stl/css :form-wrapper)
+      :on-submit on-submit}
      [:div {:class (stl/css :token-rows)}
       [:div
        [:& tokens.common/labeled-input {:label "Name"
@@ -275,16 +345,22 @@ Token names should only contain letters and digits separated by . characters.")}
       [:& tokens.common/labeled-input {:label "Value"
                                        :input-props {:default-value @value-ref
                                                      :on-blur on-update-value
-                                                     :on-change on-update-value}}]
-      [:div {:class (stl/css-case :resolved-value true
-                                  :resolved-value-placeholder (nil? @token-resolve-result)
-                                  :resolved-value-error value-error?)}
-       (case @token-resolve-result
-         :error/token-direct-self-reference "Token has self reference"
-         :error/token-missing-reference "Token has missing reference"
-         :error/unknown-error ""
-         nil "Enter token value"
-         [:p @token-resolve-result])]
+                                                     :on-change on-update-value
+                                                     :ref value-input-ref}
+                                       :render-right (when color?
+                                                       (mf/fnc []
+                                                               [:div {:class (stl/css :color-bullet)
+                                                                      :on-click #(swap! color-ramp-open? not)}
+                                                                (if-let [hex (some-> @color tinycolor/valid-color tinycolor/->hex)]
+                                                                  [:& color-bullet {:color hex
+                                                                                    :mini? true}]
+                                                                  [:div {:class (stl/css :color-bullet-placeholder)}])]))}]
+      (when @color-ramp-open?
+        [:& ramp {:color (some-> (or @token-resolve-result (:value token))
+                                 (tinycolor/valid-color))
+                  :on-change on-update-color}])
+      [:& token-value-or-errors {:result-or-errors @token-resolve-result}]
+
       [:div
        [:& tokens.common/labeled-input {:label "Description"
                                         :input-props {:default-value @description-ref
