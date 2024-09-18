@@ -7,7 +7,8 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [cuerdas.core :as str]
    [promesa.core :as p]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [app.main.ui.workspace.tokens.errors :as wte]))
 
 (def StyleDictionary
   "Initiates the global StyleDictionary instance with transforms
@@ -84,12 +85,13 @@
                                    token-or-err (case type
                                                   :color (if-let [tc (tinycolor/valid-color value)]
                                                            {:value value :unit (tinycolor/color-format tc)}
-                                                           {:errors #{:error.token/invalid-color}})
+                                                           {:errors [(wte/error-with-value :error.token/invalid-color value)]})
                                                   (or (wtt/parse-token-value value)
-                                                      (if-let [references (seq (wtt/find-token-references value))]
-                                                        {:errors #{:error.style-dictionary/missing-reference}
+                                                      (if-let [references (-> (wtt/find-token-references value)
+                                                                              (seq))]
+                                                        {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
                                                          :references references}
-                                                        {:errors #{:error.style-dictionary/invalid-token-value}})))
+                                                        {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
                                    output-token (if (:errors token-or-err)
                                                   (merge origin-token token-or-err)
                                                   (assoc origin-token

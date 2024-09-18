@@ -104,10 +104,10 @@ Token names should only contain letters and digits separated by . characters.")}
         token-name (if (str/empty? name-value) "__TOKEN_STUDIO_SYSTEM.TEMP" name-value)]
     (cond
       (empty? (str/trim input))
-      (p/rejected {:errors #{:error/empty-input}})
+      (p/rejected {:errors [{:error/code :error/empty-input}]})
 
       (token-self-reference? token-name input)
-      (p/rejected {:errors #{:error.token/direct-self-reference}})
+      (p/rejected {:errors [(wte/get-error-code :error.token/direct-self-reference)]})
 
       :else
       (let [token-id (or (:id token) (random-uuid))
@@ -121,7 +121,7 @@ Token names should only contain letters and digits separated by . characters.")}
                (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
                  (cond
                    resolved-value (p/resolved resolved-token)
-                   :else (p/rejected {:errors (or errors #{:error/unknown-error})}))))))))))
+                   :else (p/rejected {:errors (or errors (wte/get-error-code :error/unknown-error))}))))))))))
 
 (defn use-debonced-resolve-callback
   "Resolves a token values using `StyleDictionary`.
@@ -175,13 +175,13 @@ Token names should only contain letters and digits separated by . characters.")}
   [{:keys [result-or-errors]}]
   (let [{:keys [errors]} result-or-errors
         empty-message? (or (nil? result-or-errors)
-                           (= errors #{:error/empty-input}))]
+                           (wte/has-error-code? :error/empty-input errors))]
     [:div {:class (stl/css-case :resolved-value true
                                 :resolved-value-placeholder empty-message?
                                 :resolved-value-error (seq errors))}
      (cond
        empty-message? "Enter token value"
-       errors (->> (wte/humanize-errors (:value result-or-errors) errors)
+       errors (->> (wte/humanize-errors errors)
                    (str/join "\n"))
        :else [:p result-or-errors])]))
 

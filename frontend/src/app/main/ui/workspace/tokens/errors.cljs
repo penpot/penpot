@@ -1,22 +1,43 @@
-(ns app.main.ui.workspace.tokens.errors)
+(ns app.main.ui.workspace.tokens.errors
+  (:require
+   [cuerdas.core :as str]))
 
 (def error-codes
   {:error.token/direct-self-reference
-   {:error/fn #(str "Token has self reference in name: " %)}
-   :error.token/invalid-color
-   {:error/fn #(str "Invalid color value: " %)}
-   :error.style-dictionary/missing-reference
-   {:error/fn #(str "Could not resolve reference token with name: " %)}
-   :error.style-dictionary/invalid-token-value
-   {:error/message "Invalid token value"}
-   :error/unknown
-   {:error/message "Unknown error"}})
+   {:error/code :error.token/direct-self-reference
+    :error/message "Token has self reference"}
 
-(defn humanize-errors [v errors]
+   :error.token/invalid-color
+   {:error/code :error.token/invalid-color
+    :error/fn #(str "Invalid color value: " %)}
+
+   :error.style-dictionary/missing-reference
+   {:error/code :error.style-dictionary/missing-reference
+    :error/fn #(str "Missing token references: " (str/join " " %))}
+
+   :error.style-dictionary/invalid-token-value
+   {:error/code :error.style-dictionary/invalid-token-value
+    :error/fn #(str "Invalid token value: " %)}
+
+   :error/unknown
+   {:error/code :error/unknown
+    :error/message "Unknown error"}})
+
+(defn get-error-code [error-key]
+  (get error-codes error-key (:error/unknown error-codes)))
+
+(defn error-with-value [error-key error-value]
+  (-> (get-error-code error-key)
+      (assoc :error/value error-value)))
+
+(defn has-error-code? [error-key errors]
+  (some #(= (:error/code %) error-key) errors))
+
+(defn humanize-errors [errors]
   (->> errors
        (map (fn [err]
-              (let [err' (get error-codes err err)]
-                (cond
-                  (:error/fn err') ((:error/fn err') v)
-                  (:error/message err') (:error/message err')
-                  :else err'))))))
+              (js/console.log "err" err)
+              (cond
+                (:error/fn err) ((:error/fn err) (:error/value err))
+                (:error/message err) (:error/message err)
+                :else err)))))
