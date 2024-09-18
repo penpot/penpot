@@ -36,7 +36,6 @@
 (defn humanize-errors [errors]
   (->> errors
        (map (fn [err]
-              (js/console.log "err" err)
               (cond
                 (:error/fn err) ((:error/fn err) (:error/value err))
                 (:error/message err) (:error/message err)
