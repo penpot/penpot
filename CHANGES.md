@@ -6,6 +6,8 @@
 
 ### :boom: Breaking changes & Deprecations
 
+- Use [nginx-unprivileged](https://hub.docker.com/r/nginxinc/nginx-unprivileged) as base image for Penpot's frontend docker image. Now all the docker images runs with the same unprivileged user (penpot). Because of that, the default NGINX listen port now is 8080, instead of 80, so you will have to modify your infrastructure to apply this change.
+
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features
