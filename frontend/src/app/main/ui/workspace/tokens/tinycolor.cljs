@@ -1,7 +1,8 @@
 (ns app.main.ui.workspace.tokens.tinycolor
   "Bindings for tinycolor2 which supports a wide range of css compatible colors.
 
-  Used by StyleDictionary, so we might as well use it directly."
+  This library was chosen as it is already used by StyleDictionary,
+  so there is no extra dependency cost and there was no clojure alternatives with all the necessary features."
   (:require
    ["tinycolor2" :as tinycolor]))
 
