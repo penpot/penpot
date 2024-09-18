@@ -19,7 +19,8 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
-   [potok.v2.core :as ptk]))
+   [potok.v2.core :as ptk]
+   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]))
 
 ;; Token Updates ---------------------------------------------------------------
 
@@ -126,7 +127,11 @@
 
 (defn update-color
   [value shape-ids]
-  (wdc/change-fill shape-ids {:color (str "#" value)} 0))
+  (let [color (some->> value
+                       (tinycolor/valid-color)
+                       (tinycolor/->hex)
+                       (str "#"))]
+    (wdc/change-fill shape-ids {:color color} 0)))
 
 (defn update-shape-dimensions [value shape-ids attributes]
   (ptk/reify ::update-shape-dimensions
