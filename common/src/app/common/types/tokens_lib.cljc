@@ -283,11 +283,18 @@
 (def check-token-theme!
   (sm/check-fn ::token-theme))
 
+(def top-level-theme-group-name
+  "Top level theme groups have an empty string as the theme group."
+  "")
+
+(defn top-level-theme-group? [group]
+  (= group top-level-theme-group-name))
+
 (defn make-token-theme
   [& {:keys [] :as params}]
   (let [params    (-> params
                       (dissoc :id)
-                      (update :group #(or % ""))
+                      (update :group #(or % top-level-theme-group-name))
                       (update :is-source #(or % false))
                       (update :modified-at #(or % (dt/now)))
                       (update :sets #(into (d/ordered-set) %)))
@@ -308,7 +315,8 @@
   (theme-count [_] "get the total number if themes in the library")
   (get-theme-tree [_] "get a nested tree of all themes in the library")
   (get-themes [_] "get an ordered sequence of all themes in the library")
-  (get-theme [_ group name] "get one theme looking for name"))
+  (get-theme [_ group name] "get one theme looking for name")
+  (get-theme-groups [_] "get a sequence of group names by order"))
 
 (def schema:token-themes
   [:and
@@ -430,6 +438,12 @@
 
   (get-theme-tree [_]
     themes)
+
+  (get-theme-groups [_]
+    (into [] (comp
+              (map key)
+              (remove top-level-theme-group?))
+          themes))
 
   (get-themes [_]
     (->> (tree-seq d/ordered-map? vals themes)

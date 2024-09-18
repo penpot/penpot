@@ -872,6 +872,15 @@
         (t/is (= (:description token-theme') "some description"))
         (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
 
+    (t/deftest get-theme-groups
+      (let [token-lib (-> (ctob/make-tokens-lib)
+                          (ctob/add-theme (ctob/make-token-theme :group "" :name "token-theme-1"))
+                          (ctob/add-theme (ctob/make-token-theme :group "group1" :name "token-theme-2"))
+                          (ctob/add-theme (ctob/make-token-theme :group "group1" :name "token-theme-3"))
+                          (ctob/add-theme (ctob/make-token-theme :group "group2" :name "token-theme-4")))
+            token-groups (ctob/get-theme-groups token-lib)]
+        (t/is (= token-groups ["group1" "group2"]))))
+
     (t/deftest rename-theme-in-groups
       (let [tokens-lib   (-> (ctob/make-tokens-lib)
                              (ctob/add-theme (ctob/make-token-theme :group "" :name "token-theme-1"))

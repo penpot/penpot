@@ -15,7 +15,8 @@
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
    [app.main.ui.workspace.tokens.token-set :as wtts]
-   [okulary.core :as l]))
+   [okulary.core :as l]
+   [app.common.types.tokens-lib :as ctob]))
 
 ;; ---- Global refs
 
@@ -240,12 +241,17 @@
    st/state
    =))
 
+;; ---- Tokens
+
+(def tokens-lib
+  (l/derived :tokens-lib workspace-data))
+
+(def workspace-token-theme-groups
+  (l/derived #(some-> % ctob/get-theme-groups) tokens-lib))
+
 (defn workspace-token-theme
   [id]
   (l/derived #(wtts/get-workspace-theme id %) st/state))
-
-(def workspace-token-theme-groups
-  (l/derived wtts/get-workspace-theme-groups st/state))
 
 (def workspace-active-theme-ids
   (l/derived wtts/get-active-theme-ids st/state))
