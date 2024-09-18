@@ -7,6 +7,10 @@
 @import "refactor/common-refactor.scss";
 @import "./common.scss";
 
+.form-wrapper {
+  width: $s-260;
+}
+
 .button-row {
   display: flex;
   flex-direction: column;
@@ -30,7 +34,7 @@
   @include bodySmallTypography;
   padding: $s-4 $s-6;
   font-weight: medium;
-  height: $s-24;
+  min-height: 1lh;
 
   color: var(--color-foreground-primary);
   border: 1px solid color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);

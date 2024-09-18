@@ -326,7 +326,8 @@ Token names should only contain letters and digits separated by . characters.")}
                                             (st/emit! (wtu/update-workspace-tokens))
                                             (modal/hide!)))))))))]
     [:form
-     {:on-submit on-submit}
+     {:class (stl/css :form-wrapper)
+      :on-submit on-submit}
      [:div {:class (stl/css :token-rows)}
       [:div
        [:& tokens.common/labeled-input {:label "Name"

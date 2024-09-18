@@ -8,6 +8,9 @@
 
 .shadow {
   @extend .modal-container-base;
+  width: auto;
+  max-width: auto;
+  min-width: auto;
   @include menuShadow;
   position: absolute;
   z-index: 11;
