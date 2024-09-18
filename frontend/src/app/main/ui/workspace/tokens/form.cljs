@@ -7,18 +7,20 @@
 (ns app.main.ui.workspace.tokens.form
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.main.ui.workspace.tokens.errors :as wte]
    ["lodash.debounce" :as debounce]
-   [app.common.colors :as cc]
+   [app.common.colors :as c]
    [app.common.data :as d]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
+   [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
    [app.main.ui.workspace.tokens.common :as tokens.common]
+   [app.main.ui.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.update :as wtu]
    [app.util.dom :as dom]
@@ -26,8 +28,7 @@
    [malli.core :as m]
    [malli.error :as me]
    [promesa.core :as p]
-   [rumext.v2 :as mf]
-   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]))
+   [rumext.v2 :as mf]))
 
 ;; Schemas ---------------------------------------------------------------------
 
@@ -155,21 +156,30 @@ Token names should only contain letters and digits separated by . characters.")}
 
 (mf/defc ramp
   [{:keys [color on-change]}]
-  (let [dragging? (mf/use-state)
-        [r g b] (cc/hex->rgb color)
-        [h s v] (cc/hex->hsv color)
-        value (mf/use-state {:hex color
-                             :r r :g g :b b
-                             :h h :s s :v v})
-        on-change' (fn [color]
-                     (swap! value merge color)
-                     (when-not (and @dragging? (:hex color))
-                       (on-change (:hex color))))]
-    [:& ramp-selector {:color @value
-                       :disable-opacity true
-                       :on-start-drag #(reset! dragging? true)
-                       :on-finish-drag #(reset! dragging? false)
-                       :on-change on-change'}]))
+  (let [wrapper-node-ref (mf/use-ref nil)
+        dragging? (mf/use-state)
+        hex->value (fn [hex]
+                     (when-let [tc (tinycolor/valid-color hex)]
+                       (let [hex (str "#" (tinycolor/->hex tc))
+                             [r g b] (c/hex->rgb hex)
+                             [h s v] (c/hex->hsv hex)]
+                         {:hex hex
+                          :r r :g g :b b
+                          :h h :s s :v v
+                          :alpha 1})))
+        value (mf/use-state (hex->value color))
+        on-change' (fn [{:keys [hex]}]
+                     (reset! value (hex->value hex))
+                     (when-not (and @dragging? hex)
+                       (on-change hex)))]
+    (colorpicker/use-color-picker-css-variables! wrapper-node-ref @value)
+    [:div {:ref wrapper-node-ref}
+     [:& ramp-selector
+      {:color @value
+       :disable-opacity true
+       :on-start-drag #(reset! dragging? true)
+       :on-finish-drag #(reset! dragging? false)
+       :on-change on-change'}]]))
 
 (mf/defc token-value-or-errors
   [{:keys [result-or-errors]}]
@@ -343,8 +353,7 @@ Token names should only contain letters and digits separated by . characters.")}
                                                                   [:div {:class (stl/css :color-bullet-placeholder)}])]))}]
       (when @color-ramp-open?
         [:& ramp {:color (some-> (or @token-resolve-result (:value token))
-                                 (tinycolor/valid-color)
-                                 (tinycolor/->hex))
+                                 (tinycolor/valid-color))
                   :on-change on-update-color}])
       [:& token-value-or-errors {:result-or-errors @token-resolve-result}]
 

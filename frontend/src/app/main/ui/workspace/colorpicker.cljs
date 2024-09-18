@@ -52,6 +52,25 @@
 
 ;; --- Color Picker Modal
 
+(defn use-color-picker-css-variables! [node-ref current-color]
+  (mf/with-effect [current-color]
+    (let [node (mf/ref-val node-ref)
+          {:keys [r g b h v]} current-color
+          rgb [r g b]
+          hue-rgb (cc/hsv->rgb [h 1.0 255])
+          hsl-from (cc/hsv->hsl [h 0.0 v])
+          hsl-to (cc/hsv->hsl [h 1.0 v])
+
+          format-hsl (fn [[h s l]]
+                       (str/fmt "hsl(%s, %s, %s)"
+                                h
+                                (str (* s 100) "%")
+                                (str (* l 100) "%")))]
+      (dom/set-css-property! node "--color" (str/join ", " rgb))
+      (dom/set-css-property! node "--hue-rgb" (str/join ", " hue-rgb))
+      (dom/set-css-property! node "--saturation-grad-from" (format-hsl hsl-from))
+      (dom/set-css-property! node "--saturation-grad-to" (format-hsl hsl-to)))))
+
 (mf/defc colorpicker
   {::mf/props :obj}
   [{:keys [data disable-gradient disable-opacity disable-image on-change on-accept]}]
@@ -220,23 +239,7 @@
       (st/emit! (dc/update-colorpicker data)))
 
     ;; Updates the CSS color variable when there is a change in the color
-    (mf/with-effect [current-color]
-      (let [node (mf/ref-val node-ref)
-            {:keys [r g b h v]} current-color
-            rgb [r g b]
-            hue-rgb (cc/hsv->rgb [h 1.0 255])
-            hsl-from (cc/hsv->hsl [h 0.0 v])
-            hsl-to (cc/hsv->hsl [h 1.0 v])
-
-            format-hsl (fn [[h s l]]
-                         (str/fmt "hsl(%s, %s, %s)"
-                                  h
-                                  (str (* s 100) "%")
-                                  (str (* l 100) "%")))]
-        (dom/set-css-property! node "--color" (str/join ", " rgb))
-        (dom/set-css-property! node "--hue-rgb" (str/join ", " hue-rgb))
-        (dom/set-css-property! node "--saturation-grad-from" (format-hsl hsl-from))
-        (dom/set-css-property! node "--saturation-grad-to" (format-hsl hsl-to))))
+    (use-color-picker-css-variables! node-ref current-color)
 
     ;; Updates color when pixel picker is used
     (mf/with-effect [picking-color? picked-color picked-color-select]
