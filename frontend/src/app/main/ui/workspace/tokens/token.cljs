@@ -13,15 +13,6 @@
   [token-id state]
   (get-in state [:workspace-data :tokens token-id]))
 
-(def parseable-token-color-value-regexp
-  "Regexp that can be used to parse a hex value out of resolved token value.
-  This regexp also trims whitespace around the value."
-  #"^\s*#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})\s*$")
-
-(defn parse-token-color-value [value]
-  (when-let [[_ hex] (re-find parseable-token-color-value-regexp value)]
-    {:value hex :unit :hex}))
-
 (def parseable-token-value-regexp
   "Regexp that can be used to parse a number value out of resolved token value.
   This regexp also trims whitespace around the value."
@@ -47,11 +38,6 @@
 
 (defn token-identifier [{:keys [name] :as _token}]
   name)
-
-(defn resolve-token-value [{:keys [value resolved-value] :as _token}]
-  (or
-   resolved-value
-   (d/parse-double value)))
 
 (defn attributes-map
   "Creats an attributes map using collection of `attributes` for `id`."
@@ -91,11 +77,6 @@
   [token shapes token-attributes]
   (some #(token-applied? token % token-attributes) shapes))
 
-(defn shapes-token-applied-all?
-  "Test if `token` is applied to to any of `shapes` with at least one of the one of the given `token-attributes`."
-  [token shapes token-attributes]
-  (some #(token-applied? token % token-attributes) shapes))
-
 (defn shapes-ids-by-applied-attributes [token shapes token-attributes]
   (reduce (fn [acc shape]
             (let [applied-ids-by-attribute (->> (map #(when (token-attribute-applied? token shape %)
@@ -108,24 +89,6 @@
 
 (defn shapes-applied-all? [ids-by-attributes shape-ids attributes]
   (every? #(set/superset? (get ids-by-attributes %) shape-ids) attributes))
-
-(defn group-shapes-by-all-applied
-  [token shapes token-attributes]
-  (reduce
-   (fn [acc cur-shape]
-     (let [applied-attrs (token-applied-attributes token cur-shape token-attributes)]
-       (cond
-         (empty? applied-attrs) (update acc :none (fnil conj []) cur-shape)
-         (= applied-attrs token-attributes) (update acc :all (fnil conj []) cur-shape)
-         :else (reduce (fn [acc' cur']
-                         (update-in acc' [:some cur'] (fnil conj []) cur-shape))
-                       acc applied-attrs))))
-   {} shapes))
-
-(defn group-shapes-by-all-applied-all? [grouped-shapes]
-  (and (seq (:all grouped-shapes))
-       (empty? (:other grouped-shapes))
-       (empty? (:some grouped-shapes))))
 
 (defn token-name->path
   "Splits token-name into a path vector split by `.` characters.
