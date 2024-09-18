@@ -169,7 +169,8 @@ Token names should only contain letters and digits separated by . characters.")}
 (mf/defc form
   {::mf/wrap-props false}
   [{:keys [token token-type]}]
-  (let [token (or token {:type token-type})
+  (let [validate-name? (mf/use-state (not (:id token)))
+        token (or token {:type token-type})
         color? (wtt/color-token? token)
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
         active-theme-tokens (mf/deref refs/workspace-active-theme-sets-tokens)
@@ -198,7 +199,10 @@ Token names should only contain letters and digits separated by . characters.")}
                                   (debounce (fn [e]
                                               (let [value (dom/get-target-val e)
                                                     errors (validate-name value)]
-                                                (reset! name-errors errors)))))
+                                                ;; Prevent showing error when just going to another field on a new token
+                                                (when-not (and validate-name? (str/empty? value))
+                                                  (reset! validate-name? false)
+                                                  (reset! name-errors errors))))))
         on-update-name (mf/use-callback
                         (mf/deps on-update-name-debounced)
                         (fn [e]
