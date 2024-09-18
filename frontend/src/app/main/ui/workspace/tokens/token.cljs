@@ -2,7 +2,8 @@
   (:require
    [app.common.data :as d]
    [clojure.set :as set]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]))
 
 (defn get-workspace-tokens
   [state]
@@ -199,4 +200,6 @@
 
 (defn resolved-value-hex [{:keys [resolved-value] :as token}]
   (when (and resolved-value (color-token? token))
-    (str "#" resolved-value)))
+    (some->> (tinycolor/valid-color resolved-value)
+             (tinycolor/->hex)
+             (str "#"))))

@@ -71,9 +71,8 @@
       :on-click on-click
       :on-context-menu on-context-menu
       :disabled errors?}
-     (js/console.log "resolved-value" resolved-value)
-     (when (wtt/color-token? token)
-       [:& color-bullet {:color (wtt/resolved-value-hex token)
+     (when-let [color (wtt/resolved-value-hex token)]
+       [:& color-bullet {:color color
                          :mini? true}])
      name]))
 
