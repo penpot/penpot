@@ -244,6 +244,7 @@ Token names should only contain letters and digits separated by . characters.")}
         ;; Value
         color (mf/use-state (when color? (:value token)))
         color-ramp-open? (mf/use-state false)
+        value-input-ref (mf/use-ref nil)
         value-ref (mf/use-var (:value token))
         token-resolve-result (mf/use-state (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value]))
         set-resolve-value (mf/use-callback
@@ -265,6 +266,7 @@ Token names should only contain letters and digits separated by . characters.")}
                          (mf/deps on-update-value-debounced)
                          (fn [hex-value]
                            (reset! value-ref hex-value)
+                           (set! (.-value (mf/ref-val value-input-ref)) hex-value)
                            (on-update-value-debounced hex-value)))
         value-error? (seq (:errors @token-resolve-result))
         valid-value-field? (and
@@ -342,7 +344,8 @@ Token names should only contain letters and digits separated by . characters.")}
       [:& tokens.common/labeled-input {:label "Value"
                                        :input-props {:default-value @value-ref
                                                      :on-blur on-update-value
-                                                     :on-change on-update-value}
+                                                     :on-change on-update-value
+                                                     :ref value-input-ref}
                                        :render-right (when color?
                                                        (mf/fnc []
                                                                [:div {:class (stl/css :color-bullet)
