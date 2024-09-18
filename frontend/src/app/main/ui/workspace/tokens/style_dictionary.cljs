@@ -2,8 +2,8 @@
   (:require
    ["@tokens-studio/sd-transforms" :as sd-transforms]
    ["style-dictionary$default" :as sd]
-   [app.common.data :refer [ordered-map]]
    [app.main.refs :as refs]
+   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
    [cuerdas.core :as str]
    [promesa.core :as p]
@@ -61,18 +61,14 @@
                      (js/console.log "Resolved tokens" resolved-tokens))
                    resolved-tokens))))))
 
+
 (defn humanize-errors [{:keys [errors value] :as _token}]
   (->> (map (fn [err]
               (case err
-                :style-dictionary/missing-reference (str "Could not resolve reference token with the name: " value)
+                :error.style-dictionary/missing-reference (str "Could not resolve reference token with the name: " value)
                 nil))
             errors)
        (str/join "\n")))
-
-(defn missing-reference-error?
-  [errors]
-  (and (set? errors)
-       (get errors :style-dictionary/missing-reference)))
 
 (defn resolve-tokens+
   [tokens & {:keys [names-map? debug?] :as config}]
@@ -85,15 +81,21 @@
                                                 (uuid (.-uuid (.-id cur))))
                                    {:keys [type] :as origin-token} (get tokens identifier)
                                    value (.-value cur)
-                                   parsed-value (case type
-                                                  :color (wtt/parse-token-color-value value)
-                                                  (wtt/parse-token-value value))
-                                   resolved-token (if (not parsed-value)
-                                                    (assoc origin-token :errors [:style-dictionary/missing-reference])
-                                                    (assoc origin-token
-                                                           :resolved-value (:value parsed-value)
-                                                           :resolved-unit (:unit parsed-value)))]
-                               (assoc acc (wtt/token-identifier resolved-token) resolved-token)))
+                                   token-or-err (case type
+                                                  :color (if-let [tc (tinycolor/valid-color value)]
+                                                           {:value value :unit (tinycolor/color-format tc)}
+                                                           {:errors #{:error.token/invalid-color}})
+                                                  (or (wtt/parse-token-value value)
+                                                      (if-let [references (seq (wtt/find-token-references value))]
+                                                        {:errors #{:error.style-dictionary/missing-reference}
+                                                         :references references}
+                                                        {:errors #{:error.style-dictionary/invalid-token-value}})))
+                                   output-token (if (:errors token-or-err)
+                                                  (merge origin-token token-or-err)
+                                                  (assoc origin-token
+                                                         :resolved-value (:value token-or-err)
+                                                         :unit (:unit token-or-err)))]
+                               (assoc acc (wtt/token-identifier output-token) output-token)))
                            {} sd-tokens)]
       (when debug?
         (js/console.log "Resolved tokens" resolved-tokens))
