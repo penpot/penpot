@@ -250,8 +250,14 @@
   (l/derived #(some-> % ctob/get-theme-groups) tokens-lib))
 
 (defn workspace-token-theme
-  [id]
-  (l/derived #(wtts/get-workspace-theme id %) st/state))
+  [group name]
+  (l/derived
+   (fn [lib]
+     (when lib
+       (ctob/get-theme lib group name)))
+   tokens-lib))
+
+;; Old
 
 (def workspace-active-theme-ids
   (l/derived wtts/get-active-theme-ids st/state))

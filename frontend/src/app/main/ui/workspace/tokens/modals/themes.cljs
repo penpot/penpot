@@ -62,7 +62,8 @@
                         (dom/prevent-default e)
                         (dom/stop-propagation e)
                         (set-state (fn [_] {:type :edit-theme
-                                            :theme-id (:id theme)})))]
+                                            :theme-id (:id theme)
+                                            :theme-path [(:id theme) (:group theme) (:name theme)]})))]
     [:div
      [:ul {:class (stl/css :theme-group-wrapper)}
       (for [[group themes] themes]
@@ -212,9 +213,10 @@
 
 (mf/defc controlled-edit-theme
   [{:keys [state set-state]}]
-  (let [{:keys [theme-id]} @state
+  (let [{:keys [theme-path]} @state
+        [_ theme-group theme-name] theme-path
         token-sets (mf/deref refs/workspace-ordered-token-sets)
-        theme (mf/deref (refs/workspace-token-theme theme-id))
+        theme (mf/deref (refs/workspace-token-theme theme-group theme-name))
         theme-groups (mf/deref refs/workspace-token-theme-groups)]
     [:& edit-theme
      {:token-sets token-sets
