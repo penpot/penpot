@@ -38,7 +38,7 @@
 (mf/defc theme-options
   [{:keys [on-close]}]
   (let [active-theme-ids (mf/deref refs/workspace-active-theme-ids)
-        ordered-themes (mf/deref refs/workspace-ordered-token-themes)
+        ordered-themes (mf/deref refs/workspace-ordered-token-themes-OLD)
         grouped-themes (dissoc ordered-themes nil)
         ungrouped-themes (get ordered-themes nil)]
     [:ul
@@ -66,7 +66,7 @@
         active-theme-ids (-> (mf/deref refs/workspace-active-theme-ids)
                              (disj temp-theme-id))
         active-themes-count (count active-theme-ids)
-        themes (mf/deref refs/workspace-token-themes)
+        themes (mf/deref refs/workspace-token-themes-OLD)
 
         ;; Data
         current-label (cond

@@ -12,11 +12,11 @@
    [app.common.files.helpers :as cph]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
    [app.main.ui.workspace.tokens.token-set :as wtts]
-   [okulary.core :as l]
-   [app.common.types.tokens-lib :as ctob]))
+   [okulary.core :as l]))
 
 ;; ---- Global refs
 
@@ -257,42 +257,57 @@
        (ctob/get-theme lib group name)))
    tokens-lib))
 
-;; Old
-
-(def workspace-active-theme-ids
-  (l/derived wtts/get-active-theme-ids st/state))
-
-(def workspace-temp-theme-id
-  (l/derived wtts/get-temp-theme-id st/state))
-
-(def workspace-active-set-ids
-  (l/derived wtts/get-active-set-ids st/state))
+(def workspace-token-theme-tree
+  (l/derived #(or (some-> % ctob/get-theme-tree) []) tokens-lib))
 
 (def workspace-token-themes
-  (l/derived wtts/get-workspace-themes-index st/state))
+  (l/derived #(or (some-> % ctob/get-themes) []) tokens-lib))
 
-(def workspace-ordered-token-themes
-  (l/derived wtts/get-workspace-ordered-themes st/state))
+(comment
+  @workspace-token-theme-tree
+  @workspace-token-themes-OLD
+  nil)
 
-(def workspace-ordered-token-sets
-  (l/derived
-   (fn [data]
-     (or (wtts/get-workspace-ordered-sets data) {}))
-   st/state
-   =))
 
-(def workspace-active-theme-sets-tokens
-  (l/derived wtts/get-active-theme-sets-tokens-names-map st/state =))
 
-(def workspace-ordered-token-sets-tokens
-  (l/derived wtts/get-workspace-ordered-sets-tokens st/state =))
+;; Old
 
-(def workspace-selected-token-set-tokens
-  (l/derived
-   (fn [data]
-     (or (wtts/get-selected-token-set-tokens data) {}))
-   st/state
-   =))
+(dm/legacy
+
+ (def workspace-active-theme-ids
+   (l/derived wtts/get-active-theme-ids st/state))
+
+ (def workspace-temp-theme-id
+   (l/derived wtts/get-temp-theme-id st/state))
+
+ (def workspace-active-set-ids
+   (l/derived wtts/get-active-set-ids st/state))
+
+ (def workspace-token-themes-OLD
+   (l/derived wtts/get-workspace-themes-index st/state))
+
+ (def workspace-ordered-token-themes-OLD
+   (l/derived wtts/get-workspace-ordered-themes st/state))
+
+ (def workspace-ordered-token-sets
+   (l/derived
+    (fn [data]
+      (or (wtts/get-workspace-ordered-sets data) {}))
+    st/state
+    =))
+
+ (def workspace-active-theme-sets-tokens
+   (l/derived wtts/get-active-theme-sets-tokens-names-map st/state =))
+
+ (def workspace-ordered-token-sets-tokens
+   (l/derived wtts/get-workspace-ordered-sets-tokens st/state =))
+
+ (def workspace-selected-token-set-tokens
+   (l/derived
+    (fn [data]
+      (or (wtts/get-selected-token-set-tokens data) {}))
+    st/state
+    =)))
 
 (def workspace-file-colors
   (l/derived (fn [data]

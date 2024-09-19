@@ -56,21 +56,20 @@
 (mf/defc themes-overview
   [{:keys [set-state]}]
   (let [active-theme-ids (mf/deref refs/workspace-active-theme-ids)
-        themes (mf/deref refs/workspace-ordered-token-themes)
+        themes-groups (mf/deref refs/workspace-token-theme-tree)
         on-edit-theme (fn [theme e]
                         (dom/prevent-default e)
                         (dom/stop-propagation e)
                         (set-state (fn [_] {:type :edit-theme
-                                            :theme-id (:id theme)
                                             :theme-path [(:id theme) (:group theme) (:name theme)]})))]
     [:div
      [:ul {:class (stl/css :theme-group-wrapper)}
-      (for [[group themes] themes]
+      (for [[group themes] themes-groups]
         [:li {:key (str "token-theme-group" group)}
          (when (seq group)
            [:span {:class (stl/css :theme-group-label)} group])
          [:ul {:class (stl/css :theme-group-rows-wrapper)}
-          (for [{:keys [id name] :as theme} themes
+          (for [[_ {:keys [id name] :as theme}] themes
                 :let [selected? (some? (get active-theme-ids id))]]
             [:li {:key (str "token-theme-" id)
                   :class (stl/css :theme-row)}
@@ -239,8 +238,8 @@
       :on-submit #(st/emit! (wdt/create-token-theme %))}]))
 
 (mf/defc themes
-  [{:keys [] :as _args}]
-  (let [themes (mf/deref refs/workspace-ordered-token-themes)
+  [_]
+  (let [themes (mf/deref refs/workspace-token-themes)
         state (mf/use-state (if (empty? themes)
                               {:type :create-theme}
                               {:type :themes-overview}))
@@ -261,7 +260,7 @@
 
 (mf/defc modal
   {::mf/wrap-props false}
-  [{:keys [] :as _args}]
+  [_]
   (let [handle-close-dialog (mf/use-callback #(st/emit! (modal/hide)))]
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
