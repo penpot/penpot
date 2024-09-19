@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.theme-select
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as wdt]
@@ -21,7 +22,7 @@
   [{:keys [themes active-theme-ids on-close grouped?]}]
   (when (seq themes)
     [:ul
-     (for [{:keys [id name]} themes
+     (for [[_ {:keys [id name]}] themes
            :let [selected? (get active-theme-ids id)]]
        [:li {:key id
              :class (stl/css-case
@@ -37,17 +38,12 @@
 
 (mf/defc theme-options
   [{:keys [on-close]}]
-  (let [active-theme-ids (mf/deref refs/workspace-active-theme-ids)
-        ordered-themes (mf/deref refs/workspace-ordered-token-themes-OLD)
-        grouped-themes (dissoc ordered-themes nil)
-        ungrouped-themes (get ordered-themes nil)]
+  (let [active-theme-ids (dm/fixme (mf/deref refs/workspace-active-theme-ids))
+        theme-groups (mf/deref refs/workspace-token-theme-tree)]
     [:ul
-     [:& themes-list {:themes ungrouped-themes
-                      :active-theme-ids active-theme-ids
-                      :on-close on-close}]
-     (for [[group themes] grouped-themes]
+     (for [[group themes] theme-groups]
        [:li {:key group}
-        (when group
+        (when (seq group)
           [:span {:class (stl/css :group)} group])
         [:& themes-list {:themes themes
                          :active-theme-ids active-theme-ids
@@ -62,16 +58,16 @@
 (mf/defc theme-select
   [{:keys []}]
   (let [;; Store
-        temp-theme-id (mf/deref refs/workspace-temp-theme-id)
-        active-theme-ids (-> (mf/deref refs/workspace-active-theme-ids)
-                             (disj temp-theme-id))
+        temp-theme-id (dm/legacy (mf/deref refs/workspace-temp-theme-id))
+        active-theme-ids (dm/legacy (-> (mf/deref refs/workspace-active-theme-ids)
+                                        (disj temp-theme-id)))
         active-themes-count (count active-theme-ids)
-        themes (mf/deref refs/workspace-token-themes-OLD)
+        themes (mf/deref refs/workspace-token-theme-tree)
 
         ;; Data
         current-label (cond
                         (> active-themes-count 1) (str active-themes-count " themes active")
-                        (pos? active-themes-count) (get-in themes [(first active-theme-ids) :name])
+                        ;; (pos? active-themes-count) (get-in themes [(first active-theme-ids) :name])
                         :else "No theme active")
 
         ;; State

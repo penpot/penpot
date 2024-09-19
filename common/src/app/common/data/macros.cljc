@@ -16,6 +16,10 @@
    [cljs.analyzer.api :as aapi]
    [cuerdas.core :as str]))
 
+(defmacro fixme
+  "Purely annotational macro to find instances later to remove when the refactor to tokens-lib is done."
+  [& body] `(do ~@body))
+
 (defmacro legacy
   "Purely annotational macro to find instances later to remove when the refactor to tokens-lib is done."
   [& body] `(do ~@body))
