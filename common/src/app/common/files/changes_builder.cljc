@@ -713,14 +713,14 @@
   [changes token-theme]
   (-> changes
       (update :redo-changes conj {:type :add-token-theme :token-theme token-theme})
-      (update :undo-changes conj {:type :del-token-theme :id (:id token-theme) :name (:name token-theme)})
+      ;; (legacy (update :undo-changes conj {:type :del-token-theme :name (:name token-theme)}))
       (apply-changes-local)))
 
 (defn update-token-theme
   [changes token-theme prev-token-theme]
   (-> changes
-      (update :redo-changes conj {:type :mod-token-theme :id (:id token-theme) :name (:name prev-token-theme) :token-theme token-theme})
-      (update :undo-changes conj {:type :mod-token-theme :id (:id token-theme) :name (:name token-theme) :token-theme (or prev-token-theme token-theme)})
+      (update :redo-changes conj {:type :mod-token-theme :name (:name prev-token-theme) :token-theme token-theme})
+      (update :undo-changes conj {:type :mod-token-theme :name (:name token-theme) :token-theme (or prev-token-theme token-theme)})
       (apply-changes-local)))
 
 (defn delete-token-theme

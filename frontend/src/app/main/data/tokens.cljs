@@ -11,6 +11,7 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.geom.point :as gpt]
    [app.common.types.shape :as cts]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.workspace.shapes :as dwsh]
@@ -39,6 +40,13 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (dwsh/update-shapes [id] #(merge % attrs))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TOKENS Getters
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-tokens-lib [state]
+  (get-in state [:workspace-data :tokens-lib]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions
@@ -98,11 +106,7 @@
   (map #(get-in file [:tokens %]) (:tokens token-set)))
 
 (defn create-token-theme [token-theme]
-  (let [new-token-theme (merge
-                         {:id (uuid/next)
-                          :sets #{}
-                          :selected :enabled}
-                         token-theme)]
+  (let [new-token-theme token-theme]
     (ptk/reify ::create-token-theme
       ptk/WatchEvent
       (watch [it _ _]
@@ -111,13 +115,13 @@
           (rx/of
            (dch/commit-changes changes)))))))
 
-(defn update-token-theme [token-theme]
+(defn update-token-theme [[group name] token-theme]
   (ptk/reify ::update-token-theme
     ptk/WatchEvent
     (watch [it state _]
-      (let [prev-token-theme (wtts/get-workspace-token-theme (:id token-theme) state)
-            changes (-> (pcb/empty-changes it)
-                        (pcb/update-token-theme token-theme prev-token-theme))]
+      (let [tokens-lib (get-tokens-lib state)
+            prev-token-theme (some-> tokens-lib (ctob/get-theme group name))
+            changes (pcb/update-token-theme (pcb/empty-changes it) token-theme prev-token-theme)]
         (rx/of
          (dch/commit-changes changes))))))
 

@@ -15,12 +15,11 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.tokens.common :refer [labeled-input] :as wtco]
    [app.main.ui.workspace.tokens.sets :as wts]
+   [app.main.ui.workspace.tokens.sets-context :as sets-context]
    [app.main.ui.workspace.tokens.token-set :as wtts]
    [app.util.dom :as dom]
-   [rumext.v2 :as mf]
    [cuerdas.core :as str]
-   [app.main.ui.workspace.tokens.sets-context :as sets-context]
-   [app.main.ui.shapes.group :as group]))
+   [rumext.v2 :as mf]))
 
 (def ^:private chevron-icon
   (i/icon-xref :arrow (stl/css :chevron-icon)))
@@ -110,10 +109,8 @@
        "Create theme"]]]))
 
 (mf/defc edit-theme
-  [{:keys [token-sets theme theme-groups on-back on-submit]}]
+  [{:keys [edit? token-sets theme theme-groups on-back on-submit]}]
   (let [{:keys [dropdown-open? on-open-dropdown on-close-dropdown on-toggle-dropdown]} (wtco/use-dropdown-open-state)
-
-        edit? (some? (:id theme))
         theme-state (mf/use-state {:token-sets token-sets
                                    :theme theme})
         disabled? (-> (get-in @theme-state [:theme :name])
@@ -139,13 +136,15 @@
                       (fn [e]
                         (dom/prevent-default e)
                         (let [theme (:theme @theme-state)
-                              final-name (str/trim (:name theme))
-                              final-group (-> (:group theme)
-                                              (str/trim)
-                                              (str/lower))]
+                              final-name (-> (:name theme)
+                                             (str/trim))
+                              empty-description? (-> (:description theme)
+                                                     (str/trim)
+                                                     (str/empty?))]
                           (when-not (str/empty? final-name)
                             (cond-> theme
-                              (empty final-group) (dissoc :group)
+                              empty-description? (assoc :description "")
+                              :always (doto js/console.log)
                               :always on-submit)))
                         (on-back)))]
     [:form {:on-submit on-save-form}
@@ -219,11 +218,12 @@
         theme (mf/deref (refs/workspace-token-theme theme-group theme-name))
         theme-groups (mf/deref refs/workspace-token-theme-groups)]
     [:& edit-theme
-     {:token-sets token-sets
+     {:edit? true
+      :token-sets token-sets
       :theme theme
       :theme-groups theme-groups
       :on-back #(set-state (constantly {:type :themes-overview}))
-      :on-submit #(st/emit! (wdt/update-token-theme %))}]))
+      :on-submit #(st/emit! (wdt/update-token-theme [(:group theme) (:name theme)] %))}]))
 
 (mf/defc create-theme
   [{:keys [set-state]}]
@@ -231,7 +231,8 @@
         theme {:name "" :sets #{}}
         theme-groups (mf/deref refs/workspace-token-theme-groups)]
     [:& edit-theme
-     {:token-sets token-sets
+     {:edit? false
+      :token-sets token-sets
       :theme theme
       :theme-groups theme-groups
       :on-back #(set-state (constantly {:type :themes-overview}))

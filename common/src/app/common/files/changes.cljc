@@ -274,7 +274,7 @@
     [:mod-token-theme
      [:map {:title "ModTokenThemeChange"}
       [:type [:= :mod-token-theme]]
-      [:id ::sm/uuid]
+      (dm/legacy [:id {:optional true} [:maybe ::sm/uuid]])
       [:name :string]
       [:token-theme ::ctot/token-theme]]]
 
@@ -860,7 +860,6 @@
 (defmethod process-change :add-token-theme
   [data {:keys [token-theme]}]
   (-> data
-      (ctotl/add-token-theme token-theme)
       (update :tokens-lib
               #(-> %
                    (ctob/ensure-tokens-lib)
@@ -871,7 +870,8 @@
 (defmethod process-change :mod-token-theme
   [data {:keys [id name group token-theme]}]
   (-> data
-      (ctotl/update-token-theme id merge token-theme)
+      (dm/legacy (#(when id
+                     (ctotl/update-token-theme % (random-uuid) merge token-theme))))
       (update :tokens-lib
               #(-> %
                    (ctob/ensure-tokens-lib)
