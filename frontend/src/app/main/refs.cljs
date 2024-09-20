@@ -478,9 +478,6 @@
  (def workspace-active-set-ids
    (l/derived wtts/get-active-set-ids st/state))
 
- (def workspace-ordered-token-themes-OLD
-   (l/derived wtts/get-workspace-ordered-themes st/state))
-
  (def workspace-ordered-token-sets
    (l/derived
     (fn [data]

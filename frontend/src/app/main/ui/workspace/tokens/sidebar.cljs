@@ -200,7 +200,7 @@
 
 (mf/defc themes-sidebar
   [_props]
-  (let [ordered-themes (mf/deref refs/workspace-ordered-token-themes-OLD)]
+  (let [ordered-themes (mf/deref refs/workspace-token-themes)]
    [:div {:class (stl/css :theme-sidebar)}
     [:span {:class (stl/css :themes-header)} "Themes"]
     [:div {:class (stl/css :theme-select-wrapper)}
