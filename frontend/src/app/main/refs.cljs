@@ -465,13 +465,10 @@
 (def workspace-token-themes
   (l/derived #(or (some-> % ctob/get-themes) []) tokens-lib))
 
-(dm/legacy
- (def workspace-selected-token-set-id
-   (l/derived
-    wtts/get-selected-token-set-id
-    st/state
-    =))
+(def workspace-selected-token-set-id
+  (l/derived wtts/get-selected-token-set-id st/state))
 
+(dm/legacy
  (def workspace-active-theme-ids
    (l/derived wtts/get-active-theme-ids st/state))
 

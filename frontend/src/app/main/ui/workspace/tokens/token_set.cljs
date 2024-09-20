@@ -1,9 +1,10 @@
 (ns app.main.ui.workspace.tokens.token-set
   (:require
    [app.common.data :refer [ordered-map]]
+   [app.common.data.macros :as dm]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.ui.workspace.tokens.token :as wtt]
-   [clojure.set :as set]
-   [app.common.types.tokens-lib :as ctob]))
+   [clojure.set :as set]))
 
 (defn get-workspace-tokens-lib [state]
   (get-in state [:workspace-data :tokens-lib]))
@@ -167,7 +168,7 @@
 ;; === Set selection
 
 (defn get-selected-token-set-id [state]
-  (or (get-in state [:workspace-local :selected-token-set-id])
+  (or (dm/legacy (get-in state [:workspace-local :selected-token-set-id]))
       (some-> (get-workspace-tokens-lib state)
               (ctob/get-sets)
               (first)
