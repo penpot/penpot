@@ -103,7 +103,7 @@
 
         tokens (-> (mf/deref refs/workspace-active-theme-sets-tokens)
                    (sd/use-resolved-tokens))
-        tokens-by-type (mf/use-memo (mf/deps tokens) #(wtc/group-tokens-by-type tokens))
+        tokens-by-type (mf/use-memo (mf/deps tokens) #(wtc/group-tokens-by-type-OLD tokens))
 
         border-radius-tokens (:border-radius tokens-by-type)
         border-radius-options (mf/use-memo

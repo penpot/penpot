@@ -1,9 +1,10 @@
 (ns app.main.ui.workspace.tokens.token
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [clojure.set :as set]
-   [cuerdas.core :as str]
-   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]))
+   [cuerdas.core :as str]))
 
 (defn get-workspace-tokens
   [state]
@@ -117,15 +118,32 @@
   (->> (map (fn [{:keys [name] :as token}] [name token]) tokens)
        (into {})))
 
-(defn token-names-tree
-  "Convert tokens into a nested tree with their `:name` as the path."
-  [tokens]
+(defonce a (atom nil))
+
+(defn token-names-tree-id-map [tokens]
+  (reset! a tokens)
   (reduce
-   (fn [acc [_ {:keys [name] :as token}]]
+   (fn [acc {:keys [name] :as token}]
      (when (string? name)
-       (let [path (token-name->path name)]
-         (assoc-in acc path token))))
-   {} tokens))
+       (let [temp-id (random-uuid)
+             token (assoc token :temp/id temp-id)]
+         (-> acc
+             (assoc-in (concat [:tree] (token-name->path name)) token)
+             (assoc-in [:ids-map temp-id] token)))))
+   {:tree {}
+    :ids-map {}}
+   tokens))
+
+(dm/legacy
+ (defn token-names-tree
+   "Convert tokens into a nested tree with their `:name` as the path."
+   [tokens]
+   (reduce
+    (fn [acc [_ {:keys [name] :as token}]]
+      (when (string? name)
+        (let [path (token-name->path name)]
+          (assoc-in acc path token))))
+    {} tokens)))
 
 (defn token-name-path-exists?
   "Traverses the path from `token-name` down a `token-tree` and checks if a token at that path exists.

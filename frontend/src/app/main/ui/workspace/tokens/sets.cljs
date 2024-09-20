@@ -72,7 +72,7 @@
            on-cancel]
     :as _props}]
   (let [{:keys [id name _children]} token-set
-        selected? (and set? (token-set-selected? id))
+        selected? (and set? (token-set-selected? name))
         visible? (token-set-active? id)
         collapsed? (mf/use-state false)
         set? true #_(= type :set)

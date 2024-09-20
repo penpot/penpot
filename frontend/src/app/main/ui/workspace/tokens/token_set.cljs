@@ -2,7 +2,11 @@
   (:require
    [app.common.data :refer [ordered-map]]
    [app.main.ui.workspace.tokens.token :as wtt]
-   [clojure.set :as set]))
+   [clojure.set :as set]
+   [app.common.types.tokens-lib :as ctob]))
+
+(defn get-workspace-tokens-lib [state]
+  (get-in state [:workspace-data :tokens-lib]))
 
 ;; Themes ----------------------------------------------------------------------
 
@@ -146,21 +150,6 @@
   (-> (get-token-set set-id state)
       :tokens))
 
-(defn get-selected-token-set-id [state]
-  (or (get-in state [:workspace-local :selected-token-set-id])
-      (get-in state [:workspace-data :token-set-groups 0])))
-
-(defn get-selected-token-set [state]
-  (when-let [id (get-selected-token-set-id state)]
-    (get-token-set id state)))
-
-(defn get-selected-token-set-tokens [state]
-  (when-let [token-set (get-selected-token-set state)]
-    (let [tokens (or (wtt/get-workspace-tokens state) {})]
-      (select-keys tokens (:tokens token-set)))))
-
-(defn assoc-selected-token-set-id [state id]
-  (assoc-in state [:workspace-local :selected-token-set-id] id))
 
 (defn get-active-theme-sets-tokens-names-map [state]
   (let [active-set-ids (get-ordered-active-set-ids state)]
@@ -174,3 +163,24 @@
               acc))
           names-map-acc token-ids)))
      (ordered-map) active-set-ids)))
+
+;; === Set selection
+
+(defn get-selected-token-set-id [state]
+  (or (get-in state [:workspace-local :selected-token-set-id])
+      (some-> (get-workspace-tokens-lib state)
+              (ctob/get-sets)
+              (first)
+              (:name))))
+
+(defn get-selected-token-set [state]
+  (when-let [id (get-selected-token-set-id state)]
+    (some-> (get-workspace-tokens-lib state)
+            (ctob/get-set id))))
+
+(defn get-selected-token-set-tokens [state]
+  (some-> (get-selected-token-set state)
+          (ctob/get-tokens)))
+
+(defn assoc-selected-token-set-id [state id]
+  (assoc-in state [:workspace-local :selected-token-set-id] id))

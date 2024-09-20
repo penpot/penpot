@@ -241,7 +241,6 @@
         selected (mf/deref refs/selected-shapes)
         selected-shapes (into [] (keep (d/getf objects)) selected)
 
-
         active-theme-tokens (sd/use-active-theme-sets-tokens)
 
         tokens (sd/use-resolved-workspace-tokens)

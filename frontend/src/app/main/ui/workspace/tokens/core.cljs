@@ -11,7 +11,8 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.util.dom :as dom]
    [app.util.webapi :as wapi]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [app.common.data.macros :as dm]))
 
 ;; Helpers ---------------------------------------------------------------------
 
@@ -28,6 +29,13 @@
   [tokens]
   (->> (vals tokens)
        (group-by :type)))
+
+(dm/legacy
+ (defn group-tokens-by-type-OLD
+   "Groups tokens by their `:type` property."
+   [tokens]
+   (->> (vals tokens)
+        (group-by :type))))
 
 (defn tokens-name-map->select-options [{:keys [shape tokens attributes selected-attributes]}]
   (->> (wtt/token-names-map tokens)
