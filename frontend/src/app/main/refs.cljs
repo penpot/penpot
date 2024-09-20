@@ -235,80 +235,6 @@
 (def workspace-data
   (l/derived :workspace-data st/state))
 
-(def workspace-selected-token-set-id
-  (l/derived
-   wtts/get-selected-token-set-id
-   st/state
-   =))
-
-;; ---- Tokens
-
-(def tokens-lib
-  (l/derived :tokens-lib workspace-data))
-
-(def workspace-token-theme-groups
-  (l/derived #(some-> % ctob/get-theme-groups) tokens-lib))
-
-(defn workspace-token-theme
-  [group name]
-  (l/derived
-   (fn [lib]
-     (when lib
-       (ctob/get-theme lib group name)))
-   tokens-lib))
-
-(def workspace-token-theme-tree
-  (l/derived #(or (some-> % ctob/get-theme-tree) []) tokens-lib))
-
-(def workspace-token-themes
-  (l/derived #(or (some-> % ctob/get-themes) []) tokens-lib))
-
-(comment
-  @workspace-token-theme-tree
-  @workspace-token-themes-OLD
-  nil)
-
-
-
-;; Old
-
-(dm/legacy
-
- (def workspace-active-theme-ids
-   (l/derived wtts/get-active-theme-ids st/state))
-
- (def workspace-temp-theme-id
-   (l/derived wtts/get-temp-theme-id st/state))
-
- (def workspace-active-set-ids
-   (l/derived wtts/get-active-set-ids st/state))
-
- (def workspace-token-themes-OLD
-   (l/derived wtts/get-workspace-themes-index st/state))
-
- (def workspace-ordered-token-themes-OLD
-   (l/derived wtts/get-workspace-ordered-themes st/state))
-
- (def workspace-ordered-token-sets
-   (l/derived
-    (fn [data]
-      (or (wtts/get-workspace-ordered-sets data) {}))
-    st/state
-    =))
-
- (def workspace-active-theme-sets-tokens
-   (l/derived wtts/get-active-theme-sets-tokens-names-map st/state =))
-
- (def workspace-ordered-token-sets-tokens
-   (l/derived wtts/get-workspace-ordered-sets-tokens st/state =))
-
- (def workspace-selected-token-set-tokens
-   (l/derived
-    (fn [data]
-      (or (wtts/get-selected-token-set-tokens data) {}))
-    st/state
-    =)))
-
 (def workspace-file-colors
   (l/derived (fn [data]
                (when data
@@ -516,6 +442,67 @@
                    (filter (partial ctl/flex-layout-immediate-child? objects)))
              ids)))
    st/state =))
+
+;; ---- Token refs
+
+(def tokens-lib
+  (l/derived :tokens-lib workspace-data))
+
+(def workspace-token-theme-groups
+  (l/derived #(some-> % ctob/get-theme-groups) tokens-lib))
+
+(defn workspace-token-theme
+  [group name]
+  (l/derived
+   (fn [lib]
+     (when lib
+       (ctob/get-theme lib group name)))
+   tokens-lib))
+
+(def workspace-token-theme-tree
+  (l/derived #(or (some-> % ctob/get-theme-tree) []) tokens-lib))
+
+(def workspace-token-themes
+  (l/derived #(or (some-> % ctob/get-themes) []) tokens-lib))
+
+(dm/legacy
+ (def workspace-selected-token-set-id
+   (l/derived
+    wtts/get-selected-token-set-id
+    st/state
+    =))
+
+ (def workspace-active-theme-ids
+   (l/derived wtts/get-active-theme-ids st/state))
+
+ (def workspace-temp-theme-id
+   (l/derived wtts/get-temp-theme-id st/state))
+
+ (def workspace-active-set-ids
+   (l/derived wtts/get-active-set-ids st/state))
+
+ (def workspace-ordered-token-themes-OLD
+   (l/derived wtts/get-workspace-ordered-themes st/state))
+
+ (def workspace-ordered-token-sets
+   (l/derived
+    (fn [data]
+      (or (wtts/get-workspace-ordered-sets data) {}))
+    st/state
+    =))
+
+ (def workspace-active-theme-sets-tokens
+   (l/derived wtts/get-active-theme-sets-tokens-names-map st/state =))
+
+ (def workspace-ordered-token-sets-tokens
+   (l/derived wtts/get-workspace-ordered-sets-tokens st/state =))
+
+ (def workspace-selected-token-set-tokens
+   (l/derived
+    (fn [data]
+      (or (wtts/get-selected-token-set-tokens data) {}))
+    st/state
+    =)))
 
 ;; ---- Viewer refs
 
