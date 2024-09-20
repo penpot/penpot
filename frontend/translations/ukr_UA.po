@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-09-17 10:09+0000\n"
+"PO-Revision-Date: 2024-09-20 10:02+0000\n"
 "Last-Translator: Denys Kisil <denkisil@outlook.com>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
@@ -50,7 +50,7 @@ msgstr "LDAP"
 
 #: src/app/main/ui/auth/login.cljs:225, src/app/main/ui/auth/login.cljs:246
 msgid "auth.login-with-oidc-submit"
-msgstr ""
+msgstr "з OpenID"
 
 #: src/app/main/ui/auth/recovery.cljs:60
 msgid "auth.new-password"
@@ -4466,11 +4466,11 @@ msgstr "Обрати нижнє підкреслення"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:200
 msgid "shortcuts.toggle-snap-guides"
-msgstr ""
+msgstr "Прив'язувати до направляючих"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:201
 msgid "shortcuts.toggle-snap-ruler-guide"
-msgstr ""
+msgstr "Прив'язувати до лінійок-направляючих"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:213
 msgid "shortcuts.zoom-selected"
@@ -4601,7 +4601,7 @@ msgstr "Увімкнути динамічне вирівнювання"
 
 #: src/app/main/ui/workspace/main_menu.cljs:224
 msgid "workspace.header.menu.enable-snap-guides"
-msgstr ""
+msgstr "Прив'язати до направляючих"
 
 #: src/app/main/ui/workspace/main_menu.cljs:193
 msgid "workspace.header.menu.enable-scale-content"
@@ -5295,3 +5295,323 @@ msgstr "Заповнити групу"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:661
 msgid "workspace.options.interaction-duration"
 msgstr "Тривалість"
+
+#: src/app/main/ui/workspace/main_menu.cljs:254
+msgid "workspace.header.menu.enable-snap-pixel-grid"
+msgstr "Увімкнути прив'язку до пікселів"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:35, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:360
+msgid "workspace.options.interaction-on-click"
+msgstr "При натисканні"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.interaction-out"
+msgstr "З"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:403
+msgid "workspace.options.interaction-pos-bottom-center"
+msgstr "Внизу по центру"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:401
+msgid "workspace.options.interaction-pos-bottom-left"
+msgstr "Внизу ліворуч"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:402
+msgid "workspace.options.interaction-pos-bottom-right"
+msgstr "Внизу праворуч"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:137
+msgid "workspace.options.layer-options.blend-mode.color"
+msgstr "Колір"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:124
+msgid "workspace.options.layer-options.blend-mode.darken"
+msgstr "Потемніння"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:135
+msgid "workspace.options.layer-options.blend-mode.hue"
+msgstr "Відтінок"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:178
+msgid "workspace.options.flows.add-flow-start"
+msgstr "Додати початок потоку"
+
+#: src/app/main/ui/workspace/main_menu.cljs:223
+msgid "workspace.header.menu.disable-snap-guides"
+msgstr "Вимкнути прив'язку до направляючих"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:415
+msgid "workspace.options.interaction-easing-linear"
+msgstr "Лінійний"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:50
+msgid "workspace.options.interaction-navigate-to-dest"
+msgstr "Перейти до: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:445
+msgid "workspace.options.interaction-trigger"
+msgstr "Подразник"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:363
+msgid "workspace.options.interaction-while-pressing"
+msgstr "Під час натискання"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:133
+msgid "workspace.options.layer-options.blend-mode.difference"
+msgstr "Різниця"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:134
+msgid "workspace.options.layer-options.blend-mode.exclusion"
+msgstr "Виключення"
+
+#: src/app/main/ui/workspace/nudge.cljs:60
+msgid "modals.big-nudge"
+msgstr "Сильний поштовх"
+
+#: src/app/main/ui/workspace/nudge.cljs:53
+msgid "modals.small-nudge"
+msgstr "Малий поштовх"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:524
+msgid "workspace.options.interaction-position"
+msgstr "Позиція"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:370
+msgid "workspace.options.interaction-open-overlay"
+msgstr "Відкрити накладення"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:74
+msgid "workspace.align.hdistribute"
+msgstr "Розподілити горизонтальні проміжки (%s)"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:137
+msgid "shortcuts.move-fast-left"
+msgstr "Швидко рухати ліворуч"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:396
+msgid "workspace.options.interaction-pos-manual"
+msgstr "Ручний"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:400
+msgid "workspace.options.interaction-pos-top-center"
+msgstr "Зверху по центру"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:127
+msgid "workspace.options.layer-options.blend-mode.lighten"
+msgstr "Освітлення"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:136
+msgid "workspace.options.layer-options.blend-mode.saturation"
+msgstr "Насиченість"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:136
+msgid "shortcuts.move-fast-down"
+msgstr "Швидко рухати вниз"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:160
+msgid "shortcuts.open-interactions"
+msgstr "Перейти до взаємодій глядача"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:159
+msgid "shortcuts.open-inspect"
+msgstr "Перейти до інспекції глядача"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:210
+msgid "shortcuts.v-distribute"
+msgstr "Розподілити вертикально"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:458, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:459, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:464, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:663, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:665, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:669
+msgid "workspace.options.interaction-ms"
+msgstr "мс"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:369
+msgid "workspace.options.interaction-navigate-to"
+msgstr "Перейти до"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:51, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:53, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:380
+msgid "workspace.options.interaction-none"
+msgstr "(не вказано)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:39, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:364
+msgid "workspace.options.interaction-mouse-enter"
+msgstr "Вхід миші"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:40, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:365
+msgid "workspace.options.interaction-mouse-leave"
+msgstr "Вихід миші"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:477
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "Показати параметри 4-стороннього внутрішнього відступу"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:174
+msgid "workspace.options.flows.flow"
+msgstr "Потік"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.flows.flow-start"
+msgstr "Початок потоку"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:310
+msgid "workspace.options.guides.title"
+msgstr "Направляючі"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:406
+msgid "workspace.options.interaction-animation-dissolve"
+msgstr "Розчинення"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:418
+msgid "workspace.options.interaction-easing-ease-out"
+msgstr "Плавне зникнення"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:52
+msgid "workspace.options.interaction-open-overlay-dest"
+msgstr "Вікрити накладення: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:59, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:374
+msgid "workspace.options.interaction-open-url"
+msgstr "Відкрити посилання"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:494
+msgid "workspace.options.interaction-preserve-scroll"
+msgstr "Зберегти позицію прокрутки"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:58, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:373
+msgid "workspace.options.interaction-prev-screen"
+msgstr "Попередній екран"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:371
+msgid "workspace.options.interaction-toggle-overlay"
+msgstr "Перемкнути накладення"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:54
+msgid "workspace.options.interaction-toggle-overlay-dest"
+msgstr "Перемкнути накладення: %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:503
+msgid "workspace.options.interaction-url"
+msgstr "Посилання"
+
+#: src/app/main/ui/workspace/main_menu.cljs:266, src/app/main/ui/workspace/nudge.cljs:47
+msgid "modals.nudge-title"
+msgstr "Кількість поштовхів"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:138
+msgid "shortcuts.move-fast-right"
+msgstr "Швидко рухати праворуч"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
+msgid "shortcuts.move-fast-up"
+msgstr "Швидко рухати вгору"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:157
+msgid "shortcuts.open-comments"
+msgstr "Перейти до коментарів глядача"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:161
+msgid "shortcuts.open-viewer"
+msgstr "Перейти до взаємодій глядача"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:104
+msgid "workspace.align.vdistribute"
+msgstr "Розподілити вертикальні проміжки (%s)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:253
+msgid "workspace.header.menu.disable-snap-pixel-grid"
+msgstr "Вимкнути прив'язку до пікселів"
+
+#: src/app/main/ui/workspace/main_menu.cljs:207
+msgid "workspace.header.menu.disable-snap-ruler-guides"
+msgstr "Вимкнути прив'язку до лінійок-направляючих"
+
+#: src/app/main/ui/workspace/main_menu.cljs:208
+msgid "workspace.header.menu.enable-snap-ruler-guides"
+msgstr "Прив'язати до лінійок-направляючих"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:161
+msgid "workspace.options.flows.flow-starts"
+msgstr "Початки потоку"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:419
+msgid "workspace.options.interaction-easing-ease-in-out"
+msgstr "Плавна поява та зникнення"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.interaction-in"
+msgstr "В"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:691
+msgid "workspace.options.interaction-offset-effect"
+msgstr "Ефект зсуву"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:398
+msgid "workspace.options.interaction-pos-top-left"
+msgstr "Зверху ліворуч"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:399
+msgid "workspace.options.interaction-pos-top-right"
+msgstr "Зверху праворуч"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:397
+msgid "workspace.options.interaction-pos-center"
+msgstr "Центр"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:515
+msgid "workspace.options.interaction-relative-to"
+msgstr "Відносно"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:57, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:379, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:393, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:394
+msgid "workspace.options.interaction-self"
+msgstr "себе"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:37, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:362
+msgid "workspace.options.interaction-while-hovering"
+msgstr "Під час наведення"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:724
+msgid "workspace.options.interactions"
+msgstr "Взаємодії"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:126
+msgid "workspace.options.layer-options.blend-mode.color-burn"
+msgstr "Вигорання кольору"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:129
+msgid "workspace.options.layer-options.blend-mode.color-dodge"
+msgstr "Освітлення кольором"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:132
+msgid "workspace.options.layer-options.blend-mode.hard-light"
+msgstr "Жорстке світло"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:125
+msgid "workspace.options.layer-options.blend-mode.multiply"
+msgstr "Помножити"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:123
+msgid "workspace.options.layer-options.blend-mode.normal"
+msgstr "Нормальний"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:130
+msgid "workspace.options.layer-options.blend-mode.overlay"
+msgstr "Накладення"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:128
+msgid "workspace.options.layer-options.blend-mode.screen"
+msgstr "Екран"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:131
+msgid "workspace.options.layer-options.blend-mode.soft-light"
+msgstr "М'який світлий"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, unused
+msgid "workspace.options.layer-options.title"
+msgstr "Шар"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:138
+msgid "workspace.options.layer-options.blend-mode.luminosity"
+msgstr "Сяяння"
