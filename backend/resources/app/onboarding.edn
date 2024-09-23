@@ -18,10 +18,10 @@
   :file-uri "https://github.com/penpot/penpot-files/raw/main/Lucide-icons.penpot"}
  {:id "font-awesome"
   :name "Font Awesome"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/Font-Awesome.penpot"}
+  :file-uri "https://github.com/penpot/penpot-files/raw/main/FontAwesome.penpot"}
  {:id "black-white-mobile-templates"
   :name "Black & White Mobile Templates"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/Black-White-Mobile-Templates.penpot"}
+  :file-uri "https://github.com/penpot/penpot-files/raw/main/Black-&-White-Mobile-Templates.penpot"}
  {:id "avataaars"
   :name "Avataaars"
   :file-uri "https://github.com/penpot/penpot-files/raw/main/Avataaars-by-Pablo-Stanley.penpot"}
@@ -33,10 +33,10 @@
   :file-uri "https://github.com/penpot/penpot-files/raw/main/Whiteboarding-mapping-kit.penpot"}
  {:id "open-color-scheme"
   :name "Open Color Scheme"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/Open-Color-Scheme.penpot"}
+  :file-uri "https://github.com/penpot/penpot-files/raw/main/Open%20Color%20Scheme%20(v1.9.1).penpot"}
  {:id "flex-layout-playground"
   :name "Flex Layout Playground"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/Flex-Layout-Playground.penpot"}
+  :file-uri "https://github.com/penpot/penpot-files/raw/main/Flex%20Layout%20Playground.penpot"}
  {:id "welcome"
   :name "Welcome"
   :file-uri "https://github.com/penpot/penpot-files/raw/main/welcome.penpot"}]
