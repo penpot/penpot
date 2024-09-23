@@ -545,6 +545,7 @@
                       (d/update-in-when [pid :shapes] d/without-obj sid)
                       (d/update-in-when [pid :shapes] d/vec-without-nils)
                       (cond-> component? (d/update-when pid #(dissoc % :remote-synced))))))))
+
           (update-parent-id [objects id]
             (-> objects
                 (d/update-when id assoc :parent-id parent-id)))

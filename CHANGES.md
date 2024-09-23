@@ -89,6 +89,7 @@ time being.
 - Fix issue when exporting libraries when merging libraries [Taiga #8758](https://tree.taiga.io/project/penpot/issue/8758)
 - Fix problem with comments max length [Taiga #8778](https://tree.taiga.io/project/penpot/issue/8778)
 - Fix copy/paste images in Safari [Taiga #8771](https://tree.taiga.io/project/penpot/issue/8771)
+- Fix swap when the copy is the only child of a group [#5075](https://github.com/penpot/penpot/issues/5075)
 
 ## 2.1.5
 
