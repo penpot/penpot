@@ -12,6 +12,7 @@
    [app.common.time :as dt]
    [app.common.transit :as t]
    [app.common.types.token :as cto]
+   [clojure.set :as set]
    [cuerdas.core :as str]
    #?(:clj [app.common.fressian :as fres])))
 
@@ -94,6 +95,14 @@
    "expected group node"
    (group? group))
   (seq group))
+
+(def theme-separator "/")
+
+(defn theme-path [group name]
+  (join-path [group name] theme-separator))
+
+(defn token-theme->path [token-theme]
+  (theme-path (:group token-theme) (:name token-theme)))
 
 ;; === Token
 
@@ -316,7 +325,13 @@
   (get-theme-tree [_] "get a nested tree of all themes in the library")
   (get-themes [_] "get an ordered sequence of all themes in the library")
   (get-theme [_ group name] "get one theme looking for name")
-  (get-theme-groups [_] "get a sequence of group names by order"))
+  (get-theme-groups [_] "get a sequence of group names by order")
+  (get-active-theme-paths [_] "get the active theme paths")
+  (get-active-themes [_] "get an ordered sequence of active themes in the library")
+  (active? [_ group name] "predicate if token theme is active")
+  (activate [_ group name] "adds theme from the active-themes")
+  (deactivate [_ group name] "removes theme from the active-themes")
+  (toggle-active? [_ group name] "toggles theme in the active-themes"))
 
 (def schema:token-themes
   [:and
@@ -343,18 +358,25 @@
   (toggle-set-in-theme [_ group-name theme-name set-name] "toggle a set used / not used in a theme")
   (validate [_]))
 
-(deftype TokensLib [sets set-groups themes]
+(deftype TokensLib [sets set-groups themes active-themes]
   ;; NOTE: This is only for debug purposes, pending to properly
   ;; implement the toString and alternative printing.
   #?@(:clj  [clojure.lang.IDeref
-             (deref [_] {:sets sets :set-groups set-groups :themes themes})]
+             (deref [_] {:sets sets
+                         :set-groups set-groups
+                         :themes themes
+                         :active-themes active-themes})]
       :cljs [cljs.core/IDeref
-             (-deref [_] {:sets sets :set-groups set-groups :themes themes})])
+             (-deref [_] {:sets sets
+                          :set-groups set-groups
+                          :themes themes
+                          :active-themes active-themes})])
 
   #?@(:cljs [cljs.core/IEncodeJS
              (-clj->js [_] (js-obj "sets" (clj->js sets)
                                    "set-groups" (clj->js set-groups)
-                                   "themes" (clj->js themes)))])
+                                   "themes" (clj->js themes)
+                                   "active-themes" (clj->js active-themes)))])
 
   ITokenSets
   (add-set [_ token-set]
@@ -365,7 +387,8 @@
                   (cond-> set-groups
                     (not (str/empty? groups-str))
                     (assoc groups-str (make-token-set-group)))
-                  themes)))
+                  themes
+                  active-themes)))
 
   (update-set [this set-name f]
     (let [path (split-path set-name "/")
@@ -381,14 +404,16 @@
                             (d/oassoc-in-before path path' set')
                             (d/dissoc-in path)))
                       set-groups  ;; TODO update set-groups as needed
-                      themes))
+                      themes
+                      active-themes))
         this)))
 
   (delete-set [_ set-name]
     (let [path (split-path set-name "/")]
       (TokensLib. (d/dissoc-in sets path)
                   set-groups  ;; TODO remove set-group if needed
-                  themes)))
+                  themes
+                  active-themes)))
 
   (get-set-tree [_]
     sets)
@@ -412,7 +437,8 @@
     (dm/assert! "expected valid token theme" (check-token-theme! token-theme))
     (TokensLib. sets
                 set-groups
-                (update themes (:group token-theme) d/oassoc (:name token-theme) token-theme)))
+                (update themes (:group token-theme) d/oassoc (:name token-theme) token-theme)
+                active-themes))
 
   (update-theme [this group name f]
     (let [theme (dm/get-in themes [group name])]
@@ -428,13 +454,15 @@
                         (update themes group' assoc name' theme')
                         (-> themes
                             (d/oassoc-in-before [group name] [group' name'] theme')
-                            (d/dissoc-in [group name])))))
+                            (d/dissoc-in [group name])))
+                      active-themes))
         this)))
 
   (delete-theme [_ group name]
     (TokensLib. sets
                 set-groups
-                (d/dissoc-in themes [group name])))
+                (d/dissoc-in themes [group name])
+                (disj active-themes (theme-path group name))))
 
   (get-theme-tree [_]
     themes)
@@ -455,13 +483,56 @@
   (get-theme [_ group name]
     (dm/get-in themes [group name]))
 
+  (activate [this group name]
+    (if (get-theme this group name)
+      (let [group-themes (->> (get themes group)
+                              (map (comp token-theme->path val))
+                              (#(doto % println))
+                              (into #{}))
+            active-themes' (-> (set/difference active-themes group-themes)
+                               (conj (theme-path group name)))]
+        (TokensLib. sets
+                    set-groups
+                    themes
+                    active-themes'))
+      (TokensLib. sets
+                  set-groups
+                  themes
+                  active-themes)))
+
+  (deactivate [_ group name]
+    (TokensLib. sets
+                set-groups
+                themes
+                (disj active-themes (theme-path group name))))
+
+  (active? [_ group name]
+    (contains? active-themes (theme-path group name)))
+
+  (toggle-active? [this group name]
+    (if (active? this group name)
+      (deactivate this group name)
+      (activate this group name)))
+
+  (get-active-theme-paths [_]
+    active-themes)
+
+  (get-active-themes [this]
+    (into
+     (list)
+     (comp
+      (filter (partial instance? TokenTheme))
+      (filter #(active? this (:group %) (:name %))))
+     (tree-seq d/ordered-map? vals themes)))
+
   ITokensLib
   (add-token-in-set [this set-name token]
     (dm/assert! "expected valid token instance" (check-token! token))
     (if (contains? sets set-name)
       (TokensLib. (update sets set-name add-token token)
                   set-groups
-                  themes)
+                  themes
+                  active-themes)
       this))
 
   (update-token-in-set [this set-name token-name f]
@@ -469,7 +540,8 @@
       (TokensLib. (update sets set-name
                           #(update-token % token-name f))
                   set-groups
-                  themes)
+                  themes
+                  active-themes)
       this))
 
   (delete-token-from-set [this set-name token-name]
@@ -477,7 +549,8 @@
       (TokensLib. (update sets set-name
                           #(delete-token % token-name))
                   set-groups
-                  themes)
+                  themes
+                  active-themes)
       this))
 
   (toggle-set-in-theme [this theme-group theme-name set-name]
@@ -485,7 +558,8 @@
       (TokensLib. sets
                   set-groups
                   (d/oupdate-in themes [theme-group theme-name]
-                                #(toggle-set % set-name)))
+                                #(toggle-set % set-name))
+                  active-themes)
       this))
 
   (validate [_]
@@ -513,10 +587,11 @@
    ;; with pages and pages-index.
    (make-tokens-lib :sets (d/ordered-map)
                     :set-groups {}
-                    :themes (d/ordered-map)))
+                    :themes (d/ordered-map)
+                    :active-themes #{}))
 
-  ([& {:keys [sets set-groups themes]}]
-   (let [tokens-lib (TokensLib. sets set-groups themes)]
+  ([& {:keys [sets set-groups themes active-themes]}]
+   (let [tokens-lib (TokensLib. sets set-groups themes (or active-themes #{}))]
 
      (dm/assert!
       "expected valid tokens lib"
@@ -541,16 +616,16 @@
   :class TokensLib
   :wfn deref
   :rfn #(make-tokens-lib %)}
- 
+
  {:id "penpot/token-set"
   :class TokenSet
   :wfn #(into {} %)
-  :rfn #(make-token-set %)} 
- 
+  :rfn #(make-token-set %)}
+
  {:id "penpot/token-theme"
   :class TokenTheme
   :wfn #(into {} %)
-  :rfn #(make-token-theme %)} 
+  :rfn #(make-token-theme %)}
 
  {:id "penpot/token"
   :class Token
@@ -592,9 +667,11 @@
             (fres/write-tag! w n 3)
             (fres/write-object! w (.-sets o))
             (fres/write-object! w (.-set-groups o))
-            (fres/write-object! w (.-themes o)))
+            (fres/write-object! w (.-themes o))
+            (fres/write-object! w (.-active-themes o)))
      :rfn (fn [r]
-            (let [sets       (fres/read-object! r)
-                  set-groups (fres/read-object! r)
-                  themes     (fres/read-object! r)]
-              (->TokensLib sets set-groups themes)))}))
+            (let [sets          (fres/read-object! r)
+                  set-groups    (fres/read-object! r)
+                  themes        (fres/read-object! r)
+                  active-themes (fres/read-object! r)]
+              (->TokensLib sets set-groups themes active-themes)))}))
