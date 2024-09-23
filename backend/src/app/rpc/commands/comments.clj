@@ -292,7 +292,7 @@
   [:map {:title "create-comment-thread"}
    [:file-id ::sm/uuid]
    [:position ::gpt/point]
-   [:content [:string {:max 250}]]
+   [:content [:string {:max 750}]]
    [:page-id ::sm/uuid]
    [:frame-id ::sm/uuid]
    [:share-id {:optional true} [:maybe ::sm/uuid]]])

@@ -101,7 +101,17 @@
 }
 
 .tab-panel {
+  --tab-panel-outline-color: none;
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    --tab-panel-outline-color: var(--color-accent-primary);
+  }
+
   display: grid;
   width: 100%;
   height: 100%;
+  outline: $b-1 solid var(--tab-panel-outline-color);
 }

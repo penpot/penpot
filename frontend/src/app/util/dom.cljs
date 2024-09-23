@@ -760,8 +760,10 @@
   (.back (.-history js/window)))
 
 (defn reload-current-window
-  []
-  (.reload (.-location js/window)))
+  ([]
+   (.reload globals/location))
+  ([force?]
+   (.reload globals/location force?)))
 
 (defn scroll-by!
   ([element x y]

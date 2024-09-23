@@ -177,8 +177,7 @@
 
         class (dm/str class " " (stl/css :tabs))
 
-        props (mf/spread-props props {:class class
-                                      :on-key-down on-key-down})]
+        props (mf/spread-props props {:class class})]
 
     (mf/with-effect [tabs]
       (mf/set-ref-val! tabs-ref tabs))
@@ -190,6 +189,7 @@
                     :tabs tabs
                     :on-ref on-ref
                     :selected selected
+                    :on-key-down on-key-down
                     :on-click on-click}]]
 
      (let [active-tab (get-tab tabs selected)

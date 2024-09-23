@@ -177,3 +177,15 @@ test("Bug 7489 - Workspace-palette items stay hidden when opening with keyboard-
     ),
   ).toBeVisible();
 });
+
+test("Bug 8784 - Use keyboard arrow to move inside a text input does not change tabs", async ({
+  page,
+}) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.goToWorkspace();
+  await workspacePage.pageName.click();
+  await page.keyboard.press("ArrowLeft");
+
+  await expect(workspacePage.pageName).toHaveText("Page 1");
+});

@@ -16,8 +16,16 @@
 ;; Using ex/ignoring because can receive a DOMException like this when
 ;; importing the code as a library: Failed to read the 'localStorage'
 ;; property from 'Window': Storage is disabled inside 'data:' URLs.
-(defonce ^:private local-storage
+(defonce ^:private local-storage-backend
   (ex/ignoring (unchecked-get g/global "localStorage")))
+
+(defonce ^:private session-storage-backend
+  (ex/ignoring (unchecked-get g/global "sessionStorage")))
+
+(def ^:dynamic *sync*
+  "Dynamic variable which determines the mode of operation of the
+  storage mutatio actions. By default is asynchronous."
+  false)
 
 (defn- encode-key
   [prefix k]
@@ -37,35 +45,42 @@
           (keyword kns kn))))))
 
 (defn- lookup-by-index
-  [prefix result index]
+  [backend prefix result index]
   (try
-    (let [key  (.key ^js local-storage index)
+    (let [key  (.key ^js backend index)
           key' (decode-key prefix key)]
       (if key'
-        (let [val (.getItem ^js local-storage key)]
+        (let [val (.getItem ^js backend key)]
           (assoc! result key' (t/decode-str val)))
         result))
     (catch :default _
       result)))
 
 (defn- load-data
-  [prefix]
-  (if (some? local-storage)
-    (let [length (.-length ^js local-storage)]
+  [backend prefix]
+  (if (some? backend)
+    (let [length (.-length ^js backend)]
       (loop [index  0
              result (transient {})]
         (if (< index length)
           (recur (inc index)
-                 (lookup-by-index prefix result index))
+                 (lookup-by-index backend prefix result index))
           (persistent! result))))
     {}))
 
 (defn create-storage
-  [prefix]
-  (let [initial   (load-data prefix)
+  [backend prefix]
+  (let [initial   (load-data backend prefix)
         curr-data #js {:content initial}
         last-data #js {:content initial}
         watches   (js/Map.)
+
+        update-key
+        (fn [key val]
+          (when (some? backend)
+            (if (some? val)
+              (.setItem ^js backend (encode-key prefix key) (t/encode-str val))
+              (.removeItem ^js backend (encode-key prefix key)))))
 
         on-change*
         (fn [curr-state]
@@ -75,9 +90,7 @@
                       (let [prev-val (get prev-state key)
                             curr-val (get curr-state key)]
                         (when-not (identical? curr-val prev-val)
-                          (if (some? curr-val)
-                            (.setItem ^js local-storage (encode-key prefix key) (t/encode-str curr-val))
-                            (.removeItem ^js local-storage (encode-key prefix key))))))
+                          (update-key key curr-val))))
                     (into #{} (concat (keys curr-state)
                                       (keys prev-state))))
               (finally
@@ -103,7 +116,9 @@
       (-reset! [self newval]
         (let [oldval (unchecked-get curr-data "content")]
           (unchecked-set curr-data "content" newval)
-          (on-change newval)
+          (if *sync*
+            (on-change* newval)
+            (on-change newval))
           (when (> (.-size watches) 0)
             (-notify-watches self oldval newval))
           newval))
@@ -138,5 +153,7 @@
       (-remove-watch [_ key]
         (.delete watches key)))))
 
-(defonce global (create-storage "penpot-global"))
-(defonce user (create-storage "penpot-user"))
+(defonce global  (create-storage local-storage-backend "penpot-global"))
+(defonce user    (create-storage local-storage-backend "penpot-user"))
+(defonce storage (create-storage local-storage-backend "penpot"))
+(defonce session (create-storage session-storage-backend "penpot"))
