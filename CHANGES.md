@@ -6,6 +6,10 @@
 
 ### :boom: Breaking changes & Deprecations
 
+- Removed "merge assets" option when exporting ".svg + .json" files. After the components changes the option wasn't
+working properly and we're planning to change the format soon. We think it's better to deprecate the option for the
+time being.
+
 ### :heart: Community contributions (Thank you!)
 
 - Set proper default tenant on exporter (by @june128) [#4946](https://github.com/penpot/penpot/pull/4946)

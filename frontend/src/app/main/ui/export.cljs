@@ -369,7 +369,9 @@
         selected        (:selected state)
         status          (:status state)
 
-
+        ;; We've deprecated the merge option on non-binary files because it wasn't working
+        ;; and we're planning to remove this export in future releases.
+        export-types (if binary? export-types [:all :detach])
 
         start-export
         (mf/use-fn
