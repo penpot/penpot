@@ -148,14 +148,33 @@
 (defn nav-root
   "Navigate to the root page."
   []
-  (set! (.-href globals/location) "/"))
+  (ptk/reify ::nav-root
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (set! (.-href globals/location) "/"))))
+
+(defn reload
+  [force?]
+  (ptk/reify ::reload
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (ts/asap (partial dom/reload-current-window force?)))))
 
 (defn nav-raw
-  [href]
+  [& {:keys [href uri]}]
   (ptk/reify ::nav-raw
     ptk/EffectEvent
     (effect [_ _ _]
-      (set! (.-href globals/location) href))))
+      (cond
+        (string? uri)
+        (.replace globals/location uri)
+
+        (string? href)
+        (set! (.-href globals/location) href)))))
+
+(defn get-current-href
+  []
+  (.-href globals/location))
 
 (defn get-current-path
   []
@@ -163,6 +182,7 @@
     (if (str/starts-with? hash "#")
       (subs hash 1)
       hash)))
+
 
 ;; --- History API
 

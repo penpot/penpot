@@ -42,7 +42,8 @@
   (mf/lazy-component app.main.ui.workspace/workspace))
 
 (mf/defc main-page
-  {::mf/props :obj}
+  {::mf/props :obj
+   ::mf/private true}
   [{:keys [route profile]}]
   (let [{:keys [data params]} route
         props (get profile :props)
@@ -68,6 +69,7 @@
              (:onboarding-viewed props)
              (not= (:release-notes-viewed props) (:main cf/version))
              (not= "0.0" (:main cf/version)))]
+
     [:& (mf/provider ctx/current-route) {:value route}
      (case (:name data)
        (:auth-login

@@ -80,21 +80,23 @@
       [:opacity {:optional true} [:maybe ::sm/safe-number]]
       [:offset ::sm/safe-number]]]]])
 
+(def schema:color-attrs
+  [:map {:title "ColorAttrs"}
+   [:id {:optional true} ::sm/uuid]
+   [:name {:optional true} :string]
+   [:path {:optional true} [:maybe :string]]
+   [:value {:optional true} [:maybe :string]]
+   [:color {:optional true} [:maybe ::rgb-color]]
+   [:opacity {:optional true} [:maybe ::sm/safe-number]]
+   [:modified-at {:optional true} ::sm/inst]
+   [:ref-id {:optional true} ::sm/uuid]
+   [:ref-file {:optional true} ::sm/uuid]
+   [:gradient {:optional true} [:maybe schema:gradient]]
+   [:image {:optional true} [:maybe schema:image-color]]
+   [:plugin-data {:optional true} ::ctpg/plugin-data]])
+
 (def schema:color
-  [:and
-   [:map {:title "Color"}
-    [:id {:optional true} ::sm/uuid]
-    [:name {:optional true} :string]
-    [:path {:optional true} [:maybe :string]]
-    [:value {:optional true} [:maybe :string]]
-    [:color {:optional true} [:maybe ::rgb-color]]
-    [:opacity {:optional true} [:maybe ::sm/safe-number]]
-    [:modified-at {:optional true} ::sm/inst]
-    [:ref-id {:optional true} ::sm/uuid]
-    [:ref-file {:optional true} ::sm/uuid]
-    [:gradient {:optional true} [:maybe schema:gradient]]
-    [:image {:optional true} [:maybe schema:image-color]]
-    [:plugin-data {:optional true} ::ctpg/plugin-data]]
+  [:and schema:color-attrs
    [::sm/contains-any {:strict true} [:color :gradient :image]]])
 
 (def schema:recent-color
@@ -111,12 +113,13 @@
 (sm/register! ::gradient schema:gradient)
 (sm/register! ::image-color schema:image-color)
 (sm/register! ::recent-color schema:recent-color)
+(sm/register! ::color-attrs schema:color-attrs)
 
-(def valid-color?
-  (sm/lazy-validator schema:color))
+(def check-color!
+  (sm/check-fn schema:color))
 
-(def valid-recent-color?
-  (sm/lazy-validator schema:recent-color))
+(def check-recent-color!
+  (sm/check-fn schema:recent-color))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS

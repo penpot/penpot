@@ -14,6 +14,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.hooks :as h]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -21,81 +22,95 @@
 (defn- prepare-colors
   [shapes file-id shared-libs]
   (let [data           (into [] (remove nil? (ctc/extract-all-colors shapes file-id shared-libs)))
-        grouped-colors (group-by :attrs data)
+        groups         (d/group-by :attrs #(dissoc % :attrs) data)
         all-colors     (distinct (mapv :attrs data))
 
         tmp            (group-by #(some? (:id %)) all-colors)
         library-colors (get tmp true)
         colors         (get tmp false)]
-    {:grouped-colors grouped-colors
+    {:groups groups
      :all-colors all-colors
      :colors colors
      :library-colors library-colors}))
+
+(def xf:map-shape-id
+  (map :shape-id))
 
 (mf/defc color-selection-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]
    ::mf/wrap-props false}
   [{:keys [shapes file-id shared-libs]}]
-  (let [{:keys [grouped-colors library-colors colors]} (mf/with-memo [shapes file-id shared-libs]
-                                                         (prepare-colors shapes file-id shared-libs))
+  (let [{:keys [groups library-colors colors]} (mf/with-memo [shapes file-id shared-libs]
+                                                 (prepare-colors shapes file-id shared-libs))
 
-        state*          (mf/use-state true)
-        open?           (deref state*)
+        state*           (mf/use-state true)
+        open?            (deref state*)
 
-        has-colors?     (or (some? (seq colors)) (some? (seq library-colors)))
+        has-colors?      (or (some? (seq colors)) (some? (seq library-colors)))
 
-        toggle-content  (mf/use-fn #(swap! state* not))
+        toggle-content   (mf/use-fn #(swap! state* not))
 
         expand-lib-color (mf/use-state false)
         expand-color     (mf/use-state false)
 
-        grouped-colors*  (mf/use-var nil)
-        prev-colors*     (mf/use-var [])
+        groups-ref       (h/use-ref-value groups)
+        prev-colors-ref  (mf/use-ref nil)
+
+        ;; grouped-colors*  (mf/use-var nil)
+        ;; prev-colors*     (mf/use-var [])
 
         on-change
         (mf/use-fn
          (fn [new-color old-color from-picker?]
-           (let [old-color       (-> old-color (dissoc :name :path) d/without-nils)
+           (prn "new-color" new-color)
+           (prn "old-color" old-color)
+           (let [old-color   (-> old-color
+                                 (dissoc :name :path)
+                                 (d/without-nils))
 
                  ;; When dragging on the color picker sometimes all
                  ;; the shapes hasn't updated the color to the prev
                  ;; value so we need this extra calculation
-                 shapes-by-old-color  (get @grouped-colors* old-color)
-                 prev-color           (d/seek #(get @grouped-colors* %) @prev-colors*)
-                 shapes-by-prev-color (get @grouped-colors* prev-color)
-                 shapes-by-color (or shapes-by-prev-color shapes-by-old-color)]
+                 groups      (mf/ref-val groups-ref)
+                 prev-colors (mf/ref-val prev-colors-ref)
+
+                 prev-color  (d/seek (partial get groups) prev-colors)
+
+                 cops-old    (get groups old-color)
+                 cops-prev   (get groups prev-colors)
+                 cops        (or cops-prev cops-old)
+                 old-color   (or prev-color old-color)]
 
              (when from-picker?
-               (swap! prev-colors* conj (-> new-color (dissoc :name :path) d/without-nils)))
+               (let [color (-> new-color
+                               (dissoc :name :path)
+                               (d/without-nils))]
+                 (mf/set-ref-val! prev-colors-ref
+                                  (conj prev-colors color))))
 
-             (st/emit! (dc/change-color-in-selected new-color shapes-by-color (or prev-color old-color))))))
+             (st/emit! (dc/change-color-in-selected cops new-color old-color)))))
 
         on-open
-        (mf/use-fn
-         (fn []
-           (reset! prev-colors* [])))
+        (mf/use-fn #(mf/set-ref-val! prev-colors-ref []))
 
         on-close
-        (mf/use-fn
-         (fn []
-           (reset! prev-colors* [])))
+        (mf/use-fn #(mf/set-ref-val! prev-colors-ref []))
 
         on-detach
         (mf/use-fn
          (fn [color]
-           (let [shapes-by-color (get @grouped-colors* color)
-                 new-color       (assoc color :id nil :file-id nil)]
-             (st/emit! (dc/change-color-in-selected new-color shapes-by-color color)))))
+           (let [groups (mf/ref-val groups-ref)
+                 cops   (get groups color)
+                 color' (dissoc color :id :file-id)]
+             (st/emit! (dc/change-color-in-selected cops color' color)))))
 
         select-only
         (mf/use-fn
          (fn [color]
-           (let [shapes-by-color (get @grouped-colors* color)
-                 ids (into (d/ordered-set) (map :shape-id) shapes-by-color)]
+           (let [groups (mf/ref-val groups-ref)
+                 cops   (get groups color)
+                 ids    (into (d/ordered-set) xf:map-shape-id cops)]
              (st/emit! (dws/select-shapes ids)))))]
-
-    (mf/with-effect [grouped-colors]
-      (reset! grouped-colors* grouped-colors))
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}

@@ -133,7 +133,13 @@
     file))
 
 (def ^:private sql:get-files-for-library
-  "SELECT f.id, f.data, f.modified_at, f.features, f.version
+  "SELECT f.id,
+          f.data,
+          f.modified_at,
+          f.features,
+          f.version,
+          f.data_backend,
+          f.data_ref_id
      FROM file AS f
      LEFT JOIN file_library_rel AS fl ON (fl.file_id = f.id)
     WHERE fl.library_file_id = ?

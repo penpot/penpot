@@ -269,7 +269,7 @@
 
 (defn get-minimal-file
   [cfg id & {:as opts}]
-  (let [opts (assoc opts ::sql/columns [:id :modified-at :revn :data-ref-id :data-backend])]
+  (let [opts (assoc opts ::sql/columns [:id :modified-at :deleted-at :revn :data-ref-id :data-backend])]
     (db/get cfg :file {:id id} opts)))
 
 (defn get-file-etag
@@ -483,7 +483,7 @@
    [:file-id ::sm/uuid]
    [:page-id {:optional true} ::sm/uuid]
    [:share-id {:optional true} ::sm/uuid]
-   [:object-id {:optional true} [:or ::sm/uuid ::sm/coll-of-uuid]]
+   [:object-id {:optional true} [:or ::sm/uuid [::sm/set ::sm/uuid]]]
    [:features {:optional true} ::cfeat/features]])
 
 (sv/defmethod ::get-page
