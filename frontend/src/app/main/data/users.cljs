@@ -172,12 +172,12 @@
   (letfn [(get-redirect-events []
             (let [team-id         (get-current-team-id profile)
                   welcome-file-id (dm/get-in profile [:props :welcome-file-id])
-                  redirect-href   (::login-redirect storage/session)]
+                  redirect-href   (:login-redirect storage/session)]
 
               (cond
                 (some? redirect-href)
                 (binding [storage/*sync* true]
-                  (swap! storage/session dissoc ::login-redirect)
+                  (swap! storage/session dissoc :login-redirect)
                   (rx/of (rt/nav-raw :href redirect-href)))
 
                 (some? welcome-file-id)
