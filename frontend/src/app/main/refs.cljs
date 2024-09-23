@@ -468,6 +468,9 @@
 (def workspace-selected-token-set-id
   (l/derived wtts/get-selected-token-set-id st/state))
 
+(def workspace-ordered-token-sets
+  (l/derived #(or (some-> % ctob/get-sets) []) tokens-lib))
+
 (dm/legacy
  (def workspace-active-theme-ids
    (l/derived wtts/get-active-theme-ids st/state))
@@ -477,13 +480,6 @@
 
  (def workspace-active-set-ids
    (l/derived wtts/get-active-set-ids st/state))
-
- (def workspace-ordered-token-sets
-   (l/derived
-    (fn [data]
-      (or (wtts/get-workspace-ordered-sets data) {}))
-    st/state
-    =))
 
  (def workspace-active-theme-sets-tokens
    (l/derived wtts/get-active-theme-sets-tokens-names-map st/state =))
