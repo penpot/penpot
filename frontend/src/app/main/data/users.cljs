@@ -170,13 +170,22 @@
   accepting invitation, or third party auth signup or singin."
   [profile]
   (letfn [(get-redirect-events []
-            (let [team-id (get-current-team-id profile)
-                  welcome-file-id (get-in profile [:props :welcome-file-id])]
-              (if (some? welcome-file-id)
-                (rx/of
-                 (rt/nav' :workspace {:project-id (:default-project-id profile)
-                                      :file-id welcome-file-id})
-                 (update-profile-props {:welcome-file-id nil}))
+            (let [team-id         (get-current-team-id profile)
+                  welcome-file-id (dm/get-in profile [:props :welcome-file-id])
+                  redirect-href   (:login-redirect @s/session)]
+
+              (cond
+                (some? redirect-href)
+                (binding [s/*sync* true]
+                  (swap! s/session dissoc :login-redirect)
+                  (rx/of (rt/nav-raw :href redirect-href)))
+
+                (some? welcome-file-id)
+                (rx/of (rt/nav' :workspace {:project-id (:default-project-id profile)
+                                            :file-id welcome-file-id})
+                       (update-profile-props {:welcome-file-id nil}))
+
+                :else
                 (rx/of (rt/nav' :dashboard-projects {:team-id team-id})))))]
 
     (ptk/reify ::logged-in

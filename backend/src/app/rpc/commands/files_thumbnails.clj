@@ -231,7 +231,7 @@
   "INSERT INTO file_tagged_object_thumbnail (file_id, object_id, tag, media_id)
    VALUES (?, ?, ?, ?)
        ON CONFLICT (file_id, object_id, tag)
-       DO UPDATE SET updated_at=?, media_id=?, deleted_at=null
+       DO UPDATE SET updated_at=?, media_id=?, deleted_at=?
    RETURNING *")
 
 (defn- persist-thumbnail!
@@ -249,17 +249,19 @@
                       :content-type mtype
                       :bucket "file-object-thumbnail"})))
 
-
-
 (defn- create-file-object-thumbnail!
-  [{:keys [::sto/storage] :as cfg} file-id object-id media tag]
-  (let [tsnow     (dt/now)
-        media     (persist-thumbnail! storage media tsnow)
+  [{:keys [::sto/storage] :as cfg} file object-id media tag]
+  (let [file-id   (:id file)
+        timestamp (dt/now)
+        media     (persist-thumbnail! storage media timestamp)
         [th1 th2] (db/tx-run! cfg (fn [{:keys [::db/conn]}]
                                     (let [th1 (db/exec-one! conn [sql:get-file-object-thumbnail file-id object-id tag])
                                           th2 (db/exec-one! conn [sql:create-file-object-thumbnail
-                                                                  file-id object-id tag (:id media)
-                                                                  tsnow (:id media)])]
+                                                                  file-id object-id tag
+                                                                  (:id media)
+                                                                  timestamp
+                                                                  (:id media)
+                                                                  (:deleted-at file)])]
                                       [th1 th2])))]
 
     (when (and (some? th1)
@@ -292,8 +294,8 @@
   (media/validate-media-size! media)
 
   (db/run! cfg files/check-edition-permissions! profile-id file-id)
-
-  (create-file-object-thumbnail! cfg file-id object-id media (or tag "frame")))
+  (when-let [file (files/get-minimal-file cfg file-id {::db/check-deleted false})]
+    (create-file-object-thumbnail! cfg file object-id media (or tag "frame"))))
 
 ;; --- MUTATION COMMAND: delete-file-object-thumbnail
 
