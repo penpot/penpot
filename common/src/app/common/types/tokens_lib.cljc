@@ -328,10 +328,10 @@
   (get-theme-groups [_] "get a sequence of group names by order")
   (get-active-theme-paths [_] "get the active theme paths")
   (get-active-themes [_] "get an ordered sequence of active themes in the library")
-  (active? [_ group name] "predicate if token theme is active")
-  (activate [_ group name] "adds theme from the active-themes")
-  (deactivate [_ group name] "removes theme from the active-themes")
-  (toggle-active? [_ group name] "toggles theme in the active-themes"))
+  (theme-active? [_ group name] "predicate if token theme is active")
+  (activate-theme [_ group name] "adds theme from the active-themes")
+  (deactivate-theme [_ group name] "removes theme from the active-themes")
+  (toggle-theme-active? [_ group name] "toggles theme in the active-themes"))
 
 (def schema:token-themes
   [:and
@@ -483,7 +483,7 @@
   (get-theme [_ group name]
     (dm/get-in themes [group name]))
 
-  (activate [this group name]
+  (activate-theme [this group name]
     (if (get-theme this group name)
       (let [group-themes (->> (get themes group)
                               (map (comp token-theme->path val))
@@ -500,19 +500,19 @@
                   themes
                   active-themes)))
 
-  (deactivate [_ group name]
+  (deactivate-theme [_ group name]
     (TokensLib. sets
                 set-groups
                 themes
                 (disj active-themes (theme-path group name))))
 
-  (active? [_ group name]
+  (theme-active? [_ group name]
     (contains? active-themes (theme-path group name)))
 
-  (toggle-active? [this group name]
-    (if (active? this group name)
-      (deactivate this group name)
-      (activate this group name)))
+  (toggle-theme-active? [this group name]
+    (if (theme-active? this group name)
+      (deactivate-theme this group name)
+      (activate-theme this group name)))
 
   (get-active-theme-paths [_]
     active-themes)
@@ -522,7 +522,7 @@
      (list)
      (comp
       (filter (partial instance? TokenTheme))
-      (filter #(active? this (:group %) (:name %))))
+      (filter #(theme-active? this (:group %) (:name %))))
      (tree-seq d/ordered-map? vals themes)))
 
   ITokensLib

@@ -397,9 +397,9 @@
     (let [tokens-lib (-> (ctob/make-tokens-lib)
                          (ctob/add-theme (ctob/make-token-theme :group "" :name "other-theme"))
                          (ctob/add-theme (ctob/make-token-theme :group "" :name "theme-1"))
-                         (ctob/activate "" "theme-1")
+                         (ctob/activate-theme "" "theme-1")
                          (ctob/add-theme (ctob/make-token-theme :group "group-1" :name "theme-2"))
-                         (ctob/activate "group-1" "theme-2"))
+                         (ctob/activate-theme "group-1" "theme-2"))
           expected-active-themes (->> (ctob/get-active-themes tokens-lib)
                                       (map #(select-keys % [:name :group])))]
 
@@ -416,26 +416,26 @@
                          (ctob/add-theme (ctob/make-token-theme :group "group-1" :name "theme-2")))
 
           tokens-lib' (-> tokens-lib
-                          (ctob/activate "group-1" "theme-1")
-                          (ctob/activate "group-1" "theme-2"))]
+                          (ctob/activate-theme "group-1" "theme-1")
+                          (ctob/activate-theme "group-1" "theme-2"))]
 
-      (t/is (not (ctob/active? tokens-lib' "group-1" "theme-1")) "theme-1 should be de-activated")
-      (t/is (ctob/active? tokens-lib' "group-1" "theme-2") "theme-1 should be activated")))
+      (t/is (not (ctob/theme-active? tokens-lib' "group-1" "theme-1")) "theme-1 should be de-activated")
+      (t/is (ctob/theme-active? tokens-lib' "group-1" "theme-2") "theme-1 should be activated")))
 
   (t/deftest toggle-theme-activity
     (let [tokens-lib (-> (ctob/make-tokens-lib)
                          (ctob/add-theme (ctob/make-token-theme :group "group-1" :name "theme-1"))
-                         (ctob/toggle-active? "group-1" "theme-1"))
+                         (ctob/toggle-theme-active? "group-1" "theme-1"))
 
           tokens-lib' (-> tokens-lib
-                          (ctob/toggle-active? "group-1" "theme-1"))]
+                          (ctob/toggle-theme-active? "group-1" "theme-1"))]
 
-      (t/is (ctob/active? tokens-lib "group-1" "theme-1") "theme-1 should be activated")
-      (t/is (not (ctob/active? tokens-lib' "group-1" "theme-2")) "theme-1 got deactivated by toggling")))
+      (t/is (ctob/theme-active? tokens-lib "group-1" "theme-1") "theme-1 should be activated")
+      (t/is (not (ctob/theme-active? tokens-lib' "group-1" "theme-2")) "theme-1 got deactivated by toggling")))
 
   (t/deftest activating-missing-theme-noop
     (let [tokens-lib (-> (ctob/make-tokens-lib)
-                         (ctob/toggle-active? "group-1" "theme-1"))]
+                         (ctob/toggle-theme-active? "group-1" "theme-1"))]
 
       (t/is (= #{} (ctob/get-active-theme-paths tokens-lib)) "Should not non-existing theme to the active-themes"))))
 
