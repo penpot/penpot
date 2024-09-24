@@ -348,6 +348,12 @@
 (def check-token-themes!
   (sm/check-fn ::token-themes))
 
+(def schema:active-token-themes
+  [:set string?])
+
+(def valid-active-token-themes?
+  (sm/validator schema:active-token-themes))
+
 ;; === Tokens Lib
 
 (defprotocol ITokensLib
@@ -564,7 +570,8 @@
 
   (validate [_]
     (and (valid-token-sets? sets)  ;; TODO: validate set-groups
-         (valid-token-themes? themes))))
+         (valid-token-themes? themes)
+         (valid-active-token-themes? active-themes))))
 
 (defn valid-tokens-lib?
   [o]
