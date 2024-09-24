@@ -14,6 +14,7 @@
   @extend .modal-container-base;
   display: grid;
   grid-template-rows: auto 1fr auto;
+  max-height: initial;
 
   &.plugin-permissions {
     width: $s-412;
@@ -253,8 +254,8 @@ div.input-error {
 .permissions-disclaimer {
   @include bodySmallTypography;
   padding: $s-16;
-  background: var(--color-background-tertiary);
-  color: var(--color-foreground-secondary);
+  background: var(--color-background-quaternary);
+  color: var(--color-foreground-quaternary);
   border-radius: $br-4;
 }
 

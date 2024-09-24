@@ -5580,7 +5580,7 @@ msgstr "Read and modify the content of files that users have access to."
 
 #: src/app/main/ui/workspace/plugins.cljs:274
 msgid "workspace.plugins.permissions.disclaimer"
-msgstr "Note that this plugin has been created by an external party."
+msgstr "Please note that this plugin is created by an external party, so ensure you trust it before granting access. Your data privacy and security are important to us. If you have any concerns, please contact support."
 
 #: src/app/main/ui/workspace/plugins.cljs:271
 msgid "workspace.plugins.permissions.library-read"
@@ -5589,6 +5589,15 @@ msgstr "Read your libraries and assets."
 #: src/app/main/ui/workspace/plugins.cljs:265
 msgid "workspace.plugins.permissions.library-write"
 msgstr "Read and modify your libraries and assets."
+
+msgid "workspace.plugins.permissions.comment-read"
+msgstr "Read your comments and replies."
+
+msgid "workspace.plugins.permissions.comment-write"
+msgstr "Read and modify your comments and reply in your name."
+
+msgid "workspace.plugins.permissions.allow-download"
+msgstr "Start file downloads."
 
 #: src/app/main/ui/workspace/plugins.cljs:236
 msgid "workspace.plugins.permissions.title"

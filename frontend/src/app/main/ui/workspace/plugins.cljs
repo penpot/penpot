@@ -277,7 +277,27 @@
           [:div {:class (stl/css :permissions-list-entry)}
            i/oauth-3
            [:p {:class (stl/css :permissions-list-text)}
-            (tr "workspace.plugins.permissions.library-read")]])]
+            (tr "workspace.plugins.permissions.library-read")]])
+
+        (cond
+          (contains? permissions "comment:write")
+          [:div {:class (stl/css :permissions-list-entry)}
+           i/oauth-1
+           [:p {:class (stl/css :permissions-list-text)}
+            (tr "workspace.plugins.permissions.comment-write")]]
+
+          (contains? permissions "comment:read")
+          [:div {:class (stl/css :permissions-list-entry)}
+           i/oauth-1
+           [:p {:class (stl/css :permissions-list-text)}
+            (tr "workspace.plugins.permissions.comment-read")]])
+
+        (cond
+          (contains? permissions "allow:download")
+          [:div {:class (stl/css :permissions-list-entry)}
+           i/oauth-1
+           [:p {:class (stl/css :permissions-list-text)}
+            (tr "workspace.plugins.permissions.allow-download")]])]
 
        [:div {:class (stl/css :permissions-disclaimer)}
         (tr "workspace.plugins.permissions.disclaimer")]]
