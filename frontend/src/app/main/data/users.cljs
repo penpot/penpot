@@ -150,7 +150,7 @@
             href (->> path
                       (js/encodeURIComponent)
                       (str "/challenge.html?redirect="))]
-        (rx/of (rt/nav-raw href)))
+        (rx/of (rt/nav-raw :href href)))
       (rx/throw cause))))
 
 (defn fetch-profile
@@ -172,13 +172,16 @@
   (letfn [(get-redirect-events []
             (let [team-id         (get-current-team-id profile)
                   welcome-file-id (dm/get-in profile [:props :welcome-file-id])
-                  redirect-href   (:login-redirect storage/session)]
+                  redirect-href   (:login-redirect @s/session)
+                  current-href    (rt/get-current-href)]
 
               (cond
                 (some? redirect-href)
                 (binding [storage/*sync* true]
                   (swap! storage/session dissoc :login-redirect)
-                  (rx/of (rt/nav-raw :href redirect-href)))
+                  (if (= current-href redirect-href)
+                    (rx/of (rt/reload true))
+                    (rx/of (rt/nav-raw :href redirect-href))))
 
                 (some? welcome-file-id)
                 (rx/of (rt/nav' :workspace {:project-id (:default-project-id profile)
