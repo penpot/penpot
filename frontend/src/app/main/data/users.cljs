@@ -148,7 +148,7 @@
             href (->> path
                       (js/encodeURIComponent)
                       (str "/challenge.html?redirect="))]
-        (rx/of (rt/nav-raw href)))
+        (rx/of (rt/nav-raw :href href)))
       (rx/throw cause))))
 
 (defn fetch-profile
