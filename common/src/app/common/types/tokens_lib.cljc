@@ -493,7 +493,6 @@
     (if (get-theme this group name)
       (let [group-themes (->> (get themes group)
                               (map (comp token-theme->path val))
-                              (#(doto % println))
                               (into #{}))
             active-themes' (-> (set/difference active-themes group-themes)
                                (conj (theme-path group name)))]
