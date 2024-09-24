@@ -136,7 +136,8 @@
         :else
         [:div {:class (stl/css  :settings-bar-content)}
          [:> tab-switcher* {:tabs tabs
-                            :default-selected (dm/str section)
+                            :default-selected "layers"
+                            :selected (name section)
                             :on-change-tab on-tab-change
                             :class (stl/css :left-sidebar-tabs)
                             :action-button-position "start"
