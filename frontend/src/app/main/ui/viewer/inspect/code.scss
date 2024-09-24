@@ -9,12 +9,16 @@
 .element-options {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - #{$s-128}); // TODO: Fix this hardcoded value
+  height: calc(100vh - #{$s-160}); // TODO: Fix this hardcoded value
   overflow: hidden;
   padding-bottom: $s-16;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-gutter: stable;
+}
+
+.viewer-code-block {
+  height: calc(100vh - #{$s-108}); // TODO: Fix this hardcoded value
 }
 
 .download-button {

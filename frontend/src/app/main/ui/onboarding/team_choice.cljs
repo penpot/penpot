@@ -57,7 +57,7 @@
 (def ^:private schema:invite-form
   [:map {:title "InviteForm"}
    [:role :keyword]
-   [:emails [::sm/set {:kind ::sm/email}]]])
+   [:emails {:optional true} [::sm/set {:kind ::sm/email}]]])
 
 (defn- get-available-roles
   []

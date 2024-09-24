@@ -118,9 +118,9 @@
 (mf/defc tab-switcher*
   {::mf/props :obj
    ::mf/schema schema:tab-switcher}
-  [{:keys [tabs class on-change-tab default-selected action-button-position action-button] :rest props}]
-  (let [selected*        (mf/use-state #(get-selected-tab-id tabs default-selected))
-        selected         (deref selected*)
+  [{:keys [tabs class on-change-tab default-selected selected action-button-position action-button] :rest props}]
+  (let [selected*        (mf/use-state #(or selected (get-selected-tab-id tabs default-selected)))
+        selected         (or selected (deref selected*))
 
         tabs-nodes-refs  (mf/use-ref nil)
         tabs-ref         (mf/use-ref nil)

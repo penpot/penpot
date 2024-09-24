@@ -149,7 +149,11 @@
 
         empty-parents
         ;; Any parent whose children are all deleted, must be deleted too.
-        (into (d/ordered-set) (find-all-empty-parents #{}))
+        ;; Unless we are during a component swap: in this case we are replacing a shape by
+        ;; other one, so must not delete empty parents.
+        (if-not component-swap
+          (into (d/ordered-set) (find-all-empty-parents #{}))
+          #{})
 
         components-to-delete
         (if components-v2
