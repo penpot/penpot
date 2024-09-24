@@ -45,18 +45,22 @@
   []
   (st/emit! (du/create-demo-profile)))
 
+(defn- store-login-redirect
+  [save-login-redirect]
+  (binding [s/*sync* true]
+    (if (some? save-login-redirect)
+      ;; Save the current login raw uri for later redirect user back to
+      ;; the same page, we need it to be synchronous because the user is
+      ;; going to be redirected instantly to the oidc provider uri
+      (swap! s/session assoc :login-redirect (rt/get-current-href))
+      ;; Clean the login redirect
+      (swap! s/session dissoc :login-redirect))))
+
 (defn- login-with-oidc
   [event provider params]
   (dom/prevent-default event)
 
-  (binding [s/*sync* true]
-    (if (some? (:save-login-redirect params))
-    ;; Save the current login raw uri for later redirect user back to
-    ;; the same page, we need it to be synchronous because the user is
-    ;; going to be redirected instantly to the oidc provider uri
-      (swap! s/session assoc :login-redirect (rt/get-current-href))
-    ;; Clean the login redirect
-      (swap! s/session dissoc :login-redirect)))
+  (store-login-redirect (:save-login-redirect params))
 
   ;; FIXME: this code should be probably moved outside of the UI
   (->> (rp/cmd! :login-with-oidc (assoc params :provider provider))
@@ -131,6 +135,7 @@
         on-submit
         (mf/use-callback
          (fn [form _event]
+           (store-login-redirect (:save-login-redirect params))
            (reset! error nil)
            (let [params (with-meta (:clean-data @form)
                           {:on-error on-error
