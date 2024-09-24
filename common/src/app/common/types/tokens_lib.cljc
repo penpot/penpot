@@ -500,10 +500,7 @@
                     set-groups
                     themes
                     active-themes'))
-      (TokensLib. sets
-                  set-groups
-                  themes
-                  active-themes)))
+      this))
 
   (deactivate-theme [_ group name]
     (TokensLib. sets
