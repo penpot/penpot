@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as wdt]
@@ -22,8 +23,8 @@
   [{:keys [themes active-theme-ids on-close grouped?]}]
   (when (seq themes)
     [:ul
-     (for [[_ {:keys [id name]}] themes
-           :let [selected? (get active-theme-ids id)]]
+     (for [[_ {:keys [id group name] :as theme}] themes
+           :let [selected? (get active-theme-ids (ctob/theme-path theme))]]
        [:li {:key id
              :class (stl/css-case
                      :checked-element true
@@ -31,14 +32,14 @@
                      :is-selected selected?)
              :on-click (fn [e]
                          (dom/stop-propagation e)
-                         (st/emit! (wdt/toggle-token-theme id))
+                         (st/emit! (wdt/toggle-token-theme-active? group name))
                          (on-close))}
         [:span {:class (stl/css :label)} name]
         [:span {:class (stl/css :check-icon)} i/tick]])]))
 
 (mf/defc theme-options
   [{:keys [on-close]}]
-  (let [active-theme-ids (dm/fixme (mf/deref refs/workspace-active-theme-ids))
+  (let [active-theme-ids (dm/fixme (mf/deref refs/workspace-active-theme-paths))
         theme-groups (mf/deref refs/workspace-token-theme-tree)]
     [:ul
      (for [[group themes] theme-groups]
@@ -59,7 +60,7 @@
   [{:keys []}]
   (let [;; Store
         temp-theme-id (dm/legacy (mf/deref refs/workspace-temp-theme-id))
-        active-theme-ids (dm/legacy (-> (mf/deref refs/workspace-active-theme-ids)
+        active-theme-ids (dm/legacy (-> (mf/deref refs/workspace-active-theme-paths)
                                         (disj temp-theme-id)))
         active-themes-count (count active-theme-ids)
         themes (mf/deref refs/workspace-token-theme-tree)

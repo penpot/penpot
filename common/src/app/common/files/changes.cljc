@@ -258,7 +258,7 @@
     [:update-active-token-themes
      [:map {:title "UpdateActiveTokenThemes"}
       [:type [:= :update-active-token-themes]]
-      [:theme-ids [:set ::sm/uuid]]]]
+      [:theme-ids [:set :string]]]]
 
     [:delete-temporary-token-theme
      [:map {:title "DeleteTemporaryTokenThemeChange"}
@@ -846,7 +846,10 @@
 
 (defmethod process-change :update-active-token-themes
   [data {:keys [theme-ids]}]
-  (ctotl/assoc-active-token-themes data theme-ids))
+  (-> data
+      (update :tokens-lib #(-> %
+                               (ctob/ensure-tokens-lib)
+                               (ctob/set-active-themes theme-ids)))))
 
 (defmethod process-change :delete-temporary-token-theme
   [data {:keys [id group name]}]

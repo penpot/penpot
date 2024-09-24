@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.modals.themes
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
@@ -55,7 +56,7 @@
 
 (mf/defc themes-overview
   [{:keys [set-state]}]
-  (let [active-theme-ids (mf/deref refs/workspace-active-theme-ids)
+  (let [active-theme-ids (mf/deref refs/workspace-active-theme-paths)
         themes-groups (mf/deref refs/workspace-token-theme-tree)
         on-edit-theme (fn [theme e]
                         (dom/prevent-default e)
@@ -69,15 +70,15 @@
          (when (seq group)
            [:span {:class (stl/css :theme-group-label)} group])
          [:ul {:class (stl/css :theme-group-rows-wrapper)}
-          (for [[_ {:keys [id name] :as theme}] themes
-                :let [selected? (some? (get active-theme-ids id))]]
+          (for [[_ {:keys [id group name] :as theme}] themes
+                :let [selected? (some? (get active-theme-ids (ctob/theme-path theme)))]]
             [:li {:key (str "token-theme-" id)
                   :class (stl/css :theme-row)}
              [:div {:class (stl/css :theme-row-left)}
               [:div {:on-click (fn [e]
                                  (dom/prevent-default e)
                                  (dom/stop-propagation e)
-                                 (st/emit! (wdt/toggle-token-theme id)))}
+                                 (st/emit! (wdt/toggle-token-theme-active? group name)))}
                [:& switch {:name (str "Theme" name)
                            :on-change (constantly nil)
                            :selected? selected?}]]

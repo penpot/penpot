@@ -328,6 +328,7 @@
   (get-theme-groups [_] "get a sequence of group names by order")
   (get-active-theme-paths [_] "get the active theme paths")
   (get-active-themes [_] "get an ordered sequence of active themes in the library")
+  (set-active-themes  [_ active-themes] "set active themes in library")
   (theme-active? [_ group name] "predicate if token theme is active")
   (activate-theme [_ group name] "adds theme from the active-themes")
   (deactivate-theme [_ group name] "removes theme from the active-themes")
@@ -488,6 +489,12 @@
 
   (get-theme [_ group name]
     (dm/get-in themes [group name]))
+
+  (set-active-themes [_ active-themes]
+    (TokensLib. sets
+                set-groups
+                themes
+                active-themes))
 
   (activate-theme [this group name]
     (if-let [theme (get-theme this group name)]

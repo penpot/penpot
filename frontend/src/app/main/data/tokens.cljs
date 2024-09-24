@@ -140,17 +140,19 @@
                    theme))
      :else changes)))
 
-(defn toggle-token-theme [token-theme-id]
-  (ptk/reify ::toggle-token-theme
+(defn toggle-token-theme-active? [group name]
+  (ptk/reify ::toggle-token-theme-active?
     ptk/WatchEvent
     (watch [it state _]
-      (let [themes (wtts/get-active-theme-ids state)
-            new-themes (wtts/toggle-active-theme-id token-theme-id state)
-            changes (-> (pcb/empty-changes it)
-                        (pcb/update-active-token-themes new-themes themes))]
+      (let [tokens-lib (get-tokens-lib state)
+            prev-active-token-themes (some-> tokens-lib
+                                             (ctob/get-active-theme-paths))
+            active-token-themes (some-> tokens-lib
+                                        (ctob/toggle-theme-active? group name)
+                                        (ctob/get-active-theme-paths))
+            changes (pcb/update-active-token-themes (pcb/empty-changes it) active-token-themes prev-active-token-themes)]
         (rx/of
-         (dch/commit-changes changes)
-         (wtu/update-workspace-tokens))))))
+         (dch/commit-changes changes))))))
 
 (defn delete-token-theme [token-theme-id]
   (ptk/reify ::delete-token-theme
