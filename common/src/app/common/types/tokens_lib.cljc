@@ -96,14 +96,6 @@
    (group? group))
   (seq group))
 
-(def theme-separator "/")
-
-(defn theme-path [group name]
-  (join-path [group name] theme-separator))
-
-(defn token-theme->path [token-theme]
-  (theme-path (:group token-theme) (:name token-theme)))
-
 ;; === Token
 
 (defrecord Token [name type value description modified-at])
@@ -258,8 +250,14 @@
 
 ;; === TokenTheme
 
+(def theme-separator "/")
+
+(defn token-theme-path [group name]
+  (join-path [group name] theme-separator))
+
 (defprotocol ITokenTheme
-  (toggle-set [_ set-name] "togle a set used / not used in the theme"))
+  (toggle-set [_ set-name] "togle a set used / not used in the theme")
+  (theme-path [_] "get `token-theme-path` from theme"))
 
 (defrecord TokenTheme [name group description is-source modified-at sets]
   ITokenTheme
@@ -271,7 +269,9 @@
                  (dt/now)
                  (if (sets set-name)
                    (disj sets set-name)
-                   (conj sets set-name)))))
+                   (conj sets set-name))))
+  (theme-path [_]
+    (token-theme-path group name)))
 
 (def schema:token-theme
   [:and [:map {:title "TokenTheme"}
@@ -468,7 +468,7 @@
     (TokensLib. sets
                 set-groups
                 (d/dissoc-in themes [group name])
-                (disj active-themes (theme-path group name))))
+                (disj active-themes (token-theme-path group name))))
 
   (get-theme-tree [_]
     themes)
@@ -490,12 +490,12 @@
     (dm/get-in themes [group name]))
 
   (activate-theme [this group name]
-    (if (get-theme this group name)
+    (if-let [theme (get-theme this group name)]
       (let [group-themes (->> (get themes group)
-                              (map (comp token-theme->path val))
+                              (map (comp theme-path val))
                               (into #{}))
             active-themes' (-> (set/difference active-themes group-themes)
-                               (conj (theme-path group name)))]
+                               (conj (theme-path theme)))]
         (TokensLib. sets
                     set-groups
                     themes
@@ -506,10 +506,10 @@
     (TokensLib. sets
                 set-groups
                 themes
-                (disj active-themes (theme-path group name))))
+                (disj active-themes (token-theme-path group name))))
 
   (theme-active? [_ group name]
-    (contains? active-themes (theme-path group name)))
+    (contains? active-themes (token-theme-path group name)))
 
   (toggle-theme-active? [this group name]
     (if (theme-active? this group name)
