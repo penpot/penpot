@@ -42,7 +42,10 @@
           (conj "content:read")
 
           (contains? permissions "library:write")
-          (conj "content:write"))
+          (conj "content:write")
+
+          (contains? permissions "comment:write")
+          (conj "comment:read"))
 
         origin (obj/get (js/URL. plugin-url) "origin")
 
