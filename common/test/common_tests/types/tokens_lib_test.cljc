@@ -448,13 +448,15 @@
                                                                                    :type :boolean
                                                                                    :value true))
                           (ctob/add-theme (ctob/make-token-theme :name "test-token-theme"))
-                          (ctob/toggle-set-in-theme "" "test-token-theme" "test-token-set"))
+                          (ctob/toggle-set-in-theme "" "test-token-theme" "test-token-set")
+                          (ctob/activate-theme "" "test-token-theme"))
           encoded-str (tr/encode-str tokens-lib)
           tokens-lib' (tr/decode-str encoded-str)]
 
       (t/is (ctob/valid-tokens-lib? tokens-lib'))
       (t/is (= (ctob/set-count tokens-lib') 1))
-      (t/is (= (ctob/theme-count tokens-lib') 1))))
+      (t/is (= (ctob/theme-count tokens-lib') 1))
+      (t/is (= (ctob/get-active-theme-paths tokens-lib') #{"/test-token-theme"}))))
 
   (t/deftest fressian-serialization
     (let [tokens-lib   (-> (ctob/make-tokens-lib)
@@ -463,13 +465,15 @@
                                                                                     :type :boolean
                                                                                     :value true))
                            (ctob/add-theme (ctob/make-token-theme :name "test-token-theme"))
-                           (ctob/toggle-set-in-theme "" "test-token-theme" "test-token-set"))
+                           (ctob/toggle-set-in-theme "" "test-token-theme" "test-token-set")
+                           (ctob/activate-theme "" "test-token-theme"))
           encoded-blob (fres/encode tokens-lib)
           tokens-lib'  (fres/decode encoded-blob)]
 
       (t/is (ctob/valid-tokens-lib? tokens-lib'))
       (t/is (= (ctob/set-count tokens-lib') 1))
-      (t/is (= (ctob/theme-count tokens-lib') 1)))))
+      (t/is (= (ctob/theme-count tokens-lib') 1))
+      (t/is (= (ctob/get-active-theme-paths tokens-lib') #{"/test-token-theme"})))))
 
 
 (t/testing "grouping"
