@@ -265,6 +265,16 @@ RUN set -eux; \
     rm rustup-init; \
     chmod -R a+w $RUSTUP_HOME $CARGO_HOME;
 
+WORKDIR /usr/local
+
+# Install emscripten SDK and activate it
+RUN set -eux; \
+    git clone https://github.com/emscripten-core/emsdk.git; \
+    cd emsdk; \
+    ./emsdk install latest; \
+    ./emsdk activate latest; \
+    rustup target add wasm32-unknown-emscripten;
+
 WORKDIR /home
 
 COPY files/nginx.conf /etc/nginx/nginx.conf

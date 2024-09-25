@@ -49,6 +49,7 @@
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [app.renderer.cpp :as renderer-cpp]
+   [app.renderer.rs :as renderer-rs]
    [app.util.debug :as dbg]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
@@ -133,6 +134,7 @@
         ;; REFS
         [viewport-ref
          on-viewport-ref] (create-viewport-ref)
+        canvas-ref        (mf/use-ref nil)
 
         ;; VARS
         disable-paste     (mf/use-var false)
@@ -268,10 +270,12 @@
         rule-area-size (/ rulers/ruler-area-size zoom)]
 
     (mf/with-effect
-     [canvas-ref]
-      ;; FIXME:
-     (let [canvas (mf/ref-val canvas-ref)]
-       (renderer-cpp/set-canvas canvas)))
+        [canvas-ref]
+        (let [canvas (mf/ref-val canvas-ref)]
+          (when (contains? cf/flags :renderer-v2-cpp)
+            (renderer-cpp/set-canvas canvas))
+          (when (contains? cf/flags :renderer-v2-rs)
+            (renderer-rs/set-canvas canvas))))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -314,7 +318,8 @@
                                          :layout layout
                                          :viewport-ref viewport-ref}])]
 
-     (if (contains? cf/flags :renderer-v2-cpp)
+     (if (or (contains? cf/flags :renderer-v2-cpp)
+             (contains? cf/flags :renderer-v2-rs))
        [:canvas {:id "render"
                  :ref canvas-ref
                  :class (stl/css :render-shapes)
@@ -354,7 +359,7 @@
         (when (dbg/enabled? :show-export-metadata)
           [:& use/export-page {:page page}])
 
-             ;; We need a "real" background shape so layer transforms work properly in firefox
+       ;; We need a "real" background shape so layer transforms work properly in firefox
         [:rect {:width (:width vbox 0)
                 :height (:height vbox 0)
                 :x (:x vbox 0)
@@ -363,7 +368,7 @@
 
         [:& (mf/provider ctx/current-vbox) {:value vbox'}
          [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
-                ;; Render root shape
+         ;; Render root shape
           [:& shapes/root-shape {:key page-id
                                  :objects base-objects
                                  :active-frames @active-frames}]]]])

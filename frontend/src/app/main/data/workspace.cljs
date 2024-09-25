@@ -75,6 +75,7 @@
    [app.main.streams :as ms]
    [app.main.worker :as uw]
    [app.renderer.cpp :as renderer-cpp]
+   [app.renderer.rs :as renderer-rs]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -356,6 +357,8 @@
 
          (when (contains? cf/flags :renderer-v2-cpp)
            (rx/of (renderer-cpp/init)))
+         (when (contains? cf/flags :renderer-v2-rs)
+           (rx/of (renderer-rs/init)))
 
          (->> stream
               (rx/filter dch/commit?)
