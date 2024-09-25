@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-08-23 09:16+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-09-26 15:15+0000\n"
+"Last-Translator: Cesar Andres Estrella Paredes <crendai.private@gmail.com>\n"
 "Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
 "es/>\n"
 "Language: es\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.7.1-dev\n"
+"X-Generator: Weblate 5.8-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:132, src/app/main/ui/static.cljs:139, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -1859,7 +1859,7 @@ msgstr "Diseño de Producto o UX"
 
 #: src/app/main/ui/onboarding/questions.cljs:250
 msgid "labels.product-management"
-msgstr "Product Managment"
+msgstr "Gestión de Productos"
 
 #: src/app/main/ui/settings/profile.cljs:125, src/app/main/ui/settings/sidebar.cljs:82
 msgid "labels.profile"
@@ -1981,7 +1981,7 @@ msgstr "Status"
 
 #: src/app/main/ui/onboarding/questions.cljs:247
 msgid "labels.student-teacher"
-msgstr "Estudiante o profesorado"
+msgstr "Estudiante o profesor"
 
 #: src/app/main/ui/onboarding/questions.cljs:256
 msgid "labels.team-leader"
@@ -6094,3 +6094,19 @@ msgstr "Actualizar"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+#: src/app/main/ui/onboarding/questions.cljs:405
+msgid "labels.event"
+msgstr "Evento"
+
+#: src/app/main/ui/onboarding/questions.cljs:404
+msgid "labels.youtube"
+msgstr "YouTube"
+
+#: src/app/main/ui/onboarding/questions.cljs:407
+msgid "onboarding.questions.referer.social"
+msgstr "Redes sociales (X, Linkedin, FB, etc)"
+
+#: src/app/main/ui/onboarding/questions.cljs:406
+msgid "onboarding.questions.referer.search"
+msgstr "Motor de búsqueda (Google, Yahoo, Bing)"
