@@ -281,7 +281,7 @@
     [:del-token-theme
      [:map {:title "DelTokenThemeChange"}
       [:type [:= :del-token-theme]]
-      [:id ::sm/uuid]
+      [:group :string]
       [:name :string]]]
 
     [:add-token-set
@@ -885,9 +885,8 @@
                                                    (update :sets (partial set-ids->names data))))))))))
 
 (defmethod process-change :del-token-theme
-  [data {:keys [id group name]}]
+  [data {:keys [group name]}]
   (-> data
-      (ctotl/delete-token-theme id)
       (update :tokens-lib
               #(-> %
                    (ctob/ensure-tokens-lib)

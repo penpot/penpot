@@ -23,9 +23,10 @@
   [{:keys [themes active-theme-ids on-close grouped?]}]
   (when (seq themes)
     [:ul
-     (for [[_ {:keys [id group name] :as theme}] themes
-           :let [selected? (get active-theme-ids (ctob/theme-path theme))]]
-       [:li {:key id
+     (for [[_ {:keys [group name] :as theme}] themes
+           :let [theme-id (ctob/theme-path theme)
+                 selected? (get active-theme-ids theme-id)]]
+       [:li {:key theme-id
              :class (stl/css-case
                      :checked-element true
                      :sub-item grouped?

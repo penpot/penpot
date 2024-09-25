@@ -70,9 +70,10 @@
          (when (seq group)
            [:span {:class (stl/css :theme-group-label)} group])
          [:ul {:class (stl/css :theme-group-rows-wrapper)}
-          (for [[_ {:keys [id group name] :as theme}] themes
-                :let [selected? (some? (get active-theme-ids (ctob/theme-path theme)))]]
-            [:li {:key (str "token-theme-" id)
+          (for [[_ {:keys [group name] :as theme}] themes
+                :let [theme-id (ctob/theme-path theme)
+                      selected? (some? (get active-theme-ids theme-id))]]
+            [:li {:key theme-id
                   :class (stl/css :theme-row)}
              [:div {:class (stl/css :theme-row-left)}
               [:div {:on-click (fn [e]
@@ -97,7 +98,7 @@
                [:button {:on-click (fn [e]
                                      (dom/prevent-default e)
                                      (dom/stop-propagation e)
-                                     (st/emit! (wdt/delete-token-theme id)))}
+                                     (st/emit! (wdt/delete-token-theme group name)))}
                 i/delete]]]])]])]
      [:div {:class (stl/css :button-footer)}
       [:button {:class (stl/css :create-theme-button)
@@ -195,7 +196,7 @@
          [:button {:class (stl/css :button-secondary)
                    :type "button"
                    :on-click (fn []
-                               (st/emit! (wdt/delete-token-theme (:id theme)))
+                               (st/emit! (wdt/delete-token-theme (:group theme) (:name theme)))
                                (on-back))}
           "Delete"]
          [:div])

@@ -20,7 +20,8 @@
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.shape.layout :as ctl]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [app.common.types.tokens-lib :as ctob]))
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
 
@@ -724,12 +725,13 @@
       (apply-changes-local)))
 
 (defn delete-token-theme
-  [changes token-theme-id]
+  [changes group name]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
-        prev-token-theme (get-in library-data [:token-themes-index token-theme-id])]
+        prev-token-theme (some-> (get library-data :tokens-lib)
+                                 (ctob/get-theme group name))]
     (-> changes
-        (update :redo-changes conj {:type :del-token-theme :id token-theme-id :name (:name prev-token-theme)})
+        (update :redo-changes conj {:type :del-token-theme :group group :name name})
         (update :undo-changes conj {:type :add-token-theme :token-theme prev-token-theme})
         (apply-changes-local))))
 

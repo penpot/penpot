@@ -154,14 +154,14 @@
         (rx/of
          (dch/commit-changes changes))))))
 
-(defn delete-token-theme [token-theme-id]
+(defn delete-token-theme [group name]
   (ptk/reify ::delete-token-theme
     ptk/WatchEvent
     (watch [it state _]
       (let [data (get state :workspace-data)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/delete-token-theme token-theme-id))]
+                        (pcb/delete-token-theme group name))]
         (rx/of
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
