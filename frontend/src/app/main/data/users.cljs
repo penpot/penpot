@@ -172,7 +172,7 @@
   (letfn [(get-redirect-events []
             (let [team-id         (get-current-team-id profile)
                   welcome-file-id (dm/get-in profile [:props :welcome-file-id])
-                  redirect-href   (:login-redirect @s/session)
+                  redirect-href   (:login-redirect @storage/session)
                   current-href    (rt/get-current-href)]
 
               (cond
