@@ -474,15 +474,16 @@
 (def workspace-active-theme-paths
   (l/derived #(some-> % ctob/get-active-theme-paths) tokens-lib))
 
+(def workspace-active-set-names
+  (l/derived #(some-> % ctob/get-active-themes-set-names) tokens-lib))
+
+(def workspace-active-theme-sets-tokens
+  #_(l/derived wtts/get-active-theme-sets-tokens-names-map st/state =)
+  (l/derived #(some-> % ctob/get-active-themes-set-tokens) tokens-lib))
+
 (dm/legacy
  (def workspace-temp-theme-id
    (l/derived wtts/get-temp-theme-id st/state))
-
- (def workspace-active-set-ids
-   (l/derived wtts/get-active-set-ids st/state))
-
- (def workspace-active-theme-sets-tokens
-   (l/derived wtts/get-active-theme-sets-tokens-names-map st/state =))
 
  (def workspace-ordered-token-sets-tokens
    (l/derived wtts/get-workspace-ordered-sets-tokens st/state =))

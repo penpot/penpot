@@ -192,6 +192,19 @@
           token-set'  (ctob/get-set tokens-lib' "updated-name")]
 
       (t/is (= (ctob/set-count tokens-lib') 0))
+      (t/is (nil? token-set'))))
+
+  (t/deftest active-themes-set-names
+    (let [tokens-lib  (-> (ctob/make-tokens-lib)
+                          (ctob/add-set (ctob/make-token-set :name "test-token-set")))
+
+          tokens-lib' (-> tokens-lib
+                          (ctob/delete-set "test-token-set")
+                          (ctob/delete-set "not-existing-set"))
+
+          token-set'  (ctob/get-set tokens-lib' "updated-name")]
+
+      (t/is (= (ctob/set-count tokens-lib') 0))
       (t/is (nil? token-set')))))
 
 

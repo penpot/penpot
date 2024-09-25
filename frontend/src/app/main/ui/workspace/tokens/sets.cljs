@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.sets
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -26,9 +27,9 @@
 (defn on-select-token-set-click [name]
   (st/emit! (wdt/set-selected-token-set-id name)))
 
-(defn on-delete-token-set-click [id name event]
+(defn on-delete-token-set-click [name event]
   (dom/stop-propagation event)
-  (st/emit! (wdt/delete-token-set id name)))
+  (st/emit! (wdt/delete-token-set (dm/legacy nil) name)))
 
 (defn on-update-token-set [token-set]
   (st/emit! (wdt/update-token-set token-set)))
@@ -71,13 +72,13 @@
            on-submit
            on-cancel]
     :as _props}]
-  (let [{:keys [id name _children]} token-set
+  (let [{:keys [name _children]} token-set
         selected? (and set? (token-set-selected? name))
-        visible? (token-set-active? id)
+        visible? (token-set-active? name)
         collapsed? (mf/use-state false)
         set? true #_(= type :set)
         group? false #_(= type :group)
-        editing-node? (editing? id)
+        editing-node? (editing? name)
         on-select (mf/use-callback
                    (mf/deps editing-node?)
                    (fn [event]
@@ -85,7 +86,7 @@
                      (when-not editing-node?
                        (on-select name))))
         on-context-menu (mf/use-callback
-                         (mf/deps editing-node? id)
+                         (mf/deps editing-node? name)
                          (fn [event]
                            (dom/prevent-default event)
                            (dom/stop-propagation event)
@@ -93,11 +94,11 @@
                              (st/emit!
                               (wdt/show-token-set-context-menu
                                {:position (dom/get-client-position event)
-                                :token-set-id id
+                                :token-set-id name
                                 :token-set-name name})))))]
     [:div {:class (stl/css :set-item-container)
            :on-click on-select
-           :on-double-click #(on-edit id)
+           :on-double-click #(on-edit name)
            :on-context-menu on-context-menu}
      [:div {:class (stl/css-case :set-item-group group?
                                  :set-item-set set?
@@ -116,14 +117,14 @@
         [:*
          [:div {:class (stl/css :set-name)} name]
          [:div {:class (stl/css :delete-set)}
-          [:button {:on-click #(on-delete-token-set-click id name %)
+          [:button {:on-click #(on-delete-token-set-click name %)
                     :type "button"}
            i/delete]]
          (if set?
            [:span {:class (stl/css :action-btn)
                    :on-click (fn [event]
                                (dom/stop-propagation event)
-                               (on-toggle id))}
+                               (on-toggle name))}
             (if visible? i/shown i/hide)]
            nil
            #_(when (and children (not @collapsed?))
@@ -181,7 +182,7 @@
                              (mf/deps selected-token-set-id)
                              (fn [set-name]
                                (= set-name selected-token-set-id)))
-        active-token-set-ids (mf/deref refs/workspace-active-set-ids)
+        active-token-set-ids (mf/deref refs/workspace-active-set-names)
         token-set-active? (mf/use-callback
                            (mf/deps active-token-set-ids)
                            (fn [id]

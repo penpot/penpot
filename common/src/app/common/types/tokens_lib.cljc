@@ -363,6 +363,8 @@
   (update-token-in-set [_ set-name token-name f] "update a token in a set")
   (delete-token-from-set [_ set-name token-name] "delete a token from a set")
   (toggle-set-in-theme [_ group-name theme-name set-name] "toggle a set used / not used in a theme")
+  (get-active-themes-set-names [_] "set of set names that are active in the the active themes")
+  (get-active-themes-set-tokens [_] "set of set names that are active in the the active themes")
   (validate [_]))
 
 (deftype TokensLib [sets set-groups themes active-themes]
@@ -570,6 +572,21 @@
                                 #(toggle-set % set-name))
                   active-themes)
       this))
+
+  (get-active-themes-set-names [this]
+    (into #{}
+          (mapcat :sets)
+          (get-active-themes this)))
+
+  (get-active-themes-set-tokens [this]
+    (mapcat (fn [x]
+              (->> (get x :sets)
+                   (map (fn [y]
+                          (->
+                           (get-set this y)
+                           :tokens)))))
+            (get-active-themes this)))
+
 
   (validate [_]
     (and (valid-token-sets? sets)  ;; TODO: validate set-groups
