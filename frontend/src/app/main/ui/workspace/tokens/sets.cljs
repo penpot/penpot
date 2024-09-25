@@ -31,8 +31,8 @@
   (dom/stop-propagation event)
   (st/emit! (wdt/delete-token-set (dm/legacy nil) name)))
 
-(defn on-update-token-set [token-set]
-  (st/emit! (wdt/update-token-set token-set)))
+(defn on-update-token-set [set-name token-set]
+  (st/emit! (wdt/update-token-set set-name token-set)))
 
 (defn on-create-token-set [token-set]
   (st/emit! (wdt/create-token-set token-set)))
@@ -159,7 +159,7 @@
            :on-edit on-edit
            :on-toggle on-toggle-token-set
            :on-submit #(do
-                         (on-update-token-set %)
+                         (on-update-token-set (:name token-set) %)
                          (on-reset))
            :on-cancel on-reset}]))
      (when new?

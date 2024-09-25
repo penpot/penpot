@@ -182,11 +182,12 @@
            (set-selected-token-set-id (:name new-token-set))
            (dch/commit-changes changes)))))))
 
-(defn update-token-set [token-set]
+(defn update-token-set [set-name token-set]
   (ptk/reify ::update-token-set
     ptk/WatchEvent
     (watch [it state _]
-      (let [prev-token-set (wtts/get-token-set (:id token-set) state)
+      (let [prev-token-set (some-> (get-tokens-lib state)
+                                   (ctob/get-set set-name))
             changes (-> (pcb/empty-changes it)
                         (pcb/update-token-set token-set prev-token-set))]
         (rx/of

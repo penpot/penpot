@@ -292,7 +292,6 @@
     [:mod-token-set
      [:map {:title "ModTokenSetChange"}
       [:type [:= :mod-token-set]]
-      [:id ::sm/uuid]
       [:name :string]
       [:token-set ::ctot/token-set]]]
 

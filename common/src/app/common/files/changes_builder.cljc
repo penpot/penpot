@@ -745,8 +745,8 @@
 (defn update-token-set
   [changes token-set prev-token-set]
   (-> changes
-      (update :redo-changes conj {:type :mod-token-set :id (:id token-set) :name (:name prev-token-set) :token-set token-set})
-      (update :undo-changes conj {:type :mod-token-set :id (:id token-set) :name (:name prev-token-set) :token-set (or prev-token-set token-set)})
+      (update :redo-changes conj {:type :mod-token-set :name (:name prev-token-set) :token-set token-set})
+      (update :undo-changes conj {:type :mod-token-set :name (:name prev-token-set) :token-set (or prev-token-set token-set)})
       (apply-changes-local)))
 
 (defn delete-token-set
