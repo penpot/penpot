@@ -168,8 +168,7 @@
 
 (defn create-token-set [token-set]
   (let [new-token-set (merge
-                       {:id (uuid/next)
-                        :name "Token Set"
+                       {:name "Token Set"
                         :tokens []}
                        token-set)]
     (ptk/reify ::create-token-set
@@ -177,8 +176,8 @@
       (watch [it state _]
         (let [changes (-> (pcb/empty-changes it)
                           (pcb/add-token-set new-token-set)
-                          (ensure-token-theme-changes state {:id (:id new-token-set)
-                                                             :new-set? true}))]
+                          #_(ensure-token-theme-changes state {:id (:id new-token-set)
+                                                               :new-set? true}))]
           (rx/of
            (set-selected-token-set-id (:name new-token-set))
            (dch/commit-changes changes)))))))

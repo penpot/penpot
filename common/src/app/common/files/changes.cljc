@@ -793,18 +793,16 @@
 ;; -- Tokens
 
 (defmethod process-change :add-token
-  [data {:keys [set-id set-name token]}]
+  [data {:keys [set-name token]}]
   (-> data
-      (ctol/add-token set-id token)
       (update :tokens-lib
               #(-> %
                    (ctob/ensure-tokens-lib)
                    (ctob/add-token-in-set set-name (ctob/make-token token))))))
 
 (defmethod process-change :mod-token
-  [data {:keys [set-name id name token]}]
+  [data {:keys [set-name name token]}]
   (-> data
-      (ctol/update-token id merge token)
       (update :tokens-lib
               #(-> %
                    (ctob/ensure-tokens-lib)
@@ -815,9 +813,8 @@
                       (ctob/make-token (merge old-token token))))))))
 
 (defmethod process-change :del-token
-  [data {:keys [set-name id name]}]
+  [data {:keys [set-name name]}]
   (-> data
-      (ctol/delete-token id)
       (update :tokens-lib
               #(-> %
                    (ctob/ensure-tokens-lib)
@@ -836,7 +833,6 @@
 (defmethod process-change :add-temporary-token-theme
   [data {:keys [token-theme]}]
   (-> data
-      (ctotl/add-temporary-token-theme token-theme)
       (update :tokens-lib
               #(-> %
                    (ctob/ensure-tokens-lib)
@@ -852,9 +848,8 @@
                                (ctob/set-active-themes theme-ids)))))
 
 (defmethod process-change :delete-temporary-token-theme
-  [data {:keys [id group name]}]
+  [data {:keys [group name]}]
   (-> data
-      (ctotl/delete-temporary-token-theme id)
       (update :tokens-lib
               #(-> %
                    (ctob/ensure-tokens-lib)
@@ -871,10 +866,8 @@
                                        (ctob/make-token-theme)))))))
 
 (defmethod process-change :mod-token-theme
-  [data {:keys [id name group token-theme]}]
+  [data {:keys [name group token-theme]}]
   (-> data
-      (dm/legacy (#(when id
-                     (ctotl/update-token-theme % (random-uuid) merge token-theme))))
       (update :tokens-lib
               #(-> %
                    (ctob/ensure-tokens-lib)
@@ -895,16 +888,14 @@
 (defmethod process-change :add-token-set
   [data {:keys [token-set]}]
   (-> data
-      (ctotl/add-token-set token-set)
       (update :tokens-lib
               #(-> %
                    (ctob/ensure-tokens-lib)
                    (ctob/add-set (ctob/make-token-set token-set))))))
 
 (defmethod process-change :mod-token-set
-  [data {:keys [id name token-set]}]
+  [data {:keys [name token-set]}]
   (-> data
-      (ctotl/update-token-set id merge token-set)
       (update :tokens-lib
               #(-> %
                    (ctob/ensure-tokens-lib)
@@ -913,9 +904,8 @@
                                                   (dissoc token-set :tokens))))))))
 
 (defmethod process-change :del-token-set
-  [data {:keys [id name]}]
+  [data {:keys [name]}]
   (-> data
-      (ctotl/delete-token-set id)
       (update :tokens-lib
               #(-> %
                    (ctob/ensure-tokens-lib)
