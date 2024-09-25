@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.tokens.sets
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data.macros :as dm]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -29,7 +28,7 @@
 
 (defn on-delete-token-set-click [name event]
   (dom/stop-propagation event)
-  (st/emit! (wdt/delete-token-set (dm/legacy nil) name)))
+  (st/emit! (wdt/delete-token-set name)))
 
 (defn on-update-token-set [set-name token-set]
   (st/emit! (wdt/update-token-set set-name token-set)))

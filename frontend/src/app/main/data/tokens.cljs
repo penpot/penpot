@@ -210,14 +210,14 @@
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
 
-(defn delete-token-set [token-set-id token-set-name]
+(defn delete-token-set [token-set-name]
   (ptk/reify ::delete-token-set
     ptk/WatchEvent
     (watch [it state _]
       (let [data (get state :workspace-data)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/delete-token-set token-set-id token-set-name))]
+                        (pcb/delete-token-set token-set-name))]
         (rx/of
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))

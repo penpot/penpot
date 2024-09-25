@@ -298,7 +298,6 @@
     [:del-token-set
      [:map {:title "DelTokenSetChange"}
       [:type [:= :del-token-set]]
-      [:id ::sm/uuid]
       [:name :string]]]
 
     [:add-token

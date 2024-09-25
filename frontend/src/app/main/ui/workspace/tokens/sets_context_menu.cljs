@@ -32,7 +32,7 @@
   (let [{:keys [on-edit]} (sets-context/use-context)]
     [:ul {:class (stl/css :context-list)}
      [:& menu-entry {:title "Rename" :on-click #(on-edit token-set-id)}]
-     [:& menu-entry {:title "Delete" :on-click #(st/emit! (wdt/delete-token-set token-set-id token-set-name))}]]))
+     [:& menu-entry {:title "Delete" :on-click #(st/emit! (wdt/delete-token-set token-set-name))}]]))
 
 (mf/defc sets-context-menu
   []
