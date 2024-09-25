@@ -168,7 +168,7 @@
 ;; === Set selection
 
 (defn get-selected-token-set-id [state]
-  (or (dm/legacy (get-in state [:workspace-local :selected-token-set-id]))
+  (or (get-in state [:workspace-local :selected-token-set-id])
       (some-> (get-workspace-tokens-lib state)
               (ctob/get-sets)
               (first)

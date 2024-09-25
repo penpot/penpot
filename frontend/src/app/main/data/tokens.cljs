@@ -180,7 +180,7 @@
                           (ensure-token-theme-changes state {:id (:id new-token-set)
                                                              :new-set? true}))]
           (rx/of
-           (set-selected-token-set-id (:id new-token-set))
+           (set-selected-token-set-id (:name new-token-set))
            (dch/commit-changes changes)))))))
 
 (defn update-token-set [token-set]
@@ -251,7 +251,7 @@
                                 (ensure-token-theme-changes state {:new-set? create-set?
                                                                    :id (:id token-set)}))]
           (rx/of
-           (set-selected-token-set-id (:id token-set))
+           (set-selected-token-set-id (:name token-set))
            (dch/commit-changes changes)))))))
 
 (defn delete-token

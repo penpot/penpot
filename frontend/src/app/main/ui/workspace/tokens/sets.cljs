@@ -23,8 +23,8 @@
 (defn on-toggle-token-set-click [token-set-id]
   (st/emit! (wdt/toggle-token-set {:token-set-id token-set-id})))
 
-(defn on-select-token-set-click [id]
-  (st/emit! (wdt/set-selected-token-set-id id)))
+(defn on-select-token-set-click [name]
+  (st/emit! (wdt/set-selected-token-set-id name)))
 
 (defn on-delete-token-set-click [id name event]
   (dom/stop-propagation event)
@@ -83,7 +83,7 @@
                    (fn [event]
                      (dom/stop-propagation event)
                      (when-not editing-node?
-                       (on-select id))))
+                       (on-select name))))
         on-context-menu (mf/use-callback
                          (mf/deps editing-node? id)
                          (fn [event]
@@ -179,8 +179,8 @@
         selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)
         token-set-selected? (mf/use-callback
                              (mf/deps selected-token-set-id)
-                             (fn [id]
-                               (= id selected-token-set-id)))
+                             (fn [set-name]
+                               (= set-name selected-token-set-id)))
         active-token-set-ids (mf/deref refs/workspace-active-set-ids)
         token-set-active? (mf/use-callback
                            (mf/deps active-token-set-ids)
