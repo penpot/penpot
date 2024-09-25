@@ -111,6 +111,7 @@
    [:class {:optional true} :string]
    [:on-change-tab {:optional true} fn?]
    [:default-selected {:optional true} :string]
+   [:selected {:optional true} :string]
    [:action-button {:optional true} some?]
    [:action-button-position {:optional true}
     [:enum "start" "end"]]])
