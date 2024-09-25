@@ -111,6 +111,7 @@
    [:action-button-position {:optional true}
     [:enum "start" "end"]]
    [:default-selected {:optional true} :string]
+   [:selected {:optional true} :string]
    [:tabs [:vector {:min 1} schema:tab]]])
 
 (mf/defc tab-switcher*
