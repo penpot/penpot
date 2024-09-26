@@ -57,7 +57,7 @@
 (mf/defc themes-overview
   [{:keys [set-state]}]
   (let [active-theme-ids (mf/deref refs/workspace-active-theme-paths)
-        themes-groups (mf/deref refs/workspace-token-theme-tree)
+        themes-groups (mf/deref refs/workspace-token-theme-tree-no-hidden)
         on-edit-theme (fn [theme e]
                         (dom/prevent-default e)
                         (dom/stop-propagation e)
