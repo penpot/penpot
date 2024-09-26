@@ -497,12 +497,6 @@
   (l/derived #(some-> % ctob/get-active-themes-set-tokens) tokens-lib))
 
 (dm/legacy
- (def workspace-temp-theme-id
-   (l/derived wtts/get-temp-theme-id st/state))
-
- (def workspace-ordered-token-sets-tokens
-   (l/derived wtts/get-workspace-ordered-sets-tokens st/state =))
-
  (def workspace-selected-token-set-tokens
    (l/derived
     (fn [data]
