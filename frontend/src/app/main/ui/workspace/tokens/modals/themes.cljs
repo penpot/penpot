@@ -17,7 +17,6 @@
    [app.main.ui.workspace.tokens.common :refer [labeled-input] :as wtco]
    [app.main.ui.workspace.tokens.sets :as wts]
    [app.main.ui.workspace.tokens.sets-context :as sets-context]
-   [app.main.ui.workspace.tokens.token-set :as wtts]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
