@@ -112,41 +112,33 @@
 (mf/defc edit-theme
   [{:keys [edit? token-sets theme theme-groups on-back on-submit]}]
   (let [{:keys [dropdown-open? on-open-dropdown on-close-dropdown on-toggle-dropdown]} (wtco/use-dropdown-open-state)
-        theme-state (mf/use-state {:token-sets token-sets
-                                   :theme theme})
-        disabled? (-> (get-in @theme-state [:theme :name])
+        theme-state (mf/use-state theme)
+        disabled? (-> (:name @theme-state)
                       (str/trim)
                       (str/empty?))
         token-set-active? (mf/use-callback
                            (mf/deps theme-state)
-                           (fn [id]
-                             (get-in @theme-state [:theme :sets id])))
+                           (fn [set-name]
+                             (get-in @theme-state [:sets set-name])))
         on-toggle-token-set (mf/use-callback
                              (mf/deps theme-state)
-                             (fn [token-set-id]
-                               (swap! theme-state (fn [st]
-                                                    (update st :theme #(wtts/toggle-token-set-to-token-theme token-set-id %))))))
+                             (fn [set-name]
+                               (swap! theme-state #(ctob/toggle-set % set-name))))
         on-change-field (fn [field]
                           (fn [e]
-                            (swap! theme-state (fn [st] (assoc-in st field (dom/get-target-val e))))))
+                            (swap! theme-state #(assoc % field (dom/get-target-val e)))))
         group-input-ref (mf/use-ref)
-        on-update-group (on-change-field [:theme :group])
-        on-update-name (on-change-field [:theme :name])
+        on-update-group (on-change-field :group)
+        on-update-name (on-change-field :name)
         on-save-form (mf/use-callback
                       (mf/deps theme-state on-submit)
                       (fn [e]
                         (dom/prevent-default e)
-                        (let [theme (:theme @theme-state)
-                              final-name (-> (:name theme)
-                                             (str/trim))
-                              empty-description? (-> (:description theme)
-                                                     (str/trim)
-                                                     (str/empty?))]
-                          (when-not (str/empty? final-name)
-                            (cond-> theme
-                              empty-description? (assoc :description "")
-                              :always (doto js/console.log)
-                              :always on-submit)))
+                        (let [theme (-> @theme-state
+                                        (update :name str/trim)
+                                        (update :description str/trim))]
+                          (when-not (str/empty? (:name theme))
+                            (on-submit theme)))
                         (on-back)))]
     [:form {:on-submit on-save-form}
      [:div {:class (stl/css :edit-theme-wrapper)}
@@ -174,12 +166,12 @@
                                          :on-change on-update-group}
                            :render-right (when (seq theme-groups)
                                            (mf/fnc []
-                                             [:button {:class (stl/css :group-drop-down-button)
-                                                       :type "button"
-                                                       :on-click (fn [e]
-                                                                   (dom/stop-propagation e)
-                                                                   (on-toggle-dropdown))}
-                                              i/arrow]))}]]
+                                                   [:button {:class (stl/css :group-drop-down-button)
+                                                             :type "button"
+                                                             :on-click (fn [e]
+                                                                         (dom/stop-propagation e)
+                                                                         (on-toggle-dropdown))}
+                                                    i/arrow]))}]]
        [:& labeled-input {:label "Theme"
                           :input-props {:default-value (:name theme)
                                         :on-change on-update-name}}]]
@@ -229,7 +221,7 @@
 (mf/defc create-theme
   [{:keys [set-state]}]
   (let [token-sets (mf/deref refs/workspace-ordered-token-sets)
-        theme {:name "" :sets #{}}
+        theme (ctob/make-token-theme :name "")
         theme-groups (mf/deref refs/workspace-token-theme-groups)]
     [:& edit-theme
      {:edit? false

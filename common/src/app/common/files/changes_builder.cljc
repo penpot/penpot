@@ -714,7 +714,7 @@
   [changes token-theme]
   (-> changes
       (update :redo-changes conj {:type :add-token-theme :token-theme token-theme})
-      ;; (legacy (update :undo-changes conj {:type :del-token-theme :name (:name token-theme)}))
+      (update :undo-changes conj {:type :del-token-theme :group (:group token-theme) :name (:name token-theme)})
       (apply-changes-local)))
 
 (defn update-token-theme
