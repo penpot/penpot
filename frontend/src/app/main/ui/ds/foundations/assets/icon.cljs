@@ -282,7 +282,7 @@
    [:class {:optional true} :string]
    [:id [:and :string [:fn #(contains? icon-list %)]]]
    [:size  {:optional true}
-    [:enum "s" "m"]]])
+    [:maybe [:enum "s" "m"]]]])
 
 (mf/defc icon*
   {::mf/props :obj

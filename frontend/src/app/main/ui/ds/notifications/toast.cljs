@@ -24,7 +24,7 @@
   [:map
    [:class {:optional true} :string]
    [:level {:optional true}
-    [:enum "info" "warning" "error" "success"]]
+    [:maybe [:enum "info" "warning" "error" "success"]]]
    [:on-close {:optional true} fn?]])
 
 (mf/defc toast*
