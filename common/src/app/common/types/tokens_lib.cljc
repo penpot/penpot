@@ -605,14 +605,14 @@
           (get-active-themes this)))
 
   (get-active-themes-set-tokens [this]
-    (mapcat (fn [x]
-              (->> (get x :sets)
-                   (map (fn [y]
-                          (->
-                           (get-set this y)
-                           :tokens)))))
-            (get-active-themes this)))
-
+    (reduce
+     (fn [acc cur]
+       (if (theme-active? this (:group cur) (:name cur))
+         (into acc
+               (->> (get cur :sets)
+                    (map #(-> (get-set this %) :tokens))))
+         acc))
+     (d/ordered-map) (tree-seq d/ordered-map? vals themes)))
 
   (validate [_]
     (and (valid-token-sets? sets)  ;; TODO: validate set-groups
