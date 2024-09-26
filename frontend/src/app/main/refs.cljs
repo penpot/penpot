@@ -493,7 +493,6 @@
   (l/derived #(some-> % ctob/get-active-themes-set-names) tokens-lib))
 
 (def workspace-active-theme-sets-tokens
-  #_(l/derived wtts/get-active-theme-sets-tokens-names-map st/state =)
   (l/derived #(some-> % ctob/get-active-themes-set-tokens) tokens-lib))
 
 (dm/legacy
