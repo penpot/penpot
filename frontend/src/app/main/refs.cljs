@@ -465,6 +465,9 @@
 (def workspace-token-themes
   (l/derived #(or (some-> % ctob/get-themes) []) tokens-lib))
 
+(def workspace-token-themes-no-hidden
+  (l/derived #(remove ctob/hidden-temporary-theme? %) workspace-token-themes))
+
 (def workspace-selected-token-set-id
   (l/derived wtts/get-selected-token-set-id st/state))
 

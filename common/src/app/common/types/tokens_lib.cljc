@@ -16,6 +16,14 @@
    [cuerdas.core :as str]
    #?(:clj [app.common.fressian :as fres])))
 
+;; === Constants
+
+(def hidden-token-theme-group
+  "")
+
+(def hidden-token-theme-name
+  "__PENPOT__HIDDEN__TOKEN__THEME__")
+
 ;; === Groups handling
 
 (def schema:groupable-item
@@ -257,7 +265,9 @@
 
 (defprotocol ITokenTheme
   (toggle-set [_ set-name] "togle a set used / not used in the theme")
-  (theme-path [_] "get `token-theme-path` from theme"))
+  (theme-path [_] "get `token-theme-path` from theme")
+  (theme-matches-group-name [_ group name] "if a theme matches the given group & name")
+  (hidden-temporary-theme? [_] "if a theme is the (from the user ui) hidden temporary theme"))
 
 (defrecord TokenTheme [name group description is-source modified-at sets]
   ITokenTheme
@@ -271,7 +281,14 @@
                    (disj sets set-name)
                    (conj sets set-name))))
   (theme-path [_]
-    (token-theme-path group name)))
+    (token-theme-path group name))
+
+  (theme-matches-group-name [this group name]
+    (and (= (:group this) group)
+         (= (:name this) name)))
+
+  (hidden-temporary-theme? [this]
+    (theme-matches-group-name this hidden-token-theme-group hidden-token-theme-name)))
 
 (def schema:token-theme
   [:and [:map {:title "TokenTheme"}

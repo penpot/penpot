@@ -241,7 +241,7 @@
 
 (mf/defc themes
   [_]
-  (let [themes (mf/deref refs/workspace-token-themes)
+  (let [themes (mf/deref refs/workspace-token-themes-no-hidden)
         state (mf/use-state (if (empty? themes)
                               {:type :create-theme}
                               {:type :themes-overview}))

@@ -48,12 +48,6 @@
 (defn get-tokens-lib [state]
   (get-in state [:workspace-data :tokens-lib]))
 
-(def hidden-token-theme-group
-  "")
-
-(def hidden-token-theme-name
-  "__PENPOT__HIDDEN__TOKEN__SET__")
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -222,14 +216,14 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [tokens-lib (get-tokens-lib state)
-            prev-theme (ctob/get-theme tokens-lib hidden-token-theme-group hidden-token-theme-name)
+            prev-theme (ctob/get-theme tokens-lib ctob/hidden-token-theme-group ctob/hidden-token-theme-name)
             theme (-> (or prev-theme (ctob/make-token-theme
-                                      :group hidden-token-theme-group
-                                      :name hidden-token-theme-name))
+                                      :group ctob/hidden-token-theme-group
+                                      :name ctob/hidden-token-theme-name))
                       (ctob/toggle-set token-set-name))
             prev-active-token-themes (ctob/get-active-theme-paths tokens-lib)
             changes (-> (pcb/empty-changes it)
-                        (pcb/update-active-token-themes #{(ctob/token-theme-path hidden-token-theme-group hidden-token-theme-name)} prev-active-token-themes))
+                        (pcb/update-active-token-themes #{(ctob/token-theme-path ctob/hidden-token-theme-group ctob/hidden-token-theme-name)} prev-active-token-themes))
             changes' (if prev-theme
                        (pcb/update-token-theme changes theme prev-theme)
                        (pcb/add-token-theme changes theme))]
