@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
-   [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
@@ -19,7 +18,6 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.changes :as wtch]
-   [app.main.ui.workspace.tokens.common :refer [labeled-input]]
    [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.sets :refer [sets-list]]
@@ -41,15 +39,6 @@
 
 (def ^:private download-icon
   (i/icon-xref :download (stl/css :download-icon)))
-
-(def selected-set-id
-  (l/derived :selected-set-id st/state))
-
- ;; Event Functions -------------------------------------------------------------
-
-(defn on-set-add-click [_event]
-  (when-let [set-name (js/window.prompt "Set name")]
-    (st/emit! (wdt/create-token-set {:name set-name}))))
 
 ;; Components ------------------------------------------------------------------
 
@@ -172,23 +161,6 @@
                                                 (if (empty? tokens) :empty :filled))))]
     {:empty (sort-by :token-key empty)
      :filled (sort-by :token-key filled)}))
-
-(mf/defc tokene-theme-create
-  [_props]
-  (let [group (mf/use-state "")
-        name (mf/use-state "")]
-    [:div {:style {:display "flex"
-                   :flex-direction "column"
-                   :gap "10px"}}
-     [:& labeled-input {:label "Group name"
-                        :input-props {:value @group
-                                      :on-change #(reset! group (dom/event->value %))}}]
-     [:& labeled-input {:label "Theme name"
-                        :input-props {:value @name
-                                      :on-change #(reset! name (dom/event->value %))}}]
-     [:button {:on-click #(st/emit! (wdt/create-token-theme {:group @group
-                                                             :name @name}))}
-      "Create"]]))
 
 (mf/defc edit-button
   [{:keys [create?]}]

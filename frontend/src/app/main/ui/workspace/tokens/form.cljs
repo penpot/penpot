@@ -203,8 +203,9 @@ Token names should only contain letters and digits separated by . characters.")}
         color? (wtt/color-token? token)
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
         active-theme-tokens (mf/deref refs/workspace-active-theme-sets-tokens)
-        resolved-tokens (sd/use-resolved-tokens active-theme-tokens {:names-map? true
-                                                                     :cache-atom form-token-cache-atom})
+        resolved-tokens (sd/use-resolved-tokens (vals active-theme-tokens) {:names-map? true
+                                                                            :cache-atom form-token-cache-atom})
+        _ (js/console.log "resolved-tokens" resolved-tokens)
         token-path (mf/use-memo
                     (mf/deps (:name token))
                     #(wtt/token-name->path (:name token)))

@@ -6,10 +6,6 @@
    [clojure.set :as set]
    [cuerdas.core :as str]))
 
-(defn get-workspace-tokens
-  [state]
-  (get-in state [:workspace-data :tokens] {}))
-
 (defn get-workspace-token
   [token-id state]
   (get-in state [:workspace-data :tokens token-id]))
@@ -67,12 +63,6 @@
   [token shape token-attributes]
   (some #(token-attribute-applied? token shape %) token-attributes))
 
-(defn token-applied-attributes
-  "Return a set of which `token-attributes` are applied with `token`."
-  [token shape token-attributes]
-  (-> (filter #(token-attribute-applied? token shape %) token-attributes)
-      (set)))
-
 (defn shapes-token-applied?
   "Test if `token` is applied to to any of `shapes` with at least one of the one of the given `token-attributes`."
   [token shapes token-attributes]
@@ -119,6 +109,12 @@
        (into {})))
 
 (defonce a (atom nil))
+
+(comment
+
+  (token-names-tree-id-map @a)
+  nil)
+
 
 (defn token-names-tree-id-map [tokens]
   (reset! a tokens)
