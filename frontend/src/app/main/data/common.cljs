@@ -170,3 +170,26 @@
         (->> (rp/cmd! :create-team-access-request params)
              (rx/tap on-success)
              (rx/catch on-error))))))
+
+(defn change-team-permissions
+  [team-id role]
+  (ptk/reify ::change-team-permissions
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:teams team-id :permissions]
+                 (fn [permissions]
+                   (cond
+                     (= role :viewer)
+                     (assoc permissions :can-edit false :is-admin false :is-owner false)
+
+                     (= role :editor)
+                     (assoc permissions :can-edit true :is-admin false :is-owner false)
+
+                     (= role :admin)
+                     (assoc permissions :can-edit true :is-admin true :is-owner false)
+
+                     (= role :owner)
+                     (assoc permissions :can-edit true :is-admin true :is-owner true)
+
+                     :else
+                     permissions))))))

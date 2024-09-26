@@ -118,13 +118,10 @@
 
 (defn get-available-roles
   [permissions]
-  (->> [{:value "editor" :label (tr "labels.editor")}
+  (->> [{:value "viewer" :label (tr "labels.viewer")}
+        {:value "editor" :label (tr "labels.editor")}
         (when (:is-admin permissions)
-          {:value "admin" :label (tr "labels.admin")})
-        ;; Temporarily disabled viewer roles
-        ;; https://tree.taiga.io/project/penpot/issue/1083
-        ;; {:value "viewer" :label (tr "labels.viewer")}
-        ]
+          {:value "admin" :label (tr "labels.admin")})]
        (filterv identity)))
 
 (def ^:private schema:invite-member-form
@@ -146,7 +143,7 @@
         team-id     (:id team)
 
         initial     (mf/with-memo [team-id]
-                      {:role "editor" :team-id team-id})
+                      {:role "viewer" :team-id team-id})
 
         form        (fm/use-form :schema schema:invite-member-form
                                  :initial initial)
@@ -256,7 +253,7 @@
 
 (mf/defc rol-info
   {::mf/wrap-props false}
-  [{:keys [member team on-set-admin on-set-editor on-set-owner profile]}]
+  [{:keys [member team on-set-admin on-set-editor on-set-owner on-set-viewer profile]}]
   (let [member-is-owner?  (:is-owner member)
         member-is-admin?  (and (:is-admin member) (not member-is-owner?))
         member-is-editor? (and (:can-edit member) (and (not member-is-admin?) (not member-is-owner?)))
@@ -294,12 +291,12 @@
        [:li {:on-click on-set-editor
              :class (stl/css :rol-dropdown-item)}
         (tr "labels.editor")]
-       ;; Temporarily disabled viewer role
-       ;; https://tree.taiga.io/project/penpot/issue/1083
-       ;;  [:li {:on-click set-viewer} (tr "labels.viewer")]
+       [:li {:on-click on-set-viewer
+             :class (stl/css :rol-dropdown-item)}
+        (tr "labels.viewer")]
        (when you-owner?
          [:li {:on-click (partial on-set-owner member)
-               :class (:stl/css :rol-dropdown-item)}
+               :class (stl/css :rol-dropdown-item)}
           (tr "labels.owner")])]]]))
 
 (mf/defc member-actions
@@ -344,6 +341,7 @@
   (let [member-id  (:id member)
         on-set-admin  (mf/use-fn (mf/deps member-id) (partial set-role! member-id :admin))
         on-set-editor (mf/use-fn (mf/deps member-id) (partial set-role! member-id :editor))
+        on-set-viewer (mf/use-fn (mf/deps member-id) (partial set-role! member-id :viewer))
         owner?     (dm/get-in team [:permissions :is-owner])
 
         on-set-owner
@@ -459,6 +457,7 @@
                      :team team
                      :on-set-admin on-set-admin
                      :on-set-editor on-set-editor
+                     :on-set-viewer on-set-viewer
                      :on-set-owner on-set-owner
                      :profile profile}]]
 
@@ -567,7 +566,11 @@
        [:li {:data-role "editor"
              :class (stl/css :rol-dropdown-item)
              :on-click on-change'}
-        (tr "labels.editor")]]]]))
+        (tr "labels.editor")]
+       [:li {:data-role "viewer"
+             :class (stl/css :rol-dropdown-item)
+             :on-click on-change'}
+        (tr "labels.viewer")]]]]))
 
 (mf/defc invitation-actions
   {::mf/wrap-props false}

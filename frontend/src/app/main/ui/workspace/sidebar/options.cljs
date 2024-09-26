@@ -181,9 +181,9 @@
                   :id "prototype"
                   :content interactions-content}
 
-             #js {:label (tr "workspace.options.inspect")
-                  :id "inspect"
-                  :content inspect-content}]]
+               #js {:label (tr "workspace.options.inspect")
+                    :id "inspect"
+                    :content inspect-content}]]
 
     [:div {:class (stl/css :tool-window)}
      [:> tab-switcher* {:tabs tabs

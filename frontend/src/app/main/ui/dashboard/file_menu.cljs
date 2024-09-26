@@ -11,6 +11,7 @@
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
@@ -55,7 +56,7 @@
 
 (mf/defc file-menu
   {::mf/wrap-props false}
-  [{:keys [files show? on-edit on-menu-close top left navigate? origin parent-id]}]
+  [{:keys [files show? on-edit on-menu-close top left navigate? origin parent-id you-viewer?]}]
   (assert (seq files) "missing `files` prop")
   (assert (boolean? show?) "missing `show?` prop")
   (assert (fn? on-edit) "missing `on-edit` prop")
@@ -73,7 +74,10 @@
 
         current-team-id  (mf/use-ctx ctx/current-team-id)
         teams            (mf/use-state nil)
-        current-team     (get @teams current-team-id)
+        default-team     (-> (mf/deref refs/teams)
+                             (get current-team-id))
+
+        current-team     (or (get @teams current-team-id) default-team)
         other-teams      (remove #(= (:id %) current-team-id) (vals @teams))
         current-projects (remove #(= (:id %) (:project-id file))
                                  (:projects current-team))
@@ -237,11 +241,13 @@
                                                                    (:id sub-project))})})}]))
 
             options (if multi?
-                      [{:option-name    (tr "dashboard.duplicate-multi" file-count)
-                        :id             "file-duplicate-multi"
-                        :option-handler on-duplicate
-                        :data-testid      "duplicate-multi"}
-                       (when (or (seq current-projects) (seq other-teams))
+                      [(when-not you-viewer?
+                         {:option-name    (tr "dashboard.duplicate-multi" file-count)
+                          :id             "file-duplicate-multi"
+                          :option-handler on-duplicate
+                          :data-testid      "duplicate-multi"})
+                       (when (and (or (seq current-projects) (seq other-teams))
+                                  (not you-viewer?))
                          {:option-name    (tr "dashboard.move-to-multi" file-count)
                           :id             "file-move-multi"
                           :sub-options    sub-options
@@ -252,12 +258,14 @@
                        {:option-name    (tr "dashboard.export-standard-multi" file-count)
                         :id             "file-standard-export-multi"
                         :option-handler on-export-standard-files}
-                       (when (:is-shared file)
+                       (when (and (:is-shared file)
+                                  (not you-viewer?))
                          {:option-name    (tr "labels.unpublish-multi-files" file-count)
                           :id             "file-unpublish-multi"
                           :option-handler on-del-shared
                           :data-testid      "file-del-shared"})
-                       (when (not is-lib-page?)
+                       (when (and (not is-lib-page?)
+                                  (not you-viewer?))
                          {:option-name    :separator}
                          {:option-name    (tr "labels.delete-multi-files" file-count)
                           :id             "file-delete-multi"
@@ -267,22 +275,28 @@
                       [{:option-name    (tr "dashboard.open-in-new-tab")
                         :id             "file-open-new-tab"
                         :option-handler on-new-tab}
-                       (when (not is-search-page?)
+                       (when (and (not is-search-page?)
+                                  (not you-viewer?))
                          {:option-name    (tr "labels.rename")
                           :id             "file-rename"
                           :option-handler on-edit
                           :data-testid      "file-rename"})
-                       (when (not is-search-page?)
+                       (when (and (not is-search-page?)
+                                  (not you-viewer?))
                          {:option-name    (tr "dashboard.duplicate")
                           :id             "file-duplicate"
                           :option-handler on-duplicate
                           :data-testid      "file-duplicate"})
-                       (when (and (not is-lib-page?) (not is-search-page?) (or (seq current-projects) (seq other-teams)))
+                       (when (and (not is-lib-page?)
+                                  (not is-search-page?)
+                                  (or (seq current-projects) (seq other-teams))
+                                  (not you-viewer?))
                          {:option-name    (tr "dashboard.move-to")
                           :id             "file-move-to"
                           :sub-options    sub-options
                           :data-testid      "file-move-to"})
-                       (when (not is-search-page?)
+                       (when (and (not is-search-page?)
+                                  (not you-viewer?))
                          (if (:is-shared file)
                            {:option-name    (tr "dashboard.unpublish-shared")
                             :id             "file-del-shared"
@@ -301,7 +315,7 @@
                         :id             "file-download-standard"
                         :option-handler on-export-standard-files
                         :data-testid      "download-standard-file"}
-                       (when (and (not is-lib-page?) (not is-search-page?))
+                       (when (and (not is-lib-page?) (not is-search-page?) (not you-viewer?))
                          {:option-name   :separator}
                          {:option-name    (tr "labels.delete")
                           :id             "file-delete"

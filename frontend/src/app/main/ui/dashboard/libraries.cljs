@@ -19,7 +19,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc libraries-page
-  [{:keys [team] :as props}]
+  [{:keys [team you-viewer?] :as props}]
   (let [files-map       (mf/deref refs/dashboard-shared-files)
         projects        (mf/deref refs/dashboard-projects)
 
@@ -56,5 +56,6 @@
                 :project default-project
                 :origin :libraries
                 :limit limit
+                :you-viewer? you-viewer?
                 :library-view? components-v2}]]]))
 

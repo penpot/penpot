@@ -25,6 +25,10 @@
 (def ^:svg-id marketing-layers "marketing-layers")
 (def ^:svg-id penpot-logo "penpot-logo")
 (def ^:svg-id penpot-logo-icon "penpot-logo-icon")
+(def ^:svg-id empty-placeholder-1-left "empty-placeholder-1-left")
+(def ^:svg-id empty-placeholder-1-right "empty-placeholder-1-right")
+(def ^:svg-id empty-placeholder-2-left "empty-placeholder-2-left")
+(def ^:svg-id empty-placeholder-2-right "empty-placeholder-2-right")
 
 (def raw-svg-list "A collection of all raw SVG assets" (collect-raw-svgs))
 
