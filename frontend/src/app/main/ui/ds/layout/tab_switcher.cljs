@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.ds.tab-switcher
+(ns app.main.ui.ds.layout.tab-switcher
   (:require-macros
    [app.common.data.macros :as dm]
    [app.main.style :as stl])

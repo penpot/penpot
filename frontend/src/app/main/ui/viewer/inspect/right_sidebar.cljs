@@ -11,7 +11,7 @@
    [app.common.types.component :as ctk]
    [app.main.refs :as refs]
    [app.main.ui.components.shape-icon :as sir]
-   [app.main.ui.ds.tab-switcher :refer [tab-switcher*]]
+   [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.icons :as i]
    [app.main.ui.viewer.inspect.attributes :refer [attributes]]
    [app.main.ui.viewer.inspect.code :refer [code]]
