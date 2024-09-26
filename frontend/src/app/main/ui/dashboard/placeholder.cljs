@@ -7,13 +7,14 @@
 (ns app.main.ui.dashboard.placeholder
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 (mf/defc empty-placeholder
-  [{:keys [dragging? limit origin create-fn]}]
+  [{:keys [dragging? limit origin create-fn you-viewer?]}]
   (let [on-click
         (mf/use-fn
          (mf/deps create-fn)
@@ -27,14 +28,17 @@
        [:li {:class (stl/css :grid-item :grid-empty-placeholder :dragged)}]]
 
       (= :libraries origin)
-      [:div {:class (stl/css :grid-empty-placeholder :libs)
-             :data-testid "empty-placeholder"}
-       [:div {:class (stl/css :text)}
-        [:> i18n/tr-html* {:content (tr "dashboard.empty-placeholder-drafts")}]]]
+      [:> empty-placeholder* {:title (tr "dashboard.empty-placeholder-libraries-title")
+                              :type 2
+                              :subtitle (when you-viewer? (tr "dashboard.empty-placeholder-libraries-subtitle-viewer-role"))
+                              :class (stl/css :empty-placeholder-libraries)}
+       (when-not you-viewer?
+         [:> i18n/tr-html* {:content (tr "dashboard.empty-placeholder-drafts")
+                            :class (stl/css :placeholder-markdown)
+                            :tag-name "span"}])]
 
       :else
-      [:div
-       {:class (stl/css :grid-empty-placeholder)}
+      [:div {:class (stl/css :grid-empty-placeholder)}
        [:button {:class (stl/css :create-new)
                  :on-click on-click}
         i/add]])))

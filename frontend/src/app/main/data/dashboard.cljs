@@ -12,17 +12,20 @@
    [app.common.files.helpers :as cfh]
    [app.common.logging :as log]
    [app.common.schema :as sm]
+   [app.common.types.team :as tt]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.main.data.common :refer [handle-notification]]
+   [app.main.data.common :as dc]
    [app.main.data.events :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.media :as di]
+   [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
    [app.main.data.websocket :as dws]
    [app.main.features :as features]
    [app.main.repo :as rp]
+   [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
@@ -42,6 +45,7 @@
 
 (declare fetch-projects)
 (declare fetch-team-members)
+(declare process-message)
 
 (defn initialize
   [{:keys [id]}]
@@ -77,11 +81,10 @@
               (->> stream
                    (rx/filter (ptk/type? ::dws/message))
                    (rx/map deref)
-                   (rx/filter (fn [{:keys [subs-id type] :as msg}]
-                                (and (or (= subs-id uuid/zero)
-                                         (= subs-id profile-id))
-                                     (= :notification type))))
-                   (rx/map handle-notification))
+                   (rx/filter (fn [{:keys [subs-id] :as msg}]
+                                (or (= subs-id uuid/zero)
+                                    (= subs-id profile-id))))
+                   (rx/map process-message))
 
               ;; Once the teams are fecthed, initialize features related
               ;; to currently active team
@@ -477,10 +480,32 @@
                                                   :team-id team-id}))))
              (rx/catch on-error))))))
 
+(defn handle-team-permissions-change
+  [{:keys  [role team-id]}]
+  (dm/assert! (uuid? team-id))
+  (dm/assert! (contains? tt/valid-roles role))
+
+  (let [msg (case role
+              :viewer
+              (tr "dashboard.permissions-change.viewer")
+
+              :editor
+              (tr "dashboard.permissions-change.editor")
+
+              :admin
+              (tr "dashboard.permissions-change.admin")
+
+              :owner
+              (tr "dashboard.permissions-change.owner"))]
+
+    (st/emit! (ntf/info msg)
+              (dc/change-team-permissions team-id role))))
+
 (defn update-team-member-role
   [{:keys [role member-id] :as params}]
   (dm/assert! (uuid? member-id))
-  (dm/assert! (keyword? role)) ;  FIXME: validate proper role?
+  (dm/assert! (contains? tt/valid-roles role))
+
   (ptk/reify ::update-team-member-role
     ptk/WatchEvent
     (watch [_ state _]
@@ -602,7 +627,7 @@
    (sm/check-email! email))
 
   (dm/assert! (uuid? team-id))
-  (dm/assert! (keyword? role)) ;; FIXME validate role
+  (dm/assert! (contains? tt/valid-roles role))
 
   (ptk/reify ::update-team-invitation-role
     IDeref
@@ -1203,3 +1228,14 @@
           (let [file (get-in state [:dashboard-files (first files)])]
             (rx/of (go-to-workspace file)))
           (rx/empty))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Notifications
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- process-message
+  [{:keys [type] :as msg}]
+  (case type
+    :notification            (dc/handle-notification msg)
+    :team-permissions-change (handle-team-permissions-change msg)
+    nil))
