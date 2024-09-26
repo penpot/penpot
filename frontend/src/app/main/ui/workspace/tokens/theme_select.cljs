@@ -66,8 +66,9 @@
         ;; Data
         current-label (cond
                         (> active-themes-count 1) (str active-themes-count " themes active")
-                        (= active-themes-count 1) (some-> (first active-theme-paths)
-                                                          (str/replace "/" " / "))
+                        (= active-themes-count 1) (some->> (first active-theme-paths)
+                                                           (ctob/split-token-theme-path)
+                                                           (str/join " / "))
                         :else "No theme active")
 
         ;; State
