@@ -15,7 +15,7 @@
 (def levels (set '("info" "warning" "error" "success")))
 
 (def ^:private icons-by-level
-  {"info" i/help
+  {"info" i/info
    "warning" i/msg-neutral
    "error" i/delete-text
    "success" i/status-tick})

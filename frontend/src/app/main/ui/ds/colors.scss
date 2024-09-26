@@ -21,8 +21,7 @@ $orange-500: #fe4811;
 $orange-950: #440806;
 
 $red-200: #ffcada;
-$red-500: #ff3277;
-$red-700: #c80857;
+$red-400: #c80857;
 $red-950: #500124;
 
 $pink-400: #ff6fe0;
@@ -71,7 +70,7 @@ $grayish-red: #bfbfbf;
   --color-background-success: #{$green-200};
   --color-accent-warning: #{$orange-500};
   --color-background-warning: #{$orange-200};
-  --color-accent-error: #{$red-500};
+  --color-accent-error: #{$red-400};
   --color-background-error: #{$red-200};
   --color-accent-info: #{$blue-500};
   --color-background-info: #{$blue-200};
@@ -103,7 +102,7 @@ $grayish-red: #bfbfbf;
   --color-background-success: #{$green-950};
   --color-accent-warning: #{$orange-500};
   --color-background-warning: #{$orange-950};
-  --color-accent-error: #{$red-700};
+  --color-accent-error: #{$red-400};
   --color-background-error: #{$red-950};
   --color-accent-info: #{$blue-500};
   --color-background-info: #{$blue-950};
