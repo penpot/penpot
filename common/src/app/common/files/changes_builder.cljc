@@ -719,10 +719,14 @@
 
 (defn update-token-theme
   [changes token-theme prev-token-theme]
-  (-> changes
-      (update :redo-changes conj {:type :mod-token-theme :name (:name prev-token-theme) :token-theme token-theme})
-      (update :undo-changes conj {:type :mod-token-theme :name (:name token-theme) :token-theme (or prev-token-theme token-theme)})
-      (apply-changes-local)))
+  (let [name (or (:name prev-token-theme)
+                 (:name token-theme))
+        group (or (:group prev-token-theme)
+                  (:group token-theme))]
+    (-> changes
+        (update :redo-changes conj {:type :mod-token-theme :group group :name name :token-theme token-theme})
+        (update :undo-changes conj {:type :mod-token-theme :group group :name name :token-theme (or prev-token-theme token-theme)})
+        (apply-changes-local))))
 
 (defn delete-token-theme
   [changes group name]

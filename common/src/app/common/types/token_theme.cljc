@@ -6,18 +6,16 @@
 
 (ns app.common.types.token-theme
   (:require
-   [app.common.data.macros :as dm]
    [app.common.schema :as sm]))
 
 (sm/register! ::token-theme
   [:map {:title "TokenTheme"}
-   (dm/legacy [:id {:optional true} [:maybe ::sm/uuid]])
    [:name :string]
-   [:group {:optional true} :string]
-   [:source? {:optional true} :boolean]
-   [:description {:optional true} :string]
+   [:group :string]
+   [:description [:maybe :string]]
+   [:is-source :boolean]
    [:modified-at {:optional true} ::sm/inst]
-   [:sets [:set {:gen/max 10 :gen/min 1} ::sm/uuid]]])
+   [:sets :any]])
 
 (sm/register! ::token-set
   [:map {:title "TokenSet"}

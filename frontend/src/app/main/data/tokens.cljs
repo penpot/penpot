@@ -48,6 +48,12 @@
 (defn get-tokens-lib [state]
   (get-in state [:workspace-data :tokens-lib]))
 
+(def hidden-token-theme-group
+  "")
+
+(def hidden-token-theme-name
+  "__PENPOT__HIDDEN__TOKEN__SET__")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -193,21 +199,42 @@
         (rx/of
          (dch/commit-changes changes))))))
 
-(defn toggle-token-set [{:keys [token-set-id]}]
+#_[target-theme-id (wtts/get-temp-theme-id state)
+   active-set-ids (wtts/get-active-set-ids state)
+   theme (-> (wtts/get-workspace-token-theme target-theme-id state)
+             (assoc :sets active-set-ids))
+   changes (-> (pcb/empty-changes it)
+               (pcb/update-token-theme
+                (wtts/toggle-token-set-to-token-theme token-set-id theme)
+                theme)
+               (pcb/update-active-token-themes #{target-theme-id} (wtts/get-active-theme-ids state)))]
+
+(comment
+  (-> (ctob/make-token-theme
+       :group ""
+       :name "bar")
+      (ctob/toggle-set "foo"))
+  nil)
+
+
+(defn toggle-token-set [{:keys [token-set-name]}]
   (ptk/reify ::toggle-token-set
     ptk/WatchEvent
     (watch [it state _]
-      (let [target-theme-id (wtts/get-temp-theme-id state)
-            active-set-ids (wtts/get-active-set-ids state)
-            theme (-> (wtts/get-workspace-token-theme target-theme-id state)
-                      (assoc :sets active-set-ids))
+      (let [tokens-lib (get-tokens-lib state)
+            prev-theme (ctob/get-theme tokens-lib hidden-token-theme-group hidden-token-theme-name)
+            theme (-> (or prev-theme (ctob/make-token-theme
+                                      :group hidden-token-theme-group
+                                      :name hidden-token-theme-name))
+                      (ctob/toggle-set token-set-name))
+            prev-active-token-themes (ctob/get-active-theme-paths tokens-lib)
             changes (-> (pcb/empty-changes it)
-                        (pcb/update-token-theme
-                         (wtts/toggle-token-set-to-token-theme token-set-id theme)
-                         theme)
-                        (pcb/update-active-token-themes #{target-theme-id} (wtts/get-active-theme-ids state)))]
+                        (pcb/update-active-token-themes #{(ctob/token-theme-path hidden-token-theme-group hidden-token-theme-name)} prev-active-token-themes))
+            changes' (if prev-theme
+                       (pcb/update-token-theme changes theme prev-theme)
+                       (pcb/add-token-theme changes theme))]
         (rx/of
-         (dch/commit-changes changes)
+         (dch/commit-changes changes')
          (wtu/update-workspace-tokens))))))
 
 (defn delete-token-set [token-set-name]

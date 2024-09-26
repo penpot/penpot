@@ -274,7 +274,7 @@
     [:mod-token-theme
      [:map {:title "ModTokenThemeChange"}
       [:type [:= :mod-token-theme]]
-      (dm/legacy [:id {:optional true} [:maybe ::sm/uuid]])
+      [:group :string]
       [:name :string]
       [:token-theme ::ctot/token-theme]]]
 
@@ -820,23 +820,13 @@
                     set-name
                     name)))))
 
-(defn- set-ids->names
-  [data sets]
-  (let [lib-sets (:token-sets-index data)
-        set-id->name
-        (fn [set-id]
-          (dm/get-in lib-sets [set-id :name]))]
-    (map set-id->name sets)))
-
 (defmethod process-change :add-temporary-token-theme
   [data {:keys [token-theme]}]
   (-> data
       (update :tokens-lib
               #(-> %
                    (ctob/ensure-tokens-lib)
-                   (ctob/add-theme (-> token-theme
-                                       (update :sets (partial set-ids->names data))
-                                       (ctob/make-token-theme)))))))
+                   (ctob/add-theme (ctob/make-token-theme token-theme))))))
 
 (defmethod process-change :update-active-token-themes
   [data {:keys [theme-ids]}]
@@ -860,7 +850,6 @@
               #(-> %
                    (ctob/ensure-tokens-lib)
                    (ctob/add-theme (-> token-theme
-                                       (update :sets (partial set-ids->names data))
                                        (ctob/make-token-theme)))))))
 
 (defmethod process-change :mod-token-theme
@@ -869,11 +858,9 @@
       (update :tokens-lib
               #(-> %
                    (ctob/ensure-tokens-lib)
-                   (ctob/update-theme name group
+                   (ctob/update-theme group name
                                       (fn [prev-theme]
-                                        (merge prev-theme
-                                               (-> token-theme
-                                                   (update :sets (partial set-ids->names data))))))))))
+                                        (merge prev-theme token-theme)))))))
 
 (defmethod process-change :del-token-theme
   [data {:keys [group name]}]
