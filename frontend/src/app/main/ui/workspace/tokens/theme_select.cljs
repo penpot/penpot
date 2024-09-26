@@ -17,15 +17,16 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [cuerdas.core :as str]))
 
 (mf/defc themes-list
-  [{:keys [themes active-theme-ids on-close grouped?]}]
+  [{:keys [themes active-theme-paths on-close grouped?]}]
   (when (seq themes)
     [:ul
      (for [[_ {:keys [group name] :as theme}] themes
            :let [theme-id (ctob/theme-path theme)
-                 selected? (get active-theme-ids theme-id)]]
+                 selected? (get active-theme-paths theme-id)]]
        [:li {:key theme-id
              :class (stl/css-case
                      :checked-element true
@@ -39,37 +40,34 @@
         [:span {:class (stl/css :check-icon)} i/tick]])]))
 
 (mf/defc theme-options
-  [{:keys [on-close]}]
-  (let [active-theme-ids (dm/fixme (mf/deref refs/workspace-active-theme-paths))
-        theme-groups (mf/deref refs/workspace-token-theme-tree)]
-    [:ul
-     (for [[group themes] theme-groups]
-       [:li {:key group}
-        (when (seq group)
-          [:span {:class (stl/css :group)} group])
-        [:& themes-list {:themes themes
-                         :active-theme-ids active-theme-ids
-                         :on-close on-close
-                         :grouped? true}]])
-     [:li {:class (stl/css-case :checked-element true
-                                :checked-element-button true)
-           :on-click #(modal/show! :tokens/themes {})}
-      [:span "Edit themes"]
-      [:span {:class (stl/css :icon)} i/arrow]]]))
+  [{:keys [active-theme-paths themes on-close]}]
+  [:ul
+   (for [[group themes] themes]
+     [:li {:key group}
+      (when (seq group)
+        [:span {:class (stl/css :group)} group])
+      [:& themes-list {:themes themes
+                       :active-theme-paths active-theme-paths
+                       :on-close on-close
+                       :grouped? true}]])
+   [:li {:class (stl/css-case :checked-element true
+                              :checked-element-button true)
+         :on-click #(modal/show! :tokens/themes {})}
+    [:span "Edit themes"]
+    [:span {:class (stl/css :icon)} i/arrow]]])
 
 (mf/defc theme-select
   [{:keys []}]
   (let [;; Store
-        temp-theme-id (dm/legacy (mf/deref refs/workspace-temp-theme-id))
-        active-theme-ids (dm/legacy (-> (mf/deref refs/workspace-active-theme-paths)
-                                        (disj temp-theme-id)))
-        active-themes-count (count active-theme-ids)
-        themes (mf/deref refs/workspace-token-theme-tree)
+        active-theme-paths (mf/deref refs/workspace-active-theme-paths-no-hidden)
+        active-themes-count (count active-theme-paths)
+        themes (mf/deref refs/workspace-token-theme-tree-no-hidden)
 
         ;; Data
         current-label (cond
                         (> active-themes-count 1) (str active-themes-count " themes active")
-                        ;; (pos? active-themes-count) (get-in themes [(first active-theme-ids) :name])
+                        (= active-themes-count 1) (some-> (first active-theme-paths)
+                                                          (str/replace "/" " / "))
                         :else "No theme active")
 
         ;; State
@@ -90,4 +88,6 @@
      [:& dropdown {:show is-open? :on-close on-close-dropdown}
       [:div {:ref dropdown-element*
              :class (stl/css :custom-select-dropdown)}
-       [:& theme-options {:on-close on-close-dropdown}]]]]))
+       [:& theme-options {:active-theme-paths active-theme-paths
+                          :themes themes
+                          :on-close on-close-dropdown}]]]]))

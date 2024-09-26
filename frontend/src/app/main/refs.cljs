@@ -462,6 +462,15 @@
 (def workspace-token-theme-tree
   (l/derived #(or (some-> % ctob/get-theme-tree) []) tokens-lib))
 
+(def workspace-token-theme-tree-no-hidden
+  (l/derived (fn [lib]
+               (or
+                (some-> lib
+                        (ctob/delete-theme ctob/hidden-token-theme-group ctob/hidden-token-theme-name)
+                        (ctob/get-theme-tree))
+                []))
+             tokens-lib))
+
 (def workspace-token-themes
   (l/derived #(or (some-> % ctob/get-themes) []) tokens-lib))
 
@@ -476,6 +485,9 @@
 
 (def workspace-active-theme-paths
   (l/derived #(some-> % ctob/get-active-theme-paths) tokens-lib))
+
+(def workspace-active-theme-paths-no-hidden
+  (l/derived #(disj % ctob/hidden-token-theme-path) workspace-active-theme-paths))
 
 (def workspace-active-set-names
   (l/derived #(some-> % ctob/get-active-themes-set-names) tokens-lib))
