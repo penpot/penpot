@@ -882,11 +882,14 @@
   [data {:keys [name token-set]}]
   (-> data
       (update :tokens-lib
-              #(-> %
-                   (ctob/ensure-tokens-lib)
-                   (ctob/update-set name (fn [prev-set]
-                                           (merge prev-set
-                                                  (dissoc token-set :tokens))))))))
+              (fn [element]
+                (let [path-changed? (not= name (:name token-set))
+                      lib (-> element
+                              (ctob/ensure-tokens-lib)
+                              (ctob/update-set name (fn [prev-set]
+                                                      (merge prev-set (dissoc token-set :tokens)))))]
+                  (cond-> lib
+                    path-changed? (ctob/update-set-name name (:name token-set))))))))
 
 (defmethod process-change :del-token-set
   [data {:keys [name]}]

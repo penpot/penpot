@@ -6,6 +6,7 @@
 
 (ns app.common.types.tokens-lib
   (:require
+   #?(:clj [app.common.fressian :as fres])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
@@ -13,8 +14,8 @@
    [app.common.transit :as t]
    [app.common.types.token :as cto]
    [clojure.set :as set]
-   [cuerdas.core :as str]
-   #?(:clj [app.common.fressian :as fres])))
+   [clojure.walk :as walk]
+   [cuerdas.core :as str]))
 
 ;; === Groups handling
 
@@ -391,6 +392,7 @@
   (toggle-set-in-theme [_ group-name theme-name set-name] "toggle a set used / not used in a theme")
   (get-active-themes-set-names [_] "set of set names that are active in the the active themes")
   (get-active-themes-set-tokens [_] "set of set names that are active in the the active themes")
+  (update-set-name [_ old-set-name new-set-name] "updates set name in themes")
   (validate [_]))
 
 (deftype TokensLib [sets set-groups themes active-themes]
@@ -613,6 +615,19 @@
                     (map #(-> (get-set this %) :tokens))))
          acc))
      (d/ordered-map) (tree-seq d/ordered-map? vals themes)))
+
+  (update-set-name [_ old-set-name new-set-name]
+    (TokensLib. sets
+                set-groups
+                (walk/postwalk
+                 (fn [form]
+                   (if (instance? TokenTheme form)
+                     (-> form
+                         (update :sets disj old-set-name)
+                         (update :sets conj new-set-name))
+                     form))
+                 themes)
+                active-themes))
 
   (validate [_]
     (and (valid-token-sets? sets)  ;; TODO: validate set-groups
