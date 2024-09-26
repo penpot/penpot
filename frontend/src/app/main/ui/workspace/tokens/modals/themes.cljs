@@ -124,19 +124,20 @@
                              (mf/deps theme-state)
                              (fn [set-name]
                                (swap! theme-state #(ctob/toggle-set % set-name))))
-        on-change-field (fn [field]
-                          (fn [e]
-                            (swap! theme-state #(assoc % field (dom/get-target-val e)))))
+        on-change-field (fn [field value]
+                          (swap! theme-state #(assoc % field value)))
         group-input-ref (mf/use-ref)
-        on-update-group (on-change-field :group)
-        on-update-name (on-change-field :name)
+        on-update-group (partial on-change-field :group)
+        on-update-name (partial on-change-field :name)
         on-save-form (mf/use-callback
                       (mf/deps theme-state on-submit)
                       (fn [e]
                         (dom/prevent-default e)
                         (let [theme (-> @theme-state
                                         (update :name str/trim)
-                                        (update :description str/trim))]
+                                        (update :group str/trim)
+                                        (update :description str/trim)
+                                        (doto js/console.log))]
                           (when-not (str/empty? (:name theme))
                             (on-submit theme)))
                         (on-back)))]
@@ -158,12 +159,12 @@
                                                   theme-groups)
                                     :on-select (fn [{:keys [value]}]
                                                  (set! (.-value (mf/ref-val group-input-ref)) value)
-                                                 (swap! theme-state assoc-in [:theme :group] value))
+                                                 (on-update-group value))
                                     :on-close on-close-dropdown}])
         [:& labeled-input {:label "Group"
                            :input-props {:ref group-input-ref
                                          :default-value (:group theme)
-                                         :on-change on-update-group}
+                                         :on-change (comp on-update-group dom/get-target-val)}
                            :render-right (when (seq theme-groups)
                                            (mf/fnc []
                                                    [:button {:class (stl/css :group-drop-down-button)
@@ -174,7 +175,7 @@
                                                     i/arrow]))}]]
        [:& labeled-input {:label "Theme"
                           :input-props {:default-value (:name theme)
-                                        :on-change on-update-name}}]]
+                                        :on-change (comp on-update-name dom/get-target-val)}}]]
       [:div {:class (stl/css :sets-list-wrapper)}
        [:& wts/controlled-sets-list
         {:token-sets token-sets
