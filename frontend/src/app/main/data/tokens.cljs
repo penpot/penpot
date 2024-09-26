@@ -217,9 +217,13 @@
     (watch [it state _]
       (let [tokens-lib (get-tokens-lib state)
             prev-theme (ctob/get-theme tokens-lib ctob/hidden-token-theme-group ctob/hidden-token-theme-name)
-            theme (-> (or prev-theme (ctob/make-token-theme
-                                      :group ctob/hidden-token-theme-group
-                                      :name ctob/hidden-token-theme-name))
+            active-token-set-names (ctob/get-active-themes-set-names tokens-lib)
+            theme (-> (or (some-> prev-theme
+                                  (ctob/set-sets active-token-set-names))
+                          (ctob/make-token-theme
+                           :group ctob/hidden-token-theme-group
+                           :name ctob/hidden-token-theme-name
+                           :sets active-token-set-names))
                       (ctob/toggle-set token-set-name))
             prev-active-token-themes (ctob/get-active-theme-paths tokens-lib)
             changes (-> (pcb/empty-changes it)

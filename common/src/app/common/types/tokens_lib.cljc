@@ -268,6 +268,7 @@
   (token-theme-path hidden-token-theme-group hidden-token-theme-name))
 
 (defprotocol ITokenTheme
+  (set-sets [_ set-names] "set the active token sets")
   (toggle-set [_ set-name] "togle a set used / not used in the theme")
   (theme-path [_] "get `token-theme-path` from theme")
   (theme-matches-group-name [_ group name] "if a theme matches the given group & name")
@@ -275,15 +276,19 @@
 
 (defrecord TokenTheme [name group description is-source modified-at sets]
   ITokenTheme
-  (toggle-set [_ set-name]
+  (set-sets [_ set-names]
     (TokenTheme. name
                  group
                  description
                  is-source
                  (dt/now)
-                 (if (sets set-name)
-                   (disj sets set-name)
-                   (conj sets set-name))))
+                 set-names))
+
+  (toggle-set [this set-name]
+    (set-sets this (if (sets set-name)
+                     (disj sets set-name)
+                     (conj sets set-name))))
+
   (theme-path [_]
     (token-theme-path group name))
 
