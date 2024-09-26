@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Japanese "
-"<https://hosted.weblate.org/projects/penpot/frontend/ja/>\n"
+"PO-Revision-Date: 2024-09-26 15:15+0000\n"
+"Last-Translator: Tatsuto Yamamoto <me@laminne33569.net>\n"
+"Language-Team: Japanese <https://hosted.weblate.org/projects/penpot/frontend/"
+"ja/>\n"
 "Language: jpn_JP\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.6-dev\n"
+"X-Generator: Weblate 5.8-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:132, src/app/main/ui/static.cljs:139, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -979,3 +979,20 @@ msgstr "招待を再送"
 #: src/app/main/ui/static.cljs:284, src/app/main/ui/static.cljs:293, src/app/main/ui/static.cljs:371
 msgid "labels.retry"
 msgstr "リトライ"
+
+#: src/app/main/ui/settings/access_tokens.cljs:136
+msgid "dashboard.access-tokens.expiration-180-days"
+msgstr "180日"
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:267
+msgid "auth.check-mail"
+msgstr "メールを確認してください"
+
+#: src/app/main/ui/auth/register.cljs:246
+msgid "auth.register-account-title"
+msgstr "あなたの名前"
+
+#: src/app/main/ui/auth/register.cljs:156
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr "[利用規約](%s) と [プライバシーポリシー](%s) に同意します。"
