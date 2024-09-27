@@ -5,7 +5,6 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.plugins.register
-  "RPC for plugins runtime."
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -25,6 +24,10 @@
   []
   (->> (:ids @registry)
        (mapv #(dm/get-in @registry [:data %]))))
+
+(defn get-plugin
+  [id]
+  (dm/get-in @registry [:data id]))
 
 (defn parse-manifest
   "Read the manifest.json defined by the plugins definition and transforms it into an

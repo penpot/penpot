@@ -12,6 +12,7 @@
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
+   [app.main.data.plugins :as dp]
    [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.title-bar :refer [title-bar]]
@@ -58,22 +59,6 @@
                :on-click handle-open-click} (tr "workspace.plugins.button-open")]
      [:button {:class (stl/css :trash-button)
                :on-click handle-delete-click} i/delete]]))
-
-
-(defn open-plugin!
-  [{:keys [plugin-id name description host code icon permissions]}]
-  (try
-    (.ɵloadPlugin
-     js/window
-     #js {:pluginId plugin-id
-          :name name
-          :description description
-          :host host
-          :code code
-          :icon icon
-          :permissions (apply array permissions)})
-    (catch :default e
-      (.error js/console "Error" e))))
 
 (mf/defc plugin-management-dialog
   {::mf/register modal/components
@@ -144,7 +129,7 @@
                                             ::ev/origin "workspace:plugins"
                                             :name (:name manifest)
                                             :host (:host manifest)}))
-           (open-plugin! manifest)
+           (dp/open-plugin! manifest)
            (modal/hide!)))
 
         handle-remove-plugin
@@ -215,7 +200,7 @@
 (mf/defc plugins-permissions-dialog
   {::mf/register modal/components
    ::mf/register-as :plugin-permissions}
-  [{:keys [plugin on-accept]}]
+  [{:keys [plugin on-accept on-close]}]
 
   (let [{:keys [host permissions]} plugin
         permissions (set permissions)
@@ -224,25 +209,26 @@
         (mf/use-callback
          (fn [event]
            (dom/prevent-default event)
-           (st/emit! (modal/hide))
-           (ptk/event ::ev/event {::ev/name "allow-plugin-permissions"
-                                  :host host
-                                  :permissions (->> permissions (str/join ", "))})
-           (on-accept)))
+           (st/emit! (ptk/event ::ev/event {::ev/name "allow-plugin-permissions"
+                                            :host host
+                                            :permissions (->> permissions (str/join ", "))})
+                     (modal/hide))
+           (when on-accept (on-accept))))
 
         handle-close-dialog
         (mf/use-callback
          (fn [event]
            (dom/prevent-default event)
-           (ptk/event ::ev/event {::ev/name "reject-plugin-permissions"
-                                  :host host
-                                  :permissions (->> permissions (str/join ", "))})
-           (st/emit! (modal/hide))))]
+           (st/emit! (ptk/event ::ev/event {::ev/name "reject-plugin-permissions"
+                                            :host host
+                                            :permissions (->> permissions (str/join ", "))})
+                     (modal/hide))
+           (when on-close (on-close))))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :plugin-permissions)}
       [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} close-icon]
-      [:div {:class (stl/css :modal-title)} (tr "workspace.plugins.permissions.title")]
+      [:div {:class (stl/css :modal-title)} (tr "workspace.plugins.permissions.title" (str/upper (:name plugin)))]
 
       [:div {:class (stl/css :modal-content)}
        [:div {:class (stl/css :permissions-list)}
@@ -293,7 +279,7 @@
             (tr "workspace.plugins.permissions.comment-read")]])
 
         (cond
-          (contains? permissions "allow:download")
+          (contains? permissions "allow:downloads")
           [:div {:class (stl/css :permissions-list-entry)}
            i/oauth-1
            [:p {:class (stl/css :permissions-list-text)}
@@ -314,4 +300,56 @@
          {:class (stl/css :primary-button :button-expand)
           :type "button"
           :value (tr "ds.confirm-allow")
+          :on-click handle-accept-dialog}]]]]]))
+
+
+(mf/defc plugins-try-out-dialog
+  {::mf/register modal/components
+   ::mf/register-as :plugin-try-out}
+  [{:keys [plugin on-accept on-close]}]
+
+  (let [{:keys [icon host name]} plugin
+
+        handle-accept-dialog
+        (mf/use-callback
+         (fn [event]
+           (dom/prevent-default event)
+           (st/emit! (ptk/event ::ev/event {::ev/name "try-out-accept"})
+                     (modal/hide))
+           (when on-accept (on-accept))))
+
+        handle-close-dialog
+        (mf/use-callback
+         (fn [event]
+           (dom/prevent-default event)
+           (st/emit! (ptk/event ::ev/event {::ev/name "try-out-cancel"})
+                     (modal/hide))
+           (when on-close (on-close))))]
+
+    [:div {:class (stl/css :modal-overlay)}
+     [:div {:class (stl/css :modal-dialog :plugin-try-out)}
+      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} close-icon]
+      [:div {:class (stl/css :modal-title)}
+       [:div {:class (stl/css :plugin-icon)}
+        [:img {:src (if (some? icon)
+                      (dm/str host icon)
+                      (avatars/generate {:name name}))}]]
+       (tr "workspace.plugins.try-out.title" (str/upper (:name plugin)))]
+
+      [:div {:class (stl/css :modal-content)}
+       [:div {:class (stl/css :modal-message)}
+        (tr "workspace.plugins.try-out.message")]]
+
+      [:div {:class (stl/css :modal-footer)}
+       [:div {:class (stl/css :action-buttons)}
+        [:input
+         {:class (stl/css :cancel-button :button-expand)
+          :type "button"
+          :value (tr "workspace.plugins.try-out.cancel")
+          :on-click handle-close-dialog}]
+
+        [:input
+         {:class (stl/css :primary-button :button-expand)
+          :type "button"
+          :value (tr "workspace.plugins.try-out.try")
           :on-click handle-accept-dialog}]]]]]))

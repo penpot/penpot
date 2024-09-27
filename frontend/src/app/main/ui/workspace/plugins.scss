@@ -26,6 +26,11 @@
     max-width: $s-472;
   }
 
+  &.plugin-try-out {
+    width: $s-452;
+    max-width: $s-452;
+  }
+
   hr {
     border-color: var(--color-background-tertiary);
   }
@@ -48,6 +53,8 @@
   @include headlineMediumTypography;
   margin-block-end: $s-32;
   color: var(--modal-title-foreground-color);
+  display: flex;
+  gap: $s-12;
 }
 
 .modal-content {
@@ -62,6 +69,11 @@
     height: $s-380;
     max-height: $s-380;
   }
+}
+
+.modal-message {
+  font-size: $fs-14;
+  color: var(--color-foreground-secondary);
 }
 
 .primary-button {

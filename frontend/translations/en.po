@@ -5601,11 +5601,23 @@ msgstr "Start file downloads."
 
 #: src/app/main/ui/workspace/plugins.cljs:236
 msgid "workspace.plugins.permissions.title"
-msgstr "THIS PLUGIN WANTS ACCESS TO:"
+msgstr "'%s' PLUGIN WANTS ACCESS TO:"
 
 #: src/app/main/ui/workspace/plugins.cljs:258
 msgid "workspace.plugins.permissions.user-read"
 msgstr "Read the profile information of the current user."
+
+msgid "workspace.plugins.try-out.title"
+msgstr "'%s' PLUGIN IS INSTALLED FOR YOUR USER!"
+
+msgid "workspace.plugins.try-out.message"
+msgstr "Want to take a look? It will open in a new draft for your current team. (If not, you can always find it in the installed plugins of any file.)"
+
+msgid "workspace.plugins.try-out.cancel"
+msgstr "NOT NOW"
+
+msgid "workspace.plugins.try-out.try"
+msgstr "TRY PLUGIN"
 
 #: src/app/main/ui/workspace/plugins.cljs:192
 msgid "workspace.plugins.plugin-list-link"

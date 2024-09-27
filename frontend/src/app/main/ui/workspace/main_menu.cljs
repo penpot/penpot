@@ -16,6 +16,7 @@
    [app.main.data.events :as ev]
    [app.main.data.exports :as de]
    [app.main.data.modal :as modal]
+   [app.main.data.plugins :as dp]
    [app.main.data.shortcuts :as scd]
    [app.main.data.users :as du]
    [app.main.data.workspace :as dw]
@@ -29,7 +30,6 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks.resize :as r]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.plugins :as uwp]
    [app.plugins.register :as preg]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -637,7 +637,7 @@
                                                                                    ::ev/origin "workspace:menu"
                                                                                    :name name
                                                                                    :host host}))
-                                                  (uwp/open-plugin! manifest))
+                                                  (dp/open-plugin! manifest))
                                   :class       (stl/css :submenu-item)
                                   :on-key-down (fn [event]
                                                  (when (kbd/enter? event)
@@ -646,7 +646,7 @@
                                                                                        ::ev/origin "workspace:menu"
                                                                                        :name name
                                                                                        :host host}))
-                                                      (uwp/open-plugin! manifest))))}
+                                                      (dp/open-plugin! manifest))))}
           [:span {:class (stl/css :item-name)} name]])])))
 
 (mf/defc menu

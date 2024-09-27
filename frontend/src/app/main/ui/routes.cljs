@@ -16,6 +16,7 @@
    [app.util.router :as rt]
    [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 (s/def ::page-id ::us/uuid)
@@ -94,10 +95,17 @@
 (defn on-navigate
   [router path]
   (let [location (.-location js/document)
+        [base-path qs] (str/split path "?")
+
+        qstring
+        (->> (str/split qs "&")
+             (map #(str/split % "="))
+             (into {}))
+
         location-path (dm/str (.-origin location) (.-pathname location))
         valid-location? (= location-path (dm/str cf/public-uri))
         match (match-path router path)
-        empty-path? (or (= path "") (= path "/"))]
+        empty-path? (or (= base-path "") (= base-path "/"))]
     (cond
       (not valid-location?)
       (st/emit! (rt/assign-exception {:type :not-found}))
@@ -116,7 +124,7 @@
                          (st/emit! (rt/nav :auth-login))
 
                          empty-path?
-                         (st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)}))
+                         (st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)} qstring))
 
                          :else
                          (st/emit! (rt/assign-exception {:type :not-found})))))))))
