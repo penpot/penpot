@@ -75,7 +75,7 @@
    [app.main.repo :as rp]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
-   [app.renderer-v2 :as renderer]
+   [app.renderer.cpp :as renderer-cpp]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
