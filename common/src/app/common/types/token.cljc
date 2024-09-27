@@ -60,7 +60,6 @@
 
 (sm/register! ::token
   [:map {:title "Token"}
-   [:id ::sm/uuid]
    [:name token-name-ref]
    [:type [::sm/one-of token-types]]
    [:value :any]

@@ -203,14 +203,6 @@
                 theme)
                (pcb/update-active-token-themes #{target-theme-id} (wtts/get-active-theme-ids state)))]
 
-(comment
-  (-> (ctob/make-token-theme
-       :group ""
-       :name "bar")
-      (ctob/toggle-set "foo"))
-  nil)
-
-
 (defn toggle-token-set [{:keys [token-set-name]}]
   (ptk/reify ::toggle-token-set
     ptk/WatchEvent
@@ -249,34 +241,23 @@
 
 (defn update-create-token
   [token]
-  (let [token (update token :id #(or % (uuid/next)))]
-    (ptk/reify ::update-create-token
-      ptk/WatchEvent
-      (watch [it state _]
-        (let [token-set (wtts/get-selected-token-set state)
-              create-set? (not token-set)
-              token-set (or token-set
-                            {:id (uuid/next)
-                             :name "Global"
-                             :tokens []})
-
-              changes (cond-> (pcb/empty-changes it)
-                        create-set?
-                        (pcb/add-token-set token-set))
-
-              prev-token-id (d/seek #(= % (:id token)) (:tokens token-set))
-              prev-token (get-token-data-from-token-id prev-token-id)
-              create-token? (not prev-token)
-
-              changes (if create-token?
-                        (pcb/add-token changes (:id token-set) (:name token-set) token)
-                        (pcb/update-token changes (:id token-set) (:name token-set) token prev-token))
-              changes (-> changes
-                          (ensure-token-theme-changes state {:new-set? create-set?
-                                                             :id (:id token-set)}))]
-          (rx/of
-           (set-selected-token-set-id (:name token-set))
-           (dch/commit-changes changes)))))))
+  (ptk/reify ::update-create-token
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [tlib (get-tokens-lib state)
+            token-set (wtts/get-selected-token-set state)
+            changes (if (not token-set)
+                      ;; No set created add a global set
+                      (->> (ctob/make-token-set tlib :name "Global")
+                           (ctob/add-token token)
+                           (pcb/add-token-set (pcb/empty-changes)))
+                      ;; Either update or add token to existing set
+                      (if-let [prev-token (ctob/get-token token-set (:name token))]
+                        (pcb/update-token (pcb/empty-changes) (:name token-set) token prev-token)
+                        (pcb/add-token (pcb/empty-changes) (:name token-set) token)))]
+        (rx/of
+         (set-selected-token-set-id (:name token-set))
+         (dch/commit-changes changes))))))
 
 (defn delete-token
   [set-name id name]

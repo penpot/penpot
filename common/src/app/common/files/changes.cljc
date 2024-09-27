@@ -303,16 +303,13 @@
     [:add-token
      [:map {:title "AddTokenChange"}
       [:type [:= :add-token]]
-      [:set-id ::sm/uuid]
       [:set-name :string]
       [:token ::cto/token]]]
 
     [:mod-token
      [:map {:title "ModTokenChange"}
       [:type [:= :mod-token]]
-      [:set-id ::sm/uuid]
       [:set-name :string]
-      [:id ::sm/uuid]
       [:name :string]
       [:token ::cto/token]]]
 
@@ -320,7 +317,6 @@
      [:map {:title "DelTokenChange"}
       [:type [:= :del-token]]
       [:set-name :string]
-      [:id ::sm/uuid]
       [:name :string]]]]])
 
 (sm/register! ::changes

@@ -765,17 +765,17 @@
         (apply-changes-local))))
 
 (defn add-token
-  [changes set-id set-name token]
+  [changes set-name token]
   (-> changes
-      (update :redo-changes conj {:type :add-token :set-id set-id :set-name set-name :token token})
-      (update :undo-changes conj {:type :del-token :set-name set-name :id (:id token) :name (:name token)})
+      (update :redo-changes conj {:type :add-token :set-name set-name :token token})
+      (update :undo-changes conj {:type :del-token :set-name set-name :name (:name token)})
       (apply-changes-local)))
 
 (defn update-token
-  [changes set-id set-name {:keys [id name] :as token} {prev-name :name :as prev-token}]
+  [changes set-name token prev-token]
   (-> changes
-      (update :redo-changes conj {:type :mod-token :set-id set-id :set-name set-name :id id :name prev-name :token token})
-      (update :undo-changes conj {:type :mod-token :set-id set-id :set-name set-name :id id :name name :token (or prev-token token)})
+      (update :redo-changes conj {:type :mod-token :set-name set-name :name (:name prev-token) :token token})
+      (update :undo-changes conj {:type :mod-token :set-name set-name :name (:name token) :token (or prev-token token)})
       (apply-changes-local)))
 
 (defn delete-token
@@ -784,8 +784,8 @@
   (let [library-data (::library-data (meta changes))
         prev-token (get-in library-data [:tokens token-id])]
     (-> changes
-        (update :redo-changes conj {:type :del-token :set-name set-name :id token-id :name token-name})
-        (update :undo-changes conj {:type :add-token :set-id uuid/zero :set-name set-name :token prev-token})
+        (update :redo-changes conj {:type :del-token :set-name set-name :name token-name})
+        (update :undo-changes conj {:type :add-token :set-name set-name :token prev-token})
         (apply-changes-local))))
 
 (defn add-component

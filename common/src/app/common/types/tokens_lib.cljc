@@ -138,6 +138,7 @@
   (add-token [_ token] "add a token at the end of the list")
   (update-token [_ token-name f] "update a token in the list")
   (delete-token [_ token-name] "delete a token from the list")
+  (get-token [_ token-name] "return an ordered sequence of all tokens in the set")
   (get-tokens [_] "return an ordered sequence of all tokens in the set"))
 
 (defrecord TokenSet [name description modified-at tokens]
@@ -169,6 +170,9 @@
                description
                (dt/now)
                (dissoc tokens token-name)))
+
+  (get-token [_ token-name]
+    (get tokens token-name))
 
   (get-tokens [_]
     (vals tokens)))
