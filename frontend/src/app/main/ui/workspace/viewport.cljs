@@ -14,6 +14,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
+   [app.config :as cf]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.refs :as refs]
    [app.main.ui.context :as ctx]
@@ -47,6 +48,7 @@
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
+   [app.renderer.cpp :as renderer-cpp]
    [app.util.debug :as dbg]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
@@ -110,6 +112,8 @@
                             (apply-modifiers-to-selected selected base-objects text-modifiers modifiers))
 
         selected-shapes   (keep (d/getf objects-modified) selected)
+
+        canvas-ref        (mf/use-ref nil)
 
         ;; STATE
         alt?              (mf/use-state false)
@@ -263,6 +267,12 @@
 
         rule-area-size (/ rulers/ruler-area-size zoom)]
 
+    (mf/with-effect
+     [canvas-ref]
+      ;; FIXME:
+     (let [canvas (mf/ref-val canvas-ref)]
+       (renderer/set-canvas canvas)))
+
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing? z? workspace-read-only?)
@@ -304,50 +314,59 @@
                                          :layout layout
                                          :viewport-ref viewport-ref}])]
 
-     [:svg
-      {:id "render"
-       :class (stl/css :render-shapes)
-       :xmlns "http://www.w3.org/2000/svg"
-       :xmlnsXlink "http://www.w3.org/1999/xlink"
-       :xmlns:penpot "https://penpot.app/xmlns"
-       :preserveAspectRatio "xMidYMid meet"
-       :key (str "render" page-id)
-       :width (:width vport 0)
-       :height (:height vport 0)
-       :view-box (utils/format-viewbox vbox)
-       :style {:background-color background
-               :pointer-events "none"}
-       :fill "none"}
+     (if (contains? cf/flags :renderer-v2)
+       [:canvas {:id "render"
+                 :ref canvas-ref
+                 :class (stl/css :render-shapes)
+                 :key (str "render" page-id)
+                 :width (:width vport 0)
+                 :height (:height vport 0)
+                 :style {:background-color background
+                         :pointer-events "none"}}]
+       [:svg
+        {:id "render"
+         :class (stl/css :render-shapes)
+         :xmlns "http://www.w3.org/2000/svg"
+         :xmlnsXlink "http://www.w3.org/1999/xlink"
+         :xmlns:penpot "https://penpot.app/xmlns"
+         :preserveAspectRatio "xMidYMid meet"
+         :key (str "render" page-id)
+         :width (:width vport 0)
+         :height (:height vport 0)
+         :view-box (utils/format-viewbox vbox)
+         :style {:background-color background
+                 :pointer-events "none"}
+         :fill "none"}
 
-      [:defs
-       [:linearGradient {:id "frame-placeholder-gradient"}
-        [:animateTransform
-         {:attributeName "gradientTransform"
-          :type "translate"
-          :from "-1 0"
-          :to "1 0"
-          :dur "2s"
-          :repeatCount "indefinite"}]
-        [:stop {:offset "0%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]
-        [:stop {:offset "50%" :stop-color (str "color-mix(in srgb-linear, " background " 80%, #777)") :stop-opacity 1}]
-        [:stop {:offset "100%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]]]
+        [:defs
+         [:linearGradient {:id "frame-placeholder-gradient"}
+          [:animateTransform
+           {:attributeName "gradientTransform"
+            :type "translate"
+            :from "-1 0"
+            :to "1 0"
+            :dur "2s"
+            :repeatCount "indefinite"}]
+          [:stop {:offset "0%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]
+          [:stop {:offset "50%" :stop-color (str "color-mix(in srgb-linear, " background " 80%, #777)") :stop-opacity 1}]
+          [:stop {:offset "100%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]]]
 
-      (when (dbg/enabled? :show-export-metadata)
-        [:& use/export-page {:page page}])
+        (when (dbg/enabled? :show-export-metadata)
+          [:& use/export-page {:page page}])
 
-      ;; We need a "real" background shape so layer transforms work properly in firefox
-      [:rect {:width (:width vbox 0)
-              :height (:height vbox 0)
-              :x (:x vbox 0)
-              :y (:y vbox 0)
-              :fill background}]
+             ;; We need a "real" background shape so layer transforms work properly in firefox
+        [:rect {:width (:width vbox 0)
+                :height (:height vbox 0)
+                :x (:x vbox 0)
+                :y (:y vbox 0)
+                :fill background}]
 
-      [:& (mf/provider ctx/current-vbox) {:value vbox'}
-       [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
-         ;; Render root shape
-        [:& shapes/root-shape {:key page-id
-                               :objects base-objects
-                               :active-frames @active-frames}]]]]
+        [:& (mf/provider ctx/current-vbox) {:value vbox'}
+         [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
+                ;; Render root shape
+          [:& shapes/root-shape {:key page-id
+                                 :objects base-objects
+                                 :active-frames @active-frames}]]]])
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"
