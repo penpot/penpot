@@ -76,10 +76,9 @@
     (p/let [sd-tokens (resolve-sd-tokens+ tree)]
       (let [resolved-tokens (reduce
                              (fn [acc ^js cur]
-                               (let [identifier (if names-map?
-                                                  (.. cur -original -name)
-                                                  (uuid (.-uuid (.-id cur))))
-                                     {:keys [type] :as origin-token} (get ids-map identifier)
+                               (let [{:keys [type] :as origin-token} (if names-map?
+                                                                       (get tokens (.. cur -original -name))
+                                                                       (get ids-map (uuid (.-uuid (.-id cur)))))
                                      value (.-value cur)
                                      token-or-err (case type
                                                     :color (if-let [tc (tinycolor/valid-color value)]
@@ -115,7 +114,7 @@
 
   This hook will return the unresolved tokens as state until they are processed,
   then the state will be updated with the resolved tokens."
-  [tokens & {:keys [cache-atom _names-map?]
+  [tokens & {:keys [cache-atom names-map?]
              :or {cache-atom !tokens-cache}
              :as config}]
   (let [tokens-state (mf/use-state (get @cache-atom tokens))]
@@ -124,6 +123,7 @@
      (fn []
        (let [cached (get @cache-atom tokens)]
          (cond
+           (nil? tokens) (if names-map? {} [])
            ;; The tokens are already processing somewhere
            (p/promise? cached) (-> cached
                                    (p/then #(reset! tokens-state %))

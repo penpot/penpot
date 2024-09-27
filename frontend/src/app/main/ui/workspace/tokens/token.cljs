@@ -108,18 +108,9 @@
   (->> (map (fn [{:keys [name] :as token}] [name token]) tokens)
        (into {})))
 
-(defonce a (atom nil))
-
-(comment
-
-  (token-names-tree-id-map @a)
-  nil)
-
-
 (defn token-names-tree-id-map [tokens]
-  (reset! a tokens)
   (reduce
-   (fn [acc {:keys [name] :as token}]
+   (fn [acc [_ {:keys [name] :as token}]]
      (when (string? name)
        (let [temp-id (random-uuid)
              token (assoc token :temp/id temp-id)]
