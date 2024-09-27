@@ -7,7 +7,9 @@
 (ns app.main.data.common
   "A general purpose events."
   (:require
+   [app.common.data.macros :as dm]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.team :as tt]
    [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -171,25 +173,47 @@
              (rx/tap on-success)
              (rx/catch on-error))))))
 
+
 (defn change-team-permissions
-  [team-id role]
+  [{:keys [team-id role workspace?]}]
+  (dm/assert! (uuid? team-id))
+  (dm/assert! (contains? tt/valid-roles role))
   (ptk/reify ::change-team-permissions
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [msg (case role
+                  :viewer
+                  (tr "dashboard.permissions-change.viewer")
+
+                  :editor
+                  (tr "dashboard.permissions-change.editor")
+
+                  :admin
+                  (tr "dashboard.permissions-change.admin")
+
+                  :owner
+                  (tr "dashboard.permissions-change.owner"))]
+        (rx/of (ntf/info msg))))
+
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:teams team-id :permissions]
-                 (fn [permissions]
-                   (cond
-                     (= role :viewer)
-                     (assoc permissions :can-edit false :is-admin false :is-owner false)
+      (let [route (if workspace?
+                    [:workspace-file :permissions]
+                    [:teams team-id :permissions])]
+        (update-in state route
+                   (fn [permissions]
+                     (cond
+                       (= role :viewer)
+                       (assoc permissions :can-edit false :is-admin false :is-owner false)
 
-                     (= role :editor)
-                     (assoc permissions :can-edit true :is-admin false :is-owner false)
+                       (= role :editor)
+                       (assoc permissions :can-edit true :is-admin false :is-owner false)
 
-                     (= role :admin)
-                     (assoc permissions :can-edit true :is-admin true :is-owner false)
+                       (= role :admin)
+                       (assoc permissions :can-edit true :is-admin true :is-owner false)
 
-                     (= role :owner)
-                     (assoc permissions :can-edit true :is-admin true :is-owner true)
+                       (= role :owner)
+                       (assoc permissions :can-edit true :is-admin true :is-owner true)
 
-                     :else
-                     permissions))))))
+                       :else
+                       permissions)))))))

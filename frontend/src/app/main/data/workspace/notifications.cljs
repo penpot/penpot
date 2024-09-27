@@ -10,12 +10,15 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes :as cpc]
    [app.common.schema :as sm]
+   [app.common.types.team :as tt]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
-   [app.main.data.common :refer [handle-notification]]
+   [app.main.data.common :refer [handle-notification change-team-permissions]]
+   [app.main.data.notifications :as ntf]
    [app.main.data.websocket :as dws]
    [app.main.data.workspace.libraries :as dwl]
    [app.util.globals :refer [global]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.mouse :as mse]
    [app.util.object :as obj]
    [app.util.rxops :as rxs]
@@ -95,14 +98,15 @@
 (defn- process-message
   [{:keys [type] :as msg}]
   (case type
-    :join-file      (handle-presence msg)
-    :leave-file     (handle-presence msg)
-    :presence       (handle-presence msg)
-    :disconnect     (handle-presence msg)
-    :pointer-update (handle-pointer-update msg)
-    :file-change    (handle-file-change msg)
-    :library-change (handle-library-change msg)
-    :notification   (handle-notification msg)
+    :join-file               (handle-presence msg)
+    :leave-file              (handle-presence msg)
+    :presence                (handle-presence msg)
+    :disconnect              (handle-presence msg)
+    :pointer-update          (handle-pointer-update msg)
+    :file-change             (handle-file-change msg)
+    :library-change          (handle-library-change msg)
+    :notification            (handle-notification msg)
+    :team-permissions-change (change-team-permissions (assoc msg :workspace? true))
     nil))
 
 (defn- handle-pointer-send
@@ -257,3 +261,7 @@
       (when (contains? (:workspace-libraries state) file-id)
         (rx/of (dwl/ext-library-changed file-id modified-at revn changes)
                (dwl/notify-sync-file file-id))))))
+
+
+
+

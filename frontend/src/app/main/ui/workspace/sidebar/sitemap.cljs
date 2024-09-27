@@ -208,6 +208,7 @@
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
         user-viewer?   (mf/use-ctx ctx/user-viewer?)]
 
+
     [:div {:class (stl/css :sitemap)
            :style #js {"--height" (str size "px")}}
 

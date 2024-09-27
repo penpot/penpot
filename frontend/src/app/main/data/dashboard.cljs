@@ -480,27 +480,6 @@
                                                   :team-id team-id}))))
              (rx/catch on-error))))))
 
-(defn handle-team-permissions-change
-  [{:keys  [role team-id]}]
-  (dm/assert! (uuid? team-id))
-  (dm/assert! (contains? tt/valid-roles role))
-
-  (let [msg (case role
-              :viewer
-              (tr "dashboard.permissions-change.viewer")
-
-              :editor
-              (tr "dashboard.permissions-change.editor")
-
-              :admin
-              (tr "dashboard.permissions-change.admin")
-
-              :owner
-              (tr "dashboard.permissions-change.owner"))]
-
-    (st/emit! (ntf/info msg)
-              (dc/change-team-permissions team-id role))))
-
 (defn update-team-member-role
   [{:keys [role member-id] :as params}]
   (dm/assert! (uuid? member-id))
@@ -1237,5 +1216,5 @@
   [{:keys [type] :as msg}]
   (case type
     :notification            (dc/handle-notification msg)
-    :team-permissions-change (handle-team-permissions-change msg)
+    :team-permissions-change (dc/change-team-permissions (assoc msg :workspace? false))
     nil))
