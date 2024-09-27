@@ -12,6 +12,8 @@
 
 ### :sparkles: New features
 
+- Viewer role for team members  [Taiga #1056 & #6590](https://tree.taiga.io/project/penpot/us/1056 & https://tree.taiga.io/project/penpot/us/6590)
+
 ### :bug: Bugs fixed
 
 ## 2.3.0

@@ -791,7 +791,7 @@
     [:map
      [:id ::sm/uuid]
      [:fullname :string]]]
-   [:role [::sm/one-of valid-roles]]
+   [:role [::sm/one-of tt/valid-roles]]
    [:email ::sm/email]])
 
 (def ^:private check-create-invitation-params!

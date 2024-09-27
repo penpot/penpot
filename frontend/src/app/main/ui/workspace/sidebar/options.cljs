@@ -134,6 +134,8 @@
   [{:keys [selected shapes shapes-with-children page-id file-id on-change-section on-expand]}]
   (let [objects              (mf/deref refs/workspace-page-objects)
 
+        user-viewer?         (mf/use-ctx ctx/user-viewer?)
+
         selected-shapes      (into [] (keep (d/getf objects)) selected)
         first-selected-shape (first selected-shapes)
         shape-parent-frame   (cfh/get-frame objects (:frame-id first-selected-shape))
@@ -173,17 +175,21 @@
 
 
         tabs
-        #js [#js {:label (tr "workspace.options.design")
-                  :id "design"
-                  :content design-content}
+        (if user-viewer?
+          #js [#js {:label (tr "workspace.options.inspect")
+                    :id "inspect"
+                    :content inspect-content}]
+          #js [#js {:label (tr "workspace.options.design")
+                    :id "design"
+                    :content design-content}
 
-             #js {:label (tr "workspace.options.prototype")
-                  :id "prototype"
-                  :content interactions-content}
+               #js {:label (tr "workspace.options.prototype")
+                    :id "prototype"
+                    :content interactions-content}
 
                #js {:label (tr "workspace.options.inspect")
                     :id "inspect"
-                    :content inspect-content}]]
+                    :content inspect-content}])]
 
     [:div {:class (stl/css :tool-window)}
      [:> tab-switcher* {:tabs tabs

@@ -20,12 +20,10 @@
    [app.main.data.events :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.media :as di]
-   [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
    [app.main.data.websocket :as dws]
    [app.main.features :as features]
    [app.main.repo :as rp]
-   [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
@@ -479,27 +477,6 @@
                                                  {::ev/name "update-team-photo"
                                                   :team-id team-id}))))
              (rx/catch on-error))))))
-
-(defn handle-team-permissions-change
-  [{:keys  [role team-id]}]
-  (dm/assert! (uuid? team-id))
-  (dm/assert! (contains? tt/valid-roles role))
-
-  (let [msg (case role
-              :viewer
-              (tr "dashboard.permissions-change.viewer")
-
-              :editor
-              (tr "dashboard.permissions-change.editor")
-
-              :admin
-              (tr "dashboard.permissions-change.admin")
-
-              :owner
-              (tr "dashboard.permissions-change.owner"))]
-
-    (st/emit! (ntf/info msg)
-              (dc/change-team-permissions team-id role))))
 
 (defn update-team-member-role
   [{:keys [role member-id] :as params}]
@@ -1237,5 +1214,5 @@
   [{:keys [type] :as msg}]
   (case type
     :notification            (dc/handle-notification msg)
-    :team-permissions-change (handle-team-permissions-change msg)
+    :team-permissions-change (dc/change-team-permissions (assoc msg :workspace? false))
     nil))

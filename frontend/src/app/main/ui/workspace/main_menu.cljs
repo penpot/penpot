@@ -466,13 +466,13 @@
 
 (mf/defc file-menu
   {::mf/wrap-props false}
-  [{:keys [on-close file]}]
-  (let [file-id   (:id file)
-        shared?   (:is-shared file)
+  [{:keys [on-close file user-viewer?]}]
+  (let [file-id      (:id file)
+        shared?      (:is-shared file)
 
-        objects   (mf/deref refs/workspace-page-objects)
-        frames    (->> (cfh/get-immediate-children objects uuid/zero)
-                       (filterv cfh/frame-shape?))
+        objects      (mf/deref refs/workspace-page-objects)
+        frames       (->> (cfh/get-immediate-children objects uuid/zero)
+                          (filterv cfh/frame-shape?))
 
         on-remove-shared
         (mf/use-fn
@@ -565,11 +565,12 @@
                                 :id          "file-menu-remove-shared"}
         [:span {:class (stl/css :item-name)} (tr "dashboard.unpublish-shared")]]
 
-       [:> dropdown-menu-item* {:class (stl/css :submenu-item)
-                                :on-click    on-add-shared
-                                :on-key-down on-add-shared-key-down
-                                :id          "file-menu-add-shared"}
-        [:span {:class (stl/css :item-name)} (tr "dashboard.add-shared")]])
+       (when-not user-viewer?
+         [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                                  :on-click    on-add-shared
+                                  :on-key-down on-add-shared-key-down
+                                  :id          "file-menu-add-shared"}
+          [:span {:class (stl/css :item-name)} (tr "dashboard.add-shared")]]))
 
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                               :on-click    on-export-shapes
@@ -657,6 +658,8 @@
         sub-menu*      (mf/use-state false)
         sub-menu       (deref sub-menu*)
 
+        user-viewer?   (mf/use-ctx ctx/user-viewer?)
+
         open-menu
         (mf/use-fn
          (fn [event]
@@ -732,16 +735,17 @@
        [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.file")]
        [:span {:class (stl/css :open-arrow)} i/arrow]]
 
-      [:> dropdown-menu-item* {:class (stl/css :menu-item)
-                               :on-click    on-menu-click
-                               :on-key-down (fn [event]
-                                              (when (kbd/enter? event)
-                                                (on-menu-click event)))
-                               :on-pointer-enter on-menu-click
-                               :data-testid   "edit"
-                               :id          "file-menu-edit"}
-       [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.edit")]
-       [:span {:class (stl/css :open-arrow)} i/arrow]]
+      (when-not user-viewer?
+        [:> dropdown-menu-item* {:class (stl/css :menu-item)
+                                 :on-click    on-menu-click
+                                 :on-key-down (fn [event]
+                                                (when (kbd/enter? event)
+                                                  (on-menu-click event)))
+                                 :on-pointer-enter on-menu-click
+                                 :data-testid   "edit"
+                                 :id          "file-menu-edit"}
+         [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.edit")]
+         [:span {:class (stl/css :open-arrow)} i/arrow]])
 
       [:> dropdown-menu-item* {:class (stl/css :menu-item)
                                :on-click    on-menu-click
@@ -793,7 +797,8 @@
        :file
        [:& file-menu
         {:file file
-         :on-close close-sub-menu}]
+         :on-close close-sub-menu
+         :user-viewer? user-viewer?}]
 
        :edit
        [:& edit-menu

@@ -96,6 +96,7 @@
         vbox'             (mf/use-debounce 100 vbox)
 
         ;; DEREFS
+        user-viewer?      (mf/use-ctx ctx/user-viewer?)
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
 
@@ -277,7 +278,8 @@
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
 
     [:div {:class (stl/css :viewport) :style #js {"--zoom" zoom} :data-testid "viewport"}
-     [:& top-bar/top-bar {:layout layout}]
+     (when-not user-viewer?
+       [:& top-bar/top-bar {:layout layout}])
      [:div {:class (stl/css :viewport-overlays)}
       ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap
       ;; inside a foreign object "dummy" so this awkward behaviour is take into account
@@ -286,12 +288,13 @@
         [:div {:style {:pointer-events (when-not (dbg/enabled? :html-text) "none")
                        ;; some opacity because to debug auto-width events will fill the screen
                        :opacity 0.6}}
-         [:& stvh/viewport-texts
-          {:key (dm/str "texts-" page-id)
-           :page-id page-id
-           :objects objects
-           :modifiers modifiers
-           :edition edition}]]]]
+         (when-not workspace-read-only?
+           [:& stvh/viewport-texts
+            {:key (dm/str "texts-" page-id)
+             :page-id page-id
+             :objects objects
+             :modifiers modifiers
+             :edition edition}])]]]
 
       (when show-comments?
         [:& comments/comments-layer {:vbox vbox

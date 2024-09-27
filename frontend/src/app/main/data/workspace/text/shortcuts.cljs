@@ -189,7 +189,10 @@
 
 (defn- update-attrs-when-no-readonly [props]
   (let [undo-id (js/Symbol)
-        read-only?           (deref refs/workspace-read-only?)
+        file                 (deref refs/workspace-file)
+        user-viewer?         (not (get-in file [:permissions :can-edit]))
+        read-only?           (or (deref refs/workspace-read-only?)
+                                 user-viewer?)
         shapes-with-children (deref refs/selected-shapes-with-children)
         text-shapes          (filter #(= (:type %) :text) shapes-with-children)
         props                (if (> (count text-shapes) 1)
