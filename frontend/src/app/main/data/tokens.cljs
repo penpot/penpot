@@ -253,28 +253,27 @@
     (ptk/reify ::update-create-token
       ptk/WatchEvent
       (watch [it state _]
-        (let [token-set     (wtts/get-selected-token-set state)
-              create-set?   (not token-set)
-              token-set     (or token-set
-                                {:id (uuid/next)
-                                 :name "Global"
-                                 :tokens []})
+        (let [token-set (wtts/get-selected-token-set state)
+              create-set? (not token-set)
+              token-set (or token-set
+                            {:id (uuid/next)
+                             :name "Global"
+                             :tokens []})
 
-              changes       (cond-> (pcb/empty-changes it)
-                              create-set?
-                              (pcb/add-token-set token-set))
+              changes (cond-> (pcb/empty-changes it)
+                        create-set?
+                        (pcb/add-token-set token-set))
 
               prev-token-id (d/seek #(= % (:id token)) (:tokens token-set))
-              prev-token    (get-token-data-from-token-id prev-token-id)
+              prev-token (get-token-data-from-token-id prev-token-id)
               create-token? (not prev-token)
 
-              changes       (if create-token?
-                              (pcb/add-token changes (:id token-set) (:name token-set) token)
-                              (pcb/update-token changes (:id token-set) (:name token-set) token prev-token))
-
-              changes       (-> changes
-                                (ensure-token-theme-changes state {:new-set? create-set?
-                                                                   :id (:id token-set)}))]
+              changes (if create-token?
+                        (pcb/add-token changes (:id token-set) (:name token-set) token)
+                        (pcb/update-token changes (:id token-set) (:name token-set) token prev-token))
+              changes (-> changes
+                          (ensure-token-theme-changes state {:new-set? create-set?
+                                                             :id (:id token-set)}))]
           (rx/of
            (set-selected-token-set-id (:name token-set))
            (dch/commit-changes changes)))))))
