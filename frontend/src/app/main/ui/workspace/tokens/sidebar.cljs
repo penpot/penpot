@@ -140,7 +140,7 @@
           (for [token (sort-by :modified-at tokens)]
             (let [theme-token (get active-theme-tokens (wtt/token-identifier token))]
               [:& token-pill
-               {:key (:id token)
+               {:key (:name token)
                 :token token
                 :theme-token theme-token
                 :highlighted? (wtt/shapes-token-applied? token selected-shapes (or all-attributes attributes))
