@@ -487,16 +487,21 @@
         (let [theme' (-> (make-token-theme (f theme))
                          (assoc :modified-at (dt/now)))
               group' (:group theme')
-              name'  (:name theme')]
+              name'  (:name theme')
+              same-group? (= group group')
+              same-name? (= name name')
+              same-path? (and same-group? same-name?)]
           (check-token-theme! theme')
           (TokensLib. sets
                       set-groups
-                      (if (and (= group group') (= name name'))
+                      (if same-path?
                         (update themes group' assoc name' theme')
                         (-> themes
                             (d/oassoc-in-before [group name] [group' name'] theme')
                             (d/dissoc-in [group name])))
-                      active-themes))
+                      (if same-path?
+                        active-themes
+                        (disj active-themes (token-theme-path group name)))))
         this)))
 
   (delete-theme [_ group name]
