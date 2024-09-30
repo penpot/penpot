@@ -6,10 +6,6 @@
    [clojure.set :as set]
    [cuerdas.core :as str]))
 
-(defn get-workspace-token
-  [token-id state]
-  (get-in state [:workspace-data :tokens token-id]))
-
 (def parseable-token-value-regexp
   "Regexp that can be used to parse a number value out of resolved token value.
   This regexp also trims whitespace around the value."
