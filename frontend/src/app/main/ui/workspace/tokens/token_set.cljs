@@ -75,17 +75,8 @@
 
 
 (defn get-active-theme-sets-tokens-names-map [state]
-  (let [active-set-ids (get-ordered-active-set-ids state)]
-    (reduce
-     (fn [names-map-acc set-id]
-       (let [token-ids (get-workspace-token-set-tokens set-id state)]
-         (reduce
-          (fn [acc token-id]
-            (if-let [token (wtt/get-workspace-token token-id state)]
-              (assoc acc (wtt/token-identifier token) token)
-              acc))
-          names-map-acc token-ids)))
-     (ordered-map) active-set-ids)))
+  (when-let [lib (get-workspace-tokens-lib state)]
+    (ctob/get-active-themes-set-tokens lib)))
 
 ;; === Set selection
 
