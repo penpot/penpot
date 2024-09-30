@@ -10,6 +10,7 @@
    ["lodash.debounce" :as debounce]
    [app.common.colors :as c]
    [app.common.data :as d]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
@@ -25,7 +26,6 @@
    [app.main.ui.workspace.tokens.update :as wtu]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
-   [linked.map :as lkm]
    [malli.core :as m]
    [malli.error :as me]
    [promesa.core :as p]
@@ -317,11 +317,10 @@ Token names should only contain letters and digits separated by . characters.")}
                                         ;; The result should be a vector of all resolved validations
                                         ;; We do not handle the error case as it will be handled by the components validations
                                         (when (and (seq result) (not err))
-                                          (let [new-token (cond-> {:name final-name
-                                                                   :type (or (:type token) token-type)
-                                                                   :value final-value}
-                                                            final-description (assoc :description final-description)
-                                                            (:id token) (assoc :id (:id token)))]
+                                          (let [new-token (ctob/make-token :name final-name
+                                                                           :type (or (:type token) token-type)
+                                                                           :value final-value
+                                                                           :description final-description)]
                                             (st/emit! (dt/update-create-token new-token))
                                             (st/emit! (wtu/update-workspace-tokens))
                                             (modal/hide!)))))))))]

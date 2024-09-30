@@ -246,19 +246,18 @@
   (ptk/reify ::update-create-token
     ptk/WatchEvent
     (watch [_ state _]
-      (let [tlib (get-tokens-lib state)
-            token-set (wtts/get-selected-token-set state)
+      (let [token-set (wtts/get-selected-token-set state)
+            token-set-name (or (:name token-set) "Global")
             changes (if (not token-set)
                       ;; No set created add a global set
-                      (->> (ctob/make-token-set tlib :name "Global")
-                           (ctob/add-token token)
+                      (->> (ctob/make-token-set :name token-set-name :tokens {(:name token) token})
                            (pcb/add-token-set (pcb/empty-changes)))
                       ;; Either update or add token to existing set
                       (if-let [prev-token (ctob/get-token token-set (:name token))]
                         (pcb/update-token (pcb/empty-changes) (:name token-set) token prev-token)
                         (pcb/add-token (pcb/empty-changes) (:name token-set) token)))]
         (rx/of
-         (set-selected-token-set-id (:name token-set))
+         (set-selected-token-set-id token-set-name)
          (dch/commit-changes changes))))))
 
 (defn delete-token
