@@ -22,7 +22,7 @@
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.foundations.assets.icon :as ic]
-   [app.main.ui.ds.tab-switcher :refer [tab-switcher*]]
+   [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs]]
    [app.main.ui.workspace.colorpicker.gradients :refer [gradients]]

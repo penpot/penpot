@@ -14,7 +14,7 @@ const Padded = ({ children }) => (
 );
 
 export default {
-  title: "Tab switcher",
+  title: "Layout/Tab switcher",
   component: TabSwitcher,
   args: {
     tabs: [

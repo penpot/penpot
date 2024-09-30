@@ -13,7 +13,7 @@
    [app.main.store :as st]
    [app.main.ui.context :as muc]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
-   [app.main.ui.ds.tab-switcher :refer [tab-switcher*]]
+   [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.workspace.comments :refer [comments-sidebar]]
    [app.main.ui.workspace.left-header :refer [left-header]]

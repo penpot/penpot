@@ -25,7 +25,7 @@
    [app.main.ui.components.link-button :as lb]
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.title-bar :refer [title-bar]]
-   [app.main.ui.ds.tab-switcher :refer [tab-switcher*]]
+   [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.util.color :as uc]

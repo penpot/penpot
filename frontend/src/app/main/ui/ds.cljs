@@ -16,10 +16,10 @@
    [app.main.ui.ds.foundations.typography :refer [typography-list]]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
+   [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.ds.notifications.toast :refer [toast*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.ds.storybook :as sb]
-   [app.main.ui.ds.tab-switcher :refer [tab-switcher*]]
    [app.util.i18n :as i18n]))
 
 

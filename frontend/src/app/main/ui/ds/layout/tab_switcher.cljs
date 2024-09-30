@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.ds.tab-switcher
+(ns app.main.ui.ds.layout.tab-switcher
   (:require-macros
    [app.common.data.macros :as dm]
    [app.main.style :as stl])
@@ -114,7 +114,7 @@
    [:selected {:optional true} :string]
    [:action-button {:optional true} some?]
    [:action-button-position {:optional true}
-    [:enum "start" "end"]]])
+    [:maybe [:enum "start" "end"]]]])
 
 (mf/defc tab-switcher*
   {::mf/props :obj
