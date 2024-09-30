@@ -150,9 +150,11 @@
             active-token-themes (some-> tokens-lib
                                         (ctob/toggle-theme-active? group name)
                                         (ctob/get-active-theme-paths))
-            changes (pcb/update-active-token-themes (pcb/empty-changes it) active-token-themes prev-active-token-themes)]
+            changes (-> (pcb/empty-changes it)
+                        (pcb/update-active-token-themes active-token-themes prev-active-token-themes))]
         (rx/of
-         (dch/commit-changes changes))))))
+         (dch/commit-changes changes)
+         (wtu/update-workspace-tokens))))))
 
 (defn delete-token-theme [group name]
   (ptk/reify ::delete-token-theme
