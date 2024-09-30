@@ -312,7 +312,7 @@
         selected (mf/deref refs/selected-shapes)
         selected-shapes (into [] (keep (d/getf objects)) selected)
         token-id (:token-id mdata)
-        token (get (mf/deref refs/workspace-selected-token-set-tokens) token-id)
+        token (get (mf/deref refs/workspace-selected-token-set-tokens-OLD) token-id)
         selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)]
     (mf/use-effect
      (mf/deps mdata)

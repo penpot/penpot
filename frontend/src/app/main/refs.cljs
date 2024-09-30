@@ -459,9 +459,6 @@
        (ctob/get-theme lib group name)))
    tokens-lib))
 
-(def workspace-token-theme-tree
-  (l/derived #(or (some-> % ctob/get-theme-tree) []) tokens-lib))
-
 (def workspace-token-theme-tree-no-hidden
   (l/derived (fn [lib]
                (or
@@ -493,13 +490,16 @@
   (l/derived #(some-> % ctob/get-active-themes-set-names) tokens-lib))
 
 (def workspace-active-theme-sets-tokens
-  (l/derived #(some-> % ctob/get-active-themes-set-tokens) tokens-lib))
+  (l/derived #(or (some-> % ctob/get-active-themes-set-tokens) {}) tokens-lib))
+
+(def workspace-selected-token-set-tokens
+  (l/derived #(or (wtts/get-selected-token-set-tokens %) {}) st/state))
 
 (dm/legacy
- (def workspace-selected-token-set-tokens
+ (def workspace-selected-token-set-tokens-OLD
    (l/derived
     (fn [data]
-      (or (wtts/get-selected-token-set-tokens data) {}))
+      {})
     st/state
     =)))
 

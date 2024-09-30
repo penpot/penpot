@@ -103,7 +103,7 @@
 
 (defn get-selected-token-set-tokens [state]
   (some-> (get-selected-token-set state)
-          (ctob/get-tokens)))
+          :tokens))
 
 (defn assoc-selected-token-set-id [state id]
   (assoc-in state [:workspace-local :selected-token-set-id] id))

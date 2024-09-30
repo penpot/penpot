@@ -66,6 +66,6 @@
     {:global global}))
 
 (defn download-tokens-as-json []
-  (let [all-tokens (deref refs/workspace-selected-token-set-tokens)
+  (let [all-tokens (deref refs/workspace-selected-token-set-tokens-OLD)
         transformed-tokens-json (transform-tokens-into-json-format all-tokens)]
     (export-tokens-file transformed-tokens-json)))
