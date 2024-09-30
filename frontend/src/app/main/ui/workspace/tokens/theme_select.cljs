@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.tokens.theme-select
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]
@@ -17,8 +16,8 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [rumext.v2 :as mf]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [rumext.v2 :as mf]))
 
 (mf/defc themes-list
   [{:keys [themes active-theme-paths on-close grouped?]}]
