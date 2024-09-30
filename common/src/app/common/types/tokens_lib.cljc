@@ -104,10 +104,10 @@
 (def schema:token
   [:and
    [:map {:title "Token"}
-    [:name cto/token-name-ref]            ;; not necessary to have uuid
+    [:name cto/token-name-ref]
     [:type [::sm/one-of cto/token-types]]
     [:value :any]
-    [:description [:maybe :string]]       ;; defrecord always have the attributes, even with nil value
+    [:description [:maybe :string]]
     [:modified-at ::sm/inst]]
    [:fn (partial instance? Token)]])
 
