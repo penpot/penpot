@@ -317,13 +317,13 @@ Token names should only contain letters and digits separated by . characters.")}
                                         ;; The result should be a vector of all resolved validations
                                         ;; We do not handle the error case as it will be handled by the components validations
                                         (when (and (seq result) (not err))
-                                          (let [new-token (ctob/make-token :name final-name
-                                                                           :type (or (:type token) token-type)
-                                                                           :value final-value
-                                                                           :description final-description)]
-                                            (st/emit! (dt/update-create-token new-token))
-                                            (st/emit! (wtu/update-workspace-tokens))
-                                            (modal/hide!)))))))))]
+                                          (st/emit! (dt/update-create-token {:token (ctob/make-token :name final-name
+                                                                                                     :type (or (:type token) token-type)
+                                                                                                     :value final-value
+                                                                                                     :description final-description)
+                                                                             :prev-token-name (:name token)}))
+                                          (st/emit! (wtu/update-workspace-tokens))
+                                          (modal/hide!))))))))]
     [:form
      {:class (stl/css :form-wrapper)
       :on-submit on-submit}

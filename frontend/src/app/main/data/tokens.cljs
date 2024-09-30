@@ -210,7 +210,7 @@
          (wtu/update-workspace-tokens))))))
 
 (defn update-create-token
-  [token]
+  [{:keys [token prev-token-name]}]
   (ptk/reify ::update-create-token
     ptk/WatchEvent
     (watch [_ state _]
@@ -221,7 +221,7 @@
                       (->> (ctob/make-token-set :name token-set-name :tokens {(:name token) token})
                            (pcb/add-token-set (pcb/empty-changes)))
                       ;; Either update or add token to existing set
-                      (if-let [prev-token (ctob/get-token token-set (:name token))]
+                      (if-let [prev-token (ctob/get-token token-set (or prev-token-name (:name token)))]
                         (pcb/update-token (pcb/empty-changes) (:name token-set) token prev-token)
                         (pcb/add-token (pcb/empty-changes) (:name token-set) token)))]
         (rx/of
@@ -251,7 +251,7 @@
                                (ctob/get-token token-name)
                                (update :name #(str/concat % "-copy")))]
         (rx/of
-         (update-create-token token))))))
+         (update-create-token {:token token}))))))
 
 (defn set-token-type-section-open
   [token-type open?]
