@@ -779,10 +779,12 @@
       (apply-changes-local)))
 
 (defn delete-token
-  [changes set-name token-id token-name]
+  [changes set-name token-name]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
-        prev-token (get-in library-data [:tokens token-id])]
+        prev-token (some-> (get library-data :tokens-lib)
+                           (ctob/get-set set-name)
+                           (ctob/get-token token-name))]
     (-> changes
         (update :redo-changes conj {:type :del-token :set-name set-name :name token-name})
         (update :undo-changes conj {:type :add-token :set-name set-name :token prev-token})

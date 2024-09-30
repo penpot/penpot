@@ -96,7 +96,7 @@
                            (dom/stop-propagation event)
                            (st/emit! (dt/show-token-context-menu {:type :token
                                                                   :position (dom/get-client-position event)
-                                                                  :token-id (:id token)}))))
+                                                                  :token-name (:name token)}))))
 
         on-toggle-open-click (mf/use-fn
                               (mf/deps open? tokens)

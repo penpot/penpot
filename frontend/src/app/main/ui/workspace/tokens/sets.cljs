@@ -93,7 +93,6 @@
                              (st/emit!
                               (wdt/show-token-set-context-menu
                                {:position (dom/get-client-position event)
-                                :token-set-id name
                                 :token-set-name name})))))]
     [:div {:class (stl/css :set-item-container)
            :on-click on-select

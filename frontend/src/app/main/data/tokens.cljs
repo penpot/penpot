@@ -260,17 +260,16 @@
          (dch/commit-changes changes))))))
 
 (defn delete-token
-  [set-name id name]
+  [set-name token-name]
   (dm/assert! (string? set-name))
-  (dm/assert! (uuid? id))
-  (dm/assert! (string? name))
+  (dm/assert! (string? token-name))
   (ptk/reify ::delete-token
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (get state :workspace-data)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/delete-token set-name id name))]
+                        (pcb/delete-token set-name token-name))]
         (rx/of (dch/commit-changes changes))))))
 
 (defn duplicate-token
@@ -279,42 +278,6 @@
                       (dissoc :id)
                       (update :name #(str/concat % "-copy")))]
     (update-create-token new-token)))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; TEMP (Move to test)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(comment
-  (def shape-1 {:r3 3})
-
-  (def token-1 {:rx 1
-                :ry 1})
-
-
-  (def shape-after-token-1-is-applied {:rx 1
-                                       :ry 1
-                                       :r3 3})
-
-  (def token-2 {:r3 1})
-
-
-  (def shape-after-token-2-is-applied {:rx 1
-                                       :ry 1
-                                       :r3 1})
-
-  (def token-3 {:r3 1})
-
-  (def shape-after-token-3-is-applied {:rx 1
-                                       :ry 1})
-
-  (= (toggle-or-apply-token shape-1 token-1)
-     shape-after-token-1-is-applied)
-  (= (toggle-or-apply-token shape-after-token-1-is-applied token-2)
-     shape-after-token-2-is-applied)
-  (= (toggle-or-apply-token shape-after-token-2-is-applied token-3)
-     shape-after-token-3-is-applied)
-  nil)
 
 (defn set-token-type-section-open
   [token-type open?]
@@ -326,7 +289,7 @@
 ;; Token Context Menu Functions -------------------------------------------------
 
 (defn show-token-context-menu
-  [{:keys [position _token-id] :as params}]
+  [{:keys [position _token-name] :as params}]
   (dm/assert! (gpt/point? position))
   (ptk/reify ::show-token-context-menu
     ptk/UpdateEvent
@@ -340,7 +303,7 @@
       (assoc-in state [:workspace-local :token-context-menu] nil))))
 
 (defn show-token-set-context-menu
-  [{:keys [position _token-set-id] :as params}]
+  [{:keys [position _token-set-name] :as params}]
   (dm/assert! (gpt/point? position))
   (ptk/reify ::show-token-set-context-menu
     ptk/UpdateEvent
