@@ -475,6 +475,7 @@
 
         request-access?
         (and
+         (= (:type data) :not-found)
          (or workspace? dashboard? view?)
          (or (:file-id info)
              (:team-id info)))]
