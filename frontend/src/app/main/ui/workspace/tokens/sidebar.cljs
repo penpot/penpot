@@ -106,7 +106,6 @@
                                  (let [{:keys [key fields]} modal]
                                    (dom/stop-propagation event)
                                    (st/emit! (dt/set-token-type-section-open type true))
-                                   (js/console.log "key" key)
                                    (modal/show! key {:x (.-clientX ^js event)
                                                      :y (.-clientY ^js event)
                                                      :position :right
