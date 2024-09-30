@@ -227,6 +227,7 @@
   (set-count [_] "get the total number if sets in the library")
   (get-set-tree [_] "get a nested tree of all sets in the library")
   (get-sets [_] "get an ordered sequence of all sets in the library")
+  (get-sets-order [_] "get an ordered sequence of all sets in the library")
   (get-set [_ set-name] "get one set looking for name")
   (get-set-group [_ set-group-path] "get the attributes of a set group"))
 
@@ -463,6 +464,9 @@
     (->> (tree-seq d/ordered-map? vals sets)
          (filter (partial instance? TokenSet))))
 
+  (get-sets-order [this]
+    (map :name (get-sets this)))
+
   (set-count [this]
     (count (get-sets this)))
 
@@ -616,14 +620,16 @@
           (get-active-themes this)))
 
   (get-active-themes-set-tokens [this]
-    (reduce
-     (fn [acc cur]
-       (if (theme-active? this (:group cur) (:name cur))
-         (into acc
-               (->> (get cur :sets)
-                    (map #(-> (get-set this %) :tokens))))
-         acc))
-     (d/ordered-map) (tree-seq d/ordered-map? vals themes)))
+    (let [sets-order (get-sets-order this)]
+      (reduce
+       (fn [acc cur]
+         (reduce
+          (fn [acc cur]
+            (merge acc (:tokens (get-set this cur))))
+          acc
+          (let [ref-set (set (:sets cur))]
+            (filter #(contains? ref-set %) sets-order))))
+       (d/ordered-map) (get-active-themes this))))
 
   (update-set-name [_ old-set-name new-set-name]
     (TokensLib. sets
