@@ -12,7 +12,6 @@
    [app.common.geom.point :as gpt]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
-   [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.refs :as refs]
@@ -89,21 +88,12 @@
   (let [workspace-data (deref refs/workspace-data)]
     (get (:tokens workspace-data) id)))
 
-(defn get-token-set-data-from-token-set-id
-  [id]
-  (let [workspace-data (deref refs/workspace-data)]
-    (get (:token-sets-index workspace-data) id)))
-
 (defn set-selected-token-set-id
   [id]
   (ptk/reify ::set-selected-token-set-id
     ptk/UpdateEvent
     (update [_ state]
       (wtts/assoc-selected-token-set-id state id))))
-
-(defn get-token-set-tokens
-  [token-set file]
-  (map #(get-in file [:tokens %]) (:tokens token-set)))
 
 (defn create-token-theme [token-theme]
   (let [new-token-theme token-theme]
@@ -124,21 +114,6 @@
             changes (pcb/update-token-theme (pcb/empty-changes it) token-theme prev-token-theme)]
         (rx/of
          (dch/commit-changes changes))))))
-
-(defn ensure-token-theme-changes [changes state {:keys [id new-set?]}]
-  (let [theme-id (wtts/update-theme-id state)
-        theme (some-> theme-id (wtts/get-workspace-token-theme state))]
-    (cond
-     (not theme-id) (-> changes
-                        (pcb/add-temporary-token-theme
-                         {:id (uuid/next)
-                          :name "Test theme"
-                          :sets #{id}}))
-     new-set? (-> changes
-                  (pcb/update-token-theme
-                   (wtts/add-token-set-to-token-theme id theme)
-                   theme))
-     :else changes)))
 
 (defn toggle-token-theme-active? [group name]
   (ptk/reify ::toggle-token-theme-active?
@@ -194,16 +169,6 @@
                         (pcb/update-token-set token-set prev-token-set))]
         (rx/of
          (dch/commit-changes changes))))))
-
-#_[target-theme-id (wtts/get-temp-theme-id state)
-   active-set-ids (wtts/get-active-set-ids state)
-   theme (-> (wtts/get-workspace-token-theme target-theme-id state)
-             (assoc :sets active-set-ids))
-   changes (-> (pcb/empty-changes it)
-               (pcb/update-token-theme
-                (wtts/toggle-token-set-to-token-theme token-set-id theme)
-                theme)
-               (pcb/update-active-token-themes #{target-theme-id} (wtts/get-active-theme-ids state)))]
 
 (defn toggle-token-set [{:keys [token-set-name]}]
   (ptk/reify ::toggle-token-set
