@@ -301,19 +301,28 @@
                  :on-click action
                  :selected? selected?}])])))
 
+(mf/defc token-context-menu-tree
+  [{:keys [width] :as mdata}]
+  (js/console.log "mdata" mdata)
+  (let [objects (mf/deref refs/workspace-page-objects)
+        selected (mf/deref refs/selected-shapes)
+        selected-shapes (into [] (keep (d/getf objects)) selected)
+        token-name (:token-name mdata)
+        token (mf/deref (refs/workspace-selected-token-set-token token-name))
+        selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)]
+    [:ul {:class (stl/css :context-list)}
+     [:& menu-tree {:submenu-offset width
+                    :token token
+                    :selected-token-set-id selected-token-set-id
+                    :selected-shapes selected-shapes}]]))
+
 (mf/defc token-context-menu
   []
   (let [mdata (mf/deref tokens-menu-ref)
         top (+ (get-in mdata [:position :y]) 5)
         left (+ (get-in mdata [:position :x]) 5)
         width (mf/use-state 0)
-        dropdown-ref (mf/use-ref)
-        objects (mf/deref refs/workspace-page-objects)
-        selected (mf/deref refs/selected-shapes)
-        selected-shapes (into [] (keep (d/getf objects)) selected)
-        token-id (:token-id mdata)
-        token (get (mf/deref refs/workspace-selected-token-set-tokens-OLD) token-id)
-        selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)]
+        dropdown-ref (mf/use-ref)]
     (mf/use-effect
      (mf/deps mdata)
      (fn []
@@ -325,9 +334,5 @@
             :ref dropdown-ref
             :style {:top top :left left}
             :on-context-menu prevent-default}
-      (when token
-        [:ul {:class (stl/css :context-list)}
-         [:& menu-tree {:submenu-offset @width
-                        :token token
-                        :selected-token-set-id selected-token-set-id
-                        :selected-shapes selected-shapes}]])]]))
+      (when mdata
+        [:& token-context-menu-tree (assoc mdata :offset @width)])]]))
