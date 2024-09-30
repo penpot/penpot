@@ -8,19 +8,20 @@
   (:require
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
-   [app.main.data.workspace.colors :as wdc]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace :as udw]
+   [app.main.data.workspace.colors :as wdc]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
-   [potok.v2.core :as ptk]
-   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]))
+   [potok.v2.core :as ptk]))
 
 ;; Token Updates ---------------------------------------------------------------
 
@@ -34,21 +35,23 @@
   (ptk/reify ::apply-token
     ptk/WatchEvent
     (watch [_ state _]
-      (->> (rx/from (sd/resolve-tokens+ (get-in state [:workspace-data :tokens])))
-           (rx/mapcat
-            (fn [resolved-tokens]
-              (let [undo-id (js/Symbol)
-                    resolved-value (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value])
-                    tokenized-attributes (wtt/attributes-map attributes token)]
-                (rx/of
-                 (dwu/start-undo-transaction undo-id)
-                 (dwsh/update-shapes shape-ids (fn [shape]
-                                                 (cond-> shape
-                                                   attributes-to-remove (update :applied-tokens #(apply (partial dissoc %) attributes-to-remove))
-                                                   :always (update :applied-tokens merge tokenized-attributes))))
-                 (when on-update-shape
-                   (on-update-shape resolved-value shape-ids attributes))
-                 (dwu/commit-undo-transaction undo-id)))))))))
+      (when-let [tokens (some-> (get-in state [:workspace-data :tokens-lib])
+                                (ctob/get-active-themes-set-tokens))]
+        (->> (rx/from (sd/resolve-tokens+ tokens))
+             (rx/mapcat
+              (fn [resolved-tokens]
+                (let [undo-id (js/Symbol)
+                      resolved-value (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value])
+                      tokenized-attributes (wtt/attributes-map attributes token)]
+                  (rx/of
+                   (dwu/start-undo-transaction undo-id)
+                   (dwsh/update-shapes shape-ids (fn [shape]
+                                                   (cond-> shape
+                                                     attributes-to-remove (update :applied-tokens #(apply (partial dissoc %) attributes-to-remove))
+                                                     :always (update :applied-tokens merge tokenized-attributes))))
+                   (when on-update-shape
+                     (on-update-shape resolved-value shape-ids attributes))
+                   (dwu/commit-undo-transaction undo-id))))))))))
 
 (defn unapply-token
   "Removes `attributes` that match `token` for `shape-ids`.
