@@ -239,11 +239,16 @@
         (rx/of (dch/commit-changes changes))))))
 
 (defn duplicate-token
-  [id]
-  (let [new-token (-> (get-token-data-from-token-id id)
-                      (dissoc :id)
-                      (update :name #(str/concat % "-copy")))]
-    (update-create-token new-token)))
+  [token-name]
+  (dm/assert! (string? token-name))
+  (ptk/reify ::duplicate-token
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when-let [token (some-> (wtts/get-selected-token-set state)
+                               (ctob/get-token token-name)
+                               (update :name #(str/concat % "-copy")))]
+        (rx/of
+         (update-create-token token))))))
 
 (defn set-token-type-section-open
   [token-type open?]
