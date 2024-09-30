@@ -125,8 +125,11 @@
             active-token-themes (some-> tokens-lib
                                         (ctob/toggle-theme-active? group name)
                                         (ctob/get-active-theme-paths))
+            active-token-themes' (if (= active-token-themes #{ctob/hidden-token-theme-path})
+                                   active-token-themes
+                                   (disj active-token-themes ctob/hidden-token-theme-path))
             changes (-> (pcb/empty-changes it)
-                        (pcb/update-active-token-themes active-token-themes prev-active-token-themes))]
+                        (pcb/update-active-token-themes active-token-themes' prev-active-token-themes))]
         (rx/of
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
