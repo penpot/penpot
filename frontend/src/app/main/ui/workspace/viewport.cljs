@@ -271,7 +271,7 @@
      [canvas-ref]
       ;; FIXME:
      (let [canvas (mf/ref-val canvas-ref)]
-       (renderer/set-canvas canvas)))
+       (renderer-cpp/set-canvas canvas)))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)
