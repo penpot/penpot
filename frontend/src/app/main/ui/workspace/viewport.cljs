@@ -314,7 +314,7 @@
                                          :layout layout
                                          :viewport-ref viewport-ref}])]
 
-     (if (contains? cf/flags :renderer-v2)
+     (if (contains? cf/flags :renderer-v2-cpp)
        [:canvas {:id "render"
                  :ref canvas-ref
                  :class (stl/css :render-shapes)
