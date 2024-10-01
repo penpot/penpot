@@ -1057,8 +1057,9 @@
             (assoc :default-grids (:saved-grids options))
 
             (and (some? (:flows options))
-                 (not (contains? page :flows)))
-            (assoc :flows (:flows options))
+                 (or (not (contains? page :flows))
+                     (not (map? (:flows page)))))
+            (assoc :flows (d/index-by :id (:flows options)))
 
             (and (some? (:guides options))
                  (not (contains? page :guides)))
