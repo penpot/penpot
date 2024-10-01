@@ -1,16 +1,18 @@
 (ns token-tests.helpers.tokens
   (:require
    [app.common.test-helpers.ids-map :as thi]
-   [app.main.ui.workspace.tokens.token :as wtt]))
+   [app.main.ui.workspace.tokens.token :as wtt]
+   [app.common.types.tokens-lib :as ctob]))
 
 (defn add-token [state label params]
   (let [id (thi/new-id! label)
         token (assoc params :id id)]
     (update-in state [:data :tokens] assoc id token)))
 
-(defn get-token [file label]
-  (let [id (thi/id label)]
-    (get-in file [:data :tokens id])))
+(defn get-token [file name]
+  (some-> (get-in file [:data :tokens-li])
+          (ctob/get-active-themes-set-tokens)
+          (get name)))
 
 (defn apply-token-to-shape [file shape-label token-label attributes]
   (let [first-page-id (get-in file [:data :pages 0])

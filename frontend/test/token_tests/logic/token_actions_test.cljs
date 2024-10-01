@@ -1,18 +1,15 @@
 (ns token-tests.logic.token-actions-test
   (:require
-   [app.common.pprint :refer [pprint]]
+   [token-tests.helpers.state :as tohs]
    [app.common.logging :as log]
    [app.common.test-helpers.compositions :as ctho]
-   [app.common.test-helpers.files :as cthf]
-   [app.common.test-helpers.shapes :as cths]
-   [app.main.data.tokens :as wdt]
    [app.main.ui.workspace.tokens.changes :as wtch]
-   [app.main.ui.workspace.tokens.token :as wtt]
-   [app.main.ui.workspace.tokens.token-set :as wtts]
+   [app.common.test-helpers.files :as cthf]
+   [app.common.types.tokens-lib :as ctob]
    [cljs.test :as t :include-macros true]
-   [frontend-tests.helpers.pages :as thp]
+   [app.common.test-helpers.shapes :as cths]
    [frontend-tests.helpers.state :as ths]
-   [token-tests.helpers.state :as tohs]
+   [frontend-tests.helpers.pages :as thp]
    [token-tests.helpers.tokens :as toht]))
 
 
@@ -26,23 +23,26 @@
   (cthf/sample-file :file-1 :page-label :page-1))
 
 (def border-radius-token
-  {:value "12"
-   :name "borderRadius.sm"
+  {:name "borderRadius.sm"
+   :value "12"
    :type :border-radius})
 
 (def reference-border-radius-token
-  {:value "{borderRadius.sm} * 2"
-   :name "borderRadius.md"
+  {:name "borderRadius.md"
+   :value "{borderRadius.sm} * 2"
    :type :border-radius})
 
-;; (defn setup-file-with-tokens
-;;   [& {:keys [rect-1 rect-2 rect-3]}]
-;;   (-> (setup-file)
-;;       (ctho/add-rect :rect-1 rect-1)
-;;       (ctho/add-rect :rect-2 rect-2)
-;;       (ctho/add-rect :rect-3 rect-3)
-;;       (toht/add-token :token-1 border-radius-token)
-;;       (toht/add-token :token-2 reference-border-radius-token)))
+(defn setup-file-with-tokens
+  [& {:keys [rect-1 rect-2 rect-3]}]
+  (-> (setup-file)
+      (ctho/add-rect :rect-1 rect-1)
+      (ctho/add-rect :rect-2 rect-2)
+      (ctho/add-rect :rect-3 rect-3)
+      (assoc-in [:data :tokens-lib]
+                (-> (ctob/make-tokens-lib)
+                    (ctob/add-set (ctob/make-token-set :name "Set A"))
+                    (ctob/add-token-in-set "Set A" (ctob/make-token border-radius-token))
+                    (ctob/add-token-in-set "Set A" (ctob/make-token reference-border-radius-token))))))
 
 ;; (t/deftest test-apply-token
 ;;   (t/testing "applies token to shape and updates shape attributes to resolved value"
