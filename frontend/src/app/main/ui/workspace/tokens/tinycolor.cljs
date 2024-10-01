@@ -6,18 +6,18 @@
   (:require
    ["tinycolor2" :as tinycolor]))
 
-(defn tinycolor? [x]
+(defn tinycolor? [^js x]
   (and (instance? tinycolor x) (.isValid x)))
 
 (defn valid-color [color-str]
   (let [tc (tinycolor color-str)]
     (when (.isValid tc) tc)))
 
-(defn ->hex [tc]
+(defn ->hex [^js tc]
   (assert (tinycolor? tc))
   (.toHex tc))
 
-(defn color-format [tc]
+(defn color-format [^js tc]
   (assert (tinycolor? tc))
   (.getFormat tc))
 
