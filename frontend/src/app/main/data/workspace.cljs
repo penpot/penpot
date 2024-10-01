@@ -355,7 +355,7 @@
                 (fetch-bundle project-id file-id))
 
          (when (contains? cf/flags :renderer-v2-cpp)
-           (rx/of (renderer/init)))
+           (rx/of (renderer-cpp/init)))
 
          (->> stream
               (rx/filter dch/commit?)
