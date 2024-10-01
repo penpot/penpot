@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-09-10 19:09+0000\n"
-"Last-Translator: Jarne Förster <fedora@mymailclient.de>\n"
+"PO-Revision-Date: 2024-10-01 15:16+0000\n"
+"Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -6046,3 +6046,44 @@ msgstr "Muss mindestens 1 Zeichen enthalten."
 #, unused
 msgid "errors.field-not-all-whitespace"
 msgstr "Der Name muss aus etwas anderem bestehen außer Leerzeichen."
+
+#: src/app/main/ui/static.cljs:259
+msgid "not-found.no-permission.file"
+msgstr "Sie haben keinen Zugriff auf diese Datei."
+
+#: src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.you-can-ask.project"
+msgstr ""
+"Um Zugriff auf dieses Projekt zu erhalten, können Sie den Teambesitzer "
+"fragen."
+
+#: src/app/main/ui/static.cljs:259
+msgid "not-found.no-permission.you-can-ask.file"
+msgstr ""
+"Um Zugriff auf diese Datei zu erhalten, können Sie den Teambesitzer fragen."
+
+#: src/app/main/ui/workspace/plugins.cljs:271
+msgid "workspace.plugins.permissions.library-read"
+msgstr "Lesen Ihrer Bibliotheken und Assets."
+
+#: src/app/main/ui/workspace/plugins.cljs:245
+msgid "workspace.plugins.permissions.content-write"
+msgstr ""
+"Lesen und Ändern des Inhalts von Dateien, auf die Benutzer Zugriff haben."
+
+#: src/app/main/ui/workspace/plugins.cljs:274
+msgid "workspace.plugins.permissions.disclaimer"
+msgstr ""
+"Beachten Sie, dass dieses Plugin von einer externen Quelle erstellt wurde."
+
+#: src/app/main/ui/workspace/plugins.cljs:258
+msgid "workspace.plugins.permissions.user-read"
+msgstr "Lesen der Profil-Informationen des aktuellen Benutzers."
+
+#: src/app/main/ui/workspace/plugins.cljs:265
+msgid "workspace.plugins.permissions.library-write"
+msgstr "Lesen und Ändern Ihrer Bibliotheken und Assets."
+
+#: src/app/main/ui/workspace/plugins.cljs:251
+msgid "workspace.plugins.permissions.content-read"
+msgstr "Lesen des Inhalts von Dateien, auf die Benutzer Zugriff haben."
