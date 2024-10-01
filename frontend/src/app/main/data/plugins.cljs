@@ -7,13 +7,15 @@
 (ns app.main.data.plugins
   (:require
    [app.plugins.register :as pr]
+   [app.util.globals :as ug]
+   [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
 (defn open-plugin!
   [{:keys [plugin-id name description host code icon permissions]}]
   (try
     (.ɵloadPlugin
-     js/window
+     ^js ug/global
      #js {:pluginId plugin-id
           :name name
           :description description
@@ -38,5 +40,4 @@
     (watch [_ state _]
       (when-let [pid (::open-plugin state)]
         (open-plugin! (pr/get-plugin pid))
-        (fn [state]
-          (dissoc state ::open-plugin))))))
+        (rx/of #(dissoc % ::open-plugin))))))

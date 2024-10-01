@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.spec :as us]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.users :as du]
@@ -96,12 +97,6 @@
   [router path]
   (let [location (.-location js/document)
         [base-path qs] (str/split path "?")
-
-        qstring
-        (->> (str/split qs "&")
-             (map #(str/split % "="))
-             (into {}))
-
         location-path (dm/str (.-origin location) (.-pathname location))
         valid-location? (= location-path (dm/str cf/public-uri))
         match (match-path router path)
@@ -124,7 +119,7 @@
                          (st/emit! (rt/nav :auth-login))
 
                          empty-path?
-                         (st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)} qstring))
+                         (st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)} (u/query-string->map qs)))
 
                          :else
                          (st/emit! (rt/assign-exception {:type :not-found})))))))))
