@@ -987,7 +987,7 @@
            :get (fn [self]
                   (let [shape (u/proxy->shape self)
                         parent-id (:parent-id shape)]
-                    (shape-proxy (obj/get self "$file") (obj/get self "$page") parent-id)))}
+                    (shape-proxy plugin-id (obj/get self "$file") (obj/get self "$page") parent-id)))}
           {:name "parentX"
            :get (fn [self]
                   (let [shape (u/proxy->shape self)

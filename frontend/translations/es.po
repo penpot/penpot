@@ -5567,7 +5567,7 @@ msgstr "Leer y modificar el contenido de sus archivos."
 
 #: src/app/main/ui/workspace/plugins.cljs:274
 msgid "workspace.plugins.permissions.disclaimer"
-msgstr "Tenga en cuenta que esta extensión ha sido desarrollada por terceros."
+msgstr "Ten en cuenta que las extensiones están desarrolladas por terceros, aseguraté que confías antes de conceder el permiso. Tu privacidad y seguridad es importante para nosotros. Si tienes cualquier duda, contacta con soporte."
 
 #: src/app/main/ui/workspace/plugins.cljs:271
 msgid "workspace.plugins.permissions.library-read"
@@ -5577,13 +5577,34 @@ msgstr "Leer la información de sus bibliotecas y recursos."
 msgid "workspace.plugins.permissions.library-write"
 msgstr "Leer y modificar la información de sus bibliotecas y recursos."
 
+msgid "workspace.plugins.permissions.comment-read"
+msgstr "Leer tus comentarios y respuestas."
+
+msgid "workspace.plugins.permissions.comment-write"
+msgstr "Leer y modificar tus comentarios y responder en tu nombre."
+
+msgid "workspace.plugins.permissions.allow-download"
+msgstr "Comenzar descargas de ficheros."
+
 #: src/app/main/ui/workspace/plugins.cljs:236
 msgid "workspace.plugins.permissions.title"
-msgstr "LA EXTENSIÓN SOLICITA PERMISO PARA ACCEDER:"
+msgstr "LA EXTENSIÓN '%s' SOLICITA PERMISO PARA ACCEDER:"
 
 #: src/app/main/ui/workspace/plugins.cljs:258
 msgid "workspace.plugins.permissions.user-read"
 msgstr "Leer la información del usuario actual."
+
+msgid "workspace.plugins.try-out.title"
+msgstr "¡LA EXTENSIÓN '%s' HA SIDO INSTALADA PARA TU USUARIO!"
+
+msgid "workspace.plugins.try-out.message"
+msgstr "¿Quieres echar un vistazo?. Crearemos un nuevo borrador en tu equipo actual. (Si no, puedes encontrar los plugins instalados en cualquier fichero.)"
+
+msgid "workspace.plugins.try-out.cancel"
+msgstr "AHORA NO"
+
+msgid "workspace.plugins.try-out.try"
+msgstr "PROBAR PLUGIN"
 
 #: src/app/main/ui/workspace/plugins.cljs:192
 msgid "workspace.plugins.plugin-list-link"

@@ -76,18 +76,15 @@
 
   (getFile
     [_]
-    (file/file-proxy $plugin (:current-file-id @st/state)))
+    (when (some? (:current-file-id @st/state))
+      (file/file-proxy $plugin (:current-file-id @st/state))))
 
   (getPage
     [_]
     (let [file-id (:current-file-id @st/state)
           page-id (:current-page-id @st/state)]
-      (page/page-proxy $plugin file-id page-id)))
-
-  (getSelected
-    [_]
-    (let [selection (get-in @st/state [:workspace-local :selected])]
-      (apply array (map str selection))))
+      (when (and (some? file-id) (some? page-id))
+        (page/page-proxy $plugin file-id page-id))))
 
   (getSelectedShapes
     [_]
@@ -143,7 +140,9 @@
 
   (getRoot
     [_]
-    (shape/shape-proxy $plugin uuid/zero))
+    (when (and (some? (:current-file-id @st/state))
+               (some? (:current-page-id @st/state)))
+      (shape/shape-proxy $plugin uuid/zero)))
 
   (getTheme
     [_]
@@ -444,6 +443,7 @@
    {:name "root" :get #(.getRoot ^js %)}
    {:name "currentFile" :get #(.getFile ^js %)}
    {:name "currentPage" :get #(.getPage ^js %)}
+   {:name "theme" :get #(.getTheme ^js %)}
 
    {:name "selection"
     :get #(.getSelectedShapes ^js %)

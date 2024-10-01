@@ -258,7 +258,7 @@
       (u/display-not-valid :removeRulerGuide "Guide not provided")
 
       (not (r/check-permission $plugin "content:write"))
-      (u/display-not-valid :removeRulerGuide "Plugin doesn't have 'content:write' permission")
+      (u/display-not-valid :removeRulerGuide "Plugin doesn't have 'comment:write' permission")
 
       :else
       (let [guide (u/proxy->ruler-guide value)]
@@ -279,8 +279,8 @@
         (and (some? board) (or (not (shape/shape-proxy? board)) (not (cfh/frame-shape? shape))))
         (u/display-not-valid :addCommentThread "Board not valid")
 
-        (not (r/check-permission $plugin "content:write"))
-        (u/display-not-valid :addCommentThread "Plugin doesn't have 'content:write' permission")
+        (not (r/check-permission $plugin "comment:write"))
+        (u/display-not-valid :addCommentThread "Plugin doesn't have 'comment:write' permission")
 
         :else
         (let [position
@@ -311,7 +311,7 @@
       (not (pc/comment-thread-proxy? thread))
       (u/display-not-valid :removeCommentThread "Comment thread not valid")
 
-      (not (r/check-permission $plugin "content:write"))
+      (not (r/check-permission $plugin "comment:write"))
       (u/display-not-valid :removeCommentThread "Plugin doesn't have 'content:write' permission")
 
       :else
@@ -328,23 +328,30 @@
           user-id      (-> @st/state :profile :id)]
       (p/create
        (fn [resolve reject]
-         (->> (rx/zip (rp/cmd! :get-team-users {:file-id $file})
-                      (rp/cmd! :get-comment-threads {:file-id $file}))
-              (rx/take 1)
-              (rx/subs!
-               (fn [[users comments]]
-                 (let [users (d/index-by :id users)
-                       comments
-                       (cond->> comments
-                         (not show-resolved)
-                         (filter (comp not :is-resolved))
+         (cond
+           (not (r/check-permission $plugin "comment:read"))
+           (do
+             (u/display-not-valid :findCommentThreads "Plugin doesn't have 'comment:read' permission")
+             (reject "Plugin doesn't have 'comment:read' permission"))
 
-                         only-yours
-                         (filter #(contains? (:participants %) user-id)))]
-                   (resolve
-                    (format/format-array
-                     #(pc/comment-thread-proxy $plugin $file $id users %) comments))))
-               reject)))))))
+           :else
+           (->> (rx/zip (rp/cmd! :get-team-users {:file-id $file})
+                        (rp/cmd! :get-comment-threads {:file-id $file}))
+                (rx/take 1)
+                (rx/subs!
+                 (fn [[users comments]]
+                   (let [users (d/index-by :id users)
+                         comments
+                         (cond->> comments
+                           (not show-resolved)
+                           (filter (comp not :is-resolved))
+
+                           only-yours
+                           (filter #(contains? (:participants %) user-id)))]
+                     (resolve
+                      (format/format-array
+                       #(pc/comment-thread-proxy $plugin $file $id users %) comments))))
+                 reject))))))))
 
 (crc/define-properties!
   PageProxy

@@ -941,7 +941,7 @@
           (update-in [:dashboard-projects project-id :count] inc)))))
 
 (defn create-file
-  [{:keys [project-id] :as params}]
+  [{:keys [project-id name] :as params}]
   (dm/assert! (uuid? project-id))
   (ptk/reify ::create-file
     ev/Event
@@ -955,7 +955,7 @@
 
             files    (get state :dashboard-files)
             unames   (cfh/get-used-names files)
-            name     (cfh/generate-unique-name unames (str (tr "dashboard.new-file-prefix") " 1"))
+            name     (or name (cfh/generate-unique-name unames (str (tr "dashboard.new-file-prefix") " 1")))
             features (-> (features/get-team-enabled-features state)
                          (set/difference cfeat/frontend-only-features))
             params   (-> params

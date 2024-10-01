@@ -27,9 +27,16 @@
   (remove [_]
     (p/create
      (fn [resolve reject]
-       (->> (rp/cmd! :delete-comment {:id $id})
-            (rx/tap #(st/emit! (dc/retrieve-comment-threads $file)))
-            (rx/subs! #(resolve) reject))))))
+       (cond
+         (not (r/check-permission $plugin "comment:write"))
+         (do
+           (u/display-not-valid :remove "Plugin doesn't have 'comment:write' permission")
+           (reject "Plugin doesn't have 'comment:write' permission"))
+
+         :else
+         (->> (rp/cmd! :delete-comment {:id $id})
+              (rx/tap #(st/emit! (dc/retrieve-comment-threads $file)))
+              (rx/subs! #(resolve) reject)))))))
 
 (defn comment-proxy? [p]
   (instance? CommentProxy p))
@@ -60,8 +67,8 @@
             (not= (:id profile) (:owner-id data))
             (u/display-not-valid :content "Cannot change content from another user's comments")
 
-            (not (r/check-permission plugin-id "content:write"))
-            (u/display-not-valid :content "Plugin doesn't have 'content:write' permission")
+            (not (r/check-permission plugin-id "comment:write"))
+            (u/display-not-valid :content "Plugin doesn't have 'comment:write' permission")
 
             :else
             (->> (rp/cmd! :update-comment {:id (:id data) :content content})
@@ -74,22 +81,29 @@
     [_]
     (p/create
      (fn [resolve reject]
-       (->> (rp/cmd! :get-comments {:thread-id $id})
-            (rx/subs!
-             (fn [comments]
-               (resolve
-                (format/format-array
-                 #(comment-proxy $plugin $file $page $id $users %) comments)))
-             reject)))))
+       (cond
+         (not (r/check-permission $plugin "comment:read"))
+         (do
+           (u/display-not-valid :findComments "Plugin doesn't have 'comment:read' permission")
+           (reject "Plugin doesn't have 'comment:read' permission"))
+
+         :else
+         (->> (rp/cmd! :get-comments {:thread-id $id})
+              (rx/subs!
+               (fn [comments]
+                 (resolve
+                  (format/format-array
+                   #(comment-proxy $plugin $file $page $id $users %) comments)))
+               reject))))))
 
   (reply
     [_ content]
     (cond
-      (not (r/check-permission $plugin "content:write"))
-      (u/display-not-valid :content "Plugin doesn't have 'content:write' permission")
+      (not (r/check-permission $plugin "comment:write"))
+      (u/display-not-valid :reply "Plugin doesn't have 'comment:write' permission")
 
       (or (not (string? content)) (empty? content))
-      (u/display-not-valid :content "Not valid")
+      (u/display-not-valid :reply "Not valid")
 
       :else
       (p/create
@@ -100,11 +114,11 @@
   (remove [_]
     (let [profile (:profile @st/state)]
       (cond
-        (not (r/check-permission $plugin "content:write"))
-        (u/display-not-valid :removeCommentThread "Plugin doesn't have 'content:write' permission")
+        (not (r/check-permission $plugin "comment:write"))
+        (u/display-not-valid :remove "Plugin doesn't have 'comment:write' permission")
 
         (not= (:id profile) owner)
-        (u/display-not-valid :content "Cannot change content from another user's comments")
+        (u/display-not-valid :remove "Cannot change content from another user's comments")
 
         :else
         (p/create
@@ -140,8 +154,8 @@
             (or (not (us/safe-number? (:x position))) (not (us/safe-number? (:y position))))
             (u/display-not-valid :position "Not valid point")
 
-            (not (r/check-permission plugin-id "content:write"))
-            (u/display-not-valid :content "Plugin doesn't have 'content:write' permission")
+            (not (r/check-permission plugin-id "comment:write"))
+            (u/display-not-valid :position "Plugin doesn't have 'comment:write' permission")
 
             :else
             (do (st/emit! (dwc/update-comment-thread-position @data* [(:x position) (:y position)]))
@@ -155,8 +169,8 @@
           (not (boolean? is-resolved))
           (u/display-not-valid :resolved "Not a boolean type")
 
-          (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :resolved "Plugin doesn't have 'content:write' permission")
+          (not (r/check-permission plugin-id "comment:write"))
+          (u/display-not-valid :resolved "Plugin doesn't have 'comment:write' permission")
 
           :else
           (do (st/emit! (dc/update-comment-thread (assoc @data* :is-resolved is-resolved)))

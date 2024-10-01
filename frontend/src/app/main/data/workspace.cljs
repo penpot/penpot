@@ -42,6 +42,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
+   [app.main.data.plugins :as dp]
    [app.main.data.users :as du]
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.collapse :as dwco]
@@ -131,6 +132,7 @@
        (when (and (not (boolean (-> state :profile :props :v2-info-shown)))
                   (features/active-feature? state "components/v2"))
          (modal/show :v2-info {}))
+       (dp/check-open-plugin)
        (fdf/fix-deleted-fonts)
        (fbs/fix-broken-shapes)))))
 
