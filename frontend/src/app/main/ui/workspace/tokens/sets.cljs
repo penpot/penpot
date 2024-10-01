@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.sets
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.main.data.messages :as msg]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -133,6 +134,12 @@
                                        :set-id child-id
                                        :selected-set-id selected-token-set-id)])]))])]]))
 
+(defn warn-on-try-create-token-set-group!  []
+  (st/emit! (msg/show {:content "Token Set grouping is not supported yet."
+                       :notification-type :toast
+                       :type :warning
+                       :timeout 3000})))
+
 (mf/defc controlled-sets-list
   [{:keys [token-sets
            on-update-token-set
@@ -143,7 +150,8 @@
            on-select
            context]
     :as _props}]
-  (let [{:keys [editing? new? on-edit on-create on-reset] :as ctx} (or context (sets-context/use-context))]
+  (let [{:keys [editing? new? on-edit on-create on-reset] :as ctx} (or context (sets-context/use-context))
+        avoid-token-set-grouping #(str/replace % "/" "-")]
     [:ul {:class (stl/css :sets-list)}
      (for [token-set token-sets]
        (when token-set
@@ -157,7 +165,9 @@
            :on-edit on-edit
            :on-toggle on-toggle-token-set
            :on-submit #(do
-                         (on-update-token-set (:name token-set) %)
+                         ;; TODO: We don't support set grouping for now so we rename sets for now
+                         (warn-on-try-create-token-set-group!)
+                         (on-update-token-set (avoid-token-set-grouping (:name token-set)) (update % :name avoid-token-set-grouping))
                          (on-reset))
            :on-cancel on-reset}]))
      (when new?
@@ -168,7 +178,9 @@
                       :on-select (constantly nil)
                       :on-edit on-create
                       :on-submit #(do
-                                    (on-create-token-set %)
+                                    ;; TODO: We don't support set grouping for now so we rename sets for now
+                                    (warn-on-try-create-token-set-group!)
+                                    (on-create-token-set (update % :name avoid-token-set-grouping))
                                     (on-reset))
                       :on-cancel on-reset}])]))
 
