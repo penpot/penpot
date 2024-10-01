@@ -1056,6 +1056,10 @@
                  (not (contains? page :default-grids)))
             (assoc :default-grids (:saved-grids options))
 
+            (and (some? (:background options))
+                 (not (contains? page :background)))
+            (assoc :background (:background options))
+
             (and (some? (:flows options))
                  (or (not (contains? page :flows))
                      (not (map? (:flows page)))))
