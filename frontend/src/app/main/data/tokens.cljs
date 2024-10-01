@@ -182,10 +182,7 @@
             active-token-set-names (ctob/get-active-themes-set-names tokens-lib)
             theme (-> (or (some-> prev-theme
                                   (ctob/set-sets active-token-set-names))
-                          (ctob/make-token-theme
-                           :group ctob/hidden-token-theme-group
-                           :name ctob/hidden-token-theme-name
-                           :sets active-token-set-names))
+                          (ctob/make-hidden-token-theme :sets active-token-set-names))
                       (ctob/toggle-set token-set-name))
             prev-active-token-themes (ctob/get-active-theme-paths tokens-lib)
             changes (-> (pcb/empty-changes it)
@@ -218,8 +215,22 @@
             token-set-name (or (:name token-set) "Global")
             changes (if (not token-set)
                       ;; No set created add a global set
-                      (->> (ctob/make-token-set :name token-set-name :tokens {(:name token) token})
-                           (pcb/add-token-set (pcb/empty-changes)))
+                      (let [tokens-lib (get-tokens-lib state)
+                            token-set (ctob/make-token-set :name token-set-name :tokens {(:name token) token})
+                            hidden-theme (ctob/make-hidden-token-theme :sets [token-set-name])
+                            active-theme-paths (some-> tokens-lib ctob/get-active-theme-paths)
+                            add-to-hidden-theme? (= active-theme-paths #{ctob/hidden-token-theme-path})
+                            base-changes (pcb/add-token-set (pcb/empty-changes) token-set)]
+                        (cond
+                          (not tokens-lib) (-> base-changes
+                                               (pcb/add-token-theme hidden-theme)
+                                               (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} #{}))
+
+                          add-to-hidden-theme? (let [prev-hidden-theme (ctob/get-theme tokens-lib ctob/hidden-token-theme-group ctob/hidden-token-theme-name)]
+                                                   (-> base-changes
+                                                       (pcb/update-token-theme (ctob/toggle-set prev-hidden-theme ctob/hidden-token-theme-path) prev-hidden-theme)))
+
+                          :else base-changes))
                       ;; Either update or add token to existing set
                       (if-let [prev-token (ctob/get-token token-set (or prev-token-name (:name token)))]
                         (pcb/update-token (pcb/empty-changes) (:name token-set) token prev-token)

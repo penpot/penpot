@@ -273,6 +273,7 @@
 (def hidden-token-theme-path
   (token-theme-path hidden-token-theme-group hidden-token-theme-name))
 
+
 (defprotocol ITokenTheme
   (set-sets [_ set-names] "set the active token sets")
   (toggle-set [_ set-name] "togle a set used / not used in the theme")
@@ -346,6 +347,12 @@
      (check-token-theme! token-theme))
 
     token-theme))
+
+(defn make-hidden-token-theme
+  [& {:keys [] :as params}]
+  (make-token-theme (assoc params
+                           :group hidden-token-theme-group
+                           :name hidden-token-theme-name)))
 
 ;; === TokenThemes (collection)
 
