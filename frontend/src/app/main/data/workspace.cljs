@@ -354,7 +354,7 @@
                 (dcm/retrieve-comment-threads file-id)
                 (fetch-bundle project-id file-id))
 
-         (when (contains? cf/flags :renderer-v2)
+         (when (contains? cf/flags :renderer-v2-cpp)
            (rx/of (renderer/init)))
 
          (->> stream
