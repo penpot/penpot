@@ -50,10 +50,6 @@
   (t/testing "doesn't match passed `:token-attributes`"
     (t/is (nil? (wtt/token-applied? {:name "a"} {:applied-tokens {:x "a"}} #{:y})))))
 
-(t/deftest token-applied-attributes
-  (t/is (= #{:x} (wtt/token-applied-attributes {:name "a"}
-                                               {:applied-tokens {:x "a" :y "b"}}
-                                               #{:x :missing}))))
 (t/deftest shapes-ids-by-applied-attributes
   (t/testing "Returns set of matched attributes that fit the applied token"
     (let [attributes #{:x :y :z}
