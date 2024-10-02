@@ -320,7 +320,34 @@
       (t/is (= (ctob/set-count tokens-lib') 1))
       (t/is (= (count (:tokens token-set')) 0))
       (t/is (nil? token'))
-      (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set))))))
+      (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set)))))
+
+  (t/deftest list-active-themes-tokens-in-order
+    (let [tokens-lib  (-> (ctob/make-tokens-lib)
+                          (ctob/add-theme (ctob/make-token-theme :name "out-of-order-theme"
+                                                                 ;; Out of order sets in theme
+                                                                 :sets ["unknown-set" "set-b" "set-a"]))
+                          (ctob/set-active-themes #{"/out-of-order-theme"})
+
+                          (ctob/add-set (ctob/make-token-set :name "set-a"))
+                          (ctob/add-token-in-set "set-a" (ctob/make-token :name "set-a-token"
+                                                                          :type :boolean
+                                                                          :value true))
+                          (ctob/add-set (ctob/make-token-set :name "set-b"))
+                          (ctob/add-token-in-set "set-b" (ctob/make-token :name "set-b-token"
+                                                                          :type :boolean
+                                                                          :value true))
+
+                          (ctob/add-set (ctob/make-token-set :name "inactive-set"))
+                          (ctob/add-token-in-set "inactive-set" (ctob/make-token :name "inactive-set-token"
+                                                                                       :type :boolean
+                                                                                       :value true)))
+
+
+          expected-order (ctob/get-sets-order tokens-lib)
+          expected-tokens (ctob/get-active-themes-set-tokens tokens-lib)]
+      (t/is (= expected-order '("set-a" "set-b")))
+      (t/is (= ["set-a-token" "set-b-token"] (map key expected-tokens))))))
 
 
 (t/testing "token-theme in a lib"
