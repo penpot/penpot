@@ -155,9 +155,7 @@
       ptk/WatchEvent
       (watch [it state _]
         (let [changes (-> (pcb/empty-changes it)
-                          (pcb/add-token-set new-token-set)
-                          #_(ensure-token-theme-changes state {:id (:id new-token-set)
-                                                               :new-set? true}))]
+                          (pcb/add-token-set new-token-set))]
           (rx/of
            (set-selected-token-set-id (:name new-token-set))
            (dch/commit-changes changes)))))))
