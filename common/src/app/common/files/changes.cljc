@@ -788,112 +788,88 @@
 
 (defmethod process-change :add-token
   [data {:keys [set-name token]}]
-  (-> data
-      (update :tokens-lib
-              #(-> %
-                   (ctob/ensure-tokens-lib)
-                   (ctob/add-token-in-set set-name (ctob/make-token token))))))
+  (update data :tokens-lib #(-> %
+                                (ctob/ensure-tokens-lib)
+                                (ctob/add-token-in-set set-name (ctob/make-token token)))))
 
 (defmethod process-change :mod-token
   [data {:keys [set-name name token]}]
-  (-> data
-      (update :tokens-lib
-              #(-> %
-                   (ctob/ensure-tokens-lib)
-                   (ctob/update-token-in-set
-                    set-name
-                    name
-                    (fn [old-token]
-                      (ctob/make-token (merge old-token token))))))))
+  (update data :tokens-lib #(-> %
+                                (ctob/ensure-tokens-lib)
+                                (ctob/update-token-in-set
+                                 set-name
+                                 name
+                                 (fn [old-token]
+                                   (ctob/make-token (merge old-token token)))))))
 
 (defmethod process-change :del-token
   [data {:keys [set-name name]}]
-  (-> data
-      (update :tokens-lib
-              #(-> %
-                   (ctob/ensure-tokens-lib)
-                   (ctob/delete-token-from-set
-                    set-name
-                    name)))))
+  (update data :tokens-lib #(-> %
+                                (ctob/ensure-tokens-lib)
+                                (ctob/delete-token-from-set
+                                 set-name
+                                 name))))
 
 (defmethod process-change :add-temporary-token-theme
   [data {:keys [token-theme]}]
-  (-> data
-      (update :tokens-lib
-              #(-> %
-                   (ctob/ensure-tokens-lib)
-                   (ctob/add-theme (ctob/make-token-theme token-theme))))))
+  (update data :tokens-lib #(-> %
+                                (ctob/ensure-tokens-lib)
+                                (ctob/add-theme (ctob/make-token-theme token-theme)))))
 
 (defmethod process-change :update-active-token-themes
   [data {:keys [theme-ids]}]
-  (-> data
-      (update :tokens-lib #(-> %
-                               (ctob/ensure-tokens-lib)
-                               (ctob/set-active-themes theme-ids)))))
+  (update data :tokens-lib #(-> % (ctob/ensure-tokens-lib)
+                                (ctob/set-active-themes theme-ids))))
 
 (defmethod process-change :delete-temporary-token-theme
   [data {:keys [group name]}]
-  (-> data
-      (update :tokens-lib
-              #(-> %
-                   (ctob/ensure-tokens-lib)
-                   (ctob/delete-theme group name)))))
+  (update data :tokens-lib #(-> %
+                                (ctob/ensure-tokens-lib)
+                                (ctob/delete-theme group name))))
 
 (defmethod process-change :add-token-theme
   [data {:keys [token-theme]}]
-  (-> data
-      (update :tokens-lib
-              #(-> %
-                   (ctob/ensure-tokens-lib)
-                   (ctob/add-theme (-> token-theme
-                                       (ctob/make-token-theme)))))))
+  (update data :tokens-lib #(-> %
+                                (ctob/ensure-tokens-lib)
+                                (ctob/add-theme (-> token-theme
+                                                    (ctob/make-token-theme))))))
 
 (defmethod process-change :mod-token-theme
   [data {:keys [name group token-theme]}]
-  (-> data
-      (update :tokens-lib
-              #(-> %
-                   (ctob/ensure-tokens-lib)
-                   (ctob/update-theme group name
-                                      (fn [prev-theme]
-                                        (merge prev-theme token-theme)))))))
+  (update data :tokens-lib #(-> %
+                                (ctob/ensure-tokens-lib)
+                                (ctob/update-theme group name
+                                                   (fn [prev-theme]
+                                                     (merge prev-theme token-theme))))))
 
 (defmethod process-change :del-token-theme
   [data {:keys [group name]}]
-  (-> data
-      (update :tokens-lib
-              #(-> %
-                   (ctob/ensure-tokens-lib)
-                   (ctob/delete-theme group name)))))
+  (update data :tokens-lib #(-> %
+                                (ctob/ensure-tokens-lib)
+                                (ctob/delete-theme group name))))
 
 (defmethod process-change :add-token-set
   [data {:keys [token-set]}]
-  (-> data
-      (update :tokens-lib
-              #(-> %
-                   (ctob/ensure-tokens-lib)
-                   (ctob/add-set (ctob/make-token-set token-set))))))
+  (update data :tokens-lib #(-> %
+                                (ctob/ensure-tokens-lib)
+                                (ctob/add-set (ctob/make-token-set token-set)))))
 
 (defmethod process-change :mod-token-set
   [data {:keys [name token-set]}]
-  (-> data
-      (update :tokens-lib
-              (fn [element]
-                (let [path-changed? (not= name (:name token-set))
-                      lib (-> element
-                              (ctob/ensure-tokens-lib)
-                              (ctob/update-set name (fn [prev-set]
-                                                      (merge prev-set (dissoc token-set :tokens)))))]
-                  (cond-> lib
-                    path-changed? (ctob/update-set-name name (:name token-set))))))))
+  (update data :tokens-lib (fn [element]
+                             (let [path-changed? (not= name (:name token-set))
+                                   lib (-> element
+                                           (ctob/ensure-tokens-lib)
+                                           (ctob/update-set name (fn [prev-set]
+                                                                   (merge prev-set (dissoc token-set :tokens)))))]
+                               (cond-> lib
+                                 path-changed? (ctob/update-set-name name (:name token-set)))))))
 
 (defmethod process-change :del-token-set
   [data {:keys [name]}]
-  (-> data
-      (update :tokens-lib
-              #(-> %
-                   (ctob/ensure-tokens-lib)
-                   (ctob/delete-set name)))))
+  (update data :tokens-lib #(-> %
+                                (ctob/ensure-tokens-lib)
+                                (ctob/delete-set name))))
 
 ;; === Operations
 (defmethod process-operation :set
