@@ -135,8 +135,7 @@
                         (let [theme (-> @theme-state
                                         (update :name str/trim)
                                         (update :group str/trim)
-                                        (update :description str/trim)
-                                        (doto js/console.log))]
+                                        (update :description str/trim))]
                           (when-not (str/empty? (:name theme))
                             (on-submit theme)))
                         (on-back)))]
