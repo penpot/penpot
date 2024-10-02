@@ -43,6 +43,13 @@
               (cond-> (assoc item :label name)
                 (wtt/token-applied? item shape (or selected-attributes attributes)) (assoc :selected? true))))))
 
+(defn tokens->select-options [{:keys [shape tokens attributes selected-attributes]}]
+  (map
+   (fn [{:keys [name] :as item}]
+     (cond-> (assoc item :label name)
+       (wtt/token-applied? item shape (or selected-attributes attributes)) (assoc :selected? true)))
+   tokens))
+
 (defn tokens-name-map->select-options [{:keys [shape tokens attributes selected-attributes]}]
   (map
    (fn [[_k {:keys [name] :as item}]]

@@ -132,6 +132,13 @@
 
     token))
 
+(defn group-by-type [tokens]
+  (let [tokens' (if (or (map? tokens)
+                        (d/ordered-map? tokens))
+                  (vals tokens)
+                  tokens)]
+    (group-by :type tokens')))
+
 (defn filter-by-type [token-type tokens]
   (let [token-type? #(= token-type (:type %))]
     (cond
