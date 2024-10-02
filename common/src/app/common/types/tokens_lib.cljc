@@ -327,8 +327,7 @@
          [:description [:maybe :string]]
          [:is-source :boolean]
          [:modified-at ::sm/inst]
-         [:sets [:and [:set {:gen/max 5} :string]
-                 [:fn d/ordered-set?]]]]
+         [:sets [:set {:gen/max 5} :string]]]
    [:fn (partial instance? TokenTheme)]])
 
 (sm/register! ::token-theme schema:token-theme)
@@ -353,7 +352,7 @@
                       (update :group #(or % top-level-theme-group-name))
                       (update :is-source #(or % false))
                       (update :modified-at #(or % (dt/now)))
-                      (update :sets #(into (d/ordered-set) %)))
+                      (update :sets #(into #{} %)))
         token-theme (map->TokenTheme params)]
 
     (dm/assert!
