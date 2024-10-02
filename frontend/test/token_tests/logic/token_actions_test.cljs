@@ -6,14 +6,11 @@
    [app.common.test-helpers.shapes :as cths]
    [app.common.types.tokens-lib :as ctob]
    [app.main.ui.workspace.tokens.changes :as wtch]
-   [cljs.pprint :as pprint]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
    [token-tests.helpers.state :as tohs]
    [token-tests.helpers.tokens :as toht]))
-
-
 
 (t/use-fixtures :each
   {:before (fn []
