@@ -272,7 +272,7 @@
 
     (when (render-v2/is-enabled?)
       (mf/with-effect
-        [canvas-ref]
+        [canvas-ref base-objects]
         (let [canvas (mf/ref-val canvas-ref)]
           (p/then (render-v2/init)
                   #(render-v2/set-canvas canvas vbox base-objects)))))
