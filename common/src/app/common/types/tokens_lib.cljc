@@ -653,6 +653,7 @@
           tokens (order-theme-set theme)))
        (d/ordered-map) active-themes)))
 
+  ;; TODO Move to `update-set`
   (update-set-name [_ old-set-name new-set-name]
     (TokensLib. sets
                 set-groups
