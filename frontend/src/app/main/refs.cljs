@@ -449,7 +449,7 @@
   (l/derived :tokens-lib workspace-data))
 
 (def workspace-token-theme-groups
-  (l/derived #(some-> % ctob/get-theme-groups) tokens-lib))
+  (l/derived (d/nilf ctob/get-theme-groups) tokens-lib))
 
 (defn workspace-token-theme
   [group name]
@@ -481,13 +481,13 @@
   (l/derived #(or (some-> % ctob/get-sets) []) tokens-lib))
 
 (def workspace-active-theme-paths
-  (l/derived #(some-> % ctob/get-active-theme-paths) tokens-lib))
+  (l/derived (d/nilf ctob/get-active-theme-paths) tokens-lib))
 
 (def workspace-active-theme-paths-no-hidden
   (l/derived #(disj % ctob/hidden-token-theme-path) workspace-active-theme-paths))
 
 (def workspace-active-set-names
-  (l/derived #(some-> % ctob/get-active-themes-set-names) tokens-lib))
+  (l/derived (d/nilf ctob/get-active-themes-set-names) tokens-lib))
 
 (def workspace-active-theme-sets-tokens
   (l/derived #(or (some-> % ctob/get-active-themes-set-tokens) {}) tokens-lib))
