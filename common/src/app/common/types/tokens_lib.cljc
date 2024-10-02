@@ -627,16 +627,17 @@
           (get-active-themes this)))
 
   (get-active-themes-set-tokens [this]
-    (let [sets-order (get-sets-order this)]
+    (let [sets-order (get-sets-order this)
+          active-themes (get-active-themes this)
+          order-theme-set (fn [theme]
+                            (filter #(contains? (set (:sets theme)) %) sets-order))]
       (reduce
-       (fn [acc cur]
+       (fn [tokens theme]
          (reduce
-          (fn [acc cur]
-            (merge acc (:tokens (get-set this cur))))
-          acc
-          (let [ref-set (set (:sets cur))]
-            (filter #(contains? ref-set %) sets-order))))
-       (d/ordered-map) (get-active-themes this))))
+          (fn [tokens' cur]
+            (merge tokens' (:tokens (get-set this cur))))
+          tokens (order-theme-set theme)))
+       (d/ordered-map) active-themes)))
 
   (update-set-name [_ old-set-name new-set-name]
     (TokensLib. sets

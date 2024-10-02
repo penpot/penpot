@@ -337,7 +337,7 @@
                           (ctob/add-token-in-set "set-b" (ctob/make-token :name "set-b-token"
                                                                           :type :boolean
                                                                           :value true))
-
+                          ;; Ignore this set
                           (ctob/add-set (ctob/make-token-set :name "inactive-set"))
                           (ctob/add-token-in-set "inactive-set" (ctob/make-token :name "inactive-set-token"
                                                                                        :type :boolean
@@ -345,9 +345,10 @@
 
 
           expected-order (ctob/get-sets-order tokens-lib)
-          expected-tokens (ctob/get-active-themes-set-tokens tokens-lib)]
-      (t/is (= expected-order '("set-a" "set-b")))
-      (t/is (= ["set-a-token" "set-b-token"] (map key expected-tokens))))))
+          expected-tokens (ctob/get-active-themes-set-tokens tokens-lib)
+          expected-token-names (mapv key expected-tokens)]
+      (t/is (= '("set-a" "set-b" "inactive-set") expected-order))
+      (t/is (= ["set-a-token" "set-b-token"] expected-token-names)))))
 
 
 (t/testing "token-theme in a lib"
