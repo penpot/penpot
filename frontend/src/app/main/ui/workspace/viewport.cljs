@@ -130,6 +130,7 @@
         hover-top-frame-id (mf/use-state nil)
         frame-hover       (mf/use-state nil)
         active-frames     (mf/use-state #{})
+        canvas-set?       (mf/use-state false)
 
         ;; REFS
         [viewport-ref
@@ -269,13 +270,14 @@
 
         rule-area-size (/ rulers/ruler-area-size zoom)]
 
-
     (when (render-v2/is-enabled?)
       (mf/with-effect
-        [canvas-ref base-objects]
+        [canvas-ref vbox' @canvas-set? base-objects]
         (let [canvas (mf/ref-val canvas-ref)]
-          (p/then (render-v2/init)
-                  #(render-v2/set-canvas canvas vbox base-objects)))))
+          (when (and (some? vbox') (not @canvas-set?))
+            (swap! canvas-set? true)
+            (p/then (render-v2/init)
+                    #(render-v2/set-canvas canvas vbox' base-objects))))))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)

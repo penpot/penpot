@@ -14,6 +14,19 @@
    [promesa.core :as p]))
 
 (defonce ^:dynamic internal-module #js {})
+(defonce ^:dynamic gpu-state #js {})
+
+(defn draw-canvas [vbox objects]
+  (let [draw_rect (gobj/get ^js internal-module "_draw_rect")
+        translate (gobj/get ^js internal-module "_translate")
+        _ (js/console.log "vbox " (clj->js vbox))
+        scale (gobj/get ^js internal-module "_scale")]
+
+        (translate gpu-state (- (:x vbox)) (- (:y vbox)))
+        (doseq [shape (vals objects)]
+          (let [sr (:selrect shape)]
+            (println "*****" (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr))
+            (draw_rect gpu-state (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr))))))
 
 (defn set-canvas
   [canvas vbox objects]
@@ -22,7 +35,6 @@
                                               "depth" true
                                               "stencil" true
                                               "alpha" true})
-        _ (js/console.log "context" context)
         ;; Register the context with emscripten
         handle (.registerContext gl context {"majorVersion" 2})
         _ (.makeContextCurrent gl handle)
@@ -35,15 +47,14 @@
 
     (set! (.-width canvas) (.-clientWidth canvas))
     (set! (.-height canvas) (.-clientHeight canvas))
+    (set! gpu-state state)
 
-    (translate state (- (:x vbox)) (- (:y vbox)))
-    (doseq [shape (vals objects)]
-      (let [sr (:selrect shape)]
-        (println "-----" (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr))
-        (draw_rect state (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr))))
+    (draw-canvas vbox objects)
 
     #_(draw_rect state 100 100 500 500)
     (println "set-canvas ok" (.-width canvas) (.-height canvas))))
+
+
 
 (defn on-init
   [module']
