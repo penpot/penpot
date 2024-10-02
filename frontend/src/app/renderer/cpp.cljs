@@ -8,7 +8,8 @@
   (:require
    ["./cpp.js" :as renderer]
    [beicon.v2.core :as rx]
-   [potok.v2.core :as ptk]))
+   [potok.v2.core :as ptk]
+   [promesa.core :as p]))
 
 (defonce ^:dynamic internal-module nil)
 
@@ -25,9 +26,4 @@
 
 (defn init
   []
-  (ptk/reify ::init
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [p (renderer)]
-        (->> (rx/from p)
-             (rx/map #(on-init %)))))))
+  (p/then (renderer) #(on-init %)))

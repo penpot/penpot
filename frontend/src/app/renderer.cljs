@@ -21,7 +21,7 @@
     (renderer-rs/init)))
 
 (defn set-canvas
-  [canvas]
+  [canvas vbox base-objects]
   (cond
     ;; CPP
     (contains? cf/flags :renderer-v2-cpp)
@@ -29,4 +29,4 @@
 
     ;; Rust
     (contains? cf/flags :renderer-v2-rs)
-    (renderer-rs/set-canvas canvas)))
+    (renderer-rs/set-canvas canvas vbox base-objects)))

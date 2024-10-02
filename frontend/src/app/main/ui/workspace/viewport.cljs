@@ -275,7 +275,7 @@
         [canvas-ref]
         (let [canvas (mf/ref-val canvas-ref)]
           (p/then (renderer/init)
-                  #(renderer/set-canvas canvas)))))
+                  #(renderer/set-canvas canvas vbox base-objects)))))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)

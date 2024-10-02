@@ -105,6 +105,15 @@ pub extern "C" fn init(width: i32, height: i32) -> Box<State> {
     Box::new(state)
 }
 
+/// This is called from JS when the window is resized.
+/// # Safety
+#[no_mangle]
+pub unsafe extern "C" fn resize_surface(state: *mut State, width: i32, height: i32) {
+    let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
+    let surface = create_surface(&mut state.gpu_state, width, height);
+    state.set_surface(surface);
+}
+
 /// Draw a black rect at the specified coordinates.
 /// # Safety
 #[no_mangle]
