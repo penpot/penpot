@@ -469,7 +469,7 @@
                             (styles/get-styles-from-style-declaration)
                             ((comp update-node-fn migrate-node)))
                   styles (styles/attrs->styles attrs)]
-              (.applyStylesToSelection text-editor-instance styles))))))))
+              (.applyStylesToSelection ^js text-editor-instance styles))))))))
 
 ;; --- RESIZE UTILS
 
@@ -732,7 +732,7 @@
         (let [text-editor-instance (:workspace-editor state)
               styles (styles/attrs->styles attrs)]
           (when (some? text-editor-instance)
-            (.applyStylesToSelection text-editor-instance styles)))))))
+            (.applyStylesToSelection ^js text-editor-instance styles)))))))
 
 (defn update-all-attrs
   [ids attrs]
