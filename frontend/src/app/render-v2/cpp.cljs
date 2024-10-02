@@ -4,9 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.renderer.cpp
+(ns app.render-v2.cpp
   (:require
-   ["./cpp.js" :as renderer]
+   ["./cpp.js" :as render-v2]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]
    [promesa.core :as p]))
@@ -26,4 +26,4 @@
 
 (defn init
   []
-  (p/then (renderer) #(on-init %)))
+  (p/then (render-v2) #(on-init %)))

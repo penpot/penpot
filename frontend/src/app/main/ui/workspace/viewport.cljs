@@ -48,7 +48,7 @@
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
-   [app.renderer :as renderer]
+   [app.render-v2 :as render-v2]
    [app.util.debug :as dbg]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
@@ -270,12 +270,12 @@
         rule-area-size (/ rulers/ruler-area-size zoom)]
 
 
-    (when (renderer/is-enabled?)
+    (when (render-v2/is-enabled?)
       (mf/with-effect
         [canvas-ref]
         (let [canvas (mf/ref-val canvas-ref)]
-          (p/then (renderer/init)
-                  #(renderer/set-canvas canvas vbox base-objects)))))
+          (p/then (render-v2/init)
+                  #(render-v2/set-canvas canvas vbox base-objects)))))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -318,8 +318,8 @@
                                          :layout layout
                                          :viewport-ref viewport-ref}])]
 
-     (if (or (contains? cf/flags :renderer-v2-cpp)
-             (contains? cf/flags :renderer-v2-rs))
+     (if (or (contains? cf/flags :render-v2-v2-cpp)
+             (contains? cf/flags :render-v2-v2-rs))
        [:canvas {:id "render"
                  :ref canvas-ref
                  :class (stl/css :render-shapes)

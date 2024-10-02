@@ -4,9 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.renderer.rs
+(ns app.render-v2.rs
   (:require
-   ["./rs.js" :as renderer]
+   ["./rs.js" :as render-v2]
    [app.config :as cf]
    [beicon.v2.core :as rx]
    [goog.object :as gobj]
@@ -52,4 +52,4 @@
 
 (defn init
   []
-  (p/then (renderer) #(on-init %)))
+  (p/then (render-v2) #(on-init %)))

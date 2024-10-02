@@ -74,7 +74,6 @@
    [app.main.repo :as rp]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
-   [app.renderer :as renderer]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
