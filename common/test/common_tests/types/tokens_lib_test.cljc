@@ -6,8 +6,8 @@
 
 (ns common-tests.types.tokens-lib-test
   (:require
+   #?(:clj [app.common.fressian :as fres])
    [app.common.data :as d]
-   [app.common.fressian :as fres]
    [app.common.time :as dt]
    [app.common.transit :as tr]
    [app.common.types.tokens-lib :as ctob]
