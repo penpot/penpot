@@ -25,16 +25,16 @@
 
 (defn tokens->select-options [{:keys [shape tokens attributes selected-attributes]}]
   (map
-   (fn [{:keys [name] :as item}]
-     (cond-> (assoc item :label name)
-       (wtt/token-applied? item shape (or selected-attributes attributes)) (assoc :selected? true)))
+   (fn [{:keys [name] :as token}]
+     (cond-> (assoc token :label name)
+       (wtt/token-applied? token shape (or selected-attributes attributes)) (assoc :selected? true)))
    tokens))
 
 (defn tokens-name-map->select-options [{:keys [shape tokens attributes selected-attributes]}]
   (map
-   (fn [[_k {:keys [name] :as item}]]
-     (cond-> (assoc item :label name)
-       (wtt/token-applied? item shape (or selected-attributes attributes)) (assoc :selected? true)))
+   (fn [[_k {:keys [name] :as token}]]
+     (cond-> (assoc token :label name)
+       (wtt/token-applied? token shape (or selected-attributes attributes)) (assoc :selected? true)))
    tokens))
 
 ;; JSON export functions -------------------------------------------------------
