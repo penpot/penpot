@@ -11,8 +11,7 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.util.dom :as dom]
    [app.util.webapi :as wapi]
-   [cuerdas.core :as str]
-   [app.common.data.macros :as dm]))
+   [cuerdas.core :as str]))
 
 ;; Helpers ---------------------------------------------------------------------
 
@@ -23,25 +22,6 @@
 
 (defn maybe-resolve-token-value [{:keys [value] :as token}]
   (when value (resolve-token-value token)))
-
-(defn group-tokens-by-type
-  "Groups tokens by their `:type` property."
-  [tokens]
-  (->> (vals tokens)
-       (group-by :type)))
-
-(dm/legacy
- (defn group-tokens-by-type-OLD
-   "Groups tokens by their `:type` property."
-   [tokens]
-   (->> (vals tokens)
-        (group-by :type))))
-
-(defn tokens-name-map->select-options-OLD [{:keys [shape tokens attributes selected-attributes]}]
-  (->> (wtt/token-names-map tokens)
-       (map (fn [[_k {:keys [name] :as item}]]
-              (cond-> (assoc item :label name)
-                (wtt/token-applied? item shape (or selected-attributes attributes)) (assoc :selected? true))))))
 
 (defn tokens->select-options [{:keys [shape tokens attributes selected-attributes]}]
   (map

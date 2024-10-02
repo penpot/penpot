@@ -32,7 +32,8 @@
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]
-   [shadow.resource]))
+   [shadow.resource]
+   [app.common.types.tokens-lib :as ctob]))
 
 (def lens:token-type-open-status
   (l/derived (l/in [:workspace-tokens :open-status]) st/state))
@@ -150,7 +151,7 @@
   "Separate token-types into groups of `:empty` or `:filled` depending if tokens exist for that type.
   Sort each group alphabetically (by their `:token-key`)."
   [tokens]
-  (let [tokens-by-type (wtc/group-tokens-by-type tokens)
+  (let [tokens-by-type (ctob/group-by-type tokens)
         {:keys [empty filled]} (->> wtty/token-types
                                     (map (fn [[token-key token-type-props]]
                                            {:token-key token-key

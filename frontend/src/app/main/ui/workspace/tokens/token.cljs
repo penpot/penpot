@@ -117,16 +117,15 @@
     :ids-map {}}
    tokens))
 
-(dm/legacy
- (defn token-names-tree
-   "Convert tokens into a nested tree with their `:name` as the path."
-   [tokens]
-   (reduce
-    (fn [acc [_ {:keys [name] :as token}]]
-      (when (string? name)
-        (let [path (token-name->path name)]
-          (assoc-in acc path token))))
-    {} tokens)))
+(defn token-names-tree
+  "Convert tokens into a nested tree with their `:name` as the path."
+  [tokens]
+  (reduce
+   (fn [acc [_ {:keys [name] :as token}]]
+     (when (string? name)
+       (let [path (token-name->path name)]
+         (assoc-in acc path token))))
+   {} tokens))
 
 (defn token-name-path-exists?
   "Traverses the path from `token-name` down a `token-tree` and checks if a token at that path exists.
