@@ -35,13 +35,6 @@ impl State {
     }
 }
 
-#[no_mangle]
-pub fn add(left: f32, right: f32) -> f32 {
-    println!("left-> {}", left);
-    println!("right-> {}", right);
-    left + right
-}
-
 fn init_gl() {
     unsafe {
         gl::load_with(|addr| {
@@ -88,14 +81,12 @@ fn create_surface(gpu_state: &mut GpuState, width: i32, height: i32) -> Surface 
     .unwrap()
 }
 
-fn render_rect(surface: &mut Surface, left: f32, top: f32, right: f32, bottom: f32) {
+fn render_rect(surface: &mut Surface, rect: Rect, color: Color) {
     let mut paint = Paint::default();
     paint.set_style(PaintStyle::Fill);
-    paint.set_color(Color::BLACK);
+    paint.set_color(color);
     paint.set_anti_alias(true);
-    surface
-        .canvas()
-        .draw_rect(Rect::new(left, top, right, bottom), &paint);
+    surface.canvas().draw_rect(rect, &paint);
 }
 
 /// This is called from JS after the WebGL context has been created.
@@ -122,19 +113,14 @@ pub unsafe extern "C" fn resize_surface(state: *mut State, width: i32, height: i
 pub unsafe extern "C" fn draw_rect(
     state: *mut State,
     left: i32,
-    right: i32,
     top: i32,
+    right: i32,
     bottom: i32,
 ) {
     let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
-    //state.surface.canvas().clear(Color::WHITE);
-    render_rect(
-        &mut state.surface,
-        left as f32,
-        right as f32,
-        top as f32,
-        bottom as f32,
-    );
+    let rect = Rect::new(left as f32, top as f32, right as f32, bottom as f32);
+
+    render_rect(&mut state.surface, rect, Color::BLACK);
     state
         .gpu_state
         .context
@@ -163,10 +149,4 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
 }

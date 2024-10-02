@@ -20,14 +20,16 @@
   (let [draw-rect (gobj/get ^js internal-module "_draw_rect")
         translate (gobj/get ^js internal-module "_translate")
         reset-canvas (gobj/get ^js internal-module "_reset_canvas")
-        scale (gobj/get ^js internal-module "_scale")]
+        scale (gobj/get ^js internal-module "_scale")
+        supported-shapes (filter (fn [shape] (not= (:type shape) :frame)) (vals objects))]
 
         (js/requestAnimationFrame (fn [])
           (reset-canvas gpu-state)
           (scale gpu-state zoom zoom)
           (translate gpu-state (- (:x vbox)) (- (:y vbox)))
-          (doseq [shape (vals objects)]
+          (doseq [shape supported-shapes]
             (let [sr (:selrect shape)]
+              ;; (js/console.log (clj->js shape))
               (draw-rect gpu-state (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr)))))))
 
 (defn set-canvas
