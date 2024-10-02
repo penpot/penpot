@@ -61,18 +61,18 @@
 (defn export-tokens-file [tokens-json]
   (let [file-name "tokens.json"
         file-content (encode-tokens tokens-json)
-        blob (wapi/create-blob (clj->js file-content) "application/json")]
+        blob (wapi/create-blob file-content "application/json")]
     (dom/trigger-download file-name blob)))
 
-(defn transform-tokens-into-json-format [tokens]
+(defn tokens->dtcg-map [tokens]
   (let [global (reduce
                 (fn [acc [_ {:keys [name value type]}]]
-                  (assoc acc name {:$value value
-                                   :$type (str/camel type)}))
-                (sorted-map) tokens)]
+                  (assoc acc name {"$value" value
+                                   "$type" (str/camel type)}))
+                (d/ordered-map) tokens)]
     {:global global}))
 
 (defn download-tokens-as-json []
-  (let [all-tokens (deref refs/workspace-selected-token-set-tokens-OLD)
-        transformed-tokens-json (transform-tokens-into-json-format all-tokens)]
-    (export-tokens-file transformed-tokens-json)))
+  (let [tokens (deref refs/workspace-active-theme-sets-tokens)
+        dtcg-format-tokens-map (tokens->dtcg-map tokens)]
+    (export-tokens-file dtcg-format-tokens-map)))
