@@ -16,10 +16,6 @@
    [cljs.analyzer.api :as aapi]
    [cuerdas.core :as str]))
 
-(defmacro legacy
-  "Purely annotational macro to find instances later to remove when the refactor to tokens-lib is done."
-  [& body] `(do ~@body))
-
 (defmacro select-keys
   "A macro version of `select-keys`. Useful when keys vector is known
   at compile time (aprox 600% performance boost).
