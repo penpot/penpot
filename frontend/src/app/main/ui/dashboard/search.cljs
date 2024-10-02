@@ -19,7 +19,8 @@
 
 (mf/defc search-page
   [{:keys [team search-term] :as props}]
-  (let [result (mf/deref refs/dashboard-search-result)
+  (let [search-term (or search-term "")
+        result (mf/deref refs/dashboard-search-result)
         [rowref limit] (hooks/use-dynamic-grid-item-width)]
 
     (mf/use-effect

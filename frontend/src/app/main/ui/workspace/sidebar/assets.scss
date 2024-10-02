@@ -11,7 +11,7 @@
   height: 100%;
   grid-auto-rows: max-content;
   // TODO: ugly hack :( Fix this! we shouldn't be hardcoding this height
-  max-height: calc(100vh - $s-80);
+  height: calc(100vh - $s-92);
   scrollbar-gutter: stable;
   overflow-y: auto;
   padding-top: $s-8;
