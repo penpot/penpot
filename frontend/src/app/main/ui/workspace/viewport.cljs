@@ -281,9 +281,9 @@
               (swap! canvas-set? true))))))
       ;; redraw when vbox or shapes change
       (mf/with-effect
-        [vbox' base-objects canvas-set? zoom]
+        [vbox base-objects canvas-set? zoom]
         (when @canvas-set?
-          (render-v2/draw-canvas vbox' zoom base-objects))))
+          (render-v2/draw-canvas vbox zoom base-objects))))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)

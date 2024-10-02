@@ -22,13 +22,13 @@
         reset-canvas (gobj/get ^js internal-module "_reset_canvas")
         scale (gobj/get ^js internal-module "_scale")]
 
-        (reset-canvas gpu-state)
-        (scale gpu-state zoom zoom)
-        (translate gpu-state (- (:x vbox)) (- (:y vbox)))
-        (doseq [shape (vals objects)]
-          (let [sr (:selrect shape)]
-            (println "*****" (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr))
-            (draw-rect gpu-state (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr))))))
+        (js/requestAnimationFrame (fn [])
+          (reset-canvas gpu-state)
+          (scale gpu-state zoom zoom)
+          (translate gpu-state (- (:x vbox)) (- (:y vbox)))
+          (doseq [shape (vals objects)]
+            (let [sr (:selrect shape)]
+              (draw-rect gpu-state (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr)))))))
 
 (defn set-canvas
   [canvas vbox zoom objects]
