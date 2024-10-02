@@ -241,7 +241,7 @@
   (set-count [_] "get the total number if sets in the library")
   (get-set-tree [_] "get a nested tree of all sets in the library")
   (get-sets [_] "get an ordered sequence of all sets in the library")
-  (get-sets-order [_] "get an ordered sequence of all sets in the library")
+  (get-ordered-set-names [_] "get an ordered sequence of all sets names in the library")
   (get-set [_ set-name] "get one set looking for name")
   (get-set-group [_ set-group-path] "get the attributes of a set group"))
 
@@ -485,7 +485,7 @@
     (->> (tree-seq d/ordered-map? vals sets)
          (filter (partial instance? TokenSet))))
 
-  (get-sets-order [this]
+  (get-ordered-set-names [this]
     (map :name (get-sets this)))
 
   (set-count [this]
@@ -641,7 +641,7 @@
           (get-active-themes this)))
 
   (get-active-themes-set-tokens [this]
-    (let [sets-order (get-sets-order this)
+    (let [sets-order (get-ordered-set-names this)
           active-themes (get-active-themes this)
           order-theme-set (fn [theme]
                             (filter #(contains? (set (:sets theme)) %) sets-order))]
