@@ -166,7 +166,8 @@
            :on-toggle on-toggle-token-set
            :on-submit #(do
                          ;; TODO: We don't support set grouping for now so we rename sets for now
-                         (warn-on-try-create-token-set-group!)
+                         (when (str/includes? (:name %) "/")
+                           (warn-on-try-create-token-set-group!))
                          (on-update-token-set (avoid-token-set-grouping (:name token-set)) (update % :name avoid-token-set-grouping))
                          (on-reset))
            :on-cancel on-reset}]))
@@ -179,7 +180,8 @@
                       :on-edit on-create
                       :on-submit #(do
                                     ;; TODO: We don't support set grouping for now so we rename sets for now
-                                    (warn-on-try-create-token-set-group!)
+                                    (when (str/includes? (:name %) "/")
+                                      (warn-on-try-create-token-set-group!))
                                     (on-create-token-set (update % :name avoid-token-set-grouping))
                                     (on-reset))
                       :on-cancel on-reset}])]))
