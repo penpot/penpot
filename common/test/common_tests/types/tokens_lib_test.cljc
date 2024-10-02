@@ -344,7 +344,7 @@
                                                                                        :value true)))
 
 
-          expected-order (ctob/get-sets-order tokens-lib)
+          expected-order (ctob/get-ordered-set-names tokens-lib)
           expected-tokens (ctob/get-active-themes-set-tokens tokens-lib)
           expected-token-names (mapv key expected-tokens)]
       (t/is (= '("set-a" "set-b" "inactive-set") expected-order))
