@@ -132,6 +132,13 @@
 
     token))
 
+(defn filter-by-type [token-type tokens]
+  (let [token-type? #(= token-type (:type %))]
+    (cond
+      (d/ordered-map? tokens) (into (d/ordered-map) (filter (comp token-type? val) tokens))
+      (map? tokens) (into {} (filter (comp token-type? val) tokens))
+      :else (filter token-type? tokens))))
+
 ;; === Token Set
 
 (defprotocol ITokenSet

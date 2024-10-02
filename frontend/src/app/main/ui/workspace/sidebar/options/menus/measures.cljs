@@ -108,21 +108,21 @@
         border-radius-tokens (:border-radius tokens-by-type)
         border-radius-options (mf/use-memo
                                (mf/deps shape border-radius-tokens)
-                               #(wtc/tokens-name-map->select-options
+                               #(wtc/tokens-name-map->select-options-OLD
                                  {:shape shape
                                   :tokens border-radius-tokens
                                   :attributes (wtty/token-attributes :border-radius)}))
         sizing-tokens (:sizing tokens-by-type)
         width-options (mf/use-memo
                        (mf/deps shape sizing-tokens)
-                       #(wtc/tokens-name-map->select-options
+                       #(wtc/tokens-name-map->select-options-OLD
                          {:shape shape
                           :tokens sizing-tokens
                           :attributes (wtty/token-attributes :sizing)
                           :selected-attributes #{:width}}))
         height-options (mf/use-memo
                         (mf/deps shape sizing-tokens)
-                        #(wtc/tokens-name-map->select-options
+                        #(wtc/tokens-name-map->select-options-OLD
                           {:shape shape
                            :tokens sizing-tokens
                            :attributes (wtty/token-attributes :sizing)

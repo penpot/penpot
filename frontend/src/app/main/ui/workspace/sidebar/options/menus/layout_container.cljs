@@ -27,16 +27,18 @@
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.editable-select :refer [editable-select]]
+   [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
-   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [app.common.types.tokens-lib :as ctob]))
 
 (defn- dir-icons-refactor
   [val]
@@ -856,8 +858,10 @@
 
         shape (when-not multiple
                 (first (deref (refs/objects-by-id ids))))
-        tokens (mf/deref refs/workspace-selected-token-set-tokens-OLD)
-        spacing-tokens (mf/use-memo (mf/deps tokens) #(:spacing (wtc/group-tokens-by-type-OLD tokens)))
+        tokens (sd/use-active-theme-sets-tokens)
+        spacing-tokens (mf/use-memo
+                        (mf/deps tokens)
+                        #(ctob/filter-by-type :spacing tokens))
 
         spacing-column-options (mf/use-memo
                                 (mf/deps shape spacing-tokens)

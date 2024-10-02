@@ -502,14 +502,6 @@
 (def workspace-selected-token-set-tokens
   (l/derived #(or (wtts/get-selected-token-set-tokens %) {}) st/state))
 
-(dm/legacy
- (def workspace-selected-token-set-tokens-OLD
-   (l/derived
-    (fn [data]
-      {})
-    st/state
-    =)))
-
 ;; ---- Viewer refs
 
 (defn lookup-viewer-objects-by-id
