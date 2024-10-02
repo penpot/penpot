@@ -27,7 +27,7 @@
     (render-v2-rs/init)))
 
 (defn set-canvas
-  [canvas vbox base-objects]
+  [canvas vbox zoom base-objects]
   (cond
     ;; CPP
     (contains? cf/flags :render-v2-cpp)
@@ -35,10 +35,10 @@
 
     ;; Rust
     (contains? cf/flags :render-v2-rs)
-    (render-v2-rs/set-canvas canvas vbox base-objects)))
+    (render-v2-rs/set-canvas canvas vbox zoom base-objects)))
 
-(defn draw-canvas [vbox base-objects]
+(defn draw-canvas [vbox zoom base-objects]
   (cond
     ;; Rust
     (contains? cf/flags :render-v2-rs)
-    (render-v2-rs/draw-canvas vbox base-objects)))
+    (render-v2-rs/draw-canvas vbox zoom base-objects)))

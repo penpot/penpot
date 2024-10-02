@@ -16,13 +16,14 @@
 (defonce ^:dynamic internal-module #js {})
 (defonce ^:dynamic gpu-state #js {})
 
-(defn draw-canvas [vbox objects]
+(defn draw-canvas [vbox zoom objects]
   (let [draw-rect (gobj/get ^js internal-module "_draw_rect")
         translate (gobj/get ^js internal-module "_translate")
         reset-canvas (gobj/get ^js internal-module "_reset_canvas")
         scale (gobj/get ^js internal-module "_scale")]
 
         (reset-canvas gpu-state)
+        (scale gpu-state zoom zoom)
         (translate gpu-state (- (:x vbox)) (- (:y vbox)))
         (doseq [shape (vals objects)]
           (let [sr (:selrect shape)]
@@ -30,7 +31,7 @@
             (draw-rect gpu-state (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr))))))
 
 (defn set-canvas
-  [canvas vbox objects]
+  [canvas vbox zoom objects]
   (let [gl (gobj/get ^js internal-module "GL")
         context (.getContext canvas "webgl2" {"antialias" true
                                               "depth" true
@@ -50,12 +51,10 @@
     (set! (.-height canvas) (.-clientHeight canvas))
     (set! gpu-state state)
 
-    (draw-canvas vbox objects)
+    (draw-canvas vbox zoom objects)
 
     #_(draw_rect state 100 100 500 500)
     (println "set-canvas ok" (.-width canvas) (.-height canvas))))
-
-
 
 (defn on-init
   [module']
