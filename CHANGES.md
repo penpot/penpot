@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.2.1
+
+### :bug: Bugs fixed
+
+- Fix problem with Ctrl+F shortcut on the dashboard [Taiga #8876](https://tree.taiga.io/project/penpot/issue/8876)
+
 ## 2.2.0
 
 ### :rocket: Epics and highlights
