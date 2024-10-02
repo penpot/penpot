@@ -6094,3 +6094,6 @@ msgstr "Actualizar"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "errors.maximum-invitations-by-request-reached"
+msgstr "Se ha alcanzado el número máximo (%s) de correos electrónicos que se pueden invitar en una sola solicitud"

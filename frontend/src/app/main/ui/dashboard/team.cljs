@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
-   [app.common.spec :as us]
    [app.config :as cfg]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
@@ -30,7 +29,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
-   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -129,17 +127,10 @@
         ]
        (filterv identity)))
 
-(s/def ::emails (s/and ::us/set-of-valid-emails d/not-empty?))
-(s/def ::role  ::us/keyword)
-(s/def ::team-id ::us/uuid)
-
-(s/def ::invite-member-form
-  (s/keys :req-un [::role ::emails ::team-id]))
-
 (def ^:private schema:invite-member-form
   [:map {:title "InviteMemberForm"}
    [:role :keyword]
-   [:emails [::sm/set {:kind ::sm/email :min 1}]]
+   [:emails [::sm/set {:min 1} ::sm/email]]
    [:team-id ::sm/uuid]])
 
 (mf/defc invite-members-modal
@@ -180,6 +171,10 @@
                    (= :profile-is-muted code))
               (st/emit! (ntf/error (tr "errors.profile-is-muted"))
                         (modal/hide))
+
+              (and (= :validation type)
+                   (= :max-invitations-by-request code))
+              (swap! error-text (tr "errors.maximum-invitations-by-request-reached" (:threshold error)))
 
               (or (= :member-is-muted code)
                   (= :email-has-permanent-bounces code)
@@ -226,10 +221,9 @@
                            :name :emails
                            :auto-focus? true
                            :trim true
-                           :valid-item-fn us/parse-email
+                           :valid-item-fn sm/parse-email
                            :caution-item-fn current-members-emails
                            :label (tr "modals.invite-member.emails")
-                           :on-submit  on-submit
                            :invite-email invite-email}]]
 
       [:div {:class (stl/css :action-buttons)}
