@@ -5,6 +5,7 @@
 ### :bug: Bugs fixed
 
 - Fix problem with Ctrl+F shortcut on the dashboard [Taiga #8876](https://tree.taiga.io/project/penpot/issue/8876)
+- Fix visual problem with the font-size dropdown in assets [Taiga #8872](https://tree.taiga.io/project/penpot/issue/8872)
 
 ## 2.2.0
 
