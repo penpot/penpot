@@ -1,7 +1,7 @@
 
 var Module = (() => {
   var _scriptDir = typeof document !== 'undefined' && document.currentScript ? document.currentScript.src : undefined;
-  
+
   return (
 function(Module) {
   Module = Module || {};
@@ -38,31 +38,31 @@ Module['ready'] = new Promise(function(resolve, reject) {
         Object.defineProperty(Module['ready'], '_add', { configurable: true, get: function() { abort('You are getting _add on the Promise object, instead of the instance. Use .then() to get called back with the instance, see the MODULARIZE docs in src/settings.js') } });
         Object.defineProperty(Module['ready'], '_add', { configurable: true, set: function() { abort('You are setting _add on the Promise object, instead of the instance. Use .then() to get called back with the instance, see the MODULARIZE docs in src/settings.js') } });
       }
-    
+
 
       if (!Object.getOwnPropertyDescriptor(Module['ready'], '_fflush')) {
         Object.defineProperty(Module['ready'], '_fflush', { configurable: true, get: function() { abort('You are getting _fflush on the Promise object, instead of the instance. Use .then() to get called back with the instance, see the MODULARIZE docs in src/settings.js') } });
         Object.defineProperty(Module['ready'], '_fflush', { configurable: true, set: function() { abort('You are setting _fflush on the Promise object, instead of the instance. Use .then() to get called back with the instance, see the MODULARIZE docs in src/settings.js') } });
       }
-    
+
 
       if (!Object.getOwnPropertyDescriptor(Module['ready'], '___getTypeName')) {
         Object.defineProperty(Module['ready'], '___getTypeName', { configurable: true, get: function() { abort('You are getting ___getTypeName on the Promise object, instead of the instance. Use .then() to get called back with the instance, see the MODULARIZE docs in src/settings.js') } });
         Object.defineProperty(Module['ready'], '___getTypeName', { configurable: true, set: function() { abort('You are setting ___getTypeName on the Promise object, instead of the instance. Use .then() to get called back with the instance, see the MODULARIZE docs in src/settings.js') } });
       }
-    
+
 
       if (!Object.getOwnPropertyDescriptor(Module['ready'], '___embind_register_native_and_builtin_types')) {
         Object.defineProperty(Module['ready'], '___embind_register_native_and_builtin_types', { configurable: true, get: function() { abort('You are getting ___embind_register_native_and_builtin_types on the Promise object, instead of the instance. Use .then() to get called back with the instance, see the MODULARIZE docs in src/settings.js') } });
         Object.defineProperty(Module['ready'], '___embind_register_native_and_builtin_types', { configurable: true, set: function() { abort('You are setting ___embind_register_native_and_builtin_types on the Promise object, instead of the instance. Use .then() to get called back with the instance, see the MODULARIZE docs in src/settings.js') } });
       }
-    
+
 
       if (!Object.getOwnPropertyDescriptor(Module['ready'], 'onRuntimeInitialized')) {
         Object.defineProperty(Module['ready'], 'onRuntimeInitialized', { configurable: true, get: function() { abort('You are getting onRuntimeInitialized on the Promise object, instead of the instance. Use .then() to get called back with the instance, see the MODULARIZE docs in src/settings.js') } });
         Object.defineProperty(Module['ready'], 'onRuntimeInitialized', { configurable: true, set: function() { abort('You are setting onRuntimeInitialized on the Promise object, instead of the instance. Use .then() to get called back with the instance, see the MODULARIZE docs in src/settings.js') } });
       }
-    
+
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
@@ -213,13 +213,14 @@ if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
     scriptDirectory = '';
   }
 
+  scriptDirectory += 'renderer/cpp/';
+
   if (!(typeof window == 'object' || typeof importScripts == 'function')) throw new Error('not compiled for this environment (did you build to HTML and try to run it not on the web, or set ENVIRONMENT to something - like node - and run it someplace else - like on the web?)');
 
   // Differentiate the Web Worker from the Node Worker case, as reading must
   // be done differently.
   {
 // include: web_or_worker_shell_read.js
-  scriptDirectory += 'renderer/cpp/';
 
 
   read_ = (url) => {
@@ -661,7 +662,7 @@ function ccall(ident, returnType, argTypes, args, opts) {
 
   function convertReturnValue(ret) {
     if (returnType === 'string') {
-      
+
       return UTF8ToString(ret);
     }
     if (returnType === 'boolean') return Boolean(ret);
@@ -1249,7 +1250,7 @@ function initRuntime() {
 
   checkStackCookie();
 
-  
+
   callRuntimeCallbacks(__ATINIT__);
 }
 
@@ -1646,7 +1647,7 @@ var tempI64;
 // === Body ===
 
 var ASM_CONSTS = {
-  
+
 };
 
 
@@ -1682,7 +1683,7 @@ var ASM_CONSTS = {
         });
     }
 
-  
+
     /**
      * @param {number} ptr
      * @param {string} type
@@ -1743,7 +1744,7 @@ var ASM_CONSTS = {
       return error.stack.toString();
     }
 
-  
+
     /**
      * @param {number} ptr
      * @param {number} value
@@ -1782,7 +1783,7 @@ var ASM_CONSTS = {
       HEAP32[((___errno_location())>>2)] = value;
       return value;
     }
-  
+
   var SYSCALLS = {varargs:undefined,get:function() {
         assert(SYSCALLS.varargs != undefined);
         SYSCALLS.varargs += 4;
@@ -1794,7 +1795,7 @@ var ASM_CONSTS = {
       }};
   function ___syscall_fcntl64(fd, cmd, varargs) {
   SYSCALLS.varargs = varargs;
-  
+
       return 0;
     }
 
@@ -1804,7 +1805,7 @@ var ASM_CONSTS = {
 
   function ___syscall_ioctl(fd, op, varargs) {
   SYSCALLS.varargs = varargs;
-  
+
       return 0;
     }
 
@@ -1818,7 +1819,7 @@ var ASM_CONSTS = {
 
   function ___syscall_openat(dirfd, path, flags, varargs) {
   SYSCALLS.varargs = varargs;
-  
+
   abort('it should not be possible to operate on streams when !SYSCALLS_REQUIRE_FILESYSTEM');
   }
 
@@ -1838,7 +1839,7 @@ var ASM_CONSTS = {
               throw new TypeError('Unknown type size: ' + size);
       }
     }
-  
+
   function embind_init_charCodes() {
       var codes = new Array(256);
       for (var i = 0; i < 256; ++i) {
@@ -1855,15 +1856,15 @@ var ASM_CONSTS = {
       }
       return ret;
     }
-  
+
   var awaitingDependencies = {};
-  
+
   var registeredTypes = {};
-  
+
   var typeDependencies = {};
-  
+
   var char_0 = 48;
-  
+
   var char_9 = 57;
   function makeLegalFunctionName(name) {
       if (undefined === name) {
@@ -1887,7 +1888,7 @@ var ASM_CONSTS = {
       var errorClass = createNamedFunction(errorName, function(message) {
           this.name = errorName;
           this.message = message;
-  
+
           var stack = (new Error(message)).stack;
           if (stack !== undefined) {
               this.stack = this.toString() + '\n' +
@@ -1903,14 +1904,14 @@ var ASM_CONSTS = {
               return this.name + ': ' + this.message;
           }
       };
-  
+
       return errorClass;
     }
   var BindingError = undefined;
   function throwBindingError(message) {
       throw new BindingError(message);
     }
-  
+
   var InternalError = undefined;
   function throwInternalError(message) {
       throw new InternalError(message);
@@ -1919,7 +1920,7 @@ var ASM_CONSTS = {
       myTypes.forEach(function(type) {
           typeDependencies[type] = dependentTypes;
       });
-  
+
       function onComplete(typeConverters) {
           var myTypeConverters = getTypeConverters(typeConverters);
           if (myTypeConverters.length !== myTypes.length) {
@@ -1929,7 +1930,7 @@ var ASM_CONSTS = {
               registerType(myTypes[i], myTypeConverters[i]);
           }
       }
-  
+
       var typeConverters = new Array(dependentTypes.length);
       var unregisteredTypes = [];
       var registered = 0;
@@ -1959,7 +1960,7 @@ var ASM_CONSTS = {
       if (!('argPackAdvance' in registeredInstance)) {
           throw new TypeError('registerType registeredInstance requires argPackAdvance');
       }
-  
+
       var name = registeredInstance.name;
       if (!rawType) {
           throwBindingError('type "' + name + '" must have a positive integer typeid pointer');
@@ -1971,10 +1972,10 @@ var ASM_CONSTS = {
               throwBindingError("Cannot register type '" + name + "' twice");
           }
       }
-  
+
       registeredTypes[rawType] = registeredInstance;
       delete typeDependencies[rawType];
-  
+
       if (awaitingDependencies.hasOwnProperty(rawType)) {
         var callbacks = awaitingDependencies[rawType];
         delete awaitingDependencies[rawType];
@@ -1983,7 +1984,7 @@ var ASM_CONSTS = {
     }
   function __embind_register_bool(rawType, name, size, trueValue, falseValue) {
       var shift = getShiftFromSize(size);
-  
+
       name = readLatin1String(name);
       registerType(rawType, {
           name: name,
@@ -2024,7 +2025,7 @@ var ASM_CONSTS = {
     }
 
   var emval_free_list = [];
-  
+
   var emval_handle_array = [{},{value:undefined},{value:null},{value:true},{value:false}];
   function __emval_decref(handle) {
       if (handle > 4 && 0 === --emval_handle_array[handle].refcount) {
@@ -2032,7 +2033,7 @@ var ASM_CONSTS = {
         emval_free_list.push(handle);
       }
     }
-  
+
   function count_emval_handles() {
       var count = 0;
       for (var i = 5; i < emval_handle_array.length; ++i) {
@@ -2042,7 +2043,7 @@ var ASM_CONSTS = {
       }
       return count;
     }
-  
+
   function get_first_emval() {
       for (var i = 5; i < emval_handle_array.length; ++i) {
         if (emval_handle_array[i] !== undefined) {
@@ -2070,13 +2071,13 @@ var ASM_CONSTS = {
             var handle = emval_free_list.length ?
                 emval_free_list.pop() :
                 emval_handle_array.length;
-  
+
             emval_handle_array[handle] = {refcount: 1, value: value};
             return handle;
           }
         }
       }};
-  
+
   function simpleReadValueFromPointer(pointer) {
       return this['fromWireType'](HEAP32[((pointer)>>2)]);
     }
@@ -2095,7 +2096,7 @@ var ASM_CONSTS = {
         'argPackAdvance': 8,
         'readValueFromPointer': simpleReadValueFromPointer,
         destructorFunction: null, // This type does not need a destructor
-  
+
         // TODO: do we need a deleteObject here?  write a test where
         // emval is passed into JS via an interface
       });
@@ -2112,7 +2113,7 @@ var ASM_CONSTS = {
           return '' + v;
       }
     }
-  
+
   function floatReadValueFromPointer(name, shift) {
       switch (shift) {
           case 2: return function(pointer) {
@@ -2167,11 +2168,11 @@ var ASM_CONSTS = {
       var dummy = createNamedFunction(constructor.name || 'unknownFunctionName', function(){});
       dummy.prototype = constructor.prototype;
       var obj = new dummy;
-  
+
       var r = constructor.apply(obj, argumentList);
       return (r instanceof Object) ? r : obj;
     }
-  
+
   function runDestructors(destructors) {
       while (destructors.length) {
         var ptr = destructors.pop();
@@ -2189,32 +2190,32 @@ var ASM_CONSTS = {
       // cppInvokerFunc: JS Function object to the C++-side function that interops into C++ code.
       // cppTargetFunc: Function pointer (an integer to FUNCTION_TABLE) to the target C++ function the cppInvokerFunc will end up calling.
       var argCount = argTypes.length;
-  
+
       if (argCount < 2) {
         throwBindingError("argTypes array size mismatch! Must at least get return value and 'this' types!");
       }
-  
+
       var isClassMethodFunc = (argTypes[1] !== null && classType !== null);
-  
+
       // Free functions with signature "void function()" do not need an invoker that marshalls between wire types.
   // TODO: This omits argument count check - enable only at -O3 or similar.
   //    if (ENABLE_UNSAFE_OPTS && argCount == 2 && argTypes[0].name == "void" && !isClassMethodFunc) {
   //       return FUNCTION_TABLE[fn];
   //    }
-  
+
       // Determine if we need to use a dynamic stack to store the destructors for the function parameters.
       // TODO: Remove this completely once all function invokers are being dynamically generated.
       var needsDestructorStack = false;
-  
+
       for (var i = 1; i < argTypes.length; ++i) { // Skip return value at index 0 - it's not deleted here.
         if (argTypes[i] !== null && argTypes[i].destructorFunction === undefined) { // The type does not define a destructor function - must use dynamic stack
           needsDestructorStack = true;
           break;
         }
       }
-  
+
       var returns = (argTypes[0].name !== "void");
-  
+
       var expectedArgCount = argCount - 2;
       var argsWired = new Array(expectedArgCount);
       var invokerFuncArgs = [];
@@ -2237,9 +2238,9 @@ var ASM_CONSTS = {
           argsWired[i] = argTypes[i + 2]['toWireType'](destructors, arguments[i]);
           invokerFuncArgs.push(argsWired[i]);
         }
-  
+
         var rv = cppInvokerFunc.apply(null, invokerFuncArgs);
-  
+
         function onDone(rv) {
           if (needsDestructorStack) {
             runDestructors(destructors);
@@ -2251,16 +2252,16 @@ var ASM_CONSTS = {
               }
             }
           }
-  
+
           if (returns) {
             return argTypes[0]['fromWireType'](rv);
           }
         }
-  
+
         return onDone(rv);
       };
     }
-  
+
   function ensureOverloadTable(proto, methodName, humanName) {
       if (undefined === proto[methodName].overloadTable) {
         var prevFunc = proto[methodName];
@@ -2283,7 +2284,7 @@ var ASM_CONSTS = {
         if (undefined === numArguments || (undefined !== Module[name].overloadTable && undefined !== Module[name].overloadTable[numArguments])) {
           throwBindingError("Cannot register public name '" + name + "' twice");
         }
-  
+
         // We are exposing a function with the same name as an existing function. Create an overload table and a function selector
         // that routes between the two.
         ensureOverloadTable(Module, name, name);
@@ -2300,7 +2301,7 @@ var ASM_CONSTS = {
         }
       }
     }
-  
+
   function heap32VectorToArray(count, firstElement) {
       var array = [];
       for (var i = 0; i < count; i++) {
@@ -2310,7 +2311,7 @@ var ASM_CONSTS = {
       }
       return array;
     }
-  
+
   /** @param {number=} numArguments */
   function replacePublicSymbol(name, value, numArguments) {
       if (!Module.hasOwnProperty(name)) {
@@ -2325,7 +2326,7 @@ var ASM_CONSTS = {
         Module[name].argCount = numArguments;
       }
     }
-  
+
   function dynCallLegacy(sig, ptr, args) {
       assert(('dynCall_' + sig) in Module, 'bad function pointer type - no table for sig \'' + sig + '\'');
       if (args && args.length) {
@@ -2360,23 +2361,23 @@ var ASM_CONSTS = {
     }
   function embind__requireFunction(signature, rawFunction) {
       signature = readLatin1String(signature);
-  
+
       function makeDynCaller() {
         if (signature.includes('j')) {
           return getDynCaller(signature, rawFunction);
         }
         return getWasmTableEntry(rawFunction);
       }
-  
+
       var fp = makeDynCaller();
       if (typeof fp != "function") {
           throwBindingError("unknown function pointer with signature " + signature + ": " + rawFunction);
       }
       return fp;
     }
-  
+
   var UnboundTypeError = undefined;
-  
+
   function getTypeName(type) {
       var ptr = ___getTypeName(type);
       var rv = readLatin1String(ptr);
@@ -2401,19 +2402,19 @@ var ASM_CONSTS = {
         seen[type] = true;
       }
       types.forEach(visit);
-  
+
       throw new UnboundTypeError(message + ': ' + unboundTypes.map(getTypeName).join([', ']));
     }
   function __embind_register_function(name, argCount, rawArgTypesAddr, signature, rawInvoker, fn) {
       var argTypes = heap32VectorToArray(argCount, rawArgTypesAddr);
       name = readLatin1String(name);
-  
+
       rawInvoker = embind__requireFunction(signature, rawInvoker);
-  
+
       exposePublicSymbol(name, function() {
           throwUnboundTypeError('Cannot call ' + name + ' due to unbound types', argTypes);
       }, argCount - 1);
-  
+
       whenDependentTypesAreResolved([], argTypes, function(argTypes) {
           var invokerArgsArray = [argTypes[0] /* return value */, null /* no class 'this'*/].concat(argTypes.slice(1) /* actual params */);
           replacePublicSymbol(name, craftInvokerFunction(name, invokerArgsArray, null /* no class 'this'*/, rawInvoker, fn), argCount - 1);
@@ -2444,16 +2445,16 @@ var ASM_CONSTS = {
       if (maxRange === -1) {
           maxRange = 4294967295;
       }
-  
+
       var shift = getShiftFromSize(size);
-  
+
       var fromWireType = (value) => value;
-  
+
       if (minRange === 0) {
           var bitshift = 32 - 8*size;
           fromWireType = (value) => (value << bitshift) >>> bitshift;
       }
-  
+
       var isUnsignedType = (name.includes('unsigned'));
       var checkAssertions = (value, toTypeName) => {
           if (typeof value != "number" && typeof value != "boolean") {
@@ -2498,9 +2499,9 @@ var ASM_CONSTS = {
         Float32Array,
         Float64Array,
       ];
-  
+
       var TA = typeMapping[dataTypeIndex];
-  
+
       function decodeMemoryView(handle) {
         handle = handle >> 2;
         var heap = HEAPU32;
@@ -2508,7 +2509,7 @@ var ASM_CONSTS = {
         var data = heap[handle + 1]; // byte offset into emscripten heap
         return new TA(buffer, data, size);
       }
-  
+
       name = readLatin1String(name);
       registerType(rawType, {
         name: name,
@@ -2525,13 +2526,13 @@ var ASM_CONSTS = {
       var stdStringIsUTF8
       //process only std::string bindings with UTF8 support, in contrast to e.g. std::basic_string<unsigned char>
       = (name === "std::string");
-  
+
       registerType(rawType, {
           name: name,
           'fromWireType': function(value) {
               var length = HEAPU32[((value)>>2)];
               var payload = value + 4;
-  
+
               var str;
               if (stdStringIsUTF8) {
                   var decodeStartPtr = payload;
@@ -2557,19 +2558,19 @@ var ASM_CONSTS = {
                   }
                   str = a.join('');
               }
-  
+
               _free(value);
-  
+
               return str;
           },
           'toWireType': function(destructors, value) {
               if (value instanceof ArrayBuffer) {
                   value = new Uint8Array(value);
               }
-  
+
               var length;
               var valueIsOfTypeString = (typeof value == 'string');
-  
+
               if (!(valueIsOfTypeString || value instanceof Uint8Array || value instanceof Uint8ClampedArray || value instanceof Int8Array)) {
                   throwBindingError('Cannot pass non-string to std::string');
               }
@@ -2578,7 +2579,7 @@ var ASM_CONSTS = {
               } else {
                   length = value.length;
               }
-  
+
               // assumes 4-byte alignment
               var base = _malloc(4 + length + 1);
               var ptr = base + 4;
@@ -2601,7 +2602,7 @@ var ASM_CONSTS = {
                       }
                   }
               }
-  
+
               if (destructors !== null) {
                   destructors.push(_free, base);
               }
@@ -2636,7 +2637,7 @@ var ASM_CONSTS = {
           var length = HEAPU32[value >> 2];
           var HEAP = getHeap();
           var str;
-  
+
           var decodeStartPtr = value + 4;
           // Looping here to support possible embedded '0' bytes
           for (var i = 0; i <= length; ++i) {
@@ -2653,23 +2654,23 @@ var ASM_CONSTS = {
               decodeStartPtr = currentBytePtr + charSize;
             }
           }
-  
+
           _free(value);
-  
+
           return str;
         },
         'toWireType': function(destructors, value) {
           if (!(typeof value == 'string')) {
             throwBindingError('Cannot pass non-string to C++ string type ' + name);
           }
-  
+
           // assumes 4-byte alignment
           var length = lengthBytesUTF(value);
           var ptr = _malloc(4 + length + charSize);
           HEAPU32[ptr >> 2] = length >> shift;
-  
+
           encodeString(value, ptr + 4, length + charSize);
-  
+
           if (destructors !== null) {
             destructors.push(_free, ptr);
           }
@@ -2732,7 +2733,7 @@ var ASM_CONSTS = {
         return 1;
       }
     }
-  
+
   function __webgl_enable_OES_vertex_array_object(ctx) {
       // Extension available in WebGL 1 from Firefox 25 and WebKit 536.28/desktop Safari 6.0.3 onwards. Core feature in WebGL 2.
       var ext = ctx.getExtension('OES_vertex_array_object');
@@ -2744,7 +2745,7 @@ var ASM_CONSTS = {
         return 1;
       }
     }
-  
+
   function __webgl_enable_WEBGL_draw_buffers(ctx) {
       // Extension available in WebGL 1 from Firefox 28 onwards. Core feature in WebGL 2.
       var ext = ctx.getExtension('WEBGL_draw_buffers');
@@ -2753,17 +2754,17 @@ var ASM_CONSTS = {
         return 1;
       }
     }
-  
+
   function __webgl_enable_WEBGL_draw_instanced_base_vertex_base_instance(ctx) {
       // Closure is expected to be allowed to minify the '.dibvbi' property, so not accessing it quoted.
       return !!(ctx.dibvbi = ctx.getExtension('WEBGL_draw_instanced_base_vertex_base_instance'));
     }
-  
+
   function __webgl_enable_WEBGL_multi_draw_instanced_base_vertex_base_instance(ctx) {
       // Closure is expected to be allowed to minify the '.mdibvbi' property, so not accessing it quoted.
       return !!(ctx.mdibvbi = ctx.getExtension('WEBGL_multi_draw_instanced_base_vertex_base_instance'));
     }
-  
+
   function __webgl_enable_WEBGL_multi_draw(ctx) {
       // Closure is expected to be allowed to minify the '.multiDrawWebgl' property, so not accessing it quoted.
       return !!(ctx.multiDrawWebgl = ctx.getExtension('WEBGL_multi_draw'));
@@ -2786,7 +2787,7 @@ var ASM_CONSTS = {
         }
         return source;
       },createContext:function(/** @type {HTMLCanvasElement} */ canvas, webGLContextAttributes) {
-  
+
         // BUG: Workaround Safari WebGL issue: After successfully acquiring WebGL context on a canvas,
         // calling .getContext() will always return that context independent of which 'webgl' or 'webgl2'
         // context version was passed. See https://bugs.webkit.org/show_bug.cgi?id=222758 and
@@ -2801,8 +2802,8 @@ var ASM_CONSTS = {
           }
           canvas.getContext = fixedGetContext;
         }
-  
-        var ctx = 
+
+        var ctx =
           (webGLContextAttributes.majorVersion > 1)
           ?
             canvas.getContext("webgl2", webGLContextAttributes)
@@ -2810,33 +2811,33 @@ var ASM_CONSTS = {
           (canvas.getContext("webgl", webGLContextAttributes)
             // https://caniuse.com/#feat=webgl
             );
-  
+
         if (!ctx) return 0;
-  
+
         var handle = GL.registerContext(ctx, webGLContextAttributes);
-  
+
         return handle;
       },registerContext:function(ctx, webGLContextAttributes) {
         // without pthreads a context is just an integer ID
         var handle = GL.getNewId(GL.contexts);
-  
+
         var context = {
           handle: handle,
           attributes: webGLContextAttributes,
           version: webGLContextAttributes.majorVersion,
           GLctx: ctx
         };
-  
+
         // Store the created context object so that we can access the context given a canvas without having to pass the parameters again.
         if (ctx.canvas) ctx.canvas.GLctxObject = context;
         GL.contexts[handle] = context;
         if (typeof webGLContextAttributes.enableExtensionsByDefault == 'undefined' || webGLContextAttributes.enableExtensionsByDefault) {
           GL.initExtensions(context);
         }
-  
+
         return handle;
       },makeContextCurrent:function(contextHandle) {
-  
+
         GL.currentContext = GL.contexts[contextHandle]; // Active Emscripten GL layer context object.
         Module.ctx = GLctx = GL.currentContext && GL.currentContext.GLctx; // Active WebGL context object.
         return !(contextHandle && !GLctx);
@@ -2850,14 +2851,14 @@ var ASM_CONSTS = {
       },initExtensions:function(context) {
         // If this function is called without a specific context object, init the extensions of the currently active context.
         if (!context) context = GL.currentContext;
-  
+
         if (context.initExtensionsDone) return;
         context.initExtensionsDone = true;
-  
+
         var GLctx = context.GLctx;
-  
+
         // Detect the presence of a few extensions manually, this GL interop layer itself will need to know if they exist.
-  
+
         // Extensions that are only available in WebGL 1 (the calls will be no-ops if called on a WebGL 2 context active)
         __webgl_enable_ANGLE_instanced_arrays(GLctx);
         __webgl_enable_OES_vertex_array_object(GLctx);
@@ -2865,14 +2866,14 @@ var ASM_CONSTS = {
         // Extensions that are available from WebGL >= 2 (no-op if called on a WebGL 1 context active)
         __webgl_enable_WEBGL_draw_instanced_base_vertex_base_instance(GLctx);
         __webgl_enable_WEBGL_multi_draw_instanced_base_vertex_base_instance(GLctx);
-  
+
         // On WebGL 2, EXT_disjoint_timer_query is replaced with an alternative
         // that's based on core APIs, and exposes only the queryCounterEXT()
         // entrypoint.
         if (context.version >= 2) {
           GLctx.disjointTimerQueryExt = GLctx.getExtension("EXT_disjoint_timer_query_webgl2");
         }
-  
+
         // However, Firefox exposes the WebGL 1 version on WebGL 2 as well and
         // thus we look for the WebGL 1 version again if the WebGL 2 version
         // isn't present. https://bugzilla.mozilla.org/show_bug.cgi?id=1328882
@@ -2880,9 +2881,9 @@ var ASM_CONSTS = {
         {
           GLctx.disjointTimerQueryExt = GLctx.getExtension("EXT_disjoint_timer_query");
         }
-  
+
         __webgl_enable_WEBGL_multi_draw(GLctx);
-  
+
         // .getSupportedExtensions() can return null if context is lost, so coerce to empty array.
         var exts = GLctx.getSupportedExtensions() || [];
         exts.forEach(function(ext) {
@@ -2904,7 +2905,7 @@ var ASM_CONSTS = {
     }
 
   function _emscripten_glBindBuffer(target, buffer) {
-  
+
       if (target == 0x88EB /*GL_PIXEL_PACK_BUFFER*/) {
         // In WebGL 2 glReadPixels entry point, we need to use a different WebGL 2 API function call when a buffer is bound to
         // GL_PIXEL_PACK_BUFFER_BINDING point, so must keep track whether that binding point is non-null to know what is
@@ -2922,9 +2923,9 @@ var ASM_CONSTS = {
     }
 
   function _emscripten_glBindFramebuffer(target, framebuffer) {
-  
+
       GLctx.bindFramebuffer(target, GL.framebuffers[framebuffer]);
-  
+
     }
 
   function _emscripten_glBindRenderbuffer(target, renderbuffer) {
@@ -2956,7 +2957,7 @@ var ASM_CONSTS = {
   function _emscripten_glBlitFramebuffer(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9) { GLctx['blitFramebuffer'](x0, x1, x2, x3, x4, x5, x6, x7, x8, x9) }
 
   function _emscripten_glBufferData(target, size, data, usage) {
-  
+
       if (GL.currentContext.version >= 2) { // WebGL 2 provides new garbage-free entry points to call to WebGL. Use those always when possible.
         // If size is zero, WebGL would interpret uploading the whole input arraybuffer (starting from given offset), which would
         // not make sense in WebAssembly, so avoid uploading if size is zero. However we must still call bufferData to establish a
@@ -3055,7 +3056,7 @@ var ASM_CONSTS = {
   function _emscripten_glCreateShader(shaderType) {
       var id = GL.getNewId(GL.shaders);
       GL.shaders[id] = GLctx.createShader(shaderType);
-  
+
       return id;
     }
 
@@ -3065,15 +3066,15 @@ var ASM_CONSTS = {
       for (var i = 0; i < n; i++) {
         var id = HEAP32[(((buffers)+(i*4))>>2)];
         var buffer = GL.buffers[id];
-  
+
         // From spec: "glDeleteBuffers silently ignores 0's and names that do not
         // correspond to existing buffer objects."
         if (!buffer) continue;
-  
+
         GLctx.deleteBuffer(buffer);
         buffer.name = 0;
         GL.buffers[id] = null;
-  
+
         if (id == GLctx.currentPixelPackBufferBinding) GLctx.currentPixelPackBufferBinding = 0;
         if (id == GLctx.currentPixelUnpackBufferBinding) GLctx.currentPixelUnpackBufferBinding = 0;
       }
@@ -3185,9 +3186,9 @@ var ASM_CONSTS = {
     }
 
   function _emscripten_glDrawArrays(mode, first, count) {
-  
+
       GLctx.drawArrays(mode, first, count);
-  
+
     }
 
   function _emscripten_glDrawArraysInstanced(mode, first, count, primcount) {
@@ -3200,19 +3201,19 @@ var ASM_CONSTS = {
 
   var tempFixedLengthArray = [];
   function _emscripten_glDrawBuffers(n, bufs) {
-  
+
       var bufArray = tempFixedLengthArray[n];
       for (var i = 0; i < n; i++) {
         bufArray[i] = HEAP32[(((bufs)+(i*4))>>2)];
       }
-  
+
       GLctx['drawBuffers'](bufArray);
     }
 
   function _emscripten_glDrawElements(mode, count, type, indices) {
-  
+
       GLctx.drawElements(mode, count, type, indices);
-  
+
     }
 
   function _emscripten_glDrawElementsInstanced(mode, count, type, indices, primcount) {
@@ -3224,9 +3225,9 @@ var ASM_CONSTS = {
     }
 
   function _glDrawElements(mode, count, type, indices) {
-  
+
       GLctx.drawElements(mode, count, type, indices);
-  
+
     }
   function _emscripten_glDrawRangeElements(mode, start, end, count, type, indices) {
       // TODO: This should be a trivial pass-though function registered at the bottom of this page as
@@ -3340,7 +3341,7 @@ var ASM_CONSTS = {
   function readI53FromI64(ptr) {
       return HEAPU32[ptr>>2] + HEAP32[ptr+4>>2] * 4294967296;
     }
-  
+
   function readI53FromU64(ptr) {
       return HEAPU32[ptr>>2] + HEAPU32[ptr+4>>2] * 4294967296;
     }
@@ -3379,7 +3380,7 @@ var ASM_CONSTS = {
           var formats = GLctx.getParameter(0x86A3 /*GL_COMPRESSED_TEXTURE_FORMATS*/);
           ret = formats ? formats.length : 0;
           break;
-  
+
         case 0x821D: // GL_NUM_EXTENSIONS
           if (GL.currentContext.version < 2) {
             GL.recordError(0x502 /* GL_INVALID_OPERATION */); // Calling GLES3/WebGL2 function with a GLES2/WebGL1 context
@@ -3398,7 +3399,7 @@ var ASM_CONSTS = {
           ret = name_ == 0x821B ? 3 : 0; // return version 3.0
           break;
       }
-  
+
       if (ret === undefined) {
         var result = GLctx.getParameter(name_);
         switch (typeof result) {
@@ -3471,7 +3472,7 @@ var ASM_CONSTS = {
             return;
         }
       }
-  
+
       switch (type) {
         case 1: writeI53ToI64(p, ret); break;
         case 0: HEAP32[((p)>>2)] = ret; break;
@@ -3510,14 +3511,14 @@ var ASM_CONSTS = {
         GL.recordError(0x501 /* GL_INVALID_VALUE */);
         return;
       }
-  
+
       if (program >= GL.counter) {
         GL.recordError(0x501 /* GL_INVALID_VALUE */);
         return;
       }
-  
+
       program = GL.programs[program];
-  
+
       if (pname == 0x8B84) { // GL_INFO_LOG_LENGTH
         var log = GLctx.getProgramInfoLog(program);
         if (log === null) log = '(unknown error)';
@@ -3624,7 +3625,7 @@ var ASM_CONSTS = {
             }
             ret = s && stringToNewUTF8(s);
             break;
-  
+
           case 0x1F02 /* GL_VERSION */:
             var glVersion = GLctx.getParameter(0x1F02 /*GL_VERSION*/);
             // return GLES version string corresponding to the version of the WebGL context
@@ -3673,7 +3674,7 @@ var ASM_CONSTS = {
           var exts = GLctx.getSupportedExtensions() || []; // .getSupportedExtensions() can return null if context is lost, so coerce to empty array.
           exts = exts.concat(exts.map(function(e) { return "GL_" + e; }));
           exts = exts.map(function(e) { return stringToNewUTF8(e); });
-  
+
           stringiCache = GL.stringiCache[name] = exts;
           if (index < 0 || index >= stringiCache.length) {
             GL.recordError(0x501/*GL_INVALID_VALUE*/);
@@ -3690,7 +3691,7 @@ var ASM_CONSTS = {
   function jstoi_q(str) {
       return parseInt(str);
     }
-  
+
   /** @noinline */
   function webglGetLeftBracePos(name) {
       return name.slice(-1) == ']' && name.lastIndexOf('[');
@@ -3699,7 +3700,7 @@ var ASM_CONSTS = {
       var uniformLocsById = program.uniformLocsById, // Maps GLuint -> WebGLUniformLocation
         uniformSizeAndIdsByName = program.uniformSizeAndIdsByName, // Maps name -> [uniform array length, GLuint]
         i, j;
-  
+
       // On the first time invocation of glGetUniformLocation on this shader program:
       // initialize cache data structures and discover which uniforms are arrays.
       if (!uniformLocsById) {
@@ -3707,14 +3708,14 @@ var ASM_CONSTS = {
         program.uniformLocsById = uniformLocsById = {};
         // maps integer locations back to uniform name strings, so that we can lazily fetch uniform array locations
         program.uniformArrayNamesById = {};
-  
+
         for (i = 0; i < GLctx.getProgramParameter(program, 0x8B86/*GL_ACTIVE_UNIFORMS*/); ++i) {
           var u = GLctx.getActiveUniform(program, i);
           var nm = u.name;
           var sz = u.size;
           var lb = webglGetLeftBracePos(nm);
           var arrayName = lb > 0 ? nm.slice(0, lb) : nm;
-  
+
           // Assign a new location.
           var id = program.uniformIdCounter;
           program.uniformIdCounter += sz;
@@ -3724,7 +3725,7 @@ var ASM_CONSTS = {
           // application fills arrays always in full starting from the first
           // element of the array.
           uniformSizeAndIdsByName[arrayName] = [sz, id];
-  
+
           // Store placeholder integers in place that highlight that these
           // >0 index locations are array indices pending population.
           for(j = 0; j < sz; ++j) {
@@ -3735,31 +3736,31 @@ var ASM_CONSTS = {
       }
     }
   function _emscripten_glGetUniformLocation(program, name) {
-  
+
       name = UTF8ToString(name);
-  
+
       if (program = GL.programs[program]) {
         webglPrepareUniformLocationsBeforeFirstUse(program);
         var uniformLocsById = program.uniformLocsById; // Maps GLuint -> WebGLUniformLocation
         var arrayIndex = 0;
         var uniformBaseName = name;
-  
+
         // Invariant: when populating integer IDs for uniform locations, we must maintain the precondition that
         // arrays reside in contiguous addresses, i.e. for a 'vec4 colors[10];', colors[4] must be at location colors[0]+4.
         // However, user might call glGetUniformLocation(program, "colors") for an array, so we cannot discover based on the user
         // input arguments whether the uniform we are dealing with is an array. The only way to discover which uniforms are arrays
         // is to enumerate over all the active uniforms in the program.
         var leftBrace = webglGetLeftBracePos(name);
-  
+
         // If user passed an array accessor "[index]", parse the array index off the accessor.
         if (leftBrace > 0) {
           arrayIndex = jstoi_q(name.slice(leftBrace + 1)) >>> 0; // "index]", coerce parseInt(']') with >>>0 to treat "foo[]" as "foo[0]" and foo[-1] as unsigned out-of-bounds.
           uniformBaseName = name.slice(0, leftBrace);
         }
-  
+
         // Have we cached the location of this uniform before?
         var sizeAndId = program.uniformSizeAndIdsByName[uniformBaseName]; // A pair [array length, GLint of the uniform location]
-  
+
         // If an uniform with this name exists, and if its index is within the array limits (if it's even an array),
         // query the WebGLlocation, or return an existing cached location.
         if (sizeAndId && arrayIndex < sizeAndId[0]) {
@@ -3782,7 +3783,7 @@ var ASM_CONSTS = {
       for (var i = 0; i < numAttachments; i++) {
         list[i] = HEAP32[(((attachments)+(i*4))>>2)];
       }
-  
+
       GLctx['invalidateFramebuffer'](target, list);
     }
 
@@ -3791,7 +3792,7 @@ var ASM_CONSTS = {
       for (var i = 0; i < numAttachments; i++) {
         list[i] = HEAP32[(((attachments)+(i*4))>>2)];
       }
-  
+
       GLctx['invalidateSubFramebuffer'](target, list, x, y, width, height);
     }
 
@@ -3813,7 +3814,7 @@ var ASM_CONSTS = {
       // Invalidate earlier computed uniform->ID mappings, those have now become stale
       program.uniformLocsById = 0; // Mark as null-like so that glGetUniformLocation() knows to populate this again.
       program.uniformSizeAndIdsByName = {};
-  
+
     }
 
   function _emscripten_glMultiDrawArraysInstancedBaseInstanceWEBGL(mode, firsts, counts, instanceCounts, baseInstances, drawCount) {
@@ -3864,7 +3865,7 @@ var ASM_CONSTS = {
       var alignedRowSize = roundedToNextMultipleOf(plainRowSize, alignment);
       return height * alignedRowSize;
     }
-  
+
   function __colorChannelsInGlTextureFormat(format) {
       // Micro-optimizations for size: map format to size by subtracting smallest enum value (0x1902) from all values first.
       // Also omit the most common size value (1) from the list, which is assumed by formats not on the list.
@@ -3886,7 +3887,7 @@ var ASM_CONSTS = {
       };
       return colorChannels[format - 0x1902]||1;
     }
-  
+
   function heapObjectForWebGLType(type) {
       // Micro-optimization for size: Subtract lowest GL enum number (0x1400/* GL_BYTE */) from type to compare
       // smaller values for the heap, for shorter generated code size.
@@ -3894,15 +3895,15 @@ var ASM_CONSTS = {
       // (since most types are HEAPU16)
       type -= 0x1400;
       if (type == 0) return HEAP8;
-  
+
       if (type == 1) return HEAPU8;
-  
+
       if (type == 2) return HEAP16;
-  
+
       if (type == 4) return HEAP32;
-  
+
       if (type == 6) return HEAPF32;
-  
+
       if (type == 5
         || type == 28922
         || type == 28520
@@ -3910,10 +3911,10 @@ var ASM_CONSTS = {
         || type == 30782
         )
         return HEAPU32;
-  
+
       return HEAPU16;
     }
-  
+
   function heapAccessShiftForWebGLHeap(heap) {
       return 31 - Math.clz32(heap.BYTES_PER_ELEMENT);
     }
@@ -3964,7 +3965,7 @@ var ASM_CONSTS = {
 
   function _emscripten_glShaderSource(shader, count, string, length) {
       var source = GL.getSource(shader, count, string, length);
-  
+
       GLctx.shaderSource(GL.shaders[shader], source);
     }
 
@@ -4032,11 +4033,11 @@ var ASM_CONSTS = {
 
   function webglGetUniformLocation(location) {
       var p = GLctx.currentProgram;
-  
+
       if (p) {
         var webglLoc = p.uniformLocsById[location];
         // p.uniformLocsById[location] stores either an integer, or a WebGLUniformLocation.
-  
+
         // If an integer, we have not yet bound the location, so do it now. The integer value specifies the array index
         // we should bind to.
         if (typeof webglLoc == 'number') {
@@ -4054,12 +4055,12 @@ var ASM_CONSTS = {
 
   var miniTempWebGLFloatBuffers = [];
   function _emscripten_glUniform1fv(location, count, value) {
-  
+
       if (GL.currentContext.version >= 2) { // WebGL 2 provides new garbage-free entry points to call to WebGL. Use those always when possible.
         count && GLctx.uniform1fv(webglGetUniformLocation(location), HEAPF32, value>>2, count);
         return;
       }
-  
+
       if (count <= 288) {
         // avoid allocation when uploading few enough uniforms
         var view = miniTempWebGLFloatBuffers[count-1];
@@ -4079,12 +4080,12 @@ var ASM_CONSTS = {
 
   var __miniTempWebGLIntBuffers = [];
   function _emscripten_glUniform1iv(location, count, value) {
-  
+
       if (GL.currentContext.version >= 2) { // WebGL 2 provides new garbage-free entry points to call to WebGL. Use those always when possible.
         count && GLctx.uniform1iv(webglGetUniformLocation(location), HEAP32, value>>2, count);
         return;
       }
-  
+
       if (count <= 288) {
         // avoid allocation when uploading few enough uniforms
         var view = __miniTempWebGLIntBuffers[count-1];
@@ -4103,12 +4104,12 @@ var ASM_CONSTS = {
     }
 
   function _emscripten_glUniform2fv(location, count, value) {
-  
+
       if (GL.currentContext.version >= 2) { // WebGL 2 provides new garbage-free entry points to call to WebGL. Use those always when possible.
         count && GLctx.uniform2fv(webglGetUniformLocation(location), HEAPF32, value>>2, count*2);
         return;
       }
-  
+
       if (count <= 144) {
         // avoid allocation when uploading few enough uniforms
         var view = miniTempWebGLFloatBuffers[2*count-1];
@@ -4128,12 +4129,12 @@ var ASM_CONSTS = {
     }
 
   function _emscripten_glUniform2iv(location, count, value) {
-  
+
       if (GL.currentContext.version >= 2) { // WebGL 2 provides new garbage-free entry points to call to WebGL. Use those always when possible.
         count && GLctx.uniform2iv(webglGetUniformLocation(location), HEAP32, value>>2, count*2);
         return;
       }
-  
+
       if (count <= 144) {
         // avoid allocation when uploading few enough uniforms
         var view = __miniTempWebGLIntBuffers[2*count-1];
@@ -4153,12 +4154,12 @@ var ASM_CONSTS = {
     }
 
   function _emscripten_glUniform3fv(location, count, value) {
-  
+
       if (GL.currentContext.version >= 2) { // WebGL 2 provides new garbage-free entry points to call to WebGL. Use those always when possible.
         count && GLctx.uniform3fv(webglGetUniformLocation(location), HEAPF32, value>>2, count*3);
         return;
       }
-  
+
       if (count <= 96) {
         // avoid allocation when uploading few enough uniforms
         var view = miniTempWebGLFloatBuffers[3*count-1];
@@ -4179,12 +4180,12 @@ var ASM_CONSTS = {
     }
 
   function _emscripten_glUniform3iv(location, count, value) {
-  
+
       if (GL.currentContext.version >= 2) { // WebGL 2 provides new garbage-free entry points to call to WebGL. Use those always when possible.
         count && GLctx.uniform3iv(webglGetUniformLocation(location), HEAP32, value>>2, count*3);
         return;
       }
-  
+
       if (count <= 96) {
         // avoid allocation when uploading few enough uniforms
         var view = __miniTempWebGLIntBuffers[3*count-1];
@@ -4205,12 +4206,12 @@ var ASM_CONSTS = {
     }
 
   function _emscripten_glUniform4fv(location, count, value) {
-  
+
       if (GL.currentContext.version >= 2) { // WebGL 2 provides new garbage-free entry points to call to WebGL. Use those always when possible.
         count && GLctx.uniform4fv(webglGetUniformLocation(location), HEAPF32, value>>2, count*4);
         return;
       }
-  
+
       if (count <= 72) {
         // avoid allocation when uploading few enough uniforms
         var view = miniTempWebGLFloatBuffers[4*count-1];
@@ -4236,12 +4237,12 @@ var ASM_CONSTS = {
     }
 
   function _emscripten_glUniform4iv(location, count, value) {
-  
+
       if (GL.currentContext.version >= 2) { // WebGL 2 provides new garbage-free entry points to call to WebGL. Use those always when possible.
         count && GLctx.uniform4iv(webglGetUniformLocation(location), HEAP32, value>>2, count*4);
         return;
       }
-  
+
       if (count <= 72) {
         // avoid allocation when uploading few enough uniforms
         var view = __miniTempWebGLIntBuffers[4*count-1];
@@ -4259,12 +4260,12 @@ var ASM_CONSTS = {
     }
 
   function _emscripten_glUniformMatrix2fv(location, count, transpose, value) {
-  
+
       if (GL.currentContext.version >= 2) { // WebGL 2 provides new garbage-free entry points to call to WebGL. Use those always when possible.
         count && GLctx.uniformMatrix2fv(webglGetUniformLocation(location), !!transpose, HEAPF32, value>>2, count*4);
         return;
       }
-  
+
       if (count <= 72) {
         // avoid allocation when uploading few enough uniforms
         var view = miniTempWebGLFloatBuffers[4*count-1];
@@ -4282,12 +4283,12 @@ var ASM_CONSTS = {
     }
 
   function _emscripten_glUniformMatrix3fv(location, count, transpose, value) {
-  
+
       if (GL.currentContext.version >= 2) { // WebGL 2 provides new garbage-free entry points to call to WebGL. Use those always when possible.
         count && GLctx.uniformMatrix3fv(webglGetUniformLocation(location), !!transpose, HEAPF32, value>>2, count*9);
         return;
       }
-  
+
       if (count <= 32) {
         // avoid allocation when uploading few enough uniforms
         var view = miniTempWebGLFloatBuffers[9*count-1];
@@ -4310,12 +4311,12 @@ var ASM_CONSTS = {
     }
 
   function _emscripten_glUniformMatrix4fv(location, count, transpose, value) {
-  
+
       if (GL.currentContext.version >= 2) { // WebGL 2 provides new garbage-free entry points to call to WebGL. Use those always when possible.
         count && GLctx.uniformMatrix4fv(webglGetUniformLocation(location), !!transpose, HEAPF32, value>>2, count*16);
         return;
       }
-  
+
       if (count <= 18) {
         // avoid allocation when uploading few enough uniforms
         var view = miniTempWebGLFloatBuffers[16*count-1];
@@ -4359,17 +4360,17 @@ var ASM_CONSTS = {
   function _emscripten_glVertexAttrib1f(x0, x1) { GLctx['vertexAttrib1f'](x0, x1) }
 
   function _emscripten_glVertexAttrib2fv(index, v) {
-  
+
       GLctx.vertexAttrib2f(index, HEAPF32[v>>2], HEAPF32[v+4>>2]);
     }
 
   function _emscripten_glVertexAttrib3fv(index, v) {
-  
+
       GLctx.vertexAttrib3f(index, HEAPF32[v>>2], HEAPF32[v+4>>2], HEAPF32[v+8>>2]);
     }
 
   function _emscripten_glVertexAttrib4fv(index, v) {
-  
+
       GLctx.vertexAttrib4f(index, HEAPF32[v>>2], HEAPF32[v+4>>2], HEAPF32[v+8>>2], HEAPF32[v+12>>2]);
     }
 
@@ -4403,7 +4404,7 @@ var ASM_CONSTS = {
       // casing all heap size related code to treat 0 specially.
       return 2147483648;
     }
-  
+
   function emscripten_realloc_buffer(size) {
       try {
         // round size grow request up to wasm page size (fixed 64KB per spec)
@@ -4422,7 +4423,7 @@ var ASM_CONSTS = {
       // With multithreaded builds, races can happen (another thread might increase the size
       // in between), so return a failure, and let the caller retry.
       assert(requestedSize > oldSize);
-  
+
       // Memory resize rules:
       // 1.  Always increase heap size to at least the requested size, rounded up
       //     to next page multiple.
@@ -4439,7 +4440,7 @@ var ASM_CONSTS = {
       //     over-eager decision to excessively reserve due to (3) above.
       //     Hence if an allocation fails, cut down on the amount of excess
       //     growth, in an attempt to succeed to perform a smaller allocation.
-  
+
       // A limit is set for how much we can grow. We should not exceed that
       // (the wasm binary specifies it, so if we tried, we'd fail anyhow).
       var maxHeapSize = getHeapMax();
@@ -4447,9 +4448,9 @@ var ASM_CONSTS = {
         err('Cannot enlarge memory, asked to go up to ' + requestedSize + ' bytes, but the limit is ' + maxHeapSize + ' bytes!');
         return false;
       }
-  
+
       let alignUp = (x, multiple) => x + (multiple - x % multiple) % multiple;
-  
+
       // Loop through potential heap size increases. If we attempt a too eager
       // reservation that fails, cut down on the attempted size and reserve a
       // smaller bump instead. (max 3 times, chosen somewhat arbitrarily)
@@ -4457,12 +4458,12 @@ var ASM_CONSTS = {
         var overGrownHeapSize = oldSize * (1 + 0.2 / cutDown); // ensure geometric growth
         // but limit overreserving (default to capping at +96MB overgrowth at most)
         overGrownHeapSize = Math.min(overGrownHeapSize, requestedSize + 100663296 );
-  
+
         var newSize = Math.min(maxHeapSize, alignUp(Math.max(requestedSize, overGrownHeapSize), 65536));
-  
+
         var replacement = emscripten_realloc_buffer(newSize);
         if (replacement) {
-  
+
           return true;
         }
       }
@@ -4471,7 +4472,7 @@ var ASM_CONSTS = {
     }
 
   var ENV = {};
-  
+
   function getExecutableName() {
       return thisProgram || './this.program';
     }
@@ -4598,7 +4599,7 @@ var ASM_CONSTS = {
   function __isLeapYear(year) {
         return year%4 === 0 && (year%100 !== 0 || year%400 === 0);
     }
-  
+
   function __arraySum(array, index) {
       var sum = 0;
       for (var i = 0; i <= index; sum += array[i++]) {
@@ -4606,9 +4607,9 @@ var ASM_CONSTS = {
       }
       return sum;
     }
-  
+
   var __MONTH_DAYS_LEAP = [31,29,31,30,31,30,31,31,30,31,30,31];
-  
+
   var __MONTH_DAYS_REGULAR = [31,28,31,30,31,30,31,31,30,31,30,31];
   function __addDays(date, days) {
       var newDate = new Date(date.getTime());
@@ -4616,7 +4617,7 @@ var ASM_CONSTS = {
         var leap = __isLeapYear(newDate.getFullYear());
         var currentMonth = newDate.getMonth();
         var daysInCurrentMonth = (leap ? __MONTH_DAYS_LEAP : __MONTH_DAYS_REGULAR)[currentMonth];
-  
+
         if (days > daysInCurrentMonth-newDate.getDate()) {
           // we spill over to next month
           days -= (daysInCurrentMonth-newDate.getDate()+1);
@@ -4633,15 +4634,15 @@ var ASM_CONSTS = {
           return newDate;
         }
       }
-  
+
       return newDate;
     }
   function _strftime(s, maxsize, format, tm) {
       // size_t strftime(char *restrict s, size_t maxsize, const char *restrict format, const struct tm *restrict timeptr);
       // http://pubs.opengroup.org/onlinepubs/009695399/functions/strftime.html
-  
+
       var tm_zone = HEAP32[(((tm)+(40))>>2)];
-  
+
       var date = {
         tm_sec: HEAP32[((tm)>>2)],
         tm_min: HEAP32[(((tm)+(4))>>2)],
@@ -4655,9 +4656,9 @@ var ASM_CONSTS = {
         tm_gmtoff: HEAP32[(((tm)+(36))>>2)],
         tm_zone: tm_zone ? UTF8ToString(tm_zone) : ''
       };
-  
+
       var pattern = UTF8ToString(format);
-  
+
       // expand format
       var EXPANSION_RULES_1 = {
         '%c': '%a %b %d %H:%M:%S %Y',     // Replaced by the locale's appropriate date and time representation - e.g., Mon Aug  3 14:02:01 2013
@@ -4693,10 +4694,10 @@ var ASM_CONSTS = {
       for (var rule in EXPANSION_RULES_1) {
         pattern = pattern.replace(new RegExp(rule, 'g'), EXPANSION_RULES_1[rule]);
       }
-  
+
       var WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  
+
       function leadingSomething(value, digits, character) {
         var str = typeof value == 'number' ? value.toString() : (value || '');
         while (str.length < digits) {
@@ -4704,16 +4705,16 @@ var ASM_CONSTS = {
         }
         return str;
       }
-  
+
       function leadingNulls(value, digits) {
         return leadingSomething(value, digits, '0');
       }
-  
+
       function compareByDay(date1, date2) {
         function sgn(value) {
           return value < 0 ? -1 : (value > 0 ? 1 : 0);
         }
-  
+
         var compare;
         if ((compare = sgn(date1.getFullYear()-date2.getFullYear())) === 0) {
           if ((compare = sgn(date1.getMonth()-date2.getMonth())) === 0) {
@@ -4722,7 +4723,7 @@ var ASM_CONSTS = {
         }
         return compare;
       }
-  
+
       function getFirstWeekStartDate(janFourth) {
           switch (janFourth.getDay()) {
             case 0: // Sunday
@@ -4741,16 +4742,16 @@ var ASM_CONSTS = {
               return new Date(janFourth.getFullYear()-1, 11, 30);
           }
       }
-  
+
       function getWeekBasedYear(date) {
           var thisDate = __addDays(new Date(date.tm_year+1900, 0, 1), date.tm_yday);
-  
+
           var janFourthThisYear = new Date(thisDate.getFullYear(), 0, 4);
           var janFourthNextYear = new Date(thisDate.getFullYear()+1, 0, 4);
-  
+
           var firstWeekStartThisYear = getFirstWeekStartDate(janFourthThisYear);
           var firstWeekStartNextYear = getFirstWeekStartDate(janFourthNextYear);
-  
+
           if (compareByDay(firstWeekStartThisYear, thisDate) <= 0) {
             // this date is after the start of the first week of this year
             if (compareByDay(firstWeekStartNextYear, thisDate) <= 0) {
@@ -4762,7 +4763,7 @@ var ASM_CONSTS = {
             return thisDate.getFullYear()-1;
           }
       }
-  
+
       var EXPANSION_RULES_2 = {
         '%a': function(date) {
           return WEEKDAYS[date.tm_wday].substring(0,3);
@@ -4796,7 +4797,7 @@ var ASM_CONSTS = {
           // %G is replaced by 1998 and %V is replaced by 53. If December 29th, 30th,
           // or 31st is a Monday, it and any following days are part of week 1 of the following year.
           // Thus, for Tuesday 30th December 1997, %G is replaced by 1998 and %V is replaced by 01.
-  
+
           return getWeekBasedYear(date).toString().substring(2);
         },
         '%G': function(date) {
@@ -4905,7 +4906,7 @@ var ASM_CONSTS = {
           return '%';
         }
       };
-  
+
       // Replace %% with a pair of NULLs (which cannot occur in a C string), then
       // re-inject them after processing.
       pattern = pattern.replace(/%%/g, '\0\0')
@@ -4915,12 +4916,12 @@ var ASM_CONSTS = {
         }
       }
       pattern = pattern.replace(/\0\0/g, '%')
-  
+
       var bytes = intArrayFromString(pattern, false);
       if (bytes.length > maxsize) {
         return 0;
       }
-  
+
       writeArrayToMemory(bytes, s);
       return bytes.length-1;
     }
