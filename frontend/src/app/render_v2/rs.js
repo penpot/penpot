@@ -28,7 +28,7 @@ var readyPromise = new Promise((resolve, reject) => {
   readyPromiseResolve = resolve;
   readyPromiseReject = reject;
 });
-["_add","_draw_rect","_init","_main","getExceptionMessage","incrementExceptionRefcount","decrementExceptionRefcount","_memory","___indirect_function_table","onRuntimeInitialized"].forEach((prop) => {
+["_add","_draw_rect","_init","_main","_resize_surface","getExceptionMessage","incrementExceptionRefcount","decrementExceptionRefcount","_memory","___indirect_function_table","onRuntimeInitialized"].forEach((prop) => {
   if (!Object.getOwnPropertyDescriptor(readyPromise, prop)) {
     Object.defineProperty(readyPromise, prop, {
       get: () => abort('You are getting ' + prop + ' on the Promise object, instead of the instance. Use .then() to get called back with the instance, see the MODULARIZE docs in src/settings.js'),
@@ -555,7 +555,7 @@ class CppException extends EmscriptenEH {
 }
 // end include: runtime_exceptions.js
 function findWasmBinary() {
-    var f = 'renderer_v2.wasm';
+    var f = 'render_v2.wasm';
     if (!isDataURI(f)) {
       return locateFile(f);
     }
@@ -8561,6 +8561,7 @@ var wasmExports = createWasm();
 var ___wasm_call_ctors = createExportWrapper('__wasm_call_ctors', 0);
 var _add = Module['_add'] = createExportWrapper('add', 2);
 var _init = Module['_init'] = createExportWrapper('init', 2);
+var _resize_surface = Module['_resize_surface'] = createExportWrapper('resize_surface', 3);
 var _draw_rect = Module['_draw_rect'] = createExportWrapper('draw_rect', 5);
 var _main = Module['_main'] = createExportWrapper('main', 2);
 var _fflush = createExportWrapper('fflush', 1);
@@ -8607,6 +8608,17 @@ var dynCall_iiiiij = Module['dynCall_iiiiij'] = createExportWrapper('dynCall_iii
 var dynCall_iiiiijj = Module['dynCall_iiiiijj'] = createExportWrapper('dynCall_iiiiijj', 9);
 var dynCall_iiiiiijj = Module['dynCall_iiiiiijj'] = createExportWrapper('dynCall_iiiiiijj', 10);
 
+function invoke_vii(index,a1,a2) {
+  var sp = stackSave();
+  try {
+    getWasmTableEntry(index)(a1,a2);
+  } catch(e) {
+    stackRestore(sp);
+    if (!(e instanceof EmscriptenEH)) throw e;
+    _setThrew(1, 0);
+  }
+}
+
 function invoke_ii(index,a1) {
   var sp = stackSave();
   try {
@@ -8629,17 +8641,6 @@ function invoke_viii(index,a1,a2,a3) {
   }
 }
 
-function invoke_iii(index,a1,a2) {
-  var sp = stackSave();
-  try {
-    return getWasmTableEntry(index)(a1,a2);
-  } catch(e) {
-    stackRestore(sp);
-    if (!(e instanceof EmscriptenEH)) throw e;
-    _setThrew(1, 0);
-  }
-}
-
 function invoke_vi(index,a1) {
   var sp = stackSave();
   try {
@@ -8651,21 +8652,10 @@ function invoke_vi(index,a1) {
   }
 }
 
-function invoke_vii(index,a1,a2) {
+function invoke_iii(index,a1,a2) {
   var sp = stackSave();
   try {
-    getWasmTableEntry(index)(a1,a2);
-  } catch(e) {
-    stackRestore(sp);
-    if (!(e instanceof EmscriptenEH)) throw e;
-    _setThrew(1, 0);
-  }
-}
-
-function invoke_iiii(index,a1,a2,a3) {
-  var sp = stackSave();
-  try {
-    return getWasmTableEntry(index)(a1,a2,a3);
+    return getWasmTableEntry(index)(a1,a2);
   } catch(e) {
     stackRestore(sp);
     if (!(e instanceof EmscriptenEH)) throw e;
@@ -8699,6 +8689,17 @@ function invoke_viffff(index,a1,a2,a3,a4,a5) {
   var sp = stackSave();
   try {
     getWasmTableEntry(index)(a1,a2,a3,a4,a5);
+  } catch(e) {
+    stackRestore(sp);
+    if (!(e instanceof EmscriptenEH)) throw e;
+    _setThrew(1, 0);
+  }
+}
+
+function invoke_iiii(index,a1,a2,a3) {
+  var sp = stackSave();
+  try {
+    return getWasmTableEntry(index)(a1,a2,a3);
   } catch(e) {
     stackRestore(sp);
     if (!(e instanceof EmscriptenEH)) throw e;

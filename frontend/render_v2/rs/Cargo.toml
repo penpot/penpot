@@ -1,16 +1,16 @@
 [package]
-name = "renderer"
+name = "render"
 version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/penpot/penpot"
 license-file = "../../../../LICENSE"
-description = "Wasm-based canvas renderer for Penpot"
+description = "Wasm-based canvas render for Penpot"
 
 [features]
 default = ["skia-safe/gl"]
 
 [[bin]]
-name = "renderer_v2"
+name = "render_v2"
 path = "src/main.rs"
 
 [dependencies]
