@@ -17,16 +17,17 @@
 (defonce ^:dynamic gpu-state #js {})
 
 (defn draw-canvas [vbox objects]
-  (let [draw_rect (gobj/get ^js internal-module "_draw_rect")
+  (let [draw-rect (gobj/get ^js internal-module "_draw_rect")
         translate (gobj/get ^js internal-module "_translate")
-        _ (js/console.log "vbox " (clj->js vbox))
+        reset-canvas (gobj/get ^js internal-module "_reset_canvas")
         scale (gobj/get ^js internal-module "_scale")]
 
+        (reset-canvas gpu-state)
         (translate gpu-state (- (:x vbox)) (- (:y vbox)))
         (doseq [shape (vals objects)]
           (let [sr (:selrect shape)]
             (println "*****" (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr))
-            (draw_rect gpu-state (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr))))))
+            (draw-rect gpu-state (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr))))))
 
 (defn set-canvas
   [canvas vbox objects]

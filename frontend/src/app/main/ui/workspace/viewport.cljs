@@ -271,13 +271,19 @@
         rule-area-size (/ rulers/ruler-area-size zoom)]
 
     (when (render-v2/is-enabled?)
+      ;; set up canvas and first render
       (mf/with-effect
         [canvas-ref vbox' @canvas-set? base-objects]
         (let [canvas (mf/ref-val canvas-ref)]
           (when (and (some? vbox') (not @canvas-set?))
-            (swap! canvas-set? true)
-            (p/then (render-v2/init)
-                    #(render-v2/set-canvas canvas vbox' base-objects))))))
+            (p/then (render-v2/init) (fn []
+              (render-v2/set-canvas canvas vbox' base-objects)
+              (swap! canvas-set? true))))))
+      ;; redraw when vbox or shapes change
+      (mf/with-effect
+        [vbox' base-objects canvas-set?]
+        (when @canvas-set?
+          (render-v2/draw-canvas vbox' base-objects))))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)
