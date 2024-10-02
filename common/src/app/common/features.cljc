@@ -49,7 +49,8 @@
     "components/v2"
     "styles/v2"
     "layout/grid"
-    "plugins/runtime"})
+    "plugins/runtime"
+    "text-editor/v2"})
 
 ;; A set of features enabled by default
 (def default-features
@@ -64,7 +65,8 @@
 ;; team feature field
 (def frontend-only-features
   #{"styles/v2"
-    "plugins/runtime"})
+    "plugins/runtime"
+    "text-editor/v2"})
 
 ;; Features that are mainly backend only or there are a proper
 ;; fallback when frontend reports no support for it
@@ -81,7 +83,8 @@
         "fdata/pointer-map"
         "layout/grid"
         "fdata/shape-data-type"
-        "plugins/runtime"}
+        "plugins/runtime"
+        "text-editor/v2"}
       (into frontend-only-features)))
 
 (sm/register! ::features
@@ -101,6 +104,7 @@
     :feature-fdata-objects-map "fdata/objects-map"
     :feature-fdata-pointer-map "fdata/pointer-map"
     :feature-plugins "plugins/runtime"
+    :feature-text-editor-v2 "text-editor/v2"
     nil))
 
 (defn migrate-legacy-features

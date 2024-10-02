@@ -15,15 +15,18 @@
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.modifiers :as dwm]
+   [app.main.features :as features]
    [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.flex-controls :as mfc]
    [app.main.ui.hooks :as ui-hooks]
    [app.main.ui.measurements :as msr]
    [app.main.ui.shapes.export :as use]
    [app.main.ui.workspace.shapes :as shapes]
-   [app.main.ui.workspace.shapes.text.editor :as editor]
+   [app.main.ui.workspace.shapes.text.editor :as editor-v1]
    [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline]]
+   [app.main.ui.workspace.shapes.text.v2-editor :as editor-v2]
    [app.main.ui.workspace.shapes.text.viewport-texts-html :as stvh]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.comments :as comments]
@@ -383,8 +386,11 @@
 
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
        (when show-text-editor?
-         [:& editor/text-editor-svg {:shape editing-shape
-                                     :modifiers modifiers}])
+         (if (features/active-feature? @st/state "text-editor/v2")
+           [:& editor-v2/text-editor {:shape editing-shape
+                                      :modifiers modifiers}]
+           [:& editor-v1/text-editor-svg {:shape editing-shape
+                                          :modifiers modifiers}]))
 
        (when show-frame-outline?
          (let [outlined-frame-id

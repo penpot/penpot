@@ -10,7 +10,9 @@
    [app.common.text :as txt]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.features :as features]
    [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
@@ -47,15 +49,22 @@
         parents-by-ids-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         parents (mf/deref parents-by-ids-ref)
 
-        state-map    (mf/deref refs/workspace-editor-state)
+        state-map    (if (features/active-feature? @st/state "text-editor/v2")
+                       (mf/deref refs/workspace-v2-editor-state)
+                       (mf/deref refs/workspace-editor-state))
+
         shared-libs  (mf/deref refs/workspace-libraries)
 
-        editor-state (get state-map (:id shape))
+        editor-state (when (not (features/active-feature? @st/state "text-editor/v2"))
+                       (get state-map (:id shape)))
 
         layer-values (select-keys shape layer-attrs)
+        editor-instance (when (features/active-feature? @st/state "text-editor/v2")
+                          (mf/deref refs/workspace-editor))
 
         fill-values  (-> (dwt/current-text-values
                           {:editor-state editor-state
+                           :editor-instance editor-instance
                            :shape shape
                            :attrs (conj txt/text-fill-attrs :fills)})
                          (d/update-in-when [:fill-color-gradient :type] keyword))
@@ -75,10 +84,12 @@
                        :attrs txt/root-attrs})
                      (dwt/current-paragraph-values
                       {:editor-state editor-state
+                       :editor-instance editor-instance
                        :shape shape
                        :attrs txt/paragraph-attrs})
                      (dwt/current-text-values
                       {:editor-state editor-state
+                       :editor-instance editor-instance
                        :shape shape
                        :attrs txt/text-node-attrs}))
         layout-item-values (select-keys shape layout-item-attrs)]

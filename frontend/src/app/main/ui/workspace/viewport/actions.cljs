@@ -30,6 +30,7 @@
    [app.util.mouse :as mse]
    [app.util.object :as obj]
    [app.util.rxops :refer [throttle-fn]]
+   [app.util.text.ui :as txu]
    [app.util.timers :as ts]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
@@ -49,7 +50,7 @@
      ;; We need to handle editor related stuff here because
      ;; handling on editor dom node does not works properly.
      (let [target  (dom/get-target bevent)
-           editor (.closest ^js target ".public-DraftEditor-content")]
+           editor  (txu/closest-text-editor-content target)]
        ;; Capture mouse pointer to detect the movements even if cursor
        ;; leaves the viewport or the browser itself
        ;; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
@@ -319,7 +320,7 @@
            mod?     (kbd/mod? event)
            target   (dom/get-target event)
 
-           editing? (or (some? (.closest ^js target ".public-DraftEditor-content"))
+           editing? (or (txu/some-text-editor-content? target)
                         (= "rich-text" (obj/get target "className"))
                         (= "INPUT" (obj/get target "tagName"))
                         (= "TEXTAREA" (obj/get target "tagName")))]
@@ -338,7 +339,7 @@
            mod?     (kbd/mod? event)
            target   (dom/get-target event)
 
-           editing? (or (some? (.closest ^js target ".public-DraftEditor-content"))
+           editing? (or (txu/some-text-editor-content? target)
                         (= "rich-text" (obj/get target "className"))
                         (= "INPUT" (obj/get target "tagName"))
                         (= "TEXTAREA" (obj/get target "tagName")))]
