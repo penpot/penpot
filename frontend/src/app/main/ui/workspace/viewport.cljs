@@ -368,7 +368,7 @@
 
         [:& (mf/provider ctx/current-vbox) {:value vbox'}
          [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
-         ;; Render root shape
+          ;; Render root shape
           [:& shapes/root-shape {:key page-id
                                  :objects base-objects
                                  :active-frames @active-frames}]]]])

@@ -1,4 +1,0 @@
-#!/bin/bash
-docker build . -t skia-build-tools
-docker run -t -v $PWD:/tmp/renderer skia-build-tools
-./scripts/copy-artifacts
