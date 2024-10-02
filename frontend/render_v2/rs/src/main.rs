@@ -127,6 +127,16 @@ pub unsafe extern "C" fn draw_rect(state: *mut State, left: i32, right: i32, top
         .flush_and_submit_surface(&mut state.surface, None);
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn translate(state: *mut State, dx: f32, dy: f32) {
+  (*state).surface.canvas().translate((dx, dy));
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn scale(state: *mut State, sx: f32, sy: f32) {
+    (*state).surface.canvas().scale((sx, sy));
+}
+
 fn main() {
     init_gl();
 }

@@ -29,17 +29,17 @@
         ;; Initialize Skia
         state (._init ^js internal-module (.-width canvas) (.-height canvas))
         draw_rect (gobj/get ^js internal-module "_draw_rect")
+        translate (gobj/get ^js internal-module "_translate")
+        scale (gobj/get ^js internal-module "_scale")
         resize_surface (gobj/get ^js internal-module "_resize_surface")]
 
     (set! (.-width canvas) (.-clientWidth canvas))
     (set! (.-height canvas) (.-clientHeight canvas))
-    
-    ;; (resize_surface state (.-clientWidth canvas) (.-clientHeight canvas))
-    
+
+    (translate state (- (:x vbox)) (- (:y vbox)))
     (doseq [shape (vals objects)]
       (let [sr (:selrect shape)]
         (println "-----" (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr))
-        ;; TODO: scale y translate con el vbox
         (draw_rect state (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr))))
 
     #_(draw_rect state 100 100 500 500)

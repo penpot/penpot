@@ -28,7 +28,7 @@ var readyPromise = new Promise((resolve, reject) => {
   readyPromiseResolve = resolve;
   readyPromiseReject = reject;
 });
-["_add","_draw_rect","_init","_main","_resize_surface","getExceptionMessage","incrementExceptionRefcount","decrementExceptionRefcount","_memory","___indirect_function_table","onRuntimeInitialized"].forEach((prop) => {
+["_add","_draw_rect","_init","_main","_resize_surface","_scale","_translate","getExceptionMessage","incrementExceptionRefcount","decrementExceptionRefcount","_memory","___indirect_function_table","onRuntimeInitialized"].forEach((prop) => {
   if (!Object.getOwnPropertyDescriptor(readyPromise, prop)) {
     Object.defineProperty(readyPromise, prop, {
       get: () => abort('You are getting ' + prop + ' on the Promise object, instead of the instance. Use .then() to get called back with the instance, see the MODULARIZE docs in src/settings.js'),
@@ -8507,6 +8507,8 @@ var wasmImports = {
   /** @export */
   invoke_ii,
   /** @export */
+  invoke_iiff,
+  /** @export */
   invoke_iii,
   /** @export */
   invoke_iiii,
@@ -8563,6 +8565,8 @@ var _add = Module['_add'] = createExportWrapper('add', 2);
 var _init = Module['_init'] = createExportWrapper('init', 2);
 var _resize_surface = Module['_resize_surface'] = createExportWrapper('resize_surface', 3);
 var _draw_rect = Module['_draw_rect'] = createExportWrapper('draw_rect', 5);
+var _translate = Module['_translate'] = createExportWrapper('translate', 3);
+var _scale = Module['_scale'] = createExportWrapper('scale', 3);
 var _main = Module['_main'] = createExportWrapper('main', 2);
 var _fflush = createExportWrapper('fflush', 1);
 var _free = createExportWrapper('free', 1);
@@ -8711,6 +8715,17 @@ function invoke_iiiii(index,a1,a2,a3,a4) {
   var sp = stackSave();
   try {
     return getWasmTableEntry(index)(a1,a2,a3,a4);
+  } catch(e) {
+    stackRestore(sp);
+    if (!(e instanceof EmscriptenEH)) throw e;
+    _setThrew(1, 0);
+  }
+}
+
+function invoke_iiff(index,a1,a2,a3) {
+  var sp = stackSave();
+  try {
+    return getWasmTableEntry(index)(a1,a2,a3);
   } catch(e) {
     stackRestore(sp);
     if (!(e instanceof EmscriptenEH)) throw e;
