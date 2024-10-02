@@ -58,6 +58,7 @@
   [n]
   (string? n))
 
+;; TODO Move this to tokens-lib
 (sm/register! ::token
   [:map {:title "Token"}
    [:name token-name-ref]
