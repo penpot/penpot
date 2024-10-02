@@ -71,6 +71,7 @@ Module['ready'] = new Promise(function(resolve, reject) {
   console.log("preamble", Renderer);
   Renderer.setCanvas = function setCanvas(canvas, attrs) {
     console.log("GL", GL);
+    debugger
     const context = GL.createContext(canvas, attrs);
     if (!context) {
       throw new Error('Could not create a new WebGL context')
@@ -212,13 +213,13 @@ if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
     scriptDirectory = '';
   }
 
-  scriptDirectory += 'renderer/cpp/';
   if (!(typeof window == 'object' || typeof importScripts == 'function')) throw new Error('not compiled for this environment (did you build to HTML and try to run it not on the web, or set ENVIRONMENT to something - like node - and run it someplace else - like on the web?)');
 
   // Differentiate the Web Worker from the Node Worker case, as reading must
   // be done differently.
   {
 // include: web_or_worker_shell_read.js
+  scriptDirectory += 'renderer/cpp/';
 
 
   read_ = (url) => {

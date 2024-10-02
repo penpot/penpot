@@ -48,10 +48,10 @@
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
-   [app.renderer.cpp :as renderer-cpp]
-   [app.renderer.rs :as renderer-rs]
+   [app.renderer :as renderer]
    [app.util.debug :as dbg]
    [beicon.v2.core :as rx]
+   [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 ;; --- Viewport
@@ -269,13 +269,13 @@
 
         rule-area-size (/ rulers/ruler-area-size zoom)]
 
-    (mf/with-effect
+
+    (when (renderer/is-enabled?)
+      (mf/with-effect
         [canvas-ref]
         (let [canvas (mf/ref-val canvas-ref)]
-          (when (contains? cf/flags :renderer-v2-cpp)
-            (renderer-cpp/set-canvas canvas))
-          (when (contains? cf/flags :renderer-v2-rs)
-            (renderer-rs/set-canvas canvas))))
+          (p/then (renderer/init)
+                  #(renderer/set-canvas canvas)))))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)

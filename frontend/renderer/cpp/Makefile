@@ -7,7 +7,7 @@ all:
 	# -sUSE_PTHREADS: Disables pthreads.
 	# -sMAX_WEBGL_VERSION: Max WebGL set to 2
 	# -sUSE_WEBGL2: Uses WebGL2 by default.
-	emcc \
+	em++ \
 		-std=c++20 \
 		-lembind \
 		-fno-rtti \
