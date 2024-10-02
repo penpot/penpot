@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
    [app.main.data.events :as-alias ev]
    [app.main.data.workspace :as udw]
@@ -37,8 +38,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
-   [rumext.v2 :as mf]
-   [app.common.types.tokens-lib :as ctob]))
+   [rumext.v2 :as mf]))
 
 (defn- dir-icons-refactor
   [val]
