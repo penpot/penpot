@@ -11,7 +11,7 @@ a C++ WebAssembly module using [Emscripten](https://emscripten.org/index.html).
 From the root directory of `frontend/renderer` just run:
 
 ```sh
-./scripts/build
+./build
 ```
 
 This is going to build the docker image and run the container to build
