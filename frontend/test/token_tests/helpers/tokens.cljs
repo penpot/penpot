@@ -10,7 +10,7 @@
     (update-in state [:data :tokens] assoc id token)))
 
 (defn get-token [file name]
-  (some-> (get-in file [:data :tokens-li])
+  (some-> (get-in file [:data :tokens-lib])
           (ctob/get-active-themes-set-tokens)
           (get name)))
 
