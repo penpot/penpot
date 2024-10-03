@@ -44,8 +44,17 @@
                 :type :invalid}]
       (t/is (thrown-with-msg? Exception #"expected valid token"
                               (apply ctob/make-token args)))
-      (t/is (false? (ctob/valid-token? {}))))))
+      (t/is (false? (ctob/valid-token? {})))))
 
+  (t/deftest find-token-value-references
+    (t/testing "finds references inside curly braces in a string"
+     (t/is (= #{"foo" "bar"} (ctob/find-token-value-references "{foo} + {bar}")))
+     (t/testing "ignores extra text"
+       (t/is (= #{"foo.bar.baz"} (ctob/find-token-value-references "{foo.bar.baz} + something")))))
+    (t/testing "ignores string without references"
+      (t/is (nil? (ctob/find-token-value-references "1 + 2"))))
+    (t/testing "handles edge-case for extra curly braces"
+      (t/is (= #{"foo" "bar"} (ctob/find-token-value-references "{foo}} + {bar}"))))))
 
 (t/testing "token-set"
   (t/deftest make-token-set

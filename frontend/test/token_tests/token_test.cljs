@@ -25,16 +25,6 @@
   (t/testing "doesnt accept invalid double"
     (t/is (nil? (wtt/parse-token-value ".3")))))
 
-(t/deftest find-token-references
-  (t/testing "finds references inside curly braces in a string"
-    (t/is (= #{"foo" "bar"} (wtt/find-token-references "{foo} + {bar}")))
-    (t/testing "ignores extra text"
-      (t/is (= #{"foo.bar.baz"} (wtt/find-token-references "{foo.bar.baz} + something"))))
-    (t/testing "ignores string without references"
-      (t/is (nil? (wtt/find-token-references "1 + 2"))))
-    (t/testing "handles edge-case for extra curly braces"
-      (t/is (= #{"foo" "bar"} (wtt/find-token-references "{foo}} + {bar}"))))))
-
 (t/deftest remove-attributes-for-token-id
   (t/testing "removes attributes matching the `token`, keeps other attributes"
     (t/is (= {:ry "b"}

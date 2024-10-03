@@ -93,7 +93,7 @@ Token names should only contain letters and digits separated by . characters.")}
 
 (defn token-self-reference?
   [token-name input]
-  (let [token-references (wtt/find-token-references input)
+  (let [token-references (ctob/find-token-value-references input)
         self-reference? (get token-references token-name)]
     self-reference?))
 

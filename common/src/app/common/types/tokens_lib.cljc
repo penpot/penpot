@@ -132,6 +132,17 @@
 
     token))
 
+(defn find-token-value-references
+  "Returns set of token references found in `token-value`.
+
+  Used for checking if a token has a reference in the value.
+  Token references are strings delimited by curly braces.
+  E.g.: {foo.bar.baz} -> foo.bar.baz"
+  [token-value]
+  (some->> (re-seq #"\{([^}]*)\}" token-value)
+           (map second)
+           (into #{})))
+
 (defn group-by-type [tokens]
   (let [tokens' (if (or (map? tokens)
                         (d/ordered-map? tokens))
