@@ -98,46 +98,49 @@
   {::doc/added "1.17"
    ::doc/module :files
    ::webhooks/event? true
-   ::sm/params schema:create-file}
-  [cfg {:keys [::rpc/profile-id project-id] :as params}]
-  (db/tx-run! cfg
-              (fn [{:keys [::db/conn] :as cfg}]
-                (projects/check-edition-permissions! conn profile-id project-id)
-                (let [team     (teams/get-team conn
-                                               :profile-id profile-id
-                                               :project-id project-id)
-                      team-id  (:id team)
+   ::sm/params schema:create-file
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
+  (projects/check-edition-permissions! conn profile-id project-id)
+  (let [team     (teams/get-team conn
+                                 :profile-id profile-id
+                                 :project-id project-id)
+        team-id  (:id team)
 
-                      ;; When we create files, we only need to respect the team
-                      ;; features, because some features can be enabled
-                      ;; globally, but the team is still not migrated properly.
-                      features (-> (cfeat/get-team-enabled-features cf/flags team)
-                                   (cfeat/check-client-features! (:features params)))
+        ;; When we create files, we only need to respect the team
+        ;; features, because some features can be enabled
+        ;; globally, but the team is still not migrated properly.
+        features (-> (cfeat/get-team-enabled-features cf/flags team)
+                     (cfeat/check-client-features! (:features params)))
 
-                      ;; We also include all no migration features declared by
-                      ;; client; that enables the ability to enable a runtime
-                      ;; feature on frontend and make it permanent on file
-                      features (-> (:features params #{})
-                                   (set/intersection cfeat/no-migration-features)
-                                   (set/union features))
+        ;; We also include all no migration features declared by
+        ;; client; that enables the ability to enable a runtime
+        ;; feature on frontend and make it permanent on file
+        features (-> (:features params #{})
+                     (set/intersection cfeat/no-migration-features)
+                     (set/union features))
 
-                      params   (-> params
-                                   (assoc :profile-id profile-id)
-                                   (assoc :features features))]
+        params   (-> params
+                     (assoc :profile-id profile-id)
+                     (assoc :features features))]
 
-                  (run! (partial quotes/check-quote! conn)
-                        (list {::quotes/id ::quotes/files-per-project
-                               ::quotes/team-id team-id
-                               ::quotes/profile-id profile-id
-                               ::quotes/project-id project-id}))
+    (quotes/check! cfg {::quotes/id ::quotes/files-per-project
+                        ::quotes/team-id team-id
+                        ::quotes/profile-id profile-id
+                        ::quotes/project-id project-id})
 
-                  ;; When newly computed features does not match exactly with
-                  ;; the features defined on team row, we update it.
-                  (when (not= features (:features team))
-                    (let [features (db/create-array conn "text" features)]
-                      (db/update! conn :team
-                                  {:features features}
-                                  {:id team-id})))
+    ;; FIXME: IMPORTANT: this code can have race
+    ;; conditions, because we have no locks for updating
+    ;; team so, creating two files concurrently can lead
+    ;; to lost team features updating
 
-                  (-> (create-file cfg params)
-                      (vary-meta assoc ::audit/props {:team-id team-id}))))))
+    ;; When newly computed features does not match exactly with
+    ;; the features defined on team row, we update it.
+    (when (not= features (:features team))
+      (let [features (db/create-array conn "text" features)]
+        (db/update! conn :team
+                    {:features features}
+                    {:id team-id})))
+
+    (-> (create-file cfg params)
+        (vary-meta assoc ::audit/props {:team-id team-id}))))

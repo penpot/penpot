@@ -297,38 +297,38 @@
    [:frame-id ::sm/uuid]
    [:share-id {:optional true} [:maybe ::sm/uuid]]])
 
+;; FIXME: relax transaction requirements
+
 (sv/defmethod ::create-comment-thread
   {::doc/added "1.15"
    ::webhooks/event? true
    ::rtry/enabled true
    ::rtry/when rtry/conflict-exception?
-   ::sm/params schema:create-comment-thread}
-  [cfg {:keys [::rpc/profile-id ::rpc/request-at file-id page-id share-id position content frame-id]}]
+   ::sm/params schema:create-comment-thread
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg}
+   {:keys [::rpc/profile-id ::rpc/request-at file-id page-id share-id position content frame-id]}]
 
-  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                    (files/check-comment-permissions! cfg profile-id file-id share-id)
-                    (let [{:keys [team-id project-id page-name]} (get-file conn file-id page-id)]
+  (files/check-comment-permissions! cfg profile-id file-id share-id)
 
-                      (run! (partial quotes/check-quote! cfg)
-                            (list {::quotes/id ::quotes/comment-threads-per-file
-                                   ::quotes/profile-id profile-id
-                                   ::quotes/team-id team-id
-                                   ::quotes/project-id project-id
-                                   ::quotes/file-id file-id}
-                                  {::quotes/id ::quotes/comments-per-file
-                                   ::quotes/profile-id profile-id
-                                   ::quotes/team-id team-id
-                                   ::quotes/project-id project-id
-                                   ::quotes/file-id file-id}))
+  (let [{:keys [team-id project-id page-name]} (get-file conn file-id page-id)]
 
-                      (create-comment-thread conn {:created-at request-at
-                                                   :profile-id profile-id
-                                                   :file-id file-id
-                                                   :page-id page-id
-                                                   :page-name page-name
-                                                   :position position
-                                                   :content content
-                                                   :frame-id frame-id})))))
+    (-> cfg
+        (assoc ::quotes/profile-id profile-id)
+        (assoc ::quotes/team-id team-id)
+        (assoc ::quotes/project-id project-id)
+        (assoc ::quotes/file-id file-id)
+        (quotes/check! {::quotes/id ::quotes/comment-threads-per-file}
+                       {::quotes/id ::quotes/comments-per-file}))
+
+    (create-comment-thread conn {:created-at request-at
+                                 :profile-id profile-id
+                                 :file-id file-id
+                                 :page-id page-id
+                                 :page-name page-name
+                                 :position position
+                                 :content content
+                                 :frame-id frame-id})))
 
 (defn- create-comment-thread
   [conn {:keys [profile-id file-id page-id page-name created-at position content frame-id]}]
@@ -432,12 +432,11 @@
                       {:keys [team-id project-id page-name] :as file} (get-file cfg file-id page-id)]
 
                   (files/check-comment-permissions! conn profile-id file-id share-id)
-                  (quotes/check-quote! conn
-                                       {::quotes/id ::quotes/comments-per-file
-                                        ::quotes/profile-id profile-id
-                                        ::quotes/team-id team-id
-                                        ::quotes/project-id project-id
-                                        ::quotes/file-id file-id})
+                  (quotes/check! cfg {::quotes/id ::quotes/comments-per-file
+                                      ::quotes/profile-id profile-id
+                                      ::quotes/team-id team-id
+                                      ::quotes/project-id project-id
+                                      ::quotes/file-id file-id})
 
                   ;; Update the page-name cached attribute on comment thread table.
                   (when (not= page-name (:page-name thread))

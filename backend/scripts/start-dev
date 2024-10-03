@@ -17,6 +17,7 @@ export PENPOT_FLAGS="\
        disable-secure-session-cookies \
        enable-rpc-climit \
        enable-smtp \
+       enable-quotes \
        enable-file-snapshot \
        enable-access-tokens \
        enable-tiered-file-data-storage \

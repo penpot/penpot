@@ -23,6 +23,7 @@ export PENPOT_FLAGS="\
        enable-urepl-server \
        enable-rpc-climit \
        enable-rpc-rlimit \
+       enable-quotes \
        enable-soft-rpc-rlimit \
        enable-auto-file-snapshot \
        enable-webhooks \

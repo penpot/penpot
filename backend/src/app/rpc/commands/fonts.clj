@@ -86,6 +86,9 @@
    [:font-weight [::sm/one-of {:format "number"} valid-weight]]
    [:font-style [::sm/one-of {:format "string"} valid-style]]])
 
+;; FIXME: IMPORTANT: refactor this, we should not hold a whole db
+;; connection around the font creation
+
 (sv/defmethod ::create-font-variant
   {::doc/added "1.18"
    ::climit/id [[:process-font/by-profile ::rpc/profile-id]
@@ -96,9 +99,9 @@
   (db/tx-run! cfg
               (fn [{:keys [::db/conn] :as cfg}]
                 (teams/check-edition-permissions! conn profile-id team-id)
-                (quotes/check-quote! conn {::quotes/id ::quotes/font-variants-per-team
-                                           ::quotes/profile-id profile-id
-                                           ::quotes/team-id team-id})
+                (quotes/check! cfg {::quotes/id ::quotes/font-variants-per-team
+                                    ::quotes/profile-id profile-id
+                                    ::quotes/team-id team-id})
                 (create-font-variant cfg (assoc params :profile-id profile-id)))))
 
 (defn create-font-variant
