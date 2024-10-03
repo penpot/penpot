@@ -908,6 +908,10 @@
    [:role schema:role]
    [:emails [::sm/set ::sm/email]]])
 
+(def ^:private max-invitations-by-request-threshold
+  "The number of invitations can be sent in a single rpc request"
+  25)
+
 (sv/defmethod ::create-team-invitations
   "A rpc call that allow to send a single or multiple invitations to
   join the team."
@@ -919,6 +923,12 @@
           profile  (db/get-by-id conn :profile profile-id)
           team     (db/get-by-id conn :team team-id)
           emails   (into #{} (map profile/clean-email) emails)]
+
+      (when (> (count emails) max-invitations-by-request-threshold)
+        (ex/raise :type :validation
+                  :code :max-invitations-by-request
+                  :hint "the maximum of invitation on single request is reached"
+                  :threshold max-invitations-by-request-threshold))
 
       (run! (partial quotes/check-quote! conn)
             (list {::quotes/id ::quotes/invitations-per-team
@@ -993,6 +1003,12 @@
                       team     (create-team cfg params)
                       profile  (db/get-by-id conn :profile profile-id)
                       emails   (into #{} (map profile/clean-email) emails)]
+
+                  (when (> (count emails) max-invitations-by-request-threshold)
+                    (ex/raise :type :validation
+                              :code :max-invitations-by-request
+                              :hint "the maximum of invitation on single request is reached"
+                              :threshold max-invitations-by-request-threshold))
 
                   (let [props {:name name :features features}
                         event (-> (audit/event-from-rpc-params params)
