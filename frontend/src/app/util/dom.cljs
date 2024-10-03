@@ -92,7 +92,6 @@
                       "</style>")]
     (.insertAdjacentHTML ^js node "beforeend" style)))
 
-
 (defn get-element-by-class
   ([classname]
    (dom/getElementByClass classname))

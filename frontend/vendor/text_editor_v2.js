@@ -2740,5 +2740,49 @@ notifyLayout_fn = function(type = LayoutType.FULL, mutations) {
     })
   );
 };
-export default TextEditor;
+function isEditor(instance) {
+  return instance instanceof TextEditor;
+}
+function getRoot(instance) {
+  if (isEditor(instance)) {
+    return instance.root;
+  } else {
+    return null;
+  }
+}
+function setRoot(instance, root) {
+  if (isEditor(instance)) {
+    instance.root = root;
+  }
+  return instance;
+}
+function create(element, options) {
+  return new TextEditor(element, { ...options });
+}
+function getCurrentStyle(instance) {
+  if (isEditor(instance)) {
+    return instance.currentStyle;
+  }
+}
+function applyStylesToSelection(instance, styles) {
+  if (isEditor(instance)) {
+    return instance.applyStylesToSelection(styles);
+  }
+}
+function dispose(instance) {
+  if (isEditor(instance)) {
+    instance.dispose();
+  }
+}
+export {
+  TextEditor,
+  applyStylesToSelection,
+  create,
+  TextEditor as default,
+  dispose,
+  getCurrentStyle,
+  getRoot,
+  isEditor,
+  setRoot
+};
 //# sourceMappingURL=TextEditor.js.map

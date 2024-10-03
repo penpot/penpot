@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.texts
   (:require
+   ["penpot/vendor/text-editor-v2" :as editor.v2]
    [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -34,7 +35,12 @@
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
-;; -- V2 Editor
+;; -- V2 Editor Helpers
+
+(def ^function create-editor editor.v2/create)
+(def ^function set-editor-root! editor.v2/setRoot)
+(def ^function get-editor-root editor.v2/getRoot)
+(def ^function dispose! editor.v2/dispose)
 
 (declare v2-update-text-shape-content)
 (declare v2-update-text-editor-styles)
@@ -463,13 +469,12 @@
     ptk/EffectEvent
     (effect [_ state _]
       (when (features/active-feature? state "text-editor/v2")
-        (let [text-editor-instance (:workspace-editor state)]
-          (when (some? text-editor-instance)
-            (let [attrs (-> (.-currentStyle text-editor-instance)
-                            (styles/get-styles-from-style-declaration)
-                            ((comp update-node-fn migrate-node)))
-                  styles (styles/attrs->styles attrs)]
-              (.applyStylesToSelection ^js text-editor-instance styles))))))))
+        (let [instance (:workspace-editor state)
+              styles   (some-> (editor.v2/getCurrentStyle instance)
+                               (styles/get-styles-from-style-declaration)
+                               ((comp update-node-fn migrate-node))
+                               (styles/attrs->styles))]
+          (editor.v2/applyStylesToSelection instance styles))))))
 
 ;; --- RESIZE UTILS
 
@@ -729,10 +734,9 @@
     ptk/EffectEvent
     (effect [_ state _]
       (when (features/active-feature? state "text-editor/v2")
-        (let [text-editor-instance (:workspace-editor state)
+        (let [instance (:workspace-editor state)
               styles (styles/attrs->styles attrs)]
-          (when (some? text-editor-instance)
-            (.applyStylesToSelection ^js text-editor-instance styles)))))))
+          (editor.v2/applyStylesToSelection instance styles))))))
 
 (defn update-all-attrs
   [ids attrs]
