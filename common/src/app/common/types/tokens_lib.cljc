@@ -143,6 +143,14 @@
            (map second)
            (into #{})))
 
+(defn token-value-self-reference?
+  "Check if the token is self referencing with its `token-name` in `token-value`.
+  Simple 1 level check, doesn't account for circular self refernces across multiple tokens."
+  [token-name token-value]
+  (let [token-references (find-token-value-references token-value)
+        self-reference? (get token-references token-name)]
+    self-reference?))
+
 (defn group-by-type [tokens]
   (let [tokens' (if (or (map? tokens)
                         (d/ordered-map? tokens))

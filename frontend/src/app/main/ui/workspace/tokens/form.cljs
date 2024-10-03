@@ -91,12 +91,6 @@ Token names should only contain letters and digits separated by . characters.")}
 
 ;; Component -------------------------------------------------------------------
 
-(defn token-self-reference?
-  [token-name input]
-  (let [token-references (ctob/find-token-value-references input)
-        self-reference? (get token-references token-name)]
-    self-reference?))
-
 (defn validate-token-value+
   "Validates token value by resolving the value `input` using `StyleDictionary`.
   Returns a promise of either resolved tokens or rejects with an error state."
@@ -108,7 +102,7 @@ Token names should only contain letters and digits separated by . characters.")}
       (empty? (str/trim value))
       (p/rejected {:errors [{:error/code :error/empty-input}]})
 
-      (token-self-reference? token-name value)
+      (ctob/token-value-self-reference? token-name value)
       (p/rejected {:errors [(wte/get-error-code :error.token/direct-self-reference)]})
 
       :else
