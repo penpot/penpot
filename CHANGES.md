@@ -20,6 +20,14 @@
 
 ### :bug: Bugs fixed
 
+## 2.2.1
+
+### :bug: Bugs fixed
+
+- Fix problem with Ctrl+F shortcut on the dashboard [Taiga #8876](https://tree.taiga.io/project/penpot/issue/8876)
+- Fix visual problem with the font-size dropdown in assets [Taiga #8872](https://tree.taiga.io/project/penpot/issue/8872)
+- Add limits for invitation RPC methods (hard limit 25 emails per request)
+
 ## 2.2.0
 
 ### :rocket: Epics and highlights

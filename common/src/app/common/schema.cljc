@@ -391,7 +391,7 @@
 (defn parse-email
   [s]
   (if (string? s)
-    (re-matches email-re s)
+    (first (re-seq email-re s))
     nil))
 
 (defn email-string?

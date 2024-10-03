@@ -923,6 +923,9 @@ msgstr "Are you sure?"
 msgid "errors.auth-provider-not-allowed"
 msgstr "Auth provider not allowed for this profile"
 
+msgid "errors.maximum-invitations-by-request-reached"
+msgstr "The maximum (%s) number of emails that can be invited in a single request has been reached"
+
 #: src/app/main/ui/auth/login.cljs:61
 msgid "errors.auth-provider-not-configured"
 msgstr "Authentication provider not configured."
