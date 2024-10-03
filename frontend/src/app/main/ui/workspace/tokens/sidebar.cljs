@@ -45,7 +45,7 @@
 
 (mf/defc token-pill
   {::mf/wrap-props false}
-  [{:keys [on-click token theme-token highlighted? on-context-menu] :as props}]
+  [{:keys [on-click token theme-token highlighted? on-context-menu]}]
   (let [{:keys [name value resolved-value errors]} token
         errors? (and (seq errors) (seq (:errors theme-token)))]
     [:button
@@ -61,7 +61,9 @@
       :on-click on-click
       :on-context-menu on-context-menu
       :disabled errors?}
-     (when-let [color (wtt/resolved-value-hex token)]
+     (when-let [color (if (seq (ctob/find-token-value-references (:value token)))
+                        (wtt/resolved-value-hex theme-token)
+                        (wtt/resolved-value-hex token))]
        [:& color-bullet {:color color
                          :mini? true}])
      name]))
