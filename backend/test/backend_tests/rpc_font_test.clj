@@ -21,7 +21,7 @@
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest ttf-font-upload-1
-  (with-mocks [mock {:target 'app.rpc.quotes/check-quote! :return nil}]
+  (with-mocks [mock {:target 'app.rpc.quotes/check! :return nil}]
     (let [prof    (th/create-profile* 1 {:is-active true})
           team-id (:default-team-id prof)
           proj-id (:default-project-id prof)

@@ -168,6 +168,17 @@
 
 ;; --- MUTATION: Create Project
 
+(defn- create-project
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id] :as params}]
+  (let [project (teams/create-project conn params)]
+    (teams/create-project-role conn profile-id (:id project) :owner)
+    (db/insert! conn :team-project-profile-rel
+                {:project-id (:id project)
+                 :profile-id profile-id
+                 :team-id team-id
+                 :is-pinned false})
+    (assoc project :is-pinned false)))
+
 (def ^:private schema:create-project
   [:map {:title "create-project"}
    [:team-id ::sm/uuid]
@@ -178,23 +189,15 @@
   {::doc/added "1.18"
    ::webhooks/event? true
    ::sm/params schema:create-project}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
-  (db/with-atomic [conn pool]
-    (teams/check-edition-permissions! conn profile-id team-id)
-    (quotes/check-quote! conn {::quotes/id ::quotes/projects-per-team
-                               ::quotes/profile-id profile-id
-                               ::quotes/team-id team-id})
+  [cfg {:keys [::rpc/profile-id team-id] :as params}]
 
-    (let [params  (assoc params :profile-id profile-id)
-          project (teams/create-project conn params)]
-      (teams/create-project-role conn profile-id (:id project) :owner)
-      (db/insert! conn :team-project-profile-rel
-                  {:project-id (:id project)
-                   :profile-id profile-id
-                   :team-id team-id
-                   :is-pinned false})
-      (assoc project :is-pinned false))))
+  (teams/check-edition-permissions! cfg profile-id team-id)
+  (quotes/check! cfg {::quotes/id ::quotes/projects-per-team
+                      ::quotes/profile-id profile-id
+                      ::quotes/team-id team-id})
 
+  (let [params (assoc params :profile-id profile-id)]
+    (db/tx-run! cfg create-project params)))
 
 ;; --- MUTATION: Toggle Project Pin
 

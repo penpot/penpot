@@ -7,16 +7,13 @@
 (ns app.rpc.quotes
   "Penpot resource usage quotes."
   (:require
-   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
-   [app.common.spec :as us]
    [app.config :as cf]
    [app.db :as db]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
 (defmulti check-quote ::id)
@@ -34,6 +31,9 @@
    [::id :keyword]
    [::profile-id ::sm/uuid]])
 
+(def valid-quote?
+  (sm/lazy-validator schema:quote))
+
 (def ^:private enabled (volatile! true))
 
 (defn enable!
@@ -46,20 +46,31 @@
   []
   (vswap! enabled (constantly false)))
 
-(defn check-quote!
-  [ds quote]
-  (dm/assert!
-   "expected valid quote map"
-   (sm/validate schema:quote quote))
+(defn- check
+  [cfg quote]
+  (let [quote (merge cfg quote)
+        id    (::id quote)]
 
-  (when (contains? cf/flags :quotes)
-    (when @enabled
-      ;; This approach add flexibility on how and where the
-      ;; check-quote! can be called (in or out of transaction)
-      (db/run! ds (fn [cfg]
-                    (-> (merge cfg quote)
-                        (assoc ::target (name (::id quote)))
-                        (check-quote)))))))
+    (when-not (valid-quote? quote)
+      (ex/raise :type :internal
+                :code :invalid-quote-definition
+                :hint "found invalid data for quote schema"
+                :quote (name id)))
+
+    (-> (assoc quote ::target (name id))
+        (check-quote))))
+
+(defn check!
+  ([cfg]
+   (when (contains? cf/flags :quotes)
+     (when @enabled
+       (db/run! cfg check {}))))
+
+  ([cfg & others]
+   (when (contains? cf/flags :quotes)
+     (when @enabled
+       (db/run! cfg (fn [cfg]
+                      (run! (partial check cfg) others)))))))
 
 (defn- send-notification!
   [{:keys [::db/conn] :as params}]
@@ -100,7 +111,7 @@
                    (map :quote)
                    (reduce max (- Integer/MAX_VALUE)))
         quote (if (pos? quote) quote default)
-        total (->> (db/exec! conn count-sql) first :total)]
+        total (:total (db/exec-one! conn count-sql))]
 
     (when (> (+ total incr) quote)
       (if (contains? cf/flags :soft-quotes)
@@ -112,72 +123,81 @@
                   :count total)))))
 
 (def ^:private sql:get-quotes-1
-  "select id, quote from usage_quote
-    where target = ?
-      and profile_id = ?
-      and team_id is null
-      and project_id is null
-      and file_id is null;")
+  "SELECT id, quote
+     FROM usage_quote
+    WHERE target = ?
+      AND profile_id = ?
+      AND team_id IS NULL
+      AND project_id IS NULL
+      AND file_id IS NULL;")
 
 (def ^:private sql:get-quotes-2
-  "select id, quote from usage_quote
-    where target = ?
-      and ((team_id = ? and (profile_id = ? or profile_id is null)) or
-           (profile_id = ? and team_id is null and project_id is null and file_id is null));")
+  "SELECT id, quote
+     FROM usage_quote
+    WHERE target = ?
+      AND ((team_id = ? AND (profile_id = ? OR profile_id IS NULL)) OR
+           (profile_id = ? AND team_id IS NULL AND project_id IS NULL AND file_id IS NULL));")
 
 (def ^:private sql:get-quotes-3
-  "select id, quote from usage_quote
-    where target = ?
-      and ((project_id = ? and (profile_id = ? or profile_id is null)) or
-           (team_id = ? and (profile_id = ? or profile_id is null)) or
-           (profile_id = ? and team_id is null and project_id is null and file_id is null));")
+  "SELECT id, quote
+     FROM usage_quote
+    WHERE target = ?
+      AND ((project_id = ? AND (profile_id = ? OR profile_id IS NULL)) OR
+           (team_id = ? AND (profile_id = ? OR profile_id IS NULL)) OR
+           (profile_id = ? AND team_id IS NULL AND project_id IS NULL AND file_id IS NULL));")
 
 (def ^:private sql:get-quotes-4
-  "select id, quote from usage_quote
-    where target = ?
-      and ((file_id = ? and (profile_id = ? or profile_id is null)) or
-           (project_id = ? and (profile_id = ? or profile_id is null)) or
-           (team_id = ? and (profile_id = ? or profile_id is null)) or
-           (profile_id = ? and team_id is null and project_id is null and file_id is null));")
+  "SELECT id, quote
+     FROM usage_quote
+    WHERE target = ?
+      AND ((file_id = ? AND (profile_id = ? OR profile_id IS NULL)) OR
+           (project_id = ? AND (profile_id = ? OR profile_id IS NULL)) OR
+           (team_id = ? AND (profile_id = ? OR profile_id IS NULL)) OR
+           (profile_id = ? AND team_id IS NULL AND project_id IS NULL AND file_id IS NULL));")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUOTE: TEAMS-PER-PROFILE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private sql:get-teams-per-profile
-  "select count(*) as total
-     from team_profile_rel
-    where profile_id = ?")
+(def ^:private schema:teams-per-profile
+  [:map [::profile-id ::sm/uuid]])
 
-(s/def ::profile-id ::us/uuid)
-(s/def ::teams-per-profile
-  (s/keys :req [::profile-id ::target]))
+(def ^:private valid-teams-per-profile-quote?
+  (sm/lazy-validator schema:teams-per-profile))
+
+(def ^:private sql:get-teams-per-profile
+  "SELECT count(*) AS total
+     FROM team_profile_rel
+    WHERE profile_id = ?")
 
 (defmethod check-quote ::teams-per-profile
   [{:keys [::profile-id ::target] :as quote}]
-  (us/assert! ::teams-per-profile quote)
+  (assert (valid-teams-per-profile-quote? quote) "invalid quote parameters")
   (-> quote
       (assoc ::default (cf/get :quotes-teams-per-profile Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-1 target profile-id])
       (assoc ::count-sql [sql:get-teams-per-profile profile-id])
       (generic-check!)))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUOTE: ACCESS-TOKENS-PER-PROFILE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private sql:get-access-tokens-per-profile
-  "select count(*) as total
-     from access_token
-    where profile_id = ?")
+(def ^:private schema:access-tokens-per-profile
+  [:map [::profile-id ::sm/uuid]])
 
-(s/def ::access-tokens-per-profile
-  (s/keys :req [::profile-id ::target]))
+(def ^:private valid-access-tokens-per-profile-quote?
+  (sm/lazy-validator schema:access-tokens-per-profile))
+
+(def ^:private sql:get-access-tokens-per-profile
+  "SELECT count(*) AS total
+     FROM access_token
+    WHERE profile_id = ?")
 
 (defmethod check-quote ::access-tokens-per-profile
   [{:keys [::profile-id ::target] :as quote}]
-  (us/assert! ::access-tokens-per-profile quote)
+  (assert (valid-access-tokens-per-profile-quote? quote) "invalid quote parameters")
+
   (-> quote
       (assoc ::default (cf/get :quotes-access-tokens-per-profile Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-1 target profile-id])
@@ -188,40 +208,51 @@
 ;; QUOTE: PROJECTS-PER-TEAM
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private sql:get-projects-per-team
-  "select count(*) as total
-     from project as p
-    where p.team_id = ?
-      and p.deleted_at is null")
+(def ^:private schema:projects-per-team
+  [:map
+   [::profile-id ::sm/uuid]
+   [::team-id ::sm/uuid]])
 
-(s/def ::team-id ::us/uuid)
-(s/def ::projects-per-team
-  (s/keys :req [::profile-id ::team-id ::target]))
+(def ^:private valid-projects-per-team-quote?
+  (sm/lazy-validator schema:projects-per-team))
+
+(def ^:private sql:get-projects-per-team
+  "SELECT count(*) AS total
+     FROM project AS p
+    WHERE p.team_id = ?
+      AND p.deleted_at IS NULL")
 
 (defmethod check-quote ::projects-per-team
   [{:keys [::profile-id ::team-id ::target] :as quote}]
+  (assert (valid-projects-per-team-quote? quote) "invalid quote parameters")
+
   (-> quote
       (assoc ::default (cf/get :quotes-projects-per-team Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-2 target team-id profile-id profile-id])
       (assoc ::count-sql [sql:get-projects-per-team team-id])
       (generic-check!)))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUOTE: FONT-VARIANTS-PER-TEAM
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private sql:get-font-variants-per-team
-  "select count(*) as total
-     from team_font_variant as v
-     where v.team_id = ?")
+(def ^:private schema:font-variants-per-team
+  [:map
+   [::profile-id ::sm/uuid]
+   [::team-id ::sm/uuid]])
 
-(s/def ::font-variants-per-team
-  (s/keys :req [::profile-id ::team-id ::target]))
+(def ^:private valid-font-variant-per-team-quote?
+  (sm/lazy-validator schema:font-variants-per-team))
+
+(def ^:private sql:get-font-variants-per-team
+  "SELECT count(*) AS total
+     FROM team_font_variant AS v
+     WHERE v.team_id = ?")
 
 (defmethod check-quote ::font-variants-per-team
   [{:keys [::profile-id ::team-id ::target] :as quote}]
-  (us/assert! ::font-variants-per-team quote)
+  (assert (valid-font-variant-per-team-quote? quote) "invalid quote parameters")
+
   (-> quote
       (assoc ::default (cf/get :quotes-font-variants-per-team Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-2 target team-id profile-id profile-id])
@@ -233,70 +264,86 @@
 ;; QUOTE: INVITATIONS-PER-TEAM
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private sql:get-invitations-per-team
-  "select count(*) as total
-     from team_invitation
-    where team_id = ?")
+(def ^:private schema:invitations-per-team
+  [:map
+   [::profile-id ::sm/uuid]
+   [::team-id ::sm/uuid]])
 
-(s/def ::invitations-per-team
-  (s/keys :req [::profile-id ::team-id ::target]))
+(def ^:private valid-invitations-per-team-quote?
+  (sm/lazy-validator schema:invitations-per-team))
+
+(def ^:private sql:get-invitations-per-team
+  "SELECT count(*) AS total
+     FROM team_invitation
+    WHERE team_id = ?")
 
 (defmethod check-quote ::invitations-per-team
   [{:keys [::profile-id ::team-id ::target] :as quote}]
-  (us/assert! ::invitations-per-team quote)
+  (assert (valid-invitations-per-team-quote? quote) "invalid quote parameters")
+
   (-> quote
       (assoc ::default (cf/get :quotes-invitations-per-team Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-2 target team-id profile-id profile-id])
       (assoc ::count-sql [sql:get-invitations-per-team team-id])
       (generic-check!)))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUOTE: PROFILES-PER-TEAM
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def ^:private schema:profiles-per-team
+  [:map
+   [::profile-id ::sm/uuid]
+   [::team-id ::sm/uuid]])
+
+(def ^:private valid-profiles-per-team-quote?
+  (sm/lazy-validator schema:profiles-per-team))
+
 (def ^:private sql:get-profiles-per-team
-  "select (select count(*)
-             from team_profile_rel
-            where team_id = ?) +
-          (select count(*)
-             from team_invitation
-            where team_id = ?
-              and valid_until > now()) as total;")
+  "SELECT (SELECT count(*)
+             FROM team_profile_rel
+            WHERE team_id = ?) +
+          (SELECT count(*)
+             FROM team_invitation
+            WHERE team_id = ?
+              AND valid_until > now()) AS total;")
 
 ;; NOTE: the total number of profiles is determined by the number of
 ;; effective members plus ongoing valid invitations.
 
-(s/def ::profiles-per-team
-  (s/keys :req [::profile-id ::team-id ::target]))
-
 (defmethod check-quote ::profiles-per-team
   [{:keys [::profile-id ::team-id ::target] :as quote}]
-  (us/assert! ::profiles-per-team quote)
+  (assert (valid-profiles-per-team-quote? quote) "invalid quote parameters")
+
   (-> quote
       (assoc ::default (cf/get :quotes-profiles-per-team Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-2 target team-id profile-id profile-id])
       (assoc ::count-sql [sql:get-profiles-per-team team-id team-id])
       (generic-check!)))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUOTE: FILES-PER-PROJECT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private sql:get-files-per-project
-  "select count(*) as total
-     from file as f
-    where f.project_id = ?
-      and f.deleted_at is null")
+(def ^:private schema:files-per-project
+  [:map
+   [::profile-id ::sm/uuid]
+   [::project-id ::sm/uuid]
+   [::team-id ::sm/uuid]])
 
-(s/def ::project-id ::us/uuid)
-(s/def ::files-per-project
-  (s/keys :req [::profile-id ::project-id ::team-id ::target]))
+(def ^:private valid-files-per-project-quote?
+  (sm/lazy-validator schema:files-per-project))
+
+(def ^:private sql:get-files-per-project
+  "SELECT count(*) AS total
+     FROM file AS f
+    WHERE f.project_id = ?
+      AND f.deleted_at IS NULL")
 
 (defmethod check-quote ::files-per-project
   [{:keys [::profile-id ::project-id ::team-id ::target] :as quote}]
-  (us/assert! ::files-per-project quote)
+  (assert (valid-files-per-project-quote? quote) "invalid quote parameters")
+
   (-> quote
       (assoc ::default (cf/get :quotes-files-per-project Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-3 target project-id profile-id team-id profile-id profile-id])
@@ -307,17 +354,24 @@
 ;; QUOTE: COMMENT-THREADS-PER-FILE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private sql:get-comment-threads-per-file
-  "select count(*) as total
-     from comment_thread as ct
-    where ct.file_id = ?")
+(def ^:private schema:comment-threads-per-file
+  [:map
+   [::profile-id ::sm/uuid]
+   [::project-id ::sm/uuid]
+   [::team-id ::sm/uuid]])
 
-(s/def ::comment-threads-per-file
-  (s/keys :req [::profile-id ::project-id ::team-id ::target]))
+(def ^:private valid-comment-threads-per-file-quote?
+  (sm/lazy-validator schema:comment-threads-per-file))
+
+(def ^:private sql:get-comment-threads-per-file
+  "SELECT count(*) AS total
+     FROM comment_thread AS ct
+    WHERE ct.file_id = ?")
 
 (defmethod check-quote ::comment-threads-per-file
   [{:keys [::profile-id ::file-id ::team-id ::project-id ::target] :as quote}]
-  (us/assert! ::files-per-project quote)
+  (assert (valid-comment-threads-per-file-quote? quote) "invalid quote parameters")
+
   (-> quote
       (assoc ::default (cf/get :quotes-comment-threads-per-file Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-4 target file-id profile-id project-id
@@ -325,23 +379,28 @@
       (assoc ::count-sql [sql:get-comment-threads-per-file file-id])
       (generic-check!)))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; QUOTE: COMMENTS-PER-FILE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def ^:private sql:get-comments-per-file
-  "select count(*) as total
-     from comment as c
-     join comment_thread as ct on (ct.id = c.thread_id)
-    where ct.file_id = ?")
+(def ^:private schema:comments-per-file
+  [:map
+   [::profile-id ::sm/uuid]
+   [::project-id ::sm/uuid]
+   [::team-id ::sm/uuid]])
 
-(s/def ::comments-per-file
-  (s/keys :req [::profile-id ::project-id ::team-id ::target]))
+(def ^:private valid-comments-per-file-quote?
+  (sm/lazy-validator schema:comments-per-file))
+
+(def ^:private sql:get-comments-per-file
+  "SELECT count(*) AS total
+     FROM comment AS c
+     JOIN comment_thread AS ct ON (ct.id = c.thread_id)
+    WHERE ct.file_id = ?")
 
 (defmethod check-quote ::comments-per-file
   [{:keys [::profile-id ::file-id ::team-id ::project-id ::target] :as quote}]
-  (us/assert! ::files-per-project quote)
+  (assert (valid-comments-per-file-quote? quote) "invalid quote parameters")
   (-> quote
       (assoc ::default (cf/get :quotes-comments-per-file Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-4 target file-id profile-id project-id

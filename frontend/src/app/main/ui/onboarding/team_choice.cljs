@@ -98,6 +98,10 @@
                     (= :max-invitations-by-request code))
                (swap! error* (tr "errors.maximum-invitations-by-request-reached" (:threshold error)))
 
+               (and (= :restriction type)
+                    (= :max-quote-reached code))
+               (swap! error* (tr "errors.max-quote-reached" (:target error)))
+
                (or (= :member-is-muted code)
                    (= :email-has-permanent-bounces code)
                    (= :email-has-complaints code))

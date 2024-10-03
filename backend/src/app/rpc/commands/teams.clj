@@ -401,19 +401,22 @@
 
 (sv/defmethod ::create-team
   {::doc/added "1.17"
-   ::sm/params schema:create-team}
+   ::sm/params schema:create-team
+   ::db/transaction true}
   [cfg {:keys [::rpc/profile-id] :as params}]
-  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                    (quotes/check-quote! conn {::quotes/id ::quotes/teams-per-profile
-                                               ::quotes/profile-id profile-id})
 
-                    (let [features (-> (cfeat/get-enabled-features cf/flags)
-                                       (cfeat/check-client-features! (:features params)))
-                          team (create-team cfg (assoc params
-                                                       :profile-id profile-id
-                                                       :features features))]
-                      (with-meta team
-                        {::audit/props {:id (:id team)}})))))
+  (quotes/check! cfg {::quotes/id ::quotes/teams-per-profile
+                      ::quotes/profile-id profile-id})
+
+  (let [features (-> (cfeat/get-enabled-features cf/flags)
+                     (cfeat/check-client-features! (:features params)))
+        params   (-> params
+                     (assoc :profile-id profile-id)
+                     (assoc :features features))
+        team     (create-team cfg params)]
+
+    (with-meta team
+      {::audit/props {:id (:id team)}})))
 
 (defn create-team
   "This is a complete team creation process, it creates the team
@@ -867,10 +870,11 @@
       (ex/raise :type :restriction
                 :code :profile-blocked))
 
-    (quotes/check-quote! conn
-                         {::quotes/id ::quotes/profiles-per-team
-                          ::quotes/profile-id (:id member)
-                          ::quotes/team-id team-id})
+    (quotes/check!
+     {::db/conn conn
+      ::quotes/id ::quotes/profiles-per-team
+      ::quotes/profile-id (:id member)
+      ::quotes/team-id team-id})
 
     ;; Insert the member to the team
     (db/insert! conn :team-profile-rel params {::db/on-conflict-do-nothing? true})
@@ -916,64 +920,62 @@
   "A rpc call that allow to send a single or multiple invitations to
   join the team."
   {::doc/added "1.17"
-   ::sm/params schema:create-team-invitations}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id emails role] :as params}]
-  (db/with-atomic [conn pool]
-    (let [perms    (get-permissions conn profile-id team-id)
-          profile  (db/get-by-id conn :profile profile-id)
-          team     (db/get-by-id conn :team team-id)
-          emails   (into #{} (map profile/clean-email) emails)]
+   ::sm/params schema:create-team-invitations
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id team-id emails role] :as params}]
+  (let [perms    (get-permissions conn profile-id team-id)
+        profile  (db/get-by-id conn :profile profile-id)
+        team     (db/get-by-id conn :team team-id)
+        emails   (into #{} (map profile/clean-email) emails)]
 
-      (when (> (count emails) max-invitations-by-request-threshold)
-        (ex/raise :type :validation
-                  :code :max-invitations-by-request
-                  :hint "the maximum of invitation on single request is reached"
-                  :threshold max-invitations-by-request-threshold))
+    (when-not (:is-admin perms)
+      (ex/raise :type :validation
+                :code :insufficient-permissions))
 
-      (run! (partial quotes/check-quote! conn)
-            (list {::quotes/id ::quotes/invitations-per-team
-                   ::quotes/profile-id profile-id
-                   ::quotes/team-id (:id team)
-                   ::quotes/incr (count emails)}
-                  {::quotes/id ::quotes/profiles-per-team
-                   ::quotes/profile-id profile-id
-                   ::quotes/team-id (:id team)
-                   ::quotes/incr (count emails)}))
+    (when (> (count emails) max-invitations-by-request-threshold)
+      (ex/raise :type :validation
+                :code :max-invitations-by-request
+                :hint "the maximum of invitation on single request is reached"
+                :threshold max-invitations-by-request-threshold))
 
-      (when-not (:is-admin perms)
-        (ex/raise :type :validation
-                  :code :insufficient-permissions))
+    (-> cfg
+        (assoc ::quotes/profile-id profile-id)
+        (assoc ::quotes/team-id team-id)
+        (assoc ::quotes/incr (count emails))
+        (quotes/check! {::quotes/id ::quotes/invitations-per-team}
+                       {::quotes/id ::quotes/profiles-per-team}))
 
-      ;; Check if the current profile is allowed to send emails.
-      (check-valid-email-muted conn profile)
+    ;; Check if the current profile is allowed to send emails
+    (check-valid-email-muted conn profile)
 
+    (let [requested     (into #{} (map :email) (get-valid-requests-email conn team-id))
+          emails-to-add (filter #(contains? requested %) emails)
+          emails        (remove #(contains? requested %) emails)
+          cfg           (assoc cfg ::db/conn conn)
+          members     (->> (db/exec! conn [sql:team-members team-id])
+                           (into #{} (map :email)))
 
-      (let [requested     (into #{} (map :email) (get-valid-requests-email conn team-id))
-            emails-to-add (filter #(contains? requested %) emails)
-            emails        (remove #(contains? requested %) emails)
-            cfg           (assoc cfg ::db/conn conn)
-            members     (->> (db/exec! conn [sql:team-members team-id])
-                             (into #{} (map :email)))
+          invitations (into #{}
+                            (comp
+                             ;;  We don't re-send inviation to already existing members
+                             (remove (partial contains? members))
+                             (map (fn [email]
+                                    (-> params
+                                        (assoc :email email)
+                                        (assoc :team team)
+                                        (assoc :profile profile)
+                                        (assoc :role role))))
+                             (keep (partial create-invitation cfg)))
+                            emails)]
+      ;; For requested invitations, do not send
+      ;; invitation emails, add the user directly to
+      ;; the team
+      (doseq [email emails-to-add]
+        (add-user-to-team conn profile team email role))
 
-            invitations (into #{}
-                              (comp
-                               ;;  We don't re-send inviation to already existing members
-                               (remove (partial contains? members))
-                               (map (fn [email]
-                                      (-> params
-                                          (assoc :email email)
-                                          (assoc :team team)
-                                          (assoc :profile profile)
-                                          (assoc :role role))))
-                               (keep (partial create-invitation cfg)))
-                              emails)]
-          ;; For requested invitations, do not send invitation emails, add the user directly to the team
-        (doseq [email emails-to-add]
-          (add-user-to-team conn profile team email role))
-
-        (with-meta {:total (count invitations)
-                    :invitations invitations}
-          {::audit/props {:invitations (count invitations)}})))))
+      (with-meta {:total (count invitations)
+                  :invitations invitations}
+        {::audit/props {:invitations (count invitations)}}))))
 
 ;; --- Mutation: Create Team & Invite Members
 
@@ -987,58 +989,51 @@
 
 (sv/defmethod ::create-team-with-invitations
   {::doc/added "1.17"
-   ::sm/params schema:create-team-with-invitations}
-  [cfg {:keys [::rpc/profile-id emails role name] :as params}]
+   ::sm/params schema:create-team-with-invitations
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id emails role name] :as params}]
+  (let [features (-> (cfeat/get-enabled-features cf/flags)
+                     (cfeat/check-client-features! (:features params)))
 
-  (db/tx-run! cfg
-              (fn [{:keys [::db/conn] :as cfg}]
-                (let [features (-> (cfeat/get-enabled-features cf/flags)
-                                   (cfeat/check-client-features! (:features params)))
+        params   (-> params
+                     (assoc :profile-id profile-id)
+                     (assoc :features features))
 
-                      params   (-> params
-                                   (assoc :profile-id profile-id)
-                                   (assoc :features features))
+        team     (create-team cfg params)
+        emails   (into #{} (map profile/clean-email) emails)]
 
-                      cfg      (assoc cfg ::db/conn conn)
-                      team     (create-team cfg params)
-                      profile  (db/get-by-id conn :profile profile-id)
-                      emails   (into #{} (map profile/clean-email) emails)]
+    (-> cfg
+        (assoc ::quotes/profile-id profile-id)
+        (assoc ::quotes/team-id (:id team))
+        (assoc ::quotes/incr (count emails))
+        (quotes/check! {::quotes/id ::quotes/teams-per-profile}
+                       {::quotes/id ::quotes/invitations-per-team}
+                       {::quotes/id ::quotes/profiles-per-team}))
 
-                  (when (> (count emails) max-invitations-by-request-threshold)
-                    (ex/raise :type :validation
-                              :code :max-invitations-by-request
-                              :hint "the maximum of invitation on single request is reached"
-                              :threshold max-invitations-by-request-threshold))
+    (when (> (count emails) max-invitations-by-request-threshold)
+      (ex/raise :type :validation
+                :code :max-invitations-by-request
+                :hint "the maximum of invitation on single request is reached"
+                :threshold max-invitations-by-request-threshold))
 
-                  (let [props {:name name :features features}
-                        event (-> (audit/event-from-rpc-params params)
-                                  (assoc ::audit/name "create-team")
-                                  (assoc ::audit/props props))]
-                    (audit/submit! cfg event))
+    (let [props {:name name :features features}
+          event (-> (audit/event-from-rpc-params params)
+                    (assoc ::audit/name "create-team")
+                    (assoc ::audit/props props))]
+      (audit/submit! cfg event))
 
-                  ;; Create invitations for all provided emails.
-                  (->> emails
-                       (map (fn [email]
-                              (-> params
-                                  (assoc :team team)
-                                  (assoc :profile profile)
-                                  (assoc :email email)
-                                  (assoc :role role))))
-                       (run! (partial create-invitation cfg)))
+    ;; Create invitations for all provided emails.
+    (let [profile (db/get-by-id conn :profile profile-id)]
+      (->> emails
+           (map (fn [email]
+                  (-> params
+                      (assoc :team team)
+                      (assoc :profile profile)
+                      (assoc :email email)
+                      (assoc :role role))))
+           (run! (partial create-invitation cfg))))
 
-                  (run! (partial quotes/check-quote! conn)
-                        (list {::quotes/id ::quotes/teams-per-profile
-                               ::quotes/profile-id profile-id}
-                              {::quotes/id ::quotes/invitations-per-team
-                               ::quotes/profile-id profile-id
-                               ::quotes/team-id (:id team)
-                               ::quotes/incr (count emails)}
-                              {::quotes/id ::quotes/profiles-per-team
-                               ::quotes/profile-id profile-id
-                               ::quotes/team-id (:id team)
-                               ::quotes/incr (count emails)}))
-
-                  (vary-meta team assoc ::audit/props {:invitations (count emails)})))))
+    (vary-meta team assoc ::audit/props {:invitations (count emails)})))
 
 ;; --- Query: get-team-invitation-token
 
