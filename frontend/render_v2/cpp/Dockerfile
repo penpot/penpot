@@ -25,7 +25,7 @@ RUN cd /tmp \
 RUN cd /tmp \
   && git clone 'https://skia.googlesource.com/skia' \
   && cd skia \
-  && git checkout 'chrome/m127'
+  && git checkout 'chrome/m129'
 
 ENV PATH=${PATH}:/tmp/depot_tools
 ENV PATH=${PATH}:/tmp/gn

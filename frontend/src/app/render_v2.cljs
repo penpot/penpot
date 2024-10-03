@@ -31,14 +31,20 @@
   (cond
     ;; CPP
     (contains? cf/flags :render-v2-cpp)
-    (render-v2-cpp/set-canvas canvas)
+    (render-v2-cpp/set-canvas canvas vbox zoom base-objects)
 
     ;; Rust
     (contains? cf/flags :render-v2-rs)
     (render-v2-rs/set-canvas canvas vbox zoom base-objects)))
 
-(defn draw-canvas [vbox zoom base-objects]
+(defn draw-canvas
+  [vbox zoom base-objects]
+  (js/console.log "draw-canvas")
   (cond
+    ;; CPP
+    (contains? cf/flags :render-v2-cpp)
+    (render-v2-cpp/draw-canvas vbox zoom base-objects)
+
     ;; Rust
     (contains? cf/flags :render-v2-rs)
     (render-v2-rs/draw-canvas vbox zoom base-objects)))

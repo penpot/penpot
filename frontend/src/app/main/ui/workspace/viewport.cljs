@@ -114,8 +114,6 @@
 
         selected-shapes   (keep (d/getf objects-modified) selected)
 
-        canvas-ref        (mf/use-ref nil)
-
         ;; STATE
         alt?              (mf/use-state false)
         shift?            (mf/use-state false)
@@ -130,12 +128,13 @@
         hover-top-frame-id (mf/use-state nil)
         frame-hover       (mf/use-state nil)
         active-frames     (mf/use-state #{})
-        canvas-init?      (mf/use-ref false)
 
         ;; REFS
         [viewport-ref
          on-viewport-ref] (create-viewport-ref)
+
         canvas-ref        (mf/use-ref nil)
+        canvas-init?      (mf/use-ref false)
 
         ;; VARS
         disable-paste     (mf/use-var false)
@@ -276,14 +275,15 @@
         [canvas-ref]
         (let [canvas (mf/ref-val canvas-ref)]
           (when (some? canvas)
-            (p/then (render-v2/init)
-                    (fn []
-                      (render-v2/set-canvas canvas vbox' zoom base-objects)
-                      (mf/set-ref-val! canvas-init? true))))))
+            (-> (p/then (render-v2/init)
+                        (fn []
+                          (mf/set-ref-val! canvas-init? true)
+                          (render-v2/set-canvas canvas vbox' zoom base-objects)))
+                (p/catch (fn [error] (js/console.error error)))))))
 
       ;; redraw when vbox or shapes change
       (mf/with-effect
-        [vbox canvas-init? zoom]
+        [vbox canvas-init? base-objects zoom]
         (when (mf/ref-val canvas-init?)
           (render-v2/draw-canvas vbox zoom base-objects)))
 

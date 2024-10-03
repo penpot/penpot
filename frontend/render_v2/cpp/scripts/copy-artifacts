@@ -1,11 +1,11 @@
 #!/bin/bash
-mkdir -p ../../resources/public/js/render-v2/cpp
-mkdir -p ../../src/app/render-v2/
+mkdir -p ../../resources/public/js/render_v2/cpp
+mkdir -p ../../src/app/render_v2/
 
 # FIXME: This is a VERY HACKY way to set the correct `scriptDirectory` but
 # I didn't find a better way yet.
 PREAMBLE_LINES=`wc -l js/preamble.js | egrep -o [0-9]+`
 POSTAMBLE_LINES=`wc -l js/postamble.js | egrep -o [0-9]+`
 LINE_NUMBER=`echo "200 + ${PREAMBLE_LINES} + ${POSTAMBLE_LINES}" | bc | egrep -o [0-9]+`
-sed "${LINE_NUMBER} i \ \ scriptDirectory += 'render-v2/cpp/';" out/render-v2.js > ../../src/app/render-v2/cpp.js
-cp out/render-v2.wasm ../../resources/public/js/render-v2/cpp
+sed "${LINE_NUMBER} i \ \ scriptDirectory += 'js/render_v2/cpp/';" out/renderer.js > ../../src/app/render_v2/cpp.js
+cp out/renderer.wasm ../../resources/public/js/render_v2/cpp

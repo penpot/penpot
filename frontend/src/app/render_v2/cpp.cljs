@@ -14,9 +14,16 @@
 (defonce ^:dynamic internal-module nil)
 
 (defn set-canvas
-  [canvas]
+  [canvas vbox zoom base-objects]
   (js/console.log "setting canvas" canvas)
-  (.setCanvas internal-module canvas #js {:antialias false}))
+  (.setCanvas ^js internal-module canvas #js {:antialias false})
+  (js/console.log "canvas set")
+  (.drawCanvas ^js internal-module vbox zoom base-objects))
+
+(defn draw-canvas
+  [vbox zoom base-objects]
+  (js/console.log "draw canvas" vbox zoom base-objects)
+  (.drawCanvas ^js internal-module vbox zoom base-objects))
 
 (defn on-init
   [module']
