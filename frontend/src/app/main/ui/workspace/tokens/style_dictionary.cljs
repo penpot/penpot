@@ -3,6 +3,7 @@
    ["@tokens-studio/sd-transforms" :as sd-transforms]
    ["style-dictionary$default" :as sd]
    [app.common.logging :as l]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
@@ -85,7 +86,7 @@
                                                              {:value value :unit (tinycolor/color-format tc)}
                                                              {:errors [(wte/error-with-value :error.token/invalid-color value)]})
                                                     (or (wtt/parse-token-value value)
-                                                        (if-let [references (-> (wtt/find-token-references value)
+                                                        (if-let [references (-> (ctob/find-token-value-references value)
                                                                                 (seq))]
                                                           {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
                                                            :references references}
