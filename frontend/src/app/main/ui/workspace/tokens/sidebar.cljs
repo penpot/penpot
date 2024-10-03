@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
-   [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
@@ -19,7 +18,6 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.changes :as wtch]
-   [app.main.ui.workspace.tokens.common :refer [labeled-input]]
    [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.sets :refer [sets-list]]
@@ -34,22 +32,14 @@
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]
-   [shadow.resource]))
+   [shadow.resource]
+   [app.common.types.tokens-lib :as ctob]))
 
 (def lens:token-type-open-status
   (l/derived (l/in [:workspace-tokens :open-status]) st/state))
 
 (def ^:private download-icon
   (i/icon-xref :download (stl/css :download-icon)))
-
-(def selected-set-id
-  (l/derived :selected-set-id st/state))
-
- ;; Event Functions -------------------------------------------------------------
-
-(defn on-set-add-click [_event]
-  (when-let [set-name (js/window.prompt "Set name")]
-    (st/emit! (wdt/create-token-set {:name set-name}))))
 
 ;; Components ------------------------------------------------------------------
 
@@ -107,7 +97,7 @@
                            (dom/stop-propagation event)
                            (st/emit! (dt/show-token-context-menu {:type :token
                                                                   :position (dom/get-client-position event)
-                                                                  :token-id (:id token)}))))
+                                                                  :token-name (:name token)}))))
 
         on-toggle-open-click (mf/use-fn
                               (mf/deps open? tokens)
@@ -117,7 +107,6 @@
                                  (let [{:keys [key fields]} modal]
                                    (dom/stop-propagation event)
                                    (st/emit! (dt/set-token-type-section-open type true))
-                                   (js/console.log "key" key)
                                    (modal/show! key {:x (.-clientX ^js event)
                                                      :y (.-clientY ^js event)
                                                      :position :right
@@ -151,7 +140,7 @@
           (for [token (sort-by :modified-at tokens)]
             (let [theme-token (get active-theme-tokens (wtt/token-identifier token))]
               [:& token-pill
-               {:key (:id token)
+               {:key (:name token)
                 :token token
                 :theme-token theme-token
                 :highlighted? (wtt/shapes-token-applied? token selected-shapes (or all-attributes attributes))
@@ -162,7 +151,7 @@
   "Separate token-types into groups of `:empty` or `:filled` depending if tokens exist for that type.
   Sort each group alphabetically (by their `:token-key`)."
   [tokens]
-  (let [tokens-by-type (wtc/group-tokens-by-type tokens)
+  (let [tokens-by-type (ctob/group-by-type tokens)
         {:keys [empty filled]} (->> wtty/token-types
                                     (map (fn [[token-key token-type-props]]
                                            {:token-key token-key
@@ -172,23 +161,6 @@
                                                 (if (empty? tokens) :empty :filled))))]
     {:empty (sort-by :token-key empty)
      :filled (sort-by :token-key filled)}))
-
-(mf/defc tokene-theme-create
-  [_props]
-  (let [group (mf/use-state "")
-        name (mf/use-state "")]
-    [:div {:style {:display "flex"
-                   :flex-direction "column"
-                   :gap "10px"}}
-     [:& labeled-input {:label "Group name"
-                        :input-props {:value @group
-                                      :on-change #(reset! group (dom/event->value %))}}]
-     [:& labeled-input {:label "Theme name"
-                        :input-props {:value @name
-                                      :on-change #(reset! name (dom/event->value %))}}]
-     [:button {:on-click #(st/emit! (wdt/create-token-theme {:group @group
-                                                             :name @name}))}
-      "Create"]]))
 
 (mf/defc edit-button
   [{:keys [create?]}]
@@ -200,7 +172,7 @@
 
 (mf/defc themes-sidebar
   [_props]
-  (let [ordered-themes (mf/deref refs/workspace-ordered-token-themes)]
+  (let [ordered-themes (mf/deref refs/workspace-token-themes-no-hidden)]
    [:div {:class (stl/css :theme-sidebar)}
     [:span {:class (stl/css :themes-header)} "Themes"]
     [:div {:class (stl/css :theme-select-wrapper)}
@@ -240,7 +212,6 @@
 
         selected (mf/deref refs/selected-shapes)
         selected-shapes (into [] (keep (d/getf objects)) selected)
-
 
         active-theme-tokens (sd/use-active-theme-sets-tokens)
 

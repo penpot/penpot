@@ -1,14 +1,11 @@
 (ns token-tests.logic.token-actions-test
   (:require
-   [app.common.pprint :refer [pprint]]
    [app.common.logging :as log]
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.shapes :as cths]
-   [app.main.data.tokens :as wdt]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.ui.workspace.tokens.changes :as wtch]
-   [app.main.ui.workspace.tokens.token :as wtt]
-   [app.main.ui.workspace.tokens.token-set :as wtts]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
@@ -25,13 +22,13 @@
   (cthf/sample-file :file-1 :page-label :page-1))
 
 (def border-radius-token
-  {:value "12"
-   :name "borderRadius.sm"
+  {:name "borderRadius.sm"
+   :value "12"
    :type :border-radius})
 
-(def ^:private reference-border-radius-token
-  {:value "{borderRadius.sm} * 2"
-   :name "borderRadius.md"
+(def reference-border-radius-token
+  {:name "borderRadius.md"
+   :value "{borderRadius.sm} * 2"
    :type :border-radius})
 
 (defn setup-file-with-tokens
@@ -40,45 +37,13 @@
       (ctho/add-rect :rect-1 rect-1)
       (ctho/add-rect :rect-2 rect-2)
       (ctho/add-rect :rect-3 rect-3)
-      (toht/add-token :token-1 border-radius-token)
-      (toht/add-token :token-2 reference-border-radius-token)))
-
-(t/deftest test-create-token
-  (t/testing "creates token in new token set"
-    (t/async
-     done
-     (let [file (setup-file)
-           store (ths/setup-store file)
-           events [(wdt/update-create-token border-radius-token)]]
-       (tohs/run-store-async
-        store done events
-        (fn [new-state]
-          (let [set-id (wtts/get-selected-token-set-id new-state)
-                token-set (wtts/get-token-set set-id new-state)
-                set-tokens (wtts/get-active-theme-sets-tokens-names-map new-state)]
-            (t/testing "selects created workspace set and adds token to it"
-              (t/is (some? token-set))
-              (t/is (= 1 (count set-tokens)))
-              (t/is (= (list border-radius-token) (->> (vals set-tokens)
-                                                       (map #(dissoc % :id :modified-at)))))))))))))
-
-(t/deftest test-create-multiple-tokens
-  (t/testing "uses selected tokens set when creating multiple tokens"
-    (t/async
-     done
-     (let [file (setup-file)
-           store (ths/setup-store file)
-           events [(wdt/update-create-token border-radius-token)
-                   (wdt/update-create-token reference-border-radius-token)]]
-       (tohs/run-store-async
-        store done events
-        (fn [new-state]
-          (let [set-tokens (wtts/get-active-theme-sets-tokens-names-map new-state)]
-            (t/testing "selects created workspace set and adds token to it"
-              (t/is (= 2 (count set-tokens)))
-              (t/is (= (list border-radius-token reference-border-radius-token)
-                       (->> (vals set-tokens)
-                            (map #(dissoc % :id :modified-at)))))))))))))
+      (assoc-in [:data :tokens-lib]
+                (-> (ctob/make-tokens-lib)
+                    (ctob/add-theme (ctob/make-token-theme :name "Theme A" :sets #{"Set A"}))
+                    (ctob/set-active-themes #{"/Theme A"})
+                    (ctob/add-set (ctob/make-token-set :name "Set A"))
+                    (ctob/add-token-in-set "Set A" (ctob/make-token border-radius-token))
+                    (ctob/add-token-in-set "Set A" (ctob/make-token reference-border-radius-token))))))
 
 (t/deftest test-apply-token
   (t/testing "applies token to shape and updates shape attributes to resolved value"
@@ -89,18 +54,18 @@
            rect-1 (cths/get-shape file :rect-1)
            events [(wtch/apply-token {:shape-ids [(:id rect-1)]
                                       :attributes #{:rx :ry}
-                                      :token (toht/get-token file :token-2)
+                                      :token (toht/get-token file "borderRadius.md")
                                       :on-update-shape wtch/update-shape-radius-all})]]
        (tohs/run-store-async
         store done events
         (fn [new-state]
           (let [file' (ths/get-file-from-store new-state)
-                token-2' (toht/get-token file' :token-2)
+                token (toht/get-token file' "borderRadius.md")
                 rect-1' (cths/get-shape file' :rect-1)]
             (t/testing "shape `:applied-tokens` got updated"
               (t/is (some? (:applied-tokens rect-1')))
-              (t/is (= (:rx (:applied-tokens rect-1')) (wtt/token-identifier token-2')))
-              (t/is (= (:ry (:applied-tokens rect-1')) (wtt/token-identifier token-2'))))
+              (t/is (= (:rx (:applied-tokens rect-1')) (:name token)))
+              (t/is (= (:ry (:applied-tokens rect-1')) (:name token))))
             (t/testing "shape radius got update to the resolved token value."
               (t/is (= (:rx rect-1') 24))
               (t/is (= (:ry rect-1') 24))))))))))
@@ -114,22 +79,22 @@
            rect-1 (cths/get-shape file :rect-1)
            events [(wtch/apply-token {:shape-ids [(:id rect-1)]
                                       :attributes #{:rx :ry}
-                                      :token (toht/get-token file :token-1)
+                                      :token (toht/get-token file "borderRadius.sm")
                                       :on-update-shape wtch/update-shape-radius-all})
                    (wtch/apply-token {:shape-ids [(:id rect-1)]
                                       :attributes #{:rx :ry}
-                                      :token (toht/get-token file :token-2)
+                                      :token (toht/get-token file "borderRadius.md")
                                       :on-update-shape wtch/update-shape-radius-all})]]
        (tohs/run-store-async
         store done events
         (fn [new-state]
           (let [file' (ths/get-file-from-store new-state)
-                token-2' (toht/get-token file' :token-2)
+                token (toht/get-token file' "borderRadius.md")
                 rect-1' (cths/get-shape file' :rect-1)]
             (t/testing "shape `:applied-tokens` got updated"
               (t/is (some? (:applied-tokens rect-1')))
-              (t/is (= (:rx (:applied-tokens rect-1')) (wtt/token-identifier token-2')))
-              (t/is (= (:ry (:applied-tokens rect-1')) (wtt/token-identifier token-2'))))
+              (t/is (= (:rx (:applied-tokens rect-1')) (:name token)))
+              (t/is (= (:ry (:applied-tokens rect-1')) (:name token))))
             (t/testing "shape radius got update to the resolved token value."
               (t/is (= (:rx rect-1') 24))
               (t/is (= (:ry rect-1') 24))))))))))
@@ -141,9 +106,9 @@
      (let [file (setup-file-with-tokens)
            store (ths/setup-store file)
            rect-1 (cths/get-shape file :rect-1)
-           events [;; Apply `:token-1` to all border radius attributes
+           events [;; Apply "borderRadius.sm" to all border radius attributes
                    (wtch/apply-token {:attributes #{:rx :ry :r1 :r2 :r3 :r4}
-                                      :token (toht/get-token file :token-1)
+                                      :token (toht/get-token file "borderRadius.sm")
                                       :shape-ids [(:id rect-1)]
                                       :on-update-shape wtch/update-shape-radius-all})
                    ;; Apply single `:r1` attribute to same shape
@@ -151,22 +116,22 @@
                    ;; but keep `:r4` for testing purposes
                    (wtch/apply-token {:attributes #{:r1}
                                       :attributes-to-remove #{:rx :ry :r1 :r2 :r3}
-                                      :token (toht/get-token file :token-2)
+                                      :token (toht/get-token file "borderRadius.md")
                                       :shape-ids [(:id rect-1)]
                                       :on-update-shape wtch/update-shape-radius-all})]]
        (tohs/run-store-async
         store done events
         (fn [new-state]
           (let [file' (ths/get-file-from-store new-state)
-                token-1' (toht/get-token file' :token-1)
-                token-2' (toht/get-token file' :token-2)
+                token-sm (toht/get-token file' "borderRadius.sm")
+                token-md (toht/get-token file' "borderRadius.md")
                 rect-1' (cths/get-shape file' :rect-1)]
             (t/testing "other border-radius attributes got removed"
               (t/is (nil? (:rx (:applied-tokens rect-1')))))
-            (t/testing "r1 got applied with :token-2"
-              (t/is (= (:r1 (:applied-tokens rect-1')) (wtt/token-identifier token-2'))))
-            (t/testing "while :r4 was kept"
-              (t/is (= (:r4 (:applied-tokens rect-1')) (wtt/token-identifier token-1')))))))))));)))))))))))
+            (t/testing "r1 got applied with borderRadius.md"
+              (t/is (= (:r1 (:applied-tokens rect-1')) (:name token-md))))
+            (t/testing "while :r4 was kept with borderRadius.sm"
+              (t/is (= (:r4 (:applied-tokens rect-1')) (:name token-sm)))))))))))
 
 (t/deftest test-apply-dimensions
   (t/testing "applies dimensions token and updates the shapes width and height"
@@ -196,30 +161,62 @@
               (t/is (= (:width rect-1') 100))
               (t/is (= (:height rect-1') 100))))))))))
 
-(t/deftest test-apply-sizing
-  (t/testing "applies sizing token and updates the shapes width and height"
+(t/deftest test-apply-dimensions
+  (t/testing "applies dimensions token and updates the shapes width and height"
     (t/async
      done
-     (let [file (-> (setup-file-with-tokens)
-                    (toht/add-token :token-target {:value "100"
-                                                   :name "sizing.sm"
-                                                   :type :sizing}))
+     (let [dimensions-token {:name "dimensions.sm"
+                             :value "100"
+                             :type :dimensions}
+           file (-> (setup-file-with-tokens)
+                    (update-in [:data :tokens-lib]
+                               #(ctob/add-token-in-set % "Set A" (ctob/make-token dimensions-token))))
            store (ths/setup-store file)
            rect-1 (cths/get-shape file :rect-1)
            events [(wtch/apply-token {:shape-ids [(:id rect-1)]
                                       :attributes #{:width :height}
-                                      :token (toht/get-token file :token-target)
+                                      :token (toht/get-token file "dimensions.sm")
                                       :on-update-shape wtch/update-shape-dimensions})]]
        (tohs/run-store-async
         store done events
         (fn [new-state]
           (let [file' (ths/get-file-from-store new-state)
-                token-target' (toht/get-token file' :token-target)
+                token-target' (toht/get-token file' "dimensions.sm")
                 rect-1' (cths/get-shape file' :rect-1)]
             (t/testing "shape `:applied-tokens` got updated"
               (t/is (some? (:applied-tokens rect-1')))
-              (t/is (= (:width (:applied-tokens rect-1')) (wtt/token-identifier token-target')))
-              (t/is (= (:height (:applied-tokens rect-1')) (wtt/token-identifier token-target'))))
+              (t/is (= (:width (:applied-tokens rect-1')) (:name token-target')))
+              (t/is (= (:height (:applied-tokens rect-1')) (:name token-target'))))
+            (t/testing "shapes width and height got updated"
+              (t/is (= (:width rect-1') 100))
+              (t/is (= (:height rect-1') 100))))))))))
+
+(t/deftest test-apply-sizing
+  (t/testing "applies sizing token and updates the shapes width and height"
+    (t/async
+     done
+     (let [sizing-token {:name "sizing.sm"
+                         :value "100"
+                         :type :sizing}
+           file (-> (setup-file-with-tokens)
+                    (update-in [:data :tokens-lib]
+                               #(ctob/add-token-in-set % "Set A" (ctob/make-token sizing-token))))
+           store (ths/setup-store file)
+           rect-1 (cths/get-shape file :rect-1)
+           events [(wtch/apply-token {:shape-ids [(:id rect-1)]
+                                      :attributes #{:width :height}
+                                      :token (toht/get-token file "sizing.sm")
+                                      :on-update-shape wtch/update-shape-dimensions})]]
+       (tohs/run-store-async
+        store done events
+        (fn [new-state]
+          (let [file' (ths/get-file-from-store new-state)
+                token-target' (toht/get-token file' "sizing.sm")
+                rect-1' (cths/get-shape file' :rect-1)]
+            (t/testing "shape `:applied-tokens` got updated"
+              (t/is (some? (:applied-tokens rect-1')))
+              (t/is (= (:width (:applied-tokens rect-1')) (:name token-target')))
+              (t/is (= (:height (:applied-tokens rect-1')) (:name token-target'))))
             (t/testing "shapes width and height got updated"
               (t/is (= (:width rect-1') 100))
               (t/is (= (:height rect-1') 100))))))))))
@@ -228,31 +225,36 @@
   (t/testing "applies opacity token and updates the shapes opacity"
     (t/async
      done
-     (let [file (-> (setup-file-with-tokens)
-                    (toht/add-token :opacity-float {:value "0.3"
-                                                    :name "opacity.float"
-                                                    :type :opacity})
-                    (toht/add-token :opacity-percent {:value "40%"
-                                                      :name "opacity.percent"
-                                                      :type :opacity})
-                    (toht/add-token :opacity-invalid {:value "100"
-                                                      :name "opacity.invalid"
-                                                      :type :opacity}))
+     (let [opacity-float {:name "opacity.float"
+                          :value "0.3"
+                          :type :opacity}
+           opacity-percent {:name "opacity.percent"
+                            :value "40%"
+                            :type :opacity}
+           opacity-invalid {:name "opacity.invalid"
+                            :value "100"
+                            :type :opacity}
+           file (-> (setup-file-with-tokens)
+                    (update-in [:data :tokens-lib]
+                               #(-> %
+                                    (ctob/add-token-in-set "Set A" (ctob/make-token opacity-float))
+                                    (ctob/add-token-in-set "Set A" (ctob/make-token opacity-percent))
+                                    (ctob/add-token-in-set "Set A" (ctob/make-token opacity-invalid)))))
            store (ths/setup-store file)
            rect-1 (cths/get-shape file :rect-1)
            rect-2 (cths/get-shape file :rect-2)
            rect-3 (cths/get-shape file :rect-3)
            events [(wtch/apply-token {:shape-ids [(:id rect-1)]
                                       :attributes #{:opacity}
-                                      :token (toht/get-token file :opacity-float)
+                                      :token (toht/get-token file "opacity.float")
                                       :on-update-shape wtch/update-opacity})
                    (wtch/apply-token {:shape-ids [(:id rect-2)]
                                       :attributes #{:opacity}
-                                      :token (toht/get-token file :opacity-percent)
+                                      :token (toht/get-token file "opacity.percent")
                                       :on-update-shape wtch/update-opacity})
                    (wtch/apply-token {:shape-ids [(:id rect-3)]
                                       :attributes #{:opacity}
-                                      :token (toht/get-token file :opacity-invalid)
+                                      :token (toht/get-token file "opacity.invalid")
                                       :on-update-shape wtch/update-opacity})]]
        (tohs/run-store-async
         store done events
@@ -261,74 +263,78 @@
                 rect-1' (cths/get-shape file' :rect-1)
                 rect-2' (cths/get-shape file' :rect-2)
                 rect-3' (cths/get-shape file' :rect-3)
-                token-opacity-float (toht/get-token file' :opacity-float)
-                token-opacity-percent (toht/get-token file' :opacity-percent)
-                token-opacity-invalid (toht/get-token file' :opacity-invalid)]
+                token-opacity-float (toht/get-token file' "opacity.float")
+                token-opacity-percent (toht/get-token file' "opacity.percent")
+                token-opacity-invalid (toht/get-token file' "opacity.invalid")]
             (t/testing "float value got translated to float and applied to opacity"
-              (t/is (= (:opacity (:applied-tokens rect-1')) (wtt/token-identifier token-opacity-float)))
+              (t/is (= (:opacity (:applied-tokens rect-1')) (:name token-opacity-float)))
               (t/is (= (:opacity rect-1') 0.3)))
             (t/testing "percentage value got translated to float and applied to opacity"
-              (t/is (= (:opacity (:applied-tokens rect-2')) (wtt/token-identifier token-opacity-percent)))
+              (t/is (= (:opacity (:applied-tokens rect-2')) (:name token-opacity-percent)))
               (t/is (= (:opacity rect-2') 0.4)))
             (t/testing "invalid opacity value got applied but did not change shape"
-              (t/is (= (:opacity (:applied-tokens rect-3')) (wtt/token-identifier token-opacity-invalid)))
+              (t/is (= (:opacity (:applied-tokens rect-3')) (:name token-opacity-invalid)))
               (t/is (nil? (:opacity rect-3')))))))))))
 
 (t/deftest test-apply-rotation
   (t/testing "applies rotation token and updates the shapes rotation"
     (t/async
       done
-      (let [file (-> (setup-file-with-tokens)
-                     (toht/add-token :token-target {:value "120"
-                                                    :name "rotation.medium"
-                                                    :type :rotation}))
+      (let [rotation-token {:name "rotation.medium"
+                            :value "120"
+                            :type :rotation}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token rotation-token))))
             store (ths/setup-store file)
             rect-1 (cths/get-shape file :rect-1)
             events [(wtch/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:rotation}
-                                       :token (toht/get-token file :token-target)
+                                       :token (toht/get-token file "rotation.medium")
                                        :on-update-shape wtch/update-rotation})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-store new-state)
-                 token-target' (toht/get-token file' :token-target)
+                 token-target' (toht/get-token file' "rotation.medium")
                  rect-1' (cths/get-shape file' :rect-1)]
              (t/is (some? (:applied-tokens rect-1')))
-             (t/is (= (:rotation (:applied-tokens rect-1')) (wtt/token-identifier token-target')))
+             (t/is (= (:rotation (:applied-tokens rect-1')) (:name token-target')))
              (t/is (= (:rotation rect-1') 120)))))))))
 
 (t/deftest test-apply-stroke-width
   (t/testing "applies stroke-width token and updates the shapes with stroke"
     (t/async
      done
-     (let [file (-> (setup-file-with-tokens {:rect-1 {:strokes [{:stroke-alignment :inner,
+     (let [stroke-width-token {:name "stroke-width.sm"
+                               :value "10"
+                               :type :stroke-width}
+           file (-> (setup-file-with-tokens {:rect-1 {:strokes [{:stroke-alignment :inner,
                                                                  :stroke-style :solid,
                                                                  :stroke-color "#000000",
                                                                  :stroke-opacity 1,
                                                                  :stroke-width 5}]}})
-                    (toht/add-token :token-target {:value "10"
-                                                   :name "stroke-width.sm"
-                                                   :type :stroke-width}))
+                    (update-in [:data :tokens-lib]
+                               #(ctob/add-token-in-set % "Set A" (ctob/make-token stroke-width-token))))
            store (ths/setup-store file)
            rect-with-stroke (cths/get-shape file :rect-1)
            rect-without-stroke (cths/get-shape file :rect-2)
            events [(wtch/apply-token {:shape-ids [(:id rect-with-stroke) (:id rect-without-stroke)]
                                       :attributes #{:stroke-width}
-                                      :token (toht/get-token file :token-target)
+                                      :token (toht/get-token file "stroke-width.sm")
                                       :on-update-shape wtch/update-stroke-width})]]
        (tohs/run-store-async
         store done events
         (fn [new-state]
           (let [file' (ths/get-file-from-store new-state)
-                token-target' (toht/get-token file' :token-target)
+                token-target' (toht/get-token file' "stroke-width.sm")
                 rect-with-stroke' (cths/get-shape file' :rect-1)
                 rect-without-stroke' (cths/get-shape file' :rect-2)]
             (t/testing "token got applied to rect with stroke and shape stroke got updated"
-              (t/is (= (:stroke-width (:applied-tokens rect-with-stroke')) (wtt/token-identifier token-target')))
+              (t/is (= (:stroke-width (:applied-tokens rect-with-stroke')) (:name token-target')))
               (t/is (= (get-in rect-with-stroke' [:strokes 0 :stroke-width]) 10)))
             (t/testing "token got applied to rect without stroke but shape didnt get updated"
-              (t/is (= (:stroke-width (:applied-tokens rect-without-stroke')) (wtt/token-identifier token-target')))
+              (t/is (= (:stroke-width (:applied-tokens rect-without-stroke')) (:name token-target')))
               (t/is (empty? (:strokes rect-without-stroke')))))))))))
 
 (t/deftest test-toggle-token-none
@@ -342,20 +348,20 @@
             events [(wtch/toggle-token {:shapes [rect-1 rect-2]
                                         :token-type-props {:attributes #{:rx :ry}
                                                            :on-update-shape wtch/update-shape-radius-all}
-                                        :token (toht/get-token file :token-2)})]]
+                                        :token (toht/get-token file "borderRadius.md")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-store new-state)
-                      token-2' (toht/get-token file' :token-2)
-                      rect-1' (cths/get-shape file' :rect-1)
-                      rect-2' (cths/get-shape file' :rect-2)]
+                 token-2' (toht/get-token file' "borderRadius.md")
+                 rect-1' (cths/get-shape file' :rect-1)
+                 rect-2' (cths/get-shape file' :rect-2)]
              (t/is (some? (:applied-tokens rect-1')))
              (t/is (some? (:applied-tokens rect-2')))
-             (t/is (= (:rx (:applied-tokens rect-1')) (wtt/token-identifier token-2')))
-             (t/is (= (:rx (:applied-tokens rect-2')) (wtt/token-identifier token-2')))
-             (t/is (= (:ry (:applied-tokens rect-1')) (wtt/token-identifier token-2')))
-             (t/is (= (:ry (:applied-tokens rect-2')) (wtt/token-identifier token-2')))
+             (t/is (= (:rx (:applied-tokens rect-1')) (:name token-2')))
+             (t/is (= (:rx (:applied-tokens rect-2')) (:name token-2')))
+             (t/is (= (:ry (:applied-tokens rect-1')) (:name token-2')))
+             (t/is (= (:ry (:applied-tokens rect-2')) (:name token-2')))
              (t/is (= (:rx rect-1') 24))
              (t/is (= (:rx rect-2') 24)))))))))
 
@@ -364,8 +370,8 @@
     (t/async
       done
       (let [file (-> (setup-file-with-tokens)
-                     (toht/apply-token-to-shape :rect-1 :token-1 #{:rx :ry})
-                     (toht/apply-token-to-shape :rect-3 :token-2 #{:rx :ry}))
+                     (toht/apply-token-to-shape :rect-1 "borderRadius.sm" #{:rx :ry})
+                     (toht/apply-token-to-shape :rect-3 "borderRadius.md" #{:rx :ry}))
             store (ths/setup-store file)
 
             rect-with-token (cths/get-shape file :rect-1)
@@ -373,7 +379,7 @@
             rect-with-other-token (cths/get-shape file :rect-3)
 
             events [(wtch/toggle-token {:shapes [rect-with-token rect-without-token rect-with-other-token]
-                                        :token (toht/get-token file :token-1)
+                                        :token (toht/get-token file "borderRadius.sm")
                                         :token-type-props {:attributes #{:rx :ry}}})]]
         (tohs/run-store-async
          store done events
@@ -383,7 +389,7 @@
                  rect-without-token' (cths/get-shape file' :rect-2)
                  rect-with-other-token' (cths/get-shape file' :rect-3)]
 
-             (t/testing "rect-with-token got the token remove"
+             (t/testing "rect-with-token got the token removed"
                (t/is (nil? (:rx (:applied-tokens rect-with-token'))))
                (t/is (nil? (:ry (:applied-tokens rect-with-token')))))
 
@@ -398,8 +404,8 @@
     (t/async
       done
       (let [file (-> (setup-file-with-tokens)
-                     (toht/apply-token-to-shape :rect-1 :token-2 #{:rx :ry})
-                     (toht/apply-token-to-shape :rect-3 :token-2 #{:rx :ry}))
+                     (toht/apply-token-to-shape :rect-1 "borderRadius.md" #{:rx :ry})
+                     (toht/apply-token-to-shape :rect-3 "borderRadius.md" #{:rx :ry}))
             store (ths/setup-store file)
 
             rect-with-other-token-1 (cths/get-shape file :rect-1)
@@ -407,22 +413,22 @@
             rect-with-other-token-2 (cths/get-shape file :rect-3)
 
             events [(wtch/toggle-token {:shapes [rect-with-other-token-1 rect-without-token rect-with-other-token-2]
-                                        :token (toht/get-token file :token-1)
+                                        :token (toht/get-token file "borderRadius.sm")
                                         :token-type-props {:attributes #{:rx :ry}}})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-store new-state)
-                 target-token (toht/get-token file' :token-1)
+                 target-token (toht/get-token file' "borderRadius.sm")
                  rect-with-other-token-1' (cths/get-shape file' :rect-1)
                  rect-without-token' (cths/get-shape file' :rect-2)
                  rect-with-other-token-2' (cths/get-shape file' :rect-3)]
 
              (t/testing "token got applied to all shapes"
-               (t/is (= (:rx (:applied-tokens rect-with-other-token-1')) (wtt/token-identifier target-token)))
-               (t/is (= (:rx (:applied-tokens rect-without-token')) (wtt/token-identifier target-token)))
-               (t/is (= (:rx (:applied-tokens rect-with-other-token-2')) (wtt/token-identifier target-token)))
+               (t/is (= (:rx (:applied-tokens rect-with-other-token-1')) (:name target-token)))
+               (t/is (= (:rx (:applied-tokens rect-without-token')) (:name target-token)))
+               (t/is (= (:rx (:applied-tokens rect-with-other-token-2')) (:name target-token)))
 
-               (t/is (= (:ry (:applied-tokens rect-with-other-token-1')) (wtt/token-identifier target-token)))
-               (t/is (= (:ry (:applied-tokens rect-without-token')) (wtt/token-identifier target-token)))
-               (t/is (= (:ry (:applied-tokens rect-with-other-token-2')) (wtt/token-identifier target-token)))))))))))
+               (t/is (= (:ry (:applied-tokens rect-with-other-token-1')) (:name target-token)))
+               (t/is (= (:ry (:applied-tokens rect-without-token')) (:name target-token)))
+               (t/is (= (:ry (:applied-tokens rect-with-other-token-2')) (:name target-token)))))))))))

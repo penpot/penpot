@@ -19,19 +19,9 @@
    [cuerdas.core :as str]
    [goog.events :as events]
    [rumext.v2 :as mf])
-  (:import
-   goog.events.EventType))
+  (:import goog.events.EventType))
 
 ;; Helpers ---------------------------------------------------------------------
-
-(defn workspace-shapes [workspace page-id shape-ids]
-  (-> (get-in workspace [:pages-index page-id :objects])
-      (keep shape-ids)))
-
-(defn vec-remove
-  "remove elem in coll"
-  [pos coll]
-  (into (subvec coll 0 pos) (subvec coll (inc pos))))
 
 (defn camel-keys [m]
   (->> m

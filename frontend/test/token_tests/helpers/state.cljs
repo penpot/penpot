@@ -1,5 +1,6 @@
 (ns token-tests.helpers.state
   (:require
+   [app.common.types.tokens-lib :as ctob]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -21,11 +22,10 @@
   (ptk/reify ::end+
     ptk/WatchEvent
     (watch [_ state _]
-           (->> (rx/from (sd/resolve-tokens+ (get-in state [:workspace-data :tokens])))
-                (rx/mapcat
-                 (fn [_]
-                   (rx/of
-                    (end))))))))
+      (->> (rx/from (-> (get-in state [:workspace-data :tokens-lib])
+                        (ctob/get-active-themes-set-tokens)
+                        (sd/resolve-tokens+ {:names-map? true})))
+           (rx/mapcat #(rx/of (end)))))))
 
 (defn stop-on
   "Helper function to be used with async version of run-store.

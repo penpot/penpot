@@ -64,22 +64,6 @@
     [:map-of {:gen/max 5} ::sm/uuid ::media-object]]
    [:plugin-data {:optional true}
     [:map-of {:gen/max 5} :keyword ::ctpg/plugin-data]]
-   [:token-theme-temporary-id {:optional true}
-    ::sm/uuid]
-   [:token-active-themes {:optional true :default #{}}
-    [:set ::sm/uuid]]
-   [:token-themes {:optional true}
-    [:vector ::sm/uuid]]
-   [:token-themes-index {:optional true}
-    [:map-of {:gen/max 5} ::sm/uuid ::ctt/token-theme]]
-   [:token-set-groups {:optional true}
-    [:vector ::sm/uuid]]
-   [:token-set-groups-index {:optional true}
-    [:map-of {:gen/max 10} ::sm/uuid ::ctt/token-set-group]]
-   [:token-sets-index {:optional true}
-    [:map-of {:gen/max 10} ::sm/uuid ::ctt/token-set]]
-   [:tokens {:optional true}
-    [:map-of {:gen/max 100} ::sm/uuid ::cto/token]]
    [:tokens-lib {:optional true} ::ctl/tokens-lib]])
 
 (def check-file-data!

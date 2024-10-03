@@ -1,17 +1,10 @@
 (ns app.main.ui.workspace.tokens.token
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [clojure.set :as set]
-   [cuerdas.core :as str]
-   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]))
-
-(defn get-workspace-tokens
-  [state]
-  (get-in state [:workspace-data :tokens] {}))
-
-(defn get-workspace-token
-  [token-id state]
-  (get-in state [:workspace-data :tokens token-id]))
+   [cuerdas.core :as str]))
 
 (def parseable-token-value-regexp
   "Regexp that can be used to parse a number value out of resolved token value.
@@ -66,12 +59,6 @@
   [token shape token-attributes]
   (some #(token-attribute-applied? token shape %) token-attributes))
 
-(defn token-applied-attributes
-  "Return a set of which `token-attributes` are applied with `token`."
-  [token shape token-attributes]
-  (-> (filter #(token-attribute-applied? token shape %) token-attributes)
-      (set)))
-
 (defn shapes-token-applied?
   "Test if `token` is applied to to any of `shapes` with at least one of the one of the given `token-attributes`."
   [token shapes token-attributes]
@@ -116,6 +103,19 @@
   [tokens]
   (->> (map (fn [{:keys [name] :as token}] [name token]) tokens)
        (into {})))
+
+(defn token-names-tree-id-map [tokens]
+  (reduce
+   (fn [acc [_ {:keys [name] :as token}]]
+     (when (string? name)
+       (let [temp-id (random-uuid)
+             token (assoc token :temp/id temp-id)]
+         (-> acc
+             (assoc-in (concat [:tree] (token-name->path name)) token)
+             (assoc-in [:ids-map temp-id] token)))))
+   {:tree {}
+    :ids-map {}}
+   tokens))
 
 (defn token-names-tree
   "Convert tokens into a nested tree with their `:name` as the path."

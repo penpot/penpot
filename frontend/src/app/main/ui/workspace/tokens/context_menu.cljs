@@ -202,16 +202,14 @@
                     (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape wtch/update-shape-position))))}))
 
 (defn default-actions [{:keys [token selected-token-set-id]}]
-  (let [{:keys [modal]} (wtty/get-token-properties token)
-        selected-token-set (dt/get-token-set-data-from-token-set-id selected-token-set-id)]
+  (let [{:keys [modal]} (wtty/get-token-properties token)]
     [{:title "Delete Token"
-      :action #(st/emit! (dt/delete-token (:name selected-token-set) (:id token) (:name token)))}
+      :action #(st/emit! (dt/delete-token selected-token-set-id (:name token)))}
      {:title "Duplicate Token"
-      :action #(st/emit! (dt/duplicate-token (:id token)))}
+      :action #(st/emit! (dt/duplicate-token (:name token)))}
      {:title "Edit Token"
       :action (fn [event]
-                (let [{:keys [key fields]} modal
-                      token (dt/get-token-data-from-token-id (:id token))]
+                (let [{:keys [key fields]} modal]
                   (st/emit! dt/hide-token-context-menu)
                   (dom/stop-propagation event)
                   (modal/show! key {:x (.-clientX ^js event)
@@ -301,19 +299,27 @@
                  :on-click action
                  :selected? selected?}])])))
 
+(mf/defc token-context-menu-tree
+  [{:keys [width] :as mdata}]
+  (let [objects (mf/deref refs/workspace-page-objects)
+        selected (mf/deref refs/selected-shapes)
+        selected-shapes (into [] (keep (d/getf objects)) selected)
+        token-name (:token-name mdata)
+        token (mf/deref (refs/workspace-selected-token-set-token token-name))
+        selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)]
+    [:ul {:class (stl/css :context-list)}
+     [:& menu-tree {:submenu-offset width
+                    :token token
+                    :selected-token-set-id selected-token-set-id
+                    :selected-shapes selected-shapes}]]))
+
 (mf/defc token-context-menu
   []
   (let [mdata (mf/deref tokens-menu-ref)
         top (+ (get-in mdata [:position :y]) 5)
         left (+ (get-in mdata [:position :x]) 5)
         width (mf/use-state 0)
-        dropdown-ref (mf/use-ref)
-        objects (mf/deref refs/workspace-page-objects)
-        selected (mf/deref refs/selected-shapes)
-        selected-shapes (into [] (keep (d/getf objects)) selected)
-        token-id (:token-id mdata)
-        token (get (mf/deref refs/workspace-selected-token-set-tokens) token-id)
-        selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)]
+        dropdown-ref (mf/use-ref)]
     (mf/use-effect
      (mf/deps mdata)
      (fn []
@@ -325,9 +331,5 @@
             :ref dropdown-ref
             :style {:top top :left left}
             :on-context-menu prevent-default}
-      (when token
-        [:ul {:class (stl/css :context-list)}
-         [:& menu-tree {:submenu-offset @width
-                        :token token
-                        :selected-token-set-id selected-token-set-id
-                        :selected-shapes selected-shapes}]])]]))
+      (when mdata
+        [:& token-context-menu-tree (assoc mdata :offset @width)])]]))

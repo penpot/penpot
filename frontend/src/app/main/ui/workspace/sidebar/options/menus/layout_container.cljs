@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
    [app.main.data.events :as-alias ev]
    [app.main.data.workspace :as udw]
@@ -27,10 +28,11 @@
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.editable-select :refer [editable-select]]
+   [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
-   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -856,8 +858,10 @@
 
         shape (when-not multiple
                 (first (deref (refs/objects-by-id ids))))
-        tokens (mf/deref refs/workspace-selected-token-set-tokens)
-        spacing-tokens (mf/use-memo (mf/deps tokens) #(:spacing (wtc/group-tokens-by-type tokens)))
+        tokens (sd/use-active-theme-sets-tokens)
+        spacing-tokens (mf/use-memo
+                        (mf/deps tokens)
+                        #(ctob/filter-by-type :spacing tokens))
 
         spacing-column-options (mf/use-memo
                                 (mf/deps shape spacing-tokens)

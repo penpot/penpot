@@ -6,8 +6,8 @@
 
 (ns common-tests.types.tokens-lib-test
   (:require
+   #?(:clj [app.common.fressian :as fres])
    [app.common.data :as d]
-   [app.common.fressian :as fres]
    [app.common.time :as dt]
    [app.common.transit :as tr]
    [app.common.types.tokens-lib :as ctob]
@@ -192,6 +192,19 @@
           token-set'  (ctob/get-set tokens-lib' "updated-name")]
 
       (t/is (= (ctob/set-count tokens-lib') 0))
+      (t/is (nil? token-set'))))
+
+  (t/deftest active-themes-set-names
+    (let [tokens-lib  (-> (ctob/make-tokens-lib)
+                          (ctob/add-set (ctob/make-token-set :name "test-token-set")))
+
+          tokens-lib' (-> tokens-lib
+                          (ctob/delete-set "test-token-set")
+                          (ctob/delete-set "not-existing-set"))
+
+          token-set'  (ctob/get-set tokens-lib' "updated-name")]
+
+      (t/is (= (ctob/set-count tokens-lib') 0))
       (t/is (nil? token-set')))))
 
 
@@ -307,7 +320,35 @@
       (t/is (= (ctob/set-count tokens-lib') 1))
       (t/is (= (count (:tokens token-set')) 0))
       (t/is (nil? token'))
-      (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set))))))
+      (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set)))))
+
+  (t/deftest list-active-themes-tokens-in-order
+    (let [tokens-lib  (-> (ctob/make-tokens-lib)
+                          (ctob/add-theme (ctob/make-token-theme :name "out-of-order-theme"
+                                                                 ;; Out of order sets in theme
+                                                                 :sets ["unknown-set" "set-b" "set-a"]))
+                          (ctob/set-active-themes #{"/out-of-order-theme"})
+
+                          (ctob/add-set (ctob/make-token-set :name "set-a"))
+                          (ctob/add-token-in-set "set-a" (ctob/make-token :name "set-a-token"
+                                                                          :type :boolean
+                                                                          :value true))
+                          (ctob/add-set (ctob/make-token-set :name "set-b"))
+                          (ctob/add-token-in-set "set-b" (ctob/make-token :name "set-b-token"
+                                                                          :type :boolean
+                                                                          :value true))
+                          ;; Ignore this set
+                          (ctob/add-set (ctob/make-token-set :name "inactive-set"))
+                          (ctob/add-token-in-set "inactive-set" (ctob/make-token :name "inactive-set-token"
+                                                                                       :type :boolean
+                                                                                       :value true)))
+
+
+          expected-order (ctob/get-ordered-set-names tokens-lib)
+          expected-tokens (ctob/get-active-themes-set-tokens tokens-lib)
+          expected-token-names (mapv key expected-tokens)]
+      (t/is (= '("set-a" "set-b" "inactive-set") expected-order))
+      (t/is (= ["set-a-token" "set-b-token"] expected-token-names)))))
 
 
 (t/testing "token-theme in a lib"

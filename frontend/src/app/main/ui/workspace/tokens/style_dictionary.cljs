@@ -72,34 +72,33 @@
 
 (defn resolve-tokens+
   [tokens & {:keys [names-map?] :as config}]
-  (p/let [sd-tokens (-> (wtt/token-names-tree tokens)
-                        (resolve-sd-tokens+))]
-    (let [resolved-tokens (reduce
-                           (fn [acc ^js cur]
-                             (let [identifier (if names-map?
-                                                (.. cur -original -name)
-                                                (uuid (.-uuid (.-id cur))))
-                                   {:keys [type] :as origin-token} (get tokens identifier)
-                                   value (.-value cur)
-                                   token-or-err (case type
-                                                  :color (if-let [tc (tinycolor/valid-color value)]
-                                                           {:value value :unit (tinycolor/color-format tc)}
-                                                           {:errors [(wte/error-with-value :error.token/invalid-color value)]})
-                                                  (or (wtt/parse-token-value value)
-                                                      (if-let [references (-> (wtt/find-token-references value)
-                                                                              (seq))]
-                                                        {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
-                                                         :references references}
-                                                        {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
-                                   output-token (if (:errors token-or-err)
-                                                  (merge origin-token token-or-err)
-                                                  (assoc origin-token
-                                                         :resolved-value (:value token-or-err)
-                                                         :unit (:unit token-or-err)))]
-                               (assoc acc (wtt/token-identifier output-token) output-token)))
-                           {} sd-tokens)]
-      (l/debug :hint "Resolved tokens" :js/tokens resolved-tokens)
-      resolved-tokens)))
+  (let [{:keys [tree ids-map]} (wtt/token-names-tree-id-map tokens)]
+    (p/let [sd-tokens (resolve-sd-tokens+ tree)]
+      (let [resolved-tokens (reduce
+                             (fn [acc ^js cur]
+                               (let [{:keys [type] :as origin-token} (if names-map?
+                                                                       (get tokens (.. cur -original -name))
+                                                                       (get ids-map (uuid (.-uuid (.-id cur)))))
+                                     value (.-value cur)
+                                     token-or-err (case type
+                                                    :color (if-let [tc (tinycolor/valid-color value)]
+                                                             {:value value :unit (tinycolor/color-format tc)}
+                                                             {:errors [(wte/error-with-value :error.token/invalid-color value)]})
+                                                    (or (wtt/parse-token-value value)
+                                                        (if-let [references (-> (wtt/find-token-references value)
+                                                                                (seq))]
+                                                          {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
+                                                           :references references}
+                                                          {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
+                                     output-token (if (:errors token-or-err)
+                                                    (merge origin-token token-or-err)
+                                                    (assoc origin-token
+                                                           :resolved-value (:value token-or-err)
+                                                           :unit (:unit token-or-err)))]
+                                 (assoc acc (wtt/token-identifier output-token) output-token)))
+                             {} sd-tokens)]
+        (l/debug :hint "Resolved tokens" :js/tokens resolved-tokens)
+        resolved-tokens))))
 
 ;; Hooks -----------------------------------------------------------------------
 
@@ -115,7 +114,7 @@
 
   This hook will return the unresolved tokens as state until they are processed,
   then the state will be updated with the resolved tokens."
-  [tokens & {:keys [cache-atom _names-map?]
+  [tokens & {:keys [cache-atom names-map?]
              :or {cache-atom !tokens-cache}
              :as config}]
   (let [tokens-state (mf/use-state (get @cache-atom tokens))]
@@ -124,8 +123,11 @@
      (fn []
        (let [cached (get @cache-atom tokens)]
          (cond
+           (nil? tokens) (if names-map? {} [])
            ;; The tokens are already processing somewhere
-           (p/promise? cached) (p/then cached #(reset! tokens-state %))
+           (p/promise? cached) (-> cached
+                                   (p/then #(reset! tokens-state %))
+                                   #_(p/catch js/console.error))
            ;; Get the cached entry
            (some? cached) (reset! tokens-state cached)
            ;; No cached entry, start processing

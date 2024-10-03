@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.sets
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.main.data.messages :as msg]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -20,18 +21,18 @@
 (def ^:private chevron-icon
   (i/icon-xref :arrow (stl/css :chevron-icon)))
 
-(defn on-toggle-token-set-click [token-set-id]
-  (st/emit! (wdt/toggle-token-set {:token-set-id token-set-id})))
+(defn on-toggle-token-set-click [token-set-name]
+  (st/emit! (wdt/toggle-token-set {:token-set-name token-set-name})))
 
-(defn on-select-token-set-click [id]
-  (st/emit! (wdt/set-selected-token-set-id id)))
+(defn on-select-token-set-click [name]
+  (st/emit! (wdt/set-selected-token-set-id name)))
 
-(defn on-delete-token-set-click [id name event]
+(defn on-delete-token-set-click [name event]
   (dom/stop-propagation event)
-  (st/emit! (wdt/delete-token-set id name)))
+  (st/emit! (wdt/delete-token-set name)))
 
-(defn on-update-token-set [token-set]
-  (st/emit! (wdt/update-token-set token-set)))
+(defn on-update-token-set [set-name token-set]
+  (st/emit! (wdt/update-token-set set-name token-set)))
 
 (defn on-create-token-set [token-set]
   (st/emit! (wdt/create-token-set token-set)))
@@ -71,21 +72,21 @@
            on-submit
            on-cancel]
     :as _props}]
-  (let [{:keys [id name _children]} token-set
-        selected? (and set? (token-set-selected? id))
-        visible? (token-set-active? id)
+  (let [{:keys [name _children]} token-set
+        selected? (and set? (token-set-selected? name))
+        visible? (token-set-active? name)
         collapsed? (mf/use-state false)
         set? true #_(= type :set)
         group? false #_(= type :group)
-        editing-node? (editing? id)
+        editing-node? (editing? name)
         on-select (mf/use-callback
                    (mf/deps editing-node?)
                    (fn [event]
                      (dom/stop-propagation event)
                      (when-not editing-node?
-                       (on-select id))))
+                       (on-select name))))
         on-context-menu (mf/use-callback
-                         (mf/deps editing-node? id)
+                         (mf/deps editing-node? name)
                          (fn [event]
                            (dom/prevent-default event)
                            (dom/stop-propagation event)
@@ -93,11 +94,10 @@
                              (st/emit!
                               (wdt/show-token-set-context-menu
                                {:position (dom/get-client-position event)
-                                :token-set-id id
                                 :token-set-name name})))))]
     [:div {:class (stl/css :set-item-container)
            :on-click on-select
-           :on-double-click #(on-edit id)
+           :on-double-click #(on-edit name)
            :on-context-menu on-context-menu}
      [:div {:class (stl/css-case :set-item-group group?
                                  :set-item-set set?
@@ -116,14 +116,14 @@
         [:*
          [:div {:class (stl/css :set-name)} name]
          [:div {:class (stl/css :delete-set)}
-          [:button {:on-click #(on-delete-token-set-click id name %)
+          [:button {:on-click #(on-delete-token-set-click name %)
                     :type "button"}
            i/delete]]
          (if set?
            [:span {:class (stl/css :action-btn)
                    :on-click (fn [event]
                                (dom/stop-propagation event)
-                               (on-toggle id))}
+                               (on-toggle name))}
             (if visible? i/shown i/hide)]
            nil
            #_(when (and children (not @collapsed?))
@@ -133,6 +133,12 @@
                                        {:key child-id}
                                        :set-id child-id
                                        :selected-set-id selected-token-set-id)])]))])]]))
+
+(defn warn-on-try-create-token-set-group!  []
+  (st/emit! (msg/show {:content "Token Set grouping is not supported yet."
+                       :notification-type :toast
+                       :type :warning
+                       :timeout 3000})))
 
 (mf/defc controlled-sets-list
   [{:keys [token-sets
@@ -144,22 +150,27 @@
            on-select
            context]
     :as _props}]
-  (let [{:keys [editing? new? on-edit on-create on-reset] :as ctx} (or context (sets-context/use-context))]
+  (let [{:keys [editing? new? on-edit on-create on-reset] :as ctx} (or context (sets-context/use-context))
+        avoid-token-set-grouping #(str/replace % "/" "-")]
     [:ul {:class (stl/css :sets-list)}
-     (for [[id token-set] token-sets]
+     (for [token-set token-sets]
        (when token-set
-         [:& sets-tree {:key id
-                        :token-set token-set
-                        :token-set-selected? (if new? (constantly false) token-set-selected?)
-                        :token-set-active? token-set-active?
-                        :editing? editing?
-                        :on-select on-select
-                        :on-edit on-edit
-                        :on-toggle on-toggle-token-set
-                        :on-submit #(do
-                                      (on-update-token-set %)
-                                      (on-reset))
-                        :on-cancel on-reset}]))
+         [:& sets-tree
+          {:key (:name token-set)
+           :token-set token-set
+           :token-set-selected? (if new? (constantly false) token-set-selected?)
+           :token-set-active? token-set-active?
+           :editing? editing?
+           :on-select on-select
+           :on-edit on-edit
+           :on-toggle on-toggle-token-set
+           :on-submit #(do
+                         ;; TODO: We don't support set grouping for now so we rename sets for now
+                         (when (str/includes? (:name %) "/")
+                           (warn-on-try-create-token-set-group!))
+                         (on-update-token-set (avoid-token-set-grouping (:name token-set)) (update % :name avoid-token-set-grouping))
+                         (on-reset))
+           :on-cancel on-reset}]))
      (when new?
        [:& sets-tree {:token-set {:name ""}
                       :token-set-selected? (constantly true)
@@ -168,7 +179,10 @@
                       :on-select (constantly nil)
                       :on-edit on-create
                       :on-submit #(do
-                                    (on-create-token-set %)
+                                    ;; TODO: We don't support set grouping for now so we rename sets for now
+                                    (when (str/includes? (:name %) "/")
+                                      (warn-on-try-create-token-set-group!))
+                                    (on-create-token-set (update % :name avoid-token-set-grouping))
                                     (on-reset))
                       :on-cancel on-reset}])]))
 
@@ -178,9 +192,9 @@
         selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)
         token-set-selected? (mf/use-callback
                              (mf/deps selected-token-set-id)
-                             (fn [id]
-                               (= id selected-token-set-id)))
-        active-token-set-ids (mf/deref refs/workspace-active-set-ids)
+                             (fn [set-name]
+                               (= set-name selected-token-set-id)))
+        active-token-set-ids (mf/deref refs/workspace-active-set-names)
         token-set-active? (mf/use-callback
                            (mf/deps active-token-set-ids)
                            (fn [id]

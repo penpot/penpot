@@ -32,7 +32,8 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [clojure.set :refer [rename-keys union]]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [app.common.types.tokens-lib :as ctob]))
 
 (def measure-attrs
   [:proportion-lock
@@ -101,28 +102,29 @@
         selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         selection-parents     (mf/deref selection-parents-ref)
 
-        tokens (-> (mf/deref refs/workspace-active-theme-sets-tokens)
-                   (sd/use-resolved-tokens))
-        tokens-by-type (mf/use-memo (mf/deps tokens) #(wtc/group-tokens-by-type tokens))
+        tokens (sd/use-active-theme-sets-tokens)
+        tokens-by-type (mf/use-memo
+                        (mf/deps tokens)
+                        #(ctob/group-by-type tokens))
 
         border-radius-tokens (:border-radius tokens-by-type)
         border-radius-options (mf/use-memo
                                (mf/deps shape border-radius-tokens)
-                               #(wtc/tokens-name-map->select-options
+                               #(wtc/tokens->select-options
                                  {:shape shape
                                   :tokens border-radius-tokens
                                   :attributes (wtty/token-attributes :border-radius)}))
         sizing-tokens (:sizing tokens-by-type)
         width-options (mf/use-memo
                        (mf/deps shape sizing-tokens)
-                       #(wtc/tokens-name-map->select-options
+                       #(wtc/tokens->select-options
                          {:shape shape
                           :tokens sizing-tokens
                           :attributes (wtty/token-attributes :sizing)
                           :selected-attributes #{:width}}))
         height-options (mf/use-memo
                         (mf/deps shape sizing-tokens)
-                        #(wtc/tokens-name-map->select-options
+                        #(wtc/tokens->select-options
                           {:shape shape
                            :tokens sizing-tokens
                            :attributes (wtty/token-attributes :sizing)

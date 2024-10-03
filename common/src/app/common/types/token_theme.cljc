@@ -10,35 +10,16 @@
 
 (sm/register! ::token-theme
   [:map {:title "TokenTheme"}
-   [:id ::sm/uuid]
    [:name :string]
-   [:group {:optional true} :string]
-   [:source? {:optional true} :boolean]
-   [:description {:optional true} :string]
+   [:group :string]
+   [:description [:maybe :string]]
+   [:is-source :boolean]
    [:modified-at {:optional true} ::sm/inst]
-   [:sets [:set {:gen/max 10 :gen/min 1} ::sm/uuid]]])
-
-(sm/register! ::token-set-group-ref
-  [:map
-   [:id ::sm/uuid]
-   [:type [:= :group]]])
-
-(sm/register! ::token-set-ref
-  [:map
-   [:id ::sm/uuid]
-   [:type [:= :set]]])
-
-(sm/register! ::token-set-group
-  [:map {:title "TokenSetGroup"}
-   [:id ::sm/uuid]
-   [:name :string]
-   [:items [:vector {:gen/max 10 :gen/min 1}
-            [:or ::token-set-group-ref ::token-set-ref]]]])
+   [:sets :any]])
 
 (sm/register! ::token-set
   [:map {:title "TokenSet"}
-   [:id ::sm/uuid]
    [:name :string]
-   [:description {:optional true} :string]
+   [:description {:optional true} [:maybe :string]]
    [:modified-at {:optional true} ::sm/inst]
-   [:tokens [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]])
+   [:tokens :any]])

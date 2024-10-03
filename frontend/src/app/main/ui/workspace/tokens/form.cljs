@@ -10,6 +10,7 @@
    ["lodash.debounce" :as debounce]
    [app.common.colors :as c]
    [app.common.data :as d]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
@@ -99,30 +100,28 @@ Token names should only contain letters and digits separated by . characters.")}
 (defn validate-token-value+
   "Validates token value by resolving the value `input` using `StyleDictionary`.
   Returns a promise of either resolved tokens or rejects with an error state."
-  [{:keys [input name-value token tokens]}]
-  (let [ ;; When creating a new token we dont have a token name yet,
+  [{:keys [value name-value token tokens]}]
+  (let [;; When creating a new token we dont have a token name yet,
         ;; so we use a temporary token name that hopefully doesn't clash with any of the users token names
         token-name (if (str/empty? name-value) "__TOKEN_STUDIO_SYSTEM.TEMP" name-value)]
     (cond
-      (empty? (str/trim input))
+      (empty? (str/trim value))
       (p/rejected {:errors [{:error/code :error/empty-input}]})
 
-      (token-self-reference? token-name input)
+      (token-self-reference? token-name value)
       (p/rejected {:errors [(wte/get-error-code :error.token/direct-self-reference)]})
 
       :else
-      (let [token-id (or (:id token) (random-uuid))
-            new-tokens (update tokens token-name merge {:id token-id
-                                                        :value input
-                                                        :name token-name
-                                                        :type (:type token)})]
-        (-> (sd/resolve-tokens+ new-tokens {:names-map? true})
-            (p/then
-             (fn [resolved-tokens]
-               (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
-                 (cond
-                   resolved-value (p/resolved resolved-token)
-                   :else (p/rejected {:errors (or errors (wte/get-error-code :error/unknown-error))}))))))))))
+      (-> (update tokens token-name merge {:value value
+                                           :name token-name
+                                           :type (:type token)})
+          (sd/resolve-tokens+ {:names-map? true})
+          (p/then
+           (fn [resolved-tokens]
+             (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
+               (cond
+                 resolved-value (p/resolved resolved-token)
+                 :else (p/rejected {:errors (or errors (wte/get-error-code :error/unknown-error))})))))))))
 
 (defn use-debonced-resolve-callback
   "Resolves a token values using `StyleDictionary`.
@@ -141,7 +140,7 @@ Token names should only contain letters and digits separated by . characters.")}
              (js/setTimeout
               (fn []
                 (when (not (timeout-outdated-cb?))
-                  (-> (validate-token-value+ {:input value
+                  (-> (validate-token-value+ {:value value
                                               :name-value @name-ref
                                               :token token
                                               :tokens tokens})
@@ -203,8 +202,9 @@ Token names should only contain letters and digits separated by . characters.")}
         color? (wtt/color-token? token)
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
         active-theme-tokens (mf/deref refs/workspace-active-theme-sets-tokens)
-        resolved-tokens (sd/use-resolved-tokens active-theme-tokens {:names-map? true
-                                                                     :cache-atom form-token-cache-atom})
+        resolved-tokens (sd/use-resolved-tokens active-theme-tokens
+                                                {:names-map? true
+                                                 :cache-atom form-token-cache-atom})
         token-path (mf/use-memo
                     (mf/deps (:name token))
                     #(wtt/token-name->path (:name token)))
@@ -309,7 +309,7 @@ Token names should only contain letters and digits separated by . characters.")}
                            valid-description?+ (some-> final-description validate-descripion schema-validation->promise)]
                        (-> (p/all [valid-name?+
                                    valid-description?+
-                                   (validate-token-value+ {:input final-value
+                                   (validate-token-value+ {:value final-value
                                                            :name-value final-name
                                                            :token token
                                                            :tokens resolved-tokens})])
@@ -317,14 +317,13 @@ Token names should only contain letters and digits separated by . characters.")}
                                         ;; The result should be a vector of all resolved validations
                                         ;; We do not handle the error case as it will be handled by the components validations
                                         (when (and (seq result) (not err))
-                                          (let [new-token (cond-> {:name final-name
-                                                                   :type (or (:type token) token-type)
-                                                                   :value final-value}
-                                                            final-description (assoc :description final-description)
-                                                            (:id token) (assoc :id (:id token)))]
-                                            (st/emit! (dt/update-create-token new-token))
-                                            (st/emit! (wtu/update-workspace-tokens))
-                                            (modal/hide!)))))))))]
+                                          (st/emit! (dt/update-create-token {:token (ctob/make-token :name final-name
+                                                                                                     :type (or (:type token) token-type)
+                                                                                                     :value final-value
+                                                                                                     :description final-description)
+                                                                             :prev-token-name (:name token)}))
+                                          (st/emit! (wtu/update-workspace-tokens))
+                                          (modal/hide!))))))))]
     [:form
      {:class (stl/css :form-wrapper)
       :on-submit on-submit}

@@ -28,11 +28,11 @@
    [:span {:class (stl/css :title)} title]])
 
 (mf/defc menu
-  [{:keys [token-set-id token-set-name]}]
+         [{:keys [token-set-name]}]
   (let [{:keys [on-edit]} (sets-context/use-context)]
     [:ul {:class (stl/css :context-list)}
-     [:& menu-entry {:title "Rename" :on-click #(on-edit token-set-id)}]
-     [:& menu-entry {:title "Delete" :on-click #(st/emit! (wdt/delete-token-set token-set-id token-set-name))}]]))
+     [:& menu-entry {:title "Rename" :on-click #(on-edit token-set-name)}]
+     [:& menu-entry {:title "Delete" :on-click #(st/emit! (wdt/delete-token-set token-set-name))}]]))
 
 (mf/defc sets-context-menu
   []
@@ -41,7 +41,6 @@
         left (+ (get-in mdata [:position :x]) 5)
         width (mf/use-state 0)
         dropdown-ref (mf/use-ref)
-        token-set-id (:token-set-id mdata)
         token-set-name (:token-set-name mdata)]
     (mf/use-effect
      (mf/deps mdata)
@@ -54,5 +53,4 @@
             :ref dropdown-ref
             :style {:top top :left left}
             :on-context-menu prevent-default}
-      [:& menu {:token-set-id token-set-id
-                :token-set-name token-set-name}]]]))
+      [:& menu {:token-set-name token-set-name}]]]))

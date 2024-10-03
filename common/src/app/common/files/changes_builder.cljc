@@ -20,7 +20,8 @@
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.shape.layout :as ctl]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [app.common.types.tokens-lib :as ctob]))
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
 
@@ -713,23 +714,28 @@
   [changes token-theme]
   (-> changes
       (update :redo-changes conj {:type :add-token-theme :token-theme token-theme})
-      (update :undo-changes conj {:type :del-token-theme :id (:id token-theme) :name (:name token-theme)})
+      (update :undo-changes conj {:type :del-token-theme :group (:group token-theme) :name (:name token-theme)})
       (apply-changes-local)))
 
 (defn update-token-theme
   [changes token-theme prev-token-theme]
-  (-> changes
-      (update :redo-changes conj {:type :mod-token-theme :id (:id token-theme) :name (:name prev-token-theme) :token-theme token-theme})
-      (update :undo-changes conj {:type :mod-token-theme :id (:id token-theme) :name (:name token-theme) :token-theme (or prev-token-theme token-theme)})
-      (apply-changes-local)))
+  (let [name (or (:name prev-token-theme)
+                 (:name token-theme))
+        group (or (:group prev-token-theme)
+                  (:group token-theme))]
+    (-> changes
+        (update :redo-changes conj {:type :mod-token-theme :group group :name name :token-theme token-theme})
+        (update :undo-changes conj {:type :mod-token-theme :group group :name name :token-theme (or prev-token-theme token-theme)})
+        (apply-changes-local))))
 
 (defn delete-token-theme
-  [changes token-theme-id]
+  [changes group name]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
-        prev-token-theme (get-in library-data [:token-themes-index token-theme-id])]
+        prev-token-theme (some-> (get library-data :tokens-lib)
+                                 (ctob/get-theme group name))]
     (-> changes
-        (update :redo-changes conj {:type :del-token-theme :id token-theme-id :name (:name prev-token-theme)})
+        (update :redo-changes conj {:type :del-token-theme :group group :name name})
         (update :undo-changes conj {:type :add-token-theme :token-theme prev-token-theme})
         (apply-changes-local))))
 
@@ -737,48 +743,51 @@
   [changes token-set]
   (-> changes
       (update :redo-changes conj {:type :add-token-set :token-set token-set})
-      (update :undo-changes conj {:type :del-token-set :id (:id token-set) :name (:name token-set)})
+      (update :undo-changes conj {:type :del-token-set :name (:name token-set)})
       (apply-changes-local)))
 
 (defn update-token-set
   [changes token-set prev-token-set]
   (-> changes
-      (update :redo-changes conj {:type :mod-token-set :id (:id token-set) :name (:name prev-token-set) :token-set token-set})
-      (update :undo-changes conj {:type :mod-token-set :id (:id token-set) :name (:name prev-token-set) :token-set (or prev-token-set token-set)})
+      (update :redo-changes conj {:type :mod-token-set :name (:name prev-token-set) :token-set token-set})
+      (update :undo-changes conj {:type :mod-token-set :name (:name token-set) :token-set (or prev-token-set token-set)})
       (apply-changes-local)))
 
 (defn delete-token-set
-  [changes token-set-id token-set-name]
+  [changes token-set-name]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
-        prev-token-set (get-in library-data [:token-sets-index token-set-id])]
+        prev-token-theme (some-> (get library-data :tokens-lib)
+                                 (ctob/get-set token-set-name))]
     (-> changes
-        (update :redo-changes conj {:type :del-token-set :id token-set-id :name token-set-name})
-        (update :undo-changes conj {:type :add-token-set :token-set prev-token-set})
+        (update :redo-changes conj {:type :del-token-set :name token-set-name})
+        (update :undo-changes conj {:type :add-token-set :token-set prev-token-theme})
         (apply-changes-local))))
 
 (defn add-token
-  [changes set-id set-name token]
+  [changes set-name token]
   (-> changes
-      (update :redo-changes conj {:type :add-token :set-id set-id :set-name set-name :token token})
-      (update :undo-changes conj {:type :del-token :set-name set-name :id (:id token) :name (:name token)})
+      (update :redo-changes conj {:type :add-token :set-name set-name :token token})
+      (update :undo-changes conj {:type :del-token :set-name set-name :name (:name token)})
       (apply-changes-local)))
 
 (defn update-token
-  [changes set-id set-name {:keys [id name] :as token} {prev-name :name :as prev-token}]
+  [changes set-name token prev-token]
   (-> changes
-      (update :redo-changes conj {:type :mod-token :set-id set-id :set-name set-name :id id :name prev-name :token token})
-      (update :undo-changes conj {:type :mod-token :set-id set-id :set-name set-name :id id :name name :token (or prev-token token)})
+      (update :redo-changes conj {:type :mod-token :set-name set-name :name (:name prev-token) :token token})
+      (update :undo-changes conj {:type :mod-token :set-name set-name :name (:name token) :token (or prev-token token)})
       (apply-changes-local)))
 
 (defn delete-token
-  [changes set-name token-id token-name]
+  [changes set-name token-name]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
-        prev-token (get-in library-data [:tokens token-id])]
+        prev-token (some-> (get library-data :tokens-lib)
+                           (ctob/get-set set-name)
+                           (ctob/get-token token-name))]
     (-> changes
-        (update :redo-changes conj {:type :del-token :set-name set-name :id token-id :name token-name})
-        (update :undo-changes conj {:type :add-token :set-id uuid/zero :set-name set-name :token prev-token})
+        (update :redo-changes conj {:type :del-token :set-name set-name :name token-name})
+        (update :undo-changes conj {:type :add-token :set-name set-name :token prev-token})
         (apply-changes-local))))
 
 (defn add-component

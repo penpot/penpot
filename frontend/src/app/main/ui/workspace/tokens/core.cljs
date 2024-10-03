@@ -23,17 +23,19 @@
 (defn maybe-resolve-token-value [{:keys [value] :as token}]
   (when value (resolve-token-value token)))
 
-(defn group-tokens-by-type
-  "Groups tokens by their `:type` property."
-  [tokens]
-  (->> (vals tokens)
-       (group-by :type)))
+(defn tokens->select-options [{:keys [shape tokens attributes selected-attributes]}]
+  (map
+   (fn [{:keys [name] :as token}]
+     (cond-> (assoc token :label name)
+       (wtt/token-applied? token shape (or selected-attributes attributes)) (assoc :selected? true)))
+   tokens))
 
 (defn tokens-name-map->select-options [{:keys [shape tokens attributes selected-attributes]}]
-  (->> (wtt/token-names-map tokens)
-       (map (fn [[_k {:keys [name] :as item}]]
-              (cond-> (assoc item :label name)
-                (wtt/token-applied? item shape (or selected-attributes attributes)) (assoc :selected? true))))))
+  (map
+   (fn [[_k {:keys [name] :as token}]]
+     (cond-> (assoc token :label name)
+       (wtt/token-applied? token shape (or selected-attributes attributes)) (assoc :selected? true)))
+   tokens))
 
 ;; JSON export functions -------------------------------------------------------
 
@@ -46,18 +48,18 @@
 (defn export-tokens-file [tokens-json]
   (let [file-name "tokens.json"
         file-content (encode-tokens tokens-json)
-        blob (wapi/create-blob (clj->js file-content) "application/json")]
+        blob (wapi/create-blob file-content "application/json")]
     (dom/trigger-download file-name blob)))
 
-(defn transform-tokens-into-json-format [tokens]
+(defn tokens->dtcg-map [tokens]
   (let [global (reduce
                 (fn [acc [_ {:keys [name value type]}]]
-                  (assoc acc name {:$value value
-                                   :$type (str/camel type)}))
-                (sorted-map) tokens)]
+                  (assoc acc name {"$value" value
+                                   "$type" (str/camel type)}))
+                (d/ordered-map) tokens)]
     {:global global}))
 
 (defn download-tokens-as-json []
-  (let [all-tokens (deref refs/workspace-selected-token-set-tokens)
-        transformed-tokens-json (transform-tokens-into-json-format all-tokens)]
-    (export-tokens-file transformed-tokens-json)))
+  (let [tokens (deref refs/workspace-active-theme-sets-tokens)
+        dtcg-format-tokens-map (tokens->dtcg-map tokens)]
+    (export-tokens-file dtcg-format-tokens-map)))
