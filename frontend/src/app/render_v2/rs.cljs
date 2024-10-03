@@ -7,6 +7,7 @@
 (ns app.render-v2.rs
   (:require
    ["./rs.js" :as render-v2]
+   [app.common.colors :as cc]
    [app.config :as cf]
    [beicon.v2.core :as rx]
    [goog.object :as gobj]
@@ -28,9 +29,10 @@
           (scale gpu-state zoom zoom)
           (translate gpu-state (- (:x vbox)) (- (:y vbox)))
           (doseq [shape supported-shapes]
-            (let [sr (:selrect shape)]
+            (let [sr (:selrect shape)
+                  [r g b] (cc/hex->rgb (-> shape :fills first :fill-color))]
               ;; (js/console.log (clj->js shape))
-              (draw-rect gpu-state (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr)))))))
+              (draw-rect gpu-state (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr) r g b))))))
 
 (defn set-canvas
   [canvas vbox zoom objects]

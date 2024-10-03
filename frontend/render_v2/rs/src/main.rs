@@ -116,11 +116,15 @@ pub unsafe extern "C" fn draw_rect(
     top: i32,
     right: i32,
     bottom: i32,
+    r: u8,
+    g: u8,
+    b: u8,
 ) {
     let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
     let rect = Rect::new(left as f32, top as f32, right as f32, bottom as f32);
+    let color = Color::from_rgb(r, g, b);
 
-    render_rect(&mut state.surface, rect, Color::BLACK);
+    render_rect(&mut state.surface, rect, color);
     state
         .gpu_state
         .context
