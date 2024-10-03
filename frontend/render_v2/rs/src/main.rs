@@ -125,6 +125,11 @@ pub unsafe extern "C" fn draw_rect(
     let color = Color::from_rgb(r, g, b);
 
     render_rect(&mut state.surface, rect, color);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn flush(state: *mut State) {
+    let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
     state
         .gpu_state
         .context
