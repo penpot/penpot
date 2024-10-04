@@ -509,3 +509,8 @@
                      #_(.reload js/location)
                      (fn [cause]
                        (js/console.log "EE:" cause)))))))
+
+
+(defn ^:export enable-text-v2
+  []
+  (st/emit! (features/enable-feature "text-editor/v2")))

@@ -7,7 +7,7 @@
 (ns app.main.ui.workspace.shapes.text.v2-editor
   (:require-macros [app.main.style :as stl])
   (:require
-   ["./v2_editor_impl.js" :as impl]
+   ["penpot/vendor/text-editor-v2" :as editor.v2]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
@@ -27,6 +27,22 @@
    [app.util.text.content.styles :as styles]
    [goog.events :as events]
    [rumext.v2 :as mf]))
+
+(def ^:private TextEditor
+  editor.v2/default)
+
+(defn- create-editor
+  [element options]
+  (new TextEditor element (obj/clone options)))
+
+(defn- set-editor-root!
+  [instance root]
+  (set! (.-root ^TextEditor instance) root)
+  instance)
+
+(defn- get-editor-root
+  [instance]
+  (.-root ^TextEditor instance))
 
 (mf/defc text-editor-html
   "Text editor (HTML)"
@@ -53,7 +69,7 @@
          (fn []
            (let [text-editor-instance (mf/ref-val text-editor-instance-ref)
                  container (mf/ref-val text-editor-container-ref)
-                 new-content (content/dom->cljs (impl/getRoot text-editor-instance))]
+                 new-content (content/dom->cljs (get-editor-root text-editor-instance))]
              (when (some? new-content)
                (st/emit! (dwt/v2-update-text-shape-content shape-id new-content true)))
              (dom/set-style! container "opacity" 0))))
@@ -74,7 +90,7 @@
         (mf/use-fn
          (fn []
            (let [text-editor-instance (mf/ref-val text-editor-instance-ref)
-                 new-content (content/dom->cljs (impl/getRoot text-editor-instance))]
+                 new-content (content/dom->cljs (get-editor-root text-editor-instance))]
              (when (some? new-content)
                (st/emit! (dwt/v2-update-text-shape-content shape-id new-content true)))
              ;; FIXME: We need to find a better way to trigger layout changes.
@@ -85,7 +101,7 @@
         (mf/use-fn
          (fn []
            (let [text-editor-instance (mf/ref-val text-editor-instance-ref)
-                 new-content (content/dom->cljs (impl/getRoot text-editor-instance))]
+                 new-content (content/dom->cljs (get-editor-root text-editor-instance))]
              (when (some? new-content)
                (st/emit! (dwt/v2-update-text-shape-content shape-id new-content true))))))
 
@@ -105,7 +121,7 @@
              style-defaults (styles/get-style-defaults (d/merge txt/default-attrs default-font))
              text-editor-options #js {:styleDefaults style-defaults
                                       :selectionImposterElement (mf/ref-val text-editor-selection-ref)}
-             text-editor-instance (impl/createTextEditor text-editor text-editor-options)]
+             text-editor-instance (create-editor text-editor text-editor-options)]
          (mf/set-ref-val! text-editor-instance-ref text-editor-instance)
          (.addEventListener text-editor-instance "blur" on-blur)
          (.addEventListener text-editor-instance "focus" on-focus)
@@ -114,7 +130,7 @@
          (.addEventListener text-editor-instance "change" on-change)
          (st/emit! (dwt/update-editor text-editor-instance))
          (when (some? content)
-           (impl/setRoot text-editor-instance (content/cljs->dom content)))
+           (set-editor-root! text-editor-instance (content/cljs->dom content)))
          (st/emit! (dwt/focus-editor))
 
          ;; This function is called when the component is unmount.
