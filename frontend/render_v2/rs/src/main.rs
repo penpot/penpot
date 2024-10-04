@@ -2,8 +2,10 @@ use std::boxed::Box;
 
 use skia_safe::{
     gpu::{self, gl::FramebufferInfo, DirectContext},
-    Color, Paint, PaintStyle, Rect, Surface,
+    // Color, Paint, PaintStyle, Rect, Surface,
 };
+
+use skia_safe as skia;
 
 extern "C" {
     pub fn emscripten_GetProcAddress(
@@ -22,15 +24,15 @@ struct GpuState {
 /// structures are not thread safe, so a state must not be shared between different Web Workers.
 pub struct State {
     gpu_state: GpuState,
-    surface: Surface,
+    surface: skia::Surface,
 }
 
 impl State {
-    fn new(gpu_state: GpuState, surface: Surface) -> Self {
+    fn new(gpu_state: GpuState, surface: skia::Surface) -> Self {
         State { gpu_state, surface }
     }
 
-    fn set_surface(&mut self, surface: Surface) {
+    fn set_surface(&mut self, surface: skia::Surface) {
         self.surface = surface;
     }
 }
@@ -66,7 +68,7 @@ fn create_gpu_state() -> GpuState {
 }
 
 /// Create the Skia surface that will be used for rendering.
-fn create_surface(gpu_state: &mut GpuState, width: i32, height: i32) -> Surface {
+fn create_surface(gpu_state: &mut GpuState, width: i32, height: i32) -> skia::Surface {
     let backend_render_target =
         gpu::backend_render_targets::make_gl((width, height), 1, 8, gpu_state.framebuffer_info);
 
@@ -81,9 +83,9 @@ fn create_surface(gpu_state: &mut GpuState, width: i32, height: i32) -> Surface 
     .unwrap()
 }
 
-fn render_rect(surface: &mut Surface, rect: Rect, color: Color) {
-    let mut paint = Paint::default();
-    paint.set_style(PaintStyle::Fill);
+fn render_rect(surface: &mut skia::Surface, rect: skia::Rect, color: skia::Color) {
+    let mut paint = skia::Paint::default();
+    paint.set_style(skia::PaintStyle::Fill);
     paint.set_color(color);
     paint.set_anti_alias(true);
     surface.canvas().draw_rect(rect, &paint);
@@ -107,24 +109,51 @@ pub unsafe extern "C" fn resize_surface(state: *mut State, width: i32, height: i
     state.set_surface(surface);
 }
 
-/// Draw a black rect at the specified coordinates.
-/// # Safety
 #[no_mangle]
-pub unsafe extern "C" fn draw_rect(
-    state: *mut State,
-    left: i32,
-    top: i32,
-    right: i32,
-    bottom: i32,
+pub extern "C" fn make_color(r: i32, g: i32, b: i32, a: f32) -> Box<Color> {
+    Box::new(Color {
+        r: r as u8,
+        g: g as u8,
+        b: b as u8,
+        a,
+    })
+}
+
+#[repr(C)]
+pub struct Color {
     r: u8,
     g: u8,
     b: u8,
-) {
-    let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
-    let rect = Rect::new(left as f32, top as f32, right as f32, bottom as f32);
-    let color = Color::from_rgb(r, g, b);
+    a: f32,
+}
 
-    render_rect(&mut state.surface, rect, color);
+#[repr(C)]
+pub struct Rect {
+    left: f32,
+    top: f32,
+    right: f32,
+    bottom: f32,
+}
+
+#[no_mangle]
+pub extern "C" fn make_rect(left: f32, top: f32, right: f32, bottom: f32) -> Box<Rect> {
+    Box::new(Rect {
+        left,
+        top,
+        right,
+        bottom,
+    })
+}
+
+/// Draws a rect at the specified coordinates with the give ncolor
+/// # Safety
+#[no_mangle]
+pub unsafe extern "C" fn draw_rect(state: *mut State, rect: &Rect, color: &Color) {
+    let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
+    let r = skia::Rect::new(rect.left, rect.top, rect.right, rect.bottom);
+    let color = skia::Color::from_argb((color.a * 255.0) as u8, color.r, color.g, color.b);
+
+    render_rect(&mut state.surface, r, color);
 }
 
 #[no_mangle]

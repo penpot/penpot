@@ -23,6 +23,8 @@
         reset-canvas (gobj/get ^js internal-module "_reset_canvas")
         scale (gobj/get ^js internal-module "_scale")
         flush (gobj/get ^js internal-module "_flush")
+        make-color (gobj/get ^js internal-module "_make_color")
+        make-rect (gobj/get ^js internal-module "_make_rect")
         supported-shapes (filter (fn [shape] (not= (:type shape) :frame)) (vals objects))]
 
         (js/requestAnimationFrame (fn []
@@ -31,9 +33,11 @@
                                     (translate gpu-state (- (:x vbox)) (- (:y vbox)))
                                     (doseq [shape supported-shapes]
                                       (let [sr (:selrect shape)
-                                            [r g b] (cc/hex->rgb (-> shape :fills first :fill-color))]
-                                        ;; (js/console.log (clj->js shape))
-                                        (draw-rect gpu-state (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr) r g b)))
+                                            [r g b] (cc/hex->rgb (-> shape :fills first :fill-color))
+                                            alpha (-> shape :fills first :fill-opacity)
+                                            color (make-color r g b alpha)
+                                            rect (make-rect (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr))]
+                                        (draw-rect gpu-state rect color)))
                                     (flush gpu-state)))))
 
 (defn set-canvas
