@@ -20,7 +20,8 @@ export PENPOT_FLAGS="\
        enable-file-snapshot \
        enable-access-tokens \
        enable-file-validation \
-       enable-file-schema-validation";
+       enable-file-schema-validation \
+       disable-feature-design-tokens";
 
 export OPTIONS="
        -A:jmx-remote -A:dev \

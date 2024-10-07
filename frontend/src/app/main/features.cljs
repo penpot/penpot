@@ -109,7 +109,7 @@
      (watch [_ _ _]
        (when *assert*
          (->> (rx/from cfeat/no-migration-features)
-              (rx/filter #(not (contains? cfeat/backend-only-features %)))
+              (rx/filter #(not (or (contains? cfeat/backend-only-features %) (= "design-tokens/v1" %))))
               (rx/observe-on :async)
               (rx/map enable-feature))))
 

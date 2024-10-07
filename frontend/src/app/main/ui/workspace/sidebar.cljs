@@ -12,7 +12,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
-   [app.main.ui.context :as muc]
+   [app.main.ui.context :as ctx]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.workspace.comments :refer [comments-sidebar]]
    [app.main.ui.workspace.left-header :refer [left-header]]
@@ -40,6 +40,7 @@
         mode-inspect?  (= options-mode :inspect)
         project        (mf/deref refs/workspace-project)
 
+        design-tokens? (mf/use-ctx ctx/design-tokens)
 
         section        (cond (or mode-inspect? (contains? layout :layers)) :layers
                              (contains? layout :assets) :assets
@@ -64,7 +65,7 @@
         on-tab-change
         (mf/use-fn #(st/emit! (dw/go-to-layout %)))]
 
-    [:& (mf/provider muc/sidebar) {:value :left}
+    [:& (mf/provider ctx/sidebar) {:value :left}
      [:aside {:ref parent-ref
               :id "left-sidebar-aside"
               :data-testid "left-sidebar"
@@ -122,7 +123,8 @@
                              :title (tr "workspace.toolbar.assets")}
              [:& assets-toolbox {:size (- size 58)}]])
 
-          (when-not ^boolean mode-inspect?
+          (when (and (not ^boolean mode-inspect?)
+                     design-tokens?)
             [:& tab-element {:id :tokens
                              :title "Tokens"}
              [:& tokens-sidebar-tab]])]])]]))
@@ -170,7 +172,7 @@
                    :on-change-section handle-change-section
                    :on-expand handle-expand)]
 
-    [:& (mf/provider muc/sidebar) {:value :right}
+    [:& (mf/provider ctx/sidebar) {:value :right}
      [:aside {:class (stl/css-case :right-settings-bar true
                                    :not-expand (not can-be-expanded?)
                                    :expanded (> size 276))
