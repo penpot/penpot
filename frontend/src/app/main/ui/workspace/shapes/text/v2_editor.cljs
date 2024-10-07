@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.shapes.text.v2-editor
   (:require-macros [app.main.style :as stl])
   (:require
-   ["penpot/vendor/text-editor-v2" :as editor.v2]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
@@ -21,148 +20,143 @@
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
    [app.util.dom :as dom]
+   [app.util.globals :as global]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.text.content :as content]
    [app.util.text.content.styles :as styles]
-   [goog.events :as events]
    [rumext.v2 :as mf]))
 
-(def ^:private TextEditor
-  editor.v2/default)
+(defn- initialize-event-handlers
+  "Internal editor events handler initializer/destructor"
+  [shape-id content selection-ref editor-ref container-ref]
+  (let [editor-node
+        (mf/ref-val editor-ref)
 
-(defn- create-editor
-  [element options]
-  (new TextEditor element (obj/clone options)))
+        selection-node
+        (mf/ref-val selection-ref)
 
-(defn- set-editor-root!
-  [instance root]
-  (set! (.-root ^TextEditor instance) root)
-  instance)
+        ;; Gets the default font from the workspace refs.
+        default-font
+        (deref refs/default-font)
 
-(defn- get-editor-root
-  [instance]
-  (.-root ^TextEditor instance))
+        style-defaults
+        (styles/get-style-defaults
+         (merge txt/default-attrs default-font))
+
+        options
+        #js {:styleDefaults style-defaults
+             :selectionImposterElement selection-node}
+
+        instance
+        (dwt/create-editor editor-node options)
+
+        on-key-up
+        (fn [event]
+          (dom/stop-propagation event)
+          (when (kbd/esc? event)
+            (st/emit! :interrupt (dw/clear-edition-mode))))
+
+        on-blur
+        (fn []
+          (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
+            (st/emit! (dwt/v2-update-text-shape-content shape-id content true)))
+
+          (let [container-node (mf/ref-val container-ref)]
+            (dom/set-style! container-node "opacity" 0)))
+
+        on-focus
+        (fn []
+          (let [container-node (mf/ref-val container-ref)]
+            (dom/set-style! container-node "opacity" 1)))
+
+        on-style-change
+        (fn [event]
+          (let [styles (styles/get-styles-from-event event)]
+            (st/emit! (dwt/v2-update-text-editor-styles shape-id styles))))
+
+        on-needs-layout
+        (fn []
+          (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
+            (st/emit! (dwt/v2-update-text-shape-content shape-id content true)))
+          ;; FIXME: We need to find a better way to trigger layout changes.
+          #_(st/emit!
+             (dwt/v2-update-text-shape-position-data shape-id [])))
+
+        on-change
+        (fn []
+          (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
+            (st/emit! (dwt/v2-update-text-shape-content shape-id content true))))]
+
+    (.addEventListener ^js global/document "keyup" on-key-up)
+    (.addEventListener ^js instance "blur" on-blur)
+    (.addEventListener ^js instance "focus" on-focus)
+    (.addEventListener ^js instance "needslayout" on-needs-layout)
+    (.addEventListener ^js instance "stylechange" on-style-change)
+    (.addEventListener ^js instance "change" on-change)
+
+    (st/emit! (dwt/update-editor instance))
+    (when (some? content)
+      (dwt/set-editor-root! instance (content/cljs->dom content)))
+    (st/emit! (dwt/focus-editor))
+
+    ;; This function is called when the component is unmount
+    (fn []
+      (.removeEventListener ^js global/document "keyup" on-key-up)
+      (.removeEventListener ^js instance "blur" on-blur)
+      (.removeEventListener ^js instance "focus" on-focus)
+      (.removeEventListener ^js instance "needslayout" on-needs-layout)
+      (.removeEventListener ^js instance "stylechange" on-style-change)
+      (.removeEventListener ^js instance "change" on-change)
+      (dwt/dispose! instance)
+      (st/emit! (dwt/update-editor nil)))))
 
 (mf/defc text-editor-html
   "Text editor (HTML)"
   {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
-  [{:keys [shape] :as props}]
-  (let [content (:content shape)
-        shape-id (:id shape)
-
-        ;; Gets the default font from the workspace refs.
-        default-font (deref refs/default-font)
+   ::mf/props :obj}
+  [{:keys [shape]}]
+  (let [content       (:content shape)
+        shape-id      (dm/get-prop shape :id)
 
         ;; This is a reference to the dom element that
         ;; should contain the TextEditor.
-        text-editor-ref (mf/use-ref nil)
+        editor-ref    (mf/use-ref nil)
 
         ;; This reference is to the container
-        text-editor-container-ref (mf/use-ref nil)
-        text-editor-instance-ref (mf/use-ref nil)
-        text-editor-selection-ref (mf/use-ref nil)
+        container-ref (mf/use-ref nil)
+        selection-ref (mf/use-ref nil)]
 
-        on-blur
-        (mf/use-fn
-         (fn []
-           (let [text-editor-instance (mf/ref-val text-editor-instance-ref)
-                 container (mf/ref-val text-editor-container-ref)
-                 new-content (content/dom->cljs (get-editor-root text-editor-instance))]
-             (when (some? new-content)
-               (st/emit! (dwt/v2-update-text-shape-content shape-id new-content true)))
-             (dom/set-style! container "opacity" 0))))
-
-        on-focus
-        (mf/use-fn
-         (fn []
-           (let [container (mf/ref-val text-editor-container-ref)]
-             (dom/set-style! container "opacity" 1))))
-
-        on-stylechange
-        (mf/use-fn
-         (fn [e]
-           (let [new-styles (styles/get-styles-from-event e)]
-             (st/emit! (dwt/v2-update-text-editor-styles shape-id new-styles)))))
-
-        on-needslayout
-        (mf/use-fn
-         (fn []
-           (let [text-editor-instance (mf/ref-val text-editor-instance-ref)
-                 new-content (content/dom->cljs (get-editor-root text-editor-instance))]
-             (when (some? new-content)
-               (st/emit! (dwt/v2-update-text-shape-content shape-id new-content true)))
-             ;; FIXME: We need to find a better way to trigger layout changes.
-             #_(st/emit!
-                (dwt/v2-update-text-shape-position-data shape-id [])))))
-
-        on-change
-        (mf/use-fn
-         (fn []
-           (let [text-editor-instance (mf/ref-val text-editor-instance-ref)
-                 new-content (content/dom->cljs (get-editor-root text-editor-instance))]
-             (when (some? new-content)
-               (st/emit! (dwt/v2-update-text-shape-content shape-id new-content true))))))
-
-        on-key-up
-        (mf/use-fn
-         (fn [e]
-           (dom/stop-propagation e)
-           (when (kbd/esc? e)
-             (st/emit! :interrupt (dw/clear-edition-mode)))))]
-
-    ;; Initialize text editor content.
-    (mf/use-effect
-     (mf/deps text-editor-ref)
-     (fn []
-       (let [keys [(events/listen js/document "keyup" on-key-up)]
-             text-editor (mf/ref-val text-editor-ref)
-             style-defaults (styles/get-style-defaults (d/merge txt/default-attrs default-font))
-             text-editor-options #js {:styleDefaults style-defaults
-                                      :selectionImposterElement (mf/ref-val text-editor-selection-ref)}
-             text-editor-instance (create-editor text-editor text-editor-options)]
-         (mf/set-ref-val! text-editor-instance-ref text-editor-instance)
-         (.addEventListener text-editor-instance "blur" on-blur)
-         (.addEventListener text-editor-instance "focus" on-focus)
-         (.addEventListener text-editor-instance "needslayout" on-needslayout)
-         (.addEventListener text-editor-instance "stylechange" on-stylechange)
-         (.addEventListener text-editor-instance "change" on-change)
-         (st/emit! (dwt/update-editor text-editor-instance))
-         (when (some? content)
-           (set-editor-root! text-editor-instance (content/cljs->dom content)))
-         (st/emit! (dwt/focus-editor))
-
-         ;; This function is called when the component is unmount.
-         (fn []
-           (.removeEventListener text-editor-instance "blur" on-blur)
-           (.removeEventListener text-editor-instance "focus" on-focus)
-           (.removeEventListener text-editor-instance "needslayout" on-needslayout)
-           (.removeEventListener text-editor-instance "stylechange" on-stylechange)
-           (.removeEventListener text-editor-instance "change" on-change)
-           (.dispose text-editor-instance)
-           (st/emit! (dwt/update-editor nil))
-           (doseq [key keys]
-             (events/unlistenByKey key))))))
+    ;; WARN: we explicitly do not pass content on effect dependency
+    ;; array because we only need to initialize this once with initial
+    ;; content
+    (mf/with-effect [shape-id]
+      (initialize-event-handlers shape-id
+                                 content
+                                 selection-ref
+                                 editor-ref
+                                 container-ref))
 
     [:div
      {:class (dm/str (cur/get-dynamic "text" (:rotation shape))
                      " "
                      (stl/css :text-editor-container))
-      :ref text-editor-container-ref
+      :ref container-ref
       :data-testid "text-editor-container"
       :style {:width (:width shape)
               :height (:height shape)}
-              ;; We hide the editor when is blurred because otherwise the selection won't let us see
-              ;; the underlying text. Use opacity because display or visibility won't allow to recover
-              ;; focus afterwards.
-              ;; IMPORTANT! This is now done through DOM mutations (see on-blur and on-focus)
-              ;; but I keep this for future references.
-              ;; :opacity (when @blurred 0)}}
+      ;; We hide the editor when is blurred because otherwise the
+      ;; selection won't let us see the underlying text. Use opacity
+      ;; because display or visibility won't allow to recover focus
+      ;; afterwards.
+
+      ;; IMPORTANT! This is now done through DOM mutations (see
+      ;; on-blur and on-focus) but I keep this for future references.
+      ;; :opacity (when @blurred 0)}}
       }
      [:div
       {:class (stl/css :text-editor-selection-imposter)
-       :ref text-editor-selection-ref}]
+       :ref selection-ref}]
      [:div
       {:class (dm/str
                "mousetrap "
@@ -174,7 +168,7 @@
                 :align-top    (= (:vertical-align content "top") "top")
                 :align-center (= (:vertical-align content) "center")
                 :align-bottom (= (:vertical-align content) "bottom")))
-       :ref text-editor-ref
+       :ref editor-ref
        :data-testid "text-editor-content"
        :data-x (dm/get-prop shape :x)
        :data-y (dm/get-prop shape :y)
@@ -198,7 +192,7 @@
 (mf/defc text-editor
   "Text editor wrapper component"
   {::mf/wrap [mf/memo]
-   ::mf/wrap-props false
+   ::mf/props :obj
    ::mf/forward-ref true}
   [{:keys [shape modifiers] :as props} _]
   (let [shape-id  (dm/get-prop shape :id)
@@ -272,4 +266,3 @@
       [:div {:style style}
        [:& text-editor-html {:shape shape
                              :key (dm/str shape-id)}]]]]))
-
