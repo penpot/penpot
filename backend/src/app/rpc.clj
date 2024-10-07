@@ -149,6 +149,13 @@
                   :hint "authentication required for this endpoint")
         (f cfg params)))))
 
+(defn- wrap-db-transaction
+  [_ f mdata]
+  (if (::db/transaction mdata)
+    (fn [cfg params]
+      (db/tx-run! cfg f params))
+    f))
+
 (defn- wrap-audit
   [_ f mdata]
   (if (or (contains? cf/flags :webhooks)
@@ -196,6 +203,7 @@
 (defn- wrap-all
   [cfg f mdata]
   (as-> f $
+    (wrap-db-transaction cfg $ mdata)
     (cond/wrap cfg $ mdata)
     (retry/wrap-retry cfg $ mdata)
     (climit/wrap cfg $ mdata)
