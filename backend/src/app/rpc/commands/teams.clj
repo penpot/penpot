@@ -401,8 +401,7 @@
 
 (sv/defmethod ::create-team
   {::doc/added "1.17"
-   ::sm/params schema:create-team
-   ::db/transaction true}
+   ::sm/params schema:create-team}
   [cfg {:keys [::rpc/profile-id] :as params}]
 
   (quotes/check! cfg {::quotes/id ::quotes/teams-per-profile
@@ -413,7 +412,7 @@
         params   (-> params
                      (assoc :profile-id profile-id)
                      (assoc :features features))
-        team     (create-team cfg params)]
+        team     (db/tx-run! cfg create-team params)]
 
     (with-meta team
       {::audit/props {:id (:id team)}})))
