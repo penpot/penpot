@@ -27,6 +27,8 @@
 
 ### :bug: Bugs fixed
 
+- Fix problem with go back button on error page [Taiga #8887](https://tree.taiga.io/project/penpot/issue/8887)
+
 ## 2.2.1
 
 ### :bug: Bugs fixed
