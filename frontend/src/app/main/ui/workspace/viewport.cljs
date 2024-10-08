@@ -130,7 +130,7 @@
         hover-top-frame-id (mf/use-state nil)
         frame-hover       (mf/use-state nil)
         active-frames     (mf/use-state #{})
-        canvas-set?       (mf/use-state false)
+        canvas-init?      (mf/use-ref false)
 
         ;; REFS
         [viewport-ref
@@ -273,16 +273,20 @@
     (when (render-v2/is-enabled?)
       ;; set up canvas and first render
       (mf/with-effect
-        [canvas-ref vbox' @canvas-set? base-objects zoom]
+        [canvas-ref]
         (let [canvas (mf/ref-val canvas-ref)]
-          (when (and (some? vbox') (not @canvas-set?))
-            (p/then (render-v2/init) (fn []
-              (render-v2/set-canvas canvas vbox' zoom base-objects)
-              (swap! canvas-set? true))))))
+          (when (some? canvas)
+            (p/then (render-v2/init)
+                    (fn []
+                      (render-v2/set-canvas canvas vbox' zoom base-objects)
+                      (mf/set-ref-val! canvas-init? true))))))
+
       ;; redraw when vbox or shapes change
       (mf/with-effect
-        [vbox base-objects canvas-set? zoom]
-        (when @canvas-set?
+        [vbox base-objects canvas-init? zoom]
+        (js/console.log "jibiri")
+        (when (mf/ref-val canvas-init?)
+          (js/console.log "jibiri ho")
           (render-v2/draw-canvas vbox zoom base-objects))))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only? drawing-tool drawing-path?)

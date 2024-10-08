@@ -145,6 +145,17 @@ pub extern "C" fn make_rect(left: f32, top: f32, right: f32, bottom: f32) -> Box
     })
 }
 
+#[no_mangle]
+pub extern "C" fn alloc_rects(len: usize) -> *mut Rect {
+    // create a new mutable buffer with capacity `len`
+    let mut buf : Vec<Rect> = Vec::with_capacity(len);
+    let ptr = buf.as_mut_ptr();
+    // take ownership of the memory block and ensure the its destructor is not
+    // called when the object goes out of scope at the end of the function
+    std::mem::forget(buf);
+    return ptr;
+}
+
 /// Draws a rect at the specified coordinates with the give ncolor
 /// # Safety
 #[no_mangle]
@@ -178,6 +189,23 @@ pub unsafe extern "C" fn scale(state: *mut State, sx: f32, sy: f32) {
 #[no_mangle]
 pub unsafe extern "C" fn reset_canvas(state: *mut State) {
     (*state).surface.canvas().reset_matrix();
+}
+
+#[no_mangle]
+pub unsafe fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usize, zoom: f32, dx: f32, dy: f32) {
+    let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
+    reset_canvas(state);
+    scale(state, zoom, zoom);
+    translate(state, dx, dy);
+    // create a `Vec<Rect>` from the pointer to the linear memory and length
+    let buf = Vec::<Rect>::from_raw_parts(ptr, len, len);
+    for rect in buf.iter() {
+        let r = skia::Rect::new(rect.left, rect.top, rect.right, rect.bottom);
+        let color = skia::Color::from_argb(255, 0, 0, 0);
+        render_rect(&mut state.surface, r, color);
+    }
+    flush(state);
+    std::mem::forget(buf);
 }
 
 fn main() {
