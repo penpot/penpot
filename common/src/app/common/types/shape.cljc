@@ -355,7 +355,8 @@
   (sm/check-fn schema:shape-attrs))
 
 (def check-shape!
-  (sm/check-fn schema:shape))
+  (sm/check-fn schema:shape
+               :hint "expected valid shape"))
 
 (def valid-shape?
   (sm/lazy-validator schema:shape))

@@ -9,7 +9,6 @@
   #?(:cljs (:require-macros [app.common.schema :refer [ignoring]]))
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.pprint :as pp]
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
@@ -243,59 +242,35 @@
 (defn- fast-check!
   "A fast path for checking process, assumes the ILazySchema protocol
   implemented on the provided `s` schema. Sould not be used directly."
-  [s value]
+  [s type code hint value]
   (when-not ^boolean (-validate s value)
-    (let [hint    (d/nilv dm/*assert-context* "check error")
-          explain (-explain s value)]
-      (throw (ex-info hint {:type :assertion
-                            :code :data-validation
+    (let [explain (-explain s value)]
+      (throw (ex-info hint {:type type
+                            :code code
                             :hint hint
                             ::explain explain}))))
-  true)
+  value)
 
 (declare ^:private lazy-schema)
 
 (defn check-fn
   "Create a predefined check function"
-  [s]
-  (let [schema (if (lazy-schema? s) s (lazy-schema s))]
-    (partial fast-check! schema)))
+  [s & {:keys [hint type code]}]
+  (let [schema (if (lazy-schema? s) s (lazy-schema s))
+        hint   (or ^boolean hint "check error")
+        type   (or ^boolean type :assertion)
+        code   (or ^boolean code :data-validation)]
+    (partial fast-check! schema type code hint)))
 
 (defn check!
   "A helper intended to be used on assertions for validate/check the
-  schema over provided data. Raises an assertion exception, should be
-  used together with `dm/assert!` or `dm/verify!`."
-  [s value]
-  (let [s (if (lazy-schema? s) s (lazy-schema s))]
-    (fast-check! s value)))
-
-(defn- fast-validate!
-  "A fast path for validation process, assumes the ILazySchema protocol
-  implemented on the provided `s` schema. Sould not be used directly."
-  ([s value] (fast-validate! s value nil))
-  ([s value options]
-   (when-not ^boolean (-validate s value)
-     (let [explain (-explain s value)
-           options (into {:type :validation
-                          :code :data-validation
-                          ::explain explain}
-                         options)
-           hint    (get options :hint "schema validation error")]
-       (throw (ex-info hint options))))
-   value))
-
-(defn validate-fn
-  "Create a predefined validate function that raises an expception"
-  [s]
-  (let [schema (if (lazy-schema? s) s (lazy-schema s))]
-    (partial fast-validate! schema)))
-
-(defn validate!
-  "A generic validation function for predefined schemas."
-  ([s value] (validate! s value nil))
-  ([s value options]
-   (let [s (if (lazy-schema? s) s (lazy-schema s))]
-     (fast-validate! s value options))))
+  schema over provided data. Raises an assertion exception."
+  [s value & {:keys [hint type code]}]
+  (let [s      (if (lazy-schema? s) s (lazy-schema s))
+        hint   (or ^boolean hint "check error")
+        type   (or ^boolean type :assertion)
+        code   (or ^boolean code :data-validation)]
+    (fast-check! s type code hint value)))
 
 (defn register! [type s]
   (let [s (if (map? s) (m/-simple-schema s) s)]
@@ -1004,6 +979,12 @@
 
 (def check-email!
   (check-fn ::email))
+
+(def check-uuid!
+  (check-fn ::uuid :hint "expected valid uuid instance"))
+
+(def check-string!
+  (check-fn :string :hint "expected string"))
 
 (def check-coll-of-uuid!
   (check-fn ::coll-of-uuid))

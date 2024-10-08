@@ -116,7 +116,7 @@
 (sm/register! ::color-attrs schema:color-attrs)
 
 (def check-color!
-  (sm/check-fn schema:color))
+  (sm/check-fn schema:color :hint "expected valid color struct"))
 
 (def check-recent-color!
   (sm/check-fn schema:recent-color))

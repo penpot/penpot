@@ -193,9 +193,17 @@
 
 (defn rename-color
   [file-id id new-name]
-  (dm/verify! (uuid? file-id))
-  (dm/verify! (uuid? id))
-  (dm/verify! (string? new-name))
+  (dm/assert!
+   "expected valid uuid for `id`"
+   (uuid? id))
+
+  (dm/assert!
+   "expected valid uuid for `file-id`"
+   (uuid? file-id))
+
+  (dm/assert!
+   "expected valid string for `new-name`"
+   (string? new-name))
 
   (ptk/reify ::rename-color
     ptk/WatchEvent
@@ -243,8 +251,15 @@
 
 (defn rename-media
   [id new-name]
-  (dm/verify! (uuid? id))
-  (dm/verify! (string? new-name))
+
+  (dm/assert!
+   "expected valid uuid for `id`"
+   (uuid? id))
+
+  (dm/assert!
+   "expected valid string for `new-name`"
+   (string? new-name))
+
   (ptk/reify ::rename-media
     ptk/WatchEvent
     (watch [it state _]
@@ -261,8 +276,11 @@
             (rx/of (dch/commit-changes changes))))))))
 
 (defn delete-media
-  [{:keys [id] :as params}]
-  (dm/assert! (uuid? id))
+  [{:keys [id]}]
+  (dm/assert!
+   "expected valid uuid for `id`"
+   (uuid? id))
+
   (ptk/reify ::delete-media
     ev/Event
     (-data [_] {:id id})
@@ -435,8 +453,14 @@
 (defn rename-component
   "Rename the component with the given id, in the current file library."
   [id new-name]
-  (dm/verify! (uuid? id))
-  (dm/verify! (string? new-name))
+  (dm/assert!
+   "expected an uuid instance"
+   (uuid? id))
+
+  (dm/assert!
+   "expected string for new-name"
+   (string? new-name))
+
   (ptk/reify ::rename-component
     ptk/WatchEvent
     (watch [it state _]
@@ -487,8 +511,11 @@
 
 (defn delete-component
   "Delete the component with the given id, from the current file library."
-  [{:keys [id] :as params}]
-  (dm/assert! (uuid? id))
+  [{:keys [id]}]
+  (dm/assert!
+   "expected valid uuid for `id`"
+   (uuid? id))
+
   (ptk/reify ::delete-component
     ptk/WatchEvent
     (watch [it state _]
@@ -1129,7 +1156,9 @@
 (defn touch-component
   "Update the modified-at attribute of the component to now"
   [id]
-  (dm/verify! (uuid? id))
+  (dm/assert!
+   "expected valid uuid for `id`"
+   (uuid? id))
   (ptk/reify ::touch-component
     cljs.core/IDeref
     (-deref [_] [id])
