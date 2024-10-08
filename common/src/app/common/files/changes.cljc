@@ -295,6 +295,12 @@
       [:name :string]
       [:token-set ::ctot/token-set]]]
 
+    [:move-token-set-before
+     [:map {:title "MoveTokenSetBefore"}
+      [:type [:= :move-token-set-before]]
+      [:set-name :string]
+      [:before-set-name [:maybe :string]]]]
+
     [:del-token-set
      [:map {:title "DelTokenSetChange"}
       [:type [:= :del-token-set]]
@@ -864,6 +870,12 @@
                                                                     (merge prev-set (dissoc token-set :tokens)))))]
                                (cond-> lib'
                                  path-changed? (ctob/update-set-name name (:name token-set)))))))
+
+(defmethod process-change :move-token-set-before
+  [data {:keys [set-name before-set-name]}]
+  (update data :tokens-lib #(-> %
+                                (ctob/ensure-tokens-lib)
+                                (ctob/move-set-before set-name before-set-name))))
 
 (defmethod process-change :del-token-set
   [data {:keys [name]}]

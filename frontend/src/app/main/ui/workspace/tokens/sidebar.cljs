@@ -8,12 +8,14 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
@@ -32,8 +34,7 @@
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]
-   [shadow.resource]
-   [app.common.types.tokens-lib :as ctob]))
+   [shadow.resource]))
 
 (def lens:token-type-open-status
   (l/derived (l/in [:workspace-tokens :open-status]) st/state))
@@ -205,7 +206,8 @@
                       :on-collapsed #(swap! open? not)}
         [:& add-set-button {:on-open on-open}]]]
       (when @open?
-        [:& sets-list])]]))
+        [:& h/sortable-container {}
+         [:& sets-list]])]]))
 
 (mf/defc tokens-explorer
   [_props]

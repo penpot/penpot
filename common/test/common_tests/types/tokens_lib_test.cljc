@@ -79,8 +79,32 @@
     (let [args {:name 777
                 :description 999}]
       (t/is (thrown-with-msg? Exception #"expected valid token set"
-                              (apply ctob/make-token-set args))))))
+                              (apply ctob/make-token-set args)))))
 
+  (t/deftest move-token-set
+    (let [tokens-lib (-> (ctob/make-tokens-lib)
+                         (ctob/add-set (ctob/make-token-set :name "A"))
+                         (ctob/add-set (ctob/make-token-set :name "B"))
+                         (ctob/add-set (ctob/make-token-set :name "Move")))
+          original-order (into [] (ctob/get-ordered-set-names tokens-lib))
+          move (fn [set-name before-set-name]
+                 (->> (ctob/move-set-before tokens-lib set-name before-set-name)
+                      (ctob/get-ordered-set-names)
+                      (into [])))]
+      ;; TODO Nested moving doesn't work as expected
+      (t/testing "regular moving"
+        (t/is (= ["A" "Move" "B"] (move "Move" "B")))
+        (t/is (= ["B" "A" "Move"] (move "A" "Move"))))
+
+      (t/testing "move to bottom"
+        (t/is (= ["B" "Move" "A"] (move "A" nil))))
+
+      (t/testing "no move expected"
+        (t/is (= original-order (move "Move" "Move"))))
+
+      (t/testing "ignore invalid moves"
+        (t/is (= original-order (move "A" "foo/bar/baz")))
+        (t/is (= original-order (move "Missing" "Move")))))))
 
 (t/testing "token-theme"
   (t/deftest make-token-theme

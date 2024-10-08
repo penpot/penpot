@@ -167,6 +167,17 @@
 
 ;; === Token Set
 
+(def set-separator "/")
+
+(defn get-token-set-path [path]
+  (get-path path set-separator))
+
+(defn get-token-set-group-str [path]
+  (get-groups-str path set-separator))
+
+(defn split-token-set-path [path]
+  (split-path path set-separator))
+
 (defprotocol ITokenSet
   (add-token [_ token] "add a token at the end of the list")
   (update-token [_ token-name f] "update a token in the list")
@@ -257,11 +268,14 @@
   (add-set [_ token-set] "add a set to the library, at the end")
   (update-set [_ set-name f] "modify a set in the ilbrary")
   (delete-set [_ set-name] "delete a set in the library")
+  (move-set-before [_ set-name before-set-name] "move a set with `set-name` before a set with `before-set-name` in the library.
+When `before-set-name` is nil, move set to bottom")
   (set-count [_] "get the total number if sets in the library")
   (get-set-tree [_] "get a nested tree of all sets in the library")
   (get-sets [_] "get an ordered sequence of all sets in the library")
   (get-ordered-set-names [_] "get an ordered sequence of all sets names in the library")
   (get-set [_ set-name] "get one set looking for name")
+  (get-neighbor-set-name [_ set-name index-offset] "get neighboring set name offset by `index-offset`")
   (get-set-group [_ set-group-path] "get the attributes of a set group"))
 
 (def schema:token-set-node
@@ -462,8 +476,8 @@
   ITokenSets
   (add-set [_ token-set]
     (dm/assert! "expected valid token set" (check-token-set! token-set))
-    (let [path       (get-path token-set "/")
-          groups-str (get-groups-str token-set "/")]
+    (let [path       (get-token-set-path token-set)
+          groups-str (get-token-set-group-str token-set)]
       (TokensLib. (d/oassoc-in sets path token-set)
                   (cond-> set-groups
                     (not (str/empty? groups-str))
@@ -472,7 +486,7 @@
                   active-themes)))
 
   (update-set [this set-name f]
-    (let [path (split-path set-name "/")
+    (let [path (split-token-set-path set-name)
           set  (get-in sets path)]
       (if set
         (let [set'  (-> (make-token-set (f set))
@@ -490,11 +504,29 @@
         this)))
 
   (delete-set [_ set-name]
-    (let [path (split-path set-name "/")]
+    (let [path (split-token-set-path set-name)]
       (TokensLib. (d/dissoc-in sets path)
                   set-groups  ;; TODO remove set-group if needed
                   themes
                   active-themes)))
+
+  ;; TODO Handle groups and nesting
+  (move-set-before [this set-name before-set-name]
+    (let [source-path (split-token-set-path set-name)
+          token-set (-> (get-set this set-name)
+                        (assoc :modified-at (dt/now)))
+          target-path (split-token-set-path before-set-name)]
+      (if before-set-name
+        (TokensLib. (d/oassoc-in-before sets target-path source-path token-set)
+                    set-groups ;; TODO remove set-group if needed
+                    themes
+                    active-themes)
+        (TokensLib. (-> sets
+                        (d/dissoc-in source-path)
+                        (d/oassoc-in source-path token-set))
+                    set-groups ;; TODO remove set-group if needed
+                    themes
+                    active-themes))))
 
   (get-set-tree [_]
     sets)
@@ -512,6 +544,13 @@
   (get-set [_ set-name]
     (let [path (split-path set-name "/")]
       (get-in sets path)))
+
+  (get-neighbor-set-name [this set-name index-offset]
+    (let [sets (get-ordered-set-names this)
+          index (d/index-of sets set-name)
+          neighbor-set-name (when index
+                              (nth sets (+ index-offset index) nil))]
+      neighbor-set-name))
 
   (get-set-group [_ set-group-path]
     (get set-groups set-group-path))

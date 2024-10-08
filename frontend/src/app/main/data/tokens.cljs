@@ -204,6 +204,21 @@
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
 
+(defn move-token-set [source-set-name dest-set-name position]
+  (ptk/reify ::move-token-set
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [tokens-lib (get-tokens-lib state)
+            prev-before-set-name (ctob/get-neighbor-set-name tokens-lib source-set-name 1)
+            [source-set-name' dest-set-name'] (if (= :top position)
+                                                [source-set-name dest-set-name]
+                                                [source-set-name (ctob/get-neighbor-set-name tokens-lib dest-set-name 1)])
+            changes (-> (pcb/empty-changes it)
+                        (pcb/move-token-set-before source-set-name' dest-set-name' prev-before-set-name))]
+        (rx/of
+         (dch/commit-changes changes)
+         (wtu/update-workspace-tokens))))))
+
 (defn update-create-token
   [{:keys [token prev-token-name]}]
   (ptk/reify ::update-create-token
