@@ -414,10 +414,11 @@
               ;; If object has changed or is new verify is correct
               (when (and (some? shape-new)
                          (not= shape-old shape-new))
-                (dm/verify!
-                 "expected valid shape"
-                 (and (cts/valid-shape? shape-new)
-                      (cts/shape? shape-new))))))]
+                (when-not (and (cts/valid-shape? shape-new)
+                               (cts/shape? shape-new))
+                  (ex/raise :type :assertion
+                            :code :data-validation
+                            :hint "invalid shape found after applying changes")))))]
 
     (->> (into #{} (map :page-id) items)
          (mapcat (fn [page-id]

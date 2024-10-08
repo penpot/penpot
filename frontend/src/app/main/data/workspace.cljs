@@ -1725,8 +1725,8 @@
    [:images [:set :map]]
    [:position {:optional true} ::gpt/point]])
 
-(def validate-paste-data!
-  (sm/validate-fn schema:paste-data))
+(def paste-data-valid?
+  (sm/lazy-validator schema:paste-data))
 
 (defn- paste-transit
   [{:keys [images] :as pdata}]
@@ -1751,8 +1751,10 @@
         (let [file-id (:current-file-id state)
               features (features/get-team-enabled-features state)]
 
-          (validate-paste-data! pdata {:hint "invalid paste data"
-                                       :code :invalid-paste-data})
+          (when-not (paste-data-valid? pdata)
+            (ex/raise :type :validation
+                      :code :invalid-paste-data
+                      :hibt "invalid paste data found"))
 
           (cfeat/check-paste-features! features (:features pdata))
           (if (= file-id (:file-id pdata))

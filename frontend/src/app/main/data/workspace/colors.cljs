@@ -465,16 +465,16 @@
 (defn change-color-in-selected
   [operations new-color old-color]
 
-  (dm/verify!
-   "expected valid change color operations"
+  (dm/assert!
+   "expected valid color operations"
    (check-change-color-operations! operations))
 
-  (dm/verify!
-   "expected a valid color struct for new-color param"
+  (dm/assert!
+   "expected valid color structure"
    (ctc/check-color! new-color))
 
-  (dm/verify!
-   "expected a valid color struct for old-color param"
+  (dm/assert!
+   "expected valid color structure"
    (ctc/check-color! old-color))
 
   (ptk/reify ::change-color-in-selected
@@ -498,7 +498,7 @@
   [color stroke?]
 
   (dm/assert!
-   "should be a valid color"
+   "expected valid color structure"
    (ctc/check-color! color))
 
   (ptk/reify ::apply-color-from-palette
