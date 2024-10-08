@@ -4,9 +4,15 @@
 
 ### :rocket: Epics and highlights
 
+- **New plugin system.**
+
+  Penpot now supports custom plugins. Read everything about developing your plugins [HERE](https://help.penpot.app/plugins/)
+
 ### :boom: Breaking changes & Deprecations
 
 ### :heart: Community contributions (Thank you!)
+
+- All our plugins beta testers :heart:.
 
 ### :sparkles: New features
 
@@ -17,6 +23,7 @@
   retrocompatibility with previous editor.
 
   You can enable it with the `enable-feature-text-editor-v2` configuration flag.
+
 
 ### :bug: Bugs fixed
 
