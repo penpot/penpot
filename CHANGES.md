@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2.4.0
+
+### :rocket: Epics and highlights
+
+### :boom: Breaking changes & Deprecations
+
+### :heart: Community contributions (Thank you!)
+
+### :sparkles: New features
+
+### :bug: Bugs fixed
+
 ## 2.3.0
 
 ### :rocket: Epics and highlights
