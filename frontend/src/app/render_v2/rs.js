@@ -28,7 +28,7 @@ var readyPromise = new Promise((resolve, reject) => {
   readyPromiseResolve = resolve;
   readyPromiseReject = reject;
 });
-["_alloc_rects","_draw_rect","_draw_shapes","_flush","_init","_main","_make_color","_make_rect","_reset_canvas","_resize_surface","_scale","_translate","getExceptionMessage","incrementExceptionRefcount","decrementExceptionRefcount","_memory","___indirect_function_table","onRuntimeInitialized"].forEach((prop) => {
+["_alloc_rects","_draw_rect","_draw_shapes","_flush","_free_rects","_init","_main","_reset_canvas","_resize_surface","_scale","_translate","getExceptionMessage","incrementExceptionRefcount","decrementExceptionRefcount","_memory","___indirect_function_table","onRuntimeInitialized"].forEach((prop) => {
   if (!Object.getOwnPropertyDescriptor(readyPromise, prop)) {
     Object.defineProperty(readyPromise, prop, {
       get: () => abort('You are getting ' + prop + ' on the Promise object, instead of the instance. Use .then() to get called back with the instance, see the MODULARIZE docs in src/settings.js'),
@@ -8563,9 +8563,8 @@ var wasmExports = createWasm();
 var ___wasm_call_ctors = createExportWrapper('__wasm_call_ctors', 0);
 var _init = Module['_init'] = createExportWrapper('init', 2);
 var _resize_surface = Module['_resize_surface'] = createExportWrapper('resize_surface', 3);
-var _make_color = Module['_make_color'] = createExportWrapper('make_color', 4);
-var _make_rect = Module['_make_rect'] = createExportWrapper('make_rect', 4);
 var _alloc_rects = Module['_alloc_rects'] = createExportWrapper('alloc_rects', 1);
+var _free_rects = Module['_free_rects'] = createExportWrapper('free_rects', 2);
 var _draw_rect = Module['_draw_rect'] = createExportWrapper('draw_rect', 3);
 var _flush = Module['_flush'] = createExportWrapper('flush', 1);
 var _translate = Module['_translate'] = createExportWrapper('translate', 3);

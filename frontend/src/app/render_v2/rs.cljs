@@ -29,6 +29,32 @@
         (js/requestAnimationFrame (fn []
                                     (draw-shapes gpu-state shapes-ptr shapes-size zoom (- (:x vbox)) (- (:y vbox)))))))
 
+(defn set-objects
+  [vbox zoom objects]
+  (let [alloc-rects (gobj/get ^js internal-module "_alloc_rects")
+        free_rects (gobj/get ^js internal-module "_free_rects")
+        supported-shapes (filter (fn [shape] (not= (:type shape) :frame)) (vals objects))
+        heap (gobj/get ^js internal-module "HEAPF32")
+        ;; Each F32 are 4 bytes
+        ;; Each rect has:
+        ;;  - 4 F32 for points coordinates
+        ;;  - 4 F32 for color
+        ;; rect-size (* 8 4)
+        rect-size (* 8 4)]
+    (when shapes-ptr
+      (free_rects shapes-ptr shapes-size))
+
+    (let [ptr (alloc-rects (count supported-shapes))]
+      (doseq [[shape index] (zipmap supported-shapes (range))]
+        (let [sr (:selrect shape)
+              [r g b] (cc/hex->rgb (-> shape :fills first :fill-color))
+              alpha (-> shape :fills first :fill-opacity)
+              mem (js/Float32Array. (.-buffer heap) (+ ptr (* rect-size index)) rect-size)]
+          (set! shapes-ptr ptr)
+          (set! shapes-size (count supported-shapes))
+          (.set mem (js/Float32Array. (clj->js [(:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr) r g b (or alpha 1)]))))))
+    (draw-canvas vbox zoom objects)))
+
 (defn set-canvas
   [canvas vbox zoom objects]
   (let [gl (gobj/get ^js internal-module "GL")
@@ -40,32 +66,12 @@
         handle (.registerContext gl context {"majorVersion" 2})
         _ (.makeContextCurrent gl handle)
         ;; Initialize Skia
-        state (._init ^js internal-module (.-width canvas) (.-height canvas))
-        translate (gobj/get ^js internal-module "_translate")
-        scale (gobj/get ^js internal-module "_scale")
-        alloc-rects (gobj/get ^js internal-module "_alloc_rects")
-        heap (gobj/get ^js internal-module "HEAPF32")
-        supported-shapes (filter (fn [shape] (not= (:type shape) :frame)) (vals objects))
-        ptr (alloc-rects (count supported-shapes))]
+        state (._init ^js internal-module (.-width canvas) (.-height canvas))]
 
     (set! (.-width canvas) (.-clientWidth canvas))
     (set! (.-height canvas) (.-clientHeight canvas))
     (set! gpu-state state)
-    (set! shapes-ptr ptr)
-    (set! shapes-size (count supported-shapes))
-
-    (doseq [[shape index] (zipmap supported-shapes (range))]
-      (let [sr (:selrect shape)
-            [r g b] (cc/hex->rgb (-> shape :fills first :fill-color))
-            alpha (-> shape :fills first :fill-opacity)
-            ;; color (make-color r g b alpha)
-            ;; rect (make-rect (:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr))
-            ;; Each F32 are 4 bytes and each rect has 4 F32 
-            mem (js/Float32Array. (.-buffer heap) (+ ptr (* (* 4 4) index)) (* 4 4))]
-        ;; (js-debugger)
-        (.set mem (js/Float32Array. (clj->js [(:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr)])))))
-
-    (draw-canvas vbox zoom objects)
+    (set-objects vbox zoom objects)
     (println "set-canvas ok" (.-width canvas) (.-height canvas))))
 
 (defn on-init

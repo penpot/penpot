@@ -283,11 +283,14 @@
 
       ;; redraw when vbox or shapes change
       (mf/with-effect
-        [vbox base-objects canvas-init? zoom]
-        (js/console.log "jibiri")
+        [vbox canvas-init? zoom]
         (when (mf/ref-val canvas-init?)
-          (js/console.log "jibiri ho")
-          (render-v2/draw-canvas vbox zoom base-objects))))
+          (render-v2/draw-canvas vbox zoom base-objects)))
+
+      (mf/with-effect
+        [base-objects]
+        (when (mf/ref-val canvas-init?)
+          (render-v2/set-objects vbox zoom base-objects))))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)

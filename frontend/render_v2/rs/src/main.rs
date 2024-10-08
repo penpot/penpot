@@ -109,16 +109,6 @@ pub unsafe extern "C" fn resize_surface(state: *mut State, width: i32, height: i
     state.set_surface(surface);
 }
 
-#[no_mangle]
-pub extern "C" fn make_color(r: i32, g: i32, b: i32, a: f32) -> Box<Color> {
-    Box::new(Color {
-        r: r as u8,
-        g: g as u8,
-        b: b as u8,
-        a,
-    })
-}
-
 #[repr(C)]
 pub struct Color {
     r: u8,
@@ -133,16 +123,10 @@ pub struct Rect {
     top: f32,
     right: f32,
     bottom: f32,
-}
-
-#[no_mangle]
-pub extern "C" fn make_rect(left: f32, top: f32, right: f32, bottom: f32) -> Box<Rect> {
-    Box::new(Rect {
-        left,
-        top,
-        right,
-        bottom,
-    })
+    r: f32,
+    g: f32,
+    b: f32,
+    a: f32,
 }
 
 #[no_mangle]
@@ -156,6 +140,13 @@ pub extern "C" fn alloc_rects(len: usize) -> *mut Rect {
     return ptr;
 }
 
+#[no_mangle]
+pub unsafe fn free_rects(ptr: *mut Rect, len: usize) {
+    let buf = Vec::<Rect>::from_raw_parts(ptr, len, len);
+    std::mem::forget(buf);
+}
+
+
 /// Draws a rect at the specified coordinates with the give ncolor
 /// # Safety
 #[no_mangle]
@@ -163,7 +154,6 @@ pub unsafe extern "C" fn draw_rect(state: *mut State, rect: &Rect, color: &Color
     let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
     let r = skia::Rect::new(rect.left, rect.top, rect.right, rect.bottom);
     let color = skia::Color::from_argb((color.a * 255.0) as u8, color.r, color.g, color.b);
-
     render_rect(&mut state.surface, r, color);
 }
 
@@ -201,7 +191,7 @@ pub unsafe fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usize, zoom: f
     let buf = Vec::<Rect>::from_raw_parts(ptr, len, len);
     for rect in buf.iter() {
         let r = skia::Rect::new(rect.left, rect.top, rect.right, rect.bottom);
-        let color = skia::Color::from_argb(255, 0, 0, 0);
+        let color = skia::Color::from_argb((rect.a * 255.0) as u8, rect.r as u8, rect.g as u8, rect.b as u8);
         render_rect(&mut state.surface, r, color);
     }
     flush(state);

@@ -42,3 +42,9 @@
     ;; Rust
     (contains? cf/flags :render-v2-rs)
     (render-v2-rs/draw-canvas vbox zoom base-objects)))
+
+(defn set-objects [vbox zoom base-objects]
+  (cond
+    ;; Rust
+    (contains? cf/flags :render-v2-rs)
+    (render-v2-rs/set-objects vbox zoom base-objects)))
