@@ -5896,6 +5896,10 @@ msgstr "Imported SVG Attributes"
 msgid "workspace.sidebar.sitemap"
 msgstr "Pages"
 
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:217
+msgid "workspace.sidebar.sitemap.add-page"
+msgstr "Add page"
+
 #: src/app/main/ui/workspace/left_header.cljs:91
 msgid "workspace.sitemap"
 msgstr "Sitemap"
