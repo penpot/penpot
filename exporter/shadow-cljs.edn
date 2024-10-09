@@ -15,8 +15,7 @@
     :output-wrapper false}
 
    :release
-   {:closure-defines {goog.debug.LOGGING_ENABLED true}
-    :compiler-options
+   {:compiler-options
     {:fn-invoke-direct true
      :source-map true
      :optimizations #shadow/env ["PENPOT_BUILD_OPTIMIZATIONS" :as :keyword :default :simple]
