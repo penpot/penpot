@@ -44,6 +44,10 @@
     (-> (.async entry type)
         (p/then #(hash-map :path path :content %)))))
 
+(defn load
+  [data]
+  (rx/from (zip/loadAsync data)))
+
 (defn get-file
   "Gets a single file from the zip archive"
   ([zip path]

@@ -105,6 +105,13 @@
          :else
          stream)))))
 
+(defn- read-zip-manifest
+  [zipfile]
+  (js/console.log "read-zip-manifest" zipfile)
+  (->> (uz/get-file zipfile "manifest.json")
+       (rx/map :content)
+       (rx/map json/decode)))
+
 (defn progress!
   ([context type]
    (assert (keyword? type))
@@ -738,60 +745,93 @@
       "1 13 32 206" "application/octet-stream"
       "other")))
 
+(defn- read-blob-uri
+  [uri]
+  (->> (http/send!
+        {:uri uri
+         :response-type :blob
+         :method :get})
+       (rx/map :body)
+       (rx/mapcat wapi/read-file-as-array-buffer)
+       (rx/map (fn [data]
+                 {:mtype (parse-mtype data)
+                  :uri uri
+                  :body data}))))
+
+;; FIXME: add schema for file
+
+(defn analyze-file
+  [features {:keys [uri] :as file}]
+  (let [stream (->> (read-blob-uri uri)
+                    (rx/merge-map (fn [{:keys [body mtype] :as entry}]
+                                    (if (= "application/zip" mtype)
+                                      (->> (uz/load body)
+                                           (rx/merge-map read-zip-manifest)
+                                           (rx/map (fn [manifest]
+                                                     (if (= (:type manifest) "penpot/export-files")
+                                                       (assoc entry :type :binfile-v3 :manifest manifest)
+                                                       (assoc entry :type :legacy-zip)))))
+                                      (rx/of (assoc entry :type :binfile-v1)))))
+                    (rx/share))]
+    (->> (rx/merge
+          (->> stream
+               (rx/filter (fn [entry] (= :legacy-zip (:type entry))))
+               (rx/merge-map #(uz/load (:body %)))
+               (rx/merge-map #(get-file {:zip %} :manifest))
+               (rx/map
+                (fn [entry]
+                  ;; Checks if the file is exported with components v2 and the current team only
+                  ;; supports components v1
+                  (let [has-file-v2?
+                        (->> (:files entry)
+                             (d/seek (fn [[_ file]] (contains? (set (:features file)) "components/v2"))))]
+                    (if (and has-file-v2? (not (contains? features "components/v2")))
+                      (assoc entry :error "dashboard.import.analyze-error.components-v2")
+                      (-> entry
+                          (assoc :name (:name entry))
+                          (assoc :file-id (:file-id entry))
+                          (assoc :files (:files entry))
+                          (assoc :status :ready)))))))
+
+          (->> stream
+               (rx/filter (fn [entry] (= :binfile-v1 (:type entry))))
+               (rx/map (fn [entry]
+                         (let [file-id (uuid/next)]
+                           (-> entry
+                               (assoc :name (:name file))
+                               (assoc :file-id file-id)
+                               (assoc :files {file-id {:name (:name file)}})
+                               (assoc :status :ready))))))
+
+          (->> stream
+               (rx/filter (fn [entry] (= :binfile-v3 (:type entry))))
+               (rx/map (fn [entry]
+                         (let [file-id (uuid/next)]
+                           (-> entry
+                               (assoc :name (:name file))
+                               (assoc :file-id file-id)
+                               (assoc :files {file-id {:name (:name file)}})
+                               (assoc :status :ready))))))
+
+          (->> stream
+               (rx/filter (fn [data] (= "other" (:type data))))
+               (rx/map (fn [_]
+                         {:uri (:uri file)
+                          :error (tr "dashboard.import.analyze-error")}))))
+
+         (rx/catch (fn [data]
+                     (let [error (or (.-message data) (tr "dashboard.import.analyze-error"))]
+                       (rx/of {:uri (:uri file) :error error})))))))
+
 (defmethod impl/handler :analyze-import
   [{:keys [files features]}]
-
   (->> (rx/from files)
-       (rx/merge-map
-        (fn [file]
-          (let [st (->> (http/send!
-                         {:uri (:uri file)
-                          :response-type :blob
-                          :method :get})
-                        (rx/map :body)
-                        (rx/mapcat wapi/read-file-as-array-buffer)
-                        (rx/map (fn [data]
-                                  {:type (parse-mtype data)
-                                   :uri (:uri file)
-                                   :body data})))]
-            (->> (rx/merge
-                  (->> st
-                       (rx/filter (fn [data] (= "application/zip" (:type data))))
-                       (rx/merge-map #(zip/loadAsync (:body %)))
-                       (rx/merge-map #(get-file {:zip %} :manifest))
-                       (rx/map
-                        (fn [data]
-                          ;; Checks if the file is exported with components v2 and the current team only
-                          ;; supports components v1
-                          (let [has-file-v2?
-                                (->> (:files data)
-                                     (d/seek (fn [[_ file]] (contains? (set (:features file)) "components/v2"))))]
-                            (if (and has-file-v2? (not (contains? features "components/v2")))
-                              {:uri (:uri file) :error "dashboard.import.analyze-error.components-v2"}
-                              (hash-map :uri (:uri file) :data data :type "application/zip"))))))
-                  (->> st
-                       (rx/filter (fn [data] (= "application/octet-stream" (:type data))))
-                       (rx/map (fn [_]
-                                 (let [file-id (uuid/next)]
-                                   {:uri (:uri file)
-                                    :data {:name (:name file)
-                                           :file-id file-id
-                                           :files {file-id {:name (:name file)}}
-                                           :status :ready}
-                                    :type "application/octet-stream"}))))
-                  (->> st
-                       (rx/filter (fn [data] (= "other" (:type data))))
-                       (rx/map (fn [_]
-                                 {:uri (:uri file)
-                                  :error (tr "dashboard.import.analyze-error")}))))
-                 (rx/catch (fn [data]
-                             (let [error (or (.-message data) (tr "dashboard.import.analyze-error"))]
-                               (rx/of {:uri (:uri file) :error error}))))))))))
-
+       (rx/merge-map (partial analyze-file features))))
 
 (defmethod impl/handler :import-files
   [{:keys [project-id files features]}]
 
+  (app.common.pprint/pprint files)
   (let [context {:project-id project-id
                  :resolve    (resolve-factory)
                  :system-features features}

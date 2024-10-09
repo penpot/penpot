@@ -192,9 +192,42 @@
        (rx/filter some?)
        (rx/subs!
         (fn [{:keys [uri data error type] :as msg}]
+          (prn "KAKAKAKAK" msg)
           (if (some? error)
             (swap! state update-with-analyze-error uri error)
             (swap! state update-with-analyze-result uri type data))))))
+
+;; (defn- update-with-analysis
+;;   "Update the entries state with analysis result"
+;;   [entries {:keys [uri error] :as result}]
+;;   (if error
+;;     (into []
+;;           (map (fn [entry]
+;;                  (cond-> entry
+;;                    (= uri (:uri entry))
+;;                    (-> (assoc :status :analyze-error)
+;;                        (assoc :error error)))))
+;;           entries)
+
+;;     (let [file-ids (into #{} (keep :file-id) entries)]
+;;       (into []
+;;             (mapcat (fn (if (and (= uri (:uri entry))
+;;                                  (= (:status entry) :analyzing))
+
+;;                           (->> (:files result)
+;;                                (remove (comp file-ids first))
+;;                                (map (fn [[file-id file-data]]
+;;                                       (-> file-data
+;;                                           (assoc :file-id file-id)
+;;                                           (assoc :status :ready)
+;;                                           (assoc :uri uri)
+;;                                           (assoc :type type)))))
+;;             [entry]))]
+
+
+
+
+
 
 (defn- import-files!
   [state project-id entries]
@@ -328,6 +361,11 @@
                              :error error?)}
               i/detach]])))]]))
 
+(defn initialize-state
+  [entries]
+  (fn []
+    (mapv #(assoc % :status :analyzing) entries)))
+
 (mf/defc import-dialog
   {::mf/register modal/components
    ::mf/register-as :import
@@ -336,12 +374,11 @@
   [{:keys [project-id entries template on-finish-import]}]
 
   (mf/with-effect []
-    ;; dispose uris when the component is umount
+    ;; NOTE: Revoke all uri's on commonent unmount
     (fn [] (run! wapi/revoke-uri (map :uri entries))))
 
-  (let [entries* (mf/use-state
-                  (fn [] (mapv #(assoc % :status :analyzing) entries)))
-        entries  (deref entries*)
+  (let [state* (mf/use-state (initialize-state entries))
+        entries  (deref state*)
 
         status*  (mf/use-state :analyzing)
         status   (deref status*)
@@ -374,8 +411,8 @@
          (fn []
            (let [entries (filterv has-status-ready? entries)]
              (swap! status* (constantly :importing))
-             (swap! entries* mark-entries-importing)
-             (import-files! entries* project-id entries))))
+             (swap! state* mark-entries-importing)
+             (import-files! state* project-id entries))))
 
         continue-template
         (mf/use-fn
@@ -392,18 +429,18 @@
         on-edit
         (mf/use-fn
          (fn [file-id _event]
-           (swap! edition* (constantly file-id))))
+           (reset! edition* file-id)))
 
         on-entry-change
         (mf/use-fn
          (fn [file-id value]
            (swap! edition* (constantly nil))
-           (swap! entries* update-entry-name file-id value)))
+           (swap! state* update-entry-name file-id value)))
 
         on-entry-delete
         (mf/use-fn
          (fn [file-id]
-           (swap! entries* remove-entry file-id)))
+           (swap! state* remove-entry file-id)))
 
         on-cancel
         (mf/use-fn
@@ -433,26 +470,35 @@
            (when (fn? on-finish-import)
              (on-finish-import))))
 
-        entries            (filterv (comp not :deleted) entries)
-        num-importing      (+ (count (filterv has-status-importing? entries))
-                              (if (some? template) 1 0))
+        entries
+        (filterv (complement :deleted) entries)
 
-        success-num        (if (some? template)
-                             1
-                             (count (filterv has-status-success? entries)))
+        num-importing
+        (+ (count (filterv has-status-importing? entries))
+           (if (some? template) 1 0))
 
-        errors?            (if (some? template)
-                             (= status :error)
-                             (or (some has-status-error? entries)
-                                 (zero? (count entries))))
+        success-num
+        (if (some? template)
+          1
+          (count (filterv has-status-success? entries)))
 
-        pending-analysis?  (some has-status-analyzing? entries)
-        pending-import?    (and (or (nil? template)
-                                    (not template-finished))
-                                (pos? num-importing))
+        errors?
+        (if (some? template)
+          (= status :error)
+          (or (some has-status-error? entries)
+              (zero? (count entries))))
 
-        valid-all-entries? (or (some? template)
-                               (not (some has-status-analyze-error? entries)))
+        pending-analysis?
+        (some has-status-analyzing? entries)
+
+        pending-import?
+        (and (or (nil? template)
+                 (not template-finished))
+             (pos? num-importing))
+
+        valid-all-entries?
+        (or (some? template)
+            (not (some has-status-analyze-error? entries)))
 
         template-status
         (cond
@@ -467,7 +513,7 @@
 
     ;; Run analyze operation on component mount
     (mf/with-effect []
-      (let [sub (analyze-entries entries* entries)]
+      (let [sub (analyze-entries state* entries)]
         (partial rx/dispose! sub)))
 
     [:div {:class (stl/css :modal-overlay)}
@@ -484,14 +530,12 @@
           {:level :warning
            :content (tr "dashboard.import.import-warning")}])
 
-       (when (and (= :importing status) (not ^boolean pending-import?))
-         (cond
-           errors?
+       (when (and (= :importing status)
+                  (not ^boolean pending-import?))
+         (if errors?
            [:& context-notification
             {:level :warning
              :content (tr "dashboard.import.import-warning")}]
-
-           :else
            [:& context-notification
             {:level (if (zero? success-num) :warning :success)
              :content (tr "dashboard.import.import-message" (i18n/c success-num))}]))
