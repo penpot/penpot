@@ -181,14 +181,16 @@ export async function watch(baseDir, predicate, callback) {
 }
 
 async function readShadowManifest() {
+  const ts = Date.now();
   try {
     const manifestPath = "resources/public/js/manifest.json";
     let content = await fs.readFile(manifestPath, { encoding: "utf8" });
     content = JSON.parse(content);
 
     const index = {
-      config: "js/config.js?ts=" + Date.now(),
-      polyfills: "js/polyfills.js?ts=" + Date.now(),
+      ts: ts,
+      config: "js/config.js?ts=" + ts,
+      polyfills: "js/polyfills.js?ts=" + ts,
     };
 
     for (let item of content) {
@@ -198,12 +200,13 @@ async function readShadowManifest() {
     return index;
   } catch (cause) {
     return {
-      config: "js/config.js",
-      polyfills: "js/polyfills.js",
-      main: "js/main.js",
-      shared: "js/shared.js",
-      worker: "js/worker.js",
-      rasterizer: "js/rasterizer.js",
+      ts: ts,
+      config: "js/config.js?ts=" + ts,
+      polyfills: "js/polyfills.js?ts=" + ts,
+      main: "js/main.js?ts=" + ts,
+      shared: "js/shared.js?ts=" + ts,
+      worker: "js/worker.js?ts=" + ts,
+      rasterizer: "js/rasterizer.js?ts=" + ts,
     };
   }
 }
@@ -409,8 +412,8 @@ async function generateTemplates() {
 
   const pluginRuntimeUri =
     process.env.PENPOT_PLUGIN_DEV === "true"
-      ? "http://localhost:4200"
-      : "./plugins-runtime";
+      ? "http://localhost:4200/index.js?ts=" + manifest.ts
+      : "plugins-runtime/index.js?ts=" + manifest.ts;
 
   content = await renderTemplate(
     "resources/templates/index.mustache",
