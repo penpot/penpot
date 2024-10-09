@@ -19,7 +19,7 @@ values:
     secret: db-penpot-secrets
     superUser: db-penpot-superuser-secret
   config:
-    flags: 'enable-smtp'
+    flags: 'enable-smtp enable-feature-design-tokens'
     assets:
       storageBackend: assets-s3
       s3:
