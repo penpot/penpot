@@ -1,9 +1,13 @@
 use std::boxed::Box;
-
 use skia_safe::{
     gpu::{self, gl::FramebufferInfo, DirectContext},
     // Color, Paint, PaintStyle, Rect, Surface,
+    textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextStyle, TypefaceFontProvider},
+    FontMgr, Paint,
 };
+
+static ROBOTO_REGULAR: &[u8] = include_bytes!("RobotoMono-Regular.ttf");
+static LOREM_IPSUM: &str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur at leo at nulla tincidunt placerat. Proin eget purus augue. Quisque et est ullamcorper, pellentesque felis nec, pulvinar massa. Aliquam imperdiet, nulla ut dictum euismod, purus dui pulvinar risus, eu suscipit elit neque ac est. Nullam eleifend justo quis placerat ultricies. Vestibulum ut elementum velit. Praesent et dolor sit amet purus bibendum mattis. Aliquam erat volutpat.";
 
 use skia_safe as skia;
 
@@ -97,6 +101,7 @@ pub extern "C" fn init(width: i32, height: i32) -> Box<State> {
     let mut gpu_state = create_gpu_state();
     let surface = create_surface(&mut gpu_state, width, height);
     let state = State::new(gpu_state, surface);
+
     Box::new(state)
 }
 
@@ -182,17 +187,63 @@ pub unsafe extern "C" fn reset_canvas(state: *mut State) {
 }
 
 #[no_mangle]
-pub unsafe fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usize, zoom: f32, dx: f32, dy: f32) {
+pub unsafe extern "C" fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usize, zoom: f32, dx: f32, dy: f32) {
     let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
     reset_canvas(state);
     scale(state, zoom, zoom);
     translate(state, dx, dy);
     // create a `Vec<Rect>` from the pointer to the linear memory and length
     let buf = Vec::<Rect>::from_raw_parts(ptr, len, len);
+
+    let text = "SKIA TEXT";
+
+    // skia_safe::Font::default() is empty, let's use something better
+    let font_mgr = skia_safe::FontMgr::new();
+    let typeface = font_mgr
+             .new_from_data(ROBOTO_REGULAR, None)
+             .expect("Failed to load ROBOTO font");        
+    let default_font = skia_safe::Font::new(typeface, 10.0);
+
+    let mut text_paint = skia::Paint::default();
+    text_paint.set_color(skia_safe::Color::BLACK);
+    text_paint.set_anti_alias(true);
+    text_paint.set_style(skia_safe::paint::Style::StrokeAndFill);
+    text_paint.set_stroke_width(1.0);
+
     for rect in buf.iter() {
         let r = skia::Rect::new(rect.left, rect.top, rect.right, rect.bottom);
         let color = skia::Color::from_argb((rect.a * 255.0) as u8, rect.r as u8, rect.g as u8, rect.b as u8);
         render_rect(&mut state.surface, r, color);
+
+        text_paint.set_color(color);
+        state.surface.canvas().draw_str(text, (rect.left, rect.top), &default_font, &text_paint);
+
+        // https://github.com/rust-skia/rust-skia/blob/02c89a87649af8d2870fb631aae4a5e171887367/skia-org/src/skparagraph_example.rs#L18
+        const TYPEFACE_ALIAS: &str = "ubuntu-regular";
+        let typeface_font_provider = {
+            let mut typeface_font_provider = TypefaceFontProvider::new();
+            // We need a system font manager to be able to load typefaces.
+            let font_mgr = FontMgr::new();
+            let typeface = font_mgr
+                .new_from_data(ROBOTO_REGULAR, None)
+                .expect("Failed to load ROBOTO font");
+            typeface_font_provider.register_typeface(typeface, TYPEFACE_ALIAS);
+            typeface_font_provider
+        };
+    
+        let mut font_collection = FontCollection::new();
+        font_collection.set_default_font_manager(Some(typeface_font_provider.into()), None);
+        let paragraph_style = ParagraphStyle::new();
+        let mut paragraph_builder = ParagraphBuilder::new(&paragraph_style, font_collection);
+        let mut ts = TextStyle::new();
+        ts.set_foreground_paint(&Paint::default())
+            .set_font_families(&[TYPEFACE_ALIAS]);
+        paragraph_builder.push_style(&ts);
+        paragraph_builder.add_text(LOREM_IPSUM);
+        let mut paragraph = paragraph_builder.build();
+        paragraph.layout(256.0);
+        paragraph.paint(state.surface.canvas(), (rect.left, rect.top));
+
     }
     flush(state);
     std::mem::forget(buf);

@@ -7,7 +7,7 @@ license-file = "../../../../LICENSE"
 description = "Wasm-based canvas render for Penpot"
 
 [features]
-default = ["skia-safe/gl"]
+default = ["skia-safe/gl", "skia-safe/textlayout"]
 
 [[bin]]
 name = "render_v2"
@@ -15,7 +15,7 @@ path = "src/main.rs"
 
 [dependencies]
 gl = "0.14.0"
-skia-safe = "0.78.0"
+skia-safe = "0.78.2"
 
 [profile.release]
 opt-level = "s"
