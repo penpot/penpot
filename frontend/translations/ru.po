@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-08-23 09:16+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-10-10 10:15+0000\n"
+"Last-Translator: Inex Code <github@inex.rocks>\n"
 "Language-Team: Russian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ru/>\n"
 "Language: ru\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 5.7.1-dev\n"
+"X-Generator: Weblate 5.8-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:132, src/app/main/ui/static.cljs:139, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -3840,7 +3840,7 @@ msgstr "Интерлиньяж"
 
 #: src/app/main/ui/dashboard/grid.cljs:205, src/app/main/ui/workspace/libraries.cljs:461, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:464, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:489, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:596, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:615
 msgid "workspace.assets.typography.sample"
-msgstr "В то же время"
+msgstr "Ag"
 
 #, unused
 msgid "workspace.assets.typography.text-styles"
