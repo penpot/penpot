@@ -13,6 +13,7 @@
    [app.main.ui.context :as muc]
    [app.main.ui.hooks :as h]
    [app.main.ui.shapes.attrs :as attrs]
+   [app.main.ui.shapes.embed :as embed]
    [app.main.ui.shapes.export :as ed]
    [app.main.ui.shapes.fills :as fills]
    [app.main.ui.shapes.filters :as filters]
@@ -78,6 +79,7 @@
                                (obj/set! "mixBlendMode" (d/name blend-mode))))
 
         include-metadata? (mf/use-ctx ed/include-metadata-ctx)
+        embed?            (mf/use-ctx embed/context)
 
         shape-without-blur (dissoc shape :blur)
         shape-without-shadows (assoc shape :shadow [])
@@ -96,30 +98,39 @@
             (obj/unset! "disable-shadows?")
             (obj/set! "ref" ref)
             (obj/set! "id" (dm/fmt "shape-%" shape-id))
-            (obj/set! "data-testid" (:name shape))
-
-            ;; TODO: This is added for backward compatibility.
-            (cond-> (and (cfh/text-shape? shape) (empty? (:position-data shape)))
-              (-> (obj/set! "x" (:x shape))
-                  (obj/set! "y" (:y shape))
-                  (obj/set! "width" (:width shape))
-                  (obj/set! "height" (:height shape))))
             (obj/set! "style" styles))
 
         wrapper-props
         (cond-> wrapper-props
+          ;; NOTE: This is added for backward compatibility
+          (and (cfh/text-shape? shape)
+               (empty? (:position-data shape)))
+          (-> (obj/set! "x" (:x shape))
+              (obj/set! "y" (:y shape))
+              (obj/set! "width" (:width shape))
+              (obj/set! "height" (:height shape)))
+
           (= :group type)
           (-> (attrs/add-fill-props! shape render-id)
               (attrs/add-border-props! shape))
 
+          ;; FIXME: this can set the data-testid attribute with
+          ;; invalid values (unescaped) what can cause unexpected
+          ;; problems; we don't set this attribute when embed is
+          ;; enabled for fix the output on the svg exportation process
+          (not embed?)
+          (obj/set! "data-testid" (:name shape))
+
           (some? filter-str)
           (obj/set! "filter" filter-str))
 
-        svg-group? (and (contains? shape :svg-attrs) (= :group type))
+        svg-group?
+        (and (contains? shape :svg-attrs) (= :group type))
 
-        children (cond-> children
-                   svg-group?
-                   (propagate-wrapper-styles wrapper-props))]
+        children
+        (cond-> children
+          svg-group?
+          (propagate-wrapper-styles wrapper-props))]
 
     [:& (mf/provider muc/render-id) {:value render-id}
      [:> :g wrapper-props
