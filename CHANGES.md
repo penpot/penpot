@@ -31,6 +31,7 @@
 - Fix problem with shadows in text for Safari [Taiga #8770](https://tree.taiga.io/project/penpot/issue/8770)
 - Fix a regression with feedback form subject and content limits [Taiga #8908](https://tree.taiga.io/project/penpot/issue/8908)
 - Fix problem with stroke and filter ordering in frames [Github #5058](https://github.com/penpot/penpot/issues/5058)
+- Fix problem with hover layers when hidden/blocked [Github #5074](https://github.com/penpot/penpot/issues/5074)
 
 ## 2.2.1
 
