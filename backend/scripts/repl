@@ -28,7 +28,8 @@ export PENPOT_FLAGS="\
        enable-webhooks \
        enable-access-tokens \
        enable-file-validation \
-       enable-file-schema-validation";
+       enable-file-schema-validation \
+       disable-feature-design-tokens";
 
 # Default deletion delay for devenv
 export PENPOT_DELETION_DELAY="24h"

@@ -37,7 +37,7 @@ values:
         secretKeys:
           accessKeyIDKey: CONSOLE_ACCESS_KEY
           secretAccessKey: CONSOLE_SECRET_KEY
-    flags: 'enable-smtp'
+    flags: 'enable-smtp enable-feature-design-tokens'
     smtp:
       enabled: true
       host: mailslurper

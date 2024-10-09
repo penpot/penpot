@@ -31,7 +31,7 @@ spec:
             - name: PENPOT_PUBLIC_URI
               value: {{ .Values.config.publicURI | quote }}
             - name: PENPOT_FLAGS
-              value: "$PENPOT_FLAGS {{ .Values.config.flags }}"
+              value: "{{ .Values.config.flags }}"
             - name: PENPOT_SECRET_KEY
               value: {{ .Values.config.apiSecretKey | quote }}
             - name: PENPOT_DATABASE_URI

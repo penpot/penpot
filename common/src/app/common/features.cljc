@@ -49,7 +49,8 @@
     "components/v2"
     "styles/v2"
     "layout/grid"
-    "plugins/runtime"})
+    "plugins/runtime"
+    "design-tokens/v1"})
 
 ;; A set of features enabled by default
 (def default-features
@@ -81,7 +82,8 @@
         "fdata/pointer-map"
         "layout/grid"
         "fdata/shape-data-type"
-        "plugins/runtime"}
+        "plugins/runtime"
+        "design-tokens/v1"}
       (into frontend-only-features)))
 
 (sm/register! ::features
@@ -101,6 +103,7 @@
     :feature-fdata-objects-map "fdata/objects-map"
     :feature-fdata-pointer-map "fdata/pointer-map"
     :feature-plugins "plugins/runtime"
+    :feature-design-tokens "design-tokens/v1"
     nil))
 
 (defn migrate-legacy-features
@@ -308,5 +311,3 @@
                 :feature (first not-supported)
                 :hint (str/ffmt "paste features '%' not enabled on the application"
                                 (str/join "," not-supported))))))
-
-

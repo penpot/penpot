@@ -278,7 +278,7 @@ config:
   ## @param config.apiSecretKey A random secret key needed for persistent user sessions. Generate with `openssl rand -hex 16` for example.
   ##
   publicURI: "http://localhost:8080"
-  flags: "enable-registration enable-login disable-demo-users disable-demo-warning"
+  flags: "enable-registration enable-login disable-demo-users disable-demo-warning enable-feature-design-tokens"
   apiSecretKey: "b46a12cb4bedc6b9df8cb3f18c708b65"
  
   ## @param config.postgresql.host The PostgreSQL host to connect to.
