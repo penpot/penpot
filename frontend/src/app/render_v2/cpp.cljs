@@ -15,21 +15,22 @@
 
 (defn set-canvas
   [canvas vbox zoom base-objects]
-  (js/console.log "setting canvas" canvas)
   (.setCanvas ^js internal-module canvas #js {:antialias false})
-  (js/console.log "canvas set")
+  (.setObjects ^js internal-module vbox zoom base-objects)
   (.drawCanvas ^js internal-module vbox zoom base-objects))
 
 (defn draw-canvas
   [vbox zoom base-objects]
-  (js/console.log "draw canvas" vbox zoom base-objects)
   (.drawCanvas ^js internal-module vbox zoom base-objects))
+
+(defn set-objects
+  [vbox zoom base-objects]
+  (.setObjects ^js internal-module vbox zoom base-objects))
 
 (defn on-init
   [module']
   (set! internal-module module')
-  (js/console.log "internal-module" internal-module module')
-  (js/console.log "add 2 + 2" (._add ^js module' 2 2)))
+  (js/console.log "internal-module" internal-module module'))
 
 (defn init
   []

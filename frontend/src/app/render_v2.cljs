@@ -53,4 +53,7 @@
   (cond
     ;; Rust
     (contains? cf/flags :render-v2-rs)
-    (render-v2-rs/set-objects vbox zoom base-objects)))
+    (render-v2-rs/set-objects vbox zoom base-objects)
+
+    (contains? cf/flags :render-v2-cpp)
+    (render-v2-cpp/set-objects vbox zoom base-objects)))
