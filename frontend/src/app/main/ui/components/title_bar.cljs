@@ -8,7 +8,9 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
+   [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 (def ^:private chevron-icon
@@ -17,7 +19,7 @@
 (mf/defc title-bar
   {::mf/props :obj}
   [{:keys [class collapsable collapsed title children
-           btn-children all-clickable add-icon-gap
+           all-clickable add-icon-gap
            on-collapsed on-btn-click]}]
   (let [klass     (stl/css-case :title-bar true
                                 :all-clickable all-clickable)
@@ -47,9 +49,10 @@
         title])
      children
      (when (some? on-btn-click)
-       [:button {:class (stl/css :title-button)
-                 :on-click on-btn-click}
-        btn-children])]))
+       [:> icon-button* {:variant "ghost"
+                         :aria-label (tr "workspace.sidebar.layers.search")
+                         :on-click on-btn-click
+                         :icon "search"}])]))
 
 (mf/defc inspect-title-bar
   {::mf/props :obj}

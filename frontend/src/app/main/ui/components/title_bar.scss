@@ -57,18 +57,6 @@
   }
 }
 
-.title-button {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: calc($s-24 + $s-4);
-  padding: 0;
-  border-radius: $br-8;
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
-}
-
 .title-only-icon-gap {
   --title-bar-title-margin: #{$s-12};
 }
