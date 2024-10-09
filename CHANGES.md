@@ -27,6 +27,9 @@
 
 ### :bug: Bugs fixed
 
+- Fix problem with go back button on error page [Taiga #8887](https://tree.taiga.io/project/penpot/issue/8887)
+- Fix problem with shadows in text for Safari [Taiga #8770](https://tree.taiga.io/project/penpot/issue/8770)
+
 ## 2.2.1
 
 ### :bug: Bugs fixed

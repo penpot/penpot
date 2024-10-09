@@ -26,6 +26,13 @@
     (catch :default e
       (.error js/console "Error" e))))
 
+(defn close-plugin!
+  [{:keys [plugin-id]}]
+  (try
+    (.ɵunloadPlugin ^js ug/global plugin-id)
+    (catch :default e
+      (.error js/console "Error" e))))
+
 (defn delay-open-plugin
   [plugin]
   (ptk/reify ::delay-open-plugin
