@@ -27,6 +27,7 @@
    [app.common.types.plugins :as ctpg]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
+   [app.util.events :as events]
    [clojure.set :as set]
    [app.config :as cf]
    [app.db :as db]
@@ -669,6 +670,8 @@
            :version (:version file)
            ::l/sync? true)
 
+    (events/tap :progress {:op :import :section :file :name (:name file)})
+
     (when media
       ;; Update index with media
       (l/dbg :hint "update media index"
@@ -720,6 +723,8 @@
 
 (defn- import-file-relations
   [{:keys [::db/conn ::manifest ::bfc/timestamp] :as cfg}]
+  (events/tap :progress {:op :import :section :relations})
+
   (doseq [[file-id libr-id] (:relations manifest)]
 
     (let [file-id (bfc/lookup-index file-id)
@@ -737,6 +742,8 @@
 
 (defn- import-storage-objects
   [{:keys [::db/conn ::input ::entries ::bfc/timestamp] :as cfg}]
+  (events/tap :progress {:op :import :section :storage-objects})
+
   (let [storage (sto/resolve cfg)
         entries (keep (match-storage-entry-fn) entries)]
 
@@ -791,6 +798,8 @@
 
 (defn- import-file-media
   [{:keys [::db/conn] :as cfg}]
+  (events/tap :progress {:op :import :section :media})
+
   (doseq [item (:media @bfc/*state*)]
     (let [params (-> item
                      (update :id bfc/lookup-index)
@@ -808,6 +817,7 @@
 
 (defn- import-file-thumbnails
   [{:keys [::db/conn] :as cfg}]
+  (events/tap :progress {:op :import :section :thumbnails})
   (doseq [item (:thumbnails @bfc/*state*)]
     (let [file-id   (bfc/lookup-index (:file-id item))
           media-id  (bfc/lookup-index (:media-id item))
@@ -857,6 +867,8 @@
                     :hint "some files referenced on manifest not found"
                     :path path
                     :file-id file-id))))
+
+    (events/tap :progress {:op :import :section :manifest})
 
     (let [index (bfc/update-index (:files manifest))
           state {:media [] :index index}
