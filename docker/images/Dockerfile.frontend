@@ -1,5 +1,5 @@
 FROM nginxinc/nginx-unprivileged:1.27.1
-LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
+LABEL maintainer="Penpot <docker@penpot.app>"
 
 USER root
 
