@@ -315,15 +315,13 @@
             (l/dbg :hint "sendmail"
                    :id (:id params)
                    :to (:to params)
-                   :subject (str/trim (:subject params))
-                   :body (str/join "," (map :type (:body params))))
+                   :subject (str/trim (:subject params)))
 
             (.sendMessage ^Transport transport
                           ^MimeMessage message
                           (.getAllRecipients message))))))
 
-    (when (or (contains? cf/flags :log-emails)
-              (not (contains? cf/flags :smtp)))
+    (when (contains? cf/flags :log-emails)
       (send-to-logger! cfg params))))
 
 (defmethod ig/pre-init-spec ::handler [_]
