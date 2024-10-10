@@ -169,10 +169,11 @@
          [:div {:class (stl/css-case :info true :error error?)}
           (tr "workspace.plugins.error.manifest")])
 
-       [:> i18n/tr-html*
-        {:class (stl/css :discover)
-         :on-click #(st/emit! (ptk/event ::ev/event {::ev/name "open-plugins-list"}))
-         :content (tr "workspace.plugins.discover" cf/plugins-list-uri)}]
+       (when-not (empty? plugins-state)
+         [:> i18n/tr-html*
+          {:class (stl/css :discover)
+           :on-click #(st/emit! (ptk/event ::ev/event {::ev/name "open-plugins-list"}))
+           :content (tr "workspace.plugins.discover" cf/plugins-list-uri)}])
 
        [:hr]
 
