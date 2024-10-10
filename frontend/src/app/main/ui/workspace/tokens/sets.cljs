@@ -11,6 +11,7 @@
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.tokens.sets-context :as sets-context]
    [app.util.dom :as dom]
@@ -79,26 +80,56 @@
         set? true #_(= type :set)
         group? false #_(= type :group)
         editing-node? (editing? name)
-        on-select (mf/use-callback
-                   (mf/deps editing-node?)
-                   (fn [event]
-                     (dom/stop-propagation event)
-                     (when-not editing-node?
-                       (on-select name))))
-        on-context-menu (mf/use-callback
-                         (mf/deps editing-node? name)
-                         (fn [event]
-                           (dom/prevent-default event)
-                           (dom/stop-propagation event)
-                           (when-not editing-node?
-                             (st/emit!
-                              (wdt/show-token-set-context-menu
-                               {:position (dom/get-client-position event)
-                                :token-set-name name})))))]
-    [:div {:class (stl/css :set-item-container)
-           :on-click on-select
+
+        on-click
+        (mf/use-callback
+         (mf/deps editing-node?)
+         (fn [event]
+           (dom/stop-propagation event)
+           (when-not editing-node?
+             (on-select name))))
+
+        on-context-menu
+        (mf/use-callback
+         (mf/deps editing-node? name)
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (when-not editing-node?
+             (st/emit!
+              (wdt/show-token-set-context-menu
+               {:position (dom/get-client-position event)
+                :token-set-name name})))))
+
+        on-drag
+        (mf/use-fn
+         (mf/deps name)
+         (fn [_]
+           (when-not selected?
+             (on-select name))))
+
+        on-drop
+        (mf/use-fn
+         (mf/deps name)
+         (fn [position data]
+           (st/emit! (wdt/move-token-set (:name data) name position))))
+
+        [dprops dref]
+        (h/use-sortable
+         :data-type "penpot/token-set"
+         :on-drag on-drag
+         :on-drop on-drop
+         :data {:name name}
+         :draggable? true)]
+    [:div {:ref dref
+           :class (stl/css-case :set-item-container true
+                                :dnd-over (= (:over dprops) :center)
+                                :dnd-over-top (= (:over dprops) :top)
+                                :dnd-over-bot (= (:over dprops) :bot))
+           :on-click on-click
            :on-double-click #(on-edit name)
-           :on-context-menu on-context-menu}
+           :on-context-menu on-context-menu
+           :data-name name}
      [:div {:class (stl/css-case :set-item-group group?
                                  :set-item-set set?
                                  :selected-set selected?)}
@@ -191,7 +222,7 @@
   (let [token-sets (mf/deref refs/workspace-ordered-token-sets)
         selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)
         token-set-selected? (mf/use-callback
-                             (mf/deps selected-token-set-id)
+                             (mf/deps token-sets selected-token-set-id)
                              (fn [set-name]
                                (= set-name selected-token-set-id)))
         active-token-set-ids (mf/deref refs/workspace-active-set-names)

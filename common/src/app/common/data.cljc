@@ -93,16 +93,20 @@
   (if-let [index (index-of (keys o) before-k)]
     (let [new-v (if ks
                   (oassoc-in-before (get o k) before-ks ks v)
-                  v)]
+                  v)
+          current-index (index-of (keys o) k)
+          new-index (if (and current-index (< current-index index))
+                      (dec index)
+                      index)]
       (if (= k before-k)
         (-> (ordered-map)
-            (into (take index o))
+            (into (take new-index o))
             (assoc k new-v)
-            (into (drop (inc index) o)))
+            (into (drop (inc new-index) o)))
         (-> (ordered-map)
-            (into (take index o))
+            (into (take new-index (dissoc o k)))
             (assoc k new-v)
-            (into (drop index o)))))
+            (into (drop new-index (dissoc o k))))))
     (oassoc-in o (cons k ks) v)))
 
 (defn vec2

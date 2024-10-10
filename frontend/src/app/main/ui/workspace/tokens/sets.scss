@@ -17,6 +17,17 @@
   cursor: pointer;
   color: var(--layer-row-foreground-color);
   padding-left: $s-20;
+  border: $s-2 solid transparent;
+
+  &.dnd-over-bot {
+    border-bottom: $s-2 solid var(--layer-row-foreground-color-hover);
+  }
+  &.dnd-over-top {
+    border-top: $s-2 solid var(--layer-row-foreground-color-hover);
+  }
+  &.dnd-over {
+    border: $s-2 solid var(--layer-row-foreground-color-hover);
+  }
 }
 
 .set-item-set,

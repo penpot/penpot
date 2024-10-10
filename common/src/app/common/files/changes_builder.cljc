@@ -764,6 +764,13 @@
         (update :undo-changes conj {:type :add-token-set :token-set prev-token-theme})
         (apply-changes-local))))
 
+(defn move-token-set-before
+  [changes set-name before-set-name prev-before-set-name]
+  (-> changes
+      (update :redo-changes conj {:type :move-token-set-before :set-name set-name :before-set-name before-set-name})
+      (update :undo-changes conj {:type :move-token-set-before :set-name set-name :before-set-name prev-before-set-name})
+      (apply-changes-local)))
+
 (defn add-token
   [changes set-name token]
   (-> changes
