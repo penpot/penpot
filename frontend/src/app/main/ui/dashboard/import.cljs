@@ -84,8 +84,6 @@
 
 (defn- update-with-analyze-result
   [entries {:keys [uri] :as updated}]
-  (prn "update-with-analyze-result" updated)
-  ;; (app.common.pprint/pprint updated)
   (if-let [existing (some #(= uri (:uri %)) entries)]
     (mapv (fn [entry]
             (if (= (:uri entry) uri)

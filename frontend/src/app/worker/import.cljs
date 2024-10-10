@@ -318,8 +318,6 @@
   (let [frame-id (:current-frame-id file)
         frame (when (and (some? frame-id) (not= frame-id uuid/zero))
                 (fb/lookup-shape file frame-id))]
-
-    (js/console.log "    translate-frame" (clj->js frame))
     (if (some? frame)
       (-> data
           (d/update-when :x + (:x frame))
@@ -782,8 +780,6 @@
                                        ;; Checks if the file is exported with
                                        ;; components v2 and the current team
                                        ;; only supports components v1
-
-                                       (app.common.pprint/pprint manifest {:level 10})
                                        (let [has-file-v2?
                                              (->> (:files manifest)
                                                   (d/seek (fn [[_ file]] (contains? (set (:features file)) "components/v2"))))]
