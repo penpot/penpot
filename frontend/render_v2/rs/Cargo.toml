@@ -16,6 +16,7 @@ path = "src/main.rs"
 [dependencies]
 gl = "0.14.0"
 skia-safe = "0.78.2"
+base64 = "0.13"
 
 [profile.release]
 opt-level = "s"

@@ -40,7 +40,9 @@
         ;;  - 4 F32 for points coordinates
         ;;  - 4 F32 for color
         ;; rect-size (* 8 4)
-        rect-size (* 8 4)]
+        rect-size (* 8 4)
+        ;; kk (data gpu-state)
+        ]
     (when shapes-ptr
       (free_rects shapes-ptr shapes-size))
 

@@ -2,7 +2,7 @@ use std::boxed::Box;
 use skia_safe::{
     gpu::{self, gl::FramebufferInfo, DirectContext},
     textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextStyle, TypefaceFontProvider},
-    FontMgr, Paint, Path, PaintStyle
+    FontMgr, Paint, Path, PaintStyle, EncodedImageFormat, Data, Canvas, SurfaceProps
 };
 
 use skia_safe as skia;
@@ -29,7 +29,7 @@ pub struct State {
     gpu_state: GpuState,
     surface: skia::Surface,
     typeface_font_provider: TypefaceFontProvider,
-    default_font: skia_safe::Font,
+    default_font: skia_safe::Font
 }
 
 impl State {
@@ -199,8 +199,11 @@ pub unsafe extern "C" fn scale(state: *mut State, sx: f32, sy: f32) {
 
 #[no_mangle]
 pub unsafe extern "C" fn reset_canvas(state: *mut State) {
-    (*state).surface.canvas().clear(skia_safe::Color::TRANSPARENT);
-    (*state).surface.canvas().reset_matrix();
+    println!("reset_canvas");
+    let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
+    state.surface.canvas().clear(skia_safe::Color::TRANSPARENT);
+    state.surface.canvas().reset_matrix();
+    flush(state);
 }
 
 #[no_mangle]
@@ -223,10 +226,18 @@ pub unsafe extern "C" fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usi
     path_paint.set_stroke_width(1.0);
     path_paint.set_style(PaintStyle::Stroke);
 
+    let svg_canvas = skia_safe::svg::Canvas::new(skia_safe::Rect::from_size((10000, 10000)), None);
+
     for rect in buf.iter() {
         let r = skia::Rect::new(rect.left, rect.top, rect.right, rect.bottom);
         let color = skia::Color::from_argb((rect.a * 255.0) as u8, rect.r as u8, rect.g as u8, rect.b as u8);
         render_rect(&mut state.surface, r, color);
+
+        let mut paint = skia::Paint::default();
+        paint.set_style(skia::PaintStyle::Fill);
+        paint.set_color(color);
+        paint.set_anti_alias(true);
+        svg_canvas.draw_rect(r, &paint);
 
         text_paint.set_color(color);
         state.surface.canvas().draw_str("SKIA TEXT", (rect.left, rect.top), &state.default_font, &text_paint);
@@ -250,6 +261,19 @@ pub unsafe extern "C" fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usi
         paragraph.layout(256.0);
         paragraph.paint(state.surface.canvas(), (rect.left, rect.top));
     }
+    
+    // base64 image of the canvas
+    // let image = state.surface.image_snapshot();
+    // let mut context = state.surface.direct_context();
+    // let encoded_image = image.encode(context.as_mut(), EncodedImageFormat::PNG, None).unwrap();
+    // let base64_image = base64::encode(&encoded_image.as_bytes());    
+    // println!("data:image/png;base64,{}", base64_image);
+
+    // SVG representation
+    // let svg_data = svg_canvas.end();
+    // let svg = String::from_utf8_lossy(svg_data.as_bytes());
+    // println!("svg: {}", svg);
+
     flush(state);
     std::mem::forget(buf);
 }
