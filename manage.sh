@@ -178,17 +178,24 @@ function build-exporter-bundle {
     echo ">> bundle exporter end";
 }
 
-function build-docker-images {
+function build-frontend-docker-images {
     rsync -avr --delete ./bundles/frontend/ ./docker/images/bundle-frontend/;
-    rsync -avr --delete ./bundles/backend/ ./docker/images/bundle-backend/;
-    rsync -avr --delete ./bundles/exporter/ ./docker/images/bundle-exporter/;
-
     pushd ./docker/images;
-
     docker build -t penpotapp/frontend:$CURRENT_BRANCH -t penpotapp/frontend:latest -f Dockerfile.frontend .;
-    docker build -t penpotapp/backend:$CURRENT_BRANCH -t penpotapp/backend:latest -f Dockerfile.backend .;
-    docker build -t penpotapp/exporter:$CURRENT_BRANCH -t penpotapp/exporter:latest -f Dockerfile.exporter .;
+    popd;
+}
 
+function build-backend-docker-images {
+    rsync -avr --delete ./bundles/backend/ ./docker/images/bundle-backend/;
+    pushd ./docker/images;
+    docker build -t penpotapp/backend:$CURRENT_BRANCH -t penpotapp/backend:latest -f Dockerfile.backend .;
+    popd;
+}
+
+function build-exporter-docker-images {
+    rsync -avr --delete ./bundles/exporter/ ./docker/images/bundle-exporter/;
+    pushd ./docker/images;
+    docker build -t penpotapp/exporter:$CURRENT_BRANCH -t penpotapp/exporter:latest -f Dockerfile.exporter .;
     popd;
 }
 
@@ -198,12 +205,26 @@ function usage {
     echo "Options:"
     echo "- pull-devenv                      Pulls docker development oriented image"
     echo "- build-devenv                     Build docker development oriented image"
+    echo "- build-devenv-local               Build a local docker development oriented image"
     echo "- create-devenv                    Create the development oriented docker compose service."
     echo "- start-devenv                     Start the development oriented docker compose service."
     echo "- stop-devenv                      Stops the development oriented docker compose service."
     echo "- drop-devenv                      Remove the development oriented docker compose containers, volumes and clean images."
     echo "- run-devenv                       Attaches to the running devenv container and starts development environment"
+    echo "- run-devenv-shell                 Attaches to the running devenv container and starts a bash shell."
+    echo "- log-devenv                       Show logs of the running devenv docker compose service."
     echo ""
+    echo "- build-bundle                     Build all bundles (frontend, backend and exporter)."
+    echo "- build-frontend-bundle            Build frontend bundle"
+    echo "- build-backend-bundle             Build backend bundle."
+    echo "- build-exporter-bundle            Build exporter bundle."
+    echo ""
+    echo "- build-docker-images              Build all docker images (frontend, backend and exporter)."
+    echo "- build-frontend-docker-images     Build frontend docker images."
+    echo "- build-backend-docker-images      Build backend docker images."
+    echo "- build-exporter-docker-images     Build exporter docker images."
+    echo ""
+    echo "- version                          Show penpot's version."
 }
 
 case $1 in
@@ -222,10 +243,6 @@ case $1 in
 
     build-devenv-local)
         build-devenv-local ${@:2}
-        ;;
-
-    push-devenv)
-        push-devenv ${@:2}
         ;;
 
     create-devenv)
@@ -251,7 +268,7 @@ case $1 in
         log-devenv ${@:2}
         ;;
 
-    # production builds
+    ## production builds
     build-bundle)
         build-frontend-bundle;
         build-backend-bundle;
@@ -271,10 +288,23 @@ case $1 in
         ;;
 
     build-docker-images)
-        build-docker-images
+        build-frontend-docker-images
+        build-backend-docker-images
+        build-exporter-docker-images
         ;;
 
-    # Docker Image Tasks
+    build-frontend-docker-images)
+        build-frontend-docker-images
+        ;;
+
+    build-backend-docker-images)
+        build-backend-docker-images
+        ;;
+
+    build-exporter-docker-images)
+        build-exporter-docker-images
+        ;;
+
     *)
         usage
         ;;
