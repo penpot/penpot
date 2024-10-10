@@ -241,11 +241,13 @@ pub unsafe extern "C" fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usi
 
         text_paint.set_color(color);
         state.surface.canvas().draw_str("SKIA TEXT", (rect.left, rect.top), &state.default_font, &text_paint);
+        svg_canvas.draw_str("SKIA TEXT", (rect.left, rect.top), &state.default_font, &text_paint);
 
         let mut path = Path::new();
         path.move_to((rect.left, rect.top));
         path.line_to((rect.right, rect.bottom));
         state.surface.canvas().draw_path(&path, &path_paint);
+        svg_canvas.draw_path(&path, &path_paint);
 
         // https://github.com/rust-skia/rust-skia/blob/02c89a87649af8d2870fb631aae4a5e171887367/skia-org/src/skparagraph_example.rs#L18    
         let mut font_collection = FontCollection::new();
@@ -260,6 +262,7 @@ pub unsafe extern "C" fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usi
         let mut paragraph = paragraph_builder.build();
         paragraph.layout(256.0);
         paragraph.paint(state.surface.canvas(), (rect.left, rect.top));
+        paragraph.paint(&svg_canvas, (rect.left, rect.top));
     }
     
     // base64 image of the canvas
