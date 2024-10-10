@@ -332,7 +332,6 @@
     (t/is (nil? (:error out)))
     (:result out)))
 
-;; --- WEBHOOKS HELPERS
 
 (defn create-webhook*
   ([params] (create-webhook* *system* params))
@@ -347,16 +346,6 @@
                                   :uri uri
                                   :is-active is-active
                                   :mtype mtype})))))
-
-(defn check-webhook-format*
-  ([result]
-   (t/is (contains? result :id))
-   (t/is (contains? result :team-id))
-   (t/is (contains? result :created-at))
-   (t/is (contains? result :profile-id))
-   (t/is (contains? result :updated-at))
-   (t/is (contains? result :uri))
-   (t/is (contains? result :mtype))))
 
 ;; --- RPC HELPERS
 

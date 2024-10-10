@@ -19,12 +19,22 @@
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
-(defn create-webhook-params* [id team]
+(defn create-webhook-params [id team]
   {::th/type :create-webhook
    ::rpc/profile-id id
    :team-id team
    :uri (u/uri "http://example.com")
    :mtype "application/json"})
+
+(defn check-webhook-format
+  ([result]
+   (t/is (contains? result :id))
+   (t/is (contains? result :team-id))
+   (t/is (contains? result :created-at))
+   (t/is (contains? result :profile-id))
+   (t/is (contains? result :updated-at))
+   (t/is (contains? result :uri))
+   (t/is (contains? result :mtype))))
 
 (t/deftest webhook-crud
   (with-mocks [http-mock {:target 'app.http.client/req!
@@ -46,10 +56,8 @@
           (t/is (nil? (:error out)))
           (t/is (= 1 (:call-count @http-mock)))
 
-          ;; (th/print-result! out)
-
           (let [result (:result out)]
-            (th/check-webhook-format* result)
+            (check-webhook-format result)
 
             (t/is (= (:uri params) (:uri result)))
             (t/is (= (:team-id params) (:team-id result)))
@@ -71,7 +79,7 @@
           (t/is (= 0 (:call-count @http-mock)))
 
           (let [result (:result out)]
-            (th/check-webhook-format* result)
+            (check-webhook-format result)
 
             (t/is (= (:id params)  (:id result)))
             (t/is (= (:id @whook)  (:id result)))
@@ -126,9 +134,9 @@
 
           (let [rows (th/db-exec! ["select * from webhook"])]
             (t/is (= 0 (count rows))))))
-      
+
       (th/reset-mock! http-mock)
-      
+
       (t/testing "delete webhook (unauthorized)"
         (let [params {::th/type :delete-webhook
                       ::rpc/profile-id uuid/zero
@@ -152,18 +160,18 @@
       (th/create-team-role* {:team-id (:id team)
                              :profile-id (:id viewer)
                              :role :viewer})
-     ;; Assert all roles for team
+      ;; Assert all roles for team
       (let [roles (th/db-query :team-profile-rel {:team-id (:id team)})]
         (t/is (= 2 (count roles))))
 
       (t/testing "viewer creates a webhook"
-        (let [viewers-webhook (create-webhook-params* (:id viewer) (:id team))
+        (let [viewers-webhook (create-webhook-params (:id viewer) (:id team))
               out             (th/command! viewers-webhook)]
           (t/is (nil? (:error out)))
           (t/is (= 1 (:call-count @http-mock)))
 
           (let [result (:result out)]
-            (th/check-webhook-format* result)
+            (check-webhook-format result)
             (t/is (= (:uri viewers-webhook) (:uri result)))
             (t/is (= (:team-id viewers-webhook) (:team-id result)))
             (t/is (= (::rpc/profile-id viewers-webhook) (:profile-id result)))
@@ -184,8 +192,7 @@
 
           (t/is (nil? (:error out)))
           (t/is (= 0 (:call-count @http-mock)))
-          (th/check-webhook-format* result)
-          (t/is (= (:id params) (:id result)))
+          (check-webhook-format result)
           (t/is (= (:is-active params) (:is-active result)))
           (t/is (= (:team-id @whook) (:team-id result)))
           (t/is (= (:mtype params) (:mtype result)))
@@ -208,29 +215,29 @@
 
 (t/deftest webhooks-permissions-crud-viewer-owner
   (with-mocks [http-mock {:target 'app.http.client/req!
-                         :return {:status 200}}]
-  (let [owner       (th/create-profile* 1 {:is-active true})
-        viewer      (th/create-profile* 2 {:is-active true})
-        team        (th/create-team* 1 {:profile-id (:id owner)})
-        whook       (volatile! nil)]
-    (th/create-team-role* {:team-id (:id team)
-                           :profile-id (:id viewer)
-                           :role :viewer})
-    (t/testing "owner creates a wehbook"
-      (let [owners-webhook  (create-webhook-params* (:id owner) (:id team))
-            out    (th/command! owners-webhook)
-            result (:result out)]
-        (t/is (nil? (:error out)))
-        (t/is (= 1 (:call-count @http-mock)))
-        (th/check-webhook-format* result)
-        (t/is (= (:uri owners-webhook) (:uri result)))
-        (t/is (= (:team-id owners-webhook) (:team-id result)))
-        (t/is (= (:mtype owners-webhook) (:mtype result)))
-        (vreset! whook result)))
-    
-    (th/reset-mock! http-mock)
-    
-    (t/testing "viewer updates owner's webhook (unauthorized)"
+                          :return {:status 200}}]
+    (let [owner       (th/create-profile* 1 {:is-active true})
+          viewer      (th/create-profile* 2 {:is-active true})
+          team        (th/create-team* 1 {:profile-id (:id owner)})
+          whook       (volatile! nil)]
+      (th/create-team-role* {:team-id (:id team)
+                             :profile-id (:id viewer)
+                             :role :viewer})
+      (t/testing "owner creates a wehbook"
+        (let [owners-webhook  (create-webhook-params (:id owner) (:id team))
+              out    (th/command! owners-webhook)
+              result (:result out)]
+          (t/is (nil? (:error out)))
+          (t/is (= 1 (:call-count @http-mock)))
+          (check-webhook-format result)
+          (t/is (= (:uri owners-webhook) (:uri result)))
+          (t/is (= (:team-id owners-webhook) (:team-id result)))
+          (t/is (= (:mtype owners-webhook) (:mtype result)))
+          (vreset! whook result)))
+
+      (th/reset-mock! http-mock)
+
+      (t/testing "viewer updates owner's webhook (unauthorized)"
         (let [params {::th/type :update-webhook
                       ::rpc/profile-id (:id viewer)
                       :id (:id @whook)
@@ -247,19 +254,19 @@
             (t/is (= (:type error-data) :not-found))
             (t/is (= (:code error-data) :object-not-found)))))
 
-    (th/reset-mock! http-mock)
+      (th/reset-mock! http-mock)
 
-    (t/testing "viewer deletes owner's webhook (unauthorized)"
-      (let [params {::th/type :delete-webhook
-                    ::rpc/profile-id (:id viewer)
-                    :id (:id @whook)}
-            out    (th/command! params)
-            error      (:error out)
-            error-data (ex-data error)]
-        (t/is (= 0 (:call-count @http-mock)))
-        (t/is (th/ex-info? error))
-        (t/is (= (:type error-data) :not-found))
-        (t/is (= (:code error-data) :object-not-found)))))))
+      (t/testing "viewer deletes owner's webhook (unauthorized)"
+        (let [params {::th/type :delete-webhook
+                      ::rpc/profile-id (:id viewer)
+                      :id (:id @whook)}
+              out    (th/command! params)
+              error      (:error out)
+              error-data (ex-data error)]
+          (t/is (= 0 (:call-count @http-mock)))
+          (t/is (th/ex-info? error))
+          (t/is (= (:type error-data) :not-found))
+          (t/is (= (:code error-data) :object-not-found)))))))
 
 (t/deftest webhooks-quotes
   (with-mocks [http-mock {:target 'app.http.client/req!

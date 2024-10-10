@@ -15,11 +15,26 @@
    [app.http.client :as http]
    [app.loggers.webhooks :as webhooks]
    [app.rpc :as-alias rpc]
-   [app.rpc.commands.teams :refer [check-webhook-edition-permissions! check-read-permissions!]]
+   [app.rpc.commands.teams :refer [check-read-permissions!] :as t]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.permissions :as perms]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [cuerdas.core :as str]))
+
+(defn get-webhooks-permissions
+  [conn profile-id team-id creator-id]
+  (let [permissions (t/get-permissions conn profile-id team-id)
+
+        can-edit (boolean (or (:can-edit permissions)
+                              (= profile-id creator-id)))]
+    (assoc permissions :can-edit can-edit)))
+
+(def has-webhook-edit-permissions?
+  (perms/make-edition-predicate-fn get-webhooks-permissions))
+
+(def check-webhook-edition-permissions!
+  (perms/make-check-fn has-webhook-edit-permissions?))
 
 (defn decode-row
   [{:keys [uri] :as row}]

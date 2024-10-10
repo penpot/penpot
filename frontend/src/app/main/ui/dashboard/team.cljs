@@ -1015,8 +1015,7 @@
 (mf/defc team-webhooks-page
   {::mf/wrap-props false}
   [{:keys [team]}]
-  (let [webhooks (mf/deref refs/dashboard-team-webhooks)
-        _ (.log js/console (clj->js team))]
+  (let [webhooks (mf/deref refs/dashboard-team-webhooks)]
 
     (mf/with-effect [team]
       (dom/set-html-title

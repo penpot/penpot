@@ -61,19 +61,6 @@
        :can-edit (or is-owner is-admin can-edit)
        :can-read true})))
 
-(defn get-webhooks-permissions
-  [conn profile-id team-id creator-id]
-  (let [rows     (db/exec! conn [sql:team-permissions profile-id team-id])
-        is-owner (boolean (some :is-owner rows))
-        is-admin (boolean (some :is-admin rows))
-        can-edit (boolean (or (some :can-edit rows)
-                              (= profile-id creator-id)))]
-    (when (seq rows)
-      {:is-owner is-owner
-       :is-admin (or is-owner is-admin)
-       :can-edit (or is-owner is-admin can-edit)
-       :can-read true})))
-
 (def has-admin-permissions?
   (perms/make-admin-predicate-fn get-permissions))
 
@@ -91,12 +78,6 @@
 
 (def check-read-permissions!
   (perms/make-check-fn has-read-permissions?))
-
-(def has-webhook-edit-permissions?
-  (perms/make-edition-predicate-fn get-webhooks-permissions))
-
-(def check-webhook-edition-permissions! 
-  (perms/make-check-fn has-webhook-edit-permissions?))
 
 (defn decode-row
   [{:keys [features] :as row}]
