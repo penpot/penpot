@@ -272,9 +272,10 @@
 
         apply-typography
         (mf/use-fn
-         (mf/deps file-id)
+         (mf/deps file-id read-only?)
          (fn [typography _event]
-           (st/emit! (dwt/apply-typography typography file-id))))
+           (when-not read-only?
+             (st/emit! (dwt/apply-typography typography file-id)))))
 
         create-group
         (mf/use-fn

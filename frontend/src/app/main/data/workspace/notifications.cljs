@@ -12,8 +12,10 @@
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
-   [app.main.data.common :refer [handle-notification]]
+   [app.main.data.common :refer [handle-notification change-team-permissions]]
    [app.main.data.websocket :as dws]
+   [app.main.data.workspace.edition :as dwe]
+   [app.main.data.workspace.layout :as dwly]
    [app.main.data.workspace.libraries :as dwl]
    [app.util.globals :refer [global]]
    [app.util.mouse :as mse]
@@ -92,17 +94,39 @@
 
         (rx/concat stream (rx/of (dws/send endmsg)))))))
 
+
+(defn- handle-change-team-permissions
+  [{:keys [role] :as msg}]
+  (ptk/reify ::handle-change-team-permissions
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [viewer? (= :viewer role)]
+
+        (rx/concat
+         (->> (rx/of :interrupt
+                     (dwe/clear-edition-mode))
+              ;; Delay so anything that launched :interrupt can finish
+              (rx/delay 500))
+
+         (if viewer?
+           (rx/of (dwly/set-options-mode :design))
+           (rx/empty))
+
+         (rx/of (change-team-permissions msg)))))))
+
+
 (defn- process-message
   [{:keys [type] :as msg}]
   (case type
-    :join-file      (handle-presence msg)
-    :leave-file     (handle-presence msg)
-    :presence       (handle-presence msg)
-    :disconnect     (handle-presence msg)
-    :pointer-update (handle-pointer-update msg)
-    :file-change    (handle-file-change msg)
-    :library-change (handle-library-change msg)
-    :notification   (handle-notification msg)
+    :join-file               (handle-presence msg)
+    :leave-file              (handle-presence msg)
+    :presence                (handle-presence msg)
+    :disconnect              (handle-presence msg)
+    :pointer-update          (handle-pointer-update msg)
+    :file-change             (handle-file-change msg)
+    :library-change          (handle-library-change msg)
+    :notification            (handle-notification msg)
+    :team-permissions-change (handle-change-team-permissions (assoc msg :workspace? true))
     nil))
 
 (defn- handle-pointer-send
@@ -257,3 +281,7 @@
       (when (contains? (:workspace-libraries state) file-id)
         (rx/of (dwl/ext-library-changed file-id modified-at revn changes)
                (dwl/notify-sync-file file-id))))))
+
+
+
+

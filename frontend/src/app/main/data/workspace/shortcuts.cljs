@@ -41,8 +41,12 @@
 
 (defn emit-when-no-readonly
   [& events]
-  (when-not (deref refs/workspace-read-only?)
-    (run! st/emit! events)))
+  (let [file         (deref refs/workspace-file)
+        user-viewer? (not (get-in file [:permissions :can-edit]))
+        read-only?   (or (deref refs/workspace-read-only?)
+                         user-viewer?)]
+    (when-not read-only?
+      (run! st/emit! events))))
 
 ;; Shortcuts format https://github.com/ccampbell/mousetrap
 

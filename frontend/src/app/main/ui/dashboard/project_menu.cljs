@@ -118,9 +118,6 @@
                     :data-testid      "project-delete"})]]
 
     [:*
-     [:& udi/import-form {:ref file-input
-                          :project-id (:id project)
-                          :on-finish-import on-finish-import}]
      [:& context-menu-a11y
       {:on-close on-menu-close
        :show show?
@@ -129,5 +126,8 @@
        :top top
        :left left
        :options options
-       :workspace false}]]))
+       :workspace false}]
+     [:& udi/import-form {:ref file-input
+                          :project-id (:id project)
+                          :on-finish-import on-finish-import}]]))
 

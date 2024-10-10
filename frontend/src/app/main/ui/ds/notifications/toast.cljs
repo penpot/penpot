@@ -12,8 +12,6 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [rumext.v2 :as mf]))
 
-(def levels (set '("info" "warning" "error" "success")))
-
 (def ^:private icons-by-level
   {"info" i/info
    "warning" i/msg-neutral

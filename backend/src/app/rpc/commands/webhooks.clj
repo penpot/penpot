@@ -15,11 +15,26 @@
    [app.http.client :as http]
    [app.loggers.webhooks :as webhooks]
    [app.rpc :as-alias rpc]
-   [app.rpc.commands.teams :refer [check-edition-permissions! check-read-permissions!]]
+   [app.rpc.commands.teams :refer [check-read-permissions!] :as t]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.permissions :as perms]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [cuerdas.core :as str]))
+
+(defn get-webhooks-permissions
+  [conn profile-id team-id creator-id]
+  (let [permissions (t/get-permissions conn profile-id team-id)
+
+        can-edit (boolean (or (:can-edit permissions)
+                              (= profile-id creator-id)))]
+    (assoc permissions :can-edit can-edit)))
+
+(def has-webhook-edit-permissions?
+  (perms/make-edition-predicate-fn get-webhooks-permissions))
+
+(def check-webhook-edition-permissions!
+  (perms/make-check-fn has-webhook-edit-permissions?))
 
 (defn decode-row
   [{:keys [uri] :as row}]
@@ -65,11 +80,12 @@
                                 max-hooks-for-team)))))
 
 (defn- insert-webhook!
-  [{:keys [::db/pool]} {:keys [team-id uri mtype is-active] :as params}]
+  [{:keys [::db/pool]} {:keys [team-id uri mtype is-active ::rpc/profile-id] :as params}]
   (-> (db/insert! pool :webhook
                   {:id (uuid/next)
                    :team-id team-id
                    :uri (str uri)
+                   :profile-id profile-id
                    :is-active is-active
                    :mtype mtype})
       (decode-row)))
@@ -101,7 +117,7 @@
   {::doc/added "1.17"
    ::sm/params schema:create-webhook}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
-  (check-edition-permissions! pool profile-id team-id)
+  (check-webhook-edition-permissions! pool profile-id team-id profile-id)
   (validate-quotes! cfg params)
   (validate-webhook! cfg nil params)
   (insert-webhook! cfg params))
@@ -118,7 +134,7 @@
    ::sm/params schema:update-webhook}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
   (let [whook (-> (db/get pool :webhook {:id id}) (decode-row))]
-    (check-edition-permissions! pool profile-id (:team-id whook))
+    (check-webhook-edition-permissions! pool profile-id (:team-id whook) (:profile-id whook))
     (validate-webhook! cfg whook params)
     (update-webhook! cfg whook params)))
 
@@ -132,15 +148,17 @@
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id]}]
   (db/with-atomic [conn pool]
     (let [whook (-> (db/get conn :webhook {:id id}) decode-row)]
-      (check-edition-permissions! conn profile-id (:team-id whook))
+      (check-webhook-edition-permissions! conn profile-id (:team-id whook) (:profile-id whook))
       (db/delete! conn :webhook {:id id})
       nil)))
 
 ;; --- Query: Webhooks
 
 (def sql:get-webhooks
-  "select id, uri, mtype, is_active, error_code, error_count
-   from webhook where team_id = ? order by uri")
+  "SELECT id, uri, mtype, is_active, error_code, error_count, profile_id 
+     FROM webhook 
+    WHERE team_id = ? 
+    ORDER BY uri")
 
 (def ^:private schema:get-webhooks
   [:map {:title "get-webhooks"}

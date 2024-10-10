@@ -73,7 +73,7 @@
 
 (mf/defc grid-item-thumbnail
   {::mf/wrap-props false}
-  [{:keys [file-id revn thumbnail-id background-color]}]
+  [{:keys [file-id revn thumbnail-id background-color you-viewer?]}]
   (let [container (mf/use-ref)
         visible?  (h/use-visible container :once? true)]
 
@@ -94,10 +94,12 @@
      (when visible?
        (if thumbnail-id
          [:img {:class (stl/css :grid-item-thumbnail-image)
+                :draggable (dm/str (not you-viewer?))
                 :src (cf/resolve-media thumbnail-id)
                 :loading "lazy"
                 :decoding "async"}]
          [:> loader* {:class (stl/css :grid-loader)
+                      :draggable (dm/str (not you-viewer?))
                       :overlay true
                       :title (tr "labels.loading")}]))]))
 
@@ -231,7 +233,7 @@
 
 (mf/defc grid-item
   {:wrap [mf/memo]}
-  [{:keys [file origin library-view?] :as props}]
+  [{:keys [file origin library-view? you-viewer?] :as props}]
   (let [file-id         (:id file)
 
         ;; FIXME: this breaks react hooks rule, hooks should never to
@@ -274,33 +276,34 @@
 
         on-drag-start
         (mf/use-fn
-         (mf/deps selected-files)
+         (mf/deps selected-files you-viewer?)
          (fn [event]
            (st/emit! (dd/hide-file-menu))
-           (let [offset          (dom/get-offset-position (.-nativeEvent event))
+           (when-not you-viewer?
+             (let [offset          (dom/get-offset-position (.-nativeEvent event))
 
-                 select-current? (not (contains? selected-files (:id file)))
+                   select-current? (not (contains? selected-files (:id file)))
 
-                 item-el         (mf/ref-val node-ref)
-                 counter-el      (create-counter-element
-                                  item-el
-                                  (if select-current?
-                                    1
-                                    (count selected-files)))]
-             (when select-current?
-               (st/emit! (dd/clear-selected-files))
-               (st/emit! (dd/toggle-file-select file)))
+                   item-el         (mf/ref-val node-ref)
+                   counter-el      (create-counter-element
+                                    item-el
+                                    (if select-current?
+                                      1
+                                      (count selected-files)))]
+               (when select-current?
+                 (st/emit! (dd/clear-selected-files))
+                 (st/emit! (dd/toggle-file-select file)))
 
-             (dnd/set-data! event "penpot/files" "dummy")
-             (dnd/set-allowed-effect! event "move")
+               (dnd/set-data! event "penpot/files" "dummy")
+               (dnd/set-allowed-effect! event "move")
 
               ;; set-drag-image requires that the element is rendered and
               ;; visible to the user at the moment of creating the ghost
               ;; image (to make a snapshot), but you may remove it right
               ;; afterwards, in the next render cycle.
-             (dom/append-child! item-el counter-el)
-             (dnd/set-drag-image! event item-el (:x offset) (:y offset))
-             (ts/raf #(.removeChild ^js item-el counter-el)))))
+               (dom/append-child! item-el counter-el)
+               (dnd/set-drag-image! event item-el (:x offset) (:y offset))
+               (ts/raf #(.removeChild ^js item-el counter-el))))))
 
         on-menu-click
         (mf/use-fn
@@ -351,13 +354,12 @@
                (on-select event)) ;; TODO Fix this
              )))]
 
-    [:li
-     {:class (stl/css-case :grid-item true :project-th true :library library-view?)}
+    [:li {:class (stl/css-case :grid-item true :project-th true :library library-view?)}
      [:button
       {:class (stl/css-case :selected selected? :library library-view?)
        :ref node-ref
        :title (:name file)
-       :draggable true
+       :draggable (dm/str (not you-viewer?))
        :on-click on-select
        :on-key-down handle-key-down
        :on-double-click on-navigate
@@ -370,6 +372,7 @@
         [:& grid-item-library {:file file}]
         [:& grid-item-thumbnail
          {:file-id (:id file)
+          :you-viewer? you-viewer?
           :revn (:revn file)
           :thumbnail-id (:thumbnail-id file)
           :background-color (dm/get-in file [:data :options :background])}])
@@ -405,6 +408,7 @@
                            :show? (:menu-open dashboard-local)
                            :left (+ 24 (:x (:menu-pos dashboard-local)))
                            :top (:y (:menu-pos dashboard-local))
+                           :you-viewer? you-viewer?
                            :navigate? true
                            :on-edit on-edit
                            :on-menu-close on-menu-close
@@ -412,7 +416,7 @@
                            :parent-id (str file-id "-action-menu")}]])]]]]]))
 
 (mf/defc grid
-  [{:keys [files project origin limit library-view? create-fn] :as props}]
+  [{:keys [files project origin limit library-view? create-fn you-viewer?] :as props}]
   (let [dragging?  (mf/use-state false)
         project-id (:id project)
         node-ref   (mf/use-var nil)
@@ -429,11 +433,12 @@
         on-drag-enter
         (mf/use-fn
          (fn [e]
-           (when (and (not (dnd/has-type? e "penpot/files"))
-                      (or (dnd/has-type? e "Files")
-                          (dnd/has-type? e "application/x-moz-file")))
-             (dom/prevent-default e)
-             (reset! dragging? true))))
+           (when-not you-viewer?
+             (when (and (not (dnd/has-type? e "penpot/files"))
+                        (or (dnd/has-type? e "Files")
+                            (dnd/has-type? e "application/x-moz-file")))
+               (dom/prevent-default e)
+               (reset! dragging? true)))))
 
         on-drag-over
         (mf/use-fn
@@ -459,6 +464,7 @@
              (import-files (.-files (.-dataTransfer e))))))]
 
     [:div {:class (stl/css :dashboard-grid)
+           :dragabble (dm/str (not you-viewer?))
            :on-drag-enter on-drag-enter
            :on-drag-over on-drag-over
            :on-drag-leave on-drag-leave
@@ -480,21 +486,22 @@
               :key (:id item)
               :navigate? true
               :origin origin
+              :you-viewer? you-viewer?
               :library-view? library-view?}])])
 
        :else
        [:& empty-placeholder
         {:limit limit
+         :you-viewer? you-viewer?
          :create-fn create-fn
          :origin origin}])]))
 
 (mf/defc line-grid-row
-  [{:keys [files selected-files dragging? limit] :as props}]
+  [{:keys [files selected-files dragging? limit you-viewer?] :as props}]
   (let [elements limit
         limit (if dragging? (dec limit) limit)]
-    [:ul
-     {:class (stl/css :grid-row :no-wrap)
-      :style {:grid-template-columns (dm/str "repeat(" elements ", 1fr)")}}
+    [:ul {:class (stl/css :grid-row :no-wrap)
+          :style {:grid-template-columns (dm/str "repeat(" elements ", 1fr)")}}
 
      (when dragging?
        [:li {:class (stl/css :grid-item :dragged)}])
@@ -504,11 +511,12 @@
         {:id (:id item)
          :file item
          :selected-files selected-files
+         :you-viewer? you-viewer?
          :key (:id item)
          :navigate? false}])]))
 
 (mf/defc line-grid
-  [{:keys [project team files limit create-fn] :as props}]
+  [{:keys [project team files limit create-fn you-viewer?] :as props}]
   (let [dragging?        (mf/use-state false)
         project-id       (:id project)
         team-id          (:id team)
@@ -527,22 +535,23 @@
 
         on-drag-enter
         (mf/use-fn
-         (mf/deps selected-project)
+         (mf/deps selected-project you-viewer?)
          (fn [e]
-           (cond
-             (dnd/has-type? e "penpot/files")
-             (do
-               (dom/prevent-default e)
-               (when-not (or (dnd/from-child? e)
-                             (dnd/broken-event? e))
-                 (when (not= selected-project project-id)
-                   (reset! dragging? true))))
+           (when-not you-viewer?
+             (cond
+               (dnd/has-type? e "penpot/files")
+               (do
+                 (dom/prevent-default e)
+                 (when-not (or (dnd/from-child? e)
+                               (dnd/broken-event? e))
+                   (when (not= selected-project project-id)
+                     (reset! dragging? true))))
 
-             (or (dnd/has-type? e "Files")
-                 (dnd/has-type? e "application/x-moz-file"))
-             (do
-               (dom/prevent-default e)
-               (reset! dragging? true)))))
+               (or (dnd/has-type? e "Files")
+                   (dnd/has-type? e "application/x-moz-file"))
+               (do
+                 (dom/prevent-default e)
+                 (reset! dragging? true))))))
 
         on-drag-over
         (mf/use-fn
@@ -586,6 +595,7 @@
                (import-files (.-files (.-dataTransfer e)))))))]
 
     [:div {:class (stl/css :dashboard-grid)
+           :dragabble (dm/str (not you-viewer?))
            :on-drag-enter on-drag-enter
            :on-drag-over on-drag-over
            :on-drag-leave on-drag-leave
@@ -599,10 +609,12 @@
                           :team-id team-id
                           :selected-files selected-files
                           :dragging? @dragging?
+                          :you-viewer? you-viewer?
                           :limit limit}]
 
        :else
        [:& empty-placeholder
         {:dragging? @dragging?
          :limit limit
+         :you-viewer? you-viewer?
          :create-fn create-fn}])]))

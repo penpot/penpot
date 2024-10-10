@@ -128,6 +128,7 @@
     flex-wrap: wrap;
     flex-grow: 1;
     padding-left: $s-16;
+    gap: $s-6;
 
     .variant {
       display: flex;
@@ -135,13 +136,13 @@
       align-items: center;
       padding: $s-8 $s-12;
       cursor: pointer;
-
+      gap: $s-4;
       .icon {
         display: flex;
+        align-items: center;
+        justify-content: center;
         height: $s-16;
         width: $s-16;
-        margin-left: $s-6;
-        align-items: center;
         svg {
           fill: none;
           width: $s-12;
@@ -163,8 +164,6 @@
     .variant {
       background-color: var(--color-background-quaternary);
       border-radius: $br-8;
-      margin-right: $s-4;
-      padding-right: $s-4;
     }
   }
 
