@@ -397,7 +397,7 @@
 .webhook-row {
   display: grid;
   align-items: center;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: auto 1fr 1fr auto auto;
   gap: $s-16;
 }
 

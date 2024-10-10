@@ -143,7 +143,7 @@
         team-id     (:id team)
 
         initial     (mf/with-memo [team-id]
-                      {:role "viewer" :team-id team-id})
+                      {:role "editor" :team-id team-id})
 
         form        (fm/use-form :schema schema:invite-member-form
                                  :initial initial)
@@ -936,9 +936,15 @@
 
 (mf/defc webhook-item
   {::mf/wrap [mf/memo]}
-  [{:keys [webhook] :as props}]
+  [{:keys [webhook permissions] :as props}]
   (let [error-code (:error-code webhook)
         id         (:id webhook)
+        creator-id (:profile-id webhook)
+        profile    (mf/deref refs/profile)
+        user-id    (:id profile)
+        you-viewer? (not (:can-edit permissions))
+        can-edit?  (or (:can-edit permissions)
+                       (= creator-id user-id))
 
         on-edit
         (mf/use-fn
@@ -985,26 +991,32 @@
         warning-icon)]
      [:div {:class (stl/css :table-field :uri)}
       [:div (dm/str (:uri webhook))]]
+     [:div {:class (stl/css :table-field :owner)}
+      [:div (when (and you-viewer?
+                       (= creator-id user-id))
+              "you have created this")]]
      [:div {:class (stl/css :table-field :active)}
       [:div (if (:is-active webhook)
               (tr "labels.active")
               (tr "labels.inactive"))]]
      [:div {:class (stl/css :table-field :actions)}
-      [:& webhook-actions
-       {:on-edit on-edit
-        :on-delete on-delete}]]]))
+      (when can-edit?
+        [:& webhook-actions
+         {:on-edit on-edit
+          :on-delete on-delete}])]]))
 
 (mf/defc webhooks-list
   {::mf/wrap-props false}
-  [{:keys [webhooks]}]
+  [{:keys [webhooks permissions]}]
   [:div {:class (stl/css :table-rows :webhook-table)}
    (for [webhook webhooks]
-     [:& webhook-item {:webhook webhook :key (:id webhook)}])])
+     [:& webhook-item {:webhook webhook :key (:id webhook) :permissions permissions}])])
 
 (mf/defc team-webhooks-page
   {::mf/wrap-props false}
   [{:keys [team]}]
-  (let [webhooks (mf/deref refs/dashboard-team-webhooks)]
+  (let [webhooks (mf/deref refs/dashboard-team-webhooks)
+        _ (.log js/console (clj->js team))]
 
     (mf/with-effect [team]
       (dom/set-html-title
@@ -1025,7 +1037,7 @@
          [:div {:class (stl/css :webhooks-empty)}
           [:div (tr "dashboard.webhooks.empty.no-webhooks")]
           [:div (tr "dashboard.webhooks.empty.add-one")]]
-         [:& webhooks-list {:webhooks webhooks}])]]]))
+         [:& webhooks-list {:webhooks webhooks :permissions (:permissions team)}])]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SETTINGS SECTION
