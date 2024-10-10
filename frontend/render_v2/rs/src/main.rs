@@ -266,16 +266,16 @@ pub unsafe extern "C" fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usi
     }
     
     // base64 image of the canvas
-    // let image = state.surface.image_snapshot();
-    // let mut context = state.surface.direct_context();
-    // let encoded_image = image.encode(context.as_mut(), EncodedImageFormat::PNG, None).unwrap();
-    // let base64_image = base64::encode(&encoded_image.as_bytes());    
-    // println!("data:image/png;base64,{}", base64_image);
+    let image = state.surface.image_snapshot();
+    let mut context = state.surface.direct_context();
+    let encoded_image = image.encode(context.as_mut(), EncodedImageFormat::PNG, None).unwrap();
+    let base64_image = base64::encode(&encoded_image.as_bytes());    
+    println!("data:image/png;base64,{}", base64_image);
 
     // SVG representation
-    // let svg_data = svg_canvas.end();
-    // let svg = String::from_utf8_lossy(svg_data.as_bytes());
-    // println!("svg: {}", svg);
+    let svg_data = svg_canvas.end();
+    let svg = String::from_utf8_lossy(svg_data.as_bytes());
+    println!("svg: {}", svg.replace('\n', ""));
 
     flush(state);
     std::mem::forget(buf);
