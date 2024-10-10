@@ -69,7 +69,7 @@
   {::mf/props :obj}
   [{:keys [name on-back go-to-team?]}]
   (let [initial (mf/use-memo
-                 #(do {:role "viewer"
+                 #(do {:role "editor"
                        :name name}))
 
         form    (fm/use-form :schema schema:invite-form

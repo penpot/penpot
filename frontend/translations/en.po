@@ -952,6 +952,10 @@ msgstr "No webhooks created so far."
 msgid "dashboard.webhooks.update.success"
 msgstr "Webhook updated successfully."
 
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.webhooks.cant-edit"
+msgstr "You only can delete or modify webhooks created by you."
+
 #: src/app/main/ui/settings.cljs:31
 msgid "dashboard.your-account-title"
 msgstr "Your account"

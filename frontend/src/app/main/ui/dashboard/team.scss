@@ -252,7 +252,7 @@
 // MEMBER ACTIONS
 .menu-icon {
   @extend .button-icon;
-  stroke: var(--icon-foreground);
+  stroke: var(--color-foreground-primary);
 }
 
 .menu-btn {
@@ -403,6 +403,14 @@
 
 .actions {
   position: relative;
+}
+
+.menu-disabled {
+  color: var(--icon-foreground);
+  width: $s-28;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .webhook-actions-dropdown {

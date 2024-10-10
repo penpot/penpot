@@ -222,8 +222,8 @@
       (if ^boolean read-only?
         (when  (not ^boolean user-viewer?)
           [:& badge-notification {:is-focus true
-                                :size :small
-                                :content (tr "labels.view-only")}])
+                                  :size :small
+                                  :content (tr "labels.view-only")}])
         [:button {:class (stl/css :add-page)
                   :on-click on-create}
          i/add])]

@@ -23,6 +23,7 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.dashboard.change-owner]
    [app.main.ui.dashboard.team-form]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.icons :as i]
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
@@ -143,7 +144,7 @@
         team-id     (:id team)
 
         initial     (mf/with-memo [team-id]
-                      {:role "viewer" :team-id team-id})
+                      {:role "editor" :team-id team-id})
 
         form        (fm/use-form :schema schema:invite-member-form
                                  :initial initial)
@@ -908,22 +909,25 @@
 
 (mf/defc webhook-actions
   {::mf/wrap-props false}
-  [{:keys [on-edit on-delete]}]
+  [{:keys [on-edit on-delete can-edit?]}]
   (let [show?   (mf/use-state false)
         on-show (mf/use-fn #(reset! show? true))
         on-hide (mf/use-fn #(reset! show? false))]
+    (if can-edit?
+      [:*
+       [:button {:class (stl/css :menu-btn)
+                 :on-click on-show}
+        menu-icon]
+       [:& dropdown {:show @show? :on-close on-hide}
+        [:ul {:class (stl/css :webhook-actions-dropdown)}
+         [:li {:on-click on-edit
+               :class (stl/css :webhook-dropdown-item)} (tr "labels.edit")]
+         [:li {:on-click on-delete
+               :class (stl/css :webhook-dropdown-item)} (tr "labels.delete")]]]]
 
-
-    [:*
-     [:button {:class (stl/css :menu-btn)
-               :on-click on-show}
-      menu-icon]
-     [:& dropdown {:show @show? :on-close on-hide}
-      [:ul {:class (stl/css :webhook-actions-dropdown)}
-       [:li {:on-click on-edit
-             :class (stl/css :webhook-dropdown-item)} (tr "labels.edit")]
-       [:li {:on-click on-delete
-             :class (stl/css :webhook-dropdown-item)} (tr "labels.delete")]]]]))
+      [:span {:title (tr "dashboard.webhooks.cant-edit")
+              :class (stl/css :menu-disabled)}
+       [:> icon* {:id "menu"}]])))
 
 (mf/defc last-delivery-icon
   {::mf/wrap-props false}
@@ -936,10 +940,14 @@
 
 (mf/defc webhook-item
   {::mf/wrap [mf/memo]}
-  [{:keys [webhook] :as props}]
+  [{:keys [webhook permissions] :as props}]
   (let [error-code (:error-code webhook)
         id         (:id webhook)
-
+        creator-id (:profile-id webhook)
+        profile    (mf/deref refs/profile)
+        user-id    (:id profile)
+        can-edit?  (or (:can-edit permissions)
+                       (= creator-id user-id))
         on-edit
         (mf/use-fn
          (mf/deps webhook)
@@ -992,14 +1000,15 @@
      [:div {:class (stl/css :table-field :actions)}
       [:& webhook-actions
        {:on-edit on-edit
+        :can-edit? can-edit?
         :on-delete on-delete}]]]))
 
 (mf/defc webhooks-list
   {::mf/wrap-props false}
-  [{:keys [webhooks]}]
+  [{:keys [webhooks permissions]}]
   [:div {:class (stl/css :table-rows :webhook-table)}
    (for [webhook webhooks]
-     [:& webhook-item {:webhook webhook :key (:id webhook)}])])
+     [:& webhook-item {:webhook webhook :key (:id webhook) :permissions permissions}])])
 
 (mf/defc team-webhooks-page
   {::mf/wrap-props false}
@@ -1025,7 +1034,7 @@
          [:div {:class (stl/css :webhooks-empty)}
           [:div (tr "dashboard.webhooks.empty.no-webhooks")]
           [:div (tr "dashboard.webhooks.empty.add-one")]]
-         [:& webhooks-list {:webhooks webhooks}])]]]))
+         [:& webhooks-list {:webhooks webhooks :permissions (:permissions team)}])]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SETTINGS SECTION
