@@ -458,8 +458,10 @@
         page-data (-> (parser/parse-page-data content)
                       (assoc :name page-name)
                       (assoc :id (resolve page-id)))
+
         flows     (->> (get page-data :flows)
-                       (update-vals #(update % :starting-frame resolve))
+                       (map #(update % :starting-frame resolve))
+                       (d/index-by :id)
                        (not-empty))
 
         guides    (-> (get page-data :guides)
