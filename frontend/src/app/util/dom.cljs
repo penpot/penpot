@@ -720,6 +720,19 @@
   [filename blob]
   (trigger-download-uri filename (.-type ^js blob) (wapi/create-uri blob)))
 
+(defn event
+  "Create an instance of DOM Event"
+  ([^string type]
+   (js/Event. type))
+  ([^string type options]
+   (js/Event. type options)))
+
+(defn dispatch-event
+  [target event]
+  (when (some? target)
+    (.dispatchEvent ^js target event)))
+
+
 (defn save-as
   [uri filename mtype description]
 
