@@ -141,6 +141,7 @@
              (st/emit! (ptk/event ::ev/event {::ev/name "remove-plugin"
                                               :name (:name plugin)
                                               :host (:host plugin)}))
+             (dp/close-plugin! plugin)
              (preg/remove-plugin! plugin)
              (reset! plugins-state* (preg/plugins-list)))))]
 

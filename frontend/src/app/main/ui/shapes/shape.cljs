@@ -56,7 +56,6 @@
   (let [shape            (unchecked-get props "shape")
         children         (unchecked-get props "children")
         pointer-events   (unchecked-get props "pointer-events")
-        disable-shadows? (unchecked-get props "disable-shadows?")
         shape-id         (dm/get-prop shape :id)
 
         preview-blend-mode-ref
@@ -67,7 +66,6 @@
 
         type             (dm/get-prop shape :type)
         render-id        (h/use-render-id)
-        filter-id        (dm/str "filter-" render-id)
         styles           (-> (obj/create)
                              (obj/set! "pointerEvents" pointer-events)
                              (cond-> (not (cfh/frame-shape? shape))
@@ -82,32 +80,30 @@
         shape-without-blur (dissoc shape :blur)
         shape-without-shadows (assoc shape :shadow [])
 
+        filter-id        (dm/str "filter-" render-id)
         filter-str
-        (when (and (or (cfh/group-shape? shape)
-                       (cfh/frame-shape? shape)
-                       (cfh/svg-raw-shape? shape))
-                   (not disable-shadows?))
+        (when (or (cfh/group-shape? shape)
+                  (cfh/svg-raw-shape? shape))
           (filters/filter-str filter-id shape))
 
         wrapper-props
         (-> (obj/clone props)
             (obj/unset! "shape")
             (obj/unset! "children")
-            (obj/unset! "disable-shadows?")
             (obj/set! "ref" ref)
             (obj/set! "id" (dm/fmt "shape-%" shape-id))
-            (obj/set! "data-testid" (:name shape))
-
-            ;; TODO: This is added for backward compatibility.
-            (cond-> (and (cfh/text-shape? shape) (empty? (:position-data shape)))
-              (-> (obj/set! "x" (:x shape))
-                  (obj/set! "y" (:y shape))
-                  (obj/set! "width" (:width shape))
-                  (obj/set! "height" (:height shape))))
             (obj/set! "style" styles))
 
         wrapper-props
         (cond-> wrapper-props
+          ;; NOTE: This is added for backward compatibility
+          (and (cfh/text-shape? shape)
+               (empty? (:position-data shape)))
+          (-> (obj/set! "x" (:x shape))
+              (obj/set! "y" (:y shape))
+              (obj/set! "width" (:width shape))
+              (obj/set! "height" (:height shape)))
+
           (= :group type)
           (-> (attrs/add-fill-props! shape render-id)
               (attrs/add-border-props! shape))
@@ -115,11 +111,13 @@
           (some? filter-str)
           (obj/set! "filter" filter-str))
 
-        svg-group? (and (contains? shape :svg-attrs) (= :group type))
+        svg-group?
+        (and (contains? shape :svg-attrs) (= :group type))
 
-        children (cond-> children
-                   svg-group?
-                   (propagate-wrapper-styles wrapper-props))]
+        children
+        (cond-> children
+          svg-group?
+          (propagate-wrapper-styles wrapper-props))]
 
     [:& (mf/provider muc/render-id) {:value render-id}
      [:> :g wrapper-props
@@ -128,9 +126,14 @@
 
       [:defs
        [:& defs/svg-defs          {:shape shape :render-id render-id}]
-       [:& filters/filters        {:shape shape :filter-id filter-id}]
-       [:& filters/filters        {:shape shape-without-blur :filter-id (dm/fmt "filter-shadow-%" render-id)}]
-       [:& filters/filters        {:shape shape-without-shadows :filter-id (dm/fmt "filter-blur-%" render-id)}]
+
+       ;; The filters for frames should be setup inside the container.
+       (when-not (cfh/frame-shape? shape)
+         [:*
+          [:& filters/filters        {:shape shape :filter-id filter-id}]
+          [:& filters/filters        {:shape shape-without-blur :filter-id (dm/fmt "filter-shadow-%" render-id)}]
+          [:& filters/filters        {:shape shape-without-shadows :filter-id (dm/fmt "filter-blur-%" render-id)}]])
+
        [:& frame/frame-clip-def   {:shape shape :render-id render-id}]
 
        ;; Text fills need to be defined afterwards because they are specified per text-block

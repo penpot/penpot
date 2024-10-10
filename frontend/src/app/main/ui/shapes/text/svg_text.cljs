@@ -98,7 +98,11 @@
                                         (obj/set! "fill" (str "url(#fill-" index "-" render-id ")")))}
                         (cond-> browser-props
                           (obj/merge! browser-props)))
-              shape (assoc shape :fills (:fills data))
+              shape (-> shape
+                        (assoc :fills (:fills data))
+                        ;; The text elements have the shadow and blur already applied in the
+                        ;; group parent.
+                        (dissoc :shadow :blur))
 
               ;; Need to create new render-id per text-block
               render-id (dm/str render-id "-" index)]

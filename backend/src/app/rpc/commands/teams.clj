@@ -780,6 +780,7 @@
 
 (def ^:private schema:create-invitation
   [:map {:title "params:create-invitation"}
+   [::rpc/profile-id ::sm/uuid]
    [:team
     [:map
      [:id ::sm/uuid]
@@ -936,7 +937,7 @@
   (map :email))
 
 (defn- create-team-invitations
-  [{:keys [::db/conn] :as cfg} profile team role emails]
+  [{:keys [::db/conn] :as cfg} {:keys [profile team role emails] :as params}]
   (let [join-requests    (into #{} xf:map-email
                                (get-valid-requests-email conn (:id team)))
         team-members     (into #{} xf:map-email
@@ -950,11 +951,7 @@
                                 ;; We don't send invitations to
                                 ;; join-requested members
                                 (remove join-requests)
-                                (map (fn [email]
-                                       {:email email
-                                        :team team
-                                        :profile profile
-                                        :role role}))
+                                (map (fn [email] (assoc params :email email)))
                                 (keep (partial create-invitation cfg)))
                                emails)]
 
@@ -980,7 +977,7 @@
   join the team."
   {::doc/added "1.17"
    ::sm/params schema:create-team-invitations}
-  [cfg {:keys [::rpc/profile-id team-id emails role] :as params}]
+  [cfg {:keys [::rpc/profile-id team-id emails] :as params}]
   (let [perms    (get-permissions cfg profile-id team-id)
         profile  (db/get-by-id cfg :profile profile-id)
         emails   (into #{} (map profile/clean-email) emails)]
@@ -1006,7 +1003,16 @@
     (check-profile-muted cfg profile)
 
     (let [team        (db/get-by-id cfg :team team-id)
-          invitations (db/tx-run! cfg create-team-invitations profile team role emails)]
+          ;; NOTE: Is important pass RPC method params down to the
+          ;; `create-team-invitations` because it uses the implicit
+          ;; RPC properties from params for fill necessary data on
+          ;; emiting an entry to the audit-log
+          invitations (db/tx-run! cfg create-team-invitations
+                                  (-> params
+                                      (assoc :profile profile)
+                                      (assoc :team team)
+                                      (assoc :emails emails)))]
+
       (with-meta {:total (count invitations)
                   :invitations invitations}
         {::audit/props {:invitations (count invitations)}}))))
@@ -1057,17 +1063,16 @@
       (audit/submit! cfg event))
 
     ;; Create invitations for all provided emails.
-    (let [profile (db/get-by-id conn :profile profile-id)]
-      (->> emails
-           (map (fn [email]
-                  (-> params
-                      (assoc :team team)
-                      (assoc :profile profile)
-                      (assoc :email email)
-                      (assoc :role role))))
-           (run! (partial create-invitation cfg))))
+    (let [profile     (db/get-by-id conn :profile profile-id)
+          params      (-> params
+                          (assoc :team team)
+                          (assoc :profile profile)
+                          (assoc :role role))
+          invitations (->> emails
+                           (map (fn [email] (assoc params :email email)))
+                           (map (partial create-invitation cfg)))]
 
-    (vary-meta team assoc ::audit/props {:invitations (count emails)})))
+      (vary-meta team assoc ::audit/props {:invitations (count invitations)}))))
 
 ;; --- Query: get-team-invitation-token
 

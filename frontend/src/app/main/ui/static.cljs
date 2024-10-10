@@ -42,11 +42,10 @@
     [:section {:class (stl/css :exception-layout)}
      [:button
       {:class (stl/css :exception-header)
-       :on-click rt/nav-root}
+       :on-click on-nav-root}
       i/logo-icon
       (when profile-id
-        (str "< "
-             (tr "not-found.no-permission.go-dashboard")))]
+        (str "< " (tr "not-found.no-permission.go-dashboard")))]
      [:div {:class (stl/css :deco-before)} i/logo-error-screen]
      (when-not profile-id
        [:button {:class (stl/css :login-header)
