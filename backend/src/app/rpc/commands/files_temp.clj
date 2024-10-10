@@ -45,37 +45,38 @@
 (sv/defmethod ::create-temp-file
   {::doc/added "1.17"
    ::doc/module :files
-   ::sm/params schema:create-temp-file}
-  [cfg {:keys [::rpc/profile-id project-id] :as params}]
-  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                    (projects/check-edition-permissions! conn profile-id project-id)
-                    (let [team     (teams/get-team conn :profile-id profile-id :project-id project-id)
+   ::sm/params schema:create-temp-file
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
+  (projects/check-edition-permissions! conn profile-id project-id)
+  (let [team (teams/get-team conn :profile-id profile-id :project-id project-id)
+        ;; When we create files, we only need to respect the team
+        ;; features, because some features can be enabled
+        ;; globally, but the team is still not migrated properly.
+        input-features
+        (:features params #{})
 
-                          ;; When we create files, we only need to respect the team
-                          ;; features, because some features can be enabled
-                          ;; globally, but the team is still not migrated properly.
-                          input-features (:features params #{})
+        ;; If the imported project doesn't contain v2 we need to remove it
+        team-features
+        (cond-> (cfeat/get-team-enabled-features cf/flags team)
+          (not (contains? input-features "components/v2"))
+          (disj "components/v2"))
 
-                          ;; If the imported project doesn't contain v2 we need to remove it
-                          team-features
-                          (cond-> (cfeat/get-team-enabled-features cf/flags team)
-                            (not (contains? input-features "components/v2"))
-                            (disj "components/v2"))
+        ;; We also include all no migration features declared by
+        ;; client; that enables the ability to enable a runtime
+        ;; feature on frontend and make it permanent on file
+        features
+        (-> input-features
+            (set/intersection cfeat/no-migration-features)
+            (set/union team-features))
 
+        params
+        (-> params
+            (assoc :profile-id profile-id)
+            (assoc :deleted-at (dt/in-future {:days 1}))
+            (assoc :features features))]
 
-                          ;; We also include all no migration features declared by
-                          ;; client; that enables the ability to enable a runtime
-                          ;; feature on frontend and make it permanent on file
-                          features (-> input-features
-                                       (set/intersection cfeat/no-migration-features)
-                                       (set/union team-features))
-
-                          params   (-> params
-                                       (assoc :profile-id profile-id)
-                                       (assoc :deleted-at (dt/in-future {:days 1}))
-                                       (assoc :features features))]
-
-                      (files.create/create-file cfg params)))))
+    (files.create/create-file cfg params)))
 
 ;; --- MUTATION COMMAND: update-temp-file
 

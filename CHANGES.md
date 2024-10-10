@@ -49,6 +49,7 @@
 - Fix problem with hover layers when hidden/blocked [Github #5074](https://github.com/penpot/penpot/issues/5074)
 - Fix problem with precision on boolean calculation [Taiga #8482](https://tree.taiga.io/project/penpot/issue/8482)
 - Fix problem when translating multiple path points [Github #4459](https://github.com/penpot/penpot/issues/4459)
+- Fix problem on importing (and exporting) files with flows [Taiga #8914](https://tree.taiga.io/project/penpot/issue/8914)
 
 ## 2.2.1
 

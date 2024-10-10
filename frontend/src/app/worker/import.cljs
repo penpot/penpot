@@ -458,8 +458,10 @@
         page-data (-> (parser/parse-page-data content)
                       (assoc :name page-name)
                       (assoc :id (resolve page-id)))
+
         flows     (->> (get page-data :flows)
-                       (update-vals #(update % :starting-frame resolve))
+                       (map #(update % :starting-frame resolve))
+                       (d/index-by :id)
                        (not-empty))
 
         guides    (-> (get page-data :guides)
@@ -815,9 +817,12 @@
                                           :errors (:errors file)
                                           :file-id (:file-id data)})))))))
                   (rx/catch (fn [cause]
-                              (log/error :hint (ex-message cause)
-                                         :file-id (:file-id data)
-                                         :cause cause)
+                              (let [data (ex-data cause)]
+                                (log/error :hint (ex-message cause)
+                                           :file-id (:file-id data))
+                                (when-let [explain (:explain data)]
+                                  (js/console.log explain)))
+
                               (rx/of {:status :import-error
                                       :file-id (:file-id data)
                                       :error (ex-message cause)
