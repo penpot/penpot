@@ -107,7 +107,6 @@
 
 (defn- read-zip-manifest
   [zipfile]
-  (js/console.log "read-zip-manifest" zipfile)
   (->> (uz/get-file zipfile "manifest.json")
        (rx/map :content)
        (rx/map json/decode)))
@@ -169,7 +168,7 @@
     (rp/cmd! :create-temp-file
              {:id file-id
               :name (:name context)
-              :is-shared (:shared context)
+              :is-shared (:is-shared context)
               :project-id (:project-id context)
               :create-page false
 
@@ -723,7 +722,6 @@
 
 (defn create-files
   [{:keys [system-features] :as context} files]
-
   (let [data (group-by :file-id files)]
     (rx/concat
      (->> (rx/from files)
@@ -769,48 +767,56 @@
                                            (rx/merge-map read-zip-manifest)
                                            (rx/map (fn [manifest]
                                                      (if (= (:type manifest) "penpot/export-files")
-                                                       (assoc entry :type :binfile-v3 :manifest manifest)
+                                                       (assoc entry :type :binfile-v2 :manifest manifest)
                                                        (assoc entry :type :legacy-zip)))))
                                       (rx/of (assoc entry :type :binfile-v1)))))
                     (rx/share))]
     (->> (rx/merge
           (->> stream
                (rx/filter (fn [entry] (= :legacy-zip (:type entry))))
-               (rx/merge-map #(uz/load (:body %)))
-               (rx/merge-map #(get-file {:zip %} :manifest))
-               (rx/map
-                (fn [entry]
-                  ;; Checks if the file is exported with components v2 and the current team only
-                  ;; supports components v1
-                  (let [has-file-v2?
-                        (->> (:files entry)
-                             (d/seek (fn [[_ file]] (contains? (set (:features file)) "components/v2"))))]
-                    (if (and has-file-v2? (not (contains? features "components/v2")))
-                      (assoc entry :error "dashboard.import.analyze-error.components-v2")
-                      (-> entry
-                          (assoc :name (:name entry))
-                          (assoc :file-id (:file-id entry))
-                          (assoc :files (:files entry))
-                          (assoc :status :ready)))))))
+               (rx/merge-map (fn [entry]
+                               (->> (rx/from (uz/load (:body entry)))
+                                    (rx/merge-map #(get-file {:zip %} :manifest))
+                                    (rx/mapcat
+                                     (fn [manifest]
+                                       ;; Checks if the file is exported with
+                                       ;; components v2 and the current team
+                                       ;; only supports components v1
 
+                                       (app.common.pprint/pprint manifest {:level 10})
+                                       (let [has-file-v2?
+                                             (->> (:files manifest)
+                                                  (d/seek (fn [[_ file]] (contains? (set (:features file)) "components/v2"))))]
+
+                                         (if (and has-file-v2? (not (contains? features "components/v2")))
+                                           (rx/of (-> entry
+                                                      (assoc :error "dashboard.import.analyze-error.components-v2")
+                                                      (dissoc :body)))
+                                           (->> (rx/from (:files manifest))
+                                                (rx/map (fn [[file-id data]]
+                                                          (-> entry
+                                                              (dissoc :body)
+                                                              (merge data)
+                                                              (dissoc :shared)
+                                                              (assoc :is-shared (:shared data))
+                                                              (assoc :file-id file-id)
+                                                              (assoc :status :ready)))))))))))))
           (->> stream
                (rx/filter (fn [entry] (= :binfile-v1 (:type entry))))
                (rx/map (fn [entry]
                          (let [file-id (uuid/next)]
                            (-> entry
-                               (assoc :name (:name file))
                                (assoc :file-id file-id)
-                               (assoc :files {file-id {:name (:name file)}})
+                               (assoc :name (:name file))
                                (assoc :status :ready))))))
 
           (->> stream
-               (rx/filter (fn [entry] (= :binfile-v3 (:type entry))))
+               (rx/filter (fn [entry] (= :binfile-v2 (:type entry))))
                (rx/map (fn [entry]
                          (let [file-id (uuid/next)]
                            (-> entry
                                (assoc :name (:name file))
                                (assoc :file-id file-id)
-                               (assoc :files {file-id {:name (:name file)}})
                                (assoc :status :ready))))))
 
           (->> stream
@@ -830,16 +836,15 @@
 
 (defmethod impl/handler :import-files
   [{:keys [project-id files features]}]
+  (let [context    {:project-id project-id
+                    :resolve    (resolve-factory)
+                    :system-features features}
 
-  (app.common.pprint/pprint files)
-  (let [context {:project-id project-id
-                 :resolve    (resolve-factory)
-                 :system-features features}
-        zip-files (filter #(= "application/zip" (:type %)) files)
-        binary-files (filter #(= "application/octet-stream" (:type %)) files)]
+        legacy-zip (filter #(= :legacy-zip (:type %)) files)
+        binfile-v1 (filter #(= :binfile-v1 (:type %)) files)]
 
     (rx/merge
-     (->> (create-files context zip-files)
+     (->> (create-files context legacy-zip)
           (rx/merge-map
            (fn [[file data]]
              (->> (uz/load-from-url (:uri data))
@@ -866,9 +871,13 @@
                               (rx/of {:status :import-error
                                       :file-id (:file-id data)
                                       :error (ex-message cause)
-                                      :error-data (ex-data cause)})))))))
+                                      :error-data (ex-data cause)}))))))
+          (rx/catch (fn [cause]
+                      (let [data (ex-data cause)]
+                        (when-let [explain (:explain data)]
+                          (js/console.log explain))))))
 
-     (->> (rx/from binary-files)
+     (->> (rx/from binfile-v1)
           (rx/merge-map
            (fn [data]
              (->> (http/send!

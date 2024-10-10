@@ -82,32 +82,17 @@
             (assoc :deleted true)))
         entries))
 
-(defn- update-with-analyze-error
-  [entries uri error]
-  (->> entries
-       (mapv (fn [entry]
-               (cond-> entry
-                 (= uri (:uri entry))
-                 (-> (assoc :status :analyze-error)
-                     (assoc :error error)))))))
-
 (defn- update-with-analyze-result
-  [entries uri type result]
-  (let [existing-entries? (into #{} (keep :file-id) entries)
-        replace-entry
-        (fn [entry]
-          (if (and (= uri (:uri entry))
-                   (= (:status entry) :analyzing))
-            (->> (:files result)
-                 (remove (comp existing-entries? first))
-                 (map (fn [[file-id file-data]]
-                        (-> file-data
-                            (assoc :file-id file-id)
-                            (assoc :status :ready)
-                            (assoc :uri uri)
-                            (assoc :type type)))))
-            [entry]))]
-    (into [] (mapcat replace-entry) entries)))
+  [entries {:keys [uri] :as updated}]
+  (prn "update-with-analyze-result" updated)
+  ;; (app.common.pprint/pprint updated)
+  (if-let [existing (some #(= uri (:uri %)) entries)]
+    (mapv (fn [entry]
+            (if (= (:uri entry) uri)
+              (merge entry updated)
+              entry))
+          entries)
+    (conj entries updated)))
 
 (defn- mark-entries-importing
   [entries]
@@ -191,43 +176,8 @@
        (rx/mapcat #(rx/delay emit-delay (rx/of %)))
        (rx/filter some?)
        (rx/subs!
-        (fn [{:keys [uri data error type] :as msg}]
-          (prn "KAKAKAKAK" msg)
-          (if (some? error)
-            (swap! state update-with-analyze-error uri error)
-            (swap! state update-with-analyze-result uri type data))))))
-
-;; (defn- update-with-analysis
-;;   "Update the entries state with analysis result"
-;;   [entries {:keys [uri error] :as result}]
-;;   (if error
-;;     (into []
-;;           (map (fn [entry]
-;;                  (cond-> entry
-;;                    (= uri (:uri entry))
-;;                    (-> (assoc :status :analyze-error)
-;;                        (assoc :error error)))))
-;;           entries)
-
-;;     (let [file-ids (into #{} (keep :file-id) entries)]
-;;       (into []
-;;             (mapcat (fn (if (and (= uri (:uri entry))
-;;                                  (= (:status entry) :analyzing))
-
-;;                           (->> (:files result)
-;;                                (remove (comp file-ids first))
-;;                                (map (fn [[file-id file-data]]
-;;                                       (-> file-data
-;;                                           (assoc :file-id file-id)
-;;                                           (assoc :status :ready)
-;;                                           (assoc :uri uri)
-;;                                           (assoc :type type)))))
-;;             [entry]))]
-
-
-
-
-
+        (fn [message]
+          (swap! state update-with-analyze-result message)))))
 
 (defn- import-files!
   [state project-id entries]
@@ -410,6 +360,7 @@
          (mf/deps entries)
          (fn []
            (let [entries (filterv has-status-ready? entries)]
+             (prn "IMPORT" entries)
              (swap! status* (constantly :importing))
              (swap! state* mark-entries-importing)
              (import-files! state* project-id entries))))
