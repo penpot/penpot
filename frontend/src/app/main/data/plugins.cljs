@@ -6,14 +6,32 @@
 
 (ns app.main.data.plugins
   (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.main.store :as st]
    [app.plugins.register :as pr]
    [app.util.globals :as ug]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
+(defn save-current-plugin
+  [id]
+  (ptk/reify ::save-current-plugin
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-local :open-plugins] (fnil conj #{}) id))))
+
+(defn remove-current-plugin
+  [id]
+  (ptk/reify ::remove-current-plugin
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-local :open-plugins] (fnil disj #{}) id))))
+
 (defn open-plugin!
   [{:keys [plugin-id name description host code icon permissions]}]
   (try
+    (st/emit! (save-current-plugin plugin-id))
     (.ɵloadPlugin
      ^js ug/global
      #js {:pluginId plugin-id
@@ -22,8 +40,12 @@
           :host host
           :code code
           :icon icon
-          :permissions (apply array permissions)})
+          :permissions (apply array permissions)}
+     (fn []
+       (st/emit! (remove-current-plugin plugin-id))))
+
     (catch :default e
+      (st/emit! (remove-current-plugin plugin-id))
       (.error js/console "Error" e))))
 
 (defn close-plugin!
@@ -32,6 +54,15 @@
     (.ɵunloadPlugin ^js ug/global plugin-id)
     (catch :default e
       (.error js/console "Error" e))))
+
+(defn close-current-plugin
+  []
+  (ptk/reify ::close-current-plugin
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [ids (dm/get-in state [:workspace-local :open-plugins])]
+        (doseq [id ids]
+          (close-plugin! (pr/get-plugin id)))))))
 
 (defn delay-open-plugin
   [plugin]
