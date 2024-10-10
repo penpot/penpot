@@ -205,7 +205,7 @@ Token names should only contain letters and digits separated by . characters.")}
         selected-set-tokens-tree (mf/use-memo
                                   (mf/deps token-path selected-set-tokens)
                                   (fn []
-                                    (-> (wtt/token-names-tree selected-set-tokens)
+                                    (-> (ctob/tokens-tree selected-set-tokens)
                                         ;; Allow setting editing token to it's own path
                                         (d/dissoc-in token-path))))
 

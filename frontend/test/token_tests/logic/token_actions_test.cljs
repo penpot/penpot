@@ -6,6 +6,7 @@
    [app.common.test-helpers.shapes :as cths]
    [app.common.types.tokens-lib :as ctob]
    [app.main.ui.workspace.tokens.changes :as wtch]
+   [app.main.ui.workspace.tokens.token :as wtt]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
@@ -132,34 +133,6 @@
               (t/is (= (:r1 (:applied-tokens rect-1')) (:name token-md))))
             (t/testing "while :r4 was kept with borderRadius.sm"
               (t/is (= (:r4 (:applied-tokens rect-1')) (:name token-sm)))))))))))
-
-(t/deftest test-apply-dimensions
-  (t/testing "applies dimensions token and updates the shapes width and height"
-    (t/async
-     done
-     (let [file (-> (setup-file-with-tokens)
-                    (toht/add-token :token-target {:value "100"
-                                                   :name "dimensions.sm"
-                                                   :type :dimensions}))
-           store (ths/setup-store file)
-           rect-1 (cths/get-shape file :rect-1)
-           events [(wtch/apply-token {:shape-ids [(:id rect-1)]
-                                      :attributes #{:width :height}
-                                      :token (toht/get-token file :token-target)
-                                      :on-update-shape wtch/update-shape-dimensions})]]
-       (tohs/run-store-async
-        store done events
-        (fn [new-state]
-          (let [file' (ths/get-file-from-store new-state)
-                token-target' (toht/get-token file' :token-target)
-                rect-1' (cths/get-shape file' :rect-1)]
-            (t/testing "shape `:applied-tokens` got updated"
-              (t/is (some? (:applied-tokens rect-1')))
-              (t/is (= (:width (:applied-tokens rect-1')) (wtt/token-identifier token-target')))
-              (t/is (= (:height (:applied-tokens rect-1')) (wtt/token-identifier token-target'))))
-            (t/testing "shapes width and height got updated"
-              (t/is (= (:width rect-1') 100))
-              (t/is (= (:height rect-1') 100))))))))))
 
 (t/deftest test-apply-dimensions
   (t/testing "applies dimensions token and updates the shapes width and height"

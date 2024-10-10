@@ -39,22 +39,3 @@
                 (t/is (= 24 (get-in resolved-tokens ["borderRadius.md-with-dashes" :resolved-value])))
                 (t/is (= "px" (get-in resolved-tokens ["borderRadius.md-with-dashes" :unit])))
                 (done))))))))
-
-(t/deftest resolve-tokens-names-map-test
-  (t/async
-    done
-    (t/testing "resolves tokens using style-dictionary from a names map"
-      (-> (vals tokens)
-          (wtt/token-names-map)
-          (sd/resolve-tokens+ {:names-map? true})
-          (p/finally (fn [resolved-tokens]
-                       (let [expected-tokens {"borderRadius.sm"
-                                              (assoc border-radius-token
-                                                     :resolved-value 12
-                                                     :unit "px")
-                                              "borderRadius.md-with-dashes"
-                                              (assoc reference-border-radius-token
-                                                     :resolved-value 24
-                                                     :unit "px")}]
-                         (t/is (= expected-tokens resolved-tokens))
-                         (done))))))))

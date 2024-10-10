@@ -7,25 +7,37 @@
 @import "refactor/common-refactor.scss";
 @import "./common.scss";
 
-.sidebar-tab-wrapper {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+.sidebar-wrapper {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  // Overflow on the bottom section can't be done without hardcoded values for the height
+  // This has to be changed from the wrapping sidebar styles
+  height: calc(100vh - #{$s-84});
   overflow: hidden;
 }
 
 .sets-section-wrapper {
+  position: relative;
   display: flex;
+  flex: 1;
+  height: var(--resize-height);
   flex-direction: column;
-  margin-bottom: $s-8;
   overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.tokens-section-wrapper {
+  height: 100%;
+  padding-left: $s-12;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 .sets-sidebar {
   position: relative;
 }
 
-.theme-sidebar {
+.themes-wrapper {
   padding: $s-12;
   padding-bottom: 0;
 }
@@ -50,18 +62,6 @@
     stroke: var(--icon-foreground);
     transform: rotate(90deg);
   }
-}
-
-.tokens-section-wrapper {
-  flex: 1;
-  padding-top: $s-12;
-  padding-left: $s-12;
-  overflow-y: auto;
-}
-
-// TODO Remove once sets are available to public
-.sets-section-wrapper + .tokens-section-wrapper {
-  padding-top: 0;
 }
 
 .token-pills-wrapper {
@@ -103,11 +103,14 @@
   translate: 0px -1px;
 }
 
-.download-json-button {
-  @extend .button-secondary;
+.import-export-button-wrapper {
   position: absolute;
   bottom: $s-12;
   right: $s-12;
+}
+
+.import-export-button {
+  @extend .button-secondary;
   display: flex;
   align-items: center;
   padding: $s-6 $s-8;
@@ -119,6 +122,38 @@
     stroke: var(--icon-foreground);
     width: 20px;
     height: 20px;
+  }
+}
+
+.import-export-menu {
+  @extend .menu-dropdown;
+  top: -#{$s-6};
+  right: 0;
+  translate: 0 -100%;
+  width: $s-192;
+  margin: 0;
+}
+
+.import-export-menu-item {
+  @extend .menu-item-base;
+  cursor: pointer;
+  .open-arrow {
+    @include flexCenter;
+    svg {
+      @extend .button-icon;
+      stroke: var(--icon-foreground);
+    }
+  }
+  &:hover {
+    color: var(--menu-foreground-color-hover);
+    .open-arrow {
+      svg {
+        stroke: var(--menu-foreground-color-hover);
+      }
+    }
+    .shortcut-key {
+      color: var(--menu-shortcut-foreground-color-hover);
+    }
   }
 }
 

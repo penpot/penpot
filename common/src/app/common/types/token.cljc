@@ -8,6 +8,7 @@
   (:require
    [app.common.schema :as sm]
    [app.common.schema.registry :as sr]
+   [clojure.set :as set]
    [malli.util :as mu]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -32,21 +33,26 @@
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def token-type->dtcg-token-type
+  {:boolean       "boolean"
+   :border-radius "borderRadius"
+   :box-shadow    "boxShadow"
+   :color         "color"
+   :dimensions    "dimension"
+   :numeric       "numeric"
+   :opacity       "opacity"
+   :other         "other"
+   :rotation      "rotation"
+   :sizing        "sizing"
+   :spacing       "spacing"
+   :string        "string"
+   :stroke-width  "strokeWidth"})
+
+(def dtcg-token-type->token-type
+  (set/map-invert token-type->dtcg-token-type))
+
 (def token-types
-  #{:boolean
-    :border-radius
-    :box-shadow
-    :color
-    :dimensions
-    :numeric
-    :opacity
-    :other
-    :rotation
-    :sizing
-    :spacing
-    :string
-    :stroke-width
-    :typography})
+  (into #{} (keys token-type->dtcg-token-type)))
 
 (defn valid-token-type?
   [t]

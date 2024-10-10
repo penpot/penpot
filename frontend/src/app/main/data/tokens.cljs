@@ -192,6 +192,24 @@
          (dch/commit-changes changes')
          (wtu/update-workspace-tokens))))))
 
+(defn import-tokens-lib [lib]
+  (ptk/reify ::import-tokens-lib
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data (get state :workspace-data)
+            update-token-set-change (some-> lib
+                                            (ctob/get-sets)
+                                            (first)
+                                            (:name)
+                                            (set-selected-token-set-id))
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (pcb/set-tokens-lib lib))]
+        (rx/of
+         (dch/commit-changes changes)
+         update-token-set-change
+         (wtu/update-workspace-tokens))))))
+
 (defn delete-token-set [token-set-name]
   (ptk/reify ::delete-token-set
     ptk/WatchEvent
@@ -284,7 +302,7 @@
     (update [_ state]
       (assoc-in state [:workspace-tokens :open-status token-type] open?))))
 
-;; Token Context Menu Functions -------------------------------------------------
+;; === Token Context Menu
 
 (defn show-token-context-menu
   [{:keys [position _token-name] :as params}]
@@ -300,6 +318,8 @@
     (update [_ state]
       (assoc-in state [:workspace-local :token-context-menu] nil))))
 
+;; === Token Set Context Menu
+
 (defn show-token-set-context-menu
   [{:keys [position _token-set-name] :as params}]
   (dm/assert! (gpt/point? position))
@@ -313,3 +333,19 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-local :token-set-context-menu] nil))))
+
+;; === Import Export Context Menu
+
+(defn show-import-export-context-menu
+  [{:keys [position] :as params}]
+  (dm/assert! (gpt/point? position))
+  (ptk/reify ::show-import-export-context-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :import-export-context-menu] params))))
+
+(def hide-import-export-set-context-menu
+  (ptk/reify ::hide-import-export-set-context-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :import-export-set-context-menu] nil))))

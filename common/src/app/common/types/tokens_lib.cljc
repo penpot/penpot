@@ -99,6 +99,14 @@
 
 ;; === Token
 
+(def token-separator ".")
+
+(defn get-token-path [path]
+  (get-path path token-separator))
+
+(defn split-token-path [path]
+  (split-path path token-separator))
+
 (defrecord Token [name type value description modified-at])
 
 (def schema:token
@@ -178,12 +186,25 @@
 (defn split-token-set-path [path]
   (split-path path set-separator))
 
+(defn tokens-tree
+  "Convert tokens into a nested tree with their `:name` as the path.
+  Optionally use `update-token-fn` option to transform the token."
+  [tokens & {:keys [update-token-fn]
+             :or {update-token-fn identity}}]
+  (reduce
+   (fn [acc [_ token]]
+     (let [path (split-token-path (:name token))]
+       (assoc-in acc path (update-token-fn token))))
+   {} tokens))
+
 (defprotocol ITokenSet
   (add-token [_ token] "add a token at the end of the list")
   (update-token [_ token-name f] "update a token in the list")
   (delete-token [_ token-name] "delete a token from the list")
   (get-token [_ token-name] "return token by token-name")
-  (get-tokens [_] "return an ordered sequence of all tokens in the set"))
+  (get-tokens [_] "return an ordered sequence of all tokens in the set")
+  (get-tokens-tree [_] "returns a tree of tokens split & nested by their name path")
+  (get-dtcg-tokens-tree [_] "returns tokens tree formated to the dtcg spec"))
 
 (defrecord TokenSet [name description modified-at tokens]
   ITokenSet
@@ -219,7 +240,16 @@
     (get tokens token-name))
 
   (get-tokens [_]
-    (vals tokens)))
+    (vals tokens))
+
+  (get-tokens-tree [_]
+    (tokens-tree tokens))
+
+  (get-dtcg-tokens-tree [_]
+    (tokens-tree tokens :update-token-fn (fn [token]
+                                           (cond-> {"$value" (:value token)
+                                                    "$type" (cto/token-type->dtcg-token-type (:type token))}
+                                             (:description token) (assoc "$description" (:description token)))))))
 
 (def schema:token-set
   [:and [:map {:title "TokenSet"}
@@ -440,6 +470,31 @@ When `before-set-name` is nil, move set to bottom")
 (def valid-active-token-themes?
   (sm/validator schema:active-token-themes))
 
+;; === Import / Export from DTCG format
+
+(defn flatten-nested-tokens-json
+  "Recursively flatten the dtcg token structure, joining keys with '.'."
+  [tokens token-path]
+  (reduce-kv
+   (fn [acc k v]
+     (let [child-path (if (empty? token-path)
+                        (name k)
+                        (str token-path "." k))]
+       (if (and (map? v)
+                (not (contains? v "$type")))
+         (merge acc (flatten-nested-tokens-json v child-path))
+         (let [token-type (cto/dtcg-token-type->token-type (get v "$type"))]
+           (if token-type
+             (assoc acc child-path (make-token
+                                    :name child-path
+                                    :type token-type
+                                    :value (get v "$value")
+                                    :description (get v "$description")))
+             ;; Discard unknown tokens
+             acc)))))
+   {}
+   tokens))
+
 ;; === Tokens Lib
 
 (defprotocol ITokensLib
@@ -451,6 +506,8 @@ When `before-set-name` is nil, move set to bottom")
   (get-active-themes-set-names [_] "set of set names that are active in the the active themes")
   (get-active-themes-set-tokens [_] "set of set names that are active in the the active themes")
   (update-set-name [_ old-set-name new-set-name] "updates set name in themes")
+  (encode-dtcg [_] "Encodes library to a dtcg compatible json string")
+  (decode-dtcg-json [_ parsed-json] "Decodes parsed json containing tokens and converts to library")
   (validate [_]))
 
 (deftype TokensLib [sets set-groups themes active-themes]
@@ -723,6 +780,25 @@ When `before-set-name` is nil, move set to bottom")
                      form))
                  themes)
                 active-themes))
+
+  (encode-dtcg [_]
+    (into {} (map (fn [[k v]]
+                    [k (get-dtcg-tokens-tree v)])
+                  sets)))
+
+  (decode-dtcg-json [_ parsed-json]
+    (let [token-sets (into (d/ordered-map)
+                           (map (fn [[set-name tokens]]
+                                  [set-name (make-token-set
+                                             :name set-name
+                                             :tokens (flatten-nested-tokens-json tokens ""))]))
+                           (-> parsed-json
+                               ;; tokens-studio/plugin will add these meta properties, remove them for now
+                               (dissoc "$themes" "$metadata")))]
+      (TokensLib. token-sets
+                  set-groups
+                  themes
+                  active-themes)))
 
   (validate [_]
     (and (valid-token-sets? sets)  ;; TODO: validate set-groups
