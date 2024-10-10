@@ -60,11 +60,17 @@
   [:map {:title "Manifest"}
    [:version ::sm/int]
    [:type :string]
-   [:files {:optional true}
-    [::sm/set ::sm/uuid]]
-   [:relations
-    {:optional true}
-    [:vector [:tuple {:title "FileRelation"} ::sm/uuid ::sm/uuid]]]])
+
+   [:files
+    [:map-of
+     ::sm/uuid
+     [:map
+      [:id ::sm/uuid]
+      [:name :string]
+      [:seqn :int]]]]
+
+   [:relations {:optional true}
+    [:map-of ::sm/uuid ::sm/uuid]]])
 
 (def ^:private schema:storage-object
   [:map {:title "StorageObject"}
@@ -152,37 +158,37 @@
 ;; --- VALIDATORS
 
 (def validate-manifest
-  (sm/validate-fn schema:manifest))
+  (sm/check-fn schema:manifest))
 
 (def validate-file
-  (sm/validate-fn ::ctf/file))
+  (sm/check-fn ::ctf/file))
 
 (def validate-page
-  (sm/validate-fn ::ctp/page))
+  (sm/check-fn ::ctp/page))
 
 (def validate-shape
-  (sm/validate-fn ::cts/shape))
+  (sm/check-fn ::cts/shape))
 
 (def validate-media
-  (sm/validate-fn ::ctf/media))
+  (sm/check-fn ::ctf/media))
 
 (def validate-color
-  (sm/validate-fn ::ctcl/color))
+  (sm/check-fn ::ctcl/color))
 
 (def validate-component
-  (sm/validate-fn ::ctc/component))
+  (sm/check-fn ::ctc/component))
 
 (def validate-typography
-  (sm/validate-fn ::cty/typography))
+  (sm/check-fn ::cty/typography))
 
 (def validate-plugin-data
-  (sm/validate-fn ::ctpg/plugin-data))
+  (sm/check-fn ::ctpg/plugin-data))
 
 (def validate-storage-object
-  (sm/validate-fn schema:storage-object))
+  (sm/check-fn schema:storage-object))
 
 (def validate-file-thumbnail
-  (sm/validate-fn schema:file-thumbnail))
+  (sm/check-fn schema:file-thumbnail))
 
 ;; --- EXPORT IMPL
 
@@ -245,7 +251,7 @@
           (.closeEntry output))))))
 
 (defn- export-file
-  [{:keys [::file-id ::output] :as cfg}]
+  [{:keys [::file-id ::file-seqn ::output] :as cfg}]
   (let [file         (get-file cfg file-id)
         media        (->> (bfc/get-file-media cfg file)
                           (map (fn [media]
@@ -259,6 +265,11 @@
         pages-index  (:pages-index data)
 
         thumbnails   (bfc/get-file-object-thumbnails cfg file-id)]
+
+    (vswap! bfc/*state* update :files assoc file-id
+            {:id file-id
+             :name (:name file)
+             :seqn file-seqn})
 
     (let [file (cond-> (dissoc file :data)
                  (:options data)
@@ -328,20 +339,26 @@
   (let [ids  (into ids (when include-libraries (bfc/get-libraries cfg ids)))
         rels (if include-libraries
                (->> (bfc/get-files-rels cfg ids)
-                    (mapv (juxt :file-id :library-file-id)))
-               [])]
+                    (map (juxt :file-id :library-file-id))
+                    (into {}))
+               {})]
 
-    ;; Write manifest file
-    (->> {:type "penpot/export-files"
-          :version 1
-          :files ids
-          :relations rels}
-         (write-entry! output "manifest.json"))
+    (vswap! bfc/*state* assoc :files (d/ordered-map))
 
     ;; Write all the exporting files
-    (doseq [file-id ids]
-      (-> (assoc cfg ::file-id file-id)
-          (export-file)))))
+    (doseq [[index file-id] (d/enumerate ids)]
+      (-> cfg
+          (assoc ::file-id file-id)
+          (assoc ::file-seqn index)
+          (export-file)))
+
+    ;; Write manifest file
+    (let [files  (into {} (:files @bfc/*state*))
+          params {:type "penpot/export-files"
+                  :version 1
+                  :files (into {} (:files @bfc/*state*))
+                  :relations rels}]
+      (write-entry! output "manifest.json" params))))
 
 ;; TODO: proper encoder for project
 ;; TODO: proper encoder for storage metadata
@@ -849,7 +866,7 @@
    (dt/instant? timestamp))
 
   (let [manifest (-> (read-manifest input)
-                     (validate-manifest {:code :invalid-binfile-v3-manifest}))
+                     (validate-manifest))
         entries  (read-zip-entries input)]
 
     (when-not (= "penpot/export-files" (:type manifest))
@@ -859,7 +876,7 @@
                 :manifest manifest))
 
     ;; Check if all files referenced on manifest are present
-    (doseq [file-id (:files manifest)]
+    (doseq [[file-id] (:files manifest)]
       (let [path (str "files/" file-id ".json")]
         (when-not (get-zip-entry input path)
           (ex/raise :type :validation
@@ -870,7 +887,7 @@
 
     (events/tap :progress {:op :import :section :manifest})
 
-    (let [index (bfc/update-index (:files manifest))
+    (let [index (bfc/update-index (keys (:files manifest)))
           state {:media [] :index index}
           cfg   (-> cfg
                     (assoc ::entries entries)
@@ -880,12 +897,14 @@
       (binding [bfc/*state* (volatile! state)]
         (db/tx-run! cfg (fn [cfg]
                           (bfc/disable-database-timeouts! cfg)
-                          (run! (fn [[file-seqn file-id]]
-                                  (-> cfg
-                                      (assoc ::file-id file-id)
-                                      (assoc ::file-seqn file-seqn)
-                                      (import-file)))
-                                (d/enumerate (:files manifest)))
+                          (->> (vals (:files manifest))
+                               (sort-by :seqn)
+                               (run! (fn [{:keys [id seqn name] :as file}]
+                                       (-> cfg
+                                           (assoc ::file-id id)
+                                           (assoc ::file-seqn seqn)
+                                           (assoc ::file-name name)
+                                           (import-file)))))
                           (import-file-relations cfg)
                           (import-storage-objects cfg)
                           (import-file-media cfg)
