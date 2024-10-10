@@ -10,15 +10,14 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes :as cpc]
    [app.common.schema :as sm]
-   [app.common.types.team :as tt]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.common :refer [handle-notification change-team-permissions]]
-   [app.main.data.notifications :as ntf]
    [app.main.data.websocket :as dws]
+   [app.main.data.workspace.edition :as dwe]
+   [app.main.data.workspace.layout :as dwly]
    [app.main.data.workspace.libraries :as dwl]
    [app.util.globals :refer [global]]
-   [app.util.i18n :as i18n :refer [tr]]
    [app.util.mouse :as mse]
    [app.util.object :as obj]
    [app.util.rxops :as rxs]
@@ -95,6 +94,27 @@
 
         (rx/concat stream (rx/of (dws/send endmsg)))))))
 
+
+(defn- handle-change-team-permissions
+  [{:keys [role] :as msg}]
+  (ptk/reify ::handle-change-team-permissions
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [viewer? (= :viewer role)]
+
+        (rx/concat
+         (->> (rx/of :interrupt
+                     (dwe/clear-edition-mode))
+              ;; Delay so anything that launched :interrupt can finish
+              (rx/delay 500))
+
+         (if viewer?
+           (rx/of (dwly/set-options-mode :design))
+           (rx/empty))
+
+         (rx/of (change-team-permissions msg)))))))
+
+
 (defn- process-message
   [{:keys [type] :as msg}]
   (case type
@@ -106,7 +126,7 @@
     :file-change             (handle-file-change msg)
     :library-change          (handle-library-change msg)
     :notification            (handle-notification msg)
-    :team-permissions-change (change-team-permissions (assoc msg :workspace? true))
+    :team-permissions-change (handle-change-team-permissions (assoc msg :workspace? true))
     nil))
 
 (defn- handle-pointer-send
