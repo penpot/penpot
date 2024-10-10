@@ -5594,6 +5594,12 @@ msgstr "LA EXTENSIÓN '%s' SOLICITA PERMISO PARA ACCEDER:"
 msgid "workspace.plugins.permissions.user-read"
 msgstr "Leer la información del usuario actual."
 
+msgid "workspace.plugins.permissions-update.title"
+msgstr "EXTENSIÓN ACTUALIZADA"
+
+msgid "workspace.plugins.permissions-update.warning"
+msgstr "La extensión ha cambiado desde la última vez que la abriste. Ahora quiere acceder a:"
+
 msgid "workspace.plugins.try-out.title"
 msgstr "¡LA EXTENSIÓN '%s' HA SIDO INSTALADA PARA TU USUARIO!"
 

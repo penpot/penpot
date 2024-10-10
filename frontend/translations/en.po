@@ -5610,6 +5610,12 @@ msgstr "'%s' PLUGIN WANTS ACCESS TO:"
 msgid "workspace.plugins.permissions.user-read"
 msgstr "Read the profile information of the current user."
 
+msgid "workspace.plugins.permissions-update.title"
+msgstr "UPDATE THIS PLUGIN"
+
+msgid "workspace.plugins.permissions-update.warning"
+msgstr "The plugin has been modified since you last opened it. It now also wants to access:"
+
 msgid "workspace.plugins.try-out.title"
 msgstr "'%s' PLUGIN IS INSTALLED FOR YOUR USER!"
 
