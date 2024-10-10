@@ -76,6 +76,11 @@
   color: var(--color-foreground-secondary);
 }
 
+.modal-paragraph {
+  font-size: $fs-14;
+  color: var(--color-foreground-primary);
+}
+
 .primary-button {
   @extend .button-primary;
   @include headlineSmallTypography;
