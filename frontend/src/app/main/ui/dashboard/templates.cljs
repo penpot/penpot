@@ -195,19 +195,17 @@
          (fn [_event]
            (swap! collapsed* not)))
 
-        update-can-move
-        (fn [scroll-left scroll-available client-width]
-          (reset! can-move {:left (> scroll-left 0)
-                            :right (> scroll-available client-width)}))
-
         on-scroll
         (mf/use-fn
          (fn [e]
-           (let [scroll (dom/get-target-scroll e)
-                 scroll-left (:scroll-left scroll)
+           (let [scroll           (dom/get-target-scroll e)
+                 scroll-left      (:scroll-left scroll)
                  scroll-available (- (:scroll-width scroll) scroll-left)
-                 client-rect (dom/get-client-size (dom/get-target e))]
-             (update-can-move scroll-left scroll-available (unchecked-get client-rect "width")))))
+                 client-rect      (dom/get-client-size (dom/get-target e))
+                 client-width     (unchecked-get client-rect "width")]
+
+             (reset! can-move {:left (> scroll-left 0)
+                               :right (> scroll-available client-width)}))))
 
         on-move-left
         (mf/use-fn #(move-left))
@@ -231,7 +229,7 @@
       (let [content (mf/ref-val content-ref)]
         (when (and (some? content) (some? templates))
           (dom/scroll-to content #js {:behavior "instant" :left 0 :top 0})
-          (.dispatchEvent content (js/Event. "scroll")))))
+          (dom/dispatch-event content (dom/event "scroll")))))
 
     (mf/with-effect [profile collapsed]
       (swap! storage/global assoc ::collapsed collapsed)
