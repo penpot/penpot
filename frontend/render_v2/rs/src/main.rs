@@ -1,13 +1,11 @@
 use std::boxed::Box;
 use skia_safe::{
     gpu::{self, gl::FramebufferInfo, DirectContext},
-    // Color, Paint, PaintStyle, Rect, Surface,
     textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextStyle, TypefaceFontProvider},
-    FontMgr, Paint,
+    FontMgr, Paint, Path, PaintStyle
 };
 
 static ROBOTO_REGULAR: &[u8] = include_bytes!("RobotoMono-Regular.ttf");
-static LOREM_IPSUM: &str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur at leo at nulla tincidunt placerat. Proin eget purus augue. Quisque et est ullamcorper, pellentesque felis nec, pulvinar massa. Aliquam imperdiet, nulla ut dictum euismod, purus dui pulvinar risus, eu suscipit elit neque ac est. Nullam eleifend justo quis placerat ultricies. Vestibulum ut elementum velit. Praesent et dolor sit amet purus bibendum mattis. Aliquam erat volutpat.";
 
 use skia_safe as skia;
 
@@ -195,8 +193,6 @@ pub unsafe extern "C" fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usi
     // create a `Vec<Rect>` from the pointer to the linear memory and length
     let buf = Vec::<Rect>::from_raw_parts(ptr, len, len);
 
-    let text = "SKIA TEXT";
-
     // skia_safe::Font::default() is empty, let's use something better
     let font_mgr = skia_safe::FontMgr::new();
     let typeface = font_mgr
@@ -205,10 +201,15 @@ pub unsafe extern "C" fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usi
     let default_font = skia_safe::Font::new(typeface, 10.0);
 
     let mut text_paint = skia::Paint::default();
-    text_paint.set_color(skia_safe::Color::BLACK);
     text_paint.set_anti_alias(true);
     text_paint.set_style(skia_safe::paint::Style::StrokeAndFill);
     text_paint.set_stroke_width(1.0);
+
+    let mut path_paint = skia::Paint::default();
+    path_paint.set_color(skia_safe::Color::BLACK);
+    path_paint.set_anti_alias(true);
+    path_paint.set_stroke_width(1.0);
+    path_paint.set_style(PaintStyle::Stroke);
 
     for rect in buf.iter() {
         let r = skia::Rect::new(rect.left, rect.top, rect.right, rect.bottom);
@@ -216,34 +217,38 @@ pub unsafe extern "C" fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usi
         render_rect(&mut state.surface, r, color);
 
         text_paint.set_color(color);
-        state.surface.canvas().draw_str(text, (rect.left, rect.top), &default_font, &text_paint);
+        state.surface.canvas().draw_str("SKIA TEXT", (rect.left, rect.top), &default_font, &text_paint);
 
-        // https://github.com/rust-skia/rust-skia/blob/02c89a87649af8d2870fb631aae4a5e171887367/skia-org/src/skparagraph_example.rs#L18
-        const TYPEFACE_ALIAS: &str = "ubuntu-regular";
-        let typeface_font_provider = {
-            let mut typeface_font_provider = TypefaceFontProvider::new();
-            // We need a system font manager to be able to load typefaces.
-            let font_mgr = FontMgr::new();
-            let typeface = font_mgr
-                .new_from_data(ROBOTO_REGULAR, None)
-                .expect("Failed to load ROBOTO font");
-            typeface_font_provider.register_typeface(typeface, TYPEFACE_ALIAS);
-            typeface_font_provider
-        };
+        let mut path = Path::new();
+        path.move_to((rect.left, rect.top));
+        path.line_to((rect.right, rect.bottom));
+        state.surface.canvas().draw_path(&path, &path_paint);
+
+        // // https://github.com/rust-skia/rust-skia/blob/02c89a87649af8d2870fb631aae4a5e171887367/skia-org/src/skparagraph_example.rs#L18
+        // const TYPEFACE_ALIAS: &str = "ubuntu-regular";
+        // let typeface_font_provider = {
+        //     let mut typeface_font_provider = TypefaceFontProvider::new();
+        //     // We need a system font manager to be able to load typefaces.
+        //     let font_mgr = FontMgr::new();
+        //     let typeface = font_mgr
+        //         .new_from_data(ROBOTO_REGULAR, None)
+        //         .expect("Failed to load ROBOTO font");
+        //     typeface_font_provider.register_typeface(typeface, TYPEFACE_ALIAS);
+        //     typeface_font_provider
+        // };
     
-        let mut font_collection = FontCollection::new();
-        font_collection.set_default_font_manager(Some(typeface_font_provider.into()), None);
-        let paragraph_style = ParagraphStyle::new();
-        let mut paragraph_builder = ParagraphBuilder::new(&paragraph_style, font_collection);
-        let mut ts = TextStyle::new();
-        ts.set_foreground_paint(&Paint::default())
-            .set_font_families(&[TYPEFACE_ALIAS]);
-        paragraph_builder.push_style(&ts);
-        paragraph_builder.add_text(LOREM_IPSUM);
-        let mut paragraph = paragraph_builder.build();
-        paragraph.layout(256.0);
-        paragraph.paint(state.surface.canvas(), (rect.left, rect.top));
-
+        // let mut font_collection = FontCollection::new();
+        // font_collection.set_default_font_manager(Some(typeface_font_provider.into()), None);
+        // let paragraph_style = ParagraphStyle::new();
+        // let mut paragraph_builder = ParagraphBuilder::new(&paragraph_style, font_collection);
+        // let mut ts = TextStyle::new();
+        // ts.set_foreground_paint(&Paint::default())
+        //     .set_font_families(&[TYPEFACE_ALIAS]);
+        // paragraph_builder.push_style(&ts);
+        // paragraph_builder.add_text("Other skia text");
+        // let mut paragraph = paragraph_builder.build();
+        // paragraph.layout(256.0);
+        // paragraph.paint(state.surface.canvas(), (rect.left, rect.top));
     }
     flush(state);
     std::mem::forget(buf);

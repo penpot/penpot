@@ -50,6 +50,7 @@
     (render-v2-rs/draw-canvas vbox zoom base-objects)))
 
 (defn set-objects [vbox zoom base-objects]
+  (js/console.log "set-objects")
   (cond
     ;; Rust
     (contains? cf/flags :render-v2-rs)
