@@ -107,7 +107,7 @@ pub extern "C" fn init(width: i32, height: i32) -> Box<State> {
     let typeface = font_mgr
              .new_from_data(ROBOTO_REGULAR, None)
              .expect("Failed to load ROBOTO font");        
-    let default_font = skia_safe::Font::new(typeface.clone(), 4.0);
+    let default_font = skia_safe::Font::new(typeface.clone(), 10.0);
 
     let typeface_font_provider = {
       let mut typeface_font_provider = TypefaceFontProvider::new();
