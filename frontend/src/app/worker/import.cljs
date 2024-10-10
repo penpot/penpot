@@ -817,9 +817,12 @@
                                           :errors (:errors file)
                                           :file-id (:file-id data)})))))))
                   (rx/catch (fn [cause]
-                              (log/error :hint (ex-message cause)
-                                         :file-id (:file-id data)
-                                         :cause cause)
+                              (let [data (ex-data cause)]
+                                (log/error :hint (ex-message cause)
+                                           :file-id (:file-id data))
+                                (when-let [explain (:explain data)]
+                                  (js/console.log explain)))
+
                               (rx/of {:status :import-error
                                       :file-id (:file-id data)
                                       :error (ex-message cause)
