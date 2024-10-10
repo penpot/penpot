@@ -852,8 +852,10 @@
 
 (defn ray-overlaps?
   [ray-point {selrect :selrect}]
-  (and (>= (:y ray-point) (:y1 selrect))
-       (<= (:y ray-point) (:y2 selrect))))
+  (and (or (> (:y ray-point) (:y1 selrect))
+           (mth/almost-zero? (- (:y ray-point) (:y1 selrect))))
+       (or (< (:y ray-point) (:y2 selrect))
+           (mth/almost-zero? (- (:y ray-point) (:y2 selrect))))))
 
 (defn content->geom-data
   [content]

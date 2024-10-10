@@ -13,6 +13,7 @@
 ### :heart: Community contributions (Thank you!)
 
 - All our plugins beta testers :heart:.
+- Fix problem when translating multiple path points by @eeropic [#4459](https://github.com/penpot/penpot/issues/4459)
 
 ### :sparkles: New features
 
@@ -30,6 +31,10 @@
 - Fix problem with go back button on error page [Taiga #8887](https://tree.taiga.io/project/penpot/issue/8887)
 - Fix problem with shadows in text for Safari [Taiga #8770](https://tree.taiga.io/project/penpot/issue/8770)
 - Fix a regression with feedback form subject and content limits [Taiga #8908](https://tree.taiga.io/project/penpot/issue/8908)
+- Fix problem with stroke and filter ordering in frames [Github #5058](https://github.com/penpot/penpot/issues/5058)
+- Fix problem with hover layers when hidden/blocked [Github #5074](https://github.com/penpot/penpot/issues/5074)
+- Fix problem with precision on boolean calculation [Taiga #8482](https://tree.taiga.io/project/penpot/issue/8482)
+- Fix problem when translating multiple path points [Github #4459](https://github.com/penpot/penpot/issues/4459)
 
 ## 2.2.1
 
@@ -175,7 +180,7 @@ time being.
 
 ### :boom: Breaking changes & Deprecations
 
-### :heart: Community contributions (Thank you!)
+### :heart: Communityq contributions (Thank you!)
 
 ### :sparkles: New features
 

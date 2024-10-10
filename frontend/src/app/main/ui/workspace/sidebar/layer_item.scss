@@ -230,6 +230,10 @@
     }
   }
 
+  .layer-row:hover .element-actions.selected & {
+    opacity: $op-10;
+  }
+
   .layer-row.highlight &,
   .layer-row:hover & {
     display: flex;
