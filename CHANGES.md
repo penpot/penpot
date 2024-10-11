@@ -28,6 +28,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix problem with constraints buttons [Taiga #8465](https://tree.taiga.io/project/penpot/issue/8465)
 - Fix problem with go back button on error page [Taiga #8887](https://tree.taiga.io/project/penpot/issue/8887)
 - Fix problem with shadows in text for Safari [Taiga #8770](https://tree.taiga.io/project/penpot/issue/8770)
 - Fix a regression with feedback form subject and content limits [Taiga #8908](https://tree.taiga.io/project/penpot/issue/8908)
