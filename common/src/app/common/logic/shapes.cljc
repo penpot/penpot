@@ -124,7 +124,7 @@
                   ;; All parents of any deleted shape must be resized.
                   (into res (cfh/get-parent-ids objects id)))
                 (d/ordered-set)
-                ids-to-delete)
+                (concat ids-to-delete ids-to-hide))
 
         all-children
         (->> ids-to-delete ;; Children of deleted shapes must be also deleted.
