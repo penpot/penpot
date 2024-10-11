@@ -8232,25 +8232,25 @@ window.addEventListener("message", (t) => {
     console.error(e);
   }
 });
-const Dl = async function(t) {
+const Dl = async function(t, e) {
   try {
-    const e = yn && yn(t.pluginId);
-    if (!e)
+    const r = yn && yn(t.pluginId);
+    if (!r)
       return;
     bo();
-    const r = await Ll(
-      P.harden(e),
+    const n = await Ll(
+      P.harden(r),
       t,
       () => {
-        ht = ht.filter((n) => n !== r);
+        ht = ht.filter((o) => o !== n), e && e();
       }
     );
-    ht.push(r);
-  } catch (e) {
-    bo(), console.error(e);
+    ht.push(n);
+  } catch (r) {
+    bo(), console.error(r);
   }
-}, zs = async function(t) {
-  Dl(t);
+}, zs = async function(t, e) {
+  Dl(t, e);
 }, Ul = async function(t) {
   const e = await Al(t);
   zs(e);
