@@ -228,6 +228,10 @@ pub unsafe extern "C" fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usi
 
     let svg_canvas = skia_safe::svg::Canvas::new(skia_safe::Rect::from_size((10000, 10000)), None);
 
+    let mut memory = Vec::new();
+    let mut document = skia_safe::pdf::new_document(&mut memory, None).begin_page((10000, 10000), None);
+    let pdf_canvas = document.canvas();
+
     for rect in buf.iter() {
         let r = skia::Rect::new(rect.left, rect.top, rect.right, rect.bottom);
         let color = skia::Color::from_argb((rect.a * 255.0) as u8, rect.r as u8, rect.g as u8, rect.b as u8);
@@ -238,16 +242,19 @@ pub unsafe extern "C" fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usi
         paint.set_color(color);
         paint.set_anti_alias(true);
         svg_canvas.draw_rect(r, &paint);
+        pdf_canvas.draw_rect(r, &paint);
 
         text_paint.set_color(color);
         state.surface.canvas().draw_str("SKIA TEXT", (rect.left, rect.top), &state.default_font, &text_paint);
         svg_canvas.draw_str("SKIA TEXT", (rect.left, rect.top), &state.default_font, &text_paint);
+        pdf_canvas.draw_str("SKIA TEXT", (rect.left, rect.top), &state.default_font, &text_paint);
 
         let mut path = Path::new();
         path.move_to((rect.left, rect.top));
         path.line_to((rect.right, rect.bottom));
         state.surface.canvas().draw_path(&path, &path_paint);
         svg_canvas.draw_path(&path, &path_paint);
+        pdf_canvas.draw_path(&path, &path_paint);
 
         // https://github.com/rust-skia/rust-skia/blob/02c89a87649af8d2870fb631aae4a5e171887367/skia-org/src/skparagraph_example.rs#L18    
         let mut font_collection = FontCollection::new();
@@ -264,7 +271,8 @@ pub unsafe extern "C" fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usi
         paragraph.paint(state.surface.canvas(), (rect.left, rect.top));
         paragraph.paint(&svg_canvas, (rect.left, rect.top));
     }
-    
+
+    /*
     // base64 image of the canvas
     let image = state.surface.image_snapshot();
     let mut context = state.surface.direct_context();
@@ -276,6 +284,16 @@ pub unsafe extern "C" fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usi
     let svg_data = svg_canvas.end();
     let svg = String::from_utf8_lossy(svg_data.as_bytes());
     println!("svg: {}", svg.replace('\n', ""));
+
+    // PDF
+    document.end_page().close();
+    println!("PDF: ");
+    print!("echo ");
+    for byte in &memory {
+        print!("{:02x}", byte);
+    }
+    println!("| xxd -r -p > output.pdf");
+    */
 
     flush(state);
     std::mem::forget(buf);
