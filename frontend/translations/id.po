@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Indonesian "
-"<https://hosted.weblate.org/projects/penpot/frontend/id/>\n"
+"PO-Revision-Date: 2024-10-12 16:16+0000\n"
+"Last-Translator: Linerly <linerly@proton.me>\n"
+"Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
+"frontend/id/>\n"
 "Language: id\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.6-dev\n"
+"X-Generator: Weblate 5.8-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:132, src/app/main/ui/static.cljs:139, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -54,7 +54,7 @@ msgstr "Masuk ke akun saya"
 
 #: src/app/main/ui/auth/register.cljs:136, src/app/main/ui/static.cljs:142, src/app/main/ui/viewer/login.cljs:101
 msgid "auth.login-here"
-msgstr "Masuk di sini"
+msgstr "Masuk di sini."
 
 #: src/app/main/ui/auth/login.cljs:186
 msgid "auth.login-submit"
@@ -5666,3 +5666,301 @@ msgstr "Perbarui"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik untuk menutup jalur"
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:267
+msgid "auth.check-mail"
+msgstr "Periksa surel Anda"
+
+#: src/app/main/ui/onboarding/questions.cljs:115
+msgid "onboarding.questions.step1.title"
+msgstr "Bantu kami mengenal Anda"
+
+#: src/app/main/ui/onboarding/questions.cljs:121
+msgid "onboarding.questions.step1.question1"
+msgstr "Untuk apa Anda akan menggunakan Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs:80
+msgid "onboarding.questions.use.education"
+msgstr "Edukasi"
+
+#: src/app/main/ui/onboarding/questions.cljs:88
+msgid "onboarding.questions.reasons.exploring"
+msgstr "Masih eksplorasi"
+
+#: src/app/main/ui/onboarding/questions.cljs:97
+msgid "onboarding.questions.reasons.testing"
+msgstr "Menguji coba sebelum menghosting sendiri"
+
+#: src/app/main/ui/onboarding/questions.cljs:250
+msgid "labels.product-management"
+msgstr "Pengelolaan Produk"
+
+#: src/app/main/ui/onboarding/questions.cljs:249
+msgid "labels.marketing"
+msgstr "Pemasaran"
+
+#: src/app/main/ui/onboarding/questions.cljs:260
+msgid "labels.director"
+msgstr "Direktur"
+
+#: src/app/main/ui/onboarding/questions.cljs:404
+msgid "labels.youtube"
+msgstr "YouTube"
+
+#: src/app/main/ui/onboarding/questions.cljs:349
+msgid "onboarding.questions.start-with.code"
+msgstr "Membuat kode asli dari desain"
+
+#: src/app/main/ui/onboarding/questions.cljs:405
+msgid "labels.event"
+msgstr "Acara"
+
+#: src/app/main/ui/workspace/plugins.cljs:171
+msgid "workspace.plugins.install"
+msgstr "Pasang"
+
+#, unused
+msgid "workspace.plugins.success"
+msgstr "Plugin dimuat dengan benar."
+
+#: src/app/main/ui/workspace/main_menu.cljs:624
+msgid "workspace.plugins.menu.plugins-manager"
+msgstr "Pengelola plugin"
+
+#: src/app/main/ui/workspace/plugins.cljs:166
+msgid "workspace.plugins.search-placeholder"
+msgstr "Tuliskan URL plugin"
+
+#: src/app/main/ui/workspace/plugins.cljs:187
+msgid "workspace.plugins.empty-plugins"
+msgstr "Belum ada plugin yang terpasang"
+
+#: src/app/main/ui/workspace/plugins.cljs:287
+msgid "ds.confirm-allow"
+msgstr "Perbolehkan"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-max-length"
+msgstr "Harus berisi setidaknya 1 karakter."
+
+#, unused
+msgid "errors.field-min-length"
+msgstr "Harus berisi setidaknya 1 karakter."
+
+#: src/app/main/ui/static.cljs:54
+msgid "labels.copyright"
+msgstr "Kaleidos @2024"
+
+#: src/app/main/ui/onboarding/questions.cljs:259
+msgid "labels.founder"
+msgstr "CEO atau Pendiri"
+
+#: src/app/main/ui/onboarding/questions.cljs:248
+msgid "labels.graphic-design"
+msgstr "Desain grafis"
+
+#, unused
+msgid "labels.ok"
+msgstr "Oke"
+
+#: src/app/main/ui/onboarding/questions.cljs:100, src/app/main/ui/onboarding/questions.cljs:175, src/app/main/ui/onboarding/questions.cljs:251, src/app/main/ui/onboarding/questions.cljs:261, src/app/main/ui/onboarding/questions.cljs:351, src/app/main/ui/onboarding/questions.cljs:409
+msgid "labels.other-short"
+msgstr "Lainnya"
+
+#: src/app/main/ui/onboarding/questions.cljs:245
+msgid "labels.product-design"
+msgstr "Desain produk atau UX"
+
+#: src/app/main/ui/onboarding/questions.cljs:256
+msgid "labels.team-leader"
+msgstr "Pemandu Tim"
+
+#: src/app/main/ui/onboarding/questions.cljs:257
+msgid "labels.team-member"
+msgstr "Anggota tim"
+
+#: src/app/main/ui/static.cljs:270
+msgid "not-found.desc-message.error"
+msgstr "Kesalahan 404"
+
+#: src/app/main/ui/static.cljs:271
+msgid "not-found.desc-message.doesnt-exist"
+msgstr "Laman ini tidak ada"
+
+#: src/app/main/ui/auth/recovery_request.cljs:114
+msgid "not-found.login.sent-recovery"
+msgstr "Kami telah mengirim surel pemulihan ke"
+
+#: src/app/main/ui/static.cljs:133
+msgid "not-found.login.signup-free"
+msgstr "Daftar secara gratis"
+
+#: src/app/main/ui/static.cljs:134
+msgid "not-found.login.start-using"
+msgstr "Dan mulai menggunakan Penpot dalam hitungan detik!"
+
+#: src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.ask"
+msgstr "MINTA AKSES"
+
+#: src/app/main/ui/static.cljs:256
+msgid "not-found.no-permission.done.success"
+msgstr "Permintaan Anda telah dikirim dengan benar!"
+
+#: src/app/main/ui/static.cljs:259
+msgid "not-found.no-permission.file"
+msgstr "Anda tidak memiliki akses ke berkas ini."
+
+#: src/app/main/ui/static.cljs:217, src/app/main/ui/static.cljs:222
+msgid "not-found.no-permission.penpot-file"
+msgstr "Berkas Penpot"
+
+#: src/app/main/ui/static.cljs:43, src/app/main/ui/static.cljs:247, src/app/main/ui/static.cljs:250, src/app/main/ui/static.cljs:253, src/app/main/ui/static.cljs:256, src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.go-dashboard"
+msgstr "Pergi ke Penpot Anda"
+
+#: src/app/main/ui/static.cljs:247, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.project"
+msgstr "Anda tidak memiliki akses ke proyek ini."
+
+#: src/app/main/ui/static.cljs:216, src/app/main/ui/static.cljs:220
+msgid "not-found.no-permission.project-name"
+msgstr "PROYEK"
+
+#: src/app/main/ui/onboarding/questions.cljs:408
+msgid "onboarding.questions.referer.article"
+msgstr "Artikel (Blog, Posting, Buletin)"
+
+#: src/app/main/ui/onboarding/questions.cljs:406
+msgid "onboarding.questions.referer.search"
+msgstr "Mesin Pencarian (Google, Yahoo, Bing)"
+
+#: src/app/main/ui/onboarding/questions.cljs:407
+msgid "onboarding.questions.referer.social"
+msgstr "Media Sosial (X, LinkedIn, FB, dll.)"
+
+#: src/app/main/ui/onboarding/questions.cljs:343
+msgid "onboarding.questions.start-with.wireframing"
+msgstr "Kerangka Kerja"
+
+#: src/app/main/ui/onboarding/questions.cljs:345
+msgid "onboarding.questions.start-with.prototyping"
+msgstr "Prototipe"
+
+#: src/app/main/ui/onboarding/questions.cljs:347
+msgid "onboarding.questions.start-with.ds"
+msgstr "Membuat Sistem Desain"
+
+#: src/app/main/ui/onboarding/questions.cljs:128
+msgid "onboarding.questions.step1.question2"
+msgstr "Apa yang membawa Anda ke Penpot hari ini?"
+
+#: src/app/main/ui/onboarding/questions.cljs:341
+msgid "onboarding.questions.start-with.ui"
+msgstr "Desain UI/UX aplikasi"
+
+#: src/app/main/ui/onboarding/questions.cljs:289
+msgid "onboarding.questions.step3.question1"
+msgstr "Jenis pekerjaan apa yang Anda lakukan?"
+
+#: src/app/main/ui/onboarding/questions.cljs:287
+msgid "onboarding.questions.step3.title"
+msgstr "Ceritakan tentang pekerjaan Anda"
+
+#: src/app/main/ui/onboarding/questions.cljs:303
+msgid "onboarding.questions.step3.question2"
+msgstr "Apa peran Anda?"
+
+#: src/app/main/ui/onboarding/questions.cljs:317
+msgid "onboarding.questions.step3.question3"
+msgstr "Seberapa besar perusahaan Anda?"
+
+#: src/app/main/ui/onboarding/questions.cljs:270
+msgid "onboarding.questions.team-size.freelancer"
+msgstr "Saya seorang pekerja lepas"
+
+#: src/app/main/ui/onboarding/questions.cljs:429
+msgid "onboarding.questions.step5.title"
+msgstr "Dari mana Anda mendengar tentang Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs:370
+msgid "onboarding.questions.step4.title"
+msgstr "Di mana Anda ingin mulai?"
+
+#: src/app/main/ui/onboarding/questions.cljs:79
+msgid "onboarding.questions.use.work"
+msgstr "Kerja"
+
+#: src/app/main/ui/onboarding/questions.cljs:81
+msgid "onboarding.questions.use.personal"
+msgstr "Pribadi"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:525
+msgid "workspace.assets.grid-view"
+msgstr "Tampilan kisi"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:521
+msgid "workspace.assets.list-view"
+msgstr "Tampilan daftar"
+
+#: src/app/main/ui/workspace/main_menu.cljs:777
+msgid "workspace.plugins.menu.title"
+msgstr "Plugin"
+
+#: src/app/main/ui/workspace/plugins.cljs:196
+msgid "workspace.plugins.installed-plugins"
+msgstr "Plugin terpasang"
+
+#: src/app/main/ui/workspace/plugins.cljs:180
+#, markdown
+msgid "workspace.plugins.discover"
+msgstr "Jelajahi [lebih banyak plugin](%s)"
+
+#: src/app/main/ui/workspace/plugins.cljs:271
+msgid "workspace.plugins.permissions.library-read"
+msgstr "Membaca pustaka dan aset Anda."
+
+#: src/app/main/ui/workspace/plugins.cljs:236
+msgid "workspace.plugins.permissions.title"
+msgstr "PLUGIN INI MEMINTA AKSES KE:"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:201, src/app/main/ui/workspace/top_toolbar.cljs:202
+msgid "workspace.toolbar.plugins"
+msgstr "Plugin (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:219, src/app/main/ui/workspace/top_toolbar.cljs:220
+msgid "workspace.toolbar.toggle-toolbar"
+msgstr "Saklar bilah alat"
+
+#: src/app/main/ui/workspace/plugins.cljs:160
+msgid "workspace.plugins.title"
+msgstr "Plugin"
+
+#: src/app/main/ui/workspace/plugins.cljs:58
+msgid "workspace.plugins.button-open"
+msgstr "Buka"
+
+#: src/app/main/ui/static.cljs:48, src/app/main/ui/static.cljs:120
+msgid "labels.login"
+msgstr "Masuk"
+
+#: src/app/main/ui/auth/verify_token.cljs:97, src/app/main/ui/dashboard/grid.cljs:102, src/app/main/ui/dashboard/grid.cljs:122, src/app/main/ui/dashboard/import.cljs:272, src/app/main/ui/dashboard/placeholder.cljs:45, src/app/main/ui/export.cljs:323, src/app/main/ui/viewer.cljs:637, src/app/main/ui/workspace.cljs:127
+msgid "labels.loading"
+msgstr "Memuat…"
+
+#: src/app/main/ui/workspace/plugins.cljs:192
+msgid "workspace.plugins.plugin-list-link"
+msgstr "Daftar Plugin"
+
+#: src/app/main/ui/auth/login.cljs:163, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:87
+msgid "auth.work-email"
+msgstr "Surel kerja"
+
+#: src/app/main/ui/auth/register.cljs:246
+msgid "auth.register-account-title"
+msgstr "Nama Anda"
+
+#: src/app/main/ui/static.cljs:56
+msgid "not-found.made-with-love"
+msgstr "Dibuat dengan CINTA dan Sumber Terbuka"
