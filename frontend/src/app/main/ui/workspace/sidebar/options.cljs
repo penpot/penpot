@@ -138,6 +138,8 @@
         first-selected-shape (first selected-shapes)
         shape-parent-frame   (cfh/get-frame objects (:frame-id first-selected-shape))
 
+        options-mode         (mf/deref refs/options-mode-global)
+
         on-change-tab
         (fn [options-mode]
           (let [options-mode (keyword options-mode)]
@@ -187,6 +189,7 @@
      [:> tab-switcher* {:tabs tabs
                         :default-selected "info"
                         :on-change-tab on-change-tab
+                        :selected (name options-mode)
                         :class (stl/css :options-tab-switcher)}]]))
 
 ;; TODO: this need optimizations, selected-objects and
