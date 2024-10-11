@@ -700,7 +700,7 @@ function createWasm() {
     }
   }
 
-  if (!wasmBinaryFile) wasmBinaryFile = findWasmBinary();
+  wasmBinaryFile ??= findWasmBinary();
 
   // If instantiation fails, reject the module ready promise.
   instantiateAsync(wasmBinary, wasmBinaryFile, info, receiveInstantiationResult).catch(readyPromiseReject);
@@ -752,45 +752,51 @@ function isExportedByForceFilesystem(name) {
          name === 'removeRunDependency';
 }
 
-function missingGlobal(sym, msg) {
-  if (typeof globalThis != 'undefined') {
+/**
+ * Intercept access to a global symbol.  This enables us to give informative
+ * warnings/errors when folks attempt to use symbols they did not include in
+ * their build, or no symbols that no longer exist.
+ */
+function hookGlobalSymbolAccess(sym, func) {
+  if (typeof globalThis != 'undefined' && !Object.getOwnPropertyDescriptor(globalThis, sym)) {
     Object.defineProperty(globalThis, sym, {
       configurable: true,
       get() {
-        warnOnce(`\`${sym}\` is not longer defined by emscripten. ${msg}`);
+        func();
         return undefined;
       }
     });
   }
 }
 
+function missingGlobal(sym, msg) {
+  hookGlobalSymbolAccess(sym, () => {
+    warnOnce(`\`${sym}\` is not longer defined by emscripten. ${msg}`);
+  });
+}
+
 missingGlobal('buffer', 'Please use HEAP8.buffer or wasmMemory.buffer');
 missingGlobal('asm', 'Please use wasmExports instead');
 
 function missingLibrarySymbol(sym) {
-  if (typeof globalThis != 'undefined' && !Object.getOwnPropertyDescriptor(globalThis, sym)) {
-    Object.defineProperty(globalThis, sym, {
-      configurable: true,
-      get() {
-        // Can't `abort()` here because it would break code that does runtime
-        // checks.  e.g. `if (typeof SDL === 'undefined')`.
-        var msg = `\`${sym}\` is a library symbol and not included by default; add it to your library.js __deps or to DEFAULT_LIBRARY_FUNCS_TO_INCLUDE on the command line`;
-        // DEFAULT_LIBRARY_FUNCS_TO_INCLUDE requires the name as it appears in
-        // library.js, which means $name for a JS name with no prefix, or name
-        // for a JS name like _name.
-        var librarySymbol = sym;
-        if (!librarySymbol.startsWith('_')) {
-          librarySymbol = '$' + sym;
-        }
-        msg += ` (e.g. -sDEFAULT_LIBRARY_FUNCS_TO_INCLUDE='${librarySymbol}')`;
-        if (isExportedByForceFilesystem(sym)) {
-          msg += '. Alternatively, forcing filesystem support (-sFORCE_FILESYSTEM) can export this for you';
-        }
-        warnOnce(msg);
-        return undefined;
-      }
-    });
-  }
+  hookGlobalSymbolAccess(sym, () => {
+    // Can't `abort()` here because it would break code that does runtime
+    // checks.  e.g. `if (typeof SDL === 'undefined')`.
+    var msg = `\`${sym}\` is a library symbol and not included by default; add it to your library.js __deps or to DEFAULT_LIBRARY_FUNCS_TO_INCLUDE on the command line`;
+    // DEFAULT_LIBRARY_FUNCS_TO_INCLUDE requires the name as it appears in
+    // library.js, which means $name for a JS name with no prefix, or name
+    // for a JS name like _name.
+    var librarySymbol = sym;
+    if (!librarySymbol.startsWith('_')) {
+      librarySymbol = '$' + sym;
+    }
+    msg += ` (e.g. -sDEFAULT_LIBRARY_FUNCS_TO_INCLUDE='${librarySymbol}')`;
+    if (isExportedByForceFilesystem(sym)) {
+      msg += '. Alternatively, forcing filesystem support (-sFORCE_FILESYSTEM) can export this for you';
+    }
+    warnOnce(msg);
+  });
+
   // Any symbol that is not included from the JS library is also (by definition)
   // not exported on the Module object.
   unexportedRuntimeSymbol(sym);
@@ -2140,6 +2146,8 @@ function dbg(...args) {
   },
   filesystems:null,
   syncFSRequests:0,
+  readFiles:{
+  },
   FSStream:class {
         constructor() {
           // TODO(https://github.com/emscripten-core/emscripten/issues/21414):
@@ -3039,7 +3047,6 @@ function dbg(...args) {
           stream.stream_ops.open(stream);
         }
         if (Module['logReadFiles'] && !(flags & 1)) {
-          if (!FS.readFiles) FS.readFiles = {};
           if (!(path in FS.readFiles)) {
             FS.readFiles[path] = 1;
           }
@@ -3460,7 +3467,7 @@ function dbg(...args) {
   createDevice(parent, name, input, output) {
         var path = PATH.join2(typeof parent == 'string' ? parent : FS.getPath(parent), name);
         var mode = FS_getMode(!!input, !!output);
-        if (!FS.createDevice.major) FS.createDevice.major = 64;
+        FS.createDevice.major ??= 64;
         var dev = FS.makedev(FS.createDevice.major++, 0);
         // Create a fake device that a set of stream ops to emulate
         // the old behavior.
@@ -4013,34 +4020,16 @@ function dbg(...args) {
       throw new EmscriptenSjLj;
     };
 
+  
+  
+  
+  
+  
   var convertI32PairToI53Checked = (lo, hi) => {
       assert(lo == (lo >>> 0) || lo == (lo|0)); // lo should either be a i32 or a u32
       assert(hi === (hi|0));                    // hi should be a i32
       return ((hi + 0x200000) >>> 0 < 0x400001 - !!lo) ? (lo >>> 0) + hi * 4294967296 : NaN;
     };
-  function __gmtime_js(time_low, time_high,tmPtr) {
-    var time = convertI32PairToI53Checked(time_low, time_high);
-  
-    
-      var date = new Date(time * 1000);
-      HEAP32[((tmPtr)>>2)] = date.getUTCSeconds();
-      HEAP32[(((tmPtr)+(4))>>2)] = date.getUTCMinutes();
-      HEAP32[(((tmPtr)+(8))>>2)] = date.getUTCHours();
-      HEAP32[(((tmPtr)+(12))>>2)] = date.getUTCDate();
-      HEAP32[(((tmPtr)+(16))>>2)] = date.getUTCMonth();
-      HEAP32[(((tmPtr)+(20))>>2)] = date.getUTCFullYear()-1900;
-      HEAP32[(((tmPtr)+(24))>>2)] = date.getUTCDay();
-      var start = Date.UTC(date.getUTCFullYear(), 0, 1, 0, 0, 0, 0);
-      var yday = ((date.getTime() - start) / (1000 * 60 * 60 * 24))|0;
-      HEAP32[(((tmPtr)+(28))>>2)] = yday;
-    ;
-  }
-
-  
-  
-  
-  
-  
   function __mmap_js(len,prot,flags,fd,offset_low, offset_high,allocated,addr) {
     var offset = convertI32PairToI53Checked(offset_low, offset_high);
   
@@ -4135,12 +4124,7 @@ function dbg(...args) {
 
   var _emscripten_date_now = () => Date.now();
 
-  var _emscripten_get_now;
-      // Modern environment where performance.now() is supported:
-      // N.B. a shorter form "_emscripten_get_now = performance.now;" is
-      // unfortunately not allowed even in current browsers (e.g. FF Nightly 75).
-      _emscripten_get_now = () => performance.now();
-  ;
+  var _emscripten_get_now = () => performance.now();
 
   var GLctx;
   
@@ -7992,8 +7976,6 @@ var wasmImports = {
   /** @export */
   _emscripten_throw_longjmp: __emscripten_throw_longjmp,
   /** @export */
-  _gmtime_js: __gmtime_js,
-  /** @export */
   _mmap_js: __mmap_js,
   /** @export */
   _munmap_js: __munmap_js,
@@ -8864,8 +8846,6 @@ var wasmImports = {
   /** @export */
   invoke_iiff,
   /** @export */
-  invoke_iiffi,
-  /** @export */
   invoke_iii,
   /** @export */
   invoke_iiii,
@@ -8898,8 +8878,6 @@ var wasmImports = {
   /** @export */
   invoke_vi,
   /** @export */
-  invoke_vif,
-  /** @export */
   invoke_viffff,
   /** @export */
   invoke_viffi,
@@ -8909,8 +8887,6 @@ var wasmImports = {
   invoke_vii,
   /** @export */
   invoke_viif,
-  /** @export */
-  invoke_viiff,
   /** @export */
   invoke_viii,
   /** @export */
@@ -8968,12 +8944,6 @@ var ___cxa_increment_exception_refcount = createExportWrapper('__cxa_increment_e
 var ___get_exception_message = createExportWrapper('__get_exception_message', 3);
 var ___cxa_can_catch = createExportWrapper('__cxa_can_catch', 3);
 var ___cxa_get_exception_ptr = createExportWrapper('__cxa_get_exception_ptr', 1);
-var dynCall_iiiji = Module['dynCall_iiiji'] = createExportWrapper('dynCall_iiiji', 6);
-var dynCall_ji = Module['dynCall_ji'] = createExportWrapper('dynCall_ji', 2);
-var dynCall_iiji = Module['dynCall_iiji'] = createExportWrapper('dynCall_iiji', 5);
-var dynCall_iijjiii = Module['dynCall_iijjiii'] = createExportWrapper('dynCall_iijjiii', 9);
-var dynCall_iij = Module['dynCall_iij'] = createExportWrapper('dynCall_iij', 4);
-var dynCall_vijjjii = Module['dynCall_vijjjii'] = createExportWrapper('dynCall_vijjjii', 10);
 var dynCall_viji = Module['dynCall_viji'] = createExportWrapper('dynCall_viji', 5);
 var dynCall_vijiii = Module['dynCall_vijiii'] = createExportWrapper('dynCall_vijiii', 7);
 var dynCall_viiiiij = Module['dynCall_viiiiij'] = createExportWrapper('dynCall_viiiiij', 8);
@@ -8981,6 +8951,7 @@ var dynCall_jii = Module['dynCall_jii'] = createExportWrapper('dynCall_jii', 3);
 var dynCall_vij = Module['dynCall_vij'] = createExportWrapper('dynCall_vij', 4);
 var dynCall_jiiiiii = Module['dynCall_jiiiiii'] = createExportWrapper('dynCall_jiiiiii', 7);
 var dynCall_jiiiiji = Module['dynCall_jiiiiji'] = createExportWrapper('dynCall_jiiiiji', 8);
+var dynCall_ji = Module['dynCall_ji'] = createExportWrapper('dynCall_ji', 2);
 var dynCall_iijj = Module['dynCall_iijj'] = createExportWrapper('dynCall_iijj', 6);
 var dynCall_iiij = Module['dynCall_iiij'] = createExportWrapper('dynCall_iiij', 5);
 var dynCall_viij = Module['dynCall_viij'] = createExportWrapper('dynCall_viij', 5);
@@ -8994,39 +8965,6 @@ var dynCall_iiiiij = Module['dynCall_iiiiij'] = createExportWrapper('dynCall_iii
 var dynCall_iiiiijj = Module['dynCall_iiiiijj'] = createExportWrapper('dynCall_iiiiijj', 9);
 var dynCall_iiiiiijj = Module['dynCall_iiiiiijj'] = createExportWrapper('dynCall_iiiiiijj', 10);
 
-function invoke_iiii(index,a1,a2,a3) {
-  var sp = stackSave();
-  try {
-    return getWasmTableEntry(index)(a1,a2,a3);
-  } catch(e) {
-    stackRestore(sp);
-    if (!(e instanceof EmscriptenEH)) throw e;
-    _setThrew(1, 0);
-  }
-}
-
-function invoke_ii(index,a1) {
-  var sp = stackSave();
-  try {
-    return getWasmTableEntry(index)(a1);
-  } catch(e) {
-    stackRestore(sp);
-    if (!(e instanceof EmscriptenEH)) throw e;
-    _setThrew(1, 0);
-  }
-}
-
-function invoke_vi(index,a1) {
-  var sp = stackSave();
-  try {
-    getWasmTableEntry(index)(a1);
-  } catch(e) {
-    stackRestore(sp);
-    if (!(e instanceof EmscriptenEH)) throw e;
-    _setThrew(1, 0);
-  }
-}
-
 function invoke_vii(index,a1,a2) {
   var sp = stackSave();
   try {
@@ -9038,54 +8976,10 @@ function invoke_vii(index,a1,a2) {
   }
 }
 
-function invoke_v(index) {
+function invoke_iiiii(index,a1,a2,a3,a4) {
   var sp = stackSave();
   try {
-    getWasmTableEntry(index)();
-  } catch(e) {
-    stackRestore(sp);
-    if (!(e instanceof EmscriptenEH)) throw e;
-    _setThrew(1, 0);
-  }
-}
-
-function invoke_viii(index,a1,a2,a3) {
-  var sp = stackSave();
-  try {
-    getWasmTableEntry(index)(a1,a2,a3);
-  } catch(e) {
-    stackRestore(sp);
-    if (!(e instanceof EmscriptenEH)) throw e;
-    _setThrew(1, 0);
-  }
-}
-
-function invoke_viiii(index,a1,a2,a3,a4) {
-  var sp = stackSave();
-  try {
-    getWasmTableEntry(index)(a1,a2,a3,a4);
-  } catch(e) {
-    stackRestore(sp);
-    if (!(e instanceof EmscriptenEH)) throw e;
-    _setThrew(1, 0);
-  }
-}
-
-function invoke_iii(index,a1,a2) {
-  var sp = stackSave();
-  try {
-    return getWasmTableEntry(index)(a1,a2);
-  } catch(e) {
-    stackRestore(sp);
-    if (!(e instanceof EmscriptenEH)) throw e;
-    _setThrew(1, 0);
-  }
-}
-
-function invoke_vifi(index,a1,a2,a3) {
-  var sp = stackSave();
-  try {
-    getWasmTableEntry(index)(a1,a2,a3);
+    return getWasmTableEntry(index)(a1,a2,a3,a4);
   } catch(e) {
     stackRestore(sp);
     if (!(e instanceof EmscriptenEH)) throw e;
@@ -9104,10 +8998,43 @@ function invoke_viiiii(index,a1,a2,a3,a4,a5) {
   }
 }
 
-function invoke_iiiii(index,a1,a2,a3,a4) {
+function invoke_vi(index,a1) {
   var sp = stackSave();
   try {
-    return getWasmTableEntry(index)(a1,a2,a3,a4);
+    getWasmTableEntry(index)(a1);
+  } catch(e) {
+    stackRestore(sp);
+    if (!(e instanceof EmscriptenEH)) throw e;
+    _setThrew(1, 0);
+  }
+}
+
+function invoke_ii(index,a1) {
+  var sp = stackSave();
+  try {
+    return getWasmTableEntry(index)(a1);
+  } catch(e) {
+    stackRestore(sp);
+    if (!(e instanceof EmscriptenEH)) throw e;
+    _setThrew(1, 0);
+  }
+}
+
+function invoke_viii(index,a1,a2,a3) {
+  var sp = stackSave();
+  try {
+    getWasmTableEntry(index)(a1,a2,a3);
+  } catch(e) {
+    stackRestore(sp);
+    if (!(e instanceof EmscriptenEH)) throw e;
+    _setThrew(1, 0);
+  }
+}
+
+function invoke_iii(index,a1,a2) {
+  var sp = stackSave();
+  try {
+    return getWasmTableEntry(index)(a1,a2);
   } catch(e) {
     stackRestore(sp);
     if (!(e instanceof EmscriptenEH)) throw e;
@@ -9137,10 +9064,10 @@ function invoke_viiiiffii(index,a1,a2,a3,a4,a5,a6,a7,a8) {
   }
 }
 
-function invoke_iiffi(index,a1,a2,a3,a4) {
+function invoke_iiiiiii(index,a1,a2,a3,a4,a5,a6) {
   var sp = stackSave();
   try {
-    return getWasmTableEntry(index)(a1,a2,a3,a4);
+    return getWasmTableEntry(index)(a1,a2,a3,a4,a5,a6);
   } catch(e) {
     stackRestore(sp);
     if (!(e instanceof EmscriptenEH)) throw e;
@@ -9148,10 +9075,10 @@ function invoke_iiffi(index,a1,a2,a3,a4) {
   }
 }
 
-function invoke_iiiiiii(index,a1,a2,a3,a4,a5,a6) {
+function invoke_iiii(index,a1,a2,a3) {
   var sp = stackSave();
   try {
-    return getWasmTableEntry(index)(a1,a2,a3,a4,a5,a6);
+    return getWasmTableEntry(index)(a1,a2,a3);
   } catch(e) {
     stackRestore(sp);
     if (!(e instanceof EmscriptenEH)) throw e;
@@ -9214,32 +9141,21 @@ function invoke_iiff(index,a1,a2,a3) {
   }
 }
 
+function invoke_viiii(index,a1,a2,a3,a4) {
+  var sp = stackSave();
+  try {
+    getWasmTableEntry(index)(a1,a2,a3,a4);
+  } catch(e) {
+    stackRestore(sp);
+    if (!(e instanceof EmscriptenEH)) throw e;
+    _setThrew(1, 0);
+  }
+}
+
 function invoke_iif(index,a1,a2) {
   var sp = stackSave();
   try {
     return getWasmTableEntry(index)(a1,a2);
-  } catch(e) {
-    stackRestore(sp);
-    if (!(e instanceof EmscriptenEH)) throw e;
-    _setThrew(1, 0);
-  }
-}
-
-function invoke_viiiiii(index,a1,a2,a3,a4,a5,a6) {
-  var sp = stackSave();
-  try {
-    getWasmTableEntry(index)(a1,a2,a3,a4,a5,a6);
-  } catch(e) {
-    stackRestore(sp);
-    if (!(e instanceof EmscriptenEH)) throw e;
-    _setThrew(1, 0);
-  }
-}
-
-function invoke_viiiiiii(index,a1,a2,a3,a4,a5,a6,a7) {
-  var sp = stackSave();
-  try {
-    getWasmTableEntry(index)(a1,a2,a3,a4,a5,a6,a7);
   } catch(e) {
     stackRestore(sp);
     if (!(e instanceof EmscriptenEH)) throw e;
@@ -9258,10 +9174,10 @@ function invoke_iiiiffii(index,a1,a2,a3,a4,a5,a6,a7) {
   }
 }
 
-function invoke_vif(index,a1,a2) {
+function invoke_vifi(index,a1,a2,a3) {
   var sp = stackSave();
   try {
-    getWasmTableEntry(index)(a1,a2);
+    getWasmTableEntry(index)(a1,a2,a3);
   } catch(e) {
     stackRestore(sp);
     if (!(e instanceof EmscriptenEH)) throw e;
@@ -9269,10 +9185,21 @@ function invoke_vif(index,a1,a2) {
   }
 }
 
-function invoke_viiff(index,a1,a2,a3,a4) {
+function invoke_viiiiii(index,a1,a2,a3,a4,a5,a6) {
   var sp = stackSave();
   try {
-    getWasmTableEntry(index)(a1,a2,a3,a4);
+    getWasmTableEntry(index)(a1,a2,a3,a4,a5,a6);
+  } catch(e) {
+    stackRestore(sp);
+    if (!(e instanceof EmscriptenEH)) throw e;
+    _setThrew(1, 0);
+  }
+}
+
+function invoke_v(index) {
+  var sp = stackSave();
+  try {
+    getWasmTableEntry(index)();
   } catch(e) {
     stackRestore(sp);
     if (!(e instanceof EmscriptenEH)) throw e;
@@ -9361,6 +9288,17 @@ function invoke_diii(index,a1,a2,a3) {
   var sp = stackSave();
   try {
     return getWasmTableEntry(index)(a1,a2,a3);
+  } catch(e) {
+    stackRestore(sp);
+    if (!(e instanceof EmscriptenEH)) throw e;
+    _setThrew(1, 0);
+  }
+}
+
+function invoke_viiiiiii(index,a1,a2,a3,a4,a5,a6,a7) {
+  var sp = stackSave();
+  try {
+    getWasmTableEntry(index)(a1,a2,a3,a4,a5,a6,a7);
   } catch(e) {
     stackRestore(sp);
     if (!(e instanceof EmscriptenEH)) throw e;
@@ -9538,12 +9476,14 @@ var missingLibrarySymbols = [
   'setImmediateWrapped',
   'clearImmediateWrapped',
   'polyfillSetImmediate',
+  'registerPostMainLoop',
+  'registerPreMainLoop',
   'getPromise',
   'makePromise',
   'idsToPromises',
   'makePromiseCallback',
   'Browser_asyncPrepareDataCounter',
-  'setMainLoop',
+  'safeRequestAnimationFrame',
   'isLeapYear',
   'ydayFromDate',
   'arraySum',

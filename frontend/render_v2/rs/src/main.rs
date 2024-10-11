@@ -1,9 +1,16 @@
-use std::boxed::Box;
+// use skia_safe::{
+//     gpu::{self, gl::FramebufferInfo, DirectContext},
+//     textlayout::{
+//         FontCollection, ParagraphBuilder, ParagraphStyle, TextStyle, TypefaceFontProvider,
+//     },
+//     Canvas, Data, EncodedImageFormat, FontMgr, Paint, PaintStyle, Path, SurfaceProps,
+// };
 use skia_safe::{
     gpu::{self, gl::FramebufferInfo, DirectContext},
-    textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextStyle, TypefaceFontProvider},
-    FontMgr, Paint, Path, PaintStyle, EncodedImageFormat, Data, Canvas, SurfaceProps
+    textlayout::TypefaceFontProvider,
+    PaintStyle,
 };
+use std::boxed::Box;
 
 use skia_safe as skia;
 
@@ -29,12 +36,22 @@ pub struct State {
     gpu_state: GpuState,
     surface: skia::Surface,
     typeface_font_provider: TypefaceFontProvider,
-    default_font: skia_safe::Font
+    default_font: skia_safe::Font,
 }
 
 impl State {
-    fn new(gpu_state: GpuState, surface: skia::Surface, typeface_font_provider: TypefaceFontProvider, default_font: skia_safe::Font) -> Self {
-        State { gpu_state, surface, typeface_font_provider, default_font }
+    fn new(
+        gpu_state: GpuState,
+        surface: skia::Surface,
+        typeface_font_provider: TypefaceFontProvider,
+        default_font: skia_safe::Font,
+    ) -> Self {
+        State {
+            gpu_state,
+            surface,
+            typeface_font_provider,
+            default_font,
+        }
     }
 
     fn set_surface(&mut self, surface: skia::Surface) {
@@ -105,15 +122,15 @@ pub extern "C" fn init(width: i32, height: i32) -> Box<State> {
     // skia_safe::Font::default() is empty, let's use something better
     let font_mgr = skia_safe::FontMgr::new();
     let typeface = font_mgr
-             .new_from_data(ROBOTO_REGULAR, None)
-             .expect("Failed to load ROBOTO font");        
+        .new_from_data(ROBOTO_REGULAR, None)
+        .expect("Failed to load ROBOTO font");
     let default_font = skia_safe::Font::new(typeface.clone(), 10.0);
 
     let typeface_font_provider = {
-      let mut typeface_font_provider = TypefaceFontProvider::new();
-      // We need a system font manager to be able to load typefaces.
-      typeface_font_provider.register_typeface(typeface, TYPEFACE_ALIAS);
-      typeface_font_provider
+        let mut typeface_font_provider = TypefaceFontProvider::new();
+        // We need a system font manager to be able to load typefaces.
+        typeface_font_provider.register_typeface(typeface, TYPEFACE_ALIAS);
+        typeface_font_provider
     };
 
     let state = State::new(gpu_state, surface, typeface_font_provider, default_font);
@@ -153,7 +170,7 @@ pub struct Rect {
 #[no_mangle]
 pub extern "C" fn alloc_rects(len: usize) -> *mut Rect {
     // create a new mutable buffer with capacity `len`
-    let mut buf : Vec<Rect> = Vec::with_capacity(len);
+    let mut buf: Vec<Rect> = Vec::with_capacity(len);
     let ptr = buf.as_mut_ptr();
     // take ownership of the memory block and ensure the its destructor is not
     // called when the object goes out of scope at the end of the function
@@ -166,7 +183,6 @@ pub unsafe fn free_rects(ptr: *mut Rect, len: usize) {
     let buf = Vec::<Rect>::from_raw_parts(ptr, len, len);
     std::mem::forget(buf);
 }
-
 
 /// Draws a rect at the specified coordinates with the give ncolor
 /// # Safety
@@ -199,7 +215,6 @@ pub unsafe extern "C" fn scale(state: *mut State, sx: f32, sy: f32) {
 
 #[no_mangle]
 pub unsafe extern "C" fn reset_canvas(state: *mut State) {
-    println!("reset_canvas");
     let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
     state.surface.canvas().clear(skia_safe::Color::TRANSPARENT);
     state.surface.canvas().reset_matrix();
@@ -207,7 +222,14 @@ pub unsafe extern "C" fn reset_canvas(state: *mut State) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usize, zoom: f32, dx: f32, dy: f32) {
+pub unsafe extern "C" fn draw_shapes(
+    state: *mut State,
+    ptr: *mut Rect,
+    len: usize,
+    zoom: f32,
+    dx: f32,
+    dy: f32,
+) {
     let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
     reset_canvas(state);
     scale(state, zoom, zoom);
@@ -226,50 +248,62 @@ pub unsafe extern "C" fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usi
     path_paint.set_stroke_width(1.0);
     path_paint.set_style(PaintStyle::Stroke);
 
-    let svg_canvas = skia_safe::svg::Canvas::new(skia_safe::Rect::from_size((10000, 10000)), None);
+    // let svg_canvas = skia_safe::svg::Canvas::new(skia_safe::Rect::from_size((10000, 10000)), None);
 
-    let mut memory = Vec::new();
-    let mut document = skia_safe::pdf::new_document(&mut memory, None).begin_page((10000, 10000), None);
-    let pdf_canvas = document.canvas();
+    // let mut memory = Vec::new();
+    // let mut document =
+    //     skia_safe::pdf::new_document(&mut memory, None).begin_page((10000, 10000), None);
+    // // let pdf_canvas = document.canvas();
 
     for rect in buf.iter() {
         let r = skia::Rect::new(rect.left, rect.top, rect.right, rect.bottom);
-        let color = skia::Color::from_argb((rect.a * 255.0) as u8, rect.r as u8, rect.g as u8, rect.b as u8);
+        let color = skia::Color::from_argb(
+            (rect.a * 255.0) as u8,
+            rect.r as u8,
+            rect.g as u8,
+            rect.b as u8,
+        );
         render_rect(&mut state.surface, r, color);
 
         let mut paint = skia::Paint::default();
         paint.set_style(skia::PaintStyle::Fill);
         paint.set_color(color);
         paint.set_anti_alias(true);
-        svg_canvas.draw_rect(r, &paint);
-        pdf_canvas.draw_rect(r, &paint);
+        // svg_canvas.draw_rect(r, &paint);
+        // pdf_canvas.draw_rect(r, &paint);
 
         text_paint.set_color(color);
-        state.surface.canvas().draw_str("SKIA TEXT", (rect.left, rect.top), &state.default_font, &text_paint);
-        svg_canvas.draw_str("SKIA TEXT", (rect.left, rect.top), &state.default_font, &text_paint);
-        pdf_canvas.draw_str("SKIA TEXT", (rect.left, rect.top), &state.default_font, &text_paint);
+        state.surface.canvas().draw_str(
+            "SKIA TEXT",
+            (rect.left, rect.top),
+            &state.default_font,
+            &text_paint,
+        );
+        // svg_canvas.draw_str("SKIA TEXT", (rect.left, rect.top), &state.default_font, &text_paint);
+        // pdf_canvas.draw_str("SKIA TEXT", (rect.left, rect.top), &state.default_font, &text_paint);
 
-        let mut path = Path::new();
-        path.move_to((rect.left, rect.top));
-        path.line_to((rect.right, rect.bottom));
-        state.surface.canvas().draw_path(&path, &path_paint);
-        svg_canvas.draw_path(&path, &path_paint);
-        pdf_canvas.draw_path(&path, &path_paint);
+        // let mut path = Path::new();
+        // path.move_to((rect.left, rect.top));
+        // path.line_to((rect.right, rect.bottom));
+        // state.surface.canvas().draw_path(&path, &path_paint);
+        // svg_canvas.draw_path(&path, &path_paint);
+        // pdf_canvas.draw_path(&path, &path_paint);
 
-        // https://github.com/rust-skia/rust-skia/blob/02c89a87649af8d2870fb631aae4a5e171887367/skia-org/src/skparagraph_example.rs#L18    
-        let mut font_collection = FontCollection::new();
-        font_collection.set_default_font_manager(Some(state.typeface_font_provider.clone().into()), None);
-        let paragraph_style = ParagraphStyle::new();
-        let mut paragraph_builder = ParagraphBuilder::new(&paragraph_style, font_collection);
-        let mut ts = TextStyle::new();
-        ts.set_foreground_paint(&Paint::default())
-            .set_font_families(&[TYPEFACE_ALIAS]);
-        paragraph_builder.push_style(&ts);
-        paragraph_builder.add_text("Other skia text");
-        let mut paragraph = paragraph_builder.build();
-        paragraph.layout(256.0);
-        paragraph.paint(state.surface.canvas(), (rect.left, rect.top));
-        paragraph.paint(&svg_canvas, (rect.left, rect.top));
+        // https://github.com/rust-skia/rust-skia/blob/02c89a87649af8d2870fb631aae4a5e171887367/skia-org/src/skparagraph_example.rs#L18
+        // let mut font_collection = FontCollection::new();
+        // font_collection
+        //     .set_default_font_manager(Some(state.typeface_font_provider.clone().into()), None);
+        // let paragraph_style = ParagraphStyle::new();
+        // let mut paragraph_builder = ParagraphBuilder::new(&paragraph_style, font_collection);
+        // let mut ts = TextStyle::new();
+        // ts.set_foreground_paint(&Paint::default())
+        //     .set_font_families(&[TYPEFACE_ALIAS]);
+        // paragraph_builder.push_style(&ts);
+        // paragraph_builder.add_text("Other skia text");
+        // let mut paragraph = paragraph_builder.build();
+        // paragraph.layout(256.0);
+        // paragraph.paint(state.surface.canvas(), (rect.left, rect.top));
+        // paragraph.paint(&svg_canvas, (rect.left, rect.top));
     }
 
     /*
@@ -277,7 +311,7 @@ pub unsafe extern "C" fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usi
     let image = state.surface.image_snapshot();
     let mut context = state.surface.direct_context();
     let encoded_image = image.encode(context.as_mut(), EncodedImageFormat::PNG, None).unwrap();
-    let base64_image = base64::encode(&encoded_image.as_bytes());    
+    let base64_image = base64::encode(&encoded_image.as_bytes());
     println!("data:image/png;base64,{}", base64_image);
 
     // SVG representation
@@ -301,9 +335,4 @@ pub unsafe extern "C" fn draw_shapes(state: *mut State, ptr: *mut Rect, len: usi
 
 fn main() {
     init_gl();
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
 }

@@ -26,6 +26,7 @@
         scale (gobj/get ^js internal-module "_scale")
         flush (gobj/get ^js internal-module "_flush")
         draw-shapes (gobj/get ^js internal-module "_draw_shapes")]
+        (js/console.log "vbox" vbox "zoom" zoom)
         (js/requestAnimationFrame (fn []
                                     (draw-shapes gpu-state shapes-ptr shapes-size zoom (- (:x vbox)) (- (:y vbox)))))))
 
@@ -73,13 +74,12 @@
     (set! (.-width canvas) (.-clientWidth canvas))
     (set! (.-height canvas) (.-clientHeight canvas))
     (set! gpu-state state)
-    (set-objects vbox zoom objects)
-    (println "set-canvas ok" (.-width canvas) (.-height canvas))))
+    (set-objects vbox zoom objects)))
 
 (defn on-init
   [module']
   (set! internal-module module')
-  (println "on-init ok"))
+  )
 
 (defn init
   []
