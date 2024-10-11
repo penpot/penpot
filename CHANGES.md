@@ -38,8 +38,9 @@
 - Fix problem when translating multiple path points [Github #4459](https://github.com/penpot/penpot/issues/4459)
 - Fix problem on importing (and exporting) files with flows [Taiga #8914](https://tree.taiga.io/project/penpot/issue/8914)
 - Fix Internal Error page: "go to your penpot" wrong design [Taiga #8922](https://tree.taiga.io/project/penpot/issue/8922)
-- Fix problem updating layout when toggle visibility in component copy[Github #5143](https://github.com/penpot/penpot/issues/5143)
+- Fix problem updating layout when toggle visibility in component copy [Github #5143](https://github.com/penpot/penpot/issues/5143)
 - Fix "Done" button on toolbar on inspect mode should go to design mode [Taiga #8933](https://tree.taiga.io/project/penpot/issue/8933)
+- Fix problem with shortcuts in text editor [Github #5078](https://github.com/penpot/penpot/issues/5078)
 
 ## 2.2.1
 
