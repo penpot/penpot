@@ -33,7 +33,6 @@
    [app.main.ui.workspace.plugins]
    [app.plugins.register :as preg]
    [app.util.dom :as dom]
-   [app.util.http :as http]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.router :as rt]
@@ -202,19 +201,14 @@
     (mf/with-layout-effect
       [plugin-url team-id project-id]
       (when plugin-url
-        (->> (http/send! {:method :get
-                          :uri plugin-url
-                          :omit-default-headers true
-                          :response-type :json})
-             (rx/map :body)
+        (->> (dp/fetch-manifest plugin-url)
              (rx/subs!
-              (fn [body]
-                (if-let [plugin (preg/parse-manifest plugin-url body)]
+              (fn [plugin]
+                (if plugin
                   (do
                     (st/emit! (ptk/event ::ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
                     (open-permissions-dialog plugin))
                   (st/emit! (notif/error "Cannot parser the plugin manifest"))))
-
               (fn [_]
                 (st/emit! (notif/error "The plugin URL is incorrect")))))))))
 

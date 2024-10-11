@@ -6,9 +6,11 @@
 
 (ns app.main.data.workspace.shortcuts
   (:require
+   [app.common.data.macros :as dm]
    [app.main.data.events :as ev]
    [app.main.data.exports :as de]
    [app.main.data.modal :as modal]
+   [app.main.data.plugins :as dpl]
    [app.main.data.preview :as dp]
    [app.main.data.shortcuts :as ds]
    [app.main.data.users :as du]
@@ -28,6 +30,7 @@
    [app.main.store :as st]
    [app.main.ui.hooks.resize :as r]
    [app.util.dom :as dom]
+   [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -43,6 +46,17 @@
   [& events]
   (when-not (deref refs/workspace-read-only?)
     (run! st/emit! events)))
+
+(def esc-pressed
+  (ptk/reify ::esc-pressed
+    ptk/WatchEvent
+    (watch [_ state _]
+      (rx/of
+       :interrupt
+       (let [selection (dm/get-in state [:workspace-local :selected])]
+         (if (empty? selection)
+           (dpl/close-current-plugin)
+           (dw/deselect-all true)))))))
 
 ;; Shortcuts format https://github.com/ccampbell/mousetrap
 
@@ -111,7 +125,7 @@
    :escape               {:tooltip (ds/esc)
                           :command "escape"
                           :subsections [:edit]
-                          :fn #(st/emit! :interrupt (dw/deselect-all true))}
+                          :fn #(st/emit! esc-pressed)}
 
 
    ;; MODIFY LAYERS
