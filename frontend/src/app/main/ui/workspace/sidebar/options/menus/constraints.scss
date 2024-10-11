@@ -36,32 +36,37 @@
 .constraints-bottom {
   @include flexCenter;
   grid-area: top;
-  .constraint-btn,
-  .constraint-btn-special,
-  .constraint-btn-rotated {
-    @include buttonStyle;
-    @include flexCenter;
-    width: 100%;
-    height: 100%;
-    .resalted-area {
-      width: $s-32;
-      height: $s-3;
-      border-radius: $br-8;
-      background-color: var(--button-constraint-background-color-rest);
-      padding: 0;
-      margin: 0;
-    }
-    &.active .resalted-area {
-      outline: $s-4 solid var(--button-constraint-border-color-hover);
-      background-color: var(--button-constraint-background-color-hover);
-    }
-    &:hover .resalted-area,
-    &:focus .resalted-area {
-      outline: $s-4 solid var(--button-constraint-border-color-hover);
-      background-color: var(--button-constraint-background-color-hover);
-    }
+}
+.constraint-btn,
+.constraint-btn-special,
+.constraint-btn-rotated {
+  @include buttonStyle;
+  @include flexCenter;
+  width: 100%;
+  height: 100%;
+  --resalted-area-background-color: var(--button-constraint-background-color-rest);
+  --resalted-area-border-color: none;
+  &.active {
+    --resalted-area-border-color: var(--button-constraint-border-color-hover);
+    --resalted-area-background-color: var(--button-constraint-background-color-hover);
+  }
+  &:hover,
+  &:focus-visible {
+    --resalted-area-border-color: var(--button-constraint-border-color-hover);
+    --resalted-area-background-color: var(--button-constraint-background-color-hover);
   }
 }
+
+.resalted-area {
+  width: $s-32;
+  height: $s-3;
+  border-radius: $br-8;
+  background-color: var(--resalted-area-background-color);
+  outline: $s-4 solid var(--resalted-area-border-color);
+  padding: 0;
+  margin: 0;
+}
+
 .constraints-left {
   grid-area: left;
   .constraint-btn-rotated {
@@ -73,6 +78,7 @@
     }
   }
 }
+
 .constraints-center {
   grid-area: center;
   position: relative;
@@ -113,7 +119,7 @@
   grid-area: bottom;
 }
 
-.contraints-selects {
+.constraints-selects {
   @include flexColumn;
 }
 
