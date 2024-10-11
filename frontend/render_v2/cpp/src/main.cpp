@@ -139,6 +139,40 @@ struct PenpotObject {
 
 std::vector<PenpotObject> objects(0);
 
+constexpr uint32_t LCG_MULTIPLIER       = 1103515245;
+constexpr uint32_t LCG_INCREMENT        = 12345;
+constexpr uint32_t LCG_MODULUS          = 0x80000000;
+constexpr uint32_t LCG_MASK             = 0x7FFFFFFF;
+
+uint32_t lcg(uint32_t x, uint32_t a, uint32_t c, uint32_t m)
+{
+    return (x * a + c) % m;
+}
+
+class Random {
+    private:
+        uint32_t _seed;
+
+    public:
+        Random(uint32_t seed) : _seed(seed) {};
+
+        void reset(uint32_t new_seed) {
+            _seed = new_seed;
+        }
+
+        float value() {
+            _seed = lcg(_seed, LCG_MULTIPLIER, LCG_INCREMENT, LCG_MODULUS);
+            return (float)(_seed & LCG_MASK) / (float)LCG_MODULUS;
+        }
+
+        uint8_t byte() {
+            _seed = lcg(_seed, LCG_MULTIPLIER, LCG_INCREMENT, LCG_MODULUS);
+            return (_seed & LCG_MASK) % 0xFF;
+        }
+};
+
+Random lcg_random(0);
+
 // Initializes all the structures and elements needed to start rendering things.
 void InitCanvas(int width, int height)
 {
@@ -201,12 +235,13 @@ void DrawCanvas(float x, float y, float zoom)
     canvas->save();
     canvas->scale(zoom, zoom);
     canvas->translate(-x, -y);
+    lcg_random.reset(0);
     emscripten_log(EM_LOG_CONSOLE, "Clearing canvas");
     for (auto object : objects) {
-        emscripten_log(EM_LOG_CONSOLE, "Drawing object");
+        // emscripten_log(EM_LOG_CONSOLE, "Drawing object");
 
         SkPaint paint;
-        paint.setARGB(255, 255, 0, 0);
+        paint.setARGB(255, lcg_random.byte(), lcg_random.byte(), lcg_random.byte());
         paint.setStyle(SkPaint::Style::kFill_Style);
 
         SkRect rect = SkRect::MakeXYWH(object.selRect.x, object.selRect.y, object.selRect.width, object.selRect.height);
@@ -219,12 +254,12 @@ void DrawCanvas(float x, float y, float zoom)
 }
 
 void SetObjects(int num_objects) {
-    emscripten_log(EM_LOG_CONSOLE, "Resizing objects vector capacity %d", num_objects);
+    // emscripten_log(EM_LOG_CONSOLE, "Resizing objects vector capacity %d", num_objects);
     objects.resize(num_objects);
 }
 
-void SetObject(int index, float x, float y, float width, float height) {
-    emscripten_log(EM_LOG_CONSOLE, "Setting object at %d %f %f %f %f", index, x, y, width, height);
+void SetObjectRect(int index, float x, float y, float width, float height) {
+    // emscripten_log(EM_LOG_CONSOLE, "Setting object at %d %f %f %f %f", index, x, y, width, height);
     objects[index].selRect.x = x;
     objects[index].selRect.y = y;
     objects[index].selRect.width = width;
@@ -236,5 +271,5 @@ EMSCRIPTEN_BINDINGS(Renderer)
     function("_InitCanvas", InitCanvas);
     function("_DrawCanvas", DrawCanvas);
     function("_SetObjects", SetObjects);
-    function("_SetObject", SetObject);
+    function("_SetObjectRect", SetObjectRect);
 }
