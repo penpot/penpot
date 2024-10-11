@@ -26,7 +26,6 @@
         scale (gobj/get ^js internal-module "_scale")
         flush (gobj/get ^js internal-module "_flush")
         draw-shapes (gobj/get ^js internal-module "_draw_shapes")]
-        (js/console.log "vbox" vbox "zoom" zoom)
         (js/requestAnimationFrame (fn []
                                     (draw-shapes gpu-state shapes-ptr shapes-size zoom (- (:x vbox)) (- (:y vbox)))))))
 
@@ -58,6 +57,39 @@
           (.set mem (js/Float32Array. (clj->js [(:x1 sr) (:y1 sr) (:x2 sr) (:y2 sr) r g b (or alpha 1)]))))))
     (draw-canvas vbox zoom objects)))
 
+(defn set-objects-benchmark
+  [vbox zoom]
+  (let [alloc-rects (gobj/get ^js internal-module "_alloc_rects")
+        free_rects (gobj/get ^js internal-module "_free_rects")
+        shape-count 20000
+        heap (gobj/get ^js internal-module "HEAPF32")
+        ;; Each F32 are 4 bytes
+        ;; Each rect has:
+        ;;  - 4 F32 for points coordinates
+        ;;  - 4 F32 for color
+        ;; rect-size (* 8 4)
+        rect-bytes (* 8 4)
+        ]
+    (when shapes-ptr
+      (free_rects shapes-ptr shape-count))
+
+    (let
+      [ptr (alloc-rects shape-count)
+       padding 16
+       width 64
+       height 64]
+       (doseq [index (take shape-count (iterate inc 0))]
+        (let [mem (js/Float32Array. (.-buffer heap) (+ ptr (* rect-bytes index)) rect-bytes)
+              x1 (* index (+ padding width))
+              x2 (+ x1 width)
+              y1 (+ padding height)
+              y2 (+ y1 height)]
+          (set! shapes-ptr ptr)
+          (set! shapes-size shape-count)
+          (.set mem (js/Float32Array. (clj->js [x1 y1 x2 y2 255 0 0 1])))
+        )))
+    (draw-canvas vbox zoom nil)))
+
 (defn set-canvas
   [canvas vbox zoom objects]
   (let [gl (gobj/get ^js internal-module "GL")
@@ -74,7 +106,8 @@
     (set! (.-width canvas) (.-clientWidth canvas))
     (set! (.-height canvas) (.-clientHeight canvas))
     (set! gpu-state state)
-    (set-objects vbox zoom objects)))
+    (set-objects-benchmark vbox zoom)))
+    ;; (set-objects vbox zoom objects)))
 
 (defn on-init
   [module']
