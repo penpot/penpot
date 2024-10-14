@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.config :as cf]
+   [app.config :as cfg]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.plugins :as dp]
@@ -169,7 +169,7 @@
          [:> i18n/tr-html*
           {:class (stl/css :discover)
            :on-click #(st/emit! (ptk/event ::ev/event {::ev/name "open-plugins-list"}))
-           :content (tr "workspace.plugins.discover" cf/plugins-list-uri)}])
+           :content (tr "workspace.plugins.discover" cfg/plugins-list-uri)}])
 
        [:hr]
 
@@ -178,7 +178,7 @@
           [:div {:class (stl/css :plugins-empty-logo)} i/puzzle]
           [:div {:class (stl/css :plugins-empty-text)} (tr "workspace.plugins.empty-plugins")]
           [:a {:class (stl/css :plugins-link)
-               :href cf/plugins-list-uri
+               :href cfg/plugins-list-uri
                :target "_blank"
                :on-click #(st/emit! (ptk/event ::ev/event {::ev/name "open-plugins-list"}))}
            (tr "workspace.plugins.plugin-list-link") i/external-link]]
@@ -287,8 +287,9 @@
       [:div {:class (stl/css :modal-content)}
        [:& plugins-permission-list {:permissions permissions}]
 
-       [:div {:class (stl/css :permissions-disclaimer)}
-        (tr "workspace.plugins.permissions.disclaimer")]]
+       (when-not (contains? cfg/plugins-whitelist host)
+         [:div {:class (stl/css :permissions-disclaimer)}
+          (tr "workspace.plugins.permissions.disclaimer")])]
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}
