@@ -7,6 +7,9 @@ export DEVENV_PNAME="penpotdev";
 export CURRENT_USER_ID=$(id -u);
 export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
 
+# Set default java options
+export JAVA_OPTS=${JAVA_OPTS:-"-Xmx1000m -Xms50m"};
+
 set -e
 
 function print-current-version {
@@ -95,9 +98,11 @@ function run-devenv-shell {
     if [[ ! $(docker ps -f "name=penpot-devenv-main" -q) ]]; then
         start-devenv
     fi
-    docker exec -ti penpot-devenv-main sudo -EH -u penpot bash
+    docker exec -ti \
+           -e JAVA_OPTS="$JAVA_OPTS" \
+           -e EXTERNAL_UID=$CURRENT_USER_ID \
+           penpot-devenv-main sudo -EH -u penpot bash;
 }
-
 
 function build {
     echo ">> build start: $1"
@@ -111,6 +116,7 @@ function build {
            -e EXTERNAL_UID=$CURRENT_USER_ID \
            -e BUILD_STORYBOOK=$BUILD_STORYBOOK \
            -e SHADOWCLJS_EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS \
+           -e JAVA_OPTS="$JAVA_OPTS" \
            -w /home/penpot/penpot/$1 \
            $DEVENV_IMGNAME:latest sudo -EH -u penpot ./scripts/build $version
 
