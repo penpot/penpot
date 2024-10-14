@@ -60,6 +60,7 @@
         filter-y (mth/min y (+ y offset-y (- spread) (- blur) -5))
         filter-w (+ w (mth/abs offset-x) (* spread 2) (* blur 2) 10)
         filter-h (+ h (mth/abs offset-y) (* spread 2) (* blur 2) 10)]
+
     (grc/make-rect filter-x filter-y filter-w filter-h)))
 
 (defn get-rect-filter-bounds
@@ -101,7 +102,7 @@
               (map #(case (get % :stroke-alignment :center)
                       :center (/ (:stroke-width % 0) 2)
                       :outer  (:stroke-width % 0)
-                      0))
+                      (:stroke-width % 0)))
               (reduce d/max 0))
 
          stroke-margin

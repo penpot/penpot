@@ -272,7 +272,7 @@ div.input-error {
   @include bodySmallTypography;
   padding: $s-16;
   background: var(--color-background-quaternary);
-  color: var(--color-foreground-quaternary);
+  color: var(--color-foreground-primary);
   border-radius: $br-4;
 }
 

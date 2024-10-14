@@ -150,6 +150,7 @@
 .grid-layout-menu {
   @include flexColumn;
   gap: $s-8;
+  overflow: hidden;
 
   .row {
     @include flexRow;

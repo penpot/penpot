@@ -38,7 +38,14 @@
 - Fix problem when translating multiple path points [Github #4459](https://github.com/penpot/penpot/issues/4459)
 - Fix problem on importing (and exporting) files with flows [Taiga #8914](https://tree.taiga.io/project/penpot/issue/8914)
 - Fix Internal Error page: "go to your penpot" wrong design [Taiga #8922](https://tree.taiga.io/project/penpot/issue/8922)
+- Fix problem updating layout when toggle visibility in component copy [Github #5143](https://github.com/penpot/penpot/issues/5143)
 - Fix "Done" button on toolbar on inspect mode should go to design mode [Taiga #8933](https://tree.taiga.io/project/penpot/issue/8933)
+- Fix problem with shortcuts in text editor [Github #5078](https://github.com/penpot/penpot/issues/5078)
+- Fix problems with show in viewer and interactions [Github #4868](https://github.com/penpot/penpot/issues/4868)
+- Add visual feedback when moving an element into a board [Github #3210](https://github.com/penpot/penpot/issues/3210)
+- Fix percent calculation on grid layout tracks [Github #4688](https://github.com/penpot/penpot/issues/4688)
+- Fix problem with caps and inner shadows [Github #4517](https://github.com/penpot/penpot/issues/4517)
+- Fix problem with horizontal/vertical lines and shadows [Github #4516](https://github.com/penpot/penpot/issues/4516)
 
 ## 2.2.1
 
