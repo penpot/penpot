@@ -677,7 +677,7 @@
   [{:keys [type value]}]
   (case type
     :auto "auto"
-    :percent (fmt/format-percent value)
+    :percent (fmt/format-percent (/ value 100))
     :flex    (fmt/format-frs value)
     :fixed   (fmt/format-pixels value)
     value))
