@@ -44,6 +44,7 @@
 - Fix problems with show in viewer and interactions [Github #4868](https://github.com/penpot/penpot/issues/4868)
 - Add visual feedback when moving an element into a board [Github #3210](https://github.com/penpot/penpot/issues/3210)
 - Fix percent calculation on grid layout tracks [Github #4688](https://github.com/penpot/penpot/issues/4688)
+- Fix problem with caps and inner shadows [Github #4517](https://github.com/penpot/penpot/issues/4517)
 
 ## 2.2.1
 
