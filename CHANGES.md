@@ -45,6 +45,7 @@
 - Add visual feedback when moving an element into a board [Github #3210](https://github.com/penpot/penpot/issues/3210)
 - Fix percent calculation on grid layout tracks [Github #4688](https://github.com/penpot/penpot/issues/4688)
 - Fix problem with caps and inner shadows [Github #4517](https://github.com/penpot/penpot/issues/4517)
+- Fix problem with horizontal/vertical lines and shadows [Github #4516](https://github.com/penpot/penpot/issues/4516)
 
 ## 2.2.1
 
