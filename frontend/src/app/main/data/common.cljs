@@ -17,6 +17,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
+   [app.util.router :as rt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -217,3 +218,22 @@
 
                        :else
                        permissions)))))))
+
+
+
+(defn removed-from-team
+  [{:keys [team-id team-name]}]
+  (dm/assert! (uuid? team-id))
+  (ptk/reify ::removed-from-team
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [msg (tr "dashboard.removed-from-team" team-name)]
+
+        (rx/concat
+         (rx/of (rt/nav :dashboard-projects {:team-id (get-in state [:profile :default-team-id])}))
+         (->> (rx/of (ntf/info msg))
+              ;; Delay so the navigation can finish
+              (rx/delay 250)))))))
+
+
+

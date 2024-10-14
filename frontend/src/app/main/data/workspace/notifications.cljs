@@ -12,10 +12,12 @@
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
-   [app.main.data.common :refer [handle-notification change-team-permissions]]
+   [app.main.data.common :as dc]
    [app.main.data.websocket :as dws]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.layout :as dwly]
+
    [app.main.data.workspace.libraries :as dwl]
    [app.util.globals :refer [global]]
    [app.util.mouse :as mse]
@@ -103,16 +105,15 @@
       (let [viewer? (= :viewer role)]
 
         (rx/concat
-         (->> (rx/of :interrupt
-                     (dwe/clear-edition-mode))
+         (rx/of :interrupt
+                (dwe/clear-edition-mode)
+                (dwc/set-workspace-read-only false))
+         (->> (rx/of (dc/change-team-permissions msg))
               ;; Delay so anything that launched :interrupt can finish
-              (rx/delay 500))
-
+              (rx/delay 100))
          (if viewer?
-           (rx/of (dwly/set-options-mode :design))
-           (rx/empty))
-
-         (rx/of (change-team-permissions msg)))))))
+           (rx/of (dwly/set-options-mode :inspect))
+           (rx/of (dwly/set-options-mode :design))))))))
 
 
 (defn- process-message
@@ -125,8 +126,9 @@
     :pointer-update          (handle-pointer-update msg)
     :file-change             (handle-file-change msg)
     :library-change          (handle-library-change msg)
-    :notification            (handle-notification msg)
+    :notification            (dc/handle-notification msg)
     :team-permissions-change (handle-change-team-permissions (assoc msg :workspace? true))
+    :removed-from-team       (dc/removed-from-team msg)
     nil))
 
 (defn- handle-pointer-send

@@ -1215,4 +1215,5 @@
   (case type
     :notification            (dc/handle-notification msg)
     :team-permissions-change (dc/change-team-permissions (assoc msg :workspace? false))
+    :removed-from-team       (dc/removed-from-team msg)
     nil))

@@ -693,9 +693,10 @@
 (sv/defmethod ::delete-team-member
   {::doc/added "1.17"
    ::sm/params schema:delete-team-member}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id member-id] :as params}]
+  [{:keys [::db/pool ::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id team-id member-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [perms (get-permissions conn profile-id team-id)]
+    (let [team  (get-team pool :profile-id profile-id :team-id team-id)
+          perms (get-permissions conn profile-id team-id)]
       (when-not (or (:is-owner perms)
                     (:is-admin perms))
         (ex/raise :type :validation
@@ -707,6 +708,13 @@
 
       (db/delete! conn :team-profile-rel {:profile-id member-id
                                           :team-id team-id})
+
+      (mbus/pub! msgbus
+                 :topic member-id
+                 :message {:type :removed-from-team
+                           :subs-id member-id
+                           :team-id team-id
+                           :team-name (:name team)})
 
       nil)))
 

@@ -752,21 +752,25 @@ msgstr "+ New project"
 msgid "dashboard.new-project-prefix"
 msgstr "New Project"
 
-#: src/app/main/data/dashboard.cljs:72
+#: src/app/main/data/common.cljs:72
 msgid "dashboard.permissions-change.viewer"
 msgstr "You are now a viewer on this team."
 
-#: src/app/main/data/dashboard.cljs:75
+#: src/app/main/data/common.cljs:75
 msgid "dashboard.permissions-change.editor"
 msgstr "You are now an editor on this team."
 
-#: src/app/main/data/dashboard.cljs:78
+#: src/app/main/data/common.cljs:78
 msgid "dashboard.permissions-change.admin"
 msgstr "You are now an admin on this team."
 
-#: src/app/main/data/dashboard.cljs:81
+#: src/app/main/data/common.cljs:195
 msgid "dashboard.permissions-change.owner"
 msgstr "You are now owner on this team."
+
+#: src/app/main/data/common.cljs:229
+msgid "dashboard.removed-from-team"
+msgstr "You are not part of the team “%s“ anymore."
 
 #: src/app/main/ui/dashboard/search.cljs:60
 msgid "dashboard.no-matches-for"

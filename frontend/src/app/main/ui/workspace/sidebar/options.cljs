@@ -13,6 +13,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace :as udw]
+   [app.main.data.workspace.common :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -147,8 +148,8 @@
           (let [options-mode (keyword options-mode)]
             (st/emit! (udw/set-options-mode options-mode))
             (if (= options-mode :inspect)
-              (st/emit! :interrupt (udw/set-workspace-read-only true))
-              (st/emit! :interrupt (udw/set-workspace-read-only false)))))
+              (st/emit! :interrupt (dwc/set-workspace-read-only true))
+              (st/emit! :interrupt (dwc/set-workspace-read-only false)))))
 
         design-content
         (mf/html [:& design-menu {:selected selected
