@@ -397,7 +397,7 @@
                (->> @hover-ids
                     (filter #(cfh/frame-shape? (get base-objects %)))
                     (remove selected)
-                    (first))
+                    (last))
                outlined-frame (get objects outlined-frame-id)]
            [:*
             [:& outline/shape-outlines

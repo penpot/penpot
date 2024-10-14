@@ -42,6 +42,7 @@
 - Fix "Done" button on toolbar on inspect mode should go to design mode [Taiga #8933](https://tree.taiga.io/project/penpot/issue/8933)
 - Fix problem with shortcuts in text editor [Github #5078](https://github.com/penpot/penpot/issues/5078)
 - Fix problems with show in viewer and interactions [Github #4868](https://github.com/penpot/penpot/issues/4868)
+- Add visual feedback when moving an element into a board [Github #3210](https://github.com/penpot/penpot/issues/3210)
 
 ## 2.2.1
 
