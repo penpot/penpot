@@ -59,12 +59,12 @@
        [:& cmm/assets-context-menu
         {:on-close on-close-menu
          :state @menu-state
-         :options [{:option-name    (tr "workspace.assets.rename")
-                    :id             "assets-rename-group"
-                    :option-handler #(on-rename % path last-path)}
-                   {:option-name    (tr "workspace.assets.ungroup")
-                    :id             "assets-ungroup-group"
-                    :option-handler  #(on-ungroup path)}]}]])))
+         :options [{:name    (tr "workspace.assets.rename")
+                    :id      "assets-rename-group"
+                    :handler #(on-rename % path last-path)}
+                   {:name    (tr "workspace.assets.ungroup")
+                    :id      "assets-ungroup-group"
+                    :handler  #(on-ungroup path)}]}]])))
 
 (defn group-assets
   "Convert a list of assets in a nested structure like this:
