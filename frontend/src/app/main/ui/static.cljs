@@ -20,6 +20,8 @@
    [app.main.ui.auth.recovery-request :refer [recovery-request-page recovery-sent-page]]
    [app.main.ui.auth.register :as register]
    [app.main.ui.dashboard.sidebar :refer [sidebar]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
    [app.main.ui.icons :as i]
    [app.main.ui.viewer.header :as viewer.header]
    [app.util.dom :as dom]
@@ -43,9 +45,9 @@
      [:button
       {:class (stl/css :exception-header)
        :on-click on-nav-root}
-      i/logo-icon
+      [:> raw-svg* {:id "penpot-logo-icon" :class (stl/css :penpot-logo)}]
       (when profile-id
-        (str "< " (tr "not-found.no-permission.go-dashboard")))]
+        [:div {:class (stl/css :go-back-wrapper)} [:> icon* {:id "arrow" :class (stl/css :back-arrow)}] [:span (tr "not-found.no-permission.go-dashboard")]])]
      [:div {:class (stl/css :deco-before)} i/logo-error-screen]
      (when-not profile-id
        [:button {:class (stl/css :login-header)
