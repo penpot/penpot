@@ -197,8 +197,6 @@
   [{:keys [schema errors value]} & {:keys [length level]}]
   (let [errors (mapv #(update % :schema form) errors)]
     (with-out-str
-      (println "Schema: ")
-      (println (pp/pprint-str (form schema) {:width 100 :level 15 :length 20}))
       (println "Errors:")
       (println (pp/pprint-str errors {:width 100 :level 15 :length 20}))
       (println "Value:")
