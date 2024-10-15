@@ -9,12 +9,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.main.data.events :as ev]
-   [app.main.data.workspace :as dw]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr] :as i18n]
@@ -326,18 +323,8 @@
   []
   (let [objects (mf/deref refs/workspace-page-objects)
         {:keys [items index]} (mf/deref workspace-undo)
-        entries (parse-entries items objects)
-        toggle-history
-        (mf/use-fn
-         #(st/emit! (-> (dw/toggle-layout-flag :document-history)
-                        (vary-meta assoc ::ev/origin "history-toolbox"))))]
+        entries (parse-entries items objects)]
     [:div {:class (stl/css :history-toolbox)}
-     [:div {:class (stl/css :history-toolbox-title)}
-      [:span (tr "workspace.undo.title")]
-      [:> icon-button* {:variant "ghost"
-                        :aria-label (tr "labels.close")
-                        :on-click toggle-history
-                        :icon "close"}]]
      (if (empty? entries)
        [:div {:class (stl/css :history-entry-empty)}
         [:div {:class (stl/css :history-entry-empty-icon)} i/history]

@@ -42,6 +42,7 @@
                  :file-id (:id file)
                  :profile-id (:id profile)
                  :revn 0
+                 :vern 0
                  :changes
                  [{:type :add-obj
                    :page-id page-id
@@ -253,7 +254,8 @@
         file    (th/create-file* 1 {:profile-id (:id profile)
                                     :project-id (:default-project-id profile)
                                     :is-shared false
-                                    :revn 3})
+                                    :revn 3
+                                    :vern 0})
 
         data1   {::th/type :create-file-thumbnail
                  ::rpc/profile-id (:id profile)

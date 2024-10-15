@@ -1970,6 +1970,9 @@ msgstr "Eliminar integrante"
 msgid "labels.rename"
 msgstr "Renombrar"
 
+msgid "labels.restore"
+msgstr "Restaurar"
+
 #: src/app/main/ui/dashboard/team_form.cljs:99
 msgid "labels.rename-team"
 msgstr "Renombra el equipo"
@@ -6332,3 +6335,48 @@ msgstr "Pulsar para cerrar la ruta"
 
 msgid "errors.maximum-invitations-by-request-reached"
 msgstr "Se ha alcanzado el número máximo (%s) de correos electrónicos que se pueden invitar en una sola solicitud"
+
+msgid "workspace.versions.button.save"
+msgstr "Guardar versión"
+
+msgid "workspace.versions.button.pin"
+msgstr "Fijar versión"
+
+msgid "workspace.versions.button.restore"
+msgstr "Restaurar versión"
+
+msgid "workspace.versions.empty"
+msgstr "No hay versiones aún"
+
+msgid "workspace.versions.autosaved.version"
+msgstr "Autoguardado %s"
+
+msgid "workspace.versions.autosaved.entry"
+msgstr "%s versiones de autoguardado"
+
+msgid "workspace.versions.loading"
+msgstr "Cargando..."
+
+msgid "workspace.versions.filter.label"
+msgstr "Filtro de versiones"
+
+msgid "workspace.versions.filter.all"
+msgstr "Todas las versiones"
+
+msgid "workspace.versions.filter.mine"
+msgstr "Mis versiones"
+
+msgid "workspace.versions.filter.user"
+msgstr "Versiones de %s"
+
+msgid "workspace.versions.restore-warning"
+msgstr "¿Quieres restaurar esta versión?"
+
+msgid "workspace.versions.snapshot-menu"
+msgstr "Abrir menu de versiones"
+
+msgid "workspace.versions.version-menu"
+msgstr "Abrir menu de versiones"
+
+msgid "workspace.versions.expand-snapshot"
+msgstr "Expandir versiones"

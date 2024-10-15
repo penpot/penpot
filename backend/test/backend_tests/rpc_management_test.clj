@@ -30,6 +30,7 @@
                 :id file-id
                 :session-id (uuid/random)
                 :revn revn
+                :vern 0
                 :features cfeat/supported-features
                 :changes changes}
         out    (th/command! params)]
@@ -65,6 +66,7 @@
      :file-id (:id file1)
      :profile-id (:id profile)
      :revn 0
+     :vern 0
      :changes
      [{:type :add-media
        :object mobj}])
@@ -195,6 +197,7 @@
      :file-id (:id file1)
      :profile-id (:id profile)
      :revn 0
+     :vern 0
      :changes
      [{:type :add-media
        :object mobj}])

@@ -29,12 +29,16 @@
    [clojure.set :as set]
    [potok.v2.core :as ptk]))
 
+;; From app.main.data.workspace we can use directly because it causes a circular dependency
+(def reload-file nil)
+
 ;; FIXME: this ns should be renamed to something different
 
 (declare process-message)
 (declare handle-presence)
 (declare handle-pointer-update)
 (declare handle-file-change)
+(declare handle-file-restore)
 (declare handle-library-change)
 (declare handle-pointer-send)
 (declare handle-export-update)
@@ -124,6 +128,7 @@
     :disconnect             (handle-presence msg)
     :pointer-update         (handle-pointer-update msg)
     :file-change            (handle-file-change msg)
+    :file-restore           (handle-file-restore msg)
     :library-change         (handle-library-change msg)
     :notification           (dc/handle-notification msg)
     :team-role-change       (handle-change-team-role msg)
@@ -229,13 +234,14 @@
    [:file-id ::sm/uuid]
    [:session-id ::sm/uuid]
    [:revn :int]
+   [:vern :int]
    [:changes ::cpc/changes]])
 
 (def ^:private check-file-change-params!
   (sm/check-fn schema:handle-file-change))
 
 (defn handle-file-change
-  [{:keys [file-id changes revn] :as msg}]
+  [{:keys [file-id changes revn vern] :as msg}]
 
   (dm/assert!
    "expected valid parameters"
@@ -250,12 +256,40 @@
       ;; The commit event is responsible to apply the data localy
       ;; and update the persistence internal state with the updated
       ;; file-revn
+
       (rx/of (dch/commit {:file-id file-id
                           :file-revn revn
+                          :file-vern vern
                           :save-undo? false
                           :source :remote
                           :redo-changes (vec changes)
                           :undo-changes []})))))
+
+(def ^:private
+  schema:handle-file-restore
+  [:map {:title "handle-file-restore"}
+   [:type :keyword]
+   [:file-id ::sm/uuid]
+   [:vern :int]])
+
+(def ^:private check-file-restore-params!
+  (sm/check-fn schema:handle-file-restore))
+
+(defn handle-file-restore
+  [{:keys [file-id vern] :as msg}]
+
+  (dm/assert!
+   "expected valid parameters"
+   (check-file-restore-params! msg))
+
+  (ptk/reify ::handle-file-restore
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [curr-file-id    (:current-file-id state)
+            curr-vern       (dm/get-in state [:workspace-file :vern])
+            reload?         (and (= file-id curr-file-id) (not= vern curr-vern))]
+        (when reload?
+          (rx/of (reload-file)))))))
 
 (def ^:private schema:handle-library-change
   [:map {:title "handle-library-change"}
