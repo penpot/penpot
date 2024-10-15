@@ -121,17 +121,6 @@
   text-transform: uppercase;
 }
 
-.trash-button {
-  @extend .button-tertiary;
-  width: $s-32;
-  height: $s-32;
-
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
-}
-
 .plugins-list {
   padding-top: $s-20;
   overflow-x: hidden;

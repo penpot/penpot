@@ -14,6 +14,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr] :as i18n]
@@ -333,9 +334,10 @@
     [:div {:class (stl/css :history-toolbox)}
      [:div {:class (stl/css :history-toolbox-title)}
       [:span (tr "workspace.undo.title")]
-      [:div {:class (stl/css :close-button)
-             :on-click toggle-history}
-       i/close]]
+      [:> icon-button* {:variant "ghost"
+                        :aria-label (tr "labels.close")
+                        :on-click toggle-history
+                        :icon "close"}]]
      (if (empty? entries)
        [:div {:class (stl/css :history-entry-empty)}
         [:div {:class (stl/css :history-entry-empty-icon)} i/history]

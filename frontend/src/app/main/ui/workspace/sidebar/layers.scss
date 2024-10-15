@@ -53,18 +53,6 @@
         @extend .button-icon-selected;
       }
     }
-    .close-search {
-      @extend .button-tertiary;
-      height: $s-32;
-      width: $s-28;
-      min-width: $s-28;
-      padding: 0;
-      border-radius: $br-8;
-      svg {
-        @extend .button-icon-small;
-        stroke: var(--icon-foreground);
-      }
-    }
   }
 }
 

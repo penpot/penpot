@@ -14,7 +14,7 @@
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -172,19 +172,26 @@
       [:div {:class (stl/css :actions)}
        (cond
          (or (= :multiple hidden?) (not hidden?))
-         [:button {:on-click handle-set-hidden
-                   :class (stl/css :hidden-btn)} i/shown]
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.options.layer-options.toggle-layer")
+                           :on-click handle-set-hidden
+                           :icon "shown"}]
 
          :else
-         [:button {:on-click handle-set-visible
-                   :class (stl/css :hidden-btn)} i/hide])
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.options.layer-options.toggle-layer")
+                           :on-click handle-set-visible
+                           :icon "hide"}])
 
        (cond
          (or (= :multiple blocked?) (not blocked?))
-         [:button {:on-click handle-set-blocked
-                   :class (stl/css :lock-btn)} i/unlock]
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.shape.menu.lock")
+                           :on-click handle-set-blocked
+                           :icon "unlock"}]
 
          :else
-         [:button {:on-click handle-set-unblocked
-                   :class (stl/css-case :lock-btn true
-                                        :locked blocked?)} i/lock])]]]))
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.shape.menu.unlock")
+                           :on-click handle-set-unblocked
+                           :icon "lock"}])]]]))
