@@ -17,6 +17,7 @@
    [app.common.schema.desc-js-like :as-alias smdj]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
+   [app.common.uri :as uri]
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
@@ -272,14 +273,23 @@
   (let [opts (assoc opts ::sql/columns [:id :modified-at :deleted-at :revn :data-ref-id :data-backend])]
     (db/get cfg :file {:id id} opts)))
 
+(defn- get-minimal-file-with-perms
+  [cfg {:keys [:id ::rpc/profile-id]}]
+  (let [mfile (get-minimal-file cfg id)
+        perms (get-permissions cfg profile-id id)]
+    (assoc mfile :permissions perms)))
+
 (defn get-file-etag
-  [{:keys [::rpc/profile-id]} {:keys [modified-at revn]}]
-  (str profile-id (dt/format-instant modified-at :iso) revn))
+  [{:keys [::rpc/profile-id]} {:keys [modified-at revn permissions]}]
+  (str profile-id "/" revn "/"
+       (dt/format-instant modified-at :iso)
+       "/"
+       (uri/map->query-string permissions)))
 
 (sv/defmethod ::get-file
   "Retrieve a file by its ID. Only authenticated users."
   {::doc/added "1.17"
-   ::cond/get-object #(get-minimal-file %1 (:id %2))
+   ::cond/get-object #(get-minimal-file-with-perms %1 %2)
    ::cond/key-fn get-file-etag
    ::sm/params schema:get-file
    ::sm/result schema:file-with-permissions}
@@ -308,8 +318,7 @@
                                    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
                                      (update file :data feat.fdata/process-pointers deref))
                                    file)]
-
-                        (vary-meta file assoc ::cond/key (get-file-etag params file)))))))
+                        file)))))
 
 ;; --- COMMAND QUERY: get-file-fragment (by id)
 
