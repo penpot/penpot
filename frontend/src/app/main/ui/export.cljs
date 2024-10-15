@@ -314,18 +314,16 @@
                     :stroke-dashoffset (- 280 pwidth)
                     :style {:transition "stroke-dashoffset 1s ease-in-out"}}]]])])]))
 
-(def ^:const options [:all :merge :detach])
-
 (mf/defc export-entry
   {::mf/wrap-props false}
   [{:keys [file]}]
   [:div {:class (stl/css-case :file-entry true
-                              :loading  (:loading? file)
+                              :loading  (:loading file)
                               :success  (:export-success? file)
                               :error    (:export-error? file))}
 
    [:div {:class (stl/css :file-name)}
-    (if (:loading? file)
+    (if (:loading file)
       [:> loader*  {:width 16
                     :title (tr "labels.loading")}]
       [:span {:class (stl/css :file-icon)}
@@ -340,7 +338,7 @@
   (mapv #(cond-> %
            (= file-id (:id %))
            (assoc :export-error? true
-                  :loading? false))
+                  :loading false))
         files))
 
 (defn- mark-file-success
@@ -348,30 +346,38 @@
   (mapv #(cond-> %
            (= file-id (:id %))
            (assoc :export-success? true
-                  :loading? false))
+                  :loading false))
         files))
 
-(def export-types
-  [:all :merge :detach])
+(defn- initialize-state
+  "Initialize export dialog state"
+  [files]
+  (let [files (mapv (fn [file] (assoc file :loading true)) files)]
+    {:status :prepare
+     :selected :all
+     :files files}))
+
+(def default-export-types
+  (d/ordered-set :all :merge :detach))
 
 (mf/defc export-dialog
   {::mf/register modal/components
    ::mf/register-as :export
    ::mf/wrap-props false}
-  [{:keys [team-id files has-libraries? binary? features]}]
-  (let [state*          (mf/use-state
-                         #(let [files (mapv (fn [file] (assoc file :loading? true)) files)]
-                            {:status :prepare
-                             :selected :all
-                             :files files}))
+  [{:keys [team-id files features format]}]
+  (let [state*          (mf/use-state (partial initialize-state files))
+        has-libs?       (some :has-libraries files)
 
         state           (deref state*)
         selected        (:selected state)
         status          (:status state)
 
-        ;; We've deprecated the merge option on non-binary files because it wasn't working
-        ;; and we're planning to remove this export in future releases.
-        export-types (if binary? export-types [:all :detach])
+        binary?         (not= format :legacy-zip)
+
+        ;; We've deprecated the merge option on non-binary files
+        ;; because it wasn't working and we're planning to remove this
+        ;; export in future releases.
+        export-types (if binary? default-export-types [:all :detach])
 
         start-export
         (mf/use-fn
@@ -379,10 +385,11 @@
          (fn []
            (swap! state* assoc :status :exporting)
            (->> (uw/ask-many!
-                 {:cmd (if binary? :export-binary-file :export-standard-file)
+                 {:cmd :export-files
+                  :format format
                   :team-id team-id
                   :features features
-                  :export-type selected
+                  :type selected
                   :files files})
                 (rx/mapcat #(->> (rx/of %)
                                  (rx/delay 1000)))
@@ -418,9 +425,9 @@
                           (keyword))]
              (swap! state* assoc :selected type))))]
 
-    (mf/with-effect [has-libraries?]
+    (mf/with-effect [has-libs?]
       ;; Start download automatically when no libraries
-      (when-not has-libraries?
+      (when-not has-libs?
         (start-export)))
 
     [:div {:class (stl/css :modal-overlay)}
@@ -443,13 +450,13 @@
                    :key (name type)}
              [:label {:for (str "export-" type)
                       :class (stl/css-case :global/checked (= selected type))}
-                                ;; Execution time translation strings:
-                                ;;   (tr "dashboard.export.options.all.message")
-                                ;;   (tr "dashboard.export.options.all.title")
-                                ;;   (tr "dashboard.export.options.detach.message")
-                                ;;   (tr "dashboard.export.options.detach.title")
-                                ;;   (tr "dashboard.export.options.merge.message")
-                                ;;   (tr "dashboard.export.options.merge.title")
+              ;; Execution time translation strings:
+              ;;   (tr "dashboard.export.options.all.message")
+              ;;   (tr "dashboard.export.options.all.title")
+              ;;   (tr "dashboard.export.options.detach.message")
+              ;;   (tr "dashboard.export.options.detach.title")
+              ;;   (tr "dashboard.export.options.merge.message")
+              ;;   (tr "dashboard.export.options.merge.title")
               [:span {:class (stl/css-case :global/checked (= selected type))}
                (when (= selected type)
                  i/status-tick)]
@@ -488,5 +495,5 @@
            [:input {:class (stl/css :accept-btn)
                     :type "button"
                     :value (tr "labels.close")
-                    :disabled (->> state :files (some :loading?))
+                    :disabled (->> state :files (some :loading))
                     :on-click on-cancel}]]]])]]))

@@ -70,6 +70,7 @@
   [{:keys [component renaming listing-thumbs? selected
            file-id on-asset-click on-context-menu on-drag-start do-rename
            cancel-rename selected-full selected-paths local]}]
+
   (let [item-ref       (mf/use-ref)
 
         dragging*      (mf/use-state false)

@@ -7,8 +7,35 @@
 (ns app.common.types.component
   (:require
    [app.common.data :as d]
+   [app.common.schema :as sm]
+   [app.common.types.page :as ctp]
+   [app.common.types.plugins :as ctpg]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SCHEMA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def schema:component
+  [:map
+   [:id ::sm/uuid]
+   [:name :string]
+   [:path {:optional true} [:maybe :string]]
+   [:modified-at {:optional true} ::sm/inst]
+   [:objects {:gen/max 10 :optional true} ::ctp/objects]
+   [:main-instance-id ::sm/uuid]
+   [:main-instance-page ::sm/uuid]
+   [:plugin-data {:optional true} ::ctpg/plugin-data]])
+
+(sm/register! ::component schema:component)
+
+(def check-component!
+  (sm/check-fn schema:component))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; INIT & HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Attributes that may be synced in components, and the group they belong to.
 ;; When one attribute is modified in a shape inside a component, the corresponding

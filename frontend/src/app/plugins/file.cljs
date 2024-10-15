@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.record :as crc]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.workspace :as dw]
    [app.main.features :as features]
    [app.main.store :as st]
@@ -114,29 +115,33 @@
         (page/page-proxy $plugin $id page-id))))
 
   (export
-    [self type export-type]
-    (let [export-type (or (parser/parse-keyword export-type) :all)]
+    [self format type]
+    (let [type (or (parser/parse-keyword type) :all)]
       (cond
-        (not (contains? #{"penpot" "zip"} type))
-        (u/display-not-valid :export-type type)
+        (not (contains? #{"penpot" "zip"} format))
+        (u/display-not-valid :format type)
 
-        (not (contains? (set mue/export-types) export-type))
-        (u/display-not-valid :export-exportType export-type)
+        (not (contains? (set mue/default-export-types) type))
+        (u/display-not-valid :type type)
 
         :else
-        (let [export-cmd (if (= type "penpot") :export-binary-file :export-standard-file)
-              file (u/proxy->file self)
-              features (features/get-team-enabled-features @st/state)
-              team-id  (:current-team-id @st/state)]
+        (let [file       (u/proxy->file self)
+              features   (features/get-team-enabled-features @st/state)
+              team-id    (:current-team-id @st/state)
+              format     (case format
+                           "penpot" (if (contains? cf/flags :export-file-v3)
+                                      :binfile-v3
+                                      :binfile-v1)
+                           "zip"    :legacy-zip)]
           (p/create
            (fn [resolve reject]
              (->> (uw/ask-many!
-                   {:cmd export-cmd
+                   {:cmd :export-files
+                    :format format
+                    :type type
                     :team-id team-id
                     :features features
-                    :export-type export-type
                     :files [file]})
-                  (rx/mapcat #(->> (rx/of %) (rx/delay 1000)))
                   (rx/mapcat
                    (fn [msg]
                      (case (:type msg)
@@ -147,9 +152,11 @@
                        (rx/empty)
 
                        :finish
-                       (http/send! {:method :get :uri (:uri msg) :mode :no-cors :response-type :blob}))))
-                  (rx/first)
-                  (rx/mapcat (fn [{:keys [body]}] (.arrayBuffer ^js body)))
+                       (http/send! {:method :get
+                                    :uri (:uri msg)
+                                    :mode :no-cors
+                                    :response-type :buffer}))))
+                  (rx/take 1)
                   (rx/map (fn [data] (js/Uint8Array. data)))
                   (rx/subs! resolve reject)))))))))
 

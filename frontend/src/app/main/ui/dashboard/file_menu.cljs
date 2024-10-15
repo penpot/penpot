@@ -6,6 +6,7 @@
 
 (ns app.main.ui.dashboard.file-menu
   (:require
+   [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
@@ -189,24 +190,30 @@
         on-export-files
         (mf/use-fn
          (mf/deps files)
-         (fn [binary?]
-           (let [evname (if binary?
-                          "export-binary-files"
-                          "export-standard-files")]
+         (fn [format]
+           (let [evname (if (= format :legacy-zip)
+                          "export-standard-files"
+                          "export-binary-files")]
              (st/emit! (ptk/event ::ev/event {::ev/name evname
                                               ::ev/origin "dashboard"
+                                              :format format
                                               :num-files (count files)})
-                       (dcm/export-files files binary?)))))
+                       (dcm/export-files files format)))))
 
         on-export-binary-files
         (mf/use-fn
          (mf/deps on-export-files)
-         (partial on-export-files true))
+         (partial on-export-files :binfile-v1))
+
+        on-export-binary-files-v3
+        (mf/use-fn
+         (mf/deps on-export-files)
+         (partial on-export-files :binfile-v3))
 
         on-export-standard-files
         (mf/use-fn
          (mf/deps on-export-files)
-         (partial on-export-files false))
+         (partial on-export-files :legacy-zip))
 
         ;; NOTE: this is used for detect if component is still mounted
         mounted-ref (mf/use-ref true)]
@@ -256,8 +263,13 @@
                   :options    sub-options})
 
                {:name    (tr "dashboard.export-binary-multi" file-count)
-                :id      "file-binari-export-multi"
+                :id      "file-binary-export-multi"
                 :handler on-export-binary-files}
+
+               (when (contains? cf/flags :export-file-v3)
+                 {:name    (tr "dashboard.export-binary-multi-v3" file-count)
+                  :id      "file-binary-export-multi-v3"
+                  :handler on-export-binary-files-v3})
 
                {:name    (tr "dashboard.export-standard-multi" file-count)
                 :id      "file-standard-export-multi"
@@ -314,6 +326,11 @@
                {:name    (tr "dashboard.download-binary-file")
                 :id      "download-binary-file"
                 :handler on-export-binary-files}
+
+               (when (contains? cf/flags :export-file-v3)
+                 {:name    (tr "dashboard.download-binary-file-v3")
+                  :id      "download-binary-file-v3"
+                  :handler on-export-binary-files-v3})
 
                {:name    (tr "dashboard.download-standard-file")
                 :id      "download-standard-file"

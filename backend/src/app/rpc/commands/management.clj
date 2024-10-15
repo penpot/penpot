@@ -176,7 +176,7 @@
 
   (binding [bfc/*state* (volatile! {:index {team-id (uuid/next)}})]
     (let [projs (bfc/get-team-projects cfg team-id)
-          files (bfc/get-team-files cfg team-id)
+          files (bfc/get-team-files-ids cfg team-id)
           frels (bfc/get-files-rels cfg files)
 
           team  (-> (db/get-by-id conn :team team-id)
@@ -396,14 +396,15 @@
 (defn clone-template
   [cfg {:keys [project-id profile-id] :as params} template]
   (db/tx-run! cfg (fn [{:keys [::db/conn ::wrk/executor] :as cfg}]
-                    ;; NOTE: the importation process performs some operations that
-                    ;; are not very friendly with virtual threads, and for avoid
-                    ;; unexpected blocking of other concurrent operations we
-                    ;; dispatch that operation to a dedicated executor.
+                    ;; NOTE: the importation process performs some operations
+                    ;; that are not very friendly with virtual threads, and for
+                    ;; avoid unexpected blocking of other concurrent operations
+                    ;; we dispatch that operation to a dedicated executor.
                     (let [cfg    (-> cfg
                                      (assoc ::bf.v1/project-id project-id)
-                                     (assoc ::bf.v1/profile-id profile-id))
-                          result (px/invoke! executor (partial bf.v1/import-files! cfg template))]
+                                     (assoc ::bf.v1/profile-id profile-id)
+                                     (assoc ::bf.v1/input template))
+                          result (px/invoke! executor (partial bf.v1/import-files! cfg))]
 
                       (db/update! conn :project
                                   {:modified-at (dt/now)}

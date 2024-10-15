@@ -16,7 +16,7 @@
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(sm/register! ::typography
+(def schema:typography
   [:map {:title "Typography"}
    [:id ::sm/uuid]
    [:name :string]
@@ -32,6 +32,8 @@
    [:modified-at {:optional true} ::sm/inst]
    [:path {:optional true} [:maybe :string]]
    [:plugin-data {:optional true} ::ctpg/plugin-data]])
+
+(sm/register! ::typography schema:typography)
 
 (def check-typography!
   (sm/check-fn ::typography))

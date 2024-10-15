@@ -7,7 +7,6 @@
 (ns app.worker.import
   (:refer-clojure :exclude [resolve])
   (:require
-   ["jszip" :as zip]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.files.builder :as fb]
@@ -16,7 +15,6 @@
    [app.common.json :as json]
    [app.common.logging :as log]
    [app.common.media :as cm]
-   [app.common.pprint :as pp]
    [app.common.schema :as sm]
    [app.common.text :as ct]
    [app.common.time :as tm]
@@ -25,7 +23,6 @@
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.sse :as sse]
-   [app.util.webapi :as wapi]
    [app.util.zip :as uz]
    [app.worker.impl :as impl]
    [app.worker.import.parser :as parser]
@@ -64,7 +61,8 @@
     m))
 
 (defn get-file
-  "Resolves the file inside the context given its id and the data"
+  "Resolves the file inside the context given its id and the
+  data. LEGACY"
   ([context type]
    (get-file context type nil nil))
 
@@ -105,6 +103,12 @@
          :else
          stream)))))
 
+(defn- read-zip-manifest
+  [zipfile]
+  (->> (uz/get-file zipfile "manifest.json")
+       (rx/map :content)
+       (rx/map json/decode)))
+
 (defn progress!
   ([context type]
    (assert (keyword? type))
@@ -123,14 +127,14 @@
 
   ([context type file current total]
    (when (and context (contains? context :progress))
-     (let [msg {:type type
-                :file file
-                :current current
-                :total total}]
-       (log/debug :status :import-progress :message msg)
+     (let [progress {:type type
+                     :file file
+                     :current current
+                     :total total}]
+       (log/debug :status :progress :progress progress)
        (rx/push! (:progress context) {:file-id (:file-id context)
-                                      :status :import-progress
-                                      :message msg})))))
+                                      :status :progress
+                                      :progress progress})))))
 
 (defn resolve-factory
   "Creates a wrapper around the atom to remap ids to new ids and keep
@@ -162,7 +166,7 @@
     (rp/cmd! :create-temp-file
              {:id file-id
               :name (:name context)
-              :is-shared (:shared context)
+              :is-shared (:is-shared context)
               :project-id (:project-id context)
               :create-page false
 
@@ -211,6 +215,15 @@
      (->> (rp/cmd! :persist-temp-file {:id file-id})
           ;; We use merge to keep some information not stored in back-end
           (rx/map #(merge file %))))))
+
+(defn slurp-uri
+  ([uri] (slurp-uri uri :text))
+  ([uri response-type]
+   (->> (http/send!
+         {:uri uri
+          :response-type response-type
+          :method :get})
+        (rx/map :body))))
 
 (defn upload-media-files
   "Upload a image to the backend and returns its id"
@@ -312,8 +325,6 @@
   (let [frame-id (:current-frame-id file)
         frame (when (and (some? frame-id) (not= frame-id uuid/zero))
                 (fb/lookup-shape file frame-id))]
-
-    (js/console.log "    translate-frame" (clj->js frame))
     (if (some? frame)
       (-> data
           (d/update-when :x + (:x frame))
@@ -716,7 +727,6 @@
 
 (defn create-files
   [{:keys [system-features] :as context} files]
-
   (let [data (group-by :file-id files)]
     (rx/concat
      (->> (rx/from files)
@@ -738,68 +748,124 @@
       "1 13 32 206" "application/octet-stream"
       "other")))
 
+(defn- analyze-file-legacy-zip-entry
+  [features entry]
+  ;; NOTE: LEGACY manifest reading mechanism, we can't
+  ;; reuse the new read-zip-manifest funcion here
+  (->> (rx/from (uz/load (:body entry)))
+       (rx/merge-map #(get-file {:zip %} :manifest))
+       (rx/mapcat
+        (fn [manifest]
+          ;; Checks if the file is exported with
+          ;; components v2 and the current team
+          ;; only supports components v1
+          (let [has-file-v2?
+                (->> (:files manifest)
+                     (d/seek (fn [[_ file]] (contains? (set (:features file)) "components/v2"))))]
+
+            (if (and has-file-v2? (not (contains? features "components/v2")))
+              (rx/of (-> entry
+                         (assoc :error "dashboard.import.analyze-error.components-v2")
+                         (dissoc :body)))
+              (->> (rx/from (:files manifest))
+                   (rx/map (fn [[file-id data]]
+                             (-> entry
+                                 (dissoc :body)
+                                 (merge data)
+                                 (dissoc :shared)
+                                 (assoc :is-shared (:shared data))
+                                 (assoc :file-id file-id)
+                                 (assoc :status :success)))))))))))
+
+;; NOTE: this is a limited subset schema for the manifest file of
+;; binfile-v3 format; is used for partially parse it and read the
+;; files referenced inside the exported file
+
+(def ^:private schema:manifest
+  [:map {:title "Manifest"}
+   [:type :string]
+   [:files
+    [:vector
+     [:map
+      [:id ::sm/uuid]
+      [:name :string]]]]])
+
+(def ^:private decode-manifest
+  (sm/decoder schema:manifest sm/json-transformer))
+
+(defn analyze-file
+  [features {:keys [uri] :as file}]
+  (let [stream (->> (slurp-uri uri :buffer)
+                    (rx/merge-map
+                     (fn [body]
+                       (let [mtype (parse-mtype body)]
+                         (if (= "application/zip" mtype)
+                           (->> (uz/load body)
+                                (rx/merge-map read-zip-manifest)
+                                (rx/map
+                                 (fn [manifest]
+                                   (if (= (:type manifest) "penpot/export-files")
+                                     (let [manifest (decode-manifest manifest)]
+                                       (assoc file :type :binfile-v3 :files (:files manifest)))
+                                     (assoc file :type :legacy-zip :body body)))))
+                           (rx/of (assoc file :type :binfile-v1))))))
+                    (rx/share))]
+
+    (->> (rx/merge
+          (->> stream
+               (rx/filter (fn [entry] (= :legacy-zip (:type entry))))
+               (rx/merge-map (partial analyze-file-legacy-zip-entry features)))
+
+          (->> stream
+               (rx/filter (fn [entry] (= :binfile-v1 (:type entry))))
+               (rx/map (fn [entry]
+                         (let [file-id (uuid/next)]
+                           (-> entry
+                               (assoc :file-id file-id)
+                               (assoc :name (:name file))
+                               (assoc :status :success))))))
+
+          (->> stream
+               (rx/filter (fn [entry] (= :binfile-v3 (:type entry))))
+               (rx/merge-map (fn [{:keys [files] :as entry}]
+                               (->> (rx/from files)
+                                    (rx/map (fn [file]
+                                              (-> entry
+                                                  (dissoc :files)
+                                                  (assoc :name (:name file))
+                                                  (assoc :file-id (:id file))
+                                                  (assoc :status :success))))))))
+
+          (->> stream
+               (rx/filter (fn [data] (= "other" (:type data))))
+               (rx/map (fn [_]
+                         {:uri (:uri file)
+                          :error (tr "dashboard.import.analyze-error")}))))
+
+         (rx/catch (fn [cause]
+                     (let [error (or (ex-message cause) (tr "dashboard.import.analyze-error"))]
+                       (rx/of (assoc file :error error :status :error))))))))
+
 (defmethod impl/handler :analyze-import
   [{:keys [files features]}]
-
   (->> (rx/from files)
-       (rx/merge-map
-        (fn [file]
-          (let [st (->> (http/send!
-                         {:uri (:uri file)
-                          :response-type :blob
-                          :method :get})
-                        (rx/map :body)
-                        (rx/mapcat wapi/read-file-as-array-buffer)
-                        (rx/map (fn [data]
-                                  {:type (parse-mtype data)
-                                   :uri (:uri file)
-                                   :body data})))]
-            (->> (rx/merge
-                  (->> st
-                       (rx/filter (fn [data] (= "application/zip" (:type data))))
-                       (rx/merge-map #(zip/loadAsync (:body %)))
-                       (rx/merge-map #(get-file {:zip %} :manifest))
-                       (rx/map
-                        (fn [data]
-                          ;; Checks if the file is exported with components v2 and the current team only
-                          ;; supports components v1
-                          (let [has-file-v2?
-                                (->> (:files data)
-                                     (d/seek (fn [[_ file]] (contains? (set (:features file)) "components/v2"))))]
-                            (if (and has-file-v2? (not (contains? features "components/v2")))
-                              {:uri (:uri file) :error "dashboard.import.analyze-error.components-v2"}
-                              (hash-map :uri (:uri file) :data data :type "application/zip"))))))
-                  (->> st
-                       (rx/filter (fn [data] (= "application/octet-stream" (:type data))))
-                       (rx/map (fn [_]
-                                 (let [file-id (uuid/next)]
-                                   {:uri (:uri file)
-                                    :data {:name (:name file)
-                                           :file-id file-id
-                                           :files {file-id {:name (:name file)}}
-                                           :status :ready}
-                                    :type "application/octet-stream"}))))
-                  (->> st
-                       (rx/filter (fn [data] (= "other" (:type data))))
-                       (rx/map (fn [_]
-                                 {:uri (:uri file)
-                                  :error (tr "dashboard.import.analyze-error")}))))
-                 (rx/catch (fn [data]
-                             (let [error (or (.-message data) (tr "dashboard.import.analyze-error"))]
-                               (rx/of {:uri (:uri file) :error error}))))))))))
-
+       (rx/merge-map (partial analyze-file features))))
 
 (defmethod impl/handler :import-files
   [{:keys [project-id files features]}]
+  (let [context    {:project-id project-id
+                    :resolve    (resolve-factory)
+                    :system-features features}
 
-  (let [context {:project-id project-id
-                 :resolve    (resolve-factory)
-                 :system-features features}
-        zip-files (filter #(= "application/zip" (:type %)) files)
-        binary-files (filter #(= "application/octet-stream" (:type %)) files)]
+        legacy-zip (filter #(= :legacy-zip (:type %)) files)
+        binfile-v1 (filter #(= :binfile-v1 (:type %)) files)
+        binfile-v3 (filter #(= :binfile-v3 (:type %)) files)]
 
     (rx/merge
-     (->> (create-files context zip-files)
+
+     ;; NOTE: LEGACY, will be removed so no new development should be
+     ;; done for this part
+     (->> (create-files context legacy-zip)
           (rx/merge-map
            (fn [[file data]]
              (->> (uz/load-from-url (:uri data))
@@ -813,9 +879,12 @@
                                  (->> file-stream
                                       (rx/map
                                        (fn [file]
-                                         {:status :import-finish
-                                          :errors (:errors file)
-                                          :file-id (:file-id data)})))))))
+                                         (if-let [errors (not-empty (:errors file))]
+                                           {:status :error
+                                            :error (first errors)
+                                            :file-id (:file-id data)}
+                                           {:status :finish
+                                            :file-id (:file-id data)}))))))))
                   (rx/catch (fn [cause]
                               (let [data (ex-data cause)]
                                 (log/error :hint (ex-message cause)
@@ -823,12 +892,11 @@
                                 (when-let [explain (:explain data)]
                                   (js/console.log explain)))
 
-                              (rx/of {:status :import-error
+                              (rx/of {:status :error
                                       :file-id (:file-id data)
-                                      :error (ex-message cause)
-                                      :error-data (ex-data cause)})))))))
+                                      :error (ex-message cause)})))))))
 
-     (->> (rx/from binary-files)
+     (->> (rx/from binfile-v1)
           (rx/merge-map
            (fn [data]
              (->> (http/send!
@@ -836,32 +904,74 @@
                     :response-type :blob
                     :method :get})
                   (rx/map :body)
-                  (rx/mapcat (fn [file]
+                  (rx/mapcat
+                   (fn [file]
+                     (->> (rp/cmd! ::sse/import-binfile
+                                   {:name (str/replace (:name data) #".penpot$" "")
+                                    :file file
+                                    :project-id project-id})
+                          (rx/tap (fn [event]
+                                    (let [payload (sse/get-payload event)
+                                          type    (sse/get-type event)]
+                                      (if (= type "progress")
+                                        (log/dbg :hint "import-binfile: progress"
+                                                 :section (:section payload)
+                                                 :name (:name payload))
+                                        (log/dbg :hint "import-binfile: end")))))
+                          (rx/filter sse/end-of-stream?)
+                          (rx/map (fn [_]
+                                    {:status :finish
+                                     :file-id (:file-id data)})))))
+
+                  (rx/catch
+                   (fn [cause]
+                     (log/error :hint "unexpected error on import process"
+                                :project-id project-id
+                                :cause cause)
+                     (rx/of {:status :error
+                             :error (ex-message cause)
+                             :file-id (:file-id data)})))))))
+
+     (->> (rx/from binfile-v3)
+          (rx/reduce (fn [result file]
+                       (update result (:uri file) (fnil conj []) file))
+                     {})
+          (rx/mapcat identity)
+          (rx/merge-map
+           (fn [[uri entries]]
+             (->> (slurp-uri uri :blob)
+                  (rx/mapcat (fn [content]
+                               ;; FIXME: implement the naming and filtering
                                (->> (rp/cmd! ::sse/import-binfile
-                                             {:name (str/replace (:name data) #".penpot$" "")
-                                              :file file
+                                             {:name (-> entries first :name)
+                                              :file content
+                                              :version 3
                                               :project-id project-id})
                                     (rx/tap (fn [event]
                                               (let [payload (sse/get-payload event)
                                                     type    (sse/get-type event)]
                                                 (if (= type "progress")
-                                                  (log/dbg :hint "import-binfile: progress" :section (:section payload) :name (:name payload))
+                                                  (log/dbg :hint "import-binfile: progress"
+                                                           :section (:section payload)
+                                                           :name (:name payload))
                                                   (log/dbg :hint "import-binfile: end")))))
                                     (rx/filter sse/end-of-stream?)
-                                    (rx/map (fn [_]
-                                              {:status :import-finish
-                                               :file-id (:file-id data)})))))
-                  (rx/catch (fn [cause]
-                              (log/error :hint "unexpected error on import process"
-                                         :project-id project-id
-                                         ::log/sync? true)
-                              (let [edata (if (map? cause) cause (ex-data cause))]
-                                (println "Error data:")
-                                (pp/pprint (dissoc edata :explain) {:level 3 :length 10})
+                                    (rx/mapcat (fn [_]
+                                                 (->> (rx/from entries)
+                                                      (rx/map (fn [entry]
+                                                                {:status :finish
+                                                                 :file-id (:file-id entry)}))))))))
 
-                                (when (string? (:explain edata))
-                                  (js/console.log (:explain edata)))
+                  (rx/catch
+                   (fn [cause]
+                     (log/error :hint "unexpected error on import process"
+                                :project-id project-id
+                                ::log/sync? true
+                                :cause cause)
+                     (->> (rx/from entries)
+                          (rx/map (fn [entry]
+                                    {:status :error
+                                     :error (ex-message cause)
+                                     :file-id (:file-id entry)}))))))))))))
 
-                                (rx/of {:status :import-error
-                                        :file-id (:file-id data)})))))))))))
 

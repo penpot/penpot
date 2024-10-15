@@ -10,8 +10,6 @@
    [app.common.data.macros :as dm]
    [app.common.geom.shapes.common :as gco]
    [app.common.schema :as sm]
-   [app.common.types.components-list :as ctkl]
-   [app.common.types.pages-list :as ctpl]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -368,17 +366,6 @@
 (defn component?
   [container]
   (= (:type container) :component))
-
-(defn get-container
-  [file type id]
-  (dm/assert! (map? file))
-  (dm/assert! (keyword? type))
-  (dm/assert! (uuid? id))
-
-  (-> (if (= type :page)
-        (ctpl/get-page file id)
-        (ctkl/get-component file id))
-      (assoc :type type)))
 
 (defn component-touched?
   "Check if any shape in the component is touched"
