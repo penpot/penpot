@@ -13,6 +13,7 @@
    [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
@@ -145,9 +146,11 @@
                      :class        (stl/css-case :title-spacing-fill (not has-fills?))}
 
        (when (and (not disable-remove?) (not (= :multiple fills)))
-         [:button {:class (stl/css :add-fill)
-                   :data-testid "add-fill"
-                   :on-click on-add} i/add])]]
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.options.fill.add-fill")
+                           :on-click on-add
+                           :data-testid "add-fill"
+                           :icon "add"}])]]
 
      (when open?
        [:div {:class (stl/css :element-content)}
@@ -156,9 +159,10 @@
           [:div {:class (stl/css :element-set-options-group)}
            [:div {:class (stl/css :group-label)}
             (tr "settings.multiple")]
-           [:button {:on-click on-remove-all
-                     :class (stl/css :remove-btn)}
-            i/remove-icon]]
+           [:> icon-button* {:variant "ghost"
+                             :aria-label (tr "workspace.options.fill.remove-fill")
+                             :on-click on-remove-all
+                             :icon "remove"}]]
 
           (seq fills)
           [:& h/sortable-container {}

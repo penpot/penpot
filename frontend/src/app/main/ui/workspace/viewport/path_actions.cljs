@@ -218,4 +218,3 @@
                 :title (tr "workspace.path.actions.snap-nodes" (sc/get-tooltip :snap-nodes))
                 :on-click on-toggle-snap}
        snap-nodes-icon]]]))
-

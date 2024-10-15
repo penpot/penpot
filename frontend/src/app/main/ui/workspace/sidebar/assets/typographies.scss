@@ -6,18 +6,6 @@
 
 @import "refactor/common-refactor.scss";
 
-.assets-btn {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: calc($s-24 + $s-4);
-  padding: 0;
-  border-radius: $br-8;
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
-}
-
 .assets-list {
   padding: 0 0 0 $s-4;
 }

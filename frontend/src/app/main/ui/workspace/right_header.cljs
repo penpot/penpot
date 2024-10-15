@@ -16,6 +16,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.exports.assets :refer [export-progress-widget]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.icons :as i]
@@ -108,15 +109,15 @@
       [:ul {:class (stl/css :dropdown)}
        [:li {:class (stl/css :basic-zoom-bar)}
         [:span {:class (stl/css :zoom-btns)}
-         [:button {:class (stl/css :zoom-btn)
-                   :on-click on-decrease}
-          [:span {:class (stl/css :zoom-icon)}
-           i/remove-icon]]
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "shortcuts.decrease-zoom")
+                           :on-click on-decrease
+                           :icon "remove"}]
          [:p {:class (stl/css :zoom-text)} zoom]
-         [:button {:class (stl/css :zoom-btn)
-                   :on-click on-increase}
-          [:span {:class (stl/css :zoom-icon)}
-           i/add]]]
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "shortcuts.increase-zoom")
+                           :on-click on-increase
+                           :icon "add"}]]
         [:button {:class (stl/css :reset-btn)
                   :on-click on-zoom-reset}
          (tr "workspace.header.reset-zoom")]]

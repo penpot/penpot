@@ -15,15 +15,6 @@
   margin: 0;
 }
 
-.add-export {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  svg {
-    @extend .button-icon;
-  }
-}
-
 .element-set-content {
   @include flexColumn;
   margin: $s-4 0 $s-8 0;
@@ -36,14 +27,6 @@
   }
   .actions {
     @include flexRow;
-    .action-btn {
-      @extend .button-tertiary;
-      height: $s-32;
-      width: $s-28;
-      svg {
-        @extend .button-icon;
-      }
-    }
   }
 }
 
@@ -51,15 +34,6 @@
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   column-gap: $s-4;
-
-  .action-btn {
-    @extend .button-tertiary;
-    height: $s-32;
-    width: $s-28;
-    svg {
-      @extend .button-icon;
-    }
-  }
 }
 
 .input-wrapper {

@@ -14,15 +14,6 @@
   margin: 0;
 }
 
-.add-typography {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  svg {
-    @extend .button-icon;
-  }
-}
-
 .element-content {
   @include flexColumn;
   margin-top: $s-4;
@@ -58,15 +49,6 @@
 .grow-options,
 .text-decoration-options {
   height: $s-32;
-}
-
-.more-options {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  svg {
-    @extend .button-icon;
-  }
 }
 
 .text-decoration-options {

@@ -18,14 +18,6 @@
   padding-left: $s-2;
   margin: 0;
 }
-.add-stroke {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  svg {
-    @extend .button-icon;
-  }
-}
 
 .element-content {
   display: flex;
@@ -43,13 +35,4 @@
 
 .group-label {
   @extend .mixed-bar;
-}
-
-.remove-btn {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  svg {
-    @extend .button-icon;
-  }
 }

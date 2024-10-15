@@ -17,6 +17,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -335,9 +336,10 @@
                                        :global/checked (:is-resolved thread))} i/tick]])
 
        (when (= (:id profile) (:id owner))
-         [:div {:class (stl/css :options)
-                :on-click on-toggle-options}
-          i/menu])]
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "labels.options")
+                           :on-click on-toggle-options
+                           :icon "menu"}])]
 
       [:div {:class (stl/css :content)}
        (if @edition?

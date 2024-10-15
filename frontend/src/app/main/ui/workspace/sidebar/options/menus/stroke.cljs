@@ -13,8 +13,8 @@
    [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.rows.stroke-row :refer [stroke-row]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -167,9 +167,11 @@
                      :title        label
                      :class        (stl/css-case :title-spacing-stroke (not has-strokes?))}
        (when (not (= :multiple strokes))
-         [:button {:class (stl/css :add-stroke)
-                   :data-testid "add-stroke"
-                   :on-click on-add-stroke} i/add])]]
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.options.stroke.add-stroke")
+                           :on-click on-add-stroke
+                           :icon "add"
+                           :data-testid "add-stroke"}])]]
      (when open?
        [:div {:class (stl/css-case :element-content true
                                    :empty-content (not has-strokes?))}
@@ -178,9 +180,10 @@
           [:div {:class (stl/css :element-set-options-group)}
            [:div {:class (stl/css :group-label)}
             (tr "settings.multiple")]
-           [:button {:on-click handle-remove-all
-                     :class (stl/css :remove-btn)}
-            i/remove-icon]]
+           [:> icon-button* {:variant "ghost"
+                             :aria-label (tr "workspace.options.stroke.remove-stroke")
+                             :on-click handle-remove-all
+                             :icon "remove"}]]
           (seq strokes)
           [:& h/sortable-container {}
            (for [[index value] (d/enumerate (:strokes values []))]
