@@ -22,6 +22,7 @@
    [app.main.ui.components.radio-buttons :refer [radio-buttons radio-button]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -149,9 +150,10 @@
           :on-key-down on-key-down
           :default-value (:name flow "")}]]]]
 
-     [:button {:class (stl/css :remove-flow-btn)
-               :on-click remove-flow}
-      i/remove-icon]]))
+     [:> icon-button* {:variant "ghost"
+                       :aria-label (tr "workspace.options.flows.remove-flow")
+                       :on-click remove-flow
+                       :icon "remove"}]]))
 
 (mf/defc page-flows
   {::mf/props :obj}
@@ -176,10 +178,10 @@
                       :title       (tr "workspace.options.flows.flow")
                       :class       (stl/css :title-spacing-layout-flow)}
         (when (nil? flow)
-          [:button {:class (stl/css :add-flow-btn)
-                    :title (tr  "workspace.options.flows.add-flow-start")
-                    :on-click add-flow}
-           i/add])]
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "workspace.options.flows.add-flow-start")
+                            :on-click add-flow
+                            :icon "add"}])]
 
        (when (some? flow)
          [:& flow-item {:flow flow :key (dm/str (:id flow))}])])))
@@ -727,9 +729,10 @@
                         :title       (tr "workspace.options.interactions")
                         :class       (stl/css :title-spacing-layout-interactions)}
 
-          [:button {:class (stl/css :add-interaction-btn)
-                    :on-click add-interaction}
-           i/add]]])
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "workspace.options.interactions.add-interaction")
+                            :on-click add-interaction
+                            :icon "add"}]]])
 
       (when (= (count interactions) 0)
         [:div {:class (stl/css :help-content)}

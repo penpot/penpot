@@ -18,7 +18,7 @@
 (def ^:private schema:icon-button
   [:map
    [:class {:optional true} :string]
-   [:icon {:optional true}
+   [:icon
     [:and :string [:fn #(contains? icon-list %)]]]
    [:aria-label :string]
    [:variant {:optional true}

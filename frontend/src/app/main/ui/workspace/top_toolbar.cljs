@@ -22,6 +22,7 @@
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -197,16 +198,15 @@
 
          (when (features/active-feature? @st/state "plugins/runtime")
            [:li
-            [:button
-             {:title (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
-              :aria-label (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
-              :class (stl/css :main-toolbar-options-button)
-              :on-click #(st/emit!
-                          (ptk/event ::ev/event {::ev/name "open-plugins-manager" ::ev/origin "workspace:toolbar"})
-                          (modal/show :plugin-management {}))
-              :data-tool "plugins"
-              :data-testid "plugins-btn"}
-             i/puzzle]])
+            [:> icon-button* {:variant "ghost"
+                              :aria-label (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
+                              :on-click #(st/emit!
+                                          (ptk/event ::ev/event {::ev/name "open-plugins-manager"
+                                                                 ::ev/origin "workspace:toolbar"})
+                                          (modal/show :plugin-management {}))
+                              :icon "puzzle"
+                              :data-tool "plugins"
+                              :data-testid "plugins-btn"}]])
 
          (when *assert*
            [:li
