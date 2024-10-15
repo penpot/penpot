@@ -194,7 +194,7 @@
 
 (defn humanize-explain
   "Returns a string representation of the explain data structure"
-  [{:keys [schema errors value]} & {:keys [length level]}]
+  [{:keys [errors value]} & {:keys [length level]}]
   (let [errors (mapv #(update % :schema form) errors)]
     (with-out-str
       (println "Errors:")

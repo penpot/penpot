@@ -33,7 +33,7 @@
 
 (log/set-level! :debug)
 
-(def ^:const emit-delay 1000)
+(def ^:const emit-delay 200)
 
 (defn use-import-file
   [project-id on-finish-import]
@@ -82,51 +82,35 @@
             (assoc :deleted true)))
         entries))
 
-(defn- update-with-analyze-error
-  [entries uri error]
-  (->> entries
-       (mapv (fn [entry]
-               (cond-> entry
-                 (= uri (:uri entry))
-                 (-> (assoc :status :analyze-error)
-                     (assoc :error error)))))))
-
 (defn- update-with-analyze-result
-  [entries uri type result]
-  (let [existing-entries? (into #{} (keep :file-id) entries)
-        replace-entry
-        (fn [entry]
-          (if (and (= uri (:uri entry))
-                   (= (:status entry) :analyzing))
-            (->> (:files result)
-                 (remove (comp existing-entries? first))
-                 (map (fn [[file-id file-data]]
-                        (-> file-data
-                            (assoc :file-id file-id)
-                            (assoc :status :ready)
-                            (assoc :uri uri)
-                            (assoc :type type)))))
-            [entry]))]
-    (into [] (mapcat replace-entry) entries)))
-
-(defn- mark-entries-importing
-  [entries]
-  (->> entries
-       (filter #(= :ready (:status %)))
-       (mapv #(assoc % :status :importing))))
+  [entries {:keys [file-id status] :as updated}]
+  (let [entries (filterv (comp uuid? :file-id) entries)
+        status  (case status
+                  :success :import-ready
+                  :error :analyze-error)
+        updated (assoc updated :status status)]
+    (if (some #(= file-id (:file-id %)) entries)
+      (mapv (fn [entry]
+              (if (= (:file-id entry) file-id)
+                (merge entry updated)
+                entry))
+            entries)
+      (conj entries updated))))
 
 (defn- update-entry-status
-  [entries file-id status progress errors]
+  [entries message]
   (mapv (fn [entry]
-          (cond-> entry
-            (and (= file-id (:file-id entry)) (not= status :import-progress))
-            (assoc :status status)
-
-            (and (= file-id (:file-id entry)) (= status :import-progress))
-            (assoc :progress progress)
-
-            (= file-id (:file-id entry))
-            (assoc :errors errors)))
+          (if (= (:file-id entry) (:file-id message))
+            (let [status (case (:status message)
+                           :progress :import-progress
+                           :finish :import-success
+                           :error :import-error)]
+              (-> entry
+                  (assoc :progress (:progress message))
+                  (assoc :status status)
+                  (assoc :error (:error message))
+                  (d/without-nils)))
+            entry))
         entries))
 
 (defn- parse-progress-message
@@ -153,33 +137,27 @@
     :process-components
     (tr "dashboard.import.progress.process-components")
 
-    (str message)))
+    :process-deleted-components
+    (tr "dashboard.import.progress.process-components")
 
-(defn- has-status-importing?
-  [item]
-  (= (:status item) :importing))
+    ""))
 
-(defn- has-status-analyzing?
+(defn- has-status-analyze?
   [item]
-  (= (:status item) :analyzing))
+  (= (:status item) :analyze))
 
-(defn- has-status-analyze-error?
+(defn- has-status-import-success?
   [item]
-  (= (:status item) :analyzing))
-
-(defn- has-status-success?
-  [item]
-  (and (= (:status item) :import-finish)
-       (empty? (:errors item))))
+  (= (:status item) :import-success))
 
 (defn- has-status-error?
   [item]
-  (and (= (:status item) :import-finish)
-       (d/not-empty? (:errors item))))
+  (or (= (:status item) :import-error)
+      (= (:status item) :analyze-error)))
 
 (defn- has-status-ready?
   [item]
-  (and (= :ready (:status item))
+  (and (= :import-ready (:status item))
        (not (:deleted item))))
 
 (defn- analyze-entries
@@ -191,12 +169,10 @@
        (rx/mapcat #(rx/delay emit-delay (rx/of %)))
        (rx/filter some?)
        (rx/subs!
-        (fn [{:keys [uri data error type] :as msg}]
-          (if (some? error)
-            (swap! state update-with-analyze-error uri error)
-            (swap! state update-with-analyze-result uri type data))))))
+        (fn [message]
+          (swap! state update-with-analyze-result message)))))
 
-(defn- import-files!
+(defn- import-files
   [state project-id entries]
   (st/emit! (ptk/data-event ::ev/event {::ev/name "import-files"
                                         :num-files (count entries)}))
@@ -205,28 +181,36 @@
          :project-id project-id
          :files entries
          :features @features/features-ref})
+       (rx/filter (comp uuid? :file-id))
        (rx/subs!
-        (fn [{:keys [file-id status message errors] :as msg}]
-          (swap! state update-entry-status file-id status message errors)))))
+        (fn [message]
+          (swap! state update-entry-status message)))))
 
-(mf/defc import-entry
+(mf/defc import-entry*
   {::mf/props :obj
    ::mf/memo true
    ::mf/private true}
   [{:keys [entries entry edition can-be-deleted on-edit on-change on-delete]}]
-  (let [status         (:status entry)
-        loading?       (or (= :analyzing status)
-                           (= :importing status))
-        analyze-error? (= :analyze-error status)
-        import-finish? (= :import-finish status)
-        import-error?  (= :import-error status)
-        import-warn?   (d/not-empty? (:errors entry))
-        ready?         (= :ready status)
-        is-shared?     (:shared entry)
-        progress       (:progress entry)
+  (let [status          (:status entry)
+        ;; FIXME: rename to format
+        format          (:type entry)
 
-        file-id        (:file-id entry)
-        editing?       (and (some? file-id) (= edition file-id))
+        loading?        (or (= :analyze status)
+                            (= :import-progress status))
+        analyze-error?  (= :analyze-error status)
+        import-success? (= :import-success status)
+        import-error?   (= :import-error status)
+        import-ready?   (= :import-ready status)
+
+        is-shared?      (:shared entry)
+        progress        (:progress entry)
+
+        file-id         (:file-id entry)
+        editing?        (and (some? file-id) (= edition file-id))
+
+        editable?       (and (or (= :binfile-v3 format)
+                                 (= :legacy-zip format))
+                             (= status :import-ready))
 
         on-edit-key-press
         (mf/use-fn
@@ -261,23 +245,21 @@
     [:div {:class (stl/css-case
                    :file-entry true
                    :loading  loading?
-                   :success  (and import-finish? (not import-warn?) (not import-error?))
-                   :warning  (and import-finish? import-warn? (not import-error?))
+                   :success  import-success?
                    :error    (or import-error? analyze-error?)
-                   :editable (and ready? (not editing?)))}
+                   :editable (and import-ready? (not editing?)))}
 
      [:div {:class (stl/css :file-name)}
       (if loading?
-        [:> loader*  {:width 16
-                      :title (tr "labels.loading")}]
-        [:div {:class (stl/css-case :file-icon true
-                                    :icon-fill ready?)}
-         (cond ready?         i/logo-icon
-               import-warn?   i/msg-warning
-               import-error?  i/close
-               import-finish? i/tick
-               analyze-error? i/close)])
-
+        [:> loader* {:width 16 :title (tr "labels.loading")}]
+        [:div {:class (stl/css-case
+                       :file-icon true
+                       :icon-fill import-ready?)}
+         (cond
+           import-ready?   i/logo-icon
+           import-error?   i/close
+           import-success? i/tick
+           analyze-error?  i/close)])
 
       (if editing?
         [:div {:class (stl/css :file-name-edit)}
@@ -294,10 +276,9 @@
             i/library])])
 
       [:div {:class (stl/css :edit-entry-buttons)}
-       (when (and (= "application/zip" (:type entry))
-                  (= status :ready))
+       (when ^boolean editable?
          [:button {:on-click on-edit'} i/curve])
-       (when can-be-deleted
+       (when ^boolean can-be-deleted
          [:button {:on-click on-delete'} i/delete])]]
 
      (cond
@@ -311,9 +292,10 @@
        [:div {:class (stl/css :error-message)}
         (tr "dashboard.import.import-error")]
 
-       (and (not import-finish?) (some? progress))
+       (and (not import-success?) (some? progress))
        [:div {:class (stl/css :progress-message)} (parse-progress-message progress)])
 
+     ;; This is legacy code, will be removed when legacy-zip format is removed
      [:div {:class (stl/css :linked-libraries)}
       (for [library-id (:libraries entry)]
         (let [library-data (d/seek #(= library-id (:file-id %)) entries)
@@ -328,6 +310,11 @@
                              :error error?)}
               i/detach]])))]]))
 
+(defn initialize-state
+  [entries]
+  (fn []
+    (mapv #(assoc % :status :analyze) entries)))
+
 (mf/defc import-dialog
   {::mf/register modal/components
    ::mf/register-as :import
@@ -336,74 +323,66 @@
   [{:keys [project-id entries template on-finish-import]}]
 
   (mf/with-effect []
-    ;; dispose uris when the component is umount
+    ;; Revoke all uri's on commonent unmount
     (fn [] (run! wapi/revoke-uri (map :uri entries))))
 
-  (let [entries* (mf/use-state
-                  (fn [] (mapv #(assoc % :status :analyzing) entries)))
-        entries  (deref entries*)
+  (let [state*   (mf/use-state (initialize-state entries))
+        entries  (deref state*)
 
-        status*  (mf/use-state :analyzing)
+        status*  (mf/use-state :analyze)
         status   (deref status*)
 
         edition* (mf/use-state nil)
         edition  (deref edition*)
-
-        template-finished* (mf/use-state nil)
-        template-finished (deref template-finished*)
-
-        on-template-cloned-success
-        (mf/use-fn
-         (fn []
-           (reset! status* :importing)
-           (reset! template-finished* true)
-           (st/emit! (dd/fetch-recent-files))))
-
-        on-template-cloned-error
-        (mf/use-fn
-         (fn [cause]
-           (reset! status* :error)
-           (reset! template-finished* true)
-           (errors/print-error! cause)
-           (rx/of (modal/hide)
-                  (ntf/error (tr "dashboard.libraries-and-templates.import-error")))))
 
         continue-entries
         (mf/use-fn
          (mf/deps entries)
          (fn []
            (let [entries (filterv has-status-ready? entries)]
-             (swap! status* (constantly :importing))
-             (swap! entries* mark-entries-importing)
-             (import-files! entries* project-id entries))))
+             (reset! status* :import-progress)
+             (import-files state* project-id entries))))
 
         continue-template
         (mf/use-fn
-         (mf/deps on-template-cloned-success
-                  on-template-cloned-error
-                  template)
-         (fn []
-           (let [mdata  {:on-success on-template-cloned-success
-                         :on-error on-template-cloned-error}
-                 params {:project-id project-id :template-id (:id template)}]
-             (swap! status* (constantly :importing))
-             (st/emit! (dd/clone-template (with-meta params mdata))))))
+         (fn [template]
+           (let [on-success
+                 (fn [_event]
+                   (reset! status* :import-success)
+                   (st/emit! (dd/fetch-recent-files)))
+
+                 on-error
+                 (fn [cause]
+                   (reset! status* :error)
+                   (errors/print-error! cause)
+                   (rx/of (modal/hide)
+                          (ntf/error (tr "dashboard.libraries-and-templates.import-error"))))
+
+                 params
+                 {:project-id project-id
+                  :template-id (:id template)}]
+
+             (reset! status* :import-progress)
+             (st/emit! (dd/clone-template
+                        (with-meta params
+                          {:on-success on-success
+                           :on-error on-error}))))))
 
         on-edit
         (mf/use-fn
          (fn [file-id _event]
-           (swap! edition* (constantly file-id))))
+           (reset! edition* file-id)))
 
         on-entry-change
         (mf/use-fn
          (fn [file-id value]
            (swap! edition* (constantly nil))
-           (swap! entries* update-entry-name file-id value)))
+           (swap! state* update-entry-name file-id value)))
 
         on-entry-delete
         (mf/use-fn
          (fn [file-id]
-           (swap! entries* remove-entry file-id)))
+           (swap! state* remove-entry file-id)))
 
         on-cancel
         (mf/use-fn
@@ -415,13 +394,12 @@
 
         on-continue
         (mf/use-fn
-         (mf/deps template
-                  continue-template
+         (mf/deps continue-template
                   continue-entries)
          (fn [event]
            (dom/prevent-default event)
            (if (some? template)
-             (continue-template)
+             (continue-template template)
              (continue-entries))))
 
         on-accept
@@ -433,41 +411,40 @@
            (when (fn? on-finish-import)
              (on-finish-import))))
 
-        entries            (filterv (comp not :deleted) entries)
-        num-importing      (+ (count (filterv has-status-importing? entries))
-                              (if (some? template) 1 0))
+        entries
+        (mf/with-memo [entries]
+          (filterv (complement :deleted) entries))
 
-        success-num        (if (some? template)
-                             1
-                             (count (filterv has-status-success? entries)))
+        import-success-total
+        (if (some? template)
+          1
+          (count (filterv has-status-import-success? entries)))
 
-        errors?            (if (some? template)
-                             (= status :error)
-                             (or (some has-status-error? entries)
-                                 (zero? (count entries))))
+        errors?
+        (if (some? template)
+          (= status :error)
+          (or (some has-status-error? entries)
+              (zero? (count entries))))
 
-        pending-analysis?  (some has-status-analyzing? entries)
-        pending-import?    (and (or (nil? template)
-                                    (not template-finished))
-                                (pos? num-importing))
+        pending-analysis?
+        (some has-status-analyze? entries)]
 
-        valid-all-entries? (or (some? template)
-                               (not (some has-status-analyze-error? entries)))
+    (mf/with-effect [entries]
+      (cond
+        (some? template)
+        (reset! status* :import-ready)
 
-        template-status
-        (cond
-          (and (= :importing status) pending-import?)
-          :importing
+        (and (seq entries)
+             (every? #(= :import-ready (:status %)) entries))
+        (reset! status* :import-ready)
 
-          (and (= :importing status) (not ^boolean pending-import?))
-          :import-finish
-
-          :else
-          :ready)]
+        (and (seq entries)
+             (every? #(= :import-success (:status %)) entries))
+        (reset! status* :import-success)))
 
     ;; Run analyze operation on component mount
     (mf/with-effect []
-      (let [sub (analyze-entries entries* entries)]
+      (let [sub (analyze-entries state* entries)]
         (partial rx/dispose! sub)))
 
     [:div {:class (stl/css :modal-overlay)}
@@ -479,55 +456,51 @@
                  :on-click on-cancel} i/close]]
 
       [:div {:class (stl/css :modal-content)}
-       (when (and (= :analyzing status) errors?)
+       (when (and (= :analyze status) errors?)
          [:& context-notification
           {:level :warning
            :content (tr "dashboard.import.import-warning")}])
 
-       (when (and (= :importing status) (not ^boolean pending-import?))
-         (cond
-           errors?
-           [:& context-notification
-            {:level :warning
-             :content (tr "dashboard.import.import-warning")}]
-
-           :else
-           [:& context-notification
-            {:level (if (zero? success-num) :warning :success)
-             :content (tr "dashboard.import.import-message" (i18n/c success-num))}]))
+       (when (= :import-success status)
+         [:& context-notification
+          {:level (if (zero? import-success-total) :warning :success)
+           :content (tr "dashboard.import.import-message" (i18n/c import-success-total))}])
 
        (for [entry entries]
-         [:& import-entry {:edition edition
-                           :key (dm/str (:uri entry))
-                           :entry entry
-                           :entries entries
-                           :on-edit on-edit
-                           :on-change on-entry-change
-                           :on-delete on-entry-delete
-                           :can-be-deleted (> (count entries) 1)}])
+         [:> import-entry* {:edition edition
+                            :key (dm/str (:uri entry) "/" (:file-id entry))
+                            :entry entry
+                            :entries entries
+                            :on-edit on-edit
+                            :on-change on-entry-change
+                            :on-delete on-entry-delete
+                            :can-be-deleted (> (count entries) 1)}])
 
        (when (some? template)
-         [:& import-entry {:entry (assoc template :status template-status)
-                           :can-be-deleted false}])]
+         [:> import-entry* {:entry (assoc template :status status)
+                            :can-be-deleted false}])]
+
+      ;; (prn "import-dialog" status)
 
       [:div {:class (stl/css :modal-footer)}
        [:div {:class (stl/css :action-buttons)}
-        (when (= :analyzing status)
+        (when (= :analyze status)
           [:input {:class (stl/css :cancel-button)
                    :type "button"
                    :value (tr "labels.cancel")
                    :on-click on-cancel}])
 
-        (when (and (= :analyzing status) (not errors?))
+        (when (= status :import-ready)
           [:input {:class (stl/css :accept-btn)
                    :type "button"
                    :value (tr "labels.continue")
-                   :disabled (or pending-analysis? (not valid-all-entries?))
+                   :disabled pending-analysis?
                    :on-click on-continue}])
 
-        (when (and (= :importing status) (not errors?))
+        (when (or (= :import-success status)
+                  (= :import-progress status))
           [:input {:class (stl/css :accept-btn)
                    :type "button"
                    :value (tr "labels.accept")
-                   :disabled (or pending-import? (not valid-all-entries?))
+                   :disabled (= :import-progress status)
                    :on-click on-accept}])]]]]))

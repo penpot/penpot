@@ -150,6 +150,7 @@
 ;; FIXME: rename to shape-generic-attrs
 (def schema:shape-attrs
   [:map {:title "ShapeAttrs"}
+   [:page-id {:optional true} ::sm/uuid]
    [:component-id {:optional true}  ::sm/uuid]
    [:component-file {:optional true} ::sm/uuid]
    [:component-root {:optional true} :boolean]
