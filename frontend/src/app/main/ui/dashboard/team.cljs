@@ -313,22 +313,24 @@
         on-show     (mf/use-fn #(reset! show? true))
         on-hide     (mf/use-fn #(reset! show? false))]
 
-    [:*
-     (when (or is-you? (and can-delete? (not (and is-owner? (not owner?)))))
+
+    (when (or is-you? (and can-delete? (not (and is-owner? (not owner?)))))
+      [:*
        [:button {:class (stl/css :menu-btn)
                  :on-click on-show}
-        menu-icon])
+        menu-icon]
 
-     [:& dropdown {:show @show? :on-close on-hide}
-      [:ul {:class (stl/css :actions-dropdown)}
-       (when is-you?
-         [:li {:on-click on-leave
-               :class (stl/css :action-dropdown-item)
-               :key "is-you-option"} (tr "dashboard.leave-team")])
-       (when (and can-delete? (not is-you?) (not (and is-owner? (not owner?))))
-         [:li {:on-click on-delete
-               :class (stl/css :action-dropdown-item)
-               :key "is-not-you-option"} (tr "labels.remove-member")])]]]))
+
+       [:& dropdown {:show @show? :on-close on-hide}
+        [:ul {:class (stl/css :actions-dropdown)}
+         (when is-you?
+           [:li {:on-click on-leave
+                 :class (stl/css :action-dropdown-item)
+                 :key "is-you-option"} (tr "dashboard.leave-team")])
+         (when (and can-delete? (not is-you?) (not (and is-owner? (not owner?))))
+           [:li {:on-click on-delete
+                 :class (stl/css :action-dropdown-item)
+                 :key "is-not-you-option"} (tr "labels.remove-member")])]]])))
 
 (defn- set-role! [member-id role]
   (let [params {:member-id member-id :role role}]

@@ -20,6 +20,7 @@
    [app.main.data.events :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.media :as di]
+   [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.data.websocket :as dws]
    [app.main.features :as features]
@@ -1210,10 +1211,19 @@
 ;; Notifications
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+(defn- handle-change-team-permissions-dashboard
+  [msg]
+  (ptk/reify ::handle-change-team-permissions-dashboard
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (dc/change-team-permissions (assoc msg :workspace? false))
+             (modal/hide)))))
+
 (defn- process-message
   [{:keys [type] :as msg}]
   (case type
     :notification            (dc/handle-notification msg)
-    :team-permissions-change (dc/change-team-permissions (assoc msg :workspace? false))
+    :team-permissions-change (handle-change-team-permissions-dashboard msg)
     :removed-from-team       (dc/removed-from-team msg)
     nil))

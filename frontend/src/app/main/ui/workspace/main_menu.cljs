@@ -35,6 +35,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
+   [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
@@ -678,6 +679,12 @@
            (dom/stop-propagation event)
            (reset! sub-menu* nil)))
 
+        close-all-menus
+        (mf/use-fn
+         (fn []
+           (reset! show-menu* false)
+           (reset! sub-menu* nil)))
+
         on-menu-click
         (mf/use-fn
          (fn [event]
@@ -715,6 +722,12 @@
            (st/emit!
             (ptk/event ::ev/event {::ev/name "open-plugins-manager" ::ev/origin "workspace:menu"})
             (modal/show :plugin-management {}))))]
+
+    (mf/with-effect []
+      (let [disposable (->> st/stream
+                            (rx/filter #(= :interrupt %))
+                            (rx/subs! close-all-menus))]
+        (partial rx/dispose! disposable)))
 
 
     [:*

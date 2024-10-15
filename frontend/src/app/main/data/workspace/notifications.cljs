@@ -13,6 +13,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.common :as dc]
+   [app.main.data.modal :as modal]
    [app.main.data.websocket :as dws]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.edition :as dwe]
@@ -112,7 +113,8 @@
               ;; Delay so anything that launched :interrupt can finish
               (rx/delay 100))
          (if viewer?
-           (rx/of (dwly/set-options-mode :inspect))
+           (rx/of (modal/hide)
+                  (dwly/set-options-mode :inspect))
            (rx/of (dwly/set-options-mode :design))))))))
 
 
