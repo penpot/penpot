@@ -345,7 +345,8 @@
                                     (feat.fdata/process-objects (partial into {}))
                                     (blob/encode))
                        elapsed (tpoint)
-                       label   (str "internal/snapshot/" (:revn file))]
+                       label   (str "internal/snapshot/" (:revn file))
+                       created-by "system"]
 
                    (l/trc :hint "take snapshot"
                           :file-id (str (:id file))
@@ -455,7 +456,7 @@
   "SELECT fch.id, fch.created_at
      FROM file_change AS fch
     WHERE fch.file_id = ?
-      AND fch.label LIKE 'internal/%'
+      AND fch.created_by = 'system'
     ORDER BY fch.created_at DESC
     LIMIT ?")
 
@@ -465,7 +466,7 @@
   "UPDATE file_change
       SET label = NULL
     WHERE file_id = ?
-      AND label LIKE 'internal/%'
+      AND created_by LIKE 'system'
       AND created_at < ?")
 
 (defn- delete-old-snapshots!
