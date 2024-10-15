@@ -271,7 +271,18 @@
     (fast-check! s type code hint value)))
 
 (defn register! [type s]
-  (let [s (if (map? s) (m/-simple-schema s) s)]
+  (let [s (if (map? s)
+            (cond
+              (= :set (:type s))
+              (m/-collection-schema s)
+
+              (= :vec (:type s))
+              (m/-collection-schema s)
+
+              :else
+              (m/-simple-schema s))
+            s)]
+
     (swap! sr/registry assoc type s)
     nil))
 
@@ -400,7 +411,7 @@
 
 ;; NOTE: this is general purpose set spec and should be used over the other
 
-(register! ::set
+(def type:set
   {:type :set
    :min 0
    :max 1
@@ -477,6 +488,7 @@
 
 
        {:pred pred
+        :empty #{}
         :type-properties
         {:title "set"
          :description "Set of Strings"
@@ -491,6 +503,7 @@
          ::oapi/items {:type "string"}
          ::oapi/unique-items true}}))})
 
+(register! ::set type:set)
 
 (register! ::vec
   {:type :vector
