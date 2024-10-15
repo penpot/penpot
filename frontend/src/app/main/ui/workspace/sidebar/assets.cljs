@@ -13,7 +13,7 @@
    [app.main.data.workspace.assets :as dwa]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
+   [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
@@ -130,32 +130,26 @@
         on-menu-close
         (mf/use-fn #(swap! filters* assoc :open-menu false))
 
-        options (into [] (remove nil?
-                                 [{:option-name    (tr "workspace.assets.box-filter-all")
-                                   :id             "section-all"
-                                   :option-handler on-section-filter-change
-                                   :data-testid      "all"}
+        options
+        [{:name    (tr "workspace.assets.box-filter-all")
+          :id      "section-all"
+          :handler on-section-filter-change}
+         {:name    (tr "workspace.assets.components")
+          :id      "section-components"
+          :handler on-section-filter-change}
 
-                                  {:option-name    (tr "workspace.assets.components")
-                                   :id             "section-components"
-                                   :option-handler on-section-filter-change
-                                   :data-testid      "components"}
+         (when (not components-v2)
+           {:name    (tr "workspace.assets.graphics")
+            :id      "section-graphics"
+            :handler on-section-filter-change})
 
-                                  (when (not components-v2)
-                                    {:option-name    (tr "workspace.assets.graphics")
-                                     :id             "section-graphics"
-                                     :option-handler on-section-filter-change
-                                     :data-testid      "graphics"})
+         {:name    (tr "workspace.assets.colors")
+          :id      "section-colors"
+          :handler on-section-filter-change}
 
-                                  {:option-name    (tr "workspace.assets.colors")
-                                   :id             "section-color"
-                                   :option-handler on-section-filter-change
-                                   :data-testid      "colors"}
-
-                                  {:option-name    (tr "workspace.assets.typography")
-                                   :id             "section-typography"
-                                   :option-handler on-section-filter-change
-                                   :data-testid      "typographies"}]))]
+         {:name    (tr "workspace.assets.typography")
+          :id      "section-typographies"
+          :handler on-section-filter-change}]]
 
     [:article  {:class (stl/css :assets-bar)}
      [:div {:class (stl/css :assets-header)}
@@ -177,18 +171,17 @@
           :class (stl/css-case :section-button true
                                :opened menu-open?)}
          i/filter-icon]]
-       [:& context-menu-a11y
+       [:> context-menu*
         {:on-close on-menu-close
          :selectable true
          :selected section
          :show menu-open?
-         :fixed? true
-         :min-width? true
+         :fixed true
+         :min-width true
          :width size
          :top 158
          :left 18
-         :options options
-         :workspace? true}]
+         :options options}]
        [:button {:class (stl/css :sort-button)
                  :title (tr "workspace.assets.sort")
                  :on-click toggle-ordering}

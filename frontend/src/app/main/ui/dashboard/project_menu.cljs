@@ -11,7 +11,7 @@
    [app.main.data.notifications :as ntf]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
+   [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.import :as udi]
    [app.util.dom :as dom]
@@ -81,53 +81,50 @@
          (fn []
            (when (fn? on-import) (on-import))))
 
-        options [(when-not (:is-default project)
-                   {:option-name    (tr "labels.rename")
-                    :id             "project-menu-rename"
-                    :option-handler on-edit
-                    :data-testid      "project-rename"})
-                 (when-not (:is-default project)
-                   {:option-name    (tr "dashboard.duplicate")
-                    :id             "project-menu-duplicated"
-                    :option-handler on-duplicate
-                    :data-testid      "project-duplicate"})
-                 (when-not (:is-default project)
-                   {:option-name    (tr "dashboard.pin-unpin")
-                    :id             "project-menu-pin"
-                    :option-handler toggle-pin})
+        options
+        [(when-not (:is-default project)
+           {:name   (tr "labels.rename")
+            :id     "project-rename"
+            :handler on-edit})
+         (when-not (:is-default project)
+           {:name (tr "dashboard.duplicate")
+            :id   "project-duplicate"
+            :handler on-duplicate})
+         (when-not (:is-default project)
+           {:name (tr "dashboard.pin-unpin")
+            :id   "project-pin"
+            :handler toggle-pin})
 
-                 (when (and (seq teams) (not (:is-default project)))
-                   {:option-name    (tr "dashboard.move-to")
-                    :id             "project-menu-move-to"
-                    :sub-options     (for [team teams]
-                                       {:option-name    (:name team)
-                                        :id             (:name team)
-                                        :option-handler (on-move (:id team))})
-                    :data-testid      "project-move-to"})
-                 (when (some? on-import)
-                   {:option-name    (tr "dashboard.import")
-                    :id             "project-menu-import"
-                    :option-handler on-import-files
-                    :data-testid      "file-import"})
-                 (when-not (:is-default project)
-                   {:option-name    :separator})
-                 (when-not (:is-default project)
-                   {:option-name    (tr "labels.delete")
-                    :id             "project-menu-delete"
-                    :option-handler on-delete
-                    :data-testid      "project-delete"})]]
+         (when (and (seq teams) (not (:is-default project)))
+           {:name    (tr "dashboard.move-to")
+            :id      "project-move-to"
+            :options (for [team teams]
+                       {:name    (:name team)
+                        :id      (str "move-to-" (:id team))
+                        :handler (on-move (:id team))})})
+
+         (when (some? on-import)
+           {:name    (tr "dashboard.import")
+            :id      "file-import"
+            :handler on-import-files})
+         (when-not (:is-default project)
+           {:name :separator})
+         (when-not (:is-default project)
+           {:name    (tr "labels.delete")
+            :id      "project-delete"
+            :handler on-delete})]]
 
     [:*
-     [:& context-menu-a11y
+     [:> context-menu*
       {:on-close on-menu-close
        :show show?
-       :fixed? (or (not= top 0) (not= left 0))
-       :min-width? true
+       :fixed (or (not= top 0) (not= left 0))
+       :min-width true
        :top top
        :left left
-       :options options
-       :workspace false}]
+       :options options}]
      [:& udi/import-form {:ref file-input
                           :project-id (:id project)
                           :on-finish-import on-finish-import}]]))
+
 
