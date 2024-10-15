@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
+   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]))
 
 (defn shape-stroke-margin
@@ -97,12 +98,15 @@
   ([shape ignore-margin?]
    (let [strokes (:strokes shape)
 
+         open-path?    (and ^boolean (cfh/path-shape? shape)
+                            ^boolean (gsh/open-path? shape))
+
          stroke-width
          (->> strokes
               (map #(case (get % :stroke-alignment :center)
                       :center (/ (:stroke-width % 0) 2)
                       :outer  (:stroke-width % 0)
-                      (:stroke-width % 0)))
+                      (if open-path? (:stroke-width % 0) 0)))
               (reduce d/max 0))
 
          stroke-margin
