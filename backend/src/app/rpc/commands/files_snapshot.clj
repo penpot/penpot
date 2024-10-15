@@ -37,7 +37,7 @@
               :hint "only admins allowed")))
 
 (def sql:get-file-snapshots
-  "SELECT id, label, revn, created_at
+  "SELECT id, label, revn, created_at, created_by, profile_id
      FROM file_change
     WHERE file_id = ?
       AND created_at < ?
@@ -51,15 +51,15 @@
   (let [start-at (or start-at (dt/now))
         limit    (min limit 20)]
     (->> (db/exec! conn [sql:get-file-snapshots file-id start-at limit])
-         (mapv (fn [row]
-                 (update row :created-at dt/format-instant :rfc1123))))))
+         (mapv
+          (fn [row]
+            (update row :created-at dt/format-instant :rfc1123))))))
 
 (def ^:private schema:get-file-snapshots
   [:map [:file-id ::sm/uuid]])
 
 (sv/defmethod ::get-file-snapshots
   {::doc/added "1.20"
-   ::doc/skip true
    ::sm/params schema:get-file-snapshots}
   [cfg {:keys [::rpc/profile-id] :as params}]
   (check-authorized! cfg profile-id)
@@ -149,7 +149,6 @@
 
 (sv/defmethod ::restore-file-snapshot
   {::doc/added "1.20"
-   ::doc/skip true
    ::sm/params schema:restore-file-snapshot}
   [cfg {:keys [::rpc/profile-id file-id id label] :as params}]
   (check-authorized! cfg profile-id)
@@ -171,7 +170,7 @@
           (update :data blob/encode)))))
 
 (defn take-file-snapshot!
-  [cfg {:keys [file-id label ::rpc/profile-id]}]
+  [cfg {:keys [file-id label ::rpc/profile-id created-by] :or { created-by "system" }}]
   (let [file  (get-file cfg file-id)
         id    (uuid/next)]
 
@@ -187,10 +186,12 @@
                  :features (:features file)
                  :profile-id profile-id
                  :file-id (:id file)
-                 :label label}
+                 :label label
+                 :created-by created-by}
                 {::db/return-keys false})
 
     {:id id :label label}))
+
 
 (defn generate-snapshot-label
   []
@@ -205,12 +206,35 @@
 
 (sv/defmethod ::take-file-snapshot
   {::doc/added "1.20"
-   ::doc/skip true
    ::sm/params schema:take-file-snapshot}
   [cfg {:keys [::rpc/profile-id] :as params}]
   (check-authorized! cfg profile-id)
-  (db/tx-run! cfg (fn [cfg]
-                    (let [params (update params :label (fn [label]
-                                                         (or label (generate-snapshot-label))))]
-                      (take-file-snapshot! cfg params)))))
+  (db/tx-run!
+   cfg
+   (fn [cfg]
+     (let [params (update params :label (fn [label] (or label (generate-snapshot-label))))]
+       (take-file-snapshot! cfg (assoc params :created-by "user"))))))
+
+
+(def ^:private schema:update-file-snapshot
+  [:map
+   [:id ::sm/uuid]
+   [:label :string]])
+
+(defn update-file-snapshot!
+  [{:keys [::db/conn] :as cfg} {:keys [id label]}]
+  (let [result
+        (db/update! conn :file-change
+                    {:label label}
+                    {:id id}
+                    {::db/return-keys true})]
+    (select-keys result [:id :label :revn :created_at :profile-id :created-by])))
+
+(sv/defmethod ::update-file-snapshot
+  {::doc/added "1.20"
+   ::sm/params schema:update-file-snapshot}
+  [cfg {:keys [::rpc/profile-id] :as params}]
+  (check-authorized! cfg profile-id)
+  (db/tx-run! cfg update-file-snapshot! params))
+
 
