@@ -1,0 +1,258 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.version-toolbox {
+  padding: $s-8;
+}
+
+.versions-entry-empty {
+  align-items: center;
+  color: var(--color-foreground-secondary);
+  display: flex;
+  flex-direction: column;
+  font-size: $fs-12;
+  gap: $s-8;
+  padding: $s-16;
+}
+
+.versions-entry-empty-icon {
+  background: var(--color-background-tertiary);
+  border-radius: 50%;
+  padding: $s-8;
+  display: flex;
+
+  :global(.icon-history) {
+    stroke: var(--color-foreground-secondary);
+    fill: none;
+    width: $s-32;
+    height: $s-32;
+  }
+}
+
+.version-save-version {
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-foreground-secondary);
+  font-size: $fs-12;
+  padding: $s-16 0 $s-16 $s-16;
+  justify-content: space-between;
+  width: 100%;
+  display: flex;
+}
+
+.version-save-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  :global(.icon-pin) {
+    width: $s-16;
+    height: auto;
+    stroke: var(--color-foreground-secondary);
+  }
+
+  &:hover :global(.icon-pin) {
+    stroke: var(--color-accent-primary);
+  }
+
+  &:active :global(.icon-pin) {
+    fill: var(--color-accent-primary);
+  }
+}
+
+.versions-entries {
+  display: flex;
+  flex-direction: column;
+  gap: $s-6;
+}
+
+.version-entry {
+  border: 1px solid transparent;
+
+  p {
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &:hover .version-entry-options {
+    visibility: initial;
+  }
+}
+
+.version-entry {
+  display: flex;
+  padding: $s-4 $s-4 $s-4 $s-16;
+  gap: $s-8;
+  border-radius: 8px;
+  align-items: center;
+
+  &:hover {
+    border-color: var(--color-accent-primary);
+  }
+}
+
+.version-entry.is-autosave {
+  flex-direction: column;
+  align-items: start;
+  padding-left: $s-48;
+  gap: 0;
+}
+
+.version-entry-wrap {
+  position: relative;
+}
+
+.version-entry-avatar {
+  border-radius: 50%;
+  width: $s-24;
+  height: $s-24;
+}
+
+.version-entry-data {
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.version-entry-name {
+  color: var(--color-foreground-primary);
+  border-bottom: 1px solid transparent;
+}
+
+.version-entry-name-edit {
+  font-size: $fs-12;
+  color: var(--color-foreground-primary);
+  background: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  border-bottom: 1px solid var(--color-foreground-secondary);
+}
+
+.version-entry-time {
+  color: var(--color-foreground-secondary);
+}
+
+.version-entry-options {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  visibility: hidden;
+  padding: 0;
+  height: $s-40;
+  width: $s-32;
+
+  :global(.icon-menu) {
+    width: $s-16;
+    stroke-width: 2px;
+    height: auto;
+    stroke: var(--color-foreground-secondary);
+  }
+
+  &:hover :global(.icon-menu) {
+    stroke: var(--color-accent-primary);
+  }
+}
+
+.version-options-dropdown {
+  @extend .dropdown-wrapper;
+  position: absolute;
+  width: fit-content;
+  max-width: $s-200;
+  right: 0;
+  left: unset;
+  .menu-option {
+    @extend .dropdown-element-base;
+  }
+}
+
+.version-entry-snapshots {
+  display: flex;
+  align-items: center;
+  gap: $s-6;
+  color: var(--color-foreground-secondary);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+
+  :global(.icon-clock) {
+    width: $s-16;
+    height: auto;
+    stroke: var(--color-accent-warning);
+  }
+
+  :global(.icon-arrow) {
+    width: $s-12;
+    height: $s-12;
+    stroke: var(--color-foreground-secondary);
+  }
+
+  &:hover {
+    color: var(--color-accent-primary);
+    :global(.icon-arrow) {
+      stroke: var(--color-accent-primary);
+    }
+  }
+
+  .is-expanded & :global(.icon-arrow) {
+    transform: rotate(90deg);
+  }
+}
+
+.version-snapshot-list {
+  display: none;
+  margin-top: $s-8;
+  flex-direction: column;
+  gap: $s-8;
+  width: 100%;
+
+  .version-entry.is-expanded & {
+    display: flex;
+  }
+}
+
+.version-snapshot-entry {
+  font-size: $fs-12;
+  color: var(--color-foreground-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  white-space: nowrap;
+
+  :global(.icon-pin) {
+    visibility: hidden;
+    width: $s-16;
+    height: auto;
+    stroke: var(--color-foreground-secondary);
+  }
+
+  &:hover {
+    color: var(--color-accent-primary);
+    :global(.icon-pin) {
+      visibility: initial;
+      stroke: var(--color-accent-primary);
+    }
+  }
+
+  &:active {
+    color: var(--color-accent-primary);
+    :global(.icon-pin) {
+      visibility: initial;
+      fill: var(--color-accent-primary);
+    }
+  }
+}

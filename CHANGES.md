@@ -13,6 +13,7 @@
 ### :sparkles: New features
 
 - Viewer role for team members  [Taiga #1056 & #6590](https://tree.taiga.io/project/penpot/us/1056 & https://tree.taiga.io/project/penpot/us/6590)
+- File history versions management [Taiga](https://tree.taiga.io/project/penpot/us/187?milestone=411120)
 
 ### :bug: Bugs fixed
 
