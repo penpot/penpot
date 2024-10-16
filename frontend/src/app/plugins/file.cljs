@@ -10,10 +10,10 @@
    [app.common.record :as crc]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.exports.files :as exports.files]
    [app.main.data.workspace :as dw]
    [app.main.features :as features]
    [app.main.store :as st]
-   [app.main.ui.export :as mue]
    [app.main.worker :as uw]
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
@@ -121,7 +121,7 @@
         (not (contains? #{"penpot" "zip"} format))
         (u/display-not-valid :format type)
 
-        (not (contains? (set mue/default-export-types) type))
+        (not (contains? (set exports.files/valid-types) type))
         (u/display-not-valid :type type)
 
         :else

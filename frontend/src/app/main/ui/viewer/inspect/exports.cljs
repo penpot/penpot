@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.main.data.events :as ev]
-   [app.main.data.exports :as de]
+   [app.main.data.exports.assets :as de]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
