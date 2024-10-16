@@ -11,6 +11,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.debug.icons-preview :refer [icons-preview]]
    [app.main.ui.error-boundary :refer [error-boundary*]]
+   [app.main.ui.exports.files]
    [app.main.ui.frame-preview :as frame-preview]
    [app.main.ui.icons :as i]
    [app.main.ui.notifications :as notifications]

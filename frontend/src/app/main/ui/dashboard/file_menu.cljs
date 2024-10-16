@@ -9,7 +9,8 @@
    [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
-   [app.main.data.events :as ev]
+   [app.main.data.events :as-alias ev]
+   [app.main.data.exports.files :as fexp]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.refs :as refs]
@@ -21,7 +22,6 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [beicon.v2.core :as rx]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn get-project-name
@@ -191,14 +191,8 @@
         (mf/use-fn
          (mf/deps files)
          (fn [format]
-           (let [evname (if (= format :legacy-zip)
-                          "export-standard-files"
-                          "export-binary-files")]
-             (st/emit! (ptk/event ::ev/event {::ev/name evname
-                                              ::ev/origin "dashboard"
-                                              :format format
-                                              :num-files (count files)})
-                       (dcm/export-files files format)))))
+           (st/emit! (with-meta (fexp/export-files files format)
+                       {::ev/origin "dashboard"}))))
 
         on-export-binary-files
         (mf/use-fn

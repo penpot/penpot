@@ -14,7 +14,8 @@
    [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.events :as ev]
-   [app.main.data.exports :as de]
+   [app.main.data.exports.assets :as de]
+   [app.main.data.exports.files :as fexp]
    [app.main.data.modal :as modal]
    [app.main.data.plugins :as dp]
    [app.main.data.shortcuts :as scd]
@@ -527,16 +528,9 @@
          (fn [event]
            (let [target  (dom/get-current-target event)
                  format  (-> (dom/get-data target "format")
-                             (keyword))
-                 evname  (if (= format :legacy-zip)
-                           "export-standard-files"
-                           "export-binary-files")]
-             (st/emit!
-              (ptk/event ::ev/event {::ev/name evname
-                                     ::ev/origin "workspace"
-                                     :format format
-                                     :num-files 1})
-              (dcm/export-files [file] format)))))
+                             (keyword))]
+             (st/emit! (st/emit! (with-meta (fexp/export-files [file] format)
+                                   {::ev/origin "workspace"}))))))
 
         on-export-file-key-down
         (mf/use-fn
