@@ -585,6 +585,9 @@
 (def current-file-id
   (l/derived :current-file-id st/state))
 
+(def current-project-id
+  (l/derived :current-project-id st/state))
+
 (def workspace-preview-blend
   (l/derived :workspace-preview-blend st/state))
 

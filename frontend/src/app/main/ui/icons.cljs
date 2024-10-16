@@ -72,6 +72,7 @@
 (def ^:icon bug (icon-xref :bug))
 (def ^:icon clip-content (icon-xref :clip-content))
 (def ^:icon clipboard (icon-xref :clipboard))
+(def ^:icon clock (icon-xref :clock))
 (def ^:icon close-small (icon-xref :close-small))
 (def ^:icon close (icon-xref :close))
 (def ^:icon code (icon-xref :code))
