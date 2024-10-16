@@ -320,9 +320,9 @@
                     :title        (tr "workspace.options.guides.title")}
 
       [:> icon-button* {:variant "ghost"
-                   :aria-label (tr "workspace.options.guides.add-guide")
-                   :on-click handle-create-grid
-                   :icon "add"}]]
+                        :aria-label (tr "workspace.options.guides.add-guide")
+                        :on-click handle-create-grid
+                        :icon "add"}]]
 
      (when (and open? (seq frame-grids))
        [:div  {:class (stl/css :element-set-content)}

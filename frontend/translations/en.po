@@ -3909,7 +3909,7 @@ msgid "workspace.assets.components"
 msgstr "Components"
 
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:531
-msgid "workspace.assets.colors.add-component"
+msgid "workspace.assets.components.add-component"
 msgstr "Add component"
 
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:127

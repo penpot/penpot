@@ -198,15 +198,16 @@
 
          (when (features/active-feature? @st/state "plugins/runtime")
            [:li
-            [:> icon-button* {:variant "ghost"
-                              :aria-label (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
-                              :on-click #(st/emit!
-                                          (ptk/event ::ev/event {::ev/name "open-plugins-manager"
-                                                                 ::ev/origin "workspace:toolbar"})
-                                          (modal/show :plugin-management {}))
-                              :icon "puzzle"
-                              :data-tool "plugins"
-                              :data-testid "plugins-btn"}]])
+            [:button
+             {:title (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
+              :aria-label (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
+              :class (stl/css :main-toolbar-options-button)
+              :on-click #(st/emit!
+                          (ptk/event ::ev/event {::ev/name "open-plugins-manager" ::ev/origin "workspace:toolbar"})
+                          (modal/show :plugin-management {}))
+              :data-tool "plugins"
+              :data-testid "plugins-btn"}
+             i/puzzle]])
 
          (when *assert*
            [:li
