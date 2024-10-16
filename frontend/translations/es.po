@@ -436,19 +436,11 @@ msgstr "Duplicar %s archivos"
 
 #: src/app/main/ui/dashboard/placeholder.cljs:33
 #, markdown
-msgid "dashboard.empty-placeholder-drafts"
+msgid "dashboard.empty-placeholder-libraries"
 msgstr ""
-"Los archivos agregados a las bibliotecas aparecerán aquí. Si quieres probar "
+"Las bibliotecas añadidas al proyecto aparecerán aquí. Si quieres probar "
 "con alguna plantilla ve a [Bibliotecas y "
 "plantillas](https://penpot.app/libraries-templates)."
-
-#: src/app/main/ui/dashboard/placeholder.cljs:33
-msgid "dashboard.empty-placeholder-drafts-viewer-role"
-msgstr ""
-"Los archivos agregados a las bibliotecas aparecerán aquí."
-
-
-
 
 #: src/app/main/ui/dashboard/placeholder.cljs
 msgid "dashboard.empty-placeholder-libraries-title"
@@ -458,14 +450,13 @@ msgstr "Aún no existen librerías compartidas."
 #, markdown
 msgid "dashboard.empty-placeholder-libraries-subtitle"
 msgstr ""
-"Los archivos agregados a las bibliotecas aparecerán aquí. Si quieres probar "
+"Las bibliotecas añadidas al proyecto aparecerán aquí. Si quieres probar "
 "con alguna plantilla ve a [Bibliotecas y "
 "plantillas](https://penpot.app/libraries-templates)."
 
 #: src/app/main/ui/dashboard/placeholder.cljs
 msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
-msgstr "Los archivos agregados a las bibliotecas aparecerán aquí."
-
+msgstr "Las bibliotecas añadidas al proyecto aparecerán aquí."
 
 #: src/app/main/ui/dashboard/files.cljs
 msgid "dashboard.empty-placeholder-drafts-title"

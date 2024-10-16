@@ -361,7 +361,8 @@
 
      [:div {:class (stl/css :table-field :variants)}
       (for [{:keys [id] :as item} variants]
-        [:div {:class (stl/css :variant)
+        [:div {:class (stl/css-case :variant true
+                                    :inhert-variant you-viewer?)
                :key (dm/str id)}
          [:span {:class (stl/css :label)}
           [:& font-variant-display-name {:variant item}]]
@@ -384,16 +385,17 @@
                   :on-click on-cancel}
          i/close]]
 
-       (when-not you-viewer? [:div {:class (stl/css :table-field :options)}
-                              [:span {:class (stl/css :icon)
-                                      :on-click on-menu-open}
-                               i/menu]
+       (when-not you-viewer?
+         [:div {:class (stl/css :table-field :options)}
+          [:span {:class (stl/css :icon)
+                  :on-click on-menu-open}
+           i/menu]
 
-                              [:& installed-font-context-menu
-                               {:on-close on-menu-close
-                                :is-open menu-open?
-                                :on-delete on-delete-font
-                                :on-edit on-edit}]]))]))
+          [:& installed-font-context-menu
+           {:on-close on-menu-close
+            :is-open menu-open?
+            :on-delete on-delete-font
+            :on-edit on-edit}]]))]))
 
 (mf/defc installed-fonts
   [{:keys [fonts you-viewer?] :as props}]

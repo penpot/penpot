@@ -33,7 +33,7 @@
                               :subtitle (when you-viewer? (tr "dashboard.empty-placeholder-libraries-subtitle-viewer-role"))
                               :class (stl/css :empty-placeholder-libraries)}
        (when-not you-viewer?
-         [:> i18n/tr-html* {:content (tr "dashboard.empty-placeholder-drafts")
+         [:> i18n/tr-html* {:content (tr "dashboard.empty-placeholder-libraries")
                             :class (stl/css :placeholder-markdown)
                             :tag-name "span"}])]
 
