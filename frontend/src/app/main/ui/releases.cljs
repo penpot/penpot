@@ -29,6 +29,7 @@
    [app.main.ui.releases.v2-0]
    [app.main.ui.releases.v2-1]
    [app.main.ui.releases.v2-2]
+   [app.main.ui.releases.v2-3]
    [app.util.object :as obj]
    [app.util.timers :as tm]
    [rumext.v2 :as mf]))
