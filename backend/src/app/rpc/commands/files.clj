@@ -292,41 +292,40 @@
    ::cond/get-object #(get-minimal-file-with-perms %1 %2)
    ::cond/key-fn get-file-etag
    ::sm/params schema:get-file
-   ::sm/result schema:file-with-permissions}
-  [cfg {:keys [::rpc/profile-id id project-id] :as params}]
-  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                    ;; The COND middleware makes initial request for a file and
-                    ;; permissions when the incoming request comes with an
-                    ;; ETAG. When ETAG does not matches, the request is resolved
-                    ;; and this code is executed, in this case the permissions
-                    ;; will be already prefetched and we just reuse them instead
-                    ;; of making an additional database queries.
-                    (let [perms (or (:permissions (::cond/object params))
-                                    (get-permissions conn profile-id id))]
-                      (check-read-permissions! perms)
+   ::sm/result schema:file-with-permissions
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id project-id] :as params}]
+  ;; The COND middleware makes initial request for a file and
+  ;; permissions when the incoming request comes with an
+  ;; ETAG. When ETAG does not matches, the request is resolved
+  ;; and this code is executed, in this case the permissions
+  ;; will be already prefetched and we just reuse them instead
+  ;; of making an additional database queries.
+  (let [perms (or (:permissions (::cond/object params))
+                  (get-permissions conn profile-id id))]
+    (check-read-permissions! perms)
 
-                      (let [team (teams/get-team conn
-                                                 :profile-id profile-id
-                                                 :project-id project-id
-                                                 :file-id id)
+    (let [team (teams/get-team conn
+                               :profile-id profile-id
+                               :project-id project-id
+                               :file-id id)
 
-                            file (-> (get-file cfg id :project-id project-id)
-                                     (assoc :permissions perms)
-                                     (check-version!))
+          file (-> (get-file cfg id :project-id project-id)
+                   (assoc :permissions perms)
+                   (check-version!))]
 
-                            _    (-> (cfeat/get-team-enabled-features cf/flags team)
-                                     (cfeat/check-client-features! (:features params))
-                                     (cfeat/check-file-features! (:features file) (:features params)))
+      (-> (cfeat/get-team-enabled-features cf/flags team)
+          (cfeat/check-client-features! (:features params))
+          (cfeat/check-file-features! (:features file) (:features params)))
 
-                            ;; This operation is needed for backward comapatibility with frontends that
-                            ;; does not support pointer-map resolution mechanism; this just resolves the
-                            ;; pointers on backend and return a complete file.
-                            file (if (and (contains? (:features file) "fdata/pointer-map")
-                                          (not (contains? (:features params) "fdata/pointer-map")))
-                                   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
-                                     (update file :data feat.fdata/process-pointers deref))
-                                   file)]
-                        file)))))
+      ;; This operation is needed for backward comapatibility with frontends that
+      ;; does not support pointer-map resolution mechanism; this just resolves the
+      ;; pointers on backend and return a complete file.
+      (if (and (contains? (:features file) "fdata/pointer-map")
+               (not (contains? (:features params) "fdata/pointer-map")))
+        (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
+          (update file :data feat.fdata/process-pointers deref))
+        file))))
 
 ;; --- COMMAND QUERY: get-file-fragment (by id)
 
