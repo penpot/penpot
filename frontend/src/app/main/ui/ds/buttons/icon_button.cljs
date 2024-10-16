@@ -35,4 +35,4 @@
                                               :icon-button-ghost (= variant "ghost")
                                               :icon-button-destructive (= variant "destructive")))
         props (mf/spread-props props {:class class :title aria-label})]
-    [:> "button" props [:> icon* {:id icon :aria-label aria-label}] children ]))
+    [:> "button" props [:> icon* {:id icon :aria-label aria-label}] children]))

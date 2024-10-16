@@ -193,6 +193,6 @@
 
          :else
          [:> icon-button* {:variant "ghost"
-                        :aria-label (tr "workspace.shape.menu.unlock")
-                        :on-click handle-set-unblocked
-                        :icon "lock"}])]]]))
+                           :aria-label (tr "workspace.shape.menu.unlock")
+                           :on-click handle-set-unblocked
+                           :icon "lock"}])]]]))
