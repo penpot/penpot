@@ -345,8 +345,7 @@
                                     (feat.fdata/process-objects (partial into {}))
                                     (blob/encode))
                        elapsed (tpoint)
-                       label   (str "internal/snapshot/" (:revn file))
-                       created-by "system"]
+                       label   (str "internal/snapshot/" (:revn file))]
 
                    (l/trc :hint "take snapshot"
                           :file-id (str (:id file))
