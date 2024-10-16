@@ -46,6 +46,7 @@
 - Fix percent calculation on grid layout tracks [Github #4688](https://github.com/penpot/penpot/issues/4688)
 - Fix problem with caps and inner shadows [Github #4517](https://github.com/penpot/penpot/issues/4517)
 - Fix problem with horizontal/vertical lines and shadows [Github #4516](https://github.com/penpot/penpot/issues/4516)
+- Fix in workspace you can manage rulers on view mode [Taiga #8966](https://tree.taiga.io/project/penpot/issue/8966)
 
 ## 2.2.1
 
