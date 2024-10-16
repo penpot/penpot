@@ -35,7 +35,12 @@
 
     ;; Rust
     (contains? cf/flags :render-v2-rs)
-    (render-v2-rs/set-canvas canvas vbox zoom base-objects)))
+    (do
+      (js/performance.mark "rs-set-canvas-start")
+      (render-v2-rs/set-canvas canvas vbox zoom base-objects)
+      (js/performance.mark "rs-set-canvas-end")
+      (let [duration (.-duration (js/performance.measure "rs-set-canvas" "rs-set-canvas-start" "rs-set-canvas-end"))]
+        (js/console.log "Rust set-canvas" duration)))))
 
 (defn draw-canvas
   [vbox zoom base-objects]
@@ -46,7 +51,12 @@
 
     ;; Rust
     (contains? cf/flags :render-v2-rs)
-    (render-v2-rs/draw-canvas vbox zoom base-objects)))
+    (do
+      (js/performance.mark "rs-draw-canvas-start")
+      (render-v2-rs/draw-canvas vbox zoom base-objects)
+      (js/performance.mark "rs-draw-canvas-end")
+      (let [duration (.-duration (js/performance.measure "rs-draw-canvas" "rs-draw-canvas-start" "rs-draw-canvas-end"))]
+        (js/console.log "Rust draw-canvas" duration)))))
 
 (defn set-objects [vbox zoom base-objects]
   (cond

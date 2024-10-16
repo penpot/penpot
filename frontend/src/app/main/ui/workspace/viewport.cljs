@@ -272,9 +272,9 @@
     (when (render-v2/is-enabled?)
       ;; set up canvas and first render
       (mf/with-effect
-        [canvas-ref vbox']
+        [canvas-ref]
         (let [canvas (mf/ref-val canvas-ref)]
-          (when (and (some? canvas) (some? vbox'))
+          (when (some? canvas)
             (-> (p/then (render-v2/init)
                         (fn []
                           (mf/set-ref-val! canvas-init? true)

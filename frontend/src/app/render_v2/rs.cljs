@@ -61,7 +61,7 @@
   [vbox zoom]
   (let [alloc-rects (gobj/get ^js internal-module "_alloc_rects")
         free_rects (gobj/get ^js internal-module "_free_rects")
-        shape-count 20000
+        shape-count 5548
         heap (gobj/get ^js internal-module "HEAPF32")
         ;; Each F32 are 4 bytes
         ;; Each rect has:
@@ -74,28 +74,27 @@
       (free_rects shapes-ptr shape-count))
 
     (let
-      [ptr (alloc-rects shape-count)
-       padding 16
-       width 64
-       height 64]
+      [ptr (alloc-rects shape-count)]
        (doseq [index (take shape-count (iterate inc 0))]
         (let [mem (js/Float32Array. (.-buffer heap) (+ ptr (* rect-bytes index)) rect-bytes)
-              x1 (* index (+ padding width))
-              x2 (+ x1 width)
-              y1 (+ padding height)
-              y2 (+ y1 height)]
+              x1 (rand-int 1024)
+              x2 (+ x1 (rand-int 256))
+              y1 (rand-int 1024)
+              y2 (+ y1 (rand-int 256))]
           (set! shapes-ptr ptr)
           (set! shapes-size shape-count)
-          (.set mem (js/Float32Array. (clj->js [x1 y1 x2 y2 255 0 0 1])))
+          (.set mem (js/Float32Array. (clj->js [0 0 64 64 255 0 0 1])))
+          ;; (.set mem (js/Float32Array. (clj->js [(* index 72) 0 (+ (* index 72) 64) 64 255 0 0 1])))
+          ;; (.set mem (js/Float32Array. (clj->js [x1 y1 x2 y2 (rand-int 255) (rand-int 255) (rand-int 255) 1])))
         )))
     (draw-canvas vbox zoom nil)))
 
 (defn set-canvas
   [canvas vbox zoom objects]
   (let [gl (gobj/get ^js internal-module "GL")
-        context (.getContext canvas "webgl2" {"antialias" true
-                                              "depth" true
-                                              "stencil" true
+        context (.getContext canvas "webgl2" {;; "antialias" true
+                                              ;; "depth" true
+                                              ;; "stencil" false
                                               "alpha" true})
         ;; Register the context with emscripten
         handle (.registerContext gl context {"majorVersion" 2})

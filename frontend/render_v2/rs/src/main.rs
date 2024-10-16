@@ -109,8 +109,12 @@ fn render_rect(surface: &mut skia::Surface, rect: skia::Rect, color: skia::Color
     let mut paint = skia::Paint::default();
     paint.set_style(skia::PaintStyle::Fill);
     paint.set_color(color);
-    paint.set_anti_alias(true);
+    // paint.set_anti_alias(true);
     surface.canvas().draw_rect(rect, &paint);
+}
+
+fn render_rect_ref(surface: &mut skia::Surface, rect: &skia::Rect, paint: &skia::Paint) {
+    surface.canvas().draw_rect(rect, paint);
 }
 
 /// This is called from JS after the WebGL context has been created.
@@ -242,11 +246,11 @@ pub unsafe extern "C" fn draw_shapes(
     text_paint.set_style(skia_safe::paint::Style::StrokeAndFill);
     text_paint.set_stroke_width(1.0);
 
-    let mut path_paint = skia::Paint::default();
-    path_paint.set_color(skia_safe::Color::BLACK);
-    path_paint.set_anti_alias(true);
-    path_paint.set_stroke_width(1.0);
-    path_paint.set_style(PaintStyle::Stroke);
+    // let mut path_paint = skia::Paint::default();
+    // path_paint.set_color(skia_safe::Color::BLACK);
+    // path_paint.set_anti_alias(true);
+    // path_paint.set_stroke_width(1.0);
+    // path_paint.set_style(PaintStyle::Stroke);
 
     // let svg_canvas = skia_safe::svg::Canvas::new(skia_safe::Rect::from_size((10000, 10000)), None);
 
@@ -257,28 +261,48 @@ pub unsafe extern "C" fn draw_shapes(
 
     for rect in buf.iter() {
         let r = skia::Rect::new(rect.left, rect.top, rect.right, rect.bottom);
+
         let color = skia::Color::from_argb(
             (rect.a * 255.0) as u8,
             rect.r as u8,
             rect.g as u8,
             rect.b as u8,
         );
-        render_rect(&mut state.surface, r, color);
 
         let mut paint = skia::Paint::default();
         paint.set_style(skia::PaintStyle::Fill);
         paint.set_color(color);
-        paint.set_anti_alias(true);
+
+        // render_rect_ref(&mut state.surface, &r, &paint);
+        state.surface.canvas().draw_rect(&r, &paint);
+        // render_rect(&mut state.surface, r, color);
+
+        // paint.set_anti_alias(true);
+        // state.surface.canvas().draw_rect(r, &paint);
+        state.surface.canvas().draw_text_align(
+            String::from("Lorem ipsum"),
+            (rect.left, rect.top),
+            &state.default_font,
+            &paint,
+            skia::utils::text_utils::Align::Left,
+        );
+
+        // let mut paint = skia::Paint::default();
+        // paint.set_style(skia::PaintStyle::Fill);
+        // paint.set_color(color);
+        // paint.set_anti_alias(true);
+
         // svg_canvas.draw_rect(r, &paint);
         // pdf_canvas.draw_rect(r, &paint);
 
-        text_paint.set_color(color);
-        state.surface.canvas().draw_str(
-            "SKIA TEXT",
-            (rect.left, rect.top),
-            &state.default_font,
-            &text_paint,
-        );
+        // text_paint.set_color(color);
+        // state.surface.canvas().draw_str(
+        //     "SKIA TEXT",
+        //     (rect.left, rect.top),
+        //     &state.default_font,
+        //     &text_paint,
+        // );
+
         // svg_canvas.draw_str("SKIA TEXT", (rect.left, rect.top), &state.default_font, &text_paint);
         // pdf_canvas.draw_str("SKIA TEXT", (rect.left, rect.top), &state.default_font, &text_paint);
 
