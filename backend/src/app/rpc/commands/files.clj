@@ -295,8 +295,16 @@
    ::sm/result schema:file-with-permissions}
   [cfg {:keys [::rpc/profile-id id project-id] :as params}]
   (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                    (let [perms (get-permissions conn profile-id id)]
+                    ;; The COND middleware makes initial request for a file and
+                    ;; permissions when the incoming request comes with an
+                    ;; ETAG. When ETAG does not matches, the request is resolved
+                    ;; and this code is executed, in this case the permissions
+                    ;; will be already prefetched and we just reuse them instead
+                    ;; of making an additional database queries.
+                    (let [perms (or (:permissions (::cond/object params))
+                                    (get-permissions conn profile-id id))]
                       (check-read-permissions! perms)
+
                       (let [team (teams/get-team conn
                                                  :profile-id profile-id
                                                  :project-id project-id
