@@ -29,7 +29,7 @@
    [app.util.services :as-alias sv]
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
-   [ring.response :as-alias rres]))
+   [yetti.response :as-alias yres]))
 
 (def
   ^{:dynamic true
@@ -59,7 +59,7 @@
                 key'   (when (some? object)
                          (->> object (key-fn params) (fmt-key)))]
             (if (and (some? key) (= key key'))
-              (fn [_] {::rres/status 304})
+              (fn [_] {::yres/status 304})
               (let [params (if (some? object)
                              (assoc params ::object object)
                              params)
