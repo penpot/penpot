@@ -22,8 +22,8 @@
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.exec :as px]
-   [ring.request :as rreq]
-   [ring.response :as-alias rres]))
+   [yetti.request :as rreq]
+   [yetti.response :as-alias rres]))
 
 (declare parse-json)
 (declare handle-request)

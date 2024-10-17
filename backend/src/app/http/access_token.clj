@@ -12,7 +12,7 @@
    [app.main :as-alias main]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
-   [ring.request :as rreq]))
+   [yetti.request :as rreq]))
 
 (def header-re #"^Token\s+(.*)")
 

@@ -33,8 +33,8 @@
    [integrant.core :as ig]
    [markdown.core :as md]
    [markdown.transformers :as mdt]
-   [ring.request :as rreq]
-   [ring.response :as rres]))
+   [yetti.request :as rreq]
+   [yetti.response :as rres]))
 
 ;; (selmer.parser/cache-off!)
 

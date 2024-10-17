@@ -16,8 +16,8 @@
    [app.http.session :as-alias session]
    [app.util.inet :as inet]
    [clojure.spec.alpha :as s]
-   [ring.request :as rreq]
-   [ring.response :as rres]))
+   [yetti.request :as rreq]
+   [yetti.response :as rres]))
 
 (defn request->context
   "Extracts error report relevant context data from request."

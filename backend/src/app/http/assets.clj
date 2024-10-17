@@ -16,7 +16,7 @@
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
-   [ring.response :as-alias rres]))
+   [yetti.response :as-alias rres]))
 
 (def ^:private cache-max-age
   (dt/duration {:hours 24}))

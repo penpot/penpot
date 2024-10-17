@@ -27,7 +27,7 @@
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [pretty-spec.core :as ps]
-   [ring.response :as-alias rres]))
+   [yetti.response :as-alias rres]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DOC (human readable)

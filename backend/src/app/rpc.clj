@@ -36,8 +36,8 @@
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.core :as p]
-   [ring.request :as rreq]
-   [ring.response :as rres]))
+   [yetti.request :as rreq]
+   [yetti.response :as rres]))
 
 (s/def ::profile-id ::us/uuid)
 

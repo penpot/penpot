@@ -35,8 +35,8 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
-   [ring.request :as rreq]
-   [ring.response :as-alias rres]))
+   [yetti.request :as rreq]
+   [yetti.response :as-alias rres]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS

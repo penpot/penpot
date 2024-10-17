@@ -29,9 +29,9 @@
    [promesa.exec :as px]
    [reitit.core :as r]
    [reitit.middleware :as rr]
-   [ring.request :as rreq]
-   [ring.response :as-alias rres]
-   [yetti.adapter :as yt]))
+   [yetti.adapter :as yt]
+   [yetti.request :as rreq]
+   [yetti.response :as-alias rres]))
 
 (declare router-handler)
 

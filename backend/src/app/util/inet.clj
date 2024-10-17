@@ -8,7 +8,7 @@
   "INET addr parsing and validation helpers"
   (:require
    [cuerdas.core :as str]
-   [ring.request :as rreq])
+   [yetti.request :as rreq])
   (:import
    com.google.common.net.InetAddresses
    java.net.InetAddress))

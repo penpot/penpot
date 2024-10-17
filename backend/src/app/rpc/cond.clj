@@ -29,7 +29,7 @@
    [app.util.services :as-alias sv]
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
-   [ring.response :as-alias rres]))
+   [yetti.response :as-alias rres]))
 
 (def
   ^{:dynamic true

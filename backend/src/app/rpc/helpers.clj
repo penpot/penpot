@@ -11,7 +11,7 @@
    [app.common.data.macros :as dm]
    [app.http :as-alias http]
    [app.rpc :as-alias rpc]
-   [ring.response :as-alias rres]))
+   [yetti.response :as-alias rres]))
 
 ;; A utilty wrapper object for wrap service responses that does not
 ;; implements the IObj interface that make possible attach metadata to

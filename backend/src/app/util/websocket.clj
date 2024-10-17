@@ -16,8 +16,7 @@
    [promesa.exec :as px]
    [promesa.exec.csp :as sp]
    [promesa.util :as pu]
-   [ring.request :as rreq]
-   [ring.websocket :as rws]
+   [yetti.request :as rreq]
    [yetti.websocket :as yws])
   (:import
    java.nio.ByteBuffer))
@@ -138,7 +137,7 @@
 (defn- handle-ping!
   [{:keys [::id ::beats ::channel] :as wsp} beat-id]
   (l/trc :hint "send ping" :beat beat-id :conn-id (str id))
-  (rws/ping channel (encode-beat beat-id))
+  (yws/ping channel (encode-beat beat-id))
   (let [issued (swap! beats conj (long beat-id))]
     (not (>= (count issued) max-missed-heartbeats))))
 
@@ -151,14 +150,14 @@
     (loop [i 0]
       (let [ping-ch (sp/timeout-chan heartbeat-interval)
             [msg p] (sp/alts! [close-ch input-ch output-ch heartbeat-ch ping-ch])]
-        (when (rws/open? channel)
+        (when (yws/open? channel)
           (cond
             (identical? p ping-ch)
             (if (handle-ping! wsp i)
               (recur (inc i))
               (do
                 (l/trc :hint "closing" :reason "missing to many pings")
-                (rws/close channel 8802 "missing to many pings")))
+                (yws/close channel 8802 "missing to many pings")))
 
             (or (identical? p close-ch) (nil? msg))
             (do :nothing)
@@ -183,7 +182,7 @@
             (identical? p output-ch)
             (let [message (on-snd-message msg)
                   message (t/encode-str message {:type :json-verbose})]
-              (rws/send channel message)
+              (yws/send channel message)
               (recur i))))))
 
     (catch InterruptedException _cause
@@ -202,13 +201,13 @@
       (try
         (handler wsp {:type :close})
 
-        (when (rws/open? channel)
+        (when (yws/open? channel)
           ;; NOTE: we need to ignore all exceptions here because
           ;; there can be a race condition that first returns that
           ;; channel is connected but on closing, will raise that
           ;; channel is already closed.
           (ex/ignoring
-           (rws/close channel 8899 "terminated")))
+           (yws/close channel 8899 "terminated")))
 
         (when-let [on-disconnect (::on-disconnect wsp)]
           (on-disconnect))
