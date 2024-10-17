@@ -111,29 +111,29 @@
         (let [explain (ex/explain data)]
           (l/error :hint "data assertion error" :cause cause)
           {::rres/status 500
-           ::rres/body   {:type :server-error
-                          :code :assertion
-                          :data (-> data
-                                    (dissoc ::sm/explain)
-                                    (cond-> explain (assoc :explain explain)))}})
+           ::rres/body   (-> data
+                             (dissoc ::sm/explain)
+                             (cond-> explain (assoc :explain explain))
+                             (assoc :type :server-error)
+                             (assoc :code :assertion))})
 
         (= code :spec-validation)
         (let [explain (ex/explain data)]
           (l/error :hint "spec assertion error" :cause cause)
           {::rres/status 500
-           ::rres/body   {:type :server-error
-                          :code :assertion
-                          :data (-> data
-                                    (dissoc ::s/problems ::s/value ::s/spec)
-                                    (cond-> explain (assoc :explain explain)))}})
+           ::rres/body   (-> data
+                             (dissoc ::s/problems ::s/value ::s/spec)
+                             (cond-> explain (assoc :explain explain))
+                             (assoc :type :server-error)
+                             (assoc :code :assertion))})
 
         :else
         (do
           (l/error :hint "assertion error" :cause cause)
           {::rres/status 500
-           ::rres/body   {:type :server-error
-                          :code :assertion
-                          :data data}})))))
+           ::rres/body   (-> data
+                             (assoc :type :server-error)
+                             (assoc :code :assertion))})))))
 
 (defmethod handle-error :not-found
   [err _ _]
@@ -143,13 +143,14 @@
 (defmethod handle-error :internal
   [error request parent-cause]
   (binding [l/*context* (request->context request)]
-    (let [cause (or parent-cause error)]
+    (let [cause (or parent-cause error)
+          data  (ex-data error)]
       (l/error :hint "internal error" :cause cause)
       {::rres/status 500
-       ::rres/body {:type :server-error
-                    :code :unhandled
-                    :hint (ex-message error)
-                    :data (ex-data error)}})))
+       ::rres/body (-> data
+                       (assoc :type :server-error)
+                       (update :code #(or % :unhandled))
+                       (assoc :hint (ex-message error)))})))
 
 (defmethod handle-error :default
   [error request parent-cause]
@@ -209,10 +210,10 @@
       (binding [l/*context* (request->context request)]
         (l/error :hint "unhandled error" :cause cause)
         {::rres/status 500
-         ::rres/body {:type :server-error
-                      :code :unhandled
-                      :hint (ex-message error)
-                      :data edata}}))))
+         ::rres/body (-> edata
+                         (assoc :type :server-error)
+                         (update :code #(or % :unhandled))
+                         (assoc :hint (ex-message error)))}))))
 
 (defmethod handle-exception java.io.IOException
   [cause _ _]

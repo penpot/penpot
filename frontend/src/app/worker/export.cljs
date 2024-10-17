@@ -7,6 +7,7 @@
 (ns app.worker.export
   (:require
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.json :as json]
    [app.common.media :as cm]
    [app.common.text :as ct]
@@ -396,46 +397,55 @@
                           (->> (uz/compress-files data)
                                (rx/map #(vector (get files file-id) %)))))))))
 
-(defmethod impl/handler :export-binary-file
-  [{:keys [files export-type] :as message}]
-  (->> (rx/from files)
-       (rx/mapcat
-        (fn [file]
-          (->> (rp/cmd! :export-binfile {:file-id (:id file)
-                                         :include-libraries (= export-type :all)
-                                         :embed-assets (= export-type :merge)})
-               (rx/map #(hash-map :type :finish
-                                  :file-id (:id file)
-                                  :filename (:name file)
-                                  :mtype "application/penpot"
-                                  :description "Penpot export (*.penpot)"
-                                  :uri (wapi/create-uri (wapi/create-blob %))))
-               (rx/catch
-                (fn [err]
-                  (rx/of {:type :error
-                          :error (str err)
-                          :file-id (:id file)}))))))))
+(defmethod impl/handler :export-files
+  [{:keys [team-id files type format features] :as message}]
+  (cond
+    (or (= format :binfile-v1)
+        (= format :binfile-v3))
+    (->> (rx/from files)
+         (rx/mapcat
+          (fn [file]
+            (->> (rp/cmd! :export-binfile {:file-id (:id file)
+                                           :version (if (= format :binfile-v3) 3 1)
+                                           :include-libraries (= type :all)
+                                           :embed-assets (= type :merge)})
+                 (rx/map wapi/create-blob)
+                 (rx/map wapi/create-uri)
+                 (rx/map (fn [uri]
+                           {:type :finish
+                            :file-id (:id file)
+                            :filename (:name file)
+                            :mtype (if (= format :binfile-v3)
+                                     "application/zip"
+                                     "application/penpot")
+                            :uri uri}))
+                 (rx/catch
+                  (fn [cause]
+                    (rx/of (ex/raise :type :internal
+                                     :code :export-error
+                                     :hint "unexpected error on exporting file"
+                                     :file-id (:id file)
+                                     :cause cause))))))))
 
-(defmethod impl/handler :export-standard-file
-  [{:keys [team-id files export-type features] :as message}]
-
-  (->> (rx/from files)
-       (rx/mapcat
-        (fn [file]
-          (->> (export-file team-id (:id file) export-type features)
-               (rx/map
-                (fn [value]
-                  (if (contains? value :type)
-                    value
-                    (let [[file export-blob] value]
-                      {:type :finish
-                       :file-id (:id file)
-                       :filename (:name file)
-                       :mtype "application/zip"
-                       :description "Penpot export (*.zip)"
-                       :uri (wapi/create-uri export-blob)}))))
-               (rx/catch (fn [err]
-                           (js/console.error err)
-                           (rx/of {:type :error
-                                   :error (str err)
-                                   :file-id (:id file)}))))))))
+    (= format :legacy-zip)
+    (->> (rx/from files)
+         (rx/mapcat
+          (fn [file]
+            (->> (export-file team-id (:id file) type features)
+                 (rx/map
+                  (fn [value]
+                    (if (contains? value :type)
+                      value
+                      (let [[file export-blob] value]
+                        {:type :finish
+                         :file-id (:id file)
+                         :filename (:name file)
+                         :mtype "application/zip"
+                         :uri (wapi/create-uri export-blob)}))))
+                 (rx/catch
+                  (fn [cause]
+                    (rx/of (ex/raise :type :internal
+                                     :code :export-error
+                                     :hint "unexpected error on exporting file"
+                                     :file-id (:id file)
+                                     :cause cause))))))))))

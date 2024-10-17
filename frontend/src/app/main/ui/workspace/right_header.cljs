@@ -16,7 +16,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.export :refer [export-progress-widget]]
+   [app.main.ui.exports.assets :refer [export-progress-widget]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.presence :refer [active-sessions]]

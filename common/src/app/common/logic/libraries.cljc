@@ -1831,7 +1831,7 @@
   "Generate changes for remove all references to components in the shape,
   with the given id and all its children, at the current page."
   [changes id file page-id libraries]
-  (let [container (cfh/get-container file :page page-id)]
+  (let [container (ctn/get-container file :page page-id)]
     (-> changes
         (pcb/with-container container)
         (pcb/with-objects (:objects container))

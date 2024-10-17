@@ -240,21 +240,21 @@
         {:on-close on-close-menu
          :state @menu-state
          :options [(when-not (or multi-colors? multi-assets?)
-                     {:option-name    (tr "workspace.assets.rename")
-                      :id             "assets-rename-color"
-                      :option-handler rename-color-clicked})
+                     {:name    (tr "workspace.assets.rename")
+                      :id      "assets-rename-color"
+                      :handler rename-color-clicked})
                    (when-not (or multi-colors? multi-assets?)
-                     {:option-name    (tr "workspace.assets.edit")
-                      :id             "assets-edit-color"
-                      :option-handler edit-color-clicked})
+                     {:name    (tr "workspace.assets.edit")
+                      :id      "assets-edit-color"
+                      :handler edit-color-clicked})
 
-                   {:option-name    (tr "workspace.assets.delete")
-                    :id             "assets-delete-color"
-                    :option-handler delete-color}
+                   {:name    (tr "workspace.assets.delete")
+                    :id      "assets-delete-color"
+                    :handler delete-color}
                    (when-not multi-assets?
-                     {:option-name   (tr "workspace.assets.group")
-                      :id             "assets-group-color"
-                      :option-handler (on-group (:id color))})]}])
+                     {:name   (tr "workspace.assets.group")
+                      :id     "assets-group-color"
+                      :handler (on-group (:id color))})]}])
 
      (when ^boolean dragging?
        [:div {:class (stl/css :dragging)}])]))

@@ -12,7 +12,7 @@
    [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
+   [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -195,9 +195,9 @@
   (let [local    (mf/use-state {:menu-open false})
         show?    (:menu-open @local)
         options  (mf/with-memo [on-delete]
-                   [{:option-name    (tr "labels.delete")
-                     :id             "access-token-delete"
-                     :option-handler on-delete}])
+                   [{:name    (tr "labels.delete")
+                     :id      "access-token-delete"
+                     :handler on-delete}])
 
         menu-ref (mf/use-ref)
 
@@ -224,11 +224,11 @@
               :on-click on-menu-click
               :on-key-down on-keydown}
      menu-icon
-     [:& context-menu-a11y
+     [:> context-menu*
       {:on-close on-menu-close
        :show show?
-       :fixed? true
-       :min-width? true
+       :fixed true
+       :min-width true
        :top "auto"
        :left "auto"
        :options options}]]))

@@ -559,26 +559,26 @@
        {:on-close on-close-menu
         :state @menu-state
         :options [(when (and local? (not (or multi-components? multi-assets? read-only?)))
-                    {:option-name    (tr "workspace.assets.rename")
-                     :id             "assets-rename-component"
-                     :option-handler on-rename})
+                    {:name    (tr "workspace.assets.rename")
+                     :id      "assets-rename-component"
+                     :handler on-rename})
                   (when (and local? (not (or multi-assets? read-only?)))
-                    {:option-name    (if components-v2
-                                       (tr "workspace.assets.duplicate-main")
-                                       (tr "workspace.assets.duplicate"))
-                     :id             "assets-duplicate-component"
-                     :option-handler on-duplicate})
+                    {:name    (if components-v2
+                                (tr "workspace.assets.duplicate-main")
+                                (tr "workspace.assets.duplicate"))
+                     :id     "assets-duplicate-component"
+                     :handler on-duplicate})
 
                   (when (and local? (not read-only?))
-                    {:option-name    (tr "workspace.assets.delete")
-                     :id             "assets-delete-component"
-                     :option-handler on-delete})
+                    {:name    (tr "workspace.assets.delete")
+                     :id      "assets-delete-component"
+                     :handler on-delete})
                   (when (and local? (not (or multi-assets? read-only?)))
-                    {:option-name   (tr "workspace.assets.group")
-                     :id             "assets-group-component"
-                     :option-handler on-group})
+                    {:name   (tr "workspace.assets.group")
+                     :id     "assets-group-component"
+                     :handler on-group})
 
                   (when (and components-v2 (not multi-assets?))
-                    {:option-name   (tr "workspace.shape.menu.show-main")
-                     :id             "assets-show-main-component"
-                     :option-handler on-show-main})]}]]]))
+                    {:name   (tr "workspace.shape.menu.show-main")
+                     :id     "assets-show-main-component"
+                     :handler on-show-main})]}]]]))

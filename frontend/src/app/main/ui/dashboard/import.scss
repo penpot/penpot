@@ -66,7 +66,6 @@
 .file-entry {
   .file-name {
     @include flexRow;
-    margin-bottom: $s-8;
     .file-icon {
       @include flexCenter;
       height: $s-24;

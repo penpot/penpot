@@ -295,8 +295,9 @@
               cfg        (assoc cfg
                                 ::bf.v1/overwrite false
                                 ::bf.v1/profile-id profile-id
-                                ::bf.v1/project-id project-id)]
-          (bf.v1/import-files! cfg path)
+                                ::bf.v1/project-id project-id
+                                ::bf.v1/input path)]
+          (bf.v1/import-files! cfg)
           {::rres/status  200
            ::rres/headers {"content-type" "text/plain"}
            ::rres/body    "OK CLONED"})
@@ -329,8 +330,9 @@
                       ::bf.v1/overwrite overwrite?
                       ::bf.v1/migrate migrate?
                       ::bf.v1/profile-id profile-id
-                      ::bf.v1/project-id project-id)]
-      (bf.v1/import-files! cfg path)
+                      ::bf.v1/project-id project-id
+                      ::bf.v1/input path)]
+      (bf.v1/import-files! cfg)
       {::rres/status  200
        ::rres/headers {"content-type" "text/plain"}
        ::rres/body    "OK"})))
