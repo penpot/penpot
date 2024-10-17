@@ -16,7 +16,7 @@
    [app.http.session :as-alias session]
    [app.util.inet :as inet]
    [clojure.spec.alpha :as s]
-   [yetti.request :as rreq]
+   [yetti.request :as yreq]
    [yetti.response :as yres]))
 
 (defn request->context
@@ -29,10 +29,10 @@
     {:request/path       (:path request)
      :request/method     (:method request)
      :request/params     (:params request)
-     :request/user-agent (rreq/get-header request "user-agent")
+     :request/user-agent (yreq/get-header request "user-agent")
      :request/ip-addr    (inet/parse-request request)
      :request/profile-id (:uid claims)
-     :version/frontend   (or (rreq/get-header request "x-frontend-version") "unknown")
+     :version/frontend   (or (yreq/get-header request "x-frontend-version") "unknown")
      :version/backend    (:full cf/version)}))
 
 

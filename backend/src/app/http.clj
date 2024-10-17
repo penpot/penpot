@@ -30,7 +30,7 @@
    [reitit.core :as r]
    [reitit.middleware :as rr]
    [yetti.adapter :as yt]
-   [yetti.request :as rreq]
+   [yetti.request :as yreq]
    [yetti.response :as-alias yres]))
 
 (declare router-handler)
@@ -105,7 +105,7 @@
 (defn- router-handler
   [router]
   (letfn [(resolve-handler [request]
-            (if-let [match (r/match-by-path router (rreq/path request))]
+            (if-let [match (r/match-by-path router (yreq/path request))]
               (let [params  (:path-params match)
                     result  (:result match)
                     handler (or (:handler result) not-found-handler)

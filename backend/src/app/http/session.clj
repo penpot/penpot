@@ -22,7 +22,7 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
-   [yetti.request :as rreq]
+   [yetti.request :as yreq]
    [yetti.request :as yrq]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -145,7 +145,7 @@
   (us/assert! ::us/uuid profile-id)
 
   (fn [request response]
-    (let [uagent  (rreq/get-header request "user-agent")
+    (let [uagent  (yreq/get-header request "user-agent")
           params  {:profile-id profile-id
                    :user-agent uagent
                    :created-at (dt/now)}

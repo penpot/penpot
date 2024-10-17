@@ -16,7 +16,7 @@
    [promesa.exec :as px]
    [promesa.exec.csp :as sp]
    [promesa.util :as pu]
-   [yetti.request :as rreq]
+   [yetti.request :as yreq]
    [yetti.websocket :as yws])
   (:import
    java.nio.ByteBuffer))
@@ -84,7 +84,7 @@
         hbeat-ch   (sp/chan :buf (sp/sliding-buffer 6))
         close-ch   (sp/chan)
         ip-addr    (inet/parse-request request)
-        uagent     (rreq/get-header request "user-agent")
+        uagent     (yreq/get-header request "user-agent")
         id         (uuid/next)
         state      (atom {})
         beats      (atom #{})

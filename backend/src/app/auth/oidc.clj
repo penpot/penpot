@@ -35,7 +35,7 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
-   [yetti.request :as rreq]
+   [yetti.request :as yreq]
    [yetti.response :as-alias yres]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -598,7 +598,7 @@
 
 (defn- get-external-session-id
   [request]
-  (let [session-id (rreq/get-header request "x-external-session-id")]
+  (let [session-id (yreq/get-header request "x-external-session-id")]
     (when (string? session-id)
       (if (or (> (count session-id) 256)
               (= session-id "null")

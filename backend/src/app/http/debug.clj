@@ -33,7 +33,7 @@
    [integrant.core :as ig]
    [markdown.core :as md]
    [markdown.transformers :as mdt]
-   [yetti.request :as rreq]
+   [yetti.request :as yreq]
    [yetti.response :as yres]))
 
 ;; (selmer.parser/cache-off!)
@@ -157,7 +157,7 @@
 
 (defn file-data-handler
   [cfg request]
-  (case (rreq/method request)
+  (case (yreq/method request)
     :get (retrieve-file-data cfg request)
     :post (upload-file-data cfg request)
     (ex/raise :type :http

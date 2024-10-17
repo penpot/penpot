@@ -22,7 +22,7 @@
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.exec :as px]
-   [yetti.request :as rreq]
+   [yetti.request :as yreq]
    [yetti.response :as-alias yres]))
 
 (declare parse-json)
@@ -38,7 +38,7 @@
 (defmethod ig/init-key ::routes
   [_ cfg]
   (letfn [(handler [request]
-            (let [data (-> request rreq/body slurp)]
+            (let [data (-> request yreq/body slurp)]
               (px/run! :vthread (partial handle-request cfg data)))
             {::yres/status 200})]
     ["/sns" {:handler handler
