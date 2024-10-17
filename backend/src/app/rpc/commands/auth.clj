@@ -27,9 +27,11 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.setup :as-alias setup]
+   [app.setup.welcome-file :refer [create-welcome-file]]
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as wrk]
    [cuerdas.core :as str]))
 
 (def schema:password
@@ -180,10 +182,11 @@
 (defn- validate-register-attempt!
   [cfg params]
 
-  (when-not (contains? cf/flags :registration)
-    (when-not (contains? params :invitation-token)
-      (ex/raise :type :restriction
-                :code :registration-disabled)))
+  (when (or
+         (not (contains? cf/flags :registration))
+         (not (contains? cf/flags :login-with-password)))
+    (ex/raise :type :restriction
+              :code :registration-disabled))
 
   (when (contains? params :invitation-token)
     (let [invitation (tokens/verify (::setup/props cfg)
@@ -240,6 +243,7 @@
 
         params (d/without-nils params)
         token  (tokens/generate (::setup/props cfg) params)]
+
     (with-meta {:token token}
       {::audit/profile-id uuid/zero})))
 
@@ -282,6 +286,7 @@
         is-demo   (:is-demo params false)
         is-muted  (:is-muted params false)
         is-active (:is-active params false)
+        theme     (:theme params nil)
         email     (str/lower email)
 
         params    {:id id
@@ -292,6 +297,7 @@
                    :password password
                    :deleted-at (:deleted-at params)
                    :props props
+                   :theme theme
                    :is-active is-active
                    :is-muted is-muted
                    :is-demo is-demo}]
@@ -347,30 +353,43 @@
                 :extra-data ptoken})))
 
 (defn register-profile
-  [{:keys [::db/conn] :as cfg} {:keys [token fullname] :as params}]
-  (let [claims     (tokens/verify (::setup/props cfg) {:token token :iss :prepared-register})
+  [{:keys [::db/conn ::wrk/executor] :as cfg} {:keys [token fullname theme] :as params}]
+  (let [theme      (when (= theme "light") theme)
+        claims     (tokens/verify (::setup/props cfg) {:token token :iss :prepared-register})
         params     (-> claims
                        (into params)
-                       (assoc :fullname fullname))
+                       (assoc :fullname fullname)
+                       (assoc :theme theme))
 
         profile    (if-let [profile-id (:profile-id claims)]
                      (profile/get-profile conn profile-id)
-                     (let [is-active (or (boolean (:is-active claims))
-                                         (not (contains? cf/flags :email-verification)))
-                           params    (-> params
-                                         (assoc :is-active is-active)
-                                         (update :password #(profile/derive-password cfg %)))]
-                       (->> (create-profile! conn params)
-                            (create-profile-rels! conn))))
+                     ;; NOTE: we first try to match existing profile
+                     ;; by email, that in normal circumstances will
+                     ;; not return anything, but when a user tries to
+                     ;; reuse the same token multiple times, we need
+                     ;; to detect if the profile is already registered
+                     (or (profile/get-profile-by-email conn (:email claims))
+                         (let [is-active (or (boolean (:is-active claims))
+                                             (not (contains? cf/flags :email-verification)))
+                               params    (-> params
+                                             (assoc :is-active is-active)
+                                             (update :password #(profile/derive-password cfg %)))
+                               profile   (->> (create-profile! conn params)
+                                              (create-profile-rels! conn))]
+                           (vary-meta profile assoc :created true))))
 
-        ;; When no profile-id comes on claims means a new register
-        created?   (not (:profile-id claims))
+        created?   (-> profile meta :created true?)
 
         invitation (when-let [token (:invitation-token params)]
                      (tokens/verify (::setup/props cfg) {:token token :iss :team-invitation}))
 
-        props      (audit/profile->props profile)]
+        props      (audit/profile->props profile)
 
+        create-welcome-file-when-needed
+        (fn []
+          (when (:create-welcome-file params)
+            (let [cfg (dissoc cfg ::db/conn)]
+              (wrk/submit! executor (create-welcome-file cfg profile)))))]
     (cond
       ;; When profile is blocked, we just ignore it and return plain data
       (:is-blocked profile)
@@ -407,6 +426,7 @@
       (if (:is-active profile)
         (-> (profile/strip-private-attrs profile)
             (rph/with-transform (session/create-fn cfg (:id profile)))
+            (rph/with-defer create-welcome-file-when-needed)
             (rph/with-meta
               {::audit/replace-props props
                ::audit/context {:action "login"}
@@ -416,19 +436,21 @@
           (when-not (eml/has-reports? conn (:email profile))
             (send-email-verification! cfg profile))
 
-          (rph/with-meta {:email (:email profile)}
-            {::audit/replace-props props
-             ::audit/context {:action "email-verification"}
-             ::audit/profile-id (:id profile)})))
+          (-> {:email (:email profile)}
+              (rph/with-defer create-welcome-file-when-needed)
+              (rph/with-meta
+                {::audit/replace-props props
+                 ::audit/context {:action "email-verification"}
+                 ::audit/profile-id (:id profile)}))))
 
       :else
-      (let [elapsed?    (elapsed-verify-threshold? profile)
-            complaints? (eml/has-reports? conn (:email profile))
-            action      (if complaints?
-                          "ignore-because-complaints"
-                          (if elapsed?
-                            "resend-email-verification"
-                            "ignore"))]
+      (let [elapsed? (elapsed-verify-threshold? profile)
+            reports? (eml/has-reports? conn (:email profile))
+            action   (if reports?
+                       "ignore-because-complaints"
+                       (if elapsed?
+                         "resend-email-verification"
+                         "ignore"))]
 
         (l/wrn :hint "repeated registry detected"
                :profile-id (str (:id profile))
@@ -450,7 +472,9 @@
 (def schema:register-profile
   [:map {:title "register-profile"}
    [:token schema:token]
-   [:fullname [::sm/word-string {:max 100}]]])
+   [:fullname [::sm/word-string {:max 100}]]
+   [:theme {:optional true} [:string {:max 10}]]
+   [:create-welcome-file {:optional true} :boolean]])
 
 (sv/defmethod ::register-profile
   {::rpc/auth false
@@ -521,7 +545,6 @@
           (->> profile
                (create-recovery-token)
                (send-email-notification conn)))))))
-
 
 (def schema:request-profile-recovery
   [:map {:title "request-profile-recovery"}

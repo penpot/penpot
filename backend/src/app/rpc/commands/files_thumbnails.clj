@@ -179,18 +179,16 @@
 
 (def ^:private
   schema:get-file-data-for-thumbnail
-  (sm/define
-    [:map {:title "get-file-data-for-thumbnail"}
-     [:file-id ::sm/uuid]
-     [:features {:optional true} ::cfeat/features]]))
+  [:map {:title "get-file-data-for-thumbnail"}
+   [:file-id ::sm/uuid]
+   [:features {:optional true} ::cfeat/features]])
 
 (def ^:private
   schema:partial-file
-  (sm/define
-    [:map {:title "PartialFile"}
-     [:id ::sm/uuid]
-     [:revn {:min 0} :int]
-     [:page :any]]))
+  [:map {:title "PartialFile"}
+   [:id ::sm/uuid]
+   [:revn {:min 0} ::sm/int]
+   [:page :any]])
 
 (sv/defmethod ::get-file-data-for-thumbnail
   "Retrieves the data for generate the thumbnail of the file. Used
@@ -233,7 +231,7 @@
   "INSERT INTO file_tagged_object_thumbnail (file_id, object_id, tag, media_id)
    VALUES (?, ?, ?, ?)
        ON CONFLICT (file_id, object_id, tag)
-       DO UPDATE SET updated_at=?, media_id=?, deleted_at=null
+       DO UPDATE SET updated_at=?, media_id=?, deleted_at=?
    RETURNING *")
 
 (defn- persist-thumbnail!
@@ -251,17 +249,19 @@
                       :content-type mtype
                       :bucket "file-object-thumbnail"})))
 
-
-
 (defn- create-file-object-thumbnail!
-  [{:keys [::sto/storage] :as cfg} file-id object-id media tag]
-  (let [tsnow     (dt/now)
-        media     (persist-thumbnail! storage media tsnow)
+  [{:keys [::sto/storage] :as cfg} file object-id media tag]
+  (let [file-id   (:id file)
+        timestamp (dt/now)
+        media     (persist-thumbnail! storage media timestamp)
         [th1 th2] (db/tx-run! cfg (fn [{:keys [::db/conn]}]
                                     (let [th1 (db/exec-one! conn [sql:get-file-object-thumbnail file-id object-id tag])
                                           th2 (db/exec-one! conn [sql:create-file-object-thumbnail
-                                                                  file-id object-id tag (:id media)
-                                                                  tsnow (:id media)])]
+                                                                  file-id object-id tag
+                                                                  (:id media)
+                                                                  timestamp
+                                                                  (:id media)
+                                                                  (:deleted-at file)])]
                                       [th1 th2])))]
 
     (when (and (some? th1)
@@ -294,9 +294,8 @@
   (media/validate-media-size! media)
 
   (db/run! cfg files/check-edition-permissions! profile-id file-id)
-
-  (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
-    (create-file-object-thumbnail! cfg file-id object-id media (or tag "frame"))))
+  (when-let [file (files/get-minimal-file cfg file-id {::db/check-deleted false})]
+    (create-file-object-thumbnail! cfg file object-id media (or tag "frame"))))
 
 ;; --- MUTATION COMMAND: delete-file-object-thumbnail
 
@@ -327,7 +326,7 @@
   (files/check-edition-permissions! cfg profile-id file-id)
   (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
                     (-> cfg
-                        (update ::sto/storage media/configure-assets-storage conn)
+                        (update ::sto/storage sto/configure conn)
                         (delete-file-object-thumbnail! file-id object-id))
                     nil)))
 
@@ -386,7 +385,7 @@
   schema:create-file-thumbnail
   [:map {:title "create-file-thumbnail"}
    [:file-id ::sm/uuid]
-   [:revn :int]
+   [:revn ::sm/int]
    [:media ::media/upload]])
 
 (sv/defmethod ::create-file-thumbnail
@@ -405,7 +404,6 @@
   (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
                     (files/check-edition-permissions! conn profile-id file-id)
                     (when-not (db/read-only? conn)
-                      (let [cfg   (update cfg ::sto/storage media/configure-assets-storage)
-                            media (create-file-thumbnail! cfg params)]
+                      (let [media (create-file-thumbnail! cfg params)]
                         {:uri (files/resolve-public-uri (:id media))
                          :id (:id media)})))))

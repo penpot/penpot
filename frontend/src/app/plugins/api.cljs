@@ -76,18 +76,15 @@
 
   (getFile
     [_]
-    (file/file-proxy $plugin (:current-file-id @st/state)))
+    (when (some? (:current-file-id @st/state))
+      (file/file-proxy $plugin (:current-file-id @st/state))))
 
   (getPage
     [_]
     (let [file-id (:current-file-id @st/state)
           page-id (:current-page-id @st/state)]
-      (page/page-proxy $plugin file-id page-id)))
-
-  (getSelected
-    [_]
-    (let [selection (get-in @st/state [:workspace-local :selected])]
-      (apply array (map str selection))))
+      (when (and (some? file-id) (some? page-id))
+        (page/page-proxy $plugin file-id page-id))))
 
   (getSelectedShapes
     [_]
@@ -143,7 +140,9 @@
 
   (getRoot
     [_]
-    (shape/shape-proxy $plugin uuid/zero))
+    (when (and (some? (:current-file-id @st/state))
+               (some? (:current-page-id @st/state)))
+      (shape/shape-proxy $plugin uuid/zero)))
 
   (getTheme
     [_]
@@ -227,7 +226,7 @@
             ids (into #{} (map #(obj/get % "$id")) shapes)]
         (st/emit! (dwg/ungroup-shapes ids)))))
 
-  (createFrame
+  (createBoard
     [_]
     (create-shape $plugin :frame))
 
@@ -368,7 +367,73 @@
   (openPage
     [_ page]
     (let [id (obj/get page "$id")]
-      (st/emit! (dw/go-to-page id)))))
+      (st/emit! (dw/go-to-page id))))
+
+  (alignHorizontal
+    [_ shapes direction]
+    (let [dir (case direction
+                "left"   :hleft
+                "center" :hcenter
+                "right"  :hright
+                nil)]
+      (cond
+        (nil? dir)
+        (u/display-not-valid :alignHorizontal-direction "Direction not valid")
+
+        (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+        (u/display-not-valid :alignHorizontal-shapes "Not valid shapes")
+
+        :else
+        (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
+          (st/emit! (dw/align-objects dir ids))))))
+
+  (alignVertical
+    [_ shapes direction]
+    (let [dir (case direction
+                "top"   :vtop
+                "center" :vcenter
+                "bottom"  :vbottom
+                nil)]
+      (cond
+        (nil? dir)
+        (u/display-not-valid :alignVertical-direction "Direction not valid")
+
+        (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+        (u/display-not-valid :alignVertical-shapes "Not valid shapes")
+
+        :else
+        (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
+          (st/emit! (dw/align-objects dir ids))))))
+
+  (distributeHorizontal
+    [_ shapes]
+    (cond
+      (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+      (u/display-not-valid :distributeHorizontal-shapes "Not valid shapes")
+
+      :else
+      (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
+        (st/emit! (dw/distribute-objects :horizontal ids)))))
+
+  (distributeVertical
+    [_ shapes]
+    (cond
+      (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+      (u/display-not-valid :distributeVertical-shapes "Not valid shapes")
+
+      :else
+      (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
+        (st/emit! (dw/distribute-objects :vertical ids)))))
+
+  (flatten
+    [_ shapes]
+    (cond
+      (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+      (u/display-not-valid :flatten-shapes "Not valid shapes")
+
+      :else
+      (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
+        (st/emit! (dw/convert-selected-to-path ids))))))
 
 (defn create-context
   [plugin-id]
@@ -378,6 +443,7 @@
    {:name "root" :get #(.getRoot ^js %)}
    {:name "currentFile" :get #(.getFile ^js %)}
    {:name "currentPage" :get #(.getPage ^js %)}
+   {:name "theme" :get #(.getTheme ^js %)}
 
    {:name "selection"
     :get #(.getSelectedShapes ^js %)

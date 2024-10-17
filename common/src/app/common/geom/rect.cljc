@@ -80,19 +80,38 @@
    [:x2 ::sm/safe-number]
    [:y2 ::sm/safe-number]])
 
-(sm/register! ::rect
-  [:and
-   {:gen/gen (->> (sg/tuple (sg/small-double)
-                            (sg/small-double)
-                            (sg/small-double)
-                            (sg/small-double))
-                  (sg/fmap #(apply make-rect %)))}
-   [:fn rect?]
-   schema:rect-attrs])
+(defn- rect-generator
+  []
+  (->> (sg/tuple (sg/small-double)
+                 (sg/small-double)
+                 (sg/small-double)
+                 (sg/small-double))
+       (sg/fmap #(apply make-rect %))))
+
+(defn- decode-rect
+  [o]
+  (if (map? o)
+    (map->Rect o)
+    o))
+
+(defn- rect->json
+  [o]
+  (if (rect? o)
+    (into {} o)
+    o))
+
+(def schema:rect
+  [:and {:error/message "errors.invalid-rect"
+         :gen/gen (rect-generator)
+         :decode/json {:leave decode-rect}
+         :encode/json rect->json}
+   schema:rect-attrs
+   [:fn rect?]])
 
 (def valid-rect?
-  (sm/lazy-validator
-   [:and [:fn rect?] schema:rect-attrs]))
+  (sm/validator schema:rect))
+
+(sm/register! ::rect schema:rect)
 
 (def empty-rect
   (make-rect 0 0 0.01 0.01))

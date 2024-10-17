@@ -26,7 +26,6 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
-   [malli.transform :as mt]
    [pretty-spec.core :as ps]
    [ring.response :as-alias rres]))
 
@@ -98,77 +97,79 @@
 ;; OPENAPI / SWAGGER (v3.1)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def output-transformer
-  (mt/transformer
-   sm/default-transformer
-   (mt/key-transformer {:encode str/camel
-                        :decode (comp keyword str/kebab)})))
-
 (defn prepare-openapi-context
   [methods]
-  (letfn [(gen-response-doc [tsx schema]
-            (let [schema  (sm/schema schema)
-                  example (sm/generate schema)
-                  example (sm/encode schema example output-transformer)]
-              {:default
-               {:description "A default response"
-                :content
-                {"application/json"
-                 {:schema tsx
-                  :example example}}}}))
+  (let [definitions (atom {})
+        options {:registry sr/default-registry
+                 ::oapi/definitions-path "#/components/schemas/"
+                 ::oapi/definitions definitions}
 
-          (gen-params-doc [tsx schema]
-            (let [example (sm/generate schema)
-                  example (sm/encode schema example output-transformer)]
-              {:required true
-               :content
-               {"application/json"
-                {:schema tsx
-                 :example example}}}))
+        output-transformer
+        (sm/json-transformer)
 
-          (gen-method-doc [options mdata]
-            (let [pschema (::sm/params mdata)
-                  rschema (::sm/result mdata)
+        gen-response-doc
+        (fn [tsx schema]
+          (let [schema  (sm/schema schema)
+                example (sm/generate schema)
+                example (sm/encode schema example output-transformer)]
+            {:default
+             {:description "A default response"
+              :content
+              {"application/json"
+               {:schema tsx
+                :example example}}}}))
 
-                  sparams (-> pschema (oapi/transform options) (gen-params-doc pschema))
-                  sresp   (some-> rschema (oapi/transform options) (gen-response-doc rschema))
+        gen-params-doc
+        (fn [tsx schema]
+          (let [example (sm/generate schema)
+                example (sm/encode schema example output-transformer)]
+            {:required true
+             :content
+             {"application/json"
+              {:schema tsx
+               :example example}}}))
 
-                  rpost   {:description (::sv/docstring mdata)
-                           :deprecated (::deprecated mdata false)
-                           :requestBody sparams}
+        gen-method-doc
+        (fn [mdata]
+          (let [pschema (::sm/params mdata)
+                rschema (::sm/result mdata)
 
-                  rpost  (cond-> rpost
-                           (some? sresp)
-                           (assoc :responses sresp))]
+                sparams (-> pschema (oapi/transform options) (gen-params-doc pschema))
+                sresp   (some-> rschema (oapi/transform options) (gen-response-doc rschema))
 
-              {:name (-> mdata ::sv/name d/name)
-               :module (-> (:ns mdata) (str/split ".") last)
-               :repr {:post rpost}}))]
+                rpost   {:description (::sv/docstring mdata)
+                         :deprecated (::deprecated mdata false)
+                         :requestBody sparams}
 
-    (let [definitions (atom {})
-          options {:registry sr/default-registry
-                   ::oapi/definitions-path "#/components/schemas/"
-                   ::oapi/definitions definitions}
+                rpost  (cond-> rpost
+                         (some? sresp)
+                         (assoc :responses sresp))]
 
-          paths   (binding [oapi/*definitions* definitions]
-                    (->> methods
-                         (map (comp first val))
-                         (filter ::sm/params)
-                         (map (partial gen-method-doc options))
-                         (sort-by (juxt :module :name))
-                         (map (fn [doc]
-                                [(str/ffmt "/command/%" (:name doc)) (:repr doc)]))
-                         (into {})))]
-      {:openapi "3.0.0"
-       :info {:version (:main cf/version)}
-       :servers [{:url (str/ffmt "%/api/rpc" (cf/get :public-uri))
+            {:name (-> mdata ::sv/name d/name)
+             :module (-> (:ns mdata) (str/split ".") last)
+             :repr {:post rpost}}))
+
+        paths
+        (binding [oapi/*definitions* definitions]
+          (->> methods
+               (map (comp first val))
+               (filter ::sm/params)
+               (map gen-method-doc)
+               (sort-by (juxt :module :name))
+               (map (fn [doc]
+                      [(str/ffmt "/command/%" (:name doc)) (:repr doc)]))
+               (into {})))]
+
+    {:openapi "3.0.0"
+     :info {:version (:main cf/version)}
+     :servers [{:url (str/ffmt "%/api/rpc" (cf/get :public-uri))
                 ;; :description "penpot backend"
-                  }]
-       :security
-       {:api_key []}
+                }]
+     :security
+     {:api_key []}
 
-       :paths paths
-       :components {:schemas @definitions}})))
+     :paths paths
+     :components {:schemas @definitions}}))
 
 (defn openapi-json-handler
   [context]

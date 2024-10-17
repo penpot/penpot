@@ -14,6 +14,7 @@
   @extend .modal-container-base;
   display: grid;
   grid-template-rows: auto 1fr auto;
+  max-height: initial;
 
   &.plugin-permissions {
     width: $s-412;
@@ -23,6 +24,11 @@
   &.plugin-management {
     width: $s-472;
     max-width: $s-472;
+  }
+
+  &.plugin-try-out {
+    width: $s-452;
+    max-width: $s-452;
   }
 
   hr {
@@ -47,6 +53,8 @@
   @include headlineMediumTypography;
   margin-block-end: $s-32;
   color: var(--modal-title-foreground-color);
+  display: flex;
+  gap: $s-12;
 }
 
 .modal-content {
@@ -61,6 +69,16 @@
     height: $s-380;
     max-height: $s-380;
   }
+}
+
+.modal-message {
+  font-size: $fs-14;
+  color: var(--color-foreground-secondary);
+}
+
+.modal-paragraph {
+  font-size: $fs-14;
+  color: var(--color-foreground-primary);
 }
 
 .primary-button {
@@ -253,8 +271,8 @@ div.input-error {
 .permissions-disclaimer {
   @include bodySmallTypography;
   padding: $s-16;
-  background: var(--color-background-tertiary);
-  color: var(--color-foreground-secondary);
+  background: var(--color-background-quaternary);
+  color: var(--color-foreground-primary);
   border-radius: $br-4;
 }
 

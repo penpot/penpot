@@ -42,7 +42,7 @@
                        (cond-> color
                          (:value color) (assoc :color (:value color) :opacity 1)
                          (:value color) (dissoc :value)
-                         true           (assoc :file-id file-id)))
+                         :always        (assoc :file-id file-id)))
 
         color-id    (:id color)
 
@@ -70,7 +70,7 @@
          (fn [event]
            (st/emit!
             (dwl/add-recent-color color)
-            (dc/apply-color-from-palette (merge uc/empty-color color) (kbd/alt? event)))))
+            (dc/apply-color-from-palette color (kbd/alt? event)))))
 
         rename-color
         (mf/use-fn

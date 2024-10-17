@@ -8,40 +8,49 @@
   (:require
    [app.common.schema :as sm]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; SCHEMA
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(def schema:line-to-segment
+  [:map
+   [:command [:= :line-to]]
+   [:params
+    [:map
+     [:x ::sm/safe-number]
+     [:y ::sm/safe-number]]]])
 
-(sm/register! ::segment
-  [:multi {:title "PathSegment" :dispatch :command}
-   [:line-to
-    [:map
-     [:command [:= :line-to]]
-     [:params
-      [:map
-       [:x ::sm/safe-number]
-       [:y ::sm/safe-number]]]]]
-   [:close-path
-    [:map
-     [:command [:= :close-path]]]]
-   [:move-to
-    [:map
-     [:command [:= :move-to]]
-     [:params
-      [:map
-       [:x ::sm/safe-number]
-       [:y ::sm/safe-number]]]]]
-   [:curve-to
-    [:map
-     [:command [:= :curve-to]]
-     [:params
-      [:map
-       [:x ::sm/safe-number]
-       [:y ::sm/safe-number]
-       [:c1x ::sm/safe-number]
-       [:c1y ::sm/safe-number]
-       [:c2x ::sm/safe-number]
-       [:c2y ::sm/safe-number]]]]]])
+(def schema:close-path-segment
+  [:map
+   [:command [:= :close-path]]])
 
-(sm/register! ::content
-  [:vector ::segment])
+(def schema:move-to-segment
+  [:map
+   [:command [:= :move-to]]
+   [:params
+    [:map
+     [:x ::sm/safe-number]
+     [:y ::sm/safe-number]]]])
+
+(def schema:curve-to-segment
+  [:map
+   [:command [:= :curve-to]]
+   [:params
+    [:map
+     [:x ::sm/safe-number]
+     [:y ::sm/safe-number]
+     [:c1x ::sm/safe-number]
+     [:c1y ::sm/safe-number]
+     [:c2x ::sm/safe-number]
+     [:c2y ::sm/safe-number]]]])
+
+(def schema:path-segment
+  [:multi {:title "PathSegment"
+           :dispatch :command
+           :decode/json #(update % :command keyword)}
+   [:line-to schema:line-to-segment]
+   [:close-path schema:close-path-segment]
+   [:move-to schema:move-to-segment]
+   [:curve-to schema:curve-to-segment]])
+
+(def schema:path-content
+  [:vector schema:path-segment])
+
+(sm/register! ::segment schema:path-segment)
+(sm/register! ::content schema:path-content)

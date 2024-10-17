@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.schema :as sm]
-   [app.main.data.messages :as msg]
+   [app.main.data.notifications :as ntf]
    [app.main.data.users :as udu]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
@@ -27,7 +27,7 @@
            {:code "errors.email-as-password"})
 
     (let [msg (tr "generic.error")]
-      (st/emit! (msg/error msg)))))
+      (st/emit! (ntf/error msg)))))
 
 (defn- on-success
   [form]
@@ -36,7 +36,7 @@
         msg (tr "dashboard.notifications.password-saved")]
     (dom/clean-value! password-old-node)
     (dom/focus! password-old-node)
-    (st/emit! (msg/success msg))))
+    (st/emit! (ntf/success msg))))
 
 (defn- on-submit
   [form event]

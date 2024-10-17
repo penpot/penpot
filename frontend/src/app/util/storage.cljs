@@ -8,39 +8,161 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.transit :as t]
+   [app.util.functions :as fns]
    [app.util.globals :as g]
-   [app.util.timers :as tm]))
+   [app.util.time :as dt]
+   [cuerdas.core :as str]
+   [okulary.util :as ou]))
 
-(defn- persist
-  [storage prev curr]
-  (run! (fn [key]
-          (let [prev* (get prev key)
-                curr* (get curr key)]
-            (when (not= curr* prev*)
-              (tm/schedule-on-idle
-               #(if (some? curr*)
-                  (.setItem ^js storage (t/encode-str key) (t/encode-str curr*))
-                  (.removeItem ^js storage (t/encode-str key)))))))
+;; Using ex/ignoring because can receive a DOMException like this when
+;; importing the code as a library: Failed to read the 'localStorage'
+;; property from 'Window': Storage is disabled inside 'data:' URLs.
+(defonce ^:private local-storage-backend
+  (ex/ignoring (unchecked-get g/global "localStorage")))
 
-        (into #{} (concat (keys curr)
-                          (keys prev)))))
+(defonce ^:private session-storage-backend
+  (ex/ignoring (unchecked-get g/global "sessionStorage")))
 
-(defn- load
-  [storage]
-  (when storage
-    (let [len (.-length ^js storage)]
-      (reduce (fn [res index]
-                (let [key (.key ^js storage index)
-                      val (.getItem ^js storage key)]
-                  (try
-                    (assoc res (t/decode-str key) (t/decode-str val))
-                    (catch :default _e
-                      res))))
-              {}
-              (range len)))))
+(def ^:dynamic *sync*
+  "Dynamic variable which determines the mode of operation of the
+  storage mutatio actions. By default is asynchronous."
+  false)
 
-;; Using ex/ignoring because can receive a DOMException like this when importing the code as a library:
-;; Failed to read the 'localStorage' property from 'Window': Storage is disabled inside 'data:' URLs.
-(defonce storage (atom (load (ex/ignoring (unchecked-get g/global "localStorage")))))
+(defn- encode-key
+  [prefix k]
+  (assert (keyword? k) "key must be keyword")
+  (let [kns (namespace k)
+        kn  (name k)]
+    (str prefix ":" kns "/" kn)))
 
-(add-watch storage :persistence #(persist js/localStorage %3 %4))
+(defn- decode-key
+  [prefix k]
+  (when (str/starts-with? k prefix)
+    (let [l (+ (count prefix) 1)
+          k (subs k l)]
+      (if (str/starts-with? k "/")
+        (keyword (subs k 1))
+        (let [[kns kn] (str/split k "/" 2)]
+          (keyword kns kn))))))
+
+(defn- lookup-by-index
+  [backend prefix result index]
+  (try
+    (let [key  (.key ^js backend index)
+          key' (decode-key prefix key)]
+      (if key'
+        (let [val (.getItem ^js backend key)]
+          (assoc! result key' (t/decode-str val)))
+        result))
+    (catch :default _
+      result)))
+
+(defn- load-data
+  [backend prefix]
+  (if (some? backend)
+    (let [length (.-length ^js backend)]
+      (loop [index  0
+             result (transient {})]
+        (if (< index length)
+          (recur (inc index)
+                 (lookup-by-index backend prefix result index))
+          (persistent! result))))
+    {}))
+
+(defn create-storage
+  [backend prefix]
+  (let [initial   (load-data backend prefix)
+        curr-data #js {:content initial}
+        last-data #js {:content initial}
+        watches   (js/Map.)
+
+        update-key
+        (fn [key val]
+          (when (some? backend)
+            (if (some? val)
+              (.setItem ^js backend (encode-key prefix key) (t/encode-str val))
+              (.removeItem ^js backend (encode-key prefix key)))))
+
+        on-change*
+        (fn [curr-state]
+          (let [prev-state (unchecked-get last-data "content")]
+            (try
+              (run! (fn [key]
+                      (let [prev-val (get prev-state key)
+                            curr-val (get curr-state key)]
+                        (when-not (identical? curr-val prev-val)
+                          (update-key key curr-val))))
+                    (into #{} (concat (keys curr-state)
+                                      (keys prev-state))))
+              (finally
+                (unchecked-set last-data "content" curr-state)))))
+
+        on-change
+        (fns/debounce on-change* 2000)]
+
+    (reify
+      IAtom
+
+      IDeref
+      (-deref [_] (unchecked-get curr-data "content"))
+
+      ILookup
+      (-lookup [coll k]
+        (-lookup coll k nil))
+      (-lookup [_ k not-found]
+        (let [state (unchecked-get curr-data "content")]
+          (-lookup state k not-found)))
+
+      IReset
+      (-reset! [self newval]
+        (let [oldval (unchecked-get curr-data "content")]
+          (unchecked-set curr-data "content" newval)
+          (if *sync*
+            (on-change* newval)
+            (on-change newval))
+          (when (> (.-size watches) 0)
+            (-notify-watches self oldval newval))
+          newval))
+
+      ISwap
+      (-swap! [self f]
+        (let [state (unchecked-get curr-data "content")]
+          (-reset! self (f state))))
+      (-swap! [self f x]
+        (let [state (unchecked-get curr-data "content")]
+          (-reset! self (f state x))))
+      (-swap! [self f x y]
+        (let [state (unchecked-get curr-data "content")]
+          (-reset! self (f state x y))))
+      (-swap! [self f x y more]
+        (let [state (unchecked-get curr-data "content")]
+          (-reset! self (apply f state x y more))))
+
+      IWatchable
+      (-notify-watches [self oldval newval]
+        (ou/doiter
+         (.entries watches)
+         (fn [n]
+           (let [f (aget n 1)
+                 k (aget n 0)]
+             (f k self oldval newval)))))
+
+      (-add-watch [self key f]
+        (.set watches key f)
+        self)
+
+      (-remove-watch [_ key]
+        (.delete watches key)))))
+
+(defonce global  (create-storage local-storage-backend "penpot-global"))
+(defonce user    (create-storage local-storage-backend "penpot-user"))
+(defonce storage (create-storage local-storage-backend "penpot"))
+(defonce session (create-storage session-storage-backend "penpot"))
+
+(defonce before-unload
+  (letfn [(on-before-unload [_]
+            (binding [*sync* true]
+              (swap! global assoc ::last-refresh (dt/now))
+              (swap! user assoc ::last-refresh (dt/now))))]
+    (.addEventListener g/window "beforeunload" on-before-unload)
+    on-before-unload))

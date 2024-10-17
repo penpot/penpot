@@ -5,7 +5,6 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.plugins.viewport
-  "RPC for plugins runtime."
   (:require
    [app.common.data.macros :as dm]
    [app.common.record :as crc]
@@ -20,6 +19,12 @@
 
 (deftype ViewportProxy [$plugin]
   Object
+  (zoomReset [_]
+    (st/emit! dwz/reset-zoom))
+
+  (zoomToFitAll [_]
+    (st/emit! dwz/zoom-to-fit-all))
+
   (zoomIntoView [_ shapes]
     (let [ids
           (->> shapes
@@ -88,7 +93,7 @@
    {:name "bounds"
     :get
     (fn [_]
-      (let [vport (dm/get-in @st/state [:workspace-local :vport])]
-        (.freeze js/Object (format/format-bounds vport))))}))
+      (let [vbox (dm/get-in @st/state [:workspace-local :vbox])]
+        (.freeze js/Object (format/format-bounds vbox))))}))
 
 

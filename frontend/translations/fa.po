@@ -1,392 +1,548 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
-"fa/>\n"
+"PO-Revision-Date: 2024-08-05 19:09+0000\n"
+"Last-Translator: Nima K <nimiossa@gmail.com>\n"
+"Language-Team: Persian "
+"<https://hosted.weblate.org/projects/penpot/frontend/fa/>\n"
 "Language: fa\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.6-dev\n"
+"X-Generator: Weblate 5.7-dev\n"
 
-#: src/app/main/ui/auth/register.cljs
+#: src/app/main/ui/auth/register.cljs:132, src/app/main/ui/static.cljs:139, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
 msgstr "از قبل حساب کاربری دارید؟"
 
-#: src/app/main/ui/auth/register.cljs
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:267
+msgid "auth.check-mail"
+msgstr "ایمیل خود را مرور کنید"
+
+#: src/app/main/ui/auth/register.cljs:270
 msgid "auth.check-your-email"
 msgstr ""
 "ایمیل خود را بررسی کنید و برای تأیید و شروع استفاده از Penpot روی لینک کلیک "
 "کنید."
 
-#: src/app/main/ui/auth/recovery.cljs
+#: src/app/main/ui/auth/recovery.cljs:67
 msgid "auth.confirm-password"
 msgstr "تایید کلمه‌عبور"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/register.cljs:144
 msgid "auth.create-demo-account"
 msgstr "ایجاد حساب دمو"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+#, unused
 msgid "auth.create-demo-profile"
 msgstr "فقط می‌خواهید آن را امتحان کنید؟"
 
-#: src/app/main/ui/auth/register.cljs
+#: src/app/main/ui/auth/login.cljs:41
 msgid "auth.demo-warning"
 msgstr ""
 "این یک سرویس آزمایشی است، برای کار واقعی استفاده نکنید، پروژه‌ها به صورت "
 "دوره‌ای پاک می‌شوند."
 
-#: src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/login.cljs:180, src/app/main/ui/viewer/login.cljs:84
 msgid "auth.forgot-password"
 msgstr "کلمه‌عبور را فراموش کرده‌اید؟"
 
-#: src/app/main/ui/auth/register.cljs
+#: src/app/main/ui/auth/register.cljs:224
 msgid "auth.fullname"
 msgstr "نام کامل"
 
-#: src/app/main/ui/auth/register.cljs
-#, fuzzy
-msgid "auth.login-here"
-msgstr "ورود از اینجا"
+#: src/app/main/ui/auth/login.cljs:273
+msgid "auth.login-account-title"
+msgstr "ورود به حسابِ من"
 
-#: src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/register.cljs:136, src/app/main/ui/static.cljs:142, src/app/main/ui/viewer/login.cljs:101
+msgid "auth.login-here"
+msgstr "ورود از اینجا."
+
+#: src/app/main/ui/auth/login.cljs:186
 msgid "auth.login-submit"
 msgstr "ورود"
 
-#: src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/login.cljs:276
+msgid "auth.login-tagline"
+msgstr ""
+"Penpot یک ابزار طراحی و همکاری در کد نویسی است که رایگان و کد آن متن باز "
+"است."
+
+#: src/app/main/ui/auth/login.cljs:213
 msgid "auth.login-with-github-submit"
 msgstr "گیتهاب"
 
-#: src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/login.cljs:219
 msgid "auth.login-with-gitlab-submit"
 msgstr "گیتلب"
 
-#: src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/login.cljs:207
 msgid "auth.login-with-google-submit"
 msgstr "گوگل"
 
-#: src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/login.cljs:192
 msgid "auth.login-with-ldap-submit"
 msgstr "LDAP"
 
-#: src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/login.cljs:225, src/app/main/ui/auth/login.cljs:246
 msgid "auth.login-with-oidc-submit"
 msgstr "OpenID"
 
-#: src/app/main/ui/auth/recovery.cljs
+#: src/app/main/ui/auth/recovery.cljs:60
 msgid "auth.new-password"
 msgstr "یک رمزعبور جدید تایپ کنید"
 
-#: src/app/main/ui/auth/recovery.cljs
-msgid "errors.invalid-recovery-token"
-msgstr "توکن بازیابی نامعتبر است."
-
-#: src/app/main/ui/auth/recovery.cljs
+#: src/app/main/ui/auth/recovery.cljs:36
 msgid "auth.notifications.password-changed-successfully"
 msgstr "کلمه‌عبور با موفقیت تغییر یافت"
 
-#: src/app/main/ui/auth/recovery_request.cljs
+#: src/app/main/ui/auth/recovery_request.cljs:50
 msgid "auth.notifications.profile-not-verified"
 msgstr "پروفایل تأیید نشده است، لطفاً قبل از ادامه، پروفایل را تأیید کنید."
 
-#: src/app/main/ui/auth/recovery_request.cljs
+#: src/app/main/ui/auth/recovery_request.cljs:33
 msgid "auth.notifications.recovery-token-sent"
 msgstr "لینک بازیابی رمزعبور به صندوق ورودی شما ارسال شد."
 
-#: src/app/main/ui/auth/verify_token.cljs
+#: src/app/main/ui/auth/verify_token.cljs:46
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "با موفقیت به تیم پیوست"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/login.cljs:170, src/app/main/ui/auth/register.cljs:94
 msgid "auth.password"
 msgstr "کلمه‌عبور"
 
-#: src/app/main/ui/auth/register.cljs
+#: src/app/main/ui/auth/register.cljs:93
 msgid "auth.password-length-hint"
 msgstr "حداقل ۸ حرف"
 
+#: src/app/main/ui/auth/register.cljs:291
 msgid "auth.privacy-policy"
 msgstr "سیاست حفظ حریم‌خصوصی"
 
-#: src/app/main/ui/auth/recovery_request.cljs
+#: src/app/main/ui/auth/recovery_request.cljs:82
 msgid "auth.recovery-request-submit"
 msgstr "بازیابی رمزعبور"
 
-#: src/app/main/ui/auth/recovery_request.cljs
+#: src/app/main/ui/auth/recovery_request.cljs:95
 msgid "auth.recovery-request-subtitle"
 msgstr "ما یک ایمیل با دستورالعمل برای شما ارسال خواهیم کرد"
 
-#: src/app/main/ui/auth/recovery_request.cljs
+#: src/app/main/ui/auth/recovery_request.cljs:94
 msgid "auth.recovery-request-title"
 msgstr "رمزعبور را فراموش کرده‌اید؟"
 
-#: src/app/main/ui/auth/recovery.cljs
+#: src/app/main/ui/auth/recovery.cljs:71
 msgid "auth.recovery-submit"
 msgstr "رمزعبور خود را تغییر دهید"
 
-#: src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/login.cljs:289, src/app/main/ui/static.cljs:126, src/app/main/ui/viewer/login.cljs:87
 msgid "auth.register"
 msgstr "هنوز حسابی ندارید؟"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/register.cljs:247
+msgid "auth.register-account-tagline"
+msgstr "اطلاع دهید که شما را با چه نامی در ایمیل ها و حساب کاربری صدا کنیم."
+
+#: src/app/main/ui/auth/register.cljs:246
+msgid "auth.register-account-title"
+msgstr "نام شما"
+
+#: src/app/main/ui/auth/login.cljs:293, src/app/main/ui/auth/register.cljs:100, src/app/main/ui/auth/register.cljs:233, src/app/main/ui/static.cljs:129, src/app/main/ui/viewer/login.cljs:91
 msgid "auth.register-submit"
 msgstr "ایجاد حساب‌کاربری"
 
-#: src/app/main/ui/auth/register.cljs
+#: src/app/main/ui/auth/register.cljs:123
+msgid "auth.register-tagline"
+msgstr ""
+"با اکانت رایگان پنپات، شما توانایی ایجاد تیم های نامحدود را برای همکاری با "
+"طراحان و برنامه نویسان روی پروژه های نامحدود دارید. "
+
+#: src/app/main/ui/auth/register.cljs:121
 msgid "auth.register-title"
 msgstr "ایجاد حساب"
 
 #: src/app/main/ui/auth.cljs
+#, unused
 msgid "auth.sidebar-tagline"
 msgstr "راه حل منبع-باز برای طراحی و نمونه‌سازی"
 
+#: src/app/main/ui/auth/register.cljs:156
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr ""
+"من با قوانین و مقررات این سرویس و چگونگی مراقبت از اطلاعات شخصی در این "
+"سرویس را قبول میکنم."
+
+#: src/app/main/ui/auth/register.cljs:283, src/app/main/ui/dashboard/sidebar.cljs:1022, src/app/main/ui/workspace/main_menu.cljs:150
 msgid "auth.terms-of-service"
 msgstr "شرایط استفاده از خدمات"
 
-#: src/app/main/ui/auth/register.cljs
+#, unused
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"با ایجاد اکانت جدید شما با تمامی مفاد terms of service (قوانین و مقررات "
+"استفاده از این سرویس و حقوق متقابل ما و شما) و مفاد privacy policy (چگونگی "
+"مراقبت از حریم شخصی شما توسط ما) موافقت میکنید."
+
+#: src/app/main/ui/auth/register.cljs:268
 msgid "auth.verification-email-sent"
 msgstr "ما یک ایمیل تأیید ارسال کردیم به"
 
+#: src/app/main/ui/auth/login.cljs:163, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:87
+msgid "auth.work-email"
+msgstr "ایمیلِ کار"
+
+#: src/app/main/ui/workspace/libraries.cljs:228
 msgid "common.publish"
 msgstr "انتشار"
 
+#: src/app/main/ui/viewer/share_link.cljs:304, src/app/main/ui/viewer/share_link.cljs:314
 msgid "common.share-link.all-users"
 msgstr "همه کاربران Penpot"
 
+#: src/app/main/ui/viewer/share_link.cljs:198
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "آیا مطمئنید که می‌خواهید این لینک را حذف کنید؟  اگر این کار را انجام دهید، "
 "دیگر برای کسی در دسترس نیست"
 
+#: src/app/main/ui/viewer/share_link.cljs:259, src/app/main/ui/viewer/share_link.cljs:289
 msgid "common.share-link.current-tag"
 msgstr "(فعلی)"
 
+#: src/app/main/ui/viewer/share_link.cljs:207, src/app/main/ui/viewer/share_link.cljs:214
 msgid "common.share-link.destroy-link"
 msgstr "از بین بردن لینک"
 
+#: src/app/main/ui/viewer/share_link.cljs:221
 msgid "common.share-link.get-link"
 msgstr "دریافت لینک"
 
+#: src/app/main/ui/viewer/share_link.cljs:139
 msgid "common.share-link.link-copied-success"
 msgstr "لینک با موفقیت کپی شد"
 
+#: src/app/main/ui/viewer/share_link.cljs:231
 msgid "common.share-link.manage-ops"
 msgstr "مدیریت مجوزها"
 
-#, fuzzy
+#: src/app/main/ui/viewer/share_link.cljs:277
 msgid "common.share-link.page-shared"
 msgid_plural "common.share-link.page-shared"
 msgstr[0] "۱ صفحه به اشتراک گذاشته شد"
 msgstr[1] "%s صفحه به اشتراک گذاشته شدند"
 
-#, fuzzy
+#: src/app/main/ui/viewer/share_link.cljs:298
 msgid "common.share-link.permissions-can-comment"
 msgstr "می‌تواند نظر دهد"
 
-#, fuzzy
+#: src/app/main/ui/viewer/share_link.cljs:308
 msgid "common.share-link.permissions-can-inspect"
 msgstr "می‌تواند کد را بررسی کند"
 
+#: src/app/main/ui/viewer/share_link.cljs:193
 msgid "common.share-link.permissions-hint"
 msgstr "هر کسی که لینک داشته باشد دسترسی خواهد داشت"
 
+#: src/app/main/ui/viewer/share_link.cljs:241
 msgid "common.share-link.permissions-pages"
 msgstr "صفحات به اشتراک گذاشته شده"
 
+#: src/app/main/ui/viewer/share_link.cljs:183
 msgid "common.share-link.placeholder"
 msgstr "پیوند قابل اشتراک‌گذاری در اینجا ظاهر می‌شود"
 
+#: src/app/main/ui/viewer/share_link.cljs:303, src/app/main/ui/viewer/share_link.cljs:313
 msgid "common.share-link.team-members"
 msgstr "فقط اعضای تیم"
 
+#: src/app/main/ui/viewer/share_link.cljs:171
 msgid "common.share-link.title"
 msgstr "اشتراک‌گذاری پروتوتایپ‌ها"
 
+#: src/app/main/ui/viewer/share_link.cljs:269
 msgid "common.share-link.view-all"
 msgstr "انتخاب همه"
 
+#: src/app/main/ui/workspace/libraries.cljs:224
 msgid "common.unpublish"
 msgstr "لغو انتشار"
 
-#: src/app/main/ui/dashboard/projects.cljs
+#: src/app/main/ui/dashboard/projects.cljs:85
 msgid "dasboard.team-hero.management"
 msgstr "مدیریت تیم"
 
-#: src/app/main/ui/dashboard/projects.cljs
+#: src/app/main/ui/dashboard/projects.cljs:84
 msgid "dasboard.team-hero.text"
 msgstr ""
 "Penpot برای تیم‌ها در نظر گرفته شده است. از اعضا دعوت کنید تا روی پروژه‌ها "
 "و فایل‌ها با هم کار کنند"
 
-#: src/app/main/ui/dashboard/projects.cljs
-#, fuzzy
+#: src/app/main/ui/dashboard/projects.cljs:82
 msgid "dasboard.team-hero.title"
-msgstr "تیم!"
+msgstr "تیم ایجاد کن!"
 
 #: src/app/main/ui/dashboard/projects.cljs
+#, unused
 msgid "dasboard.tutorial-hero.info"
-msgstr "در حالی که با این آموزش سرگرم می‌شوید، اصول اولیه را در Penpot بیاموزید."
+msgstr "در عین حالی که با این آموزش سرگرم می‌شوید، اصول اولیه را در Penpot بیاموزید."
 
 #: src/app/main/ui/dashboard/projects.cljs
+#, unused
 msgid "dasboard.tutorial-hero.start"
 msgstr "شروع آموزش"
 
 #: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.tutorial-hero.title"
+msgstr "یادگیری با انجام کار"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
 msgid "dasboard.walkthrough-hero.info"
 msgstr "در پنپات قدم بزنید و با ویژگی‌های اصلی آن آشنا شوید."
 
 #: src/app/main/ui/dashboard/projects.cljs
-#, fuzzy
+#, unused
 msgid "dasboard.walkthrough-hero.start"
 msgstr "شروع تور"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/projects.cljs
+#, unused
+msgid "dasboard.walkthrough-hero.title"
+msgstr "گذری در رابط کاربریِ برنامه"
+
+#: src/app/main/ui/settings/access_tokens.cljs:104
+msgid "dashboard.access-tokens.copied-success"
+msgstr "توکن دسترسی با موفقیت کپی شد"
+
+#: src/app/main/ui/settings/access_tokens.cljs:191
+msgid "dashboard.access-tokens.create"
+msgstr "ایجاد توکن دسترسی جدید"
+
+#: src/app/main/ui/settings/access_tokens.cljs:65
+#, fuzzy
+msgid "dashboard.access-tokens.create.success"
+msgstr "توکن دسترسی با موفقیت ایجاد شد."
+
+#: src/app/main/ui/settings/access_tokens.cljs:289
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "برای ایجاد توکن دسترسی جدید دکمه «ایجاد توکن دسترسی جدید» توکن را کلیک کنید."
+
+#: src/app/main/ui/settings/access_tokens.cljs:288
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "شما تا به حال هیچ توکن دسترسی نداشتید."
+
+#: src/app/main/ui/settings/access_tokens.cljs:136
+msgid "dashboard.access-tokens.expiration-180-days"
+msgstr "۱۸۰ روز"
+
+#: src/app/main/ui/settings/access_tokens.cljs:133
+msgid "dashboard.access-tokens.expiration-30-days"
+msgstr "۳۰ روز"
+
+#: src/app/main/ui/settings/access_tokens.cljs:134
+msgid "dashboard.access-tokens.expiration-60-days"
+msgstr "۶۰ روز"
+
+#: src/app/main/ui/settings/access_tokens.cljs:135
+msgid "dashboard.access-tokens.expiration-90-days"
+msgstr "۹۰ روز"
+
+#: src/app/main/ui/settings/access_tokens.cljs:132
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "هیچ گاه (بدون تاریخ انقضا)"
+
+#: src/app/main/ui/settings/access_tokens.cljs:271
+msgid "dashboard.access-tokens.expired-on"
+msgstr "تاریخ انقضای توکن دسترسی %s بوده"
+
+#: src/app/main/ui/settings/access_tokens.cljs:272
+msgid "dashboard.access-tokens.expires-on"
+msgstr "تاریخ انقضا %s میباشد"
+
+#: src/app/main/ui/settings/access_tokens.cljs:270
+msgid "dashboard.access-tokens.no-expiration"
+msgstr "بدون تاریخ انقضا"
+
+#: src/app/main/ui/settings/access_tokens.cljs:186
+msgid "dashboard.access-tokens.personal"
+msgstr "توکنِ دسترسیِ شخصی"
+
+#: src/app/main/ui/settings/access_tokens.cljs:187
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"توکن های دسترسی شخصی میتوانند به عنوان جایگزینی به جای رمز عبور و نام "
+"کاربری باشند برای برنامه ها برای دسترسی به API درونی پنپات"
+
+#: src/app/main/ui/settings/access_tokens.cljs:143
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "توکن دسترسی تاریخ انقضایش در تاریخ %s تمام میشود"
+
+#: src/app/main/ui/settings/access_tokens.cljs:144
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "این توکن دسترسی تاریخ انقضا ندارد"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:291, src/app/main/ui/workspace/main_menu.cljs:572
 msgid "dashboard.add-shared"
 msgstr "افزودن به‌عنوان کتابخانه مشترک"
 
-#: src/app/main/ui/settings/profile.cljs
+#: src/app/main/ui/settings/profile.cljs:72
 msgid "dashboard.change-email"
 msgstr "تغییر ایمیل"
 
-#: src/app/main/data/dashboard.cljs, src/app/main/data/dashboard.cljs
+#: src/app/main/data/dashboard.cljs:763, src/app/main/data/dashboard.cljs:983
 msgid "dashboard.copy-suffix"
 msgstr "(کپی)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:338
 msgid "dashboard.create-new-team"
 msgstr "ایجاد تیم جدید"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/components/context_menu_a11y.cljs:256, src/app/main/ui/dashboard/sidebar.cljs:646
 msgid "dashboard.default-team-name"
 msgstr "Penpot شما"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:571
 msgid "dashboard.delete-team"
 msgstr "حذف تیم"
 
-#, fuzzy
+#: src/app/main/ui/dashboard/file_menu.cljs:296, src/app/main/ui/workspace/main_menu.cljs:589
 msgid "dashboard.download-binary-file"
 msgstr "دانلود فایل پنپات (.penpot)"
 
-#, fuzzy
+#: src/app/main/ui/dashboard/file_menu.cljs:300, src/app/main/ui/workspace/main_menu.cljs:597
 msgid "dashboard.download-standard-file"
 msgstr "دانلود فایل استاندارد (.svg + .json)"
 
-#: src/app/main/ui/dashboard/project_menu.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:276, src/app/main/ui/dashboard/project_menu.cljs:90
 msgid "dashboard.duplicate"
 msgstr "تکثیر"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:240
 msgid "dashboard.duplicate-multi"
 msgstr "فایل‌های %s را کپی کنید"
 
-#: src/app/main/ui/dashboard/grid.cljs
+#: src/app/main/ui/dashboard/placeholder.cljs:33
+#, markdown
 msgid "dashboard.empty-placeholder-drafts"
 msgstr ""
 "وای نه! شما هنوز هیچ فایلی ندارید! اگر می‌خواهید چند الگو را امتحان کنید، "
-"به [کتابخانه‌ها و الگوها] بروید "
-"(https://penpot.app/libraries-templates)"
+"به [کتابخانه‌ها و الگوها] بروید (https://penpot.app/libraries-templates)"
 
-#, fuzzy
+#: src/app/main/ui/dashboard/file_menu.cljs:249
 msgid "dashboard.export-binary-multi"
-msgstr "دانلود %s فایل پنپات (.penpot)"
+msgstr "دانلود %s عدد فایل های پنپات (.penpot)"
 
+#: src/app/main/ui/workspace/main_menu.cljs:605
 msgid "dashboard.export-frames"
 msgstr "خروجی آرت‌بوردها به پی‌دی‌اف"
 
-#: src/app/main/ui/export.cljs
+#: src/app/main/ui/export.cljs:202
 msgid "dashboard.export-frames.title"
 msgstr "اکسپورت به پی‌دی‌اف"
 
+#, unused
 msgid "dashboard.export-multi"
 msgstr "خروجی فایل‌های %s پن‌پات"
 
-#: src/app/main/ui/export.cljs
+#: src/app/main/ui/export.cljs:110
 msgid "dashboard.export-multiple.selected"
 msgstr "%s از %s عناصر انتخاب‌شده"
 
-#: src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/main_menu.cljs:578
 msgid "dashboard.export-shapes"
 msgstr "اکسپورت"
 
-#: src/app/main/ui/export.cljs
+#: src/app/main/ui/export.cljs:181
 msgid "dashboard.export-shapes.how-to"
 msgstr ""
 "می‌توانید تنظیمات اکسپورت را از ویژگی‌های طراحی (در پایین نوار کناری سمت "
 "راست) به عناصر اضافه کنید."
 
-#: src/app/main/ui/export.cljs
+#: src/app/main/ui/export.cljs:185
 msgid "dashboard.export-shapes.how-to-link"
 msgstr "اطلاعات نحوه تنظیم اکسپورت در پنپات."
 
-#: src/app/main/ui/export.cljs
+#: src/app/main/ui/export.cljs:180
 msgid "dashboard.export-shapes.no-elements"
 msgstr "هیچ عنصری با تنظیمات اکسپورت وجود ندارد."
 
-#: src/app/main/ui/export.cljs
+#: src/app/main/ui/export.cljs:191
 msgid "dashboard.export-shapes.title"
 msgstr "انتخاب اکسپورت"
 
-#, fuzzy
+#: src/app/main/ui/dashboard/file_menu.cljs:252
 msgid "dashboard.export-standard-multi"
-msgstr "دانلود %s فایل استاندارد (.svg + .json)"
+msgstr "دانلود %s عدد فایل های استاندارد (.svg + .json)"
 
+#: src/app/main/ui/export.cljs:430
 msgid "dashboard.export.detail"
 msgstr "* ممکن است شامل کامپوننت‌ها، گرافیک، رنگ‌ها و/یا تایپوگرافی باشد."
 
+#: src/app/main/ui/export.cljs:429
 msgid "dashboard.export.explain"
 msgstr ""
 "یک یا چند فایلی که می‌خواهید اکسپورت کنید از کتابخانه‌های مشترک استفاده "
 "می‌کنند. با دارایی‌های آن‌ها چه می‌خواهید بکنید*؟"
 
+#: src/app/main/ui/export.cljs:438
 msgid "dashboard.export.options.all.message"
 msgstr ""
 "فایل‌های دارای کتابخانه‌های مشترک در اکسپورت گنجانده می‌شوند و پیوند خود را "
 "حفظ می‌کنند."
 
+#: src/app/main/ui/export.cljs:439
 msgid "dashboard.export.options.all.title"
 msgstr "اکسپورت کتابخانه‌های مشترک"
 
+#: src/app/main/ui/export.cljs:440
 msgid "dashboard.export.options.detach.message"
 msgstr ""
 "کتابخانه‌های مشترک در صادرات گنجانده نخواهند شد و هیچ دارایی به کتابخانه "
 "اضافه نخواهد شد. "
 
+#: src/app/main/ui/export.cljs:441
 msgid "dashboard.export.options.detach.title"
 msgstr "دارایی‌های کتابخانه مشترک را به عنوان اشیاء اساسی در نظر بگیرید"
 
+#: src/app/main/ui/export.cljs:442
 msgid "dashboard.export.options.merge.message"
 msgstr ""
 "فایل شما با تمام دارایی‌های خارجی که در کتابخانه فایل ادغام شده‌اند اکسپورت "
 "می‌شود."
 
+#: src/app/main/ui/export.cljs:443
 msgid "dashboard.export.options.merge.title"
 msgstr "دارایی‌های کتابخانه مشترک را در کتابخانه‌های فایل قرار دهید"
 
+#: src/app/main/ui/export.cljs:421
 msgid "dashboard.export.title"
 msgstr "خروجی از فایل‌ها"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:309
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "فونت حذف شد"
 
-#: src/app/main/ui/dashboard/fonts.cljs
+#: src/app/main/ui/dashboard/fonts.cljs:206
 msgid "dashboard.fonts.dismiss-all"
 msgstr "ردکردن همه"
 
+#: src/app/main/ui/dashboard/fonts.cljs:436
 msgid "dashboard.fonts.empty-placeholder"
 msgstr "شما هنوز هیچ فونت سفارشی‌ای نصب نکرده‌اید."
 
-#: src/app/main/ui/dashboard/fonts.cljs
+#: src/app/main/ui/dashboard/fonts.cljs:194
 msgid "dashboard.fonts.fonts-added"
 msgid_plural "dashboard.fonts.fonts-added"
 msgstr[0] "۱ فونت اضافه شد"
 msgstr[1] "%s فونت اضافه شد"
 
+#: src/app/main/ui/dashboard/fonts.cljs:170
+#, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
 "هر وب فونتی که در اینجا آپلود کنید به لیست خانواده فونت‌های موجود در "
@@ -395,6 +551,8 @@ msgstr ""
 "فرمت‌های زیر بارگذاری کنید: **TTF، OTF و WOFF** (فقط یکی مورد نیاز خواهد "
 "بود)."
 
+#: src/app/main/ui/dashboard/fonts.cljs:182
+#, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
 "شما فقط باید فونت‌هایی را که مالک آنها هستید یا مجوز استفاده از آنها را در "
@@ -402,2659 +560,2742 @@ msgstr ""
 "(https://penpot.app/terms.html) اطلاعات بیشتری کسب کنید. همچنین ممکن است "
 "بخواهید درباره [مجوز فونت] (https://www.typography.com/faq) مطالعه کنید."
 
-#: src/app/main/ui/dashboard/fonts.cljs
+#: src/app/main/ui/dashboard/fonts.cljs:202
 msgid "dashboard.fonts.upload-all"
 msgstr "آپلود همه"
 
+#: src/app/main/ui/dashboard/import.cljs:476, src/app/main/ui/dashboard/project_menu.cljs:108
 msgid "dashboard.import"
 msgstr "ایمپورت کردن فایل‌های پن‌پات"
 
+#: src/app/main/ui/dashboard/import.cljs:308, src/app/worker/import.cljs:753, src/app/worker/import.cljs:755
 msgid "dashboard.import.analyze-error"
 msgstr "اوه! ما نتوانستیم این فایل را ایمپورت کنیم"
 
+#: src/app/main/ui/dashboard/import.cljs:312
 msgid "dashboard.import.import-error"
 msgstr "مشکلی در ایمپورت کردن فایل وجود داشت. فایل ایمپورت نشد."
 
+#: src/app/main/ui/dashboard/import.cljs:497
 msgid "dashboard.import.import-message"
 msgstr "فایل‌های %s با موفقیت ایمپورت شد."
 
-#, fuzzy
+#: src/app/main/ui/dashboard/import.cljs:485, src/app/main/ui/dashboard/import.cljs:492
 msgid "dashboard.import.import-warning"
 msgstr "برخی از فایل‌ها حاوی آبجکت‌های نامعتبر بودند که حذف شده‌اند."
 
+#: src/app/main/ui/dashboard/import.cljs:145
 msgid "dashboard.import.progress.process-colors"
 msgstr "در حال پردازش رنگ‌ها"
 
+#: src/app/main/ui/dashboard/import.cljs:154
 msgid "dashboard.import.progress.process-components"
 msgstr "در حال پردازش کامپوننت‌ها"
 
+#: src/app/main/ui/dashboard/import.cljs:151
 msgid "dashboard.import.progress.process-media"
 msgstr "در حال پردازش رسانه‌ها"
 
+#: src/app/main/ui/dashboard/import.cljs:142
 msgid "dashboard.import.progress.process-page"
 msgstr "در حال پردازش صفحه: %s"
 
+#: src/app/main/ui/dashboard/import.cljs:148
 msgid "dashboard.import.progress.process-typographies"
 msgstr "در حال پردازش تایپوگرافی‌ها"
 
+#: src/app/main/ui/dashboard/import.cljs:136
 msgid "dashboard.import.progress.upload-data"
 msgstr "در حال آپلود اطلاعات روی سرور (%s/%s)"
 
+#: src/app/main/ui/dashboard/import.cljs:139
 msgid "dashboard.import.progress.upload-media"
 msgstr "در حال آپلود فایل: %s"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:114
 msgid "dashboard.invite-profile"
 msgstr "دعوت به تیم"
 
-#: src/app/main/ui/dashboard/sidebar.cljs,
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:547, src/app/main/ui/dashboard/sidebar.cljs:556, src/app/main/ui/dashboard/sidebar.cljs:563, src/app/main/ui/dashboard/team.cljs:331
 msgid "dashboard.leave-team"
 msgstr "خروج از تیم"
 
+#: src/app/main/ui/dashboard/templates.cljs:88, src/app/main/ui/dashboard/templates.cljs:163
 msgid "dashboard.libraries-and-templates"
 msgstr "کتابخانه‌ها و قالب‌ها"
 
-#, fuzzy
+#: src/app/main/ui/dashboard/templates.cljs:164
 msgid "dashboard.libraries-and-templates.explore"
 msgstr "بیشتر آنها را کاوش کنید و بدانید که چگونه مشارکت کنید"
 
-#, fuzzy
+#: src/app/main/ui/dashboard/import.cljs:369
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr "مشکلی در ایمپورت کردن قالب وجود داشت. قالب ایمپورت نشد."
 
-#: src/app/main/ui/dashboard/libraries.cljs
+#: src/app/main/ui/dashboard/libraries.cljs:53
 msgid "dashboard.libraries-title"
 msgstr "کتابخانه‌های مشترک"
 
-#: src/app/main/ui/dashboard/grid.cljs
+#: src/app/main/ui/dashboard/placeholder.cljs:47
 msgid "dashboard.loading-files"
 msgstr "در حال بارگذاری فایل‌های شما …"
 
+#: src/app/main/ui/dashboard/fonts.cljs:431
 msgid "dashboard.loading-fonts"
 msgstr "در حال بارگیری فونت‌های شما …"
 
-#: src/app/main/ui/dashboard/project_menu.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:281, src/app/main/ui/dashboard/project_menu.cljs:100
 msgid "dashboard.move-to"
 msgstr "انتقال به"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:245
 msgid "dashboard.move-to-multi"
 msgstr "انتقال فایل‌های %s به"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:226
 msgid "dashboard.move-to-other-team"
 msgstr "انتقال به تیم دیگر"
 
-#: src/app/main/ui/dashboard/projects.cljs,
-#: src/app/main/ui/dashboard/files.cljs
+#: src/app/main/ui/dashboard/files.cljs:105, src/app/main/ui/dashboard/projects.cljs:252, src/app/main/ui/dashboard/projects.cljs:253
 msgid "dashboard.new-file"
 msgstr "+ فایل جدید"
 
-#: src/app/main/data/dashboard.cljs
+#: src/app/main/data/dashboard.cljs:958, src/app/main/data/dashboard.cljs:1181
 msgid "dashboard.new-file-prefix"
 msgstr "فایل جدید"
 
-#: src/app/main/ui/dashboard/projects.cljs
+#: src/app/main/ui/dashboard/projects.cljs:55
 msgid "dashboard.new-project"
 msgstr "+ پروژه جدید"
 
-#: src/app/main/data/dashboard.cljs
+#: src/app/main/data/dashboard.cljs:727, src/app/main/data/dashboard.cljs:1184
 msgid "dashboard.new-project-prefix"
 msgstr "پروژه جدید"
 
-#: src/app/main/ui/dashboard/search.cljs
-#, fuzzy
+#: src/app/main/ui/dashboard/search.cljs:60
 msgid "dashboard.no-matches-for"
 msgstr "هیچ منطبقی برای «%s» یافت نشد"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:827
 msgid "dashboard.no-projects-placeholder"
 msgstr "پروژه‌های پین شده در اینجا ظاهر می‌شوند"
 
-#: src/app/main/ui/auth/verify_token.cljs
+#: src/app/main/ui/auth/verify_token.cljs:32
 msgid "dashboard.notifications.email-changed-successfully"
 msgstr "آدرس ایمیل شما با موفقیت به‌روز شد"
 
-#: src/app/main/ui/auth/verify_token.cljs
+#: src/app/main/ui/auth/verify_token.cljs:26
 msgid "dashboard.notifications.email-verified-successfully"
 msgstr "آدرس ایمیل شما با موفقیت تایید شد"
 
-#: src/app/main/ui/settings/password.cljs
+#: src/app/main/ui/settings/password.cljs:36
 msgid "dashboard.notifications.password-saved"
 msgstr "رمزعبور با موفقیت ذخیره شد!"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:1102
 msgid "dashboard.num-of-members"
 msgstr "اعضای %s"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:267
 msgid "dashboard.open-in-new-tab"
 msgstr "باز کردن فایل در تب جدید"
 
+#: src/app/main/ui/dashboard/files.cljs:117, src/app/main/ui/dashboard/projects.cljs:260, src/app/main/ui/dashboard/projects.cljs:261
 msgid "dashboard.options"
 msgstr "گزینه‌ها"
 
-#: src/app/main/ui/settings/password.cljs
+#: src/app/main/ui/settings/password.cljs:94, src/app/main/ui/settings/password.cljs:107
 msgid "dashboard.password-change"
 msgstr "تغییر رمزعبور"
 
-#: src/app/main/ui/dashboard/project_menu.cljs
+#: src/app/main/ui/dashboard/pin_button.cljs:24, src/app/main/ui/dashboard/project_menu.cljs:95
 msgid "dashboard.pin-unpin"
 msgstr "پین/برداشتن پین"
 
-#: src/app/main/ui/dashboard/projects.cljs
+#: src/app/main/ui/dashboard/projects.cljs:51
 msgid "dashboard.projects-title"
 msgstr "پروژه‌ها"
 
-#: src/app/main/ui/settings/profile.cljs
+#: src/app/main/ui/settings/profile.cljs:83
 msgid "dashboard.remove-account"
 msgstr "آیا می‌خواهید حساب خود را حذف کنید؟"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, unused
 msgid "dashboard.remove-shared"
 msgstr "حذف به عنوان کتابخانه مشترک"
 
-#: src/app/main/ui/settings/profile.cljs
+#: src/app/main/ui/settings/profile.cljs:75
 msgid "dashboard.save-settings"
 msgstr "ذخیره تنظیمات"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:246, src/app/main/ui/dashboard/sidebar.cljs:247
 msgid "dashboard.search-placeholder"
 msgstr "جستجو…"
 
-#: src/app/main/ui/dashboard/search.cljs
+#: src/app/main/ui/dashboard/search.cljs:55
 msgid "dashboard.searching-for"
 msgstr "جستجو برای “%s“…"
 
-#: src/app/main/ui/settings/options.cljs
+#: src/app/main/ui/settings/options.cljs:53
 msgid "dashboard.select-ui-language"
 msgstr "زبان رابط کاربری را انتخاب کنید"
 
-#: src/app/main/ui/settings/options.cljs
+#: src/app/main/ui/settings/options.cljs:60
 msgid "dashboard.select-ui-theme"
 msgstr "انتخاب تم"
 
-#: src/app/main/ui/dashboard/grid.cljs
-#, fuzzy
+#: src/app/main/ui/dashboard/projects.cljs:282
 msgid "dashboard.show-all-files"
 msgstr "نمایش همه فایل‌ها"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:96
 msgid "dashboard.success-delete-file"
 msgstr "فایل شما با موفقیت حذف شد"
 
-#: src/app/main/ui/dashboard/project_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs:59
 msgid "dashboard.success-delete-project"
 msgstr "پروژه شما با موفقیت حذف شد"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
-#, fuzzy
+#: src/app/main/ui/dashboard/file_menu.cljs:91
 msgid "dashboard.success-duplicate-file"
 msgstr "فایل شما با موفقیت duplicate شد"
 
-#: src/app/main/ui/dashboard/project_menu.cljs
-#, fuzzy
+#: src/app/main/ui/dashboard/project_menu.cljs:33
 msgid "dashboard.success-duplicate-project"
 msgstr "پروژه شما با موفقیت duplicate شد"
 
-#: src/app/main/ui/dashboard/grid.cljs, src/app/main/ui/dashboard/sidebar.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:130, src/app/main/ui/dashboard/grid.cljs:563, src/app/main/ui/dashboard/sidebar.cljs:152
 msgid "dashboard.success-move-file"
 msgstr "فایل شما با موفقیت منتقل شد"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:129
 msgid "dashboard.success-move-files"
 msgstr "فایل‌های شما با موفقیت منتقل شدند"
 
-#: src/app/main/ui/dashboard/project_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs:54
 msgid "dashboard.success-move-project"
 msgstr "پروژه شما با موفقیت منتقل شد"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:1073
 msgid "dashboard.team-info"
 msgstr "اطلاعات تیم"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:1091
 msgid "dashboard.team-members"
 msgstr "اعضای تیم"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:1106
 msgid "dashboard.team-projects"
 msgstr "پروژه‌های تیم"
 
-#: src/app/main/ui/settings/options.cljs
+#: src/app/main/ui/settings/options.cljs:58
 msgid "dashboard.theme-change"
 msgstr "تم رابط کاربری"
 
-#: src/app/main/ui/dashboard/search.cljs
+#: src/app/main/ui/dashboard/search.cljs:42
 msgid "dashboard.title-search"
 msgstr "نتایج جستجو"
 
-#: src/app/main/ui/dashboard/search.cljs
-#, fuzzy
+#: src/app/main/ui/dashboard/search.cljs:50
 msgid "dashboard.type-something"
 msgstr "برای نمایش نتایج جستجو تایپ کنید"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:287, src/app/main/ui/workspace/main_menu.cljs:566
 msgid "dashboard.unpublish-shared"
 msgstr "لغو انتشار کتابخانه"
 
-#: src/app/main/ui/settings/password.cljs,
-#: src/app/main/ui/settings/options.cljs
+#: src/app/main/ui/settings/options.cljs:68
 msgid "dashboard.update-settings"
 msgstr "به‌روزرسانی تنظیمات"
 
-#: src/app/main/ui/settings.cljs
+#: src/app/main/ui/settings.cljs:31
 msgid "dashboard.your-account-title"
 msgstr "حساب شما"
 
-#: src/app/main/ui/settings/profile.cljs
+#: src/app/main/ui/settings/profile.cljs:67
 msgid "dashboard.your-email"
 msgstr "ایمیل"
 
-#: src/app/main/ui/settings/profile.cljs
+#: src/app/main/ui/settings/profile.cljs:59
 msgid "dashboard.your-name"
 msgstr "نام شما"
 
-#: src/app/main/ui/dashboard/search.cljs, src/app/main/ui/dashboard/team.cljs,
-#: src/app/main/ui/dashboard/libraries.cljs,
-#: src/app/main/ui/dashboard/projects.cljs,
-#: src/app/main/ui/dashboard/sidebar.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:38, src/app/main/ui/dashboard/fonts.cljs:33, src/app/main/ui/dashboard/libraries.cljs:42, src/app/main/ui/dashboard/projects.cljs:318, src/app/main/ui/dashboard/search.cljs:30, src/app/main/ui/dashboard/sidebar.cljs:312, src/app/main/ui/dashboard/team.cljs:514, src/app/main/ui/dashboard/team.cljs:749, src/app/main/ui/dashboard/team.cljs:1012, src/app/main/ui/dashboard/team.cljs:1059
 msgid "dashboard.your-penpot"
 msgstr "پن‌پات شما"
 
-#: src/app/main/ui/alert.cljs
+#: src/app/main/ui/alert.cljs:32
 msgid "ds.alert-ok"
 msgstr "خیلی خوب"
 
-#: src/app/main/ui/alert.cljs
-#, fuzzy
+#: src/app/main/ui/alert.cljs:31, src/app/main/ui/alert.cljs:34
 msgid "ds.alert-title"
 msgstr "توجه"
 
-#: src/app/main/ui/confirm.cljs
-#, fuzzy
+#: src/app/main/ui/confirm.cljs:83
 msgid "ds.component-subtitle"
 msgstr "کامپوننت‌ها برای به‌روزرسانی:"
 
-#: src/app/main/ui/confirm.cljs
+#: src/app/main/ui/confirm.cljs:36, src/app/main/ui/workspace/plugins.cljs:281
 msgid "ds.confirm-cancel"
 msgstr "لغو"
 
-#: src/app/main/ui/confirm.cljs
+#: src/app/main/ui/confirm.cljs:37, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:141
 msgid "ds.confirm-ok"
 msgstr "بله"
 
-#: src/app/main/ui/confirm.cljs, src/app/main/ui/confirm.cljs
+#: src/app/main/ui/confirm.cljs:35, src/app/main/ui/confirm.cljs:39
 msgid "ds.confirm-title"
 msgstr "مطمئنی؟"
 
-#: src/app/main/ui/auth/login.cljs
-#, fuzzy
+#: src/app/main/ui/auth/login.cljs:61
 msgid "errors.auth-provider-not-configured"
 msgstr "ارائه دهنده احراز هویت پیکربندی نشده است."
 
-#, fuzzy
+#: src/app/main/errors.cljs:105
 msgid "errors.auth.unable-to-login"
 msgstr "به نظر می‌رسد شما احراز هویت نشده‌اید یا جلسه منقضی شده است."
 
+#: src/app/main/data/fonts.cljs:189
 msgid "errors.bad-font"
 msgstr "فونت %s بارگیری نشد"
 
+#: src/app/main/data/fonts.cljs:188
 msgid "errors.bad-font-plural"
 msgstr "فونت‌های %s بارگیری نشدند"
 
-#: src/app/main/data/workspace.cljs
+#: src/app/main/data/workspace.cljs:1596
 msgid "errors.clipboard-not-implemented"
 msgstr "مرورگر شما نمی‌تواند این عملیات را انجام دهد"
 
-#: src/app/main/ui/auth/verify_token.cljs,
-#: src/app/main/ui/settings/change_email.cljs
-#, fuzzy
+#: src/app/main/ui/auth/verify_token.cljs:81, src/app/main/ui/settings/change_email.cljs:29
 msgid "errors.email-already-exists"
 msgstr "ایمیل قبلا استفاده شده است"
 
-#: src/app/main/ui/auth/verify_token.cljs
+#: src/app/main/ui/auth/verify_token.cljs:86
 msgid "errors.email-already-validated"
 msgstr "ایمیل قبلاً تأیید شده است."
 
+#, unused
 msgid "errors.email-as-password"
 msgstr "شما نمی‌توانید از ایمیل خود به عنوان رمزعبور استفاده کنید"
 
-#: src/app/main/ui/settings/change_email.cljs
-msgid "errors.invalid-email-confirmation"
-msgstr "ایمیل تأیید باید مطابقت داشته باشد"
-
-#: src/app/main/ui/auth/verify_token.cljs,
-#: src/app/main/ui/settings/feedback.cljs, src/app/main/ui/dashboard/team.cljs
-#, fuzzy
+#: src/app/main/data/users.cljs:708, src/app/main/ui/auth/login.cljs:64, src/app/main/ui/auth/login.cljs:105, src/app/main/ui/auth/register.cljs:65, src/app/main/ui/auth/register.cljs:205, src/app/main/ui/auth/verify_token.cljs:91, src/app/main/ui/dashboard/team.cljs:190, src/app/main/ui/onboarding/team_choice.cljs:93, src/app/main/ui/settings/access_tokens.cljs:80, src/app/main/ui/settings/feedback.cljs:49
 msgid "errors.generic"
 msgstr "اشتباهی رخ داده است."
 
-#: src/app/main/ui/components/color_input.cljs
+#: src/app/main/ui/components/color_input.cljs:57
 msgid "errors.invalid-color"
 msgstr "رنگ نامعتبر"
 
-#: src/app/main/ui/auth/verify_token.cljs
+#: src/app/main/ui/settings/change_email.cljs
+#, unused
+msgid "errors.invalid-email-confirmation"
+msgstr "ایمیل تأیید باید مطابقت داشته باشد"
+
+#: src/app/main/ui/auth/recovery.cljs:32
+msgid "errors.invalid-recovery-token"
+msgstr "توکن بازیابی نامعتبر است."
+
+#: src/app/main/ui/static.cljs:61
 msgid "errors.invite-invalid"
 msgstr "دعوت نامعتبر"
 
+#: src/app/main/ui/static.cljs:62
 msgid "errors.invite-invalid.info"
 msgstr "این دعوت ممکن است لغو یا منقضی شده باشد."
 
-#: src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/login.cljs:90
 msgid "errors.ldap-disabled"
 msgstr "احراز هویت LDAP غیرفعال است."
 
-#: src/app/main/data/workspace/persistence.cljs
+#: src/app/main/data/workspace/media.cljs:184
 msgid "errors.media-too-large"
 msgstr "تصویر برای درج خیلی بزرگ است."
 
-#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+#: src/app/main/data/media.cljs:68, src/app/main/data/workspace/media.cljs:187
 msgid "errors.media-type-mismatch"
 msgstr "به نظر می‌رسد که محتوای تصویر با پسوند فایل مطابقت ندارد."
 
-#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+#: src/app/main/data/media.cljs:65, src/app/main/data/workspace/media.cljs:172, src/app/main/data/workspace/media.cljs:175, src/app/main/data/workspace/media.cljs:178, src/app/main/data/workspace/media.cljs:181
 msgid "errors.media-type-not-allowed"
 msgstr "به نظر می‌رسد که این یک تصویر معتبر نیست."
 
 #: src/app/main/ui/settings/password.cljs
+#, unused
 msgid "errors.password-invalid-confirmation"
 msgstr "رمزعبور تأیید باید مطابقت داشته باشد"
 
 #: src/app/main/ui/settings/password.cljs
-#, fuzzy
+#, unused
 msgid "errors.password-too-short"
 msgstr "رمزعبور باید حداقل 8 کاراکتر باشد"
 
+#: src/app/main/data/users.cljs:698, src/app/main/ui/auth/login.cljs:86, src/app/main/ui/auth/login.cljs:94
 msgid "errors.profile-blocked"
 msgstr "پروفایل مسدود شده"
 
-#: src/app/main/ui/auth/register.cljs
+#: src/app/main/data/users.cljs:696, src/app/main/ui/auth/register.cljs:50
 msgid "errors.registration-disabled"
 msgstr "ثبت‌نام در حال حاضر غیرفعال است."
 
+#: src/app/main/ui/dashboard/sidebar.cljs:365, src/app/main/ui/dashboard/team.cljs:378
 msgid "errors.team-leave.insufficient-members"
 msgstr "اعضای کافی برای ترک تیم وجود ندارد، احتمالاً می‌خواهید آن را حذف کنید."
 
-#, fuzzy
+#: src/app/main/ui/dashboard/sidebar.cljs:368, src/app/main/ui/dashboard/team.cljs:381
 msgid "errors.team-leave.member-does-not-exists"
 msgstr "عضوی که می‌خواهید اختصاص دهید وجود ندارد."
 
+#: src/app/main/ui/dashboard/sidebar.cljs:371, src/app/main/ui/dashboard/team.cljs:384
 msgid "errors.team-leave.owner-cant-leave"
 msgstr "مالک نمی‌تواند تیم را ترک کند، شما باید نقش مالک را مجدداً اختصاص دهید."
 
-#: src/app/main/data/media.cljs,
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/inspect/exports.cljs
+#: src/app/main/data/media.cljs:71
 msgid "errors.unexpected-error"
 msgstr "یک خطای غیرمنتظره رخ داد."
 
-#: src/app/main/ui/auth/verify_token.cljs
+#: src/app/main/ui/auth/verify_token.cljs:59
 msgid "errors.unexpected-token"
 msgstr "توکن ناشناخته"
 
-#: src/app/main/ui/auth/login.cljs
+#: src/app/main/ui/auth/login.cljs:98, src/app/main/ui/auth/login.cljs:102
 msgid "errors.wrong-credentials"
 msgstr "به نظر می‌رسد نام‌کاربری یا رمزعبور اشتباه است."
 
 #: src/app/main/ui/settings/password.cljs
+#, unused
 msgid "errors.wrong-old-password"
 msgstr "رمزعبور قدیمی اشتباه است"
 
-#: src/app/main/ui/settings/feedback.cljs
+#: src/app/main/ui/settings/feedback.cljs:74
 msgid "feedback.description"
 msgstr "شرح"
 
-#: src/app/main/ui/settings/feedback.cljs
+#: src/app/main/ui/settings/feedback.cljs:92
 msgid "feedback.discourse-go-to"
 msgstr "به انجمن Penpot بروید"
 
-#: src/app/main/ui/settings/feedback.cljs
-#, fuzzy
+#: src/app/main/ui/settings/feedback.cljs:86
 msgid "feedback.discourse-subtitle1"
 msgstr ""
 "ما خوشحالیم که شما اینجا هستید. اگر به کمک نیاز دارید، لطفا قبل از ارسال "
 "پست جستجو کنید."
 
-#: src/app/main/ui/settings/feedback.cljs
+#: src/app/main/ui/settings/feedback.cljs:85
 msgid "feedback.discourse-title"
 msgstr "انجمن Penpot"
 
-#: src/app/main/ui/settings/feedback.cljs
+#: src/app/main/ui/settings/feedback.cljs:69
 msgid "feedback.subject"
 msgstr "موضوع"
 
-#: src/app/main/ui/settings/feedback.cljs
+#: src/app/main/ui/settings/feedback.cljs:66
 msgid "feedback.subtitle"
 msgstr ""
 "لطفاً دلیل ایمیل خود را توضیح دهید و مشخص کنید که آیا یک مشکل، ایده یا شک "
 "است. یکی از اعضای تیم ما در اسرع وقت پاسخ خواهد داد."
 
-#: src/app/main/ui/settings/feedback.cljs
+#: src/app/main/ui/settings/feedback.cljs:65
 msgid "feedback.title"
 msgstr "ایمیل"
 
-#: src/app/main/ui/settings/feedback.cljs
-#, fuzzy
+#: src/app/main/ui/settings/feedback.cljs:102
 msgid "feedback.twitter-go-to"
 msgstr "به توییتر بروید"
 
-#: src/app/main/ui/settings/feedback.cljs
-#, fuzzy
+#: src/app/main/ui/settings/feedback.cljs:96
 msgid "feedback.twitter-subtitle1"
 msgstr "اینجا برای کمک به سوالات فنی شما."
 
-#: src/app/main/ui/settings/feedback.cljs
-#, fuzzy
+#: src/app/main/ui/settings/feedback.cljs:95
 msgid "feedback.twitter-title"
 msgstr "حساب پشتیبانی در توییتر"
 
-#: src/app/main/ui/settings/password.cljs
+#: src/app/main/ui/settings/password.cljs:29
 msgid "generic.error"
 msgstr "خطایی رخ داده است"
 
-#: src/app/main/ui/inspect/attributes/blur.cljs
+#: src/app/main/ui/viewer/inspect/attributes/blur.cljs:26
 msgid "inspect.attributes.blur"
 msgstr "محو"
 
-#: src/app/main/ui/inspect/attributes/blur.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:115
 msgid "inspect.attributes.blur.value"
 msgstr "مقدار"
 
-#: src/app/main/ui/inspect/attributes/common.cljs
+#: src/app/main/ui/viewer/inspect/attributes/common.cljs:112
 msgid "inspect.attributes.color.hex"
 msgstr "HEX"
 
-#: src/app/main/ui/inspect/attributes/common.cljs
+#: src/app/main/ui/viewer/inspect/attributes/common.cljs:114
 msgid "inspect.attributes.color.hsla"
 msgstr "HSLA"
 
-#: src/app/main/ui/inspect/attributes/common.cljs
+#: src/app/main/ui/viewer/inspect/attributes/common.cljs:113
 msgid "inspect.attributes.color.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/inspect/attributes/fill.cljs
+#: src/app/main/ui/viewer/inspect/attributes/fill.cljs:57
 msgid "inspect.attributes.fill"
 msgstr "پر"
 
-#: src/app/main/ui/inspect/attributes/image.cljs
+#: src/app/main/ui/viewer/inspect/attributes/common.cljs:99, src/app/main/ui/viewer/inspect/attributes/image.cljs:51
 msgid "inspect.attributes.image.download"
 msgstr "دانلود تصویر منبع"
 
-#: src/app/main/ui/inspect/attributes/image.cljs
+#: src/app/main/ui/viewer/inspect/attributes/image.cljs:39
 msgid "inspect.attributes.image.height"
 msgstr "ارتفاع"
 
-#: src/app/main/ui/inspect/attributes/image.cljs
+#: src/app/main/ui/viewer/inspect/attributes/image.cljs:32
 msgid "inspect.attributes.image.width"
 msgstr "عرض"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
+#, unused
 msgid "inspect.attributes.layout"
 msgstr "چیدمان"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
+#, unused
 msgid "inspect.attributes.layout.height"
 msgstr "ارتفاع"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
+#, unused
 msgid "inspect.attributes.layout.left"
 msgstr "چپ"
 
-#: src/app/main/ui/inspect/attributes/layout.cljs,
-#: src/app/main/ui/inspect/attributes/layout.cljs
+#: src/app/main/ui/inspect/attributes/layout.cljs, src/app/main/ui/inspect/attributes/layout.cljs
+#, unused
 msgid "inspect.attributes.layout.radius"
 msgstr "گردی"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
+#, unused
 msgid "inspect.attributes.layout.rotation"
 msgstr "چرخش"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
+#, unused
 msgid "inspect.attributes.layout.top"
 msgstr "بالا"
 
 #: src/app/main/ui/inspect/attributes/layout.cljs
+#, unused
 msgid "inspect.attributes.layout.width"
 msgstr "عرض"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs
+#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:57
 msgid "inspect.attributes.shadow"
 msgstr "سایه"
 
-#: src/app/main/ui/inspect/attributes/stroke.cljs
-#, fuzzy
+#: src/app/main/ui/viewer/inspect/attributes/stroke.cljs:52
 msgid "inspect.attributes.stroke"
 msgstr "استروک"
 
+#, permanent, unused
 msgid "inspect.attributes.stroke.alignment.center"
 msgstr "مرکز"
 
+#, permanent, unused
 msgid "inspect.attributes.stroke.alignment.inner"
 msgstr "داخل"
 
+#, permanent, unused
 msgid "inspect.attributes.stroke.alignment.outer"
 msgstr "بیرون"
 
+#, unused
 msgid "inspect.attributes.stroke.style.dotted"
 msgstr "خط‌چین"
 
+#, unused
 msgid "inspect.attributes.stroke.style.mixed"
 msgstr "‏مخلوط"
 
+#, unused
 msgid "inspect.attributes.stroke.style.none"
 msgstr "هیچ‌یک"
 
-#, fuzzy
+#, unused
 msgid "inspect.attributes.stroke.style.solid"
 msgstr "جامد"
 
 #: src/app/main/ui/inspect/attributes/stroke.cljs
+#, unused
 msgid "inspect.attributes.stroke.width"
 msgstr "عرض"
 
-#: src/app/main/ui/inspect/attributes/text.cljs
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:81, src/app/main/ui/viewer/inspect/attributes/text.cljs:194
 msgid "inspect.attributes.typography"
 msgstr "تایپوگرافی"
 
-#: src/app/main/ui/inspect/attributes/text.cljs
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:89
 msgid "inspect.attributes.typography.font-family"
 msgstr "خانواده فونت"
 
-#: src/app/main/ui/inspect/attributes/text.cljs
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:107
 msgid "inspect.attributes.typography.font-size"
 msgstr "اندازه فونت"
 
-#: src/app/main/ui/inspect/attributes/text.cljs
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:98
 msgid "inspect.attributes.typography.font-style"
 msgstr "استایل فونت"
 
-#: src/app/main/ui/inspect/attributes/text.cljs
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:134
 msgid "inspect.attributes.typography.letter-spacing"
 msgstr "فاصله بین حروف"
 
-#: src/app/main/ui/inspect/attributes/text.cljs
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:125
 msgid "inspect.attributes.typography.line-height"
 msgstr "ارتفاع خط"
 
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:145
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "هیچ‌یک"
 
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:147
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "خط‌زیر"
 
-#: src/app/main/ui/inspect/attributes/text.cljs
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:156
 msgid "inspect.attributes.typography.text-transform"
 msgstr "تبدیل متن"
 
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:158
 msgid "inspect.attributes.typography.text-transform.lowercase"
 msgstr "حروف کوچک"
 
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:159
 msgid "inspect.attributes.typography.text-transform.none"
 msgstr "هیچ‌یک"
 
+#: src/app/main/ui/viewer/inspect/attributes/text.cljs:161
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "حروف بزرگ"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs
+#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:100
 msgid "inspect.tabs.code"
 msgstr "کد"
 
+#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:124
 msgid "inspect.tabs.code.selected.circle"
 msgstr "دایره"
 
+#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:125
 msgid "inspect.tabs.code.selected.component"
 msgstr "کامپوننت"
 
+#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:126
 msgid "inspect.tabs.code.selected.curve"
 msgstr "منحنی"
 
+#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:127
 msgid "inspect.tabs.code.selected.frame"
 msgstr "آرت‌برد"
 
+#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:128
 msgid "inspect.tabs.code.selected.group"
 msgstr "گروه"
 
+#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:129
 msgid "inspect.tabs.code.selected.image"
 msgstr "تصویر"
 
+#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:130
 msgid "inspect.tabs.code.selected.mask"
 msgstr "ماسک"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs
-#, fuzzy
+#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:119
 msgid "inspect.tabs.code.selected.multiple"
 msgstr "%s انتخاب شد"
 
+#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:131
 msgid "inspect.tabs.code.selected.path"
 msgstr "مسیر"
 
+#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:132
 msgid "inspect.tabs.code.selected.rect"
 msgstr "مستطیل"
 
+#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:133
 msgid "inspect.tabs.code.selected.svg-raw"
 msgstr "SVG"
 
+#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:134
 msgid "inspect.tabs.code.selected.text"
 msgstr "متن"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs
+#: src/app/main/ui/viewer/inspect/right_sidebar.cljs:96
 msgid "inspect.tabs.info"
 msgstr "اطلاعات"
 
-#: src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/main_menu.cljs:158
 msgid "label.shortcuts"
 msgstr "میانبرها"
 
+#: src/app/main/data/common.cljs:88, src/app/main/ui/dashboard/import.cljs:531
 msgid "labels.accept"
 msgstr "تایید"
 
+#: src/app/main/ui/dashboard/fonts.cljs:175
 msgid "labels.add-custom-font"
 msgstr "اضافه کردن فونت سفارشی"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:125, src/app/main/ui/dashboard/team.cljs:295, src/app/main/ui/dashboard/team.cljs:538, src/app/main/ui/dashboard/team.cljs:568, src/app/main/ui/onboarding/team_choice.cljs:65
 msgid "labels.admin"
 msgstr "مدیر"
 
 #: src/app/main/ui/workspace/comments.cljs
+#, unused
 msgid "labels.all"
 msgstr "همه"
 
+#: src/app/main/ui/auth/register.cljs:287
 msgid "labels.and"
 msgstr "و"
 
+#: src/app/main/ui/onboarding/team_choice.cljs:162
 msgid "labels.back"
 msgstr "بازگشت"
 
-#: src/app/main/ui/static.cljs
-#, fuzzy
+#: src/app/main/ui/static.cljs:282
 msgid "labels.bad-gateway.desc-message"
 msgstr ""
 "به نظر می‌رسد باید کمی صبر کنید و دوباره تلاش کنید; ما در حال انجام تعمیرات "
 "کوچک روی سرورهای خود هستیم."
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/data/common.cljs:126, src/app/main/ui/dashboard/change_owner.cljs:68, src/app/main/ui/dashboard/import.cljs:518, src/app/main/ui/dashboard/team.cljs:889, src/app/main/ui/delete_shared.cljs:35, src/app/main/ui/export.cljs:165, src/app/main/ui/export.cljs:463, src/app/main/ui/settings/access_tokens.cljs:177, src/app/main/ui/viewer/share_link.cljs:203, src/app/main/ui/workspace/sidebar/assets/groups.cljs:145
 msgid "labels.cancel"
 msgstr "لغو"
 
+#: src/app/main/ui/dashboard/projects.cljs:93, src/app/main/ui/export.cljs:481, src/app/main/ui/settings/access_tokens.cljs:172, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:174, src/app/main/ui/workspace/libraries.cljs:530
 msgid "labels.close"
 msgstr "بستن"
 
-#: src/app/main/ui/dashboard/comments.cljs
+#: src/app/main/ui/dashboard/comments.cljs:104, src/app/main/ui/viewer/comments.cljs:70, src/app/main/ui/workspace/comments.cljs:126
 msgid "labels.comments"
 msgstr "نظرات"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:985, src/app/main/ui/workspace/main_menu.cljs:110
 msgid "labels.community"
 msgstr "انجمن"
 
-#: src/app/main/ui/settings/password.cljs
+#: src/app/main/ui/settings/password.cljs:91
 msgid "labels.confirm-password"
 msgstr "تایید رمزعبور"
 
+#: src/app/main/ui/dashboard/import.cljs:524, src/app/main/ui/export.cljs:468, src/app/main/ui/onboarding/newsletter.cljs:101
 msgid "labels.continue"
 msgstr "ادامه"
 
+#, unused
 msgid "labels.continue-with"
 msgstr "ادامه دادن با"
 
+#: src/app/main/ui/viewer/login.cljs:69
 msgid "labels.continue-with-penpot"
 msgstr "شما می‌توانید با یک حساب Penpot ادامه دهید"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:153, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:190
 msgid "labels.create"
 msgstr "ایجاد"
 
-#: src/app/main/ui/dashboard/team_form.cljs,
-#: src/app/main/ui/dashboard/team_form.cljs
+#: src/app/main/ui/dashboard/team_form.cljs:101, src/app/main/ui/dashboard/team_form.cljs:121
 msgid "labels.create-team"
 msgstr "ایجاد تیم جدید"
 
-#: src/app/main/ui/dashboard/team_form.cljs
+#: src/app/main/ui/dashboard/team_form.cljs:113
 msgid "labels.create-team.placeholder"
 msgstr "نام تیم جدید را وارد کنید"
 
+#, unused
 msgid "labels.custom-fonts"
 msgstr "فونت‌های سفارشی"
 
-#: src/app/main/ui/settings/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs:73
 msgid "labels.dashboard"
 msgstr "داشبورد"
 
-#: src/app/main/ui/dashboard/project_menu.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:306, src/app/main/ui/dashboard/fonts.cljs:255, src/app/main/ui/dashboard/fonts.cljs:332, src/app/main/ui/dashboard/fonts.cljs:346, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:925, src/app/main/ui/settings/access_tokens.cljs:198, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:209
 msgid "labels.delete"
 msgstr "حذف"
 
-#: src/app/main/ui/comments.cljs
+#: src/app/main/ui/comments.cljs:356
 msgid "labels.delete-comment"
 msgstr "حذف نظر"
 
-#: src/app/main/ui/comments.cljs
-#, fuzzy
+#: src/app/main/ui/comments.cljs:353
 msgid "labels.delete-comment-thread"
 msgstr "حذف موضوع"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:668
 msgid "labels.delete-invitation"
 msgstr "حذف دعوت"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:262
 msgid "labels.delete-multi-files"
 msgstr "حذف فایل‌های %s"
 
-#: src/app/main/ui/dashboard/projects.cljs,
-#: src/app/main/ui/dashboard/sidebar.cljs,
-#: src/app/main/ui/dashboard/files.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:28, src/app/main/ui/dashboard/files.cljs:72, src/app/main/ui/dashboard/files.cljs:156, src/app/main/ui/dashboard/projects.cljs:220, src/app/main/ui/dashboard/projects.cljs:224, src/app/main/ui/dashboard/sidebar.cljs:791
 msgid "labels.drafts"
 msgstr "پیش‌نویس‌ها"
 
-#: src/app/main/ui/comments.cljs
+#: src/app/main/ui/comments.cljs:349, src/app/main/ui/dashboard/fonts.cljs:252, src/app/main/ui/dashboard/team.cljs:923, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:205
 msgid "labels.edit"
 msgstr "ویرایش"
 
+#, unused
 msgid "labels.edit-file"
 msgstr "ویرایش فایل"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:123, src/app/main/ui/dashboard/team.cljs:298, src/app/main/ui/dashboard/team.cljs:539, src/app/main/ui/dashboard/team.cljs:572, src/app/main/ui/onboarding/team_choice.cljs:64
 msgid "labels.editor"
 msgstr "ویرایشگر"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:681
 msgid "labels.expired-invitation"
 msgstr "منقضی شده"
 
+#: src/app/main/ui/export.cljs:174
 msgid "labels.export"
 msgstr "اکسپورت"
 
-#: src/app/main/ui/settings/feedback.cljs
+#: src/app/main/ui/settings/feedback.cljs:48
 msgid "labels.feedback-disabled"
 msgstr "بازخورد غیرفعال شد"
 
-#: src/app/main/ui/settings/feedback.cljs
+#: src/app/main/ui/settings/feedback.cljs:39
 msgid "labels.feedback-sent"
 msgstr "بازخورد ارسال شد"
 
+#: src/app/main/ui/dashboard/fonts.cljs:412
 msgid "labels.font-family"
 msgstr "خانواده فونت"
 
+#, unused
 msgid "labels.font-providers"
 msgstr "ارائه‌دهندگان فونت"
 
+#: src/app/main/ui/dashboard/fonts.cljs:413
 msgid "labels.font-variants"
 msgstr "استایل‌ها"
 
+#: src/app/main/ui/dashboard/fonts.cljs:52, src/app/main/ui/dashboard/sidebar.cljs:811
 msgid "labels.fonts"
 msgstr "فونت‌ها"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-#, fuzzy
+#: src/app/main/ui/dashboard/sidebar.cljs:1015, src/app/main/ui/workspace/main_menu.cljs:142
 msgid "labels.github-repo"
 msgstr "مخزن Github"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/settings/sidebar.cljs,
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:1032, src/app/main/ui/settings/sidebar.cljs:113, src/app/main/ui/workspace/main_menu.cljs:171
 msgid "labels.give-feedback"
 msgstr "بازخورد بده"
 
+#: src/app/main/ui/auth/recovery_request.cljs:104, src/app/main/ui/auth/register.cljs:255, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:111
 msgid "labels.go-back"
 msgstr "برگرد"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-#, fuzzy
+#: src/app/main/ui/dashboard/sidebar.cljs:978, src/app/main/ui/workspace/main_menu.cljs:102
 msgid "labels.help-center"
 msgstr "مرکز کمک"
 
-#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
-#, fuzzy
+#: src/app/main/ui/viewer/comments.cljs:103, src/app/main/ui/workspace/comments.cljs:67
 msgid "labels.hide-resolved-comments"
 msgstr "پنهان کردن نظرات حل شده"
 
+#: src/app/main/ui/dashboard/fonts.cljs:410
 msgid "labels.installed-fonts"
 msgstr "فونت‌های نصب‌شده"
 
-#: src/app/main/ui/static.cljs
-#, fuzzy
+#: src/app/main/ui/static.cljs:367
 msgid "labels.internal-error.desc-message"
 msgstr ""
 "اتفاق بدی افتاد. لطفاً عملیات را دوباره امتحان کنید و اگر مشکل همچنان ادامه "
 "داشت، با پشتیبانی تماس بگیرید."
 
-#: src/app/main/ui/static.cljs
+#: src/app/main/ui/static.cljs:366
 msgid "labels.internal-error.main-message"
 msgstr "خطای داخلی"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs,
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:516, src/app/main/ui/dashboard/team.cljs:94, src/app/main/ui/dashboard/team.cljs:102, src/app/main/ui/dashboard/team.cljs:728
 msgid "labels.invitations"
 msgstr "دعوت‌نامه‌ها"
 
-#: src/app/main/ui/settings/options.cljs
+#: src/app/main/ui/settings/options.cljs:48
 msgid "labels.language"
 msgstr "زبان"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:1008, src/app/main/ui/workspace/main_menu.cljs:134
 msgid "labels.libraries-and-templates"
 msgstr "کتابخانه‌ها و قالب‌ها"
 
+#: src/app/main/ui/viewer/header.cljs:209
 msgid "labels.log-or-sign"
 msgstr "ورود یا ثبت نام"
 
-#: src/app/main/ui/settings.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:1040
 msgid "labels.logout"
 msgstr "خروج"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs:487
 msgid "labels.member"
 msgstr "عضو"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:510, src/app/main/ui/dashboard/team.cljs:92, src/app/main/ui/dashboard/team.cljs:100
 msgid "labels.members"
 msgstr "اعضا"
 
-#: src/app/main/ui/settings/password.cljs
+#: src/app/main/ui/settings/password.cljs:84
 msgid "labels.new-password"
 msgstr "رمزعبور جدید"
 
-#: src/app/main/ui/workspace/comments.cljs,
-#: src/app/main/ui/dashboard/comments.cljs
+#: src/app/main/ui/dashboard/comments.cljs:128, src/app/main/ui/workspace/comments.cljs:161
 msgid "labels.no-comments-available"
 msgstr "هیچ اعلان نظر معلقی ندارید"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:714
 msgid "labels.no-invitations"
 msgstr "هیچ دعوتنامه‌ای وجود ندارد."
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:716
+#, markdown
 msgid "labels.no-invitations-hint"
 msgstr "دکمه \"دعوت به تیم\" را فشار دهید تا اعضای بیشتری را به این تیم دعوت کنید."
 
 #: src/app/main/ui/static.cljs
+#, unused
 msgid "labels.not-found.desc-message"
 msgstr "ممکن است این صفحه وجود نداشته باشد یا شما مجوز دسترسی به آن را نداشته باشید."
 
-#: src/app/main/ui/static.cljs
+#: src/app/main/ui/static.cljs:269
 msgid "labels.not-found.main-message"
 msgstr "اوپس!"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/projects.cljs:239, src/app/main/ui/dashboard/team.cljs:1116
 msgid "labels.num-of-files"
 msgid_plural "labels.num-of-files"
 msgstr[0] "۱ فایل"
 msgstr[1] "%s فایل"
 
+#: src/app/main/ui/viewer/thumbnails.cljs:80
 msgid "labels.num-of-frames"
 msgid_plural "labels.num-of-frames"
 msgstr[0] "۱ برد"
 msgstr[1] "%s برد"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:1111
 msgid "labels.num-of-projects"
 msgid_plural "labels.num-of-projects"
 msgstr[0] "۱ پروژه"
 msgstr[1] "%s پروژه"
 
-#: src/app/main/ui/settings/password.cljs
+#: src/app/main/ui/settings/password.cljs:77
 msgid "labels.old-password"
 msgstr "رمزعبور قدیمی"
 
 #: src/app/main/ui/workspace/comments.cljs
-#, fuzzy
+#, unused
 msgid "labels.only-yours"
 msgstr "فقط برای تو"
 
+#, unused
 msgid "labels.or"
 msgstr "یا"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:305, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:1097
 msgid "labels.owner"
 msgstr "مالک"
 
-#: src/app/main/ui/settings/sidebar.cljs,
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/settings/sidebar.cljs:87
 msgid "labels.password"
 msgstr "کلمه‌عبور"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:682
 msgid "labels.pending-invitation"
 msgstr "در انتظار"
 
-#: src/app/main/ui/settings/sidebar.cljs
+#: src/app/main/ui/settings/profile.cljs:125, src/app/main/ui/settings/sidebar.cljs:82
 msgid "labels.profile"
 msgstr "پروفایل"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:784
 msgid "labels.projects"
 msgstr "پروژه‌ها"
 
-#: src/app/main/ui/settings/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:998, src/app/main/ui/settings/sidebar.cljs:106, src/app/main/ui/workspace/main_menu.cljs:126
 msgid "labels.release-notes"
 msgstr "یادداشت‌های انتشار"
 
-#: src/app/main/ui/workspace/libraries.cljs,
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
+#, unused
 msgid "labels.remove"
 msgstr "حذف"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:335
 msgid "labels.remove-member"
 msgstr "حذف عضو"
 
-#: src/app/main/ui/dashboard/sidebar.cljs,
-#: src/app/main/ui/dashboard/project_menu.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:271, src/app/main/ui/dashboard/project_menu.cljs:85, src/app/main/ui/dashboard/sidebar.cljs:539, src/app/main/ui/workspace/sidebar/assets/groups.cljs:153
 msgid "labels.rename"
 msgstr "تغییرنام"
 
-#: src/app/main/ui/dashboard/team_form.cljs
+#: src/app/main/ui/dashboard/team_form.cljs:99
 msgid "labels.rename-team"
 msgstr "تغییر نام تیم"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:665
 msgid "labels.resend-invitation"
 msgstr "فرستادن مجدد دعوتنامه"
 
-#: src/app/main/ui/static.cljs, src/app/main/ui/static.cljs
+#: src/app/main/ui/static.cljs:284, src/app/main/ui/static.cljs:293, src/app/main/ui/static.cljs:371
 msgid "labels.retry"
 msgstr "امتحان دوباره"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:488, src/app/main/ui/dashboard/team.cljs:729
 msgid "labels.role"
 msgstr "نقش"
 
+#: src/app/main/ui/dashboard/fonts.cljs:380, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:191
 msgid "labels.save"
 msgstr "ذخیره"
 
+#: src/app/main/ui/dashboard/fonts.cljs:415
 msgid "labels.search-font"
 msgstr "جستجوی فونت"
 
-#: src/app/main/ui/settings/feedback.cljs
+#: src/app/main/ui/settings/feedback.cljs:79
 msgid "labels.send"
 msgstr "ارسال"
 
-#: src/app/main/ui/settings/feedback.cljs
+#: src/app/main/ui/settings/feedback.cljs:79
 msgid "labels.sending"
 msgstr "درحال ارسال…"
 
-#: src/app/main/ui/static.cljs
+#: src/app/main/ui/static.cljs:291
 msgid "labels.service-unavailable.desc-message"
 msgstr "ما در حال تعمیر و نگهداری برنامه‌ریزی شده سیستم‌های خود هستیم."
 
-#: src/app/main/ui/static.cljs
+#: src/app/main/ui/static.cljs:290
 msgid "labels.service-unavailable.main-message"
 msgstr "سرویس در دسترس نیست"
 
-#: src/app/main/ui/settings/sidebar.cljs, src/app/main/ui/dashboard/team.cljs,
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:530, src/app/main/ui/dashboard/team.cljs:93, src/app/main/ui/dashboard/team.cljs:107, src/app/main/ui/settings/options.cljs:81, src/app/main/ui/settings/sidebar.cljs:93
 msgid "labels.settings"
 msgstr "تنظیمات"
 
+#, unused
 msgid "labels.share-prototype"
 msgstr "به اشتراک گذاشتن پروتوتایپ"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:800
 msgid "labels.shared-libraries"
 msgstr "کتابخانه‌های مشترک"
 
-#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
+#: src/app/main/ui/viewer/comments.cljs:82, src/app/main/ui/workspace/comments.cljs:55, src/app/main/ui/workspace/comments.cljs:135
 msgid "labels.show-all-comments"
 msgstr "نمایش همه نظرات"
 
+#: src/app/main/ui/viewer/comments.cljs:115
 msgid "labels.show-comments-list"
 msgstr "نمایش لیست نظرات"
 
-#: src/app/main/ui/workspace/comments.cljs, src/app/main/ui/viewer/header.cljs
-#, fuzzy
+#: src/app/main/ui/viewer/comments.cljs:91, src/app/main/ui/workspace/comments.cljs:61, src/app/main/ui/workspace/comments.cljs:136
 msgid "labels.show-your-comments"
 msgstr "فقط نظرات خودتان را نشان دهید"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:730
 msgid "labels.status"
 msgstr "وضعیت"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:992, src/app/main/ui/workspace/main_menu.cljs:118
 msgid "labels.tutorials"
 msgstr "آموزش‌ها"
 
-#: src/app/main/ui/settings/profile.cljs
+#: src/app/main/ui/settings/profile.cljs:108
 msgid "labels.update"
 msgstr "به‌روزرسانی"
 
-#: src/app/main/ui/dashboard/team_form.cljs
-#, fuzzy
+#: src/app/main/ui/dashboard/team_form.cljs:120
 msgid "labels.update-team"
 msgstr "بروزرسانی تیم"
 
+#: src/app/main/ui/dashboard/fonts.cljs:241
 msgid "labels.upload"
 msgstr "بارگذاری"
 
+#: src/app/main/ui/dashboard/fonts.cljs:169
 msgid "labels.upload-custom-fonts"
 msgstr "آپلود فونت‌های سفارشی"
 
+#: src/app/main/ui/dashboard/fonts.cljs:240
 msgid "labels.uploading"
 msgstr "درحال بارگذاری…"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:128, src/app/main/ui/dashboard/team.cljs:301, src/app/main/ui/dashboard/team.cljs:540
 msgid "labels.viewer"
 msgstr "بیننده"
 
-#: src/app/main/ui/comments.cljs
+#: src/app/main/ui/comments.cljs:193
 msgid "labels.write-new-comment"
 msgstr "نظر جدید بنویس"
 
-#: src/app/main/ui/dashboard/team.cljs, src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/team.cljs:256
 msgid "labels.you"
 msgstr "(شما)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:968
 msgid "labels.your-account"
 msgstr "حساب شما"
 
-#: src/app/main/data/workspace/persistence.cljs, src/app/main/data/media.cljs
+#: src/app/main/data/media.cljs:49, src/app/main/data/workspace/media.cljs:223, src/app/main/data/workspace/media.cljs:451
 msgid "media.loading"
 msgstr "در حال بارگیری تصویر…"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-#, fuzzy
+#: src/app/main/data/common.cljs:127
 msgid "modals.add-shared-confirm.accept"
 msgstr "افزودن به عنوان کتابخانه مشترک"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/data/common.cljs:125
 msgid "modals.add-shared-confirm.hint"
 msgstr ""
 "پس از افزودن به‌عنوان کتابخانه مشترک، دارایی‌های این کتابخانۀ فایل برای "
 "استفاده در بین بقیه فایل‌های شما در دسترس خواهد بود."
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/data/common.cljs:124
 msgid "modals.add-shared-confirm.message"
 msgstr "افزودن «%s» به عنوان کتابخانه مشترک"
 
-#: src/app/main/ui/settings/change_email.cljs
+#: src/app/main/ui/settings/change_email.cljs:111
 msgid "modals.change-email.confirm-email"
 msgstr "تایید ایمیل جدید"
 
-#: src/app/main/ui/settings/change_email.cljs
+#: src/app/main/ui/settings/change_email.cljs:99
 msgid "modals.change-email.info"
 msgstr "برای تأیید هویت شما یک ایمیل به ایمیل فعلی شما \"%s\" ارسال می‌کنیم."
 
-#: src/app/main/ui/settings/change_email.cljs
+#: src/app/main/ui/settings/change_email.cljs:104
 msgid "modals.change-email.new-email"
 msgstr "ایمیل جدید"
 
-#: src/app/main/ui/settings/change_email.cljs
+#: src/app/main/ui/settings/change_email.cljs:119
 msgid "modals.change-email.submit"
 msgstr "تغییر ایمیل"
 
-#: src/app/main/ui/settings/change_email.cljs
+#: src/app/main/ui/settings/change_email.cljs:92
 msgid "modals.change-email.title"
 msgstr "ایمیل خود را تغییر دهید"
 
-#: src/app/main/ui/settings/delete_account.cljs
+#: src/app/main/ui/settings/delete_account.cljs:59
 msgid "modals.delete-account.cancel"
 msgstr "لغو و نگه‌داشتن حساب من"
 
-#: src/app/main/ui/settings/delete_account.cljs
+#: src/app/main/ui/settings/delete_account.cljs:64
 msgid "modals.delete-account.confirm"
 msgstr "بله، حسابم رو حذف کن"
 
-#: src/app/main/ui/settings/delete_account.cljs
+#: src/app/main/ui/settings/delete_account.cljs:53
 msgid "modals.delete-account.info"
 msgstr ""
 "با حذف کردن حساب خود، تمام پروژه‌ها و آرشیوهای فعلی خود را از دست خواهید "
 "داد."
 
-#: src/app/main/ui/settings/delete_account.cljs
+#: src/app/main/ui/settings/delete_account.cljs:46
 msgid "modals.delete-account.title"
 msgstr "آیا مطمئن هستید که می‌خواهید حساب خود را حذف کنید؟"
 
-#: src/app/main/ui/comments.cljs
+#: src/app/main/ui/comments.cljs:297
 msgid "modals.delete-comment-thread.accept"
 msgstr "حذف مکالمه"
 
-#: src/app/main/ui/comments.cljs
+#: src/app/main/ui/comments.cljs:296
 msgid "modals.delete-comment-thread.message"
 msgstr ""
 "آیا مطمئنید که می‌خواهید این مکالمه را حذف کنید؟ تمامی نظرات این تاپیک حذف "
 "خواهد شد."
 
-#: src/app/main/ui/comments.cljs
+#: src/app/main/ui/comments.cljs:295
 msgid "modals.delete-comment-thread.title"
 msgstr "حذف مکالمه"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:123
 msgid "modals.delete-file-confirm.accept"
 msgstr "حذف فایل"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:122
 msgid "modals.delete-file-confirm.message"
 msgstr "آیا مطمئن هستید که می‌خواهید این فایل را حذف کنید؟"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:121
 msgid "modals.delete-file-confirm.title"
 msgstr "در حال حذف فایل"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:117
 msgid "modals.delete-file-multi-confirm.accept"
 msgstr "حذف فایل‌ها"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:116
 msgid "modals.delete-file-multi-confirm.message"
 msgstr "آیا مطمئن هستید که می‌خواهید فایل‌های %s را حذف کنید؟"
 
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/dashboard/file_menu.cljs:115
 msgid "modals.delete-file-multi-confirm.title"
 msgstr "در حال حذف %s فایل‌ها"
 
+#: src/app/main/ui/dashboard/fonts.cljs:345
 msgid "modals.delete-font-variant.message"
 msgstr ""
 "آیا مطمئن هستید که می‌خواهید این سبک فونت را حذف کنید؟ اگر در یک فایل "
 "استفاده شود، بارگیری نمی‌شود."
 
+#: src/app/main/ui/dashboard/fonts.cljs:344
 msgid "modals.delete-font-variant.title"
 msgstr "درحال حذف استایل فونت"
 
+#: src/app/main/ui/dashboard/fonts.cljs:331
 msgid "modals.delete-font.message"
 msgstr ""
 "آیا مطمئن هستید که می‌خواهید این فونت را حذف کنید؟ اگر در یک فایل استفاده "
 "شود، بارگیری نمی‌شود."
 
+#: src/app/main/ui/dashboard/fonts.cljs:330
 msgid "modals.delete-font.title"
 msgstr "درحال حذف فونت"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:522, src/app/main/ui/workspace/sidebar/sitemap.cljs:45
 msgid "modals.delete-page.body"
 msgstr "آیا مطمئن هستید که می‌خواهید این صفحه را حذف کنید؟"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:521, src/app/main/ui/workspace/sidebar/sitemap.cljs:44
 msgid "modals.delete-page.title"
 msgstr "حذف صفحه"
 
-#: src/app/main/ui/dashboard/project_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs:69
 msgid "modals.delete-project-confirm.accept"
 msgstr "حذف پروژه"
 
-#: src/app/main/ui/dashboard/project_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs:68
 msgid "modals.delete-project-confirm.message"
 msgstr "آیا مطمئن هستید که می‌خواهید این پروژه را حذف کنید؟"
 
-#: src/app/main/ui/dashboard/project_menu.cljs
+#: src/app/main/ui/dashboard/project_menu.cljs:67
 msgid "modals.delete-project-confirm.title"
 msgstr "حذف پروژه"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/delete_shared.cljs:51
 msgid "modals.delete-shared-confirm.accept"
 msgid_plural "modals.delete-shared-confirm.accept"
 msgstr[0] "حذف فایل"
 msgstr[1] "حذف فایل‌ها"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/delete_shared.cljs:46
 msgid "modals.delete-shared-confirm.message"
 msgid_plural "modals.delete-shared-confirm.message"
 msgstr[0] "آیا مطمئن هستید که می‌خواهید این فایل را حذف کنید؟"
 msgstr[1] "آیا مطمئن هستید که می‌خواهید این فایل‌ها را حذف کنید؟"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/delete_shared.cljs:41
 msgid "modals.delete-shared-confirm.title"
 msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "درحال حذف فایل"
 msgstr[1] "درحال حذف فایل‌ها"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:435
 msgid "modals.delete-team-confirm.accept"
 msgstr "حذف تیم"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:434
 msgid "modals.delete-team-confirm.message"
 msgstr ""
 "آیا مطمئنید که می‌خواهید این تیم را حذف کنید؟ تمام پروژه‌ها و فایل‌های "
 "مرتبط با تیم به طور دائم حذف خواهند شد."
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:433
 msgid "modals.delete-team-confirm.title"
 msgstr "درحال حذف تیم"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:446
 msgid "modals.delete-team-member-confirm.accept"
 msgstr "حذف عضو"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:445
 msgid "modals.delete-team-member-confirm.message"
 msgstr "آیا مطمئن هستید که می‌خواهید این عضو را از تیم حذف کنید؟"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:444
 msgid "modals.delete-team-member-confirm.title"
 msgstr "حذف عضو تیم"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:237
 msgid "modals.invite-member-confirm.accept"
 msgstr "ارسال دعوت‌نامه"
 
+#: src/app/main/ui/dashboard/team.cljs:231, src/app/main/ui/onboarding/team_choice.cljs:156
 msgid "modals.invite-member.emails"
 msgstr "ایمیل‌ها، با کاما از هم جدا شده‌اند"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:208
 msgid "modals.invite-team-member.title"
 msgstr "دعوت اعضا به تیم"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-#, fuzzy
+#: src/app/main/ui/dashboard/sidebar.cljs:423, src/app/main/ui/dashboard/team.cljs:412
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""
 "از آنجایی که شما تنها عضو این تیم هستید، تیم به همراه پروژه‌ها و فایل‌هایش "
 "حذف خواهد شد."
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:422, src/app/main/ui/dashboard/team.cljs:411
 msgid "modals.leave-and-close-confirm.message"
 msgstr "آیا مطمئنید که می‌خواهید تیم %s را ترک کنید؟"
 
-#, fuzzy
+#: src/app/main/ui/dashboard/change_owner.cljs:58
 msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
 "اگر عضو دیگری برای ارتقا به مالک وجود نداشته باشد، نمی‌توانید تیم را ترک "
 "کنید. شاید بخواهید تیم را حذف کنید."
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-#, fuzzy
+#: src/app/main/ui/dashboard/change_owner.cljs:54
 msgid "modals.leave-and-reassign.hint1"
 msgstr ""
 "شما مالک این تیم هستید. لطفاً قبل از ترک تیم، عضو دیگری را برای ارتقاء به "
 "مالک انتخاب کنید."
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-#, fuzzy
+#: src/app/main/ui/dashboard/change_owner.cljs:33
 msgid "modals.leave-and-reassign.select-member-to-promote"
 msgstr "انتخاب یک عضو برای ارتقا"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
-#, fuzzy
+#: src/app/main/ui/dashboard/change_owner.cljs:48
 msgid "modals.leave-and-reassign.title"
 msgstr "قبل از رفتن"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:402, src/app/main/ui/dashboard/sidebar.cljs:424, src/app/main/ui/dashboard/team.cljs:413, src/app/main/ui/dashboard/team.cljs:435
 msgid "modals.leave-confirm.accept"
 msgstr "خروج از تیم"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:401, src/app/main/ui/dashboard/team.cljs:434
 msgid "modals.leave-confirm.message"
 msgstr "آیا مطمئنید که می‌خواهید این تیم را ترک کنید؟"
 
-#: src/app/main/ui/dashboard/sidebar.cljs
+#: src/app/main/ui/dashboard/sidebar.cljs:400, src/app/main/ui/dashboard/sidebar.cljs:421, src/app/main/ui/dashboard/team.cljs:410, src/app/main/ui/dashboard/team.cljs:433
 msgid "modals.leave-confirm.title"
 msgstr "درحال ترک تیم"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:359
 msgid "modals.promote-owner-confirm.accept"
 msgstr "انتقال مالکیت"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:358
 msgid "modals.promote-owner-confirm.hint"
 msgstr ""
 "اگر مالکیت را منتقل کنید، نقش خود را به مدیر تغییر می‌دهید و برخی از "
 "مجوزهای این تیم را از دست می‌دهید. "
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:357
 msgid "modals.promote-owner-confirm.message"
 msgstr ""
 "شما مالک فعلی این تیم هستید. آیا مطمئنید که می‌خواهید %s را مالک جدید تیم "
 "کنید؟"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:356
 msgid "modals.promote-owner-confirm.title"
 msgstr "مالک جدید تیم"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, unused
 msgid "modals.remove-shared-confirm.accept"
 msgstr "حذف به عنوان کتابخانه مشترک"
 
-#: src/app/main/ui/workspace/header.cljs,
-#: src/app/main/ui/dashboard/file_menu.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
+#, unused
 msgid "modals.remove-shared-confirm.hint"
 msgstr ""
 "پس از حذف به‌عنوان کتابخانه مشترک، کتابخانه فایل این فایل برای استفاده در "
 "بین بقیه فایل‌های شما در دسترس نخواهد بود."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:380
 msgid "modals.update-remote-component.accept"
 msgstr "به‌روزرسانی"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:379
 msgid "modals.update-remote-component.cancel"
 msgstr "لغو"
 
-#: src/app/main/ui/settings/profile.cljs, src/app/main/ui/settings/options.cljs
+#: src/app/main/ui/settings/options.cljs:26, src/app/main/ui/settings/profile.cljs:33
 msgid "notifications.profile-saved"
 msgstr "پروفایل با موفقیت ذخیره شد!"
 
-#, fuzzy
+#, unused
 msgid "onboarding-v2.before-start.desc2"
 msgstr ""
 "اطلاعات دقیق در مورد نحوه استفاده از Penpot. از نمونه‌سازی تا سازماندهی یا "
 "به اشتراک‌گذاری طرح‌ها."
 
-#, fuzzy
+#, unused
 msgid "onboarding-v2.before-start.desc3"
 msgstr ""
 "شما می‌توانید آموزش‌های ما و آموزش‌های ساخته شده توسط انجمن ما را تماشا "
 "کنید."
 
+#: src/app/main/ui/onboarding/team_choice.cljs:213
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "پس از نامگذاری تیم خود، می‌توانید افراد را برای پیوستن دعوت کنید."
 
+#, unused
 msgid "onboarding.welcome.alt"
 msgstr "Penpot"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs,
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs,
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs,
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs,
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs,
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+#: src/app/main/ui/viewer/inspect/exports.cljs:147, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:631, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:137, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:188, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:158, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:399, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:410, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:430, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:441, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:458, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:472, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:309, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:180, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:373, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:245, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:172
 msgid "settings.multiple"
 msgstr "مخلوط"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:420
 msgid "shortcut-section.dashboard"
 msgstr "داشبورد"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:423
 msgid "shortcut-section.viewer"
 msgstr "بیننده"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:57
 msgid "shortcut-subsection.edit"
 msgstr "ویرایش"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
 msgid "shortcut-subsection.main-menu"
 msgstr "منوی اصلی"
 
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:65
 msgid "shortcut-subsection.panels"
 msgstr "پنل‌ها"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:66
 msgid "shortcut-subsection.path-editor"
 msgstr "مسیرها"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:67
 msgid "shortcut-subsection.shape"
 msgstr "شکل‌ها"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:69
 msgid "shortcut-subsection.tools"
 msgstr "ابزار"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:70
 msgid "shortcut-subsection.zoom-viewer"
 msgstr "بزرگنمایی"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:71
 msgid "shortcut-subsection.zoom-workspace"
 msgstr "بزرگنمایی"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:72
 msgid "shortcuts.add-comment"
 msgstr "نظرات"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:73
 msgid "shortcuts.add-node"
 msgstr "افزودن گره"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:74
 msgid "shortcuts.align-bottom"
 msgstr "تراز به پایین"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:93
 msgid "shortcuts.copy"
 msgstr "کپی"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:98
 msgid "shortcuts.delete"
 msgstr "حذف"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:101
 msgid "shortcuts.draw-curve"
 msgstr "منحنی"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:102
 msgid "shortcuts.draw-ellipse"
 msgstr "بیضی"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:103
 msgid "shortcuts.draw-frame"
 msgstr "آرت‌بورد"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:105
 msgid "shortcuts.draw-path"
 msgstr "مسیر"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:106
 msgid "shortcuts.draw-rect"
 msgstr "مستطیل"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:107
 msgid "shortcuts.draw-text"
 msgstr "متن"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:109
 msgid "shortcuts.escape"
 msgstr "لغو"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:112
 msgid "shortcuts.flip-horizontal"
 msgstr "حرکت افقی"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:113
 msgid "shortcuts.flip-vertical"
 msgstr "حرکت عمودی"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:118
 msgid "shortcuts.go-to-search"
 msgstr "جستجو"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:119
 msgid "shortcuts.group"
 msgstr "گروه"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:133
 msgid "shortcuts.mask"
 msgstr "ماسک"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:135
 msgid "shortcuts.move"
 msgstr "انتقال"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:163
 msgid "shortcuts.paste"
 msgstr "چسباندن"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:207
 msgid "shortcuts.undo"
 msgstr "واگرد"
 
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:208
 msgid "shortcuts.ungroup"
 msgstr "حذف گروه"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:209
 msgid "shortcuts.unmask"
 msgstr "برداشتن ماسک"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:210
 msgid "shortcuts.v-distribute"
 msgstr "توزیع به صورت عمودی"
 
-#: src/app/main/ui/dashboard/files.cljs
-#, fuzzy
+#: src/app/main/ui/dashboard/files.cljs:158
 msgid "title.dashboard.files"
 msgstr "%s - Penpot"
 
-#: src/app/main/ui/dashboard/fonts.cljs
-#, fuzzy
+#: src/app/main/ui/dashboard/fonts.cljs:36
 msgid "title.dashboard.fonts"
 msgstr "فونت‌ها - %s - Penpot"
 
-#: src/app/main/ui/dashboard/projects.cljs
-#, fuzzy
+#: src/app/main/ui/dashboard/projects.cljs:320
 msgid "title.dashboard.projects"
 msgstr "پروژه‌ها - %s - Penpot"
 
-#: src/app/main/ui/dashboard/search.cljs
-#, fuzzy
+#: src/app/main/ui/dashboard/search.cljs:32
 msgid "title.dashboard.search"
 msgstr "جستجو - %s - Penpot"
 
-#: src/app/main/ui/dashboard/libraries.cljs
+#: src/app/main/ui/dashboard/libraries.cljs:44
 msgid "title.dashboard.shared-libraries"
 msgstr "کتابخانه‌های مشترک - %s - پن‌پات"
 
-#: src/app/main/ui/auth/verify_token.cljs, src/app/main/ui/auth.cljs
+#: src/app/main/ui/auth/verify_token.cljs:67, src/app/main/ui/auth.cljs:36
 msgid "title.default"
 msgstr "Penpot - طراحی آزاد برای تیم‌ها"
 
-#: src/app/main/ui/settings/feedback.cljs
+#: src/app/main/ui/settings/feedback.cljs:107
 msgid "title.settings.feedback"
 msgstr "بازخورد بدهید - Penpot"
 
-#: src/app/main/ui/settings/options.cljs
+#: src/app/main/ui/settings/options.cljs:77
 msgid "title.settings.options"
 msgstr "تنظیمات - Penpot"
 
-#: src/app/main/ui/settings/password.cljs
+#: src/app/main/ui/settings/password.cljs:103
 msgid "title.settings.password"
 msgstr "رمزعبور - Penpot"
 
-#: src/app/main/ui/settings/profile.cljs
+#: src/app/main/ui/settings/profile.cljs:121
 msgid "title.settings.profile"
 msgstr "پروفایل - پن‌پات"
 
-#: src/app/main/ui/dashboard/team.cljs
-#, fuzzy
+#: src/app/main/ui/dashboard/team.cljs:747
 msgid "title.team-invitations"
 msgstr "دعوت‌نامه‌ها - %s - Penpot"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:512
 msgid "title.team-members"
 msgstr "اعضا - %s - پن‌پات"
 
-#: src/app/main/ui/dashboard/team.cljs
+#: src/app/main/ui/dashboard/team.cljs:1057
 msgid "title.team-settings"
 msgstr "تنظیمات - %s - پن‌پات"
 
-#: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
+#: src/app/main/ui/viewer.cljs:420
 msgid "title.viewer"
 msgstr "%s - حالت مشاهده - پن‌پات"
 
-#: src/app/main/ui/workspace.cljs
-#, fuzzy
+#: src/app/main/ui/workspace.cljs:190
 msgid "title.workspace"
 msgstr "%s - Penpot"
 
+#: src/app/main/ui.cljs:143
 msgid "viewer.breaking-change.description"
 msgstr ""
 "این لینک قابل اشتراک‌گذاری دیگر معتبر نیست. یک مورد جدید ایجاد کنید یا از "
 "مالک یک مورد جدید بخواهید."
 
+#: src/app/main/ui.cljs:142
 msgid "viewer.breaking-change.message"
 msgstr "متاسفم!"
 
-#: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
+#: src/app/main/ui/viewer.cljs:570
 msgid "viewer.empty-state"
 msgstr "هیچ آرت‌بوردی در صفحه یافت نشد."
 
-#: src/app/main/ui/inspect.cljs, src/app/main/ui/viewer.cljs
+#: src/app/main/ui/viewer.cljs:575
 msgid "viewer.frame-not-found"
 msgstr "آرت‌بورد یافت نشد."
 
+#: src/app/main/ui/viewer/header.cljs:342
 msgid "viewer.header.comments-section"
 msgstr "نظرات (%s)"
 
-#: src/app/main/ui/viewer/header.cljs
+#: src/app/main/ui/viewer/interactions.cljs:292
 msgid "viewer.header.dont-show-interactions"
 msgstr "تعاملات را نشان ندهید"
 
-#: src/app/main/ui/viewer/header.cljs
+#: src/app/main/ui/viewer/header.cljs:194
 msgid "viewer.header.fullscreen"
 msgstr "تمام صفحه"
 
-#: src/app/main/ui/viewer/header.cljs
+#: src/app/main/ui/viewer/interactions.cljs:282
 msgid "viewer.header.interactions"
 msgstr "تعاملات"
 
+#: src/app/main/ui/viewer/header.cljs:333
 msgid "viewer.header.interactions-section"
 msgstr "تعاملات (%s)"
 
-#: src/app/main/ui/viewer/header.cljs
+#: src/app/main/ui/viewer/share_link.cljs:187
 msgid "viewer.header.share.copy-link"
 msgstr "کپی کردن لینک"
 
-#: src/app/main/ui/viewer/header.cljs
+#: src/app/main/ui/viewer/interactions.cljs:300
 msgid "viewer.header.show-interactions"
 msgstr "نشان دادن تعاملات"
 
-#: src/app/main/ui/viewer/header.cljs
+#: src/app/main/ui/viewer/interactions.cljs:311
 msgid "viewer.header.show-interactions-on-click"
 msgstr "نمایش تعاملات در کلیک"
 
-#: src/app/main/ui/viewer/header.cljs
+#: src/app/main/ui/viewer/header.cljs:237
 msgid "viewer.header.sitemap"
 msgstr "نقشه سایت"
 
-#: src/app/main/ui/workspace/sidebar/align.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:58
 msgid "workspace.align.hcenter"
 msgstr "تراز کردن مرکز افقی (%s)"
 
-#: src/app/main/ui/workspace/sidebar/align.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:74
 msgid "workspace.align.hdistribute"
 msgstr "توزیع فاصله افقی (%s)"
 
-#: src/app/main/ui/workspace/sidebar/align.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:50
 msgid "workspace.align.hleft"
 msgstr "تراز به چپ (%s)"
 
-#: src/app/main/ui/workspace/sidebar/align.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:66
 msgid "workspace.align.hright"
 msgstr "تراز کردن به راست (%s)"
 
-#: src/app/main/ui/workspace/sidebar/align.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:99
 msgid "workspace.align.vbottom"
 msgstr "تراز کردن پایین (%s)"
 
-#: src/app/main/ui/workspace/sidebar/align.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:91
 msgid "workspace.align.vcenter"
 msgstr "تراز کردن مرکز عمودی (%s)"
 
-#: src/app/main/ui/workspace/sidebar/align.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:104
 msgid "workspace.align.vdistribute"
 msgstr "توزیع فاصله عمودی (%s)"
 
 #: src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
 msgid "workspace.assets.assets"
 msgstr "دارایی‌ها"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs:134
 msgid "workspace.assets.box-filter-all"
 msgstr "تمام دارایی‌ها"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/dashboard/grid.cljs:136, src/app/main/ui/dashboard/grid.cljs:168, src/app/main/ui/workspace/sidebar/assets/colors.cljs:487, src/app/main/ui/workspace/sidebar/assets.cljs:150
 msgid "workspace.assets.colors"
 msgstr "رنگ‌ها"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/dashboard/grid.cljs:132, src/app/main/ui/dashboard/grid.cljs:147, src/app/main/ui/workspace/sidebar/assets/components.cljs:509, src/app/main/ui/workspace/sidebar/assets.cljs:139
 msgid "workspace.assets.components"
 msgstr "کامپوننت‌ها"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:127
 msgid "workspace.assets.create-group"
 msgstr "ایجاد یک گروه"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:138
 msgid "workspace.assets.create-group-hint"
 msgstr "آیتم‌های شما به طور خودکار به عنوان \"نام گروه / نام آیتم\" نامگذاری می‌شوند"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:529, src/app/main/ui/workspace/sidebar/assets/colors.cljs:251, src/app/main/ui/workspace/sidebar/assets/components.cljs:573, src/app/main/ui/workspace/sidebar/assets/graphics.cljs:424, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:445
 msgid "workspace.assets.delete"
 msgstr "حذف"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:534, src/app/main/ui/workspace/sidebar/assets/components.cljs:568
 msgid "workspace.assets.duplicate"
 msgstr "تکثیر"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:247, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:441
 msgid "workspace.assets.edit"
 msgstr "ویرایش"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets/graphics.cljs:384, src/app/main/ui/workspace/sidebar/assets.cljs:145
 msgid "workspace.assets.graphics"
 msgstr "گرافیک"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:255, src/app/main/ui/workspace/sidebar/assets/components.cljs:577, src/app/main/ui/workspace/sidebar/assets/graphics.cljs:428, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:450
 msgid "workspace.assets.group"
 msgstr "گروه"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets.cljs:168
 msgid "workspace.assets.libraries"
 msgstr "کتابخانه‌ها"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:532, src/app/main/ui/workspace/sidebar/assets/colors.cljs:243, src/app/main/ui/workspace/sidebar/assets/components.cljs:562, src/app/main/ui/workspace/sidebar/assets/graphics.cljs:421, src/app/main/ui/workspace/sidebar/assets/groups.cljs:62, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:436
 msgid "workspace.assets.rename"
 msgstr "تغییرنام"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs,
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/dashboard/grid.cljs:140, src/app/main/ui/dashboard/grid.cljs:195, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:399, src/app/main/ui/workspace/sidebar/assets.cljs:155
 msgid "workspace.assets.typography"
 msgstr "تایپوگرافی‌ها"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#, unused
 msgid "workspace.assets.typography.font-id"
 msgstr "فونت"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:505
 msgid "workspace.assets.typography.font-size"
 msgstr "اندازه"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:501
 msgid "workspace.assets.typography.font-variant-id"
 msgstr "گونه"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs,
-#: src/app/main/ui/handoff/attributes/text.cljs,
-#: src/app/main/ui/handoff/attributes/text.cljs
+#: src/app/main/ui/dashboard/grid.cljs:205, src/app/main/ui/workspace/libraries.cljs:461, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:464, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:489, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:596, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:615
 msgid "workspace.assets.typography.sample"
 msgstr "مثال"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:517
 msgid "workspace.assets.typography.text-transform"
 msgstr "تبدیل متن"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:65
 msgid "workspace.assets.ungroup"
 msgstr "حذف گروه"
 
+#, unused
 msgid "workspace.focus.selection"
 msgstr "انتخاب"
 
-#: src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/main_menu.cljs:367
 msgid "workspace.header.menu.hide-textpalette"
 msgstr "پنهان کردن پالت فونت‌ها"
 
-#: src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/main_menu.cljs:743
 msgid "workspace.header.menu.option.edit"
 msgstr "ویرایش"
 
-#: src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/main_menu.cljs:732
 msgid "workspace.header.menu.option.file"
 msgstr "فایل"
 
-#: src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/main_menu.cljs:765
 msgid "workspace.header.menu.option.preferences"
 msgstr "اولویت‌ها"
 
-#: src/app/main/ui/workspace/header.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/main_menu.cljs:754
 msgid "workspace.header.menu.option.view"
 msgstr "بازدید"
 
-#: src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/main_menu.cljs:368
 msgid "workspace.header.menu.show-textpalette"
 msgstr "نمایش پالت فونت‌ها"
 
-#: src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/viewer/header.cljs:98, src/app/main/ui/workspace/right_header.cljs:120
 msgid "workspace.header.reset-zoom"
 msgstr "بازنشانی"
 
 #: src/app/main/ui/workspace/header.cljs
+#, unused
 msgid "workspace.header.save-error"
 msgstr "خطا در ذخیره"
 
-#: src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/right_header.cljs:52
 msgid "workspace.header.saved"
 msgstr "ذخیره‌شد"
 
 #: src/app/main/ui/workspace/header.cljs
-#, fuzzy
+#, unused
 msgid "workspace.header.saving"
 msgstr "ذخیره‌کردن"
 
-#: src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/right_header.cljs:42, src/app/main/ui/workspace/right_header.cljs:47
 msgid "workspace.header.unsaved"
 msgstr "تغییرات ذخیره نشده"
 
 #: src/app/main/ui/workspace/libraries.cljs
+#, unused
 msgid "workspace.libraries.add"
 msgstr "افزودن"
 
 #: src/app/main/ui/workspace/colorpicker.cljs
+#, unused
 msgid "workspace.libraries.colors.hsv"
 msgstr "HSV"
 
-#: src/app/main/ui/workspace/colorpicker.cljs
+#: src/app/main/ui/workspace/colorpicker.cljs:215
 msgid "workspace.libraries.colors.rgba"
 msgstr "RGBA"
 
-#: src/app/main/ui/workspace/colorpicker.cljs
+#: src/app/main/ui/workspace/colorpicker.cljs:379
 msgid "workspace.libraries.colors.save-color"
 msgstr "ذخیره استایل رنگ"
 
-#: src/app/main/ui/workspace/libraries.cljs
+#: src/app/main/ui/workspace/libraries.cljs:509, src/app/main/ui/workspace/libraries.cljs:534
 msgid "workspace.libraries.libraries"
 msgstr "کتابخانه‌ها"
 
 #: src/app/main/ui/workspace/libraries.cljs
+#, unused
 msgid "workspace.libraries.library"
 msgstr "کتابخانه"
 
-#: src/app/main/ui/workspace/libraries.cljs
+#: src/app/main/ui/workspace/libraries.cljs:380
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "هیچ کتابخانه مشترکی وجود ندارد که نیاز به به‌روزرسانی داشته باشد"
 
-#: src/app/main/ui/workspace/libraries.cljs
+#: src/app/main/ui/workspace/libraries.cljs:296
 msgid "workspace.libraries.no-shared-libraries-available"
 msgstr "هیچ کتابخانه مشترکی در دسترس نیست"
 
-#: src/app/main/ui/workspace/libraries.cljs
+#: src/app/main/ui/workspace/libraries.cljs:260
 msgid "workspace.libraries.search-shared-libraries"
 msgstr "جستجوی کتابخانه‌های مشترک"
 
-#: src/app/main/ui/workspace/libraries.cljs
+#: src/app/main/ui/workspace/libraries.cljs:256
 msgid "workspace.libraries.shared-libraries"
 msgstr "کتابخانه‌های مشترک"
 
-#: src/app/main/ui/workspace/libraries.cljs
+#: src/app/main/ui/workspace/libraries.cljs:402
 msgid "workspace.libraries.update"
 msgstr "به‌روزرسانی"
 
-#: src/app/main/ui/workspace/libraries.cljs
+#: src/app/main/ui/workspace/libraries.cljs:516
 msgid "workspace.libraries.updates"
 msgstr "به‌روزرسانی‌ها"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:86, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:102
 msgid "workspace.options.blur-options.title"
 msgstr "محو"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:600, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:605
 msgid "workspace.options.component"
 msgstr "کامپوننت"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163
 msgid "workspace.options.constraints"
 msgstr "محدودیت‌ها"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:150
 msgid "workspace.options.constraints.bottom"
 msgstr "پایین"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:141, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:152
 msgid "workspace.options.constraints.center"
 msgstr "مرکز"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:138
 msgid "workspace.options.constraints.left"
 msgstr "چپ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:139
 msgid "workspace.options.constraints.right"
 msgstr "راست"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:142, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:153
 msgid "workspace.options.constraints.scale"
 msgstr "مقیاس"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:149
 msgid "workspace.options.constraints.top"
 msgstr "بالا"
 
-#: src/app/main/ui/workspace/sidebar/options.cljs
+#: src/app/main/ui/workspace/sidebar/options.cljs:169
 msgid "workspace.options.design"
 msgstr "طراحی"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/inspect/exports.cljs
+#: src/app/main/ui/viewer/inspect/exports.cljs:139
 msgid "workspace.options.export"
 msgstr "اکسپورت"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs
+#: src/app/main/ui/viewer/inspect/exports.cljs:178, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:219
 msgid "workspace.options.export.suffix"
 msgstr "پسوند"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/export.cljs:173, src/app/main/ui/export.cljs:242, src/app/main/ui/viewer/inspect/exports.cljs:194, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:236
 msgid "workspace.options.exporting-object"
 msgstr "درحال گرفتن خروجی…"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:49, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:174
 msgid "workspace.options.fill"
 msgstr "پر"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:29
 msgid "workspace.options.grid.auto"
 msgstr "خودکار"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:157
 msgid "workspace.options.grid.column"
 msgstr "ستون‌ها"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:237
 msgid "workspace.options.grid.params.color"
 msgstr "رنگ"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
 msgid "workspace.options.grid.params.columns"
 msgstr "ستون‌ها"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:246
 msgid "workspace.options.grid.params.height"
 msgstr "ارتفاع"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:270
 msgid "workspace.options.grid.params.margin"
 msgstr "لبه"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
 msgid "workspace.options.grid.params.rows"
 msgstr "ردیف‌ها"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:216, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:290
 msgid "workspace.options.grid.params.set-default"
 msgstr "تنظیم به عنوان پیش‌فرض"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
 msgid "workspace.options.grid.params.size"
 msgstr "اندازه"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#, unused
 msgid "workspace.options.grid.params.type"
 msgstr "نوع"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:231
 msgid "workspace.options.grid.params.type.bottom"
 msgstr "پایین"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:229
 msgid "workspace.options.grid.params.type.center"
 msgstr "مرکز"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:228
 msgid "workspace.options.grid.params.type.left"
 msgstr "چپ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:232
 msgid "workspace.options.grid.params.type.right"
 msgstr "راست"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:227
 msgid "workspace.options.grid.params.type.top"
 msgstr "بالا"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:247
 msgid "workspace.options.grid.params.width"
 msgstr "پهنا"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:158
 msgid "workspace.options.grid.row"
 msgstr "ردیف‌ها"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:156
 msgid "workspace.options.grid.square"
 msgstr "مربع"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:406
 msgid "workspace.options.height"
 msgstr "بلندی"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:468
 msgid "workspace.options.interaction-action"
 msgstr "عمل"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:614
 msgid "workspace.options.interaction-animation"
 msgstr "انیمیشن"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:406
 msgid "workspace.options.interaction-animation-dissolve"
 msgstr "حل کردن"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:405
 msgid "workspace.options.interaction-animation-none"
 msgstr "هیچ‌یک"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:412
 msgid "workspace.options.interaction-animation-push"
 msgstr "هل"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:407
 msgid "workspace.options.interaction-animation-slide"
 msgstr "اسلاید"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:456
 msgid "workspace.options.interaction-delay"
 msgstr "تاخیر"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:478
 msgid "workspace.options.interaction-destination"
 msgstr "مقصد"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:661
 msgid "workspace.options.interaction-duration"
 msgstr "مدت‌زمان"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:674
 msgid "workspace.options.interaction-easing"
 msgstr "تسهیل"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:416
 msgid "workspace.options.interaction-easing-ease"
 msgstr "سهولت"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:415
 msgid "workspace.options.interaction-easing-linear"
 msgstr "خطی"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
 msgid "workspace.options.interaction-in"
 msgstr "در"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:458, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:459, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:464, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:663, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:665, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:669
 msgid "workspace.options.interaction-ms"
 msgstr "م‌ث"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:51, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:53, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:55, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:380
 msgid "workspace.options.interaction-none"
 msgstr "(تنظیم نشده)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
 msgid "workspace.options.interaction-out"
 msgstr "خارج"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:397
 msgid "workspace.options.interaction-pos-center"
 msgstr "مرکز"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:396
 msgid "workspace.options.interaction-pos-manual"
 msgstr "دستی"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:524
 msgid "workspace.options.interaction-position"
 msgstr "موقعیت"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:57, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:379, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:393, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:394
 msgid "workspace.options.interaction-self"
 msgstr "خود"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:503
 msgid "workspace.options.interaction-url"
 msgstr "URL"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:137
 msgid "workspace.options.layer-options.blend-mode.color"
 msgstr "رنگ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:124
 msgid "workspace.options.layer-options.blend-mode.darken"
 msgstr "تاریک"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:133
 msgid "workspace.options.layer-options.blend-mode.difference"
 msgstr "تفاوت"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:135
 msgid "workspace.options.layer-options.blend-mode.hue"
 msgstr "رنگ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:127
 msgid "workspace.options.layer-options.blend-mode.lighten"
 msgstr "روشن کردن"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:138
 msgid "workspace.options.layer-options.blend-mode.luminosity"
 msgstr "درخشندگی"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:125
 msgid "workspace.options.layer-options.blend-mode.multiply"
 msgstr "تکثیر"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:123
 msgid "workspace.options.layer-options.blend-mode.normal"
 msgstr "معمولی"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:136
 msgid "workspace.options.layer-options.blend-mode.saturation"
 msgstr "اشباع"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:128
 msgid "workspace.options.layer-options.blend-mode.screen"
 msgstr "صفحه نمایش"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, unused
 msgid "workspace.options.layer-options.title"
 msgstr "لایه"
 
-#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs,
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#, unused
 msgid "workspace.options.position"
 msgstr "موقعیت"
 
-#: src/app/main/ui/workspace/sidebar/options.cljs
+#: src/app/main/ui/workspace/sidebar/options.cljs:173
 msgid "workspace.options.prototype"
 msgstr "پروتوتایپ"
 
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:469, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:481
 msgid "workspace.options.radius"
 msgstr "گردی"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:183
 msgid "workspace.options.recent-fonts"
 msgstr "اخیر"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs,
-#: src/app/main/ui/inspect/exports.cljs, src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/export.cljs:285
 msgid "workspace.options.retry"
 msgstr "تلاش دوباره"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:451
 msgid "workspace.options.rotation"
 msgstr "چرخش"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:741
 msgid "workspace.options.select-a-shape"
 msgstr "یک شکل، برد یا گروه را برای کشیدن اتصال به تابلوی دیگر انتخاب کنید."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:40, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:198, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:200
 msgid "workspace.options.shadow-options.blur"
 msgstr "محو"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:186
 msgid "workspace.options.shadow-options.offsetx"
 msgstr "X"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:39, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:224
 msgid "workspace.options.shadow-options.offsety"
 msgstr "Y"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:296
 msgid "workspace.options.shadow-options.title"
 msgstr "سایه"
 
-#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs,
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:162
 msgid "workspace.options.size"
 msgstr "اندازه"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:43
 msgid "workspace.options.stroke"
 msgstr "استروک"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:124
 msgid "workspace.options.stroke-cap.none"
 msgstr "هیچ‌یک"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:132
 msgid "workspace.options.stroke-cap.round"
 msgstr "گردی"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:133
 msgid "workspace.options.stroke-cap.square"
 msgstr "مربع"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:87
 msgid "workspace.options.stroke.center"
 msgstr "مرکز"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:105
 msgid "workspace.options.stroke.dashed"
 msgstr "نقطه‌چین"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:104
 msgid "workspace.options.stroke.dotted"
 msgstr "خط‌چین"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:88
 msgid "workspace.options.stroke.inner"
 msgstr "داخل"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:106
 msgid "workspace.options.stroke.mixed"
 msgstr "مخلوط"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:89
 msgid "workspace.options.stroke.outer"
 msgstr "خارج"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:115
 msgid "workspace.options.text-options.align-bottom"
 msgstr "تراز پایین"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:111
 msgid "workspace.options.text-options.align-middle"
 msgstr "تراز وسط"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:107
 msgid "workspace.options.text-options.align-top"
 msgstr "تراز بالا"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:82
 msgid "workspace.options.text-options.direction-ltr"
 msgstr "LTR"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:87
 msgid "workspace.options.text-options.direction-rtl"
 msgstr "RTL"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:149
 msgid "workspace.options.text-options.grow-auto-height"
 msgstr "ارتفاع خودکار"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:145
 msgid "workspace.options.text-options.grow-auto-width"
 msgstr "عرض خودکار"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:141
 msgid "workspace.options.text-options.grow-fixed"
 msgstr "درست شد"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:381
 msgid "workspace.options.text-options.letter-spacing"
 msgstr "فاصله بین حروف"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:364
 msgid "workspace.options.text-options.line-height"
 msgstr "ارتفاع خط"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#, unused
 msgid "workspace.options.text-options.lowercase"
 msgstr "حروف کوچک"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs,
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#, unused
 msgid "workspace.options.text-options.none"
 msgstr "هیچ‌یک"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:51
 msgid "workspace.options.text-options.text-align-center"
 msgstr "تراز در مرکز (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:47
 msgid "workspace.options.text-options.text-align-left"
 msgstr "تراز چپ (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:55
 msgid "workspace.options.text-options.text-align-right"
 msgstr "تراز راست (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:189
 msgid "workspace.options.text-options.title"
 msgstr "متن"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:188
 msgid "workspace.options.text-options.title-group"
 msgstr "متن گروهی"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:187
 msgid "workspace.options.text-options.title-selection"
 msgstr "متن انتخابی"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:171
 msgid "workspace.options.text-options.underline"
 msgstr "خط‌زیر (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
+#, unused
 msgid "workspace.options.text-options.uppercase"
 msgstr "حروف بزرگ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:745
 msgid "workspace.options.use-play-button"
 msgstr "از دکمه پخش در هدر برای اجرای نمای پروتوتایپ استفاده کنید."
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:395
 msgid "workspace.options.width"
 msgstr "پهنا"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:427
 msgid "workspace.options.x"
 msgstr "X"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:438
 msgid "workspace.options.y"
 msgstr "Y"
 
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:167
 msgid "workspace.path.actions.add-node"
 msgstr "افزودن گره (%s)"
 
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:174
 msgid "workspace.path.actions.delete-node"
 msgstr "حذف گره (%s)"
 
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:182
 msgid "workspace.path.actions.merge-nodes"
 msgstr "ادغام گره‌ها (%s)"
 
-#, fuzzy
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:159
 msgid "workspace.path.actions.move-nodes"
 msgstr "انتقال گره‌ها (%s)"
 
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:193
 msgid "workspace.shape.menu.back"
 msgstr "فرستادن به پشت"
 
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:190
 msgid "workspace.shape.menu.backward"
 msgstr "فرستادن به عقب"
 
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:139
 msgid "workspace.shape.menu.copy"
 msgstr "کپی"
 
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:465
 msgid "workspace.shape.menu.create-component"
 msgstr "ایجاد کامپوننت"
 
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:142
 msgid "workspace.shape.menu.cut"
 msgstr "برش"
 
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:486
 msgid "workspace.shape.menu.delete"
 msgstr "حذف"
 
+#: src/app/main/ui/workspace/context_menu.cljs:335, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:75
 msgid "workspace.shape.menu.difference"
 msgstr "تفاوت"
 
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:148
 msgid "workspace.shape.menu.duplicate"
 msgstr "تکرار"
 
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:321
 msgid "workspace.shape.menu.edit"
 msgstr "ویزایش"
 
+#: src/app/main/ui/workspace/context_menu.cljs:348, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:89
 msgid "workspace.shape.menu.flatten"
 msgstr "صاف"
 
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:208
 msgid "workspace.shape.menu.flip-horizontal"
 msgstr "حرکت افقی"
 
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:204
 msgid "workspace.shape.menu.flip-vertical"
 msgstr "چرخش عمودی"
 
-#: src/app/main/ui/workspace/context_menu.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/context_menu.cljs:394
 msgid "workspace.shape.menu.flow-start"
 msgstr "شروع فلو"
 
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:184
 msgid "workspace.shape.menu.forward"
 msgstr "جلو بیاورید"
 
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:187
 msgid "workspace.shape.menu.front"
 msgstr "به جلو بیاورید"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs
+#, unused
 msgid "workspace.shape.menu.go-main"
 msgstr "به فایل کامپوننت اصلی بروید"
 
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:261
 msgid "workspace.shape.menu.group"
 msgstr "گروه"
 
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:363, src/app/main/ui/workspace/sidebar/layer_item.cljs:145
 msgid "workspace.shape.menu.hide"
 msgstr "مخفی"
 
+#: src/app/main/ui/workspace/context_menu.cljs:548, src/app/main/ui/workspace/main_menu.cljs:408
 msgid "workspace.shape.menu.hide-ui"
 msgstr "نمایش/پنهان کردن رابط کاربری"
 
-#, fuzzy
+#: src/app/main/ui/workspace/context_menu.cljs:338
 msgid "workspace.shape.menu.intersection"
 msgstr "تقاطع"
 
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:371, src/app/main/ui/workspace/sidebar/layer_item.cljs:153
 msgid "workspace.shape.menu.lock"
 msgstr "قفل"
 
-#: src/app/main/ui/workspace/context_menu.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:266
 msgid "workspace.shape.menu.mask"
 msgstr "ماسک"
 
-#: src/app/main/ui/workspace/context_menu.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:145, src/app/main/ui/workspace/context_menu.cljs:545
 msgid "workspace.shape.menu.paste"
 msgstr "چسباندن"
 
+#: src/app/main/ui/workspace/context_menu.cljs:331
 msgid "workspace.shape.menu.path"
 msgstr "مسیر"
 
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:439
 msgid "workspace.shape.menu.restore-main"
 msgstr "بازیابی کامپوننت اصلی"
 
-#: src/app/main/ui/workspace/context_menu.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/context_menu.cljs:174
 msgid "workspace.shape.menu.select-layer"
 msgstr "انتخاب لایه"
 
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:360, src/app/main/ui/workspace/sidebar/layer_item.cljs:144
 msgid "workspace.shape.menu.show"
 msgstr "نمایش"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:424
 msgid "workspace.shape.menu.show-in-assets"
 msgstr "نمایش در پنل دارایی"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:442, src/app/main/ui/workspace/sidebar/assets/components.cljs:582
 msgid "workspace.shape.menu.show-main"
 msgstr "نمایش کامپوننت اصلی"
 
+#: src/app/main/ui/workspace/context_menu.cljs:221
 msgid "workspace.shape.menu.thumbnail-remove"
 msgstr "حذف تصویر کوچک"
 
+#: src/app/main/ui/workspace/context_menu.cljs:223
 msgid "workspace.shape.menu.thumbnail-set"
 msgstr "تنظیم بعنوان تصویر کوچک"
 
+#: src/app/main/ui/workspace/context_menu.cljs:326
 msgid "workspace.shape.menu.transform-to-path"
 msgstr "تبدیل به مسیر"
 
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:257
 msgid "workspace.shape.menu.ungroup"
 msgstr "حذف گروه"
 
-#, fuzzy
+#: src/app/main/ui/workspace/context_menu.cljs:332, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:70
 msgid "workspace.shape.menu.union"
 msgstr "متحد"
 
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/context_menu.cljs:368, src/app/main/ui/workspace/sidebar/layer_item.cljs:152
 msgid "workspace.shape.menu.unlock"
 msgstr "بازکردن قفل"
 
-#: src/app/main/ui/workspace/context_menu.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/context_menu.cljs:271
 msgid "workspace.shape.menu.unmask"
 msgstr "حذف ماسک"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
+#, unused
 msgid "workspace.shape.menu.update-components-in-bulk"
 msgstr "به‌روزرسانی کامپوننت‌های اصلی"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs,
-#: src/app/main/ui/workspace/context_menu.cljs
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:445
 msgid "workspace.shape.menu.update-main"
 msgstr "به‌روزرسانی کامپوننت اصلی"
 
+#: src/app/main/ui/workspace/sidebar/collapsable_button.cljs:25, src/app/main/ui/workspace/sidebar/collapsable_button.cljs:29
 msgid "workspace.sidebar.expand"
 msgstr "گسترش نوار کناری"
 
-#: src/app/main/ui/workspace/left_toolbar.cljs
+#: src/app/main/ui/workspace/right_header.cljs:231, src/app/main/ui/workspace/right_header.cljs:232
 msgid "workspace.sidebar.history"
 msgstr "تاریخچه (%s)"
 
-#: src/app/main/ui/workspace/left_toolbar.cljs
+#: src/app/main/ui/workspace/sidebar/layers.cljs:522, src/app/main/ui/workspace/sidebar.cljs:77, src/app/main/ui/workspace/sidebar.cljs:95
 msgid "workspace.sidebar.layers"
 msgstr "لایه‌ها"
 
+#: src/app/main/ui/workspace/sidebar/layers.cljs:308, src/app/main/ui/workspace/sidebar/layers.cljs:380
 msgid "workspace.sidebar.layers.components"
 msgstr "کامپوننت‌ها"
 
+#: src/app/main/ui/workspace/sidebar/layers.cljs:305, src/app/main/ui/workspace/sidebar/layers.cljs:338
 msgid "workspace.sidebar.layers.frames"
 msgstr "آرت‌بوردها"
 
+#: src/app/main/ui/workspace/sidebar/layers.cljs:306, src/app/main/ui/workspace/sidebar/layers.cljs:352
 msgid "workspace.sidebar.layers.groups"
 msgstr "گروه‌ها"
 
+#: src/app/main/ui/workspace/sidebar/layers.cljs:310, src/app/main/ui/workspace/sidebar/layers.cljs:408
 msgid "workspace.sidebar.layers.images"
 msgstr "تصاویر"
 
+#: src/app/main/ui/workspace/sidebar/layers.cljs:307, src/app/main/ui/workspace/sidebar/layers.cljs:366
 msgid "workspace.sidebar.layers.masks"
 msgstr "ماسک‌ها"
 
+#: src/app/main/ui/workspace/sidebar/layers.cljs:289
 msgid "workspace.sidebar.layers.search"
 msgstr "جستجوی لایه‌ها"
 
+#: src/app/main/ui/workspace/sidebar/layers.cljs:311, src/app/main/ui/workspace/sidebar/layers.cljs:422
 msgid "workspace.sidebar.layers.shapes"
 msgstr "شکل‌ها"
 
+#: src/app/main/ui/workspace/sidebar/layers.cljs:309, src/app/main/ui/workspace/sidebar/layers.cljs:394
 msgid "workspace.sidebar.layers.texts"
 msgstr "متن‌ها"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs,
-#: src/app/main/ui/handoff/attributes/svg.cljs
-#, fuzzy
+#: src/app/main/ui/viewer/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:91
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "ویژگی‌های SVG ایمپورت شد"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:217
 msgid "workspace.sidebar.sitemap"
 msgstr "صفحات"
 
-#: src/app/main/ui/workspace/header.cljs
+#: src/app/main/ui/workspace/left_header.cljs:91
 msgid "workspace.sitemap"
 msgstr "نقشه سایت"
 
-#: src/app/main/ui/workspace/left_toolbar.cljs
+#: src/app/main/ui/workspace/sidebar.cljs:113
 msgid "workspace.toolbar.assets"
 msgstr "دارایی‌ها"
 
-#: src/app/main/ui/workspace/left_toolbar.cljs
+#: src/app/main/ui/workspace/palette.cljs:165, src/app/main/ui/workspace/palette.cljs:166
 msgid "workspace.toolbar.color-palette"
 msgstr "پالت رنگ (%s)"
 
-#: src/app/main/ui/workspace/left_toolbar.cljs
+#: src/app/main/ui/workspace/right_header.cljs:220, src/app/main/ui/workspace/right_header.cljs:221
 msgid "workspace.toolbar.comments"
 msgstr "نظرات (%s)"
 
-#: src/app/main/ui/workspace/left_toolbar.cljs
+#: src/app/main/ui/workspace/top_toolbar.cljs:181, src/app/main/ui/workspace/top_toolbar.cljs:182
 msgid "workspace.toolbar.curve"
 msgstr "منحنی (%s)"
 
-#: src/app/main/ui/workspace/left_toolbar.cljs
+#: src/app/main/ui/workspace/top_toolbar.cljs:161, src/app/main/ui/workspace/top_toolbar.cljs:162
 msgid "workspace.toolbar.ellipse"
 msgstr "بیضی (%s)"
 
-#: src/app/main/ui/workspace/left_toolbar.cljs
+#: src/app/main/ui/workspace/top_toolbar.cljs:143, src/app/main/ui/workspace/top_toolbar.cljs:144
 msgid "workspace.toolbar.frame"
 msgstr "آرت‌بورد (%s)"
 
-#: src/app/main/ui/workspace/left_toolbar.cljs
+#: src/app/main/ui/workspace/top_toolbar.cljs:60, src/app/main/ui/workspace/top_toolbar.cljs:61
 msgid "workspace.toolbar.image"
 msgstr "تصویر (%s)"
 
-#: src/app/main/ui/workspace/left_toolbar.cljs
+#: src/app/main/ui/workspace/top_toolbar.cljs:133, src/app/main/ui/workspace/top_toolbar.cljs:134
 msgid "workspace.toolbar.move"
 msgstr "انتقال (%s)"
 
-#: src/app/main/ui/workspace/left_toolbar.cljs
+#: src/app/main/ui/workspace/top_toolbar.cljs:190, src/app/main/ui/workspace/top_toolbar.cljs:191
 msgid "workspace.toolbar.path"
 msgstr "مسیر (%s)"
 
-#: src/app/main/ui/workspace/left_toolbar.cljs
+#: src/app/main/ui/workspace/top_toolbar.cljs:152, src/app/main/ui/workspace/top_toolbar.cljs:153
 msgid "workspace.toolbar.rect"
 msgstr "مستطیل (%s)"
 
 #: src/app/main/ui/workspace/left_toolbar.cljs
+#, unused
 msgid "workspace.toolbar.shortcuts"
 msgstr "میانبرها (%s)"
 
-#: src/app/main/ui/workspace/left_toolbar.cljs
+#: src/app/main/ui/workspace/top_toolbar.cljs:170, src/app/main/ui/workspace/top_toolbar.cljs:171
 msgid "workspace.toolbar.text"
 msgstr "متن (%s)"
 
-#: src/app/main/ui/workspace/left_toolbar.cljs
+#: src/app/main/ui/workspace/palette.cljs:173, src/app/main/ui/workspace/palette.cljs:174
 msgid "workspace.toolbar.text-palette"
 msgstr "تایپوگرافی‌ها (%s)"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/history.cljs:342
 msgid "workspace.undo.empty"
 msgstr "هیچ تاریخچه تغییری تاکنون وجود ندارد"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs
+#: src/app/main/ui/workspace/sidebar/history.cljs:147
 msgid "workspace.undo.entry.delete"
 msgstr "%s حذف شد"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs
+#: src/app/main/ui/workspace/sidebar/history.cljs:146
 msgid "workspace.undo.entry.modify"
 msgstr "اصلاح شد %s"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:111
 msgid "workspace.undo.entry.multiple.circle"
 msgstr "دایره‌ها"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:112
 msgid "workspace.undo.entry.multiple.color"
 msgstr "دارایی‌های رنگ"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:113
 msgid "workspace.undo.entry.multiple.component"
 msgstr "کامپوننت‌ها"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:114
 msgid "workspace.undo.entry.multiple.curve"
 msgstr "منحنی‌ها"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:115
 msgid "workspace.undo.entry.multiple.frame"
 msgstr "آرت‌بورد"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:116
 msgid "workspace.undo.entry.multiple.group"
 msgstr "گروه‌ها"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:117
 msgid "workspace.undo.entry.multiple.media"
 msgstr "دارایی‌های گرافیکی"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:118
 msgid "workspace.undo.entry.multiple.multiple"
 msgstr "اشیاء"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:119
 msgid "workspace.undo.entry.multiple.page"
 msgstr "صفحات"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:120
 msgid "workspace.undo.entry.multiple.path"
 msgstr "مسیرها"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:121
 msgid "workspace.undo.entry.multiple.rect"
 msgstr "مستطیل‌ها"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:122
 msgid "workspace.undo.entry.multiple.shape"
 msgstr "شکل‌ها"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:123
 msgid "workspace.undo.entry.multiple.text"
 msgstr "متن‌ها"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:124
 msgid "workspace.undo.entry.multiple.typography"
 msgstr "دارایی‌های تایپوگرافی"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs
+#: src/app/main/ui/workspace/sidebar/history.cljs:145
 msgid "workspace.undo.entry.new"
 msgstr "%s جدید"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:125
 msgid "workspace.undo.entry.single.circle"
 msgstr "دایره"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:126
 msgid "workspace.undo.entry.single.color"
 msgstr "دارایی رنگ"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:127
 msgid "workspace.undo.entry.single.component"
 msgstr "کامپوننت"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:128
 msgid "workspace.undo.entry.single.curve"
 msgstr "منحنی"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:129
 msgid "workspace.undo.entry.single.frame"
 msgstr "آرت‌بورد"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:130
 msgid "workspace.undo.entry.single.group"
 msgstr "گروه"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:131
 msgid "workspace.undo.entry.single.image"
 msgstr "تصویر"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:132
 msgid "workspace.undo.entry.single.media"
 msgstr "دارایی گرافیکی"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:133
 msgid "workspace.undo.entry.single.multiple"
 msgstr "شیء"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:134
 msgid "workspace.undo.entry.single.page"
 msgstr "صفحه"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:135
 msgid "workspace.undo.entry.single.path"
 msgstr "مسیر"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:136
 msgid "workspace.undo.entry.single.rect"
 msgstr "مستطیل"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:137
 msgid "workspace.undo.entry.single.shape"
 msgstr "شکل"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:138
 msgid "workspace.undo.entry.single.text"
 msgstr "متن"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:139
 msgid "workspace.undo.entry.single.typography"
 msgstr "دارایی‌های تایپوگرافی"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs
+#: src/app/main/ui/workspace/sidebar/history.cljs:149
 msgid "workspace.undo.entry.unknown"
 msgstr "عملیات بیش‌از %s"
 
-#: src/app/main/ui/workspace/sidebar/history.cljs
+#: src/app/main/ui/workspace/sidebar/history.cljs:335
 msgid "workspace.undo.title"
 msgstr "تاریخچه"
 
-#: src/app/main/data/workspace/libraries.cljs
+#: src/app/main/data/workspace/libraries.cljs:1097
 msgid "workspace.updates.dismiss"
 msgstr "رد"
 
-#: src/app/main/data/workspace/libraries.cljs
+#: src/app/main/data/workspace/libraries.cljs:1093
 msgid "workspace.updates.there-are-updates"
 msgstr "به‌روزرسانی در کتابخانه‌های مشترک وجود دارد"
 
-#: src/app/main/data/workspace/libraries.cljs
+#: src/app/main/data/workspace/libraries.cljs:1100
 msgid "workspace.updates.update"
 msgstr "به‌روزرسانی"
 
+#, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "برای بستن مسیر کلیک کنید"
 

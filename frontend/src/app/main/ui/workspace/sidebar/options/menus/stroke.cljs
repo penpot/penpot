@@ -97,13 +97,10 @@
           (when-not (str/empty? value)
             (st/emit! (dc/change-stroke ids {:stroke-alignment value} index))))
 
-
-
         on-stroke-width-change
         (fn [index value]
           (when-not (str/empty? value)
             (st/emit! (dc/change-stroke ids {:stroke-width value} index))))
-
 
         open-caps-select
         (fn [caps-state]

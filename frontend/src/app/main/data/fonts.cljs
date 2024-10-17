@@ -13,12 +13,12 @@
    [app.common.media :as cm]
    [app.common.uuid :as uuid]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as msg]
+   [app.main.data.notifications :as ntf]
    [app.main.fonts :as fonts]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
-   [app.util.storage :refer [storage]]
+   [app.util.storage :as storage]
    [app.util.webapi :as wa]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -183,7 +183,7 @@
                     #(when
                       (not-empty %)
                        (st/emit!
-                        (msg/error
+                        (ntf/error
                          (if (> (count %) 1)
                            (tr "errors.bad-font-plural" (str/join ", " %))
                            (tr "errors.bad-font" (first %)))))))
@@ -335,8 +335,9 @@
         (assoc-in state [:workspace-data :recent-fonts] most-recent-fonts)))
     ptk/EffectEvent
     (effect [_ state _]
-      (let [most-recent-fonts      (get-in state [:workspace-data :recent-fonts])]
-        (swap! storage assoc ::recent-fonts most-recent-fonts)))))
+      (let [most-recent-fonts (get-in state [:workspace-data :recent-fonts])]
+        ;; FIXME: this should be prefixed by team
+        (swap! storage/user assoc ::recent-fonts most-recent-fonts)))))
 
 (defn load-recent-fonts
   [fonts]
@@ -344,7 +345,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [fonts-map (d/index-by :id fonts)
-            saved-recent-fonts (->> (::recent-fonts @storage)
+            saved-recent-fonts (->> (::recent-fonts storage/user)
                                     (keep #(get fonts-map (:id %)))
                                     (into #{}))]
         (assoc-in state [:workspace-data :recent-fonts] saved-recent-fonts)))))

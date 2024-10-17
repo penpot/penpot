@@ -15,6 +15,7 @@
    [app.main.data.fonts :as fts]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
+   [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -293,6 +294,7 @@
          :show-recent show-recent}])
 
      [:div {:class (stl/css :font-option)
+            :title (tr "inspect.attributes.typography.font-family")
             :on-click #(reset! open-selector? true)}
       (cond
         (= :multiple font-id)
@@ -309,7 +311,8 @@
         (tr "dashboard.fonts.deleted-placeholder"))]
 
      [:div {:class (stl/css :font-modifiers)}
-      [:div {:class (stl/css :font-size-options)}
+      [:div {:class (stl/css :font-size-options)
+             :title (tr "inspect.attributes.typography.font-size")}
        (let [size-options [8 9 10 11 12 14 16 18 24 36 48 72]
              size-options (if (= font-size :multiple) (into [""] size-options) size-options)]
          [:& editable-select
@@ -324,7 +327,8 @@
            :on-change on-font-size-change
            :on-blur on-blur}])]
 
-      [:div {:class (stl/css :font-variant-options)}
+      [:div {:class (stl/css :font-variant-options)
+             :title (tr "inspect.attributes.typography.font-style")}
        (let [basic-variant-options (->> (:variants font)
                                         (map (fn [variant]
                                                {:value (:id variant)
@@ -336,7 +340,7 @@
                                       :key :multiple-variants
                                       :label "--"})
                                basic-variant-options)]
-               ;;  TODO Add disabled mode
+         ;;  TODO Add disabled mode
          [:& select
           {:class (stl/css :font-variant-select)
            :default-value (attr->string font-variant-id)
@@ -359,7 +363,8 @@
           (on-change {attr (str value)}))]
 
     [:div {:class (stl/css :spacing-options)}
-     [:div {:class (stl/css :line-height)}
+     [:div {:class (stl/css :line-height)
+            :title (tr "inspect.attributes.typography.line-height")}
       [:span {:class (stl/css :icon)
               :alt (tr "workspace.options.text-options.line-height")}
        i/text-lineheight]
@@ -375,7 +380,8 @@
         :on-change #(handle-change % :line-height)
         :on-blur on-blur}]]
 
-     [:div {:class (stl/css :letter-spacing)}
+     [:div {:class (stl/css :letter-spacing)
+            :title (tr "inspect.attributes.typography.letter-spacing")}
       [:span
        {:class (stl/css :icon)
         :alt (tr "workspace.options.text-options.letter-spacing")}
@@ -394,10 +400,11 @@
   {::mf/wrap-props false}
   [{:keys [values on-change on-blur]}]
   (let [text-transform (or (:text-transform values) "none")
+        unset-value    (if (features/active-feature? @st/state "text-editor/v2") "none" "unset")
         handle-change
         (fn [type]
           (if (= text-transform type)
-            (on-change {:text-transform "unset"})
+            (on-change {:text-transform unset-value})
             (on-change {:text-transform type}))
           (when (some? on-blur) (on-blur)))]
 
@@ -407,14 +414,17 @@
                         :name "text-transform"}
       [:& radio-button {:icon i/text-uppercase
                         :type "checkbox"
+                        :title (tr "inspect.attributes.typography.text-transform.uppercase")
                         :value "uppercase"
                         :id "text-transform-uppercase"}]
       [:& radio-button {:icon i/text-mixed
                         :type "checkbox"
                         :value "capitalize"
+                        :title (tr "inspect.attributes.typography.text-transform.titlecase")
                         :id "text-transform-capitalize"}]
       [:& radio-button {:icon i/text-lowercase
                         :type "checkbox"
+                        :title (tr "inspect.attributes.typography.text-transform.lowercase")
                         :value "lowercase"
                         :id "text-transform-lowercase"}]]]))
 

@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.events :as-alias ev]
-   [app.main.data.messages :as msg]
+   [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
@@ -37,7 +37,7 @@
          (fn []
            (when (or (:newsletter-updates state)
                      (:newsletter-news state))
-             (st/emit! (msg/success (tr "onboarding.newsletter.acceptance-message"))))
+             (st/emit! (ntf/success (tr "onboarding.newsletter.acceptance-message"))))
 
            (let [params (-> state
                             (assoc ::ev/name "onboarding-step")

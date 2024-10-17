@@ -276,7 +276,7 @@
 
 (mf/defc viewer-content
   {::mf/wrap-props false}
-  [{:keys [data page-id share-id section index interactions-mode] :as props}]
+  [{:keys [data page-id share-id section index interactions-mode share] :as props}]
   (let [{:keys [file users project permissions]} data
         allowed (or
                  (= section :interactions)
@@ -615,7 +615,8 @@
                         :zoom zoom
                         :section section
                         :shown-thumbnails (:show-thumbnails local)
-                        :interactions-mode interactions-mode}]]))
+                        :interactions-mode interactions-mode
+                        :share share}]]))
 
 ;; --- Component: Viewer
 

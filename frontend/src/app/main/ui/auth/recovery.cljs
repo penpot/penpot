@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.schema :as sm]
-   [app.main.data.messages :as msg]
+   [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
@@ -29,11 +29,11 @@
 
 (defn- on-error
   [_form _error]
-  (st/emit! (msg/error (tr "errors.invalid-recovery-token"))))
+  (st/emit! (ntf/error (tr "errors.invalid-recovery-token"))))
 
 (defn- on-success
   [_]
-  (st/emit! (msg/info (tr "auth.notifications.password-changed-successfully"))
+  (st/emit! (ntf/info (tr "auth.notifications.password-changed-successfully"))
             (rt/nav :auth-login)))
 
 (defn- on-submit

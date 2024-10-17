@@ -168,7 +168,7 @@ export class WorkspacePage extends BaseWebSocketPage {
   async moveSelectionToShape(name) {
     await this.page.locator("rect.viewport-selrect").hover();
     await this.page.mouse.down();
-    await this.viewport.getByTestId(name).first().hover({ force: true });
+    await this.viewport.getByText(name).first().hover({ force: true });
     await this.page.mouse.up();
   }
 

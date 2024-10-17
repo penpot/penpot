@@ -71,10 +71,15 @@
   [conn comment-id & {:as opts}]
   (db/get-by-id conn :comment comment-id opts))
 
+(def ^:private sql:get-next-seqn
+  "SELECT (f.comment_thread_seqn + 1) AS next_seqn
+     FROM file AS f
+    WHERE f.id = ?
+      FOR UPDATE")
+
 (defn- get-next-seqn
   [conn file-id]
-  (let [sql "select (f.comment_thread_seqn + 1) as next_seqn from file as f where f.id = ?"
-        res (db/exec-one! conn [sql file-id])]
+  (let [res (db/exec-one! conn [sql:get-next-seqn file-id])]
     (:next-seqn res)))
 
 (def sql:upsert-comment-thread-status
@@ -292,7 +297,7 @@
   [:map {:title "create-comment-thread"}
    [:file-id ::sm/uuid]
    [:position ::gpt/point]
-   [:content [:string {:max 250}]]
+   [:content [:string {:max 750}]]
    [:page-id ::sm/uuid]
    [:frame-id ::sm/uuid]
    [:share-id {:optional true} [:maybe ::sm/uuid]]])
@@ -304,38 +309,43 @@
    ::rtry/when rtry/conflict-exception?
    ::sm/params schema:create-comment-thread}
   [cfg {:keys [::rpc/profile-id ::rpc/request-at file-id page-id share-id position content frame-id]}]
+  (files/check-comment-permissions! cfg profile-id file-id share-id)
 
-  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                    (files/check-comment-permissions! cfg profile-id file-id share-id)
-                    (let [{:keys [team-id project-id page-name]} (get-file conn file-id page-id)]
+  (let [{:keys [team-id project-id page-name]} (get-file cfg file-id page-id)]
 
-                      (run! (partial quotes/check-quote! cfg)
-                            (list {::quotes/id ::quotes/comment-threads-per-file
-                                   ::quotes/profile-id profile-id
-                                   ::quotes/team-id team-id
-                                   ::quotes/project-id project-id
-                                   ::quotes/file-id file-id}
-                                  {::quotes/id ::quotes/comments-per-file
-                                   ::quotes/profile-id profile-id
-                                   ::quotes/team-id team-id
-                                   ::quotes/project-id project-id
-                                   ::quotes/file-id file-id}))
+    (-> cfg
+        (assoc ::quotes/profile-id profile-id)
+        (assoc ::quotes/team-id team-id)
+        (assoc ::quotes/project-id project-id)
+        (assoc ::quotes/file-id file-id)
+        (quotes/check! {::quotes/id ::quotes/comment-threads-per-file}
+                       {::quotes/id ::quotes/comments-per-file}))
 
-                      (create-comment-thread conn {:created-at request-at
-                                                   :profile-id profile-id
-                                                   :file-id file-id
-                                                   :page-id page-id
-                                                   :page-name page-name
-                                                   :position position
-                                                   :content content
-                                                   :frame-id frame-id})))))
+    (let [params {:created-at request-at
+                  :profile-id profile-id
+                  :file-id file-id
+                  :page-id page-id
+                  :page-name page-name
+                  :position position
+                  :content content
+                  :frame-id frame-id}
+          thread (db/tx-run! cfg create-comment-thread params)]
+
+      (vary-meta thread assoc ::audit/props thread))))
 
 (defn- create-comment-thread
-  [conn {:keys [profile-id file-id page-id page-name created-at position content frame-id]}]
+  [{:keys [::db/conn] :as cfg}
+   {:keys [profile-id file-id page-id page-name created-at position content frame-id]}]
 
-  (let [;; NOTE: we take the next seq number from a separate query because the whole
-        ;; operation can be retried on conflict, and in this case the new seq shold be
-        ;; retrieved from the database.
+  (let [;; NOTE: we take the next seq number from a separate query
+        ;; because we need to lock the file for avoid race conditions
+
+        ;; FIXME: this method touches and locks the file table,which
+        ;; is already heavy-update tablel; we need to think on move
+        ;; the sequence state management to a different table or
+        ;; different storage (example: redis) for alivate the update
+        ;; pression on the file table
+
         seqn      (get-next-seqn conn file-id)
         thread-id (uuid/next)
         thread    (db/insert! conn :comment-thread
@@ -364,7 +374,8 @@
     ;; Optimistic update of current seq number on file.
     (db/update! conn :file
                 {:comment-thread-seqn seqn}
-                {:id file-id})
+                {:id file-id}
+                {::db/return-keys false})
 
     (-> thread
         (select-keys [:id :file-id :page-id])
@@ -386,7 +397,6 @@
                     (let [{:keys [file-id] :as thread} (get-comment-thread conn id ::sql/for-update true)]
                       (files/check-comment-permissions! conn profile-id file-id share-id)
                       (upsert-comment-thread-status! conn profile-id id)))))
-
 
 ;; --- COMMAND: Update Comment Thread
 
@@ -432,12 +442,11 @@
                       {:keys [team-id project-id page-name] :as file} (get-file cfg file-id page-id)]
 
                   (files/check-comment-permissions! conn profile-id file-id share-id)
-                  (quotes/check-quote! conn
-                                       {::quotes/id ::quotes/comments-per-file
-                                        ::quotes/profile-id profile-id
-                                        ::quotes/team-id team-id
-                                        ::quotes/project-id project-id
-                                        ::quotes/file-id file-id})
+                  (quotes/check! cfg {::quotes/id ::quotes/comments-per-file
+                                      ::quotes/profile-id profile-id
+                                      ::quotes/team-id team-id
+                                      ::quotes/project-id project-id
+                                      ::quotes/file-id file-id})
 
                   ;; Update the page-name cached attribute on comment thread table.
                   (when (not= page-name (:page-name thread))

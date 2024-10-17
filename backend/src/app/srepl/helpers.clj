@@ -75,6 +75,7 @@
                  :created-at (:created-at file)
                  :modified-at (:modified-at file)
                  :data-backend nil
+                 :data-ref-id nil
                  :has-media-trimmed false}
                 {:id (:id file)})))
 

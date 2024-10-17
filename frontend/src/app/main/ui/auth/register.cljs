@@ -7,9 +7,10 @@
 (ns app.main.ui.auth.register
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.config :as cf]
-   [app.main.data.messages :as msg]
+   [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -19,7 +20,7 @@
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
-   [app.util.storage :as sto]
+   [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
@@ -38,7 +39,8 @@
         form    (fm/use-form :schema schema:register-form
                              :initial initial)
 
-        submitted? (mf/use-state false)
+        submitted?
+        (mf/use-state false)
 
         on-error
         (mf/use-fn
@@ -46,22 +48,22 @@
            (let [{:keys [type code] :as edata} (ex-data cause)]
              (condp = [type code]
                [:restriction :registration-disabled]
-               (st/emit! (msg/error (tr "errors.registration-disabled")))
+               (st/emit! (ntf/error (tr "errors.registration-disabled")))
 
                [:restriction :email-domain-is-not-allowed]
-               (st/emit! (msg/error (tr "errors.email-domain-not-allowed")))
+               (st/emit! (ntf/error (tr "errors.email-domain-not-allowed")))
 
                [:restriction :email-has-permanent-bounces]
-               (st/emit! (msg/error (tr "errors.email-has-permanent-bounces" (:email edata))))
+               (st/emit! (ntf/error (tr "errors.email-has-permanent-bounces" (:email edata))))
 
                [:restriction :email-has-complaints]
-               (st/emit! (msg/error (tr "errors.email-has-permanent-bounces" (:email edata))))
+               (st/emit! (ntf/error (tr "errors.email-has-permanent-bounces" (:email edata))))
 
                [:validation :email-as-password]
                (swap! form assoc-in [:errors :password]
                       {:code "errors.email-as-password"})
 
-               (st/emit! (msg/error (tr "errors.generic")))))))
+               (st/emit! (ntf/error (tr "errors.generic")))))))
 
         on-submit
         (mf/use-fn
@@ -103,12 +105,14 @@
 
 (mf/defc register-methods
   {::mf/props :obj}
-  [{:keys [params on-success-callback]}]
+  [{:keys [params hide-separator on-success-callback]}]
   [:*
    (when login/show-alt-login-buttons?
      [:& login/login-buttons {:params params}])
-   [:hr {:class (stl/css :separator)}]
-   [:& register-form {:params params :on-success-callback on-success-callback}]])
+   (when (or login/show-alt-login-buttons? (false? hide-separator))
+     [:hr {:class (stl/css :separator)}])
+   (when (contains? cf/flags :login-with-password)
+     [:& register-form {:params params :on-success-callback on-success-callback}])])
 
 (mf/defc register-page
   {::mf/props :obj}
@@ -173,7 +177,9 @@
    ::mf/private true}
   [{:keys [params on-success-callback]}]
   (let [form       (fm/use-form :schema schema:register-validate-form :initial params)
-        submitted? (mf/use-state false)
+
+        submitted?
+        (mf/use-state false)
 
         on-success
         (mf/use-fn
@@ -192,20 +198,26 @@
 
                :else
                (do
-                 (swap! sto/storage assoc ::email (:email params))
+                 (swap! storage/user assoc ::email (:email params))
                  (st/emit! (rt/nav :auth-register-success)))))))
 
         on-error
         (mf/use-fn
          (fn [_]
-           (st/emit! (msg/error (tr "errors.generic")))))
+           (st/emit! (ntf/error (tr "errors.generic")))))
 
         on-submit
         (mf/use-fn
          (mf/deps on-success on-error)
          (fn [form _]
            (reset! submitted? true)
-           (let [params (:clean-data @form)]
+           (let [create-welcome-file?
+                 (cf/external-feature-flag "onboarding-03" "test")
+
+                 params
+                 (cond-> (:clean-data @form)
+                   create-welcome-file? (assoc :create-welcome-file true))]
+
              (->> (rp/cmd! :register-profile params)
                   (rx/finalize #(reset! submitted? false))
                   (rx/subs! on-success on-error)))))]
@@ -251,14 +263,37 @@
 
 (mf/defc register-success-page
   {::mf/props :obj}
-  []
-  (let [email (::email @sto/storage)]
+  [{:keys [params]}]
+  (let [email (or (:email params) (::email storage/user))]
     [:div {:class (stl/css :auth-form-wrapper :register-success)}
-     [:h1 {:class (stl/css :logo-container)}
-      [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} i/logo]]
+     (when-not (:hide-logo params)
+       [:h1 {:class (stl/css :logo-container)}
+        [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} i/logo]])
      [:div {:class (stl/css :auth-title-wrapper)}
       [:h2 {:class (stl/css :auth-title)}
        (tr "auth.check-mail")]
       [:div {:class (stl/css :notification-text)} (tr "auth.verification-email-sent")]]
      [:div {:class (stl/css :notification-text-email)} email]
      [:div {:class (stl/css :notification-text)} (tr "auth.check-your-email")]]))
+
+
+(mf/defc terms-register
+  []
+  (let [show-all?     (and cf/terms-of-service-uri cf/privacy-policy-uri)
+        show-terms?   (some? cf/terms-of-service-uri)
+        show-privacy? (some? cf/privacy-policy-uri)]
+
+    (when show-all?
+      [:div {:class (stl/css :terms-register)}
+       (when show-terms?
+         [:a {:href cf/terms-of-service-uri :target "_blank" :class (stl/css :auth-link)}
+          (tr "auth.terms-of-service")])
+
+       (when show-all?
+         [:span {:class (stl/css :and-text)}
+          (dm/str " " (tr "labels.and") "  ")])
+
+       (when show-privacy?
+         [:a {:href cf/privacy-policy-uri :target "_blank" :class (stl/css :auth-link)}
+          (tr "auth.privacy-policy")])])))
+

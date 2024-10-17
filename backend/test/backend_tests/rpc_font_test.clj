@@ -21,7 +21,7 @@
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest ttf-font-upload-1
-  (with-mocks [mock {:target 'app.rpc.quotes/check-quote! :return nil}]
+  (with-mocks [mock {:target 'app.rpc.quotes/check! :return nil}]
     (let [prof    (th/create-profile* 1 {:is-active true})
           team-id (:default-team-id prof)
           proj-id (:default-project-id prof)
@@ -145,7 +145,7 @@
       (t/is (nil? (:result out))))
 
     (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
-      (t/is (= 6 (:freeze res)))
+      (t/is (= 0 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
     (let [res (th/run-task! :objects-gc {:min-age 0})]
@@ -207,7 +207,7 @@
       (t/is (nil? (:result out))))
 
     (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
-      (t/is (= 3 (:freeze res)))
+      (t/is (= 0 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
     (let [res (th/run-task! :objects-gc {:min-age 0})]
@@ -268,7 +268,7 @@
       (t/is (nil? (:result out))))
 
     (let [res (th/run-task! :storage-gc-touched {:min-age 0})]
-      (t/is (= 3 (:freeze res)))
+      (t/is (= 0 (:freeze res)))
       (t/is (= 0 (:delete res))))
 
     (let [res (th/run-task! :objects-gc {:min-age 0})]

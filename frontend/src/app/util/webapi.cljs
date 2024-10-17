@@ -103,6 +103,14 @@
   (let [cboard (unchecked-get js/navigator "clipboard")]
     (.writeText ^js cboard data)))
 
+(defn write-to-clipboard-promise
+  [mimetype promise]
+  (let [cboard (unchecked-get js/navigator "clipboard")
+        data   (js/ClipboardItem.
+                (-> (obj/create)
+                    (obj/set! mimetype promise)))]
+    (.write ^js cboard #js [data])))
+
 (defn read-from-clipboard
   []
   (try

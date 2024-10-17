@@ -26,16 +26,24 @@
 
 (def ^:private
   schema:config
-  (sm/define
-    [:map {:title "config"}
-     [:public-uri {:optional true} ::sm/uri]
-     [:host {:optional true} :string]
-     [:tenant {:optional true} :string]
-     [:flags {:optional true} ::sm/set-of-keywords]
-     [:redis-uri {:optional true} :string]
-     [:tempdir {:optional true} :string]
-     [:browser-pool-max {:optional true} :int]
-     [:browser-pool-min {:optional true} :int]]))
+  [:map {:title "config"}
+   [:public-uri {:optional true} ::sm/uri]
+   [:host {:optional true} :string]
+   [:tenant {:optional true} :string]
+   [:flags {:optional true} [::sm/set :keyword]]
+   [:redis-uri {:optional true} :string]
+   [:tempdir {:optional true} :string]
+   [:browser-pool-max {:optional true} ::sm/int]
+   [:browser-pool-min {:optional true} ::sm/int]])
+
+(def ^:private decode-config
+  (sm/decoder schema:config sm/string-transformer))
+
+(def ^:private explain-config
+  (sm/explainer schema:config))
+
+(def ^:private valid-config?
+  (sm/validator schema:config))
 
 (defn- parse-flags
   [config]
@@ -60,15 +68,15 @@
   []
   (let [env  (read-env "penpot")
         env  (d/without-nils env)
-        data (merge defaults env)]
+        data (merge defaults env)
+        data (decode-config data)]
 
-    (try
-      (sm/conform! schema:config data)
-      (catch :default cause
-        (if-let [explain (some->> cause ex-data ::sm/explain)]
-          (println (sm/humanize-explain explain))
-          (js/console.error cause))
-        (process/exit -1)))))
+    (when-not (valid-config? data)
+      (let [explain (explain-config data)]
+        (println (sm/humanize-explain explain))
+        (process/exit -1)))
+
+    data))
 
 (def config
   (prepare-config))

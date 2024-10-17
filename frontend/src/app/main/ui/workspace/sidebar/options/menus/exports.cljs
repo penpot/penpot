@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.main.data.events :as ev]
    [app.main.data.exports :as de]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -20,6 +21,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer  [tr c]]
    [app.util.keyboard :as kbd]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def exports-attrs
@@ -75,8 +77,12 @@
                  (cond-> sname
                    (some? suffix)
                    (str suffix))
-                 (st/emit! (de/request-simple-export {:export (merge export defaults)})))
-               (st/emit! (de/show-workspace-export-dialog {:selected (reverse ids)})))
+                 (st/emit!
+                  (de/request-simple-export {:export (merge export defaults)})
+                  (ptk/event
+                   ::ev/event {::ev/name "export-shapes" ::ev/origin "workspace:sidebar" :num-shapes 1})))
+               (st/emit!
+                (de/show-workspace-export-dialog {:selected (reverse ids) :origin "workspace:sidebar"})))
 
              ;; In other all cases we only allowed to have a single
              ;; shape-id because multiple shape-ids are handled
@@ -88,8 +94,14 @@
                    exports  (mapv #(merge % defaults) exports)]
                (if (= 1 (count exports))
                  (let [export (first exports)]
-                   (st/emit! (de/request-simple-export {:export export})))
-                 (st/emit! (de/request-multiple-export {:exports exports})))))))
+                   (st/emit!
+                    (de/request-simple-export {:export export})
+                    (ptk/event
+                     ::ev/event {::ev/name "export-shapes" ::ev/origin "workspace:sidebar" :num-shapes 1})))
+                 (st/emit!
+                  (de/request-multiple-export {:exports exports})
+                  (ptk/event
+                   ::ev/event {::ev/name "export-shapes" ::ev/origin "workspace:sidebar" :num-shapes (count exports)})))))))
 
         ;; TODO: maybe move to specific events for avoid to have this logic here?
         add-export

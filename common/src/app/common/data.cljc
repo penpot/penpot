@@ -65,7 +65,7 @@
   [o [k & ks] v]
   (if ks
     (oassoc o k (oassoc-in (get o k) ks v))
-    (oassoc o k v))) 
+    (oassoc o k v)))
 
 (defn oupdate-in
   [m ks f & args]
@@ -616,7 +616,6 @@
                 new-elems
                 (remove p? after))))
 
-;; TODO: remove this
 (defn addm-at-index
   "Insert an element in an ordered map at an arbitrary index"
   [coll index key element]

@@ -7,7 +7,7 @@
 (ns app.main.ui.settings.options
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.main.data.messages :as msg]
+   [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -23,7 +23,7 @@
 
 (defn- on-success
   [profile]
-  (st/emit! (msg/success (tr "notifications.profile-saved"))
+  (st/emit! (ntf/success (tr "notifications.profile-saved"))
             (du/profile-fetched profile)))
 
 (defn- on-submit

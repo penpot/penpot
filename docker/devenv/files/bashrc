@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 
 export PATH=/usr/lib/jvm/openjdk/bin:/usr/local/nodejs/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
-export JAVA_OPTS="-Xmx1000m -Xms50m"
+export JAVA_OPTS=${JAVA_OPTS:-"-Xmx1000m -Xms200m"};
 
 alias l='ls --color -GFlh'
 alias rm='rm -r'
 alias ls='ls --color -F'
 alias lsd='ls -d *(/)'
 alias lsf='ls -h *(.)'
+
+# init Cargo / Rust env
+. "/usr/local/cargo/env"
 
 # include .bashrc if it exists
 if [ -f "$HOME/.bashrc.local" ]; then

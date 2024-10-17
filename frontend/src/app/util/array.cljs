@@ -6,7 +6,9 @@
 
 (ns app.util.array
   "A collection of helpers for work with javascript arrays."
-  (:refer-clojure :exclude [conj! conj filter]))
+  (:refer-clojure :exclude [conj! conj filter map reduce find])
+  (:require
+   [cljs.core :as c]))
 
 (defn conj
   "A conj like function for js arrays."
@@ -49,3 +51,19 @@
   "A specific filter for js arrays."
   [pred ^js/Array o]
   (.filter o pred))
+
+(defn map
+  [f a]
+  (.map ^js/Array a f))
+
+(defn reduce
+  [f init val]
+  (.reduce ^js/Array val f init))
+
+(defn find-index
+  [f v]
+  (.findIndex ^js/Array v f))
+
+(defn find
+  [f v]
+  (.find ^js/Array v f))

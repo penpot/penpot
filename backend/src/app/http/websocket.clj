@@ -278,18 +278,18 @@
             :inc 1)
   message)
 
-(def ^:private schema:params
-  (sm/define
-    [:map {:title "params"}
-     [:session-id ::sm/uuid]]))
-
 (defn- http-handler
   [cfg {:keys [params ::session/profile-id] :as request}]
-  (let [{:keys [session-id]} (sm/conform! schema:params params)]
+  (let [session-id (some-> params :session-id sm/parse-uuid)]
+    (when-not (uuid? session-id)
+      (ex/raise :type :validation
+                :code :missing-session-id
+                :hint "missing or invalid session-id found"))
+
     (cond
       (not profile-id)
       (ex/raise :type :authentication
-                :hint "Authentication required.")
+                :hint "authentication required")
 
       ;; WORKAROUND: we use the adapter specific predicate for
       ;; performance reasons; for now, the ring default impl for

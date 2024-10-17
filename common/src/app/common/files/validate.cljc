@@ -57,16 +57,17 @@
     :misplaced-slot
     :missing-slot})
 
-(def ^:private
-  schema:error
-  (sm/define
-    [:map {:title "ValidationError"}
-     [:code {:optional false} [::sm/one-of error-codes]]
-     [:hint {:optional false} :string]
-     [:shape {:optional true} :map] ; Cannot validate a shape because here it may be broken
-     [:shape-id {:optional true} ::sm/uuid]
-     [:file-id ::sm/uuid]
-     [:page-id {:optional true} [:maybe ::sm/uuid]]]))
+(def ^:private schema:error
+  [:map {:title "ValidationError"}
+   [:code {:optional false} [::sm/one-of error-codes]]
+   [:hint {:optional false} :string]
+   [:shape {:optional true} :map] ; Cannot validate a shape because here it may be broken
+   [:shape-id {:optional true} ::sm/uuid]
+   [:file-id ::sm/uuid]
+   [:page-id {:optional true} [:maybe ::sm/uuid]]])
+
+(def check-error!
+  (sm/check-fn schema:error))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ERROR HANDLING
@@ -95,7 +96,7 @@
 
     (dm/assert!
      "expected valid error"
-     (sm/check! schema:error error))
+     (check-error! error))
 
     (vswap! *errors* conj error)))
 

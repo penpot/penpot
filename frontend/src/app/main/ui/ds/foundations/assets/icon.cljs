@@ -157,6 +157,7 @@
 (def ^:icon-id hug-content "hug-content")
 (def ^:icon-id icon "icon")
 (def ^:icon-id img "img")
+(def ^:icon-id info "info")
 (def ^:icon-id interaction "interaction")
 (def ^:icon-id join-nodes "join-nodes")
 (def ^:icon-id external-link "external-link")
@@ -277,10 +278,17 @@
 (def ^:private icon-size-m 16)
 (def ^:private icon-size-s 12)
 
+(def ^:private schema:icon
+  [:map
+   [:class {:optional true} :string]
+   [:id [:and :string [:fn #(contains? icon-list %)]]]
+   [:size  {:optional true}
+    [:maybe [:enum "s" "m"]]]])
+
 (mf/defc icon*
-  {::mf/props :obj}
+  {::mf/props :obj
+   ::mf/schema schema:icon}
   [{:keys [id size class] :rest props}]
-  (assert (contains? icon-list id) "invalid icon id")
   (let [class (dm/str (or class "") " " (stl/css :icon))
         props (mf/spread-props props {:class class :width icon-size-m :height icon-size-m})
         size-px (cond (= size "s") icon-size-s :else icon-size-m)

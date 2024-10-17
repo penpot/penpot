@@ -10,6 +10,7 @@
    [app.main.style :as stl])
   (:require
    [app.common.math :as mth]
+   [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 (mf/defc loader-icon*
@@ -22,7 +23,6 @@
                                       :width width
                                       :height height
                                       :class class})]
-
     [:> "svg" props
      [:title title]
      [:g
@@ -32,18 +32,25 @@
               :d
               "M134.482 157.147v25l518.57.008.002-25-518.572-.008z"}]]]))
 
+(def ^:private schema:loader
+  [:map
+   [:class {:optional true} :string]
+   [:width {:optional true} :int]
+   [:height {:optional true} :int]
+   [:title {:optional true} :string]
+   [:overlay {:optional true} :boolean]])
+
 (mf/defc loader*
-  {::mf/props :obj}
+  {::mf/props :obj
+   ::mf/schema schema:loader}
   [{:keys [class width height title overlay children] :rest props}]
 
   (let [w (or width (when (some? height) (mth/ceil (* height (/ 100 27)))) 100)
         h (or height (when (some? width) (mth/ceil (* width (/ 27 100)))) 27)
         class (dm/str (or class "") " " (stl/css-case :wrapper true
                                                       :wrapper-overlay overlay))
+        title (or title (tr "labels.loading"))
         props (mf/spread-props props {:class class})]
-
-    (assert title
-            (dm/str "You must provide an accesible name for the component"))
 
     [:> "div" props
      [:> loader-icon* {:title title

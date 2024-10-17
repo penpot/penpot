@@ -31,7 +31,7 @@
 (defn asap
   [f]
   (-> (p/resolved nil)
-      (p/then f)))
+      (p/then (fn [_] (f)))))
 
 (defn interval
   [ms func]

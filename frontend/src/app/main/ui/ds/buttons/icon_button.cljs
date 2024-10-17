@@ -14,12 +14,20 @@
 
 (def button-variants (set '("primary" "secondary" "ghost" "destructive")))
 
+
+(def ^:private schema:icon-button
+  [:map
+   [:class {:optional true} :string]
+   [:icon {:optional true}
+    [:and :string [:fn #(contains? icon-list %)]]]
+   [:aria-label :string]
+   [:variant {:optional true}
+    [:maybe [:enum "primary" "secondary" "ghost" "destructive"]]]])
+
 (mf/defc icon-button*
-  {::mf/props :obj}
+  {::mf/props :obj
+   ::mf/schema schema:icon-button}
   [{:keys [class icon variant aria-label] :rest props}]
-  (assert (contains? icon-list icon) "expected valid icon id")
-  (assert (or (not variant) (contains? button-variants variant)) "expected valid variant")
-  (assert (some? aria-label) "aria-label must be provided")
   (let [variant (or variant "primary")
         class (dm/str class " " (stl/css-case :icon-button true
                                               :icon-button-primary (= variant "primary")

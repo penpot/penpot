@@ -16,7 +16,7 @@
    [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
-   [app.util.storage :refer [storage]]
+   [app.util.storage :as storage]
    [app.util.timers :as ts]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
@@ -260,6 +260,14 @@
          (when ^boolean obj
            (apply (.-f obj) args)))))))
 
+(defn use-ref-value
+  "Returns a ref that will be automatically updated when the value is changed"
+  [v]
+  (let [ref (mf/use-ref v)]
+    (mf/with-effect [v]
+      (mf/set-ref-val! ref v))
+    ref))
+
 (defn use-equal-memo
   [val]
   (let [ref (mf/use-ref nil)]
@@ -294,19 +302,21 @@
   `key` for new values."
   [key default]
   (let [id     (mf/use-id)
-        state  (mf/use-state (get @storage key default))
+        state* (mf/use-state #(get storage/user key default))
+        state  (deref state*)
         stream (mf/with-memo [id]
                  (->> mbc/stream
                       (rx/filter #(not= (:id %) id))
                       (rx/filter #(= (:type %) key))
                       (rx/map deref)))]
 
-    (mf/with-effect [@state key id]
-      (mbc/emit! id key @state)
-      (swap! storage assoc key @state))
+    (mf/with-effect [state key id]
+      (mbc/emit! id key state)
+      (swap! storage/user assoc key state))
 
-    (use-stream stream (partial reset! state))
-    state))
+    (use-stream stream (partial reset! state*))
+
+    state*))
 
 (defonce ^:private intersection-subject (rx/subject))
 (defonce ^:private intersection-observer

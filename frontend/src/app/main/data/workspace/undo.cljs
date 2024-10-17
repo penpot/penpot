@@ -26,10 +26,9 @@
 
 (def ^:private
   schema:undo-entry
-  (sm/define
-    [:map {:title "undo-entry"}
-     [:undo-changes [:vector ::cpc/change]]
-     [:redo-changes [:vector ::cpc/change]]]))
+  [:map {:title "undo-entry"}
+   [:undo-changes [:vector ::cpc/change]]
+   [:redo-changes [:vector ::cpc/change]]])
 
 (def check-undo-entry!
   (sm/check-fn schema:undo-entry))

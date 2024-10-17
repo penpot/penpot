@@ -8,6 +8,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
+   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.http.session :as session]
@@ -29,21 +30,19 @@
 
 (def ^:private schema:verify-token
   [:map {:title "verify-token"}
-   [:token [:string {:max 1000}]]])
+   [:token [:string {:max 5000}]]])
 
 (sv/defmethod ::verify-token
   {::rpc/auth false
    ::doc/added "1.15"
    ::doc/module :auth
    ::sm/params schema:verify-token}
-  [{:keys [::db/pool] :as cfg} {:keys [token] :as params}]
-  (db/with-atomic [conn pool]
-    (let [claims (tokens/verify (::setup/props cfg) {:token token})
-          cfg    (assoc cfg :conn conn)]
-      (process-token cfg params claims))))
+  [cfg {:keys [token] :as params}]
+  (let [claims (tokens/verify (::setup/props cfg) {:token token})]
+    (db/tx-run! cfg process-token params claims)))
 
 (defmethod process-token :change-email
-  [{:keys [conn] :as cfg} _params {:keys [profile-id email] :as claims}]
+  [{:keys [::db/conn] :as cfg} _params {:keys [profile-id email] :as claims}]
   (let [email (profile/clean-email email)]
     (when (profile/get-profile-by-email conn email)
       (ex/raise :type :validation
@@ -59,7 +58,7 @@
        ::audit/profile-id profile-id})))
 
 (defmethod process-token :verify-email
-  [{:keys [conn] :as cfg} _ {:keys [profile-id] :as claims}]
+  [{:keys [::db/conn] :as cfg} _ {:keys [profile-id] :as claims}]
   (let [profile (profile/get-profile conn profile-id)
         claims  (assoc claims :profile profile)]
 
@@ -80,22 +79,14 @@
                         ::audit/profile-id (:id profile)}))))
 
 (defmethod process-token :auth
-  [{:keys [conn] :as cfg} _params {:keys [profile-id] :as claims}]
-  (let [profile  (profile/get-profile conn profile-id {::sql/for-update true})
-        props    (merge (:props profile)
-                        (:props claims))]
-    (when (not= props (:props profile))
-      (db/update! conn :profile
-                  {:props (db/tjson props)}
-                  {:id profile-id}))
-
-    (let [profile (assoc profile :props props)]
-      (assoc claims :profile profile))))
+  [{:keys [::db/conn] :as cfg} _params {:keys [profile-id] :as claims}]
+  (let [profile (profile/get-profile conn profile-id)]
+    (assoc claims :profile profile)))
 
 ;; --- Team Invitation
 
 (defn- accept-invitation
-  [{:keys [conn] :as cfg} {:keys [team-id role member-email] :as claims} invitation member]
+  [{:keys [::db/conn] :as cfg} {:keys [team-id role member-email] :as claims} invitation member]
   (let [;; Update the role if there is an invitation
         role   (or (some-> invitation :role keyword) role)
         params (merge
@@ -108,10 +99,9 @@
       (ex/raise :type :restriction
                 :code :profile-blocked))
 
-    (quotes/check-quote! conn
-                         {::quotes/id ::quotes/profiles-per-team
-                          ::quotes/profile-id (:id member)
-                          ::quotes/team-id team-id})
+    (quotes/check! cfg {::quotes/id ::quotes/profiles-per-team
+                        ::quotes/profile-id (:id member)
+                        ::quotes/team-id team-id})
 
     ;; Insert the invited member to the team
     (db/insert! conn :team-profile-rel params {::db/on-conflict-do-nothing? true})
@@ -126,6 +116,10 @@
     ;; Delete the invitation
     (db/delete! conn :team-invitation
                 {:team-id team-id :email-to member-email})
+
+    ;; Delete any request
+    (db/delete! conn :team-access-request
+                {:team-id team-id :requester-id (:id member)})
 
     (assoc member :is-active true)))
 
@@ -143,7 +137,7 @@
   (sm/lazy-validator schema:team-invitation-claims))
 
 (defmethod process-token :team-invitation
-  [{:keys [conn] :as cfg}
+  [{:keys [::db/conn] :as cfg}
    {:keys [::rpc/profile-id token] :as params}
    {:keys [member-id team-id member-email] :as claims}]
 
@@ -152,11 +146,12 @@
               :code :invalid-invitation-token
               :hint "invitation token contains unexpected data"))
 
-  (let [invitation (db/get* conn :team-invitation
-                            {:team-id team-id :email-to member-email})
-        profile    (db/get* conn :profile
-                            {:id profile-id}
-                            {:columns [:id :email]})]
+  (let [invitation             (db/get* conn :team-invitation
+                                        {:team-id team-id :email-to member-email})
+        profile                (db/get* conn :profile
+                                        {:id profile-id}
+                                        {:columns [:id :email]})
+        registration-disabled? (not (contains? cf/flags :registration))]
     (when (nil? invitation)
       (ex/raise :type :validation
                 :code :invalid-token
@@ -185,12 +180,12 @@
                   :hint "logged-in user does not matches the invitation"))
 
       ;; If we have not logged-in user, and invitation comes with member-id we
-      ;; redirect user to login, if no memeber-id is present in the invitation
-      ;; token, we redirect user the the register page.
+      ;; redirect user to login, if no memeber-id is present and  in the invitation
+      ;; token and registration is enabled, we redirect user the the register page.
 
       {:invitation-token token
        :iss :team-invitation
-       :redirect-to (if member-id :auth-login :auth-register)
+       :redirect-to (if (or member-id registration-disabled?) :auth-login :auth-register)
        :state :pending})))
 
 ;; --- Default

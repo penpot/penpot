@@ -20,15 +20,12 @@
   ([state page-id]
    (get-in state [:workspace-data :pages-index page-id])))
 
-(defn lookup-data-objects
-  [data page-id]
-  (dm/get-in data [:pages-index page-id :objects]))
-
 (defn lookup-page-objects
   ([state]
    (lookup-page-objects state (:current-page-id state)))
   ([state page-id]
-   (dm/get-in state [:workspace-data :pages-index page-id :objects])))
+   (-> (lookup-page state page-id)
+       (get :objects))))
 
 (defn lookup-viewer-objects
   ([state page-id]
@@ -44,12 +41,6 @@
     (if ^boolean current-file?
       (lookup-page-objects state page-id)
       (lookup-library-objects state file-id page-id))))
-
-(defn lookup-page-options
-  ([state]
-   (lookup-page-options state (:current-page-id state)))
-  ([state page-id]
-   (dm/get-in state [:workspace-data :pages-index page-id :options])))
 
 (defn lookup-local-components
   ([state]

@@ -7,22 +7,22 @@
 (ns app.main.data.workspace.assets
   "Workspace assets management events and helpers."
   (:require
-   [app.util.storage :refer [storage]]))
+   [app.util.storage :as storage]))
 
 (defn get-current-assets-ordering
   []
-  (let [ordering (::ordering @storage)]
+  (let [ordering (::ordering storage/user)]
     (or ordering :asc)))
 
 (defn set-current-assets-ordering!
   [ordering]
-  (swap! storage assoc ::ordering ordering))
+  (swap! storage/user assoc ::ordering ordering))
 
 (defn get-current-assets-list-style
   []
-  (let [list-style (::list-style @storage)]
+  (let [list-style (::list-style storage/user)]
     (or list-style :thumbs)))
 
 (defn set-current-assets-list-style!
   [list-style]
-  (swap! storage assoc ::list-style list-style))
+  (swap! storage/user assoc ::list-style list-style))

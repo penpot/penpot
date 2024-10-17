@@ -35,6 +35,7 @@
         on-focus         (unchecked-get props "on-focus")
         on-blur          (unchecked-get props "on-blur")
         placeholder      (unchecked-get props "placeholder")
+        max-length       (unchecked-get props "max-length")
         on-change        (unchecked-get props "on-change")
         on-esc           (unchecked-get props "on-esc")
         on-ctrl-enter    (unchecked-get props "on-ctrl-enter")
@@ -88,7 +89,8 @@
                 :on-blur on-blur
                 :value value
                 :placeholder placeholder
-                :on-change on-change*}]))
+                :on-change on-change*
+                :max-length max-length}]))
 
 (mf/defc reply-form
   [{:keys [thread] :as props}]
@@ -128,7 +130,8 @@
                             :on-focus on-focus
                             :select-on-focus? false
                             :on-ctrl-enter on-submit
-                            :on-change on-change}]
+                            :on-change on-change
+                            :max-length 750}]
      (when (or @show-buttons? (seq @content))
        [:div {:class (stl/css :buttons-wrapper)}
         [:input.btn-secondary
@@ -196,7 +199,8 @@
                               :select-on-focus? false
                               :on-esc on-esc
                               :on-change on-change
-                              :on-ctrl-enter on-submit}]
+                              :on-ctrl-enter on-submit
+                              :max-length 750}]
        [:div {:class (stl/css :buttons-wrapper)}
 
         [:input {:on-click on-esc
@@ -233,7 +237,8 @@
                             :select-on-focus true
                             :select-on-focus? false
                             :on-ctrl-enter on-submit*
-                            :on-change on-change}]
+                            :on-change on-change
+                            :max-length 750}]
      [:div {:class (stl/css :buttons-wrapper)}
       [:input  {:type "button"
                 :value "Cancel"

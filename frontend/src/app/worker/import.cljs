@@ -9,18 +9,21 @@
   (:require
    ["jszip" :as zip]
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.files.builder :as fb]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.path :as gpa]
+   [app.common.json :as json]
    [app.common.logging :as log]
    [app.common.media :as cm]
    [app.common.pprint :as pp]
+   [app.common.schema :as sm]
    [app.common.text :as ct]
+   [app.common.time :as tm]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.json :as json]
    [app.util.sse :as sse]
    [app.util.webapi :as wapi]
    [app.util.zip :as uz]
@@ -36,6 +39,29 @@
 (def ^:const change-batch-size 100)
 
 (def conjv (fnil conj []))
+
+(def ^:private iso-date-rx
+  "Incomplete ISO regex for detect datetime-like values on strings"
+  #"^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d.*")
+
+(defn read-json-key
+  [m]
+  (or (sm/parse-uuid m)
+      (json/read-kebab-key m)))
+
+(defn read-json-val
+  [m]
+  (cond
+    (and (string? m)
+         (re-matches sm/uuid-rx m))
+    (uuid/uuid m)
+
+    (and (string? m)
+         (re-matches iso-date-rx m))
+    (or (ex/ignoring (tm/parse-instant m)) m)
+
+    :else
+    m))
 
 (defn get-file
   "Resolves the file inside the context given its id and the data"
@@ -62,22 +88,22 @@
 
          parse-svg?  (and (not= type :media) (str/ends-with? path "svg"))
          parse-json? (and (not= type :media) (str/ends-with? path "json"))
-         no-parse?   (or (= type :media)
-                         (not (or parse-svg? parse-json?)))
-
-         file-type (if (or parse-svg? parse-json?) "text" "blob")]
+         file-type   (if (or parse-svg? parse-json?) "text" "blob")]
 
      (log/debug :action "parsing" :path path)
 
-     (cond->> (uz/get-file (:zip context) path file-type)
-       parse-svg?
-       (rx/map (comp tubax/xml->clj :content))
+     (let [stream (->> (uz/get-file (:zip context) path file-type)
+                       (rx/map :content))]
 
-       parse-json?
-       (rx/map (comp json/decode :content))
+       (cond
+         parse-svg?
+         (rx/map tubax/xml->clj stream)
 
-       no-parse?
-       (rx/map :content)))))
+         parse-json?
+         (rx/map #(json/decode % :key-fn read-json-key :val-fn read-json-val) stream)
+
+         :else
+         stream)))))
 
 (defn progress!
   ([context type]
@@ -319,7 +345,7 @@
                                (assoc :id (resolve old-id)))
                              (cond-> (< (:version context 1) 2)
                                (translate-frame type file))
-                             ;; Shapes inside the deleted component should be stored with absolute coordinates 
+                             ;; Shapes inside the deleted component should be stored with absolute coordinates
                              ;; so we calculate that with the x and y stored in the context
                              (cond-> (:x context)
                                (assoc :x (:x context)))
@@ -426,22 +452,30 @@
 
 (defn import-page
   [context file [page-id page-name content]]
-  (let [nodes (->> content parser/node-seq)
-        file-id (:id file)
-        resolve (:resolve context)
+  (let [nodes     (parser/node-seq content)
+        file-id   (:id file)
+        resolve   (:resolve context)
         page-data (-> (parser/parse-page-data content)
                       (assoc :name page-name)
                       (assoc :id (resolve page-id)))
-        flows     (->> (get-in page-data [:options :flows])
-                       (mapv #(update % :starting-frame resolve)))
 
-        guides    (-> (get-in page-data [:options :guides])
-                      (update-vals #(update % :frame-id resolve)))
+        flows     (->> (get page-data :flows)
+                       (map #(update % :starting-frame resolve))
+                       (d/index-by :id)
+                       (not-empty))
 
-        page-data (-> page-data
-                      (d/assoc-in-when [:options :flows] flows)
-                      (d/assoc-in-when [:options :guides] guides))
-        file      (-> file (fb/add-page page-data))
+        guides    (-> (get page-data :guides)
+                      (update-vals #(update % :frame-id resolve))
+                      (not-empty))
+
+        page-data (cond-> page-data
+                    flows
+                    (assoc :flows flows)
+
+                    guides
+                    (assoc :guides guides))
+
+        file      (fb/add-page file page-data)
 
         ;; Preprocess nodes to parallel upload the images. Store the result in a table
         ;; old-node => node with image
@@ -569,7 +603,7 @@
                             (update :id resolve))]
               (fb/add-library-color file color)))]
       (->> (get-file context :colors-list)
-           (rx/merge-map (comp d/kebab-keys parser/string->uuid))
+           (rx/merge-map identity)
            (rx/mapcat
             (fn [[id color]]
               (let [color (assoc color :id id)
@@ -599,7 +633,7 @@
   (if (:has-typographies context)
     (let [resolve (:resolve context)]
       (->> (get-file context :typographies)
-           (rx/merge-map (comp d/kebab-keys parser/string->uuid))
+           (rx/merge-map identity)
            (rx/map (fn [[id typography]]
                      (-> typography
                          (d/kebab-keys)
@@ -613,7 +647,7 @@
   (if (:has-media context)
     (let [resolve (:resolve context)]
       (->> (get-file context :media-list)
-           (rx/merge-map (comp d/kebab-keys parser/string->uuid))
+           (rx/merge-map identity)
            (rx/mapcat
             (fn [[id media]]
               (let [media (-> media
@@ -725,7 +759,6 @@
                        (rx/filter (fn [data] (= "application/zip" (:type data))))
                        (rx/merge-map #(zip/loadAsync (:body %)))
                        (rx/merge-map #(get-file {:zip %} :manifest))
-                       (rx/map (comp d/kebab-keys parser/string->uuid))
                        (rx/map
                         (fn [data]
                           ;; Checks if the file is exported with components v2 and the current team only
@@ -784,9 +817,12 @@
                                           :errors (:errors file)
                                           :file-id (:file-id data)})))))))
                   (rx/catch (fn [cause]
-                              (log/error :hint (ex-message cause)
-                                         :file-id (:file-id data)
-                                         :cause cause)
+                              (let [data (ex-data cause)]
+                                (log/error :hint (ex-message cause)
+                                           :file-id (:file-id data))
+                                (when-let [explain (:explain data)]
+                                  (js/console.log explain)))
+
                               (rx/of {:status :import-error
                                       :file-id (:file-id data)
                                       :error (ex-message cause)

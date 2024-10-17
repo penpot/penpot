@@ -15,7 +15,7 @@
    [app.util.http :as http]
    [app.util.i18n :as i18n]
    [app.util.object :as obj]
-   [app.util.storage :refer [storage]]
+   [app.util.storage :as storage]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [beicon.v2.operators :as rxo]
@@ -170,7 +170,7 @@
         (let [session (atom nil)
               stopper (rx/filter (ptk/type? ::initialize) stream)
               buffer  (atom #queue [])
-              profile (->> (rx/from-atom storage {:emit-current-value? true})
+              profile (->> (rx/from-atom storage/user {:emit-current-value? true})
                            (rx/map :profile)
                            (rx/map :id)
                            (rx/pipe (rxo/distinct-contiguous)))]

@@ -10,6 +10,7 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
@@ -29,12 +30,12 @@
   {:x 0 :y 0 :width 1 :height 1})
 
 (defn- assert-valid-num [attr num]
-  (dm/verify!
-   ["%1 attribute has invalid value: %2" (d/name attr) num]
-   (and (d/num? num)
-        (<= num max-safe-int)
-        (>= num min-safe-int)))
-
+  (when-not (and (d/num? num)
+                 (<= num max-safe-int)
+                 (>= num min-safe-int))
+    (ex/raise :type :assertion
+              :code :data-validation
+              :hint (str "invalid numeric value for `" attr "`: " num)))
   (cond
     (and (> num 0) (< num 1))    1
     (and (< num 0) (> num -1))  -1
@@ -43,19 +44,21 @@
 (defn- assert-valid-pos-num
   [attr num]
 
-  (dm/verify!
-   ["%1 attribute should be positive" (d/name attr)]
-   (pos? num))
-
+  (when-not (pos? num)
+    (ex/raise :type :assertion
+              :code :data-validation
+              :hint (str "invalid numeric value for `" attr "`: " num " (should be positive)")))
   num)
 
 (defn- assert-valid-blend-mode
   [mode]
-  (let [clean-value (-> mode str/trim str/lower keyword)]
-    (dm/verify!
-     ["%1 is not a valid blend mode" clean-value]
-     (contains? cts/blend-modes clean-value))
-    clean-value))
+  (let [value (-> mode str/trim str/lower keyword)]
+
+    (when-not (contains? cts/blend-modes value)
+      (ex/raise :type :assertion
+                :code :data-validation
+                :hint (str "unexpected blend mode: " value)))
+    value))
 
 (defn- svg-dimensions
   [{:keys [attrs] :as data}]

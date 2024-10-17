@@ -1,0 +1,70 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../_borders.scss" as *;
+@use "../_sizes.scss" as *;
+@use "../typography.scss" as *;
+
+.container {
+  --input-bg-color: var(--color-background-tertiary);
+  --input-fg-color: var(--color-foreground-primary);
+  --input-icon-color: var(--color-foreground-secondary);
+  --input-outline-color: none;
+
+  display: inline-flex;
+  column-gap: var(--sp-xs);
+  align-items: center;
+  position: relative;
+
+  background: var(--input-bg-color);
+  border-radius: $br-8;
+  padding: 0 var(--sp-s);
+  outline-offset: #{$b-1};
+  outline: $b-1 solid var(--input-outline-color);
+
+  &:hover {
+    --input-bg-color: var(--color-background-quaternary);
+  }
+
+  &:has(*:focus-visible) {
+    --input-bg-color: var(--color-background-primary);
+    --input-outline-color: var(--color-accent-primary);
+  }
+
+  &:has(*:disabled) {
+    --input-bg-color: var(--color-background-primary);
+    --input-outline-color: var(--color-background-quaternary);
+  }
+}
+
+.input {
+  margin: unset; // remove settings from global css
+  padding: 0;
+  appearance: none;
+  margin-inline-start: var(--sp-xxs);
+  height: $sz-32;
+  border: none;
+  background: none;
+
+  @include use-typography("body-small");
+  color: var(--input-fg-color);
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  &::selection {
+    background: var(--color-accent-select);
+  }
+
+  &::placeholder {
+    --input-fg-color: var(--color-foreground-secondary);
+  }
+}
+
+.icon {
+  color: var(--color-foreground-secondary);
+}

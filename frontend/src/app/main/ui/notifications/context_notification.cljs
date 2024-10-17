@@ -25,9 +25,9 @@
 (def ^:private info-icon
   (i/icon-xref :help (stl/css :icon)))
 
-(defn get-icon-by-type
-  [type]
-  (case type
+(defn get-icon-by-level
+  [level]
+  (case level
     :warning neutral-icon
     :error error-icon
     :success success-icon
@@ -36,19 +36,17 @@
 
 (mf/defc context-notification
   "They are persistent, informative and non-actionable.
-   They are contextual messages in specific areas off the app"
-
+  They are contextual messages in specific areas off the app"
   {::mf/props :obj}
-  [{:keys [type content links is-html] :as props}]
-
+  [{:keys [level content links is-html] :as props}]
   [:aside {:class (stl/css-case :context-notification true
                                 :contain-html is-html
-                                :warning      (= type :warning)
-                                :error        (= type :error)
-                                :success      (= type :success)
-                                :info         (= type :info))}
+                                :warning      (= level :warning)
+                                :error        (= level :error)
+                                :success      (= level :success)
+                                :info         (= level :info))}
 
-   (get-icon-by-type type)
+   (get-icon-by-level level)
 
    ;; The content can arrive in markdown format, in these cases
    ;;  we will use the prop is-html to true to indicate it and

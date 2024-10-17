@@ -5,7 +5,6 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.plugins.shape
-  "RPC for plugins runtime."
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
@@ -33,6 +32,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.groups :as dwg]
+   [app.main.data.workspace.guides :as dwgu]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
@@ -46,6 +46,7 @@
    [app.plugins.grid :as grid]
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
+   [app.plugins.ruler-guides :as rg]
    [app.plugins.text :as text]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
@@ -551,10 +552,10 @@
 
   ;; Interactions
   (addInteraction
-    [self interaction]
+    [self trigger action delay]
     (let [interaction
           (-> ctsi/default-interaction
-              (d/patch-object (parser/parse-interaction interaction)))]
+              (d/patch-object (parser/parse-interaction trigger action delay)))]
       (cond
         (not (sm/validate ::ctsi/interaction interaction))
         (u/display-not-valid :addInteraction interaction)
@@ -571,16 +572,55 @@
       (u/display-not-valid :removeInteraction interaction)
 
       :else
-      (st/emit! (dwi/remove-interaction {:id $id} (obj/get interaction "$index"))))))
+      (st/emit! (dwi/remove-interaction {:id $id} (obj/get interaction "$index")))))
+
+  ;; Ruler guides
+  (addRulerGuide
+    [self orientation value]
+    (let [shape (u/proxy->shape self)]
+      (cond
+        (not (us/safe-number? value))
+        (u/display-not-valid :addRulerGuide "Value not a safe number")
+
+        (not (contains? #{"vertical" "horizontal"} orientation))
+        (u/display-not-valid :addRulerGuide "Orientation should be either 'vertical' or 'horizontal'")
+
+        (not (cfh/frame-shape? shape))
+        (u/display-not-valid :addRulerGuide "The shape is not a board")
+
+        (not (r/check-permission $plugin "content:write"))
+        (u/display-not-valid :addRulerGuide "Plugin doesn't have 'content:write' permission")
+
+        :else
+        (let [id        (uuid/next)
+              axis      (parser/orientation->axis orientation)
+              objects   (u/locate-objects $file $page)
+              frame     (get objects $id)
+              board-pos (get frame axis)
+              position  (+ board-pos value)]
+          (st/emit!
+           (dwgu/update-guides
+            {:id       id
+             :axis     axis
+             :position position
+             :frame-id $id}))
+          (rg/ruler-guide-proxy $plugin $file $page id)))))
+
+  (removeRulerGuide
+    [_ value]
+    (cond
+      (not (rg/ruler-guide-proxy? value))
+      (u/display-not-valid :removeRulerGuide "Guide not provided")
+
+      (not (r/check-permission $plugin "content:write"))
+      (u/display-not-valid :removeRulerGuide "Plugin doesn't have 'content:write' permission")
+
+      :else
+      (let [guide (u/proxy->ruler-guide value)]
+        (st/emit! (dwgu/remove-guide guide))))))
 
 (defn shape-proxy? [p]
   (instance? ShapeProxy p))
-
-;; Prevent circular dependency
-(do (set! flex/shape-proxy? shape-proxy?)
-    (set! grid/shape-proxy? shape-proxy?))
-
-(set! format/shape-proxy shape-proxy)
 
 (crc/define-properties!
   ShapeProxy
@@ -611,7 +651,7 @@
            :get #(-> % u/proxy->shape :id str)}
 
           {:name "type"
-           :get #(-> % u/proxy->shape :type d/name)}
+           :get #(-> % u/proxy->shape :type format/shape-type)}
 
           {:name "name"
            :get #(-> % u/proxy->shape :name)
@@ -661,6 +701,21 @@
                :else
                (let [id (obj/get self "$id")]
                  (st/emit! (dwsh/update-shapes [id] #(assoc % :hidden value))))))}
+
+          {:name "visible"
+           :get #(-> % u/proxy->shape :hidden boolean not)
+           :set
+           (fn [self value]
+             (cond
+               (not (boolean? value))
+               (u/display-not-valid :visible value)
+
+               (not (r/check-permission plugin-id "content:write"))
+               (u/display-not-valid :visible "Plugin doesn't have 'content:write' permission")
+
+               :else
+               (let [id (obj/get self "$id")]
+                 (st/emit! (dwsh/update-shapes [id] #(assoc % :hidden (not value)))))))}
 
           {:name "proportionLock"
            :get #(-> % u/proxy->shape :proportion-lock boolean)
@@ -932,7 +987,7 @@
            :get (fn [self]
                   (let [shape (u/proxy->shape self)
                         parent-id (:parent-id shape)]
-                    (shape-proxy (obj/get self "$file") (obj/get self "$page") parent-id)))}
+                    (shape-proxy plugin-id (obj/get self "$file") (obj/get self "$page") parent-id)))}
           {:name "parentX"
            :get (fn [self]
                   (let [shape (u/proxy->shape self)
@@ -978,7 +1033,7 @@
                      parent-y (:y parent)]
                  (st/emit! (dw/update-position id {:y (+ parent-y value)})))))}
 
-          {:name "frameX"
+          {:name "boardX"
            :get (fn [self]
                   (let [shape (u/proxy->shape self)
                         frame-id (:parent-id shape)
@@ -1001,7 +1056,7 @@
                      frame-x (:x frame)]
                  (st/emit! (dw/update-position id {:x (+ frame-x value)})))))}
 
-          {:name "frameY"
+          {:name "boardY"
            :get (fn [self]
                   (let [shape (u/proxy->shape self)
                         frame-id (:parent-id shape)
@@ -1192,6 +1247,15 @@
 
                             :else
                             (st/emit! (dwsh/update-shapes [id] #(assoc % :grids value))))))}
+
+                {:name "rulerGuides"
+                 :get
+                 (fn [_]
+                   (let [guides (-> (u/locate-page file-id page-id) :guides)]
+                     (->> guides
+                          (vals)
+                          (filter #(= id (:frame-id %)))
+                          (format/format-array #(rg/ruler-guide-proxy plugin-id file-id page-id (:id %))))))}
 
                 {:name "horizontalSizing"
                  :get #(-> % u/proxy->shape :layout-item-h-sizing (d/nilv :fix) d/name)

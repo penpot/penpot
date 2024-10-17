@@ -22,7 +22,7 @@
    [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.media :as dmm]
-   [app.main.data.messages :as msg]
+   [app.main.data.notifications :as ntf]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -169,25 +169,25 @@
     (handle-media-error (ex-data error) on-error)
     (cond
       (= (:code error) :invalid-svg-file)
-      (rx/of (msg/error (tr "errors.media-type-not-allowed")))
+      (rx/of (ntf/error (tr "errors.media-type-not-allowed")))
 
       (= (:code error) :media-type-not-allowed)
-      (rx/of (msg/error (tr "errors.media-type-not-allowed")))
+      (rx/of (ntf/error (tr "errors.media-type-not-allowed")))
 
       (= (:code error) :unable-to-access-to-url)
-      (rx/of (msg/error (tr "errors.media-type-not-allowed")))
+      (rx/of (ntf/error (tr "errors.media-type-not-allowed")))
 
       (= (:code error) :invalid-image)
-      (rx/of (msg/error (tr "errors.media-type-not-allowed")))
+      (rx/of (ntf/error (tr "errors.media-type-not-allowed")))
 
       (= (:code error) :media-max-file-size-reached)
-      (rx/of (msg/error (tr "errors.media-too-large")))
+      (rx/of (ntf/error (tr "errors.media-too-large")))
 
       (= (:code error) :media-type-mismatch)
-      (rx/of (msg/error (tr "errors.media-type-mismatch")))
+      (rx/of (ntf/error (tr "errors.media-type-mismatch")))
 
       (= (:code error) :unable-to-optimize)
-      (rx/of (msg/error (:hint error)))
+      (rx/of (ntf/error (:hint error)))
 
       (fn? on-error)
       (on-error error)
@@ -195,19 +195,18 @@
       :else
       (do
         (.error js/console "ERROR" error)
-        (rx/of (msg/error (tr "errors.cannot-upload")))))))
+        (rx/of (ntf/error (tr "errors.cannot-upload")))))))
 
 
 (def ^:private
   schema:process-media-objects
-  (sm/define
-    [:map {:title "process-media-objects"}
-     [:file-id ::sm/uuid]
-     [:local? :boolean]
-     [:name {:optional true} :string]
-     [:data {:optional true} :any] ; FIXME
-     [:uris {:optional true} [:sequential :string]]
-     [:mtype {:optional true} :string]]))
+  [:map {:title "process-media-objects"}
+   [:file-id ::sm/uuid]
+   [:local? :boolean]
+   [:name {:optional true} :string]
+   [:data {:optional true} :any] ; FIXME
+   [:uris {:optional true} [:sequential :string]]
+   [:mtype {:optional true} :string]])
 
 (defn- process-media-objects
   [{:keys [uris on-error] :as params}]
@@ -220,9 +219,9 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/concat
-       (rx/of (msg/show {:content (tr "media.loading")
-                         :notification-type :toast
-                         :type :info
+       (rx/of (ntf/show {:content (tr "media.loading")
+                         :type :toast
+                         :level :info
                          :timeout nil
                          :tag :media-loading}))
        (->> (if (seq uris)
@@ -234,7 +233,7 @@
               ;; Every stream has its own sideeffect. We need to ignore the result
             (rx/ignore)
             (rx/catch #(handle-media-error % on-error))
-            (rx/finalize #(st/emit! (msg/hide-tag :media-loading))))))))
+            (rx/finalize #(st/emit! (ntf/hide :tag :media-loading))))))))
 
 ;; Deprecated in components-v2
 (defn upload-media-asset
@@ -253,8 +252,6 @@
                       :on-image #(st/emit! (image-uploaded % position))
                       :on-svg   #(st/emit! (svg-uploaded % file-id position)))]
     (process-media-objects params)))
-
-
 
 (defn upload-fill-image
   [file on-success]
@@ -429,10 +426,9 @@
 
 (def ^:private
   schema:clone-media-object
-  (sm/define
-    [:map {:title "clone-media-object"}
-     [:file-id ::sm/uuid]
-     [:object-id ::sm/uuid]]))
+  [:map {:title "clone-media-object"}
+   [:file-id ::sm/uuid]
+   [:object-id ::sm/uuid]])
 
 (defn clone-media-object
   [{:keys [file-id object-id] :as params}]
@@ -450,15 +446,15 @@
                     :id object-id}]
 
         (rx/concat
-         (rx/of (msg/show {:content (tr "media.loading")
-                           :notification-type :toast
-                           :type :info
+         (rx/of (ntf/show {:content (tr "media.loading")
+                           :type :toast
+                           :level :info
                            :timeout nil
                            :tag :media-loading}))
          (->> (rp/cmd! :clone-file-media-object params)
               (rx/tap on-success)
               (rx/catch on-error)
-              (rx/finalize #(st/emit! (msg/hide-tag :media-loading)))))))))
+              (rx/finalize #(st/emit! (ntf/hide :tag :media-loading)))))))))
 
 (defn create-svg-shape
   [id name svg-string position]

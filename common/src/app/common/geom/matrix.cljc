@@ -67,16 +67,6 @@
   ([a b c d e f]
    (pos->Matrix a b c d e f)))
 
-(def number-regex
-  #"[+-]?\d*(\.\d+)?([eE][+-]?\d+)?")
-
-(defn str->matrix
-  [matrix-str]
-  (let [params (->> (re-seq number-regex matrix-str)
-                    (filter #(-> % first seq))
-                    (map (comp d/parse-double first)))]
-    (apply matrix params)))
-
 (def ^:private schema:matrix-attrs
   [:map {:title "MatrixAttrs"}
    [:a ::sm/safe-double]
@@ -87,41 +77,70 @@
    [:f ::sm/safe-double]])
 
 (def valid-matrix?
-  (sm/lazy-validator
+  (sm/validator
    [:and [:fn matrix?] schema:matrix-attrs]))
 
-(sm/register! ::matrix
-  (letfn [(decode [o]
-            (if (map? o)
-              (map->Matrix o)
-              (if (string? o)
-                (str->matrix o)
-                o)))
-          (encode [o]
-            (dm/str (dm/get-prop o :a) ","
-                    (dm/get-prop o :b) ","
-                    (dm/get-prop o :c) ","
-                    (dm/get-prop o :d) ","
-                    (dm/get-prop o :e) ","
-                    (dm/get-prop o :f) ","))]
+(defn matrix-generator
+  []
+  (->> (sg/tuple (sg/small-double)
+                 (sg/small-double)
+                 (sg/small-double)
+                 (sg/small-double)
+                 (sg/small-double)
+                 (sg/small-double))
+       (sg/fmap #(apply pos->Matrix %))))
 
-    {:type ::matrix
-     :pred valid-matrix?
-     :type-properties
-     {:title "matrix"
-      :description "Matrix instance"
-      :error/message "expected a valid point"
-      :gen/gen (->> (sg/tuple (sg/small-double)
-                              (sg/small-double)
-                              (sg/small-double)
-                              (sg/small-double)
-                              (sg/small-double)
-                              (sg/small-double))
-                    (sg/fmap #(apply pos->Matrix %)))
-      ::oapi/type "string"
-      ::oapi/format "matrix"
-      ::oapi/decode decode
-      ::oapi/encode encode}}))
+(def ^:private number-regex
+  #"[+-]?\d*(\.\d+)?([eE][+-]?\d+)?")
+
+(defn str->matrix
+  [matrix-str]
+  (let [params (->> (re-seq number-regex matrix-str)
+                    (filter #(-> % first seq))
+                    (map (comp d/parse-double first)))]
+    (apply matrix params)))
+
+(defn- matrix->str
+  [o]
+  (if (matrix? o)
+    (dm/str (dm/get-prop o :a) ","
+            (dm/get-prop o :b) ","
+            (dm/get-prop o :c) ","
+            (dm/get-prop o :d) ","
+            (dm/get-prop o :e) ","
+            (dm/get-prop o :f) ",")
+    o))
+
+(defn- matrix->json
+  [o]
+  (if (matrix? o)
+    (into {} o)
+    o))
+
+(defn- decode-matrix
+  [o]
+  (if (map? o)
+    (map->Matrix o)
+    (if (string? o)
+      (str->matrix o)
+      o)))
+
+(def schema:matrix
+  {:type :map
+   :pred valid-matrix?
+   :type-properties
+   {:title "matrix"
+    :description "Matrix instance"
+    :error/message "expected a valid matrix instance"
+    :gen/gen (matrix-generator)
+    :decode/json decode-matrix
+    :decode/string decode-matrix
+    :encode/json matrix->json
+    :encode/string matrix->str
+    ::oapi/type "string"
+    ::oapi/format "matrix"}})
+
+(sm/register! ::matrix schema:matrix)
 
 ;; FIXME: deprecated
 (s/def ::a ::us/safe-float)

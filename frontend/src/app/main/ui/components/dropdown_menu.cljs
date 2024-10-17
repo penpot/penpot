@@ -96,14 +96,17 @@
     [:ul {:class list-class :role "menu"} children]))
 
 (mf/defc dropdown-menu
-  {::mf/wrap-props false}
+  {::mf/props :obj}
   [props]
   (assert (fn? (gobj/get props "on-close")) "missing `on-close` prop")
   (assert (boolean? (gobj/get props "show")) "missing `show` prop")
 
   (let [ids (obj/get props "ids")
-        ids (d/nilv ids (->> (obj/get props "children")
-                             (keep #(obj/get-in % ["props" "id"]))))]
+        ids (or ids
+                (->> (obj/get props "children")
+                     (keep (fn [o]
+                             (let [props (obj/get o "props")]
+                               (obj/get props "id"))))))]
     (when (gobj/get props "show")
       (mf/element
        dropdown-menu'

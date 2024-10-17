@@ -10,6 +10,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.http.client :as http]
@@ -19,27 +20,25 @@
    [datoteka.fs :as fs]
    [integrant.core :as ig]))
 
-(def ^:private
-  schema:template
-  (sm/define
-    [:map {:title "Template"}
-     [:id ::sm/word-string]
-     [:name ::sm/word-string]
-     [:file-uri ::sm/word-string]]))
+(def ^:private schema:template
+  [:map {:title "Template"}
+   [:id ::sm/word-string]
+   [:name ::sm/word-string]
+   [:file-uri ::sm/word-string]])
 
-(def ^:private
-  schema:templates
-  (sm/define
-    [:vector schema:template]))
+(def ^:private schema:templates
+  [:vector schema:template])
+
+(def check-templates!
+  (sm/check-fn schema:templates
+               :code :invalid-templates
+               :hint "invalid templates"))
 
 (defmethod ig/init-key ::setup/templates
   [_ _]
   (let [templates (-> "app/onboarding.edn" io/resource slurp edn/read-string)
+        templates (check-templates! templates)
         dest      (fs/join fs/*cwd* "builtin-templates")]
-
-    (dm/verify!
-     "expected a valid templates file"
-     (sm/check! schema:templates templates))
 
     (doseq [{:keys [id path] :as template} templates]
       (let [path (or path (fs/join dest id))]
@@ -60,9 +59,9 @@
         (let [resp (http/req! cfg
                               {:method :get :uri (:file-uri template)}
                               {:response-type :input-stream :sync? true})]
-
-          (dm/verify!
-           "unexpected response found on fetching template"
-           (= 200 (:status resp)))
+          (when-not (= 200 (:status resp))
+            (ex/raise :type :internal
+                      :code :unexpected-status-code
+                      :hint (str "unable to download template, recevied status " (:status resp))))
 
           (io/input-stream (:body resp)))))))

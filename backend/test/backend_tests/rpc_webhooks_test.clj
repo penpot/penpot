@@ -166,7 +166,6 @@
           out9    (th/command! params)]
 
       (t/is (= 8 (:call-count @http-mock)))
-
       (t/is (nil? (:error out1)))
       (t/is (nil? (:error out2)))
       (t/is (nil? (:error out3)))

@@ -30,18 +30,17 @@
                                            :tid token-id
                                            :iat created-at})
 
-        expires-at (some-> expiration dt/in-future)]
-
-    (db/insert! conn :access-token
-                {:id token-id
-                 :name name
-                 :token token
-                 :profile-id profile-id
-                 :created-at created-at
-                 :updated-at created-at
-                 :expires-at expires-at
-                 :perms (db/create-array conn "text" [])})))
-
+        expires-at (some-> expiration dt/in-future)
+        token      (db/insert! conn :access-token
+                               {:id token-id
+                                :name name
+                                :token token
+                                :profile-id profile-id
+                                :created-at created-at
+                                :updated-at created-at
+                                :expires-at expires-at
+                                :perms (db/create-array conn "text" [])})]
+    (decode-row token)))
 
 (defn repl:create-access-token
   [{:keys [::db/pool] :as system} profile-id name expiration]
@@ -60,14 +59,12 @@
 (sv/defmethod ::create-access-token
   {::doc/added "1.18"
    ::sm/params schema:create-access-token}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id name expiration]}]
-  (db/with-atomic [conn pool]
-    (let [cfg (assoc cfg ::db/conn conn)]
-      (quotes/check-quote! conn
-                           {::quotes/id ::quotes/access-tokens-per-profile
-                            ::quotes/profile-id profile-id})
-      (-> (create-access-token cfg profile-id name expiration)
-          (decode-row)))))
+  [cfg {:keys [::rpc/profile-id name expiration]}]
+
+  (quotes/check! cfg {::quotes/id ::quotes/access-tokens-per-profile
+                      ::quotes/profile-id profile-id})
+
+  (db/tx-run! cfg create-access-token profile-id name expiration))
 
 (def ^:private schema:delete-access-token
   [:map {:title "delete-access-token"}

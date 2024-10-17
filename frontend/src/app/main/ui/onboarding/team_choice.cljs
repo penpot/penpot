@@ -11,11 +11,11 @@
    [app.common.schema :as sm]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as msg]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
+   [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [potok.v2.core :as ptk]
@@ -57,7 +57,7 @@
 (def ^:private schema:invite-form
   [:map {:title "InviteForm"}
    [:role :keyword]
-   [:emails [::sm/set {:kind ::sm/email}]]])
+   [:emails {:optional true} [::sm/set ::sm/email]]])
 
 (defn- get-available-roles
   []
@@ -66,18 +66,15 @@
 
 (mf/defc team-form-step-2
   {::mf/props :obj}
-  [{:keys [name on-back]}]
-  (let [initial (mf/use-memo
-                 #(do {:role "editor"
-                       :name name}))
+  [{:keys [name on-back go-to-team?]}]
+  (let [initial (mf/with-memo []
+                  {:role "editor" :name name})
 
         form    (fm/use-form :schema schema:invite-form
                              :initial initial)
 
-        params  (:clean-data @form)
-        emails  (:emails params)
-
         roles   (mf/use-memo get-available-roles)
+        error*  (mf/use-state nil)
 
         on-success
         (mf/use-fn
@@ -85,12 +82,33 @@
            (let [team-id (:id response)]
              (st/emit! (du/update-profile-props {:onboarding-team-id team-id
                                                  :onboarding-viewed true})
-                       (rt/nav :dashboard-projects {:team-id team-id})))))
+                       (when go-to-team?
+                         (rt/nav :dashboard-projects {:team-id team-id}))))))
 
         on-error
         (mf/use-fn
-         (fn [_]
-           (st/emit! (msg/error (tr "errors.generic")))))
+         (fn [cause]
+           (let [{:keys [type code] :as error} (ex-data cause)]
+             (cond
+               (and (= :validation type)
+                    (= :profile-is-muted code))
+               (swap! error* (tr "errors.profile-is-muted"))
+
+               (and (= :validation type)
+                    (= :max-invitations-by-request code))
+               (swap! error* (tr "errors.maximum-invitations-by-request-reached" (:threshold error)))
+
+               (and (= :restriction type)
+                    (= :max-quote-reached code))
+               (swap! error* (tr "errors.max-quote-reached" (:target error)))
+
+               (or (= :member-is-muted code)
+                   (= :email-has-permanent-bounces code)
+                   (= :email-has-complaints code))
+               (swap! error* (tr "errors.email-spam-or-permanent-bounces" (:email error)))
+
+               :else
+               (swap! error* (tr "errors.generic"))))))
 
         on-invite-later
         (mf/use-fn
@@ -110,7 +128,7 @@
 
         on-invite-now
         (mf/use-fn
-         (fn [{:keys [name] :as params}]
+         (fn [{:keys [name emails] :as params}]
            (let [mdata  {:on-success on-success
                          :on-error   on-error}]
 
@@ -142,6 +160,10 @@
       [:& fm/form {:form form
                    :class (stl/css :modal-form-invitations)
                    :on-submit on-submit}
+
+       (when-let [content (deref error*)]
+         [:& context-notification {:content content :level :error}])
+
        [:div {:class (stl/css :role-select)}
         [:p {:class (stl/css :role-title)} (tr "onboarding.choice.team-up.roles")]
         [:& fm/select {:name :role :options roles}]]
@@ -154,18 +176,22 @@
                             :valid-item-fn sm/parse-email
                             :caution-item-fn #{}
                             :label (tr "modals.invite-member.emails")
-                            :on-submit on-submit}]]
+                            ;; :on-submit on-submit
+                            }]]
 
        [:div {:class (stl/css :action-buttons)}
         [:button {:class (stl/css :back-button)
                   :on-click on-back}
          (tr "labels.back")]
 
-        [:> fm/submit-button*
-         {:class (stl/css :accept-button)
-          :label (if (> (count emails) 0)
-                   (tr "onboarding.choice.team-up.create-team-and-invite")
-                   (tr "onboarding.choice.team-up.create-team-without-invite"))}]]
+        (let [params (:clean-data @form)
+              emails (:emails params)]
+          [:> fm/submit-button*
+           {:class (stl/css :accept-button)
+            :label (if (> (count emails) 0)
+                     (tr "onboarding.choice.team-up.create-team-and-invite")
+                     (tr "onboarding.choice.team-up.create-team-without-invite"))}])]
+
        [:div {:class (stl/css :modal-hint)}
         "(" (tr "onboarding.choice.team-up.create-team-and-send-invites-description") ")"]]]
 
@@ -240,7 +266,7 @@
 
 (mf/defc onboarding-team-modal
   {::mf/props :obj}
-  []
+  [{:keys [go-to-team?]}]
   (let [name* (mf/use-state nil)
         name  (deref name*)
 
@@ -262,6 +288,6 @@
       [:& left-sidebar]
       [:div {:class (stl/css :separator)}]
       (if name
-        [:& team-form-step-2 {:name name :on-back on-back}]
+        [:& team-form-step-2 {:name name :on-back on-back :go-to-team? go-to-team?}]
         [:& team-form-step-1 {:on-submit on-submit}])]]))
 

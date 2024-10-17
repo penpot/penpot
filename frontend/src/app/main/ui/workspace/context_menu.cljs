@@ -373,26 +373,25 @@
                        :on-click do-lock-shape}])]))
 
 (mf/defc context-menu-prototype
+  {::mf/props :obj}
   [{:keys [shapes]}]
-  (let [options         (mf/deref refs/workspace-page-options)
+  (let [flows           (mf/deref refs/workspace-page-flows)
         options-mode    (mf/deref refs/options-mode-global)
         do-add-flow     #(st/emit! (dwi/add-flow-selected-frame))
         do-remove-flow  #(st/emit! (dwi/remove-flow (:id %)))
-        flows           (:flows options)
 
         prototype?      (= options-mode :prototype)
         single?         (= (count shapes) 1)
-        has-frame?      (->> shapes (d/seek cfh/frame-shape?))
+
+        has-frame?      (d/seek cfh/frame-shape? shapes)
         is-frame?       (and single? has-frame?)]
 
     (when (and prototype? is-frame?)
-      (let [flow (ctp/get-frame-flow flows (-> shapes first :id))]
-        (if (some? flow)
-          [:& menu-entry {:title (tr "workspace.shape.menu.delete-flow-start")
-                          :on-click (do-remove-flow flow)}]
-
-          [:& menu-entry {:title (tr "workspace.shape.menu.flow-start")
-                          :on-click do-add-flow}])))))
+      (if-let [flow (ctp/get-frame-flow flows (-> shapes first :id))]
+        [:& menu-entry {:title (tr "workspace.shape.menu.delete-flow-start")
+                        :on-click (do-remove-flow flow)}]
+        [:& menu-entry {:title (tr "workspace.shape.menu.flow-start")
+                        :on-click do-add-flow}]))))
 
 (mf/defc context-menu-layout
   {::mf/props :obj}

@@ -98,8 +98,8 @@
    (add-shape shape {}))
   ([shape {:keys [no-select? no-update-layout?]}]
 
-   (dm/verify!
-    "expected a valid shape"
+   (dm/assert!
+    "expected valid shape"
     (cts/check-shape! shape))
 
    (ptk/reify ::add-shape

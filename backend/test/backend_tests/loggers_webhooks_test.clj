@@ -21,10 +21,9 @@
   (with-mocks [submit-mock {:target 'app.worker/submit! :return nil}]
     (let [prof (th/create-profile* 1 {:is-active true})
           res  (th/run-task! :process-webhook-event
-                             {:event
-                              {:type "command"
-                               :name "create-project"
-                               :props {:team-id (:default-team-id prof)}}})]
+                             {:type "command"
+                              :name "create-project"
+                              :props {:team-id (:default-team-id prof)}})]
 
       (t/is (= 0 (:call-count @submit-mock)))
       (t/is (nil? res)))))
@@ -34,10 +33,9 @@
     (let [prof (th/create-profile* 1 {:is-active true})
           whk  (th/create-webhook* {:team-id (:default-team-id prof)})
           res  (th/run-task! :process-webhook-event
-                             {:event
-                              {:type "command"
-                               :name "create-project"
-                               :props {:team-id (:default-team-id prof)}}})]
+                             {:type "command"
+                              :name "create-project"
+                              :props {:team-id (:default-team-id prof)}})]
 
       (t/is (= 1 (:call-count @submit-mock)))
       (t/is (nil? res)))))

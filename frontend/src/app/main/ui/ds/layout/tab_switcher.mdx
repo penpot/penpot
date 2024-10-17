@@ -1,0 +1,121 @@
+import { Canvas, Meta } from '@storybook/blocks';
+import * as TabSwitcher from "./tab_switcher.stories";
+
+
+<Meta title= "Layout/Tab Switcher" />
+
+# Tab Switcher
+
+Tabbed interfaces are a way of navigating between multiple panels, 
+reducing clutter and fitting more into a smaller space.
+
+## Variants
+
+**Icon + Text**, we will use this variant when there is plenty of space 
+and an icon can help to understand the tab content quickly. 
+Use it only when icons add real value, to avoid too much noise in the UI.
+<Canvas of={TabSwitcher.WithIconsAndText} />
+
+**Text**, we will use this variant when there are enough space and icons don't add any useful context.
+
+<Canvas of={TabSwitcher.Default} />
+
+**Icon**, we will use this variant in small spaces, when an icon is enough hint to understand the tab content.
+<Canvas of={TabSwitcher.WithIcons} />
+
+**With action button**, we can add an action button to the begining or ending of the tab nav. 
+This button must be configured and styled outside of the component. 
+
+<Canvas of={TabSwitcher.WithActionButton} />
+
+
+## Technical notes
+
+### Icons
+
+Each tab of `tab_switcher*` accept an `icon`, which must contain an [icon ID](../foundations/assets/icon.mdx).
+These are available in the `app.main.ds.foundations.assets.icon` namespace.
+
+
+```clj
+(ns app.main.ui.foo
+  (:require
+   [app.main.ui.ds.foundations.assets.icon :as i]))
+```
+
+```clj
+[:> tab_switcher*       
+    {:tabs [{ :label "Code"
+              :id "tab-code"
+              :icon i/fill-content
+              :content [:p Lorem Ipsum ]}
+            { :label "Design"
+              :id "tab-design"
+              :icon i/pentool
+              :content [:p Dolor sit amet ]}
+            { :label "Menu"
+              :id "tab-menu"
+              :icon i/mask
+              :content [:p Consectetur adipiscing elit ]} 
+            ]}]
+```
+
+<Canvas of={TabSwitcher.WithIconsAndText} />
+
+### Paddings
+
+We have the option to define `paddings` for tab nav from outside the component to fit all needs. In order to do so
+we will create, on the parent, this variables with the desired `value`. 
+
+```scss
+.parent {
+    --tabs-nav-padding-inline-start: value;
+    --tabs-nav-padding-inline-end: value;
+    --tabs-nav-padding-block-start: value;
+    --tabs-nav-padding-block-end: value;
+}
+```
+
+### Accessibility
+
+A tab  with icons only on a `tab_switcher*` require an `aria-label`. This is also shown in a tooltip on hovering the tab.
+
+```clj
+[:> tab_switcher*       
+    {:tabs [{ :aria-label "Code"
+              :id "tab-code"
+              :icon i/fill-content
+              :content [:p Lorem Ipsum ]}
+            { :aria-label "Design"
+              :id "tab-design"
+              :icon i/pentool
+              :content [:p Dolor sit amet ]}
+            { :aria-label "Menu"
+              :id "tab-menu"
+              :icon i/mask
+              :content [:p Consectetur adipiscing elit ]} 
+            ]}]
+```
+
+<Canvas of={TabSwitcher.WithIcons} />
+
+## Usage guidelines (design)
+
+### Where to use
+
+In panels where we want to show elements that are related but are 
+different or have different goals, or that are in the same hierarchy level.
+
+### When to use
+
+Used when we need to display in the same space a full complex views of related elements.
+
+### Interaction / Behavior
+
+On click, switch the tab content.
+Tabs with icons only should display a tooltip on hover.
+
+In the event that the content of the tabs, due to language changes, 
+modifies its length and does not fit within the tab sizes, the tabs 
+will adapt to the content, trying to display it in full and reducing 
+the size of the other tabs when possible.

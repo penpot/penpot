@@ -24,6 +24,7 @@
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry text-options]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.text.ui :as txu]
    [app.util.timers :as ts]
    [rumext.v2 :as mf]))
 
@@ -278,7 +279,7 @@
                      100
                      (fn []
                        (when (not= "INPUT" (-> (dom/get-active) (dom/get-tag-name)))
-                         (let [node (dom/get-element-by-class "public-DraftEditor-content")]
+                         (let [node (txu/get-text-editor-content)]
                            (dom/focus! node))))))}]
 
     [:div {:class (stl/css :element-set)}

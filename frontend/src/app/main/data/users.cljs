@@ -15,28 +15,30 @@
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.media :as di]
-   [app.main.data.messages :as msg]
+   [app.main.data.notifications :as ntf]
    [app.main.data.websocket :as ws]
    [app.main.features :as features]
    [app.main.repo :as rp]
+   [app.plugins.register :as register]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
-   [app.util.storage :refer [storage]]
+   [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
+
+(declare update-profile-props)
 
 ;; --- SCHEMAS
 
 (def ^:private
   schema:profile
-  (sm/define
-    [:map {:title "Profile"}
-     [:id ::sm/uuid]
-     [:created-at {:optional true} :any]
-     [:fullname {:optional true} :string]
-     [:email {:optional true} :string]
-     [:lang {:optional true} :string]
-     [:theme {:optional true} :string]]))
+  [:map {:title "Profile"}
+   [:id ::sm/uuid]
+   [:created-at {:optional true} :any]
+   [:fullname {:optional true} :string]
+   [:email {:optional true} :string]
+   [:lang {:optional true} :string]
+   [:theme {:optional true} :string]])
 
 (def check-profile!
   (sm/check-fn schema:profile))
@@ -49,14 +51,14 @@
 
 (defn get-current-team-id
   [profile]
-  (let [team-id (::current-team-id @storage)]
+  (let [team-id (::current-team-id storage/user)]
     (or team-id (:default-team-id profile))))
 
 (defn set-current-team!
   [team-id]
   (if (nil? team-id)
-    (swap! storage dissoc ::current-team-id)
-    (swap! storage assoc ::current-team-id team-id)))
+    (swap! storage/user dissoc ::current-team-id)
+    (swap! storage/user assoc ::current-team-id team-id)))
 
 ;; --- EVENT: fetch-teams
 
@@ -76,9 +78,9 @@
       ;; if not, dissoc it from storage.
 
       (let [ids (into #{} (map :id) teams)]
-        (when-let [ctid (::current-team-id @storage)]
+        (when-let [ctid (::current-team-id storage/user)]
           (when-not (contains? ids ctid)
-            (swap! storage dissoc ::current-team-id)))))))
+            (swap! storage/user dissoc ::current-team-id)))))))
 
 (defn fetch-teams
   []
@@ -129,13 +131,27 @@
     (effect [_ state _]
       (let [profile          (:profile state)
             email            (:email profile)
-            previous-profile (:profile @storage)
+            previous-profile (:profile storage/user)
             previous-email   (:email previous-profile)]
         (when profile
-          (swap! storage assoc :profile profile)
+          (swap! storage/user assoc :profile profile)
           (i18n/set-locale! (:lang profile))
           (when (not= previous-email email)
-            (set-current-team! nil)))))))
+            (set-current-team! nil))
+
+          (register/init))))))
+
+(defn- on-fetch-profile-exception
+  [cause]
+  (let [data (ex-data cause)]
+    (if (and (= :authorization (:type data))
+             (= :challenge-required (:code data)))
+      (let [path (rt/get-current-path)
+            href (->> path
+                      (js/encodeURIComponent)
+                      (str "/challenge.html?redirect="))]
+        (rx/of (rt/nav-raw :href href)))
+      (rx/throw cause))))
 
 (defn fetch-profile
   []
@@ -143,7 +159,8 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :get-profile)
-           (rx/map profile-fetched)))))
+           (rx/map profile-fetched)
+           (rx/catch on-fetch-profile-exception)))))
 
 ;; --- EVENT: login
 
@@ -152,14 +169,27 @@
   profile. The profile can proceed from standard login or from
   accepting invitation, or third party auth signup or singin."
   [profile]
-  (letfn [(get-redirect-event []
-            (let [team-id (get-current-team-id profile)
-                  redirect-url (:redirect-url @storage)]
-              (if (some? redirect-url)
-                (do
-                  (swap! storage dissoc :redirect-url)
-                  (.replace js/location redirect-url))
-                (rt/nav' :dashboard-projects {:team-id team-id}))))]
+  (letfn [(get-redirect-events []
+            (let [team-id         (get-current-team-id profile)
+                  welcome-file-id (dm/get-in profile [:props :welcome-file-id])
+                  redirect-href   (:login-redirect @storage/session)
+                  current-href    (rt/get-current-href)]
+
+              (cond
+                (some? redirect-href)
+                (binding [storage/*sync* true]
+                  (swap! storage/session dissoc :login-redirect)
+                  (if (= current-href redirect-href)
+                    (rx/of (rt/reload true))
+                    (rx/of (rt/nav-raw :href redirect-href))))
+
+                (some? welcome-file-id)
+                (rx/of (rt/nav' :workspace {:project-id (:default-project-id profile)
+                                            :file-id welcome-file-id})
+                       (update-profile-props {:welcome-file-id nil}))
+
+                :else
+                (rx/of (rt/nav' :dashboard-projects {:team-id team-id})))))]
 
     (ptk/reify ::logged-in
       ev/Event
@@ -176,10 +206,11 @@
       ptk/WatchEvent
       (watch [_ _ _]
         (when (is-authenticated? profile)
-          (->> (rx/of (profile-fetched profile)
-                      (fetch-teams)
-                      (get-redirect-event)
-                      (ws/initialize))
+          (->> (rx/concat
+                (rx/of (profile-fetched profile)
+                       (fetch-teams)
+                       (ws/initialize))
+                (get-redirect-events))
                (rx/observe-on :async)))))))
 
 (declare login-from-register)
@@ -233,10 +264,9 @@
              (rx/catch on-error))))))
 
 (def ^:private schema:login-with-ldap
-  (sm/define
-    [:map
-     [:email ::sm/email]
-     [:password :string]]))
+  [:map {:title "login-with-ldap"}
+   [:email ::sm/email]
+   [:password :string]])
 
 (defn login-with-ldap
   [params]
@@ -316,8 +346,7 @@
      ptk/EffectEvent
      (effect [_ _ _]
        ;; We prefer to keek some stuff in the storage like the current-team-id and the profile
-       (swap! storage dissoc :redirect-url)
-       (set-current-team! nil)))))
+       (swap! storage/user (constantly {}))))))
 
 (defn logout
   ([] (logout {}))
@@ -467,6 +496,7 @@
 
     ;; TODO: for the release 1.13 we should skip fetching profile and just use
     ;; the response value of update-profile-props RPC call
+    ;; FIXME
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :update-profile-props {:props props})
@@ -576,9 +606,8 @@
 
 (def ^:private
   schema:request-profile-recovery
-  (sm/define
-    [:map {:title "request-profile-recovery" :closed true}
-     [:email ::sm/email]]))
+  [:map {:title "request-profile-recovery" :closed true}
+   [:email ::sm/email]])
 
 (defn request-profile-recovery
   [data]
@@ -602,10 +631,9 @@
 
 (def ^:private
   schema:recover-profile
-  (sm/define
-    [:map {:title "recover-profile" :closed true}
-     [:password :string]
-     [:token :string]]))
+  [:map {:title "recover-profile" :closed true}
+   [:password :string]
+   [:token :string]])
 
 (defn recover-profile
   [data]
@@ -711,4 +739,4 @@
 
                         (tr "errors.generic"))]
 
-        (rx/of (msg/warn hint))))))
+        (rx/of (ntf/warn hint))))))

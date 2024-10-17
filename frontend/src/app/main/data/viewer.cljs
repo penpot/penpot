@@ -49,11 +49,10 @@
 
 (def ^:private
   schema:initialize
-  (sm/define
-    [:map {:title "initialize"}
-     [:file-id ::sm/uuid]
-     [:share-id {:optional true} [:maybe ::sm/uuid]]
-     [:page-id {:optional true} ::sm/uuid]]))
+  [:map {:title "initialize"}
+   [:file-id ::sm/uuid]
+   [:share-id {:optional true} [:maybe ::sm/uuid]]
+   [:page-id {:optional true} ::sm/uuid]])
 
 (defn initialize
   [{:keys [file-id share-id interactions-show?] :as params}]
@@ -102,11 +101,10 @@
 
 (def ^:private
   schema:fetch-bundle
-  (sm/define
-    [:map {:title "fetch-bundle"}
-     [:page-id ::sm/uuid]
-     [:file-id ::sm/uuid]
-     [:share-id {:optional true} ::sm/uuid]]))
+  [:map {:title "fetch-bundle"}
+   [:page-id ::sm/uuid]
+   [:file-id ::sm/uuid]
+   [:share-id {:optional true} ::sm/uuid]])
 
 (defn- fetch-bundle
   [{:keys [file-id share-id] :as params}]
@@ -134,7 +132,7 @@
                                       (uuid? share-id)
                                       (assoc :share-id share-id))]
                          (->> (rp/cmd! :get-file-fragment params)
-                              (rx/map :content)
+                              (rx/map :data)
                               (rx/map #(vector key %)))))]
 
         (->> (rp/cmd! :get-view-only-bundle params')

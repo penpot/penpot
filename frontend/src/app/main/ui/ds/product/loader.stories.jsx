@@ -7,10 +7,10 @@ export default {
   title: "Product/Loader",
   component: Loader,
   args: {
-    title: "Loading…",
     overlay: false,
   },
   argTypes: {
+    title: { control: "text" },
     width: { control: "number" },
     height: { control: "number" },
     overlay: { control: "boolean" },

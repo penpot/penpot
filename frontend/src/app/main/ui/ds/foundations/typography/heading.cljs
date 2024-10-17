@@ -19,14 +19,16 @@
 (defn- valid-typography? [value]
   (contains? t/typography-list value))
 
+(def ^:private schema:heading
+  [:map
+   [:level {:optional true} [:and :int [:fn #(valid-level? %)]]]
+   [:class {:optional true} :string]
+   [:typography [:and :string [:fn #(valid-typography? (dm/str %))]]]])
+
 (mf/defc heading*
-  {::mf/props :obj}
+  {::mf/props :obj
+   ::mf/schema schema:heading}
   [{:keys [level typography class children] :rest props}]
-  (assert (or (valid-level? level)
-              (nil? level))
-          (dm/str "Invalid level: " level ". Valid numbers are 1 to 6."))
-  (assert (valid-typography? (dm/str typography))
-          (dm/str typography " is an unknown typography"))
 
   (let [level (or level "1")
         tag   (dm/str "h" level)

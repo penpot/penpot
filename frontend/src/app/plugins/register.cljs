@@ -5,13 +5,16 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.plugins.register
-  "RPC for plugins runtime."
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.schema :as sm]
+   [app.common.types.plugins :as ctp]
    [app.common.uuid :as uuid]
+   [app.main.repo :as rp]
+   [app.main.store :as st]
    [app.util.object :as obj]
-   [app.util.storage :refer [storage]]))
+   [beicon.v2.core :as rx]))
 
 ;; Stores the installed plugins information
 (defonce ^:private registry (atom {}))
@@ -21,6 +24,10 @@
   []
   (->> (:ids @registry)
        (mapv #(dm/get-in @registry [:data %]))))
+
+(defn get-plugin
+  [id]
+  (dm/get-in @registry [:data id]))
 
 (defn parse-manifest
   "Read the manifest.json defined by the plugins definition and transforms it into an
@@ -38,7 +45,10 @@
           (conj "content:read")
 
           (contains? permissions "library:write")
-          (conj "content:write"))
+          (conj "content:write")
+
+          (contains? permissions "comment:write")
+          (conj "comment:read"))
 
         origin (obj/get (js/URL. plugin-url) "origin")
 
@@ -49,49 +59,31 @@
                        (and (= name (:name plugin))
                             (= origin (:host plugin))))))
 
-        plugin-id (d/nilv (:plugin-id prev-plugin) (str (uuid/next)))]
-    {:plugin-id plugin-id
-     :name name
-     :description desc
-     :host origin
-     :code code
-     :icon icon
-     :permissions (into #{} (map str) permissions)}))
+        plugin-id (d/nilv (:plugin-id prev-plugin) (str (uuid/next)))
 
-;; FIXME: LEGACY version of the load from store
-;; can be removed before deploying plugins to production
-;; Needs to be preserved for the beta users
-(defn legacy-load-from-store
-  []
-  (let [parse-plugin-data
-        (fn [^js data]
-          {:plugin-id (obj/get data "plugin-id")
-           :name (obj/get data "name")
-           :description (obj/get data "description")
-           :host (obj/get data "host")
-           :code (obj/get data "code")
-           :icon (obj/get data "icon")
-           :permissions (into #{} (obj/get data "permissions"))})
-
-        ls (.-localStorage js/window)
-        plugins-val (.getItem ls "plugins")]
-    (when plugins-val
-      (let [stored (->> (.parse js/JSON plugins-val)
-                        (map parse-plugin-data))]
-        (reset! registry
-                {:ids (->> stored (map :plugin-id))
-                 :data (d/index-by :plugin-id stored)})))))
+        manifest
+        (d/without-nils
+         {:plugin-id plugin-id
+          :url plugin-url
+          :name name
+          :description desc
+          :host origin
+          :code code
+          :icon icon
+          :permissions (into #{} (map str) permissions)})]
+    (when (sm/validate ::ctp/registry-entry manifest)
+      manifest)))
 
 (defn save-to-store
   []
-  (swap! storage assoc :plugins @registry))
+  ;; TODO: need this for the transition to the new schema. We can remove eventually
+  (let [registry (update @registry :data d/update-vals d/without-nils)]
+    (->> (rp/cmd! :update-profile-props {:props {:plugins registry}})
+         (rx/subs! identity))))
 
 (defn load-from-store
   []
-  (if (:plugins @storage)
-    (reset! registry (:plugins @storage))
-    (do (legacy-load-from-store)
-        (save-to-store))))
+  (reset! registry (get-in @st/state [:profile :props :plugins] {})))
 
 (defn init
   []
