@@ -37,7 +37,7 @@
    [integrant.core :as ig]
    [promesa.core :as p]
    [yetti.request :as rreq]
-   [yetti.response :as rres]))
+   [yetti.response :as yres]))
 
 (s/def ::profile-id ::us/uuid)
 
@@ -64,9 +64,9 @@
         response (if (fn? result)
                    (result request)
                    (let [result (rph/unwrap result)]
-                     {::rres/status  (::http/status mdata 200)
-                      ::rres/headers (::http/headers mdata {})
-                      ::rres/body    result}))]
+                     {::yres/status  (::http/status mdata 200)
+                      ::yres/headers (::http/headers mdata {})
+                      ::yres/body    result}))]
     (-> response
         (handle-response-transformation request mdata)
         (handle-before-comple-hook mdata))))

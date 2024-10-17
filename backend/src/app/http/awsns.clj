@@ -23,7 +23,7 @@
    [integrant.core :as ig]
    [promesa.exec :as px]
    [yetti.request :as rreq]
-   [yetti.response :as-alias rres]))
+   [yetti.response :as-alias yres]))
 
 (declare parse-json)
 (declare handle-request)
@@ -40,7 +40,7 @@
   (letfn [(handler [request]
             (let [data (-> request rreq/body slurp)]
               (px/run! :vthread (partial handle-request cfg data)))
-            {::rres/status 200})]
+            {::yres/status 200})]
     ["/sns" {:handler handler
              :allowed-methods #{:post}}]))
 

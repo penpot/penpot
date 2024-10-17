@@ -31,7 +31,7 @@
    [reitit.middleware :as rr]
    [yetti.adapter :as yt]
    [yetti.request :as rreq]
-   [yetti.response :as-alias rres]))
+   [yetti.response :as-alias yres]))
 
 (declare router-handler)
 
@@ -100,7 +100,7 @@
 
 (defn- not-found-handler
   [_]
-  {::rres/status 404})
+  {::yres/status 404})
 
 (defn- router-handler
   [router]
@@ -114,11 +114,11 @@
               (partial not-found-handler request)))
 
           (on-error [cause request]
-            (let [{:keys [::rres/body] :as response} (errors/handle cause request)]
+            (let [{:keys [::yres/body] :as response} (errors/handle cause request)]
               (cond-> response
                 (map? body)
-                (-> (update ::rres/headers assoc "content-type" "application/transit+json")
-                    (assoc ::rres/body (t/encode-str body {:type :json-verbose}))))))]
+                (-> (update ::yres/headers assoc "content-type" "application/transit+json")
+                    (assoc ::yres/body (t/encode-str body {:type :json-verbose}))))))]
 
     (fn [request]
       (let [handler (resolve-handler request)]
