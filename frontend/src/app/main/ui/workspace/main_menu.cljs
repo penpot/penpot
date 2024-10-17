@@ -414,7 +414,7 @@
 (mf/defc edit-menu
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
-  [{:keys [on-close]}]
+  [{:keys [on-close user-viewer?]}]
   (let [select-all (mf/use-fn #(st/emit! (dw/select-all)))
         undo       (mf/use-fn #(st/emit! dwu/undo))
         redo       (mf/use-fn #(st/emit! dwu/redo))]
@@ -438,32 +438,34 @@
                  :key sc}
           sc])]]
 
-     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
-                              :on-click    undo
-                              :on-key-down (fn [event]
-                                             (when (kbd/enter? event)
-                                               (undo event)))
-                              :id          "file-menu-undo"}
-      [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.undo")]
-      [:span {:class (stl/css :shortcut)}
-       (for [sc (scd/split-sc (sc/get-tooltip :undo))]
-         [:span {:class (stl/css :shortcut-key)
-                 :key sc}
-          sc])]]
+     (when-not :user-viewer? user-viewer?
+               [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                                        :on-click    undo
+                                        :on-key-down (fn [event]
+                                                       (when (kbd/enter? event)
+                                                         (undo event)))
+                                        :id          "file-menu-undo"}
+                [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.undo")]
+                [:span {:class (stl/css :shortcut)}
+                 (for [sc (scd/split-sc (sc/get-tooltip :undo))]
+                   [:span {:class (stl/css :shortcut-key)
+                           :key sc}
+                    sc])]])
 
-     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
-                              :on-click    redo
-                              :on-key-down (fn [event]
-                                             (when (kbd/enter? event)
-                                               (redo event)))
-                              :id          "file-menu-redo"}
-      [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.redo")]
-      [:span {:class (stl/css :shortcut)}
+     (when-not :user-viewer? user-viewer?
+               [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                                        :on-click    redo
+                                        :on-key-down (fn [event]
+                                                       (when (kbd/enter? event)
+                                                         (redo event)))
+                                        :id          "file-menu-redo"}
+                [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.redo")]
+                [:span {:class (stl/css :shortcut)}
 
-       (for [sc (scd/split-sc (sc/get-tooltip :redo))]
-         [:span {:class (stl/css :shortcut-key)
-                 :key sc}
-          sc])]]]))
+                 (for [sc (scd/split-sc (sc/get-tooltip :redo))]
+                   [:span {:class (stl/css :shortcut-key)
+                           :key sc}
+                    sc])]])]))
 
 (mf/defc file-menu
   {::mf/wrap-props false}
@@ -748,17 +750,16 @@
        [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.file")]
        [:span {:class (stl/css :open-arrow)} i/arrow]]
 
-      (when-not user-viewer?
-        [:> dropdown-menu-item* {:class (stl/css :menu-item)
-                                 :on-click    on-menu-click
-                                 :on-key-down (fn [event]
-                                                (when (kbd/enter? event)
-                                                  (on-menu-click event)))
-                                 :on-pointer-enter on-menu-click
-                                 :data-testid   "edit"
-                                 :id          "file-menu-edit"}
-         [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.edit")]
-         [:span {:class (stl/css :open-arrow)} i/arrow]])
+      [:> dropdown-menu-item* {:class (stl/css :menu-item)
+                               :on-click    on-menu-click
+                               :on-key-down (fn [event]
+                                              (when (kbd/enter? event)
+                                                (on-menu-click event)))
+                               :on-pointer-enter on-menu-click
+                               :data-testid   "edit"
+                               :id          "file-menu-edit"}
+       [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.edit")]
+       [:span {:class (stl/css :open-arrow)} i/arrow]]
 
       [:> dropdown-menu-item* {:class (stl/css :menu-item)
                                :on-click    on-menu-click
@@ -815,7 +816,8 @@
 
        :edit
        [:& edit-menu
-        {:on-close close-sub-menu}]
+        {:on-close close-sub-menu
+         :user-viewer? user-viewer?}]
 
        :view
        [:& view-menu

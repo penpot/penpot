@@ -328,7 +328,7 @@
    :toggle-focus-mode    {:command "f"
                           :tooltip "F"
                           :subsections [:basics :tools]
-                          :fn #(emit-when-no-readonly (dw/toggle-focus-mode))}
+                          :fn #(st/emit! (dw/toggle-focus-mode))}
 
    ;; ITEM ALIGNMENT
 
