@@ -27,7 +27,7 @@
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [pretty-spec.core :as ps]
-   [ring.response :as-alias rres]))
+   [yetti.response :as-alias yres]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DOC (human readable)
@@ -87,11 +87,11 @@
       (let [params  (:query-params request)
             pstyle  (:type params "js")
             context (assoc context :param-style pstyle)]
-        {::rres/status 200
-         ::rres/body (-> (io/resource "app/templates/api-doc.tmpl")
+        {::yres/status 200
+         ::yres/body (-> (io/resource "app/templates/api-doc.tmpl")
                          (tmpl/render context))}))
     (fn [_]
-      {::rres/status 404})))
+      {::yres/status 404})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OPENAPI / SWAGGER (v3.1)
@@ -175,12 +175,12 @@
   [context]
   (if (contains? cf/flags :backend-openapi-doc)
     (fn [_]
-      {::rres/status 200
-       ::rres/headers {"content-type" "application/json; charset=utf-8"}
-       ::rres/body (json/encode context)})
+      {::yres/status 200
+       ::yres/headers {"content-type" "application/json; charset=utf-8"}
+       ::yres/body (json/encode context)})
 
     (fn [_]
-      {::rres/status 404})))
+      {::yres/status 404})))
 
 (defn openapi-handler
   []
@@ -191,12 +191,12 @@
             context    {:public-uri (cf/get :public-uri)
                         :swagger-js swagger-js
                         :swagger-css swagger-cs}]
-        {::rres/status 200
-         ::rres/headers {"content-type" "text/html"}
-         ::rres/body (-> (io/resource "app/templates/openapi.tmpl")
+        {::yres/status 200
+         ::yres/headers {"content-type" "text/html"}
+         ::yres/body (-> (io/resource "app/templates/openapi.tmpl")
                          (tmpl/render context))}))
     (fn [_]
-      {::rres/status 404})))
+      {::yres/status 404})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MODULE INIT

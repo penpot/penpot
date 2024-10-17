@@ -25,7 +25,7 @@
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [promesa.exec :as px]
-   [ring.response :as rres]))
+   [yetti.response :as yres]))
 
 (set! *warn-on-reflection* true)
 
@@ -42,33 +42,33 @@
 
 (defn stream-export-v1
   [cfg {:keys [file-id include-libraries embed-assets] :as params}]
-  (reify rres/StreamableResponseBody
-    (-write-body-to-stream [_ _ output-stream]
-      (try
-        (-> cfg
-            (assoc ::bf.v1/ids #{file-id})
-            (assoc ::bf.v1/embed-assets embed-assets)
-            (assoc ::bf.v1/include-libraries include-libraries)
-            (bf.v1/export-files! output-stream))
-        (catch Throwable cause
-          (l/err :hint "exception on exporting file"
-                 :file-id (str file-id)
-                 :cause cause))))))
+  (yres/stream-body
+   (fn [_ output-stream]
+     (try
+       (-> cfg
+           (assoc ::bf.v1/ids #{file-id})
+           (assoc ::bf.v1/embed-assets embed-assets)
+           (assoc ::bf.v1/include-libraries include-libraries)
+           (bf.v1/export-files! output-stream))
+       (catch Throwable cause
+         (l/err :hint "exception on exporting file"
+                :file-id (str file-id)
+                :cause cause))))))
 
 (defn stream-export-v3
   [cfg {:keys [file-id include-libraries embed-assets] :as params}]
-  (reify rres/StreamableResponseBody
-    (-write-body-to-stream [_ _ output-stream]
-      (try
-        (-> cfg
-            (assoc ::bf.v3/ids #{file-id})
-            (assoc ::bf.v3/embed-assets embed-assets)
-            (assoc ::bf.v3/include-libraries include-libraries)
-            (bf.v3/export-files! output-stream))
-        (catch Throwable cause
-          (l/err :hint "exception on exporting file"
-                 :file-id (str file-id)
-                 :cause cause))))))
+  (yres/stream-body
+   (fn [_ output-stream]
+     (try
+       (-> cfg
+           (assoc ::bf.v3/ids #{file-id})
+           (assoc ::bf.v3/embed-assets embed-assets)
+           (assoc ::bf.v3/include-libraries include-libraries)
+           (bf.v3/export-files! output-stream))
+       (catch Throwable cause
+         (l/err :hint "exception on exporting file"
+                :file-id (str file-id)
+                :cause cause))))))
 
 (sv/defmethod ::export-binfile
   "Export a penpot file in a binary format."
@@ -84,9 +84,25 @@
                     2 (throw (ex-info "not-implemented" {}))
                     3 (stream-export-v3 cfg params))]
 
-      {::rres/status 200
-       ::rres/headers {"content-type" "application/octet-stream"}
-       ::rres/body body})))
+      {::yres/status 200
+       ::yres/headers {"content-type" "application/octet-stream"}
+       ::yres/body body})))
+
+
+    ;; {::yres/status 200
+    ;;  ::yres/headers {"content-type" "application/octet-stream"}
+    ;;  ::yres/body (yres/stream-body
+    ;;               (fn [_ output-stream]
+    ;;                 (try
+    ;;                   (-> cfg
+    ;;                       (assoc ::bf.v1/ids #{file-id})
+    ;;                       (assoc ::bf.v1/embed-assets embed-assets)
+    ;;                       (assoc ::bf.v1/include-libraries include-libraries)
+    ;;                       (bf.v1/export-files! output-stream))
+    ;;                   (catch Throwable cause
+    ;;                     (l/err :hint "exception on exporting file"
+    ;;                            :file-id (str file-id)
+    ;;                            :cause cause)))))}))
 
 ;; --- Command: import-binfile
 

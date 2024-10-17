@@ -15,10 +15,10 @@
    [app.http.errors :as errors]
    [app.util.pointer-map :as pmap]
    [cuerdas.core :as str]
-   [ring.request :as rreq]
-   [ring.response :as rres]
    [yetti.adapter :as yt]
-   [yetti.middleware :as ymw])
+   [yetti.middleware :as ymw]
+   [yetti.request :as yreq]
+   [yetti.response :as yres])
   (:import
    io.undertow.server.RequestTooBigException
    java.io.InputStream
@@ -37,17 +37,17 @@
 (defn- get-reader
   ^java.io.BufferedReader
   [request]
-  (let [^InputStream body (rreq/body request)]
+  (let [^InputStream body (yreq/body request)]
     (java.io.BufferedReader.
      (java.io.InputStreamReader. body))))
 
 (defn wrap-parse-request
   [handler]
   (letfn [(process-request [request]
-            (let [header (rreq/get-header request "content-type")]
+            (let [header (yreq/get-header request "content-type")]
               (cond
                 (str/starts-with? header "application/transit+json")
-                (with-open [^InputStream is (rreq/body request)]
+                (with-open [^InputStream is (yreq/body request)]
                   (let [params (t/read! (t/reader is))]
                     (-> request
                         (assoc :body-params params)
@@ -85,7 +85,7 @@
               (errors/handle cause request)))]
 
     (fn [request]
-      (if (= (rreq/method request) :post)
+      (if (= (yreq/method request) :post)
         (try
           (-> request process-request handler)
           (catch Throwable cause
@@ -113,57 +113,53 @@
 
 (defn wrap-format-response
   [handler]
-  (letfn [(transit-streamable-body [data opts]
-            (reify rres/StreamableResponseBody
-              (-write-body-to-stream [_ _ output-stream]
-                (try
-                  (with-open [^OutputStream bos (buffered-output-stream output-stream buffer-size)]
-                    (let [tw (t/writer bos opts)]
-                      (t/write! tw data)))
-                  (catch java.io.IOException _)
-                  (catch Throwable cause
-                    (binding [l/*context* {:value data}]
-                      (l/error :hint "unexpected error on encoding response"
-                               :cause cause)))
-                  (finally
-                    (.close ^OutputStream output-stream))))))
+  (letfn [(transit-streamable-body [data opts _ output-stream]
+            (try
+              (with-open [^OutputStream bos (buffered-output-stream output-stream buffer-size)]
+                (let [tw (t/writer bos opts)]
+                  (t/write! tw data)))
+              (catch java.io.IOException _)
+              (catch Throwable cause
+                (binding [l/*context* {:value data}]
+                  (l/error :hint "unexpected error on encoding response"
+                           :cause cause)))
+              (finally
+                (.close ^OutputStream output-stream))))
 
-          (json-streamable-body [data]
-            (reify rres/StreamableResponseBody
-              (-write-body-to-stream [_ _ output-stream]
-                (try
-                  (let [encode (or (-> data meta :encode/json) identity)
-                        data   (encode data)]
-                    (with-open [^OutputStream bos (buffered-output-stream output-stream buffer-size)]
-                      (with-open [^java.io.OutputStreamWriter writer (java.io.OutputStreamWriter. bos)]
-                        (json/write writer data :key-fn json/write-camel-key :value-fn write-json-value))))
-                  (catch java.io.IOException _)
-                  (catch Throwable cause
-                    (binding [l/*context* {:value data}]
-                      (l/error :hint "unexpected error on encoding response"
-                               :cause cause)))
-                  (finally
-                    (.close ^OutputStream output-stream))))))
+          (json-streamable-body [data _ output-stream]
+            (try
+              (let [encode (or (-> data meta :encode/json) identity)
+                    data   (encode data)]
+                (with-open [^OutputStream bos (buffered-output-stream output-stream buffer-size)]
+                  (with-open [^java.io.OutputStreamWriter writer (java.io.OutputStreamWriter. bos)]
+                    (json/write writer data :key-fn json/write-camel-key :value-fn write-json-value))))
+              (catch java.io.IOException _)
+              (catch Throwable cause
+                (binding [l/*context* {:value data}]
+                  (l/error :hint "unexpected error on encoding response"
+                           :cause cause)))
+              (finally
+                (.close ^OutputStream output-stream))))
 
           (format-response-with-json [response _]
-            (let [body (::rres/body response)]
+            (let [body (::yres/body response)]
               (if (or (boolean? body) (coll? body))
                 (-> response
-                    (update ::rres/headers assoc "content-type" "application/json")
-                    (assoc ::rres/body (json-streamable-body body)))
+                    (update ::yres/headers assoc "content-type" "application/json")
+                    (assoc ::yres/body (yres/stream-body (partial json-streamable-body body))))
                 response)))
 
           (format-response-with-transit [response request]
-            (let [body (::rres/body response)]
+            (let [body (::yres/body response)]
               (if (or (boolean? body) (coll? body))
-                (let [qs   (rreq/query request)
+                (let [qs   (yreq/query request)
                       opts (if (or (contains? cf/flags :transit-readable-response)
                                    (str/includes? qs "transit_verbose"))
                              {:type :json-verbose}
                              {:type :json})]
                   (-> response
-                      (update ::rres/headers assoc "content-type" "application/transit+json")
-                      (assoc ::rres/body (transit-streamable-body body opts))))
+                      (update ::yres/headers assoc "content-type" "application/transit+json")
+                      (assoc ::yres/body (yres/stream-body (partial transit-streamable-body body opts)))))
                 response)))
 
           (format-from-params [{:keys [query-params] :as request}]
@@ -172,7 +168,7 @@
 
           (format-response [response request]
             (let [accept (or (format-from-params request)
-                             (rreq/get-header request "accept"))]
+                             (yreq/get-header request "accept"))]
               (cond
                 (or (= accept "application/transit+json")
                     (str/includes? accept "application/transit+json"))
@@ -221,11 +217,11 @@
 (defn wrap-cors
   [handler]
   (fn [request]
-    (let [response (if (= (rreq/method request) :options)
-                     {::rres/status 200}
+    (let [response (if (= (yreq/method request) :options)
+                     {::yres/status 200}
                      (handler request))
-          origin   (rreq/get-header request "origin")]
-      (update response ::rres/headers with-cors-headers origin))))
+          origin   (yreq/get-header request "origin")]
+      (update response ::yres/headers with-cors-headers origin))))
 
 (def cors
   {:name ::cors
@@ -240,7 +236,7 @@
      (when-let [allowed (:allowed-methods data)]
        (fn [handler]
          (fn [request]
-           (let [method (rreq/method request)]
+           (let [method (yreq/method request)]
              (if (contains? allowed method)
                (handler request)
-               {::rres/status 405}))))))})
+               {::yres/status 405}))))))})
