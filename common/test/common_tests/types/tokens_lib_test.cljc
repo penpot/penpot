@@ -11,6 +11,7 @@
    [app.common.time :as dt]
    [app.common.transit :as tr]
    [app.common.types.tokens-lib :as ctob]
+   [clojure.data.json :as json]
    [clojure.test :as t]))
 
 (t/testing "token"
@@ -104,7 +105,25 @@
 
       (t/testing "ignore invalid moves"
         (t/is (= original-order (move "A" "foo/bar/baz")))
-        (t/is (= original-order (move "Missing" "Move")))))))
+        (t/is (= original-order (move "Missing" "Move"))))))
+
+  (t/deftest tokens-tree
+    (let [tokens-lib (-> (ctob/make-tokens-lib)
+                         (ctob/add-set (ctob/make-token-set :name "A"
+                                                            :tokens {"foo.bar.baz" (ctob/make-token :name "foo.bar.baz"
+                                                                                                    :type :boolean
+                                                                                                    :value true)
+                                                                     "foo.bar.bam" (ctob/make-token :name "foo.bar.bam"
+                                                                                                    :type :boolean
+                                                                                                    :value true)
+                                                                     "baz.boo" (ctob/make-token :name "baz.boo"
+                                                                                                :type :boolean
+                                                                                                :value true)})))
+          expected (-> (ctob/get-set tokens-lib "A")
+                       (ctob/get-tokens-tree))]
+      (t/is (= (get-in expected ["foo" "bar" "baz" :name]) "foo.bar.baz"))
+      (t/is (= (get-in expected ["foo" "bar" "bam" :name]) "foo.bar.bam"))
+      (t/is (= (get-in expected ["baz" "boo" :name]) "baz.boo")))))
 
 (t/testing "token-theme"
   (t/deftest make-token-theme
@@ -1026,3 +1045,94 @@
         (t/is (= (ctob/theme-count tokens-lib') 1))
         (t/is (= (count themes-tree') 1))
         (t/is (nil? token-theme'))))))
+
+(t/testing "dtcg encoding/decoding"
+  (t/deftest decode-dtcg-json
+    (let [json (-> (slurp "test/common_tests/types/data/tokens-multi-set-example.json")
+                   (tr/decode-str))
+          lib (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json)
+          get-set-token (fn [set-name token-name]
+                          (some-> (ctob/get-set lib set-name)
+                                  (ctob/get-token token-name)
+                                  (dissoc :modified-at)))]
+      (t/is (= '("core" "light" "dark" "theme") (ctob/get-ordered-set-names lib)))
+      (t/testing "tokens exist in core set"
+        (t/is (= (get-set-token "core" "colors.red.600")
+                 {:name "colors.red.600"
+                  :type :color
+                  :value "#e53e3e"
+                  :description nil}))
+        (t/is (= (get-set-token "core" "spacing.multi-value")
+                 {:name "spacing.multi-value"
+                  :type :spacing
+                  :value "{dimension.sm} {dimension.xl}"
+                  :description "You can have multiple values in a single spacing token"}))
+        (t/is (= (get-set-token "theme" "button.primary.background")
+                 {:name "button.primary.background"
+                  :type :color
+                  :value "{accent.default}"
+                  :description nil})))
+      (t/testing "invalid tokens got discarded"
+        (t/is (nil? (get-set-token "typography" "H1.Bold"))))))
+
+  (t/deftest encode-dtcg-json
+    (let [tokens-lib (-> (ctob/make-tokens-lib)
+                         (ctob/add-set (ctob/make-token-set :name "core"
+                                                            :tokens {"colors.red.600"
+                                                                     (ctob/make-token
+                                                                      {:name "colors.red.600"
+                                                                       :type :color
+                                                                       :value "#e53e3e"})
+                                                                     "spacing.multi-value"
+                                                                     (ctob/make-token
+                                                                      {:name "spacing.multi-value"
+                                                                       :type :spacing
+                                                                       :value "{dimension.sm} {dimension.xl}"
+                                                                       :description "You can have multiple values in a single spacing token"})
+                                                                     "button.primary.background"
+                                                                     (ctob/make-token
+                                                                      {:name "button.primary.background"
+                                                                       :type :color
+                                                                       :value "{accent.default}"})})))
+          expected (ctob/encode-dtcg tokens-lib)]
+      (t/is (= {"core"
+                {"colors" {"red" {"600" {"$value" "#e53e3e"
+                                         "$type" "color"}}}
+                 "spacing"
+                 {"multi-value"
+                  {"$value" "{dimension.sm} {dimension.xl}"
+                   "$type" "spacing"
+                   "$description" "You can have multiple values in a single spacing token"}}
+                 "button"
+                 {"primary" {"background" {"$value" "{accent.default}"
+                                           "$type" "color"}}}}}
+               expected))))
+
+  (t/deftest encode-decode-dtcg-json
+    (with-redefs [dt/now (constantly #inst "2024-10-16T12:01:20.257840055-00:00")]
+      (let [tokens-lib (-> (ctob/make-tokens-lib)
+                           (ctob/add-set (ctob/make-token-set :name "core"
+                                                              :tokens {"colors.red.600"
+                                                                       (ctob/make-token
+                                                                        {:name "colors.red.600"
+                                                                         :type :color
+                                                                         :value "#e53e3e"})
+                                                                       "spacing.multi-value"
+                                                                       (ctob/make-token
+                                                                        {:name "spacing.multi-value"
+                                                                         :type :spacing
+                                                                         :value "{dimension.sm} {dimension.xl}"
+                                                                         :description "You can have multiple values in a single spacing token"})
+                                                                       "button.primary.background"
+                                                                       (ctob/make-token
+                                                                        {:name "button.primary.background"
+                                                                         :type :color
+                                                                         :value "{accent.default}"})})))
+            encoded (ctob/encode-dtcg tokens-lib)
+            with-prev-tokens-lib (ctob/decode-dtcg-json tokens-lib encoded)
+            with-empty-tokens-lib (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) encoded)]
+        (t/testing "library got updated but data is equal"
+          (t/is (not= with-prev-tokens-lib tokens-lib))
+          (t/is (= @with-prev-tokens-lib @tokens-lib)))
+        (t/testing "fresh tokens library is also equal"
+          (= @with-empty-tokens-lib @tokens-lib))))))

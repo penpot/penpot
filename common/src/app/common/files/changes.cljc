@@ -26,8 +26,6 @@
    [app.common.types.token :as cto]
    [app.common.types.token-theme :as ctot]
    [app.common.types.tokens-lib :as ctob]
-   [app.common.types.tokens-list :as ctol]
-   [app.common.types.tokens-theme-list :as ctotl]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as ctt]
    [clojure.set :as set]))
@@ -305,6 +303,11 @@
      [:map {:title "DelTokenSetChange"}
       [:type [:= :del-token-set]]
       [:name :string]]]
+
+    [:set-tokens-lib
+     [:map {:title "SetTokensLib"}
+      [:type [:= :set-tokens-lib]]
+      [:tokens-lib :any]]]
 
     [:add-token
      [:map {:title "AddTokenChange"}
@@ -791,6 +794,10 @@
   (ctyl/delete-typography data id))
 
 ;; -- Tokens
+
+(defmethod process-change :set-tokens-lib
+  [data {:keys [tokens-lib]}]
+  (assoc data :tokens-lib tokens-lib))
 
 (defmethod process-change :add-token
   [data {:keys [set-name token]}]

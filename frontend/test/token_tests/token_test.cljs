@@ -91,26 +91,6 @@
   (t/is (= ["foo" "bar" "baz"] (wtt/token-name->path "foo..bar.baz")))
   (t/is (= ["foo" "bar" "baz"] (wtt/token-name->path "foo..bar.baz...."))))
 
-(t/deftest tokens-name-map-test
-  (t/testing "creates a a names map from tokens"
-    (t/is (= {"border-radius.sm" {:name "border-radius.sm", :value "10"}
-              "border-radius.md" {:name "border-radius.md", :value "20"}}
-             (wtt/token-names-map [{:name "border-radius.sm" :value "10"}
-                                   {:name "border-radius.md" :value "20"}])))))
-
-(t/deftest tokens-name-tree-test
-  (t/is (= {"foo"
-            {"bar"
-             {"baz" {:name "foo.bar.baz", :value "a"},
-              "bam" {:name "foo.bar.bam", :value "b"}}},
-            "baz" {"bar" {"foo" {:name "baz.bar.foo", :value "{foo.bar.baz}"}}}}
-           (wtt/token-names-tree {:a {:name "foo.bar.baz"
-                                      :value "a"}
-                                  :b {:name "foo.bar.bam"
-                                      :value "b"}
-                                  :c {:name "baz.bar.foo"
-                                      :value "{foo.bar.baz}"}}))))
-
 (t/deftest token-name-path-exists?-test
   (t/is (true? (wtt/token-name-path-exists? "border-radius" {"border-radius" {"sm" {:name "sm"}}})))
   (t/is (true? (wtt/token-name-path-exists? "border-radius" {"border-radius" {:name "sm"}})))

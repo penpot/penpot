@@ -8,12 +8,16 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.transit :as t]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
+   [app.main.ui.components.dropdown-menu :refer [dropdown-menu
+                                                 dropdown-menu-item*]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
@@ -21,7 +25,6 @@
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
-   [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.sets :refer [sets-list]]
    [app.main.ui.workspace.tokens.sets-context :as sets-context]
    [app.main.ui.workspace.tokens.sets-context-menu :refer [sets-context-menu]]
@@ -30,7 +33,8 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
-   [app.util.storage :refer [storage]]
+   [app.util.webapi :as wapi]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]
@@ -140,7 +144,7 @@
       (when open?
         [:& cmm/asset-section-block {:role :content}
          [:div {:class (stl/css :token-pills-wrapper)}
-          (for [token (sort-by :modified-at tokens)]
+          (for [token (sort-by :name tokens)]
             (let [theme-token (get active-theme-tokens (wtt/token-identifier token))]
               [:& token-pill
                {:key (:name token)
@@ -173,10 +177,10 @@
                         (modal/show! :tokens/themes {}))}
    (if create? "Create" "Edit")])
 
-(mf/defc themes-sidebar
+(mf/defc themes-header
   [_props]
   (let [ordered-themes (mf/deref refs/workspace-token-themes-no-hidden)]
-   [:div {:class (stl/css :theme-sidebar)}
+   [:div {:class (stl/css :themes-wrapper)}
     [:span {:class (stl/css :themes-header)} "Themes"]
     [:div {:class (stl/css :theme-select-wrapper)}
      [:& theme-select]
@@ -191,13 +195,14 @@
                            (on-create))}
      i/add]))
 
-(mf/defc sets-sidebar
+(mf/defc themes-sets-tab
   []
   (let [open? (mf/use-state true)
         on-open (mf/use-fn #(reset! open? true))]
     [:& sets-context/provider {}
      [:& sets-context-menu]
      [:div {:class (stl/css :sets-sidebar)}
+      [:& themes-header]
       [:div {:class (stl/css :sidebar-header)}
        [:& title-bar {:collapsable true
                       :collapsed (not @open?)
@@ -209,10 +214,9 @@
         [:& h/sortable-container {}
          [:& sets-list]])]]))
 
-(mf/defc tokens-explorer
+(mf/defc tokens-tab
   [_props]
-  (let [open? (mf/use-state true)
-        objects (mf/deref refs/workspace-page-objects)
+  (let [objects (mf/deref refs/workspace-page-objects)
 
         selected (mf/deref refs/selected-shapes)
         selected-shapes (into [] (keep (d/getf objects)) selected)
@@ -222,70 +226,125 @@
         tokens (sd/use-resolved-workspace-tokens)
         token-groups (mf/with-memo [tokens]
                        (sorted-token-groups tokens))]
-    [:article
+    [:*
      [:& token-context-menu]
-     [:& title-bar {:collapsable true
-                    :collapsed (not @open?)
-                    :all-clickable true
-                    :title "TOKENS"
-                    :on-collapsed #(swap! open? not)}]
-     (when @open?
-       [:div.assets-bar
-        (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
-                                                                  (:empty token-groups))]
-          [:& token-component {:key token-key
-                               :type token-key
-                               :selected-shapes selected-shapes
-                               :active-theme-tokens active-theme-tokens
-                               :tokens tokens
-                               :token-type-props token-type-props}])])]))
+     [:& title-bar {:all-clickable true
+                    :title "TOKENS"}]
+     [:div.assets-bar
+      (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
+                                                                (:empty token-groups))]
+        [:& token-component {:key token-key
+                             :type token-key
+                             :selected-shapes selected-shapes
+                             :active-theme-tokens active-theme-tokens
+                             :tokens tokens
+                             :token-type-props token-type-props}])]]))
 
-(defn dev-or-preview-url? [url]
-  (let [host (-> url js/URL. .-host)
-        localhost? (= "localhost" (first (str/split host #":")))
-        pr? (str/ends-with? host "penpot.alpha.tokens.studio")]
-    (or localhost? pr?)))
+(mf/defc json-import-button []
+  (let []
+    [:div
 
-(defn location-url-dev-or-preview-url!? []
-  (dev-or-preview-url? js/window.location.href))
+     [:button {:class (stl/css :download-json-button)
+               :on-click #(.click (js/document.getElementById "file-input"))}
+      download-icon
+      "Import JSON"]]))
 
-(defn temp-use-themes-flag []
-  (let [show? (mf/use-state (or
-                             (location-url-dev-or-preview-url!?)
-                             (get @storage ::show-token-themes-sets?)
-                             true))]
-    (mf/use-effect
-     (fn []
-       (letfn [(toggle! []
-                 (swap! storage update ::show-token-themes-sets? not)
-                 (reset! show? (get @storage ::show-token-themes-sets?)))]
-         (set! js/window.toggleThemes toggle!))))
-    show?))
+(mf/defc import-export-button
+  {::mf/wrap-props false}
+  [{:keys []}]
+  (let [show-menu* (mf/use-state false)
+        show-menu? (deref show-menu*)
+
+        open-menu
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! show-menu* true)))
+
+        close-menu
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! show-menu* false)))
+
+        input-ref (mf/use-ref)
+        on-import
+        (fn [event]
+          (let [file (-> event .-target .-files (aget 0))]
+            (->> (wapi/read-file-as-text file)
+                 (rx/map (fn [data]
+                           (try
+                             (t/decode-str data)
+                             (catch js/Error e
+                               (throw (ex-info "Json parse error"
+                                               {:user-error "Import Error: Could not parse json"
+                                                :type :json-parse-error
+                                                :data data
+                                                :exception e}))))))
+                 (rx/map (fn [json-data]
+                           (try
+                             (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json-data)
+                             (catch js/Error e
+                               (throw (ex-info "invalid token data"
+                                               {:user-error "Import Error: Invalid token data in json."
+                                                :type :invalid-token-data
+                                                :data json-data
+                                                :exception e}))))))
+                 (rx/subs! (fn [lib]
+                             (st/emit! (dt/import-tokens-lib lib)))
+                           (fn [err]
+                             (let [{:keys [user-error]} (ex-data err)]
+                               (st/emit! (msg/show {:content user-error
+                                                    :notification-type :toast
+                                                    :type :warning
+                                                    :timeout 3000}))))))
+            (set! (.-value (mf/ref-val input-ref)) "")))
+        on-export (fn []
+                    (let [tokens-blob (some-> (deref refs/tokens-lib)
+                                              (ctob/encode-dtcg)
+                                              (clj->js)
+                                              (js/JSON.stringify nil 2)
+                                              (wapi/create-blob "application/json"))]
+                      (dom/trigger-download "tokens.json" tokens-blob)))]
+    [:div {:class (stl/css :import-export-button-wrapper)}
+     [:input {:type "file"
+              :ref input-ref
+              :style {:display "none"}
+              :id "file-input"
+              :accept ".json"
+              :on-change on-import}]
+     [:button {:class (stl/css :import-export-button)
+               :on-click open-menu}
+      download-icon
+      "Tokens"]
+     [:& dropdown-menu {:show show-menu?
+                        :on-close close-menu
+                        :list-class (stl/css :import-export-menu)}
+      [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
+                               :on-click #(.click (mf/ref-val input-ref))}
+       "Import"]
+
+      [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
+                               :on-click on-export}
+       "Export"]]]))
 
 (mf/defc tokens-sidebar-tab
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [_props]
-  (let [show-sets-section? (deref (temp-use-themes-flag))
-        {on-pointer-down-pages :on-pointer-down
+  (let [{on-pointer-down-pages :on-pointer-down
          on-lost-pointer-capture-pages :on-lost-pointer-capture
          on-pointer-move-pages :on-pointer-move
          size-pages-opened :size}
-        (use-resize-hook :sitemap 200 38 400 :y false nil)]
-    [:div {:class (stl/css :sidebar-tab-wrapper)}
-     (when show-sets-section?
-       [:div {:class (stl/css :sets-section-wrapper)
-              :style {:height (str size-pages-opened "px")}}
-        [:& themes-sidebar]
-        [:& sets-sidebar]])
-     [:div {:class (stl/css :tokens-section-wrapper)}
-      (when show-sets-section?
-        [:div {:class (stl/css :resize-area-horiz)
-               :on-pointer-down on-pointer-down-pages
-               :on-lost-pointer-capture on-lost-pointer-capture-pages
-               :on-pointer-move on-pointer-move-pages}])
-      [:& tokens-explorer]]
-     [:button {:class (stl/css :download-json-button)
-               :on-click wtc/download-tokens-as-json}
-      download-icon
-      "Export JSON"]]))
+        (use-resize-hook :tokens 200 38 400 :y false nil)]
+    [:div {:class (stl/css :sidebar-wrapper)}
+     [:article {:class (stl/css :sets-section-wrapper)
+                :style {"--resize-height" (str size-pages-opened "px")}}
+      [:& themes-sets-tab]]
+     [:article {:class (stl/css :tokens-section-wrapper)}
+      [:div {:class (stl/css :resize-area-horiz)
+             :on-pointer-down on-pointer-down-pages
+             :on-lost-pointer-capture on-lost-pointer-capture-pages
+             :on-pointer-move on-pointer-move-pages}]
+      [:& tokens-tab]
+      [:& import-export-button]]]))

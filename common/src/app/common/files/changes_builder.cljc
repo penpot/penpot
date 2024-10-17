@@ -771,6 +771,15 @@
       (update :undo-changes conj {:type :move-token-set-before :set-name set-name :before-set-name prev-before-set-name})
       (apply-changes-local)))
 
+(defn set-tokens-lib
+  [changes tokens-lib]
+  (let [library-data (::library-data (meta changes))
+        prev-tokens-lib (get library-data :tokens-lib)]
+    (-> changes
+        (update :redo-changes conj {:type :set-tokens-lib :tokens-lib tokens-lib})
+        (update :undo-changes conj {:type :set-tokens-lib :tokens-lib prev-tokens-lib})
+        (apply-changes-local))))
+
 (defn add-token
   [changes set-name token]
   (-> changes

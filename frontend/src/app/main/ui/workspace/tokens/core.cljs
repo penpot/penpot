@@ -7,11 +7,7 @@
 (ns app.main.ui.workspace.tokens.core
   (:require
    [app.common.data :as d]
-   [app.main.refs :as refs]
-   [app.main.ui.workspace.tokens.token :as wtt]
-   [app.util.dom :as dom]
-   [app.util.webapi :as wapi]
-   [cuerdas.core :as str]))
+   [app.main.ui.workspace.tokens.token :as wtt]))
 
 ;; Helpers ---------------------------------------------------------------------
 
@@ -36,30 +32,3 @@
      (cond-> (assoc token :label name)
        (wtt/token-applied? token shape (or selected-attributes attributes)) (assoc :selected? true)))
    tokens))
-
-;; JSON export functions -------------------------------------------------------
-
-(defn encode-tokens
-  [data]
-  (-> data
-      (clj->js)
-      (js/JSON.stringify nil 2)))
-
-(defn export-tokens-file [tokens-json]
-  (let [file-name "tokens.json"
-        file-content (encode-tokens tokens-json)
-        blob (wapi/create-blob file-content "application/json")]
-    (dom/trigger-download file-name blob)))
-
-(defn tokens->dtcg-map [tokens]
-  (let [global (reduce
-                (fn [acc [_ {:keys [name value type]}]]
-                  (assoc acc name {"$value" value
-                                   "$type" (str/camel type)}))
-                (d/ordered-map) tokens)]
-    {:global global}))
-
-(defn download-tokens-as-json []
-  (let [tokens (deref refs/workspace-active-theme-sets-tokens)
-        dtcg-format-tokens-map (tokens->dtcg-map tokens)]
-    (export-tokens-file dtcg-format-tokens-map)))
