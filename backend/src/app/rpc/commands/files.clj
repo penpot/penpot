@@ -17,6 +17,7 @@
    [app.common.schema.desc-js-like :as-alias smdj]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
+   [app.common.uri :as uri]
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
@@ -272,44 +273,59 @@
   (let [opts (assoc opts ::sql/columns [:id :modified-at :deleted-at :revn :data-ref-id :data-backend])]
     (db/get cfg :file {:id id} opts)))
 
+(defn- get-minimal-file-with-perms
+  [cfg {:keys [:id ::rpc/profile-id]}]
+  (let [mfile (get-minimal-file cfg id)
+        perms (get-permissions cfg profile-id id)]
+    (assoc mfile :permissions perms)))
+
 (defn get-file-etag
-  [{:keys [::rpc/profile-id]} {:keys [modified-at revn]}]
-  (str profile-id (dt/format-instant modified-at :iso) revn))
+  [{:keys [::rpc/profile-id]} {:keys [modified-at revn permissions]}]
+  (str profile-id "/" revn "/"
+       (dt/format-instant modified-at :iso)
+       "/"
+       (uri/map->query-string permissions)))
 
 (sv/defmethod ::get-file
   "Retrieve a file by its ID. Only authenticated users."
   {::doc/added "1.17"
-   ::cond/get-object #(get-minimal-file %1 (:id %2))
+   ::cond/get-object #(get-minimal-file-with-perms %1 %2)
    ::cond/key-fn get-file-etag
    ::sm/params schema:get-file
-   ::sm/result schema:file-with-permissions}
-  [cfg {:keys [::rpc/profile-id id project-id] :as params}]
-  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                    (let [perms (get-permissions conn profile-id id)]
-                      (check-read-permissions! perms)
-                      (let [team (teams/get-team conn
-                                                 :profile-id profile-id
-                                                 :project-id project-id
-                                                 :file-id id)
+   ::sm/result schema:file-with-permissions
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id project-id] :as params}]
+  ;; The COND middleware makes initial request for a file and
+  ;; permissions when the incoming request comes with an
+  ;; ETAG. When ETAG does not matches, the request is resolved
+  ;; and this code is executed, in this case the permissions
+  ;; will be already prefetched and we just reuse them instead
+  ;; of making an additional database queries.
+  (let [perms (or (:permissions (::cond/object params))
+                  (get-permissions conn profile-id id))]
+    (check-read-permissions! perms)
 
-                            file (-> (get-file cfg id :project-id project-id)
-                                     (assoc :permissions perms)
-                                     (check-version!))
+    (let [team (teams/get-team conn
+                               :profile-id profile-id
+                               :project-id project-id
+                               :file-id id)
 
-                            _    (-> (cfeat/get-team-enabled-features cf/flags team)
-                                     (cfeat/check-client-features! (:features params))
-                                     (cfeat/check-file-features! (:features file) (:features params)))
+          file (-> (get-file cfg id :project-id project-id)
+                   (assoc :permissions perms)
+                   (check-version!))]
 
-                            ;; This operation is needed for backward comapatibility with frontends that
-                            ;; does not support pointer-map resolution mechanism; this just resolves the
-                            ;; pointers on backend and return a complete file.
-                            file (if (and (contains? (:features file) "fdata/pointer-map")
-                                          (not (contains? (:features params) "fdata/pointer-map")))
-                                   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
-                                     (update file :data feat.fdata/process-pointers deref))
-                                   file)]
+      (-> (cfeat/get-team-enabled-features cf/flags team)
+          (cfeat/check-client-features! (:features params))
+          (cfeat/check-file-features! (:features file) (:features params)))
 
-                        (vary-meta file assoc ::cond/key (get-file-etag params file)))))))
+      ;; This operation is needed for backward comapatibility with frontends that
+      ;; does not support pointer-map resolution mechanism; this just resolves the
+      ;; pointers on backend and return a complete file.
+      (if (and (contains? (:features file) "fdata/pointer-map")
+               (not (contains? (:features params) "fdata/pointer-map")))
+        (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
+          (update file :data feat.fdata/process-pointers deref))
+        file))))
 
 ;; --- COMMAND QUERY: get-file-fragment (by id)
 
