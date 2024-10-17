@@ -182,7 +182,7 @@
             uchg         (vec undo-changes)
             rchg         (vec redo-changes)
             features     (features/get-team-enabled-features state)
-            user-viewer? (not (get-in state [:workspace-file :permissions :can-edit]))]
+            user-viewer? (not (dm/get-in state [:workspace-file :permissions :can-edit]))]
 
         ;; Prevent commit changes by a viewer team member (it really should never happen)
         (if user-viewer?

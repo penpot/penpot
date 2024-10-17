@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.projects
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
@@ -312,9 +313,9 @@
                                  (sort-by :modified-at)
                                  (reverse))
         recent-map          (mf/deref recent-files-ref)
-        you-owner?          (get-in team [:permissions :is-owner])
-        you-admin?          (get-in team [:permissions :is-admin])
-        you-viewer?         (not (get-in team [:permissions :can-edit]))
+        you-owner?          (dm/get-in team [:permissions :is-owner])
+        you-admin?          (dm/get-in team [:permissions :is-admin])
+        you-viewer?         (not (dm/get-in team [:permissions :can-edit]))
         can-invite?         (or you-owner? you-admin?)
 
         show-team-hero*     (mf/use-state #(get storage/global ::show-team-hero true))

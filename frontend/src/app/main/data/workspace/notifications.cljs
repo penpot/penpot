@@ -121,16 +121,16 @@
 (defn- process-message
   [{:keys [type] :as msg}]
   (case type
-    :join-file               (handle-presence msg)
-    :leave-file              (handle-presence msg)
-    :presence                (handle-presence msg)
-    :disconnect              (handle-presence msg)
-    :pointer-update          (handle-pointer-update msg)
-    :file-change             (handle-file-change msg)
-    :library-change          (handle-library-change msg)
-    :notification            (dc/handle-notification msg)
-    :team-permissions-change (handle-change-team-permissions (assoc msg :workspace? true))
-    :removed-from-team       (dc/removed-from-team msg)
+    :join-file              (handle-presence msg)
+    :leave-file             (handle-presence msg)
+    :presence               (handle-presence msg)
+    :disconnect             (handle-presence msg)
+    :pointer-update         (handle-pointer-update msg)
+    :file-change            (handle-file-change msg)
+    :library-change         (handle-library-change msg)
+    :notification           (dc/handle-notification msg)
+    :team-role-change       (handle-change-team-permissions (assoc msg :workspace? true))
+    :team-membership-change (dc/team-membership-change msg)
     nil))
 
 (defn- handle-pointer-send

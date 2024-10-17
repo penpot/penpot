@@ -8,3 +8,10 @@
 
 (def valid-roles
   #{:owner :admin :editor :viewer})
+
+(def permissions-for-role
+  {:viewer {:can-edit false :is-admin false :is-owner false}
+   :editor {:can-edit true :is-admin false :is-owner false}
+   :admin  {:can-edit true :is-admin true :is-owner false}
+   :owner  {:can-edit true :is-admin true :is-owner true}})
+

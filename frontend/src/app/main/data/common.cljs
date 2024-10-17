@@ -174,6 +174,14 @@
              (rx/tap on-success)
              (rx/catch on-error))))))
 
+(defn- change-role-msg
+  [role]
+  (case role
+    :viewer (tr "dashboard.permissions-change.viewer")
+    :editor (tr "dashboard.permissions-change.editor")
+    :admin  (tr "dashboard.permissions-change.admin")
+    :owner  (tr "dashboard.permissions-change.owner")))
+
 
 (defn change-team-permissions
   [{:keys [team-id role workspace?]}]
@@ -182,19 +190,7 @@
   (ptk/reify ::change-team-permissions
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [msg (case role
-                  :viewer
-                  (tr "dashboard.permissions-change.viewer")
-
-                  :editor
-                  (tr "dashboard.permissions-change.editor")
-
-                  :admin
-                  (tr "dashboard.permissions-change.admin")
-
-                  :owner
-                  (tr "dashboard.permissions-change.owner"))]
-        (rx/of (ntf/info msg))))
+      (rx/of (ntf/info (change-role-msg role))))
 
     ptk/UpdateEvent
     (update [_ state]
@@ -203,37 +199,24 @@
                     [:teams team-id :permissions])]
         (update-in state route
                    (fn [permissions]
-                     (cond
-                       (= role :viewer)
-                       (assoc permissions :can-edit false :is-admin false :is-owner false)
-
-                       (= role :editor)
-                       (assoc permissions :can-edit true :is-admin false :is-owner false)
-
-                       (= role :admin)
-                       (assoc permissions :can-edit true :is-admin true :is-owner false)
-
-                       (= role :owner)
-                       (assoc permissions :can-edit true :is-admin true :is-owner true)
-
-                       :else
-                       permissions)))))))
+                     (merge permissions (get tt/permissions-for-role role))))))))
 
 
 
-(defn removed-from-team
-  [{:keys [team-id team-name]}]
+(defn team-membership-change
+  [{:keys [team-id team-name change]}]
   (dm/assert! (uuid? team-id))
-  (ptk/reify ::removed-from-team
+  (ptk/reify ::team-membership-change
     ptk/WatchEvent
     (watch [_ state _]
-      (let [msg (tr "dashboard.removed-from-team" team-name)]
+      (when (= :removed change)
+        (let [msg (tr "dashboard.removed-from-team" team-name)]
 
-        (rx/concat
-         (rx/of (rt/nav :dashboard-projects {:team-id (get-in state [:profile :default-team-id])}))
-         (->> (rx/of (ntf/info msg))
+          (rx/concat
+           (rx/of (rt/nav :dashboard-projects {:team-id (get-in state [:profile :default-team-id])}))
+           (->> (rx/of (ntf/info msg))
               ;; Delay so the navigation can finish
-              (rx/delay 250)))))))
+                (rx/delay 250))))))))
 
 
 

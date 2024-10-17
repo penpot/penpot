@@ -172,7 +172,7 @@
         team-id          (:team-id project)
         file-name        (:name file)
 
-        user-viewer?     (not (get-in file [:permissions :can-edit]))
+        user-viewer?     (not (dm/get-in file [:permissions :can-edit]))
         read-only?       (or (mf/deref refs/workspace-read-only?)
                              user-viewer?)
 

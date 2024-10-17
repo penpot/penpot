@@ -65,7 +65,7 @@
         content-width      (mf/use-state 0)
         project-id         (:id project)
         team-id            (:id team)
-        you-viewer?        (not (get-in team [:permissions :can-edit]))
+        you-viewer?        (not (dm/get-in team [:permissions :can-edit]))
 
         dashboard-local     (mf/deref refs/dashboard-local)
         file-menu-open?     (:menu-open dashboard-local)
