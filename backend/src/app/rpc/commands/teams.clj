@@ -652,7 +652,7 @@
 
     (mbus/pub! msgbus
                :topic member-id
-               :message {:type :team-permissions-change
+               :message {:type :team-role-change
                          :subs-id member-id
                          :team-id team-id
                          :role role})
@@ -711,7 +711,8 @@
 
       (mbus/pub! msgbus
                  :topic member-id
-                 :message {:type :removed-from-team
+                 :message {:type :team-membership-change
+                           :change :removed
                            :subs-id member-id
                            :team-id team-id
                            :team-name (:name team)})

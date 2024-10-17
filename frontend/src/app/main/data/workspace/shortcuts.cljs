@@ -45,7 +45,7 @@
 (defn emit-when-no-readonly
   [& events]
   (let [file         (deref refs/workspace-file)
-        user-viewer? (not (get-in file [:permissions :can-edit]))
+        user-viewer? (not (dm/get-in file [:permissions :can-edit]))
         read-only?   (or (deref refs/workspace-read-only?)
                          user-viewer?)]
     (when-not read-only?

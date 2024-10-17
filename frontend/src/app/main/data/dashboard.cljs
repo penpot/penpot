@@ -1223,7 +1223,7 @@
 (defn- process-message
   [{:keys [type] :as msg}]
   (case type
-    :notification            (dc/handle-notification msg)
-    :team-permissions-change (handle-change-team-permissions-dashboard msg)
-    :removed-from-team       (dc/removed-from-team msg)
+    :notification           (dc/handle-notification msg)
+    :team-role-change       (handle-change-team-permissions-dashboard msg)
+    :team-membership-change (dc/team-membership-change msg)
     nil))
