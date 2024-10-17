@@ -53,8 +53,8 @@
   fipp/fipp {:mvn/version "0.6.26"}
 
   io.github.eerohele/pp
-  {:git/tag "2024-01-04.60"
-   :git/sha "e8a9773"}
+  {:git/tag "2024-09-09.69"
+   :git/sha "de4b20f"}
 
   io.aviso/pretty {:mvn/version "1.4.4"}
   environ/environ {:mvn/version "1.2.0"}}
