@@ -22,8 +22,7 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
-   [yetti.request :as yreq]
-   [yetti.request :as yrq]))
+   [yetti.request :as yreq]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DEFAULTS
@@ -161,7 +160,7 @@
   (us/assert! ::manager manager)
   (fn [request response]
     (let [cname   (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
-          cookie  (yrq/get-cookie request cname)]
+          cookie  (yreq/get-cookie request cname)]
       (l/trace :hint "delete" :profile-id (:profile-id request))
       (some->> (:value cookie) (delete! manager))
       (-> response
@@ -183,7 +182,7 @@
 (defn- get-token
   [request]
   (let [cname  (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
-        cookie (some-> (yrq/get-cookie request cname) :value)]
+        cookie (some-> (yreq/get-cookie request cname) :value)]
     (when-not (str/empty? cookie)
       cookie)))
 
