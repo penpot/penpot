@@ -236,16 +236,24 @@
 (defn find-ref-shape
   "Locate the nearest component in the local file or libraries, and retrieve the shape
    referenced by the instance shape."
-  [file container libraries shape & {:keys [include-deleted? with-context?] :or {include-deleted? false with-context? false}}]
+  [file container libraries shape & {:keys [include-deleted? with-context? only-lower?]
+                                     :or {include-deleted? false with-context? false only-lower? false}}]
   (let [find-ref-shape-in-head
         (fn [head-shape]
           (let [component-file (find-component-file file libraries (:component-file head-shape))
                 component      (when (some? component-file)
                                  (ctkl/get-component (:data component-file) (:component-id head-shape) include-deleted?))]
             (when (some? component)
-              (get-ref-shape (:data component-file) component shape :with-context? with-context?))))]
+              (get-ref-shape (:data component-file) component shape :with-context? with-context?))))
+        
+        parent-heads (ctn/get-parent-heads (:objects container) shape)]
+    ;; (when (= (:id shape) #uuid "805fa3b6-a357-808b-8004-58bccaa27dca")
+    ;;   (js/console.log "shape" (clj->js shape))
+    ;;   (js/console.log "parent-heads" (clj->js parent-heads)))
 
-    (some find-ref-shape-in-head (ctn/get-parent-heads (:objects container) shape))))
+    (if only-lower?
+      (find-ref-shape-in-head (last parent-heads))
+      (some find-ref-shape-in-head parent-heads))))
 
 (defn advance-shape-ref
   "Get the shape-ref of the near main of the shape, recursively repeated as many times

@@ -258,20 +258,24 @@
 (defn- generate-detach-recursive
   [changes container libraries shape-id first component-root?]
   (let [shape (ctn/get-shape container shape-id)]
+    (prn "shape-id" (:id shape))
     (if (and (ctk/instance-head? shape) (not first))
       ; Subinstances are not detached
-      (cond-> changes
-        component-root?
+      (do
+        (when (= (:id shape) #uuid "81f32503-7638-8059-8005-1883e6d1a4fa")
+          (prn "wurxt" (ctk/get-swap-slot shape)))
+        (cond-> changes
+          component-root?
         ; If the initial shape was component-root, first level subinstances are converted in top instances
-        (pcb/update-shapes [shape-id] #(assoc % :component-root true))
+          (pcb/update-shapes [shape-id] #(assoc % :component-root true))
 
-        :always
+          :always
         ; First level subinstances of a detached component can't have swap-slot
-        (pcb/update-shapes [shape-id] ctk/remove-swap-slot)
+          (pcb/update-shapes [shape-id] ctk/remove-swap-slot)
 
-        (nil? (ctk/get-swap-slot shape))
+          (nil? (ctk/get-swap-slot shape))
         ; Near shape-refs need to be advanced one level (except if the head is already swapped)
-        (generate-advance-nesting-level nil container libraries (:id shape)))
+          (generate-advance-nesting-level nil container libraries (:id shape))))
 
       ;; Otherwise, detach the shape and all children
       (let [children-ids (:shapes shape)]
