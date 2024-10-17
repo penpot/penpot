@@ -152,7 +152,7 @@
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :not-found))))
 
-(t/deftest permissions-checks-delete-project
+(t/deftest permissions-checks-pin-project
   (let [profile1 (th/create-profile* 1)
         profile2 (th/create-profile* 2)
         project  (th/create-project* 1 {:team-id (:default-team-id profile1)

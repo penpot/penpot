@@ -44,8 +44,12 @@
 
 (defn emit-when-no-readonly
   [& events]
-  (when-not (deref refs/workspace-read-only?)
-    (run! st/emit! events)))
+  (let [file         (deref refs/workspace-file)
+        user-viewer? (not (dm/get-in file [:permissions :can-edit]))
+        read-only?   (or (deref refs/workspace-read-only?)
+                         user-viewer?)]
+    (when-not read-only?
+      (run! st/emit! events))))
 
 (def esc-pressed
   (ptk/reify ::esc-pressed
@@ -324,7 +328,7 @@
    :toggle-focus-mode    {:command "f"
                           :tooltip "F"
                           :subsections [:basics :tools]
-                          :fn #(emit-when-no-readonly (dw/toggle-focus-mode))}
+                          :fn #(st/emit! (dw/toggle-focus-mode))}
 
    ;; ITEM ALIGNMENT
 

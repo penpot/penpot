@@ -35,6 +35,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
+   [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
@@ -413,7 +414,7 @@
 (mf/defc edit-menu
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
-  [{:keys [on-close]}]
+  [{:keys [on-close user-viewer?]}]
   (let [select-all (mf/use-fn #(st/emit! (dw/select-all)))
         undo       (mf/use-fn #(st/emit! dwu/undo))
         redo       (mf/use-fn #(st/emit! dwu/redo))]
@@ -437,42 +438,44 @@
                  :key sc}
           sc])]]
 
-     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
-                              :on-click    undo
-                              :on-key-down (fn [event]
-                                             (when (kbd/enter? event)
-                                               (undo event)))
-                              :id          "file-menu-undo"}
-      [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.undo")]
-      [:span {:class (stl/css :shortcut)}
-       (for [sc (scd/split-sc (sc/get-tooltip :undo))]
-         [:span {:class (stl/css :shortcut-key)
-                 :key sc}
-          sc])]]
+     (when-not :user-viewer? user-viewer?
+               [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                                        :on-click    undo
+                                        :on-key-down (fn [event]
+                                                       (when (kbd/enter? event)
+                                                         (undo event)))
+                                        :id          "file-menu-undo"}
+                [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.undo")]
+                [:span {:class (stl/css :shortcut)}
+                 (for [sc (scd/split-sc (sc/get-tooltip :undo))]
+                   [:span {:class (stl/css :shortcut-key)
+                           :key sc}
+                    sc])]])
 
-     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
-                              :on-click    redo
-                              :on-key-down (fn [event]
-                                             (when (kbd/enter? event)
-                                               (redo event)))
-                              :id          "file-menu-redo"}
-      [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.redo")]
-      [:span {:class (stl/css :shortcut)}
+     (when-not :user-viewer? user-viewer?
+               [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                                        :on-click    redo
+                                        :on-key-down (fn [event]
+                                                       (when (kbd/enter? event)
+                                                         (redo event)))
+                                        :id          "file-menu-redo"}
+                [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.redo")]
+                [:span {:class (stl/css :shortcut)}
 
-       (for [sc (scd/split-sc (sc/get-tooltip :redo))]
-         [:span {:class (stl/css :shortcut-key)
-                 :key sc}
-          sc])]]]))
+                 (for [sc (scd/split-sc (sc/get-tooltip :redo))]
+                   [:span {:class (stl/css :shortcut-key)
+                           :key sc}
+                    sc])]])]))
 
 (mf/defc file-menu
   {::mf/wrap-props false}
-  [{:keys [on-close file]}]
-  (let [file-id   (:id file)
-        shared?   (:is-shared file)
+  [{:keys [on-close file user-viewer?]}]
+  (let [file-id      (:id file)
+        shared?      (:is-shared file)
 
-        objects   (mf/deref refs/workspace-page-objects)
-        frames    (->> (cfh/get-immediate-children objects uuid/zero)
-                       (filterv cfh/frame-shape?))
+        objects      (mf/deref refs/workspace-page-objects)
+        frames       (->> (cfh/get-immediate-children objects uuid/zero)
+                          (filterv cfh/frame-shape?))
 
         on-remove-shared
         (mf/use-fn
@@ -565,11 +568,12 @@
                                 :id          "file-menu-remove-shared"}
         [:span {:class (stl/css :item-name)} (tr "dashboard.unpublish-shared")]]
 
-       [:> dropdown-menu-item* {:class (stl/css :submenu-item)
-                                :on-click    on-add-shared
-                                :on-key-down on-add-shared-key-down
-                                :id          "file-menu-add-shared"}
-        [:span {:class (stl/css :item-name)} (tr "dashboard.add-shared")]])
+       (when-not user-viewer?
+         [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                                  :on-click    on-add-shared
+                                  :on-key-down on-add-shared-key-down
+                                  :id          "file-menu-add-shared"}
+          [:span {:class (stl/css :item-name)} (tr "dashboard.add-shared")]]))
 
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                               :on-click    on-export-shapes
@@ -657,6 +661,8 @@
         sub-menu*      (mf/use-state false)
         sub-menu       (deref sub-menu*)
 
+        user-viewer?   (mf/use-ctx ctx/user-viewer?)
+
         open-menu
         (mf/use-fn
          (fn [event]
@@ -673,6 +679,12 @@
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
+           (reset! sub-menu* nil)))
+
+        close-all-menus
+        (mf/use-fn
+         (fn []
+           (reset! show-menu* false)
            (reset! sub-menu* nil)))
 
         on-menu-click
@@ -712,6 +724,12 @@
            (st/emit!
             (ptk/event ::ev/event {::ev/name "open-plugins-manager" ::ev/origin "workspace:menu"})
             (modal/show :plugin-management {}))))]
+
+    (mf/with-effect []
+      (let [disposable (->> st/stream
+                            (rx/filter #(= :interrupt %))
+                            (rx/subs! close-all-menus))]
+        (partial rx/dispose! disposable)))
 
 
     [:*
@@ -793,11 +811,13 @@
        :file
        [:& file-menu
         {:file file
-         :on-close close-sub-menu}]
+         :on-close close-sub-menu
+         :user-viewer? user-viewer?}]
 
        :edit
        [:& edit-menu
-        {:on-close close-sub-menu}]
+        {:on-close close-sub-menu
+         :user-viewer? user-viewer?}]
 
        :view
        [:& view-menu

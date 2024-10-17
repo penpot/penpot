@@ -12,8 +12,13 @@
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
-   [app.main.data.common :refer [handle-notification]]
+   [app.main.data.common :as dc]
+   [app.main.data.modal :as modal]
    [app.main.data.websocket :as dws]
+   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.edition :as dwe]
+   [app.main.data.workspace.layout :as dwly]
+
    [app.main.data.workspace.libraries :as dwl]
    [app.util.globals :refer [global]]
    [app.util.mouse :as mse]
@@ -92,17 +97,40 @@
 
         (rx/concat stream (rx/of (dws/send endmsg)))))))
 
+
+(defn- handle-change-team-permissions
+  [{:keys [role] :as msg}]
+  (ptk/reify ::handle-change-team-permissions
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [viewer? (= :viewer role)]
+
+        (rx/concat
+         (rx/of :interrupt
+                (dwe/clear-edition-mode)
+                (dwc/set-workspace-read-only false))
+         (->> (rx/of (dc/change-team-permissions msg))
+              ;; Delay so anything that launched :interrupt can finish
+              (rx/delay 100))
+         (if viewer?
+           (rx/of (modal/hide)
+                  (dwly/set-options-mode :inspect))
+           (rx/of (dwly/set-options-mode :design))))))))
+
+
 (defn- process-message
   [{:keys [type] :as msg}]
   (case type
-    :join-file      (handle-presence msg)
-    :leave-file     (handle-presence msg)
-    :presence       (handle-presence msg)
-    :disconnect     (handle-presence msg)
-    :pointer-update (handle-pointer-update msg)
-    :file-change    (handle-file-change msg)
-    :library-change (handle-library-change msg)
-    :notification   (handle-notification msg)
+    :join-file              (handle-presence msg)
+    :leave-file             (handle-presence msg)
+    :presence               (handle-presence msg)
+    :disconnect             (handle-presence msg)
+    :pointer-update         (handle-pointer-update msg)
+    :file-change            (handle-file-change msg)
+    :library-change         (handle-library-change msg)
+    :notification           (dc/handle-notification msg)
+    :team-role-change       (handle-change-team-permissions (assoc msg :workspace? true))
+    :team-membership-change (dc/team-membership-change msg)
     nil))
 
 (defn- handle-pointer-send

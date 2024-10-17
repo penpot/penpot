@@ -31,6 +31,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.shape-icon :as sic]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.util.dom :as dom]
@@ -534,16 +535,17 @@
                      :on-click do-duplicate}]]))
 
 (mf/defc viewport-context-menu
-  []
+  [{:keys [read-only?]}]
   (let [focus      (mf/deref refs/workspace-focus-selected)
         do-paste   #(st/emit! (dw/paste-from-clipboard))
         do-hide-ui #(st/emit! (-> (dw/toggle-layout-flag :hide-ui)
                                   (vary-meta assoc ::ev/origin "workspace-context-menu")))
         do-toggle-focus-mode #(st/emit! (dw/toggle-focus-mode))]
     [:*
-     [:& menu-entry {:title (tr "workspace.shape.menu.paste")
-                     :shortcut (sc/get-tooltip :paste)
-                     :on-click do-paste}]
+     (when-not read-only?
+       [:& menu-entry {:title (tr "workspace.shape.menu.paste")
+                       :shortcut (sc/get-tooltip :paste)
+                       :on-click do-paste}])
      [:& menu-entry {:title (tr "workspace.shape.menu.hide-ui")
                      :shortcut (sc/get-tooltip :hide-ui)
                      :on-click do-hide-ui}]
@@ -643,7 +645,8 @@
   (let [mdata          (mf/deref menu-ref)
         top            (- (get-in mdata [:position :y]) 20)
         left           (get-in mdata [:position :x])
-        dropdown-ref   (mf/use-ref)]
+        dropdown-ref   (mf/use-ref)
+        read-only?     (mf/use-ctx ctx/workspace-read-only?)]
 
     (mf/use-effect
      (mf/deps mdata)
@@ -666,9 +669,11 @@
             :on-context-menu prevent-default}
 
       [:ul {:class (stl/css :context-list)}
-       (case (:kind mdata)
-         :shape [:& shape-context-menu {:mdata mdata}]
-         :page [:& page-item-context-menu {:mdata mdata}]
-         :grid-track [:& grid-track-context-menu {:mdata mdata}]
-         :grid-cells [:& grid-cells-context-menu {:mdata mdata}]
-         [:& viewport-context-menu {:mdata mdata}])]]]))
+       (if read-only?
+         [:& viewport-context-menu {:mdata mdata :read-only? read-only?}]
+         (case (:kind mdata)
+           :shape [:& shape-context-menu {:mdata mdata}]
+           :page [:& page-item-context-menu {:mdata mdata}]
+           :grid-track [:& grid-track-context-menu {:mdata mdata}]
+           :grid-cells [:& grid-cells-context-menu {:mdata mdata}]
+           [:& viewport-context-menu {:mdata mdata}]))]]]))
