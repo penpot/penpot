@@ -7,10 +7,10 @@
 (ns app.main.ui.workspace.tokens.sets
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.main.data.messages :as msg]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.data.notifications :as ntf]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.tokens.sets-context :as sets-context]
@@ -166,7 +166,7 @@
                                        :selected-set-id selected-token-set-id)])]))])]]))
 
 (defn warn-on-try-create-token-set-group!  []
-  (st/emit! (msg/show {:content "Token Set grouping is not supported yet."
+  (st/emit! (ntf/show {:content "Token Set grouping is not supported yet."
                        :notification-type :toast
                        :type :warning
                        :timeout 3000})))

@@ -10,7 +10,7 @@
    [app.common.data :as d]
    [app.common.transit :as t]
    [app.common.types.tokens-lib :as ctob]
-   [app.main.data.messages :as msg]
+   [app.main.data.notifications :as ntf]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
@@ -294,7 +294,7 @@
                              (st/emit! (dt/import-tokens-lib lib)))
                            (fn [err]
                              (let [{:keys [user-error]} (ex-data err)]
-                               (st/emit! (msg/show {:content user-error
+                               (st/emit! (ntf/show {:content user-error
                                                     :notification-type :toast
                                                     :type :warning
                                                     :timeout 3000}))))))
