@@ -11,7 +11,6 @@
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]
-   [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
    [app.main.data.events :as-alias ev]
    [app.main.data.workspace :as udw]
@@ -28,12 +27,6 @@
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.tokens.changes :as wtch]
-   [app.main.ui.workspace.tokens.core :as wtc]
-   [app.main.ui.workspace.tokens.editable-select :refer [editable-select]]
-   [app.main.ui.workspace.tokens.style-dictionary :as sd]
-   [app.main.ui.workspace.tokens.token :as wtt]
-   [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -300,7 +293,7 @@
 
 (mf/defc simple-padding-selection
   {::mf/props :obj}
-  [{:keys [value on-change padding-x-options padding-y-options]}]
+  [{:keys [value on-change]}]
   (let [p1 (:p1 value)
         p2 (:p2 value)
         p3 (:p3 value)
@@ -319,12 +312,15 @@
         on-change'
         (mf/use-fn
          (mf/deps on-change)
-         (fn [value attr]
-           (on-change :simple attr value)))
+         (fn [value event]
+           (let [attr (-> (dom/get-current-target event)
+                          (dom/get-data "attr")
+                          (keyword))]
+             (on-change :simple attr value event))))
 
         on-focus
         (mf/use-fn
-         (fn [attr event]
+         (fn [event]
            (let [attr (-> (dom/get-current-target event)
                           (dom/get-data "attr")
                           (keyword))]
@@ -340,39 +336,28 @@
             :title "Vertical padding"}
       [:span {:class (stl/css :icon)}
        i/padding-top-bottom]
-      [:& editable-select
-       {:placeholder "--"
-        :on-change #(on-change' %1 :p1)
-        :on-token-remove #(on-change' (wtc/maybe-resolve-token-value %) :p1)
-        :options padding-x-options
-        :position :left
-        :value p1
-        :input-props {:type "number"
-                      :data-attr "p1"
-                      :onFocus on-focus
-                      :no-validate true
-                      :nillable true
-                      :min 0
-                      :class (stl/css :numeric-input)}}]]
+      [:> numeric-input*
+       {:class (stl/css :numeric-input)
+        :placeholder "--"
+        :data-attr "p1"
+        :on-change on-change'
+        :on-focus on-focus
+        :min 0
+        :value p1}]]
      [:div {:class (stl/css :padding-simple)
             :title "Horizontal padding"}
 
       [:span {:class (stl/css :icon)}
        i/padding-left-right]
-      [:& editable-select
-       {:placeholder "--"
-        :on-change #(on-change' %1 :p2)
-        :on-token-remove #(on-change' (wtc/maybe-resolve-token-value %) :p2)
-        :options padding-y-options
-        :position :right
-        :value p2
-        :input-props {:type "number"
-                      :data-attr "p2"
-                      :onFocus on-focus
-                      :no-validate true
-                      :nillable true
-                      :min 0
-                      :class (stl/css :numeric-input)}}]]]))
+      [:> numeric-input*
+       {:className (stl/css :numeric-input)
+        :placeholder "--"
+        :data-attr "p2"
+        :on-change on-change'
+        :on-focus on-focus
+        :on-blur on-padding-blur
+        :min 0
+        :value p2}]]]))
 
 (mf/defc multiple-padding-selection
   {::mf/props :obj}
@@ -413,7 +398,6 @@
         :on-change on-change'
         :on-focus on-focus
         :on-blur on-padding-blur
-        :nillable true
         :min 0
         :value p1}]]
 
@@ -428,7 +412,6 @@
         :on-change on-change'
         :on-focus on-focus
         :on-blur on-padding-blur
-        :nillable true
         :min 0
         :value p2}]]
 
@@ -443,7 +426,6 @@
         :on-change on-change'
         :on-focus on-focus
         :on-blur on-padding-blur
-        :nillable true
         :min 0
         :value p3}]]
 
@@ -458,7 +440,6 @@
         :on-change on-change'
         :on-focus on-focus
         :on-blur on-padding-blur
-        :nillable true
         :min 0
         :value p4}]]]))
 
@@ -520,7 +501,7 @@
 
 (mf/defc gap-section
   {::mf/props :obj}
-  [{:keys [is-column wrap-type on-change value spacing-column-options spacing-row-options]
+  [{:keys [is-column wrap-type on-change value]
     :or {wrap-type :none}
     :as props}]
   (let [nowrap? (= :nowrap wrap-type)
@@ -536,8 +517,11 @@
         on-change'
         (mf/use-fn
          (mf/deps on-change)
-         (fn [value wrap-type type]
-           (on-change (= "nowrap" wrap-type) type value)))]
+         (fn [value event]
+           (let [target    (dom/get-current-target event)
+                 wrap-type (dom/get-data target "wrap-type")
+                 type      (keyword (dom/get-data target "type"))]
+             (on-change (= "nowrap" wrap-type) type value event))))]
 
     (mf/with-effect []
       ;; on destroy component
@@ -551,45 +535,38 @@
                     :disabled row-gap-disabled?)
             :title "Row gap"}
       [:span {:class (stl/css :icon)} i/gap-vertical]
-      [:& editable-select
-       {:disabled row-gap-disabled?
+      [:> numeric-input*
+       {:class (stl/css :numeric-input true)
+        :no-validate true
         :placeholder "--"
-        :on-change #(on-change' %1 (d/name wrap-type) :row-gap)
+        :data-type "row-gap"
+        :data-wrap-type (d/name wrap-type)
+        :on-focus on-gap-focus
+        :on-change on-change'
         :on-blur on-gap-blur
-        :on-token-remove #(on-change' (wtc/maybe-resolve-token-value %) (d/name wrap-type) :row-gap)
-        :options spacing-row-options
-        :position :left
+        :nillable true
+        :min 0
         :value (:row-gap value)
-        :input-props {:type "number"
-                      :data-type "row-gap"
-                      :data-wrap-type (d/name wrap-type)
-                      :no-validate true
-                      :nillable true
-                      :min 0
-                      :class (stl/css :numeric-input)}}]]
+        :disabled row-gap-disabled?}]]
 
      [:div {:class (stl/css-case
                     :column-gap true
                     :disabled col-gap-disabled?)
             :title "Column gap"}
       [:span {:class (stl/css :icon)} i/gap-horizontal]
-      [:& editable-select
-       {:disabled col-gap-disabled?
+      [:> numeric-input*
+       {:class (stl/css :numeric-input true)
+        :no-validate true
         :placeholder "--"
-        :on-change #(on-change' %1 (d/name wrap-type) :column-gap)
+        :data-type "column-gap"
+        :data-wrap-type (d/name wrap-type)
+        :on-focus on-gap-focus
+        :on-change on-change'
         :on-blur on-gap-blur
-        :on-token-remove #(on-change' (wtc/maybe-resolve-token-value %) (d/name wrap-type) :column-gap)
-        :options spacing-column-options
-        :position :right
+        :nillable true
+        :min 0
         :value (:column-gap value)
-        :input-props {:type "number"
-                      :data-type "column-gap"
-                      :data-wrap-type (d/name wrap-type)
-                      :no-validate true
-                      :onFocus on-gap-focus
-                      :nillable true
-                      :min 0
-                      :class (stl/css :numeric-input)}}]]]))
+        :disabled col-gap-disabled?}]]]))
 
 ;; GRID COMPONENTS
 
@@ -700,7 +677,7 @@
   [{:keys [type value]}]
   (case type
     :auto "auto"
-    :percent (fmt/format-percent value)
+    :percent (fmt/format-percent (/ value 100))
     :flex    (fmt/format-frs value)
     :fixed   (fmt/format-pixels value)
     value))
@@ -840,9 +817,9 @@
   (st/emit! (dom/open-new-window cf/grid-help-uri)))
 
 (mf/defc layout-container-menu
-  {#_#_::mf/memo #{:ids :values :multiple :shape}
+  {::mf/memo #{:ids :values :multiple}
    ::mf/props :obj}
-  [{:keys [ids values multiple] :as props}]
+  [{:keys [ids values multiple]}]
   (let [;; Display
         layout-type    (:layout values)
         has-layout?    (some? layout-type)
@@ -855,49 +832,6 @@
 
         on-toggle-visibility
         (mf/use-fn #(swap! open* not))
-
-        shape (when-not multiple
-                (first (deref (refs/objects-by-id ids))))
-        tokens (sd/use-active-theme-sets-tokens)
-        spacing-tokens (mf/use-memo
-                        (mf/deps tokens)
-                        #(ctob/filter-by-type :spacing tokens))
-
-        spacing-column-options (mf/use-memo
-                                (mf/deps shape spacing-tokens)
-                                #(when shape
-                                   (wtc/tokens-name-map->select-options
-                                    {:shape shape
-                                     :tokens spacing-tokens
-                                     :attributes (wtty/token-attributes :spacing)
-                                     :selected-attributes #{:spacing-column}})))
-
-        spacing-row-options (mf/use-memo
-                             (mf/deps shape spacing-tokens)
-                             #(when shape
-                                (wtc/tokens-name-map->select-options
-                                 {:shape shape
-                                  :tokens spacing-tokens
-                                  :attributes (wtty/token-attributes :spacing)
-                                  :selected-attributes #{:spacing-row}})))
-
-        padding-x-options (mf/use-memo
-                           (mf/deps shape spacing-tokens)
-                           #(when shape
-                              (wtc/tokens-name-map->select-options
-                               {:shape shape
-                                :tokens spacing-tokens
-                                :attributes (wtty/token-attributes :spacing)
-                                :selected-attributes #{:padding-p1 :padding-p3}})))
-
-        padding-y-options (mf/use-memo
-                           (mf/deps shape spacing-tokens)
-                           #(when shape
-                              (wtc/tokens-name-map->select-options
-                               {:shape shape
-                                :tokens spacing-tokens
-                                :attributes (wtty/token-attributes :spacing)
-                                :selected-attributes #{:padding-p2 :padding-p4}})))
 
         on-add-layout
         (mf/use-fn
@@ -965,20 +899,14 @@
 
         ;; Gap
         on-gap-change
-        (fn [multiple? type value]
-          (let [token-value (wtc/maybe-resolve-token-value value)
-                val (or token-value (mth/finite value 0))
-                token-type (case type
-                             :column-gap :spacing-column
-                             :row-gap :spacing-row)]
+        (fn [multiple? type val]
+          (let [val (mth/finite val 0)]
             (cond
               ^boolean multiple?
-              (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}
-                                                 :applied-tokens {token-type (if token-value (:id value) nil)}}))
+              (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
 
               (some? type)
-              (st/emit! (dwsl/update-layout ids {:layout-gap {type val}
-                                                 :applied-tokens {token-type (if token-value (:id value) nil)}})))))
+              (st/emit! (dwsl/update-layout ids {:layout-gap {type val}})))))
 
         ;; Padding
         on-padding-type-change
@@ -990,26 +918,14 @@
         on-padding-change
         (mf/use-fn
          (mf/deps ids)
-         (fn [type prop value]
-           (let [token-identifier (wtt/token-identifier value)
-                 val (or token-identifier (mth/finite value 0))
-                 on-update-shape wtch/update-layout-padding]
+         (fn [type prop val]
+           (let [val (mth/finite val 0)]
              (cond
                (and (= type :simple) (= prop :p1))
-               (if token-identifier
-                 (st/emit! (wtch/apply-token {:shape-ids ids
-                                              :attributes #{:p1 :p3}
-                                              :token value
-                                              :on-update-shape on-update-shape}))
-                 (st/emit! (on-update-shape value ids #{:p1 :p3})))
+               (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))
 
                (and (= type :simple) (= prop :p2))
-               (if token-identifier
-                 (st/emit! (wtch/apply-token {:shape-ids ids
-                                              :attributes #{:p2 :p4}
-                                              :token value
-                                              :on-update-shape on-update-shape}))
-                 (st/emit! (on-update-shape value ids #{:p2 :p4})))
+               (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}}))
 
                (some? prop)
                (st/emit! (dwsl/update-layout ids {:layout-padding {prop val}}))))))
@@ -1162,16 +1078,12 @@
            [:& gap-section {:is-column is-column
                             :wrap-type wrap-type
                             :on-change on-gap-change
-                            :value (:layout-gap values)
-                            :spacing-column-options spacing-column-options
-                            :spacing-row-options spacing-row-options}]
+                            :value (:layout-gap values)}]
 
            [:& padding-section {:value (:layout-padding values)
                                 :type (:layout-padding-type values)
                                 :on-type-change on-padding-type-change
-                                :on-change on-padding-change
-                                :padding-x-options padding-x-options
-                                :padding-y-options padding-y-options}]]]
+                                :on-change on-padding-change}]]]
 
          :grid
          [:div {:class (stl/css :grid-layout-menu)}

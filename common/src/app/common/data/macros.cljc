@@ -108,14 +108,6 @@
           `(do ~@body)
           (reverse (partition 2 bindings))))
 
-(defmacro check
-  "Applies a predicate to the value, if result is true, return the
-  value if not, returns nil."
-  [pred-fn value]
-  `(if (~pred-fn ~value)
-     ~value
-     nil))
-
 (defmacro get-prop
   "A macro based, optimized variant of `get` that access the property
   directly on CLJS, on CLJ works as get."
@@ -124,47 +116,32 @@
     (list 'js* (c/str "(~{}?." (str/snake prop) "?? ~{})") obj (list 'cljs.core/get obj prop))
     (list `c/get obj prop)))
 
-(def ^:dynamic *assert-context* nil)
+(defn runtime-assert
+  [hint f]
+  (try
+    (when-not (f)
+      (throw (ex-info hint {:type :assertion
+                            :code :expr-validation
+                            :hint hint})))
+    (catch #?(:clj Throwable :cljs :default) cause
+      (let [data (-> (ex-data cause)
+                     (assoc :type :assertion)
+                     (assoc :code :expr-validation)
+                     (assoc :hint hint))]
+        (throw (ex-info hint data cause))))))
 
 (defmacro assert!
   ([expr]
    `(assert! nil ~expr))
   ([hint expr]
-   (let [hint (cond
-                (vector? hint)
-                `(str/ffmt ~@hint)
+   (let [hint  (cond
+                 (vector? hint)
+                 `(str/ffmt ~@hint)
 
-                (some? hint)
-                hint
+                 (some? hint)
+                 hint
 
-                :else
-                (str "expr assert: " (pr-str expr)))]
+                 :else
+                 (str "expr assert: " (pr-str expr)))]
      (when *assert*
-       `(binding [*assert-context* ~hint]
-          (when-not ~expr
-            (let [hint#   ~hint
-                  params# {:type :assertion
-                           :code :expr-validation
-                           :hint hint#}]
-              (throw (ex-info hint# params#)))))))))
-
-(defmacro verify!
-  ([expr]
-   `(verify! nil ~expr))
-  ([hint expr]
-   (let [hint (cond
-                (vector? hint)
-                `(str/ffmt ~@hint)
-
-                (some? hint)
-                hint
-
-                :else
-                (str "expr assert: " (pr-str expr)))]
-     `(binding [*assert-context* ~hint]
-        (when-not ~expr
-          (let [hint#   ~hint
-                params# {:type :assertion
-                         :code :expr-validation
-                         :hint hint#}]
-            (throw (ex-info hint# params#))))))))
+       `(runtime-assert ~hint (fn [] ~expr))))))

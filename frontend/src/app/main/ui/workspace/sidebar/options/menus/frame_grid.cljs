@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.geom.grid :as gg]
+   [app.common.types.grid :as ctg]
    [app.main.data.workspace.grid :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -22,8 +23,8 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(def workspace-saved-grids
-  (l/derived :saved-grids refs/workspace-page-options))
+(def lens:default-grids
+  (l/derived :default-grids refs/workspace-page))
 
 (defn- get-size-options []
   [{:value nil :label (tr "workspace.options.grid.auto")}
@@ -297,10 +298,16 @@
         has-frame-grids?    (or (= :multiple frame-grids) (some? (seq frame-grids)))
 
         toggle-content      (mf/use-fn #(swap! state* not))
+
         id                  (:id shape)
-        saved-grids         (mf/deref workspace-saved-grids)
-        default-grid-params (mf/use-memo (mf/deps saved-grids) #(merge dw/default-grid-params saved-grids))
-        handle-create-grid  (mf/use-fn (mf/deps id) #(st/emit! (dw/add-frame-grid id)))]
+        default-grids       (mf/deref lens:default-grids)
+        default-grid-params (mf/with-memo [default-grids]
+                              (merge ctg/default-grid-params default-grids))
+
+        handle-create-grid
+        (mf/use-fn
+         (mf/deps id)
+         #(st/emit! (dw/add-frame-grid id)))]
 
     [:div {:class (stl/css :element-set)}
      [:& title-bar {:collapsable  has-frame-grids?

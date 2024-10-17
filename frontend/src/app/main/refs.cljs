@@ -26,9 +26,6 @@
 (def router
   (l/derived :router st/state))
 
-(def message
-  (l/derived :message st/state))
-
 (def profile
   (l/derived :profile st/state))
 
@@ -189,6 +186,9 @@
 (def options-mode-global
   (l/derived :options-mode workspace-global))
 
+(def default-font
+  (l/derived :default-font workspace-global))
+
 (def inspect-expanded
   (l/derived :inspect-expanded workspace-local))
 
@@ -244,9 +244,10 @@
              =))
 
 (def workspace-recent-colors
-  (l/derived (fn [data]
-               (get data :recent-colors []))
-             workspace-data))
+  (l/derived (fn [state]
+               (when-let [file-id (:current-file-id state)]
+                 (dm/get-in state [:recent-colors file-id])))
+             st/state))
 
 (def workspace-recent-fonts
   (l/derived (fn [data]
@@ -287,6 +288,9 @@
                      data    (:workspace-data state)]
                  (dm/get-in data [:pages-index page-id])))
              st/state))
+
+(def workspace-page-flows
+  (l/derived #(-> % :flows not-empty) workspace-page))
 
 (defn workspace-page-objects-by-id
   [page-id]
@@ -350,9 +354,6 @@
        (into [] (keep (d/getf objects)) children-ids)))
    workspace-page-objects =))
 
-(def workspace-page-options
-  (l/derived :options workspace-page))
-
 (def workspace-frames
   (l/derived ctt/get-frames workspace-page-objects =))
 
@@ -361,6 +362,9 @@
 
 (def workspace-editor-state
   (l/derived :workspace-editor-state st/state))
+
+(def workspace-v2-editor-state
+  (l/derived :workspace-v2-editor-state st/state))
 
 (def workspace-modifiers
   (l/derived :workspace-modifiers st/state =))

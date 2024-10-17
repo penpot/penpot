@@ -17,7 +17,7 @@
    [cuerdas.core :as str]))
 
 (defn handle-response
-  [{:keys [status body] :as response}]
+  [{:keys [status body headers] :as response}]
   (cond
     (= 204 status)
     ;; We need to send "something" so the streams listening downstream can act
@@ -40,6 +40,13 @@
                        {:type :validation
                         :code :request-body-too-large}))
 
+    (and (= status 403)
+         (or (= "cloudflare" (get headers "server"))
+             (= "challenge" (get headers "cf-mitigated"))))
+    (rx/throw (ex-info "http error"
+                       {:type :authorization
+                        :code :challenge-required}))
+
     (and (>= status 400) (map? body))
     (rx/throw (ex-info "http error" body))
 
@@ -48,6 +55,7 @@
      (ex-info "http error"
               {:type :unexpected-error
                :status status
+               :headers headers
                :data body}))))
 
 (def default-options

@@ -413,8 +413,6 @@
 (defn lib-typography-proxy? [p]
   (instance? LibraryTypographyProxy p))
 
-(set! shape/lib-typography-proxy? lib-typography-proxy?)
-
 (defn lib-typography-proxy
   [plugin-id file-id id]
   (assert (uuid? file-id))
@@ -757,8 +755,6 @@
         (let [component (u/proxy->library-component self)
               value (dm/str value " / " (:name component))]
           (st/emit! (dwl/rename-component id value)))))}))
-
-(set! shape/lib-component-proxy lib-component-proxy)
 
 (deftype Library [$plugin $id]
   Object

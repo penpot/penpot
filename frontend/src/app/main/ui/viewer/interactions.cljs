@@ -218,24 +218,27 @@
                       :delta delta
                       :fixed? fixed?}]))
 
-(mf/defc flows-menu
-  {::mf/wrap [mf/memo]}
+(mf/defc flows-menu*
+  {::mf/wrap [mf/memo]
+   ::mf/props :obj}
   [{:keys [page index]}]
-  (let [flows        (dm/get-in page [:options :flows])
-        frames       (:frames page)
-        frame        (get frames index)
-        current-flow* (mf/use-state
-                       #(ctp/get-frame-flow flows (:id frame)))
+  (let [flows            (not-empty (:flows page))
+        frames           (:frames page)
 
-        current-flow  (deref current-flow*)
+        frame            (get frames index)
+        frame-id         (dm/get-prop frame :id)
+
+        current-flow*    (mf/use-state #(ctp/get-frame-flow flows frame-id))
+        current-flow     (deref current-flow*)
 
         show-dropdown?*  (mf/use-state false)
         show-dropdown?   (deref show-dropdown?*)
+
         toggle-dropdown  (mf/use-fn #(swap! show-dropdown?* not))
         hide-dropdown    (mf/use-fn #(reset! show-dropdown?* false))
 
         select-flow
-        (mf/use-callback
+        (mf/use-fn
          (fn [event]
            (let [flow (-> (dom/get-current-target event)
                           (dom/get-data "value")
@@ -243,7 +246,7 @@
              (reset! current-flow* flow)
              (st/emit! (dv/go-to-frame (:starting-frame flow))))))]
 
-    (when (seq flows)
+    (when flows
       [:div {:on-click toggle-dropdown
              :class (stl/css :view-options)}
        [:span {:class (stl/css :icon)} i/play]
@@ -252,15 +255,16 @@
        [:& dropdown {:show show-dropdown?
                      :on-close hide-dropdown}
         [:ul {:class (stl/css :dropdown)}
-         (for [[index flow] (d/enumerate flows)]
-           [:li {:key (dm/str "flow-" (:id flow) "-" index)
+         (for [[flow-id flow] flows]
+           [:li {:key (dm/str "flow-" flow-id)
                  :class (stl/css-case :dropdown-element true
-                                      :selected (= (:id flow) (:id current-flow)))
-                         ;; This is not a best practise, is not very performant Do not reproduce
+                                      :selected (= flow-id (:id current-flow)))
+                 ;; WARN: This is not a best practise, is not very
+                 ;; performant DO NOT COPY
                  :data-value (pr-str flow)
                  :on-click select-flow}
             [:span {:class (stl/css :label)} (:name flow)]
-            (when (= (:id flow) (:id current-flow))
+            (when (= flow-id (:id current-flow))
               [:span {:class (stl/css :icon)} i/tick])])]]])))
 
 (mf/defc interactions-menu

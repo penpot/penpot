@@ -22,7 +22,6 @@
    [app.db :as db]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
-   [app.media :as media]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
@@ -403,9 +402,9 @@
     (write-obj! output rels)))
 
 (defmethod write-section :v1/sobjects
-  [{:keys [::sto/storage ::output]}]
+  [{:keys [::output] :as cfg}]
   (let [sids    (-> bfc/*state* deref :sids)
-        storage (media/configure-assets-storage storage)]
+        storage (sto/resolve cfg)]
 
     (l/dbg :hint "found sobjects"
            :items (count sids)
@@ -620,8 +619,8 @@
                   ::l/sync? true))))))
 
 (defmethod read-section :v1/sobjects
-  [{:keys [::sto/storage ::db/conn ::input ::bfc/overwrite ::bfc/timestamp]}]
-  (let [storage (media/configure-assets-storage storage)
+  [{:keys [::db/conn ::input ::bfc/overwrite ::bfc/timestamp] :as cfg}]
+  (let [storage (sto/resolve cfg)
         ids     (read-obj! input)
         thumb?  (into #{} (map :media-id) (:thumbnails @bfc/*state*))]
 

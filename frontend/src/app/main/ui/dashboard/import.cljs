@@ -12,8 +12,8 @@
    [app.common.logging :as log]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.errors :as errors]
    [app.main.features :as features]
    [app.main.store :as st]
@@ -366,7 +366,7 @@
            (reset! template-finished* true)
            (errors/print-error! cause)
            (rx/of (modal/hide)
-                  (msg/error (tr "dashboard.libraries-and-templates.import-error")))))
+                  (ntf/error (tr "dashboard.libraries-and-templates.import-error")))))
 
         continue-entries
         (mf/use-fn
@@ -481,19 +481,19 @@
       [:div {:class (stl/css :modal-content)}
        (when (and (= :analyzing status) errors?)
          [:& context-notification
-          {:type :warning
+          {:level :warning
            :content (tr "dashboard.import.import-warning")}])
 
        (when (and (= :importing status) (not ^boolean pending-import?))
          (cond
            errors?
            [:& context-notification
-            {:type :warning
+            {:level :warning
              :content (tr "dashboard.import.import-warning")}]
 
            :else
            [:& context-notification
-            {:type (if (zero? success-num) :warning :success)
+            {:level (if (zero? success-num) :warning :success)
              :content (tr "dashboard.import.import-message" (i18n/c success-num))}]))
 
        (for [entry entries]

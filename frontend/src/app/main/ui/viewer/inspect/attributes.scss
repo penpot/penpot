@@ -11,6 +11,13 @@
   flex-direction: column;
   gap: $s-16;
   width: 100%;
-  height: 100%;
+  height: calc(100vh - #{$s-128}); // TODO: Fix this hardcoded value
   padding-top: $s-8;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
+.workspace-element-options {
+  height: calc(100vh - #{$s-164}); // TODO: Fix this hardcoded value
 }

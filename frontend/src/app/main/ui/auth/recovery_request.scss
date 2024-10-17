@@ -10,3 +10,10 @@
 .fields-row {
   margin-bottom: $s-8;
 }
+
+.notification-text-email {
+  @include medTitleTipography;
+  font-size: $fs-20;
+  color: var(--register-confirmation-color);
+  margin-inline: $s-36;
+}

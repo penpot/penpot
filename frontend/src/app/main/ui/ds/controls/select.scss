@@ -1,0 +1,147 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../_borders.scss" as *;
+@use "../_sizes.scss" as *;
+@use "../typography.scss" as *;
+
+.select-wrapper {
+  --select-icon-fg-color: var(--color-foreground-secondary);
+  --select-fg-color: var(--color-foreground-primary);
+  --select-bg-color: var(--color-background-tertiary);
+  --select-outline-color: none;
+  --select-border-color: none;
+  --select-dropdown-border-color: var(--color-background-quaternary);
+
+  &:hover {
+    --select-bg-color: var(--color-background-quaternary);
+  }
+
+  @include use-typography("body-small");
+  position: relative;
+  display: grid;
+  grid-template-rows: auto;
+  gap: var(--sp-xxs);
+  width: 100%;
+}
+
+.select {
+  &:focus-visible {
+    --select-outline-color: var(--color-accent-primary);
+  }
+
+  &:disabled {
+    --select-bg-color: var(--color-background-primary);
+    --select-border-color: var(--color-background-quaternary);
+    --select-fg-color: var(--color-foreground-secondary);
+  }
+
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-xs);
+  height: $sz-32;
+  width: 100%;
+  padding: var(--sp-s);
+  border: none;
+  border-radius: $br-8;
+  outline: $b-1 solid var(--select-outline-color);
+  border: $b-1 solid var(--select-border-color);
+  background: var(--select-bg-color);
+  color: var(--select-fg-color);
+  appearance: none;
+}
+
+.arrow {
+  color: var(--select-icon-fg-color);
+  transform: rotate(90deg);
+}
+
+.select-header {
+  display: grid;
+  justify-items: start;
+  gap: var(--sp-xs);
+}
+
+.header-label {
+  @include use-typography("body-small");
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  min-width: 0;
+  padding-inline-start: var(--sp-xxs);
+  text-align: left;
+  color: var(--select-fg-color);
+}
+
+.header-icon {
+  grid-template-columns: auto 1fr;
+  color: var(--select-icon-fg-color);
+}
+
+.option-list {
+  --options-dropdown-bg-color: var(--color-background-tertiary);
+  position: absolute;
+  right: 0;
+  top: $sz-36;
+  width: 100%;
+  background-color: var(--options-dropdown-bg-color);
+  border-radius: $br-8;
+  border: $b-1 solid var(--select-dropdown-border-color);
+  padding-block: var(--sp-xs);
+  margin-block-end: 0;
+  max-height: $sz-400;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.option {
+  --select-option-fg-color: var(--color-foreground-primary);
+  --select-option-bg-color: unset;
+
+  &:hover {
+    --select-option-bg-color: var(--color-background-quaternary);
+  }
+
+  &[aria-selected="true"] {
+    --select-option-bg-color: var(--color-background-quaternary);
+  }
+
+  display: grid;
+  align-items: center;
+  justify-items: start;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-xs);
+  width: 100%;
+  height: $sz-32;
+  padding: var(--sp-s);
+  border-radius: $br-8;
+  outline: $b-1 solid var(--select-outline-color);
+  outline-offset: -1px;
+  background-color: var(--select-option-bg-color);
+}
+
+.option-with-icon {
+  grid-template-columns: auto 1fr auto;
+}
+
+.option-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  min-width: 0;
+  padding-inline-start: var(--sp-xxs);
+}
+
+.option-icon {
+  color: var(--select-icon-fg-color);
+}
+
+.option-current {
+  --select-option-outline-color: var(--color-accent-primary);
+  outline: $b-1 solid var(--select-option-outline-color);
+}

@@ -41,7 +41,8 @@
         content (when (= (count shapes) 1)
                   (ctkl/get-component-annotation (first shapes) libraries))]
 
-    [:div {:class (stl/css :element-options)}
+    [:div {:class (stl/css-case :element-options true
+                                :workspace-element-options (= from :workspace))}
      (for [[idx option] (map-indexed vector options)]
        [:> (case option
              :geometry         geometry-panel

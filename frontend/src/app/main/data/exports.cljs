@@ -49,31 +49,30 @@
 
 
 (defn show-workspace-export-dialog
-  ([] (show-workspace-export-dialog nil))
-  ([{:keys [selected]}]
-   (ptk/reify ::show-workspace-export-dialog
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [file-id  (:current-file-id state)
-             page-id  (:current-page-id state)
-             selected (or selected (wsh/lookup-selected state page-id {}))
+  [{:keys [selected origin]}]
+  (ptk/reify ::show-workspace-export-dialog
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id  (:current-file-id state)
+            page-id  (:current-page-id state)
+            selected (or selected (wsh/lookup-selected state page-id {}))
 
-             shapes   (if (seq selected)
-                        (wsh/lookup-shapes state selected)
-                        (reverse (wsh/filter-shapes state #(pos? (count (:exports %))))))
+            shapes   (if (seq selected)
+                       (wsh/lookup-shapes state selected)
+                       (reverse (wsh/filter-shapes state #(pos? (count (:exports %))))))
 
-             exports  (for [shape  shapes
-                            export (:exports shape)]
-                        (-> export
-                            (assoc :enabled true)
-                            (assoc :page-id page-id)
-                            (assoc :file-id file-id)
-                            (assoc :object-id (:id shape))
-                            (assoc :shape (dissoc shape :exports))
-                            (assoc :name (:name shape))))]
+            exports  (for [shape  shapes
+                           export (:exports shape)]
+                       (-> export
+                           (assoc :enabled true)
+                           (assoc :page-id page-id)
+                           (assoc :file-id file-id)
+                           (assoc :object-id (:id shape))
+                           (assoc :shape (dissoc shape :exports))
+                           (assoc :name (:name shape))))]
 
-         (rx/of (modal/show :export-shapes
-                            {:exports (vec exports)})))))))
+        (rx/of (modal/show :export-shapes
+                           {:exports (vec exports) :origin origin}))))))
 
 (defn show-viewer-export-dialog
   [{:keys [shapes page-id file-id share-id exports]}]
@@ -90,7 +89,7 @@
                           (assoc :shape (dissoc shape :exports))
                           (assoc :name (:name shape))
                           (cond-> share-id (assoc :share-id share-id))))]
-        (rx/of (modal/show :export-shapes {:exports (vec exports)})))))) #_TODO
+        (rx/of (modal/show :export-shapes {:exports (vec exports) :origin "viewer"})))))) #_TODO
 
 (defn show-workspace-export-frames-dialog
   [frames]
@@ -108,7 +107,7 @@
                         :name (:name frame)})]
 
         (rx/of (modal/show :export-frames
-                           {:exports (vec exports)}))))))
+                           {:exports (vec exports) :origin "workspace:menu"}))))))
 
 (defn- initialize-export-status
   [exports cmd resource]

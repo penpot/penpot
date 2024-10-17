@@ -182,6 +182,11 @@
   [page-id [event [old-data new-data]]]
   (let [changes (:changes event)
 
+        lookup-data-objects
+        (fn [data page-id]
+          (dm/get-in data [:pages-index page-id :objects]))
+
+
         extract-ids
         (fn [{:keys [page-id type] :as change}]
           (case type
@@ -193,8 +198,8 @@
 
         get-frame-ids
         (fn get-frame-ids [id]
-          (let [old-objects  (wsh/lookup-data-objects old-data page-id)
-                new-objects  (wsh/lookup-data-objects new-data page-id)
+          (let [old-objects  (lookup-data-objects old-data page-id)
+                new-objects  (lookup-data-objects new-data page-id)
 
                 new-shape    (get new-objects id)
                 old-shape    (get old-objects id)

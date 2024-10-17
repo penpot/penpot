@@ -10,8 +10,13 @@
    [app.main.features :as features]
    [app.main.store :as st]
    [app.plugins.api :as api]
+   [app.plugins.flex :as flex]
+   [app.plugins.format :as format]
+   [app.plugins.grid :as grid]
+   [app.plugins.library :as library]
    [app.plugins.public-utils]
-   [app.plugins.register :as register]
+   [app.plugins.ruler-guides :as rg]
+   [app.plugins.shape :as shape]
    [app.util.globals :refer [global]]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
@@ -20,7 +25,6 @@
 (defn init-plugins-runtime!
   []
   (when-let [init-runtime (obj/get global "initPluginsRuntime")]
-    (register/init)
     (init-runtime (fn [plugin-id] (api/create-context plugin-id)))))
 
 (defn initialize
@@ -36,3 +40,12 @@
            (rx/tap init-plugins-runtime!)
            (rx/ignore)))))
 
+;; Prevent circular dependency
+(set! flex/shape-proxy? shape/shape-proxy?)
+(set! grid/shape-proxy? shape/shape-proxy?)
+(set! format/shape-proxy shape/shape-proxy)
+(set! rg/shape-proxy shape/shape-proxy)
+(set! rg/shape-proxy? shape/shape-proxy?)
+
+(set! shape/lib-typography-proxy? library/lib-typography-proxy?)
+(set! shape/lib-component-proxy library/lib-component-proxy)

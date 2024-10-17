@@ -1,0 +1,10 @@
+Hello!
+
+As you requested, {{invited-by|abbreviate:25}} has added you to the team “{{ team|abbreviate:25}}”.
+
+Go to the team with this link:
+
+{{ public-uri }}/#/dashboard/team/{{team-id}}
+
+Enjoy!
+The Penpot team.

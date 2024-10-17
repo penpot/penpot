@@ -8,8 +8,8 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.schema :as sm]
-   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -30,11 +30,11 @@
                       (assoc-in data [:errors :email-1] error))))
 
       :profile-is-muted
-      (rx/of (msg/error (tr "errors.profile-is-muted")))
+      (rx/of (ntf/error (tr "errors.profile-is-muted")))
 
       (:email-has-permanent-bounces
        :email-has-complaints)
-      (rx/of (msg/error (tr "errors.email-has-permanent-bounces" (:email error))))
+      (rx/of (ntf/error (tr "errors.email-has-permanent-bounces" (:email error))))
 
       (rx/throw cause))))
 
@@ -44,7 +44,7 @@
     (st/emit! (du/fetch-profile)
               (modal/hide))
     (let [message (tr "notifications.validation-email-sent" (:email profile))]
-      (st/emit! (msg/info message)
+      (st/emit! (ntf/info message)
                 (modal/hide)))))
 
 (defn- on-submit
@@ -95,7 +95,7 @@
 
        [:div {:class (stl/css :modal-content)}
         [:& context-notification
-         {:type :info
+         {:level :info
           :content (tr "modals.change-email.info" (:email profile))}]
 
         [:div {:class (stl/css :fields-row)}

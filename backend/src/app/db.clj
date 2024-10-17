@@ -153,7 +153,7 @@
 (s/def ::conn some?)
 (s/def ::nilable-pool (s/nilable ::pool))
 (s/def ::pool pool?)
-(s/def ::pool-or-conn some?)
+(s/def ::connectable some?)
 
 (defn closed?
   [pool]
@@ -407,6 +407,7 @@
       (ex/raise :type :not-found
                 :code :object-not-found
                 :table table
+                :params params
                 :hint "database object not found"))
     row))
 

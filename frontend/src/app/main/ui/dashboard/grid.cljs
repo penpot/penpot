@@ -13,7 +13,7 @@
    [app.common.logging :as log]
    [app.config :as cf]
    [app.main.data.dashboard :as dd]
-   [app.main.data.messages :as msg]
+   [app.main.data.notifications :as ntf]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.rasterizer :as thr]
@@ -560,7 +560,7 @@
 
         on-drop-success
         (fn []
-          (st/emit! (msg/success (tr "dashboard.success-move-file"))
+          (st/emit! (ntf/success (tr "dashboard.success-move-file"))
                     (dd/fetch-recent-files (:id team))
                     (dd/clear-selected-files)))
 

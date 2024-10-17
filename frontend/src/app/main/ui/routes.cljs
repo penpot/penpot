@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.spec :as us]
+   [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.users :as du]
@@ -16,6 +17,7 @@
    [app.util.router :as rt]
    [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 (s/def ::page-id ::us/uuid)
@@ -60,8 +62,6 @@
    (when *assert*
      ["/debug/icons-preview" :debug-icons-preview])
 
-   ["/debug/components-preview" :debug-components-preview]
-
    ;; Used for export
    ["/render-sprite/:file-id" :render-sprite]
 
@@ -96,10 +96,11 @@
 (defn on-navigate
   [router path]
   (let [location (.-location js/document)
+        [base-path qs] (str/split path "?")
         location-path (dm/str (.-origin location) (.-pathname location))
         valid-location? (= location-path (dm/str cf/public-uri))
         match (match-path router path)
-        empty-path? (or (= path "") (= path "/"))]
+        empty-path? (or (= base-path "") (= base-path "/"))]
     (cond
       (not valid-location?)
       (st/emit! (rt/assign-exception {:type :not-found}))
@@ -108,9 +109,9 @@
       (st/emit! (rt/navigated match))
 
       :else
-      ;; We just recheck with an additional profile request; this avoids
-      ;; some race conditions that causes unexpected redirects on
-      ;; invitations workflows (and probably other cases).
+      ;; We just recheck with an additional profile request; this
+      ;; avoids some race conditions that causes unexpected redirects
+      ;; on invitations workflows (and probably other cases).
       (->> (rp/cmd! :get-profile)
            (rx/subs! (fn [{:keys [id] :as profile}]
                        (cond
@@ -118,7 +119,7 @@
                          (st/emit! (rt/nav :auth-login))
 
                          empty-path?
-                         (st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)}))
+                         (st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)} (u/query-string->map qs)))
 
                          :else
                          (st/emit! (rt/assign-exception {:type :not-found})))))))))

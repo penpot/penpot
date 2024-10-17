@@ -57,11 +57,10 @@
 (defn- serve-object
   "Helper function that returns the appropriate response depending on
   the storage object backend type."
-  [{:keys [::sto/storage] :as cfg} {:keys [backend] :as obj}]
-  (let [backend (sto/resolve-backend storage backend)]
-    (case (::sto/type backend)
-      :s3 (serve-object-from-s3 cfg obj)
-      :fs (serve-object-from-fs cfg obj))))
+  [cfg {:keys [backend] :as obj}]
+  (case backend
+    (:s3 :assets-s3) (serve-object-from-s3 cfg obj)
+    (:fs :assets-fs) (serve-object-from-fs cfg obj)))
 
 (defn objects-handler
   "Handler that servers storage objects by id."

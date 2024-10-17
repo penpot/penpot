@@ -1,5 +1,5 @@
 FROM debian:bookworm
-LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
+LABEL maintainer="Penpot <docker@penpot.app>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -8,6 +8,8 @@ ENV NODE_VERSION=v20.11.1 \
     CLJKONDO_VERSION=2024.03.13 \
     BABASHKA_VERSION=1.3.189 \
     CLJFMT_VERSION=0.12.0 \
+    RUSTUP_VERSION=1.27.1 \
+    RUST_VERSION=1.81.0 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -241,6 +243,27 @@ RUN set -ex; \
     wget -O /tmp/mc ${BINARY_URL}; \
     mv /tmp/mc /usr/local/bin/; \
     chmod +x /usr/local/bin/mc;
+
+# Install Rust toolchain
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH;
+
+RUN set -eux; \
+    # Same steps as in Rust official Docker image https://github.com/rust-lang/docker-rust/blob/9f287282d513a84cb7c7f38f197838f15d37b6a9/1.81.0/bookworm/Dockerfile
+    dpkgArch="$(dpkg --print-architecture)"; \
+    case "${dpkgArch##*-}" in \
+        amd64) rustArch='x86_64-unknown-linux-gnu'; rustupSha256='6aeece6993e902708983b209d04c0d1dbb14ebb405ddb87def578d41f920f56d' ;; \
+        arm64) rustArch='aarch64-unknown-linux-gnu'; rustupSha256='1cffbf51e63e634c746f741de50649bbbcbd9dbe1de363c9ecef64e278dba2b2' ;; \
+    *) echo >&2 "unsupported architecture: ${dpkgArch}"; exit 1 ;; \
+    esac; \
+    url="https://static.rust-lang.org/rustup/archive/${RUSTUP_VERSION}/${rustArch}/rustup-init"; \
+    wget "$url"; \
+    echo "${rustupSha256} *rustup-init" | sha256sum -c -; \
+    chmod +x rustup-init; \
+    ./rustup-init -y --no-modify-path --profile minimal --default-toolchain $RUST_VERSION --default-host ${rustArch}; \
+    rm rustup-init; \
+    chmod -R a+w $RUSTUP_HOME $CARGO_HOME;
 
 WORKDIR /home
 

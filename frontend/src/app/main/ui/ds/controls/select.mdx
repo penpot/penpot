@@ -1,0 +1,63 @@
+import { Canvas, Meta } from '@storybook/blocks';
+import * as SelectStories from "./select.stories";
+
+<Meta title="Controls/Select" />
+
+# Select
+
+Select lets users choose one option from an options menu.
+
+## Variants
+
+**Text**: We will use this variant when there are enough space and icons don't add any useful context.
+
+<Canvas of={SelectStories.Default} />
+
+**Icon and text**: We will use this variant when there are enough space and icons add any useful context.
+<Canvas of={SelectStories.WithIcons} />
+
+## Technical notes
+
+### Icons
+
+Each option of `select*` may accept an `icon`, which must contain an [icon ID](../foundations/assets/icon.mdx).
+These are available in the `app.main.ds.foundations.assets.icon` namespace.
+
+
+```clj
+(ns app.main.ui.foo
+  (:require
+   [app.main.ui.ds.foundations.assets.icon :as i]))
+```
+
+```clj
+[:> select*       
+    {:options [{ :label "Code"
+                 :id "option-code"
+                 :icon i/fill-content }
+               { :label "Design"
+                 :id "option-design"
+                 :icon i/pentool }
+               { :label "Menu"
+                 :id "option-menu" } 
+               ]}]
+```
+
+<Canvas of={SelectStories.WithIcons} />
+
+## Usage guidelines (design)
+
+### Where to use
+
+Used in a wide range of applications in the app, 
+to select among available text-based options, 
+sometimes with icons that offers additional context.
+
+### When to use
+
+Consider using select when you have 5 or more options to choose from.
+
+### Interaction / Behavior
+
+When the user clicks on the clickable area, a list of 
+options appears. When an option is chosen, the list is closed.

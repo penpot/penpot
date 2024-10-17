@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.texts
   (:require
+   ["penpot/vendor/text-editor-v2" :as editor.v2]
    [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -24,13 +25,25 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.util.router :as rt]
    [app.util.text-editor :as ted]
+   [app.util.text.content.styles :as styles]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
+
+;; -- V2 Editor Helpers
+
+(def ^function create-editor editor.v2/create)
+(def ^function set-editor-root! editor.v2/setRoot)
+(def ^function get-editor-root editor.v2/getRoot)
+(def ^function dispose! editor.v2/dispose)
+
+(declare v2-update-text-shape-content)
+(declare v2-update-text-editor-styles)
 
 ;; -- Editor
 
@@ -186,22 +199,41 @@
   [{:keys [attrs shape]}]
   (shape-current-values shape txt/is-root-node? attrs))
 
-(defn current-paragraph-values
+(defn v2-current-text-values
+  [{:keys [editor-instance attrs]}]
+  (let [result (-> (.-currentStyle editor-instance)
+                   (styles/get-styles-from-style-declaration)
+                   (select-keys attrs))
+        result (if (empty? result) txt/default-text-attrs result)]
+    result))
+
+(defn v1-current-paragraph-values
   [{:keys [editor-state attrs shape]}]
   (if editor-state
     (-> (ted/get-editor-current-block-data editor-state)
         (select-keys attrs))
     (shape-current-values shape txt/is-paragraph-node? attrs)))
 
-(defn current-text-values
-  [{:keys [editor-state attrs shape]}]
-  (if editor-state
-    (let [result (-> (ted/get-editor-current-inline-styles editor-state)
-                     (select-keys attrs))
-          result (if (empty? result) txt/default-text-attrs result)]
-      result)
-    (shape-current-values shape txt/is-text-node? attrs)))
+(defn current-paragraph-values
+  [{:keys [editor-state editor-instance attrs shape] :as options}]
+  (cond
+    (some? editor-instance) (v2-current-text-values options)
+    (some? editor-state) (v1-current-paragraph-values options)
+    :else (shape-current-values shape txt/is-paragraph-node? attrs)))
 
+(defn v1-current-text-values
+  [{:keys [editor-state attrs]}]
+  (let [result (-> (ted/get-editor-current-inline-styles editor-state)
+                   (select-keys attrs))
+        result (if (empty? result) txt/default-text-attrs result)]
+    result))
+
+(defn current-text-values
+  [{:keys [editor-state editor-instance attrs shape] :as options}]
+  (cond
+    (some? editor-instance) (v2-current-text-values options)
+    (some? editor-state) (v1-current-text-values options)
+    :else (shape-current-values shape txt/is-text-node? attrs)))
 
 ;; --- TEXT EDITION IMPL
 
@@ -408,7 +440,9 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (when (nil? (get-in state [:workspace-editor-state id]))
+      (when (or
+             (and (features/active-feature? state "text-editor/v2") (nil? (:workspace-editor state)))
+             (and (not (features/active-feature? state "text-editor/v2")) (nil? (get-in state [:workspace-editor-state id]))))
         (let [objects   (wsh/lookup-page-objects state)
               shape     (get objects id)
 
@@ -430,8 +464,17 @@
                 (-> shape
                     (dissoc :fills)
                     (d/update-when :content update-content)))]
+          (rx/of (dwsh/update-shapes shape-ids update-shape)))))
 
-          (rx/of (dwsh/update-shapes shape-ids update-shape)))))))
+    ptk/EffectEvent
+    (effect [_ state _]
+      (when (features/active-feature? state "text-editor/v2")
+        (let [instance (:workspace-editor state)
+              styles   (some-> (editor.v2/getCurrentStyle instance)
+                               (styles/get-styles-from-style-declaration)
+                               ((comp update-node-fn migrate-node))
+                               (styles/attrs->styles))]
+          (editor.v2/applyStylesToSelection instance styles))))))
 
 ;; --- RESIZE UTILS
 
@@ -664,22 +707,36 @@
   [id attrs]
   (ptk/reify ::update-attrs
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/concat
-       (let [attrs (select-keys attrs txt/root-attrs)]
-         (if-not (empty? attrs)
-           (rx/of (update-root-attrs {:id id :attrs attrs}))
-           (rx/empty)))
+    (watch [_ state _]
+      (let [text-editor-instance (:workspace-editor state)]
+        (if (and (features/active-feature? state "text-editor/v2")
+                 (some? text-editor-instance))
+          (rx/empty)
+          (rx/concat
+           (let [attrs (select-keys attrs txt/root-attrs)]
+             (if-not (empty? attrs)
+               (rx/of (update-root-attrs {:id id :attrs attrs}))
+               (rx/empty)))
 
-       (let [attrs (select-keys attrs txt/paragraph-attrs)]
-         (if-not (empty? attrs)
-           (rx/of (update-paragraph-attrs {:id id :attrs attrs}))
-           (rx/empty)))
+           (let [attrs (select-keys attrs txt/paragraph-attrs)]
+             (if-not (empty? attrs)
+               (rx/of (update-paragraph-attrs {:id id :attrs attrs}))
+               (rx/empty)))
 
-       (let [attrs (select-keys attrs txt/text-node-attrs)]
-         (if-not (empty? attrs)
-           (rx/of (update-text-attrs {:id id :attrs attrs}))
-           (rx/empty)))))))
+           (let [attrs (select-keys attrs txt/text-node-attrs)]
+             (if-not (empty? attrs)
+               (rx/of (update-text-attrs {:id id :attrs attrs}))
+               (rx/empty)))
+
+           (when (features/active-feature? state "text-editor/v2")
+             (rx/of (v2-update-text-editor-styles id attrs)))))))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (when (features/active-feature? state "text-editor/v2")
+        (let [instance (:workspace-editor state)
+              styles (styles/attrs->styles attrs)]
+          (editor.v2/applyStylesToSelection instance styles))))))
 
 (defn update-all-attrs
   [ids attrs]
@@ -773,3 +830,52 @@
            (rx/of (update-attrs (:id shape)
                                 {:typography-ref-id typ-id
                                  :typography-ref-file file-id}))))))))
+
+;; -- New Editor
+
+(defn v2-update-text-editor-styles
+  [id new-styles]
+  (ptk/reify ::v2-update-text-editor-styles
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [merged-styles (d/merge txt/default-text-attrs
+                                   (get-in state [:workspace-global :default-font])
+                                   new-styles)]
+        (update-in state [:workspace-v2-editor-state id] (fnil merge {}) merged-styles)))))
+
+(defn v2-update-text-shape-position-data
+  [shape-id position-data]
+  (ptk/reify ::v2-update-text-shape-position-data
+    ptk/UpdateEvent
+    (update [_ state]
+      (let []
+        (update-in state [:workspace-text-modifier shape-id] {:position-data position-data})))))
+
+(defn v2-update-text-shape-content
+  ([id content]
+   (v2-update-text-shape-content id content false nil))
+  ([id content update-name?]
+   (v2-update-text-shape-content id content update-name? nil))
+  ([id content update-name? name]
+   (ptk/reify ::v2-update-text-shape-content
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [objects      (wsh/lookup-page-objects state)
+             shape        (get objects id)
+             modifiers    (get-in state [:workspace-text-modifier id])
+             new-shape?   (nil? (:content shape))]
+         (rx/of
+          (dwsh/update-shapes
+           [id]
+           (fn [shape]
+             (let [{:keys [width height position-data]} modifiers]
+               (let [new-shape (-> shape
+                                   (assoc :content content)
+                                   (cond-> position-data
+                                     (assoc :position-data position-data))
+                                   (cond-> (and update-name? (some? name))
+                                     (assoc :name name))
+                                   (cond-> (or (some? width) (some? height))
+                                     (gsh/transform-shape (ctm/change-size shape width height))))]
+                 new-shape)))
+           {:undo-group (when new-shape? id)})))))))

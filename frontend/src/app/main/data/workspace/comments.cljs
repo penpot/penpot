@@ -132,21 +132,20 @@
    (ptk/reify ::update-comment-thread-position
      ptk/WatchEvent
      (watch [it state _]
-       (let [thread-id (:id thread)
-             page (wsh/lookup-page state)
-             page-id (:id page)
-             objects (wsh/lookup-page-objects state page-id)
-             new-frame-id (if (nil? frame-id)
-                            (ctst/get-frame-id-by-position objects (gpt/point new-x new-y))
-                            (:frame-id thread))
-             thread (assoc thread
-                           :position (gpt/point new-x new-y)
-                           :frame-id new-frame-id)
+       (let [page      (wsh/lookup-page state)
+             page-id   (:id page)
+             objects   (wsh/lookup-page-objects state page-id)
+             frame-id  (if (nil? frame-id)
+                         (ctst/get-frame-id-by-position objects (gpt/point new-x new-y))
+                         (:frame-id thread))
 
-             changes
-             (-> (pcb/empty-changes it)
-                 (pcb/with-page page)
-                 (pcb/update-page-option :comment-threads-position assoc thread-id (select-keys thread [:position :frame-id])))]
+             thread     (-> thread
+                            (assoc :position (gpt/point new-x new-y))
+                            (assoc :frame-id frame-id))
+
+             changes    (-> (pcb/empty-changes it)
+                            (pcb/with-page page)
+                            (pcb/set-comment-thread-position thread))]
 
          (rx/merge
           (rx/of (dch/commit-changes changes))
@@ -164,25 +163,28 @@
   (ptk/reify ::move-frame-comment-threads
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [page       (wsh/lookup-page state)
+            objects    (get page :objects)
 
-            is-frame? (fn [id] (= :frame (get-in objects [id :type])))
+            is-frame?  (fn [id] (= :frame (get-in objects [id :type])))
             frame-ids? (into #{} (filter is-frame?) ids)
 
-            object-modifiers  (:workspace-modifiers state)
+            threads-position-map
+            (get page :comment-thread-positions)
 
-            threads-position-map (:comment-threads-position (wsh/lookup-page-options state))
+            object-modifiers
+            (:workspace-modifiers state)
 
             build-move-event
             (fn [comment-thread]
-              (let [frame (get objects (:frame-id comment-thread))
+              (let [frame     (get objects (:frame-id comment-thread))
                     modifiers (get-in object-modifiers [(:frame-id comment-thread) :modifiers])
-                    frame' (gsh/transform-shape frame modifiers)
-                    moved (gpt/to-vec (gpt/point (:x frame) (:y frame))
-                                      (gpt/point (:x frame') (:y frame')))
-                    position (get-in threads-position-map [(:id comment-thread) :position])
-                    new-x (+ (:x position) (:x moved))
-                    new-y (+ (:y position) (:y moved))]
+                    frame'    (gsh/transform-shape frame modifiers)
+                    moved     (gpt/to-vec (gpt/point (:x frame) (:y frame))
+                                          (gpt/point (:x frame') (:y frame')))
+                    position  (get-in threads-position-map [(:id comment-thread) :position])
+                    new-x     (+ (:x position) (:x moved))
+                    new-y     (+ (:y position) (:y moved))]
                 (update-comment-thread-position comment-thread [new-x new-y] (:id frame))))]
 
         (->> (:comment-threads state)

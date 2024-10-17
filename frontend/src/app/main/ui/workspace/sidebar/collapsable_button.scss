@@ -14,10 +14,11 @@
   padding: $s-4;
   border-radius: $br-8;
   background: var(--color-background-primary);
+  margin-inline-start: var(--sp-m);
 }
 .collapsed-title {
   @include flexCenter;
-  height: $s-32;
+  height: $s-36;
   width: $s-24;
   border-radius: $br-8;
   background: var(--color-background-secondary);

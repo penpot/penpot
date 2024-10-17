@@ -567,7 +567,6 @@
                         (tokens/generate (::setup/props cfg)
                                          {:iss :auth
                                           :exp (dt/in-future "15m")
-                                          :props (:props info)
                                           :profile-id (:id profile)}))
             props   (audit/profile->props profile)
             context (d/without-nils {:external-session-id (:external-session-id info)})]
@@ -592,7 +591,8 @@
 
     :else
     (let [info (assoc info :is-active (provider-has-email-verified? cfg info))]
-      (if (contains? cf/flags :registration)
+      (if (or (contains? cf/flags :registration)
+              (contains? cf/flags :oidc-registration))
         (redirect-to-register cfg info request)
         (redirect-with-error "registration-disabled")))))
 

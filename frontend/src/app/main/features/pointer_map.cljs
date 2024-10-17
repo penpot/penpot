@@ -16,7 +16,7 @@
   (letfn [(resolve-pointer [[key val :as kv]]
             (if (t/pointer? val)
               (->> (rp/cmd! :get-file-fragment {:file-id id :fragment-id @val})
-                   (rx/map #(get % :content))
+                   (rx/map #(get % :data))
                    (rx/map #(vector key %)))
               (rx/of kv)))
 

@@ -8,10 +8,15 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.spec :as us]
    [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.dashboard.shortcuts :as sc]
+   [app.main.data.events :as ev]
+   [app.main.data.modal :as modal]
+   [app.main.data.notifications :as notif]
+   [app.main.data.plugins :as dp]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -25,11 +30,16 @@
    [app.main.ui.dashboard.team :refer [team-settings-page team-members-page team-invitations-page team-webhooks-page]]
    [app.main.ui.dashboard.templates :refer [templates-section]]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.workspace.plugins]
+   [app.plugins.register :as preg]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
+   [app.util.router :as rt]
+   [beicon.v2.core :as rx]
    [goog.events :as events]
    [okulary.core :as l]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn ^boolean uuid-str?
@@ -42,9 +52,7 @@
   (let [search-term (get-in route [:params :query :search-term])
         team-id     (get-in route [:params :path :team-id])
         project-id  (get-in route [:params :path :project-id])]
-    (cond->
-     {:search-term search-term}
-
+    (cond-> {:search-term search-term}
       (uuid-str? team-id)
       (assoc :team-id (uuid team-id))
 
@@ -52,7 +60,7 @@
       (assoc :project-id (uuid project-id)))))
 
 (mf/defc dashboard-content
-  [{:keys [team projects project section search-term profile] :as props}]
+  [{:keys [team projects project section search-term profile invite-email] :as props}]
   (let [container          (mf/use-ref)
         content-width      (mf/use-state 0)
         project-id         (:id project)
@@ -84,10 +92,10 @@
 
     (mf/use-effect on-resize)
 
-
     [:div {:class (stl/css :dashboard-content)
            :style {:pointer-events (when file-menu-open? "none")}
-           :on-click clear-selected-fn :ref container}
+           :on-click clear-selected-fn
+           :ref container}
      (case section
        :dashboard-projects
        [:*
@@ -129,7 +137,7 @@
        [:& libraries-page {:team team}]
 
        :dashboard-team-members
-       [:& team-members-page {:team team :profile profile}]
+       [:& team-members-page {:team team :profile profile :invite-email invite-email}]
 
        :dashboard-team-invitations
        [:& team-invitations-page {:team team}]
@@ -145,20 +153,87 @@
 (def dashboard-initialized
   (l/derived :current-team-id st/state))
 
+(defn use-plugin-register
+  [plugin-url team-id project-id]
+
+  (let [navegate-file!
+        (fn [plugin {:keys [project-id id data]}]
+          (st/emit!
+           (dp/delay-open-plugin plugin)
+           (rt/nav :workspace
+                   {:project-id project-id :file-id id}
+                   {:page-id (dm/get-in data [:pages 0])})))
+
+        create-file!
+        (fn [plugin]
+          (st/emit!
+           (modal/hide)
+           (let [data
+                 (with-meta
+                   {:project-id project-id
+                    :name (dm/str "Try plugin: " (:name plugin))}
+                   {:on-success (partial navegate-file! plugin)})]
+             (-> (dd/create-file data)
+                 (with-meta {::ev/origin "plugin-try-out"})))))
+
+        open-try-out-dialog
+        (fn [plugin]
+          (modal/show
+           :plugin-try-out
+           {:plugin plugin
+            :on-accept #(create-file! plugin)
+            :on-close #(modal/hide!)}))
+
+        open-permissions-dialog
+        (fn [plugin]
+          (modal/show!
+           :plugin-permissions
+           {:plugin plugin
+            :on-accept
+            #(do (preg/install-plugin! plugin)
+                 (st/emit! (modal/hide)
+                           (rt/nav :dashboard-projects {:team-id team-id})
+                           (open-try-out-dialog plugin)))
+            :on-close
+            #(st/emit! (modal/hide)
+                       (rt/nav :dashboard-projects {:team-id team-id}))}))]
+
+    (mf/with-layout-effect
+      [plugin-url team-id project-id]
+      (when plugin-url
+        (->> (dp/fetch-manifest plugin-url)
+             (rx/subs!
+              (fn [plugin]
+                (if plugin
+                  (do
+                    (st/emit! (ptk/event ::ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
+                    (open-permissions-dialog plugin))
+                  (st/emit! (notif/error "Cannot parser the plugin manifest"))))
+              (fn [_]
+                (st/emit! (notif/error "The plugin URL is incorrect")))))))))
+
 (mf/defc dashboard
-  [{:keys [route profile] :as props}]
+  {::mf/props :obj}
+  [{:keys [route profile]}]
   (let [section        (get-in route [:data :name])
         params         (parse-params route)
 
         project-id     (:project-id params)
+
         team-id        (:team-id params)
         search-term    (:search-term params)
+
+        plugin-url     (-> route :query-params :plugin)
+
+        invite-email   (-> route :query-params :invite-email)
 
         teams          (mf/deref refs/teams)
         team           (get teams team-id)
 
         projects       (mf/deref refs/dashboard-projects)
         project        (get projects project-id)
+
+        default-project (->> projects vals (d/seek :is-default))
 
         initialized?   (mf/deref dashboard-initialized)]
 
@@ -178,15 +253,17 @@
         (fn []
           (events/unlistenByKey key))))
 
+    (use-plugin-register plugin-url team-id (:id default-project))
+
     [:& (mf/provider ctx/current-team-id) {:value team-id}
      [:& (mf/provider ctx/current-project-id) {:value project-id}
-            ;; NOTE: dashboard events and other related functions assumes
-            ;; that the team is a implicit context variable that is
-            ;; available using react context or accessing
-            ;; the :current-team-id on the state. We set the key to the
-            ;; team-id because we want to completely refresh all the
-            ;; components on team change. Many components assumes that the
-            ;; team is already set so don't put the team into mf/deps.
+      ;; NOTE: dashboard events and other related functions assumes
+      ;; that the team is a implicit context variable that is
+      ;; available using react context or accessing
+      ;; the :current-team-id on the state. We set the key to the
+      ;; team-id because we want to completely refresh all the
+      ;; components on team change. Many components assumes that the
+      ;; team is already set so don't put the team into mf/deps.
       (when (and team initialized?)
         [:main {:class (stl/css :dashboard)
                 :key (:id team)}
@@ -204,5 +281,5 @@
              :project project
              :section section
              :search-term search-term
-             :team team}])])]]))
-
+             :team team
+             :invite-email invite-email}])])]]))

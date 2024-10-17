@@ -16,10 +16,10 @@
    [app.util.forms :as fm]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.object :as obj]
    [cljs.core :as c]
    [cuerdas.core :as str]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [rumext.v2.util :as mfu]))
 
 (def form-ctx (mf/create-context nil))
 (def use-form fm/use-form)
@@ -102,7 +102,7 @@
                   (cond-> (and value is-checkbox?) (assoc :default-checked value))
                   (cond-> (and touched? (:message error)) (assoc "aria-invalid" "true"
                                                                  "aria-describedby" (dm/str "error-" input-name)))
-                  (obj/map->obj obj/prop-key-fn))
+                  (mfu/map->props))
 
         checked? (and is-checkbox? (= value true))
         show-valid? (and show-success? touched? (not error))
@@ -205,7 +205,7 @@
                          :on-blur on-blur
                          ;; :placeholder label
                          :on-change on-change)
-                  (obj/map->obj obj/prop-key-fn))]
+                  (mfu/map->props))]
 
     [:div {:class (dm/str klass " " (stl/css :textarea-wrapper))}
      [:label {:class (stl/css :textarea-label)} label]
@@ -420,7 +420,7 @@
   (into [] (distinct) (conj coll item)))
 
 (mf/defc multi-input
-  [{:keys [form label class name trim valid-item-fn caution-item-fn on-submit] :as props}]
+  [{:keys [form label class name trim valid-item-fn caution-item-fn on-submit invite-email] :as props}]
   (let [form       (or form (mf/use-ctx form-ctx))
         input-name (get props :name)
         touched?   (get-in @form [:touched input-name])
@@ -483,7 +483,8 @@
 
                  ;; Empty values means "submit" the form (whent some items have been added
                  (when (and (kbd/enter? event) (str/empty? @value) (not-empty @items))
-                   (on-submit form))
+                   (when (fn? on-submit)
+                     (on-submit form event)))
 
                  ;; If we have a string in the input we add it only if valid
                  (when (and (valid-item-fn val) (not (str/empty? @value)))
@@ -527,6 +528,12 @@
             values (conj-dedup result {:text val :valid (valid-item-fn val)})
             values (filterv #(:valid %) values)]
         (update-form! values)))
+
+    (mf/with-effect []
+      (when invite-email
+        (swap! items conj-dedup {:text (str/trim invite-email)
+                                 :valid (valid-item-fn invite-email)
+                                 :caution (caution-item-fn invite-email)})))
 
     [:div {:class klass}
      [:input {:id (name input-name)

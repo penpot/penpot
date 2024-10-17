@@ -60,6 +60,9 @@
                          (try
                            (let [result (handler)]
                              (events/tap :end result))
+
+                           (catch java.io.EOFException cause
+                             (events/tap :error (errors/handle' cause request)))
                            (catch Throwable cause
                              (l/err :hint "unexpected error on processing sse response"
                                     :cause cause)

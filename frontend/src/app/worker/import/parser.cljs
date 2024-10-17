@@ -1136,16 +1136,16 @@
         guides     (parse-guides node)]
     (cond-> {}
       (some? background)
-      (assoc-in [:options :background] background)
+      (assoc :background background)
 
       (d/not-empty? grids)
-      (assoc-in [:options :saved-grids] grids)
+      (assoc :default-grids grids)
 
       (d/not-empty? flows)
-      (assoc-in [:options :flows] flows)
+      (assoc :flows flows)
 
       (d/not-empty? guides)
-      (assoc-in [:options :guides] guides))))
+      (assoc :guides guides))))
 
 (defn parse-interactions
   [node]

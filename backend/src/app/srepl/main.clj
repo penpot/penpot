@@ -155,9 +155,10 @@
 
 (defn enable-team-feature!
   [team-id feature]
-  (dm/verify!
-   "feature should be supported"
-   (contains? cfeat/supported-features feature))
+  (when-not (contains? cfeat/supported-features feature)
+    (ex/raise :type :assertion
+              :code :feature-not-supported
+              :hint (str "feature '" feature "' not supported")))
 
   (let [team-id (h/parse-uuid team-id)]
     (db/tx-run! main/system
@@ -173,9 +174,11 @@
 
 (defn disable-team-feature!
   [team-id feature]
-  (dm/verify!
-   "feature should be supported"
-   (contains? cfeat/supported-features feature))
+
+  (when-not (contains? cfeat/supported-features feature)
+    (ex/raise :type :assertion
+              :code :feature-not-supported
+              :hint (str "feature '" feature "' not supported")))
 
   (let [team-id (h/parse-uuid team-id)]
     (db/tx-run! main/system
@@ -203,9 +206,11 @@
   [{:keys [::mbus/msgbus ::db/pool]} & {:keys [dest code message level]
                                         :or {code :generic level :info}
                                         :as params}]
-  (dm/verify!
-   ["invalid level %" level]
-   (contains? #{:success :error :info :warning} level))
+
+  (when-not (contains? #{:success :error :info :warning} level)
+    (ex/raise :type :assertion
+              :code :incorrect-level
+              :hint (str "level '" level "' not supported")))
 
   (letfn [(send [dest]
             (l/inf :hint "sending notification" :dest (str dest))
@@ -727,13 +732,15 @@
                    deleted 0
                    total   0]
               (if-let [email (first emails)]
-                (if-let [profile (db/get* system :profile
-                                          {:email (str/lower email)}
-                                          {::db/remove-deleted false})]
+                (if-let [profile (some-> (db/get* system :profile
+                                                  {:email (str/lower email)}
+                                                  {::db/remove-deleted false})
+                                         (profile/decode-row))]
                   (do
                     (audit/insert! system
                                    {::audit/name "delete-profile"
                                     ::audit/type "action"
+                                    ::audit/profile-id (:id profile)
                                     ::audit/tracked-at deleted-at
                                     ::audit/props (audit/profile->props profile)
                                     ::audit/context {:triggered-by "srepl"

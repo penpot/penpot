@@ -244,7 +244,8 @@
             (fn [result]
               (reset! images-data* result)))))
 
-    [:div {:class (stl/css :element-options)}
+    [:div {:class (stl/css-case :element-options true
+                                :viewer-code-block (= :viewer from))}
      [:div {:class (stl/css :attributes-block)}
       [:button {:class (stl/css :download-button)
                 :on-click handle-copy-all-code}

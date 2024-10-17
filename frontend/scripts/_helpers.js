@@ -115,20 +115,30 @@ export async function compileSassAll(worker) {
     return path.startsWith("app/main/ui/ds/");
   };
 
+  const isOldComponentSystemFile = (path) => {
+    return path.startsWith("app/main/ui/components/");
+  };
+
   let files = (await fs.readdir(sourceDir, { recursive: true })).filter(
     isSassFile,
   );
 
   const appFiles = files
     .filter((path) => !isDesignSystemFile(path))
+    .filter((path) => !isOldComponentSystemFile(path))
     .map((path) => ph.join(sourceDir, path));
+
   const dsFiles = files
     .filter(isDesignSystemFile)
     .map((path) => ph.join(sourceDir, path));
 
+  const oldComponentsFiles = files
+    .filter(isOldComponentSystemFile)
+    .map((path) => ph.join(sourceDir, path));
+
   const procs = [compileSass(worker, "resources/styles/main-default.scss", {})];
 
-  for (let path of [...dsFiles, ...appFiles]) {
+  for (let path of [...oldComponentsFiles, ...dsFiles, ...appFiles]) {
     const proc = limitFn(() => compileSass(worker, path, { modules: true }));
     procs.push(proc);
   }
@@ -171,14 +181,16 @@ export async function watch(baseDir, predicate, callback) {
 }
 
 async function readShadowManifest() {
+  const ts = Date.now();
   try {
     const manifestPath = "resources/public/js/manifest.json";
     let content = await fs.readFile(manifestPath, { encoding: "utf8" });
     content = JSON.parse(content);
 
     const index = {
-      config: "js/config.js?ts=" + Date.now(),
-      polyfills: "js/polyfills.js?ts=" + Date.now(),
+      ts: ts,
+      config: "js/config.js?ts=" + ts,
+      polyfills: "js/polyfills.js?ts=" + ts,
     };
 
     for (let item of content) {
@@ -188,12 +200,13 @@ async function readShadowManifest() {
     return index;
   } catch (cause) {
     return {
-      config: "js/config.js",
-      polyfills: "js/polyfills.js",
-      main: "js/main.js",
-      shared: "js/shared.js",
-      worker: "js/worker.js",
-      rasterizer: "js/rasterizer.js",
+      ts: ts,
+      config: "js/config.js?ts=" + ts,
+      polyfills: "js/polyfills.js?ts=" + ts,
+      main: "js/main.js?ts=" + ts,
+      shared: "js/shared.js?ts=" + ts,
+      worker: "js/worker.js?ts=" + ts,
+      rasterizer: "js/rasterizer.js?ts=" + ts,
     };
   }
 }
@@ -303,7 +316,20 @@ async function readTranslations() {
     }
   }
 
-  return JSON.stringify(result);
+  return result;
+}
+
+function filterTranslations(translations, langs = [], keyFilter) {
+  const filteredEntries = Object.entries(translations)
+    .filter(([translationKey, _]) => keyFilter(translationKey))
+    .map(([translationKey, value]) => {
+      const langEntries = Object.entries(value).filter(([lang, _]) =>
+        langs.includes(lang),
+      );
+      return [translationKey, Object.fromEntries(langEntries)];
+    });
+
+  return Object.fromEntries(filteredEntries);
 }
 
 async function generateSvgSprite(files, prefix) {
@@ -355,7 +381,14 @@ async function generateTemplates() {
   const isDebug = process.env.NODE_ENV !== "production";
   await fs.mkdir("./resources/public/", { recursive: true });
 
-  const translations = await readTranslations();
+  let translations = await readTranslations();
+  const storybookTranslations = JSON.stringify(
+    filterTranslations(translations, ["en"], (key) =>
+      key.startsWith("labels."),
+    ),
+  );
+  translations = JSON.stringify(translations);
+
   const manifest = await readShadowManifest();
   let content;
 
@@ -379,8 +412,8 @@ async function generateTemplates() {
 
   const pluginRuntimeUri =
     process.env.PENPOT_PLUGIN_DEV === "true"
-      ? "http://localhost:4200"
-      : "./plugins-runtime";
+      ? "http://localhost:4200/index.js?ts=" + manifest.ts
+      : "plugins-runtime/index.js?ts=" + manifest.ts;
 
   content = await renderTemplate(
     "resources/templates/index.mustache",
@@ -396,6 +429,13 @@ async function generateTemplates() {
   await fs.writeFile("./resources/public/index.html", content);
 
   content = await renderTemplate(
+    "resources/templates/challenge.mustache",
+    {},
+    partials,
+  );
+  await fs.writeFile("./resources/public/challenge.html", content);
+
+  content = await renderTemplate(
     "resources/templates/preview-body.mustache",
     {
       manifest: manifest,
@@ -408,6 +448,7 @@ async function generateTemplates() {
     "resources/templates/preview-head.mustache",
     {
       manifest: manifest,
+      translations: JSON.stringify(storybookTranslations),
     },
     partials,
   );

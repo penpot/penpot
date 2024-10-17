@@ -1,0 +1,117 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../_sizes.scss" as *;
+@use "../_borders.scss" as *;
+@use "../typography.scss" as *;
+
+.tabs {
+  --tabs-bg-color: var(--color-background-secondary);
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.padding-wrapper {
+  padding-inline-start: var(--tabs-nav-padding-inline-start, 0);
+  padding-inline-end: var(--tabs-nav-padding-inline-end, 0);
+  padding-block-start: var(--tabs-nav-padding-block-start, 0);
+  padding-block-end: var(--tabs-nav-padding-block-end, 0);
+}
+
+// TAB NAV
+.tab-nav {
+  display: grid;
+  gap: var(--sp-xxs);
+  width: 100%;
+  border-radius: $br-8;
+  padding: var(--sp-xxs);
+  background-color: var(--tabs-bg-color);
+}
+
+.tab-nav-start {
+  grid-template-columns: auto 1fr;
+}
+
+.tab-nav-end {
+  grid-template-columns: 1fr auto;
+}
+
+.tab-list {
+  display: grid;
+  grid-auto-flow: column;
+  gap: var(--sp-xxs);
+  width: 100%;
+  // Removing margin bottom from default ul
+  margin-block-end: 0;
+  border-radius: $br-8;
+}
+
+// TAB
+.tab {
+  --tabs-item-bg-color: var(--color-background-secondary);
+  --tabs-item-fg-color: var(--color-foreground-secondary);
+  --tabs-item-fg-color-hover: var(--color-foreground-primary);
+  --tabs-item-outline-color: none;
+
+  &:hover {
+    --tabs-item-fg-color: var(--tabs-item-fg-color-hover);
+  }
+
+  &:focus-visible {
+    --tabs-item-outline-color: var(--color-accent-primary);
+  }
+
+  appearance: none;
+  height: $sz-32;
+  border: none;
+  border-radius: $br-8;
+  padding: 0 var(--sp-s);
+  outline: $b-1 solid var(--tabs-item-outline-color);
+  display: grid;
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: center;
+  column-gap: var(--sp-xs);
+  background: var(--tabs-item-bg-color);
+  color: var(--tabs-item-fg-color);
+  padding: 0 var(--sp-m);
+  width: 100%;
+}
+
+.selected {
+  --tabs-item-bg-color: var(--color-background-quaternary);
+  --tabs-item-fg-color: var(--color-accent-primary);
+  --tabs-item-fg-color-hover: var(--color-accent-primary);
+}
+
+.tab-text {
+  @include use-typography("headline-small");
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  min-width: 0;
+}
+
+.tab-text-and-icon {
+  padding-inline: var(--sp-xxs);
+}
+
+.tab-panel {
+  --tab-panel-outline-color: none;
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    --tab-panel-outline-color: var(--color-accent-primary);
+  }
+
+  display: grid;
+  width: 100%;
+  height: 100%;
+  outline: $b-1 solid var(--tab-panel-outline-color);
+}

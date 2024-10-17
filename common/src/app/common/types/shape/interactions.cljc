@@ -11,7 +11,8 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.bounds :as gsb]
-   [app.common.schema :as sm]))
+   [app.common.schema :as sm]
+   [app.common.schema.generators :as sg]))
 
 ;; WARNING: options are not deleted when changing event or action type, so it can be
 ;;          restored if the user changes it back later.
@@ -71,81 +72,116 @@
 (def animation-types
   #{:dissolve :slide :push})
 
-(sm/register! ::animation
-  [:multi {:dispatch :animation-type :title "Animation"}
-   [:dissolve
-    [:map {:title "AnimationDisolve"}
-     [:animation-type [:= :dissolve]]
-     [:duration ::sm/safe-int]
-     [:easing [::sm/one-of easing-types]]]]
-   [:slide
-    [:map {:title "AnimationSlide"}
-     [:animation-type [:= :slide]]
-     [:duration ::sm/safe-int]
-     [:easing [::sm/one-of easing-types]]
-     [:way [::sm/one-of way-types]]
-     [:direction [::sm/one-of direction-types]]
-     [:offset-effect :boolean]]]
-   [:push
-    [:map {:title "AnimationPush"}
-     [:animation-type [:= :push]]
-     [:duration ::sm/safe-int]
-     [:easing [::sm/one-of easing-types]]
-     [:direction [::sm/one-of direction-types]]]]])
+(def schema:dissolve-animation
+  [:map {:title "AnimationDisolve"}
+   [:animation-type [:= :dissolve]]
+   [:duration ::sm/safe-int]
+   [:easing [::sm/one-of easing-types]]])
+
+(def schema:slide-animation
+  [:map {:title "AnimationSlide"}
+   [:animation-type [:= :slide]]
+   [:duration ::sm/safe-int]
+   [:easing [::sm/one-of easing-types]]
+   [:way [::sm/one-of way-types]]
+   [:direction [::sm/one-of direction-types]]
+   [:offset-effect :boolean]])
+
+(def schema:push-animation
+  [:map {:title "PushAnimation"}
+   [:animation-type [:= :push]]
+   [:duration ::sm/safe-int]
+   [:easing [::sm/one-of easing-types]]
+   [:direction [::sm/one-of direction-types]]])
+
+(def schema:animation
+  [:multi {:dispatch :animation-type
+           :title "Animation"
+           :gen/gen (sg/one-of (sg/generator schema:dissolve-animation)
+                               (sg/generator schema:slide-animation)
+                               (sg/generator schema:push-animation))
+           :decode/json #(update % :animation-type keyword)}
+   [:dissolve schema:dissolve-animation]
+   [:slide schema:slide-animation]
+   [:push schema:push-animation]])
+
+(sm/register! ::animation schema:animation)
 
 (def check-animation!
-  (sm/check-fn ::animation))
+  (sm/check-fn schema:animation))
 
-(sm/register! ::interaction
-  [:multi {:dispatch :action-type}
-   [:navigate
-    [:map
-     [:action-type [:= :navigate]]
-     [:event-type [::sm/one-of event-types]]
-     [:destination {:optional true} [:maybe ::sm/uuid]]
-     [:preserve-scroll {:optional true} :boolean]
-     [:animation {:optional true} ::animation]]]
-   [:open-overlay
-    [:map
-     [:action-type [:= :open-overlay]]
-     [:event-type [::sm/one-of event-types]]
-     [:overlay-position ::gpt/point]
-     [:overlay-pos-type [::sm/one-of overlay-positioning-types]]
-     [:destination {:optional true} [:maybe ::sm/uuid]]
-     [:close-click-outside {:optional true} :boolean]
-     [:background-overlay {:optional true} :boolean]
-     [:animation {:optional true} ::animation]
-     [:position-relative-to {:optional true} [:maybe ::sm/uuid]]]]
-   [:toggle-overlay
-    [:map
-     [:action-type [:= :toggle-overlay]]
-     [:event-type [::sm/one-of event-types]]
-     [:overlay-position ::gpt/point]
-     [:overlay-pos-type [::sm/one-of overlay-positioning-types]]
-     [:destination {:optional true} [:maybe ::sm/uuid]]
-     [:close-click-outside {:optional true} :boolean]
-     [:background-overlay {:optional true} :boolean]
-     [:animation {:optional true} ::animation]
-     [:position-relative-to {:optional true} [:maybe ::sm/uuid]]]]
-   [:close-overlay
-    [:map
-     [:action-type [:= :close-overlay]]
-     [:event-type [::sm/one-of event-types]]
-     [:destination {:optional true} [:maybe ::sm/uuid]]
-     [:animation {:optional true} ::animation]
-     [:position-relative-to {:optional true} [:maybe ::sm/uuid]]]]
-   [:prev-screen
-    [:map
-     [:action-type [:= :prev-screen]]
-     [:event-type [::sm/one-of event-types]]]]
-   [:open-url
-    [:map
-     [:action-type [:= :open-url]]
-     [:event-type [::sm/one-of event-types]]
-     [:url :string]]]])
+(def schema:navigate-interaction
+  [:map
+   [:action-type [:= :navigate]]
+   [:event-type [::sm/one-of event-types]]
+   [:destination {:optional true} [:maybe ::sm/uuid]]
+   [:preserve-scroll {:optional true} :boolean]
+   [:animation {:optional true} ::animation]])
+
+(def schema:open-overlay-interaction
+  [:map
+   [:action-type [:= :open-overlay]]
+   [:event-type [::sm/one-of event-types]]
+   [:overlay-position ::gpt/point]
+   [:overlay-pos-type [::sm/one-of overlay-positioning-types]]
+   [:destination {:optional true} [:maybe ::sm/uuid]]
+   [:close-click-outside {:optional true} :boolean]
+   [:background-overlay {:optional true} :boolean]
+   [:animation {:optional true} ::animation]
+   [:position-relative-to {:optional true} [:maybe ::sm/uuid]]])
+
+(def schema:toggle-overlay-interaction
+  [:map
+   [:action-type [:= :toggle-overlay]]
+   [:event-type [::sm/one-of event-types]]
+   [:overlay-position ::gpt/point]
+   [:overlay-pos-type [::sm/one-of overlay-positioning-types]]
+   [:destination {:optional true} [:maybe ::sm/uuid]]
+   [:close-click-outside {:optional true} :boolean]
+   [:background-overlay {:optional true} :boolean]
+   [:animation {:optional true} ::animation]
+   [:position-relative-to {:optional true} [:maybe ::sm/uuid]]])
+
+(def schema:close-overlay-interaction
+  [:map
+   [:action-type [:= :close-overlay]]
+   [:event-type [::sm/one-of event-types]]
+   [:destination {:optional true} [:maybe ::sm/uuid]]
+   [:animation {:optional true} ::animation]
+   [:position-relative-to {:optional true} [:maybe ::sm/uuid]]])
+
+(def schema:prev-scren-interaction
+  [:map
+   [:action-type [:= :prev-screen]]
+   [:event-type [::sm/one-of event-types]]])
+
+(def schema:open-url-interaction
+  [:map
+   [:action-type [:= :open-url]]
+   [:event-type [::sm/one-of event-types]]
+   [:url :string]])
+
+(def schema:interaction
+  [:multi {:dispatch :action-type
+           :title "Interaction"
+           :gen/gen (sg/one-of (sg/generator schema:navigate-interaction)
+                               (sg/generator schema:open-overlay-interaction)
+                               (sg/generator schema:close-overlay-interaction)
+                               (sg/generator schema:toggle-overlay-interaction)
+                               (sg/generator schema:prev-scren-interaction)
+                               (sg/generator schema:open-url-interaction))
+           :decode/json #(update % :action-type keyword)}
+   [:navigate schema:navigate-interaction]
+   [:open-overlay schema:open-overlay-interaction]
+   [:toggle-overlay schema:toggle-overlay-interaction]
+   [:close-overlay schema:close-overlay-interaction]
+   [:prev-screen schema:prev-scren-interaction]
+   [:open-url schema:open-url-interaction]])
+
+(sm/register! ::interaction schema:interaction)
 
 (def check-interaction!
-  (sm/check-fn ::interaction))
+  (sm/check-fn schema:interaction))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS

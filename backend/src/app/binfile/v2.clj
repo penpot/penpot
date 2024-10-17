@@ -20,7 +20,6 @@
    [app.db.sql :as sql]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
-   [app.media :as media]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.util.events :as events]
@@ -347,9 +346,7 @@
   [cfg team-id]
   (let [id  (uuid/next)
         tp  (dt/tpoint)
-
-        cfg (-> (create-database cfg)
-                (update ::sto/storage media/configure-assets-storage))]
+        cfg (create-database cfg)]
 
     (l/inf :hint "start"
            :operation "export"
@@ -390,7 +387,6 @@
         tp  (dt/tpoint)
 
         cfg (-> (create-database cfg path)
-                (update ::sto/storage media/configure-assets-storage)
                 (assoc ::bfc/timestamp (dt/now)))]
 
     (l/inf :hint "start"

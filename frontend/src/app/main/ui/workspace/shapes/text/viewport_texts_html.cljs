@@ -26,6 +26,7 @@
    [app.util.object :as obj]
    [app.util.text-editor :as ted]
    [app.util.text-svg-position :as tsp]
+   [app.util.text.content :as content]
    [promesa.core :as p]
    [rumext.v2 :as mf]))
 
@@ -46,6 +47,12 @@
           (dissoc :modifiers)))
     shape))
 
+(defn- update-shape-with-content
+  [shape content editor-content]
+  (cond-> shape
+    (and (some? shape) (some? editor-content))
+    (assoc :content (d/txt-merge content editor-content))))
+
 (defn- update-with-editor-state
   "Updates the shape with the current state in the editor"
   [shape editor-state]
@@ -56,32 +63,39 @@
               (ted/get-editor-current-content)
               (ted/export-content)))]
 
-    (cond-> shape
-      (and (some? shape) (some? editor-content))
-      (assoc :content (d/txt-merge content editor-content)))))
+    (update-shape-with-content shape content editor-content)))
+
+(defn- update-with-editor-v2
+  "Updates the shape with the current editor"
+  [shape editor]
+  (let [content (:content shape)
+        editor-content (content/dom->cljs (.-root editor))]
+
+    (update-shape-with-content shape content editor-content)))
 
 (defn- update-text-shape
   [{:keys [grow-type id migrate] :as shape} node]
   ;; Check if we need to update the size because it's auto-width or auto-height
   ;; Update the position-data of every text fragment
-  (p/let [position-data (tsp/calc-position-data id)]
-    ;; At least one paragraph needs to be inside the bounding box
-    (when (gsht/overlaps-position-data? shape position-data)
-      (st/emit! (dwt/update-position-data id position-data)))
+  (->> (tsp/calc-position-data id)
+       (p/fmap (fn [position-data]
+                 ;; At least one paragraph needs to be inside the bounding box
+                 (when (gsht/overlaps-position-data? shape position-data)
+                   (st/emit! (dwt/update-position-data id position-data)))
 
-    (when (contains? #{:auto-height :auto-width} grow-type)
-      (let [{:keys [width height]}
-            (-> (dom/query node ".paragraph-set")
-                (dom/get-bounding-rect))
+                 (when (contains? #{:auto-height :auto-width} grow-type)
+                   (let [{:keys [width height]}
+                         (-> (dom/query node ".paragraph-set")
+                             (dom/get-bounding-rect))
 
-            width (mth/ceil width)
-            height (mth/ceil height)]
-        (when (and (not (mth/almost-zero? width))
-                   (not (mth/almost-zero? height))
-                   (not migrate))
-          (st/emit! (dwt/resize-text id width height)))))
+                         width (mth/ceil width)
+                         height (mth/ceil height)]
+                     (when (and (not (mth/almost-zero? width))
+                                (not (mth/almost-zero? height))
+                                (not migrate))
+                       (st/emit! (dwt/resize-text id width height)))))
 
-    (st/emit! (dwt/clean-text-modifier id))))
+                 (st/emit! (dwt/clean-text-modifier id))))))
 
 (defn- update-text-modifier
   [{:keys [grow-type id] :as shape} node]
@@ -218,22 +232,28 @@
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
-
   (let [shape   (obj/get props "shape")
+        shape-id (:id shape)
 
         workspace-editor-state (mf/deref refs/workspace-editor-state)
+        workspace-v2-editor-state (mf/deref refs/workspace-v2-editor-state)
+        workspace-editor (mf/deref refs/workspace-editor)
 
-        editor-state (get workspace-editor-state (:id shape))
+        editor-state (get workspace-editor-state shape-id)
+        v2-editor-state (get workspace-v2-editor-state shape-id)
 
         text-modifier-ref
-        (mf/use-memo (mf/deps (:id shape)) #(refs/workspace-text-modifier-by-id (:id shape)))
+        (mf/use-memo (mf/deps shape-id) #(refs/workspace-text-modifier-by-id shape-id))
 
         text-modifier
         (mf/deref text-modifier-ref)
 
         shape (cond-> shape
                 (some? editor-state)
-                (update-with-editor-state editor-state))
+                (update-with-editor-state editor-state)
+
+                (and (some? v2-editor-state) (some? workspace-editor))
+                (update-with-editor-v2 workspace-editor))
 
         ;; When we have a text with grow-type :auto-height or :auto-height we need to check the correct height
         ;; otherwise the center alignment will break

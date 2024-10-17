@@ -28,8 +28,8 @@
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dc]
    [app.main.data.events :as ev]
-   [app.main.data.messages :as msg]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.notifications :as-alias dwn]
@@ -48,6 +48,7 @@
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
+   [app.util.storage :as storage]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -115,8 +116,13 @@
                    (update :id #(or % (uuid/next)))
                    (assoc :name (or (get-in color [:image :name])
                                     (:color color)
-                                    (uc/gradient-type->string (get-in color [:gradient :type])))))]
-     (dm/assert! ::ctc/color color)
+                                    (uc/gradient-type->string (get-in color [:gradient :type]))))
+                   (d/without-nils))]
+
+     (dm/assert!
+      "expect valid color structure"
+      (ctc/check-color! color))
+
      (ptk/reify ::add-color
        ev/Event
        (-data [_] color)
@@ -132,16 +138,21 @@
 
 (defn add-recent-color
   [color]
+
   (dm/assert!
-   "expected valid recent color map"
+   "expected valid recent color structure"
    (ctc/check-recent-color! color))
 
   (ptk/reify ::add-recent-color
-    ptk/WatchEvent
-    (watch [it _ _]
-      (let [changes (-> (pcb/empty-changes it)
-                        (pcb/add-recent-color color))]
-        (rx/of (dch/commit-changes changes))))))
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [file-id (:current-file-id state)]
+        (update state :recent-colors ctc/add-recent-color file-id color)))
+
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [recent-colors (:recent-colors state)]
+        (swap! storage/user assoc :recent-colors recent-colors)))))
 
 (def clear-color-for-rename
   (ptk/reify ::clear-color-for-rename
@@ -149,7 +160,7 @@
     (update [_ state]
       (assoc-in state [:workspace-local :color-for-rename] nil))))
 
-(defn- do-update-color
+(defn- update-color*
   [it state color file-id]
   (let [data        (get state :workspace-data)
         [path name] (cfh/parse-path-name (:name color))
@@ -165,22 +176,34 @@
 
 (defn update-color
   [color file-id]
+  (let [color (d/without-nils color)]
 
-  (dm/assert!
-   "expected valid parameters"
-   (and (ctc/check-color! color)
-        (uuid? file-id)))
+    (dm/assert!
+     "expected valid color data structure"
+     (ctc/check-color! color))
 
-  (ptk/reify ::update-color
-    ptk/WatchEvent
-    (watch [it state _]
-      (do-update-color it state color file-id))))
+    (dm/assert!
+     "expected file-id"
+     (uuid? file-id))
+
+    (ptk/reify ::update-color
+      ptk/WatchEvent
+      (watch [it state _]
+        (update-color* it state color file-id)))))
 
 (defn rename-color
   [file-id id new-name]
-  (dm/verify! (uuid? file-id))
-  (dm/verify! (uuid? id))
-  (dm/verify! (string? new-name))
+  (dm/assert!
+   "expected valid uuid for `id`"
+   (uuid? id))
+
+  (dm/assert!
+   "expected valid uuid for `file-id`"
+   (uuid? file-id))
+
+  (dm/assert!
+   "expected valid string for `new-name`"
+   (string? new-name))
 
   (ptk/reify ::rename-color
     ptk/WatchEvent
@@ -189,9 +212,10 @@
         (if (str/empty? new-name)
           (rx/empty)
           (let [data   (get state :workspace-data)
-                object (get-in data [:colors id])
-                object (assoc object :name new-name)]
-            (do-update-color it state object file-id)))))))
+                color  (get-in data [:colors id])
+                color  (assoc color :name new-name)
+                color  (d/without-nils color)]
+            (update-color* it state color file-id)))))))
 
 (defn delete-color
   [{:keys [id] :as params}]
@@ -227,8 +251,15 @@
 
 (defn rename-media
   [id new-name]
-  (dm/verify! (uuid? id))
-  (dm/verify! (string? new-name))
+
+  (dm/assert!
+   "expected valid uuid for `id`"
+   (uuid? id))
+
+  (dm/assert!
+   "expected valid string for `new-name`"
+   (string? new-name))
+
   (ptk/reify ::rename-media
     ptk/WatchEvent
     (watch [it state _]
@@ -245,8 +276,11 @@
             (rx/of (dch/commit-changes changes))))))))
 
 (defn delete-media
-  [{:keys [id] :as params}]
-  (dm/assert! (uuid? id))
+  [{:keys [id]}]
+  (dm/assert!
+   "expected valid uuid for `id`"
+   (uuid? id))
+
   (ptk/reify ::delete-media
     ev/Event
     (-data [_] {:id id})
@@ -419,8 +453,14 @@
 (defn rename-component
   "Rename the component with the given id, in the current file library."
   [id new-name]
-  (dm/verify! (uuid? id))
-  (dm/verify! (string? new-name))
+  (dm/assert!
+   "expected an uuid instance"
+   (uuid? id))
+
+  (dm/assert!
+   "expected string for new-name"
+   (string? new-name))
+
   (ptk/reify ::rename-component
     ptk/WatchEvent
     (watch [it state _]
@@ -471,8 +511,11 @@
 
 (defn delete-component
   "Delete the component with the given id, from the current file library."
-  [{:keys [id] :as params}]
-  (dm/assert! (uuid? id))
+  [{:keys [id]}]
+  (dm/assert!
+   "expected valid uuid for `id`"
+   (uuid? id))
+
   (ptk/reify ::delete-component
     ptk/WatchEvent
     (watch [it state _]
@@ -666,8 +709,15 @@
 
 (defn ext-library-changed
   [library-id modified-at revn changes]
-  (dm/assert! (uuid? library-id))
-  (dm/assert! (ch/check-changes! changes))
+
+  (dm/assert!
+   "expected valid uuid for library-id"
+   (uuid? library-id))
+
+  (dm/assert!
+   "expected valid changes vector"
+   (ch/check-changes! changes))
+
   (ptk/reify ::ext-library-changed
     ptk/UpdateEvent
     (update [_ state]
@@ -1016,7 +1066,7 @@
                                                               file))
            (rx/concat
             (rx/of (set-updating-library false)
-                   (msg/hide-tag :sync-dialog))
+                   (ntf/hide {:tag :sync-dialog}))
             (when (seq (:redo-changes changes))
               (rx/of (dch/commit-changes changes)))
             (when-not (empty? updated-frames)
@@ -1084,12 +1134,12 @@
                                                   (sync-file (:current-file-id state)
                                                              (:id library)))
                                                 libraries-need-sync))
-                           (st/emit! msg/hide))
+                           (st/emit! (ntf/hide)))
             do-dismiss #(do (st/emit! ignore-sync)
-                            (st/emit! msg/hide))]
+                            (st/emit! (ntf/hide)))]
 
         (when (seq libraries-need-sync)
-          (rx/of (msg/info-dialog
+          (rx/of (ntf/dialog
                   :content (tr "workspace.updates.there-are-updates")
                   :controls :inline-actions
                   :links   [{:label (tr "workspace.updates.more-info")
@@ -1106,7 +1156,9 @@
 (defn touch-component
   "Update the modified-at attribute of the component to now"
   [id]
-  (dm/verify! (uuid? id))
+  (dm/assert!
+   "expected valid uuid for `id`"
+   (uuid? id))
   (ptk/reify ::touch-component
     cljs.core/IDeref
     (-deref [_] [id])

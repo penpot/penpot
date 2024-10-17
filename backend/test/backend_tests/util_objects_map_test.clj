@@ -8,6 +8,7 @@
   (:require
    [app.common.fressian :as fres]
    [app.common.schema.generators :as sg]
+   [app.common.schema.test :as smt]
    [app.common.transit :as transit]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
@@ -84,54 +85,56 @@
       (t/is (= (hash obj1) (hash obj2))))))
 
 (t/deftest internal-encode-decode
-  (sg/check!
-   (sg/for [data (->> (cg/map cg/uuid (sg/generator ::cts/shape))
-                      (cg/not-empty))]
+  (smt/check!
+   (smt/for [data (->> (cg/map cg/uuid (sg/generator ::cts/shape))
+                       (cg/not-empty))]
      (let [obj1 (omap/wrap data)
            obj2 (omap/create (deref obj1))
            obj3 (assoc obj2 uuid/zero 1)
            obj4 (omap/create (deref obj3))]
        ;; (app.common.pprint/pprint data)
-       (t/is (= (hash obj1) (hash obj2)))
-       (t/is (not= (hash obj2) (hash obj3)))
-       (t/is (bytes? (deref obj3)))
-       (t/is (pos? (alength (deref obj3))))
-       (t/is (= (hash obj3) (hash obj4)))))))
+
+       (and (= (hash obj1) (hash obj2))
+            (not= (hash obj2) (hash obj3))
+            (bytes? (deref obj3))
+            (pos? (alength (deref obj3)))
+            (= (hash obj3) (hash obj4)))))
+   {:num 50}))
 
 (t/deftest fressian-encode-decode
-  (sg/check!
-   (sg/for [data (->> (cg/map cg/uuid (sg/generator ::cts/shape))
-                      (cg/not-empty)
-                      (cg/fmap omap/wrap)
-                      (cg/fmap (fn [o] {:objects o})))]
+  (smt/check!
+   (smt/for [data (->> (cg/map cg/uuid (sg/generator ::cts/shape))
+                       (cg/not-empty)
+                       (cg/fmap omap/wrap)
+                       (cg/fmap (fn [o] {:objects o})))]
 
      (let [res (-> data fres/encode fres/decode)]
-       (t/is (contains? res :objects))
-       (t/is (omap/objects-map? (:objects res)))
-       (t/is (= (count (:objects data))
-                (count (:objects res))))
-       (t/is (= (hash (:objects data))
-                (hash (:objects res))))))))
+       (and (contains? res :objects)
+            (omap/objects-map? (:objects res))
+            (= (count (:objects data))
+               (count (:objects res)))
+            (= (hash (:objects data))
+               (hash (:objects res))))))
+   {:num 50}))
 
 (t/deftest transit-encode-decode
-  (sg/check!
-   (sg/for [data (->> (cg/map cg/uuid (sg/generator ::cts/shape))
-                      (cg/not-empty)
-                      (cg/fmap omap/wrap)
-                      (cg/fmap (fn [o] {:objects o})))]
+  (smt/check!
+   (smt/for [data (->> (cg/map cg/uuid (sg/generator ::cts/shape))
+                       (cg/not-empty)
+                       (cg/fmap omap/wrap)
+                       (cg/fmap (fn [o] {:objects o})))]
      (let [res (-> data transit/encode transit/decode)]
        ;; (app.common.pprint/pprint data)
        ;; (app.common.pprint/pprint res)
-       (doseq [[k v] (:objects res)]
-         (t/is (= v (get-in data [:objects k]))))
-
-       (t/is (contains? res :objects))
-       (t/is (contains? data :objects))
-
-       (t/is (omap/objects-map? (:objects data)))
-       (t/is (not (omap/objects-map? (:objects res))))
-
-       (t/is (= (count (:objects data))
-                (count (:objects res))))))))
+       (and (every? (fn [[k v]]
+                      (= v (get-in data [:objects k])))
+                    (:objects res))
+            (contains? res :objects)
+            (contains? data :objects)
+            (omap/objects-map? (:objects data))
+            (not (omap/objects-map? (:objects res)))
+            (= (count (:objects data))
+               (count (:objects res))))))
+   {:num 50}))
 
 

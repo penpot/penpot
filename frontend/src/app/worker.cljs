@@ -24,24 +24,27 @@
 
 ;; --- Messages Handling
 
-(def ^:private
-  schema:message
-  (sm/define
-    [:map {:title "WorkerMessage"}
-     [:sender-id ::sm/uuid]
-     [:payload
-      [:map
-       [:cmd :keyword]]]
-     [:buffer? {:optional true} :boolean]]))
+(def ^:private schema:message
+  [:map {:title "WorkerMessage"}
+   [:sender-id ::sm/uuid]
+   [:payload
+    [:map
+     [:cmd :keyword]]]
+   [:buffer? {:optional true} :boolean]])
+
+(def ^:private check-message!
+  (sm/check-fn schema:message))
 
 (def buffer (rx/subject))
 
 (defn- handle-message
   "Process the message and returns to the client"
   [{:keys [sender-id payload transfer] :as message}]
+
   (dm/assert!
    "expected valid message"
-   (sm/check! schema:message message))
+   (check-message! message))
+
   (letfn [(post [msg]
             (let [msg (-> msg (assoc :reply-to sender-id) (wm/encode))]
               (.postMessage js/self msg)))

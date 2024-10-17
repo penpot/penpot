@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.schema :as sm]
-   [app.main.data.messages :as msg]
+   [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
@@ -30,7 +30,7 @@
 
         default-success-finish
         (mf/use-fn
-         #(st/emit! (msg/info (tr "auth.notifications.recovery-token-sent"))))
+         #(st/emit! (ntf/info (tr "auth.notifications.recovery-token-sent"))))
 
         on-success
         (mf/use-fn
@@ -47,14 +47,14 @@
            (let [code (-> cause ex-data :code)]
              (case code
                :profile-not-verified
-               (rx/of (msg/error (tr "auth.notifications.profile-not-verified")))
+               (rx/of (ntf/error (tr "auth.notifications.profile-not-verified")))
 
                :profile-is-muted
-               (rx/of (msg/error (tr "errors.profile-is-muted")))
+               (rx/of (ntf/error (tr "errors.profile-is-muted")))
 
                (:email-has-permanent-bounces
                 :email-has-complaints)
-               (rx/of (msg/error (tr "errors.email-has-permanent-bounces" (:email data))))
+               (rx/of (ntf/error (tr "errors.email-has-permanent-bounces" (:email data))))
 
                (rx/throw cause)))))
 
@@ -102,3 +102,16 @@
                    :class (stl/css :go-back-link)
                    :data-testid "go-back-link"}
        (tr "labels.go-back")]]]))
+
+
+(mf/defc recovery-sent-page
+  {::mf/props :obj}
+  [{:keys [email]}]
+  [:div {:class (stl/css :auth-form-wrapper :register-success)}
+   [:div {:class (stl/css :auth-title-wrapper)}
+    [:h2 {:class (stl/css :auth-title)}
+     (tr "auth.check-mail")]
+    [:div {:class (stl/css :notification-text)} (tr "not-found.login.sent-recovery")]]
+   [:div {:class (stl/css :notification-text-email)} email]
+   [:div {:class (stl/css :notification-text)} (tr "not-found.login.sent-recovery-check")]])
+

@@ -141,20 +141,21 @@
 
 ;; --- INSTANT
 
+(defn instant?
+  [v]
+  (instance? Instant v))
+
 (defn instant
   ([s]
-   (if (int? s)
-     (Instant/ofEpochMilli s)
-     (Instant/parse s)))
+   (cond
+     (instant? s) s
+     (int? s)    (Instant/ofEpochMilli s)
+     :else       (Instant/parse s)))
   ([s fmt]
    (case fmt
      :rfc1123 (Instant/from (.parse DateTimeFormatter/RFC_1123_DATE_TIME ^String s))
      :iso     (Instant/from (.parse DateTimeFormatter/ISO_INSTANT ^String s))
      :iso8601 (Instant/from (.parse DateTimeFormatter/ISO_INSTANT ^String s)))))
-
-(defn instant?
-  [v]
-  (instance? Instant v))
 
 (defn is-after?
   [da db]
@@ -374,7 +375,10 @@
    :type-properties
    {:error/message "should be an instant"
     :title "instant"
-    ::sm/decode instant
+    :decode/string instant
+    :encode/string format-instant
+    :decode/json instant
+    :encode/json format-instant
     :gen/gen (tgen/fmap (fn [i] (in-past i))  tgen/pos-int)
     ::oapi/type "string"
     ::oapi/format "iso"}})
@@ -386,6 +390,9 @@
    {:error/message "should be a duration"
     :gen/gen (tgen/fmap duration tgen/pos-int)
     :title "duration"
-    ::sm/decode duration
+    :decode/string duration
+    :encode/string format-duration
+    :decode/json duration
+    :encode/json format-duration
     ::oapi/type "string"
     ::oapi/format "duration"}})

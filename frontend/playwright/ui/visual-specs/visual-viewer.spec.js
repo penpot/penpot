@@ -117,7 +117,7 @@ test("User goes to the Viewer Inspect code, code tab", async ({ page }) => {
   });
 
   await viewerPage.showCode();
-  await viewerPage.page.getByTestId("code").click();
+  await viewerPage.page.getByRole("tab", { name: "code" }).click();
 
   await expect(
     viewerPage.page.getByRole("button", { name: "Copy all code" }),

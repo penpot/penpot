@@ -28,58 +28,80 @@
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
-(def ^:private sql:get-team-font-variant-nrefs
-  "SELECT ((SELECT count(*) FROM team_font_variant WHERE woff1_file_id = ?) +
-           (SELECT count(*) FROM team_font_variant WHERE woff2_file_id = ?) +
-           (SELECT count(*) FROM team_font_variant WHERE otf_file_id = ?) +
-           (SELECT count(*) FROM team_font_variant WHERE ttf_file_id = ?)) AS nrefs")
+(def ^:private sql:has-team-font-variant-refs
+  "SELECT ((SELECT EXISTS (SELECT 1 FROM team_font_variant WHERE woff1_file_id = ?)) OR
+           (SELECT EXISTS (SELECT 1 FROM team_font_variant WHERE woff2_file_id = ?)) OR
+           (SELECT EXISTS (SELECT 1 FROM team_font_variant WHERE otf_file_id = ?)) OR
+           (SELECT EXISTS (SELECT 1 FROM team_font_variant WHERE ttf_file_id = ?))) AS has_refs")
 
-(defn- get-team-font-variant-nrefs
+(defn- has-team-font-variant-refs?
   [conn id]
-  (-> (db/exec-one! conn [sql:get-team-font-variant-nrefs id id id id])
-      (get :nrefs)))
-
+  (-> (db/exec-one! conn [sql:has-team-font-variant-refs id id id id])
+      (get :has-refs)))
 
 (def ^:private
-  sql:get-file-media-object-nrefs
-  "SELECT ((SELECT count(*) FROM file_media_object WHERE media_id = ?) +
-           (SELECT count(*) FROM file_media_object WHERE thumbnail_id = ?)) AS nrefs")
+  sql:has-file-media-object-refs
+  "SELECT ((SELECT EXISTS (SELECT 1 FROM file_media_object WHERE media_id = ?)) OR
+           (SELECT EXISTS (SELECT 1 FROM file_media_object WHERE thumbnail_id = ?))) AS has_refs")
 
-(defn- get-file-media-object-nrefs
+(defn- has-file-media-object-refs?
   [conn id]
-  (-> (db/exec-one! conn [sql:get-file-media-object-nrefs id id])
-      (get :nrefs)))
+  (-> (db/exec-one! conn [sql:has-file-media-object-refs id id])
+      (get :has-refs)))
 
+(def ^:private sql:has-profile-refs
+  "SELECT ((SELECT EXISTS (SELECT 1 FROM profile WHERE photo_id = ?)) OR
+           (SELECT EXISTS (SELECT 1 FROM team WHERE photo_id = ?))) AS has_refs")
 
-(def ^:private sql:get-profile-nrefs
-  "SELECT ((SELECT count(*) FROM profile WHERE photo_id = ?) +
-           (SELECT count(*) FROM team WHERE photo_id = ?)) AS nrefs")
-
-(defn- get-profile-nrefs
+(defn- has-profile-refs?
   [conn id]
-  (-> (db/exec-one! conn [sql:get-profile-nrefs id id])
-      (get :nrefs)))
-
+  (-> (db/exec-one! conn [sql:has-profile-refs id id])
+      (get :has-refs)))
 
 (def ^:private
-  sql:get-file-object-thumbnail-nrefs
-  "SELECT (SELECT count(*) FROM file_tagged_object_thumbnail WHERE media_id = ?) AS nrefs")
+  sql:has-file-object-thumbnail-refs
+  "SELECT EXISTS (SELECT 1 FROM file_tagged_object_thumbnail WHERE media_id = ?) AS has_refs")
 
-(defn- get-file-object-thumbnails
+(defn- has-file-object-thumbnails-refs?
   [conn id]
-  (-> (db/exec-one! conn [sql:get-file-object-thumbnail-nrefs id])
-      (get :nrefs)))
-
+  (-> (db/exec-one! conn [sql:has-file-object-thumbnail-refs id])
+      (get :has-refs)))
 
 (def ^:private
-  sql:get-file-thumbnail-nrefs
-  "SELECT (SELECT count(*) FROM file_thumbnail WHERE media_id = ?) AS nrefs")
+  sql:has-file-thumbnail-refs
+  "SELECT EXISTS (SELECT 1 FROM file_thumbnail WHERE media_id = ?) AS has_refs")
 
-(defn- get-file-thumbnails
+(defn- has-file-thumbnails-refs?
   [conn id]
-  (-> (db/exec-one! conn [sql:get-file-thumbnail-nrefs id])
-      (get :nrefs)))
+  (-> (db/exec-one! conn [sql:has-file-thumbnail-refs id])
+      (get :has-refs)))
 
+(def ^:private
+  sql:has-file-data-refs
+  "SELECT EXISTS (SELECT 1 FROM file WHERE data_ref_id = ?) AS has_refs")
+
+(defn- has-file-data-refs?
+  [conn id]
+  (-> (db/exec-one! conn [sql:has-file-data-refs id])
+      (get :has-refs)))
+
+(def ^:private
+  sql:has-file-data-fragment-refs
+  "SELECT EXISTS (SELECT 1 FROM file_data_fragment WHERE data_ref_id = ?) AS has_refs")
+
+(defn- has-file-data-fragment-refs?
+  [conn id]
+  (-> (db/exec-one! conn [sql:has-file-data-fragment-refs id])
+      (get :has-refs)))
+
+(def ^:private
+  sql:has-file-change-refs
+  "SELECT EXISTS (SELECT 1 FROM file_change WHERE data_ref_id = ?) AS has_refs")
+
+(defn- has-file-change-refs?
+  [conn id]
+  (-> (db/exec-one! conn [sql:has-file-change-refs id])
+      (get :has-refs)))
 
 (def ^:private sql:mark-freeze-in-bulk
   "UPDATE storage_object
@@ -90,7 +112,6 @@
   [conn ids]
   (let [ids (db/create-array conn "uuid" ids)]
     (db/exec-one! conn [sql:mark-freeze-in-bulk ids])))
-
 
 (def ^:private sql:mark-delete-in-bulk
   "UPDATE storage_object
@@ -123,25 +144,24 @@
       "file-media-object"))
 
 (defn- process-objects!
-  [conn get-fn ids bucket]
+  [conn has-refs? ids bucket]
   (loop [to-freeze #{}
          to-delete #{}
          ids       (seq ids)]
     (if-let [id (first ids)]
-      (let [nrefs (get-fn conn id)]
-        (if (pos? nrefs)
-          (do
-            (l/debug :hint "processing object"
-                     :id (str id)
-                     :status "freeze"
-                     :bucket bucket :refs nrefs)
-            (recur (conj to-freeze id) to-delete (rest ids)))
-          (do
-            (l/debug :hint "processing object"
-                     :id (str id)
-                     :status "delete"
-                     :bucket bucket :refs nrefs)
-            (recur to-freeze (conj to-delete id) (rest ids)))))
+      (if (has-refs? conn id)
+        (do
+          (l/debug :hint "processing object"
+                   :id (str id)
+                   :status "freeze"
+                   :bucket bucket)
+          (recur (conj to-freeze id) to-delete (rest ids)))
+        (do
+          (l/debug :hint "processing object"
+                   :id (str id)
+                   :status "delete"
+                   :bucket bucket)
+          (recur to-freeze (conj to-delete id) (rest ids))))
       (do
         (some->> (seq to-freeze) (mark-freeze-in-bulk! conn))
         (some->> (seq to-delete) (mark-delete-in-bulk! conn))
@@ -150,15 +170,26 @@
 (defn- process-bucket!
   [conn bucket ids]
   (case bucket
-    "file-media-object"     (process-objects! conn get-file-media-object-nrefs ids bucket)
-    "team-font-variant"     (process-objects! conn get-team-font-variant-nrefs ids bucket)
-    "file-object-thumbnail" (process-objects! conn get-file-object-thumbnails ids bucket)
-    "file-thumbnail"        (process-objects! conn get-file-thumbnails ids bucket)
-    "profile"               (process-objects! conn get-profile-nrefs ids bucket)
+    "file-media-object"     (process-objects! conn has-file-media-object-refs? ids bucket)
+    "team-font-variant"     (process-objects! conn has-team-font-variant-refs? ids bucket)
+    "file-object-thumbnail" (process-objects! conn has-file-object-thumbnails-refs? ids bucket)
+    "file-thumbnail"        (process-objects! conn has-file-thumbnails-refs? ids bucket)
+    "profile"               (process-objects! conn has-profile-refs? ids bucket)
+    "file-data"             (process-objects! conn has-file-data-refs? ids bucket)
+    "file-data-fragment"    (process-objects! conn has-file-data-fragment-refs? ids bucket)
+    "file-change"           (process-objects! conn has-file-change-refs? ids bucket)
     (ex/raise :type :internal
               :code :unexpected-unknown-reference
-              :hint (dm/fmt "unknown reference %" bucket))))
+              :hint (dm/fmt "unknown reference '%'" bucket))))
 
+(defn process-chunk!
+  [{:keys [::db/conn]} chunk]
+  (reduce-kv (fn [[nfo ndo] bucket ids]
+               (let [[nfo' ndo'] (process-bucket! conn bucket ids)]
+                 [(+ nfo nfo')
+                  (+ ndo ndo')]))
+             [0 0]
+             (d/group-by lookup-bucket :id #{} chunk)))
 
 (def ^:private
   sql:get-touched-storage-objects
@@ -167,29 +198,22 @@
     WHERE so.touched_at IS NOT NULL
     ORDER BY touched_at ASC
       FOR UPDATE
-     SKIP LOCKED")
+     SKIP LOCKED
+    LIMIT 10")
 
-(defn- group-by-bucket
-  [row]
-  (d/group-by lookup-bucket :id #{} row))
-
-(defn- get-buckets
+(defn get-chunk
   [conn]
-  (sequence
-   (comp (map impl/decode-row)
-         (partition-all 25)
-         (mapcat group-by-bucket))
-   (db/cursor conn sql:get-touched-storage-objects)))
+  (->> (db/exec! conn [sql:get-touched-storage-objects])
+       (map impl/decode-row)
+       (not-empty)))
 
 (defn- process-touched!
-  [{:keys [::db/conn]}]
-  (loop [buckets (get-buckets conn)
-         freezed 0
+  [{:keys [::db/pool] :as cfg}]
+  (loop [freezed 0
          deleted 0]
-    (if-let [[bucket ids] (first buckets)]
-      (let [[nfo ndo] (process-bucket! conn bucket ids)]
-        (recur (rest buckets)
-               (+ freezed nfo)
+    (if-let [chunk (get-chunk pool)]
+      (let [[nfo ndo] (db/tx-run! cfg process-chunk! chunk)]
+        (recur (+ freezed nfo)
                (+ deleted ndo)))
       (do
         (l/inf :hint "task finished"
@@ -198,11 +222,14 @@
 
         {:freeze freezed :delete deleted}))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HANDLER
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defmethod ig/pre-init-spec ::handler [_]
   (s/keys :req [::db/pool]))
 
 (defmethod ig/init-key ::handler
   [_ cfg]
-  (fn [_]
-    (db/tx-run! cfg process-touched!)))
+  (fn [_] (process-touched! cfg)))
 

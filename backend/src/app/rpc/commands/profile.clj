@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
+   [app.common.types.plugins :refer [schema:plugin-registry]]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -40,6 +41,33 @@
 (declare strip-private-attrs)
 (declare verify-password)
 
+(def schema:props
+  [:map {:title "ProfileProps"}
+   [:plugins {:optional true} schema:plugin-registry]
+   [:newsletter-updates {:optional true} ::sm/boolean]
+   [:newsletter-news {:optional true} ::sm/boolean]
+   [:onboarding-team-id {:optional true} ::sm/uuid]
+   [:onboarding-viewed {:optional true} ::sm/boolean]
+   [:v2-info-shown {:optional true} ::sm/boolean]
+   [:welcome-file-id {:optional true} [:maybe ::sm/boolean]]
+   [:release-notes-viewed {:optional true}
+    [::sm/text {:max 100}]]])
+
+(def schema:profile
+  [:map {:title "Profile"}
+   [:id ::sm/uuid]
+   [:fullname [::sm/word-string {:max 250}]]
+   [:email ::sm/email]
+   [:is-active {:optional true} ::sm/boolean]
+   [:is-blocked {:optional true} ::sm/boolean]
+   [:is-demo {:optional true} ::sm/boolean]
+   [:is-muted {:optional true} ::sm/boolean]
+   [:created-at {:optional true} ::sm/inst]
+   [:modified-at {:optional true} ::sm/inst]
+   [:default-project-id {:optional true} ::sm/uuid]
+   [:default-team-id {:optional true} ::sm/uuid]
+   [:props {:optional true} schema:props]])
+
 (defn clean-email
   "Clean and normalizes email address string"
   [email]
@@ -52,24 +80,6 @@
                 (str/trim email "<>")
                 email)]
     email))
-
-(def ^:private
-  schema:profile
-  (sm/define
-    [:map {:title "Profile"}
-     [:id ::sm/uuid]
-     [:fullname [::sm/word-string {:max 250}]]
-     [:email ::sm/email]
-     [:is-active {:optional true} :boolean]
-     [:is-blocked {:optional true} :boolean]
-     [:is-demo {:optional true} :boolean]
-     [:is-muted {:optional true} :boolean]
-     [:created-at {:optional true} ::sm/inst]
-     [:modified-at {:optional true} ::sm/inst]
-     [:default-project-id {:optional true} ::sm/uuid]
-     [:default-team-id {:optional true} ::sm/uuid]
-     [:props {:optional true}
-      [:map-of {:title "ProfileProps"} :keyword :any]]]))
 
 ;; --- QUERY: Get profile (own)
 
@@ -99,11 +109,10 @@
 
 (def ^:private
   schema:update-profile
-  (sm/define
-    [:map {:title "update-profile"}
-     [:fullname [::sm/word-string {:max 250}]]
-     [:lang {:optional true} [:string {:max 5}]]
-     [:theme {:optional true} [:string {:max 250}]]]))
+  [:map {:title "update-profile"}
+   [:fullname [::sm/word-string {:max 250}]]
+   [:lang {:optional true} [:string {:max 8}]]
+   [:theme {:optional true} [:string {:max 250}]]])
 
 (sv/defmethod ::update-profile
   {::doc/added "1.0"
@@ -144,11 +153,10 @@
 
 (def ^:private
   schema:update-profile-password
-  (sm/define
-    [:map {:title "update-profile-password"}
-     [:password [::sm/word-string {:max 500}]]
-     ;; Social registered users don't have old-password
-     [:old-password {:optional true} [:maybe [::sm/word-string {:max 500}]]]]))
+  [:map {:title "update-profile-password"}
+   [:password [::sm/word-string {:max 500}]]
+   ;; Social registered users don't have old-password
+   [:old-password {:optional true} [:maybe [::sm/word-string {:max 500}]]]])
 
 (sv/defmethod ::update-profile-password
   {::doc/added "1.0"
@@ -199,9 +207,8 @@
 
 (def ^:private
   schema:update-profile-photo
-  (sm/define
-    [:map {:title "update-profile-photo"}
-     [:file ::media/upload]]))
+  [:map {:title "update-profile-photo"}
+   [:file ::media/upload]])
 
 (sv/defmethod ::update-profile-photo
   {:doc/added "1.1"
@@ -210,8 +217,7 @@
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
-  (let [cfg (update cfg ::sto/storage media/configure-assets-storage)]
-    (update-profile-photo cfg (assoc params :profile-id profile-id))))
+  (update-profile-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-profile-photo
   [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id file] :as params}]
@@ -269,9 +275,8 @@
 
 (def ^:private
   schema:request-email-change
-  (sm/define
-    [:map {:title "request-email-change"}
-     [:email ::sm/email]]))
+  [:map {:title "request-email-change"}
+   [:email ::sm/email]])
 
 (sv/defmethod ::request-email-change
   {::doc/added "1.0"
@@ -352,36 +357,38 @@
                 :extra-data ptoken})
     nil))
 
-
 ;; --- MUTATION: Update Profile Props
 
 (def ^:private
   schema:update-profile-props
-  (sm/define
-    [:map {:title "update-profile-props"}
-     [:props [:map-of :keyword :any]]]))
+  [:map {:title "update-profile-props"}
+   [:props schema:props]])
+
+(defn update-profile-props
+  [{:keys [::db/conn] :as cfg} profile-id props]
+  (let [profile (get-profile conn profile-id ::sql/for-update true)
+        props   (reduce-kv (fn [props k v]
+                             ;; We don't accept namespaced keys
+                             (if (simple-ident? k)
+                               (if (nil? v)
+                                 (dissoc props k)
+                                 (assoc props k v))
+                               props))
+                           (:props profile)
+                           props)]
+
+    (db/update! conn :profile
+                {:props (db/tjson props)}
+                {:id profile-id})
+
+    (filter-props props)))
 
 (sv/defmethod ::update-profile-props
   {::doc/added "1.0"
    ::sm/params schema:update-profile-props}
-  [{:keys [::db/pool]} {:keys [::rpc/profile-id props]}]
-  (db/with-atomic [conn pool]
-    (let [profile (get-profile conn profile-id ::sql/for-update true)
-          props   (reduce-kv (fn [props k v]
-                               ;; We don't accept namespaced keys
-                               (if (simple-ident? k)
-                                 (if (nil? v)
-                                   (dissoc props k)
-                                   (assoc props k v))
-                                 props))
-                             (:props profile)
-                             props)]
-
-      (db/update! conn :profile
-                  {:props (db/tjson props)}
-                  {:id profile-id})
-
-      (filter-props props))))
+  [cfg {:keys [::rpc/profile-id props]}]
+  (db/tx-run! cfg (fn [cfg]
+                    (update-profile-props cfg profile-id props))))
 
 ;; --- MUTATION: Delete Profile
 

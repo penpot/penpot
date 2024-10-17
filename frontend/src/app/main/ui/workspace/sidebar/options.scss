@@ -8,8 +8,7 @@
 
 .tool-window {
   position: relative;
-  display: flex;
-  flex-direction: column;
+  display: grid;
   width: 100%;
   height: 100%;
   padding-left: $s-12;
@@ -27,14 +26,24 @@
 }
 
 .element-options {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-auto-rows: min-content;
   gap: $s-8;
+  width: 100%;
+  height: calc(100vh - $s-80);
   padding-top: $s-8;
+}
+
+.design-options,
+.interaction-options {
+  overflow: auto;
+  scrollbar-gutter: stable;
 }
 
 .inspect {
   scrollbar-gutter: unset;
+}
+
+.options-tab-switcher {
+  --tabs-nav-padding-inline-end: 12px;
 }

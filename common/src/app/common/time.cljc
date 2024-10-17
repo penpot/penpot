@@ -5,13 +5,14 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.time
-  "A new cross-platform date and time API. It should be prefered over
-  a platform specific implementation found on `app.util.time`."
+  "Minimal cross-platoform date time api for specific use cases on types
+  definition and other common code."
   #?(:cljs
      (:require
       ["luxon" :as lxn])
      :clj
      (:import
+      java.time.format.DateTimeFormatter
       java.time.Instant
       java.time.Duration)))
 
@@ -31,10 +32,29 @@
      [one other]
      (.isAfter one other)))
 
-(defn instant
+(defn instant?
+  [o]
+  #?(:clj (instance? Instant o)
+     :cljs (instance? DateTime o)))
+
+(defn parse-instant
   [s]
-  #?(:clj  (Instant/ofEpochMilli s)
-     :cljs (.fromMillis ^js DateTime s #js {:zone "local" :setZone false})))
+  (cond
+    (instant? s)
+    s
+
+    (int? s)
+    #?(:clj  (Instant/ofEpochMilli s)
+       :cljs (.fromMillis ^js DateTime s #js {:zone "local" :setZone false}))
+
+    (string? s)
+    #?(:clj (Instant/parse s)
+       :cljs (.fromISO ^js DateTime s))))
+
+(defn format-instant
+  [v]
+  #?(:clj (.format DateTimeFormatter/ISO_INSTANT ^Instant v)
+     :cljs (.toISO ^js v)))
 
 ;; To check for valid date time we can just use the core inst? function
 

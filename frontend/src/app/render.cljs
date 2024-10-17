@@ -115,7 +115,7 @@
 
 (def ^:private render-objects-decoder
   (sm/lazy-decoder schema:render-objects
-                   sm/default-transformer))
+                   sm/string-transformer))
 
 (def ^:private render-objects-validator
   (sm/lazy-validator schema:render-objects))
@@ -236,7 +236,7 @@
 
 (def ^:private render-components-decoder
   (sm/lazy-decoder schema:render-components
-                   sm/default-transformer))
+                   sm/string-transformer))
 
 (def ^:private render-components-validator
   (sm/lazy-validator schema:render-components))

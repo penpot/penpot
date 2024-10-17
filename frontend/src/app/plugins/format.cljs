@@ -31,14 +31,22 @@
     "mixed"
     value))
 
-;; export type PenpotPoint = { x: number; y: number };
+;; export type Point = { x: number; y: number };
 (defn format-point
   [{:keys [x y] :as point}]
   (when (some? point)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:x x :y y})))
 
-;;export type PenpotBounds = {
+(defn shape-type
+  [type]
+  (case type
+    :frame "board"
+    :rect "rectangle"
+    :circle "ellipse"
+    (d/name type)))
+
+;;export type Bounds = {
 ;;  x: number;
 ;;  y: number;
 ;;  width: number;
@@ -47,10 +55,10 @@
 (defn format-bounds
   [{:keys [x y width height] :as bounds}]
   (when (some? bounds)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:x x :y y :width width :height height})))
 
-;; export interface PenpotColorShapeInfoEntry {
+;; export interface ColorShapeInfoEntry {
 ;;   readonly property: string;
 ;;   readonly index?: number;
 ;;   readonly shapeId: string;
@@ -58,12 +66,12 @@
 (defn format-shape-info
   [{:keys [prop shape-id index] :as info}]
   (when (some? info)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:property (d/name prop)
           :index index
           :shapeId (dm/str shape-id)})))
 
-;; export type PenpotGradient = {
+;; export type Gradient = {
 ;;   type: 'linear' | 'radial';
 ;;   startX: number;
 ;;   startY: number;
@@ -75,12 +83,12 @@
 (defn format-stop
   [{:keys [color opacity offset] :as stop}]
   (when (some? stop)
-    (obj/clear-empty #js {:color color :opacity opacity :offset offset})))
+    (obj/without-empty #js {:color color :opacity opacity :offset offset})))
 
 (defn format-gradient
   [{:keys [type start-x start-y end-x end-y width stops] :as gradient}]
   (when (some? gradient)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:type (format-key type)
           :startX start-x
           :startY start-y
@@ -89,7 +97,7 @@
           :width width
           :stops (format-array format-stop stops)})))
 
-;; export type PenpotImageData = {
+;; export type ImageData = {
 ;;   name?: string;
 ;;   width: number;
 ;;   height: number;
@@ -100,7 +108,7 @@
 (defn format-image
   [{:keys [name width height mtype id keep-aspect-ratio] :as image}]
   (when (some? image)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:name name
           :width width
           :height height
@@ -108,7 +116,7 @@
           :id (format-id id)
           :keepAspectRatio keep-aspect-ratio})))
 
-;; export interface PenpotColor {
+;; export interface Color {
 ;;   id?: string;
 ;;   name?: string;
 ;;   path?: string;
@@ -116,13 +124,13 @@
 ;;   opacity?: number;
 ;;   refId?: string;
 ;;   refFile?: string;
-;;   gradient?: PenpotGradient;
-;;   image?: PenpotImageData;
+;;   gradient?: Gradient;
+;;   image?: ImageData;
 ;; }
 (defn format-color
   [{:keys [id name path color opacity ref-id ref-file gradient image] :as color-data}]
   (when (some? color-data)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:id (format-id id)
           :name name
           :path path
@@ -133,7 +141,7 @@
           :gradient (format-gradient gradient)
           :image (format-image image)})))
 
-;; PenpotColor & PenpotColorShapeInfo
+;; Color & ColorShapeInfo
 (defn format-color-result
   [[color attrs]]
   (let [shapes-info (apply array (map format-shape-info attrs))
@@ -142,7 +150,7 @@
     color))
 
 
-;; export interface PenpotShadow {
+;; export interface Shadow {
 ;;   id?: string;
 ;;   style?: 'drop-shadow' | 'inner-shadow';
 ;;   offsetX?: number;
@@ -150,12 +158,12 @@
 ;;   blur?: number;
 ;;   spread?: number;
 ;;   hidden?: boolean;
-;;   color?: PenpotColor;
+;;   color?: Color;
 ;; }
 (defn format-shadow
   [{:keys [id style offset-x offset-y blur spread hidden color] :as shadow}]
   (when (some? shadow)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:id (-> id format-id)
           :style (-> style format-key)
           :offsetX offset-x
@@ -170,18 +178,18 @@
   (when (some? shadows)
     (format-array format-shadow shadows)))
 
-;;export interface PenpotFill {
+;;export interface Fill {
 ;;  fillColor?: string;
 ;;  fillOpacity?: number;
-;;  fillColorGradient?: PenpotGradient;
+;;  fillColorGradient?: Gradient;
 ;;  fillColorRefFile?: string;
 ;;  fillColorRefId?: string;
-;;  fillImage?: PenpotImageData;
+;;  fillImage?: ImageData;
 ;;}
 (defn format-fill
   [{:keys [fill-color fill-opacity fill-color-gradient fill-color-ref-file fill-color-ref-id fill-image] :as fill}]
   (when (some? fill)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:fillColor fill-color
           :fillOpacity fill-opacity
           :fillColorGradient (format-gradient fill-color-gradient)
@@ -201,7 +209,7 @@
     (some? fills)
     (format-array format-fill fills)))
 
-;; export interface PenpotStroke {
+;; export interface Stroke {
 ;;   strokeColor?: string;
 ;;   strokeColorRefFile?: string;
 ;;   strokeColorRefId?: string;
@@ -209,9 +217,9 @@
 ;;   strokeStyle?: 'solid' | 'dotted' | 'dashed' | 'mixed' | 'none' | 'svg';
 ;;   strokeWidth?: number;
 ;;   strokeAlignment?: 'center' | 'inner' | 'outer';
-;;   strokeCapStart?: PenpotStrokeCap;
-;;   strokeCapEnd?: PenpotStrokeCap;
-;;   strokeColorGradient?: PenpotGradient;
+;;   strokeCapStart?: StrokeCap;
+;;   strokeCapEnd?: StrokeCap;
+;;   strokeColorGradient?: Gradient;
 ;; }
 (defn format-stroke
   [{:keys [stroke-color stroke-color-ref-file stroke-color-ref-id
@@ -219,7 +227,7 @@
            stroke-cap-start stroke-cap-end stroke-color-gradient] :as stroke}]
 
   (when (some? stroke)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:strokeColor stroke-color
           :strokeColorRefFile (format-id stroke-color-ref-file)
           :strokeColorRefId (format-id stroke-color-ref-id)
@@ -236,7 +244,7 @@
   (when (some? strokes)
     (format-array format-stroke strokes)))
 
-;; export interface PenpotBlur {
+;; export interface Blur {
 ;;   id?: string;
 ;;   type?: 'layer-blur';
 ;;   value?: number;
@@ -245,13 +253,13 @@
 (defn format-blur
   [{:keys [id type value hidden] :as blur}]
   (when (some? blur)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:id (format-id id)
           :type (format-key type)
           :value value
           :hidden hidden})))
 
-;; export interface PenpotExport {
+;; export interface Export {
 ;;   type: 'png' | 'jpeg' | 'svg' | 'pdf';
 ;;   scale: number;
 ;;   suffix: string;
@@ -259,7 +267,7 @@
 (defn format-export
   [{:keys [type scale suffix] :as export}]
   (when (some? export)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:type (format-key type)
           :scale scale
           :suffix suffix})))
@@ -269,7 +277,7 @@
   (when (some? exports)
     (format-array format-export exports)))
 
-;; export interface PenpotFrameGuideColumnParams {
+;; export interface GuideColumnParams {
 ;;   color: { color: string; opacity: number };
 ;;   type?: 'stretch' | 'left' | 'center' | 'right';
 ;;   size?: number;
@@ -280,7 +288,7 @@
 (defn format-frame-guide-column-params
   [{:keys [color type size margin item-length gutter] :as params}]
   (when (some? params)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:color (format-color color)
           :type (format-key type)
           :size size
@@ -288,53 +296,53 @@
           :itemLength item-length
           :gutter gutter})))
 
-;; export interface PenpotFrameGuideColumn {
+;; export interface GuideColumn {
 ;;   type: 'column';
 ;;   display: boolean;
-;;   params: PenpotFrameGuideColumnParams;
+;;   params: GuideColumnParams;
 ;; }
 (defn format-frame-guide-column
   [{:keys [type display params] :as guide}]
   (when (some? guide)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:type (format-key type)
           :display display
           :params (format-frame-guide-column-params params)})))
 
-;; export interface PenpotFrameGuideRow {
+;; export interface GuideRow {
 ;;   type: 'row';
 ;;   display: boolean;
-;;   params: PenpotFrameGuideColumnParams;
+;;   params: GuideColumnParams;
 ;; }
 (defn format-frame-guide-row
   [{:keys [type display params] :as guide}]
   (when (some? guide)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:type (format-key type)
           :display display
           :params (format-frame-guide-column-params params)})))
 
-;;export interface PenpotFrameGuideSquareParams {
+;;export interface GuideSquareParams {
 ;;  color: { color: string; opacity: number };
 ;;  size?: number;
 ;;}
 (defn format-frame-guide-square-params
   [{:keys [color size] :as params}]
   (when (some? params)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:color (format-color color)
           :size size})))
 
-;; export interface PenpotFrameGuideSquare {
+;; export interface GuideSquare {
 ;;   type: 'square';
 ;;   display: boolean;
-;;   params: PenpotFrameGuideSquareParams;
+;;   params: GuideSquareParams;
 ;; }
 
 (defn format-frame-guide-square
   [{:keys [type display params] :as guide}]
   (when (some? guide)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:type (format-key type)
           :display display
           :params (format-frame-guide-column-params params)})))
@@ -352,7 +360,7 @@
   (when (some? guides)
     (format-array format-frame-guide guides)))
 
-;;interface PenpotPathCommand {
+;;interface PathCommand {
 ;;  command:
 ;;    | 'M' | 'move-to'
 ;;    | 'Z' | 'close-path'
@@ -382,7 +390,7 @@
 (defn format-command-params
   [{:keys [x y c1x c1y c2x c2y rx ry x-axis-rotation large-arc-flag sweep-flag] :as props}]
   (when (some? props)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:x x
           :y y
           :c1x c1x
@@ -398,7 +406,7 @@
 (defn format-command
   [{:keys [command params] :as props}]
   (when (some? props)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:command (format-key command)
           :params (format-command-params params)})))
 
@@ -407,16 +415,16 @@
   (when (some? content)
     (format-array format-command content)))
 
-;; export type PenpotTrackType = 'flex' | 'fixed' | 'percent' | 'auto';
+;; export type TrackType = 'flex' | 'fixed' | 'percent' | 'auto';
 ;;
-;; export interface PenpotTrack {
-;;   type: PenpotTrackType;
+;; export interface Track {
+;;   type: TrackType;
 ;;   value: number | null;
 ;; }
 (defn format-track
   [{:keys [type value] :as track}]
   (when (some? track)
-    (obj/clear-empty
+    (obj/without-empty
      #js {:type (-> type format-key)
           :value value})))
 
@@ -426,13 +434,13 @@
     (format-array format-track tracks)))
 
 
-;; export interface PenpotDissolve {
+;; export interface Dissolve {
 ;;   type: 'dissolve';
 ;;   duration: number;
 ;;   easing?: 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out';
 ;; }
 ;;
-;; export interface PenpotSlide {
+;; export interface Slide {
 ;;   type: 'slide';
 ;;   way: 'in' | 'out';
 ;;   direction?:
@@ -445,7 +453,7 @@
 ;;   easing?: 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out';
 ;; }
 ;;
-;; export interface PenpotPush {
+;; export interface Push {
 ;;   type: 'push';
 ;;   direction?:
 ;;     | 'right'
@@ -457,12 +465,12 @@
 ;;   easing?: 'linear' | 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out';
 ;; }
 ;;
-;; export type PenpotAnimation = PenpotDissolve | PenpotSlide | PenpotPush;
+;; export type Animation = Dissolve | Slide | Push;
 
 (defn format-animation
   [animation]
   (when animation
-    (obj/clear-empty
+    (obj/without-empty
      (case (:animation-type animation)
 
        :dissolve
@@ -485,24 +493,24 @@
             :easing (format-key (:easing animation))}
        nil))))
 
-;;export type PenpotAction =
-;;  | PenpotNavigateTo
-;;  | PenpotOpenOverlay
-;;  | PenpotToggleOverlay
-;;  | PenpotCloseOverlay
-;;  | PenpotPreviousScreen
-;;  | PenpotOpenUrl;
+;;export type Action =
+;;  | NavigateTo
+;;  | OpenOverlay
+;;  | ToggleOverlay
+;;  | CloseOverlay
+;;  | PreviousScreen
+;;  | OpenUrl;
 ;;
-;;export interface PenpotNavigateTo {
+;;export interface NavigateTo {
 ;;  type: 'navigate-to';
-;;  destination: PenpotFrame;
+;;  destination: Board;
 ;;  preserveScrollPosition?: boolean;
-;;  animation: PenpotAnimation;
+;;  animation: Animation;
 ;;}
 ;;
-;;export interface PenpotOverlayAction {
-;;  destination: PenpotFrame;
-;;  relativeTo?: PenpotShape;
+;;export interface OverlayAction {
+;;  destination: Board;
+;;  relativeTo?: Shape;
 ;;  position?:
 ;;    | 'manual'
 ;;    | 'center'
@@ -512,38 +520,38 @@
 ;;    | 'bottom-left'
 ;;    | 'bottom-right'
 ;;    | 'bottom-center';
-;;  manualPositionLocation?: PenpotPoint;
+;;  manualPositionLocation?: Point;
 ;;  closeWhenClickOutside?: boolean;
 ;;  addBackgroundOverlay?: boolean;
-;;  animation: PenpotAnimation;
+;;  animation: Animation;
 ;;}
 ;;
-;;export interface PenpotOpenOverlay extends PenpotOverlayAction {
+;;export interface OpenOverlay extends OverlayAction {
 ;;  type: 'open-overlay';
 ;;}
 ;;
-;;export interface PenpotToggleOverlay extends PenpotOverlayAction {
+;;export interface ToggleOverlay extends OverlayAction {
 ;;  type: 'toggle-overlay';
 ;;}
 ;;
-;;export interface PenpotCloseOverlay {
+;;export interface CloseOverlay {
 ;;  type: 'close-overlay';
-;;  destination?: PenpotFrame;
-;;  animation: PenpotAnimation;
+;;  destination?: Board;
+;;  animation: Animation;
 ;;}
 ;;
-;;export interface PenpotPreviousScreen {
+;;export interface PreviousScreen {
 ;;  type: 'previous-screen';
 ;;}
 ;;
-;;export interface PenpotOpenUrl {
+;;export interface OpenUrl {
 ;;  type: 'open-url';
 ;;  url: string;
 ;;}
 (defn format-action
   [interaction plugin file-id page-id]
   (when interaction
-    (obj/clear-empty
+    (obj/without-empty
      (case (:action-type interaction)
        :navigate
        #js {:type "navigate-to"
@@ -584,3 +592,9 @@
             :url (:url interaction)}
 
        nil))))
+
+(defn axis->orientation
+  [axis]
+  (case axis
+    :y "horizontal"
+    :x "vertical"))

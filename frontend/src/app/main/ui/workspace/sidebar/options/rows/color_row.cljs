@@ -113,9 +113,9 @@
         handle-value-change
         (mf/use-fn
          (mf/deps color on-change)
-         (fn [new-value]
+         (fn [value]
            (let [color (-> color
-                           (assoc :color new-value)
+                           (assoc :color value)
                            (dissoc :gradient))]
              (st/emit! (dwl/add-recent-color color)
                        (on-change color)))))
@@ -146,7 +146,9 @@
                          :else
                          color)
 
-                 {:keys [x y]} (dom/get-client-position event)
+                 cpos  (dom/get-client-position event)
+                 x     (dm/get-prop cpos :x)
+                 y     (dm/get-prop cpos :y)
 
                  props {:x x
                         :y y
@@ -154,14 +156,14 @@
                         :disable-opacity disable-opacity
                         :disable-image disable-image
                         ;; on-change second parameter means if the source is the color-picker
-                        :on-change #(on-change (merge uc/empty-color %) true)
+                        :on-change #(on-change % true)
                         :on-close (fn [value opacity id file-id]
                                     (when on-close
                                       (on-close value opacity id file-id)))
                         :data color}]
 
-             (when on-open
-               (on-open (merge uc/empty-color color)))
+             (when (fn? on-open)
+               (on-open color))
 
              (modal/show! :colorpicker props))))
 

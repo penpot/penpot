@@ -1,0 +1,51 @@
+import { Canvas, Meta } from '@storybook/blocks';
+import * as InputStories from "./input.stories";
+
+<Meta title="Controls/Input" />
+
+# Input
+
+The `input*` component is a wrapper to the HTML `<input>` element with custom styling
+and additional elements that adds context and, in some cases, adds extra
+functionality.
+
+<Canvas of={InputStories.Default} />
+
+
+## Technical notes
+
+### Icons
+
+`input*` accepts an `icon` prop, which must contain an [icon ID](../foundations/assets/icon.mdx).
+These are available in the `app.main.ds.foundations.assets.icon` namespace.
+
+```clj
+(ns app.main.ui.foo
+  (:require
+   [app.main.ui.ds.foundations.assets.icon :as i]))
+```
+
+```clj
+[:> input* {:icon i/effects}]
+```
+
+<Canvas of={InputStories.WithIcon} />
+
+## Usage guidelines (design)
+
+### Where to use
+
+In forms where the user needs to input any short text or number.
+
+### When to use
+
+When the information that is needed is short and needs an element to add context
+for using it or additional functionality (like color picker).
+
+### Size
+
+The width of the component depends on the content and layout. They can expand to
+fill the container or the content area to which they relate (e.g. tabs) and adapt
+depending on whether there are one or two input elements with or without buttons
+next to them. Their height is always fixed, `32px`, with text area being used for
+larger text blocks.

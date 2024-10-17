@@ -139,7 +139,7 @@
                            :viewport-size)
 
         tpos-ref     (mf/with-memo [page-id]
-                       (-> (l/in [:pages page-id :options :comment-threads-position])
+                       (-> (l/in [:pages page-id :comment-thread-positions])
                            (l/derived refs/viewer-data)))
 
         positions    (mf/deref tpos-ref)

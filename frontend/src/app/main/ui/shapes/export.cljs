@@ -12,9 +12,9 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
+   [app.common.json :as json]
    [app.common.svg :as csvg]
    [app.main.ui.context :as muc]
-   [app.util.json :as json]
    [app.util.object :as obj]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -29,23 +29,17 @@
 
   (cond
     (map? node)
-    [:> (d/name tag) (obj/map->obj (csvg/attrs->props attrs))
-     (for [child content]
-       [:& render-xml {:xml child :key (swap! internal-counter inc)}])]
+    (let [props (-> (csvg/attrs->props attrs)
+                    (json/->js :key-fn name))]
+      [:> (d/name tag) props
+       (for [child content]
+         [:& render-xml {:xml child :key (swap! internal-counter inc)}])])
 
     (string? node)
     node
 
     :else
     nil))
-
-(defn uuid->string [m]
-  (->> m
-       (d/deep-mapm
-        (fn [[k v]]
-          (if (uuid? v)
-            [k (str v)]
-            [k v])))))
 
 (defn bool->str [val]
   (when (some? val) (str val)))
@@ -130,8 +124,8 @@
               (add! :width)
               (add! :height)
               (add! :grow-type)
-              (add! :content (comp json/encode uuid->string))
-              (add! :position-data (comp json/encode uuid->string))))
+              (add! :content json/encode)
+              (add! :position-data json/encode)))
 
         (cond-> mask?
           (obj/set! "penpot:masked-group" "true"))
@@ -179,7 +173,7 @@
 (mf/defc export-flows
   [{:keys [flows]}]
   [:> "penpot:flows" #js {}
-   (for [{:keys [id name starting-frame]} flows]
+   (for [{:keys [id name starting-frame]} (vals flows)]
      [:> "penpot:flow" #js {:id id
                             :name name
                             :starting-frame starting-frame}])])
@@ -193,14 +187,16 @@
                              :axis (d/name axis)}])])
 
 (mf/defc export-page
-  [{:keys [id options]}]
-  (let [saved-grids (get options :saved-grids)
-        flows       (get options :flows)
-        guides      (get options :guides)]
+  {::mf/props :obj}
+  [{:keys [page]}]
+  (let [id     (get page :id)
+        grids  (get page :grids)
+        flows  (get page :flows)
+        guides (get page :guides)]
     [:> "penpot:page" #js {:id id}
-     (when (d/not-empty? saved-grids)
+     (when (d/not-empty? grids)
        (let [parse-grid (fn [[type params]] {:type type :params params})
-             grids (->> saved-grids (mapv parse-grid))]
+             grids (mapv parse-grid grids)]
          [:& export-grid-data {:grids grids}]))
 
      (when (d/not-empty? flows)

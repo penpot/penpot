@@ -12,13 +12,13 @@
    [app.plugins.utils :as u]
    [app.util.object :as obj]))
 
-(deftype CurrentUserProxy [$plugin $session])
-(deftype ActiveUserProxy [$plugin $session])
+(deftype CurrentUserProxy [$plugin])
+(deftype ActiveUserProxy [$plugin])
+(deftype UserProxy [$plugin])
 
-(defn add-user-properties
-  [user-proxy]
-  (let [plugin-id (obj/get user-proxy "$plugin")
-        session-id (obj/get user-proxy "$session")]
+(defn- add-session-properties
+  [user-proxy session-id]
+  (let [plugin-id (obj/get user-proxy "$plugin")]
     (crc/add-properties!
      user-proxy
      {:name "$plugin" :enumerable false :get (constantly plugin-id)}
@@ -39,21 +39,43 @@
      {:name "sessionId"
       :get (fn [_] (str session-id))})))
 
+
 (defn current-user-proxy? [p]
   (instance? CurrentUserProxy p))
 
 (defn current-user-proxy
   [plugin-id session-id]
-  (-> (CurrentUserProxy. plugin-id session-id)
-      (add-user-properties)))
+  (-> (CurrentUserProxy. plugin-id)
+      (add-session-properties session-id)))
 
 (defn active-user-proxy? [p]
   (instance? ActiveUserProxy p))
 
 (defn active-user-proxy
   [plugin-id session-id]
-  (-> (ActiveUserProxy. plugin-id session-id)
-      (add-user-properties)
+  (-> (ActiveUserProxy. plugin-id)
+      (add-session-properties session-id)
       (crc/add-properties!
        {:name "position" :get (fn [_] (-> (u/locate-presence session-id) :point format/format-point))}
        {:name "zoom" :get (fn [_] (-> (u/locate-presence session-id) :zoom))})))
+
+(defn- add-user-properties
+  [user-proxy data]
+  (let [plugin-id (obj/get user-proxy "$plugin")]
+    (crc/add-properties!
+     user-proxy
+     {:name "$plugin" :enumerable false :get (constantly plugin-id)}
+
+     {:name "id"
+      :get (fn [_] (-> data :id str))}
+
+     {:name "name"
+      :get (fn [_] (-> data :fullname))}
+
+     {:name "avatarUrl"
+      :get (fn [_] (cfg/resolve-profile-photo-url data))})))
+
+(defn user-proxy
+  [plugin-id data]
+  (-> (UserProxy. plugin-id)
+      (add-user-properties data)))

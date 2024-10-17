@@ -154,19 +154,21 @@
       i/remove-icon]]))
 
 (mf/defc page-flows
+  {::mf/props :obj}
   [{:keys [flows]}]
-  (when (seq flows)
+  (when flows
     [:div {:class (stl/css :interaction-options)}
      [:& title-bar {:collapsable false
                     :title       (tr "workspace.options.flows.flow-starts")
                     :class       (stl/css :title-spacing-layout-flow)}]
-     (for [flow flows]
-       [:& flow-item {:flow flow :key (str (:id flow))}])]))
+     (for [[id flow] flows]
+       [:& flow-item {:flow flow :key (dm/str id)}])]))
 
 (mf/defc shape-flows
+  {::mf/props :obj}
   [{:keys [flows shape]}]
-  (when (= (:type shape) :frame)
-    (let [flow           (ctp/get-frame-flow flows (:id shape))
+  (when (cfh/frame-shape? shape)
+    (let [flow     (ctp/get-frame-flow flows (:id shape))
           add-flow (mf/use-fn #(st/emit! (dwi/add-flow-selected-frame)))]
 
       [:div {:class (stl/css :element-set)}
@@ -179,8 +181,8 @@
                     :on-click add-flow}
            i/add])]
 
-       (when flow
-         [:& flow-item {:flow flow :key (str (:id flow))}])])))
+       (when (some? flow)
+         [:& flow-item {:flow flow :key (dm/str (:id flow))}])])))
 
 (def ^:private corner-center-icon
   (i/icon-xref :corner-center (stl/css :corner-icon)))
@@ -695,11 +697,12 @@
                          :on-change change-offset-effect}]]]])])])]))
 
 (mf/defc interactions-menu
-  [{:keys [shape] :as props}]
-  (let [interactions   (get shape :interactions [])
+  {::mf/props :obj}
+  [{:keys [shape]}]
+  (let [interactions
+        (get shape :interactions [])
 
-        options (mf/deref refs/workspace-page-options)
-        flows   (:flows options)
+        flows (mf/deref refs/workspace-page-flows)
 
         add-interaction
         (fn []

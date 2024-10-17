@@ -9,15 +9,14 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.pprint :as pp]
-   [app.common.schema :as-alias sm]
-   [app.main.data.messages :as msg]
+   [app.common.schema :as sm]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.util.globals :as glob]
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
-   [app.util.storage :refer [storage]]
    [app.util.timers :as ts]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
@@ -33,8 +32,11 @@
 
 (defn- print-explain!
   [data]
-  (when-let [explain (or (ex/explain data)
-                         (:explain data))]
+  (when-let [{:keys [errors] :as explain} (::sm/explain data)]
+    (let [errors (mapv #(update % :schema sm/form) errors)]
+      (pp/pprint errors {:width 100 :level 15 :length 20})))
+
+  (when-let [explain (:explain data)]
     (js/console.log explain)))
 
 (defn- print-trace!
@@ -57,6 +59,14 @@
                           (print-explain! cause)
                           (print-trace! cause))))
 
+(defn exception->error-data
+  [cause]
+  (let [data (ex-data cause)]
+    (-> data
+        (assoc :hint (or (:hint data) (ex-message cause)))
+        (assoc ::instance cause)
+        (assoc ::trace (.-stack cause)))))
+
 (defn print-error!
   [cause]
   (cond
@@ -67,22 +77,14 @@
     (print-cause! (ex-message cause) (ex-data cause))
 
     :else
-    (let [trace (.-stack cause)]
-      (print-cause! (ex-message cause)
-                    {:hint (ex-message cause)
-                     ::trace trace
-                     ::instance cause}))))
+    (print-cause! (ex-message cause) (exception->error-data cause))))
 
 (defn on-error
   "A general purpose error handler."
   [error]
   (if (map? error)
     (ptk/handle-error error)
-    (let [data (ex-data error)
-          data (-> data
-                   (assoc :hint (or (:hint data) (ex-message error)))
-                   (assoc ::instance error)
-                   (assoc ::trace (.-stack error)))]
+    (let [data (exception->error-data error)]
       (ptk/handle-error data))))
 
 ;; Set the main potok error handler
@@ -96,16 +98,23 @@
                   (print-trace! error)
                   (print-data! error))))
 
-;; We receive a explicit authentication error; this explicitly clears
+;; We receive a explicit authentication error;
+;; If the uri is for workspace, dashboard or view assign the
+;; exception for the 'Oops' page. Otherwise this explicitly clears
 ;; all profile data and redirect the user to the login page. This is
 ;; here and not in app.main.errors because of circular dependency.
 (defmethod ptk/handle-error :authentication
-  [_]
-  (let [msg (tr "errors.auth.unable-to-login")
-        uri (. (. js/document -location) -href)]
-    (st/emit! (du/logout {:capture-redirect true}))
-    (ts/schedule 500 #(st/emit! (msg/warn msg)))
-    (ts/schedule 1000 #(swap! storage assoc :redirect-url uri))))
+  [e]
+  (let [msg        (tr "errors.auth.unable-to-login")
+        uri        (.-href glob/location)
+        show-oops? (or (str/includes? uri "workspace")
+                       (str/includes? uri "dashboard")
+                       (str/includes? uri "view"))]
+    (if show-oops?
+      (st/async-emit! (rt/assign-exception e))
+      (do
+        (st/emit! (du/logout {:capture-redirect true}))
+        (ts/schedule 500 #(st/emit! (ntf/warn msg)))))))
 
 ;; Error that happens on an active business model validation does not
 ;; passes an validation (example: profile can't leave a team). From
@@ -123,9 +132,9 @@
     (= code :invalid-paste-data)
     (let [message (tr "errors.paste-data-validation")]
       (st/async-emit!
-       (msg/show {:content message
-                  :notification-type :toast
-                  :type :error
+       (ntf/show {:content message
+                  :type :toast
+                  :level :error
                   :timeout 3000})))
 
     :else
@@ -138,9 +147,9 @@
 (defmethod ptk/handle-error :assertion
   [error]
   (ts/schedule
-   #(st/emit! (msg/show {:content "Internal Assertion Error"
-                         :notification-type :toast
-                         :type :error
+   #(st/emit! (ntf/show {:content "Internal Assertion Error"
+                         :type :toast
+                         :level :error
                          :timeout 3000})))
 
   (print-group! "Internal Assertion Error"
@@ -154,9 +163,9 @@
   [error]
   (ts/schedule
    #(st/emit!
-     (msg/show {:content "Something wrong has happened (on worker)."
-                :notification-type :toast
-                :type :error
+     (ntf/show {:content "Something wrong has happened (on worker)."
+                :type :toast
+                :level :error
                 :timeout 3000})))
 
   (print-group! "Internal Worker Error"
@@ -168,18 +177,18 @@
 (defmethod ptk/handle-error :svg-parser
   [_]
   (ts/schedule
-   #(st/emit! (msg/show {:content "SVG is invalid or malformed"
-                         :notification-type :toast
-                         :type :error
+   #(st/emit! (ntf/show {:content "SVG is invalid or malformed"
+                         :type :toast
+                         :level :error
                          :timeout 3000}))))
 
 ;; TODO: should be handled in the event and not as general error handler
 (defmethod ptk/handle-error :comment-error
   [_]
   (ts/schedule
-   #(st/emit! (msg/show {:content "There was an error with the comment"
-                         :notification-type :toast
-                         :type :error
+   #(st/emit! (ntf/show {:content "There was an error with the comment"
+                         :type :toast
+                         :level :error
                          :timeout 3000}))))
 
 ;; That are special case server-errors that should be treated
@@ -279,6 +288,7 @@
             (let [message (ex-message cause)]
               (or (= message "Possible side-effect in debug-evaluate")
                   (= message "Unexpected end of input")
+                  (str/starts-with? message "invalid props on component")
                   (str/starts-with? message "Unexpected token "))))
 
           (on-unhandled-error [event]

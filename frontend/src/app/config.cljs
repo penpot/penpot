@@ -110,7 +110,8 @@
 (def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI" "https://penpot.app/privacy"))
 (def flex-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
 (def grid-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
-(def plugins-list-uri     (obj/get global "penpotPluginsListUri" "https://penpot-docs-plugins.pages.dev/technical-guide/plugins/getting-started/#examples"))
+(def plugins-list-uri     (obj/get global "penpotPluginsListUri" "https://penpot-docs-plugins.pages.dev/plugins/getting-started/#examples"))
+(def plugins-whitelist    (into #{} (obj/get global "penpotPluginsWhitelist" [])))
 
 (defn- normalize-uri
   [uri-str]
