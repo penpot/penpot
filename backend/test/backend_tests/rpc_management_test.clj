@@ -6,7 +6,9 @@
 
 (ns backend-tests.rpc-management-test
   (:require
+   [app.common.features :as cfeat]
    [app.common.pprint :as pp]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]
@@ -20,6 +22,20 @@
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
+
+(defn- update-file!
+  [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
+  (let [params {::th/type :update-file
+                ::rpc/profile-id profile-id
+                :id file-id
+                :session-id (uuid/random)
+                :revn revn
+                :features cfeat/supported-features
+                :changes changes}
+        out    (th/command! params)]
+    ;; (th/print-result! out)
+    (t/is (nil? (:error out)))
+    (:result out)))
 
 ;; TODO: migrate to commands
 
@@ -45,11 +61,13 @@
         mobj    (th/create-file-media-object* {:file-id (:id file1)
                                                :is-local false
                                                :media-id (:id sobject)})]
-    (th/update-file*
-     {:file-id (:id file1)
-      :profile-id (:id profile)
-      :changes [{:type :add-media
-                 :object (select-keys mobj [:id :width :height :mtype :name])}]})
+    (update-file!
+     :file-id (:id file1)
+     :profile-id (:id profile)
+     :revn 0
+     :changes
+     [{:type :add-media
+       :object mobj}])
 
     (let [data {::th/type :duplicate-file
                 ::rpc/profile-id (:id profile)
@@ -173,13 +191,13 @@
                                                :is-local false
                                                :media-id (:id sobject)})]
 
-
-    (th/update-file*
-     {:file-id (:id file1)
-      :profile-id (:id profile)
-      :changes [{:type :add-media
-                 :object (select-keys mobj [:id :width :height :mtype :name])}]})
-
+    (update-file!
+     :file-id (:id file1)
+     :profile-id (:id profile)
+     :revn 0
+     :changes
+     [{:type :add-media
+       :object mobj}])
 
     (let [data {::th/type :duplicate-project
                 ::rpc/profile-id (:id profile)

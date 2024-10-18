@@ -8,6 +8,7 @@
   "A general purpose events."
   (:require
    [app.common.data.macros :as dm]
+   [app.common.schema :as sm]
    [app.common.types.components-list :as ctkl]
    [app.common.types.team :as tt]
    [app.config :as cf]
@@ -136,9 +137,31 @@
 ;; Exportations
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def ^:private schema:export-files
+  [:sequential {:title "Files"}
+   [:map {:title "FileParam"}
+    [:id ::sm/uuid]
+    [:name :string]
+    [:project-id ::sm/uuid]
+    [:is-shared ::sm/boolean]]])
+
+(def check-export-files!
+  (sm/check-fn schema:export-files))
+
+(def valid-export-formats
+  #{:binfile-v1 :binfile-v3 :legacy-zip})
+
 (defn export-files
-  [files binary?]
-  (ptk/reify ::request-file-export
+  [files format]
+  (dm/assert!
+   "expected valid files param"
+   (check-export-files! files))
+
+  (dm/assert!
+   "expected valid format"
+   (contains? valid-export-formats format))
+
+  (ptk/reify ::export-files
     ptk/WatchEvent
     (watch [_ state _]
       (let [features (features/get-team-enabled-features state)
@@ -147,16 +170,15 @@
              (rx/mapcat
               (fn [file]
                 (->> (rp/cmd! :has-file-libraries {:file-id (:id file)})
-                     (rx/map #(assoc file :has-libraries? %)))))
+                     (rx/map #(assoc file :has-libraries %)))))
              (rx/reduce conj [])
              (rx/map (fn [files]
                        (modal/show
                         {:type :export
                          :features features
                          :team-id team-id
-                         :has-libraries? (->> files (some :has-libraries?))
                          :files files
-                         :binary? binary?}))))))))
+                         :format format}))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Team Request

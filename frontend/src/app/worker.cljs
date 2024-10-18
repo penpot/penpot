@@ -64,8 +64,9 @@
 
           (reply-completed
             ([] (reply-completed nil))
-            ([msg] (post {:payload msg
-                          :completed true})))]
+            ([msg]
+             (post {:payload msg
+                    :completed true})))]
 
     (try
       (let [result (impl/handler payload transfer)

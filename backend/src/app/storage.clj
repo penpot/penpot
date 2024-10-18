@@ -32,6 +32,16 @@
       :assets-s3 :s3
       :fs)))
 
+(def valid-buckets
+  #{"file-media-object"
+    "team-font-variant"
+    "file-object-thumbnail"
+    "file-thumbnail"
+    "profile"
+    "file-data"
+    "file-data-fragment"
+    "file-change"})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Storage Module State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -257,6 +267,8 @@
     (pos? (db/get-update-count res))))
 
 (dm/export impl/calculate-hash)
+(dm/export impl/get-hash)
+(dm/export impl/get-size)
 
 (defn configure
   [storage connectable]

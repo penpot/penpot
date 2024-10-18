@@ -14,7 +14,7 @@
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
+   [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.icons :as i]
@@ -250,21 +250,20 @@
    ::mf/private true}
   [{:keys [is-open on-close on-edit on-delete]}]
   (let [options (mf/with-memo [on-edit on-delete]
-                  [{:option-name    (tr "labels.edit")
-                    :id             "font-edit"
-                    :option-handler on-edit}
-                   {:option-name    (tr "labels.delete")
-                    :id             "font-delete"
-                    :option-handler on-delete}])]
-    [:& context-menu-a11y
+                  [{:name    (tr "labels.edit")
+                    :id      "font-edit"
+                    :handler on-edit}
+                   {:name    (tr "labels.delete")
+                    :id      "font-delete"
+                    :handler on-delete}])]
+    [:> context-menu*
      {:on-close on-close
       :show is-open
-      :fixed? false
-      :min-width? true
+      :fixed false
+      :min-width true
       :top -15
       :left -115
-      :options options
-      :workspace? false}]))
+      :options options}]))
 
 (mf/defc installed-font
   {::mf/props :obj

@@ -434,27 +434,27 @@
           {:on-close on-close-menu
            :state @menu-state
            :options [(when-not (or multi-typographies? multi-assets?)
-                       {:option-name    (tr "workspace.assets.rename")
-                        :id             "assets-rename-typography"
-                        :option-handler handle-rename-typography-clicked})
+                       {:name    (tr "workspace.assets.rename")
+                        :id      "assets-rename-typography"
+                        :handler handle-rename-typography-clicked})
 
                      (when-not (or multi-typographies? multi-assets?)
-                       {:option-name    (tr "workspace.assets.edit")
-                        :id             "assets-edit-typography"
-                        :option-handler handle-edit-typography-clicked})
+                       {:name    (tr "workspace.assets.edit")
+                        :id      "assets-edit-typography"
+                        :handler handle-edit-typography-clicked})
 
-                     {:option-name    (tr "workspace.assets.delete")
-                      :id             "assets-delete-typography"
-                      :option-handler handle-delete-typography}
+                     {:name    (tr "workspace.assets.delete")
+                      :id      "assets-delete-typography"
+                      :handler handle-delete-typography}
 
                      (when-not multi-assets?
-                       {:option-name    (tr "workspace.assets.group")
-                        :id             "assets-group-typography"
-                        :option-handler on-group})]}]
+                       {:name    (tr "workspace.assets.group")
+                        :id      "assets-group-typography"
+                        :handler on-group})]}]
 
          [:& cmm/assets-context-menu
           {:on-close on-close-menu
            :state @menu-state
-           :options [{:option-name   "show info"
-                      :id             "assets-rename-typography"
-                      :option-handler handle-edit-typography-clicked}]}])]]]))
+           :options [{:name   "show info"
+                      :id     "assets-rename-typography"
+                      :handler handle-edit-typography-clicked}]}])]]]))

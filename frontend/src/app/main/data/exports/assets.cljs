@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.data.exports
+(ns app.main.data.exports.assets
   (:require
    [app.common.uuid :as uuid]
    [app.main.data.modal :as modal]

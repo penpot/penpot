@@ -14,7 +14,8 @@
    [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.events :as ev]
-   [app.main.data.exports :as de]
+   [app.main.data.exports.assets :as de]
+   [app.main.data.exports.files :as fexp]
    [app.main.data.modal :as modal]
    [app.main.data.plugins :as dp]
    [app.main.data.shortcuts :as scd]
@@ -526,15 +527,10 @@
          (mf/deps file)
          (fn [event]
            (let [target  (dom/get-current-target event)
-                 binary? (= (dom/get-data target "binary") "true")
-                 evname  (if binary?
-                           "export-binary-files"
-                           "export-standard-files")]
-             (st/emit!
-              (ptk/event ::ev/event {::ev/name evname
-                                     ::ev/origin "workspace"
-                                     :num-files 1})
-              (dcm/export-files [file] binary?)))))
+                 format  (-> (dom/get-data target "format")
+                             (keyword))]
+             (st/emit! (st/emit! (with-meta (fexp/export-files [file] format)
+                                   {::ev/origin "workspace"}))))))
 
         on-export-file-key-down
         (mf/use-fn
@@ -587,15 +583,24 @@
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                               :on-click    on-export-file
                               :on-key-down on-export-file-key-down
-                              :data-binary true
+                              :data-format "binfile-v1"
                               :id          "file-menu-binary-file"}
       [:span {:class (stl/css :item-name)}
        (tr "dashboard.download-binary-file")]]
 
+     (when (contains? cf/flags :export-file-v3)
+       [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                                :on-click    on-export-file
+                                :on-key-down on-export-file-key-down
+                                :data-format "binfile-v3"
+                                :id          "file-menu-binary-file"}
+        [:span {:class (stl/css :item-name)}
+         (tr "dashboard.download-binary-file-v3")]])
+
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                               :on-click    on-export-file
                               :on-key-down on-export-file-key-down
-                              :data-binary false
+                              :data-format "legacy-zip"
                               :id          "file-menu-standard-file"}
       [:span {:class (stl/css :item-name)}
        (tr "dashboard.download-standard-file")]]

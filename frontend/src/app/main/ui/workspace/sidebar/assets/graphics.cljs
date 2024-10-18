@@ -418,13 +418,13 @@
          {:on-close on-close-menu
           :state @menu-state
           :options [(when-not (or multi-objects? multi-assets?)
-                      {:option-name    (tr "workspace.assets.rename")
-                       :id             "assets-rename-graphics"
-                       :option-handler on-rename})
-                    {:option-name    (tr "workspace.assets.delete")
-                     :id             "assets-delete-graphics"
-                     :option-handler on-delete}
+                      {:name    (tr "workspace.assets.rename")
+                       :id      "assets-rename-graphics"
+                       :handler on-rename})
+                    {:name    (tr "workspace.assets.delete")
+                     :id       "assets-delete-graphics"
+                     :handler on-delete}
                     (when-not multi-assets?
-                      {:option-name    (tr "workspace.assets.group")
-                       :id             "assets-group-graphics"
-                       :option-handler on-group})]}])]]))
+                      {:name    (tr "workspace.assets.group")
+                       :id      "assets-group-graphics"
+                       :handler on-group})]}])]]))

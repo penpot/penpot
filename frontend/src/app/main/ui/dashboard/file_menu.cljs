@@ -6,21 +6,22 @@
 
 (ns app.main.ui.dashboard.file-menu
   (:require
+   [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
-   [app.main.data.events :as ev]
+   [app.main.data.events :as-alias ev]
+   [app.main.data.exports.files :as fexp]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
+   [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.context :as ctx]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [beicon.v2.core :as rx]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn get-project-name
@@ -189,24 +190,24 @@
         on-export-files
         (mf/use-fn
          (mf/deps files)
-         (fn [binary?]
-           (let [evname (if binary?
-                          "export-binary-files"
-                          "export-standard-files")]
-             (st/emit! (ptk/event ::ev/event {::ev/name evname
-                                              ::ev/origin "dashboard"
-                                              :num-files (count files)})
-                       (dcm/export-files files binary?)))))
+         (fn [format]
+           (st/emit! (with-meta (fexp/export-files files format)
+                       {::ev/origin "dashboard"}))))
 
         on-export-binary-files
         (mf/use-fn
          (mf/deps on-export-files)
-         (partial on-export-files true))
+         (partial on-export-files :binfile-v1))
+
+        on-export-binary-files-v3
+        (mf/use-fn
+         (mf/deps on-export-files)
+         (partial on-export-files :binfile-v3))
 
         on-export-standard-files
         (mf/use-fn
          (mf/deps on-export-files)
-         (partial on-export-files false))
+         (partial on-export-files :legacy-zip))
 
         ;; NOTE: this is used for detect if component is still mounted
         mounted-ref (mf/use-ref true)]
@@ -221,113 +222,128 @@
                            (reset! teams %)))))))
 
     (when current-team
-      (let [sub-options (concat (vec (for [project current-projects]
-                                       {:option-name (get-project-name project)
-                                        :id (get-project-id project)
-                                        :option-handler (on-move (:id current-team)
-                                                                 (:id project))}))
-                                (when (seq other-teams)
-                                  [{:option-name (tr "dashboard.move-to-other-team")
-                                    :id "move-to-other-team"
-                                    :sub-options
-                                    (for [team other-teams]
-                                      {:option-name (get-team-name team)
-                                       :id (get-project-id team)
-                                       :sub-options
-                                       (for [sub-project (:projects team)]
-                                         {:option-name (get-project-name sub-project)
-                                          :id (get-project-id sub-project)
-                                          :option-handler (on-move (:id team)
-                                                                   (:id sub-project))})})}]))
+      (let [sub-options
+            (concat
+             (for [project current-projects]
+               {:name (get-project-name project)
+                :id (get-project-id project)
+                :handler (on-move (:id current-team)
+                                  (:id project))})
+             (when (seq other-teams)
+               [{:name (tr "dashboard.move-to-other-team")
+                 :id "move-to-other-team"
+                 :options
+                 (for [team other-teams]
+                   {:name (get-team-name team)
+                    :id (get-project-id team)
+                    :options
+                    (for [sub-project (:projects team)]
+                      {:name (get-project-name sub-project)
+                       :id (get-project-id sub-project)
+                       :handler (on-move (:id team)
+                                         (:id sub-project))})})}]))
 
-            options (if multi?
-                      [(when-not you-viewer?
-                         {:option-name    (tr "dashboard.duplicate-multi" file-count)
-                          :id             "file-duplicate-multi"
-                          :option-handler on-duplicate
-                          :data-testid      "duplicate-multi"})
-                       (when (and (or (seq current-projects) (seq other-teams))
-                                  (not you-viewer?))
-                         {:option-name    (tr "dashboard.move-to-multi" file-count)
-                          :id             "file-move-multi"
-                          :sub-options    sub-options
-                          :data-testid      "move-to-multi"})
-                       {:option-name    (tr "dashboard.export-binary-multi" file-count)
-                        :id             "file-binari-export-multi"
-                        :option-handler on-export-binary-files}
-                       {:option-name    (tr "dashboard.export-standard-multi" file-count)
-                        :id             "file-standard-export-multi"
-                        :option-handler on-export-standard-files}
-                       (when (and (:is-shared file)
-                                  (not you-viewer?))
-                         {:option-name    (tr "labels.unpublish-multi-files" file-count)
-                          :id             "file-unpublish-multi"
-                          :option-handler on-del-shared
-                          :data-testid      "file-del-shared"})
-                       (when (and (not is-lib-page?)
-                                  (not you-viewer?))
-                         {:option-name    :separator}
-                         {:option-name    (tr "labels.delete-multi-files" file-count)
-                          :id             "file-delete-multi"
-                          :option-handler on-delete
-                          :data-testid      "delete-multi-files"})]
+            options
+            (if multi?
+              [(when-not you-viewer?
+                 {:name    (tr "dashboard.duplicate-multi" file-count)
+                  :id      "duplicate-multi"
+                  :handler on-duplicate})
 
-                      [{:option-name    (tr "dashboard.open-in-new-tab")
-                        :id             "file-open-new-tab"
-                        :option-handler on-new-tab}
-                       (when (and (not is-search-page?)
-                                  (not you-viewer?))
-                         {:option-name    (tr "labels.rename")
-                          :id             "file-rename"
-                          :option-handler on-edit
-                          :data-testid      "file-rename"})
-                       (when (and (not is-search-page?)
-                                  (not you-viewer?))
-                         {:option-name    (tr "dashboard.duplicate")
-                          :id             "file-duplicate"
-                          :option-handler on-duplicate
-                          :data-testid      "file-duplicate"})
-                       (when (and (not is-lib-page?)
-                                  (not is-search-page?)
-                                  (or (seq current-projects) (seq other-teams))
-                                  (not you-viewer?))
-                         {:option-name    (tr "dashboard.move-to")
-                          :id             "file-move-to"
-                          :sub-options    sub-options
-                          :data-testid      "file-move-to"})
-                       (when (and (not is-search-page?)
-                                  (not you-viewer?))
-                         (if (:is-shared file)
-                           {:option-name    (tr "dashboard.unpublish-shared")
-                            :id             "file-del-shared"
-                            :option-handler on-del-shared
-                            :data-testid      "file-del-shared"}
-                           {:option-name    (tr "dashboard.add-shared")
-                            :id             "file-add-shared"
-                            :option-handler on-add-shared
-                            :data-testid      "file-add-shared"}))
-                       {:option-name   :separator}
-                       {:option-name    (tr "dashboard.download-binary-file")
-                        :id             "file-download-binary"
-                        :option-handler on-export-binary-files
-                        :data-testid      "download-binary-file"}
-                       {:option-name    (tr "dashboard.download-standard-file")
-                        :id             "file-download-standard"
-                        :option-handler on-export-standard-files
-                        :data-testid      "download-standard-file"}
-                       (when (and (not is-lib-page?) (not is-search-page?) (not you-viewer?))
-                         {:option-name   :separator}
-                         {:option-name    (tr "labels.delete")
-                          :id             "file-delete"
-                          :option-handler on-delete
-                          :data-testid      "file-delete"})])]
+               (when (and (or (seq current-projects) (seq other-teams))
+                          (not you-viewer?))
+                 {:name    (tr "dashboard.move-to-multi" file-count)
+                  :id      "file-move-multi"
+                  :options    sub-options})
 
-        [:& context-menu-a11y {:on-close on-menu-close
-                               :show show?
-                               :fixed? (or (not= top 0) (not= left 0))
-                               :min-width? true
-                               :top top
-                               :left left
-                               :options options
-                               :origin parent-id
-                               :workspace? false}]))))
+               {:name    (tr "dashboard.export-binary-multi" file-count)
+                :id      "file-binary-export-multi"
+                :handler on-export-binary-files}
+
+               (when (contains? cf/flags :export-file-v3)
+                 {:name    (tr "dashboard.export-binary-multi-v3" file-count)
+                  :id      "file-binary-export-multi-v3"
+                  :handler on-export-binary-files-v3})
+
+               {:name    (tr "dashboard.export-standard-multi" file-count)
+                :id      "file-standard-export-multi"
+                :handler on-export-standard-files}
+
+               (when (and (:is-shared file)
+                          (not you-viewer?))
+                 {:name    (tr "labels.unpublish-multi-files" file-count)
+                  :id      "file-unpublish-multi"
+                  :handler on-del-shared})
+
+               (when (and (not is-lib-page?)
+                          (not you-viewer?))
+                 {:name    :separator}
+                 {:name    (tr "labels.delete-multi-files" file-count)
+                  :id      "file-delete-multi"
+                  :handler on-delete})]
+
+              [{:name    (tr "dashboard.open-in-new-tab")
+                :id      "file-open-new-tab"
+                :handler on-new-tab}
+               (when (and (not is-search-page?)
+                          (not you-viewer?))
+                 {:name    (tr "labels.rename")
+                  :id      "file-rename"
+                  :handler on-edit})
+
+               (when (and (not is-search-page?)
+                          (not you-viewer?))
+                 {:name    (tr "dashboard.duplicate")
+                  :id      "file-duplicate"
+                  :handler on-duplicate})
+
+               (when (and (not is-lib-page?)
+                          (not is-search-page?)
+                          (or (seq current-projects) (seq other-teams))
+                          (not you-viewer?))
+                 {:name    (tr "dashboard.move-to")
+                  :id      "file-move-to"
+                  :options    sub-options})
+
+               (when (and (not is-search-page?)
+                          (not you-viewer?))
+                 (if (:is-shared file)
+                   {:name    (tr "dashboard.unpublish-shared")
+                    :id      "file-del-shared"
+                    :handler on-del-shared}
+                   {:name    (tr "dashboard.add-shared")
+                    :id      "file-add-shared"
+                    :handler on-add-shared}))
+
+               {:name   :separator}
+
+               {:name    (tr "dashboard.download-binary-file")
+                :id      "download-binary-file"
+                :handler on-export-binary-files}
+
+               (when (contains? cf/flags :export-file-v3)
+                 {:name    (tr "dashboard.download-binary-file-v3")
+                  :id      "download-binary-file-v3"
+                  :handler on-export-binary-files-v3})
+
+               {:name    (tr "dashboard.download-standard-file")
+                :id      "download-standard-file"
+                :handler on-export-standard-files}
+
+               (when (and (not is-lib-page?) (not is-search-page?) (not you-viewer?))
+                 {:name   :separator})
+
+               (when (and (not is-lib-page?) (not is-search-page?) (not you-viewer?))
+                 {:name    (tr "labels.delete")
+                  :id      "file-delete"
+                  :handler on-delete})])]
+
+        [:> context-menu*
+         {:on-close on-menu-close
+          :show show?
+          :fixed (or (not= top 0) (not= left 0))
+          :min-width true
+          :top top
+          :left left
+          :options options
+          :origin parent-id}]))))

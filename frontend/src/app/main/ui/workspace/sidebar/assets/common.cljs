@@ -22,7 +22,7 @@
    [app.main.refs :as refs]
    [app.main.render :refer [component-svg component-svg-thumbnail]]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
+   [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
@@ -111,14 +111,13 @@
 (mf/defc assets-context-menu
   {::mf/wrap-props false}
   [{:keys [options state on-close]}]
-  [:& context-menu-a11y
+  [:> context-menu*
    {:show (:open? state)
-    :fixed? (or (not= (:top state) 0) (not= (:left state) 0))
+    :fixed (or (not= (:top state) 0) (not= (:left state) 0))
     :on-close on-close
     :top (:top state)
     :left (:left state)
-    :options options
-    :workspace? true}])
+    :options options}])
 
 (mf/defc section-icon
   {::mf/wrap-props false}

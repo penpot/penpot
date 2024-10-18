@@ -420,6 +420,9 @@ msgstr "Delete team"
 msgid "dashboard.download-binary-file"
 msgstr "Download Penpot file (.penpot)"
 
+msgid "dashboard.download-binary-file-v3"
+msgstr "Download Penpot file (.zip) (BETA)"
+
 #: src/app/main/ui/dashboard/file_menu.cljs:300, src/app/main/ui/workspace/main_menu.cljs:597
 msgid "dashboard.download-standard-file"
 msgstr "Download standard file (.svg + .json)"
@@ -484,6 +487,10 @@ msgstr "Once a project member creates a file, it will be displayed here."
 #: src/app/main/ui/dashboard/file_menu.cljs:249
 msgid "dashboard.export-binary-multi"
 msgstr "Download %s Penpot files (.penpot)"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:249
+msgid "dashboard.export-binary-multi-v3"
+msgstr "Download %s Penpot files (.zip) (BETA)"
 
 #: src/app/main/ui/workspace/main_menu.cljs:605
 msgid "dashboard.export-frames"

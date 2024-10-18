@@ -288,7 +288,8 @@
 
          (when (ex/exception? cause)
            (let [data    (ex-data cause)
-                 explain (ex/explain data)]
+                 explain (or (:explain data)
+                             (ex/explain data))]
              (when explain
                (js/console.log "Explain:")
                (js/console.log explain))
