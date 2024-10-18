@@ -22,6 +22,7 @@
     "build:storybook:assets": "node ./scripts/build-storybook-assets.js",
     "build:storybook:cljs": "clojure -M:dev:shadow-cljs compile storybook",
     "build:renderer": "yarn run wasm-pack build ./renderer --target web --out-dir ../resources/public/js/renderer --release",
+    "build:app": "clojure -M:dev:shadow-cljs release main",
     "e2e:server": "node ./scripts/e2e-server.js",
     "fmt:clj": "cljfmt fix --parallel=true src/ test/",
     "fmt:clj:check": "cljfmt check --parallel=false src/ test/",

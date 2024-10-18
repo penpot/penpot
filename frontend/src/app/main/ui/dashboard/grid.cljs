@@ -355,9 +355,10 @@
              )))]
 
     [:li {:class (stl/css-case :grid-item true :project-th true :library library-view?)}
-     [:button
+     [:div
       {:class (stl/css-case :selected selected? :library library-view?)
        :ref node-ref
+       :role "button"
        :title (:name file)
        :draggable (dm/str can-edit)
        :on-click on-select

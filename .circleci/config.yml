@@ -109,9 +109,9 @@ jobs:
           command: |
             yarn install
             yarn run build:app:assets
-            clojure -M:dev:shadow-cljs release main
-            yarn playwright install --with-deps chromium
-            yarn test:e2e
+            yarn run build:app
+            yarn run playwright install --with-deps chromium
+            yarn run test:e2e
 
       - run:
           name: "backend tests"
