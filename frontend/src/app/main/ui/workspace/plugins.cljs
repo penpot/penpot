@@ -29,6 +29,15 @@
 (def ^:private close-icon
   (i/icon-xref :close (stl/css :close-icon)))
 
+(defn icon-url
+  "Creates an sanitizes de icon URL to display"
+  [host icon]
+  (dm/str host
+          (if (and (not (str/ends-with? host "/"))
+                   (not (str/starts-with? icon "/")))
+            "/" "")
+          icon))
+
 (mf/defc plugin-entry
   [{:keys [index manifest on-open-plugin on-remove-plugin]}]
 
@@ -49,7 +58,7 @@
     [:div {:class (stl/css :plugins-list-element)}
      [:div {:class (stl/css :plugin-icon)}
       [:img {:src (if (some? icon)
-                    (dm/str host icon)
+                    (icon-url host icon)
                     (avatars/generate {:name name}))}]]
      [:div {:class (stl/css :plugin-description)}
       [:div {:class (stl/css :plugin-title)} name]
@@ -389,7 +398,7 @@
       [:div {:class (stl/css :modal-title)}
        [:div {:class (stl/css :plugin-icon)}
         [:img {:src (if (some? icon)
-                      (dm/str host icon)
+                      (icon-url host icon)
                       (avatars/generate {:name name}))}]]
        (tr "workspace.plugins.try-out.title" (str/upper (:name plugin)))]
 

@@ -1988,7 +1988,8 @@
                                                 (+ (:position guide) (- (:y new-frame) (:y frame))))
                                      guide    {:id guide-id
                                                :frame-id new-id
-                                               :position position}]
+                                               :position position
+                                               :axis (:axis guide)}]
                                  (pcb/set-guide changes guide-id guide))
                                changes))
                            changes
