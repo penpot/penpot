@@ -29,20 +29,6 @@
   }
 }
 
-.close-button {
-  @extend .button-tertiary;
-  position: absolute;
-  right: $s-2;
-  top: $s-2;
-  height: $s-28;
-  width: $s-28;
-  border-radius: $br-6;
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
-}
-
 .checkbox-wrapper {
   @extend .input-checkbox;
   height: $s-32;

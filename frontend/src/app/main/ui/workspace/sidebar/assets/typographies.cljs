@@ -18,7 +18,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
-   [app.main.ui.icons :as i]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry]]
@@ -404,9 +404,10 @@
       (when local?
         [:& cmm/asset-section-block {:role :title-button}
          (when-not read-only?
-           [:button {:class (stl/css :assets-btn)
-                     :on-click add-typography}
-            i/add])])
+           [:> icon-button* {:variant "ghost"
+                             :aria-label (tr "workspace.assets.typography.add-typography")
+                             :on-click add-typography
+                             :icon "add"}])])
 
       [:& cmm/asset-section-block {:role :content}
        [:& typographies-group {:file-id file-id
