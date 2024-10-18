@@ -57,7 +57,7 @@
 
 (mf/defc file-menu
   {::mf/wrap-props false}
-  [{:keys [files show? on-edit on-menu-close top left navigate? origin parent-id you-viewer?]}]
+  [{:keys [files show? on-edit on-menu-close top left navigate? origin parent-id can-edit]}]
   (assert (seq files) "missing `files` prop")
   (assert (boolean? show?) "missing `show?` prop")
   (assert (fn? on-edit) "missing `on-edit` prop")
@@ -245,13 +245,12 @@
 
             options
             (if multi?
-              [(when-not you-viewer?
+              [(when can-edit
                  {:name    (tr "dashboard.duplicate-multi" file-count)
                   :id      "duplicate-multi"
                   :handler on-duplicate})
 
-               (when (and (or (seq current-projects) (seq other-teams))
-                          (not you-viewer?))
+               (when (and (or (seq current-projects) (seq other-teams)) can-edit)
                  {:name    (tr "dashboard.move-to-multi" file-count)
                   :id      "file-move-multi"
                   :options    sub-options})
@@ -269,14 +268,12 @@
                 :id      "file-standard-export-multi"
                 :handler on-export-standard-files}
 
-               (when (and (:is-shared file)
-                          (not you-viewer?))
+               (when (and (:is-shared file) can-edit)
                  {:name    (tr "labels.unpublish-multi-files" file-count)
                   :id      "file-unpublish-multi"
                   :handler on-del-shared})
 
-               (when (and (not is-lib-page?)
-                          (not you-viewer?))
+               (when (and (not is-lib-page?) can-edit)
                  {:name    :separator}
                  {:name    (tr "labels.delete-multi-files" file-count)
                   :id      "file-delete-multi"
@@ -285,14 +282,12 @@
               [{:name    (tr "dashboard.open-in-new-tab")
                 :id      "file-open-new-tab"
                 :handler on-new-tab}
-               (when (and (not is-search-page?)
-                          (not you-viewer?))
+               (when (and (not is-search-page?) can-edit)
                  {:name    (tr "labels.rename")
                   :id      "file-rename"
                   :handler on-edit})
 
-               (when (and (not is-search-page?)
-                          (not you-viewer?))
+               (when (and (not is-search-page?) can-edit)
                  {:name    (tr "dashboard.duplicate")
                   :id      "file-duplicate"
                   :handler on-duplicate})
@@ -300,13 +295,13 @@
                (when (and (not is-lib-page?)
                           (not is-search-page?)
                           (or (seq current-projects) (seq other-teams))
-                          (not you-viewer?))
+                          can-edit)
                  {:name    (tr "dashboard.move-to")
                   :id      "file-move-to"
                   :options    sub-options})
 
                (when (and (not is-search-page?)
-                          (not you-viewer?))
+                          can-edit)
                  (if (:is-shared file)
                    {:name    (tr "dashboard.unpublish-shared")
                     :id      "file-del-shared"
@@ -330,10 +325,10 @@
                 :id      "download-standard-file"
                 :handler on-export-standard-files}
 
-               (when (and (not is-lib-page?) (not is-search-page?) (not you-viewer?))
+               (when (and (not is-lib-page?) (not is-search-page?) can-edit)
                  {:name   :separator})
 
-               (when (and (not is-lib-page?) (not is-search-page?) (not you-viewer?))
+               (when (and (not is-lib-page?) (not is-search-page?) can-edit)
                  {:name    (tr "labels.delete")
                   :id      "file-delete"
                   :handler on-delete})])]

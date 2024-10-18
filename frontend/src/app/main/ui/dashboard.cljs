@@ -61,14 +61,15 @@
 
 (mf/defc dashboard-content
   [{:keys [team projects project section search-term profile invite-email] :as props}]
-  (let [container          (mf/use-ref)
-        content-width      (mf/use-state 0)
-        project-id         (:id project)
-        team-id            (:id team)
-        you-viewer?        (not (dm/get-in team [:permissions :can-edit]))
+  (let [container       (mf/use-ref)
+        content-width   (mf/use-state 0)
+        project-id      (:id project)
+        team-id         (:id team)
 
-        dashboard-local     (mf/deref refs/dashboard-local)
-        file-menu-open?     (:menu-open dashboard-local)
+        permissions     (:permissions team)
+
+        dashboard-local (mf/deref refs/dashboard-local)
+        file-menu-open? (:menu-open dashboard-local)
 
         default-project-id
         (mf/with-memo [projects]
@@ -87,8 +88,9 @@
         (mf/use-fn
          #(st/emit! (dd/clear-selected-files)))
 
-        show-templates (and (contains? cf/flags :dashboard-templates-section)
-                            (not you-viewer?))]
+        show-templates
+        (and (contains? cf/flags :dashboard-templates-section)
+             (not (:can-edit permissions)))]
 
     (mf/with-effect []
       (let [key1 (events/listen js/window "resize" on-resize)]
@@ -117,7 +119,7 @@
                                  :content-width @content-width}])]
 
        :dashboard-fonts
-       [:& fonts-page {:team team :you-viewer? you-viewer?}]
+       [:& fonts-page {:team team}]
 
        :dashboard-font-providers
        [:& font-providers-page {:team team}]
@@ -125,7 +127,7 @@
        :dashboard-files
        (when project
          [:*
-          [:& files-section {:team team :project project :you-viewer? you-viewer?}]
+          [:& files-section {:team team :project project}]
           (when show-templates
             [:& templates-section {:profile profile
                                    :team-id team-id
@@ -138,7 +140,7 @@
                         :search-term search-term}]
 
        :dashboard-libraries
-       [:& libraries-page {:team team :you-viewer? you-viewer?}]
+       [:& libraries-page {:team team}]
 
        :dashboard-team-members
        [:& team-members-page {:team team :profile profile :invite-email invite-email}]
@@ -231,8 +233,7 @@
 
         invite-email   (-> route :query-params :invite-email)
 
-        teams          (mf/deref refs/teams)
-        team           (get teams team-id)
+        team           (mf/deref refs/team)
 
         projects       (mf/deref refs/dashboard-projects)
         project        (get projects project-id)
@@ -261,29 +262,30 @@
 
     [:& (mf/provider ctx/current-team-id) {:value team-id}
      [:& (mf/provider ctx/current-project-id) {:value project-id}
-      ;; NOTE: dashboard events and other related functions assumes
-      ;; that the team is a implicit context variable that is
-      ;; available using react context or accessing
-      ;; the :current-team-id on the state. We set the key to the
-      ;; team-id because we want to completely refresh all the
-      ;; components on team change. Many components assumes that the
-      ;; team is already set so don't put the team into mf/deps.
-      (when (and team initialized?)
-        [:main {:class (stl/css :dashboard)
-                :key (:id team)}
-         [:& sidebar
-          {:team team
-           :projects projects
-           :project project
-           :profile profile
-           :section section
-           :search-term search-term}]
-         (when (and team profile (seq projects))
-           [:& dashboard-content
-            {:projects projects
-             :profile profile
-             :project project
-             :section section
-             :search-term search-term
-             :team team
-             :invite-email invite-email}])])]]))
+      [:& (mf/provider ctx/team-permissions) {:value (:permissions team)}
+       ;; NOTE: dashboard events and other related functions assumes
+       ;; that the team is a implicit context variable that is
+       ;; available using react context or accessing
+       ;; the :current-team-id on the state. We set the key to the
+       ;; team-id because we want to completely refresh all the
+       ;; components on team change. Many components assumes that the
+       ;; team is already set so don't put the team into mf/deps.
+       (when (and team initialized?)
+         [:main {:class (stl/css :dashboard)
+                 :key (:id team)}
+          [:& sidebar
+           {:team team
+            :projects projects
+            :project project
+            :profile profile
+            :section section
+            :search-term search-term}]
+          (when (and team profile (seq projects))
+            [:& dashboard-content
+             {:projects projects
+              :profile profile
+              :project project
+              :section section
+              :search-term search-term
+              :team team
+              :invite-email invite-email}])])]]]))

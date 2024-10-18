@@ -97,6 +97,7 @@
     (update [_ state]
       (-> state
           (assoc :team team)
+          (assoc :permissions (:permissions team))
           (assoc :current-team-id (:id team))))
 
     ptk/WatchEvent

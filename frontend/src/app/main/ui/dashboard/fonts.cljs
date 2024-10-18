@@ -269,7 +269,7 @@
   {::mf/props :obj
    ::mf/private true
    ::mf/memo true}
-  [{:keys [font-id variants you-viewer?]}]
+  [{:keys [font-id variants can-edit]}]
   (let [font        (first variants)
 
         menu-open*  (mf/use-state false)
@@ -361,11 +361,11 @@
      [:div {:class (stl/css :table-field :variants)}
       (for [{:keys [id] :as item} variants]
         [:div {:class (stl/css-case :variant true
-                                    :inhert-variant you-viewer?)
+                                    :inhert-variant (not can-edit))
                :key (dm/str id)}
          [:span {:class (stl/css :label)}
           [:& font-variant-display-name {:variant item}]]
-         (when-not you-viewer?
+         (when can-edit
            [:span
             {:class (stl/css :icon :close)
              :data-id (dm/str id)
@@ -384,7 +384,7 @@
                   :on-click on-cancel}
          i/close]]
 
-       (when-not you-viewer?
+       (when can-edit
          [:div {:class (stl/css :table-field :options)}
           [:span {:class (stl/css :icon)
                   :on-click on-menu-open}
@@ -397,7 +397,7 @@
             :on-edit on-edit}]]))]))
 
 (mf/defc installed-fonts
-  [{:keys [fonts you-viewer?] :as props}]
+  [{:keys [fonts can-edit] :as props}]
   (let [sterm (mf/use-state "")
 
         matches?
@@ -426,7 +426,7 @@
                                       (group-by :font-id))]
           [:& installed-font {:key (dm/str font-id "-installed")
                               :font-id font-id
-                              :you-viewer? you-viewer?
+                              :can-edit can-edit
                               :variants variants}])]
 
        (nil? fonts)
@@ -435,27 +435,33 @@
         [:div {:class (stl/css :label)} (tr "dashboard.loading-fonts")]]
 
        :else
-       (if you-viewer?
-         [:> empty-placeholder* {:title (tr "dashboard.fonts.empty-placeholder-viewer")
-                                 :subtitle (tr "dashboard.fonts.empty-placeholder-viewer-sub")
-                                 :type 2}]
-
+       (if ^boolean can-edit
          [:div {:class (stl/css :fonts-placeholder)}
           [:div {:class (stl/css :icon)} i/text]
-          [:div {:class (stl/css :label)} (tr "dashboard.fonts.empty-placeholder")]]))]))
+          [:div {:class (stl/css :label)} (tr "dashboard.fonts.empty-placeholder")]]
+
+         [:> empty-placeholder*
+          {:title (tr "dashboard.fonts.empty-placeholder-viewer")
+           :subtitle (tr "dashboard.fonts.empty-placeholder-viewer-sub")
+           :type 2}]))]))
+
 
 (mf/defc fonts-page
-  [{:keys [team you-viewer?] :as props}]
-  (let [fonts (mf/deref refs/dashboard-fonts)]
+  {::mf/props :obj}
+  [{:keys [team]}]
+  (let [fonts       (mf/deref refs/dashboard-fonts)
+        permissions (:permissions team)
+        can-edit    (:can-edit permissions)]
     [:*
      [:& header {:team team :section :fonts}]
      [:section {:class (stl/css :dashboard-container :dashboard-fonts)}
-      (when-not you-viewer?
+      (when ^boolean can-edit
         [:& uploaded-fonts {:team team :installed-fonts fonts}])
-      [:& installed-fonts {:team team :fonts fonts :you-viewer? you-viewer?}]]]))
+      [:& installed-fonts {:team team :fonts fonts :can-edit can-edit}]]]))
 
 (mf/defc font-providers-page
-  [{:keys [team] :as props}]
+  {::mf/props :obj}
+  [{:keys [team]}]
   [:*
    [:& header {:team team :section :providers}]
    [:section {:class (stl/css :dashboard-container)}

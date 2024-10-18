@@ -7,7 +7,6 @@
 (ns app.main.ui.dashboard.projects
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
@@ -46,12 +45,12 @@
 
 (mf/defc header
   {::mf/wrap [mf/memo]}
-  [{:keys [you-viewer?]}]
+  [{:keys [can-edit]}]
   (let [on-click (mf/use-fn #(st/emit! (dd/create-project)))]
     [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
      [:div#dashboard-projects-title {:class (stl/css :dashboard-title)}
       [:h1 (tr "dashboard.projects-title")]]
-     (when-not you-viewer?
+     (when can-edit
        [:button {:class (stl/css :btn-secondary :btn-small)
                  :on-click on-click
                  :data-testid "new-project-button"}
@@ -101,13 +100,13 @@
   (l/derived :builtin-templates st/state))
 
 (mf/defc project-item
-  [{:keys [project first? team files you-viewer?] :as props}]
+  [{:keys [project first? team files can-edit] :as props}]
   (let [locale     (mf/deref i18n/locale)
         file-count (or (:count project) 0)
         project-id (:id project)
         is-draft-proyect (:is-default project)
         team-id    (:id team)
-        empty-state-viewer (and you-viewer?
+        empty-state-viewer (and (not can-edit)
                                 (= 0 file-count))
 
         dstate     (mf/deref refs/dashboard-local)
@@ -225,7 +224,7 @@
                :title (if (:is-default project)
                         (tr "labels.drafts")
                         (:name project))
-               :on-context-menu (when-not you-viewer? on-menu-click)}
+               :on-context-menu (when can-edit on-menu-click)}
           (if (:is-default project)
             (tr "labels.drafts")
             (:name project))])
@@ -246,7 +245,7 @@
          (when-not (:is-default project)
            [:> pin-button* {:class (stl/css :pin-button) :is-pinned (:is-pinned project) :on-click toggle-pin :tab-index 0}])
 
-         (when-not you-viewer?
+         (when ^boolean can-edit
            [:button {:class (stl/css :add-file-btn)
                      :on-click on-create-click
                      :title (tr "dashboard.new-file")
@@ -255,7 +254,7 @@
                      :on-key-down handle-create-click}
             add-icon])
 
-         (when-not you-viewer?
+         (when ^boolean can-edit
            [:button {:class (stl/css :options-btn)
                      :on-click on-menu-click
                      :title (tr "dashboard.options")
@@ -263,7 +262,8 @@
                      :data-testid "project-options"
                      :on-key-down handle-menu-click}
             menu-icon])]
-        (when-not you-viewer?
+
+        (when ^boolean can-edit
           [:& project-menu
            {:project project
             :show? (:menu-open @local)
@@ -289,7 +289,7 @@
           :team team
           :files files
           :create-fn create-file
-          :you-viewer? you-viewer?
+          :can-edit can-edit
           :limit limit}])]
 
      (when (and (> limit 0)
@@ -309,14 +309,16 @@
 
 (mf/defc projects-section
   [{:keys [team projects profile] :as props}]
+
   (let [projects            (->> (vals projects)
                                  (sort-by :modified-at)
                                  (reverse))
         recent-map          (mf/deref recent-files-ref)
-        you-owner?          (dm/get-in team [:permissions :is-owner])
-        you-admin?          (dm/get-in team [:permissions :is-admin])
-        you-viewer?         (not (dm/get-in team [:permissions :can-edit]))
-        can-invite?         (or you-owner? you-admin?)
+        permisions          (:permissions team)
+
+        can-edit            (:can-edit permisions)
+        can-invite          (or (:is-owner permisions)
+                                (:is-admin permisions))
 
         show-team-hero*     (mf/use-state #(get storage/global ::show-team-hero true))
         show-team-hero?     (deref show-team-hero*)
@@ -348,11 +350,11 @@
 
     (when (seq projects)
       [:*
-       [:& header {:you-viewer? you-viewer?}]
+       [:& header {:can-edit can-edit}]
        [:div {:class (stl/css :projects-container)}
         [:*
          (when (and show-team-hero?
-                    can-invite?
+                    can-invite
                     (not is-defalt-team?))
            [:> team-hero* {:team team :on-close on-close}])
 
@@ -362,7 +364,7 @@
                                      :with-team-hero (and (not is-my-penpot)
                                                           (not is-defalt-team?)
                                                           show-team-hero?
-                                                          can-invite?))}
+                                                          can-invite))}
           (for [{:keys [id] :as project} projects]
             (let [files (when recent-map
                           (->> (vals recent-map)
@@ -371,6 +373,6 @@
               [:& project-item {:project project
                                 :team team
                                 :files files
-                                :you-viewer? you-viewer?
+                                :can-edit can-edit
                                 :first? (= project (first projects))
                                 :key id}]))]]]])))

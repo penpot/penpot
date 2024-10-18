@@ -28,8 +28,10 @@
 (def ^:private menu-icon
   (i/icon-xref :menu (stl/css :menu-icon)))
 
-(mf/defc header
-  [{:keys [project create-fn you-viewer?] :as props}]
+(mf/defc header*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [project create-fn can-edit]}]
   (let [local (mf/use-state
                {:menu-open false
                 :edition false})
@@ -72,8 +74,7 @@
        [:div#dashboard-drafts-title {:class (stl/css :dashboard-title)}
         [:h1 (tr "labels.drafts")]]
 
-       (if (and (:edition @local)
-                (not you-viewer?))
+       (if (and (:edition @local) can-edit)
          [:& inline-edition
           {:content (:name project)
            :on-end (fn [name]
@@ -89,7 +90,7 @@
            (:name project)]]))
 
      [:div {:class (stl/css :dashboard-header-actions)}
-      (when-not you-viewer?
+      (when ^boolean can-edit
         [:a {:class (stl/css :btn-secondary :btn-small :new-file)
              :tab-index "0"
              :on-click on-create-click
@@ -106,7 +107,7 @@
           :on-click toggle-pin
           :on-key-down (fn [event] (when (kbd/enter? event) (toggle-pin event)))}])
 
-      (when-not you-viewer?
+      (when ^boolean can-edit
         [:div {:class (stl/css :icon)
                :tab-index "0"
                :on-click on-menu-click
@@ -116,7 +117,7 @@
                                 (on-menu-click event)))}
          menu-icon])
 
-      (when-not you-viewer?
+      (when ^boolean can-edit
         [:& project-menu {:project project
                           :show? (:menu-open @local)
                           :left (- (:x (:menu-pos @local)) 180)
@@ -126,9 +127,11 @@
                           :on-import on-import}])]]))
 
 (mf/defc files-section
-  [{:keys [project team you-viewer?] :as props}]
-  (let [files-map  (mf/deref refs/dashboard-files)
-        project-id (:id project)
+  {::mf/props :obj}
+  [{:keys [project team]}]
+  (let [files-map        (mf/deref refs/dashboard-files)
+        can-edit?        (-> team :permissions :can-edit)
+        project-id       (:id project)
         is-draft-proyect (:is-default project)
 
         [rowref limit] (hooks/use-dynamic-grid-item-width)
@@ -139,7 +142,7 @@
                          (sort-by :modified-at)
                          (reverse)))
         file-count (or (count files) 0)
-        empty-state-viewer (and you-viewer?
+        empty-state-viewer (and (not can-edit?)
                                 (= 0 file-count))
 
         on-file-created
@@ -171,10 +174,10 @@
                 (dd/clear-selected-files)))
 
     [:*
-     [:& header {:team team
-                 :project project
-                 :you-viewer? you-viewer?
-                 :create-fn create-file}]
+     [:> header* {:team team
+                  :can-edit can-edit?
+                  :project project
+                  :create-fn create-file}]
      [:section {:class (stl/css :dashboard-container :no-bg)
                 :ref rowref}
       (if empty-state-viewer
@@ -188,7 +191,7 @@
                                             (tr "dashboard.empty-placeholder-files-subtitle"))}]
         [:& grid {:project project
                   :files files
-                  :you-viewer? you-viewer?
+                  :can-edit can-edit?
                   :origin :files
                   :create-fn create-file
                   :limit limit}])]]))
