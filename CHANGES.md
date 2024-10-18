@@ -47,6 +47,7 @@
 - Fix problem with caps and inner shadows [Github #4517](https://github.com/penpot/penpot/issues/4517)
 - Fix problem with horizontal/vertical lines and shadows [Github #4516](https://github.com/penpot/penpot/issues/4516)
 - Fix problem with layers overflowing panel [Taiga #9021](https://tree.taiga.io/project/penpot/issue/9021)
+- Fix in workspace you can manage rulers on view mode [Taiga #8966](https://tree.taiga.io/project/penpot/issue/8966)
 
 ## 2.2.1
 
