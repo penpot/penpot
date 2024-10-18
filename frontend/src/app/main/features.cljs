@@ -26,16 +26,16 @@
 
 (defn get-enabled-features
   [state]
-  (-> (get state :features/runtime #{})
+  (-> (get state :features-runtime #{})
       (set/intersection cfeat/no-migration-features)
       (set/union global-enabled-features)))
 
 (defn get-team-enabled-features
   [state]
   (-> global-enabled-features
-      (set/union (:features/runtime state #{}))
+      (set/union (:features-runtime state #{}))
       (set/intersection cfeat/no-migration-features)
-      (set/union (:features/team state #{}))))
+      (set/union (:features-team state #{}))))
 
 (def features-ref
   (l/derived get-team-enabled-features st/state =))
@@ -44,11 +44,11 @@
   "Given a state and feature, check if feature is enabled"
   [state feature]
   (assert (contains? cfeat/supported-features feature) "not supported feature")
-  (or (contains? (get state :features/runtime) feature)
+  (or (contains? (get state :features-runtime) feature)
       (if (contains? cfeat/no-migration-features feature)
         (or (contains? global-enabled-features feature)
-            (contains? (get state :features/team) feature))
-        (contains? (get state :features/team state) feature))))
+            (contains? (get state :features-team) feature))
+        (contains? (get state :features-team state) feature))))
 
 (defn use-feature
   "A react hook that checks if feature is currently enabled"
@@ -67,7 +67,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (assert (contains? cfeat/supported-features feature) "not supported feature")
-      (update state :features/runtime (fn [features]
+      (update state :features-runtime (fn [features]
                                         (if (contains? features feature)
                                           (do
                                             (log/trc :hint "feature disabled" :feature feature)
@@ -86,7 +86,7 @@
         state
         (do
           (log/trc :hint "feature enabled" :feature feature)
-          (update state :features/runtime (fnil conj #{}) feature))))))
+          (update state :features-runtime (fnil conj #{}) feature))))))
 
 (defn initialize
   ([] (initialize #{}))
@@ -102,8 +102,8 @@
                                     cfeat/xf-supported-features
                                     team-features)]
          (-> state
-             (assoc :features/runtime runtime-features)
-             (assoc :features/team team-features))))
+             (assoc :features-runtime runtime-features)
+             (assoc :features-team team-features))))
 
      ptk/WatchEvent
      (watch [_ _ _]
@@ -117,6 +117,6 @@
      ptk/EffectEvent
      (effect [_ state _]
        (log/trc :hint "initialized features"
-                :team (str/join "," (:features/team state))
-                :runtime (str/join "," (:features/runtime state)))))))
+                :team (str/join "," (:features-team state))
+                :runtime (str/join "," (:features-runtime state)))))))
 

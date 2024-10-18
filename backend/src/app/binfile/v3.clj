@@ -248,7 +248,6 @@
 
         data         (:data file)
         typographies (:typographies data)
-        plugins-data (:plugin-data data)
         components   (:components data)
         colors       (:colors data)
 
@@ -322,11 +321,7 @@
     (doseq [[id object] typographies]
       (let [path  (str "files/" file-id "/typographies/" id ".json")
             color (encode-typography object)]
-        (write-entry! output path color)))
-
-    (when-let [data (not-empty plugins-data)]
-      (let [path (str "files/" file-id "/plugin-data.json")]
-        (write-entry! output path data)))))
+        (write-entry! output path color)))))
 
 (defn- export-files
   [{:keys [::ids ::include-libraries ::output] :as cfg}]
@@ -648,7 +643,7 @@
            :version (:version file)
            ::l/sync? true)
 
-    (events/tap :progress {:op :import :section :file :name file-name})
+    (events/tap :progress {:section :file :name file-name})
 
     (when media
       ;; Update index with media
@@ -694,8 +689,7 @@
 
 (defn- import-file-relations
   [{:keys [::db/conn ::manifest ::bfc/timestamp] :as cfg}]
-  (events/tap :progress {:op :import :section :relations})
-
+  (events/tap :progress {:section :relations})
   (doseq [[file-id libr-id] (:relations manifest)]
 
     (let [file-id (bfc/lookup-index file-id)
@@ -713,7 +707,7 @@
 
 (defn- import-storage-objects
   [{:keys [::input ::entries ::bfc/timestamp] :as cfg}]
-  (events/tap :progress {:op :import :section :storage-objects})
+  (events/tap :progress {:section :storage-objects})
 
   (let [storage (sto/resolve cfg)
         entries (keep (match-storage-entry-fn) entries)]
@@ -769,7 +763,7 @@
 
 (defn- import-file-media
   [{:keys [::db/conn] :as cfg}]
-  (events/tap :progress {:op :import :section :media})
+  (events/tap :progress {:section :media})
 
   (doseq [item (:media @bfc/*state*)]
     (let [params (-> item
@@ -788,7 +782,7 @@
 
 (defn- import-file-thumbnails
   [{:keys [::db/conn] :as cfg}]
-  (events/tap :progress {:op :import :section :thumbnails})
+  (events/tap :progress {:section :thumbnails})
   (doseq [item (:thumbnails @bfc/*state*)]
     (let [file-id   (bfc/lookup-index (:file-id item))
           media-id  (bfc/lookup-index (:media-id item))
@@ -839,7 +833,7 @@
                     :path path
                     :file-id file-id))))
 
-    (events/tap :progress {:op :import :section :manifest})
+    (events/tap :progress {:section :manifest})
 
     (let [index (bfc/update-index (map :id (:files manifest)))
           state {:media [] :index index}

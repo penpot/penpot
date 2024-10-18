@@ -30,11 +30,11 @@
 (mf/defc page-item
   {::mf/wrap-props false}
   [{:keys [page index deletable? selected? editing? hovering?]}]
-  (let [input-ref            (mf/use-ref)
-        id                   (:id page)
-        delete-fn            (mf/use-fn (mf/deps id) #(st/emit! (dw/delete-page id)))
-        navigate-fn          (mf/use-fn (mf/deps id) #(st/emit! :interrupt (dw/go-to-page id)))
-        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
+  (let [input-ref    (mf/use-ref)
+        id           (:id page)
+        delete-fn    (mf/use-fn (mf/deps id) #(st/emit! (dw/delete-page id)))
+        navigate-fn  (mf/use-fn (mf/deps id) #(st/emit! :interrupt (dw/go-to-page id)))
+        read-only?   (mf/use-ctx ctx/workspace-read-only?)
 
         on-delete
         (mf/use-fn
@@ -47,11 +47,11 @@
 
         on-double-click
         (mf/use-fn
-         (mf/deps workspace-read-only?)
+         (mf/deps read-only?)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (when-not workspace-read-only?
+           (when-not read-only?
              (st/emit! (dw/start-rename-page-item id)))))
 
         on-blur
@@ -86,15 +86,15 @@
          :data {:id id
                 :index index
                 :name (:name page)}
-         :draggable? (not workspace-read-only?))
+         :draggable? (not read-only?))
 
         on-context-menu
         (mf/use-fn
-         (mf/deps id workspace-read-only?)
+         (mf/deps id read-only?)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (when-not workspace-read-only?
+           (when-not read-only?
              (let [position (dom/get-client-position event)]
                (st/emit! (dw/show-page-item-context-menu
                           {:position position
@@ -147,7 +147,7 @@
          [:span {:class (stl/css :page-name) :data-testid "page-name"}
           (:name page)]
          [:div {:class  (stl/css :page-actions)}
-          (when (and deletable? (not workspace-read-only?))
+          (when (and deletable? (not read-only?))
             [:button {:on-click on-delete}
              i/delete])]])]]))
 
@@ -206,8 +206,7 @@
                           (st/emit! (dw/create-page {:file-id file-id :project-id project-id}))
                           (-> event dom/get-current-target dom/blur!)))
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
-        user-viewer?   (mf/use-ctx ctx/user-viewer?)]
-
+        permissions    (mf/use-ctx ctx/team-permissions)]
 
     [:div {:class (stl/css :sitemap)
            :style #js {"--height" (str size "px")}}
@@ -220,7 +219,7 @@
                     :class         (stl/css :title-spacing-sitemap)}
 
       (if ^boolean read-only?
-        (when  (not ^boolean user-viewer?)
+        (when ^boolean (:can-edit permissions)
           [:& badge-notification {:is-focus true
                                   :size :small
                                   :content (tr "labels.view-only")}])

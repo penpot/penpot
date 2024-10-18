@@ -24,23 +24,23 @@
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
-(defn get-project-name
+(defn- get-project-name
   [project]
   (if (:is-default project)
     (tr "labels.drafts")
     (:name project)))
 
-(defn get-project-id
+(defn- get-project-id
   [project]
   (str (:id project)))
 
-(defn get-team-name
+(defn- get-team-name
   [team]
   (if (:is-default team)
     (tr "dashboard.your-penpot")
     (:name team)))
 
-(defn group-by-team
+(defn- group-by-team
   "Group projects by team."
   [projects]
   (reduce (fn [teams project]
@@ -55,14 +55,14 @@
           {}
           projects))
 
-(mf/defc file-menu
-  {::mf/wrap-props false}
-  [{:keys [files show? on-edit on-menu-close top left navigate? origin parent-id you-viewer?]}]
+(mf/defc file-menu*
+  {::mf/props :obj}
+  [{:keys [files show on-edit on-menu-close top left navigate origin parent-id can-edit]}]
   (assert (seq files) "missing `files` prop")
-  (assert (boolean? show?) "missing `show?` prop")
+  (assert (boolean? show) "missing `show` prop")
   (assert (fn? on-edit) "missing `on-edit` prop")
   (assert (fn? on-menu-close) "missing `on-menu-close` prop")
-  (assert (boolean? navigate?) "missing `navigate?` prop")
+  (assert (boolean? navigate) "missing `navigate` prop")
 
   (let [is-lib-page?     (= :libraries origin)
         is-search-page?  (= :search origin)
@@ -133,7 +133,7 @@
           (if multi?
             (st/emit! (ntf/success (tr "dashboard.success-move-files")))
             (st/emit! (ntf/success (tr "dashboard.success-move-file"))))
-          (if (or navigate? (not= team-id current-team-id))
+          (if (or navigate (not= team-id current-team-id))
             (st/emit! (dd/go-to-files team-id project-id))
             (st/emit! (dd/fetch-recent-files team-id)
                       (dd/clear-selected-files))))
@@ -213,9 +213,9 @@
         mounted-ref (mf/use-ref true)]
 
     (mf/use-effect
-     (mf/deps show?)
+     (mf/deps show)
      (fn []
-       (when show?
+       (when show
          (->> (rp/cmd! :get-all-projects)
               (rx/map group-by-team)
               (rx/subs! #(when (mf/ref-val mounted-ref)
@@ -245,13 +245,12 @@
 
             options
             (if multi?
-              [(when-not you-viewer?
+              [(when can-edit
                  {:name    (tr "dashboard.duplicate-multi" file-count)
                   :id      "duplicate-multi"
                   :handler on-duplicate})
 
-               (when (and (or (seq current-projects) (seq other-teams))
-                          (not you-viewer?))
+               (when (and (or (seq current-projects) (seq other-teams)) can-edit)
                  {:name    (tr "dashboard.move-to-multi" file-count)
                   :id      "file-move-multi"
                   :options    sub-options})
@@ -269,14 +268,12 @@
                 :id      "file-standard-export-multi"
                 :handler on-export-standard-files}
 
-               (when (and (:is-shared file)
-                          (not you-viewer?))
+               (when (and (:is-shared file) can-edit)
                  {:name    (tr "labels.unpublish-multi-files" file-count)
                   :id      "file-unpublish-multi"
                   :handler on-del-shared})
 
-               (when (and (not is-lib-page?)
-                          (not you-viewer?))
+               (when (and (not is-lib-page?) can-edit)
                  {:name    :separator}
                  {:name    (tr "labels.delete-multi-files" file-count)
                   :id      "file-delete-multi"
@@ -285,14 +282,12 @@
               [{:name    (tr "dashboard.open-in-new-tab")
                 :id      "file-open-new-tab"
                 :handler on-new-tab}
-               (when (and (not is-search-page?)
-                          (not you-viewer?))
+               (when (and (not is-search-page?) can-edit)
                  {:name    (tr "labels.rename")
                   :id      "file-rename"
                   :handler on-edit})
 
-               (when (and (not is-search-page?)
-                          (not you-viewer?))
+               (when (and (not is-search-page?) can-edit)
                  {:name    (tr "dashboard.duplicate")
                   :id      "file-duplicate"
                   :handler on-duplicate})
@@ -300,13 +295,13 @@
                (when (and (not is-lib-page?)
                           (not is-search-page?)
                           (or (seq current-projects) (seq other-teams))
-                          (not you-viewer?))
+                          can-edit)
                  {:name    (tr "dashboard.move-to")
                   :id      "file-move-to"
                   :options    sub-options})
 
                (when (and (not is-search-page?)
-                          (not you-viewer?))
+                          can-edit)
                  (if (:is-shared file)
                    {:name    (tr "dashboard.unpublish-shared")
                     :id      "file-del-shared"
@@ -330,17 +325,17 @@
                 :id      "download-standard-file"
                 :handler on-export-standard-files}
 
-               (when (and (not is-lib-page?) (not is-search-page?) (not you-viewer?))
+               (when (and (not is-lib-page?) (not is-search-page?) can-edit)
                  {:name   :separator})
 
-               (when (and (not is-lib-page?) (not is-search-page?) (not you-viewer?))
+               (when (and (not is-lib-page?) (not is-search-page?) can-edit)
                  {:name    (tr "labels.delete")
                   :id      "file-delete"
                   :handler on-delete})])]
 
         [:> context-menu*
          {:on-close on-menu-close
-          :show show?
+          :show show
           :fixed (or (not= top 0) (not= left 0))
           :min-width true
           :top top

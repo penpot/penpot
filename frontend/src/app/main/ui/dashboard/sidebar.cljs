@@ -22,7 +22,7 @@
    [app.main.ui.components.link :refer [link]]
    [app.main.ui.dashboard.comments :refer [comments-icon comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
-   [app.main.ui.dashboard.project-menu :refer [project-menu]]
+   [app.main.ui.dashboard.project-menu :refer [project-menu*]]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i :refer [icon-xref]]
    [app.util.dom :as dom]
@@ -181,12 +181,12 @@
         [:& inline-edition {:content (:name item)
                             :on-end on-edit}]
         [:span {:class (stl/css :element-title)} (:name item)])]
-     [:& project-menu {:project item
-                       :show? (:menu-open local)
-                       :left (:x (:menu-pos local))
-                       :top (:y (:menu-pos local))
-                       :on-edit on-edit-open
-                       :on-menu-close on-menu-close}]]))
+     [:> project-menu* {:project item
+                        :show (:menu-open local)
+                        :left (:x (:menu-pos local))
+                        :top (:y (:menu-pos local))
+                        :on-edit on-edit-open
+                        :on-menu-close on-menu-close}]]))
 
 (mf/defc sidebar-search
   [{:keys [search-term team-id] :as props}]

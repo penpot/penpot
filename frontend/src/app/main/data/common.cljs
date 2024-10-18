@@ -7,10 +7,11 @@
 (ns app.main.data.common
   "A general purpose events."
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.types.components-list :as ctkl]
-   [app.common.types.team :as tt]
+   [app.common.types.team :as ctt]
    [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -196,7 +197,7 @@
              (rx/tap on-success)
              (rx/catch on-error))))))
 
-(defn- change-role-msg
+(defn- get-change-role-msg
   [role]
   (case role
     :viewer (tr "dashboard.permissions-change.viewer")
@@ -204,26 +205,23 @@
     :admin  (tr "dashboard.permissions-change.admin")
     :owner  (tr "dashboard.permissions-change.owner")))
 
-
-(defn change-team-permissions
-  [{:keys [team-id role workspace?]}]
+(defn change-team-role
+  [{:keys [team-id role]}]
   (dm/assert! (uuid? team-id))
-  (dm/assert! (contains? tt/valid-roles role))
-  (ptk/reify ::change-team-permissions
+  (dm/assert! (contains? ctt/valid-roles role))
+
+  (ptk/reify ::change-team-role
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (ntf/info (change-role-msg role))))
+      (rx/of (ntf/info (get-change-role-msg role))))
 
     ptk/UpdateEvent
     (update [_ state]
-      (let [route (if workspace?
-                    [:workspace-file :permissions]
-                    [:teams team-id :permissions])]
-        (update-in state route
-                   (fn [permissions]
-                     (merge permissions (get tt/permissions-for-role role))))))))
-
-
+      (let [permissions (get ctt/permissions-for-role role)]
+        (-> state
+            (update :permissions merge permissions)
+            (update-in [:team :permissions] merge permissions)
+            (d/update-in-when [:teams team-id :permissions] merge permissions))))))
 
 (defn team-membership-change
   [{:keys [team-id team-name change]}]
@@ -232,12 +230,12 @@
     ptk/WatchEvent
     (watch [_ state _]
       (when (= :removed change)
-        (let [msg (tr "dashboard.removed-from-team" team-name)]
-
+        (let [message (tr "dashboard.removed-from-team" team-name)
+              profile (:profile state)]
           (rx/concat
-           (rx/of (rt/nav :dashboard-projects {:team-id (get-in state [:profile :default-team-id])}))
-           (->> (rx/of (ntf/info msg))
-              ;; Delay so the navigation can finish
+           (rx/of (rt/nav :dashboard-projects {:team-id (:default-team-id profile)}))
+           (->> (rx/of (ntf/info message))
+                ;; Delay so the navigation can finish
                 (rx/delay 250))))))))
 
 

@@ -165,16 +165,16 @@
   (let [layout           (mf/deref refs/workspace-layout)
         wglobal          (mf/deref refs/workspace-global)
 
-
+        team             (mf/deref refs/team)
         file             (mf/deref refs/workspace-file)
         project          (mf/deref refs/workspace-project)
 
         team-id          (:team-id project)
         file-name        (:name file)
+        permissions      (:permissions team)
 
-        user-viewer?     (not (dm/get-in file [:permissions :can-edit]))
-        read-only?       (or (mf/deref refs/workspace-read-only?)
-                             user-viewer?)
+        read-only?       (mf/deref refs/workspace-read-only?)
+        read-only?       (or read-only? (not (:can-edit permissions)))
 
         file-ready*      (mf/with-memo [file-id]
                            (make-file-ready-ref file-id))
@@ -214,7 +214,7 @@
        [:& (mf/provider ctx/current-page-id) {:value page-id}
         [:& (mf/provider ctx/components-v2) {:value components-v2?}
          [:& (mf/provider ctx/workspace-read-only?) {:value read-only?}
-          [:& (mf/provider ctx/user-viewer?) {:value user-viewer?}
+          [:& (mf/provider ctx/team-permissions) {:value permissions}
            [:section {:class (stl/css :workspace)
                       :style {:background-color background-color
                               :touch-action "none"}}

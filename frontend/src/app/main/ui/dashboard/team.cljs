@@ -255,28 +255,30 @@
 (mf/defc rol-info
   {::mf/wrap-props false}
   [{:keys [member team on-set-admin on-set-editor on-set-owner on-set-viewer profile]}]
-  (let [member-is-owner?  (:is-owner member)
-        member-is-admin?  (and (:is-admin member) (not member-is-owner?))
-        member-is-editor? (and (:can-edit member) (and (not member-is-admin?) (not member-is-owner?)))
-        show?             (mf/use-state false)
+  (let [member-is-owner  (:is-owner member)
+        member-is-admin  (and (:is-admin member) (not member-is-owner))
+        member-is-editor (and (:can-edit member) (and (not member-is-admin) (not member-is-owner)))
+        show?            (mf/use-state false)
 
-        you-owner?        (dm/get-in team [:permissions :is-owner])
-        you-admin?        (dm/get-in team [:permissions :is-admin])
-        is-you?           (= (:id profile) (:id member))
+        permissions      (:permissions team)
+        is-owner         (:is-owner permissions)
+        is-admin         (:is-admin permissions)
 
-        can-change-rol?   (or you-owner? you-admin?)
-        not-superior?     (or you-owner? (and can-change-rol? (or member-is-admin? member-is-editor?)))
+        is-you           (= (:id profile) (:id member))
 
-        role              (cond
-                            member-is-owner?  "labels.owner"
-                            member-is-admin?  "labels.admin"
-                            member-is-editor? "labels.editor"
-                            :else             "labels.viewer")
+        can-change-rol   (or is-owner is-admin)
+        not-superior     (or is-admin (and can-change-rol (or member-is-admin member-is-editor)))
 
-        on-show           (mf/use-fn #(reset! show? true))
-        on-hide           (mf/use-fn #(reset! show? false))]
+        role             (cond
+                           member-is-owner  "labels.owner"
+                           member-is-admin  "labels.admin"
+                           member-is-editor "labels.editor"
+                           :else             "labels.viewer")
+
+        on-show          (mf/use-fn #(reset! show? true))
+        on-hide          (mf/use-fn #(reset! show? false))]
     [:*
-     (if (and can-change-rol? not-superior? (not (and is-you? you-owner?)))
+     (if (and can-change-rol not-superior (not (and is-you is-owner)))
        [:div {:class (stl/css :rol-selector :has-priv)
               :on-click on-show}
         [:span {:class (stl/css :rol-label)} (tr role)]
@@ -295,7 +297,7 @@
        [:li {:on-click on-set-viewer
              :class (stl/css :rol-dropdown-item)}
         (tr "labels.viewer")]
-       (when you-owner?
+       (when is-owner
          [:li {:on-click (partial on-set-owner member)
                :class (stl/css :rol-dropdown-item)}
           (tr "labels.owner")])]]]))
@@ -319,7 +321,6 @@
        [:button {:class (stl/css :menu-btn)
                  :on-click on-show}
         menu-icon]
-
 
        [:& dropdown {:show @show? :on-close on-hide}
         [:ul {:class (stl/css :actions-dropdown)}
@@ -910,12 +911,13 @@
     (tr "dashboard.webhooks.create")]])
 
 (mf/defc webhook-actions
-  {::mf/wrap-props false}
-  [{:keys [on-edit on-delete can-edit?]}]
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [on-edit on-delete can-edit]}]
   (let [show?   (mf/use-state false)
         on-show (mf/use-fn #(reset! show? true))
         on-hide (mf/use-fn #(reset! show? false))]
-    (if can-edit?
+    (if can-edit
       [:*
        [:button {:class (stl/css :menu-btn)
                  :on-click on-show}
@@ -948,7 +950,7 @@
         creator-id (:profile-id webhook)
         profile    (mf/deref refs/profile)
         user-id    (:id profile)
-        can-edit?  (or (:can-edit permissions)
+        can-edit   (or (:can-edit permissions)
                        (= creator-id user-id))
         on-edit
         (mf/use-fn
@@ -1002,8 +1004,8 @@
      [:div {:class (stl/css :table-field :actions)}
       [:& webhook-actions
        {:on-edit on-edit
-        :can-edit? can-edit?
-        :on-delete on-delete}]]]))
+        :on-delete on-delete
+        :can-edit can-edit}]]]))
 
 (mf/defc webhooks-list
   {::mf/wrap-props false}
@@ -1053,9 +1055,9 @@
 
         stats       (mf/deref refs/dashboard-team-stats)
 
-        you-owner?  (get-in team [:permissions :is-owner])
-        you-admin?  (get-in team [:permissions :is-admin])
-        can-edit?   (or you-owner? you-admin?)
+        permissions (:permissions team)
+        can-edit    (or (:is-owner permissions)
+                        (:is-admin permissions))
 
         on-image-click
         (mf/use-callback #(dom/click (mf/ref-val finput)))
@@ -1086,13 +1088,13 @@
        [:div {:class (stl/css :block-text)}
         (:name team)]
        [:div {:class (stl/css :team-icon)}
-        (when can-edit?
+        (when can-edit
           [:button {:class (stl/css :update-overlay)
                     :on-click on-image-click}
            image-icon])
         [:img {:class (stl/css :team-image)
                :src (cfg/resolve-team-photo-url team)}]
-        (when can-edit?
+        (when can-edit
           [:& file-uploader {:accept "image/jpeg,image/png"
                              :multi false
                              :ref finput

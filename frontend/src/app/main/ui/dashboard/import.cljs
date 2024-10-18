@@ -208,8 +208,7 @@
         file-id         (:file-id entry)
         editing?        (and (some? file-id) (= edition file-id))
 
-        editable?       (and (or (= :binfile-v3 format)
-                                 (= :legacy-zip format))
+        editable?       (and (= :legacy-zip format)
                              (= status :import-ready))
 
         on-edit-key-press

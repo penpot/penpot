@@ -134,8 +134,7 @@
    ::mf/props :obj}
   [{:keys [selected shapes shapes-with-children page-id file-id on-change-section on-expand]}]
   (let [objects              (mf/deref refs/workspace-page-objects)
-
-        user-viewer?         (mf/use-ctx ctx/user-viewer?)
+        permissions          (mf/use-ctx ctx/team-permissions)
 
         selected-shapes      (into [] (keep (d/getf objects)) selected)
         first-selected-shape (first selected-shapes)
@@ -176,10 +175,7 @@
 
 
         tabs
-        (if user-viewer?
-          #js [#js {:label (tr "workspace.options.inspect")
-                    :id "inspect"
-                    :content inspect-content}]
+        (if (:can-edit permissions)
           #js [#js {:label (tr "workspace.options.design")
                     :id "design"
                     :content design-content}
@@ -189,6 +185,9 @@
                     :content interactions-content}
 
                #js {:label (tr "workspace.options.inspect")
+                    :id "inspect"
+                    :content inspect-content}]
+          #js [#js {:label (tr "workspace.options.inspect")
                     :id "inspect"
                     :content inspect-content}])]
 
