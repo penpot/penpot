@@ -89,7 +89,7 @@
    ::sse/stream? true
    ::sm/params schema:import-binfile}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id name project-id file] :as params}]
-  (projects/check-read-permissions! pool profile-id project-id)
+  (projects/check-edition-permissions! pool profile-id project-id)
   (let [cfg (-> cfg
                 (assoc ::bf.v1/project-id project-id)
                 (assoc ::bf.v1/profile-id profile-id)

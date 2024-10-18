@@ -436,11 +436,54 @@ msgstr "Duplicar %s archivos"
 
 #: src/app/main/ui/dashboard/placeholder.cljs:33
 #, markdown
-msgid "dashboard.empty-placeholder-drafts"
+msgid "dashboard.empty-placeholder-libraries"
 msgstr ""
-"Los archivos agregados a las bibliotecas aparecerán aquí. Si quieres probar "
+"Las bibliotecas añadidas al proyecto aparecerán aquí. Si quieres probar "
 "con alguna plantilla ve a [Bibliotecas y "
 "plantillas](https://penpot.app/libraries-templates)."
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+msgid "dashboard.empty-placeholder-libraries-title"
+msgstr "Aún no existen librerías compartidas."
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-libraries-subtitle"
+msgstr ""
+"Las bibliotecas añadidas al proyecto aparecerán aquí. Si quieres probar "
+"con alguna plantilla ve a [Bibliotecas y "
+"plantillas](https://penpot.app/libraries-templates)."
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
+msgstr "Las bibliotecas añadidas al proyecto aparecerán aquí."
+
+#: src/app/main/ui/dashboard/files.cljs
+msgid "dashboard.empty-placeholder-drafts-title"
+msgstr "Aún no hay borradores."
+
+#: src/app/main/ui/dashboard/files.cljs
+msgid "dashboard.empty-placeholder-drafts-subtitle"
+msgstr "Cuando un miembro del equipo cree algún borrador, este aparecerá aquí."
+
+#: src/app/main/ui/dashboard/files.cljs
+msgid "dashboard.empty-placeholder-files-title"
+msgstr  "Aún no hay archivos."
+
+#: src/app/main/ui/dashboard/files.cljs
+msgid "dashboard.empty-placeholder-files-subtitle"
+msgstr "Cuando un miembro del equipo cree algún archivo, este aparecerá aquí."
+
+
+
+
+
+
+
+
+
+
+
 
 #: src/app/main/ui/dashboard/file_menu.cljs:249
 msgid "dashboard.export-binary-multi"
@@ -543,6 +586,14 @@ msgstr "Ignorar todas"
 #: src/app/main/ui/dashboard/fonts.cljs:436
 msgid "dashboard.fonts.empty-placeholder"
 msgstr "Las fuentes personalizadas que subas aparecerán aquí."
+
+#: src/app/main/ui/dashboard/fonts.cljs:436
+msgid "dashboard.fonts.empty-placeholder-viewer"
+msgstr "Aún no hay fuentes personalizadas."
+
+#: src/app/main/ui/dashboard/fonts.cljs:436
+msgid "dashboard.fonts.empty-placeholder-viewer-sub"
+msgstr "Cuando un miembro del equipo suba una fuente personalizada, esta aparecerá aquí."
 
 #: src/app/main/ui/dashboard/fonts.cljs:194
 msgid "dashboard.fonts.fonts-added"
@@ -701,6 +752,26 @@ msgstr "+ Nuevo proyecto"
 #: src/app/main/data/dashboard.cljs:727, src/app/main/data/dashboard.cljs:1184
 msgid "dashboard.new-project-prefix"
 msgstr "Nuevo Proyecto"
+
+#: src/app/main/data/common.cljs:72
+msgid "dashboard.permissions-change.viewer"
+msgstr "Ahora eres lector del equipo."
+
+#: src/app/main/data/common.cljs:75
+msgid "dashboard.permissions-change.editor"
+msgstr "Ahora eres editor del equipo."
+
+#: src/app/main/data/common.cljs:78
+msgid "dashboard.permissions-change.admin"
+msgstr "Ahora eres administrador del equipo."
+
+#: src/app/main/data/common.cljs:81
+msgid "dashboard.permissions-change.owner"
+msgstr "Ahora eres el dueño del equipo."
+
+#: src/app/main/data/common.cljs:229
+msgid "dashboard.removed-from-team"
+msgstr "Ya no eres parte del equipo “%s“."
 
 #: src/app/main/ui/dashboard/search.cljs:60
 msgid "dashboard.no-matches-for"
@@ -881,6 +952,10 @@ msgstr "No hay ningún webhook aún."
 #, unused
 msgid "dashboard.webhooks.update.success"
 msgstr "Webhook modificado con éxito."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.webhooks.cant-edit"
+msgstr "Sólo puedes borrar o modificar webhooks creados por ti."
 
 #: src/app/main/ui/settings.cljs:31
 msgid "dashboard.your-account-title"
@@ -2025,7 +2100,7 @@ msgstr "Solo lectura"
 
 #: src/app/main/ui/dashboard/team.cljs:128, src/app/main/ui/dashboard/team.cljs:301, src/app/main/ui/dashboard/team.cljs:540
 msgid "labels.viewer"
-msgstr "Visualizador"
+msgstr "Lector"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:523, src/app/main/ui/dashboard/team.cljs:95, src/app/main/ui/dashboard/team.cljs:105, src/app/main/ui/dashboard/team.cljs:901
 msgid "labels.webhooks"

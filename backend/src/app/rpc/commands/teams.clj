@@ -12,6 +12,7 @@
    [app.common.features :as cfeat]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.types.team :as tt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -20,6 +21,7 @@
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.media :as media]
+   [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
@@ -605,14 +607,8 @@
       nil)))
 
 ;; --- Mutation: Team Update Role
-
-;; Temporarily disabled viewer role
-;; https://tree.taiga.io/project/penpot/issue/1083
-(def valid-roles
-  #{:owner :admin :editor #_:viewer})
-
 (def schema:role
-  [::sm/one-of valid-roles])
+  [::sm/one-of tt/valid-roles])
 
 (defn role->params
   [role]
@@ -623,7 +619,7 @@
     :viewer {:is-owner false :is-admin false :can-edit false}))
 
 (defn update-team-member-role
-  [conn {:keys [profile-id team-id member-id role] :as params}]
+  [{:keys [::db/conn ::mbus/msgbus]} {:keys [profile-id team-id member-id role] :as params}]
   ;; We retrieve all team members instead of query the
   ;; database for a single member. This is just for
   ;; convenience, if this becomes a bottleneck or problematic,
@@ -631,7 +627,6 @@
   (let [perms   (get-permissions conn profile-id team-id)
         members (get-team-members conn team-id)
         member  (d/seek #(= member-id (:id %)) members)
-
         is-owner? (:is-owner perms)
         is-admin? (:is-admin perms)]
 
@@ -654,6 +649,13 @@
     (when (and (not is-owner?) (= role :owner))
       (ex/raise :type :validation
                 :code :cant-promote-to-owner))
+
+    (mbus/pub! msgbus
+               :topic member-id
+               :message {:type :team-role-change
+                         :subs-id member-id
+                         :team-id team-id
+                         :role role})
 
     (let [params (role->params role)]
       ;; Only allow single owner on team
@@ -678,9 +680,8 @@
 (sv/defmethod ::update-team-member-role
   {::doc/added "1.17"
    ::sm/params schema:update-team-member-role}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
-  (db/with-atomic [conn pool]
-    (update-team-member-role conn (assoc params :profile-id profile-id))))
+  [cfg {:keys [::rpc/profile-id] :as params}]
+  (db/tx-run! cfg update-team-member-role (assoc params :profile-id profile-id)))
 
 ;; --- Mutation: Delete Team Member
 
@@ -692,9 +693,10 @@
 (sv/defmethod ::delete-team-member
   {::doc/added "1.17"
    ::sm/params schema:delete-team-member}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id member-id] :as params}]
+  [{:keys [::db/pool ::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id team-id member-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [perms (get-permissions conn profile-id team-id)]
+    (let [team  (get-team pool :profile-id profile-id :team-id team-id)
+          perms (get-permissions conn profile-id team-id)]
       (when-not (or (:is-owner perms)
                     (:is-admin perms))
         (ex/raise :type :validation
@@ -706,6 +708,14 @@
 
       (db/delete! conn :team-profile-rel {:profile-id member-id
                                           :team-id team-id})
+
+      (mbus/pub! msgbus
+                 :topic member-id
+                 :message {:type :team-membership-change
+                           :change :removed
+                           :subs-id member-id
+                           :team-id team-id
+                           :team-name (:name team)})
 
       nil)))
 
@@ -724,6 +734,7 @@
    ::sm/params schema:update-team-photo}
   [cfg {:keys [::rpc/profile-id file] :as params}]
   ;; Validate incoming mime type
+
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
   (update-team-photo cfg (assoc params :profile-id profile-id)))
 
@@ -789,7 +800,7 @@
     [:map
      [:id ::sm/uuid]
      [:fullname :string]]]
-   [:role [::sm/one-of valid-roles]]
+   [:role [::sm/one-of tt/valid-roles]]
    [:email ::sm/email]])
 
 (def ^:private check-create-invitation-params!
@@ -1115,7 +1126,7 @@
    ::sm/params schema:update-team-invitation-role}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email role] :as params}]
   (db/with-atomic [conn pool]
-    (let [perms    (get-permissions conn profile-id team-id)]
+    (let [perms (get-permissions conn profile-id team-id)]
 
       (when-not (:is-admin perms)
         (ex/raise :type :validation
@@ -1124,6 +1135,7 @@
       (db/update! conn :team-invitation
                   {:role (name role) :updated-at (dt/now)}
                   {:team-id team-id :email-to (profile/clean-email email)})
+
       nil)))
 
 ;; --- Mutation: Delete invitation

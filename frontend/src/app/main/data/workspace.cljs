@@ -2106,24 +2106,7 @@
                          (pcb/mod-page {:background (:color color)}))]
          (rx/of (dch/commit-changes changes)))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Read only
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn set-workspace-read-only
-  [read-only?]
-  (ptk/reify ::set-workspace-read-only
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-global :read-only?] read-only?))
-
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (if read-only?
-        (rx/of :interrupt
-               (remove-layout-flag :colorpalette)
-               (remove-layout-flag :textpalette))
-        (rx/empty)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Measurements

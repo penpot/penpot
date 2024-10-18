@@ -61,14 +61,16 @@
 
 (defn- get-available-roles
   []
-  [{:value "editor" :label (tr "labels.editor")}
+  [{:value "viewer" :label (tr "labels.viewer")}
+   {:value "editor" :label (tr "labels.editor")}
    {:value "admin" :label (tr "labels.admin")}])
 
 (mf/defc team-form-step-2
   {::mf/props :obj}
   [{:keys [name on-back go-to-team?]}]
-  (let [initial (mf/with-memo []
-                  {:role "editor" :name name})
+  (let [initial (mf/use-memo
+                 #(do {:role "editor"
+                       :name name}))
 
         form    (fm/use-form :schema schema:invite-form
                              :initial initial)

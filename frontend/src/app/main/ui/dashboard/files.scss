@@ -35,3 +35,7 @@
   @extend .button-icon;
   stroke: var(--icon-foreground);
 }
+
+.placeholder-placement {
+  margin: $s-16 $s-32;
+}

@@ -240,20 +240,19 @@
    (mf/deps @hover @hover-ids workspace-read-only?)
    (fn [event]
      (dom/prevent-default event)
-     (when-not workspace-read-only?
-       (when (or (dom/class? (dom/get-target event) "viewport-controls")
-                 (dom/child? (dom/get-target event) (dom/query ".grid-layout-editor"))
-                 (dom/class? (dom/get-target event) "viewport-selrect")
-                 workspace-read-only?)
-         (let [position (dom/get-client-position event)]
+     ;;(when-not workspace-read-only?
+     (when (or (dom/class? (dom/get-target event) "viewport-controls")
+               (dom/child? (dom/get-target event) (dom/query ".grid-layout-editor"))
+               (dom/class? (dom/get-target event) "viewport-selrect"))
+       (let [position (dom/get-client-position event)]
            ;; Delayed callback because we need to wait to the previous context menu to be closed
-           (ts/schedule
-            #(st/emit!
-              (if (some? @hover)
-                (dw/show-shape-context-menu {:position position
-                                             :shape @hover
-                                             :hover-ids @hover-ids})
-                (dw/show-context-menu {:position position}))))))))))
+         (ts/schedule
+          #(st/emit!
+            (if (and (not workspace-read-only?) (some? @hover))
+              (dw/show-shape-context-menu {:position position
+                                           :shape @hover
+                                           :hover-ids @hover-ids})
+              (dw/show-context-menu {:position position})))))))))
 
 (defn on-menu-selected
   [hover hover-ids selected workspace-read-only?]

@@ -434,10 +434,52 @@ msgstr "Duplicate %s files"
 
 #: src/app/main/ui/dashboard/placeholder.cljs:33
 #, markdown
-msgid "dashboard.empty-placeholder-drafts"
+msgid "dashboard.empty-placeholder-libraries"
 msgstr ""
-"Files added to Libraries will appear here. Try sharing your files or add "
+"Libraries added to the project will appear here. Try sharing your files or add "
 "from our [Libraries & templates](https://penpot.app/libraries-templates)."
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+msgid "dashboard.empty-placeholder-libraries-title"
+msgstr "No libraries yet."
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+#, markdown
+msgid "dashboard.empty-placeholder-libraries-subtitle"
+msgstr ""
+"Libraries added to the project will appear here. Try sharing your files or add "
+"from our [Libraries & templates](https://penpot.app/libraries-templates)."
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
+msgstr "Libraries added to the project will appear here."
+
+#: src/app/main/ui/dashboard
+msgid "dashboard.empty-placeholder-drafts-title"
+msgstr "No drafts yet."
+
+#: src/app/main/ui/dashboard
+msgid "dashboard.empty-placeholder-drafts-subtitle"
+msgstr "Once a project member creates a draft, it will be displayed here."
+
+#: src/app/main/ui/dashboard
+msgid "dashboard.empty-placeholder-files-title"
+msgstr "No files yet."
+
+#: src/app/main/ui/dashboard
+msgid "dashboard.empty-placeholder-files-subtitle"
+msgstr "Once a project member creates a file, it will be displayed here."
+
+
+
+
+
+
+
+
+
+
+
 
 #: src/app/main/ui/dashboard/file_menu.cljs:249
 msgid "dashboard.export-binary-multi"
@@ -540,6 +582,14 @@ msgstr "Dismiss all"
 #: src/app/main/ui/dashboard/fonts.cljs:436
 msgid "dashboard.fonts.empty-placeholder"
 msgstr "Custom fonts you upload will appear here."
+
+#: src/app/main/ui/dashboard/fonts.cljs:436
+msgid "dashboard.fonts.empty-placeholder-viewer"
+msgstr "No custom fonts yet."
+
+#: src/app/main/ui/dashboard/fonts.cljs:436
+msgid "dashboard.fonts.empty-placeholder-viewer-sub"
+msgstr "Once a project member uploads a custom font, it will be displayed here."
 
 #: src/app/main/ui/dashboard/fonts.cljs:194
 msgid "dashboard.fonts.fonts-added"
@@ -694,6 +744,26 @@ msgstr "+ New project"
 #: src/app/main/data/dashboard.cljs:727, src/app/main/data/dashboard.cljs:1184
 msgid "dashboard.new-project-prefix"
 msgstr "New Project"
+
+#: src/app/main/data/common.cljs:72
+msgid "dashboard.permissions-change.viewer"
+msgstr "You are now a viewer on this team."
+
+#: src/app/main/data/common.cljs:75
+msgid "dashboard.permissions-change.editor"
+msgstr "You are now an editor on this team."
+
+#: src/app/main/data/common.cljs:78
+msgid "dashboard.permissions-change.admin"
+msgstr "You are now an admin on this team."
+
+#: src/app/main/data/common.cljs:195
+msgid "dashboard.permissions-change.owner"
+msgstr "You are now owner on this team."
+
+#: src/app/main/data/common.cljs:229
+msgid "dashboard.removed-from-team"
+msgstr "You are not part of the team “%s“ anymore."
 
 #: src/app/main/ui/dashboard/search.cljs:60
 msgid "dashboard.no-matches-for"
@@ -874,6 +944,10 @@ msgstr "No webhooks created so far."
 #, unused
 msgid "dashboard.webhooks.update.success"
 msgstr "Webhook updated successfully."
+
+#: src/app/main/ui/dashboard/team.cljs
+msgid "dashboard.webhooks.cant-edit"
+msgstr "You only can delete or modify webhooks created by you."
 
 #: src/app/main/ui/settings.cljs:31
 msgid "dashboard.your-account-title"

@@ -23,6 +23,7 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.dashboard.change-owner]
    [app.main.ui.dashboard.team-form]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.icons :as i]
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
@@ -118,13 +119,10 @@
 
 (defn get-available-roles
   [permissions]
-  (->> [{:value "editor" :label (tr "labels.editor")}
+  (->> [{:value "viewer" :label (tr "labels.viewer")}
+        {:value "editor" :label (tr "labels.editor")}
         (when (:is-admin permissions)
-          {:value "admin" :label (tr "labels.admin")})
-        ;; Temporarily disabled viewer roles
-        ;; https://tree.taiga.io/project/penpot/issue/1083
-        ;; {:value "viewer" :label (tr "labels.viewer")}
-        ]
+          {:value "admin" :label (tr "labels.admin")})]
        (filterv identity)))
 
 (def ^:private schema:invite-member-form
@@ -256,7 +254,7 @@
 
 (mf/defc rol-info
   {::mf/wrap-props false}
-  [{:keys [member team on-set-admin on-set-editor on-set-owner profile]}]
+  [{:keys [member team on-set-admin on-set-editor on-set-owner on-set-viewer profile]}]
   (let [member-is-owner?  (:is-owner member)
         member-is-admin?  (and (:is-admin member) (not member-is-owner?))
         member-is-editor? (and (:can-edit member) (and (not member-is-admin?) (not member-is-owner?)))
@@ -294,12 +292,12 @@
        [:li {:on-click on-set-editor
              :class (stl/css :rol-dropdown-item)}
         (tr "labels.editor")]
-       ;; Temporarily disabled viewer role
-       ;; https://tree.taiga.io/project/penpot/issue/1083
-       ;;  [:li {:on-click set-viewer} (tr "labels.viewer")]
+       [:li {:on-click on-set-viewer
+             :class (stl/css :rol-dropdown-item)}
+        (tr "labels.viewer")]
        (when you-owner?
          [:li {:on-click (partial on-set-owner member)
-               :class (:stl/css :rol-dropdown-item)}
+               :class (stl/css :rol-dropdown-item)}
           (tr "labels.owner")])]]]))
 
 (mf/defc member-actions
@@ -315,22 +313,24 @@
         on-show     (mf/use-fn #(reset! show? true))
         on-hide     (mf/use-fn #(reset! show? false))]
 
-    [:*
-     (when (or is-you? (and can-delete? (not (and is-owner? (not owner?)))))
+
+    (when (or is-you? (and can-delete? (not (and is-owner? (not owner?)))))
+      [:*
        [:button {:class (stl/css :menu-btn)
                  :on-click on-show}
-        menu-icon])
+        menu-icon]
 
-     [:& dropdown {:show @show? :on-close on-hide}
-      [:ul {:class (stl/css :actions-dropdown)}
-       (when is-you?
-         [:li {:on-click on-leave
-               :class (stl/css :action-dropdown-item)
-               :key "is-you-option"} (tr "dashboard.leave-team")])
-       (when (and can-delete? (not is-you?) (not (and is-owner? (not owner?))))
-         [:li {:on-click on-delete
-               :class (stl/css :action-dropdown-item)
-               :key "is-not-you-option"} (tr "labels.remove-member")])]]]))
+
+       [:& dropdown {:show @show? :on-close on-hide}
+        [:ul {:class (stl/css :actions-dropdown)}
+         (when is-you?
+           [:li {:on-click on-leave
+                 :class (stl/css :action-dropdown-item)
+                 :key "is-you-option"} (tr "dashboard.leave-team")])
+         (when (and can-delete? (not is-you?) (not (and is-owner? (not owner?))))
+           [:li {:on-click on-delete
+                 :class (stl/css :action-dropdown-item)
+                 :key "is-not-you-option"} (tr "labels.remove-member")])]]])))
 
 (defn- set-role! [member-id role]
   (let [params {:member-id member-id :role role}]
@@ -344,6 +344,7 @@
   (let [member-id  (:id member)
         on-set-admin  (mf/use-fn (mf/deps member-id) (partial set-role! member-id :admin))
         on-set-editor (mf/use-fn (mf/deps member-id) (partial set-role! member-id :editor))
+        on-set-viewer (mf/use-fn (mf/deps member-id) (partial set-role! member-id :viewer))
         owner?     (dm/get-in team [:permissions :is-owner])
 
         on-set-owner
@@ -459,6 +460,7 @@
                      :team team
                      :on-set-admin on-set-admin
                      :on-set-editor on-set-editor
+                     :on-set-viewer on-set-viewer
                      :on-set-owner on-set-owner
                      :profile profile}]]
 
@@ -567,7 +569,11 @@
        [:li {:data-role "editor"
              :class (stl/css :rol-dropdown-item)
              :on-click on-change'}
-        (tr "labels.editor")]]]]))
+        (tr "labels.editor")]
+       [:li {:data-role "viewer"
+             :class (stl/css :rol-dropdown-item)
+             :on-click on-change'}
+        (tr "labels.viewer")]]]]))
 
 (mf/defc invitation-actions
   {::mf/wrap-props false}
@@ -905,22 +911,25 @@
 
 (mf/defc webhook-actions
   {::mf/wrap-props false}
-  [{:keys [on-edit on-delete]}]
+  [{:keys [on-edit on-delete can-edit?]}]
   (let [show?   (mf/use-state false)
         on-show (mf/use-fn #(reset! show? true))
         on-hide (mf/use-fn #(reset! show? false))]
+    (if can-edit?
+      [:*
+       [:button {:class (stl/css :menu-btn)
+                 :on-click on-show}
+        menu-icon]
+       [:& dropdown {:show @show? :on-close on-hide}
+        [:ul {:class (stl/css :webhook-actions-dropdown)}
+         [:li {:on-click on-edit
+               :class (stl/css :webhook-dropdown-item)} (tr "labels.edit")]
+         [:li {:on-click on-delete
+               :class (stl/css :webhook-dropdown-item)} (tr "labels.delete")]]]]
 
-
-    [:*
-     [:button {:class (stl/css :menu-btn)
-               :on-click on-show}
-      menu-icon]
-     [:& dropdown {:show @show? :on-close on-hide}
-      [:ul {:class (stl/css :webhook-actions-dropdown)}
-       [:li {:on-click on-edit
-             :class (stl/css :webhook-dropdown-item)} (tr "labels.edit")]
-       [:li {:on-click on-delete
-             :class (stl/css :webhook-dropdown-item)} (tr "labels.delete")]]]]))
+      [:span {:title (tr "dashboard.webhooks.cant-edit")
+              :class (stl/css :menu-disabled)}
+       [:> icon* {:id "menu"}]])))
 
 (mf/defc last-delivery-icon
   {::mf/wrap-props false}
@@ -933,10 +942,14 @@
 
 (mf/defc webhook-item
   {::mf/wrap [mf/memo]}
-  [{:keys [webhook] :as props}]
+  [{:keys [webhook permissions] :as props}]
   (let [error-code (:error-code webhook)
         id         (:id webhook)
-
+        creator-id (:profile-id webhook)
+        profile    (mf/deref refs/profile)
+        user-id    (:id profile)
+        can-edit?  (or (:can-edit permissions)
+                       (= creator-id user-id))
         on-edit
         (mf/use-fn
          (mf/deps webhook)
@@ -989,14 +1002,15 @@
      [:div {:class (stl/css :table-field :actions)}
       [:& webhook-actions
        {:on-edit on-edit
+        :can-edit? can-edit?
         :on-delete on-delete}]]]))
 
 (mf/defc webhooks-list
   {::mf/wrap-props false}
-  [{:keys [webhooks]}]
+  [{:keys [webhooks permissions]}]
   [:div {:class (stl/css :table-rows :webhook-table)}
    (for [webhook webhooks]
-     [:& webhook-item {:webhook webhook :key (:id webhook)}])])
+     [:& webhook-item {:webhook webhook :key (:id webhook) :permissions permissions}])])
 
 (mf/defc team-webhooks-page
   {::mf/wrap-props false}
@@ -1022,7 +1036,7 @@
          [:div {:class (stl/css :webhooks-empty)}
           [:div (tr "dashboard.webhooks.empty.no-webhooks")]
           [:div (tr "dashboard.webhooks.empty.add-one")]]
-         [:& webhooks-list {:webhooks webhooks}])]]]))
+         [:& webhooks-list {:webhooks webhooks :permissions (:permissions team)}])]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SETTINGS SECTION

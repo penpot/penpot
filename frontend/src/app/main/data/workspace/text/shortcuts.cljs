@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.text.shortcuts
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.text :as txt]
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace.texts :as dwt]
@@ -189,7 +190,10 @@
 
 (defn- update-attrs-when-no-readonly [props]
   (let [undo-id (js/Symbol)
-        read-only?           (deref refs/workspace-read-only?)
+        file                 (deref refs/workspace-file)
+        user-viewer?         (not (dm/get-in file [:permissions :can-edit]))
+        read-only?           (or (deref refs/workspace-read-only?)
+                                 user-viewer?)
         shapes-with-children (deref refs/selected-shapes-with-children)
         text-shapes          (filter #(= (:type %) :text) shapes-with-children)
         props                (if (> (count text-shapes) 1)

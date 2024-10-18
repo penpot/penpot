@@ -23,6 +23,7 @@
    [app.main.data.preview :as dp]
    [app.main.data.viewer.shortcuts]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.common :as dwcm]
    [app.main.data.workspace.path.shortcuts]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shortcuts]
@@ -370,7 +371,7 @@
 
 (defn ^:export set-workspace-read-only
   [read-only?]
-  (st/emit! (dw/set-workspace-read-only read-only?)))
+  (st/emit! (dwcm/set-workspace-read-only read-only?)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; REPAIR & VALIDATION

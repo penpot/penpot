@@ -7,7 +7,9 @@
 (ns app.main.data.common
   "A general purpose events."
   (:require
+   [app.common.data.macros :as dm]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.team :as tt]
    [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -15,6 +17,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
+   [app.util.router :as rt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -170,3 +173,50 @@
         (->> (rp/cmd! :create-team-access-request params)
              (rx/tap on-success)
              (rx/catch on-error))))))
+
+(defn- change-role-msg
+  [role]
+  (case role
+    :viewer (tr "dashboard.permissions-change.viewer")
+    :editor (tr "dashboard.permissions-change.editor")
+    :admin  (tr "dashboard.permissions-change.admin")
+    :owner  (tr "dashboard.permissions-change.owner")))
+
+
+(defn change-team-permissions
+  [{:keys [team-id role workspace?]}]
+  (dm/assert! (uuid? team-id))
+  (dm/assert! (contains? tt/valid-roles role))
+  (ptk/reify ::change-team-permissions
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (ntf/info (change-role-msg role))))
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [route (if workspace?
+                    [:workspace-file :permissions]
+                    [:teams team-id :permissions])]
+        (update-in state route
+                   (fn [permissions]
+                     (merge permissions (get tt/permissions-for-role role))))))))
+
+
+
+(defn team-membership-change
+  [{:keys [team-id team-name change]}]
+  (dm/assert! (uuid? team-id))
+  (ptk/reify ::team-membership-change
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (= :removed change)
+        (let [msg (tr "dashboard.removed-from-team" team-name)]
+
+          (rx/concat
+           (rx/of (rt/nav :dashboard-projects {:team-id (get-in state [:profile :default-team-id])}))
+           (->> (rx/of (ntf/info msg))
+              ;; Delay so the navigation can finish
+                (rx/delay 250))))))))
+
+
+

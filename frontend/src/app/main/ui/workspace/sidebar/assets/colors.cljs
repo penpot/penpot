@@ -184,8 +184,8 @@
 
         on-click
         (mf/use-fn
-         (mf/deps color-id apply-color on-asset-click)
-         (do
+         (mf/deps color-id apply-color on-asset-click read-only?)
+         (when-not read-only?
            (dwl/add-recent-color color)
            (partial on-asset-click color-id apply-color)))]
 

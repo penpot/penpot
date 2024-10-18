@@ -16,6 +16,7 @@
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
+   [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.icons :as i]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
@@ -269,7 +270,7 @@
   {::mf/props :obj
    ::mf/private true
    ::mf/memo true}
-  [{:keys [font-id variants]}]
+  [{:keys [font-id variants you-viewer?]}]
   (let [font        (first variants)
 
         menu-open*  (mf/use-state false)
@@ -360,15 +361,17 @@
 
      [:div {:class (stl/css :table-field :variants)}
       (for [{:keys [id] :as item} variants]
-        [:div {:class (stl/css :variant)
+        [:div {:class (stl/css-case :variant true
+                                    :inhert-variant you-viewer?)
                :key (dm/str id)}
          [:span {:class (stl/css :label)}
           [:& font-variant-display-name {:variant item}]]
-         [:span
-          {:class (stl/css :icon :close)
-           :data-id (dm/str id)
-           :on-click on-delete-variant}
-          i/add]])]
+         (when-not you-viewer?
+           [:span
+            {:class (stl/css :icon :close)
+             :data-id (dm/str id)
+             :on-click on-delete-variant}
+            i/add])])]
 
      (if ^boolean edition?
        [:div {:class (stl/css :table-field :options)}
@@ -382,19 +385,20 @@
                   :on-click on-cancel}
          i/close]]
 
-       [:div {:class (stl/css :table-field :options)}
-        [:span {:class (stl/css :icon)
-                :on-click on-menu-open}
-         i/menu]
+       (when-not you-viewer?
+         [:div {:class (stl/css :table-field :options)}
+          [:span {:class (stl/css :icon)
+                  :on-click on-menu-open}
+           i/menu]
 
-        [:& installed-font-context-menu
-         {:on-close on-menu-close
-          :is-open menu-open?
-          :on-delete on-delete-font
-          :on-edit on-edit}]])]))
+          [:& installed-font-context-menu
+           {:on-close on-menu-close
+            :is-open menu-open?
+            :on-delete on-delete-font
+            :on-edit on-edit}]]))]))
 
 (mf/defc installed-fonts
-  [{:keys [fonts] :as props}]
+  [{:keys [fonts you-viewer?] :as props}]
   (let [sterm (mf/use-state "")
 
         matches?
@@ -407,23 +411,24 @@
              (reset! sterm (str/lower val)))))]
 
     [:div {:class (stl/css :dashboard-installed-fonts)}
-     [:h3 (tr "labels.installed-fonts")]
-     [:div {:class (stl/css :installed-fonts-header)}
-      [:div {:class (stl/css :table-field :family)} (tr "labels.font-family")]
-      [:div {:class (stl/css :table-field :variants)} (tr "labels.font-variants")]
-      [:div {:class (stl/css :table-field :search-input)}
-       [:input {:placeholder (tr "labels.search-font")
-                :default-value ""
-                :on-change on-change}]]]
-
      (cond
        (seq fonts)
-       (for [[font-id variants] (->> (vals fonts)
-                                     (filter matches?)
-                                     (group-by :font-id))]
-         [:& installed-font {:key (dm/str font-id "-installed")
-                             :font-id font-id
-                             :variants variants}])
+       [:*
+        [:h3 (tr "labels.installed-fonts")]
+        [:div {:class (stl/css :installed-fonts-header)}
+         [:div {:class (stl/css :table-field :family)} (tr "labels.font-family")]
+         [:div {:class (stl/css :table-field :variants)} (tr "labels.font-variants")]
+         [:div {:class (stl/css :table-field :search-input)}
+          [:input {:placeholder (tr "labels.search-font")
+                   :default-value ""
+                   :on-change on-change}]]]
+        (for [[font-id variants] (->> (vals fonts)
+                                      (filter matches?)
+                                      (group-by :font-id))]
+          [:& installed-font {:key (dm/str font-id "-installed")
+                              :font-id font-id
+                              :you-viewer? you-viewer?
+                              :variants variants}])]
 
        (nil? fonts)
        [:div {:class (stl/css :fonts-placeholder)}
@@ -431,18 +436,24 @@
         [:div {:class (stl/css :label)} (tr "dashboard.loading-fonts")]]
 
        :else
-       [:div {:class (stl/css :fonts-placeholder)}
-        [:div {:class (stl/css :icon)} i/text]
-        [:div {:class (stl/css :label)} (tr "dashboard.fonts.empty-placeholder")]])]))
+       (if you-viewer?
+         [:> empty-placeholder* {:title (tr "dashboard.fonts.empty-placeholder-viewer")
+                                 :subtitle (tr "dashboard.fonts.empty-placeholder-viewer-sub")
+                                 :type 2}]
+
+         [:div {:class (stl/css :fonts-placeholder)}
+          [:div {:class (stl/css :icon)} i/text]
+          [:div {:class (stl/css :label)} (tr "dashboard.fonts.empty-placeholder")]]))]))
 
 (mf/defc fonts-page
-  [{:keys [team] :as props}]
+  [{:keys [team you-viewer?] :as props}]
   (let [fonts (mf/deref refs/dashboard-fonts)]
     [:*
      [:& header {:team team :section :fonts}]
      [:section {:class (stl/css :dashboard-container :dashboard-fonts)}
-      [:& uploaded-fonts {:team team :installed-fonts fonts}]
-      [:& installed-fonts {:team team :fonts fonts}]]]))
+      (when-not you-viewer?
+        [:& uploaded-fonts {:team team :installed-fonts fonts}])
+      [:& installed-fonts {:team team :fonts fonts :you-viewer? you-viewer?}]]]))
 
 (mf/defc font-providers-page
   [{:keys [team] :as props}]
