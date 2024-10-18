@@ -178,15 +178,14 @@
   (ptk/reify ::commit-changes
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id      (or file-id (:current-file-id state))
-            uchg         (vec undo-changes)
-            rchg         (vec redo-changes)
-            features     (features/get-team-enabled-features state)
-            user-viewer? (not (dm/get-in state [:workspace-file :permissions :can-edit]))]
+      (let [file-id     (or file-id (:current-file-id state))
+            uchg        (vec undo-changes)
+            rchg        (vec redo-changes)
+            features    (features/get-team-enabled-features state)
+            permissions (:permissions state)]
 
         ;; Prevent commit changes by a viewer team member (it really should never happen)
-        (if user-viewer?
-          (rx/empty)
+        (when (:can-edit permissions)
           (rx/of (-> params
                      (assoc :undo-group undo-group)
                      (assoc :features features)

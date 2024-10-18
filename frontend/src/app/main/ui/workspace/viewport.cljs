@@ -95,8 +95,11 @@
 
         vbox'             (mf/use-debounce 100 vbox)
 
+        permissions       (mf/use-ctx ctx/team-permissions)
+        read-only?        (mf/use-ctx ctx/workspace-read-only?)
+
         ;; DEREFS
-        user-viewer?      (mf/use-ctx ctx/user-viewer?)
+
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
 
@@ -169,12 +172,11 @@
         text-editing?     (and edition (= :text (get-in base-objects [edition :type])))
         grid-editing?     (and edition (ctl/grid-layout? base-objects edition))
 
-        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
         mode-inspect?       (= options-mode :inspect)
 
         on-click          (actions/on-click hover selected edition drawing-path? drawing-tool space? selrect z?)
-        on-context-menu   (actions/on-context-menu hover hover-ids workspace-read-only?)
-        on-double-click   (actions/on-double-click hover hover-ids hover-top-frame-id drawing-path? base-objects edition drawing-tool z? workspace-read-only?)
+        on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
+        on-double-click   (actions/on-double-click hover hover-ids hover-top-frame-id drawing-path? base-objects edition drawing-tool z? read-only?)
 
         comp-inst-ref     (mf/use-ref false)
         on-drag-enter     (actions/on-drag-enter comp-inst-ref)
@@ -182,19 +184,19 @@
         on-drag-end       (actions/on-drag-over comp-inst-ref)
         on-drop           (actions/on-drop file comp-inst-ref)
         on-pointer-down   (actions/on-pointer-down @hover selected edition drawing-tool text-editing? node-editing? grid-editing?
-                                                   drawing-path? create-comment? space? panning z? workspace-read-only?)
+                                                   drawing-path? create-comment? space? panning z? read-only?)
 
         on-pointer-up     (actions/on-pointer-up disable-paste)
 
         on-pointer-enter  (actions/on-pointer-enter in-viewport?)
         on-pointer-leave  (actions/on-pointer-leave in-viewport?)
         on-pointer-move   (actions/on-pointer-move move-stream)
-        on-move-selected  (actions/on-move-selected hover hover-ids selected space? z? workspace-read-only?)
-        on-menu-selected  (actions/on-menu-selected hover hover-ids selected workspace-read-only?)
+        on-move-selected  (actions/on-move-selected hover hover-ids selected space? z? read-only?)
+        on-menu-selected  (actions/on-menu-selected hover hover-ids selected read-only?)
 
         on-frame-enter    (actions/on-frame-enter frame-hover)
         on-frame-leave    (actions/on-frame-leave frame-hover)
-        on-frame-select   (actions/on-frame-select selected workspace-read-only?)
+        on-frame-select   (actions/on-frame-select selected read-only?)
 
         disable-events?          (contains? layout :comments)
         show-comments?           (= drawing-tool :comments)
@@ -267,9 +269,9 @@
 
         rule-area-size (/ rulers/ruler-area-size zoom)]
 
-    (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only? drawing-tool drawing-path?)
+    (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)
-    (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing? z? workspace-read-only?)
+    (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing? z? read-only?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover measure-hover
                               hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures?)
@@ -278,7 +280,7 @@
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
 
     [:div {:class (stl/css :viewport) :style #js {"--zoom" zoom} :data-testid "viewport"}
-     (when-not user-viewer?
+     (when (:can-edit permissions)
        [:& top-bar/top-bar {:layout layout}])
      [:div {:class (stl/css :viewport-overlays)}
       ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap
@@ -288,7 +290,7 @@
         [:div {:style {:pointer-events (when-not (dbg/enabled? :html-text) "none")
                        ;; some opacity because to debug auto-width events will fill the screen
                        :opacity 0.6}}
-         (when-not workspace-read-only?
+         (when (and (:can-edit permissions) (not read-only?))
            [:& stvh/viewport-texts
             {:key (dm/str "texts-" page-id)
              :page-id page-id

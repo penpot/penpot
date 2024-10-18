@@ -12,7 +12,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.logging :as log]
    [app.common.schema :as sm]
-   [app.common.types.team :as tt]
+   [app.common.types.team :as ctt]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -482,7 +482,7 @@
 (defn update-team-member-role
   [{:keys [role member-id] :as params}]
   (dm/assert! (uuid? member-id))
-  (dm/assert! (contains? tt/valid-roles role))
+  (dm/assert! (contains? ctt/valid-roles role))
 
   (ptk/reify ::update-team-member-role
     ptk/WatchEvent
@@ -605,7 +605,7 @@
    (sm/check-email! email))
 
   (dm/assert! (uuid? team-id))
-  (dm/assert! (contains? tt/valid-roles role))
+  (dm/assert! (contains? ctt/valid-roles role))
 
   (ptk/reify ::update-team-invitation-role
     IDeref
@@ -1211,19 +1211,18 @@
 ;; Notifications
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-(defn- handle-change-team-permissions-dashboard
-  [msg]
-  (ptk/reify ::handle-change-team-permissions-dashboard
+(defn- handle-change-team-role
+  [params]
+  (ptk/reify ::handle-change-team-role
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dc/change-team-permissions (assoc msg :workspace? false))
+      (rx/of (dc/change-team-role params)
              (modal/hide)))))
 
 (defn- process-message
   [{:keys [type] :as msg}]
   (case type
     :notification           (dc/handle-notification msg)
-    :team-role-change       (handle-change-team-permissions-dashboard msg)
+    :team-role-change       (handle-change-team-role msg)
     :team-membership-change (dc/team-membership-change msg)
     nil))

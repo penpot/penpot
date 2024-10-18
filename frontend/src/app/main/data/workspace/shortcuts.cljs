@@ -37,18 +37,16 @@
 ;; Shortcuts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn toggle-layout-flag
+(defn- toggle-layout-flag
   [flag]
   (-> (dw/toggle-layout-flag flag)
       (vary-meta assoc ::ev/origin "workspace-shortcuts")))
 
-(defn emit-when-no-readonly
+(defn- emit-when-no-readonly
   [& events]
-  (let [file         (deref refs/workspace-file)
-        user-viewer? (not (dm/get-in file [:permissions :can-edit]))
-        read-only?   (or (deref refs/workspace-read-only?)
-                         user-viewer?)]
-    (when-not read-only?
+  (let [can-edit?  (:can-edit (deref refs/permissions))
+        read-only? (deref refs/workspace-read-only?)]
+    (when (and can-edit? (not read-only?))
       (run! st/emit! events))))
 
 (def esc-pressed

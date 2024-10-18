@@ -68,7 +68,7 @@
   (ptk/reify ::set-workspace-read-only
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-global :read-only?] read-only?))
+      (update state :workspace-global assoc :read-only? read-only?))
 
     ptk/WatchEvent
     (watch [_ _ _]
