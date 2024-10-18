@@ -24,23 +24,23 @@
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
-(defn get-project-name
+(defn- get-project-name
   [project]
   (if (:is-default project)
     (tr "labels.drafts")
     (:name project)))
 
-(defn get-project-id
+(defn- get-project-id
   [project]
   (str (:id project)))
 
-(defn get-team-name
+(defn- get-team-name
   [team]
   (if (:is-default team)
     (tr "dashboard.your-penpot")
     (:name team)))
 
-(defn group-by-team
+(defn- group-by-team
   "Group projects by team."
   [projects]
   (reduce (fn [teams project]
@@ -55,14 +55,14 @@
           {}
           projects))
 
-(mf/defc file-menu
-  {::mf/wrap-props false}
-  [{:keys [files show? on-edit on-menu-close top left navigate? origin parent-id can-edit]}]
+(mf/defc file-menu*
+  {::mf/props :obj}
+  [{:keys [files show on-edit on-menu-close top left navigate origin parent-id can-edit]}]
   (assert (seq files) "missing `files` prop")
-  (assert (boolean? show?) "missing `show?` prop")
+  (assert (boolean? show) "missing `show` prop")
   (assert (fn? on-edit) "missing `on-edit` prop")
   (assert (fn? on-menu-close) "missing `on-menu-close` prop")
-  (assert (boolean? navigate?) "missing `navigate?` prop")
+  (assert (boolean? navigate) "missing `navigate` prop")
 
   (let [is-lib-page?     (= :libraries origin)
         is-search-page?  (= :search origin)
@@ -133,7 +133,7 @@
           (if multi?
             (st/emit! (ntf/success (tr "dashboard.success-move-files")))
             (st/emit! (ntf/success (tr "dashboard.success-move-file"))))
-          (if (or navigate? (not= team-id current-team-id))
+          (if (or navigate (not= team-id current-team-id))
             (st/emit! (dd/go-to-files team-id project-id))
             (st/emit! (dd/fetch-recent-files team-id)
                       (dd/clear-selected-files))))
@@ -213,9 +213,9 @@
         mounted-ref (mf/use-ref true)]
 
     (mf/use-effect
-     (mf/deps show?)
+     (mf/deps show)
      (fn []
-       (when show?
+       (when show
          (->> (rp/cmd! :get-all-projects)
               (rx/map group-by-team)
               (rx/subs! #(when (mf/ref-val mounted-ref)
@@ -335,7 +335,7 @@
 
         [:> context-menu*
          {:on-close on-menu-close
-          :show show?
+          :show show
           :fixed (or (not= top 0) (not= left 0))
           :min-width true
           :top top
