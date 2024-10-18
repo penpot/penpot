@@ -19,8 +19,9 @@
    [app.util.router :as rt]
    [rumext.v2 :as mf]))
 
-(mf/defc project-menu
-  [{:keys [project show? on-edit on-menu-close top left on-import] :as props}]
+(mf/defc project-menu*
+  {::mf/props :obj}
+  [{:keys [project show on-edit on-menu-close top left on-import]}]
   (let [top  (or top 0)
         left (or left 0)
 
@@ -117,7 +118,7 @@
     [:*
      [:> context-menu*
       {:on-close on-menu-close
-       :show show?
+       :show show
        :fixed (or (not= top 0) (not= left 0))
        :min-width true
        :top top
