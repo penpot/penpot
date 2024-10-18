@@ -255,7 +255,7 @@
           (l/trace :fn "read-stream*!" :expected s :readed readed :position @*position* ::l/sync? true)
           (swap! *position* + readed)
           [s p]))
-      [s (io/read-as-bytes input :size s)])))
+      [s (io/read! input :size s)])))
 
 (defmacro assert-read-label!
   [input expected-label]
