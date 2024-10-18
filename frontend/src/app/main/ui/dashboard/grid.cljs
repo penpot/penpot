@@ -73,7 +73,7 @@
 
 (mf/defc grid-item-thumbnail
   {::mf/wrap-props false}
-  [{:keys [file-id revn thumbnail-id background-color you-viewer?]}]
+  [{:keys [file-id revn thumbnail-id background-color can-edit]}]
   (let [container (mf/use-ref)
         visible?  (h/use-visible container :once? true)]
 
@@ -94,12 +94,12 @@
      (when visible?
        (if thumbnail-id
          [:img {:class (stl/css :grid-item-thumbnail-image)
-                :draggable (dm/str (not you-viewer?))
+                :draggable (dm/str can-edit)
                 :src (cf/resolve-media thumbnail-id)
                 :loading "lazy"
                 :decoding "async"}]
          [:> loader* {:class (stl/css :grid-loader)
-                      :draggable (dm/str (not you-viewer?))
+                      :draggable (dm/str can-edit)
                       :overlay true
                       :title (tr "labels.loading")}]))]))
 
@@ -233,7 +233,7 @@
 
 (mf/defc grid-item
   {:wrap [mf/memo]}
-  [{:keys [file origin library-view? you-viewer?] :as props}]
+  [{:keys [file origin library-view? can-edit] :as props}]
   (let [file-id         (:id file)
 
         ;; FIXME: this breaks react hooks rule, hooks should never to
@@ -276,10 +276,10 @@
 
         on-drag-start
         (mf/use-fn
-         (mf/deps selected-files you-viewer?)
+         (mf/deps selected-files can-edit)
          (fn [event]
            (st/emit! (dd/hide-file-menu))
-           (when-not you-viewer?
+           (when can-edit
              (let [offset          (dom/get-offset-position (.-nativeEvent event))
 
                    select-current? (not (contains? selected-files (:id file)))
@@ -359,7 +359,7 @@
       {:class (stl/css-case :selected selected? :library library-view?)
        :ref node-ref
        :title (:name file)
-       :draggable (dm/str (not you-viewer?))
+       :draggable (dm/str can-edit)
        :on-click on-select
        :on-key-down handle-key-down
        :on-double-click on-navigate
@@ -372,7 +372,7 @@
         [:& grid-item-library {:file file}]
         [:& grid-item-thumbnail
          {:file-id (:id file)
-          :you-viewer? you-viewer?
+          :can-edit can-edit
           :revn (:revn file)
           :thumbnail-id (:thumbnail-id file)
           :background-color (dm/get-in file [:data :options :background])}])
@@ -408,7 +408,7 @@
                            :show? (:menu-open dashboard-local)
                            :left (+ 24 (:x (:menu-pos dashboard-local)))
                            :top (:y (:menu-pos dashboard-local))
-                           :you-viewer? you-viewer?
+                           :can-edit can-edit
                            :navigate? true
                            :on-edit on-edit
                            :on-menu-close on-menu-close
@@ -416,7 +416,7 @@
                            :parent-id (str file-id "-action-menu")}]])]]]]]))
 
 (mf/defc grid
-  [{:keys [files project origin limit library-view? create-fn you-viewer?] :as props}]
+  [{:keys [files project origin limit library-view? create-fn can-edit] :as props}]
   (let [dragging?  (mf/use-state false)
         project-id (:id project)
         node-ref   (mf/use-var nil)
@@ -433,7 +433,7 @@
         on-drag-enter
         (mf/use-fn
          (fn [e]
-           (when-not you-viewer?
+           (when can-edit
              (when (and (not (dnd/has-type? e "penpot/files"))
                         (or (dnd/has-type? e "Files")
                             (dnd/has-type? e "application/x-moz-file")))
@@ -464,7 +464,7 @@
              (import-files (.-files (.-dataTransfer e))))))]
 
     [:div {:class (stl/css :dashboard-grid)
-           :dragabble (dm/str (not you-viewer?))
+           :dragabble (dm/str can-edit)
            :on-drag-enter on-drag-enter
            :on-drag-over on-drag-over
            :on-drag-leave on-drag-leave
@@ -486,18 +486,18 @@
               :key (:id item)
               :navigate? true
               :origin origin
-              :you-viewer? you-viewer?
+              :can-edit can-edit
               :library-view? library-view?}])])
 
        :else
        [:& empty-placeholder
         {:limit limit
-         :you-viewer? you-viewer?
+         :can-edit can-edit
          :create-fn create-fn
          :origin origin}])]))
 
 (mf/defc line-grid-row
-  [{:keys [files selected-files dragging? limit you-viewer?] :as props}]
+  [{:keys [files selected-files dragging? limit can-edit] :as props}]
   (let [elements limit
         limit (if dragging? (dec limit) limit)]
     [:ul {:class (stl/css :grid-row :no-wrap)
@@ -511,12 +511,12 @@
         {:id (:id item)
          :file item
          :selected-files selected-files
-         :you-viewer? you-viewer?
+         :can-edit can-edit
          :key (:id item)
          :navigate? false}])]))
 
 (mf/defc line-grid
-  [{:keys [project team files limit create-fn you-viewer?] :as props}]
+  [{:keys [project team files limit create-fn can-edit] :as props}]
   (let [dragging?        (mf/use-state false)
         project-id       (:id project)
         team-id          (:id team)
@@ -535,9 +535,9 @@
 
         on-drag-enter
         (mf/use-fn
-         (mf/deps selected-project you-viewer?)
+         (mf/deps selected-project can-edit)
          (fn [e]
-           (when-not you-viewer?
+           (when can-edit
              (cond
                (dnd/has-type? e "penpot/files")
                (do
@@ -595,7 +595,7 @@
                (import-files (.-files (.-dataTransfer e)))))))]
 
     [:div {:class (stl/css :dashboard-grid)
-           :dragabble (dm/str (not you-viewer?))
+           :dragabble (dm/str can-edit)
            :on-drag-enter on-drag-enter
            :on-drag-over on-drag-over
            :on-drag-leave on-drag-leave
@@ -609,12 +609,12 @@
                           :team-id team-id
                           :selected-files selected-files
                           :dragging? @dragging?
-                          :you-viewer? you-viewer?
+                          :can-edit can-edit
                           :limit limit}]
 
        :else
        [:& empty-placeholder
         {:dragging? @dragging?
          :limit limit
-         :you-viewer? you-viewer?
+         :can-edit can-edit
          :create-fn create-fn}])]))

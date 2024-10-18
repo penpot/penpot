@@ -27,6 +27,12 @@
 (def profile
   (l/derived :profile st/state))
 
+(def team
+  (l/derived :team st/state))
+
+(def permissions
+  (l/derived :permissions st/state))
+
 (def teams
   (l/derived :teams st/state))
 

@@ -14,7 +14,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc empty-placeholder
-  [{:keys [dragging? limit origin create-fn you-viewer?]}]
+  [{:keys [dragging? limit origin create-fn can-edit]}]
   (let [on-click
         (mf/use-fn
          (mf/deps create-fn)
@@ -28,11 +28,14 @@
        [:li {:class (stl/css :grid-item :grid-empty-placeholder :dragged)}]]
 
       (= :libraries origin)
-      [:> empty-placeholder* {:title (tr "dashboard.empty-placeholder-libraries-title")
-                              :type 2
-                              :subtitle (when you-viewer? (tr "dashboard.empty-placeholder-libraries-subtitle-viewer-role"))
-                              :class (stl/css :empty-placeholder-libraries)}
-       (when-not you-viewer?
+      [:> empty-placeholder*
+       {:title (tr "dashboard.empty-placeholder-libraries-title")
+        :type 2
+        :subtitle (when-not can-edit
+                    (tr "dashboard.empty-placeholder-libraries-subtitle-viewer-role"))
+        :class (stl/css :empty-placeholder-libraries)}
+
+       (when can-edit
          [:> i18n/tr-html* {:content (tr "dashboard.empty-placeholder-libraries")
                             :class (stl/css :placeholder-markdown)
                             :tag-name "span"}])]

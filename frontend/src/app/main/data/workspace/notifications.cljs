@@ -97,26 +97,22 @@
 
         (rx/concat stream (rx/of (dws/send endmsg)))))))
 
-
-(defn- handle-change-team-permissions
+(defn- handle-change-team-role
   [{:keys [role] :as msg}]
-  (ptk/reify ::handle-change-team-permissions
+  (ptk/reify ::handle-change-team-role
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [viewer? (= :viewer role)]
-
-        (rx/concat
-         (rx/of :interrupt
-                (dwe/clear-edition-mode)
-                (dwc/set-workspace-read-only false))
-         (->> (rx/of (dc/change-team-permissions msg))
-              ;; Delay so anything that launched :interrupt can finish
-              (rx/delay 100))
-         (if viewer?
-           (rx/of (modal/hide)
-                  (dwly/set-options-mode :inspect))
-           (rx/of (dwly/set-options-mode :design))))))))
-
+      (rx/concat
+       (rx/of :interrupt
+              (dwe/clear-edition-mode)
+              (dwc/set-workspace-read-only false))
+       (->> (rx/of (dc/change-team-role msg))
+            ;; Delay so anything that launched :interrupt can finish
+            (rx/delay 100))
+       (if (= :viewer role)
+         (rx/of (modal/hide)
+                (dwly/set-options-mode :inspect))
+         (rx/of (dwly/set-options-mode :design)))))))
 
 (defn- process-message
   [{:keys [type] :as msg}]
@@ -129,7 +125,7 @@
     :file-change            (handle-file-change msg)
     :library-change         (handle-library-change msg)
     :notification           (dc/handle-notification msg)
-    :team-role-change       (handle-change-team-permissions (assoc msg :workspace? true))
+    :team-role-change       (handle-change-team-role msg)
     :team-membership-change (dc/team-membership-change msg)
     nil))
 
