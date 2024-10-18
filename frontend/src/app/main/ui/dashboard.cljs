@@ -33,7 +33,6 @@
    [app.main.ui.workspace.plugins]
    [app.plugins.register :as preg]
    [app.util.dom :as dom]
-   [app.util.http :as http]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.router :as rt]
@@ -66,6 +65,7 @@
         content-width      (mf/use-state 0)
         project-id         (:id project)
         team-id            (:id team)
+        you-viewer?        (not (dm/get-in team [:permissions :can-edit]))
 
         dashboard-local     (mf/deref refs/dashboard-local)
         file-menu-open?     (:menu-open dashboard-local)
@@ -85,7 +85,10 @@
 
         clear-selected-fn
         (mf/use-fn
-         #(st/emit! (dd/clear-selected-files)))]
+         #(st/emit! (dd/clear-selected-files)))
+
+        show-templates (and (contains? cf/flags :dashboard-templates-section)
+                            (not you-viewer?))]
 
     (mf/with-effect []
       (let [key1 (events/listen js/window "resize" on-resize)]
@@ -106,7 +109,7 @@
           :profile profile
           :default-project-id default-project-id}]
 
-        (when (contains? cf/flags :dashboard-templates-section)
+        (when show-templates
           [:& templates-section {:profile profile
                                  :project-id project-id
                                  :team-id team-id
@@ -114,7 +117,7 @@
                                  :content-width @content-width}])]
 
        :dashboard-fonts
-       [:& fonts-page {:team team}]
+       [:& fonts-page {:team team :you-viewer? you-viewer?}]
 
        :dashboard-font-providers
        [:& font-providers-page {:team team}]
@@ -122,8 +125,8 @@
        :dashboard-files
        (when project
          [:*
-          [:& files-section {:team team :project project}]
-          (when (contains? cf/flags :dashboard-templates-section)
+          [:& files-section {:team team :project project :you-viewer? you-viewer?}]
+          (when show-templates
             [:& templates-section {:profile profile
                                    :team-id team-id
                                    :project-id project-id
@@ -135,7 +138,7 @@
                         :search-term search-term}]
 
        :dashboard-libraries
-       [:& libraries-page {:team team}]
+       [:& libraries-page {:team team :you-viewer? you-viewer?}]
 
        :dashboard-team-members
        [:& team-members-page {:team team :profile profile :invite-email invite-email}]
@@ -202,19 +205,14 @@
     (mf/with-layout-effect
       [plugin-url team-id project-id]
       (when plugin-url
-        (->> (http/send! {:method :get
-                          :uri plugin-url
-                          :omit-default-headers true
-                          :response-type :json})
-             (rx/map :body)
+        (->> (dp/fetch-manifest plugin-url)
              (rx/subs!
-              (fn [body]
-                (if-let [plugin (preg/parse-manifest plugin-url body)]
+              (fn [plugin]
+                (if plugin
                   (do
                     (st/emit! (ptk/event ::ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
                     (open-permissions-dialog plugin))
                   (st/emit! (notif/error "Cannot parser the plugin manifest"))))
-
               (fn [_]
                 (st/emit! (notif/error "The plugin URL is incorrect")))))))))
 

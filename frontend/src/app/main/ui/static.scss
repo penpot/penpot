@@ -66,6 +66,7 @@
     justify-content: flex-end;
     height: 100%;
     width: 25%;
+    padding-bottom: $s-28;
 
     &:first-child {
       text-align: right;
@@ -82,12 +83,25 @@
   cursor: pointer;
   display: flex;
   align-items: center;
+}
 
-  svg {
-    fill: var(--color-foreground-primary);
-    width: $s-48;
-    height: auto;
-  }
+.penpot-logo {
+  fill: var(--color-foreground-primary);
+  width: $s-48;
+  height: $s-48;
+}
+
+.back-arrow {
+  transform: rotate(180deg);
+}
+
+.go-back-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: $s-8;
+  margin-left: $s-12;
+  font-size: $fs-14;
 }
 
 .login-header {

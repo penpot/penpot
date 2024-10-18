@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
+   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]))
 
 (defn shape-stroke-margin
@@ -60,6 +61,7 @@
         filter-y (mth/min y (+ y offset-y (- spread) (- blur) -5))
         filter-w (+ w (mth/abs offset-x) (* spread 2) (* blur 2) 10)
         filter-h (+ h (mth/abs offset-y) (* spread 2) (* blur 2) 10)]
+
     (grc/make-rect filter-x filter-y filter-w filter-h)))
 
 (defn get-rect-filter-bounds
@@ -96,12 +98,15 @@
   ([shape ignore-margin?]
    (let [strokes (:strokes shape)
 
+         open-path?    (and ^boolean (cfh/path-shape? shape)
+                            ^boolean (gsh/open-path? shape))
+
          stroke-width
          (->> strokes
               (map #(case (get % :stroke-alignment :center)
                       :center (/ (:stroke-width % 0) 2)
                       :outer  (:stroke-width % 0)
-                      0))
+                      (if open-path? (:stroke-width % 0) 0)))
               (reduce d/max 0))
 
          stroke-margin

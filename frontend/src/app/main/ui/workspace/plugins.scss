@@ -76,6 +76,11 @@
   color: var(--color-foreground-secondary);
 }
 
+.modal-paragraph {
+  font-size: $fs-14;
+  color: var(--color-foreground-primary);
+}
+
 .primary-button {
   @extend .button-primary;
   @include headlineSmallTypography;
@@ -256,7 +261,7 @@ div.input-error {
   @include bodySmallTypography;
   padding: $s-16;
   background: var(--color-background-quaternary);
-  color: var(--color-foreground-quaternary);
+  color: var(--color-foreground-primary);
   border-radius: $br-4;
 }
 

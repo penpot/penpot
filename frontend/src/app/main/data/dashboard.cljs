@@ -12,13 +12,15 @@
    [app.common.files.helpers :as cfh]
    [app.common.logging :as log]
    [app.common.schema :as sm]
+   [app.common.types.team :as tt]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.main.data.common :refer [handle-notification]]
+   [app.main.data.common :as dc]
    [app.main.data.events :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.media :as di]
+   [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.data.websocket :as dws]
    [app.main.features :as features]
@@ -42,6 +44,7 @@
 
 (declare fetch-projects)
 (declare fetch-team-members)
+(declare process-message)
 
 (defn initialize
   [{:keys [id]}]
@@ -77,11 +80,10 @@
               (->> stream
                    (rx/filter (ptk/type? ::dws/message))
                    (rx/map deref)
-                   (rx/filter (fn [{:keys [subs-id type] :as msg}]
-                                (and (or (= subs-id uuid/zero)
-                                         (= subs-id profile-id))
-                                     (= :notification type))))
-                   (rx/map handle-notification))
+                   (rx/filter (fn [{:keys [subs-id] :as msg}]
+                                (or (= subs-id uuid/zero)
+                                    (= subs-id profile-id))))
+                   (rx/map process-message))
 
               ;; Once the teams are fecthed, initialize features related
               ;; to currently active team
@@ -480,7 +482,8 @@
 (defn update-team-member-role
   [{:keys [role member-id] :as params}]
   (dm/assert! (uuid? member-id))
-  (dm/assert! (keyword? role)) ;  FIXME: validate proper role?
+  (dm/assert! (contains? tt/valid-roles role))
+
   (ptk/reify ::update-team-member-role
     ptk/WatchEvent
     (watch [_ state _]
@@ -602,7 +605,7 @@
    (sm/check-email! email))
 
   (dm/assert! (uuid? team-id))
-  (dm/assert! (keyword? role)) ;; FIXME validate role
+  (dm/assert! (contains? tt/valid-roles role))
 
   (ptk/reify ::update-team-invitation-role
     IDeref
@@ -1203,3 +1206,24 @@
           (let [file (get-in state [:dashboard-files (first files)])]
             (rx/of (go-to-workspace file)))
           (rx/empty))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Notifications
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defn- handle-change-team-permissions-dashboard
+  [msg]
+  (ptk/reify ::handle-change-team-permissions-dashboard
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (dc/change-team-permissions (assoc msg :workspace? false))
+             (modal/hide)))))
+
+(defn- process-message
+  [{:keys [type] :as msg}]
+  (case type
+    :notification           (dc/handle-notification msg)
+    :team-role-change       (handle-change-team-permissions-dashboard msg)
+    :team-membership-change (dc/team-membership-change msg)
+    nil))

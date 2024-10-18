@@ -1,5 +1,5 @@
 FROM debian:bookworm
-LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
+LABEL maintainer="Penpot <docker@penpot.app>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 

@@ -62,8 +62,6 @@
         on-change
         (mf/use-fn
          (fn [new-color old-color from-picker?]
-           (prn "new-color" new-color)
-           (prn "old-color" old-color)
            (let [old-color   (-> old-color
                                  (dissoc :name :path)
                                  (d/without-nils))

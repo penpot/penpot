@@ -328,8 +328,10 @@
                   :page-name page-name
                   :position position
                   :content content
-                  :frame-id frame-id}]
-      (db/tx-run! cfg create-comment-thread params))))
+                  :frame-id frame-id}
+          thread (db/tx-run! cfg create-comment-thread params)]
+
+      (vary-meta thread assoc ::audit/props thread))))
 
 (defn- create-comment-thread
   [{:keys [::db/conn] :as cfg}

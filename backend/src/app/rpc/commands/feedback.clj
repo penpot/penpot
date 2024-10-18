@@ -21,8 +21,8 @@
 
 (def ^:private schema:send-user-feedback
   [:map {:title "send-user-feedback"}
-   [:subject [:string {:max 250}]]
-   [:content [:string {:max 250}]]])
+   [:subject [:string {:max 400}]]
+   [:content [:string {:max 2500}]]])
 
 (sv/defmethod ::send-user-feedback
   {::doc/added "1.18"

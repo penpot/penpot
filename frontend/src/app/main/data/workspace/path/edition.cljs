@@ -160,7 +160,7 @@
 
             selected-points (dm/get-in state [:workspace-local :edit-path id :selected-points] #{})
 
-            start-position (apply min #(gpt/distance start-position %) selected-points)
+            start-position (apply min-key #(gpt/distance start-position %) selected-points)
 
             content (st/get-path state :content)
             points (upg/content->points content)]

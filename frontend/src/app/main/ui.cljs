@@ -105,7 +105,7 @@
         :dashboard-team-webhooks
         :dashboard-team-settings)
        [:?
-        #_[:& app.main.ui.releases/release-notes-modal {:version "1.19"}]
+        #_[:& app.main.ui.releases/release-notes-modal {:version "2.3"}]
         #_[:& app.main.ui.onboarding/onboarding-templates-modal]
         #_[:& app.main.ui.onboarding/onboarding-modal]
         #_[:& app.main.ui.onboarding.team-choice/onboarding-team-modal]

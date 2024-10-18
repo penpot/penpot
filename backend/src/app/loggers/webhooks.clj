@@ -135,7 +135,7 @@
 
         (l/dbg :hint "run webhook"
                :event-name (:name event)
-               :webhook-id (:id whook)
+               :webhook-id (str (:id whook))
                :webhook-uri (:uri whook)
                :webhook-mtype (:mtype whook))
 

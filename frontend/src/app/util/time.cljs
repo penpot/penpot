@@ -6,7 +6,7 @@
 
 (ns app.util.time
   (:require
-   ["./time_impl.js" :as impl]
+   ["./time_impl" :as impl]
    [app.common.data.macros :as dm]
    [app.common.time :as common-time]
    [app.util.object :as obj]

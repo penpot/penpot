@@ -1,5 +1,5 @@
-import fmt1 from "date-fns/format";
-import fmt2 from "date-fns/formatDistanceToNowStrict";
+import {format as dfnFormat} from "date-fns/format";
+import {formatDistanceToNowStrict as dfnFormatDistance} from "date-fns/formatDistanceToNowStrict";
 
 import {arSA} from "date-fns/locale/ar-SA";
 import {ca} from "date-fns/locale/ca";
@@ -67,5 +67,5 @@ export const locales = {
   "ja_jp": ja,
 };
 
-export const format = fmt1.format;
-export const format_distance_to_now = fmt2.formatDistanceToNowStrict;
+export const format = dfnFormat;
+export const format_distance_to_now = dfnFormatDistance;

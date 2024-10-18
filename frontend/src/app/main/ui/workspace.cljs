@@ -164,13 +164,17 @@
 
   (let [layout           (mf/deref refs/workspace-layout)
         wglobal          (mf/deref refs/workspace-global)
-        read-only?       (mf/deref refs/workspace-read-only?)
+
 
         file             (mf/deref refs/workspace-file)
         project          (mf/deref refs/workspace-project)
 
         team-id          (:team-id project)
         file-name        (:name file)
+
+        user-viewer?     (not (dm/get-in file [:permissions :can-edit]))
+        read-only?       (or (mf/deref refs/workspace-read-only?)
+                             user-viewer?)
 
         file-ready*      (mf/with-memo [file-id]
                            (make-file-ready-ref file-id))
@@ -210,13 +214,14 @@
        [:& (mf/provider ctx/current-page-id) {:value page-id}
         [:& (mf/provider ctx/components-v2) {:value components-v2?}
          [:& (mf/provider ctx/workspace-read-only?) {:value read-only?}
-          [:section {:class (stl/css :workspace)
-                     :style {:background-color background-color
-                             :touch-action "none"}}
-           [:& context-menu]
-           (if ^boolean file-ready?
-             [:& workspace-page {:page-id page-id
-                                 :file file
-                                 :wglobal wglobal
-                                 :layout layout}]
-             [:& workspace-loader])]]]]]]]))
+          [:& (mf/provider ctx/user-viewer?) {:value user-viewer?}
+           [:section {:class (stl/css :workspace)
+                      :style {:background-color background-color
+                              :touch-action "none"}}
+            [:& context-menu]
+            (if ^boolean file-ready?
+              [:& workspace-page {:page-id page-id
+                                  :file file
+                                  :wglobal wglobal
+                                  :layout layout}]
+              [:& workspace-loader])]]]]]]]]))

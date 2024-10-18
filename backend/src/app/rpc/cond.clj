@@ -48,20 +48,25 @@
   (str "W/\"" (encode s) "\""))
 
 (defn wrap
-  [_ f {:keys [::get-object ::key-fn ::reuse-key?] :as mdata}]
+  [_ f {:keys [::get-object ::key-fn ::reuse-key?] :or {reuse-key? true} :as mdata}]
   (if (and (ifn? get-object) (ifn? key-fn))
     (do
       (l/trc :hint "instrumenting method" :service (::sv/name mdata))
       (fn [cfg {:keys [::key] :as params}]
         (if *enabled*
-          (let [key' (when (or key reuse-key?)
-                       (some->> (get-object cfg params) (key-fn params) (fmt-key)))]
+          (let [object (when (some? key)
+                         (get-object cfg params))
+                key'   (when (some? object)
+                         (->> object (key-fn params) (fmt-key)))]
             (if (and (some? key) (= key key'))
               (fn [_] {::rres/status 304})
-              (let [result (f cfg params)
+              (let [params (if (some? object)
+                             (assoc params ::object object)
+                             params)
+                    result (f cfg params)
                     etag   (or (and reuse-key? key')
-                               (some-> result meta ::key fmt-key)
-                               (some-> result key-fn fmt-key))]
+                               (some->> result meta ::key fmt-key)
+                               (some->> result (key-fn params) fmt-key))]
                 (rph/with-header result "etag" etag))))
           (f cfg params))))
     f))

@@ -7,6 +7,8 @@
 (ns app.main.data.workspace.common
   (:require
    [app.common.logging :as log]
+   [app.main.data.workspace.layout :as dwl]
+   [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module
@@ -56,3 +58,22 @@
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:workspace-local :hide-toolbar] not))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Read only
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn set-workspace-read-only
+  [read-only?]
+  (ptk/reify ::set-workspace-read-only
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-global :read-only?] read-only?))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (if read-only?
+        (rx/of :interrupt
+               (dwl/remove-layout-flag :colorpalette)
+               (dwl/remove-layout-flag :textpalette))
+        (rx/empty)))))

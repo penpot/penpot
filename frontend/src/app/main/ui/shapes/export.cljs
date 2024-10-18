@@ -173,7 +173,7 @@
 (mf/defc export-flows
   [{:keys [flows]}]
   [:> "penpot:flows" #js {}
-   (for [{:keys [id name starting-frame]} flows]
+   (for [{:keys [id name starting-frame]} (vals flows)]
      [:> "penpot:flow" #js {:id id
                             :name name
                             :starting-frame starting-frame}])])

@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.projects
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
@@ -17,6 +18,7 @@
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.pin-button :refer [pin-button*]]
    [app.main.ui.dashboard.project-menu :refer [project-menu]]
+   [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -44,15 +46,16 @@
 
 (mf/defc header
   {::mf/wrap [mf/memo]}
-  []
+  [{:keys [you-viewer?]}]
   (let [on-click (mf/use-fn #(st/emit! (dd/create-project)))]
     [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
      [:div#dashboard-projects-title {:class (stl/css :dashboard-title)}
       [:h1 (tr "dashboard.projects-title")]]
-     [:button {:class (stl/css :btn-secondary :btn-small)
-               :on-click on-click
-               :data-testid "new-project-button"}
-      (tr "dashboard.new-project")]]))
+     (when-not you-viewer?
+       [:button {:class (stl/css :btn-secondary :btn-small)
+                 :on-click on-click
+                 :data-testid "new-project-button"}
+        (tr "dashboard.new-project")])]))
 
 (mf/defc team-hero*
   {::mf/wrap [mf/memo]
@@ -98,11 +101,14 @@
   (l/derived :builtin-templates st/state))
 
 (mf/defc project-item
-  [{:keys [project first? team files] :as props}]
+  [{:keys [project first? team files you-viewer?] :as props}]
   (let [locale     (mf/deref i18n/locale)
         file-count (or (:count project) 0)
         project-id (:id project)
+        is-draft-proyect (:is-default project)
         team-id    (:id team)
+        empty-state-viewer (and you-viewer?
+                                (= 0 file-count))
 
         dstate     (mf/deref refs/dashboard-local)
         edit-id    (:project-for-edit dstate)
@@ -198,7 +204,6 @@
            (when (kbd/enter? event)
              (on-create-click event))))
 
-
         handle-menu-click
         (mf/use-callback
          (mf/deps on-menu-click)
@@ -220,20 +225,13 @@
                :title (if (:is-default project)
                         (tr "labels.drafts")
                         (:name project))
-               :on-context-menu on-menu-click}
+               :on-context-menu (when-not you-viewer? on-menu-click)}
           (if (:is-default project)
             (tr "labels.drafts")
             (:name project))])
 
        [:div {:class (stl/css :info-wrapper)}
-        [:& project-menu
-         {:project project
-          :show? (:menu-open @local)
-          :left (+ 24 (:x (:menu-pos @local)))
-          :top (:y (:menu-pos @local))
-          :on-edit on-edit-open
-          :on-menu-close on-menu-close
-          :on-import on-import}]
+
 
         ;; We group these two spans under a div to avoid having extra space between them.
         [:div
@@ -248,29 +246,51 @@
          (when-not (:is-default project)
            [:> pin-button* {:class (stl/css :pin-button) :is-pinned (:is-pinned project) :on-click toggle-pin :tab-index 0}])
 
-         [:button {:class (stl/css :add-file-btn)
-                   :on-click on-create-click
-                   :title (tr "dashboard.new-file")
-                   :aria-label (tr "dashboard.new-file")
-                   :data-testid "project-new-file"
-                   :on-key-down handle-create-click}
-          add-icon]
+         (when-not you-viewer?
+           [:button {:class (stl/css :add-file-btn)
+                     :on-click on-create-click
+                     :title (tr "dashboard.new-file")
+                     :aria-label (tr "dashboard.new-file")
+                     :data-testid "project-new-file"
+                     :on-key-down handle-create-click}
+            add-icon])
 
-         [:button {:class (stl/css :options-btn)
-                   :on-click on-menu-click
-                   :title (tr "dashboard.options")
-                   :aria-label  (tr "dashboard.options")
-                   :data-testid "project-options"
-                   :on-key-down handle-menu-click}
-          menu-icon]]]]]
+         (when-not you-viewer?
+           [:button {:class (stl/css :options-btn)
+                     :on-click on-menu-click
+                     :title (tr "dashboard.options")
+                     :aria-label  (tr "dashboard.options")
+                     :data-testid "project-options"
+                     :on-key-down handle-menu-click}
+            menu-icon])]
+        (when-not you-viewer?
+          [:& project-menu
+           {:project project
+            :show? (:menu-open @local)
+            :left (+ 24 (:x (:menu-pos @local)))
+            :top (:y (:menu-pos @local))
+            :on-edit on-edit-open
+            :on-menu-close on-menu-close
+            :on-import on-import}])]]]
 
      [:div {:class (stl/css :grid-container) :ref rowref}
-      [:& line-grid
-       {:project project
-        :team team
-        :files files
-        :create-fn create-file
-        :limit limit}]]
+      (if empty-state-viewer
+        [:> empty-placeholder* {:title (if is-draft-proyect
+                                         (tr "dashboard.empty-placeholder-drafts-title")
+                                         (tr "dashboard.empty-placeholder-files-title"))
+                                :class (stl/css :placeholder-placement)
+                                :type 1
+                                :subtitle (if is-draft-proyect
+                                            (tr "dashboard.empty-placeholder-drafts-subtitle")
+                                            (tr "dashboard.empty-placeholder-files-subtitle"))}]
+
+        [:& line-grid
+         {:project project
+          :team team
+          :files files
+          :create-fn create-file
+          :you-viewer? you-viewer?
+          :limit limit}])]
 
      (when (and (> limit 0)
                 (> file-count limit))
@@ -293,8 +313,9 @@
                                  (sort-by :modified-at)
                                  (reverse))
         recent-map          (mf/deref recent-files-ref)
-        you-owner?          (get-in team [:permissions :is-owner])
-        you-admin?          (get-in team [:permissions :is-admin])
+        you-owner?          (dm/get-in team [:permissions :is-owner])
+        you-admin?          (dm/get-in team [:permissions :is-admin])
+        you-viewer?         (not (dm/get-in team [:permissions :can-edit]))
         can-invite?         (or you-owner? you-admin?)
 
         show-team-hero*     (mf/use-state #(get storage/global ::show-team-hero true))
@@ -327,7 +348,7 @@
 
     (when (seq projects)
       [:*
-       [:& header]
+       [:& header {:you-viewer? you-viewer?}]
        [:div {:class (stl/css :projects-container)}
         [:*
          (when (and show-team-hero?
@@ -350,5 +371,6 @@
               [:& project-item {:project project
                                 :team team
                                 :files files
+                                :you-viewer? you-viewer?
                                 :first? (= project (first projects))
                                 :key id}]))]]]])))

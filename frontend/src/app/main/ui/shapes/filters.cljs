@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes.bounds :as gsb]
+   [app.common.math :as mth]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -129,6 +130,34 @@
   [filters]
   (map #(assoc %1 :filter-in %2) filters (cons nil (map :id filters))))
 
+(defn filter-coords
+  [bounds selrect padding]
+  (if (or (mth/close? 0.01 (:width selrect))
+          (mth/close? 0.01 (:height selrect)))
+
+    ;; We cannot use "objectBoundingbox" if the shape doesn't have width/heigth
+    ;; From the SVG spec (https://www.w3.org/TR/SVG11/coords.html#ObjectBoundingBox
+    ;; Keyword objectBoundingBox should not be used when the geometry of the applicable element
+    ;; has no width or no height, such as the case of a horizontal or vertical line, even when
+    ;; the line has actual thickness when viewed due to having a non-zero stroke width since
+    ;; stroke width is ignored for bounding box calculations. When the geometry of the
+    ;; applicable element has no width or height and objectBoundingBox is specified, then
+    ;; the given effect (e.g., a gradient or a filter) will be ignored.
+    (let [filter-width  (+ (:width bounds) (* 2 (:horizontal padding)))
+          filter-height (+ (:height bounds) (* 2 (:vertical padding)))
+          filter-x      (- (:x bounds) #_(:x selrect) (:horizontal padding))
+          filter-y      (- (:y bounds) #_(:y selrect) (:vertical padding))
+          filter-units  "userSpaceOnUse"]
+      [filter-x filter-y filter-width filter-height filter-units])
+
+    ;; If the width/height is not zero we use objectBoundingBox as it's more stable
+    (let [filter-width  (/ (+ (:width bounds) (* 2 (:horizontal padding))) (:width selrect))
+          filter-height (/ (+ (:height bounds) (* 2 (:vertical padding))) (:height selrect))
+          filter-x      (/ (- (:x bounds) (:x selrect) (:horizontal padding)) (:width selrect))
+          filter-y      (/ (- (:y bounds) (:y selrect) (:vertical padding)) (:height selrect))
+          filter-units  "objectBoundingBox"]
+      [filter-x filter-y filter-width filter-height filter-units])))
+
 (mf/defc filters
   [{:keys [filter-id shape]}]
 
@@ -136,17 +165,17 @@
         bounds        (gsb/get-rect-filter-bounds (:selrect shape) filters (or (-> shape :blur :value) 0))
         padding       (gsb/calculate-padding shape)
         selrect       (:selrect shape)
-        filter-x      (/ (- (:x bounds) (:x selrect) (:horizontal padding)) (:width selrect))
-        filter-y      (/ (- (:y bounds) (:y selrect) (:vertical padding)) (:height selrect))
-        filter-width  (/ (+ (:width bounds) (* 2 (:horizontal padding))) (:width selrect))
-        filter-height (/ (+ (:height bounds) (* 2 (:vertical padding))) (:height selrect))]
+
+        [filter-x filter-y filter-width filter-height filter-units]
+        (filter-coords bounds selrect padding)]
+
     (when (> (count filters) 2)
       [:filter {:id          filter-id
                 :x           filter-x
                 :y           filter-y
                 :width       filter-width
                 :height      filter-height
-                :filterUnits "objectBoundingBox"
+                :filterUnits filter-units
                 :color-interpolation-filters "sRGB"}
        (for [[index entry] (d/enumerate filters)]
          [:& filter-entry {:key (dm/str filter-id "-" index)

@@ -6,9 +6,13 @@
 
 ### :boom: Breaking changes & Deprecations
 
+- Use [nginx-unprivileged](https://hub.docker.com/r/nginxinc/nginx-unprivileged) as base image for Penpot's frontend docker image. Now all the docker images runs with the same unprivileged user (penpot). Because of that, the default NGINX listen port now is 8080, instead of 80, so you will have to modify your infrastructure to apply this change.
+
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features
+
+- Viewer role for team members  [Taiga #1056 & #6590](https://tree.taiga.io/project/penpot/us/1056 & https://tree.taiga.io/project/penpot/us/6590)
 
 ### :bug: Bugs fixed
 
@@ -16,9 +20,16 @@
 
 ### :rocket: Epics and highlights
 
+- **New plugin system.**
+
+  Penpot now supports custom plugins. Read everything about developing your plugins [HERE](https://help.penpot.app/plugins/)
+
 ### :boom: Breaking changes & Deprecations
 
 ### :heart: Community contributions (Thank you!)
+
+- All our plugins beta testers :heart:.
+- Fix problem when translating multiple path points by @eeropic [#4459](https://github.com/penpot/penpot/issues/4459)
 
 ### :sparkles: New features
 
@@ -30,7 +41,27 @@
 
   You can enable it with the `enable-feature-text-editor-v2` configuration flag.
 
+
 ### :bug: Bugs fixed
+
+- Fix problem with constraints buttons [Taiga #8465](https://tree.taiga.io/project/penpot/issue/8465)
+- Fix problem with go back button on error page [Taiga #8887](https://tree.taiga.io/project/penpot/issue/8887)
+- Fix problem with shadows in text for Safari [Taiga #8770](https://tree.taiga.io/project/penpot/issue/8770)
+- Fix a regression with feedback form subject and content limits [Taiga #8908](https://tree.taiga.io/project/penpot/issue/8908)
+- Fix problem with stroke and filter ordering in frames [Github #5058](https://github.com/penpot/penpot/issues/5058)
+- Fix problem with hover layers when hidden/blocked [Github #5074](https://github.com/penpot/penpot/issues/5074)
+- Fix problem with precision on boolean calculation [Taiga #8482](https://tree.taiga.io/project/penpot/issue/8482)
+- Fix problem when translating multiple path points [Github #4459](https://github.com/penpot/penpot/issues/4459)
+- Fix problem on importing (and exporting) files with flows [Taiga #8914](https://tree.taiga.io/project/penpot/issue/8914)
+- Fix Internal Error page: "go to your penpot" wrong design [Taiga #8922](https://tree.taiga.io/project/penpot/issue/8922)
+- Fix problem updating layout when toggle visibility in component copy [Github #5143](https://github.com/penpot/penpot/issues/5143)
+- Fix "Done" button on toolbar on inspect mode should go to design mode [Taiga #8933](https://tree.taiga.io/project/penpot/issue/8933)
+- Fix problem with shortcuts in text editor [Github #5078](https://github.com/penpot/penpot/issues/5078)
+- Fix problems with show in viewer and interactions [Github #4868](https://github.com/penpot/penpot/issues/4868)
+- Add visual feedback when moving an element into a board [Github #3210](https://github.com/penpot/penpot/issues/3210)
+- Fix percent calculation on grid layout tracks [Github #4688](https://github.com/penpot/penpot/issues/4688)
+- Fix problem with caps and inner shadows [Github #4517](https://github.com/penpot/penpot/issues/4517)
+- Fix problem with horizontal/vertical lines and shadows [Github #4516](https://github.com/penpot/penpot/issues/4516)
 
 ## 2.2.1
 
@@ -176,7 +207,7 @@ time being.
 
 ### :boom: Breaking changes & Deprecations
 
-### :heart: Community contributions (Thank you!)
+### :heart: Communityq contributions (Thank you!)
 
 ### :sparkles: New features
 

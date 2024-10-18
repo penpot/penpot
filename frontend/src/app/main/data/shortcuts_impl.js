@@ -24,6 +24,10 @@ target.stopCallback = function (e, element, combo) {
     return false
   }
 
+  if ((' ' + element.className + ' ').indexOf(' mousetrap ') > -1) {
+    return false;
+  }
+
   if ('composedPath' in e && typeof e.composedPath === 'function') {
     // For open shadow trees, update `element` so that the following check works.
     const initialEventTarget = e.composedPath()[0];

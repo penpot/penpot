@@ -1,6 +1,6 @@
 FROM ubuntu:22.04
+LABEL maintainer="Penpot <docker@penpot.app>"
 
-LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 ENV LANG='en_US.UTF-8' \
     LC_ALL='en_US.UTF-8' \
     JAVA_HOME="/opt/jdk" \

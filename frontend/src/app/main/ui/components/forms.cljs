@@ -483,7 +483,8 @@
 
                  ;; Empty values means "submit" the form (whent some items have been added
                  (when (and (kbd/enter? event) (str/empty? @value) (not-empty @items))
-                   (on-submit form))
+                   (when (fn? on-submit)
+                     (on-submit form event)))
 
                  ;; If we have a string in the input we add it only if valid
                  (when (and (valid-item-fn val) (not (str/empty? @value)))

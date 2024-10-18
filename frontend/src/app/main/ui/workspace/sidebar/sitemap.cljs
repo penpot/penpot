@@ -206,7 +206,9 @@
                         (fn [event]
                           (st/emit! (dw/create-page {:file-id file-id :project-id project-id}))
                           (-> event dom/get-current-target dom/blur!)))
-        read-only?     (mf/use-ctx ctx/workspace-read-only?)]
+        read-only?     (mf/use-ctx ctx/workspace-read-only?)
+        user-viewer?   (mf/use-ctx ctx/user-viewer?)]
+
 
     [:div {:class (stl/css :sitemap)
            :style #js {"--height" (str size "px")}}
@@ -219,9 +221,10 @@
                     :class         (stl/css :title-spacing-sitemap)}
 
       (if ^boolean read-only?
-        [:& badge-notification {:is-focus true
-                                :size :small
-                                :content (tr "labels.view-only")}]
+        (when  (not ^boolean user-viewer?)
+          [:& badge-notification {:is-focus true
+                                  :size :small
+                                  :content (tr "labels.view-only")}])
         [:> icon-button* {:variant "ghost"
                           :class (stl/css :add-page)
                           :aria-label (tr "workspace.sidebar.sitemap.add-page")
