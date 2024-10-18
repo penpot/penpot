@@ -16,7 +16,7 @@
    [app.main.ui.dashboard.grid :refer [line-grid]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.pin-button :refer [pin-button*]]
-   [app.main.ui.dashboard.project-menu :refer [project-menu]]
+   [app.main.ui.dashboard.project-menu :refer [project-menu*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
@@ -264,9 +264,9 @@
             menu-icon])]
 
         (when ^boolean can-edit
-          [:& project-menu
+          [:> project-menu*
            {:project project
-            :show? (:menu-open @local)
+            :show (:menu-open @local)
             :left (+ 24 (:x (:menu-pos @local)))
             :top (:y (:menu-pos @local))
             :on-edit on-edit-open

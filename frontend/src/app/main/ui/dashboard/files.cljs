@@ -14,7 +14,7 @@
    [app.main.ui.dashboard.grid :refer [grid]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.pin-button :refer [pin-button*]]
-   [app.main.ui.dashboard.project-menu :refer [project-menu]]
+   [app.main.ui.dashboard.project-menu :refer [project-menu*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
@@ -118,13 +118,13 @@
          menu-icon])
 
       (when ^boolean can-edit
-        [:& project-menu {:project project
-                          :show? (:menu-open @local)
-                          :left (- (:x (:menu-pos @local)) 180)
-                          :top (:y (:menu-pos @local))
-                          :on-edit on-edit
-                          :on-menu-close on-menu-close
-                          :on-import on-import}])]]))
+        [:> project-menu* {:project project
+                           :show (:menu-open @local)
+                           :left (- (:x (:menu-pos @local)) 180)
+                           :top (:y (:menu-pos @local))
+                           :on-edit on-edit
+                           :on-menu-close on-menu-close
+                           :on-import on-import}])]]))
 
 (mf/defc files-section
   {::mf/props :obj}
