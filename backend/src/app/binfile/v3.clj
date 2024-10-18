@@ -248,7 +248,6 @@
 
         data         (:data file)
         typographies (:typographies data)
-        plugins-data (:plugin-data data)
         components   (:components data)
         colors       (:colors data)
 
@@ -322,11 +321,7 @@
     (doseq [[id object] typographies]
       (let [path  (str "files/" file-id "/typographies/" id ".json")
             color (encode-typography object)]
-        (write-entry! output path color)))
-
-    (when-let [data (not-empty plugins-data)]
-      (let [path (str "files/" file-id "/plugin-data.json")]
-        (write-entry! output path data)))))
+        (write-entry! output path color)))))
 
 (defn- export-files
   [{:keys [::ids ::include-libraries ::output] :as cfg}]
