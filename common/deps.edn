@@ -72,7 +72,7 @@
 
   :build
   {:extra-deps
-   {io.github.clojure/tools.build {:git/tag "v0.10.3" :git/sha "15ead66"}}
+   {io.github.clojure/tools.build {:git/tag "v0.10.5" :git/sha "2a21b7a"}}
    :ns-default build}
 
   :test
