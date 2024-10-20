@@ -1298,7 +1298,7 @@
                            (let [[mtype data] (parse-datauri href)
                                  size         (alength ^bytes data)
                                  path         (tmp/tempfile :prefix "penpot.media.download.")
-                                 written      (io/write-to-file! data path :size size)]
+                                 written      (io/write* path data :size size)]
 
                              (when (not= written size)
                                (ex/raise :type :internal

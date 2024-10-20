@@ -190,7 +190,7 @@
   [{:keys [::sto/storage] :as cfg} id]
   (let [sobj (sto/get-object storage id)
         data (with-open [input (sto/get-object-data storage sobj)]
-               (io/read-as-bytes input))]
+               (io/read input))]
 
     (l/trc :hint "write" :obj "storage-object" :id (str id) :size (:size sobj))
     (write! cfg :storage-object id (meta sobj) data)))

@@ -88,22 +88,6 @@
        ::yres/headers {"content-type" "application/octet-stream"}
        ::yres/body body})))
 
-
-    ;; {::yres/status 200
-    ;;  ::yres/headers {"content-type" "application/octet-stream"}
-    ;;  ::yres/body (yres/stream-body
-    ;;               (fn [_ output-stream]
-    ;;                 (try
-    ;;                   (-> cfg
-    ;;                       (assoc ::bf.v1/ids #{file-id})
-    ;;                       (assoc ::bf.v1/embed-assets embed-assets)
-    ;;                       (assoc ::bf.v1/include-libraries include-libraries)
-    ;;                       (bf.v1/export-files! output-stream))
-    ;;                   (catch Throwable cause
-    ;;                     (l/err :hint "exception on exporting file"
-    ;;                            :file-id (str file-id)
-    ;;                            :cause cause)))))}))
-
 ;; --- Command: import-binfile
 
 (defn- import-binfile-v1

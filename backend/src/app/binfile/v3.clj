@@ -236,7 +236,7 @@
 
         (with-open [input (sto/get-object-data storage sobject)]
           (.putNextEntry output (ZipEntry. (str "objects/" id ext)))
-          (io/copy! input output (:size sobject))
+          (io/copy input output :size (:size sobject))
           (.closeEntry output))))))
 
 (defn- export-file
@@ -385,7 +385,7 @@
 (defn- zip-entry-reader
   [^ZipFile input ^ZipEntry entry]
   (-> (zip-entry-stream input entry)
-      (jio/reader :encoding "UTF-8")))
+      (io/reader :encoding "UTF-8")))
 
 (defn- zip-entry-storage-content
   "Wraps a ZipFile and ZipEntry into a penpot storage compatible
@@ -929,7 +929,7 @@
 
   (dm/assert!
    "expected instance of jio/IOFactory for `input`"
-   (satisfies? jio/IOFactory input))
+   (io/coercible? input))
 
   (let [id (uuid/next)
         tp (dt/tpoint)

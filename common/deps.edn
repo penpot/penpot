@@ -38,7 +38,7 @@
 
   funcool/datoteka
   {:git/tag "4.0.0"
-   :git/sha "8dcb8fc"
+   :git/sha "3372f3a"
    :git/url "https://github.com/funcool/datoteka"}
 
   lambdaisland/uri {:mvn/version "1.19.155"
@@ -72,7 +72,7 @@
 
   :build
   {:extra-deps
-   {io.github.clojure/tools.build {:git/tag "v0.10.3" :git/sha "15ead66"}}
+   {io.github.clojure/tools.build {:git/tag "v0.10.5" :git/sha "2a21b7a"}}
    :ns-default build}
 
   :test
