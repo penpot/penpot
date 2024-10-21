@@ -4496,6 +4496,14 @@ msgstr "No matches found for “%s“"
 msgid "workspace.libraries.no-shared-libraries-available"
 msgstr "There are no Shared Libraries available"
 
+#: src/app/main/ui/workspace/libraries.cljs:297
+msgid "workspace.libraries.more-templates"
+msgstr "You can look for "
+
+#: src/app/main/ui/workspace/libraries.cljs:297
+msgid "workspace.libraries.more-templates-link"
+msgstr "more templates in here"
+
 #: src/app/main/ui/workspace/libraries.cljs:260
 msgid "workspace.libraries.search-shared-libraries"
 msgstr "Search shared libraries"
