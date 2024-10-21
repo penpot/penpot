@@ -11,6 +11,8 @@ alias lsf='ls -h *(.)'
 
 # init Cargo / Rust env
 . "/usr/local/cargo/env"
+# init emscripten
+EMSDK_QUIET=1 . "/usr/local/emsdk/emsdk_env.sh"
 
 # include .bashrc if it exists
 if [ -f "$HOME/.bashrc.local" ]; then
