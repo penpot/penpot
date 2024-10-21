@@ -299,8 +299,8 @@
                            (fn [err]
                              (let [{:keys [user-error]} (ex-data err)]
                                (st/emit! (ntf/show {:content user-error
-                                                    :notification-type :toast
-                                                    :type :warning
+                                                    :type :toast
+                                                    :level :warning
                                                     :timeout 3000}))))))
             (set! (.-value (mf/ref-val input-ref)) "")))
         on-export (fn []
