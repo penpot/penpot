@@ -32,10 +32,10 @@
    ctt/rotation-keys wtch/update-rotation})
 
 (def attribute-actions-map
- (reduce
-  (fn [acc [ks action]]
-    (into acc (map (fn [k] [k action]) ks)))
-  {} attributes->shape-update))
+  (reduce
+   (fn [acc [ks action]]
+     (into acc (map (fn [k] [k action]) ks)))
+   {} attributes->shape-update))
 
 ;; Helpers ---------------------------------------------------------------------
 
@@ -110,7 +110,7 @@
                (fn [[v shape-ids]]
                  (action v shape-ids attrs))
                update-infos)))
-       shapes-update-info))
+          shapes-update-info))
 
 (defn update-tokens [resolved-tokens]
   (->> @refs/workspace-page-objects
@@ -124,8 +124,8 @@
       (->>
        (rx/from
         (->
-          (wtts/get-active-theme-sets-tokens-names-map state)
-          (wtsd/resolve-tokens+ {:names-map? true})))
+         (wtts/get-active-theme-sets-tokens-names-map state)
+         (wtsd/resolve-tokens+ {:names-map? true})))
        (rx/mapcat
         (fn [sd-tokens]
           (let [undo-id (js/Symbol)]

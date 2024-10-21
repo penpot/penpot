@@ -1,8 +1,8 @@
 (ns token-tests.helpers.tokens
   (:require
    [app.common.test-helpers.ids-map :as thi]
-   [app.main.ui.workspace.tokens.token :as wtt]
-   [app.common.types.tokens-lib :as ctob]))
+   [app.common.types.tokens-lib :as ctob]
+   [app.main.ui.workspace.tokens.token :as wtt]))
 
 (defn add-token [state label params]
   (let [id (thi/new-id! label)

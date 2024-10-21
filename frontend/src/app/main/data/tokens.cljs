@@ -259,8 +259,8 @@
                                                (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} #{}))
 
                           add-to-hidden-theme? (let [prev-hidden-theme (ctob/get-theme tokens-lib ctob/hidden-token-theme-group ctob/hidden-token-theme-name)]
-                                                   (-> base-changes
-                                                       (pcb/update-token-theme (ctob/toggle-set prev-hidden-theme ctob/hidden-token-theme-path) prev-hidden-theme)))
+                                                 (-> base-changes
+                                                     (pcb/update-token-theme (ctob/toggle-set prev-hidden-theme ctob/hidden-token-theme-path) prev-hidden-theme)))
 
                           :else base-changes))
                       ;; Either update or add token to existing set
@@ -279,6 +279,7 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (get state :workspace-data)
+            _ (prn "paso por aquí")
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/delete-token set-name token-name))]

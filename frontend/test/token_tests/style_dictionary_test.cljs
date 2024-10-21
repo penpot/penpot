@@ -1,10 +1,10 @@
 (ns token-tests.style-dictionary-test
   (:require
+   [app.common.data :as d]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
-   [cljs.test :as t :include-macros true]
-   [promesa.core :as p]
    [app.main.ui.workspace.tokens.token :as wtt]
-   [app.common.data :as d]))
+   [cljs.test :as t :include-macros true]
+   [promesa.core :as p]))
 
 (def border-radius-token
   {:value "12px"

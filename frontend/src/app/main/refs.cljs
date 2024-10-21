@@ -501,7 +501,7 @@
     (l/derived
      #(some-> (wtts/get-selected-token-set %)
               (ctob/get-token token-name))
-      st/state)))
+     st/state)))
 
 (def workspace-selected-token-set-tokens
   (l/derived #(or (wtts/get-selected-token-set-tokens %) {}) st/state))

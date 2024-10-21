@@ -165,12 +165,12 @@
                                          :on-change (comp on-update-group dom/get-target-val)}
                            :render-right (when (seq theme-groups)
                                            (mf/fnc []
-                                                   [:button {:class (stl/css :group-drop-down-button)
-                                                             :type "button"
-                                                             :on-click (fn [e]
-                                                                         (dom/stop-propagation e)
-                                                                         (on-toggle-dropdown))}
-                                                    i/arrow]))}]]
+                                             [:button {:class (stl/css :group-drop-down-button)
+                                                       :type "button"
+                                                       :on-click (fn [e]
+                                                                   (dom/stop-propagation e)
+                                                                   (on-toggle-dropdown))}
+                                              i/arrow]))}]]
        [:& labeled-input {:label "Theme"
                           :input-props {:default-value (:name theme)
                                         :on-change (comp on-update-name dom/get-target-val)}}]]

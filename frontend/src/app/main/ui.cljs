@@ -6,7 +6,6 @@
 
 (ns app.main.ui
   (:require
-   [app.main.ui.workspace.tokens.modals.themes :as wtmt]
    [app.config :as cf]
    [app.main.refs :as refs]
    [app.main.ui.context :as ctx]
@@ -20,6 +19,7 @@
    [app.main.ui.onboarding.team-choice :refer [onboarding-team-modal]]
    [app.main.ui.releases :refer [release-notes-modal]]
    [app.main.ui.static :as static]
+   [app.main.ui.workspace.tokens.modals.themes :as wtmt]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))

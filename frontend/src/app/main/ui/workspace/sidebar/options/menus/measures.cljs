@@ -12,6 +12,7 @@
    [app.common.logic.shapes :as cls]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [size-presets]]
    [app.main.data.tokens :as dt]
    [app.main.data.workspace :as udw]
@@ -32,8 +33,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [clojure.set :refer [rename-keys union]]
-   [rumext.v2 :as mf]
-   [app.common.types.tokens-lib :as ctob]))
+   [rumext.v2 :as mf]))
 
 (def measure-attrs
   [:proportion-lock
@@ -248,11 +248,11 @@
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
                        (dwu/start-undo-transaction undo-id)
                        (dwsh/update-shapes ids
-                                          (if token-value
-                                            #(assoc-in % [:applied-tokens attr] (:id value))
-                                            #(d/dissoc-in % [:applied-tokens attr]))
-                                          {:reg-objects? true
-                                           :attrs [:applied-tokens]})
+                                           (if token-value
+                                             #(assoc-in % [:applied-tokens attr] (:id value))
+                                             #(d/dissoc-in % [:applied-tokens attr]))
+                                           {:reg-objects? true
+                                            :attrs [:applied-tokens]})
                        (udw/update-dimensions ids attr (or token-value value))
                        (dwu/commit-undo-transaction undo-id)))))
 
