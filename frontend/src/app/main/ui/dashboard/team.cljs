@@ -289,15 +289,15 @@
 
      [:& dropdown {:show @show? :on-close on-hide}
       [:ul {:class (stl/css :roles-dropdown)}
-       [:li {:on-click on-set-admin
-             :class (stl/css :rol-dropdown-item)}
-        (tr "labels.admin")]
-       [:li {:on-click on-set-editor
-             :class (stl/css :rol-dropdown-item)}
-        (tr "labels.editor")]
        [:li {:on-click on-set-viewer
              :class (stl/css :rol-dropdown-item)}
         (tr "labels.viewer")]
+       [:li {:on-click on-set-editor
+             :class (stl/css :rol-dropdown-item)}
+        (tr "labels.editor")]
+       [:li {:on-click on-set-admin
+             :class (stl/css :rol-dropdown-item)}
+        (tr "labels.admin")]
        (when is-owner
          [:li {:on-click (partial on-set-owner member)
                :class (stl/css :rol-dropdown-item)}
