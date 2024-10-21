@@ -12,9 +12,6 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list]]
    [rumext.v2 :as mf]))
 
-(def button-variants (set '("primary" "secondary" "ghost" "destructive")))
-
-
 (def ^:private schema:icon-button
   [:map
    [:class {:optional true} :string]
@@ -22,7 +19,7 @@
     [:and :string [:fn #(contains? icon-list %)]]]
    [:aria-label :string]
    [:variant {:optional true}
-    [:maybe [:enum "primary" "secondary" "ghost" "destructive"]]]])
+    [:maybe [:enum "primary" "secondary" "ghost" "destructive" "action"]]]])
 
 (mf/defc icon-button*
   {::mf/props :obj
@@ -33,6 +30,7 @@
                                               :icon-button-primary (= variant "primary")
                                               :icon-button-secondary (= variant "secondary")
                                               :icon-button-ghost (= variant "ghost")
+                                              :icon-button-action (= variant "action")
                                               :icon-button-destructive (= variant "destructive")))
         props (mf/spread-props props {:class class :title aria-label})]
     [:> "button" props [:> icon* {:id icon :aria-label aria-label}]]))

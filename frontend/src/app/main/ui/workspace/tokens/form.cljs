@@ -10,12 +10,16 @@
    ["lodash.debounce" :as debounce]
    [app.common.colors :as c]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
    [app.main.ui.workspace.tokens.common :as tokens.common]
@@ -25,6 +29,7 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.update :as wtu]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [malli.core :as m]
    [malli.error :as me]
@@ -124,7 +129,7 @@ Token names should only contain letters and digits separated by . characters.")}
   [name-ref token tokens callback & {:keys [timeout] :or {timeout 160}}]
   (let [timeout-id-ref (mf/use-ref nil)
         debounced-resolver-callback
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps token callback tokens)
          (fn [value]
            (let [timeout-id (js/Symbol)
@@ -178,19 +183,22 @@ Token names should only contain letters and digits separated by . characters.")}
   [{:keys [result-or-errors]}]
   (let [{:keys [errors]} result-or-errors
         empty-message? (or (nil? result-or-errors)
-                           (wte/has-error-code? :error/empty-input errors))]
-    [:div {:class (stl/css-case :resolved-value true
-                                :resolved-value-placeholder empty-message?
-                                :resolved-value-error (seq errors))}
-     (cond
-       empty-message? "Enter token value"
-       errors (->> (wte/humanize-errors errors)
-                   (str/join "\n"))
-       :else [:p result-or-errors])]))
+                           (wte/has-error-code? :error/empty-input errors))
+        message (cond
+                  empty-message? (dm/str (tr "workspace.token.resolved-value") "-")
+                  errors (->> (wte/humanize-errors errors)
+                              (str/join "\n"))
+                  :else (dm/str (tr "workspace.token.resolved-value") result-or-errors))]
+    [:> text* {:as "p"
+               :typography "body-small"
+               :class (stl/css-case :resolved-value true
+                                    :resolved-value-placeholder empty-message?
+                                    :resolved-value-error (seq errors))}
+     message]))
 
 (mf/defc form
   {::mf/wrap-props false}
-  [{:keys [token token-type]}]
+  [{:keys [token token-type action selected-token-set-id]}]
   (let [validate-name? (mf/use-state (not (:id token)))
         token (or token {:type token-type})
         color? (wtt/color-token? token)
@@ -212,25 +220,31 @@ Token names should only contain letters and digits separated by . characters.")}
         ;; Name
         name-ref (mf/use-var (:name token))
         name-errors (mf/use-state nil)
-        validate-name (mf/use-callback
-                       (mf/deps selected-set-tokens-tree)
-                       (fn [value]
-                         (let [schema (token-name-schema {:token token
-                                                          :tokens-tree selected-set-tokens-tree})]
-                           (m/explain schema (finalize-name value)))))
-        on-update-name-debounced (mf/use-callback
-                                  (debounce (fn [e]
-                                              (let [value (dom/get-target-val e)
-                                                    errors (validate-name value)]
+        validate-name
+        (mf/use-fn
+         (mf/deps selected-set-tokens-tree)
+         (fn [value]
+           (let [schema (token-name-schema {:token token
+                                            :tokens-tree selected-set-tokens-tree})]
+             (m/explain schema (finalize-name value)))))
+
+        on-update-name-debounced
+        (mf/use-fn
+         (debounce (fn [e]
+                     (let [value (dom/get-target-val e)
+                           errors (validate-name value)]
                                                 ;; Prevent showing error when just going to another field on a new token
-                                                (when-not (and validate-name? (str/empty? value))
-                                                  (reset! validate-name? false)
-                                                  (reset! name-errors errors))))))
-        on-update-name (mf/use-callback
-                        (mf/deps on-update-name-debounced)
-                        (fn [e]
-                          (reset! name-ref (dom/get-target-val e))
-                          (on-update-name-debounced e)))
+                       (when-not (and validate-name? (str/empty? value))
+                         (reset! validate-name? false)
+                         (reset! name-errors errors))))))
+
+        on-update-name
+        (mf/use-fn
+         (mf/deps on-update-name-debounced)
+         (fn [e]
+           (reset! name-ref (dom/get-target-val e))
+           (on-update-name-debounced e)))
+
         valid-name-field? (and
                            (not @name-errors)
                            (valid-name? @name-ref))
@@ -241,27 +255,29 @@ Token names should only contain letters and digits separated by . characters.")}
         value-input-ref (mf/use-ref nil)
         value-ref (mf/use-var (:value token))
         token-resolve-result (mf/use-state (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value]))
-        set-resolve-value (mf/use-callback
-                           (fn [token-or-err]
-                             (let [error? (:errors token-or-err)
-                                   v (if error?
-                                       token-or-err
-                                       (:resolved-value token-or-err))]
-                               (when color? (reset! color (if error? nil v)))
-                               (reset! token-resolve-result v))))
+        set-resolve-value
+        (mf/use-fn
+         (fn [token-or-err]
+           (let [error? (:errors token-or-err)
+                 v (if error?
+                     token-or-err
+                     (:resolved-value token-or-err))]
+             (when color? (reset! color (if error? nil v)))
+             (reset! token-resolve-result v))))
         on-update-value-debounced (use-debonced-resolve-callback name-ref token active-theme-tokens set-resolve-value)
-        on-update-value (mf/use-callback
+        on-update-value (mf/use-fn
                          (mf/deps on-update-value-debounced)
                          (fn [e]
                            (let [value (dom/get-target-val e)]
                              (reset! value-ref value)
                              (on-update-value-debounced value))))
-        on-update-color (mf/use-callback
+        on-update-color (mf/use-fn
                          (mf/deps on-update-value-debounced)
                          (fn [hex-value]
                            (reset! value-ref hex-value)
                            (set! (.-value (mf/ref-val value-input-ref)) hex-value)
                            (on-update-value-debounced hex-value)))
+
         value-error? (seq (:errors @token-resolve-result))
         valid-value-field? (and
                             (not value-error?)
@@ -270,17 +286,18 @@ Token names should only contain letters and digits separated by . characters.")}
         ;; Description
         description-ref (mf/use-var (:description token))
         description-errors (mf/use-state nil)
-        validate-descripion (mf/use-callback #(m/explain token-description-schema %))
-        on-update-description-debounced (mf/use-callback
+        validate-descripion (mf/use-fn #(m/explain token-description-schema %))
+        on-update-description-debounced (mf/use-fn
                                          (debounce (fn [e]
                                                      (let [value (dom/get-target-val e)
                                                            errors (validate-descripion value)]
                                                        (reset! description-errors errors)))))
-        on-update-description (mf/use-callback
-                               (mf/deps on-update-description-debounced)
-                               (fn [e]
-                                 (reset! description-ref (dom/get-target-val e))
-                                 (on-update-description-debounced e)))
+        on-update-description
+        (mf/use-fn
+         (mf/deps on-update-description-debounced)
+         (fn [e]
+           (reset! description-ref (dom/get-target-val e))
+           (on-update-description-debounced e)))
         valid-description-field? (not @description-errors)
 
         ;; Form
@@ -288,41 +305,62 @@ Token names should only contain letters and digits separated by . characters.")}
                       (not valid-value-field?)
                       (not valid-description-field?))
 
-        on-submit (mf/use-callback
-                   (mf/deps validate-name validate-descripion token resolved-tokens)
-                   (fn [e]
-                     (dom/prevent-default e)
+        on-submit
+        (mf/use-fn
+         (mf/deps validate-name validate-descripion token resolved-tokens)
+         (fn [e]
+           (dom/prevent-default e)
                      ;; We have to re-validate the current form values before submitting
                      ;; because the validation is asynchronous/debounced
                      ;; and the user might have edited a valid form to make it invalid,
                      ;; and press enter before the next validations could return.
-                     (let [final-name (finalize-name @name-ref)
-                           valid-name?+ (-> (validate-name final-name) schema-validation->promise)
-                           final-value (finalize-value @value-ref)
-                           final-description @description-ref
-                           valid-description?+ (some-> final-description validate-descripion schema-validation->promise)]
-                       (-> (p/all [valid-name?+
-                                   valid-description?+
-                                   (validate-token-value+ {:value final-value
-                                                           :name-value final-name
-                                                           :token token
-                                                           :tokens resolved-tokens})])
-                           (p/finally (fn [result err]
+           (let [final-name (finalize-name @name-ref)
+                 valid-name?+ (-> (validate-name final-name) schema-validation->promise)
+                 final-value (finalize-value @value-ref)
+                 final-description @description-ref
+                 valid-description?+ (some-> final-description validate-descripion schema-validation->promise)]
+             (-> (p/all [valid-name?+
+                         valid-description?+
+                         (validate-token-value+ {:value final-value
+                                                 :name-value final-name
+                                                 :token token
+                                                 :tokens resolved-tokens})])
+                 (p/finally (fn [result err]
                                         ;; The result should be a vector of all resolved validations
                                         ;; We do not handle the error case as it will be handled by the components validations
-                                        (when (and (seq result) (not err))
-                                          (st/emit! (dt/update-create-token {:token (ctob/make-token :name final-name
-                                                                                                     :type (or (:type token) token-type)
-                                                                                                     :value final-value
-                                                                                                     :description final-description)
-                                                                             :prev-token-name (:name token)}))
-                                          (st/emit! (wtu/update-workspace-tokens))
-                                          (modal/hide!))))))))]
-    [:form
-     {:class (stl/css :form-wrapper)
-      :on-submit on-submit}
+                              (when (and (seq result) (not err))
+                                (st/emit! (dt/update-create-token {:token (ctob/make-token :name final-name
+                                                                                           :type (or (:type token) token-type)
+                                                                                           :value final-value
+                                                                                           :description final-description)
+                                                                   :prev-token-name (:name token)}))
+                                (st/emit! (wtu/update-workspace-tokens))
+                                (modal/hide!))))))))
+        on-delete-token
+        (mf/use-fn
+         (mf/deps selected-token-set-id)
+         (fn [e]
+           (dom/prevent-default e)
+           (modal/hide!)
+           (st/emit! (dt/delete-token selected-token-set-id (:name token)))))
+
+        on-cancel
+        (mf/use-fn
+         (fn [e]
+           (dom/prevent-default e)
+           (modal/hide!)))]
+
+    [:form  {:class (stl/css :form-wrapper)
+             :on-submit on-submit}
      [:div {:class (stl/css :token-rows)}
-      [:div
+      [:> text* {:as "span" :typography "headline-medium"}
+       (if (= action "edit")
+         (tr "workspace.token.edit-token")
+         (tr "workspace.token.create-token" token-type))]
+
+      [:div {:class (stl/css :input-row)}
+       ;; This should be remove when labeled-imput is modified
+       [:span "Name"]
        [:& tokens.common/labeled-input {:label "Name"
                                         :error? @name-errors
                                         :input-props {:default-value @name-ref
@@ -332,37 +370,59 @@ Token names should only contain letters and digits separated by . characters.")}
        (for [error (->> (:errors @name-errors)
                         (map #(-> (assoc @name-errors :errors [%])
                                   (me/humanize))))]
-         [:p {:key error
-              :class (stl/css :error)}
+         [:> text* {:as "p"
+                    :key error
+                    :typography "body-small"
+                    :class (stl/css :error)}
           error])]
-      [:& tokens.common/labeled-input {:label "Value"
-                                       :input-props {:default-value @value-ref
-                                                     :on-blur on-update-value
-                                                     :on-change on-update-value
-                                                     :ref value-input-ref}
-                                       :render-right (when color?
-                                                       (mf/fnc []
-                                                               [:div {:class (stl/css :color-bullet)
-                                                                      :on-click #(swap! color-ramp-open? not)}
-                                                                (if-let [hex (some-> @color tinycolor/valid-color tinycolor/->hex)]
-                                                                  [:& color-bullet {:color hex
-                                                                                    :mini? true}]
-                                                                  [:div {:class (stl/css :color-bullet-placeholder)}])]))}]
-      (when @color-ramp-open?
-        [:& ramp {:color (some-> (or @token-resolve-result (:value token))
-                                 (tinycolor/valid-color))
-                  :on-change on-update-color}])
-      [:& token-value-or-errors {:result-or-errors @token-resolve-result}]
 
-      [:div
+      [:div {:class (stl/css :input-row)}
+       ;; This should be remove when labeled-imput is modified
+       [:span "value"]
+       [:& tokens.common/labeled-input {:label "Value"
+                                        :input-props {:default-value @value-ref
+                                                      :on-blur on-update-value
+                                                      :on-change on-update-value
+                                                      :ref value-input-ref}
+                                        :render-right (when color?
+                                                        (mf/fnc []
+                                                          [:div {:class (stl/css :color-bullet)
+                                                                 :on-click #(swap! color-ramp-open? not)}
+                                                           (if-let [hex (some-> @color tinycolor/valid-color tinycolor/->hex)]
+                                                             [:& color-bullet {:color hex
+                                                                               :mini? true}]
+                                                             [:div {:class (stl/css :color-bullet-placeholder)}])]))}]
+       (when @color-ramp-open?
+         [:& ramp {:color (some-> (or @token-resolve-result (:value token))
+                                  (tinycolor/valid-color))
+                   :on-change on-update-color}])
+       [:& token-value-or-errors {:result-or-errors @token-resolve-result}]]
+
+
+      [:div {:class (stl/css :input-row)}
+       ;; This should be remove when labeled-imput is modified
+       [:span "Description"]
        [:& tokens.common/labeled-input {:label "Description"
                                         :input-props {:default-value @description-ref
                                                       :on-change on-update-description}}]
        (when @description-errors
-         [:p {:class (stl/css :error)}
+         [:> text* {:as "p"
+                    :typography "body-small"
+                    :class (stl/css :error)}
           (me/humanize @description-errors)])]
-      [:div {:class (stl/css :button-row)}
-       [:button {:class (stl/css :button)
-                 :type "submit"
-                 :disabled disabled?}
-        "Save"]]]]))
+
+      [:div {:class (stl/css-case :button-row true
+                                  :with-delete (= action "edit"))}
+       (when (= action "edit")
+         [:> button* {:on-click on-delete-token
+                      :class (stl/css :delete-btn)
+                      :icon i/delete
+                      :variant "secondary"}
+          (tr "labels.delete")])
+       [:> button* {:on-click on-cancel
+                    :variant "secondary"}
+        (tr "labels.cancel")]
+       [:> button* {:type "submit"
+                    :variant "primary"
+                    :disabled disabled?}
+        (tr "labels.save")]]]]))

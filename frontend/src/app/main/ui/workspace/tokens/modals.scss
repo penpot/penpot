@@ -6,14 +6,19 @@
 
 @import "refactor/common-refactor.scss";
 
-.shadow {
+.token-modal-wrapper {
   @extend .modal-container-base;
-  width: auto;
-  max-width: auto;
-  min-width: auto;
   @include menuShadow;
   position: absolute;
+  width: auto;
+  min-width: auto;
   z-index: 11;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+.close-btn {
+  position: absolute;
+  top: $s-6;
+  right: $s-6;
 }

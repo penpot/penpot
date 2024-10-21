@@ -279,7 +279,6 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (get state :workspace-data)
-            _ (prn "paso por aquí")
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/delete-token set-name token-name))]

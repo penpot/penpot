@@ -1991,6 +1991,14 @@ msgstr "Líder de equipo"
 msgid "labels.team-member"
 msgstr "Miembro de equipo"
 
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "labels.themes"
+msgstr "Temas"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "labels.sets"
+msgstr "Sets"
+
 #: src/app/main/ui/dashboard/sidebar.cljs:992, src/app/main/ui/workspace/main_menu.cljs:118
 msgid "labels.tutorials"
 msgstr "Tutoriales"
@@ -6126,3 +6134,20 @@ msgstr "Pulsar para cerrar la ruta"
 
 msgid "errors.maximum-invitations-by-request-reached"
 msgstr "Se ha alcanzado el número máximo (%s) de correos electrónicos que se pueden invitar en una sola solicitud"
+
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.create-token"
+msgstr "Crear un token de %s"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.edit-token"
+msgstr "Editar token"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.resolved-value"
+msgstr "Valor resuelto: "
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.original-value"
+msgstr "Valor original: "

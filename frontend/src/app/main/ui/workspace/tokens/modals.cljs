@@ -8,9 +8,12 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.modal :as modal]
-   [app.main.ui.workspace.tokens.modals.themes :as wtmt]
    [app.main.refs :as refs]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon  :as i]
    [app.main.ui.workspace.tokens.form :refer [form]]
+   [app.main.ui.workspace.tokens.modals.themes :as wtmt]
+   [app.util.i18n :refer [tr]]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -40,12 +43,21 @@
 
 (mf/defc token-update-create-modal
   {::mf/wrap-props false}
-  [{:keys [x y position token token-type] :as _args}]
-  (let [wrapper-style (use-viewport-position-style x y position)]
-    [:div
-     {:class (stl/css :shadow)
-      :style wrapper-style}
+  [{:keys [x y position token token-type action selected-token-set-id] :as _args}]
+  (let [wrapper-style (use-viewport-position-style x y position)
+        close-modal (mf/use-fn
+                     (fn []
+                       (modal/hide!)))]
+    [:div {:class (stl/css :token-modal-wrapper)
+           :style wrapper-style}
+     [:> icon-button* {:on-click close-modal
+                       :class (stl/css :close-btn)
+                       :icon i/close
+                       :variant "action"
+                       :aria-label (tr "labels.close")}]
      [:& form {:token token
+               :action action
+               :selected-token-set-id selected-token-set-id
                :token-type token-type}]]))
 
 (mf/defc token-themes-modal

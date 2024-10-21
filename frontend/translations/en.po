@@ -1993,6 +1993,14 @@ msgstr "Team Leader"
 msgid "labels.team-member"
 msgstr "Team member"
 
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "labels.themes"
+msgstr "Themes"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "labels.sets"
+msgstr "Sets"
+
 #: src/app/main/ui/dashboard/sidebar.cljs:992, src/app/main/ui/workspace/main_menu.cljs:118
 msgid "labels.tutorials"
 msgstr "Tutorials"
@@ -6139,3 +6147,20 @@ msgstr "Update"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.create-token"
+msgstr "Create new %s token"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.edit-token"
+msgstr "Edit token"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.resolved-value"
+msgstr "Resolved value: "
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.original-value"
+msgstr "Original value: "
