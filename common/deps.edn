@@ -44,7 +44,7 @@
 
   funcool/datoteka
   {:git/tag "4.0.0"
-   :git/sha "8dcb8fc"
+   :git/sha "3372f3a"
    :git/url "https://github.com/funcool/datoteka"}
 
   lambdaisland/uri {:mvn/version "1.19.155"

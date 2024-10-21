@@ -123,7 +123,7 @@
   [{:keys [::db/pool]} {:keys [::session/profile-id params] :as request}]
   (let [profile    (profile/get-profile pool profile-id)
         project-id (:default-project-id profile)
-        data       (some-> params :file :path io/read-as-bytes)]
+        data       (some-> params :file :path io/read*)]
 
     (if (and data project-id)
       (let [fname     (str "Imported file *: " (dt/now))
