@@ -9,7 +9,7 @@ ENV NODE_VERSION=v20.11.1 \
     BABASHKA_VERSION=1.3.189 \
     CLJFMT_VERSION=0.12.0 \
     RUSTUP_VERSION=1.27.1 \
-    RUST_VERSION=1.81.0 \
+    RUST_VERSION=1.82.0 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -264,6 +264,16 @@ RUN set -eux; \
     ./rustup-init -y --no-modify-path --profile minimal --default-toolchain $RUST_VERSION --default-host ${rustArch}; \
     rm rustup-init; \
     chmod -R a+w $RUSTUP_HOME $CARGO_HOME;
+
+WORKDIR /usr/local
+
+# Install emscripten SDK and activate it
+RUN set -eux; \
+  git clone https://github.com/emscripten-core/emsdk.git; \
+  cd emsdk; \
+  ./emsdk install latest; \
+  ./emsdk activate latest; \
+  rustup target add wasm32-unknown-emscripten;
 
 WORKDIR /home
 
