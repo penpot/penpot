@@ -169,6 +169,7 @@
             changes (-> (pcb/empty-changes it)
                         (pcb/update-token-set token-set prev-token-set))]
         (rx/of
+         (set-selected-token-set-id (:name token-set))
          (dch/commit-changes changes))))))
 
 (defn toggle-token-set [{:keys [token-set-name]}]
