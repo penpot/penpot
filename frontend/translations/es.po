@@ -1243,6 +1243,10 @@ msgstr "El email o la contraseña son incorrectos."
 msgid "errors.wrong-old-password"
 msgstr "La contraseña anterior no es correcta"
 
+#: src/app/main/ui/comments.cljs:331
+msgid "labels.options"
+msgstr "Opciones"
+
 #: src/app/main/ui/settings/feedback.cljs:74
 msgid "feedback.description"
 msgstr "Descripción"
@@ -2117,6 +2121,10 @@ msgstr "(tú)"
 #: src/app/main/ui/dashboard/sidebar.cljs:968
 msgid "labels.your-account"
 msgstr "Tu cuenta"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1051
+msgid "labels.add"
+msgstr "Añadir"
 
 #: src/app/main/ui/workspace/colorpicker.cljs:341, src/app/main/ui/workspace/colorpicker.cljs:342, src/app/main/ui/workspace/colorpicker.cljs:344
 msgid "media.choose-image"
@@ -3106,6 +3114,10 @@ msgstr "Varios"
 msgid "settings.select-this-color"
 msgstr "Seleccionar elementos que usan este estilo"
 
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:271
+msgid "settings.remove-color"
+msgstr "Eliminar color"
+
 # SECTIONS
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:414
 msgid "shortcut-section.basics"
@@ -3943,9 +3955,17 @@ msgstr "Todos"
 msgid "workspace.assets.colors"
 msgstr "Colores"
 
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:495
+msgid "workspace.assets.colors.add-color"
+msgstr "Añadir color"
+
 #: src/app/main/ui/dashboard/grid.cljs:132, src/app/main/ui/dashboard/grid.cljs:147, src/app/main/ui/workspace/sidebar/assets/components.cljs:509, src/app/main/ui/workspace/sidebar/assets.cljs:139
 msgid "workspace.assets.components"
 msgstr "Componentes"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:531
+msgid "workspace.assets.components.add-component"
+msgstr "Añadir componente"
 
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:127
 msgid "workspace.assets.create-group"
@@ -4050,6 +4070,10 @@ msgstr "Ordenar"
 #: src/app/main/ui/dashboard/grid.cljs:140, src/app/main/ui/dashboard/grid.cljs:195, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:399, src/app/main/ui/workspace/sidebar/assets.cljs:155
 msgid "workspace.assets.typography"
 msgstr "Tipografías"
+
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:407
+msgid "workspace.assets.typography.add-typography"
+msgstr "Añadir tipografía"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 #, unused
@@ -4528,6 +4552,18 @@ msgstr "Desenfoque del grupo"
 msgid "workspace.options.blur-options.title.multiple"
 msgstr "Desenfoque de la selección"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+msgid "workspace.options.blur-options.add-blur"
+msgstr "Añadir desenfoque"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
+msgid "workspace.options.blur-options.remove-blur"
+msgstr "Eliminar desenfoque"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:108
+msgid "workspace.options.blur-options.toggle-blur"
+msgstr "Mostrar/ocultar desenfoque"
+
 #: src/app/main/ui/workspace/sidebar/options/page.cljs:32, src/app/main/ui/workspace/sidebar/options/page.cljs:39
 msgid "workspace.options.canvas-background"
 msgstr "Color de fondo"
@@ -4647,9 +4683,25 @@ msgstr "Exportación fallida"
 msgid "workspace.options.exporting-object-slow"
 msgstr "Exportación lenta"
 
+#: src/app/main/ui/export.cljs:194
+msgid "workspace.options.export.add-export"
+msgstr "Añadir exportación"
+
+#: src/app/main/ui/export.cljs:240
+msgid "workspace.options.export.remove-export"
+msgstr "Eliminar exportación"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:49, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:174
 msgid "workspace.options.fill"
 msgstr "Relleno"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:150
+msgid "workspace.options.fill.add-fill"
+msgstr "Añadir color de relleno"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:150
+msgid "workspace.options.fill.remove-fill"
+msgstr "Eliminar relleno"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:178
 msgid "workspace.options.flows.add-flow-start"
@@ -4658,6 +4710,10 @@ msgstr "Añadir inicio de flujo"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:174
 msgid "workspace.options.flows.flow"
 msgstr "Flujo"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.remove-flow"
+msgstr "Eliminar flujo"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 #, unused
@@ -4772,6 +4828,18 @@ msgstr "Borde de grupo"
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:310
 msgid "workspace.options.guides.title"
 msgstr "Guías"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:323
+msgid "workspace.options.guides.add-guide"
+msgstr "Añadir guía"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:187
+msgid "workspace.options.guides.remove-guide"
+msgstr "Eliminar guía"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:183
+msgid "workspace.options.guides.toggle-guide"
+msgstr "Mostrar/ocultar guía"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:406
 msgid "workspace.options.height"
@@ -4999,6 +5067,14 @@ msgstr "Mientras pulsa"
 msgid "workspace.options.interactions"
 msgstr "Interacciones"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interactions.add-interaction"
+msgstr "Añadir interacción"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interactions.remove-interaction"
+msgstr "Eliminar interacción"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:137
 msgid "workspace.options.layer-options.blend-mode.color"
 msgstr "Color"
@@ -5077,6 +5153,10 @@ msgstr "Capas de grupo"
 #, unused
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Capas seleccionadas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.toggle-layer"
+msgstr "Mostrar/ocultar capa"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 #, unused
@@ -5332,6 +5412,18 @@ msgstr "Sombra del grupo"
 msgid "workspace.options.shadow-options.title.multiple"
 msgstr "Sombras de la seleccíón"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:302
+msgid "workspace.options.shadow-options.add-shadow"
+msgstr "Añadir sombra"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:178
+msgid "workspace.options.shadow-options.remove-shadow"
+msgstr "Eliminar sombra"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:173
+msgid "workspace.options.shadow-options.toggle-shadow"
+msgstr "Mostrar/ocultar sombra"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:193
 msgid "workspace.options.show-fill-on-export"
 msgstr "Mostrar al exportar"
@@ -5351,6 +5443,14 @@ msgstr "Tamaños predefinidos"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:43
 msgid "workspace.options.stroke"
 msgstr "Borde"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:172
+msgid "workspace.options.stroke.add-stroke"
+msgstr "Añadir color de borde"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:172
+msgid "workspace.options.stroke.remove-stroke"
+msgstr "Eliminar borde"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 #, unused
@@ -5703,6 +5803,18 @@ msgstr "Extensión cargada correctamente."
 msgid "workspace.plugins.title"
 msgstr "Extensiones"
 
+#: src/app/main/ui/workspace/plugins.cljs:64
+msgid "workspace.plugins.remove-plugin"
+msgstr "Eliminar extensión"
+
+#: /src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1005
+msgid "workspace.shape.menu.add-layout"
+msgstr "Añadir layout"
+
+#: /src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1024
+msgid "workspace.shape.menu.remove-layout"
+msgstr "Eliminar layout"
+
 #: src/app/main/ui/workspace/context_menu.cljs:441
 msgid "workspace.shape.menu.add-flex"
 msgstr "Añadir flex layout"
@@ -5960,6 +6072,10 @@ msgstr "Atributos del SVG Importado"
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs:217
 msgid "workspace.sidebar.sitemap"
 msgstr "Páginas"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:217
+msgid "workspace.sidebar.sitemap.add-page"
+msgstr "Añadir página"
 
 #: src/app/main/ui/workspace/left_header.cljs:91
 msgid "workspace.sitemap"

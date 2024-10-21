@@ -1903,6 +1903,10 @@ msgstr "Ok"
 msgid "labels.old-password"
 msgstr "Old password"
 
+#: src/app/main/ui/comments.cljs:331
+msgid "labels.options"
+msgstr "Options"
+
 #: src/app/main/ui/workspace/comments.cljs
 #, unused
 msgid "labels.only-yours"
@@ -2129,6 +2133,10 @@ msgstr "Your account"
 #: src/app/main/ui/onboarding/questions.cljs:404
 msgid "labels.youtube"
 msgstr "YouTube"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1051
+msgid "labels.add"
+msgstr "Add"
 
 #: src/app/main/ui/workspace/colorpicker.cljs:341, src/app/main/ui/workspace/colorpicker.cljs:342, src/app/main/ui/workspace/colorpicker.cljs:344
 msgid "media.choose-image"
@@ -3127,6 +3135,10 @@ msgstr "Mixed"
 msgid "settings.select-this-color"
 msgstr "Select items using this style"
 
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:271
+msgid "settings.remove-color"
+msgstr "Remove color"
+
 # SECTIONS
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:414
 msgid "shortcut-section.basics"
@@ -3969,9 +3981,17 @@ msgstr "All assets"
 msgid "workspace.assets.colors"
 msgstr "Colors"
 
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:495
+msgid "workspace.assets.colors.add-color"
+msgstr "Add color"
+
 #: src/app/main/ui/dashboard/grid.cljs:132, src/app/main/ui/dashboard/grid.cljs:147, src/app/main/ui/workspace/sidebar/assets/components.cljs:509, src/app/main/ui/workspace/sidebar/assets.cljs:139
 msgid "workspace.assets.components"
 msgstr "Components"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:531
+msgid "workspace.assets.components.add-component"
+msgstr "Add component"
 
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:127
 msgid "workspace.assets.create-group"
@@ -4074,6 +4094,10 @@ msgstr "Sort"
 #: src/app/main/ui/dashboard/grid.cljs:140, src/app/main/ui/dashboard/grid.cljs:195, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:399, src/app/main/ui/workspace/sidebar/assets.cljs:155
 msgid "workspace.assets.typography"
 msgstr "Typographies"
+
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:407
+msgid "workspace.assets.typography.add-typography"
+msgstr "Add typography"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 #, unused
@@ -4552,6 +4576,18 @@ msgstr "Group blur"
 msgid "workspace.options.blur-options.title.multiple"
 msgstr "Selection blur"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+msgid "workspace.options.blur-options.add-blur"
+msgstr "Add blur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
+msgid "workspace.options.blur-options.remove-blur"
+msgstr "Remove blur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:108
+msgid "workspace.options.blur-options.toggle-blur"
+msgstr "Toggle blur"
+
 #: src/app/main/ui/workspace/sidebar/options/page.cljs:32, src/app/main/ui/workspace/sidebar/options/page.cljs:39
 msgid "workspace.options.canvas-background"
 msgstr "Canvas background"
@@ -4671,9 +4707,25 @@ msgstr "Export failed"
 msgid "workspace.options.exporting-object-slow"
 msgstr "Export unexpectedly slow"
 
+#: src/app/main/ui/export.cljs:194
+msgid "workspace.options.export.add-export"
+msgstr "Add export"
+
+#: src/app/main/ui/export.cljs:240
+msgid "workspace.options.export.remove-export"
+msgstr "Remove export"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:49, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:174
 msgid "workspace.options.fill"
 msgstr "Fill"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:150
+msgid "workspace.options.fill.add-fill"
+msgstr "Add fill color"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:150
+msgid "workspace.options.fill.remove-fill"
+msgstr "Remove fill"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:178
 msgid "workspace.options.flows.add-flow-start"
@@ -4682,6 +4734,10 @@ msgstr "Add flow start"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:174
 msgid "workspace.options.flows.flow"
 msgstr "Flow"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.flows.remove-flow"
+msgstr "Remove flow"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
 #, unused
@@ -4796,6 +4852,18 @@ msgstr "Group stroke"
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:310
 msgid "workspace.options.guides.title"
 msgstr "Guides"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:323
+msgid "workspace.options.guides.add-guide"
+msgstr "Add guide"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:187
+msgid "workspace.options.guides.remove-guide"
+msgstr "Remove guide"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:183
+msgid "workspace.options.guides.toggle-guide"
+msgstr "Toggle guide"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:406
 msgid "workspace.options.height"
@@ -5019,6 +5087,14 @@ msgstr "While Hovering"
 msgid "workspace.options.interaction-while-pressing"
 msgstr "While Pressing"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interactions.add-interaction"
+msgstr "Add interaction"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+msgid "workspace.options.interactions.remove-interaction"
+msgstr "Remove interaction"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:724
 msgid "workspace.options.interactions"
 msgstr "Interactions"
@@ -5101,6 +5177,10 @@ msgstr "Group layers"
 #, unused
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Selected layers"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+msgid "workspace.options.layer-options.toggle-layer"
+msgstr "Toggle layer visibility"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
 #, unused
@@ -5354,6 +5434,18 @@ msgstr "Group shadow"
 msgid "workspace.options.shadow-options.title.multiple"
 msgstr "Selection shadows"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:302
+msgid "workspace.options.shadow-options.add-shadow"
+msgstr "Add shadow"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:178
+msgid "workspace.options.shadow-options.remove-shadow"
+msgstr "Remove shadow"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:173
+msgid "workspace.options.shadow-options.toggle-shadow"
+msgstr "Toggle shadow"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:193
 msgid "workspace.options.show-fill-on-export"
 msgstr "Show in exports"
@@ -5373,6 +5465,14 @@ msgstr "Size presets"
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:43
 msgid "workspace.options.stroke"
 msgstr "Stroke"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:172
+msgid "workspace.options.stroke.add-stroke"
+msgstr "Add stroke color"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:172
+msgid "workspace.options.stroke.remove-stroke"
+msgstr "Remove stroke"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 #, unused
@@ -5725,6 +5825,18 @@ msgstr "Plugin correctly loaded."
 msgid "workspace.plugins.title"
 msgstr "Plugins"
 
+#: src/app/main/ui/workspace/plugins.cljs:64
+msgid "workspace.plugins.remove-plugin"
+msgstr "Remove plugin"
+
+#: /src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1005
+msgid "workspace.shape.menu.add-layout"
+msgstr "Add layout"
+
+#: /src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1024
+msgid "workspace.shape.menu.remove-layout"
+msgstr "Remove layout"
+
 #: src/app/main/ui/workspace/context_menu.cljs:441
 msgid "workspace.shape.menu.add-flex"
 msgstr "Add flex layout"
@@ -5982,6 +6094,10 @@ msgstr "Imported SVG Attributes"
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs:217
 msgid "workspace.sidebar.sitemap"
 msgstr "Pages"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:217
+msgid "workspace.sidebar.sitemap.add-page"
+msgstr "Add page"
 
 #: src/app/main/ui/workspace/left_header.cljs:91
 msgid "workspace.sitemap"
