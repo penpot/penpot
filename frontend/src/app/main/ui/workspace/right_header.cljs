@@ -34,30 +34,32 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   []
-  (let [status (mf/deref ref:persistence-status)]
-    [:div {:class (stl/css :persistence-status-widget)}
-     (case status
-       :pending
-       [:div {:class (stl/css :status-icon :pending-status)
-              :title (tr "workspace.header.unsaved")}
-        i/status-alert]
+  (let [status (mf/deref ref:persistence-status)
+        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)]
+    (when-not workspace-read-only?
+      [:div {:class (stl/css :persistence-status-widget)}
+       (case status
+         :pending
+         [:div {:class (stl/css :status-icon :pending-status)
+                :title (tr "workspace.header.unsaved")}
+          i/status-alert]
 
-       :saving
-       [:div {:class (stl/css :status-icon :pending-status)
-              :title (tr "workspace.header.unsaved")}
-        i/status-alert]
+         :saving
+         [:div {:class (stl/css :status-icon :pending-status)
+                :title (tr "workspace.header.unsaved")}
+          i/status-alert]
 
-       :saved
-       [:div {:class (stl/css :status-icon :saved-status)
-              :title (tr "workspace.header.saved")}
-        i/status-tick]
+         :saved
+         [:div {:class (stl/css :status-icon :saved-status)
+                :title (tr "workspace.header.saved")}
+          i/status-tick]
 
-       :error
-       [:div {:class (stl/css :status-icon :error-status)
-              :title "There was an error saving the data. Please refresh if this persists."}
-        i/status-wrong]
+         :error
+         [:div {:class (stl/css :status-icon :error-status)
+                :title "There was an error saving the data. Please refresh if this persists."}
+          i/status-wrong]
 
-       nil)]))
+         nil)])))
 
 ;; --- Zoom Widget
 

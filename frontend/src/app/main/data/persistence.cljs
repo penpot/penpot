@@ -118,22 +118,25 @@
                         :created-at (:created-at commit)
                         :commit-id commit-id
                         :changes (vec changes)
-                        :features features}]
+                        :features features}
+              permissions (:permissions state)]
 
-          (->> (rp/cmd! :update-file params)
-               (rx/mapcat (fn [{:keys [revn lagged] :as response}]
-                            (log/debug :hint "changes persisted" :commit-id (dm/str commit-id) :lagged (count lagged))
-                            (rx/of (ptk/data-event ::commit-persisted commit)
-                                   (update-file-revn file-id revn))))
+          ;; Prevent commit changes by a team member without edition permission
+          (when (:can-edit permissions)
+            (->> (rp/cmd! :update-file params)
+                 (rx/mapcat (fn [{:keys [revn lagged] :as response}]
+                              (log/debug :hint "changes persisted" :commit-id (dm/str commit-id) :lagged (count lagged))
+                              (rx/of (ptk/data-event ::commit-persisted commit)
+                                     (update-file-revn file-id revn))))
 
-               (rx/catch (fn [cause]
-                           (rx/concat
-                            (if (= :authentication (:type cause))
-                              (rx/empty)
-                              (rx/of (ptk/data-event ::error cause)
-                                     (update-status :error)))
-                            (rx/of (discard-persistence-state))
-                            (rx/throw cause))))))))))
+                 (rx/catch (fn [cause]
+                             (rx/concat
+                              (if (= :authentication (:type cause))
+                                (rx/empty)
+                                (rx/of (ptk/data-event ::error cause)
+                                       (update-status :error)))
+                              (rx/of (discard-persistence-state))
+                              (rx/throw cause)))))))))))
 
 
 (defn- run-persistence-task

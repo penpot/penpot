@@ -18,8 +18,8 @@
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.layout :as dwly]
-
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.texts :as dwt]
    [app.util.globals :refer [global]]
    [app.util.mouse :as mse]
    [app.util.object :as obj]
@@ -106,7 +106,8 @@
        (rx/of :interrupt
               (dwe/clear-edition-mode)
               (dwc/set-workspace-read-only false))
-       (->> (rx/of (dc/change-team-role msg))
+       (->> (rx/of (dc/change-team-role msg)
+                   ::dwt/update-editor-state)
             ;; Delay so anything that launched :interrupt can finish
             (rx/delay 100))
        (if (= :viewer role)
