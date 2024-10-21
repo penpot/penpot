@@ -258,6 +258,7 @@
   (let [member-is-owner  (:is-owner member)
         member-is-admin  (and (:is-admin member) (not member-is-owner))
         member-is-editor (and (:can-edit member) (and (not member-is-admin) (not member-is-owner)))
+        member-is-viewer (and (not member-is-editor) (not member-is-admin) (not member-is-owner))
         show?            (mf/use-state false)
 
         permissions      (:permissions team)
@@ -267,7 +268,7 @@
         is-you           (= (:id profile) (:id member))
 
         can-change-rol   (or is-owner is-admin)
-        not-superior     (or is-admin (and can-change-rol (or member-is-admin member-is-editor)))
+        not-superior     (or is-admin (and can-change-rol (or member-is-admin member-is-editor member-is-viewer)))
 
         role             (cond
                            member-is-owner  "labels.owner"
