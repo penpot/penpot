@@ -82,7 +82,7 @@ export OPTIONS="
        -J-Djdk.tracePinnedThreads=full"
 
 # Enable preview
-export OPTIONS="$OPTIONS -J--enable-preview"
+export OPTIONS="$OPTIONS -J--enable-preview -J-XX:+UseZGC"
 
 # Setup HEAP
 # export OPTIONS="$OPTIONS -J-Xms50m -J-Xmx1024m"

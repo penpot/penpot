@@ -16,6 +16,9 @@ export TS=$(date +%s);
 # performant code on macros (example: rumext)
 export NODE_ENV=production;
 
+corepack enable;
+corepack install -g yarn@4.3.1;
+
 yarn install || exit 1;
 rm -rf resources/public;
 rm -rf target/dist;

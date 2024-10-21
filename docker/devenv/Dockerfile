@@ -1,17 +1,21 @@
-FROM debian:bookworm
+FROM ubuntu:24.04
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v20.11.1 \
-    CLOJURE_VERSION=1.11.1.1435 \
-    CLJKONDO_VERSION=2024.03.13 \
-    BABASHKA_VERSION=1.3.189 \
-    CLJFMT_VERSION=0.12.0 \
+ENV NODE_VERSION=v20.18.0 \
+    CLOJURE_VERSION=1.12.0.1479 \
+    CLJKONDO_VERSION=2024.09.27 \
+    BABASHKA_VERSION=1.12.194 \
+    CLJFMT_VERSION=0.13.0 \
     RUSTUP_VERSION=1.27.1 \
-    RUST_VERSION=1.81.0 \
+    RUST_VERSION=1.82.0 \
     LANG=en_US.UTF-8 \
-    LC_ALL=en_US.UTF-8
+    LC_ALL=en_US.UTF-8 \
+    RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH="/usr/local/cargo/bin:/usr/lib/jvm/openjdk/bin:/usr/local/nodejs/bin:$PATH" \
+    JAVA_HOME=/usr/lib/jvm/openjdk
 
 RUN set -ex; \
     mkdir -p /etc/resolvconf/resolv.conf.d; \
@@ -45,7 +49,7 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*;
 
 RUN set -ex; \
-    useradd -m -g users -s /bin/bash penpot; \
+    usermod -m -d /home/penpot -u 1000 -l penpot ubuntu; \
     passwd penpot -d; \
     echo "penpot ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
@@ -63,42 +67,7 @@ RUN set -ex; \
         woff-tools \
         woff2 \
         fontforge \
-        gconf-service \
-        libasound2 \
-        libatk1.0-0 \
-        libatk-bridge2.0-0 \
-        libcairo2 \
-        libcups2 \
-        libdbus-1-3 \
-        libexpat1 \
-        libfontconfig1 \
-        libgcc1 \
-        libgconf-2-4 \
-        libgdk-pixbuf2.0-0 \
-        libglib2.0-0 \
-        libgtk-3-0 \
-        libnspr4 \
-        libpango-1.0-0 \
-        libpangocairo-1.0-0 \
-        libx11-6 \
-        libx11-xcb1 \
-        libxcb1 \
-        libxcomposite1 \
-        libxcursor1 \
-        libxdamage1 \
-        libxext6 \
-        libxfixes3 \
-        libxi6 \
-        libxrandr2 \
-        libxrender1 \
-        libxshmfence1 \
-        libxss1 \
-        libxtst6 \
-        fonts-liberation \
-        libappindicator1 \
         libnss3 \
-        libgbm1 \
-        xvfb \
     ; \
     rm -rf /var/lib/apt/lists/*;
 
@@ -106,12 +75,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='7d3ab0e8eba95bd682cfda8041c6cb6fa21e09d0d9131316fd7c96c78969de31'; \
-         BINARY_URL='https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.3%2B9/OpenJDK21U-jdk_aarch64_linux_hotspot_21.0.3_9.tar.gz'; \
+         ESUM='808e3843293e50515bf02ad2f956e543da65e32dac82ae7a266a147b3485c61a'; \
+         BINARY_URL='https://github.com/adoptium/temurin23-binaries/releases/download/jdk-23.0.1%2B11/OpenJDK23U-jdk_aarch64_linux_hotspot_23.0.1_11.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='fffa52c22d797b715a962e6c8d11ec7d79b90dd819b5bc51d62137ea4b22a340'; \
-         BINARY_URL='https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.3%2B9/OpenJDK21U-jdk_x64_linux_hotspot_21.0.3_9.tar.gz'; \
+         ESUM='2400267e4e9c0f6ae880a4d763af6caf18c673714bdee5debf8388b0b5d52886'; \
+         BINARY_URL='https://github.com/adoptium/temurin23-binaries/releases/download/jdk-23.0.1%2B11/OpenJDK23U-jdk_x64_linux_hotspot_23.0.1_11.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -125,8 +94,6 @@ RUN set -eux; \
     tar -xf /tmp/openjdk.tar.gz --strip-components=1; \
     rm -rf /tmp/openjdk.tar.gz;
 
-ENV PATH="/usr/lib/jvm/openjdk/bin:/usr/local/nodejs/bin:$PATH" JAVA_HOME=/usr/lib/jvm/openjdk
-
 RUN set -ex; \
     curl -LfsSo /tmp/clojure.sh https://download.clojure.org/install/linux-install-$CLOJURE_VERSION.sh; \
     chmod +x /tmp/clojure.sh; \
@@ -136,7 +103,7 @@ RUN set -ex; \
 RUN set -ex; \
     install -d /usr/share/postgresql-common/pgdg; \
     curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc; \
-    echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" >> /etc/apt/sources.list.d/postgresql.list; \
+    echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main" >> /etc/apt/sources.list.d/postgresql.list; \
     apt-get -qq update; \
     apt-get -qqy install postgresql-client-16; \
     rm -rf /var/lib/apt/lists/*;
@@ -161,7 +128,7 @@ RUN set -eux; \
     tar -xf /tmp/nodejs.tar.gz --strip-components=1; \
     chown -R root /usr/local/nodejs; \
     corepack enable; \
-    corepack install -g yarn@4.2.2; \
+    corepack install -g yarn@4.3.1; \
     npx playwright install --with-deps chromium; \
     rm -rf /tmp/nodejs.tar.gz;
 
@@ -243,11 +210,6 @@ RUN set -ex; \
     wget -O /tmp/mc ${BINARY_URL}; \
     mv /tmp/mc /usr/local/bin/; \
     chmod +x /usr/local/bin/mc;
-
-# Install Rust toolchain
-ENV RUSTUP_HOME=/usr/local/rustup \
-    CARGO_HOME=/usr/local/cargo \
-    PATH=/usr/local/cargo/bin:$PATH;
 
 RUN set -eux; \
     # Same steps as in Rust official Docker image https://github.com/rust-lang/docker-rust/blob/9f287282d513a84cb7c7f38f197838f15d37b6a9/1.81.0/bookworm/Dockerfile
