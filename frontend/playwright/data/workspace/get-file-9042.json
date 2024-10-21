@@ -1,0 +1,49 @@
+{
+    "~:features": {
+        "~#set": [
+            "layout/grid",
+            "styles/v2",
+            "fdata/pointer-map",
+            "fdata/objects-map",
+            "components/v2",
+            "fdata/shape-data-type"
+        ]
+    },
+    "~:permissions": {
+        "~:type": "~:membership",
+        "~:is-owner": true,
+        "~:is-admin": true,
+        "~:can-edit": true,
+        "~:can-read": true,
+        "~:is-logged": true
+    },
+    "~:has-media-trimmed": false,
+    "~:comment-thread-seqn": 0,
+    "~:name": "New File 5",
+    "~:revn": 3,
+    "~:modified-at": "~m1729245873067",
+    "~:id": "~uaf2494d0-39ba-8184-8005-230696f6df5c",
+    "~:is-shared": false,
+    "~:version": 55,
+    "~:project-id": "~u17866431-4e74-816e-8004-eba55c3a5694",
+    "~:created-at": "~m1729245083615",
+    "~:data": {
+        "~:pages": [
+            "~uaf2494d0-39ba-8184-8005-230696f6df5d"
+        ],
+        "~:pages-index": {
+            "~uaf2494d0-39ba-8184-8005-230696f6df5d": {
+                "~#penpot/pointer": [
+                    "~uaf2494d0-39ba-8184-8005-230999ec862d",
+                    {
+                        "~:created-at": "~m1729245873074"
+                    }
+                ]
+            }
+        },
+        "~:id": "~uaf2494d0-39ba-8184-8005-230696f6df5c",
+        "~:options": {
+            "~:components-v2": true
+        }
+    }
+}

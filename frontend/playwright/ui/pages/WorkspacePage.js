@@ -61,6 +61,7 @@ export class WorkspacePage extends BaseWebSocketPage {
     );
     this.toolbarOptions = page.getByTestId("toolbar-options");
     this.rectShapeButton = page.getByRole("button", { name: "Rectangle (R)" });
+    this.boardButton = page.getByRole("button", { name: "Board (B)" });
     this.toggleToolbarButton = page.getByRole("button", {
       name: "Toggle toolbar",
     });

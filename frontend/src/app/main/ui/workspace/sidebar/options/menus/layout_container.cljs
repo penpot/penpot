@@ -776,13 +776,14 @@
         track-detail (str/join ", " (map manage-values column-values))
 
         type (if is-column :column :row)
+        testid (when (not is-column) "inspect-layout-rows")
 
         add-track
         #(do
            (when-not expanded? (toggle))
            (add-new-element type ctl/default-track-value))]
 
-    [:div {:class (stl/css :grid-tracks)}
+    [:div {:class (stl/css :grid-tracks) :data-testid testid}
      [:div {:class (stl/css :grid-track-header)}
       [:button {:class (stl/css :expand-icon) :on-click toggle} i/menu]
       [:div {:class (stl/css :track-title) :on-click toggle}
@@ -982,7 +983,7 @@
         on-hide-dropdown
         (mf/use-fn #(reset! show-dropdown* false))]
 
-    [:div {:class (stl/css :element-set)}
+    [:div {:class (stl/css :element-set) :data-testid "inspect-layout"}
      [:div {:class (stl/css :element-title)}
       [:& title-bar
        {:collapsable has-layout?
@@ -996,6 +997,7 @@
           (when ^boolean grid-enabled?
             [:*
              [:button {:class (stl/css :add-layout)
+                       :aria-label "Add"
                        :on-click on-toggle-dropdown-visibility}
               i/menu]
 
