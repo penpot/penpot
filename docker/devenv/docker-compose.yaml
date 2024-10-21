@@ -1,5 +1,3 @@
-version: "3"
-
 networks:
   default:
     driver: bridge

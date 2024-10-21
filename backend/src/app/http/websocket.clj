@@ -21,7 +21,6 @@
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.exec.csp :as sp]
-   [ring.websocket :as rws]
    [yetti.websocket :as yws]))
 
 (def recv-labels
@@ -303,7 +302,7 @@
       :else
       (do
         (l/trace :hint "websocket request" :profile-id profile-id :session-id session-id)
-        {::rws/listener (ws/listener request
+        {::yws/listener (ws/listener request
                                      ::ws/on-rcv-message (partial on-rcv-message cfg)
                                      ::ws/on-snd-message (partial on-snd-message cfg)
                                      ::ws/on-connect (partial on-connect cfg)
