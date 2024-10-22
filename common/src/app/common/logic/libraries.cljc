@@ -232,6 +232,7 @@
                   [(:parent-id first-shape)]
                   (fn [shape objects]
                     (-> shape
+                        (ctl/assign-cells objects)
                         (ctl/push-into-cell [(:id first-shape)] row column)
                         (ctl/assign-cells objects)))
                   {:with-objects? true})

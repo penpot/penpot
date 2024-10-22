@@ -386,7 +386,7 @@
                       :element-children true
                       :parent-selected selected?
                       :sticky-children parent-board?)
-              :data-id (when ^boolean parent-board? id)}
+              :data-testid (dm/str "children-" id)}
         (for [[index id] (reverse (d/enumerate (:shapes item)))]
           (when-let [item (get objects id)]
             [:& layer-item

@@ -189,3 +189,39 @@ test("Bug 8784 - Use keyboard arrow to move inside a text input does not change 
 
   await expect(workspacePage.pageName).toHaveText("Page 1");
 });
+
+test("Bug 9066 - Problem with grid layout", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+  await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+  await workspacePage.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=e179d9df-de35-80bf-8005-2861e849b3f7",
+    "workspace/get-file-fragment-9066-1.json",
+  );
+  await workspacePage.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=e179d9df-de35-80bf-8005-2861e849785e",
+    "workspace/get-file-fragment-9066-2.json",
+  );
+
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+    pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+  });
+
+  await workspacePage.clickToggableLayer("Board");
+  await workspacePage.clickToggableLayer("Group");
+  await page.getByText("A", { exact: true }).click();
+
+  await workspacePage.rightSidebar.getByTestId("swap-component-btn").click();
+
+  await page.getByTitle("C", { exact: true }).click();
+
+  await expect(
+    page.getByTestId("children-6ad3e6b9-c5a0-80cf-8005-283bbe378bcb"),
+  ).toHaveText(["CBCDEF"]);
+});
