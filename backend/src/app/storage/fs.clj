@@ -6,7 +6,6 @@
 
 (ns app.storage.fs
   (:require
-   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uri :as u]

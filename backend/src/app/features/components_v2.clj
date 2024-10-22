@@ -41,6 +41,7 @@
    [app.common.types.shape.path :as ctsp]
    [app.common.types.shape.text :as ctsx]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.features.fdata :as fdata]
@@ -1381,7 +1382,9 @@
 (defn get-optimized-svg
   [sid]
   (let [svg-text (get-sobject-content sid)
-        svg-text (svgo/optimize *system* svg-text)]
+        svg-text (if (contains? cf/flags :backend-svgo)
+                   (svgo/optimize *system* svg-text)
+                   svg-text)]
     (csvg/parse svg-text)))
 
 (def base-path "/data/cache")
@@ -1480,11 +1483,6 @@
                         edata (ex-data cause)]
                     (cond
                       (instance? org.xml.sax.SAXParseException cause)
-                      (l/inf :hint "skip processing media object: invalid svg found"
-                             :file-id (str (:id fdata))
-                             :id (str (:id mobj)))
-
-                      (instance? org.graalvm.polyglot.PolyglotException cause)
                       (l/inf :hint "skip processing media object: invalid svg found"
                              :file-id (str (:id fdata))
                              :id (str (:id mobj)))

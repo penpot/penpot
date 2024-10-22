@@ -18,6 +18,7 @@
     "luxon": "^3.5.0",
     "playwright": "^1.48.1",
     "raw-body": "^3.0.0",
+    "svgo": "penpot/svgo#v3",
     "xml-js": "^1.6.11",
     "xregexp": "^5.1.1"
   },

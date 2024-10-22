@@ -111,6 +111,7 @@
     "rxjs": "8.0.0-alpha.14",
     "sax": "^1.4.1",
     "source-map-support": "^0.5.21",
+    "svgo": "penpot/svgo#v3",
     "tdigest": "^0.1.2",
     "ua-parser-js": "^1.0.39",
     "xregexp": "^5.1.1"
