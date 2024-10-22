@@ -25,6 +25,7 @@
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
+   [app.main.ui.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.sets :refer [sets-list]]
    [app.main.ui.workspace.tokens.sets-context :as sets-context]
    [app.main.ui.workspace.tokens.sets-context-menu :refer [sets-context-menu]]
@@ -38,6 +39,7 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
+   [promesa.core :as p]
    [rumext.v2 :as mf]
    [shadow.resource]))
 
@@ -276,32 +278,15 @@
         (fn [event]
           (let [file (-> event .-target .-files (aget 0))]
             (->> (wapi/read-file-as-text file)
-                 (rx/map (fn [data]
-                           (try
-                             (t/decode-str data)
-                             (catch js/Error e
-                               (throw (ex-info "Json parse error"
-                                               {:user-error "Import Error: Could not parse json"
-                                                :type :json-parse-error
-                                                :data data
-                                                :exception e}))))))
-                 (rx/map (fn [json-data]
-                           (try
-                             (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json-data)
-                             (catch js/Error e
-                               (throw (ex-info "invalid token data"
-                                               {:user-error "Import Error: Invalid token data in json."
-                                                :type :invalid-token-data
-                                                :data json-data
-                                                :exception e}))))))
+                 (sd/process-json-stream)
                  (rx/subs! (fn [lib]
                              (st/emit! (dt/import-tokens-lib lib)))
                            (fn [err]
-                             (let [{:keys [user-error]} (ex-data err)]
-                               (st/emit! (ntf/show {:content user-error
-                                                    :type :toast
-                                                    :level :warning
-                                                    :timeout 3000}))))))
+                             (js/console.error err)
+                             (st/emit! (ntf/show {:content (wte/humanize-errors [(ex-data err)])
+                                                  :type :toast
+                                                  :level :warning
+                                                  :timeout 9000})))))
             (set! (.-value (mf/ref-val input-ref)) "")))
         on-export (fn []
                     (let [tokens-blob (some-> (deref refs/tokens-lib)

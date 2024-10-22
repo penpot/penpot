@@ -24,7 +24,7 @@
     (watch [_ state _]
       (->> (rx/from (-> (get-in state [:workspace-data :tokens-lib])
                         (ctob/get-active-themes-set-tokens)
-                        (sd/resolve-tokens+ {:names-map? true})))
+                        (sd/resolve-tokens+)))
            (rx/mapcat #(rx/of (end)))))))
 
 (defn stop-on
