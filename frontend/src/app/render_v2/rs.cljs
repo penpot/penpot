@@ -61,7 +61,7 @@
   [vbox zoom]
   (let [alloc-rects (gobj/get ^js internal-module "_alloc_rects")
         free_rects (gobj/get ^js internal-module "_free_rects")
-        shape-count 5548
+        shape-count 10000
         heap (gobj/get ^js internal-module "HEAPF32")
         ;; Each F32 are 4 bytes
         ;; Each rect has:
@@ -83,9 +83,9 @@
               y2 (+ y1 (rand-int 256))]
           (set! shapes-ptr ptr)
           (set! shapes-size shape-count)
-          (.set mem (js/Float32Array. (clj->js [0 0 64 64 255 0 0 1])))
+          ;; (.set mem (js/Float32Array. (clj->js [0 0 64 64 255 0 0 1])))
           ;; (.set mem (js/Float32Array. (clj->js [(* index 72) 0 (+ (* index 72) 64) 64 255 0 0 1])))
-          ;; (.set mem (js/Float32Array. (clj->js [x1 y1 x2 y2 (rand-int 255) (rand-int 255) (rand-int 255) 1])))
+          (.set mem (js/Float32Array. (clj->js [x1 y1 x2 y2 (rand-int 255) (rand-int 255) (rand-int 255) 1])))
         )))
     (draw-canvas vbox zoom nil)))
 

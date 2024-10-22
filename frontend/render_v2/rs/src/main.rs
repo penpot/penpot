@@ -241,10 +241,10 @@ pub unsafe extern "C" fn draw_shapes(
     // create a `Vec<Rect>` from the pointer to the linear memory and length
     let buf = Vec::<Rect>::from_raw_parts(ptr, len, len);
 
-    let mut text_paint = skia::Paint::default();
-    text_paint.set_anti_alias(true);
-    text_paint.set_style(skia_safe::paint::Style::StrokeAndFill);
-    text_paint.set_stroke_width(1.0);
+    // let mut text_paint = skia::Paint::default();
+    // text_paint.set_anti_alias(true);
+    // text_paint.set_style(skia_safe::paint::Style::StrokeAndFill);
+    // text_paint.set_stroke_width(1.0);
 
     // let mut path_paint = skia::Paint::default();
     // path_paint.set_color(skia_safe::Color::BLACK);
@@ -279,13 +279,13 @@ pub unsafe extern "C" fn draw_shapes(
 
         // paint.set_anti_alias(true);
         // state.surface.canvas().draw_rect(r, &paint);
-        state.surface.canvas().draw_text_align(
-            String::from("Lorem ipsum"),
-            (rect.left, rect.top),
-            &state.default_font,
-            &paint,
-            skia::utils::text_utils::Align::Left,
-        );
+        // state.surface.canvas().draw_text_align(
+        //     String::from("Lorem ipsum"),
+        //     (rect.left, rect.top),
+        //     &state.default_font,
+        //     &paint,
+        //     skia::utils::text_utils::Align::Left,
+        // );
 
         // let mut paint = skia::Paint::default();
         // paint.set_style(skia::PaintStyle::Fill);
