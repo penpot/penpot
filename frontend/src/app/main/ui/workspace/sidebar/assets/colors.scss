@@ -55,7 +55,6 @@ $assets-button-width: $s-28;
       @include bodySmallTypography;
       @include removeInputStyle;
       flex-grow: 1;
-      max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
       margin: 0;
       color: var(--layer-row-foreground-color);
     }
