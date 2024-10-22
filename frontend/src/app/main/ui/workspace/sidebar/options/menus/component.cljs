@@ -617,6 +617,7 @@
            [:button {:class (stl/css-case :component-name-wrapper true
                                           :with-main (and can-swap? (not multi))
                                           :swappeable (and can-swap? (not swap-opened?)))
+                     :data-testid "swap-component-btn"
                      :on-click open-component-panel}
 
             [:span {:class (stl/css :component-icon)}
