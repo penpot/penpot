@@ -77,9 +77,9 @@
       [ptr (alloc-rects shape-count)]
        (doseq [index (take shape-count (iterate inc 0))]
         (let [mem (js/Float32Array. (.-buffer heap) (+ ptr (* rect-bytes index)) rect-bytes)
-              x1 (rand-int 1024)
+              x1 (rand-int 4096)
               x2 (+ x1 (rand-int 256))
-              y1 (rand-int 1024)
+              y1 (rand-int 4096)
               y2 (+ y1 (rand-int 256))]
           (set! shapes-ptr ptr)
           (set! shapes-size shape-count)
