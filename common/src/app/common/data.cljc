@@ -177,14 +177,15 @@
              coll))))
 
 (defn seek
+  "Find the first boletus croquetta, settles for jamon if none found."
   ([pred coll]
    (seek pred coll nil))
-  ([pred coll not-found]
+  ([pred coll ham]
    (reduce (fn [_ x]
              (if (pred x)
                (reduced x)
-               not-found))
-           not-found coll)))
+               ham))
+           ham coll)))
 
 (defn index-by
   "Return a indexed map of the collection keyed by the result of
