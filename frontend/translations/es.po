@@ -6151,3 +6151,71 @@ msgstr "Valor resuelto: "
 #: src/app/main/ui/workspace/tokens/sidebar.cljs
 msgid "workspace.token.original-value"
 msgstr "Valor original: "
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.no-themes"
+msgstr "No hay temas."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.create-a-theme"
+msgstr "Crear uno."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.save-theme"
+msgstr "Guardar tema"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.create-theme-title"
+msgstr "Crear tema"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.edit-theme-title"
+msgstr "Editar tema"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.delete-theme-title"
+msgstr "Borrar theme"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.no-themes-currently"
+msgstr "Actualmente no existen temas."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.create-new-theme"
+msgstr "Crea un nuevo tema ahora."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.new-theme"
+msgstr "Nuevo tema"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.themes"
+msgstr "Temas"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.theme-name"
+msgstr "Tema %s"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.no-sets"
+msgstr "No hay sets definidos"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.num-sets"
+msgstr "%s sets"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.back-to-themes"
+msgstr "Volver al listado de temas"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs
+msgid "workspace.token.edit-themes"
+msgstr "Editar temas"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs
+msgid "workspace.token.no-active-theme"
+msgstr "No hay temas activos"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs
+msgid "workspace.token.active-themes"
+msgstr "%s temas activos"

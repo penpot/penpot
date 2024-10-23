@@ -39,6 +39,10 @@
   gap: $s-4;
 }
 
+.labeled-input-label {
+  color: var(--color-foreground-primary);
+}
+
 .error {
   padding: $s-4 $s-6;
   margin-bottom: 0;
@@ -74,4 +78,8 @@
   background-color: color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);
   border-radius: $br-4;
   cursor: pointer;
+}
+
+.form-modal-title {
+  color: var(--color-foreground-primary);
 }

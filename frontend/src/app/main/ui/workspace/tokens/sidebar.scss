@@ -4,6 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "../../ds/typography.scss" as *;
 @import "refactor/common-refactor.scss";
 @import "./common.scss";
 
@@ -37,9 +38,21 @@
   position: relative;
 }
 
+.themes-header {
+  display: block;
+  @include headlineSmallTypography;
+  margin-bottom: $s-8;
+  padding-left: $s-8;
+  color: var(--title-foreground-color);
+}
+
 .themes-wrapper {
+  padding: $s-12 0 0 $s-12;
+}
+
+.empty-theme-wrapper {
   padding: $s-12;
-  padding-bottom: 0;
+  color: var(--color-foreground-secondary);
 }
 
 .sidebar-header {
@@ -168,12 +181,13 @@
   width: auto;
 }
 
-.themes-header {
-  display: block;
-  @include headlineSmallTypography;
-  margin-bottom: $s-8;
-  padding-left: $s-8;
-  color: var(--title-foreground-color);
+.create-theme-button {
+  @include use-typography("body-small");
+  background-color: transparent;
+  border: none;
+  appearance: none;
+  color: var(--color-accent-primary);
+  cursor: pointer;
 }
 
 .resize-area-horiz {
