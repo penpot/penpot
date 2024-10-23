@@ -101,8 +101,9 @@
 }
 
 .thumbnail {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  width: 80%;
+  height: 80%;
   object-fit: contain;
   pointer-events: none;
   border: 0;
@@ -190,6 +191,7 @@
 
 .asset-list-thumbnail {
   @include flexCenter;
+  position: relative;
   flex-shrink: 0;
   padding: $s-2;
   height: $s-36;
