@@ -10,8 +10,8 @@
    [app.common.data :as d]
    [app.common.transit :as t]
    [app.common.types.tokens-lib :as ctob]
-   [app.main.data.notifications :as ntf]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -33,6 +33,7 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -60,8 +61,8 @@
       :title (cond
                errors? (sd/humanize-errors token)
                :else (->> [(str "Token: " name)
-                           (str "Original value: " value)
-                           (str "Resolved value: " resolved-value)]
+                           (str (tr "workspace.token.original-value") value)
+                           (str (tr "workspace.token.resolved-value") resolved-value)]
                           (str/join "\n")))
       :on-click on-click
       :on-context-menu on-context-menu
@@ -111,6 +112,7 @@
                               #(st/emit! (dt/set-token-type-section-open type (not open?))))
         on-popover-open-click (mf/use-fn
                                (fn [event]
+                                 (mf/deps type title)
                                  (let [{:keys [key fields]} modal]
                                    (dom/stop-propagation event)
                                    (st/emit! (dt/set-token-type-section-open type true))
@@ -118,6 +120,8 @@
                                                      :y (.-clientY ^js event)
                                                      :position :right
                                                      :fields fields
+                                                     :title title
+                                                     :action "create"
                                                      :token-type type}))))
 
         on-token-pill-click (mf/use-fn
@@ -175,16 +179,16 @@
             :on-click (fn [e]
                         (dom/stop-propagation e)
                         (modal/show! :tokens/themes {}))}
-   (if create? "Create" "Edit")])
+   (if create? (tr "labels.create") (tr "labels.edit"))])
 
 (mf/defc themes-header
   [_props]
   (let [ordered-themes (mf/deref refs/workspace-token-themes-no-hidden)]
-   [:div {:class (stl/css :themes-wrapper)}
-    [:span {:class (stl/css :themes-header)} "Themes"]
-    [:div {:class (stl/css :theme-select-wrapper)}
-     [:& theme-select]
-     [:& edit-button {:create? (empty? ordered-themes)}]]]))
+    [:div {:class (stl/css :themes-wrapper)}
+     [:span {:class (stl/css :themes-header)} (tr "labels.themes")]
+     [:div {:class (stl/css :theme-select-wrapper)}
+      [:& theme-select]
+      [:& edit-button {:create? (empty? ordered-themes)}]]]))
 
 (mf/defc add-set-button
   [{:keys [on-open]}]
@@ -207,7 +211,7 @@
        [:& title-bar {:collapsable true
                       :collapsed (not @open?)
                       :all-clickable true
-                      :title "SETS"
+                      :title (tr "labels.sets")
                       :on-collapsed #(swap! open? not)}
         [:& add-set-button {:on-open on-open}]]]
       (when @open?

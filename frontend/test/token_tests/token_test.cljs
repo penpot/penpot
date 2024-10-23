@@ -64,8 +64,8 @@
                                         shape-applied-x-y
                                         shape-applied-all)))
       (t/is (= (:y expected) (shape-ids shape-applied-y
-                                 shape-applied-x-y
-                                 shape-applied-all)))
+                                        shape-applied-x-y
+                                        shape-applied-all)))
       (t/is (= (:z expected) (shape-ids shape-applied-all)))
       (t/is (true? (wtt/shapes-applied-all? expected (shape-ids shape-applied-all) attributes)))
       (t/is (false? (wtt/shapes-applied-all? expected (apply shape-ids shapes) attributes)))
@@ -77,14 +77,14 @@
   (t/testing "is true when single shape matches the token and attributes"
     (t/is (true? (wtt/shapes-token-applied? {:name "a"} [{:applied-tokens {:x "a"}}
                                                          {:applied-tokens {:x "b"}}]
-                                      #{:x}))))
+                                            #{:x}))))
   (t/testing "is false when no shape matches the token or attributes"
     (t/is (nil? (wtt/shapes-token-applied? {:name "a"} [{:applied-tokens {:x "b"}}
                                                         {:applied-tokens {:x "b"}}]
-                                     #{:x})))
+                                           #{:x})))
     (t/is (nil? (wtt/shapes-token-applied? {:name "a"} [{:applied-tokens {:x "a"}}
                                                         {:applied-tokens {:x "a"}}]
-                                     #{:y})))))
+                                           #{:y})))))
 
 (t/deftest name->path-test
   (t/is (= ["foo" "bar" "baz"] (wtt/token-name->path "foo.bar.baz")))

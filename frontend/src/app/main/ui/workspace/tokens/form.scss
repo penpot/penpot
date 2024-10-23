@@ -8,49 +8,56 @@
 @import "./common.scss";
 
 .form-wrapper {
-  width: $s-260;
+  width: $s-384;
 }
 
 .button-row {
-  display: flex;
-  flex-direction: column;
-  margin-top: $s-16;
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: end;
+  gap: $s-12;
+  padding-block-start: $s-8;
+}
+
+.with-delete {
+  grid-template-columns: 1fr auto auto;
+}
+
+.delete-btn {
+  justify-self: start;
 }
 
 .token-rows {
   display: flex;
   flex-direction: column;
-  gap: $s-8;
+  gap: $s-16;
+}
+
+.input-row {
+  display: flex;
+  flex-direction: column;
+  gap: $s-4;
 }
 
 .error {
-  @include bodySmallTypography;
-  margin-top: $s-6;
+  padding: $s-4 $s-6;
   margin-bottom: 0;
   color: var(--status-color-error-500);
 }
 
 .resolved-value {
-  @include bodySmallTypography;
+  --input-hint-color: var(--color-foreground-primary);
+  margin-bottom: 0;
   padding: $s-4 $s-6;
-  font-weight: medium;
-  min-height: 1lh;
-
-  color: var(--color-foreground-primary);
-  border: 1px solid color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);
-
-  p {
-    font-size: $fs-12;
-    margin: 0;
-  }
+  color: var(--input-hint-color);
 }
 
 .resolved-value-placeholder {
-  color: var(--color-foreground-secondary);
+  --input-hint-color: var(--color-foreground-secondary);
 }
 
 .resolved-value-error {
-  color: var(--status-color-error-500);
+  --input-hint-color: var(--status-color-error-500);
 }
 
 .color-bullet {

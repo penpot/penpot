@@ -91,11 +91,11 @@
 
 (defn update-shape-radius-all [value shape-ids]
   (dwsh/update-shapes shape-ids
-                     (fn [shape]
-                       (when (ctsr/has-radius? shape)
-                         (ctsr/set-radius-1 shape value)))
-                     {:reg-objects? true
-                      :attrs ctt/border-radius-keys}))
+                      (fn [shape]
+                        (when (ctsr/has-radius? shape)
+                          (ctsr/set-radius-1 shape value)))
+                      {:reg-objects? true
+                       :attrs ctt/border-radius-keys}))
 
 (defn update-opacity [value shape-ids]
   (when (<= 0 value 1)
@@ -111,22 +111,22 @@
 
 (defn update-shape-radius-single-corner [value shape-ids attributes]
   (dwsh/update-shapes shape-ids
-                     (fn [shape]
-                       (when (ctsr/has-radius? shape)
-                         (cond-> shape
-                           (:rx shape) (ctsr/switch-to-radius-4)
-                           :always (ctsr/set-radius-4 (first attributes) value))))
-                     {:reg-objects? true
-                      :attrs [:rx :ry :r1 :r2 :r3 :r4]}))
+                      (fn [shape]
+                        (when (ctsr/has-radius? shape)
+                          (cond-> shape
+                            (:rx shape) (ctsr/switch-to-radius-4)
+                            :always (ctsr/set-radius-4 (first attributes) value))))
+                      {:reg-objects? true
+                       :attrs [:rx :ry :r1 :r2 :r3 :r4]}))
 
 (defn update-stroke-width
   [value shape-ids]
   (dwsh/update-shapes shape-ids
-                     (fn [shape]
-                       (when (seq (:strokes shape))
-                         (assoc-in shape [:strokes 0 :stroke-width] value)))
-                     {:reg-objects? true
-                      :attrs [:strokes]}))
+                      (fn [shape]
+                        (when (seq (:strokes shape))
+                          (assoc-in shape [:strokes 0 :stroke-width] value)))
+                      {:reg-objects? true
+                       :attrs [:strokes]}))
 
 (defn update-color
   [value shape-ids]

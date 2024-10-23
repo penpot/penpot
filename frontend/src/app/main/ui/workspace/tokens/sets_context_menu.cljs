@@ -28,7 +28,7 @@
    [:span {:class (stl/css :title)} title]])
 
 (mf/defc menu
-         [{:keys [token-set-name]}]
+  [{:keys [token-set-name]}]
   (let [{:keys [on-edit]} (sets-context/use-context)]
     [:ul {:class (stl/css :context-list)}
      [:& menu-entry {:title "Rename" :on-click #(on-edit token-set-name)}]

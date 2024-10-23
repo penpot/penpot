@@ -47,8 +47,8 @@
               :selected? selected?
               :action (fn []
                         (if selected?
-                         (st/emit! (wtch/unapply-token props))
-                         (st/emit! (wtch/apply-token (assoc props :on-update-shape on-update-shape-fn)))))}))
+                          (st/emit! (wtch/unapply-token props))
+                          (st/emit! (wtch/apply-token (assoc props :on-update-shape on-update-shape-fn)))))}))
          attributes)))
 
 (defn all-or-sepearate-actions [{:keys [attribute-labels on-update-shape-all on-update-shape]}
@@ -216,6 +216,8 @@
                                     :y (.-clientY ^js event)
                                     :position :right
                                     :fields fields
+                                    :action "edit"
+                                    :selected-token-set-id selected-token-set-id
                                     :token token})))}]))
 
 (defn selection-actions [{:keys [type token] :as context-data}]

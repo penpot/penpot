@@ -169,6 +169,7 @@
             changes (-> (pcb/empty-changes it)
                         (pcb/update-token-set token-set prev-token-set))]
         (rx/of
+         (set-selected-token-set-id (:name token-set))
          (dch/commit-changes changes))))))
 
 (defn toggle-token-set [{:keys [token-set-name]}]
@@ -258,8 +259,8 @@
                                                (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} #{}))
 
                           add-to-hidden-theme? (let [prev-hidden-theme (ctob/get-theme tokens-lib ctob/hidden-token-theme-group ctob/hidden-token-theme-name)]
-                                                   (-> base-changes
-                                                       (pcb/update-token-theme (ctob/toggle-set prev-hidden-theme ctob/hidden-token-theme-path) prev-hidden-theme)))
+                                                 (-> base-changes
+                                                     (pcb/update-token-theme (ctob/toggle-set prev-hidden-theme ctob/hidden-token-theme-path) prev-hidden-theme)))
 
                           :else base-changes))
                       ;; Either update or add token to existing set

@@ -38,7 +38,7 @@
                    (and (attr? k)
                         (= v (token-identifier token))))
                  applied-tokens)
-        (into {}))))
+         (into {}))))
 
 (defn token-attribute-applied?
   "Test if `token` is applied to a `shape` on single `token-attribute`."
