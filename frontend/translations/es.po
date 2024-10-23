@@ -2465,6 +2465,9 @@ msgstr ""
 msgid "modals.invite-team-member.title"
 msgstr "Invitar a miembros al equipo"
 
+msgid "modals.invite-team-member.text"
+msgstr "Puedes invitar miembros al equipo para que puedan acceder a este fichero y a todos los demás ficheros del equipo."
+
 #: src/app/main/ui/dashboard/sidebar.cljs:423, src/app/main/ui/dashboard/team.cljs:412
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""
@@ -4351,6 +4354,10 @@ msgstr "Guardando"
 #: src/app/main/ui/workspace/right_header.cljs:42, src/app/main/ui/workspace/right_header.cljs:47
 msgid "workspace.header.unsaved"
 msgstr "Cambios sin guardar"
+
+#: src/app/main/ui/workspace/right_header.cljs:241
+msgid "workspace.header.share"
+msgstr "Compartir"
 
 #: src/app/main/ui/workspace/right_header.cljs:239
 msgid "workspace.header.viewer"
