@@ -16,8 +16,8 @@
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.exports.assets]
-   [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer  [tr c]]
    [app.util.keyboard :as kbd]
@@ -116,12 +116,15 @@
         delete-export
         (mf/use-fn
          (mf/deps ids)
-         (fn [position]
-           (let [remove-fill-by-index (fn [values index] (->> (d/enumerate values)
+         (fn [event]
+           (let [value (-> (dom/get-current-target event)
+                           (dom/get-data "value")
+                           (d/parse-integer))
+                 remove-fill-by-index (fn [values index] (->> (d/enumerate values)
                                                               (filterv (fn [[idx _]] (not= idx index)))
                                                               (mapv second)))
 
-                 remove (fn [shape] (update shape :exports remove-fill-by-index position))]
+                 remove (fn [shape] (update shape :exports remove-fill-by-index value))]
              (st/emit! (dwsh/update-shapes ids remove)))))
 
         on-scale-change
@@ -188,9 +191,10 @@
                      :on-collapsed toggle-content
                      :title        (tr (if (> (count ids) 1) "workspace.options.export-multiple" "workspace.options.export"))
                      :class        (stl/css-case :title-spacing-export (not has-exports?))}
-       [:button {:class (stl/css :add-export)
-                 :on-click add-export}
-        i/add]]]
+       [:> icon-button* {:variant "ghost"
+                         :aria-label (tr "workspace.options.export.add-export")
+                         :on-click add-export
+                         :icon "add"}]]]
      (when open?
        [:div {:class (stl/css :element-set-content)}
 
@@ -199,9 +203,10 @@
           [:div {:class (stl/css :multiple-exports)}
            [:div {:class (stl/css :label)} (tr "settings.multiple")]
            [:div {:class (stl/css :actions)}
-            [:button {:class (stl/css :action-btn)
-                      :on-click on-remove-all}
-             i/remove-icon]]]
+            [:> icon-button* {:variant "ghost"
+                              :aria-label (tr "workspace.options.export.remove-export")
+                              :on-click on-remove-all
+                              :icon "remove"}]]]
 
           (seq exports)
           [:*
@@ -233,9 +238,11 @@
                          :on-change on-suffix-change
                          :on-key-down manage-key-down}]]]
 
-              [:button {:class (stl/css :action-btn)
-                        :on-click (partial delete-export index)}
-               i/remove-icon]])])
+              [:> icon-button* {:variant "ghost"
+                                :aria-label (tr "workspace.options.export.remove-export")
+                                :on-click delete-export
+                                :data-value index
+                                :icon "remove"}]])])
 
         (when (or (= :multiple exports) (seq exports))
           [:button

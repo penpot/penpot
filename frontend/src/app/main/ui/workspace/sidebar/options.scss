@@ -40,6 +40,10 @@
   scrollbar-gutter: stable;
 }
 
+.design-options {
+  padding-inline-end: $s-12;
+}
+
 .inspect {
   scrollbar-gutter: unset;
 }

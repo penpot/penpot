@@ -15,6 +15,7 @@
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.notifications.badge :refer [badge-notification]]
@@ -223,9 +224,11 @@
           [:& badge-notification {:is-focus true
                                   :size :small
                                   :content (tr "labels.view-only")}])
-        [:button {:class (stl/css :add-page)
-                  :on-click on-create}
-         i/add])]
+        [:> icon-button* {:variant "ghost"
+                          :class (stl/css :add-page)
+                          :aria-label (tr "workspace.sidebar.sitemap.add-page")
+                          :on-click on-create
+                          :icon "add"}])]
 
      [:div {:class (stl/css :tool-window-content)}
       [:& pages-list {:file file :key (:id file)}]]]))

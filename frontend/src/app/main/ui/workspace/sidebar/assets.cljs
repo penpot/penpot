@@ -16,6 +16,7 @@
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.file-library :refer [file-library]]
@@ -182,12 +183,10 @@
          :top 158
          :left 18
          :options options}]
-       [:button {:class (stl/css :sort-button)
-                 :title (tr "workspace.assets.sort")
-                 :on-click toggle-ordering}
-        (if reverse-sort?
-          i/asc-sort
-          i/desc-sort)]]]
+       [:> icon-button* {:variant "ghost"
+                         :aria-label (tr "workspace.assets.sort")
+                         :on-click toggle-ordering
+                         :icon (if reverse-sort? "asc-sort" "desc-sort")}]]]
 
      [:& (mf/provider cmm/assets-filters) {:value filters}
       [:& (mf/provider cmm/assets-toggle-ordering) {:value toggle-ordering}

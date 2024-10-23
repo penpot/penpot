@@ -16,6 +16,7 @@
    [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.plugins.register :as preg]
    [app.util.avatars :as avatars]
@@ -65,8 +66,10 @@
       [:div {:class (stl/css :plugin-summary)} (d/nilv description "")]]
      [:button {:class (stl/css :open-button)
                :on-click handle-open-click} (tr "workspace.plugins.button-open")]
-     [:button {:class (stl/css :trash-button)
-               :on-click handle-delete-click} i/delete]]))
+     [:> icon-button* {:variant "ghost"
+                       :aria-label (tr "workspace.plugins.remove-plugin")
+                       :on-click handle-delete-click
+                       :icon "delete"}]]))
 
 (mf/defc plugin-management-dialog
   {::mf/register modal/components

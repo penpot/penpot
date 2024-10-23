@@ -19,6 +19,7 @@
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
@@ -168,14 +169,14 @@
            :options type-options
            :on-change on-type-change}]]]
        [:div {:class (stl/css :actions)}
-        [:button {:class (stl/css :action-btn)
-                  :on-click toggle-visibility}
-         (if hidden?
-           i/hide
-           i/shown)]
-        [:button {:class (stl/css :action-btn)
-                  :on-click on-remove-shadow}
-         i/remove-icon]]]
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.options.shadow-options.toggle-shadow")
+                          :on-click toggle-visibility
+                          :icon (if hidden? "hide" "shown")}]
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.options.shadow-options.remove-shadow")
+                          :on-click on-remove-shadow
+                          :icon "remove"}]]]
       (when open-shadow
         [:& advanced-options {:class (stl/css :shadow-advanced-options)
                               :visible? open-shadow
@@ -297,9 +298,11 @@
                      :class        (stl/css-case :title-spacing-shadow (not has-shadows?))}
 
        (when-not (= :multiple shadows)
-         [:button {:class (stl/css :add-shadow)
-                   :data-testid "add-shadow"
-                   :on-click on-add-shadow} i/add])]]
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.options.shadow-options.add-shadow")
+                           :on-click on-add-shadow
+                           :icon "add"
+                           :data-testid "add-shadow"}])]]
 
      (when open?
        (cond
@@ -308,9 +311,10 @@
           [:div {:class (stl/css :multiple-shadows)}
            [:div {:class (stl/css :label)} (tr "settings.multiple")]
            [:div {:class (stl/css :actions)}
-            [:button {:class (stl/css :action-btn)
-                      :on-click on-remove-all}
-             i/remove-icon]]]]
+            [:> icon-button* {:variant "ghost"
+                              :aria-label (tr "workspace.options.shadow-options.remove-shadow")
+                              :on-click on-remove-all
+                              :icon "remove"}]]]]
 
          (seq shadows)
          [:& h/sortable-container {}

@@ -29,6 +29,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks.resize :as r]
    [app.main.ui.icons :as i]
    [app.plugins.register :as preg]
@@ -745,8 +746,10 @@
 
 
     [:*
-     [:div {:on-click open-menu
-            :class (stl/css :menu-btn)} i/menu]
+     [:> icon-button* {:variant "ghost"
+                       :aria-label (tr "shortcut-subsection.main-menu")
+                       :on-click open-menu
+                       :icon "menu"}]
 
      [:& dropdown-menu {:show show-menu?
                         :on-close close-menu

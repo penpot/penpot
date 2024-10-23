@@ -72,25 +72,6 @@
   display: flex;
 }
 
-.zoom-btn {
-  @extend .button-tertiary;
-  height: $s-28;
-  width: $s-28;
-  border-radius: $br-8;
-  .zoom-icon {
-    @include flexCenter;
-    svg {
-      @extend .button-icon;
-      stroke: var(--icon-foreground);
-    }
-  }
-  &:hover {
-    .zoom-icon svg {
-      stroke: var(--button-tertiary-foreground-color-hover);
-    }
-  }
-}
-
 .zoom-text {
   @include flexCenter;
   height: 100%;

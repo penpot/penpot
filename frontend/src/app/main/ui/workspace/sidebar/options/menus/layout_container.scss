@@ -27,17 +27,6 @@
       .layout-option {
         white-space: nowrap;
       }
-      .remove-layout,
-      .add-layout {
-        @extend .button-tertiary;
-        border-radius: $br-8;
-        height: $s-32;
-        width: $s-28;
-        svg {
-          @extend .button-icon;
-          stroke: var(--icon-foreground);
-        }
-      }
     }
   }
   .flex-layout-menu {
@@ -69,12 +58,9 @@
       @include flexColumn;
     }
     .help-button-wrapper {
-      position: relative;
-      .help-button {
-        position: absolute;
-        top: 0;
-        right: 0;
-      }
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
     }
   }
 }
@@ -252,19 +238,6 @@
     border-radius: 0 $br-8 $br-8 0;
     width: $s-96;
   }
-
-  .remove-track-btn {
-    @extend .button-tertiary;
-    padding: $s-8;
-
-    svg {
-      @extend .button-icon;
-      width: $s-12;
-      height: $s-12;
-      stroke: var(--icon-foreground);
-      fill: var(--icon-foreground);
-    }
-  }
 }
 
 .grid-tracks {
@@ -320,9 +293,6 @@
     }
   }
 
-  .columns-info {
-  }
-
   .add-column {
     @extend .button-tertiary;
     height: $s-52;
@@ -334,17 +304,6 @@
       stroke: var(--icon-foreground);
       fill: var(--icon-foreground);
     }
-  }
-}
-
-.locate-button,
-.help-button {
-  @extend .button-tertiary;
-  padding: $s-8;
-  svg {
-    fill: none;
-    width: $s-16;
-    height: $s-16;
   }
 }
 

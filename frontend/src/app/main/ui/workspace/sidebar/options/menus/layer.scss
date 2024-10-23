@@ -25,17 +25,6 @@
   .actions {
     display: flex;
     gap: $s-4;
-    .hidden-btn,
-    .lock-btn {
-      @extend .button-tertiary;
-      border-radius: $br-8;
-      height: $s-32;
-      width: $s-28;
-      svg {
-        @extend .button-icon;
-        stroke: var(--icon-foreground);
-      }
-    }
   }
 
   &.hidden {

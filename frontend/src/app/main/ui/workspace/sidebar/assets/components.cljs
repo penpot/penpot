@@ -24,6 +24,7 @@
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
@@ -527,9 +528,10 @@
                             :id "opt-grid"}]]])
 
       (when (and components-v2 (not read-only?) local?)
-        [:div {:on-click add-component
-               :class (stl/css :add-component)}
-         i/add
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.assets.components.add-component")
+                          :on-click add-component
+                          :icon "add"}
          [:& file-uploader {:accept cm/str-image-types
                             :multi true
                             :ref input-ref
