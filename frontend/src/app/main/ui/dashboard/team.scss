@@ -446,10 +446,15 @@
   width: $s-400;
   padding: $s-32;
   background-color: var(--modal-background-color);
+
   &.hero {
     top: $s-216;
     right: $s-32;
   }
+}
+
+.modal-team-container-workspace {
+  top: $s-40;
 }
 
 .modal-title {
@@ -467,6 +472,12 @@
   @extend .button-icon;
   stroke: var(--icon-foreground);
   transform: rotate(90deg);
+}
+
+.invite-team-member-text {
+  @include bodyLargeTypography;
+  margin: 0 0 $s-16 0;
+  color: var(--modal-title-foreground-color);
 }
 
 .role-title {
@@ -538,9 +549,11 @@
 
 .action-buttons {
   @extend .modal-action-btns;
+
   button {
     @extend .modal-accept-btn;
   }
+
   .cancel-button {
     @extend .modal-cancel-btn;
   }

@@ -2482,6 +2482,9 @@ msgstr ""
 msgid "modals.invite-team-member.title"
 msgstr "Invite members to the team"
 
+msgid "modals.invite-team-member.text"
+msgstr "You can invite members to the team so they can access to this file and all of the team files."
+
 #: src/app/main/ui/dashboard/sidebar.cljs:423, src/app/main/ui/dashboard/team.cljs:412
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""
@@ -4375,6 +4378,10 @@ msgstr "Saving"
 #: src/app/main/ui/workspace/right_header.cljs:42, src/app/main/ui/workspace/right_header.cljs:47
 msgid "workspace.header.unsaved"
 msgstr "Unsaved changes"
+
+#: src/app/main/ui/workspace/right_header.cljs:241
+msgid "workspace.header.share"
+msgstr "Share"
 
 #: src/app/main/ui/workspace/right_header.cljs:239
 msgid "workspace.header.viewer"
