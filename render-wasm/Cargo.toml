@@ -1,19 +1,18 @@
 [package]
-name = "renderer"
+name = "render"
 version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/penpot/penpot"
-license-file = "../../../../LICENSE"
+license-file = "../LICENSE"
 description = "Wasm-based canvas renderer for Penpot"
 
-[lib]
-crate-type = ["cdylib"]
+[[bin]]
+name = "render_wasm"
+path = "src/main.rs"
 
 [dependencies]
-wasm-bindgen = "0.2.93"
+gl = "0.14.0"
+skia-safe = { version = "0.78.2", features = ["gl"] }
 
 [profile.release]
 opt-level = "s"
-
-[dev-dependencies]
-wasm-bindgen-test = "0.3.43"
