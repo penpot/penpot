@@ -50,7 +50,7 @@
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
-   [app.render-v2 :as render-v2]
+   [app.render-wasm :as render.wasm]
    [app.util.debug :as dbg]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
@@ -140,7 +140,7 @@
          on-viewport-ref] (create-viewport-ref)
 
         canvas-ref        (mf/use-ref nil)
-        canvas-init?      (mf/use-ref false)
+        canvas-init       (mf/use-ref false)
 
         ;; VARS
         disable-paste     (mf/use-var false)
@@ -274,17 +274,20 @@
 
         rule-area-size (/ rulers/ruler-area-size zoom)]
 
-    (when (render-v2/enabled?)
-      ;; set up canvas and first render
-      (mf/with-effect
-        [canvas-ref vbox']
-        (let [canvas (mf/ref-val canvas-ref)]
-          (when (and (some? canvas) (some? vbox'))
-            (-> (p/then (render-v2/init)
-                        (fn []
-                          (mf/set-ref-val! canvas-init? true)
-                          (render-v2/set-canvas canvas vbox' zoom base-objects)))
-                (p/catch (fn [error] (js/console.error error))))))))
+    (when ^boolean render.wasm/enabled?
+      (mf/with-effect []
+        (when-let [canvas (mf/ref-val canvas-ref)]
+          (->> render.wasm/module
+               (p/fmap (fn [ready?]
+                         (when ready?
+                           (mf/set-ref-val! canvas-init true)
+                           (render.wasm/assign-canvas canvas)))))
+          (fn []
+            (render.wasm/clear-canvas))))
+
+      (mf/with-effect [vbox' base-objects]
+        (when (mf/ref-val canvas-init)
+          (render.wasm/draw-objects base-objects zoom vbox'))))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -329,11 +332,11 @@
                                          :layout layout
                                          :viewport-ref viewport-ref}])]
 
-     (if (render-v2/enabled?)
+     (if ^boolean render.wasm/enabled?
        [:canvas {:id "render"
                  :ref canvas-ref
                  :class (stl/css :render-shapes)
-                 :key (str "render" page-id)
+                 :key (dm/str "render" page-id)
                  :width (:width vport 0)
                  :height (:height vport 0)
                  :style {:background-color background

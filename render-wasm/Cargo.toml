@@ -3,11 +3,11 @@ name = "render"
 version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/penpot/penpot"
-license-file = "../../../../LICENSE"
+license-file = "../LICENSE"
 description = "Wasm-based canvas renderer for Penpot"
 
 [[bin]]
-name = "render_v2"
+name = "render_wasm"
 path = "src/main.rs"
 
 [dependencies]
