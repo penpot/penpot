@@ -1,0 +1,21 @@
+{
+  "title": "Help center",
+  "url": "https://docs.penpot.app/",
+  "description": "Design freedom for teams.",
+  "feed": {
+    "subtitle": "Penpot: design freedom for teams.",
+    "filename": "feed.xml",
+    "path": "/feed/feed.xml",
+    "id": "https://docs.penpot.app/"
+  },
+  "jsonfeed": {
+    "path": "/feed/feed.json",
+    "url": "https://docs.penpot.app/feed/feed.json"
+  },
+  "author": {
+    "name": "Penpot",
+    "email": "hello@penpot.app",
+    "url": "https://penpot.app"
+  },
+  "twitter": "@penpotapp"
+}

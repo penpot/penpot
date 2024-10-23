@@ -1,0 +1,206 @@
+---
+title: 11· Prototyping
+---
+
+<h1 id="prototype">Prototyping interactions</h1>
+<p class="main-paragraph">Learn how to build interactive prototypes to visualize how users navigate through your screens and mimic your product behaviour.<p>
+
+<p class="main-paragraph">Penpot allows you to prototype interactions by connecting boards, which can act as screens. Once the prototype is prepared with interactions and/or flows, it can be used at the View mode and shared through a link.<p>
+
+<h2 id="prototyping-connection">Connect boards</h2>
+<figure>
+  <video title="Connect boards" muted="" playsinline="" controls="" width="100%" poster="/img/prototype/prototype-connect.webp" height="auto">
+    <source src="/img/prototype/prototype-connect.mp4" type="video/mp4">
+  </video>
+</figure>
+<p>The simplest and most usual way to prototype an interaction at Penpot is connecting boards. Add interactions following this simple steps:</p>
+<ol>
+  <li>Open a file with at least two boards.</li>
+  <li>Activate <strong>Prototype mode</strong> clicking at the tab at the right sidebar.</li>
+  <li><strong>Select</strong> the layer (shape, board or group) that will trigger the interaction.</li>
+  <li><strong>Drag</strong> a connection from the selected layer to the destination board.</li>
+  <li>A <strong>flow start</strong> will be automatically created. <a href="/user-guide/prototyping/#prototyping-flows">More about flows</a>.</li>
+  <li><strong>Launch</strong> the interactive prototype to see it in action in the <a href="/user-guide/view-mode/">View mode</a> (access by clicking the play button at the top right).</li>
+</ol>
+
+<h3 id="prototype-anatomy">Anatomy of a prototype</h3>
+<figure>
+  <img src="/img/prototype/prototype-anatomy.webp" alt="Different elements that involve prototyping with Penpot">
+</figure>
+<p class="hint">
+  <strong>1)</strong> Hotspot (origin connection)
+  <strong>2)</strong> Connector wire
+  <strong>3)</strong> Destination
+  <strong>4)</strong> Prototype mode tab
+  <strong>5)</strong> View mode launcher
+  <strong>6)</strong> Add new interaction
+  <strong>7)</strong> Interaction trigger
+  <strong>8)</strong> Interaction action
+  <strong>9)</strong> Interaction animation
+  <strong>10)</strong> Flow indicator and launcher
+</p>
+
+<h2 id="interaction-triggers">Interaction triggers</h2>
+<figure>
+  <img src="/img/prototype/prototype-trigger.webp" alt="Prototype trigger options">
+</figure>
+<p>A trigger defines the user action that will start the interaction. Penpot currently provides the following triggers (more of them will come):</p>
+<ul>
+  <li><strong>On click:</strong> when user clicks or tap the hotspot.</li>
+  <li><strong>Mouse enter:</strong> when the mouse enter the hotspot area.</li>
+  <li><strong>Mouse leave:</strong> when the mouse leaves the hotspot area.</li>
+  <li><strong>After delay:</strong> when a certain time has passed after a board is shown. Note: this can only be set at boards.</li>
+</ul>
+
+<h2 id="prototyping-actions">Interaction actions</h2>
+<figure>
+  <img src="/img/prototype/prototype-action.webp" alt="Prototype action options">
+</figure>
+<p>The action defines what will happen when the interaction is triggered. Penpot currently provides the following actions (more of them will come):</p>
+<ul>
+  <li><strong>Navigate to</strong>.</li>
+  <li><strong>Open overlay</strong>.</li>
+  <li><strong>Toggle overlay</strong>.</li>
+  <li><strong>Close overlay</strong>.</li>
+  <li><strong>Previous screen</strong>.</li>
+  <li><strong>Open URL</strong>.</li>
+</ul>
+
+<h3 id="prototyping-actions-navigate">Navigate to</h3>
+<p>The classic, most usual of the prototyping actions. It takes the user from one board to the destination set in the interaction.</p>
+
+<h3 id="prototyping-actions-overlay">Open overlay</h3>
+<p>It opens a board right over the current board. This action is typically used to display tooltips, modal windows or notifications.</p>
+<figure>
+  <video title="Prototype overlay" muted="" playsinline="" controls="" width="100%" poster="/img/prototype/prototype-overlay.webp" height="auto">
+    <source src="/img/prototype/prototype-overlay.mp4" type="video/mp4">
+  </video>
+</figure>
+<p>You have several presets for positioning the overlay (center, top left, top right...) but you can also do it manually. Just select the “Manual” option and drag the “ghost” (an area with the size of the destination board) to the place you want the overlay to show up.</p>
+<p>There are also a couple of options that facilitates to mimic typical overlay behaviours:</p>
+<ul>
+  <li>Close when clicking outside: the overlay is closed if the user clicks outside its area.</li>
+  <li>Add background overlay: a black background with 20% opacity is added.</li>
+</ul>
+<p class="advice">TIP: You can select to open the overlay relative to the element that triggers it using the field "relative to". This is extremely useful for hover effects.</p>
+<figure>
+  <img src="/img/prototype/prototype-overlay-relative.webp" alt="Prototype overlay relative position">
+</figure>
+<h3 id="prototyping-actions-overlay-toggle">Toggle overlay</h3>
+<p>It opens an overlay if it is not already opened or closes it if it is already opened.</p>
+
+<h3 id="prototyping-actions-overlay-close">Close overlay</h3>
+<p>This action will close a targeted board that is opened as an overlay. It can be also set to “self” so the board can be closed from itself.</p>
+
+<h3 id="prototyping-actions-previous">Previous screen</h3>
+<figure>
+  <img src="/img/prototype/prototype-previous.webp" alt="Prototype previous screen action">
+</figure>
+<p>It takes back to the last board shown. This action is typically used for back buttons, when the same screen can be accessed from different origins.</p>
+
+<h3 id="prototyping-actions-url">Open URL</h3>
+<p>This action opens an URL in a new tab. This is useful to add external links outside of the prototype.</p>
+
+
+<h2 id="prototyping-animations">Interaction animations</h2>
+<figure>
+  <img src="/img/prototype/prototype-animation.webp" alt="Prototype animation options">
+</figure>
+<p>The animation defines the transition between boards when the interaction is triggered. Penpot currently provides the following actions (more of them will come):</p>
+<ul>
+  <li><strong>Dissolve</strong>.</li>
+  <li><strong>Slide</strong>.</li>
+  <li><strong>Push</strong>.</li>
+</ul>
+
+<h3 id="prototyping-animations-dissolve">Dissolve</h3>
+<figure>
+  <img src="/img/prototype/prototyping-animations-dissolve.gif" alt="Prototyping animations">
+</figure>
+<p>Dissolve means that the destination board fades in while the origin board fades out.</p>
+<p>Options:</p>
+<ul>
+  <li>Easing.</li>
+  <li>Duration.</li>
+</ul>
+
+<h3 id="prototyping-animations-Slide">Slide</h3>
+<figure>
+  <img src="/img/prototype/prototyping-animations-slide.gif" alt="Prototyping animations">
+</figure>
+<p>Slide animation will move the destination frame in or out of the view.</p>
+<p>Options:</p>
+<ul>
+  <li>IN / OUT.</li>
+  <li>Direction (right, down, left, top).</li>
+  <li>Easing.</li>
+  <li>Duration.</li>
+  <li>Offset effect.</li>
+</ul>
+<p><strong>Offset effect</strong> means that the origin board will slightly fade and move in the same direction of the destination board.</p>
+
+<h3 id="prototyping-animations-push">Push</h3>
+<figure>
+  <img src="/img/prototype/prototyping-animations-push.gif" alt="Prototyping animations">
+</figure>
+<p>Push animations will move the destination board into view pushing out the origin board.</p>
+<ul>
+  <li>Direction (right, down, left, top).</li>
+  <li>Easing.</li>
+  <li>Duration.</li>
+</ul>
+
+<h2 id="prototyping-flows">Flows</h2>
+<p>Design projects usually need to define multiple casuistics for different devices and user journeys. Flows allow you to define one or multiple starting points within the same page so you can better organize and present your prototypes.</p>
+
+<p>A <strong>flow</strong> is defined by a starting board for an interaction. Flows can be selected independently at the view mode. Each flow has its own shareable link at the View mode.</p>
+
+
+<h3 id="prototyping-flows-starting">Starting points</h3>
+<p><strong>A starting point</strong> is a board selected to be the first screen of a flow. You could set a board as a starting point just because you want this board to be the first one to be shown in the view mode, but you can also set more starting points to define different user journeys.</p>
+<p>There are several ways to create starting points:</p>
+<ul>
+  <li><strong>Automatically</strong>: when creating a connection from a board which is not connected yet (meaning that it does not belong to an existing flow), the origin board will be set as a flow start.
+<figure>
+  <video title="New flow" muted="" playsinline="" controls="" width="100%" poster="/img/prototype/prototype-flow-new.webp" height="auto">
+    <source src="/img/prototype/prototype-flow-new.mp4" type="video/mp4">
+  </video>
+</figure>
+</li>
+  <li><strong>From the prototype sidebar</strong>: having a board selected, click on the “+” button to set it as a flow start.
+<figure>
+  <video title="Flow add" muted="" playsinline="" controls="" width="auto" poster="/img/prototype/prototype-flow-add.webp" height="auto">
+    <source src="/img/prototype/prototype-flow-add.mp4" type="video/mp4">
+  </video>
+</figure>
+
+</li>
+  <li><strong>From the board menu</strong>.
+<figure>
+  <img src="/img/prototype/prototype-flow-menu.webp" alt="Prototyping flow from the menu">
+</figure>
+</li>
+</ul>
+
+<h3 id="prototyping-flows-multiple">Multiple flows</h3>
+<p>You can add as many flows as you want. The complete list of flows is shown at the prototype sidebar when no shape is selected.</p>
+<figure>
+  <img src="/img/prototype/prototype-flows-multiple.webp" alt="Prototyping flows">
+</figure>
+
+<h3 id="prototyping-flows-multiple">Flows at the view mode</h3>
+<p>At the view mode there’s a menu where you can access to all the flows set and easily switch between them.</p>
+<figure>
+  <img src="/img/prototype/prototype-flows-viewmode.webp" alt="Prototyping flows">
+</figure>
+
+<h2 id="prototyping-fix-scroll">Fix elements at scroll</h2>
+<p>You can fix the position of an object when scrolling at the presentation view. This is tipically useful for prototyping fixed headers, navbars and floating buttons.</p>
+<figure>
+  <img src="/img/prototype/prototype-fix-scroll.webp" alt="Prototyping fix scroll">
+</figure>
+<p>Select an element and check the option "Fix when scrolling" that you can find inside the Constraints section at the Design sidebar (right side).</p>
+<figure>
+  <img src="/img/prototype/prototyping-scroll.gif" alt="Prototyping scroll">
+</figure>
+<p>Launch the View Mode to see the elements with a fixed scroll position.</p>
