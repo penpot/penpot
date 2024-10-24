@@ -17,7 +17,8 @@
 (defonce ^:dynamic internal-module #js {})
 (defonce ^:dynamic internal-gpu-state #js {})
 
-(defn draw-objects [objects zoom vbox]
+(defn draw-objects
+  [objects zoom vbox]
   (let [draw-rect    (unchecked-get internal-module "_draw_rect")
         translate    (unchecked-get internal-module "_translate")
         reset-canvas (unchecked-get internal-module "_reset_canvas")
@@ -35,17 +36,24 @@
          (translate gpu-state (- x) (- y)))
 
        (run! (fn [shape]
+               ;; (js/console.log "render-shape" (.-buffer shape))
                (let [selrect (dm/get-prop shape :selrect)
                      x1      (dm/get-prop selrect :x1)
                      y1      (dm/get-prop selrect :y1)
                      x2      (dm/get-prop selrect :x2)
                      y2      (dm/get-prop selrect :y2)]
+                 ;; (prn (:id shape) selrect)
                  (draw-rect gpu-state x1 y1 x2 y2)))
              (vals objects))
 
        (flush gpu-state)))))
 
-(def canvas-options
+(defn cancel-draw
+  [sem]
+  (when (some? sem)
+    (js/cancelAnimationFrame sem)))
+
+(def ^:private canvas-options
   #js {:antialias true
        :depth true
        :stencil true

@@ -276,18 +276,20 @@
 
     (when ^boolean render.wasm/enabled?
       (mf/with-effect []
-        (when-let [canvas (mf/ref-val canvas-ref)]
+        (time (when-let [canvas (mf/ref-val canvas-ref)]
           (->> render.wasm/module
                (p/fmap (fn [ready?]
                          (when ready?
                            (mf/set-ref-val! canvas-init true)
                            (render.wasm/assign-canvas canvas)))))
           (fn []
-            (render.wasm/clear-canvas))))
+            (render.wasm/clear-canvas)))))
 
-      (mf/with-effect [vbox' base-objects]
-        (when (mf/ref-val canvas-init)
-          (render.wasm/draw-objects base-objects zoom vbox'))))
+      (mf/with-effect [vbox objects-modified]
+        (let [sem (when (mf/ref-val canvas-init)
+                    (render.wasm/draw-objects objects-modified zoom vbox))]
+          (partial render.wasm/cancel-draw sem)))
+      )
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)
