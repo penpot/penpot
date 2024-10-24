@@ -16,9 +16,10 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
-   [app.main.ui.components.dropdown-menu :refer [dropdown-menu
-                                                 dropdown-menu-item*]]
+   [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.icons :as i]
@@ -173,22 +174,26 @@
     {:empty (sort-by :token-key empty)
      :filled (sort-by :token-key filled)}))
 
-(mf/defc edit-button
-  [{:keys [create?]}]
-  [:button {:class (stl/css :themes-button)
-            :on-click (fn [e]
-                        (dom/stop-propagation e)
-                        (modal/show! :tokens/themes {}))}
-   (if create? (tr "labels.create") (tr "labels.edit"))])
-
 (mf/defc themes-header
   [_props]
-  (let [ordered-themes (mf/deref refs/workspace-token-themes-no-hidden)]
+  (let [ordered-themes (mf/deref refs/workspace-token-themes-no-hidden)
+        open-modal
+        (mf/use-fn
+         (fn [e]
+           (dom/stop-propagation e)
+           (modal/show! :tokens/themes {})))]
     [:div {:class (stl/css :themes-wrapper)}
      [:span {:class (stl/css :themes-header)} (tr "labels.themes")]
-     [:div {:class (stl/css :theme-select-wrapper)}
-      [:& theme-select]
-      [:& edit-button {:create? (empty? ordered-themes)}]]]))
+     (if (empty? ordered-themes)
+       [:div {:class (stl/css :empty-theme-wrapper)}
+        [:> text* {:as "span" :typography "body-small"} (tr "workspace.token.no-themes")]
+        [:button {:on-click open-modal
+                  :class (stl/css :create-theme-button)} (tr "workspace.token.create-a-theme")]]
+       [:div {:class (stl/css :theme-select-wrapper)}
+        [:& theme-select]
+        [:> button* {:variant "secondary"
+                     :on-click open-modal}
+         (tr "labels.edit")]])]))
 
 (mf/defc add-set-button
   [{:keys [on-open]}]

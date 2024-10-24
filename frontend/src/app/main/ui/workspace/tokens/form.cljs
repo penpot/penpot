@@ -19,6 +19,7 @@
    [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
@@ -353,14 +354,14 @@ Token names should only contain letters and digits separated by . characters.")}
     [:form  {:class (stl/css :form-wrapper)
              :on-submit on-submit}
      [:div {:class (stl/css :token-rows)}
-      [:> text* {:as "span" :typography "headline-medium"}
+      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :form-modal-title)}
        (if (= action "edit")
          (tr "workspace.token.edit-token")
          (tr "workspace.token.create-token" token-type))]
 
       [:div {:class (stl/css :input-row)}
        ;; This should be remove when labeled-imput is modified
-       [:span "Name"]
+       [:span {:class (stl/css :labeled-input-label)} "Name"]
        [:& tokens.common/labeled-input {:label "Name"
                                         :error? @name-errors
                                         :input-props {:default-value @name-ref
@@ -378,7 +379,7 @@ Token names should only contain letters and digits separated by . characters.")}
 
       [:div {:class (stl/css :input-row)}
        ;; This should be remove when labeled-imput is modified
-       [:span "value"]
+       [:span {:class (stl/css :labeled-input-label)}  "value"]
        [:& tokens.common/labeled-input {:label "Value"
                                         :input-props {:default-value @value-ref
                                                       :on-blur on-update-value
@@ -401,7 +402,7 @@ Token names should only contain letters and digits separated by . characters.")}
 
       [:div {:class (stl/css :input-row)}
        ;; This should be remove when labeled-imput is modified
-       [:span "Description"]
+       [:span {:class (stl/css :labeled-input-label)}  "Description"]
        [:& tokens.common/labeled-input {:label "Description"
                                         :input-props {:default-value @description-ref
                                                       :on-change on-update-description}}]
@@ -416,10 +417,12 @@ Token names should only contain letters and digits separated by . characters.")}
        (when (= action "edit")
          [:> button* {:on-click on-delete-token
                       :class (stl/css :delete-btn)
+                      :type "button"
                       :icon i/delete
                       :variant "secondary"}
           (tr "labels.delete")])
        [:> button* {:on-click on-cancel
+                    :type "button"
                     :variant "secondary"}
         (tr "labels.cancel")]
        [:> button* {:type "submit"

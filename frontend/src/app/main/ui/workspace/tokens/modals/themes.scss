@@ -10,10 +10,6 @@
   @extend .modal-overlay-base;
 }
 
-hr {
-  border-color: var(--color-background-tertiary);
-}
-
 .modal-dialog {
   @extend .modal-container-base;
   display: grid;
@@ -23,16 +19,43 @@ hr {
   user-select: none;
 }
 
-.modal-title {
-  @include headlineMediumTypography;
-  font-weight: 500;
-  margin-block-end: $s-16;
-  color: var(--color-foreground-secondary);
-}
-
-.modal-content {
+.empty-themes-message {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: $s-12;
+  padding: $s-72 0;
+}
+
+.themes-modal-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $s-24;
+}
+
+.themes-modal-title {
+  color: var(--color-foreground-primary);
+}
+
+.back-btn {
+  background-color: transparent;
+  border: none;
+  appearance: none;
+  color: var(--color-foreground-secondary);
+  width: fit-content;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: $s-4;
+  align-items: center;
+  padding: 0;
+  &:hover {
+    color: var(--color-accent-primary);
+  }
+}
+
+.labeled-input-label {
+  color: var(--color-foreground-primary);
 }
 
 .button-footer {
@@ -46,60 +69,41 @@ hr {
   justify-content: space-between;
 }
 
-.button-primary {
-  @extend .button-primary;
-  padding: $s-6;
-}
-
-.button-secondary {
-  @extend .button-secondary;
-  padding: $s-6;
-}
-
 .empty-themes-wrapper {
   display: flex;
   flex-direction: column;
-
-  .empty-themes-message {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: $s-12;
-    padding: $s-72 0;
-
-    h1 {
-      @include headlineLargeTypography;
-    }
-
-    p {
-      @include bodyMediumTypography;
-      font-weight: 500;
-      color: var(--color-foreground-secondary);
-    }
-  }
+  color: var(--color-foreground-secondary);
 }
 
-.create-theme-button {
-  @extend .button-secondary;
-  padding: $s-6;
-  padding-right: $s-8;
-  svg {
-    margin-right: $s-6;
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
+.empty-theme-subtitle {
+  color: var(--color-foreground-secondary);
+}
+
+.empty-theme-title {
+  color: var(--color-foreground-primary);
+}
+
+.create-theme-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $s-24;
 }
 
 .close-btn {
-  @extend .modal-close-btn-base;
+  position: absolute;
+  top: $s-8;
+  right: $s-6;
 }
 
 .theme-group-label {
-  display: block;
-  @include headlineMediumTypography;
   color: var(--color-foreground-secondary);
-  margin-bottom: $s-8;
+}
+
+.group-title {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: $s-4;
 }
 
 .theme-group-rows-wrapper {
@@ -127,45 +131,31 @@ hr {
   gap: $s-16;
 }
 
+.theme-name {
+  color: var(--color-foreground-primary);
+}
+
 .theme-row-right {
   display: flex;
   align-items: center;
   gap: $s-6;
 }
 
-.back-button {
-  @extend .button-tertiary;
-  padding: $s-6;
-  padding-left: 0;
-  display: flex;
-  svg {
-    scale: -1 1;
-    margin-left: 0;
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
-}
-
 .sets-count-button {
-  @extend .button-secondary;
+  text-transform: lowercase;
   padding: $s-6;
   padding-left: $s-12;
-  svg {
-    margin-left: $s-6;
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
+}
+
+.label-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .edit-theme-wrapper {
   display: flex;
   flex-direction: column;
-  gap: $s-12;
-}
-
-.edit-theme-inputs-wrapper {
-  display: grid;
-  grid-template-columns: 0.6fr 1fr;
   gap: $s-12;
 }
 
@@ -176,57 +166,29 @@ hr {
 }
 
 .sets-count-empty-button {
-  @extend .button-secondary;
+  text-transform: lowercase;
   padding: $s-6;
   padding-left: $s-12;
-  svg {
-    margin-left: $s-6;
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
-}
-
-.theme-row-label {
-  @include bodyMediumTypography;
-  font-weight: 500;
-  color: var(--color-foreground-primary);
-}
-
-.delete-theme-button {
-  @extend .button-tertiary;
-  height: $s-28;
-  width: $s-28;
-  button {
-    @include buttonStyle;
-    @include flexCenter;
-    width: $s-24;
-    height: 100%;
-    svg {
-      @extend .button-icon-small;
-      height: $s-12;
-      width: $s-12;
-      color: transparent;
-      fill: none;
-      stroke: var(--icon-foreground);
-    }
-  }
 }
 
 .group-input-wrapper {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: $s-4;
+}
+
+.edit-theme-inputs-wrapper {
+  display: grid;
+  grid-template-columns: 0.6fr 1fr;
+  gap: $s-12;
 }
 
 .group-drop-down-button {
   @include buttonStyle;
+  color: var(--color-foreground-secondary);
   width: $s-24;
   height: 100%;
-
   padding: 0;
   margin: 0 $s-6;
-
-  svg {
-    @extend .button-icon-small;
-    transform: rotate(90deg);
-    fill: var(--icon-foreground);
-  }
 }

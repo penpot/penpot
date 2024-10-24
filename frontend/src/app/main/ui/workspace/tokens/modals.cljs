@@ -12,7 +12,6 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon  :as i]
    [app.main.ui.workspace.tokens.form :refer [form]]
-   [app.main.ui.workspace.tokens.modals.themes :as wtmt]
    [app.util.i18n :refer [tr]]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
@@ -59,12 +58,6 @@
                :action action
                :selected-token-set-id selected-token-set-id
                :token-type token-type}]]))
-
-(mf/defc token-themes-modal
-  {::mf/register modal/components
-   ::mf/register-as :tokens/themes}
-  [args]
-  [:& wtmt/modal args])
 
 ;; Modals ----------------------------------------------------------------------
 
