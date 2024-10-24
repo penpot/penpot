@@ -29,8 +29,7 @@
 
 (defprotocol ILazySchema
   (-validate [_ o])
-  (-explain [_ o])
-  (-decode [_ o]))
+  (-explain [_ o]))
 
 (def default-options
   {:registry sr/default-registry})
@@ -337,9 +336,7 @@
       (-validate [_ o]
         (@validator o))
       (-explain [_ o]
-        (@explainer o))
-      (-decode [_ o]
-        (@decoder o)))))
+        (@explainer o)))))
 
 ;; --- BUILTIN SCHEMAS
 
