@@ -19,6 +19,7 @@
    [app.common.schema.generators :as sg]
    [app.common.transit :as t]
    [app.common.types.color :as ctc]
+   [app.common.types.shape.impl :as impl]
    [app.common.types.grid :as ctg]
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape.attrs :refer [default-color]]
@@ -36,7 +37,7 @@
 
 (defn shape?
   [o]
-  (instance? Shape o))
+  (impl/shape? o))
 
 (def stroke-caps-line #{:round :square})
 (def stroke-caps-marker #{:line-arrow :triangle-arrow :square-marker :circle-marker :diamond-marker})
@@ -244,7 +245,7 @@
 (defn- decode-shape
   [o]
   (if (map? o)
-    (map->Shape o)
+    (impl/map->Shape o)
     o))
 
 (defn- shape-generator
@@ -268,7 +269,7 @@
                             (= type :bool))
                       (merge attrs1 shape attrs3)
                       (merge attrs1 shape attrs2 attrs3)))))
-       (sg/fmap map->Shape)))
+       (sg/fmap impl/map->Shape)))
 
 (def schema:shape
   [:and {:title "Shape"
@@ -472,7 +473,7 @@
              :rotation 0)
 
       :always
-      (map->Shape))))
+      (impl/map->Shape))))
 
 (defn setup-rect
   "Initializes the selrect and points for a shape."
@@ -527,17 +528,3 @@
           (assoc :transform-inverse (gmt/matrix)))
         (gpr/setup-proportions))))
 
-;; --- SHAPE SERIALIZATION
-
-(t/add-handlers!
- {:id "shape"
-  :class Shape
-  :wfn #(into {} %)
-  :rfn map->Shape})
-
-#?(:clj
-   (fres/add-handlers!
-    {:name "penpot/shape"
-     :class Shape
-     :wfn fres/write-map-like
-     :rfn (comp map->Shape fres/read-map-like)}))
