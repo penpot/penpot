@@ -403,30 +403,30 @@
                 nil)))
        ~rsym)))
 
-;; (defmacro clone
-;;   [ssym]
-;;   (if (:ns &env)
-;;     `(cljs.core/clone ~ssym)
-;;     ssym))
+(defmacro clone
+  [ssym]
+  (if (:ns &env)
+    `(cljs.core/clone ~ssym)
+    ssym))
 
-;; (defmacro assoc!
-;;   "A record specific update operation"
-;;   [ssym & pairs]
-;;   (if (:ns &env)
-;;     (let [pairs (partition-all 2 pairs)]
-;;       `(-> ~ssym
-;;            ~@(map (fn [[ks vs]]
-;;                     `(cljs.core/-assoc! ~ks ~vs))
-;;                   pairs)))
-;;     `(assoc ~ssym ~@pairs)))
+(defmacro assoc!
+  "A record specific update operation"
+  [ssym & pairs]
+  (if (:ns &env)
+    (let [pairs (partition-all 2 pairs)]
+      `(-> ~ssym
+           ~@(map (fn [[ks vs]]
+                    `(cljs.core/-assoc! ~ks ~vs))
+                  pairs)))
+    `(assoc ~ssym ~@pairs)))
 
-;; (defmacro update!
-;;   "A record specific update operation"
-;;   [ssym ksym f & params]
-;;   (if (:ns &env)
-;;     (let [ssym (with-meta ssym {:tag 'js})]
-;;       `(cljs.core/assoc! ~ssym ~ksym (~f (. ~ssym ~(property-symbol ksym)) ~@params)))
-;;     `(update ~ssym ~ksym ~f ~@params)))
+(defmacro update!
+  "A record specific update operation"
+  [ssym ksym f & params]
+  (if (:ns &env)
+    (let [ssym (with-meta ssym {:tag 'js})]
+      `(cljs.core/assoc! ~ssym ~ksym (~f (. ~ssym ~(property-symbol ksym)) ~@params)))
+    `(update ~ssym ~ksym ~f ~@params)))
 
 (defmacro define-properties!
   "Define properties in the prototype with `.defineProperty`"

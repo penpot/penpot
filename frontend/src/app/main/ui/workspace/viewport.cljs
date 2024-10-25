@@ -134,13 +134,13 @@
         hover-top-frame-id (mf/use-state nil)
         frame-hover       (mf/use-state nil)
         active-frames     (mf/use-state #{})
+        canvas-init?      (mf/use-state false)
 
         ;; REFS
         [viewport-ref
          on-viewport-ref] (create-viewport-ref)
 
         canvas-ref        (mf/use-ref nil)
-        canvas-init       (mf/use-ref false)
 
         ;; VARS
         disable-paste     (mf/use-var false)
@@ -277,19 +277,22 @@
     (when ^boolean render.wasm/enabled?
       (mf/with-effect []
         (time (when-let [canvas (mf/ref-val canvas-ref)]
-          (->> render.wasm/module
-               (p/fmap (fn [ready?]
-                         (when ready?
-                           (mf/set-ref-val! canvas-init true)
-                           (render.wasm/assign-canvas canvas)))))
-          (fn []
-            (render.wasm/clear-canvas)))))
+                (->> render.wasm/module
+                     (p/fmap (fn [ready?]
+                               (when ready?
+                                 (reset! canvas-init? true)
+                                 (render.wasm/assign-canvas canvas)))))
+                (fn []
+                  (render.wasm/clear-canvas)))))
 
-      (mf/with-effect [vbox objects-modified]
-        (let [sem (when (mf/ref-val canvas-init)
-                    (render.wasm/draw-objects objects-modified zoom vbox))]
-          (partial render.wasm/cancel-draw sem)))
-      )
+      (mf/with-effect [objects-modified canvas-init?]
+        (when @canvas-init?
+          (render.wasm/set-objects objects-modified)
+          (render.wasm/draw-objects zoom vbox)))
+      (mf/with-effect [vbox canvas-init?]
+        (let [frame-id (when @canvas-init? (do
+                                             (render.wasm/draw-objects zoom vbox)))]
+          (partial render.wasm/cancel-draw frame-id))))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)

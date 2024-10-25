@@ -1,4 +1,5 @@
 pub mod render;
+pub mod shapes;
 
 use skia_safe as skia;
 
@@ -34,6 +35,19 @@ pub unsafe extern "C" fn draw_rect(state: *mut State, x1: f32, y1: f32, x2: f32,
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn draw_all_shapes(state: *mut State, zoom: f32, pan_x: f32, pan_y: f32) {
+    let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
+
+    reset_canvas(state);
+    scale(state, zoom, zoom);
+    translate(state, pan_x, pan_y);
+
+    shapes::draw_all(state);
+
+    flush(state);
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn flush(state: *mut State) {
     let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
     state
@@ -58,6 +72,12 @@ pub unsafe extern "C" fn reset_canvas(state: *mut State) {
     state.surface.canvas().clear(skia_safe::Color::TRANSPARENT);
     state.surface.canvas().reset_matrix();
     flush(state);
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn shapes_buffer() -> *mut shapes::Shape {
+    let ptr = shapes::SHAPES_BUFFER.as_mut_ptr();
+    return ptr;
 }
 
 fn main() {

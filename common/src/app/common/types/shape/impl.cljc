@@ -10,18 +10,20 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.geom.rect :as grc]
    [app.common.record :as cr]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
-   [app.common.geom.rect :as grc]
-   [cuerdas.core :as str]
    [clojure.core :as c]
-   [clojure.set :as set]))
+   [clojure.set :as set]
+   [cuerdas.core :as str]))
 
-(def ArrayBuffer js/ArrayBuffer)
-(def Float32Array js/Float32Array)
+#?(:cljs
+   (do
+     (def ArrayBuffer js/ArrayBuffer)
+     (def Float32Array js/Float32Array)))
 
 (cr/defrecord Shape [id name type x y width height rotation selrect points
                      transform transform-inverse parent-id frame-id flip-x flip-y])
@@ -49,77 +51,77 @@
        ;;   (let [bf32 (clone-float32-array buffer)]
        ;;     (ShapeWithBuffer. bf32 delegate)))
 
-       IWithMeta
-       (-with-meta [coll meta]
-         (ShapeWithBuffer. buffer (with-meta delegate meta)))
+     IWithMeta
+     (-with-meta [coll meta]
+       (ShapeWithBuffer. buffer (with-meta delegate meta)))
 
-       IMeta
-       (-meta [coll] (meta delegate))
+     IMeta
+     (-meta [coll] (meta delegate))
 
-       ICollection
-       (-conj [coll entry]
-         (impl-conj coll entry))
+     ICollection
+     (-conj [coll entry]
+       (impl-conj coll entry))
 
-       IEquiv
-       (-equiv [coll other]
-         (c/equiv-map coll other))
+     IEquiv
+     (-equiv [coll other]
+       (c/equiv-map coll other))
 
-       IHash
-       (-hash [coll] (hash (into {} coll)))
+     IHash
+     (-hash [coll] (hash (into {} coll)))
 
-       ISequential
+     ISequential
 
-       ISeqable
-       (-seq [coll]
-         (cons (find coll :selrect)
-               (seq delegate)))
+     ISeqable
+     (-seq [coll]
+       (cons (find coll :selrect)
+             (seq delegate)))
 
-       ICounted
-       (-count [coll]
-         (+ 1 (count delegate)))
+     ICounted
+     (-count [coll]
+       (+ 1 (count delegate)))
 
-       ILookup
-       (-lookup [coll k]
-         (-lookup coll k nil))
+     ILookup
+     (-lookup [coll k]
+       (-lookup coll k nil))
 
-       (-lookup [coll k not-found]
-         (if (= k :selrect)
-           (read-selrect buffer)
-           (c/-lookup delegate k not-found)))
+     (-lookup [coll k not-found]
+       (if (= k :selrect)
+         (read-selrect buffer)
+         (c/-lookup delegate k not-found)))
 
-       IFind
-       (-find [coll k]
-         (if (= k :selrect)
-           (c/MapEntry. k (read-selrect buffer) nil) ; Replace with lazy MapEntry
-           (c/-find delegate k)))
+     IFind
+     (-find [coll k]
+       (if (= k :selrect)
+         (c/MapEntry. k (read-selrect buffer) nil) ; Replace with lazy MapEntry
+         (c/-find delegate k)))
 
-       IAssociative
-       (-assoc [coll k v]
-         (impl-assoc coll k v))
+     IAssociative
+     (-assoc [coll k v]
+       (impl-assoc coll k v))
 
-       (-contains-key? [coll k]
-         (or (= k :selrect)
-             (contains? delegate k)))
+     (-contains-key? [coll k]
+       (or (= k :selrect)
+           (contains? delegate k)))
 
-       IMap
-       (-dissoc [coll k]
-         (impl-dissoc coll k))
+     IMap
+     (-dissoc [coll k]
+       (impl-dissoc coll k))
 
-       IFn
-       (-invoke [coll k]
-         (-lookup coll k))
+     IFn
+     (-invoke [coll k]
+       (-lookup coll k))
 
-       (-invoke [coll k not-found]
-         (-lookup coll k not-found))
+     (-invoke [coll k not-found]
+       (-lookup coll k not-found))
 
-       IPrintWithWriter
-       (-pr-writer [coll writer opts]
-         (-write writer (str "#penpot/shape " (:id delegate))))))
+     IPrintWithWriter
+     (-pr-writer [coll writer opts]
+       (-write writer (str "#penpot/shape " (:id delegate))))))
 
 (defn shape?
   [o]
   (or (instance? Shape o)
-      (instance? ShapeWithBuffer o)))
+      #?(:cljs (instance? ShapeWithBuffer o))))
 
 ;; --- SHAPE IMPL
 
@@ -211,12 +213,12 @@
   :rfn #?(:cljs create-shape
           :clj map->Shape)})
 
-(t/add-handlers!
- {:id "shape"
-  :class ShapeWithBuffer
-  :wfn #(into {} %)
-  :rfn #?(:cljs create-shape
-          :clj map->Shape)})
+#?(:cljs (t/add-handlers!
+          {:id "shape"
+           :class ShapeWithBuffer
+           :wfn #(into {} %)
+           :rfn #?(:cljs create-shape
+                   :clj map->Shape)}))
 
 
 

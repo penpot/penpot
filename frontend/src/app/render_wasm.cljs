@@ -8,6 +8,7 @@
   "A WASM based render API"
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.config :as cf]
    [promesa.core :as p]))
 
@@ -17,41 +18,31 @@
 (defonce ^:dynamic internal-module #js {})
 (defonce ^:dynamic internal-gpu-state #js {})
 
-(defn draw-objects
-  [objects zoom vbox]
-  (let [draw-rect    (unchecked-get internal-module "_draw_rect")
-        translate    (unchecked-get internal-module "_translate")
-        reset-canvas (unchecked-get internal-module "_reset_canvas")
-        scale        (unchecked-get internal-module "_scale")
-        flush        (unchecked-get internal-module "_flush")
-        gpu-state    internal-gpu-state]
+(defn set-objects [objects]
+  (let [shapes-buffer (unchecked-get internal-module "_shapes_buffer")
+        heap (unchecked-get internal-module "HEAPF32")
+        ;; size *in bytes* for each shapes::Shape
+        rect-size 16
+        ;; TODO: remove the `take` once we have the dynamic data structure in Rust
+        supported-shapes (take 2048 (filter #(not (cfh/root? %)) (vals objects)))
+        mem (js/Float32Array. (.-buffer heap) (shapes-buffer) (* rect-size (count supported-shapes)))]
+    (run! (fn [[shape index]]
+            (.set mem (.-buffer shape) (* index rect-size)))
+          (zipmap supported-shapes (range)))))
 
+(defn draw-objects
+  [zoom vbox]
+  (let [draw-all-shapes (unchecked-get internal-module "_draw_all_shapes")]
     (js/requestAnimationFrame
      (fn []
-       (reset-canvas gpu-state)
-       (scale gpu-state zoom zoom)
-
-       (let [x (dm/get-prop vbox :x)
-             y (dm/get-prop vbox :y)]
-         (translate gpu-state (- x) (- y)))
-
-       (run! (fn [shape]
-               ;; (js/console.log "render-shape" (.-buffer shape))
-               (let [selrect (dm/get-prop shape :selrect)
-                     x1      (dm/get-prop selrect :x1)
-                     y1      (dm/get-prop selrect :y1)
-                     x2      (dm/get-prop selrect :x2)
-                     y2      (dm/get-prop selrect :y2)]
-                 ;; (prn (:id shape) selrect)
-                 (draw-rect gpu-state x1 y1 x2 y2)))
-             (vals objects))
-
-       (flush gpu-state)))))
+       (let [pan-x (- (dm/get-prop vbox :x))
+             pan-y (- (dm/get-prop vbox :y))]
+         (draw-all-shapes internal-gpu-state zoom pan-x pan-y))))))
 
 (defn cancel-draw
-  [sem]
-  (when (some? sem)
-    (js/cancelAnimationFrame sem)))
+  [frame-id]
+  (when (some? frame-id)
+    (js/cancelAnimationFrame frame-id)))
 
 (def ^:private canvas-options
   #js {:antialias true

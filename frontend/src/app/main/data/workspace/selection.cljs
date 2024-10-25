@@ -72,7 +72,7 @@
                                 (cr/update! :x2 + (:x delta))
                                 (cr/update! :y2 + (:y delta)))
                     selrect (if ^boolean space?
-                              (-> selrect
+                              (-> (cr/clone selrect)
                                   (cr/update! :x1 + (:x delta))
                                   (cr/update! :y1 + (:y delta)))
                               selrect)]
