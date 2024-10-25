@@ -59,6 +59,10 @@
    software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
    software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest))
 
+(def ^:private max-retries
+  "A maximum number of retries on internal operations"
+  3)
+
 (declare put-object)
 (declare get-object-bytes)
 (declare get-object-data)
@@ -128,18 +132,27 @@
   [backend object]
   (us/assert! ::backend backend)
 
-  (let [result (p/await (get-object-data backend object))]
-    (if (ex/exception? result)
-      (cond
-        (ex/instance? NoSuchKeyException result)
-        (ex/raise :type :not-found
-                  :code :object-not-found
-                  :hint "s3 object not found"
-                  :cause result)
-        :else
-        (throw result))
+  (loop [result (get-object-data backend object)
+         retryn 0]
 
-      result)))
+    (let [result (p/await result)]
+      (if (ex/exception? result)
+        (cond
+          (ex/instance? NoSuchKeyException result)
+          (ex/raise :type :not-found
+                    :code :object-not-found
+                    :hint "s3 object not found"
+                    :cause result)
+
+          (and (ex/instance? java.nio.file.FileAlreadyExistsException result)
+               (< retryn max-retries))
+          (recur (get-object-data backend object)
+                 (inc retryn))
+
+          :else
+          (throw result))
+
+        result))))
 
 (defmethod impl/get-object-bytes :s3
   [backend object]
