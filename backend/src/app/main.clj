@@ -471,7 +471,8 @@
     ::sto.s3/bucket     (or (cf/get :storage-assets-s3-bucket)
                             (cf/get :objects-storage-s3-bucket))
     ::sto.s3/io-threads (or (cf/get :storage-assets-s3-io-threads)
-                            (cf/get :objects-storage-s3-io-threads))}
+                            (cf/get :objects-storage-s3-io-threads))
+    ::wrk/executor      (ig/ref ::wrk/executor)}
 
    :app.storage.fs/backend
    {::sto.fs/directory (or (cf/get :storage-assets-fs-directory)
