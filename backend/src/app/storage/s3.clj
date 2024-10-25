@@ -142,6 +142,8 @@
           (ex/raise :type :not-found
                     :code :object-not-found
                     :hint "s3 object not found"
+                    :object-id (:id object)
+                    :object-path (impl/id->path (:id object))
                     :cause result)
 
           (and (ex/instance? java.nio.file.FileAlreadyExistsException result)
@@ -242,10 +244,12 @@
     {:name "penpot/s3/uploader"
      :virtual true
      :daemon true}
-    (l/trace :hint "start upload thread"
+    (l/debug :hint "start upload thread"
              :object-id (str id)
              :size (impl/get-size content)
              ::l/sync? true)
+
+    ;; FIXME: improve buffer reusing
     (let [stream (io/input-stream content)
           bsize  (* 1024 64)
           tpoint (dt/tpoint)]
