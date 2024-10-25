@@ -846,12 +846,12 @@
          :on-close close-sub-menu}]
 
        :plugins
-       [:& plugins-menu*
+       [:> plugins-menu*
         {:open-plugins open-plugins-manager
          :on-close close-sub-menu}]
 
        :help-info
-       [:& help-info-menu*
+       [:> help-info-menu*
         {:layout layout
          :on-close close-sub-menu}]
 
