@@ -174,13 +174,13 @@ export class WorkspacePage extends BaseWebSocketPage {
   }
 
   async clickLeafLayer(name, clickOptions = {}) {
-    const layer = this.layers.getByText(name);
+    const layer = this.layers.getByText(name).first();
     await layer.click(clickOptions);
   }
 
   async clickToggableLayer(name, clickOptions = {}) {
     const layer = this.layers
-      .getByTestId("layer-item")
+      .getByTestId("layer-row")
       .filter({ has: this.page.getByText(name) });
     await layer.getByRole("button").click(clickOptions);
   }

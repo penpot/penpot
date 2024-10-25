@@ -18,6 +18,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.main.ui.context :as ctx]
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.formats :as fmt]
    [app.main.ui.workspace.viewport.rulers :as rulers]
@@ -56,67 +57,78 @@
 
         snap-pixel? (mf/deref refs/snap-pixel?)
 
+        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
+
         on-pointer-enter
         (mf/use-callback
+         (mf/deps workspace-read-only?)
          (fn []
-           (st/emit! (dw/set-hover-guide id true))
-           (swap! state assoc :hover true)))
+           (when-not workspace-read-only?
+             (st/emit! (dw/set-hover-guide id true))
+             (swap! state assoc :hover true))))
 
         on-pointer-leave
         (mf/use-callback
+         (mf/deps workspace-read-only?)
          (fn []
-           (st/emit! (dw/set-hover-guide id false))
-           (swap! state assoc :hover false)))
+           (when-not workspace-read-only?
+             (st/emit! (dw/set-hover-guide id false))
+             (swap! state assoc :hover false))))
 
         on-pointer-down
         (mf/use-callback
+         (mf/deps workspace-read-only?)
          (fn [event]
-           (when (= 0 (.-button event))
-             (dom/capture-pointer event)
-             (mf/set-ref-val! dragging-ref true)
-             (mf/set-ref-val! start-ref (dom/get-client-position event))
-             (mf/set-ref-val! start-pos-ref (get @ms/mouse-position axis)))))
+           (when-not workspace-read-only?
+             (when (= 0 (.-button event))
+               (dom/capture-pointer event)
+               (mf/set-ref-val! dragging-ref true)
+               (mf/set-ref-val! start-ref (dom/get-client-position event))
+               (mf/set-ref-val! start-pos-ref (get @ms/mouse-position axis))))))
 
         on-pointer-up
         (mf/use-callback
-         (mf/deps (select-keys @state [:new-position :new-frame-id]) on-guide-change)
+         (mf/deps (select-keys @state [:new-position :new-frame-id]) on-guide-change workspace-read-only?)
          (fn []
-           (when (some? on-guide-change)
-             (when (some? (:new-position @state))
-               (on-guide-change {:position (:new-position @state)
-                                 :frame-id (:new-frame-id @state)})))))
+           (when-not workspace-read-only?
+             (when (some? on-guide-change)
+               (when (some? (:new-position @state))
+                 (on-guide-change {:position (:new-position @state)
+                                   :frame-id (:new-frame-id @state)}))))))
 
         on-lost-pointer-capture
         (mf/use-callback
+         (mf/deps workspace-read-only?)
          (fn [event]
-           (dom/release-pointer event)
-           (mf/set-ref-val! dragging-ref false)
-           (mf/set-ref-val! start-ref nil)
-           (mf/set-ref-val! start-pos-ref nil)
-           (swap! state assoc :new-position nil)))
+           (when-not workspace-read-only?
+             (dom/release-pointer event)
+             (mf/set-ref-val! dragging-ref false)
+             (mf/set-ref-val! start-ref nil)
+             (mf/set-ref-val! start-pos-ref nil)
+             (swap! state assoc :new-position nil))))
 
         on-pointer-move
         (mf/use-callback
-         (mf/deps position zoom snap-pixel?)
+         (mf/deps position zoom snap-pixel? workspace-read-only?)
          (fn [event]
+           (when-not workspace-read-only?
+             (when-let [_ (mf/ref-val dragging-ref)]
+               (let [start-pt (mf/ref-val start-ref)
+                     start-pos (mf/ref-val start-pos-ref)
+                     current-pt (dom/get-client-position event)
+                     delta (/ (- (get current-pt axis) (get start-pt axis)) zoom)
+                     new-position (if (some? position)
+                                    (+ position delta)
+                                    (+ start-pos delta))
 
-           (when-let [_ (mf/ref-val dragging-ref)]
-             (let [start-pt (mf/ref-val start-ref)
-                   start-pos (mf/ref-val start-pos-ref)
-                   current-pt (dom/get-client-position event)
-                   delta (/ (- (get current-pt axis) (get start-pt axis)) zoom)
-                   new-position (if (some? position)
-                                  (+ position delta)
-                                  (+ start-pos delta))
+                     new-position (if snap-pixel?
+                                    (mth/round new-position)
+                                    new-position)
 
-                   new-position (if snap-pixel?
-                                  (mth/round new-position)
-                                  new-position)
-
-                   new-frame-id (:id (get-hover-frame))]
-               (swap! state assoc
-                      :new-position new-position
-                      :new-frame-id new-frame-id)))))]
+                     new-frame-id (:id (get-hover-frame))]
+                 (swap! state assoc
+                        :new-position new-position
+                        :new-frame-id new-frame-id))))))]
     {:on-pointer-enter on-pointer-enter
      :on-pointer-leave on-pointer-leave
      :on-pointer-down on-pointer-down
@@ -407,7 +419,8 @@
                 on-pointer-move
                 state
                 frame]}
-        (use-guide on-guide-change get-hover-frame zoom {:axis axis})]
+        (use-guide on-guide-change get-hover-frame zoom {:axis axis})
+        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)]
 
     [:g.new-guides
      (when-not disabled-guides
@@ -422,7 +435,8 @@
                  :on-pointer-up on-pointer-up
                  :on-lost-pointer-capture on-lost-pointer-capture
                  :on-pointer-move on-pointer-move
-                 :class (if (= axis :x) (cur/get-dynamic "resize-ew" 0) (cur/get-dynamic "resize-ns" 0))
+                 :class (when-not workspace-read-only?
+                          (if (= axis :x) (cur/get-dynamic "resize-ew" 0) (cur/get-dynamic "resize-ns" 0)))
                  :style {:fill "none"
                          :pointer-events "fill"}}]))
 
