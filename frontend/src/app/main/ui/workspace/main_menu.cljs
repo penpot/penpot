@@ -479,13 +479,16 @@
 (mf/defc file-menu*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [on-close file can-edit]}]
+  [{:keys [on-close file]}]
   (let [file-id      (:id file)
         shared?      (:is-shared file)
 
         objects      (mf/deref refs/workspace-page-objects)
         frames       (->> (cfh/get-immediate-children objects uuid/zero)
                           (filterv cfh/frame-shape?))
+
+        perms        (mf/use-ctx ctx/team-permissions)
+        can-edit     (:can-edit perms)
 
         on-remove-shared
         (mf/use-fn
@@ -567,11 +570,12 @@
                        :on-close on-close}
 
      (if ^boolean shared?
-       [:> dropdown-menu-item* {:class (stl/css :submenu-item)
-                                :on-click    on-remove-shared
-                                :on-key-down on-remove-shared-key-down
-                                :id          "file-menu-remove-shared"}
-        [:span {:class (stl/css :item-name)} (tr "dashboard.unpublish-shared")]]
+       (when can-edit
+         [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                                  :on-click    on-remove-shared
+                                  :on-key-down on-remove-shared-key-down
+                                  :id          "file-menu-remove-shared"}
+          [:span {:class (stl/css :item-name)} (tr "dashboard.unpublish-shared")]])
 
        (when can-edit
          [:> dropdown-menu-item* {:class (stl/css :submenu-item)
