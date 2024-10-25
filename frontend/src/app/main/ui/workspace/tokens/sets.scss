@@ -39,79 +39,61 @@
   width: 100%;
   cursor: pointer;
   color: var(--layer-row-foreground-color);
-  padding-right: $s-2;
-
-  .set-name {
-    @include textEllipsis;
-    flex-grow: 1;
-    padding-left: $s-2;
-  }
-
-  .icon {
-    display: flex;
-    align-items: center;
-    width: $s-20;
-    height: $s-20;
-    padding-right: $s-4;
-
-    svg {
-      height: $s-20;
-      width: $s-20;
-      color: white;
-      fill: none;
-      stroke: var(--icon-foreground);
-    }
-  }
 }
 
-.set-item-set {
-  &:hover {
-    background-color: var(--layer-row-background-color-hover);
-    color: var(--layer-row-foreground-color-hover);
-    box-shadow: -100px 0 0 0 var(--layer-row-background-color-hover);
-
-    .delete-set {
-      visibility: visible;
-    }
-  }
+.set-name {
+  @include textEllipsis;
+  flex-grow: 1;
+  padding-left: $s-2;
 }
 
+.icon {
+  display: flex;
+  align-items: center;
+  width: $s-20;
+  height: $s-20;
+  padding-right: $s-4;
+}
+
+.checkbox-style {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: $s-16;
+  height: $s-16;
+  margin-inline: $s-6;
+  background-color: var(--input-checkbox-background-color-rest);
+  border: 1px solid var(--input-checkbox-border-color-rest);
+  border-radius: 0.25rem;
+  padding: 0;
+}
+
+.checkbox-checked-style {
+  background-color: var(--input-border-color-active);
+}
+
+.check-icon {
+  color: var(--color-background-secondary);
+}
+
+.set-item-set:hover {
+  background-color: var(--layer-row-background-color-hover);
+  color: var(--layer-row-foreground-color-hover);
+  box-shadow: -100px 0 0 0 var(--layer-row-background-color-hover);
+}
+
+.empty-state-message-sets {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: $s-12;
+  color: var(--color-foreground-secondary);
+}
 .selected-set {
   background-color: var(--layer-row-background-color-selected);
   color: var(--layer-row-foreground-color-selected);
   box-shadow: -100px 0 0 0 var(--layer-row-background-color-selected);
-}
-
-.delete-set {
-  @extend .button-tertiary;
-  height: $s-28;
-  width: $s-28;
-  visibility: hidden;
-  button {
-    @include buttonStyle;
-    @include flexCenter;
-    width: $s-24;
-    height: 100%;
-    svg {
-      @extend .button-icon-small;
-      height: $s-12;
-      width: $s-12;
-      color: transparent;
-      fill: none;
-      stroke: var(--icon-foreground);
-    }
-  }
-}
-
-.action-btn {
-  @extend .button-tertiary;
-  height: $s-28;
-  width: $s-28;
-  svg {
-    @extend .button-icon;
-    width: 12px;
-    height: 12px;
-  }
 }
 
 .collapsabled-icon {
@@ -119,23 +101,9 @@
   @include flexCenter;
   height: $s-24;
   border-radius: $br-8;
-
-  --chevron-icon-rotation: 90deg;
-
-  &.collapsed {
-    --chevron-icon-rotation: 0deg;
-  }
-
   &:hover {
-    --chevron-icon-color: var(--title-foreground-color-hover);
+    color: var(--title-foreground-color-hover);
   }
-}
-
-.chevron-icon {
-  @extend .button-icon-small;
-  margin-right: $s-6;
-  transform: rotate(var(--chevron-icon-rotation));
-  stroke: var(--icon-foreground);
 }
 
 .editing-node {
@@ -143,7 +111,7 @@
   color: var(--layer-row-foreground-color-focus);
 }
 
-input.editing-node {
+.editing-node {
   @include textEllipsis;
   @include bodySmallTypography;
   @include removeInputStyle;

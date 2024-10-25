@@ -314,19 +314,23 @@
                          :on-toggle-dropdown on-toggle-dropdown
                          :theme theme
                          :on-change-field on-change-field}]
-
+       [:> text* {:as "span"  :typography "body-small" :class (stl/css :select-sets-message)}
+        (tr "workspace.token.set-selection-theme")]
        [:div {:class (stl/css :sets-list-wrapper)}
+
         [:& wts/controlled-sets-list
          {:token-sets token-sets
           :token-set-selected? (constantly false)
           :token-set-active? token-set-active?
           :on-select on-toggle-token-set
           :on-toggle-token-set on-toggle-token-set
+          :origin "theme-modal"
           :context sets-context/static-context}]]
 
        [:div {:class (stl/css :edit-theme-footer)}
         [:> button* {:variant "secondary"
                      :type "button"
+                     :icon "delete"
                      :on-click on-delete-token}
          (tr "labels.delete")]
         [:div {:class (stl/css :button-footer)}

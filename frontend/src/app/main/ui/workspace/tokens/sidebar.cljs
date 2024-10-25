@@ -19,6 +19,7 @@
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
@@ -188,9 +189,11 @@
      [:span {:class (stl/css :themes-header)} (tr "labels.themes")]
      (if (empty? ordered-themes)
        [:div {:class (stl/css :empty-theme-wrapper)}
-        [:> text* {:as "span" :typography "body-small"} (tr "workspace.token.no-themes")]
+        [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
+         (tr "workspace.token.no-themes")]
         [:button {:on-click open-modal
-                  :class (stl/css :create-theme-button)} (tr "workspace.token.create-a-theme")]]
+                  :class (stl/css :create-theme-button)}
+         (tr "workspace.token.create-one")]]
        [:div {:class (stl/css :theme-select-wrapper)}
         [:& theme-select]
         [:> button* {:variant "secondary"
@@ -198,17 +201,24 @@
          (tr "labels.edit")]])]))
 
 (mf/defc add-set-button
-  [{:keys [on-open]}]
-  (let [{:keys [on-create]} (sets-context/use-context)]
-    [:button {:class (stl/css :add-set)
-              :on-click #(do
-                           (on-open)
-                           (on-create))}
-     i/add]))
+  [{:keys [on-open style]}]
+  (let [{:keys [on-create]} (sets-context/use-context)
+        on-click #(do
+                    (on-open)
+                    (on-create))]
+    (if (= style "inline")
+      [:button {:on-click on-click
+                :class (stl/css :create-theme-button)}
+       (tr "workspace.token.create-one")]
+      [:> icon-button* {:variant "ghost"
+                        :icon "add"
+                        :on-click on-click
+                        :aria-label (tr "workspace.token.add set")}])))
 
 (mf/defc themes-sets-tab
   []
-  (let [open? (mf/use-state true)
+  (let [token-sets (mf/deref refs/workspace-ordered-token-sets)
+        open? (mf/use-state true)
         on-open (mf/use-fn #(reset! open? true))]
     [:& sets-context/provider {}
      [:& sets-context-menu]
@@ -220,10 +230,18 @@
                       :all-clickable true
                       :title (tr "labels.sets")
                       :on-collapsed #(swap! open? not)}
-        [:& add-set-button {:on-open on-open}]]]
+        [:& add-set-button {:on-open on-open
+                            :style "header"}]]]
       (when @open?
         [:& h/sortable-container {}
-         [:& sets-list]])]]))
+         [:*
+          (when (empty? token-sets)
+            [:div {:class (stl/css :empty-sets-wrapper)}
+             [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
+              (tr "workspace.token.no-sets-yet")]
+             [:& add-set-button {:on-open on-open
+                                 :style "inline"}]])
+          [:& sets-list]]])]]))
 
 (mf/defc tokens-tab
   [_props]

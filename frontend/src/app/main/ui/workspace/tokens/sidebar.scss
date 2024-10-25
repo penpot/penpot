@@ -55,6 +55,12 @@
   color: var(--color-foreground-secondary);
 }
 
+.empty-sets-wrapper {
+  padding: $s-12;
+  padding-inline-start: $s-24;
+  color: var(--color-foreground-secondary);
+}
+
 .sidebar-header {
   display: flex;
   align-items: center;
@@ -64,17 +70,8 @@
   color: var(--layer-row-foreground-color);
 }
 
-.add-set {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  padding: 0;
-  margin-right: $s-12;
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-    transform: rotate(90deg);
-  }
+.empty-state-message {
+  color: var(--color-foreground-secondary);
 }
 
 .token-pills-wrapper {

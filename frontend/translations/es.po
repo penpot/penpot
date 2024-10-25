@@ -1534,6 +1534,10 @@ msgstr "Canva"
 msgid "labels.close"
 msgstr "Cerrar"
 
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "labels.collapse"
+msgstr "Colapsar"
+
 #: src/app/main/ui/dashboard/comments.cljs:104, src/app/main/ui/viewer/comments.cljs:70, src/app/main/ui/workspace/comments.cljs:126
 msgid "labels.comments"
 msgstr "Comentarios"
@@ -6157,8 +6161,12 @@ msgid "workspace.token.no-themes"
 msgstr "No hay temas."
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs
-msgid "workspace.token.create-a-theme"
+msgid "workspace.token.create-one"
 msgstr "Crear uno."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.add set"
+msgstr "Añadir set"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs
 msgid "workspace.token.save-theme"
@@ -6198,7 +6206,7 @@ msgstr "Tema %s"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs
 msgid "workspace.token.no-sets"
-msgstr "No hay sets definidos"
+msgstr "No hay sets"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs
 msgid "workspace.token.num-sets"
@@ -6219,3 +6227,28 @@ msgstr "No hay temas activos"
 #: src/app/main/ui/workspace/tokens/theme_select.cljs
 msgid "workspace.token.active-themes"
 msgstr "%s temas activos"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.grouping-set-alert"
+msgstr "La agrupación de sets aun no está soportada."
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.select-set"
+msgstr "Selecciona set"
+
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.set-selection-theme"
+msgstr "Define que sets de tokens deberian formar parte de este tema:"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.no-sets"
+msgstr "Aun no hay sets."
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.create-one"
+msgstr "Crea uno."
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.no-sets-create"
+msgstr "Aun no hay sets definidos. Crea uno primero"

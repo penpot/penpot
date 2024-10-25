@@ -1,3 +1,9 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
 (ns app.main.ui.workspace.tokens.sets-context-menu
   (:require-macros [app.main.style :as stl])
   (:require
@@ -7,6 +13,7 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.workspace.tokens.sets-context :as sets-context]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -29,10 +36,12 @@
 
 (mf/defc menu
   [{:keys [token-set-name]}]
-  (let [{:keys [on-edit]} (sets-context/use-context)]
+  (let [{:keys [on-edit]} (sets-context/use-context)
+        edit-name (mf/use-fn #(on-edit token-set-name))
+        delete-set (mf/use-fn #(st/emit! (wdt/delete-token-set token-set-name)))]
     [:ul {:class (stl/css :context-list)}
-     [:& menu-entry {:title "Rename" :on-click #(on-edit token-set-name)}]
-     [:& menu-entry {:title "Delete" :on-click #(st/emit! (wdt/delete-token-set token-set-name))}]]))
+     [:& menu-entry {:title (tr "labels.rename") :on-click edit-name}]
+     [:& menu-entry {:title (tr "labels.delete")  :on-click delete-set}]]))
 
 (mf/defc sets-context-menu
   []
