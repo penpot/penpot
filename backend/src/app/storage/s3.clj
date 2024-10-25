@@ -244,7 +244,7 @@
             (when (pos? readed)
               (let [data (ByteBuffer/wrap ^bytes buffer 0 readed)]
                 (.onNext ^Subscriber subscriber ^ByteBuffer data)
-                (when (= readed bsize)
+                (when (not= readed -1)
                   (recur))))))
         (.onComplete ^Subscriber subscriber)
         (catch InterruptedException _
