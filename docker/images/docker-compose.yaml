@@ -224,7 +224,7 @@ services:
       - POSTGRES_PASSWORD=penpot
 
   penpot-redis:
-    image: redis:7
+    image: redis:7.2
     restart: always
     networks:
       - penpot
