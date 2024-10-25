@@ -41,33 +41,73 @@
          :warnings "silent"
          :errors {:brokenReferences "console"}}})
 
-(defn process-sd-tokens [sd-tokens get-origin-token]
+(defn parse-sd-token-color-value
+  "Parses `value` of a color `sd-token` into a map like `{:value 1 :unit \"px\"}`.
+  If the value is not parseable and/or has missing references returns a map with `:errors`."
+  [value]
+  (if-let [tc (tinycolor/valid-color value)]
+    {:value value :unit (tinycolor/color-format tc)}
+    {:errors [(wte/error-with-value :error.token/invalid-color value)]}))
+
+(defn parse-sd-token-dimensions-value
+  "Parses `value` of a dimensions `sd-token` into a map like `{:value 1 :unit \"px\"}`.
+  If the `value` is not parseable and/or has missing references returns a map with `:errors`."
+  [value]
+  (or
+   (wtt/parse-token-value value)
+   (if-let [references (seq (ctob/find-token-value-references value))]
+     {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
+      :references references}
+     {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
+
+(defn process-sd-tokens
+  "Converts a StyleDictionary dictionary with resolved tokens (aka `sd-tokens`) back to clojure.
+  The `get-origin-token` argument should be a function that takes an `sd-token` and returns the original penpot token, so we can merge the resolved attributes back in.
+
+  The `sd-token` will have references in `value` replaced with the computed value as a string.
+  Here's an example for a `sd-token`:
+  ```js
+  {
+    name:  'token.with.reference',
+    value: '12px',
+    type:  'border-radius',
+    path: ['token', 'with', 'reference'],
+
+    // The penpot origin token converted to a js object
+    original: {
+        name:  'token.with.reference',
+        value: '{referenced.token}',
+        type:  'border-radius'
+    },
+  }
+  ```
+  
+  We also convert `sd-token` value string into a unit that can be used as penpot shape attributes.
+    - Dimensions like '12px' will be converted into numbers
+    - Colors will be validated & converted to hex
+
+  Lastly we check for errors in each token
+  `sd-token` will keep the missing references in the `value` (E.g \"{missing} + {existing}\" -> \"{missing} + 12px\")
+  So we parse out the missing references and add them to `:errors` in the final token."
+  [sd-tokens get-origin-token]
   (reduce
    (fn [acc ^js sd-token]
-     (let [{:keys [type] :as origin-token} (get-origin-token sd-token)
+     (let [origin-token (get-origin-token sd-token)
            value (.-value sd-token)
-           token-or-err (case type
-                          :color (if-let [tc (tinycolor/valid-color value)]
-                                   {:value value :unit (tinycolor/color-format tc)}
-                                   {:errors [(wte/error-with-value :error.token/invalid-color value)]})
-                          (or (wtt/parse-token-value value)
-                              (if-let [references (-> (ctob/find-token-value-references value)
-                                                      (seq))]
-                                {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
-                                 :references references}
-                                {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
-           output-token (if (:errors token-or-err)
-                          (merge origin-token token-or-err)
+           parsed-token-value (case (:type origin-token)
+                                :color (parse-sd-token-color-value value)
+                                (parse-sd-token-dimensions-value value))
+           output-token (if (:errors parsed-token-value)
+                          (merge origin-token parsed-token-value)
                           (assoc origin-token
-                                 :resolved-value (:value token-or-err)
-                                 :unit (:unit token-or-err)))]
-       (assoc acc (wtt/token-identifier output-token) output-token)))
+                                 :resolved-value (:value parsed-token-value)
+                                 :unit (:unit parsed-token-value)))]
+       (assoc acc (:name output-token) output-token)))
    {} sd-tokens))
 
 (defprotocol IStyleDictionary
   (add-tokens [_ tokens])
   (enable-debug [_])
-  (set-config [_])
   (get-config [_])
   (build-dictionary [_]))
 
@@ -78,9 +118,6 @@
 
   (enable-debug [_]
     (StyleDictionary. (update config :log merge {:verbosity "verbose"})))
-
-  (set-config [_]
-    (StyleDictionary. config))
 
   (get-config [_]
     config)
@@ -111,7 +148,14 @@
 (defn resolve-tokens-interactive+
   "Interactive check of resolving tokens.
   Uses a ids map to backtrace the original token from the resolved StyleDictionary token.
-  This is necessary as the user might have removed/changed the token name but we still want to validate the value interactively."
+
+  We have to pass in all tokens from all sets in the entire library to style dictionary
+  so we know if references are missing / to resolve them and possibly show interactive previews (in the tokens form) to the user.
+
+  Since we're using the :name path as the identifier we might be throwing away or overriding tokens in the tree that we pass to StyleDictionary.
+
+  So to get back the original token from the resolved sd-token (see my updates for what an sd-token is) we include a temporary :id for the token that we pass to StyleDictionary,
+  this way after the resolving computation we can restore any token, even clashing ones with the same :name path by just looking up that :id in the ids map."
   [tokens]
   (let [{:keys [tokens-tree ids]} (ctob/backtrace-tokens-tree tokens)]
     (resolve-tokens-tree+ tokens-tree  #(get ids (sd-token-uuid %)))))

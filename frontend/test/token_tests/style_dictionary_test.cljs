@@ -1,39 +1,33 @@
 (ns token-tests.style-dictionary-test
   (:require
-   [app.common.data :as d]
+   [app.common.transit :as tr]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [beicon.v2.core :as rx]
-   [app.common.transit :as tr]
    [cljs.test :as t :include-macros true]
-   [promesa.core :as p]
-   [app.common.types.tokens-lib :as ctob]))
-
-(def border-radius-token
-  {:value "12px"
-   :name "borderRadius.sm"
-   :type :border-radius})
-
-(def reference-border-radius-token
-  {:value "{borderRadius.sm} * 2"
-   :name "borderRadius.md-with-dashes"
-   :type :border-radius})
-
-(def tokens (d/ordered-map
-             (:name border-radius-token) border-radius-token
-             (:name reference-border-radius-token) reference-border-radius-token))
+   [promesa.core :as p]))
 
 (t/deftest resolve-tokens-test
   (t/async
-    done
-    (t/testing "resolves tokens using style-dictionary from a ids map"
-      (-> (sd/resolve-tokens+ tokens)
-          (p/finally
-            (fn [resolved-tokens]
-              (t/is (= 12 (get-in resolved-tokens ["borderRadius.sm" :resolved-value])))
-              (t/is (= "px" (get-in resolved-tokens ["borderRadius.sm" :unit])))
-              (t/is (= 24 (get-in resolved-tokens ["borderRadius.md-with-dashes" :resolved-value])))
-              (t/is (= "px" (get-in resolved-tokens ["borderRadius.md-with-dashes" :unit])))
-              (done)))))))
+   done
+   (t/testing "resolves tokens using style-dictionary from a ids map"
+     (let [tokens (-> (ctob/make-tokens-lib)
+                      (ctob/add-set (ctob/make-token-set :name "core"))
+                      (ctob/add-token-in-set "core" (ctob/make-token {:name "borderRadius.sm"
+                                                                      :value "12px"
+                                                                      :type :border-radius}))
+                      (ctob/add-token-in-set "core" (ctob/make-token {:value "{borderRadius.sm} * 2"
+                                                                      :name "borderRadius.md-with-dashes"
+                                                                      :type :border-radius}))
+                      (ctob/get-all-tokens))]
+       (-> (sd/resolve-tokens+ tokens)
+           (p/finally
+             (fn [resolved-tokens]
+               (t/is (= 12 (get-in resolved-tokens ["borderRadius.sm" :resolved-value])))
+               (t/is (= "px" (get-in resolved-tokens ["borderRadius.sm" :unit])))
+               (t/is (= 24 (get-in resolved-tokens ["borderRadius.md-with-dashes" :resolved-value])))
+               (t/is (= "px" (get-in resolved-tokens ["borderRadius.md-with-dashes" :unit])))
+               (done))))))))
 
 (t/deftest process-json-stream-test
   (t/async
