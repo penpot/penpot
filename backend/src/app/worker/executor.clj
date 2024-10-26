@@ -17,12 +17,11 @@
    [integrant.core :as ig]
    [promesa.exec :as px])
   (:import
-   java.util.concurrent.Executor
    java.util.concurrent.ThreadPoolExecutor))
 
 (set! *warn-on-reflection* true)
 
-(s/def ::wrk/executor #(instance? Executor %))
+(s/def ::wrk/executor #(instance? ThreadPoolExecutor %))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; EXECUTOR
@@ -36,29 +35,21 @@
   (let [factory  (px/thread-factory :prefix "penpot/default/")
         executor (px/cached-executor :factory factory :keepalive 60000)]
     (l/inf :hint "executor started")
-    (reify
-      java.lang.AutoCloseable
-      (close [_]
-        (l/inf :hint "stoping executor")
-        (px/shutdown! executor))
-
-      clojure.lang.IDeref
-      (deref [_]
-        {:active (.getPoolSize ^ThreadPoolExecutor executor)
-         :running (.getActiveCount ^ThreadPoolExecutor executor)
-         :completed (.getCompletedTaskCount ^ThreadPoolExecutor executor)})
-
-      Executor
-      (execute [_ runnable]
-        (.execute ^Executor executor ^Runnable runnable)))))
+    executor))
 
 (defmethod ig/halt-key! ::wrk/executor
   [_ instance]
-  (.close ^java.lang.AutoCloseable instance))
+  (px/shutdown! instance))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MONITOR
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- get-stats
+  [^ThreadPoolExecutor executor]
+  {:active (.getPoolSize ^ThreadPoolExecutor executor)
+   :running (.getActiveCount ^ThreadPoolExecutor executor)
+   :completed (.getCompletedTaskCount ^ThreadPoolExecutor executor)})
 
 (s/def ::name ::us/keyword)
 
@@ -74,7 +65,7 @@
   [_ {:keys [::wrk/executor ::mtx/metrics ::interval ::wrk/name]}]
   (letfn [(monitor! [executor prev-completed]
             (let [labels        (into-array String [(d/name name)])
-                  stats         (deref executor)
+                  stats         (get-stats executor)
 
                   completed     (:completed stats)
                   completed-inc (- completed prev-completed)
