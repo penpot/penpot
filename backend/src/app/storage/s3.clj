@@ -186,9 +186,8 @@
   (Region/of (name region)))
 
 (defn- build-s3-client
-  [{:keys [::region ::endpoint ::io-threads]}]
-  (let [executor (px/resolve-executor :virtual)
-        aconfig  (-> (ClientAsyncConfiguration/builder)
+  [{:keys [::region ::endpoint ::io-threads ::wrk/executor]}]
+  (let [aconfig  (-> (ClientAsyncConfiguration/builder)
                      (.advancedOption SdkAdvancedAsyncClientOption/FUTURE_COMPLETION_EXECUTOR executor)
                      (.build))
 
