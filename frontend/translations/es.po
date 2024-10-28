@@ -6369,6 +6369,30 @@ msgstr "Editar token"
 msgid "workspace.token.resolved-value"
 msgstr "Valor resuelto: "
 
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-name"
+msgstr "Nombre"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-name"
+msgstr "Introduce un nombre para el token %s" 
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-value"
+msgstr "Valor"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-value"
+msgstr "Introduce un valor o alias"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-description"
+msgstr "Descripción"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-description"
+msgstr "Añade una Descripción (opcional)"
+
 #: src/app/main/ui/workspace/tokens/sidebar.cljs
 msgid "workspace.token.original-value"
 msgstr "Valor original: "
