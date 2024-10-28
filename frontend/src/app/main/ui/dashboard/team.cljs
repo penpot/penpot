@@ -199,10 +199,15 @@
 
 
     [:div {:class (stl/css-case :modal-team-container true
+                                :modal-team-container-workspace (= origin :workspace)
                                 :hero (= origin :hero))}
      [:& fm/form {:on-submit on-submit :form form}
       [:div {:class (stl/css :modal-title)}
        (tr "modals.invite-team-member.title")]
+
+      (when (= :workspace origin)
+        [:div {:class (stl/css :invite-team-member-text)}
+         (tr "modals.invite-team-member.text")])
 
       (when-not (= "" @error-text)
         [:& context-notification {:content  @error-text
