@@ -47,7 +47,7 @@
   {::yres/status  200
    ::yres/headers {"content-type" "text/html"}
    ::yres/body    (-> (io/resource "app/templates/debug.tmpl")
-                      (tmpl/render {}))})
+                      (tmpl/render {:version (:full cf/version)}))})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FILE CHANGES
