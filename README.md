@@ -8,10 +8,12 @@
   <img alt="penpot header image" src="https://penpot.app/images/readme/github-light-mode.png">
 </picture>
 
-<p align="center"><a href="https://www.mozilla.org/en-US/MPL/2.0" rel="nofollow"><img src="https://camo.githubusercontent.com/3fcf3d6b678ea15fde3cf7d6af0e242160366282d62a7c182d83a50bfee3f45e/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f4d504c2d322e302d626c75652e737667" alt="License: MPL-2.0" data-canonical-src="https://img.shields.io/badge/MPL-2.0-blue.svg" style="max-width:100%;"></a>
-<a href="https://gitter.im/penpot/community" rel="nofollow"><img src="https://camo.githubusercontent.com/5b0aecb33434f82a7b158eab7247544235ada0cf7eeb9ce8e52562dd67f614b7/68747470733a2f2f6261646765732e6769747465722e696d2f736572656e6f2d78797a2f636f6d6d756e6974792e737667" alt="Gitter" data-canonical-src="https://badges.gitter.im/sereno-xyz/community.svg" style="max-width:100%;"></a>
-<a href="https://tree.taiga.io/project/penpot/" title="Managed with Taiga.io" rel="nofollow"><img src="https://camo.githubusercontent.com/4a1d1112f0272e3393b1e8da312ff4435418e9e2eb4c0964881e3680f90a653c/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f6d616e61676564253230776974682d54414947412e696f2d3730396631342e737667" alt="Managed with Taiga.io" data-canonical-src="https://img.shields.io/badge/managed%20with-TAIGA.io-709f14.svg" style="max-width:100%;"></a>
-<a href="https://gitpod.io/#https://github.com/penpot/penpot" rel="nofollow"><img src="https://camo.githubusercontent.com/daadb4894128d1e19b72d80236f5959f1f2b47f9fe081373f3246131f0189f6c/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f476974706f642d72656164792d2d746f2d2d636f64652d626c75653f6c6f676f3d676974706f64" alt="Gitpod ready-to-code" data-canonical-src="https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod" style="max-width:100%;"></a></p>
+<p align="center">
+<a href="https://www.mozilla.org/en-US/MPL/2.0" rel="nofollow"><img alt="License: MPL-2.0" src="https://img.shields.io/badge/MPL-2.0-blue.svg" style="max-width:100%;"></a>
+<a href="https://gitter.im/penpot/community" rel="nofollow"><img alt="Gitter" src="https://badges.gitter.im/sereno-xyz/community.svg" style="max-width:100%;"></a>
+<a href="https://tree.taiga.io/project/penpot/" title="Managed with Taiga.io" rel="nofollow"><img alt="Managed with Taiga.io" src="https://img.shields.io/badge/managed%20with-TAIGA.io-709f14.svg" style="max-width:100%;"></a>
+<a href="https://gitpod.io/#https://github.com/penpot/penpot" rel="nofollow"><img alt="Gitpod ready-to-code" src="https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod" style="max-width:100%;"></a>
+</p>
 
 <p align="center">
     <a href="https://penpot.app/"><b>Website</b></a>  •  
