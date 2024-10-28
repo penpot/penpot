@@ -47,7 +47,7 @@
   {::rres/status  200
    ::rres/headers {"content-type" "text/html"}
    ::rres/body    (-> (io/resource "app/templates/debug.tmpl")
-                      (tmpl/render {}))})
+                      (tmpl/render {:version (:full cf/version)}))})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FILE CHANGES
