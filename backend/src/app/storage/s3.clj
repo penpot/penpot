@@ -62,6 +62,16 @@
   "A maximum number of retries on internal operations"
   3)
 
+(def ^:private max-concurrency
+  "Maximum concurrent request to S3 service"
+  128)
+
+(def ^:private max-pending-connection-acquires
+  20000)
+
+(def default-timeout
+  (dt/duration {:seconds 30}))
+
 (declare put-object)
 (declare get-object-bytes)
 (declare get-object-data)
@@ -177,9 +187,6 @@
 
 ;; --- HELPERS
 
-(def default-timeout
-  (dt/duration {:seconds 30}))
-
 (defn- lookup-region
   ^Region
   [region]
@@ -203,6 +210,8 @@
                      (.connectionTimeout default-timeout)
                      (.readTimeout default-timeout)
                      (.writeTimeout default-timeout)
+                     (.maxConcurrency (int max-concurrency))
+                     (.maxPendingConnectionAcquires (int max-pending-connection-acquires))
                      (.build))
 
         client   (let [builder (S3AsyncClient/builder)
