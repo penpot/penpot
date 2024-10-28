@@ -177,6 +177,12 @@
 
    :devtools {:http-port 3460}
 
+   :js-options
+   {:entry-keys ["module" "browser" "main"]
+    :resolve {"penpot/vendor/text-editor-v2"
+              {:target :file
+               :file   "vendor/text_editor_v2.js"}}}
+
    :compiler-options
    {:output-feature-set :es2020
     :output-wrapper false

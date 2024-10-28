@@ -36,7 +36,6 @@
 (def token-type->dtcg-token-type
   {:boolean       "boolean"
    :border-radius "borderRadius"
-   :box-shadow    "boxShadow"
    :color         "color"
    :dimensions    "dimension"
    :numeric       "numeric"

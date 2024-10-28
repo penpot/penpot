@@ -197,6 +197,21 @@
        (assoc-in acc path (update-token-fn token))))
    {} tokens))
 
+(defn backtrace-tokens-tree
+  "Convert tokens into a nested tree with their `:name` as the path.
+  Generates a uuid per token to backtrace a token from an external source (StyleDictionary).
+  The backtrace can't be the name as the name might not exist when the user is creating a token."
+  [tokens]
+  (reduce
+   (fn [acc [_ token]]
+     (let [temp-id (random-uuid)
+           token (assoc token :temp/id temp-id)
+           path (split-token-path (:name token))]
+       (-> acc
+           (assoc-in (concat [:tokens-tree] path) token)
+           (assoc-in [:ids temp-id] token))))
+   {:tokens-tree {} :ids {}} tokens))
+
 (defprotocol ITokenSet
   (add-token [_ token] "add a token at the end of the list")
   (update-token [_ token-name f] "update a token in the list")
@@ -508,6 +523,7 @@ When `before-set-name` is nil, move set to bottom")
   (update-set-name [_ old-set-name new-set-name] "updates set name in themes")
   (encode-dtcg [_] "Encodes library to a dtcg compatible json string")
   (decode-dtcg-json [_ parsed-json] "Decodes parsed json containing tokens and converts to library")
+  (get-all-tokens [_] "all tokens in the lib")
   (validate [_]))
 
 (deftype TokensLib [sets set-groups themes active-themes]
@@ -799,6 +815,12 @@ When `before-set-name` is nil, move set to bottom")
                   set-groups
                   themes
                   active-themes)))
+
+  (get-all-tokens [this]
+    (reduce
+     (fn [tokens' set]
+       (into tokens' (map (fn [x] [(:name x) x]) (get-tokens set))))
+     {} (get-sets this)))
 
   (validate [_]
     (and (valid-token-sets? sets)  ;; TODO: validate set-groups

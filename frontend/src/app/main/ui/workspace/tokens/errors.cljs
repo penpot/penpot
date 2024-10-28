@@ -3,7 +3,23 @@
    [cuerdas.core :as str]))
 
 (def error-codes
-  {:error.token/direct-self-reference
+  {:error.import/json-parse-error
+   {:error/code :error.import/json-parse-error
+    :error/message "Import Error: Could not parse json"}
+
+   :error.import/invalid-json-data
+   {:error/code :error.import/invalid-json-data
+    :error/message "Import Error: Invalid token data in json."}
+
+   :error.import/style-dictionary-reference-errors
+   {:error/code :error.import/style-dictionary-reference-errors
+    :error/fn #(str "Import Error:\n\n" (str/join "\n\n" %))}
+
+   :error.import/style-dictionary-unknown-error
+   {:error/code :error.import/style-dictionary-reference-errors
+    :error/message "Import Error:"}
+
+   :error.token/direct-self-reference
    {:error/code :error.token/direct-self-reference
     :error/message "Token has self reference"}
 
@@ -29,6 +45,11 @@
 (defn error-with-value [error-key error-value]
   (-> (get-error-code error-key)
       (assoc :error/value error-value)))
+
+(defn error-ex-info [error-key error-value exception]
+  (let [err (-> (error-with-value error-key error-value)
+                (assoc :error/exception exception))]
+    (ex-info (:error/code err) err)))
 
 (defn has-error-code? [error-key errors]
   (some #(= (:error/code %) error-key) errors))

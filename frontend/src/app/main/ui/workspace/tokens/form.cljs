@@ -115,7 +115,7 @@ Token names should only contain letters and digits separated by . characters.")}
       (-> (update tokens token-name merge {:value value
                                            :name token-name
                                            :type (:type token)})
-          (sd/resolve-tokens+ {:names-map? true})
+          (sd/resolve-tokens+)
           (p/then
            (fn [resolved-tokens]
              (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
@@ -205,9 +205,8 @@ Token names should only contain letters and digits separated by . characters.")}
         color? (wtt/color-token? token)
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
         active-theme-tokens (mf/deref refs/workspace-active-theme-sets-tokens)
-        resolved-tokens (sd/use-resolved-tokens active-theme-tokens
-                                                {:names-map? true
-                                                 :cache-atom form-token-cache-atom})
+        resolved-tokens (sd/use-resolved-tokens active-theme-tokens {:cache-atom form-token-cache-atom
+                                                                     :interactive? true})
         token-path (mf/use-memo
                     (mf/deps (:name token))
                     #(wtt/token-name->path (:name token)))
