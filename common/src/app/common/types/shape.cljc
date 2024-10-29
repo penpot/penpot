@@ -6,7 +6,6 @@
 
 (ns app.common.types.shape
   (:require
-   #?(:clj [app.common.fressian :as fres])
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
@@ -14,16 +13,15 @@
    [app.common.geom.proportions :as gpr]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.common.record :as cr]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
-   [app.common.transit :as t]
    [app.common.types.color :as ctc]
    [app.common.types.grid :as ctg]
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape.attrs :refer [default-color]]
    [app.common.types.shape.blur :as ctsb]
    [app.common.types.shape.export :as ctse]
+   [app.common.types.shape.impl :as impl]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.path :as ctsp]
@@ -32,11 +30,9 @@
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
-(cr/defrecord Shape [id name type x y width height rotation selrect points transform transform-inverse parent-id frame-id flip-x flip-y])
-
 (defn shape?
   [o]
-  (instance? Shape o))
+  (impl/shape? o))
 
 (def stroke-caps-line #{:round :square})
 (def stroke-caps-marker #{:line-arrow :triangle-arrow :square-marker :circle-marker :diamond-marker})
@@ -244,7 +240,7 @@
 (defn- decode-shape
   [o]
   (if (map? o)
-    (map->Shape o)
+    (impl/map->Shape o)
     o))
 
 (defn- shape-generator
@@ -268,7 +264,7 @@
                             (= type :bool))
                       (merge attrs1 shape attrs3)
                       (merge attrs1 shape attrs2 attrs3)))))
-       (sg/fmap map->Shape)))
+       (sg/fmap impl/map->Shape)))
 
 (def schema:shape
   [:and {:title "Shape"
@@ -455,27 +451,30 @@
     ;; NOTE: used for create ephimeral shapes for multiple selection
     :multiple minimal-multiple-attrs))
 
+(defn create-shape
+  "A low level function that creates a Shape data structure
+  from a attrs map without performing other transformations"
+  [attrs]
+  (impl/create-shape attrs))
+
 (defn- make-minimal-shape
   [type]
   (let [type  (if (= type :curve) :path type)
-        attrs (get-minimal-shape type)]
+        attrs (get-minimal-shape type)
+        attrs (cond-> attrs
+                (and (not= :path type)
+                     (not= :bool type))
+                (-> (assoc :x 0)
+                    (assoc :y 0)
+                    (assoc :width 0.01)
+                    (assoc :height 0.01)))
+        attrs  (-> attrs
+                   (assoc :id (uuid/next))
+                   (assoc :frame-id uuid/zero)
+                   (assoc :parent-id uuid/zero)
+                   (assoc :rotation 0))]
 
-    (cond-> attrs
-      (and (not= :path type)
-           (not= :bool type))
-      (-> (assoc :x 0)
-          (assoc :y 0)
-          (assoc :width 0.01)
-          (assoc :height 0.01))
-
-      :always
-      (assoc :id (uuid/next)
-             :frame-id uuid/zero
-             :parent-id uuid/zero
-             :rotation 0)
-
-      :always
-      (map->Shape))))
+    (impl/create-shape attrs)))
 
 (defn setup-rect
   "Initializes the selrect and points for a shape."
@@ -530,17 +529,3 @@
           (assoc :transform-inverse (gmt/matrix)))
         (gpr/setup-proportions))))
 
-;; --- SHAPE SERIALIZATION
-
-(t/add-handlers!
- {:id "shape"
-  :class Shape
-  :wfn #(into {} %)
-  :rfn map->Shape})
-
-#?(:clj
-   (fres/add-handlers!
-    {:name "penpot/shape"
-     :class Shape
-     :wfn fres/write-map-like
-     :rfn (comp map->Shape fres/read-map-like)}))

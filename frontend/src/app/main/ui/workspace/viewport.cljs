@@ -134,13 +134,13 @@
         hover-top-frame-id (mf/use-state nil)
         frame-hover       (mf/use-state nil)
         active-frames     (mf/use-state #{})
+        canvas-init?      (mf/use-state false)
 
         ;; REFS
         [viewport-ref
          on-viewport-ref] (create-viewport-ref)
 
         canvas-ref        (mf/use-ref nil)
-        canvas-init       (mf/use-ref false)
 
         ;; VARS
         disable-paste     (mf/use-var false)
@@ -261,7 +261,8 @@
              (= (:layout selected-frame) :flex)
              (zero? (:rotation first-shape)))
 
-        selecting-first-level-frame? (and single-select? (cfh/root-frame? first-shape))
+        selecting-first-level-frame?
+        (and single-select? (cfh/root-frame? first-shape))
 
         offset-x (if selecting-first-level-frame?
                    (:x first-shape)
@@ -280,14 +281,20 @@
           (->> render.wasm/module
                (p/fmap (fn [ready?]
                          (when ready?
-                           (mf/set-ref-val! canvas-init true)
+                           (reset! canvas-init? true)
                            (render.wasm/assign-canvas canvas)))))
           (fn []
             (render.wasm/clear-canvas))))
 
-      (mf/with-effect [vbox' base-objects]
-        (when (mf/ref-val canvas-init)
-          (render.wasm/draw-objects base-objects zoom vbox'))))
+      (mf/with-effect [objects-modified canvas-init?]
+        (when @canvas-init?
+          (render.wasm/set-objects objects-modified)
+          (render.wasm/draw-objects zoom vbox)))
+
+      (mf/with-effect [vbox canvas-init?]
+        (let [frame-id (when @canvas-init? (do
+                                             (render.wasm/draw-objects zoom vbox)))]
+          (partial render.wasm/cancel-draw frame-id))))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -295,6 +302,8 @@
     (hooks/setup-keyboard alt? mod? space? z? shift?)
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover measure-hover
                               hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures?)
+
+    ;; FIXME: this should be removed on canvas viewport
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path? text-editing? grid-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)

@@ -8,44 +8,75 @@
   "A WASM based render API"
   (:require
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
+   [app.common.types.shape.impl]
    [app.config :as cf]
    [promesa.core :as p]))
 
 (def enabled?
   (contains? cf/flags :render-wasm))
 
-(defonce ^:dynamic internal-module #js {})
-(defonce ^:dynamic internal-gpu-state #js {})
+(set! app.common.types.shape.impl/enabled-wasm-ready-shape enabled?)
 
-(defn draw-objects [objects zoom vbox]
-  (let [draw-rect    (unchecked-get internal-module "_draw_rect")
-        translate    (unchecked-get internal-module "_translate")
-        reset-canvas (unchecked-get internal-module "_reset_canvas")
-        scale        (unchecked-get internal-module "_scale")
-        flush        (unchecked-get internal-module "_flush")
-        gpu-state    internal-gpu-state]
+(defonce internal-module #js {})
+(defonce internal-gpu-state #js {})
 
+;; TODO: remove the `take` once we have the dynamic data structure in Rust
+(def xform
+  (comp
+   (remove cfh/root?)
+   (take 2048)))
+
+;; Size in number of f32 values that represents the shape selrect (
+(def rect-size 4)
+
+(defn set-objects
+  [objects]
+  ;; FIXME: maybe change the name of `_shapes_buffer` (?)
+  (let [get-shapes-buffer-ptr
+        (unchecked-get internal-module "_shapes_buffer")
+
+        heap
+        (unchecked-get internal-module "HEAPF32")
+
+        shapes
+        (into [] xform (vals objects))
+
+        total-shapes
+        (count shapes)
+
+        heap-offset
+        (get-shapes-buffer-ptr)
+
+        heap-size
+        (* rect-size total-shapes)
+
+        mem
+        (js/Float32Array. (.-buffer heap)
+                          heap-offset
+                          heap-size)]
+
+    (loop [index 0]
+      (when (< index total-shapes)
+        (let [shape (nth shapes index)]
+          (.set ^js mem (.-buffer shape) (* index rect-size))
+          (recur (inc index)))))))
+
+(defn draw-objects
+  [zoom vbox]
+  (let [draw-all-shapes (unchecked-get internal-module "_draw_all_shapes")]
     (js/requestAnimationFrame
      (fn []
-       (reset-canvas gpu-state)
-       (scale gpu-state zoom zoom)
+       (let [pan-x (- (dm/get-prop vbox :x))
+             pan-y (- (dm/get-prop vbox :y))]
+         (draw-all-shapes internal-gpu-state zoom pan-x pan-y))))))
 
-       (let [x (dm/get-prop vbox :x)
-             y (dm/get-prop vbox :y)]
-         (translate gpu-state (- x) (- y)))
+(defn cancel-draw
+  [frame-id]
+  (when (some? frame-id)
+    (js/cancelAnimationFrame frame-id)))
 
-       (run! (fn [shape]
-               (let [selrect (dm/get-prop shape :selrect)
-                     x1      (dm/get-prop selrect :x1)
-                     y1      (dm/get-prop selrect :y1)
-                     x2      (dm/get-prop selrect :x2)
-                     y2      (dm/get-prop selrect :y2)]
-                 (draw-rect gpu-state x1 y1 x2 y2)))
-             (vals objects))
-
-       (flush gpu-state)))))
-
-(def canvas-options
+(def ^:private canvas-options
   #js {:antialias true
        :depth true
        :stencil true
