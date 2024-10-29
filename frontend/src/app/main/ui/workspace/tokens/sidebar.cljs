@@ -356,5 +356,5 @@
              :on-pointer-down on-pointer-down-pages
              :on-lost-pointer-capture on-lost-pointer-capture-pages
              :on-pointer-move on-pointer-move-pages}]
-      [:& tokens-tab]
-      [:& import-export-button]]]))
+      [:& tokens-tab]]
+      [:& import-export-button]]))

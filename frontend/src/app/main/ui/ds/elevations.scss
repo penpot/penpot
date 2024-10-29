@@ -5,8 +5,10 @@
 // Copyright (c) KALEIDOS INC
 
 $elevation-shadow: 0 0 10px 0 var(--color-shadow);
+$elevation-shadow-dark: 0 0 10px 0 var(--color-shadow-dark);
 
 :global(.light),
 :global(.default) {
   --elevation-shadow: #{$elevation-shadow};
+  --elevation-shadow-dark: #{$elevation-shadow-dark};
 }
