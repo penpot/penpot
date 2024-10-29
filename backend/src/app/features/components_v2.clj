@@ -1745,8 +1745,8 @@
                     (fn [system]
                       (binding [*system* system]
                         (when (string? label)
-                          (fsnap/take-file-snapshot! system {:file-id file-id
-                                                             :label (str "migration/" label)}))
+                          (fsnap/create-file-snapshot! system nil file-id (str "migration/" label)))
+
                         (let [file (get-file system file-id)
                               file (process-file! system file :validate? validate?)]
 

@@ -109,8 +109,7 @@
              (kbd/esc? event)
              (st/emit! (dwv/update-version-state {:editing nil})))))]
 
-    [:li {:data-testid (dm/str "version(" (:label entry) ")")
-          :class (stl/css :version-entry-wrap)}
+    [:li {:class (stl/css :version-entry-wrap)}
      [:div {:class (stl/css :version-entry :is-snapshot)}
       [:img {:class (stl/css :version-entry-avatar)
              :alt (:fullname profile)

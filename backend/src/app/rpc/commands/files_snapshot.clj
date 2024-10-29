@@ -29,17 +29,13 @@
   "SELECT id, label, revn, created_at, created_by, profile_id
      FROM file_change
     WHERE file_id = ?
-      AND created_at < ?
       AND data IS NOT NULL
     ORDER BY created_at DESC
-    LIMIT ?")
+    LIMIT 20")
 
 (defn get-file-snapshots
-  [{:keys [::db/conn]} {:keys [file-id limit start-at]
-                        :or {limit Long/MAX_VALUE}}]
-  (let [start-at (or start-at (dt/now))
-        limit    (min limit 20)]
-    (db/exec! conn [sql:get-file-snapshots file-id start-at limit])))
+  [conn file-id]
+  (db/exec! conn [sql:get-file-snapshots file-id]))
 
 (def ^:private schema:get-file-snapshots
   [:map {:title "get-file-snapshots"}
@@ -48,29 +44,121 @@
 (sv/defmethod ::get-file-snapshots
   {::doc/added "1.20"
    ::sm/params schema:get-file-snapshots}
-  [cfg params]
-  (db/run! cfg get-file-snapshots params))
+  [cfg {:keys [::rpc/profile-id file-id] :as params}]
+  (db/run! cfg (fn [{:keys [::db/conn]}]
+                 (files/check-read-permissions! conn profile-id file-id)
+                 (get-file-snapshots conn file-id))))
+
+(defn- get-file
+  [cfg file-id]
+  (let [file (->> (db/get cfg :file {:id file-id})
+                  (feat.fdata/resolve-file-data cfg))]
+    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+      (-> file
+          (update :data blob/decode)
+          (update :data feat.fdata/process-pointers deref)
+          (update :data feat.fdata/process-objects (partial into {}))
+          (update :data blob/encode)))))
+
+(defn- generate-snapshot-label
+  []
+  (let [ts (-> (dt/now)
+               (dt/format-instant)
+               (str/replace #"[T:\.]" "-")
+               (str/rtrim "Z"))]
+    (str "snapshot-" ts)))
+
+(defn create-file-snapshot!
+  [cfg profile-id file-id label]
+  (let [file  (-> (get-file cfg file-id)
+                  (update :data
+                          (fn [data]
+                            (-> data
+                                (blob/decode)
+                                (assoc :id file-id)))))
+
+        ;; NOTE: final user never can provide label as `:system`
+        ;; keyword because the validator implies label always as
+        ;; string; keyword is used for signal a special case
+        created-by
+        (if (= label :system)
+          "system"
+          "user")
+
+        label
+        (if (= label :system)
+          (str "internal/snapshot/" (:revn file))
+          (or label (generate-snapshot-label)))
+
+        snapshot-id
+        (uuid/next)
+
+        snapshot-data
+        (-> (:data file)
+            (feat.fdata/process-pointers deref)
+            (feat.fdata/process-objects (partial into {}))
+            (blob/encode))]
+
+    (l/debug :hint "creating file snapshot"
+             :file-id (str file-id)
+             :id (str snapshot-id)
+             :label label)
+
+    (db/insert! cfg :file-change
+                {:id snapshot-id
+                 :revn (:revn file)
+                 :data snapshot-data
+                 :version (:version file)
+                 :features (:features file)
+                 :profile-id profile-id
+                 :file-id (:id file)
+                 :label label
+                 :created-by created-by}
+                {::db/return-keys false})
+
+    {:id snapshot-id :label label}))
+
+(def ^:private schema:create-file-snapshot
+  [:map
+   [:file-id ::sm/uuid]
+   [:label {:optional true} :string]])
+
+(sv/defmethod ::create-file-snapshot
+  {::doc/added "1.20"
+   ::sm/params schema:create-file-snapshot}
+  [cfg {:keys [::rpc/profile-id file-id label]}]
+  (db/tx-run! cfg
+              (fn [{:keys [::db/conn] :as cfg}]
+                (files/check-edition-permissions! conn profile-id file-id)
+                (create-file-snapshot! cfg profile-id file-id label))))
 
 (defn restore-file-snapshot!
-  [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [file-id id]}]
+  [{:keys [::db/conn ::mbus/msgbus] :as cfg} file-id snapshot-id]
   (let [storage  (sto/resolve cfg {::db/reuse-conn true})
         file     (files/get-minimal-file conn file-id {::db/for-update true})
         vern     (rand-int Integer/MAX_VALUE)
         snapshot (db/get* conn :file-change
                           {:file-id file-id
-                           :id id}
+                           :id snapshot-id}
                           {::db/for-share true})]
 
     (when-not snapshot
       (ex/raise :type :not-found
                 :code :snapshot-not-found
                 :hint "unable to find snapshot with the provided label"
-                :id id
+                :snapshot-id snapshot-id
                 :file-id file-id))
+
+    ;; (when (= (:revn snapshot) (:revn file))
+    ;;   (ex/raise :type :validation
+    ;;             :code :snapshot-identical-to-file
+    ;;             :hint "you can't restore a snapshot that is identical to a file"
+    ;;             :snapshot-id snapshot-id
+    ;;             :file-id file-id))
 
     (let [snapshot (feat.fdata/resolve-file-data cfg snapshot)]
       (when-not (:data snapshot)
-        (ex/raise :type :precondition
+        (ex/raise :type :validation
                   :code :snapshot-without-data
                   :hint "snapshot has no data"
                   :label (:label snapshot)
@@ -123,125 +211,77 @@
       {:id (:id snapshot)
        :label (:label snapshot)})))
 
-(def ^:private
-  schema:restore-file-snapshot
-  [:and
-   [:map
-    [:file-id ::sm/uuid]
-    [:id {:optional true} ::sm/uuid]]
-   [::sm/contains-any #{:id :label}]])
+(def ^:private schema:restore-file-snapshot
+  [:map {:title "restore-file-snapshot"}
+   [:file-id ::sm/uuid]
+   [:id ::sm/uuid]])
 
 (sv/defmethod ::restore-file-snapshot
   {::doc/added "1.20"
    ::sm/params schema:restore-file-snapshot}
-  [cfg params]
-  (db/tx-run! cfg restore-file-snapshot! params))
-
-(defn- get-file
-  [cfg file-id]
-  (let [file (->> (db/get cfg :file {:id file-id})
-                  (feat.fdata/resolve-file-data cfg))]
-    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
-      (-> file
-          (update :data blob/decode)
-          (update :data feat.fdata/process-pointers deref)
-          (update :data feat.fdata/process-objects (partial into {}))
-          (update :data blob/encode)))))
-
-(defn- generate-snapshot-label
-  []
-  (let [ts (-> (dt/now)
-               (dt/format-instant)
-               (str/replace #"[T:\.]" "-")
-               (str/rtrim "Z"))]
-    (str "snapshot-" ts)))
-
-(defn take-file-snapshot!
-  [cfg {:keys [file-id label ::rpc/profile-id]}]
-  (let [label (or label (generate-snapshot-label))
-        file  (-> (get-file cfg file-id)
-                  (update :data
-                          (fn [data]
-                            (-> data
-                                (blob/decode)
-                                (assoc :id file-id)))))
-
-        snapshot-id
-        (uuid/next)
-
-        snapshot-data
-        (-> (:data file)
-            (feat.fdata/process-pointers deref)
-            (feat.fdata/process-objects (partial into {}))
-            (blob/encode))]
-
-    (l/debug :hint "creating file snapshot"
-             :file-id (str file-id)
-             :id (str snapshot-id)
-             :label label)
-
-    (db/insert! cfg :file-change
-                {:id snapshot-id
-                 :revn (:revn file)
-                 :data snapshot-data
-                 :version (:version file)
-                 :features (:features file)
-                 :profile-id profile-id
-                 :file-id (:id file)
-                 :label label
-                 :created-by "user"}
-                {::db/return-keys false})
-
-    {:id snapshot-id :label label}))
-
-(def ^:private schema:take-file-snapshot
-  [:map
-   [:file-id ::sm/uuid]
-   [:label {:optional true} :string]])
-
-(sv/defmethod ::take-file-snapshot
-  {::doc/added "1.20"
-   ::sm/params schema:take-file-snapshot}
-  [cfg params]
-  (db/tx-run! cfg take-file-snapshot! params))
+  [cfg {:keys [::rpc/profile-id file-id id] :as params}]
+  (db/tx-run! cfg
+              (fn [{:keys [::db/conn] :as cfg}]
+                (files/check-edition-permissions! conn profile-id file-id)
+                (create-file-snapshot! cfg profile-id file-id :system)
+                (restore-file-snapshot! cfg file-id id))))
 
 (def ^:private schema:update-file-snapshot
   [:map {:title "update-file-snapshot"}
    [:id ::sm/uuid]
    [:label ::sm/text]])
 
-(defn update-file-snapshot!
-  [{:keys [::db/conn] :as cfg} {:keys [id label]}]
-  (let [result
-        (db/update! conn :file-change
-                    {:label label
-                     :created-by "user"}
-                    {:id id}
-                    {::db/return-keys true})]
+(defn- update-file-snapshot!
+  [conn snapshot-id label]
+  (-> (db/update! conn :file-change
+                  {:label label
+                   :created-by "user"}
+                  {:id snapshot-id}
+                  {::db/return-keys true})
+      (dissoc :data :features)))
 
-    (select-keys result [:id :label :revn :created-at :profile-id :created-by])))
+(defn- get-snapshot
+  "Get a minimal snapshot from database and lock for update"
+  [conn id]
+  (db/get conn :file-change
+          {:id id}
+          {::sql/columns [:id :file-id :created-by]
+           ::db/for-update true}))
 
 (sv/defmethod ::update-file-snapshot
   {::doc/added "1.20"
    ::sm/params schema:update-file-snapshot}
-  [cfg params]
-  (db/tx-run! cfg update-file-snapshot! params))
+  [cfg {:keys [::rpc/profile-id id label]}]
+  (db/tx-run! cfg
+              (fn [{:keys [::db/conn]}]
+                (let [snapshot (get-snapshot conn id)]
+                  (files/check-edition-permissions! conn profile-id (:file-id snapshot))
+                  (update-file-snapshot! conn id label)))))
 
 (def ^:private schema:remove-file-snapshot
   [:map {:title "remove-file-snapshot"}
    [:id ::sm/uuid]])
 
-(defn remove-file-snapshot!
-  [{:keys [::db/conn] :as cfg} {:keys [id]}]
+(defn- delete-file-snapshot!
+  [conn snapshot-id]
   (db/delete! conn :file-change
-              {:id id :created-by "user"}
+              {:id snapshot-id}
               {::db/return-keys false})
   nil)
 
-(sv/defmethod ::remove-file-snapshot
+(sv/defmethod ::delete-file-snapshot
   {::doc/added "1.20"
    ::sm/params schema:remove-file-snapshot}
-  [cfg params]
-  (db/tx-run! cfg remove-file-snapshot! params))
+  [cfg {:keys [::rpc/profile-id id]}]
+  (db/tx-run! cfg
+              (fn [{:keys [::db/conn]}]
+                (let [snapshot (get-snapshot conn id)]
+                  (files/check-edition-permissions! conn profile-id (:file-id snapshot))
 
+                  (when (not= (:created-by snapshot) "user")
+                    (ex/raise :type :validation
+                              :code :system-snapshots-cant-be-deleted
+                              :snapshot-id id
+                              :profile-id profile-id))
 
+                  (delete-file-snapshot! conn id)))))
