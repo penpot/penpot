@@ -16,7 +16,6 @@
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.path :as gpa]
    [app.common.math :as mth]
-   [app.common.record :as cr]
    [app.common.types.modifiers :as ctm]))
 
 #?(:clj (set! *warn-on-reflection* true))

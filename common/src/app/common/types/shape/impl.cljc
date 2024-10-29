@@ -7,18 +7,14 @@
 (ns app.common.types.shape.impl
   (:require
    #?(:clj [app.common.fressian :as fres])
-   [app.common.colors :as clr]
-   [app.common.data :as d]
-   [app.common.data.macros :as dm]
-   [app.common.geom.rect :as grc]
+   #?(:cljs [app.common.data.macros :as dm])
+   #?(:cljs [app.common.geom.rect :as grc])
+   #?(:cljs [cuerdas.core :as str])
    [app.common.record :as cr]
-   [app.common.schema :as sm]
-   [app.common.schema.generators :as sg]
    [app.common.transit :as t]
-   [app.common.uuid :as uuid]
-   [clojure.core :as c]
-   [clojure.set :as set]
-   [cuerdas.core :as str]))
+   [clojure.core :as c]))
+
+(def enabled-wasm-ready-shape false)
 
 #?(:cljs
    (do
@@ -52,11 +48,11 @@
        ;;     (ShapeWithBuffer. bf32 delegate)))
 
      IWithMeta
-     (-with-meta [coll meta]
+     (-with-meta [_ meta]
        (ShapeWithBuffer. buffer (with-meta delegate meta)))
 
      IMeta
-     (-meta [coll] (meta delegate))
+     (-meta [_] (meta delegate))
 
      ICollection
      (-conj [coll entry]
@@ -77,20 +73,20 @@
              (seq delegate)))
 
      ICounted
-     (-count [coll]
+     (-count [_]
        (+ 1 (count delegate)))
 
      ILookup
      (-lookup [coll k]
        (-lookup coll k nil))
 
-     (-lookup [coll k not-found]
+     (-lookup [_ k not-found]
        (if (= k :selrect)
          (read-selrect buffer)
          (c/-lookup delegate k not-found)))
 
      IFind
-     (-find [coll k]
+     (-find [_ k]
        (if (= k :selrect)
          (c/MapEntry. k (read-selrect buffer) nil) ; Replace with lazy MapEntry
          (c/-find delegate k)))
@@ -99,7 +95,7 @@
      (-assoc [coll k v]
        (impl-assoc coll k v))
 
-     (-contains-key? [coll k]
+     (-contains-key? [_ k]
        (or (= k :selrect)
            (contains? delegate k)))
 
@@ -115,13 +111,14 @@
        (-lookup coll k not-found))
 
      IPrintWithWriter
-     (-pr-writer [coll writer opts]
+     (-pr-writer [_ writer _]
        (-write writer (str "#penpot/shape " (:id delegate))))))
 
 (defn shape?
   [o]
-  (or (instance? Shape o)
-      #?(:cljs (instance? ShapeWithBuffer o))))
+  #?(:clj (instance? Shape o)
+     :cljs (or (instance? Shape o)
+               (instance? ShapeWithBuffer o))))
 
 ;; --- SHAPE IMPL
 
@@ -194,15 +191,18 @@
                       (next es))
                (throw (js/Error. "conj on a map takes map entries or seqables of map entries")))))))))
 
+(defn create-shape
+  "Instanciate a shape from a map"
+  [attrs]
+  #?(:cljs
+     (if enabled-wasm-ready-shape
+       (let [selrect (:selrect attrs)
+             buffer  (new Float32Array 4)]
+         (write-selrect buffer selrect)
+         (ShapeWithBuffer. buffer (dissoc attrs :selrect)))
+       (map->Shape attrs))
 
-#?(:cljs
-   (defn create-shape
-     "Instanciate a shape from a map"
-     [data]
-     (let [selrect (:selrect data)
-           buffer  (new Float32Array 4)]
-       (write-selrect buffer selrect)
-       (ShapeWithBuffer. buffer (dissoc data :selrect)))))
+     :clj (map->Shape attrs)))
 
 ;; --- SHAPE SERIALIZATION
 
@@ -210,21 +210,18 @@
  {:id "shape"
   :class Shape
   :wfn #(into {} %)
-  :rfn #?(:cljs create-shape
-          :clj map->Shape)})
+  :rfn create-shape})
 
-#?(:cljs (t/add-handlers!
-          {:id "shape"
-           :class ShapeWithBuffer
-           :wfn #(into {} %)
-           :rfn #?(:cljs create-shape
-                   :clj map->Shape)}))
-
-
+#?(:cljs
+   (t/add-handlers!
+    {:id "shape"
+     :class ShapeWithBuffer
+     :wfn #(into {} %)
+     :rfn create-shape}))
 
 #?(:clj
    (fres/add-handlers!
     {:name "penpot/shape"
      :class Shape
      :wfn fres/write-map-like
-     :rfn (comp map->Shape fres/read-map-like)}))
+     :rfn (comp create-shape fres/read-map-like)}))

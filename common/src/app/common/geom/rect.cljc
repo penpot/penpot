@@ -139,6 +139,7 @@
              :width (mth/abs (- x2 x1))
              :height (mth/abs (- y2 y1))))
 
+    ;; FIXME: looks unused
     :position
     (let [x (dm/get-prop rect :x)
           y (dm/get-prop rect :y)

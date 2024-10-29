@@ -15,7 +15,6 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
-   [app.common.record :as cr]
    [app.common.types.component :as ctk]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
@@ -68,15 +67,15 @@
 
             calculate-selrect
             (fn [selrect [delta space?]]
-              (let [selrect (-> (cr/clone selrect)
-                                (cr/update! :x2 + (:x delta))
-                                (cr/update! :y2 + (:y delta)))
+              (let [selrect (-> selrect
+                                (update :x2 + (:x delta))
+                                (update :y2 + (:y delta)))
                     selrect (if ^boolean space?
-                              (-> (cr/clone selrect)
-                                  (cr/update! :x1 + (:x delta))
-                                  (cr/update! :y1 + (:y delta)))
+                              (-> selrect
+                                  (update :x1 + (:x delta))
+                                  (update :y1 + (:y delta)))
                               selrect)]
-                (grc/update-rect! selrect :corners)))
+                (grc/update-rect selrect :corners)))
 
             selrect-stream
             (->> ms/mouse-position

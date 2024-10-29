@@ -261,7 +261,8 @@
              (= (:layout selected-frame) :flex)
              (zero? (:rotation first-shape)))
 
-        selecting-first-level-frame? (and single-select? (cfh/root-frame? first-shape))
+        selecting-first-level-frame?
+        (and single-select? (cfh/root-frame? first-shape))
 
         offset-x (if selecting-first-level-frame?
                    (:x first-shape)
@@ -276,19 +277,20 @@
 
     (when ^boolean render.wasm/enabled?
       (mf/with-effect []
-        (time (when-let [canvas (mf/ref-val canvas-ref)]
-                (->> render.wasm/module
-                     (p/fmap (fn [ready?]
-                               (when ready?
-                                 (reset! canvas-init? true)
-                                 (render.wasm/assign-canvas canvas)))))
-                (fn []
-                  (render.wasm/clear-canvas)))))
+        (when-let [canvas (mf/ref-val canvas-ref)]
+          (->> render.wasm/module
+               (p/fmap (fn [ready?]
+                         (when ready?
+                           (reset! canvas-init? true)
+                           (render.wasm/assign-canvas canvas)))))
+          (fn []
+            (render.wasm/clear-canvas))))
 
       (mf/with-effect [objects-modified canvas-init?]
         (when @canvas-init?
           (render.wasm/set-objects objects-modified)
           (render.wasm/draw-objects zoom vbox)))
+
       (mf/with-effect [vbox canvas-init?]
         (let [frame-id (when @canvas-init? (do
                                              (render.wasm/draw-objects zoom vbox)))]
@@ -300,6 +302,8 @@
     (hooks/setup-keyboard alt? mod? space? z? shift?)
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover measure-hover
                               hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures?)
+
+    ;; FIXME: this should be removed on canvas viewport
     (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path? text-editing? grid-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)

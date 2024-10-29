@@ -499,7 +499,7 @@
               object
               (-> object
                   (update :selrect grc/make-rect)
-                  (cts/map->Shape))))
+                  (cts/create-shape))))
           (update-container [container]
             (d/update-when container :objects update-vals update-object))]
     (-> data
