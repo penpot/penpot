@@ -368,7 +368,8 @@ When `before-set-name` is nil, move set to bottom")
 
 (defprotocol ITokenTheme
   (set-sets [_ set-names] "set the active token sets")
-  (toggle-set [_ set-name] "togle a set used / not used in the theme")
+  (disable-set [_ set-name] "disable set in theme")
+  (toggle-set [_ set-name] "toggle a set enabled / disabled in the theme")
   (theme-path [_] "get `token-theme-path` from theme")
   (theme-matches-group-name [_ group name] "if a theme matches the given group & name")
   (hidden-temporary-theme? [_] "if a theme is the (from the user ui) hidden temporary theme"))
@@ -382,6 +383,9 @@ When `before-set-name` is nil, move set to bottom")
                  is-source
                  (dt/now)
                  set-names))
+
+  (disable-set [this set-name]
+    (set-sets this (disj sets set-name)))
 
   (toggle-set [this set-name]
     (set-sets this (if (sets set-name)
@@ -580,7 +584,12 @@ When `before-set-name` is nil, move set to bottom")
     (let [path (split-token-set-path set-name)]
       (TokensLib. (d/dissoc-in sets path)
                   set-groups  ;; TODO remove set-group if needed
-                  themes
+                  (walk/postwalk
+                   (fn [form]
+                     (if (instance? TokenTheme form)
+                       (disable-set form set-name)
+                       form))
+                   themes)
                   active-themes)))
 
   ;; TODO Handle groups and nesting
