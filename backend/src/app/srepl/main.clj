@@ -311,28 +311,25 @@
   collectable file-changes entry."
   [& {:keys [file-id label]}]
   (let [file-id (h/parse-uuid file-id)]
-    (db/tx-run! main/system fsnap/take-file-snapshot! {:file-id file-id :label label})))
+    (db/tx-run! main/system fsnap/create-file-snapshot! {:file-id file-id :label label})))
 
 (defn restore-file-snapshot!
   [file-id label]
   (let [file-id (h/parse-uuid file-id)]
     (db/tx-run! main/system
                 (fn [{:keys [::db/conn] :as system}]
-                  (when-let [snapshot (->> (h/get-file-snapshots conn label #{file-id})
+                  (when-let [snapshot (->> (h/search-file-snapshots conn #{file-id} label)
                                            (map :id)
                                            (first))]
-                    (fsnap/restore-file-snapshot! system
-                                                  {:id (:id snapshot)
-                                                   :file-id file-id}))))))
+                    (fsnap/restore-file-snapshot! system file-id (:id snapshot)))))))
 
 (defn list-file-snapshots!
-  [file-id & {:keys [limit]}]
+  [file-id & {:as _}]
   (let [file-id (h/parse-uuid file-id)]
     (db/tx-run! main/system
-                (fn [system]
-                  (let [params {:file-id file-id :limit limit}]
-                    (->> (fsnap/get-file-snapshots system (d/without-nils params))
-                         (print-table [:label :id :revn :created-at])))))))
+                (fn [{:keys [::db/conn]}]
+                  (->> (fsnap/get-file-snapshots conn file-id)
+                       (print-table [:label :id :revn :created-at]))))))
 
 (defn take-team-snapshot!
   [team-id & {:keys [label rollback?] :or {rollback? true}}]

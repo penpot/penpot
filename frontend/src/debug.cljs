@@ -12,12 +12,9 @@
    [app.common.files.validate :as cfv]
    [app.common.json :as json]
    [app.common.logging :as l]
-   [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.types.file :as ctf]
-   [app.common.uri :as u]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.main.data.changes :as dwc]
    [app.main.data.dashboard.shortcuts]
    [app.main.data.preview :as dp]
@@ -33,7 +30,6 @@
    [app.main.store :as st]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
-   [app.util.http :as http]
    [app.util.object :as obj]
    [app.util.timers :as timers]
    [beicon.v2.core :as rx]
@@ -453,66 +449,6 @@
 (defn ^:export set-shape-ref
   [id shape-ref]
   (st/emit! (dw/set-shape-ref id shape-ref)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; SNAPSHOTS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn ^:export list-available-snapshots
-  [file-id]
-  (let [file-id (or (d/parse-uuid file-id)
-                    (:current-file-id @st/state))]
-    (->> (http/send! {:method :get
-                      :uri (u/join cf/public-uri "api/rpc/command/get-file-snapshots")
-                      :query {:file-id file-id}})
-         (rx/map http/conditional-decode-transit)
-         (rx/mapcat rp/handle-response)
-         (rx/subs! (fn [result]
-                     (let [result (map (fn [row]
-                                         (update row :id str))
-                                       result)]
-                       (js/console.table (json/->js result))))
-                   (fn [cause]
-                     (js/console.log "EE:" cause))))
-    nil))
-
-(defn ^:export take-snapshot
-  [label file-id]
-  (when-let [file-id (or (d/parse-uuid file-id)
-                         (:current-file-id @st/state))]
-    (->> (http/send! {:method :post
-                      :uri (u/join cf/public-uri "api/rpc/command/take-file-snapshot")
-                      :body (http/transit-data {:file-id file-id :label label})})
-         (rx/map http/conditional-decode-transit)
-         (rx/mapcat rp/handle-response)
-         (rx/subs! (fn [{:keys [id]}]
-                     (println "Snapshot saved:" (str id) label))
-                   (fn [cause]
-                     (js/console.log "EE:" cause))))))
-
-(defn ^:export restore-snapshot
-  [label file-id]
-  (when-let [file-id (or (d/parse-uuid file-id)
-                         (:current-file-id @st/state))]
-    (let [snapshot-id (sm/parse-uuid label)
-          label       (if snapshot-id nil label)
-          params      (cond-> {:file-id file-id}
-                        (uuid? snapshot-id)
-                        (assoc :id snapshot-id)
-
-                        (string? label)
-                        (assoc :label label))]
-      (->> (http/send! {:method :post
-                        :uri (u/join cf/public-uri "api/rpc/command/restore-file-snapshot")
-                        :body (http/transit-data params)})
-           (rx/map http/conditional-decode-transit)
-           (rx/mapcat rp/handle-response)
-           (rx/subs! (fn [_]
-                       (println "Snapshot restored " (or snapshot-id label)))
-                     #_(.reload js/location)
-                     (fn [cause]
-                       (js/console.log "EE:" cause)))))))
-
 
 (defn ^:export enable-text-v2
   []

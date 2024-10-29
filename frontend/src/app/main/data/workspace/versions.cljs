@@ -64,7 +64,7 @@
          (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
               (rx/filter #(or (nil? %) (= :saved %)))
               (rx/take 1)
-              (rx/mapcat #(rp/cmd! :take-file-snapshot {:file-id file-id :label label}))
+              (rx/mapcat #(rp/cmd! :create-file-snapshot {:file-id file-id :label label}))
               (rx/mapcat
                (fn [{:keys [id]}]
                  (rx/of
@@ -101,7 +101,6 @@
        (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
             (rx/filter #(or (nil? %) (= :saved %)))
             (rx/take 1)
-            (rx/mapcat #(rp/cmd! :take-file-snapshot {:file-id file-id :created-by "system" :label (dt/format (dt/now) :date-full)}))
             (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
             (rx/map #(dw/initialize-file project-id file-id)))
        (rx/of (ptk/event ::ev/event {::ev/name "restore-version"}))))))
@@ -114,7 +113,7 @@
   (ptk/reify ::delete-version
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/cmd! :remove-file-snapshot {:id id})
+      (->> (rp/cmd! :delete-file-snapshot {:id id})
            (rx/map #(fetch-versions file-id))))))
 
 (defn pin-version

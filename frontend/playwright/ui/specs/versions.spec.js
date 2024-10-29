@@ -33,7 +33,7 @@ test("Save and restore version", async ({ page }) => {
   await page.getByLabel("History (Alt+H)").click();
 
   await workspacePage.mockRPC(
-    "take-file-snapshot",
+    "create-file-snapshot",
     "workspace/versions-take-snapshot-1.json",
   );
 
@@ -57,7 +57,11 @@ test("Save and restore version", async ({ page }) => {
   await page.getByRole("textbox").fill("INIT");
   await page.getByRole("textbox").press("Enter");
 
-  await page.getByTestId("version(INIT)").getByRole("button").click();
+  await page
+    .locator("li")
+    .filter({ hasText: "INIT" })
+    .getByRole("button")
+    .click();
   await page.getByRole("button", { name: "Restore" }).click();
 
   await workspacePage.mockRPC(
