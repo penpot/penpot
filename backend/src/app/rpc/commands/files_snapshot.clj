@@ -10,6 +10,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.features.fdata :as feat.fdata]
@@ -30,6 +31,7 @@
      FROM file_change
     WHERE file_id = ?
       AND data IS NOT NULL
+      AND (deleted_at IS NULL OR deleted_at > now())
     ORDER BY created_at DESC
     LIMIT 20")
 
@@ -85,6 +87,11 @@
           "system"
           "user")
 
+        deleted-at
+        (if (= label :system)
+          (dt/plus (dt/now) (cf/get-deletion-delay))
+          nil)
+
         label
         (if (= label :system)
           (str "internal/snapshot/" (:revn file))
@@ -113,6 +120,7 @@
                  :profile-id profile-id
                  :file-id (:id file)
                  :label label
+                 :deleted-at deleted-at
                  :created-by created-by}
                 {::db/return-keys false})
 
@@ -235,7 +243,8 @@
   [conn snapshot-id label]
   (-> (db/update! conn :file-change
                   {:label label
-                   :created-by "user"}
+                   :created-by "user"
+                   :deleted-at nil}
                   {:id snapshot-id}
                   {::db/return-keys true})
       (dissoc :data :features)))
@@ -245,7 +254,7 @@
   [conn id]
   (db/get conn :file-change
           {:id id}
-          {::sql/columns [:id :file-id :created-by]
+          {::sql/columns [:id :file-id :created-by :deleted-at]
            ::db/for-update true}))
 
 (sv/defmethod ::update-file-snapshot
@@ -264,7 +273,8 @@
 
 (defn- delete-file-snapshot!
   [conn snapshot-id]
-  (db/delete! conn :file-change
+  (db/update! conn :file-change
+              {:deleted-at (dt/now)}
               {:id snapshot-id}
               {::db/return-keys false})
   nil)
