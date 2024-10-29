@@ -1,0 +1,69 @@
+import { test, expect } from "@playwright/test";
+import { WorkspacePage } from "../pages/WorkspacePage";
+import { presenceFixture } from "../../data/workspace/ws-notifications";
+
+test.beforeEach(async ({ page }) => {
+  await WorkspacePage.init(page);
+});
+
+test("Save and restore version", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+  await workspacePage.mockRPC(/get\-file\?/, "workspace/versions-init.json");
+  await workspacePage.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=406b7b01-d3e2-80e4-8005-3138b7cc5f0b",
+    "workspace/versions-init-fragment.json",
+  );
+
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "406b7b01-d3e2-80e4-8005-3138ac5d449c",
+    pageId: "406b7b01-d3e2-80e4-8005-3138ac5d449d",
+  });
+
+  await workspacePage.mockRPC(
+    "get-file-snapshots?file-id=*",
+    "workspace/versions-snapshot-1.json",
+  );
+
+  await page.getByLabel("History (Alt+H)").click();
+
+  await workspacePage.mockRPC(
+    "take-file-snapshot",
+    "workspace/versions-take-snapshot-1.json",
+  );
+
+  await workspacePage.mockRPC(
+    "get-file-snapshots?file-id=*",
+    "workspace/versions-snapshot-2.json",
+  );
+
+  await page.getByRole("button", { name: "Save version" }).click();
+
+  await workspacePage.mockRPC(
+    "update-file-snapshot",
+    "workspace/versions-update-snapshot-1.json",
+  );
+
+  await workspacePage.mockRPC(
+    "get-file-snapshots?file-id=*",
+    "workspace/versions-snapshot-3.json",
+  );
+
+  await page.getByRole("textbox").fill("INIT");
+  await page.getByRole("textbox").press("Enter");
+
+  await page.getByTestId("version(INIT)").getByRole("button").click();
+  await page.getByRole("button", { name: "Restore" }).click();
+
+  await workspacePage.mockRPC(
+    "restore-file-snapshot",
+    "workspace/versions-restore-snapshot-1.json",
+  );
+
+  await page.getByRole("button", { name: "Restore" }).click();
+});

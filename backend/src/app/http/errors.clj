@@ -89,6 +89,10 @@
                            (dissoc ::s/problems ::s/value ::s/spec ::sm/explain)
                            (cond-> explain (assoc :explain explain)))})
 
+      (= code :vern-conflict)
+      {::yres/status 409 ;; 409 - Conflict
+       ::yres/body data}
+
       (= code :request-body-too-large)
       {::yres/status 413 ::yres/body data}
 

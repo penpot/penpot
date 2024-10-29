@@ -106,7 +106,7 @@
 (defn commit
   "Create a commit event instance"
   [{:keys [commit-id redo-changes undo-changes origin save-undo? features
-           file-id file-revn undo-group tags stack-undo? source]}]
+           file-id file-revn file-vern undo-group tags stack-undo? source]}]
 
   (dm/assert!
    "expect valid vector of changes for redo-changes"
@@ -126,6 +126,7 @@
                    :features features
                    :file-id file-id
                    :file-revn file-revn
+                   :file-vern file-vern
                    :changes redo-changes
                    :redo-changes redo-changes
                    :undo-changes undo-changes
@@ -159,6 +160,13 @@
     (if (= (:id file) file-id)
       (:revn file)
       (dm/get-in state [:workspace-libraries file-id :revn]))))
+
+(defn- resolve-file-vern
+  [state file-id]
+  (let [file (:workspace-file state)]
+    (if (= (:id file) file-id)
+      (:vern file)
+      (dm/get-in state [:workspace-libraries file-id :vern]))))
 
 (defn commit-changes
   "Schedules a list of changes to execute now, and add the corresponding undo changes to
@@ -194,6 +202,7 @@
                      (assoc :save-undo? save-undo?)
                      (assoc :file-id file-id)
                      (assoc :file-revn (resolve-file-revn state file-id))
+                     (assoc :file-vern (resolve-file-vern state file-id))
                      (assoc :undo-changes uchg)
                      (assoc :redo-changes rchg)
                      (commit))))))))

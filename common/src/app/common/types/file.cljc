@@ -134,6 +134,7 @@
                   :project-id project-id
                   :name name
                   :revn revn
+                  :vern 0
                   :is-shared is-shared
                   :version version
                   :data data

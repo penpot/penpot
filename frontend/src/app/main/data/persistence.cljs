@@ -108,11 +108,12 @@
     ptk/WatchEvent
     (watch [_ state _]
       (log/dbg :hint "persist-commit" :commit-id (dm/str commit-id))
-      (when-let [{:keys [file-id file-revn changes features] :as commit} (dm/get-in state [:persistence :index commit-id])]
+      (when-let [{:keys [file-id file-revn file-vern changes features] :as commit} (dm/get-in state [:persistence :index commit-id])]
         (let [sid      (:session-id state)
               revn     (max file-revn (get @revn-data file-id 0))
               params   {:id file-id
                         :revn revn
+                        :vern file-vern
                         :session-id sid
                         :origin (:origin commit)
                         :created-at (:created-at commit)

@@ -182,6 +182,7 @@
    [:comment-thread-seqn [::sm/int {:min 0}]]
    [:name [:string {:max 250}]]
    [:revn [::sm/int {:min 0}]]
+   [:vern [::sm/int {:min 0}]]
    [:modified-at ::dt/instant]
    [:is-shared ::sm/boolean]
    [:project-id ::sm/uuid]
@@ -270,7 +271,7 @@
 
 (defn get-minimal-file
   [cfg id & {:as opts}]
-  (let [opts (assoc opts ::sql/columns [:id :modified-at :deleted-at :revn :data-ref-id :data-backend])]
+  (let [opts (assoc opts ::sql/columns [:id :modified-at :deleted-at :revn :vern :data-ref-id :data-backend])]
     (db/get cfg :file {:id id} opts)))
 
 (defn- get-minimal-file-with-perms
@@ -280,8 +281,8 @@
     (assoc mfile :permissions perms)))
 
 (defn get-file-etag
-  [{:keys [::rpc/profile-id]} {:keys [modified-at revn permissions]}]
-  (str profile-id "/" revn "/"
+  [{:keys [::rpc/profile-id]} {:keys [modified-at revn vern permissions]}]
+  (str profile-id "/" revn "/" vern "/"
        (dt/format-instant modified-at :iso)
        "/"
        (uri/map->query-string permissions)))
@@ -371,6 +372,7 @@
           f.modified_at,
           f.name,
           f.revn,
+          f.vern,
           f.is_shared,
           ft.media_id
      from file as f
@@ -526,6 +528,7 @@
 (def ^:private sql:team-shared-files
   "select f.id,
           f.revn,
+          f.vern,
           f.data,
           f.project_id,
           f.created_at,
@@ -609,6 +612,7 @@
           l.deleted_at,
           l.name,
           l.revn,
+          l.vern,
           l.synced_at
      FROM libs AS l
     WHERE l.deleted_at IS NULL OR l.deleted_at > now();")
@@ -670,6 +674,7 @@
   "with recent_files as (
      select f.id,
             f.revn,
+            f.vern,
             f.project_id,
             f.created_at,
             f.modified_at,

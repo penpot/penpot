@@ -36,6 +36,7 @@
                 :id file-id
                 :session-id (uuid/random)
                 :revn revn
+                :vern 0
                 :features cfeat/supported-features
                 :changes changes}
         out    (th/command! params)]
@@ -55,6 +56,7 @@
      :file-id (:id file)
      :profile-id (:id profile)
      :revn 0
+     :vern 0
      :changes
      [{:type :add-page
        :name "test 1"
@@ -67,6 +69,7 @@
      :file-id (:id file)
      :profile-id (:id profile)
      :revn 0
+     :vern 0
      :changes
      [{:type :add-obj
        :page-id page-id-1

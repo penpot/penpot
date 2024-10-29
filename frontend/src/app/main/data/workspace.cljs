@@ -70,6 +70,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.viewport :as dwv]
    [app.main.data.workspace.zoom :as dwz]
+   [app.main.errors]
    [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
    [app.main.repo :as rp]
@@ -377,6 +378,19 @@
     (effect [_ _ _]
       (let [name (dm/str "workspace-" file-id)]
         (unchecked-set ug/global "name" name)))))
+
+(defn reload-file
+  []
+  (ptk/reify ::reload-file
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id    (:current-file-id state)
+            project-id (:current-project-id state)]
+        (rx/of (initialize-file project-id file-id))))))
+
+;; We need to inject this so there are no cycles
+(set! app.main.data.workspace.notifications/reload-file reload-file)
+(set! app.main.errors/reload-file reload-file)
 
 (defn finalize-file
   [_project-id file-id]

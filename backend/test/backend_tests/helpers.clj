@@ -312,6 +312,7 @@
                        (#'files.update/update-file* system
                                                     {:id file-id
                                                      :revn revn
+                                                     :vern 0
                                                      :file file
                                                      :features (:features file)
                                                      :changes changes
@@ -327,6 +328,7 @@
                   :id file-id
                   :session-id (uuid/random)
                   :revn revn
+                  :vern 0
                   :features features
                   :changes changes}
         out      (command! params)]

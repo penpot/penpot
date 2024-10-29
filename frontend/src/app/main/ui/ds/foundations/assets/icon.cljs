@@ -88,6 +88,7 @@
 (def ^:icon-id character-z "character-z")
 (def ^:icon-id clip-content "clip-content")
 (def ^:icon-id clipboard "clipboard")
+(def ^:icon-id clock "clock")
 (def ^:icon-id close-small "close-small")
 (def ^:icon-id close "close")
 (def ^:icon-id code "code")

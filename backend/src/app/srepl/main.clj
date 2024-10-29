@@ -336,8 +336,7 @@
 
 (defn take-team-snapshot!
   [team-id & {:keys [label rollback?] :or {rollback? true}}]
-  (let [team-id (h/parse-uuid team-id)
-        label   (or label (fsnap/generate-snapshot-label))]
+  (let [team-id (h/parse-uuid team-id)]
     (-> (assoc main/system ::db/rollback rollback?)
         (db/tx-run! h/take-team-snapshot! team-id label))))
 

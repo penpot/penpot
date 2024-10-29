@@ -429,11 +429,11 @@
 
              params    {:id (:id file)
                         :revn (:revn file)
+                        :vern (:vern file)
                         :session-id sid
                         :changes changes
                         :features features
                         :skip-validate true}]
-
 
          (->> (rp/cmd! :update-file params)
               (rx/subs! (fn [_]
