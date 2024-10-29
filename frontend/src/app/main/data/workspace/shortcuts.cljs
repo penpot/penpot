@@ -129,9 +129,12 @@
                           :subsections [:edit]
                           :fn #(st/emit! esc-pressed)}
 
-
    ;; MODIFY LAYERS
 
+   :rename               {:tooltip (ds/alt "N")
+                          :command "alt+n"
+                          :subsections [:edit]
+                          :fn #(emit-when-no-readonly (dw/start-rename-selected))}
 
    :group                {:tooltip (ds/meta "G")
                           :command (ds/c-mod "g")
