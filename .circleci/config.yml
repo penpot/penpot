@@ -65,6 +65,13 @@ jobs:
             - v1-dependencies-{{ checksum "frontend/deps.edn"}}
 
       - run:
+          name: "prepopulate linter cache"
+          working_directory: "./common"
+          command: |
+            yarn install
+            yarn run lint:clj
+
+      - run:
           name: "fmt check & linter"
           working_directory: "./frontend"
           command: |
@@ -81,6 +88,31 @@ jobs:
             yarn install
             yarn test
 
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: v1-dependencies-{{ checksum "frontend/deps.edn"}}
+
+
+  test-integration:
+    docker:
+      - image: penpotapp/devenv:latest
+
+    working_directory: ~/repo
+    resource_class: medium+
+
+    environment:
+      JAVA_OPTS: -Xmx4g -Xms100m -XX:+UseSerialGC
+      NODE_OPTIONS: --max-old-space-size=4096
+
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "frontend/deps.edn"}}
+
       - run:
           name: "integration tests"
           working_directory: "./frontend"
@@ -90,11 +122,6 @@ jobs:
             yarn run build:app
             yarn run playwright install --with-deps chromium
             yarn run test:e2e
-
-      - save_cache:
-          paths:
-            - ~/.m2
-          key: v1-dependencies-{{ checksum "frontend/deps.edn"}}
 
   test-backend:
     docker:
@@ -119,6 +146,13 @@ jobs:
       - restore_cache:
           keys:
             - v1-dependencies-{{ checksum "backend/deps.edn" }}
+
+      - run:
+          name: "prepopulate linter cache"
+          working_directory: "./common"
+          command: |
+            yarn install
+            yarn run lint:clj
 
       - run:
           name: "fmt check & linter"
@@ -160,9 +194,12 @@ jobs:
     steps:
       - checkout
 
-      - run: cd .clj-kondo && cat config.edn
-      - run: cat .cljfmt.edn
-      - run: clj-kondo --version
+      - run:
+          name: "prepopulate linter cache"
+          working_directory: "./common"
+          command: |
+            yarn install
+            yarn run lint:clj
 
       - run:
           name: "fmt check & linter"
@@ -176,6 +213,7 @@ workflows:
   penpot:
     jobs:
       - test-frontend
+      - test-integration
       - test-backend
       - test-common
       - test-exporter
