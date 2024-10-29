@@ -274,7 +274,7 @@
 
   (dm/assert!
    "expected valid params"
-   (sm/check! schema:login-with-ldap params))
+   (sm/check schema:login-with-ldap params))
 
   (ptk/reify ::login-with-ldap
     ptk/WatchEvent
@@ -468,7 +468,7 @@
   [data]
   (dm/assert!
    "expected valid parameters"
-   (sm/check! schema:update-password data))
+   (sm/check schema:update-password data))
 
   (ptk/reify ::update-password
     ev/Event
@@ -615,7 +615,7 @@
 
   (dm/assert!
    "expected valid parameters"
-   (sm/check! schema:request-profile-recovery data))
+   (sm/check schema:request-profile-recovery data))
 
   (ptk/reify ::request-profile-recovery
     ptk/WatchEvent
@@ -640,7 +640,7 @@
   [data]
   (dm/assert!
    "expected valid arguments"
-   (sm/check! schema:recover-profile data))
+   (sm/check schema:recover-profile data))
 
   (ptk/reify ::recover-profile
     ptk/WatchEvent

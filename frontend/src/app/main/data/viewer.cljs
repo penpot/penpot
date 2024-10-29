@@ -58,7 +58,7 @@
   [{:keys [file-id share-id interactions-show?] :as params}]
   (dm/assert!
    "expected valid params"
-   (sm/check! schema:initialize params))
+   (sm/check schema:initialize params))
 
   (ptk/reify ::initialize
     ptk/UpdateEvent
@@ -111,7 +111,7 @@
 
   (dm/assert!
    "expected valid params"
-   (sm/check! schema:fetch-bundle params))
+   (sm/check schema:fetch-bundle params))
 
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent

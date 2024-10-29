@@ -12,18 +12,12 @@
    [app.common.logging :as l]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
-   [app.common.spec :as us]
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
-   [app.email.invite-to-team :as-alias email.invite-to-team]
-   [app.email.join-team :as-alias email.join-team]
-   [app.email.request-team-access :as-alias email.request-team-access]
-   [app.metrics :as mtx]
    [app.util.template :as tmpl]
    [app.worker :as wrk]
    [clojure.java.io :as io]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig])
   (:import
@@ -223,50 +217,47 @@
               [{:type "text/html"
                 :content html}]))}))
 
-(s/def ::priority #{:high :low})
-(s/def ::to (s/or :single ::us/email
-                  :multi (s/coll-of ::us/email)))
-(s/def ::from ::us/email)
-(s/def ::reply-to ::us/email)
-(s/def ::lang string?)
-(s/def ::extra-data ::us/string)
+(def ^:private schema:context
+  [:map
+   [:to [:or ::sm/email [::sm/vec ::sm/email]]]
+   [:reply-to {:optional true} ::sm/email]
+   [:from {:optional true} ::sm/email]
+   [:lang {:optional true} ::sm/text]
+   [:priority {:optional true} [:enum :high :low]]
+   [:extra-data {:optional true} ::sm/text]])
 
-(s/def ::context
-  (s/keys :req-un [::to]
-          :opt-un [::reply-to ::from ::lang ::priority ::extra-data]))
+(def ^:private valid-context?
+  (sm/validator schema:context))
 
 (defn template-factory
-  ([id] (template-factory id {}))
-  ([id extra-context]
-   (s/assert keyword? id)
-   (fn [context]
-     (us/verify ::context context)
-     (when-let [spec (s/get-spec id)]
-       (s/assert spec context))
+  [& {:keys [id schema]}]
+  (assert (keyword? id) "id should be provided and it should be a keyword")
+  (let [check-fn (if schema
+                   (sm/check-fn schema)
+                   (constantly nil))]
+    (fn [context]
+      (assert (valid-context? context) "expected a valid context")
+      (check-fn context)
 
-     (let [context (merge (if (fn? extra-context)
-                            (extra-context)
-                            extra-context)
-                          context)
-           email   (build-email-template id context)]
-       (when-not email
-         (ex/raise :type :internal
-                   :code :email-template-does-not-exists
-                   :hint "seems like the template is wrong or does not exists."
-                   :context {:id id}))
-       (cond-> (assoc email :id (name id))
-         (:extra-data context)
-         (assoc :extra-data (:extra-data context))
+      (let [email (build-email-template id context)]
+        (when-not email
+          (ex/raise :type :internal
+                    :code :email-template-does-not-exists
+                    :hint "seems like the template is wrong or does not exists."
+                    :template-id id))
 
-         (:from context)
-         (assoc :from (:from context))
+        (cond-> (assoc email :id (name id))
+          (:extra-data context)
+          (assoc :extra-data (:extra-data context))
 
-         (:reply-to context)
-         (assoc :reply-to (:reply-to context))
+          (:from context)
+          (assoc :from (:from context))
 
-         (:to context)
-         (assoc :to (:to context)))))))
+          (:reply-to context)
+          (assoc :reply-to (:reply-to context))
 
+          (:to context)
+          (assoc :to (:to context)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PUBLIC HIGH-LEVEL API
@@ -280,7 +271,8 @@
   "Schedule an already defined email to be sent using asynchronously
   using worker task."
   [{:keys [::conn ::factory] :as context}]
-  (us/verify some? conn)
+  (assert (db/connection? conn) "expected a valid database connection")
+
   (let [email (if factory
                 (factory context)
                 (dissoc context ::conn))]
@@ -296,8 +288,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare send-to-logger!)
-
-(s/def ::sendmail fn?)
 
 (defmethod ig/init-key ::sendmail
   [_ cfg]
@@ -324,8 +314,9 @@
     (when (contains? cf/flags :log-emails)
       (send-to-logger! cfg params))))
 
-(defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req [::sendmail ::mtx/metrics]))
+(defmethod ig/assert-key ::handler
+  [_ params]
+  (assert (fn? (::sendmail params)) "expected valid sendmail handler"))
 
 (defmethod ig/init-key ::handler
   [_ {:keys [::sendmail]}]
@@ -352,125 +343,113 @@
 ;; EMAIL FACTORIES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::subject ::us/string)
-(s/def ::content ::us/string)
-
-(s/def ::feedback
-  (s/keys :req-un [::subject ::content]))
+(def ^:private schema:feedback
+  [:map
+   [:subject ::sm/text]
+   [:content ::sm/text]])
 
 (def feedback
   "A profile feedback email."
-  (template-factory ::feedback))
+  (template-factory
+   :id ::feedback
+   :schema schema:feedback))
 
-(s/def ::name ::us/string)
-(s/def ::register
-  (s/keys :req-un [::name]))
+(def ^:private schema:register
+  [:map [:name ::sm/text]])
 
 (def register
   "A new profile registration welcome email."
-  (template-factory ::register))
+  (template-factory
+   :id ::register
+   :schema schema:register))
 
-(s/def ::token ::us/string)
-(s/def ::password-recovery
-  (s/keys :req-un [::name ::token]))
+(def ^:private schema:password-recovery
+  [:map
+   [:name ::sm/text]
+   [:token ::sm/text]])
 
 (def password-recovery
   "A password recovery notification email."
-  (template-factory ::password-recovery))
+  (template-factory
+   :id ::password-recovery
+   :schema schema:password-recovery))
 
-(s/def ::pending-email ::us/email)
-(s/def ::change-email
-  (s/keys :req-un [::name ::pending-email ::token]))
+(def ^:private schema:change-email
+  [:map
+   [:name ::sm/text]
+   [:pending-email ::sm/email]
+   [:token ::sm/text]])
 
 (def change-email
   "Password change confirmation email"
-  (template-factory ::change-email))
+  (template-factory
+   :id ::change-email
+   :schema schema:change-email))
 
-(s/def ::email.invite-to-team/invited-by ::us/string)
-(s/def ::email.invite-to-team/team ::us/string)
-(s/def ::email.invite-to-team/token ::us/string)
-
-(s/def ::invite-to-team
-  (s/keys :req-un [::email.invite-to-team/invited-by
-                   ::email.invite-to-team/token
-                   ::email.invite-to-team/team]))
+(def ^:private schema:invite-to-team
+  [:map
+   [:invited-by ::sm/text]
+   [:team ::sm/text]
+   [:token ::sm/text]])
 
 (def invite-to-team
   "Teams member invitation email."
-  (template-factory ::invite-to-team))
+  (template-factory
+   :id ::invite-to-team
+   :schema schema:invite-to-team))
 
-
-(s/def ::email.join-team/invited-by ::us/string)
-(s/def ::email.join-team/team ::us/string)
-(s/def ::email.join-team/team-id ::us/uuid)
-
-(s/def ::join-team
-  (s/keys :req-un [::email.join-team/invited-by
-                   ::email.join-team/team-id
-                   ::email.join-team/team]))
+(def ^:private schema:join-team
+  [:map
+   [:invited-by ::sm/text]
+   [:team ::sm/text]
+   [:team-id ::sm/uuid]])
 
 (def join-team
   "Teams member joined after request email."
-  (template-factory ::join-team))
+  (template-factory
+   :id ::join-team
+   :schema schema:join-team))
 
-(s/def ::email.request-team-access/requested-by ::us/string)
-(s/def ::email.request-team-access/requested-by-email ::us/string)
-(s/def ::email.request-team-access/team-name ::us/string)
-(s/def ::email.request-team-access/team-id ::us/uuid)
-(s/def ::email.request-team-access/file-name ::us/string)
-(s/def ::email.request-team-access/file-id ::us/uuid)
-(s/def ::email.request-team-access/page-id ::us/uuid)
-
-(s/def ::request-file-access
-  (s/keys :req-un [::email.request-team-access/requested-by
-                   ::email.request-team-access/requested-by-email
-                   ::email.request-team-access/team-name
-                   ::email.request-team-access/team-id
-                   ::email.request-team-access/file-name
-                   ::email.request-team-access/file-id
-                   ::email.request-team-access/page-id]))
+(def ^:private schema:request-file-access
+  [:map
+   [:requested-by ::sm/text]
+   [:requested-by-email ::sm/text]
+   [:team-name ::sm/text]
+   [:team-id ::sm/uuid]
+   [:file-name ::sm/text]
+   [:file-id ::sm/uuid]
+   [:page-id ::sm/uuid]])
 
 (def request-file-access
   "File access request email."
-  (template-factory ::request-file-access))
-
-
-(s/def ::request-file-access-yourpenpot
-  (s/keys :req-un [::email.request-team-access/requested-by
-                   ::email.request-team-access/requested-by-email
-                   ::email.request-team-access/team-name
-                   ::email.request-team-access/team-id
-                   ::email.request-team-access/file-name
-                   ::email.request-team-access/file-id
-                   ::email.request-team-access/page-id]))
+  (template-factory
+   :id ::request-file-access
+   :schema schema:request-file-access))
 
 (def request-file-access-yourpenpot
   "File access on Your Penpot request email."
-  (template-factory ::request-file-access-yourpenpot))
-
-(s/def ::request-file-access-yourpenpot-view
-  (s/keys :req-un [::email.request-team-access/requested-by
-                   ::email.request-team-access/requested-by-email
-                   ::email.request-team-access/team-name
-                   ::email.request-team-access/team-id
-                   ::email.request-team-access/file-name
-                   ::email.request-team-access/file-id
-                   ::email.request-team-access/page-id]))
+  (template-factory
+   :id ::request-file-access-yourpenpot
+   :schema schema:request-file-access))
 
 (def request-file-access-yourpenpot-view
   "File access on Your Penpot view mode request email."
-  (template-factory ::request-file-access-yourpenpot-view))
+  (template-factory
+   :id ::request-file-access-yourpenpot-view
+   :schema schema:request-file-access))
 
-(s/def ::request-team-access
-  (s/keys :req-un [::email.request-team-access/requested-by
-                   ::email.request-team-access/requested-by-email
-                   ::email.request-team-access/team-name
-                   ::email.request-team-access/team-id]))
+(def ^:private schema:request-team-access
+  [:map
+   [:requested-by ::sm/text]
+   [:requested-by-email ::sm/text]
+   [:team-name ::sm/text]
+   [:team-id ::sm/uuid]])
 
 (def request-team-access
   "Team access request email."
-  (template-factory ::request-team-access))
-
+  (template-factory
+   :id ::request-team-access
+   :schema schema:request-team-access))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; BOUNCE/COMPLAINS HELPERS

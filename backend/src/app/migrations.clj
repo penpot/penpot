@@ -11,7 +11,6 @@
    [app.db :as db]
    [app.migrations.clj.migration-0023 :as mg0023]
    [app.util.migrations :as mg]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
 (def migrations
@@ -435,9 +434,9 @@
     (mg/setup! conn)
     (mg/migrate! conn {:name name :steps migrations})))
 
-(defmethod ig/pre-init-spec ::migrations
-  [_]
-  (s/keys :req [::db/pool]))
+(defmethod ig/assert-key ::migrations
+  [_ {:keys [::db/pool]}]
+  (assert (db/pool? pool) "expected valid pool"))
 
 (defmethod ig/init-key ::migrations
   [module {:keys [::db/pool]}]

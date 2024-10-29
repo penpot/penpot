@@ -9,11 +9,10 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.metrics :as mtx]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.exec :as px])
   (:import
@@ -21,14 +20,16 @@
 
 (set! *warn-on-reflection* true)
 
-(s/def ::wrk/executor #(instance? ThreadPoolExecutor %))
+(sm/register!
+ {:type ::wrk/executor
+  :pred #(instance? ThreadPoolExecutor %)
+  :type-properties
+  {:title "executor"
+   :description "Instance of ThreadPoolExecutor"}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; EXECUTOR
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defmethod ig/pre-init-spec ::wrk/executor [_]
-  (s/keys :req []))
 
 (defmethod ig/init-key ::wrk/executor
   [_ _]
@@ -51,15 +52,10 @@
    :running (.getActiveCount ^ThreadPoolExecutor executor)
    :completed (.getCompletedTaskCount ^ThreadPoolExecutor executor)})
 
-(s/def ::name ::us/keyword)
-
-(defmethod ig/pre-init-spec ::wrk/monitor [_]
-  (s/keys :req [::wrk/name ::wrk/executor ::mtx/metrics]))
-
-(defmethod ig/prep-key ::wrk/monitor
-  [_ cfg]
-  (merge {::interval (dt/duration "2s")}
-         (d/without-nils cfg)))
+(defmethod ig/expand-key ::wrk/monitor
+  [k v]
+  {k (-> (d/without-nils v)
+         (assoc ::interval (dt/duration "2s")))})
 
 (defmethod ig/init-key ::wrk/monitor
   [_ {:keys [::wrk/executor ::mtx/metrics ::interval ::wrk/name]}]

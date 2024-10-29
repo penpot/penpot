@@ -11,7 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.common.logging :as l]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.db.sql :as sql]
@@ -20,7 +20,6 @@
    [app.util.time :as dt]
    [clojure.java.io :as io]
    [clojure.set :as set]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [next.jdbc :as jdbc]
    [next.jdbc.date-time :as jdbc-dt])
@@ -49,27 +48,17 @@
 ;; Initialization
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::connection-timeout ::us/integer)
-(s/def ::max-size ::us/integer)
-(s/def ::min-size ::us/integer)
-(s/def ::name keyword?)
-(s/def ::password ::us/string)
-(s/def ::uri ::us/not-empty-string)
-(s/def ::username ::us/string)
-(s/def ::validation-timeout ::us/integer)
-(s/def ::read-only? ::us/boolean)
-
-(s/def ::pool-options
-  (s/keys :opt [::uri
-                ::name
-                ::min-size
-                ::max-size
-                ::connection-timeout
-                ::validation-timeout
-                ::username
-                ::password
-                ::mtx/metrics
-                ::read-only?]))
+(def ^:private schema:pool-options
+  [:map {:title "pool-options"}
+   [::connect-timeout {:optional true} ::sm/int]
+   [::max-size {:optional true} ::sm/int]
+   [::min-size {:optional true} ::sm/int]
+   [::name {:optional true} :keyword]
+   [::uri {:optional true} ::sm/uri]
+   [::password {:optional true} :string]
+   [::username {:optional true} :string]
+   [::validation-timeout {:optional true} ::sm/int]
+   [::read-only {:optional true} ::sm/boolean]])
 
 (def defaults
   {::name :main
@@ -79,27 +68,26 @@
    ::validation-timeout 10000
    ::idle-timeout 120000 ; 2min
    ::max-lifetime 1800000 ; 30m
-   ::read-only? false})
+   ::read-only false})
 
-(defmethod ig/prep-key ::pool
-  [_ cfg]
-  (merge defaults (d/without-nils cfg)))
-
-;; Don't validate here, just validate that a map is received.
-(defmethod ig/pre-init-spec ::pool [_] ::pool-options)
+(defmethod ig/assert-key ::pool
+  [_ options]
+  (assert (sm/check schema:pool-options options)))
 
 (defmethod ig/init-key ::pool
-  [_ {:keys [::uri ::read-only?] :as cfg}]
-  (when uri
-    (l/info :hint "initialize connection pool"
-            :name (d/name (::name cfg))
-            :uri uri
-            :read-only read-only?
-            :with-credentials (and (contains? cfg ::username)
-                                   (contains? cfg ::password))
-            :min-size (::min-size cfg)
-            :max-size (::max-size cfg))
-    (create-pool cfg)))
+  [_ cfg]
+  (let [{:keys [::uri ::read-only] :as cfg}
+        (merge defaults cfg)]
+    (when uri
+      (l/info :hint "initialize connection pool"
+              :name (d/name (::name cfg))
+              :uri (str uri)
+              :read-only read-only
+              :credentials (and (contains? cfg ::username)
+                                (contains? cfg ::password))
+              :min-size (::min-size cfg)
+              :max-size (::max-size cfg))
+      (create-pool cfg))))
 
 (defmethod ig/halt-key! ::pool
   [_ pool]
@@ -115,13 +103,15 @@
        "SET idle_in_transaction_session_timeout = 300000;"))
 
 (defn- create-datasource-config
-  [{:keys [::mtx/metrics ::uri] :as cfg}]
+  [{:keys [::uri] :as cfg}]
+
+  ;; (app.common.pprint/pprint cfg)
   (let [config (HikariConfig.)]
     (doto config
       (.setJdbcUrl           (str "jdbc:" uri))
       (.setPoolName          (d/name (::name cfg)))
       (.setAutoCommit true)
-      (.setReadOnly          (::read-only? cfg))
+      (.setReadOnly          (::read-only cfg))
       (.setConnectionTimeout (::connection-timeout cfg))
       (.setValidationTimeout (::validation-timeout cfg))
       (.setIdleTimeout       (::idle-timeout cfg))
@@ -132,8 +122,8 @@
       (.setInitializationFailTimeout -1))
 
     ;; When metrics namespace is provided
-    (when metrics
-      (->> (::mtx/registry metrics)
+    (when-let [instance (::mtx/metrics cfg)]
+      (->> (mtx/get-registry instance)
            (PrometheusMetricsTrackerFactory.)
            (.setMetricsTrackerFactory config)))
 
@@ -150,10 +140,22 @@
   [conn]
   (instance? Connection conn))
 
-(s/def ::conn some?)
-(s/def ::nilable-pool (s/nilable ::pool))
-(s/def ::pool pool?)
-(s/def ::connectable some?)
+(defn connectable?
+  [o]
+  (or (connection? o)
+      (pool? o)))
+
+(sm/register!
+ {:type ::conn
+  :pred connection?})
+
+(sm/register!
+ {:type ::connectable
+  :pred connectable?})
+
+(sm/register!
+ {:type ::pool
+  :pred pool?})
 
 (defn closed?
   [pool]

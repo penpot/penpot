@@ -8,9 +8,8 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [clj-ldap.client :as ldap]
-   [clojure.spec.alpha :as s]
    [clojure.string]
    [integrant.core :as ig]))
 
@@ -58,21 +57,26 @@
        :email    email
        :backend  "ldap"})))
 
-(s/def ::fullname ::us/not-empty-string)
-(s/def ::email ::us/email)
-(s/def ::backend ::us/not-empty-string)
+(def ^:private schema:info-data
+  [:map
+   [:fullname ::sm/text]
+   [:email ::sm/email]
+   [:backend ::sm/text]])
 
-(s/def ::info-data
-  (s/keys :req-un [::fullname ::email ::backend]))
+(def ^:private valid-info-data?
+  (sm/lazy-validator schema:info-data))
+
+(def ^:private explain-info-data
+  (sm/lazy-explainer schema:info-data))
 
 (defn authenticate
   [cfg params]
   (with-open [conn (connect cfg)]
     (when-let [user (-> (assoc cfg ::conn conn)
                         (retrieve-user params))]
-      (when-not (s/valid? ::info-data user)
-        (let [explain (s/explain-str ::info-data user)]
-          (l/warn ::l/raw (str "invalid response from ldap, looks like ldap is not configured correctly\n" explain))
+      (when-not (valid-info-data? user)
+        (let [explain (explain-info-data user)]
+          (l/warn :hint "invalid response from ldap, looks like ldap is not configured correctly" :data user)
           (ex/raise :type :restriction
                     :code :wrong-ldap-response
                     :explain explain)))
@@ -102,38 +106,31 @@
                  :host (:host cfg) :port (:port cfg) :cause cause)
         nil))))
 
-(s/def ::enabled? ::us/boolean)
-(s/def ::host ::us/string)
-(s/def ::port ::us/integer)
-(s/def ::ssl ::us/boolean)
-(s/def ::tls ::us/boolean)
-(s/def ::query ::us/string)
-(s/def ::base-dn ::us/string)
-(s/def ::bind-dn ::us/string)
-(s/def ::bind-password ::us/string)
-(s/def ::attrs-email ::us/string)
-(s/def ::attrs-fullname ::us/string)
-(s/def ::attrs-username ::us/string)
+(def ^:private schema:params
+  [:map
+   [:host {:optional true} :string]
+   [:port {:optional true} ::sm/int]
+   [:bind-dn {:optional true} :string]
+   [:bind-passwor {:optional true} :string]
+   [:query {:optional true} :string]
+   [:base-dn {:optional true} :string]
+   [:attrs-email {:optional true} :string]
+   [:attrs-username {:optional true} :string]
+   [:attrs-fullname {:optional true} :string]
+   [:ssl {:optional true} ::sm/boolean]
+   [:tls {:optional true} ::sm/boolean]])
 
-(s/def ::provider-params
-  (s/keys :opt-un [::host ::port
-                   ::ssl ::tls
-                   ::enabled?
-                   ::bind-dn
-                   ::bind-password
-                   ::query
-                   ::attrs-email
-                   ::attrs-username
-                   ::attrs-fullname]))
+(def ^:private check-params
+  (sm/check-fn schema:params :hint "Invalid LDAP provider parameters"))
 
-(s/def ::provider
-  (s/nilable ::provider-params))
-
-(defmethod ig/pre-init-spec ::provider
-  [_]
-  (s/spec ::provider))
+(defmethod ig/assert-key ::provider
+  [_ params]
+  (when (:enabled params)
+    (some->> params check-params)))
 
 (defmethod ig/init-key ::provider
   [_ cfg]
-  (when (:enabled? cfg)
+  (when (:enabled cfg)
     (try-connectivity cfg)))
+
+(sm/register! ::provider schema:params)

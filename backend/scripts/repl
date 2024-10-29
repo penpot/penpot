@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 export PENPOT_HOST=devenv
-export PENPOT_TENANT=dev
 export PENPOT_FLAGS="\
        $PENPOT_FLAGS \
        enable-login-with-ldap \

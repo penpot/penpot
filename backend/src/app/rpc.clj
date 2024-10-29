@@ -257,33 +257,42 @@
          (map (partial process-method cfg))
          (into {}))))
 
-(defmethod ig/pre-init-spec ::methods [_]
-  (s/keys :req [::session/manager
-                ::http.client/client
-                ::db/pool
-                ::mbus/msgbus
-                ::ldap/provider
-                ::sto/storage
-                ::mtx/metrics
-                ::setup/props]
-          :opt [::climit
-                ::rlimit]))
+(def ^:private schema:methods-params
+  [:map {:title "methods-params"}
+   ::session/manager
+   ::http.client/client
+   ::db/pool
+   ::mbus/msgbus
+   ::ldap/provider
+   ::sto/storage
+   ::mtx/metrics
+   [::climit [:maybe ::climit]]
+   [::rlimit [:maybe ::rlimit]]
+   ::setup/props])
+
+(defmethod ig/assert-key ::methods
+  [_ params]
+  (assert (sm/check schema:methods-params params)))
 
 (defmethod ig/init-key ::methods
   [_ cfg]
   (let [cfg (d/without-nils cfg)]
     (resolve-command-methods cfg)))
 
-(s/def ::methods
-  (s/map-of keyword? (s/tuple map? fn?)))
+(def ^:private schema:methods
+  [:map-of :keyword [:tuple :map ::sm/fn]])
 
-(s/def ::routes vector?)
+(sm/register! ::methods schema:methods)
 
-(defmethod ig/pre-init-spec ::routes [_]
-  (s/keys :req [::methods
-                ::db/pool
-                ::setup/props
-                ::session/manager]))
+(def ^:private valid-methods?
+  (sm/validator schema:methods))
+
+(defmethod ig/assert-key ::routes
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expect valid database pool")
+  (assert (some? (::setup/props params)))
+  (assert (session/manager? (::session/manager params)) "expect valid session manager")
+  (assert (valid-methods? (::methods params)) "expect valid methods map"))
 
 (defmethod ig/init-key ::routes
   [_ {:keys [::methods] :as cfg}]

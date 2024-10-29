@@ -13,7 +13,6 @@
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.storage :as sto]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
 (defn- offload-file-data!
@@ -109,8 +108,10 @@
 ;; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req [::db/pool ::sto/storage]))
+(defmethod ig/assert-key ::handler
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expected a valid database pool")
+  (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage to be provided"))
 
 (defmethod ig/init-key ::handler
   [_ cfg]

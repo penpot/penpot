@@ -8,6 +8,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -16,7 +17,6 @@
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [lambdaisland.uri :as u]
    [promesa.exec :as px]))
@@ -108,8 +108,15 @@
                           (mark-archived! cfg rows)
                           (count events)))))))
 
-(defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req [::db/pool ::setup/props ::http/client]))
+(def ^:private schema:handler-params
+  [:map
+   ::db/pool
+   ::setup/props
+   ::http/client])
+
+(defmethod ig/assert-key ::handler
+  [_ params]
+  (assert (sm/valid? schema:handler-params params) "valid params expected for handler"))
 
 (defmethod ig/init-key ::handler
   [_ cfg]

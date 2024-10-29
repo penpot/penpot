@@ -202,10 +202,9 @@
 ;; MODULE INIT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::routes vector?)
-
-(defmethod ig/pre-init-spec ::routes [_]
-  (s/keys :req-un [::rpc/methods]))
+(defmethod ig/assert-key ::routes
+  [_ params]
+  (assert (sm/valid? ::rpc/methods (::rpc/methods params)) "expected valid methods"))
 
 (defmethod ig/init-key ::routes
   [_ {:keys [methods] :as cfg}]

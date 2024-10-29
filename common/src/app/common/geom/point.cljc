@@ -87,7 +87,7 @@
 
 ;; FIXME: make like matrix
 (def schema:point
-  {:type :map
+  {:type ::point
    :pred valid-point?
    :type-properties
    {:title "point"
@@ -102,7 +102,7 @@
     :encode/json point->json
     :encode/string point->str}})
 
-(sm/register! ::point schema:point)
+(sm/register! schema:point)
 
 (defn point-like?
   [{:keys [x y] :as v}]
