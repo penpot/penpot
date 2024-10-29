@@ -1,6 +1,102 @@
-version: 2
+version: 2.1
 jobs:
-  build:
+  test-common:
+    docker:
+      - image: penpotapp/devenv:latest
+
+    working_directory: ~/repo
+    resource_class: medium+
+
+    environment:
+      JAVA_OPTS: -Xmx4g -Xms100m -XX:+UseSerialGC
+      NODE_OPTIONS: --max-old-space-size=4096
+
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "common/deps.edn"}}
+
+      - run:
+          name: "fmt check & linter"
+          working_directory: "./common"
+          command: |
+            yarn install
+            yarn run fmt:clj:check
+            yarn run lint:clj
+
+      - run:
+          name: "JS tests"
+          working_directory: "./common"
+          command: |
+            yarn run test
+
+      - run:
+          name: "JVM tests"
+          working_directory: "./common"
+          command: |
+            clojure -M:dev:test
+
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: v1-dependencies-{{ checksum "common/deps.edn"}}
+
+
+  test-frontend:
+    docker:
+      - image: penpotapp/devenv:latest
+
+    working_directory: ~/repo
+    resource_class: medium+
+
+    environment:
+      JAVA_OPTS: -Xmx4g -Xms100m -XX:+UseSerialGC
+      NODE_OPTIONS: --max-old-space-size=4096
+
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "frontend/deps.edn"}}
+
+      - run:
+          name: "fmt check & linter"
+          working_directory: "./frontend"
+          command: |
+            yarn install
+            yarn run fmt:clj:check
+            yarn run fmt:js:check
+            yarn run lint:scss
+            yarn run lint:clj
+
+      - run:
+          name: "unit tests"
+          working_directory: "./frontend"
+          command: |
+            yarn install
+            yarn test
+
+      - run:
+          name: "integration tests"
+          working_directory: "./frontend"
+          command: |
+            yarn install
+            yarn run build:app:assets
+            yarn run build:app
+            yarn run playwright install --with-deps chromium
+            yarn run test:e2e
+
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: v1-dependencies-{{ checksum "frontend/deps.edn"}}
+
+  test-backend:
     docker:
       - image: penpotapp/devenv:latest
       - image: cimg/postgres:14.5
@@ -20,101 +116,20 @@ jobs:
     steps:
       - checkout
 
-      # Download and cache dependencies
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "backend/deps.edn" }}-{{ checksum "frontend/deps.edn"}}-{{ checksum "common/deps.edn"}}
-            # fallback to using the latest cache if no exact match is found
-            - v1-dependencies-
-
-      - run: cd .clj-kondo && cat config.edn
-      - run: cat .cljfmt.edn
-      - run: clj-kondo --version
+            - v1-dependencies-{{ checksum "backend/deps.edn" }}
 
       - run:
-          name: "backend fmt check"
+          name: "fmt check & linter"
           working_directory: "./backend"
           command: |
             yarn install
             yarn run fmt:clj:check
-
-      - run:
-          name: "exporter fmt check"
-          working_directory: "./exporter"
-          command: |
-            yarn install
-            yarn run fmt:clj:check
-
-      - run:
-          name: "common fmt check"
-          working_directory: "./common"
-          command: |
-            yarn install
-            yarn run fmt:clj:check
-
-      - run:
-          name: "frontend fmt check"
-          working_directory: "./frontend"
-          command: |
-            yarn install
-            yarn run fmt:clj:check
-            yarn run fmt:js:check
-
-      - run:
-          name: "common linter check"
-          working_directory: "./common"
-          command: |
-            yarn install
             yarn run lint:clj
 
       - run:
-          name: "frontend linter check"
-          working_directory: "./frontend"
-          command: |
-            yarn install
-            yarn run lint:scss
-            yarn run lint:clj
-
-      - run:
-          name: "backend linter check"
-          working_directory: "./backend"
-          command: |
-            yarn install
-            yarn run lint:clj
-
-      - run:
-          name: "exporter linter check"
-          working_directory: "./exporter"
-          command: |
-            yarn install
-            yarn run lint:clj
-
-      - run:
-          name: "common tests"
-          working_directory: "./common"
-          command: |
-            yarn test
-            clojure -M:dev:test
-
-      - run:
-          name: "frontend tests"
-          working_directory: "./frontend"
-          command: |
-            yarn install
-            yarn test
-
-      - run:
-          name: "frontend integration tests"
-          working_directory: "./frontend"
-          command: |
-            yarn install
-            yarn run build:app:assets
-            yarn run build:app
-            yarn run playwright install --with-deps chromium
-            yarn run test:e2e
-
-      - run:
-          name: "backend tests"
+          name: "tests"
           working_directory: "./backend"
           command: |
             clojure -M:dev:test
@@ -128,4 +143,39 @@ jobs:
       - save_cache:
           paths:
             - ~/.m2
-          key: v1-dependencies-{{ checksum "backend/deps.edn" }}-{{ checksum "frontend/deps.edn"}}-{{ checksum "common/deps.edn"}}
+          key: v1-dependencies-{{ checksum "backend/deps.edn" }}
+
+
+  test-exporter:
+    docker:
+      - image: penpotapp/devenv:latest
+
+    working_directory: ~/repo
+    resource_class: medium+
+
+    environment:
+      JAVA_OPTS: -Xmx4g -Xms100m -XX:+UseSerialGC
+      NODE_OPTIONS: --max-old-space-size=4096
+
+    steps:
+      - checkout
+
+      - run: cd .clj-kondo && cat config.edn
+      - run: cat .cljfmt.edn
+      - run: clj-kondo --version
+
+      - run:
+          name: "fmt check & linter"
+          working_directory: "./exporter"
+          command: |
+            yarn install
+            yarn run fmt:clj:check
+            yarn run lint:clj
+
+workflows:
+  penpot:
+    jobs:
+      - test-frontend
+      - test-backend
+      - test-common
+      - test-exporter
