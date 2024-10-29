@@ -60,6 +60,9 @@ Penpot’s latest [huge release 2.0](https://penpot.app/dev-diaries), takes the 
 
 Penpot expresses designs as code. Designers can do their best work and see it will be beautifully implemented by developers in a two-way collaboration.
 
+### Plugin system ###
+[Penpot plugins](https://penpot.app/penpothub/plugins) let you expand the platform's capabilities, give you the flexibility to integrate it with other apps, and design custom solutions. 
+
 ### Designed for developers ###
 Penpot was built to serve both designers and developers and create a fluid design-code process. You have the choice to enjoy real-time collaboration or play "solo".
 
