@@ -34,7 +34,7 @@
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as-alias wrk]
+   [app.worker :as wrk]
    [clojure.set :as set]
    [promesa.exec :as px]))
 
@@ -44,7 +44,6 @@
 (declare ^:private update-file*)
 (declare ^:private process-changes-and-validate)
 (declare ^:private take-snapshot?)
-(declare ^:private delete-old-snapshots!)
 
 ;; PUBLIC API; intended to be used outside of this module
 (declare update-file!)
@@ -224,23 +223,34 @@
       (let [storage (sto/resolve cfg ::db/reuse-conn true)]
         (some->> (:data-ref-id file) (sto/touch-object! storage))))
 
-    ;; TODO: move this to asynchronous task
-    (when (::snapshot-data file)
-      (delete-old-snapshots! cfg file))
+    (-> cfg
+        (assoc ::wrk/task :file-xlog-gc)
+        (assoc ::wrk/label (str "xlog:" (:id file)))
+        (assoc ::wrk/params {:file-id (:id file)})
+        (assoc ::wrk/delay (dt/duration "5m"))
+        (assoc ::wrk/dedupe true)
+        (assoc ::wrk/priority 1)
+        (wrk/submit!))
 
     (persist-file! cfg file)
 
     (let [params   (assoc params :file file)
           response {:revn (:revn file)
                     :lagged (get-lagged-changes conn params)}
-          features (db/create-array conn "text" (:features file))]
+          features (db/create-array conn "text" (:features file))
+          deleted-at (if (::snapshot-data file)
+                       (dt/plus timestamp (cf/get-deletion-delay))
+                       (dt/plus timestamp (dt/duration {:hours 1})))]
 
-      ;; Insert change (xlog)
+      ;; Insert change (xlog) with deleted_at in a future data for
+      ;; make them automatically eleggible for GC once they expires
       (db/insert! conn :file-change
                   {:id (uuid/next)
                    :session-id session-id
                    :profile-id profile-id
                    :created-at timestamp
+                   :updated-at timestamp
+                   :deleted-at deleted-at
                    :file-id (:id file)
                    :revn (:revn file)
                    :version (:version file)
@@ -457,33 +467,6 @@
           (zero? (mod revn freq))
           (> (inst-ms (dt/diff modified-at (dt/now)))
              (inst-ms timeout))))))
-
-;; Get the latest available snapshots without exceeding the total
-;; snapshot limit.
-(def ^:private sql:get-latest-snapshots
-  "SELECT fch.id, fch.created_at
-     FROM file_change AS fch
-    WHERE fch.file_id = ?
-      AND fch.created_by = 'system'
-    ORDER BY fch.created_at DESC
-    LIMIT ?")
-
-;; Mark all snapshots that are outside the allowed total threshold
-;; available for the GC.
-(def ^:private sql:delete-snapshots
-  "UPDATE file_change
-      SET label = NULL
-    WHERE file_id = ?
-      AND created_by LIKE 'system'
-      AND created_at < ?")
-
-(defn- delete-old-snapshots!
-  [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
-  (when-let [snapshots (not-empty (db/exec! conn [sql:get-latest-snapshots id
-                                                  (cf/get :auto-file-snapshot-total 10)]))]
-    (let [last-date (-> snapshots peek :created-at)
-          result    (db/exec-one! conn [sql:delete-snapshots id last-date])]
-      (l/trc :hint "delete old snapshots" :file-id (str id) :total (db/get-update-count result)))))
 
 (def ^:private sql:lagged-changes
   "select s.id, s.revn, s.file_id,

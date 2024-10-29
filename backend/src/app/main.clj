@@ -484,10 +484,7 @@
    {::wrk/registry            (ig/ref ::wrk/registry)
     ::db/pool                 (ig/ref ::db/pool)
     ::wrk/entries
-    [{:cron #app/cron "0 0 * * * ?" ;; hourly
-      :task :file-xlog-gc}
-
-     {:cron #app/cron "0 0 0 * * ?" ;; daily
+    [{:cron #app/cron "0 0 0 * * ?" ;; daily
       :task :session-gc}
 
      {:cron #app/cron "0 0 0 * * ?" ;; daily
