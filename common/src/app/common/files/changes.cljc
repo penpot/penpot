@@ -418,7 +418,8 @@
                                (cts/shape? shape-new))
                   (ex/raise :type :assertion
                             :code :data-validation
-                            :hint "invalid shape found after applying changes")))))]
+                            :hint "invalid shape found after applying changes"
+                            ::sm/explain (cts/explain-shape shape-new))))))]
 
     (->> (into #{} (map :page-id) items)
          (mapcat (fn [page-id]

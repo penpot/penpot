@@ -362,6 +362,9 @@
 (def valid-shape?
   (sm/lazy-validator schema:shape))
 
+(def explain-shape
+  (sm/lazy-explainer schema:shape))
+
 (defn has-images?
   [{:keys [fills strokes]}]
   (or (some :fill-image fills)
