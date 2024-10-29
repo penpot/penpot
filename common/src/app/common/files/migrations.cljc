@@ -1075,6 +1075,33 @@
 
     (update data :pages-index d/update-vals update-page)))
 
+(defn migrate-up-56
+  [data]
+  (letfn [(fix-fills [object]
+            (d/update-when object :fills (partial filterv valid-fill?)))
+
+          (update-object [object]
+            (-> object
+                (fix-fills)
+
+                ;; If shape contains shape-ref but has a nil value, we
+                ;; should remove it from shape object
+                (cond-> (and (contains? object :shape-ref)
+                             (nil? (get object :shape-ref)))
+                  (dissoc :shape-ref))
+
+                ;; The text shape also can has fills on the text
+                ;; fragments so we need to fix fills there
+                (cond-> (cfh/text-shape? object)
+                  (update :content (partial txt/transform-nodes identity fix-fills)))))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
 (def migrations
   "A vector of all applicable migrations"
   [{:id 2 :migrate-up migrate-up-2}
@@ -1121,4 +1148,5 @@
    {:id 52 :migrate-up migrate-up-52}
    {:id 53 :migrate-up migrate-up-26}
    {:id 54 :migrate-up migrate-up-54}
-   {:id 55 :migrate-up migrate-up-55}])
+   {:id 55 :migrate-up migrate-up-55}
+   {:id 56 :migrate-up migrate-up-56}])

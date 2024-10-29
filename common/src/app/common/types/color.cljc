@@ -56,8 +56,8 @@
 (def schema:image-color
   [:map {:title "ImageColor"}
    [:name {:optional true} :string]
-   [:width :int]
-   [:height :int]
+   [:width ::sm/int]
+   [:height ::sm/int]
    [:mtype {:optional true} [:maybe :string]]
    [:id ::sm/uuid]
    [:keep-aspect-ratio {:optional true} :boolean]])

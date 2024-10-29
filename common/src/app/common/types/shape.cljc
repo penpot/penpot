@@ -225,8 +225,8 @@
   [:map {:title "ImageAttrs"}
    [:metadata
     [:map
-     [:width {:gen/gen (sg/small-int :min 1)} :int]
-     [:height {:gen/gen (sg/small-int :min 1)} :int]
+     [:width {:gen/gen (sg/small-int :min 1)} ::sm/int]
+     [:height {:gen/gen (sg/small-int :min 1)} ::sm/int]
      [:mtype {:optional true
               :gen/gen (sg/elements ["image/jpeg"
                                      "image/png"])}
