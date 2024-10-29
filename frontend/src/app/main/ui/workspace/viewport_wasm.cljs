@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.workspace.viewport
+(ns app.main.ui.workspace.viewport-wasm
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.colors :as clr]
@@ -22,13 +22,10 @@
    [app.main.ui.flex-controls :as mfc]
    [app.main.ui.hooks :as ui-hooks]
    [app.main.ui.measurements :as msr]
-   [app.main.ui.shapes.export :as use]
-   [app.main.ui.workspace.shapes :as shapes]
    [app.main.ui.workspace.shapes.text.editor :as editor-v1]
    [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline]]
    [app.main.ui.workspace.shapes.text.v2-editor :as editor-v2]
    [app.main.ui.workspace.shapes.text.viewport-texts-html :as stvh]
-   [app.main.ui.workspace.viewport-wasm :as viewport.wasm]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.comments :as comments]
    [app.main.ui.workspace.viewport.debug :as wvd]
@@ -54,6 +51,7 @@
    [app.render-wasm :as render.wasm]
    [app.util.debug :as dbg]
    [beicon.v2.core :as rx]
+   [promesa.core :as p]
    [rumext.v2 :as mf]))
 
 ;; --- Viewport
@@ -75,7 +73,7 @@
    objects
    selected))
 
-(mf/defc viewport-classic
+(mf/defc viewport
   [{:keys [selected wglobal wlocal layout file palete-size] :as props}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
@@ -94,8 +92,6 @@
                 tooltip
                 show-distances?
                 picking-color?]} wglobal
-
-        vbox'             (mf/use-debounce 100 vbox)
 
         permissions       (mf/use-ctx ctx/team-permissions)
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
@@ -134,10 +130,13 @@
         hover-top-frame-id (mf/use-state nil)
         frame-hover       (mf/use-state nil)
         active-frames     (mf/use-state #{})
+        canvas-init?      (mf/use-state false)
 
         ;; REFS
         [viewport-ref
          on-viewport-ref] (create-viewport-ref)
+
+        canvas-ref        (mf/use-ref nil)
 
         ;; VARS
         disable-paste     (mf/use-var false)
@@ -272,13 +271,32 @@
 
         rule-area-size (/ rulers/ruler-area-size zoom)]
 
+    (mf/with-effect []
+      (when-let [canvas (mf/ref-val canvas-ref)]
+        (->> render.wasm/module
+             (p/fmap (fn [ready?]
+                       (when ready?
+                         (reset! canvas-init? true)
+                         (render.wasm/assign-canvas canvas)))))
+        (fn []
+          (render.wasm/clear-canvas))))
+
+    (mf/with-effect [objects-modified canvas-init?]
+      (when @canvas-init?
+        (render.wasm/set-objects objects-modified)
+        (render.wasm/draw-objects zoom vbox)))
+
+    (mf/with-effect [vbox canvas-init?]
+      (let [frame-id (when @canvas-init? (do
+                                           (render.wasm/draw-objects zoom vbox)))]
+        (partial render.wasm/cancel-draw frame-id)))
+
     (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing? z? read-only?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover measure-hover
                               hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures?)
-    (hooks/setup-viewport-modifiers modifiers base-objects)
     (hooks/setup-shortcuts node-editing? drawing-path? text-editing? grid-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
 
@@ -315,50 +333,14 @@
                                          :layout layout
                                          :viewport-ref viewport-ref}])]
 
-     [:svg
-      {:id "render"
-       :class (stl/css :render-shapes)
-       :xmlns "http://www.w3.org/2000/svg"
-       :xmlnsXlink "http://www.w3.org/1999/xlink"
-       :xmlns:penpot "https://penpot.app/xmlns"
-       :preserveAspectRatio "xMidYMid meet"
-       :key (str "render" page-id)
-       :width (:width vport 0)
-       :height (:height vport 0)
-       :view-box (utils/format-viewbox vbox)
-       :style {:background-color background
-               :pointer-events "none"}
-       :fill "none"}
-
-      [:defs
-       [:linearGradient {:id "frame-placeholder-gradient"}
-        [:animateTransform
-         {:attributeName "gradientTransform"
-          :type "translate"
-          :from "-1 0"
-          :to "1 0"
-          :dur "2s"
-          :repeatCount "indefinite"}]
-        [:stop {:offset "0%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]
-        [:stop {:offset "50%" :stop-color (str "color-mix(in srgb-linear, " background " 80%, #777)") :stop-opacity 1}]
-        [:stop {:offset "100%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]]]
-
-      (when (dbg/enabled? :show-export-metadata)
-        [:& use/export-page {:page page}])
-
-        ;; We need a "real" background shape so layer transforms work properly in firefox
-      [:rect {:width (:width vbox 0)
-              :height (:height vbox 0)
-              :x (:x vbox 0)
-              :y (:y vbox 0)
-              :fill background}]
-
-      [:& (mf/provider ctx/current-vbox) {:value vbox'}
-       [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
-          ;; Render root shape
-        [:& shapes/root-shape {:key page-id
-                               :objects base-objects
-                               :active-frames @active-frames}]]]]
+     [:canvas {:id "render"
+               :ref canvas-ref
+               :class (stl/css :render-shapes)
+               :key (dm/str "render" page-id)
+               :width (:width vport 0)
+               :height (:height vport 0)
+               :style {:background-color background
+                       :pointer-events "none"}}]
 
      [:svg.viewport-controls
       {:xmlns "http://www.w3.org/2000/svg"
@@ -654,9 +636,3 @@
           :zoom zoom
           :vbox vbox
           :bottom-padding (when palete-size (+ palete-size 8))}]]]]]))
-
-(mf/defc viewport
-  [props]
-  (if ^boolean render.wasm/enabled?
-    [:& viewport.wasm/viewport props]
-    [:& viewport-classic props]))
