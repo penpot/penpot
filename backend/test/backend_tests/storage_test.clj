@@ -202,8 +202,7 @@
                                     :is-shared false})
 
         ttfdata (-> (io/resource "backend_tests/test_files/font-1.ttf")
-                    io/input-stream
-                    io/read-as-bytes)
+                    (io/read*))
 
         mfile   {:filename "sample.jpg"
                  :path (th/tempfile "backend_tests/test_files/sample.jpg")

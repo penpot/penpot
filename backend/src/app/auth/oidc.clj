@@ -35,8 +35,8 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
-   [ring.request :as rreq]
-   [ring.response :as-alias rres]))
+   [yetti.request :as yreq]
+   [yetti.response :as-alias yres]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
@@ -492,8 +492,8 @@
 
 (defn- redirect-response
   [uri]
-  {::rres/status 302
-   ::rres/headers {"location" (str uri)}})
+  {::yres/status 302
+   ::yres/headers {"location" (str uri)}})
 
 (defn- redirect-with-error
   ([error] (redirect-with-error error nil))
@@ -598,7 +598,7 @@
 
 (defn- get-external-session-id
   [request]
-  (let [session-id (rreq/get-header request "x-external-session-id")]
+  (let [session-id (yreq/get-header request "x-external-session-id")]
     (when (string? session-id)
       (if (or (> (count session-id) 256)
               (= session-id "null")
@@ -618,8 +618,8 @@
         state  (tokens/generate (::setup/props cfg)
                                 (d/without-nils params))
         uri    (build-auth-uri cfg state)]
-    {::rres/status 200
-     ::rres/body {:redirect-uri uri}}))
+    {::yres/status 200
+     ::yres/body {:redirect-uri uri}}))
 
 (defn- callback-handler
   [{:keys [::provider] :as cfg} request]

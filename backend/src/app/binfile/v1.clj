@@ -222,7 +222,7 @@
 
 (defn copy-stream!
   [^OutputStream output ^InputStream input ^long size]
-  (let [written (io/copy! input output :size size)]
+  (let [written (io/copy input output :size size)]
     (l/trace :fn "copy-stream!" :position @*position* :size size :written written ::l/sync? true)
     (swap! *position* + written)
     written))
@@ -251,11 +251,11 @@
 
     (if (> s bfc/temp-file-threshold)
       (with-open [^OutputStream output (io/output-stream p)]
-        (let [readed (io/copy! input output :offset 0 :size s)]
+        (let [readed (io/copy input output :offset 0 :size s)]
           (l/trace :fn "read-stream*!" :expected s :readed readed :position @*position* ::l/sync? true)
           (swap! *position* + readed)
           [s p]))
-      [s (io/read-as-bytes input :size s)])))
+      [s (io/read input :size s)])))
 
 (defmacro assert-read-label!
   [input expected-label]
@@ -699,7 +699,7 @@
 
   (dm/assert!
    "expected instance of jio/IOFactory for `input`"
-   (satisfies? jio/IOFactory output))
+   (io/coercible? output))
 
   (let [id (uuid/next)
         tp (dt/tpoint)

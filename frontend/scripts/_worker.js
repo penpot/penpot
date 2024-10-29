@@ -26,6 +26,7 @@ async function compileFile(path) {
           "resources/styles",
         ],
         sourceMap: false,
+        silenceDeprecations: ["import", "mixed-decls"],
       });
       // console.dir(result);
       resolve({

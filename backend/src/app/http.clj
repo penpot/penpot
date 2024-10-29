@@ -29,9 +29,9 @@
    [promesa.exec :as px]
    [reitit.core :as r]
    [reitit.middleware :as rr]
-   [ring.request :as rreq]
-   [ring.response :as-alias rres]
-   [yetti.adapter :as yt]))
+   [yetti.adapter :as yt]
+   [yetti.request :as yreq]
+   [yetti.response :as-alias yres]))
 
 (declare router-handler)
 
@@ -100,12 +100,12 @@
 
 (defn- not-found-handler
   [_]
-  {::rres/status 404})
+  {::yres/status 404})
 
 (defn- router-handler
   [router]
   (letfn [(resolve-handler [request]
-            (if-let [match (r/match-by-path router (rreq/path request))]
+            (if-let [match (r/match-by-path router (yreq/path request))]
               (let [params  (:path-params match)
                     result  (:result match)
                     handler (or (:handler result) not-found-handler)
@@ -114,11 +114,11 @@
               (partial not-found-handler request)))
 
           (on-error [cause request]
-            (let [{:keys [::rres/body] :as response} (errors/handle cause request)]
+            (let [{:keys [::yres/body] :as response} (errors/handle cause request)]
               (cond-> response
                 (map? body)
-                (-> (update ::rres/headers assoc "content-type" "application/transit+json")
-                    (assoc ::rres/body (t/encode-str body {:type :json-verbose}))))))]
+                (-> (update ::yres/headers assoc "content-type" "application/transit+json")
+                    (assoc ::yres/body (t/encode-str body {:type :json-verbose}))))))]
 
     (fn [request]
       (let [handler (resolve-handler request)]

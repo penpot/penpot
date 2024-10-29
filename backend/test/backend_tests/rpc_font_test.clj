@@ -28,8 +28,7 @@
           font-id (uuid/custom 10 1)
 
           ttfdata (-> (io/resource "backend_tests/test_files/font-1.ttf")
-                      io/input-stream
-                      io/read-as-bytes)
+                      (io/read*))
 
           params  {::th/type :create-font-variant
                    ::rpc/profile-id (:id prof)
@@ -65,8 +64,7 @@
         font-id (uuid/custom 10 1)
 
         data    (-> (io/resource "backend_tests/test_files/font-1.woff")
-                    io/input-stream
-                    io/read-as-bytes)
+                    (io/read*))
 
         params  {::th/type :create-font-variant
                  ::rpc/profile-id (:id prof)
@@ -100,12 +98,10 @@
         font-id (uuid/custom 10 1)
 
         data1   (-> (io/resource "backend_tests/test_files/font-1.woff")
-                    io/input-stream
-                    io/read-as-bytes)
+                    (io/read*))
 
         data2   (-> (io/resource "backend_tests/test_files/font-2.woff")
-                    io/input-stream
-                    io/read-as-bytes)]
+                    (io/read*))]
 
     ;; Create front variant
     (let [params  {::th/type :create-font-variant
@@ -162,12 +158,10 @@
         font-id (uuid/custom 10 1)
 
         data1   (-> (io/resource "backend_tests/test_files/font-1.woff")
-                    io/input-stream
-                    io/read-as-bytes)
+                    (io/read*))
 
         data2   (-> (io/resource "backend_tests/test_files/font-2.woff")
-                    io/input-stream
-                    io/read-as-bytes)]
+                    (io/read*))]
 
     ;; Create front variant
     (let [params  {::th/type :create-font-variant
@@ -224,12 +218,10 @@
         font-id (uuid/custom 10 1)
 
         data1   (-> (io/resource "backend_tests/test_files/font-1.woff")
-                    io/input-stream
-                    io/read-as-bytes)
+                    (io/read*))
 
         data2   (-> (io/resource "backend_tests/test_files/font-2.woff")
-                    io/input-stream
-                    io/read-as-bytes)
+                    (io/read*))
         params1 {::th/type :create-font-variant
                  ::rpc/profile-id (:id prof)
                  :team-id team-id
