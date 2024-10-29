@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-09-20 10:02+0000\n"
-"Last-Translator: Denys Kisil <denkisil@outlook.com>\n"
+"PO-Revision-Date: 2024-10-30 11:07+0000\n"
+"Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
 "Language: ukr_UA\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 5.8-dev\n"
+"X-Generator: Weblate 5.8.2-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:132, src/app/main/ui/static.cljs:139, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -5615,3 +5615,81 @@ msgstr "Шар"
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:138
 msgid "workspace.options.layer-options.blend-mode.luminosity"
 msgstr "Сяяння"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout-item.title.layout-item-max-h"
+msgstr "Максимальна висота"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.direction.column"
+msgstr "Колонка"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.direction.column-reverse"
+msgstr "Обернена колонка"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.direction.row"
+msgstr "Розміщення в рядок"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.direction.row-reverse"
+msgstr "Обернене розміщення в рядок"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.packed"
+msgstr "упакований"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.left"
+msgstr "Ліворуч"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout.margin-all"
+msgstr "Всі сторони"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout.margin-simple"
+msgstr "Простий відступ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:548
+msgid "workspace.options.layout-item.layout-item-min-h"
+msgstr "Мін.Висота"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout-item.title.layout-item-max-w"
+msgstr "Максимальна ширина"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout-item.title.layout-item-min-h"
+msgstr "Мінімальна висота"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout-item.title.layout-item-min-w"
+msgstr "Мінімальна ширина"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout.margin"
+msgstr "Відступ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.bottom"
+msgstr "Низ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:515
+msgid "workspace.options.layout-item.layout-item-min-w"
+msgstr "Мін.Ширина"
