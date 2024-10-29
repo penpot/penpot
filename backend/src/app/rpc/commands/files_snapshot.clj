@@ -19,6 +19,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.rpc.doc :as-alias doc]
+   [app.rpc.quotes :as quotes]
    [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
@@ -51,15 +52,24 @@
                  (files/check-read-permissions! conn profile-id file-id)
                  (get-file-snapshots conn file-id))))
 
+(def ^:private sql:get-file
+  "SELECT f.*,
+          p.id AS project_id,
+          p.team_id AS team_id
+     FROM file AS f
+    INNER JOIN project AS p ON (p.id = f.project_id)
+    WHERE f.id = ?")
+
 (defn- get-file
   [cfg file-id]
-  (let [file (->> (db/get cfg :file {:id file-id})
+  (let [file (->> (db/exec-one! cfg [sql:get-file file-id])
                   (feat.fdata/resolve-file-data cfg))]
     (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
       (-> file
           (update :data blob/decode)
           (update :data feat.fdata/process-pointers deref)
           (update :data feat.fdata/process-objects (partial into {}))
+          (update :data assoc ::id file-id)
           (update :data blob/encode)))))
 
 (defn- generate-snapshot-label
@@ -72,12 +82,7 @@
 
 (defn create-file-snapshot!
   [cfg profile-id file-id label]
-  (let [file  (-> (get-file cfg file-id)
-                  (update :data
-                          (fn [data]
-                            (-> data
-                                (blob/decode)
-                                (assoc :id file-id)))))
+  (let [file (get-file cfg file-id)
 
         ;; NOTE: final user never can provide label as `:system`
         ;; keyword because the validator implies label always as
@@ -98,13 +103,15 @@
           (or label (generate-snapshot-label)))
 
         snapshot-id
-        (uuid/next)
+        (uuid/next)]
 
-        snapshot-data
-        (-> (:data file)
-            (feat.fdata/process-pointers deref)
-            (feat.fdata/process-objects (partial into {}))
-            (blob/encode))]
+    (-> cfg
+        (assoc ::quotes/profile-id profile-id)
+        (assoc ::quotes/project-id (:project-id file))
+        (assoc ::quotes/team-id (:team-id file))
+        (assoc ::quotes/file-id (:id file))
+        (quotes/check! {::quotes/id ::quotes/snapshots-per-file}
+                       {::quotes/id ::quotes/snapshots-per-team}))
 
     (l/debug :hint "creating file snapshot"
              :file-id (str file-id)
@@ -114,7 +121,7 @@
     (db/insert! cfg :file-change
                 {:id snapshot-id
                  :revn (:revn file)
-                 :data snapshot-data
+                 :data (:data file)
                  :version (:version file)
                  :features (:features file)
                  :profile-id profile-id
@@ -145,10 +152,11 @@
   (let [storage  (sto/resolve cfg {::db/reuse-conn true})
         file     (files/get-minimal-file conn file-id {::db/for-update true})
         vern     (rand-int Integer/MAX_VALUE)
-        snapshot (db/get* conn :file-change
-                          {:file-id file-id
-                           :id snapshot-id}
-                          {::db/for-share true})]
+        snapshot (some->> (db/get* conn :file-change
+                                   {:file-id file-id
+                                    :id snapshot-id}
+                                   {::db/for-share true})
+                          (feat.fdata/resolve-file-data cfg))]
 
     (when-not snapshot
       (ex/raise :type :not-found
@@ -157,67 +165,59 @@
                 :snapshot-id snapshot-id
                 :file-id file-id))
 
-    ;; (when (= (:revn snapshot) (:revn file))
-    ;;   (ex/raise :type :validation
-    ;;             :code :snapshot-identical-to-file
-    ;;             :hint "you can't restore a snapshot that is identical to a file"
-    ;;             :snapshot-id snapshot-id
-    ;;             :file-id file-id))
+    (when-not (:data snapshot)
+      (ex/raise :type :validation
+                :code :snapshot-without-data
+                :hint "snapshot has no data"
+                :label (:label snapshot)
+                :file-id file-id))
 
-    (let [snapshot (feat.fdata/resolve-file-data cfg snapshot)]
-      (when-not (:data snapshot)
-        (ex/raise :type :validation
-                  :code :snapshot-without-data
-                  :hint "snapshot has no data"
-                  :label (:label snapshot)
-                  :file-id file-id))
+    (l/dbg :hint "restoring snapshot"
+           :file-id (str file-id)
+           :label (:label snapshot)
+           :snapshot-id (str (:id snapshot)))
 
-      (l/dbg :hint "restoring snapshot"
-             :file-id (str file-id)
-             :label (:label snapshot)
-             :snapshot-id (str (:id snapshot)))
+    ;; If the file was already offloaded, on restring the snapshot
+    ;; we are going to replace the file data, so we need to touch
+    ;; the old referenced storage object and avoid possible leaks
+    (when (feat.fdata/offloaded? file)
+      (sto/touch-object! storage (:data-ref-id file)))
 
-      ;; If the file was already offloaded, on restring the snapshot
-      ;; we are going to replace the file data, so we need to touch
-      ;; the old referenced storage object and avoid possible leaks
-      (when (feat.fdata/offloaded? file)
-        (sto/touch-object! storage (:data-ref-id file)))
+    (db/update! conn :file
+                {:data (:data snapshot)
+                 :revn (inc (:revn file))
+                 :vern vern
+                 :version (:version snapshot)
+                 :data-backend nil
+                 :data-ref-id nil
+                 :has-media-trimmed false
+                 :features (:features snapshot)}
+                {:id file-id})
 
-      (db/update! conn :file
-                  {:data (:data snapshot)
-                   :revn (inc (:revn file))
-                   :vern vern
-                   :version (:version snapshot)
-                   :data-backend nil
-                   :data-ref-id nil
-                   :has-media-trimmed false
-                   :features (:features snapshot)}
-                  {:id file-id})
+    ;; clean object thumbnails
+    (let [sql (str "update file_tagged_object_thumbnail "
+                   "   set deleted_at = now() "
+                   " where file_id=? returning media_id")
+          res (db/exec! conn [sql file-id])]
+      (doseq [media-id (into #{} (keep :media-id) res)]
+        (sto/touch-object! storage media-id)))
 
-      ;; clean object thumbnails
-      (let [sql (str "update file_tagged_object_thumbnail "
-                     "   set deleted_at = now() "
-                     " where file_id=? returning media_id")
-            res (db/exec! conn [sql file-id])]
-        (doseq [media-id (into #{} (keep :media-id) res)]
-          (sto/touch-object! storage media-id)))
+    ;; clean file thumbnails
+    (let [sql (str "update file_thumbnail "
+                   "   set deleted_at = now() "
+                   " where file_id=? returning media_id")
+          res (db/exec! conn [sql file-id])]
+      (doseq [media-id (into #{} (keep :media-id) res)]
+        (sto/touch-object! storage media-id)))
 
-      ;; clean file thumbnails
-      (let [sql (str "update file_thumbnail "
-                     "   set deleted_at = now() "
-                     " where file_id=? returning media_id")
-            res (db/exec! conn [sql file-id])]
-        (doseq [media-id (into #{} (keep :media-id) res)]
-          (sto/touch-object! storage media-id)))
-
-      ;; Send to the clients a notification to reload the file
-      (mbus/pub! msgbus
-                 :topic (:id file)
-                 :message {:type :file-restore
-                           :file-id (:id file)
-                           :vern vern})
-      {:id (:id snapshot)
-       :label (:label snapshot)})))
+    ;; Send to the clients a notification to reload the file
+    (mbus/pub! msgbus
+               :topic (:id file)
+               :message {:type :file-restore
+                         :file-id (:id file)
+                         :vern vern})
+    {:id (:id snapshot)
+     :label (:label snapshot)}))
 
 (def ^:private schema:restore-file-snapshot
   [:map {:title "restore-file-snapshot"}
