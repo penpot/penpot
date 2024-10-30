@@ -16,6 +16,7 @@
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.util.color :as uc]
+   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
@@ -92,7 +93,9 @@
         (mf/use-callback
          (mf/deps max-offset)
          (fn [event]
-           (let [delta (+ (.. event -nativeEvent -deltaY) (.. event -nativeEvent -deltaX))]
+           (let [event (dom/event->native-event event)
+                 delta (+ (.. ^js event -deltaY)
+                          (.. ^js event -deltaX))]
              (if (pos? delta)
                (on-right-arrow-click event)
                (on-left-arrow-click event)))))]

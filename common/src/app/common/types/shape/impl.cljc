@@ -10,31 +10,30 @@
    #?(:cljs [app.common.data.macros :as dm])
    #?(:cljs [app.common.geom.rect :as grc])
    #?(:cljs [cuerdas.core :as str])
+   [app.common.geom.matrix :as cgm]
    [app.common.record :as cr]
    [app.common.transit :as t]
    [clojure.core :as c]))
 
-(def enabled-wasm-ready-shape false)
-
-#?(:cljs
-   (do
-     (def ArrayBuffer js/ArrayBuffer)
-     (def Float32Array js/Float32Array)))
+(defonce ^:dynamic *wasm-sync* false)
+(defonce enabled-wasm-ready-shape false)
+(defonce wasm-create-shape (constantly nil))
+(defonce wasm-use-shape (constantly nil))
+(defonce wasm-set-shape-selrect (constantly nil))
+(defonce wasm-set-shape-transform (constantly nil))
+(defonce wasm-set-shape-rotation (constantly nil))
 
 (cr/defrecord Shape [id name type x y width height rotation selrect points
                      transform transform-inverse parent-id frame-id flip-x flip-y])
 
-(declare ^:private clone-f32-array)
 (declare ^:private impl-assoc)
 (declare ^:private impl-conj)
 (declare ^:private impl-dissoc)
-(declare ^:private read-selrect)
-(declare ^:private write-selrect)
 
 ;; TODO: implement lazy MapEntry
 
 #?(:cljs
-   (deftype ShapeWithBuffer [buffer delegate]
+   (deftype ShapeProxy [delegate]
      Object
      (toString [coll]
        (str "{" (str/join ", " (for [[k v] coll] (str k " " v))) "}"))
@@ -42,14 +41,9 @@
      (equiv [this other]
        (-equiv this other))
 
-       ;; ICloneable
-       ;; (-clone [_]
-       ;;   (let [bf32 (clone-float32-array buffer)]
-       ;;     (ShapeWithBuffer. bf32 delegate)))
-
      IWithMeta
      (-with-meta [_ meta]
-       (ShapeWithBuffer. buffer (with-meta delegate meta)))
+       (ShapeProxy. (with-meta delegate meta)))
 
      IMeta
      (-meta [_] (meta delegate))
@@ -68,9 +62,8 @@
      ISequential
 
      ISeqable
-     (-seq [coll]
-       (cons (find coll :selrect)
-             (seq delegate)))
+     (-seq [_]
+       (c/-seq delegate))
 
      ICounted
      (-count [_]
@@ -81,23 +74,18 @@
        (-lookup coll k nil))
 
      (-lookup [_ k not-found]
-       (if (= k :selrect)
-         (read-selrect buffer)
-         (c/-lookup delegate k not-found)))
+       (c/-lookup delegate k not-found))
 
      IFind
      (-find [_ k]
-       (if (= k :selrect)
-         (c/MapEntry. k (read-selrect buffer) nil) ; Replace with lazy MapEntry
-         (c/-find delegate k)))
+       (c/-find delegate k))
 
      IAssociative
      (-assoc [coll k v]
        (impl-assoc coll k v))
 
      (-contains-key? [_ k]
-       (or (= k :selrect)
-           (contains? delegate k)))
+       (contains? delegate k))
 
      IMap
      (-dissoc [coll k]
@@ -118,64 +106,34 @@
   [o]
   #?(:clj (instance? Shape o)
      :cljs (or (instance? Shape o)
-               (instance? ShapeWithBuffer o))))
+               (instance? ShapeProxy o))))
 
 ;; --- SHAPE IMPL
 
 #?(:cljs
-   (defn- clone-f32-array
-     [^Float32Array src]
-     (let [copy (new Float32Array (.-length src))]
-       (.set copy src)
-       copy)))
-
-#?(:cljs
-   (defn- write-selrect
-     "Write the selrect into the buffer"
-     [data selrect]
-     (assert (instance? Float32Array data) "expected instance of float32array")
-
-     (aset data 0 (dm/get-prop selrect :x1))
-     (aset data 1 (dm/get-prop selrect :y1))
-     (aset data 2 (dm/get-prop selrect :x2))
-     (aset data 3 (dm/get-prop selrect :y2))))
-
-#?(:cljs
-   (defn- read-selrect
-     "Read selrect from internal buffer"
-     [^Float32Array buffer]
-     (let [x1 (aget buffer 0)
-           y1 (aget buffer 1)
-           x2 (aget buffer 2)
-           y2 (aget buffer 3)]
-       (grc/make-rect x1 y1
-                      (- x2 x1)
-                      (- y2 y1)))))
-
-#?(:cljs
    (defn- impl-assoc
      [coll k v]
-     (if (= k :selrect)
-       (let [buffer (clone-f32-array (.-buffer coll))]
-         (write-selrect buffer v)
-         (ShapeWithBuffer. buffer (.-delegate coll)))
-
-       (let [delegate  (.-delegate coll)
-             delegate' (assoc delegate k v)]
-         (if (identical? delegate' delegate)
-           coll
-           (let [buffer (clone-f32-array (.-buffer coll))]
-             (ShapeWithBuffer. buffer delegate')))))))
+     (when *wasm-sync*
+       (wasm-use-shape (:id coll))
+       (case k
+         :selrect (wasm-set-shape-selrect v)
+         :rotation (wasm-set-shape-rotation v)
+         :transform (wasm-set-shape-transform v)
+         nil))
+     (let [delegate  (.-delegate ^ShapeProxy coll)
+           delegate' (assoc delegate k v)]
+       (if (identical? delegate' delegate)
+         coll
+         (ShapeProxy. delegate')))))
 
 #?(:cljs
    (defn- impl-dissoc
      [coll k]
-     (let [delegate  (.-delegate coll)
+     (let [delegate  (.-delegate ^ShapeProxy coll)
            delegate' (dissoc delegate k)]
        (if (identical? delegate delegate')
          coll
-         (let [buffer (clone-f32-array (.-buffer coll))]
-           (ShapeWithBuffer. buffer delegate'))))))
+         (ShapeProxy. delegate')))))
 
 #?(:cljs
    (defn- impl-conj
@@ -196,10 +154,7 @@
   [attrs]
   #?(:cljs
      (if enabled-wasm-ready-shape
-       (let [selrect (:selrect attrs)
-             buffer  (new Float32Array 4)]
-         (write-selrect buffer selrect)
-         (ShapeWithBuffer. buffer (dissoc attrs :selrect)))
+       (ShapeProxy. attrs)
        (map->Shape attrs))
 
      :clj (map->Shape attrs)))
@@ -215,7 +170,7 @@
 #?(:cljs
    (t/add-handlers!
     {:id "shape"
-     :class ShapeWithBuffer
+     :class ShapeProxy
      :wfn #(into {} %)
      :rfn create-shape}))
 

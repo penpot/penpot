@@ -756,9 +756,16 @@
 
     (trigger-download-uri filename mtype uri)))
 
-(defn left-mouse? [bevent]
-  (let [event  (.-nativeEvent ^js bevent)]
+(defn left-mouse?
+  [bevent]
+  (let [event (.-nativeEvent ^js bevent)]
     (= 1 (.-which event))))
+
+(defn middle-mouse?
+  [bevent]
+  (let [event (.-nativeEvent ^js bevent)]
+    (= 2 (.-which event))))
+
 
 ;; Warning: need to protect against reverse tabnabbing attack
 ;; https://www.comparitech.com/blog/information-security/reverse-tabnabbing/

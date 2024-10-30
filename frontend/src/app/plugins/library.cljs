@@ -30,8 +30,7 @@
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
-   [potok.v2.core :as ptk]
-   [promesa.core :as p]))
+   [potok.v2.core :as ptk]))
 
 (declare lib-color-proxy)
 (declare lib-typography-proxy)
@@ -915,7 +914,7 @@
   (availableLibraries
     [_]
     (let [team-id (:current-team-id @st/state)]
-      (p/create
+      (js/Promise.
        (fn [resolve reject]
          (let [current-libs (into #{} (map first) (get @st/state :workspace-libraries))]
            (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
@@ -939,7 +938,7 @@
       (u/display-not-valid :connectLibrary "Plugin doesn't have 'library:write' permission")
 
       :else
-      (p/create
+      (js/Promise.
        (fn [resolve reject]
          (cond
            (not (string? library-id))

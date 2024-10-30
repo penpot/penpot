@@ -280,7 +280,7 @@
          (fn [event]
            (st/emit! (dd/hide-file-menu))
            (when can-edit
-             (let [offset          (dom/get-offset-position (.-nativeEvent event))
+             (let [offset          (dom/get-offset-position (dom/event->native-event event))
 
                    select-current? (not (contains? selected-files (:id file)))
 

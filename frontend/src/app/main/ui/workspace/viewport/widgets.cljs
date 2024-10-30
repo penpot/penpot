@@ -110,7 +110,7 @@
         (mf/use-fn
          (mf/deps frame workspace-read-only?)
          (fn [bevent]
-           (let [event    (.-nativeEvent bevent)
+           (let [event    (dom/event->native-event bevent)
                  position (dom/get-client-position event)]
              (dom/prevent-default event)
              (dom/stop-propagation event)

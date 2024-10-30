@@ -21,8 +21,7 @@
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
-   [beicon.v2.core :as rx]
-   [promesa.core :as p]))
+   [beicon.v2.core :as rx]))
 
 (deftype FileProxy [$plugin $id]
   Object

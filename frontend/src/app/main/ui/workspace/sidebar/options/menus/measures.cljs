@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.shapes :as cls]
+   [app.common.types.shape.impl :as shape.impl]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
    [app.main.constants :refer [size-presets]]
@@ -209,8 +210,9 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value attr]
-           (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                     (udw/update-dimensions ids attr value))))
+           (binding [shape.impl/*wasm-sync* true]
+             (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                       (udw/update-dimensions ids attr value)))))
 
         on-proportion-lock-change
         (mf/use-fn
@@ -226,7 +228,8 @@
          (mf/deps ids)
          (fn [shape' frame' value attr]
            (let [to (+ value (attr frame'))]
-             (st/emit! (udw/update-position (:id shape') {attr to})))))
+             (binding [shape.impl/*wasm-sync* true]
+               (st/emit! (udw/update-position (:id shape') {attr to}))))))
 
         on-position-change
         (mf/use-fn
@@ -241,8 +244,9 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value]
-           (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                     (udw/increase-rotation ids value))))
+           (binding [shape.impl/*wasm-sync* true]
+             (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                       (udw/increase-rotation ids value)))))
 
         ;; RADIUS
 

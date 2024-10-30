@@ -24,7 +24,7 @@
 
     <link rel="icon" href="images/favicon.png" />
     {{# manifest}}
-    <script>window.penpotWorkerURI="{{& worker}}"</script>
+    <script>window.penpotWorkerURI="{{& worker_main}}"</script>
     <script defer src="{{& config}}"></script>
     <script defer src="{{& polyfills}}"></script>
     {{/manifest}}
@@ -46,6 +46,7 @@
     <section id="modal"></section>
 
     {{# manifest}}
+    <script defer src="js/libs.js?ts={{& ts}}"></script>
     <script defer src="{{& shared}}"></script>
     <script defer src="{{& main}}"></script>
     {{/manifest}}

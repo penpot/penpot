@@ -177,14 +177,28 @@ function build-exporter-bundle {
 
     rm -rf $bundle_dir;
     mv ./exporter/target $bundle_dir;
-
     echo $version > $bundle_dir/version.txt
     put-license-file $bundle_dir;
-
     echo ">> bundle exporter end";
 }
 
-function build-frontend-docker-images {
+function build-docs-bundle {
+    echo ">> bundle docs start";
+
+    mkdir -p ./bundles
+    local version=$(print-current-version);
+    local bundle_dir="./bundles/docs";
+
+    build "docs";
+
+    rm -rf $bundle_dir;
+    mv ./docs/_dist $bundle_dir;
+    echo $version > $bundle_dir/version.txt;
+    put-license-file $bundle_dir;
+    echo ">> bundle docs end";
+}
+
+function build-docker-images {
     rsync -avr --delete ./bundles/frontend/ ./docker/images/bundle-frontend/;
     pushd ./docker/images;
     docker build -t penpotapp/frontend:$CURRENT_BRANCH -t penpotapp/frontend:latest -f Dockerfile.frontend .;
@@ -224,11 +238,17 @@ function usage {
     echo "- build-frontend-bundle            Build frontend bundle"
     echo "- build-backend-bundle             Build backend bundle."
     echo "- build-exporter-bundle            Build exporter bundle."
+<<<<<<< HEAD
     echo ""
     echo "- build-docker-images              Build all docker images (frontend, backend and exporter)."
     echo "- build-frontend-docker-images     Build frontend docker images."
     echo "- build-backend-docker-images      Build backend docker images."
     echo "- build-exporter-docker-images     Build exporter docker images."
+=======
+    echo "- build-docs-bundle                Build docs bundle."
+    echo ""
+    echo "- build-docker-images              Build all docker images (frontend, backend and exporter)."
+>>>>>>> 977a2090f (:tada: add command to build docs bundle)
     echo ""
     echo "- version                          Show penpot's version."
 }
@@ -291,6 +311,10 @@ case $1 in
 
     build-exporter-bundle)
         build-exporter-bundle;
+        ;;
+
+    build-docs-bundle)
+        build-docs-bundle;
         ;;
 
     build-docker-images)

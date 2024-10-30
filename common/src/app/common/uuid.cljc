@@ -76,6 +76,11 @@
      [id]
      (impl/short-v8 (dm/str id))))
 
+#?(:cljs
+   (defn uuid->u32
+     [id]
+     (impl/get-u32 (dm/str id))))
+
 #?(:clj
    (defn hash-int
      [id]

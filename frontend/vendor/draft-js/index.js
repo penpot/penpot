@@ -5,10 +5,9 @@
  *
  * Copyright (c) KALEIDOS INC
  */
+import pkg from "draft-js";
 
-'use strict';
-
-import {
+export const {
   BlockMapBuilder,
   CharacterMetadata,
   CompositeDecorator,
@@ -16,9 +15,11 @@ import {
   Modifier,
   RichTextEditorUtil,
   SelectionState,
-} from "draft-js";
+  convertFromRaw,
+  convertToRaw
+} = pkg;
 
-import DraftPasteProcessor from 'draft-js/lib/DraftPasteProcessor';
+import DraftPasteProcessor from 'draft-js/lib/DraftPasteProcessor.js';
 import {Map, OrderedSet} from "immutable";
 
 function isDefined(v) {

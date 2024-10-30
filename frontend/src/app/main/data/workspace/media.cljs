@@ -6,7 +6,7 @@
 
 (ns app.main.data.workspace.media
   (:require
-   ["svgo" :as svgo]
+   ["@penpot/svgo$default" :as svgo]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]

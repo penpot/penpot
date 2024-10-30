@@ -959,9 +959,8 @@
         handle-pointer-down
         (mf/use-fn
          (fn [event]
-           (let [left-click? (= 1 (.-which (.-nativeEvent event)))]
-             (when left-click?
-               (dom/stop-propagation event)))))
+           (when (dom/left-mouse? event)
+             (dom/stop-propagation event))))
 
         handle-add-column
         (mf/use-fn
