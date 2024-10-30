@@ -111,8 +111,9 @@
         modifiers         (mf/deref refs/workspace-modifiers)
         text-modifiers    (mf/deref refs/workspace-text-modifier)
 
-        objects-modified  (mf/with-memo [base-objects text-modifiers modifiers]
-                            (apply-modifiers-to-selected selected base-objects text-modifiers modifiers))
+        ;; objects-modified  (mf/with-memo [base-objects text-modifiers modifiers]
+                            ;; (apply-modifiers-to-selected selected base-objects text-modifiers modifiers))
+        objects-modified base-objects
 
         selected-shapes   (keep (d/getf objects-modified) selected)
 

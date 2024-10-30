@@ -93,8 +93,8 @@ pub(crate) fn draw_all(state: &mut State) {
 
     for shape in shapes {
         let selrect = shape.transformed_selrect();
-
         let r = skia::Rect::new(selrect.x1, selrect.y1, selrect.x2, selrect.y2);
+
         render_rect(&mut state.surface, r, skia::Color::RED);
     }
 }

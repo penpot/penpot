@@ -12,6 +12,7 @@
    [app.common.types.shape.impl :as ctsi]
    [app.common.types.modifiers :as ctm]
     [app.common.geom.shapes :as gsh]
+   [app.common.geom.matrix :as cgm]
    [app.config :as cf]
    [promesa.core :as p]))
 
@@ -124,9 +125,12 @@
   [objects modifiers]
   (update-vals objects (fn [obj]
     (let [id (:id obj)]
-      (when (contains? modifiers id)
+      (if (contains? modifiers id)
+        ;; copy new transform matrix to the shape buffer
         (let [shape-modifiers (dm/get-in modifiers [id :modifiers])
               transform (ctm/modifiers->transform shape-modifiers)
               buffer (.-buffer obj)]
-          (ctsi/write-transform buffer transform)))
+          (ctsi/write-transform buffer transform))
+          ;; reset transform matrix in the shape buffer
+          (ctsi/write-transform (.-buffer obj) (cgm/matrix)))
       obj))))
