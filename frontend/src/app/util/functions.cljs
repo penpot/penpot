@@ -25,5 +25,7 @@
       lodash-debounce))
 
 (defn debounce
-  [f timeout]
-  (ext-debounce f timeout #{:leading false :trailing true}))
+  ([f]
+   (debounce f 0))
+  ([f timeout]
+   (ext-debounce f timeout #{:leading false :trailing true})))
