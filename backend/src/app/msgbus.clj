@@ -99,8 +99,9 @@
     nil))
 
 (defn pub!
-  [{::keys [pub-ch]} & {:as params}]
-  (sp/put! pub-ch params))
+  [{::keys [pub-ch]} & {:keys [topic] :as params}]
+  (let [params (update params :message assoc :topic topic)]
+    (sp/put! pub-ch params)))
 
 (defn purge!
   [{:keys [::state ::wrk/executor] :as msgbus} chans]
@@ -229,7 +230,6 @@
           (run! sp/close! (keys chans)))
 
         (l/debug :hint "io-loop thread terminated")))))
-
 
 (defn- redis-pub!
   "Publish a message to the redis server. Asynchronous operation,

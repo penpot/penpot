@@ -112,7 +112,6 @@
         fsub (::file-subscription @state)
         tsub (::team-subscription @state)
         msg  {:type :disconnect
-              :subs-id profile-id
               :profile-id profile-id
               :session-id session-id}]
 
@@ -137,9 +136,7 @@
   (l/trace :fn "handle-message" :event "subscribe-team" :team-id team-id :conn-id id)
   (let [prev-subs (get @state ::team-subscription)
         channel   (sp/chan :buf (sp/dropping-buffer 64)
-                           :xf  (comp
-                                 (remove #(= (:session-id %) session-id))
-                                 (map #(assoc % :subs-id team-id))))]
+                           :xf  (remove #(= (:session-id %) session-id)))]
 
     (sp/pipe channel output-ch false)
     (mbus/sub! msgbus :topic team-id :chan channel)
@@ -158,8 +155,7 @@
   (l/trace :fn "handle-message" :event "subscribe-file" :file-id file-id :conn-id id)
   (let [psub (::file-subscription @state)
         fch  (sp/chan :buf (sp/dropping-buffer 64)
-                      :xf  (comp (remove #(= (:session-id %) session-id))
-                                 (map #(assoc % :subs-id file-id))))]
+                      :xf  (remove #(= (:session-id %) session-id)))]
 
     (let [subs {:file-id file-id :channel fch :topic file-id}]
       (swap! state assoc ::file-subscription subs))
@@ -190,7 +186,6 @@
     ;; Notifify the rest of participants of the new connection.
     (let [message {:type :join-file
                    :file-id file-id
-                   :subs-id file-id
                    :session-id session-id
                    :profile-id profile-id}]
       (mbus/pub! msgbus :topic file-id :message message))))
