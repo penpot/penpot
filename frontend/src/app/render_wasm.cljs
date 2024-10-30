@@ -125,30 +125,8 @@
   (update-vals objects (fn [obj]
     (let [id (:id obj)]
       (when (contains? modifiers id)
-        (let [shape-modifiers (get modifiers id)
-              _ (js/console.log (clj->js shape-modifiers))
+        (let [shape-modifiers (dm/get-in modifiers [id :modifiers])
               transform (ctm/modifiers->transform shape-modifiers)
               buffer (ctsi/clone-f32-array (.-buffer obj))]
-              (ctsi/write-transform buffer transform)
-              (js/console.log (clj->js transform))
-              (js/console.log (clj->js (.-buffer obj)))))
+          (ctsi/write-transform buffer transform)))
       obj))))
-  ;; (reduce
-  ;;   (fn [acc [id shape]]
-  ;;     (js/console.log id (clj->js shape))
-  ;;     (update
-  ;;       acc
-  ;;       id
-  ;;       (fn [shape]
-  ;;         (js/console.log shape)
-  ;;         (when (contains? modifiers (:id shape))
-  ;;           (let [id (:id shape)
-  ;;                 shape-modifiers (get modifiers id)
-  ;;                 transform (ctm/modifiers->transform shape-modifiers)]
-  ;;                 (js/console.log (clj->js shape))
-  ;;                 (ctsi/write-transform shape transform)
-  ;;                 (js/console.log (clj->js shape))
-  ;;                 ))
-  ;;         shape)))
-  ;;   {}
-  ;;   objects))

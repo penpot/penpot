@@ -598,7 +598,6 @@
 (defn transform-move!
   "Transforms a matrix by the translation modifier"
   [matrix modifier]
-  (println "waaagh!")
   (-> (dm/get-prop modifier :vector)
       (gmt/translate-matrix)
       (gmt/multiply! matrix)))
