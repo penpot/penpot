@@ -160,7 +160,6 @@
      (assert (instance? Float32Array data) "expected instance of float32array")
      (let [offset 4
            matrix (if (nil? transform) (cgm/matrix) transform)]
-       (println "write-transform matrix" (dm/get-prop matrix :e) (dm/get-prop matrix :f))
        (aset data (+ offset 0) (dm/get-prop matrix :a))
        (aset data (+ offset 1) (dm/get-prop matrix :b))
        (aset data (+ offset 2) (dm/get-prop matrix :c))
