@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-10-12 16:16+0000\n"
+"PO-Revision-Date: 2024-10-30 11:07+0000\n"
 "Last-Translator: Linerly <linerly@proton.me>\n"
 "Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
 "frontend/id/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.8-dev\n"
+"X-Generator: Weblate 5.8.2-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:132, src/app/main/ui/static.cljs:139, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -5964,3 +5964,121 @@ msgstr "Nama Anda"
 #: src/app/main/ui/static.cljs:56
 msgid "not-found.made-with-love"
 msgstr "Dibuat dengan CINTA dan Sumber Terbuka"
+
+#: src/app/main/ui/onboarding/questions.cljs:117
+msgid "onboarding.questions.step1.subtitle"
+msgstr ""
+"Beri tahu kami sedikit tentang Anda untuk membantu kami membuat Penpot "
+"berfungsi bagi Anda. Jawaban Anda akan membantu kami memprioritaskan fitur "
+"baru dan mengarahkan Anda ke arah yang tepat untuk memulai."
+
+#: src/app/main/ui/onboarding/questions.cljs:94
+msgid "onboarding.questions.reasons.alternative"
+msgstr "Mencari alternatif Figma, XD, dll"
+
+#: src/app/main/ui/onboarding/questions.cljs:196
+msgid "onboarding.questions.step2.title"
+msgstr "Alat manakah yang paling sering Anda gunakan?"
+
+#: src/app/main/ui/auth/register.cljs:247
+msgid "auth.register-account-tagline"
+msgstr ""
+"Beri tahu kami panggilan apa yang harus kami berikan kepada Anda di dasbor "
+"dan dalam surel."
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-not-all-whitespace"
+msgstr "Nama harus berisi karakter selain spasi."
+
+#: src/app/main/ui/static.cljs:121
+msgid "not-found.login.free"
+msgstr ""
+"Penpkt adalah alat bebas dan bersumber terbuka untuk kolaborasi dengan "
+"Desain dan Kode"
+
+#: src/app/main/ui/auth/recovery_request.cljs:116
+msgid "not-found.login.sent-recovery-check"
+msgstr "Periksa surel Anda dan klik tautan untuk membuat kata sandi baru."
+
+#: src/app/main/ui/static.cljs:250
+msgid "not-found.no-permission.already-requested.file"
+msgstr "Anda sudah meminta akses ke berkas ini."
+
+#: src/app/main/ui/static.cljs:250
+msgid "not-found.no-permission.already-requested.or-others.file"
+msgstr ""
+"Anda sudah meminta akses ke berkas ini atau berkas lain atau proyek dari tim "
+"ini."
+
+#: src/app/main/ui/static.cljs:253
+msgid "not-found.no-permission.already-requested.project"
+msgstr "Anda sudah meminta akses ke proyek ini."
+
+#: src/app/main/ui/static.cljs:256
+msgid "not-found.no-permission.done.remember"
+msgstr "Perlu diingat, jika pemilik mengizinkan, Anda akan diundang ke tim."
+
+#: src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.if-approves"
+msgstr "Jika pemilik mengizinkan, Anda akan diundang ke tim."
+
+#: src/app/main/ui/static.cljs:259
+msgid "not-found.no-permission.you-can-ask.file"
+msgstr "Untuk mengakses berkas ini, Anda dapat menanyakan kepada pemilik tim."
+
+#: src/app/main/data/common.cljs:85
+msgid "notifications.by-code.maintenance"
+msgstr ""
+"Jeda pemeliharaan: kami tidak akan tersedia selama pemeliharaan yang "
+"sebentar dalam 5 menit lagi."
+
+#: src/app/main/ui/onboarding/questions.cljs:91
+msgid "onboarding.questions.reasons.fit"
+msgstr "Melihat apakah Penpot baik untuk tim saya"
+
+#: src/app/main/ui/workspace/plugins.cljs:274
+msgid "workspace.plugins.permissions.disclaimer"
+msgstr "Dicatat bahwa plugin ini telah dibuat oleh pihak eksternal."
+
+#: src/app/main/ui/workspace/plugins.cljs:245
+msgid "workspace.plugins.permissions.content-write"
+msgstr "Membaca dan mengubah konten berkas yang dapat diakses pengguna."
+
+#: src/app/main/ui/workspace/plugins.cljs:251
+msgid "workspace.plugins.permissions.content-read"
+msgstr "Membaca konten berkas yang dapat diakses pengguna."
+
+#: src/app/main/ui/workspace/plugins.cljs:258
+msgid "workspace.plugins.permissions.user-read"
+msgstr "Membaca informasi profil pengguna sasaat ini."
+
+#: src/app/main/ui/workspace/plugins.cljs:265
+msgid "workspace.plugins.permissions.library-write"
+msgstr "Membaca dan mengubah pustaka dan aset Anda."
+
+#: src/app/main/ui/auth/register.cljs:156
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr "Saya menyetujui [persyaratan layanan](%s) dan [kebijakan privasi](%s)."
+
+#: src/app/main/ui/auth/register.cljs:123
+msgid "auth.register-tagline"
+msgstr ""
+"Dengan akun Penpot gratis, Anda dapat membuat tim tanpa batas dan "
+"berkolaborasi dengan desainer dan pengembang lain pada proyek sebanyak yang "
+"Anda inginkan. "
+
+#: src/app/main/ui/static.cljs:253
+msgid "not-found.no-permission.already-requested.or-others.project"
+msgstr ""
+"Anda sudah meminta akses ke proyek ini atau proyek lain atau berkas dari tim "
+"ini."
+
+#: src/app/main/ui/workspace/plugins.cljs:175
+msgid "workspace.plugins.error.url"
+msgstr "Plugin tidak ada atau URL tidak benar."
+
+#: src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.you-can-ask.project"
+msgstr "Untuk mengakses proyek ini, Anda dapat menanyakan kepada pemilik tim."
