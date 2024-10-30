@@ -1,3 +1,22 @@
+--- a/lib/utils/index.js
++++ b/lib/utils/index.js
+@@ -18,7 +18,6 @@
+ import { outputReferencesTransformed } from './references/outputReferencesTransformed.js';
+ import flattenTokens from './flattenTokens.js';
+ import { typeDtcgDelegate } from './typeDtcgDelegate.js';
+-import { convertToDTCG, convertJSONToDTCG, convertZIPToDTCG } from './convertToDTCG.js';
+
+ // Public style-dictionary/utils API
+ export {
+@@ -29,8 +28,5 @@
+   outputReferencesTransformed,
+   flattenTokens,
+   typeDtcgDelegate,
+-  convertToDTCG,
+-  convertJSONToDTCG,
+-  convertZIPToDTCG,
+ };
+ export * from '../common/formatHelpers/index.js';
 diff --git a/lib/StyleDictionary.js b/lib/StyleDictionary.js
 index 150e81bdac15e505b74d7f1453c7b7c543fc2b35..c5c695cfb04abc835e457027291b1522bdbdb795 100644
 --- a/lib/StyleDictionary.js
