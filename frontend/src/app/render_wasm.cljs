@@ -9,7 +9,9 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
-   [app.common.types.shape.impl]
+   [app.common.types.shape.impl :as ctsi]
+   [app.common.types.modifiers :as ctm]
+    [app.common.geom.shapes :as gsh]
    [app.config :as cf]
    [promesa.core :as p]))
 
@@ -28,7 +30,7 @@
    (take 2048)))
 
 ;; Size in number of f32 values that represents the shape selrect (
-(def rect-size 4)
+(def rect-size (+ 4 6))
 
 (defn set-objects
   [objects]
@@ -117,3 +119,36 @@
        (p/merr (fn [cause]
                  (js/console.error cause)
                  (p/resolved false)))))
+
+(defn apply-modifiers
+  [objects modifiers]
+  (update-vals objects (fn [obj]
+    (let [id (:id obj)]
+      (when (contains? modifiers id)
+        (let [shape-modifiers (get modifiers id)
+              _ (js/console.log (clj->js shape-modifiers))
+              transform (ctm/modifiers->transform shape-modifiers)
+              buffer (ctsi/clone-f32-array (.-buffer obj))]
+              (ctsi/write-transform buffer transform)
+              (js/console.log (clj->js transform))
+              (js/console.log (clj->js (.-buffer obj)))))
+      obj))))
+  ;; (reduce
+  ;;   (fn [acc [id shape]]
+  ;;     (js/console.log id (clj->js shape))
+  ;;     (update
+  ;;       acc
+  ;;       id
+  ;;       (fn [shape]
+  ;;         (js/console.log shape)
+  ;;         (when (contains? modifiers (:id shape))
+  ;;           (let [id (:id shape)
+  ;;                 shape-modifiers (get modifiers id)
+  ;;                 transform (ctm/modifiers->transform shape-modifiers)]
+  ;;                 (js/console.log (clj->js shape))
+  ;;                 (ctsi/write-transform shape transform)
+  ;;                 (js/console.log (clj->js shape))
+  ;;                 ))
+  ;;         shape)))
+  ;;   {}
+  ;;   objects))

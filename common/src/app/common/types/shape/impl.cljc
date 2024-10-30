@@ -10,6 +10,7 @@
    #?(:cljs [app.common.data.macros :as dm])
    #?(:cljs [app.common.geom.rect :as grc])
    #?(:cljs [cuerdas.core :as str])
+   [app.common.geom.matrix :as cgm]
    [app.common.record :as cr]
    [app.common.transit :as t]
    [clojure.core :as c]))
@@ -24,7 +25,7 @@
 (cr/defrecord Shape [id name type x y width height rotation selrect points
                      transform transform-inverse parent-id frame-id flip-x flip-y])
 
-(declare ^:private clone-f32-array)
+(declare clone-f32-array)
 (declare ^:private impl-assoc)
 (declare ^:private impl-conj)
 (declare ^:private impl-dissoc)
@@ -153,6 +154,33 @@
                       (- y2 y1)))))
 
 #?(:cljs
+   (defn write-transform
+     "Write the transform (or identity if nil) into the buffer"
+     [data transform]
+     (assert (instance? Float32Array data) "expected instance of float32array")
+     (let [offset 4
+           matrix (if (nil? transform) (cgm/matrix) transform)]
+      (aset data (+ offset 0) (dm/get-prop matrix :a))
+      (aset data (+ offset 1) (dm/get-prop matrix :b))
+      (aset data (+ offset 2) (dm/get-prop matrix :c))
+      (aset data (+ offset 3) (dm/get-prop matrix :d))
+      (aset data (+ offset 4) (dm/get-prop matrix :e))
+      (aset data (+ offset 5) (dm/get-prop matrix :f)))))
+
+#?(:cljs
+   (defn read-transform
+     "Read transform from internal buffer"
+     [^Float32Array buffer]
+     (let [offset 4
+           a (aget buffer (+ offset 0))
+           b (aget buffer (+ offset 1))
+           c (aget buffer (+ offset 2))
+           d (aget buffer (+ offset 3))
+           e (aget buffer (+ offset 4))
+           f (aget buffer (+ offset 5))]
+      (cgm/matrix a b c d e f))))
+
+#?(:cljs
    (defn- impl-assoc
      [coll k v]
      (if (= k :selrect)
@@ -197,9 +225,12 @@
   #?(:cljs
      (if enabled-wasm-ready-shape
        (let [selrect (:selrect attrs)
-             buffer  (new Float32Array 4)]
+             transform (:transform attrs)
+             buffer-size (+ 4 6) ;; 4 f32 for selrect + 6 f32 for transform matrix
+             buffer  (new Float32Array buffer-size)]
          (write-selrect buffer selrect)
-         (ShapeWithBuffer. buffer (dissoc attrs :selrect)))
+         (write-transform buffer transform)
+         (ShapeWithBuffer. buffer (dissoc attrs :selrect :tranform)))
        (map->Shape attrs))
 
      :clj (map->Shape attrs)))
