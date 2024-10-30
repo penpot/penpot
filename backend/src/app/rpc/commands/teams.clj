@@ -653,7 +653,7 @@
     (mbus/pub! msgbus
                :topic member-id
                :message {:type :team-role-change
-                         :subs-id member-id
+                         :topic member-id
                          :team-id team-id
                          :role role})
 
@@ -713,7 +713,6 @@
                  :topic member-id
                  :message {:type :team-membership-change
                            :change :removed
-                           :subs-id member-id
                            :team-id team-id
                            :team-name (:name team)})
 

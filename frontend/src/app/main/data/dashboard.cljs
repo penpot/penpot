@@ -80,9 +80,9 @@
               (->> stream
                    (rx/filter (ptk/type? ::dws/message))
                    (rx/map deref)
-                   (rx/filter (fn [{:keys [subs-id] :as msg}]
-                                (or (= subs-id uuid/zero)
-                                    (= subs-id profile-id))))
+                   (rx/filter (fn [{:keys [topic] :as msg}]
+                                (or (= topic uuid/zero)
+                                    (= topic profile-id))))
                    (rx/map process-message))
 
               ;; Once the teams are fecthed, initialize features related

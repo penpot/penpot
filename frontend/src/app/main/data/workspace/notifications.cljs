@@ -65,15 +65,16 @@
                              (->> (rx/from initmsg)
                                   (rx/map dws/send))
 
+
                              ;; Subscribe to notifications of the subscription
                              (->> stream
                                   (rx/filter (ptk/type? ::dws/message))
                                   (rx/map deref)
-                                  (rx/filter (fn [{:keys [subs-id] :as msg}]
-                                               (or (= subs-id uuid/zero)
-                                                   (= subs-id profile-id)
-                                                   (= subs-id team-id)
-                                                   (= subs-id file-id))))
+                                  (rx/filter (fn [{:keys [topic] :as msg}]
+                                               (or (= topic uuid/zero)
+                                                   (= topic profile-id)
+                                                   (= topic team-id)
+                                                   (= topic file-id))))
                                   (rx/map process-message))
 
                              ;; On reconnect, send again the subscription messages
