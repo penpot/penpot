@@ -8,10 +8,7 @@
   {:target :browser
    :output-dir "resources/public/js/"
    :asset-path "/js"
-   :devtools {:preloads [preload devtools.preload]
-              :log false
-              :browser-inject :main
-              :watch-dir "resources/public"
+   :devtools {:watch-dir "resources/public"
               :reload-strategy :full}
    :build-options {:manifest-name "manifest.json"}
    :module-loader true
@@ -73,8 +70,7 @@
    :compiler-options
    {:output-feature-set :es2020
     :output-wrapper false
-    :warnings {:fn-deprecated false}
-    :closure-defines {shadow.debug.LogLevel :warning}}
+    :warnings {:fn-deprecated false}}
 
    :release
    {:closure-defines {goog.DEBUG false
