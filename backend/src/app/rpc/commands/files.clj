@@ -356,7 +356,7 @@
           f.name,
           f.revn,
           f.is_shared,
-          ft.media_id
+          ft.media_id AS thumbnail_id
      from file as f
      left join file_thumbnail as ft on (ft.file_id = f.id
                                         and ft.revn = f.revn
@@ -367,13 +367,7 @@
 
 (defn get-project-files
   [conn project-id]
-  (->> (db/exec! conn [sql:project-files project-id])
-       (mapv (fn [row]
-               (if-let [media-id (:media-id row)]
-                 (-> row
-                     (dissoc :media-id)
-                     (assoc :thumbnail-uri (resolve-public-uri media-id)))
-                 (dissoc row :media-id))))))
+  (db/exec! conn [sql:project-files project-id]))
 
 (def schema:get-project-files
   [:map {:title "get-project-files"}
