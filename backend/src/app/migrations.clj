@@ -412,7 +412,16 @@
     :fn (mg/resource "app/migrations/sql/0129-mod-file-change-table.sql")}
 
    {:name "0130-mod-file-change-table"
-    :fn (mg/resource "app/migrations/sql/0130-mod-file-change-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0130-mod-file-change-table.sql")}
+
+   {:name "0131-mod-webhook-table"
+    :fn (mg/resource "app/migrations/sql/0131-mod-webhook-table.sql")}
+
+   {:name "0132-mod-file-change-table"
+    :fn (mg/resource "app/migrations/sql/0132-mod-file-change-table.sql")}
+
+   {:name "0133-mod-file-table"
+    :fn (mg/resource "app/migrations/sql/0133-mod-file-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

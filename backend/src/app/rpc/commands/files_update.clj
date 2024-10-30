@@ -60,6 +60,7 @@
    [:id ::sm/uuid]
    [:session-id ::sm/uuid]
    [:revn {:min 0} ::sm/int]
+   [:vern {:min 0} ::sm/int]
    [:features {:optional true} ::cfeat/features]
    [:changes {:optional true} [:vector ::cpc/change]]
    [:changes-with-metadata {:optional true}
@@ -156,6 +157,14 @@
 
                           tpoint   (dt/tpoint)]
 
+
+                      (when (not= (:vern params)
+                                  (:vern file))
+                        (ex/raise :type :validation
+                                  :code :vern-conflict
+                                  :hint "A different version has been restored for the file."
+                                  :context {:incoming-revn (:revn params)
+                                            :stored-revn (:revn file)}))
 
                       (when (> (:revn params)
                                (:revn file))
@@ -455,7 +464,7 @@
   "SELECT fch.id, fch.created_at
      FROM file_change AS fch
     WHERE fch.file_id = ?
-      AND fch.label LIKE 'internal/%'
+      AND fch.created_by = 'system'
     ORDER BY fch.created_at DESC
     LIMIT ?")
 
@@ -465,7 +474,7 @@
   "UPDATE file_change
       SET label = NULL
     WHERE file_id = ?
-      AND label LIKE 'internal/%'
+      AND created_by LIKE 'system'
       AND created_at < ?")
 
 (defn- delete-old-snapshots!
@@ -502,6 +511,7 @@
                          :file-id (:id file)
                          :session-id (:session-id params)
                          :revn (:revn file)
+                         :vern (:vern file)
                          :changes changes})
 
     (when (and (:is-shared file) (seq lchanges))

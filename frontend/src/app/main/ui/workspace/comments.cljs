@@ -16,6 +16,7 @@
    [app.main.ui.comments :as cmt]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -124,9 +125,10 @@
      [:div {:class (stl/css-case :comments-section-title true
                                  :viewer-title from-viewer)}
       [:span (tr "labels.comments")]
-      [:button {:class (stl/css :close-button)
-                :on-click close-section}
-       i/close]]
+      [:> icon-button* {:variant "ghost"
+                        :aria-label (tr "labels.close")
+                        :on-click close-section
+                        :icon "close"}]]
 
      [:button {:class (stl/css :mode-dropdown-wrapper)
                :on-click toggle-mode-selector}

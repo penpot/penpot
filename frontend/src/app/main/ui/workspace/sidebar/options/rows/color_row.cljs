@@ -19,6 +19,7 @@
    [app.main.ui.components.color-input :refer [color-input*]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
@@ -266,11 +267,13 @@
                              :max 100}]])]
 
      (when (some? on-remove)
-       [:button {:class (stl/css :remove-btn)
-                 :on-click on-remove} i/remove-icon])
+       [:> icon-button* {:variant "ghost"
+                         :aria-label (tr "settings.remove-color")
+                         :on-click on-remove
+                         :icon "remove"}])
      (when select-only
-       [:button {:class (stl/css :select-btn)
-                 :title (tr "settings.select-this-color")
-                 :on-click handle-select}
-        i/move])]))
+       [:> icon-button* {:variant "ghost"
+                         :aria-label (tr "settings.select-this-color")
+                         :on-click handle-select
+                         :icon "move"}])]))
 

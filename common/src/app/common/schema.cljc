@@ -29,8 +29,7 @@
 
 (defprotocol ILazySchema
   (-validate [_ o])
-  (-explain [_ o])
-  (-decode [_ o]))
+  (-explain [_ o]))
 
 (def default-options
   {:registry sr/default-registry})
@@ -194,11 +193,9 @@
 
 (defn humanize-explain
   "Returns a string representation of the explain data structure"
-  [{:keys [schema errors value]} & {:keys [length level]}]
+  [{:keys [errors value]} & {:keys [length level]}]
   (let [errors (mapv #(update % :schema form) errors)]
     (with-out-str
-      (println "Schema: ")
-      (println (pp/pprint-str (form schema) {:width 100 :level 15 :length 20}))
       (println "Errors:")
       (println (pp/pprint-str errors {:width 100 :level 15 :length 20}))
       (println "Value:")
@@ -273,7 +270,18 @@
     (fast-check! s type code hint value)))
 
 (defn register! [type s]
-  (let [s (if (map? s) (m/-simple-schema s) s)]
+  (let [s (if (map? s)
+            (cond
+              (= :set (:type s))
+              (m/-collection-schema s)
+
+              (= :vec (:type s))
+              (m/-collection-schema s)
+
+              :else
+              (m/-simple-schema s))
+            s)]
+
     (swap! sr/registry assoc type s)
     nil))
 
@@ -328,9 +336,7 @@
       (-validate [_ o]
         (@validator o))
       (-explain [_ o]
-        (@explainer o))
-      (-decode [_ o]
-        (@decoder o)))))
+        (@explainer o)))))
 
 ;; --- BUILTIN SCHEMAS
 
@@ -402,7 +408,7 @@
 
 ;; NOTE: this is general purpose set spec and should be used over the other
 
-(register! ::set
+(def type:set
   {:type :set
    :min 0
    :max 1
@@ -479,6 +485,7 @@
 
 
        {:pred pred
+        :empty #{}
         :type-properties
         {:title "set"
          :description "Set of Strings"
@@ -493,6 +500,7 @@
          ::oapi/items {:type "string"}
          ::oapi/unique-items true}}))})
 
+(register! ::set type:set)
 
 (register! ::vec
   {:type :vector
@@ -686,8 +694,8 @@
                   pred)
            pred (if (some? max)
                   (fn [v]
-                    (and (>= max v)
-                         (pred v)))
+                    (and (pred v)
+                         (>= max v)))
                   pred)]
 
        {:pred pred
@@ -724,8 +732,8 @@
                   pred)
            pred (if (some? max)
                   (fn [v]
-                    (and (>= max v)
-                         (pred v)))
+                    (and (pred v)
+                         (>= max v)))
                   pred)]
 
        {:pred pred
@@ -754,8 +762,8 @@
                   pred)
            pred (if (some? max)
                   (fn [v]
-                    (and (>= max v)
-                         (pred v)))
+                    (and (pred v)
+                         (>= max v)))
                   pred)
 
            gen  (sg/one-of

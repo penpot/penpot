@@ -753,7 +753,7 @@
             libraries  (wsh/get-libraries state)
 
             page-id    (:current-page-id state)
-            container  (cfh/get-container file :page page-id)
+            container  (ctn/get-container file :page page-id)
 
             components-v2
             (features/active-feature? state "components/v2")
@@ -806,7 +806,7 @@
        (let [page-id       (get state :current-page-id)
              local-file    (wsh/get-local-file state)
              full-file     (wsh/get-local-file-full state)
-             container     (cfh/get-container local-file :page page-id)
+             container     (ctn/get-container local-file :page page-id)
              shape         (ctn/get-shape container id)
              components-v2 (features/active-feature? state "components/v2")]
 

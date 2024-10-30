@@ -32,6 +32,7 @@
                 :id file-id
                 :session-id (uuid/random)
                 :revn revn
+                :vern 0
                 :features cfeat/supported-features
                 :changes changes}
         out    (th/command! params)]
@@ -147,6 +148,7 @@
                           :id file-id
                           :session-id (uuid/random)
                           :revn revn
+                          :vern 0
                           :features cfeat/supported-features
                           :changes changes}
                   out    (th/command! params)]
@@ -174,6 +176,7 @@
        :file-id (:id file)
        :profile-id (:id profile)
        :revn 0
+       :vern 0
        :changes
        [{:type :add-page
          :name "test"
@@ -203,6 +206,7 @@
        :file-id (:id file)
        :profile-id (:id profile)
        :revn 0
+       :vern 0
        :changes
        [{:type :add-obj
          :page-id page-id
@@ -279,6 +283,7 @@
                           :id file-id
                           :session-id (uuid/random)
                           :revn revn
+                          :vern 0
                           :features cfeat/supported-features
                           :changes changes}
                   out    (th/command! params)]
@@ -305,6 +310,7 @@
        :file-id (:id file)
        :profile-id (:id profile)
        :revn 0
+       :vern 0
        :changes
        [{:type :add-obj
          :page-id page-id
@@ -367,6 +373,7 @@
        :file-id (:id file)
        :profile-id (:id profile)
        :revn 0
+       :vern 0
        :changes [{:type :del-obj
                   :page-id (first (get-in file [:data :pages]))
                   :id shid}])
@@ -418,6 +425,7 @@
                           :id file-id
                           :session-id (uuid/random)
                           :revn revn
+                          :vern 0
                           :components-v2 true
                           :changes changes}
                   out    (th/command! params)]
@@ -452,6 +460,7 @@
        :file-id (:id file)
        :profile-id (:id profile)
        :revn 0
+       :vern 0
        :changes
        [{:type :add-obj
          :page-id page-id
@@ -528,6 +537,7 @@
        :file-id (:id file)
        :profile-id (:id profile)
        :revn 0
+       :vern 0
        :changes [{:type :del-obj
                   :page-id (first (get-in file [:data :pages]))
                   :id s-shid}
@@ -622,6 +632,7 @@
        :file-id (:id file)
        :profile-id (:id profile)
        :revn 0
+       :vern 0
        :changes
        [{:type :add-obj
          :page-id page-id
@@ -688,6 +699,7 @@
        :file-id file-id
        :profile-id (:id profile)
        :revn 0
+       :vern 0
        :changes [{:type :del-obj
                   :page-id page-id
                   :id frame-id-2}])
@@ -721,6 +733,7 @@
        :file-id file-id
        :profile-id (:id profile)
        :revn 0
+       :vern 0
        :changes [{:type :del-obj
                   :page-id page-id
                   :id frame-id-1}])
@@ -978,6 +991,7 @@
     (th/update-file* {:file-id (:id file)
                       :profile-id (:id prof)
                       :revn 0
+                      :vern 0
                       :components-v2 true
                       :changes changes})
 
@@ -1178,6 +1192,7 @@
         file (th/create-file* 1 {:profile-id (:id prof)
                                  :project-id (:default-project-id prof)
                                  :revn 2
+                                 :vern 0
                                  :is-shared false})]
 
     (t/testing "create a file thumbnail"
@@ -1286,6 +1301,7 @@
      :file-id (:id file)
      :profile-id (:id profile)
      :revn 0
+     :vern 0
      :changes
      [{:type :add-page
        :name "test"

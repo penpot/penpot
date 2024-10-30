@@ -7,7 +7,9 @@
 (ns app.main.ui.workspace.right-header
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.config :as cf]
    [app.main.data.events :as ev]
+   [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as scd]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.drawing.common :as dwc]
@@ -16,7 +18,8 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.export :refer [export-progress-widget]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.exports.assets :refer [export-progress-widget]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.presence :refer [active-sessions]]
@@ -34,30 +37,32 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   []
-  (let [status (mf/deref ref:persistence-status)]
-    [:div {:class (stl/css :persistence-status-widget)}
-     (case status
-       :pending
-       [:div {:class (stl/css :status-icon :pending-status)
-              :title (tr "workspace.header.unsaved")}
-        i/status-alert]
+  (let [status (mf/deref ref:persistence-status)
+        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)]
+    (when-not workspace-read-only?
+      [:div {:class (stl/css :persistence-status-widget)}
+       (case status
+         :pending
+         [:div {:class (stl/css :status-icon :pending-status)
+                :title (tr "workspace.header.unsaved")}
+          i/status-alert]
 
-       :saving
-       [:div {:class (stl/css :status-icon :pending-status)
-              :title (tr "workspace.header.unsaved")}
-        i/status-alert]
+         :saving
+         [:div {:class (stl/css :status-icon :pending-status)
+                :title (tr "workspace.header.unsaved")}
+          i/status-alert]
 
-       :saved
-       [:div {:class (stl/css :status-icon :saved-status)
-              :title (tr "workspace.header.saved")}
-        i/status-tick]
+         :saved
+         [:div {:class (stl/css :status-icon :saved-status)
+                :title (tr "workspace.header.saved")}
+          i/status-tick]
 
-       :error
-       [:div {:class (stl/css :status-icon :error-status)
-              :title "There was an error saving the data. Please refresh if this persists."}
-        i/status-wrong]
+         :error
+         [:div {:class (stl/css :status-icon :error-status)
+                :title "There was an error saving the data. Please refresh if this persists."}
+          i/status-wrong]
 
-       nil)]))
+         nil)])))
 
 ;; --- Zoom Widget
 
@@ -106,15 +111,15 @@
       [:ul {:class (stl/css :dropdown)}
        [:li {:class (stl/css :basic-zoom-bar)}
         [:span {:class (stl/css :zoom-btns)}
-         [:button {:class (stl/css :zoom-btn)
-                   :on-click on-decrease}
-          [:span {:class (stl/css :zoom-icon)}
-           i/remove-icon]]
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "shortcuts.decrease-zoom")
+                           :on-click on-decrease
+                           :icon "remove"}]
          [:p {:class (stl/css :zoom-text)} zoom]
-         [:button {:class (stl/css :zoom-btn)
-                   :on-click on-increase}
-          [:span {:class (stl/css :zoom-icon)}
-           i/add]]]
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "shortcuts.increase-zoom")
+                           :on-click on-increase
+                           :icon "add"}]]
         [:button {:class (stl/css :reset-btn)
                   :on-click on-zoom-reset}
          (tr "workspace.header.reset-zoom")]]
@@ -155,6 +160,8 @@
 
         input-ref         (mf/use-ref nil)
 
+        team              (mf/deref refs/team)
+
         nav-to-viewer
         (mf/use-fn
          (mf/deps file-id page-id)
@@ -191,7 +198,15 @@
                        (dw/clear-edition-mode)))
 
            (st/emit! (-> (dw/toggle-layout-flag :document-history)
-                         (vary-meta assoc ::ev/origin "workspace-header")))))]
+                         (vary-meta assoc ::ev/origin "workspace-header")))))
+
+        open-share-dialog
+        (mf/use-fn
+         (mf/deps team)
+         (fn []
+           (st/emit! (modal/show {:type :invite-members
+                                  :team team
+                                  :origin :workspace}))))]
 
     (mf/with-effect [editing?]
       (when ^boolean editing?
@@ -234,6 +249,12 @@
                                :history-button true)
           :on-click toggle-history}
          i/history]])
+
+     (when (cf/external-feature-flag "share-01" "test")
+       [:a {:class (stl/css :viewer-btn)
+            :title (tr "workspace.header.share")
+            :on-click open-share-dialog}
+        i/share])
 
      [:a {:class (stl/css :viewer-btn)
           :title (tr "workspace.header.viewer" (sc/get-tooltip :open-viewer))

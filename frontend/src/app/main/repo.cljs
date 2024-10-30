@@ -7,6 +7,7 @@
 (ns app.main.repo
   (:require
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.transit :as t]
    [app.common.uri :as u]
    [app.config :as cf]
@@ -17,7 +18,7 @@
    [cuerdas.core :as str]))
 
 (defn handle-response
-  [{:keys [status body headers] :as response}]
+  [{:keys [status body headers uri] :as response}]
   (cond
     (= 204 status)
     ;; We need to send "something" so the streams listening downstream can act
@@ -52,8 +53,10 @@
 
     :else
     (rx/throw
-     (ex-info "http error"
-              {:type :unexpected-error
+     (ex-info "repository requet error"
+              {:type :internal
+               :code :repository-access-error
+               :uri uri
                :status status
                :headers headers
                :data body}))))
@@ -71,20 +74,19 @@
     :form-data? true}
 
    ::sse/clone-template
-   {:response-type ::sse/stream}
+   {:stream? true}
 
    ::sse/import-binfile
-   {:response-type ::sse/stream
+   {:stream? true
     :form-data? true}
 
    :export-binfile {:response-type :blob}
    :retrieve-list-of-builtin-templates {:query-params :all}})
 
 (defn- send!
-  "A simple helper for a common case of sending and receiving transit
-  data to the penpot mutation api."
   [id params options]
   (let [{:keys [response-type
+                stream?
                 form-data?
                 raw-transit?
                 query-params
@@ -92,46 +94,61 @@
         (-> (get default-options id)
             (merge options))
 
-        decode-fn (if raw-transit?
-                    http/conditional-error-decode-transit
-                    http/conditional-decode-transit)
+        decode-fn
+        (if raw-transit?
+          http/conditional-error-decode-transit
+          http/conditional-decode-transit)
 
-        id        (or rename-to id)
-        nid       (name id)
-        method    (cond
-                    (= query-params :all)  :get
-                    (str/starts-with? nid "get-") :get
-                    :else :post)
-        request   {:method method
-                   :uri (u/join cf/public-uri "api/rpc/command/" nid)
-                   :credentials "include"
-                   :headers {"accept" "application/transit+json,text/event-stream,*/*"
-                             "x-external-session-id" (cf/external-session-id)
-                             "x-event-origin" (::ev/origin (meta params))}
-                   :body (when (= method :post)
-                           (if form-data?
-                             (http/form-data params)
-                             (http/transit-data params)))
-                   :query (if (= method :get)
-                            params
-                            (if query-params
-                              (select-keys params query-params)
-                              nil))
+        id     (or rename-to id)
+        nid    (name id)
+        method (cond
+                 (= query-params :all)  :get
+                 (str/starts-with? nid "get-") :get
+                 :else :post)
 
-                   :response-type
-                   (if (= response-type ::sse/stream)
-                     :stream
-                     (or response-type :text))}
+        response-type
+        (d/nilv response-type :text)
 
-        result    (->> (http/send! request)
-                       (rx/map decode-fn)
-                       (rx/mapcat handle-response))]
+        request
+        {:method method
+         :uri (u/join cf/public-uri "api/rpc/command/" nid)
+         :credentials "include"
+         :headers {"accept" "application/transit+json,text/event-stream,*/*"
+                   "x-external-session-id" (cf/external-session-id)
+                   "x-event-origin" (::ev/origin (meta params))}
+         :body (when (= method :post)
+                 (if form-data?
+                   (http/form-data params)
+                   (http/transit-data params)))
+         :query (if (= method :get)
+                  params
+                  (if query-params
+                    (select-keys params query-params)
+                    nil))
+         :response-type
+         (if stream? nil response-type)}]
 
-    (cond->> result
-      (= ::sse/stream response-type)
-      (rx/mapcat (fn [body]
-                   (-> (sse/create-stream body)
-                       (sse/read-stream t/decode-str)))))))
+    (->> (http/fetch request)
+         (rx/map http/response->map)
+         (rx/mapcat (fn [{:keys [headers body] :as response}]
+                      (let [ctype (get headers "content-type")
+                            response-stream? (str/starts-with? ctype "text/event-stream")]
+
+                        (when (and response-stream? (not stream?))
+                          (ex/raise :type :internal
+                                    :code :invalid-response-processing
+                                    :hint "expected normal response, received sse stream"
+                                    :response-uri (:uri response)
+                                    :response-status (:status response)))
+
+                        (if response-stream?
+                          (-> (sse/create-stream body)
+                              (sse/read-stream t/decode-str))
+
+                          (->> response
+                               (http/process-response-type response-type)
+                               (rx/map decode-fn)
+                               (rx/mapcat handle-response)))))))))
 
 (defmulti cmd! (fn [id _] id))
 

@@ -8,7 +8,6 @@
   (:require
    [app.common.colors :as cc]
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.svg.path :as svg.path]
@@ -236,11 +235,10 @@
 
       (= type :frame)
       (let [;; Old .penpot files doesn't have "g" nodes. They have a clipPath reference as a node attribute
-            to-url #(dm/str "url(#" % ")")
             frame-clip-rect-node  (->> (find-all-nodes node :defs)
                                        (mapcat #(find-all-nodes % :clipPath))
-                                       (filter #(= (to-url (:id (:attrs %))) (:clip-path node-attrs)))
                                        (mapcat #(find-all-nodes % #{:rect :path}))
+                                       (filter #(contains? (:attrs %) :width))
                                        (first))
 
             ;; The nodes with the "frame-background" class can have some anidation depending on the strokes they have

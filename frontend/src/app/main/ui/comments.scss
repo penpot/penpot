@@ -206,14 +206,6 @@
           cursor: pointer;
         }
       }
-      .options {
-        @extend .button-tertiary;
-        height: $s-32;
-        width: $s-28;
-        svg {
-          @extend .button-icon;
-        }
-      }
     }
   }
   .comment-options-dropdown {

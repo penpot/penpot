@@ -24,6 +24,7 @@
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
@@ -759,9 +760,12 @@
                              {:value :percent :label "%"}]
                    :on-change #(set-column-type type index %)}]]]
 
-     [:button {:class (stl/css :remove-track-btn)
-               :on-click #(remove-element type index)}
-      i/remove-icon]]))
+     [:> icon-button* {:variant "ghost"
+                       :aria-label (tr "workspace.shape.menu.delete")
+                       :on-click remove-element
+                       :data-type type
+                       :data-index index
+                       :icon "remove"}]]))
 
 (mf/defc grid-columns-row
   {::mf/props :obj}
@@ -776,13 +780,14 @@
         track-detail (str/join ", " (map manage-values column-values))
 
         type (if is-column :column :row)
+        testid (when (not is-column) "inspect-layout-rows")
 
         add-track
         #(do
            (when-not expanded? (toggle))
            (add-new-element type ctl/default-track-value))]
 
-    [:div {:class (stl/css :grid-tracks)}
+    [:div {:class (stl/css :grid-tracks) :data-testid testid}
      [:div {:class (stl/css :grid-track-header)}
       [:button {:class (stl/css :expand-icon) :on-click toggle} i/menu]
       [:div {:class (stl/css :track-title) :on-click toggle}
@@ -982,7 +987,7 @@
         on-hide-dropdown
         (mf/use-fn #(reset! show-dropdown* false))]
 
-    [:div {:class (stl/css :element-set)}
+    [:div {:class (stl/css :element-set) :data-testid "inspect-layout"}
      [:div {:class (stl/css :element-title)}
       [:& title-bar
        {:collapsable has-layout?
@@ -995,9 +1000,10 @@
          [:div {:class (stl/css :title-actions)}
           (when ^boolean grid-enabled?
             [:*
-             [:button {:class (stl/css :add-layout)
-                       :on-click on-toggle-dropdown-visibility}
-              i/menu]
+             [:> icon-button* {:variant "ghost"
+                               :aria-label (tr "workspace.shape.menu.add-layout")
+                               :on-click on-toggle-dropdown-visibility
+                               :icon "menu"}]
 
              [:& dropdown {:show show-dropdown?
                            :on-close on-hide-dropdown}
@@ -1012,16 +1018,18 @@
                 "Grid layout"]]]])
 
           (when has-layout?
-            [:button {:class (stl/css :remove-layout)
-                      :on-click on-remove-layout}
-             i/remove-icon])]
+            [:> icon-button* {:variant "ghost"
+                              :aria-label (tr "workspace.shape.menu.remove-layout")
+                              :on-click on-remove-layout
+                              :icon "remove"}])]
 
          [:div {:class (stl/css :title-actions)}
           (if ^boolean grid-enabled?
             [:*
-             [:button {:class (stl/css :add-layout)
-                       :on-click on-toggle-dropdown-visibility}
-              i/add]
+             [:> icon-button* {:variant "ghost"
+                               :aria-label (tr "workspace.shape.menu.add-layout")
+                               :on-click on-toggle-dropdown-visibility
+                               :icon "add"}]
 
              [:& dropdown {:show show-dropdown?
                            :on-close on-hide-dropdown}
@@ -1040,9 +1048,10 @@
                       :on-click on-add-layout}
              i/add])
           (when has-layout?
-            [:button {:class (stl/css :remove-layout)
-                      :on-click on-remove-layout}
-             i/remove-icon])])]]
+            [:> icon-button* {:variant "ghost"
+                              :aria-label (tr "workspace.shape.menu.delete")
+                              :on-click on-remove-layout
+                              :icon "remove"}])])]]
 
      (when (and ^boolean open?
                 ^boolean has-layout?
@@ -1066,9 +1075,10 @@
                                     :justify-content justify-content
                                     :on-change set-justify-content}]
 
-           [:button {:on-click open-flex-help
-                     :class (stl/css :help-button)}
-            i/help]]
+           [:> icon-button* {:variant "ghost"
+                             :aria-label (tr "labels.help-center")
+                             :on-click open-flex-help
+                             :icon "help"}]]
           (when (= :wrap wrap-type)
             [:div {:class (stl/css :third-row)}
              [:& align-content-row {:is-column is-column
@@ -1090,8 +1100,10 @@
           (when (= 1 (count ids))
             [:div {:class (stl/css :edit-grid-wrapper)}
              [:& grid-edit-mode {:id (first ids)}]
-             [:button {:on-click open-grid-help
-                       :class (stl/css :help-button)} i/help]])
+             [:> icon-button* {:variant "ghost"
+                               :aria-label (tr "labels.help-center")
+                               :on-click open-grid-help
+                               :icon "help"}]])
 
           [:div {:class (stl/css :row :first-row)}
            [:div {:class (stl/css :direction-edit)}
@@ -1220,8 +1232,14 @@
         remove-element
         (mf/use-fn
          (mf/deps ids)
-         (fn [type index]
-           (st/emit! (dwsl/remove-layout-track ids type index))))
+         (fn [event]
+           (let [type (-> (dom/get-current-target event)
+                          (dom/get-data "type")
+                          (d/read-string))
+                 index (-> (dom/get-current-target event)
+                           (dom/get-data "index")
+                           (d/parse-integer))]
+             (st/emit! (dwsl/remove-layout-track ids type index)))))
 
         reorder-track
         (mf/use-fn
@@ -1267,8 +1285,11 @@
     [:div {:class (stl/css :grid-layout-menu)}
      [:div {:class (stl/css :row)}
       [:div {:class (stl/css :grid-layout-menu-title)} "GRID LAYOUT"]
-      [:button {:on-click open-grid-help
-                :class (stl/css :help-button)} i/help]
+      [:> icon-button* {:variant "ghost"
+                        :class (stl/css :help-button)
+                        :aria-label (tr "labels.help-center")
+                        :on-click open-grid-help
+                        :icon "help"}]
       [:button {:class (stl/css :exit-btn)
                 :on-click #(st/emit! (udw/clear-edition-mode))}
        (tr "workspace.layout_grid.editor.options.exit")]]
@@ -1295,10 +1316,11 @@
                             :value grid-justify-content-row
                             :on-change on-row-justify-change}]
 
-      [:button {:on-click handle-locate-grid
-                :class (stl/css :locate-button)
-                :title (tr "workspace.layout_grid.editor.top-bar.locate.tooltip")}
-       i/locate]]
+      [:> icon-button* {:variant "ghost"
+                        :class (stl/css :locate-button)
+                        :aria-label (tr "workspace.layout_grid.editor.top-bar.locate.tooltip")
+                        :on-click handle-locate-grid
+                        :icon "locate"}]]
 
      [:div {:class (stl/css :row)}
       [:& gap-section {:on-change on-gap-change

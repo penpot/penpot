@@ -36,8 +36,8 @@
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.core :as p]
-   [ring.request :as rreq]
-   [ring.response :as rres]))
+   [yetti.request :as yreq]
+   [yetti.response :as yres]))
 
 (s/def ::profile-id ::us/uuid)
 
@@ -64,16 +64,16 @@
         response (if (fn? result)
                    (result request)
                    (let [result (rph/unwrap result)]
-                     {::rres/status  (::http/status mdata 200)
-                      ::rres/headers (::http/headers mdata {})
-                      ::rres/body    result}))]
+                     {::yres/status  (::http/status mdata 200)
+                      ::yres/headers (::http/headers mdata {})
+                      ::yres/body    result}))]
     (-> response
         (handle-response-transformation request mdata)
         (handle-before-comple-hook mdata))))
 
 (defn get-external-session-id
   [request]
-  (when-let [session-id (rreq/get-header request "x-external-session-id")]
+  (when-let [session-id (yreq/get-header request "x-external-session-id")]
     (when-not (or (> (count session-id) 256)
                   (= session-id "null")
                   (str/blank? session-id))
@@ -81,7 +81,7 @@
 
 (defn- get-external-event-origin
   [request]
-  (when-let [origin (rreq/get-header request "x-event-origin")]
+  (when-let [origin (yreq/get-header request "x-event-origin")]
     (when-not (or (> (count origin) 256)
                   (= origin "null")
                   (str/blank? origin))
@@ -92,7 +92,7 @@
   internal async flow into ring async flow."
   [methods {:keys [params path-params method] :as request}]
   (let [handler-name (:type path-params)
-        etag         (rreq/get-header request "if-none-match")
+        etag         (yreq/get-header request "if-none-match")
         profile-id   (or (::session/profile-id request)
                          (::actoken/profile-id request))
 

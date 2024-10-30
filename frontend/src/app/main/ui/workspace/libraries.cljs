@@ -14,6 +14,7 @@
    [app.common.types.file :as ctf]
    [app.common.types.typographies-list :as ctyl]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.data.workspace.colors :as mdc]
@@ -293,7 +294,14 @@
              [:*
               [:span {:class (stl/css :empty-state-icon)}
                library-icon]
-              (tr "workspace.libraries.no-shared-libraries-available")]
+              (tr "workspace.libraries.no-shared-libraries-available")
+              (when (cf/external-feature-flag "templates-01" "test")
+                [:div {:class (stl/css :templates-info)}
+                 (tr "workspace.libraries.more-templates")
+                 [:a {:target "_blank"
+                      :class (stl/css :templates-info-link)
+                      :href "https://penpot.app/libraries-templates"}
+                  (tr "workspace.libraries.more-templates-link")]])]
 
              :else
              (tr "workspace.libraries.no-matches-for" search-term))]))]]))

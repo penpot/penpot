@@ -10,6 +10,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.logging :as l]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -19,6 +20,7 @@
    [app.storage.s3 :as ss3]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [integrant.core :as ig])
   (:import
@@ -30,7 +32,17 @@
     (case name
       :assets-fs :fs
       :assets-s3 :s3
-      :fs)))
+      nil)))
+
+(def valid-buckets
+  #{"file-media-object"
+    "team-font-variant"
+    "file-object-thumbnail"
+    "file-thumbnail"
+    "profile"
+    "file-data"
+    "file-data-fragment"
+    "file-change"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Storage Module State
@@ -52,11 +64,19 @@
 
 (defmethod ig/init-key ::storage
   [_ {:keys [::backends ::db/pool] :as cfg}]
-  (-> (d/without-nils cfg)
-      (assoc ::backends (d/without-nils backends))
-      (assoc ::backend (or (get-legacy-backend)
-                           (cf/get :objects-storage-backend :fs)))
-      (assoc ::db/connectable pool)))
+  (let [backend (or (get-legacy-backend)
+                    (cf/get :objects-storage-backend)
+                    :fs)
+        backends (d/without-nils backends)]
+
+    (l/dbg :hint "initialize"
+           :default (d/name backend)
+           :available (str/join "," (map d/name (keys backends))))
+
+    (-> (d/without-nils cfg)
+        (assoc ::backends backends)
+        (assoc ::backend backend)
+        (assoc ::db/connectable pool))))
 
 (s/def ::backend keyword?)
 (s/def ::storage
@@ -257,6 +277,8 @@
     (pos? (db/get-update-count res))))
 
 (dm/export impl/calculate-hash)
+(dm/export impl/get-hash)
+(dm/export impl/get-size)
 
 (defn configure
   [storage connectable]

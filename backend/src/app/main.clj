@@ -319,7 +319,6 @@
     ::mtx/metrics        (ig/ref ::mtx/metrics)
     ::mbus/msgbus        (ig/ref ::mbus/msgbus)
     ::rds/redis          (ig/ref ::rds/redis)
-    ::svgo/optimizer     (ig/ref ::svgo/optimizer)
 
     ::rpc/climit         (ig/ref ::rpc/climit)
     ::rpc/rlimit         (ig/ref ::rpc/rlimit)
@@ -430,9 +429,6 @@
     ;; module requires the migrations to run before initialize.
     ::migrations (ig/ref :app.migrations/migrations)}
 
-   ::svgo/optimizer
-   {}
-
    :app.loggers.audit.archive-task/handler
    {::setup/props        (ig/ref ::setup/props)
     ::db/pool            (ig/ref ::db/pool)
@@ -475,7 +471,8 @@
     ::sto.s3/bucket     (or (cf/get :storage-assets-s3-bucket)
                             (cf/get :objects-storage-s3-bucket))
     ::sto.s3/io-threads (or (cf/get :storage-assets-s3-io-threads)
-                            (cf/get :objects-storage-s3-io-threads))}
+                            (cf/get :objects-storage-s3-io-threads))
+    ::wrk/executor      (ig/ref ::wrk/executor)}
 
    :app.storage.fs/backend
    {::sto.fs/directory (or (cf/get :storage-assets-fs-directory)
