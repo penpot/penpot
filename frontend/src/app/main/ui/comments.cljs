@@ -99,7 +99,7 @@
         content       (mf/use-state "")
 
         disabled? (or (str/blank? @content)
-                      (str/empty-or-nil? @content))
+                      (str/empty? @content))
 
         on-focus
         (mf/use-fn
@@ -159,7 +159,7 @@
         pos-y    (* (:y position) zoom)
 
         disabled? (or (str/blank? content)
-                      (str/empty-or-nil? content))
+                      (str/empty? content))
 
         on-esc
         (mf/use-fn
@@ -230,7 +230,7 @@
          (fn [] (on-submit @content)))
 
         disabled? (or (str/blank? @content)
-                      (str/empty-or-nil? @content))]
+                      (str/empty? @content))]
 
     [:div {:class (stl/css :edit-form)}
      [:& resizing-textarea {:value @content

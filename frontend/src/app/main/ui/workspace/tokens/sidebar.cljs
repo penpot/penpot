@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.transit :as t]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -41,7 +40,6 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [promesa.core :as p]
    [rumext.v2 :as mf]
    [shadow.resource]))
 
@@ -139,7 +137,7 @@
                                                       :token-type-props token-type-props})))))
         tokens-count (count tokens)]
     [:div {:on-click on-toggle-open-click}
-     [:& cmm/asset-section {:icon (mf/fnc icon-wrapper [_]
+     [:& cmm/asset-section {:icon (mf/fnc icon-wrapper []
                                     [:div {:class (stl/css :section-icon)}
                                      [:& token-section-icon {:type type}]])
                             :title title

@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
-   [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]

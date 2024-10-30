@@ -26,8 +26,8 @@
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox]]
    [app.main.ui.workspace.sidebar.shortcuts :refer [shortcuts-container]]
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap]]
-   [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab]]
    [app.main.ui.workspace.sidebar.versions :refer [versions-toolbox]]
+   [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab]]
    [app.util.debug :as dbg]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))

@@ -26,8 +26,6 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape-tree :as ctst]
-   [app.common.types.token :as cto]
-   [app.common.types.token-theme :as ctt]
    [app.common.types.tokens-lib :as ctl]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as cty]

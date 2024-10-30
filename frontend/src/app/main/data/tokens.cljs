@@ -153,7 +153,7 @@
                        token-set)]
     (ptk/reify ::create-token-set
       ptk/WatchEvent
-      (watch [it state _]
+      (watch [it _ _]
         (let [changes (-> (pcb/empty-changes it)
                           (pcb/add-token-set new-token-set))]
           (rx/of

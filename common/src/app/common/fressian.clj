@@ -277,7 +277,7 @@
   :class clojure.lang.ISeq
   :wfn write-list-like
   :rfn (comp sequence read-object!)}
- 
+
  {:name "linked/set"
   :class LinkedSet
   :wfn write-list-like

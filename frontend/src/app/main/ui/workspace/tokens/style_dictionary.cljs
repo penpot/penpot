@@ -12,8 +12,7 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]
-   [rumext.v2 :as mf]
-   [app.common.data :as d]))
+   [rumext.v2 :as mf]))
 
 (l/set-level! "app.main.ui.workspace.tokens.style-dictionary" :warn)
 

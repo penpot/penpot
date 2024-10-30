@@ -49,9 +49,9 @@
 
   (t/deftest find-token-value-references
     (t/testing "finds references inside curly braces in a string"
-     (t/is (= #{"foo" "bar"} (ctob/find-token-value-references "{foo} + {bar}")))
-     (t/testing "ignores extra text"
-       (t/is (= #{"foo.bar.baz"} (ctob/find-token-value-references "{foo.bar.baz} + something")))))
+      (t/is (= #{"foo" "bar"} (ctob/find-token-value-references "{foo} + {bar}")))
+      (t/testing "ignores extra text"
+        (t/is (= #{"foo.bar.baz"} (ctob/find-token-value-references "{foo.bar.baz} + something")))))
     (t/testing "ignores string without references"
       (t/is (nil? (ctob/find-token-value-references "1 + 2"))))
     (t/testing "handles edge-case for extra curly braces"
@@ -395,8 +395,8 @@
                           ;; Ignore this set
                           (ctob/add-set (ctob/make-token-set :name "inactive-set"))
                           (ctob/add-token-in-set "inactive-set" (ctob/make-token :name "inactive-set-token"
-                                                                                       :type :boolean
-                                                                                       :value true)))
+                                                                                 :type :boolean
+                                                                                 :value true)))
 
 
           expected-order (ctob/get-ordered-set-names tokens-lib)
@@ -425,13 +425,13 @@
 
           tokens-lib' (-> tokens-lib
                           (ctob/update-theme "" "test-token-theme"
-                                           (fn [token-theme]
-                                             (assoc token-theme
-                                                    :description "some description")))
+                                             (fn [token-theme]
+                                               (assoc token-theme
+                                                      :description "some description")))
                           (ctob/update-theme "" "not-existing-theme"
-                                           (fn [token-theme]
-                                             (assoc token-theme
-                                                    :description "no-effect"))))
+                                             (fn [token-theme]
+                                               (assoc token-theme
+                                                      :description "no-effect"))))
 
           token-theme   (ctob/get-theme tokens-lib "" "test-token-theme")
           token-theme'  (ctob/get-theme tokens-lib' "" "test-token-theme")]
@@ -472,20 +472,20 @@
       (t/is (nil? token-theme'))))
 
   (t/deftest toggle-set-in-theme
-      (let [tokens-lib   (-> (ctob/make-tokens-lib)
-                             (ctob/add-set (ctob/make-token-set :name "token-set-1"))
-                             (ctob/add-set (ctob/make-token-set :name "token-set-2"))
-                             (ctob/add-set (ctob/make-token-set :name "token-set-3"))
-                             (ctob/add-theme (ctob/make-token-theme :name "test-token-theme")))
-            tokens-lib'  (-> tokens-lib
-                             (ctob/toggle-set-in-theme "" "test-token-theme" "token-set-1")
-                             (ctob/toggle-set-in-theme "" "test-token-theme" "token-set-2")
-                             (ctob/toggle-set-in-theme "" "test-token-theme" "token-set-2"))
+    (let [tokens-lib   (-> (ctob/make-tokens-lib)
+                           (ctob/add-set (ctob/make-token-set :name "token-set-1"))
+                           (ctob/add-set (ctob/make-token-set :name "token-set-2"))
+                           (ctob/add-set (ctob/make-token-set :name "token-set-3"))
+                           (ctob/add-theme (ctob/make-token-theme :name "test-token-theme")))
+          tokens-lib'  (-> tokens-lib
+                           (ctob/toggle-set-in-theme "" "test-token-theme" "token-set-1")
+                           (ctob/toggle-set-in-theme "" "test-token-theme" "token-set-2")
+                           (ctob/toggle-set-in-theme "" "test-token-theme" "token-set-2"))
 
-            token-theme  (ctob/get-theme tokens-lib "" "test-token-theme")
-            token-theme' (ctob/get-theme tokens-lib' "" "test-token-theme")]
+          token-theme  (ctob/get-theme tokens-lib "" "test-token-theme")
+          token-theme' (ctob/get-theme tokens-lib' "" "test-token-theme")]
 
-        (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme))))))
+      (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme))))))
 
 
 (t/testing "serialization"
@@ -797,8 +797,8 @@
 
             tokens-lib' (-> tokens-lib
                             (ctob/update-set "group1/token-set-2"
-                                                      (fn [token-set]
-                                                        (assoc token-set :description "some description"))))
+                                             (fn [token-set]
+                                               (assoc token-set :description "some description"))))
 
             sets-tree   (ctob/get-set-tree tokens-lib)
             sets-tree'  (ctob/get-set-tree tokens-lib')
@@ -823,9 +823,9 @@
 
             tokens-lib' (-> tokens-lib
                             (ctob/update-set "group1/token-set-2"
-                                                      (fn [token-set]
-                                                        (assoc token-set
-                                                               :name "group1/updated-name"))))
+                                             (fn [token-set]
+                                               (assoc token-set
+                                                      :name "group1/updated-name"))))
 
             sets-tree   (ctob/get-set-tree tokens-lib)
             sets-tree'  (ctob/get-set-tree tokens-lib')
@@ -850,9 +850,9 @@
 
             tokens-lib' (-> tokens-lib
                             (ctob/update-set "group1/token-set-2"
-                                                      (fn [token-set]
-                                                        (assoc token-set
-                                                               :name "group2/updated-name"))))
+                                             (fn [token-set]
+                                               (assoc token-set
+                                                      :name "group2/updated-name"))))
 
             sets-tree   (ctob/get-set-tree tokens-lib)
             sets-tree'  (ctob/get-set-tree tokens-lib')
@@ -951,8 +951,8 @@
 
             tokens-lib'  (-> tokens-lib
                              (ctob/update-theme "group1" "token-theme-2"
-                                                       (fn [token-theme]
-                                                         (assoc token-theme :description "some description"))))
+                                                (fn [token-theme]
+                                                  (assoc token-theme :description "some description"))))
 
             themes-tree  (ctob/get-theme-tree tokens-lib)
             themes-tree' (ctob/get-theme-tree tokens-lib')
@@ -986,9 +986,9 @@
 
             tokens-lib'  (-> tokens-lib
                              (ctob/update-theme "group1" "token-theme-2"
-                                                       (fn [token-theme]
-                                                         (assoc token-theme
-                                                                :name "updated-name"))))
+                                                (fn [token-theme]
+                                                  (assoc token-theme
+                                                         :name "updated-name"))))
 
             themes-tree  (ctob/get-theme-tree tokens-lib)
             themes-tree' (ctob/get-theme-tree tokens-lib')
@@ -1013,10 +1013,10 @@
 
             tokens-lib'  (-> tokens-lib
                              (ctob/update-theme "group1" "token-theme-2"
-                                                       (fn [token-theme]
-                                                         (assoc token-theme
-                                                                :name "updated-name"
-                                                                :group "group2"))))
+                                                (fn [token-theme]
+                                                  (assoc token-theme
+                                                         :name "updated-name"
+                                                         :group "group2"))))
 
             themes-tree  (ctob/get-theme-tree tokens-lib)
             themes-tree' (ctob/get-theme-tree tokens-lib')

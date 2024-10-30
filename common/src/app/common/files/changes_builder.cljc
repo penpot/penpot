@@ -20,8 +20,8 @@
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.shape.layout :as ctl]
-   [app.common.uuid :as uuid]
-   [app.common.types.tokens-lib :as ctob]))
+   [app.common.types.tokens-lib :as ctob]
+   [app.common.uuid :as uuid]))
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
 
@@ -401,7 +401,7 @@
          (update :redo-changes conj add-change)
          (cond->
           (and (ctk/in-component-copy? parent) (not ignore-touched))
-          (update :undo-changes conj restore-touched-change))
+           (update :undo-changes conj restore-touched-change))
          (update :undo-changes conj del-change)
          (apply-changes-local)))))
 
@@ -462,7 +462,7 @@
          (update :redo-changes conj set-parent-change)
          (cond->
           (ctk/in-component-copy? parent)
-          (update :undo-changes conj restore-touched-change))
+           (update :undo-changes conj restore-touched-change))
          (update :undo-changes #(reduce mk-undo-change % shapes))
          (apply-changes-local)))))
 

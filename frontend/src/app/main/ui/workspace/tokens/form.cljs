@@ -57,7 +57,7 @@ Token names should only contain letters and digits separated by . characters.")}
 
 (defn token-name-schema
   "Generate a dynamic schema validation to check if a token path derived from the name already exists at `tokens-tree`."
-  [{:keys [token tokens-tree]}]
+  [{:keys [tokens-tree]}]
   (let [path-exists-schema
         (m/-simple-schema
          {:type :token/name-exists
@@ -385,7 +385,7 @@ Token names should only contain letters and digits separated by . characters.")}
                                                       :on-change on-update-value
                                                       :ref value-input-ref}
                                         :render-right (when color?
-                                                        (mf/fnc []
+                                                        (mf/fnc color-bullet []
                                                           [:div {:class (stl/css :color-bullet)
                                                                  :on-click #(swap! color-ramp-open? not)}
                                                            (if-let [hex (some-> @color tinycolor/valid-color tinycolor/->hex)]

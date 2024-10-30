@@ -102,7 +102,7 @@
     (dwsh/update-shapes shape-ids #(assoc % :opacity value))))
 
 (defn update-rotation [value shape-ids]
-  (ptk/reify ::update-shape-dimensions
+  (ptk/reify ::update-shape-rotation
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of
