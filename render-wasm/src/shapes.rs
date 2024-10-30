@@ -55,7 +55,7 @@ pub(crate) fn draw_all(state: &mut State) {
             shape.selrect.x2,
             shape.selrect.y2,
         );
-        println!("{:?}", shape.transform);
+        // println!("{:?}", shape.transform);
         render_rect(&mut state.surface, r, skia::Color::RED);
     }
 }

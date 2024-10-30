@@ -126,7 +126,10 @@
     (let [id (:id obj)]
       (when (contains? modifiers id)
         (let [shape-modifiers (dm/get-in modifiers [id :modifiers])
+              _ (js/console.log "shape-modifiers" (clj->js shape-modifiers))
               transform (ctm/modifiers->transform shape-modifiers)
+              _ (js/console.log "transform" (clj->js transform))
               buffer (ctsi/clone-f32-array (.-buffer obj))]
-          (ctsi/write-transform buffer transform)))
+          (ctsi/write-transform buffer transform)
+          (js/console.log "buffer" (clj->js (.-buffer obj)))))
       obj))))
