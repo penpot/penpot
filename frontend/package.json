@@ -53,6 +53,7 @@
     "@storybook/react-vite": "^8.2.2",
     "@types/node": "^20.11.20",
     "autoprefixer": "^10.4.19",
+    "bun": "^1.1.25",
     "concurrently": "^8.2.2",
     "draft-js": "git+https://github.com/penpot/draft-js.git#commit=4a99b2a6020b2af97f6dc5fa1b4275ec16b559a0",
     "express": "^4.19.2",
@@ -96,7 +97,6 @@
   },
   "dependencies": {
     "@tokens-studio/sd-transforms": "^0.16.1",
-    "bun": "^1.1.25",
     "compression": "^1.7.4",
     "date-fns": "^3.6.0",
     "eventsource-parser": "^1.1.2",
