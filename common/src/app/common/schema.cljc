@@ -686,8 +686,8 @@
                   pred)
            pred (if (some? max)
                   (fn [v]
-                    (and (>= max v)
-                         (pred v)))
+                    (and (pred v)
+                         (>= max v)))
                   pred)]
 
        {:pred pred
@@ -724,8 +724,8 @@
                   pred)
            pred (if (some? max)
                   (fn [v]
-                    (and (>= max v)
-                         (pred v)))
+                    (and (pred v)
+                         (>= max v)))
                   pred)]
 
        {:pred pred
@@ -754,8 +754,8 @@
                   pred)
            pred (if (some? max)
                   (fn [v]
-                    (and (>= max v)
-                         (pred v)))
+                    (and (pred v)
+                         (>= max v)))
                   pred)
 
            gen  (sg/one-of
