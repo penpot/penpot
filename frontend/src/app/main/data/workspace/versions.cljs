@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.data.events :as ev]
    [app.main.data.persistence :as dwp]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
@@ -68,7 +69,8 @@
                (fn [{:keys [id]}]
                  (rx/of
                   (update-version-state {:editing id})
-                  (fetch-versions file-id))))))))))
+                  (fetch-versions file-id)))))
+         (rx/of (ptk/event ::ev/event {::ev/name "create-version"})))))))
 
 (defn rename-version
   [file-id id label]
@@ -82,7 +84,8 @@
       (rx/merge
        (rx/of (update-version-state {:editing false}))
        (->> (rp/cmd! :update-file-snapshot {:id id :label label})
-            (rx/map #(fetch-versions file-id)))))))
+            (rx/map #(fetch-versions file-id)))
+       (rx/of (ptk/event ::ev/event {::ev/name "rename-version"}))))))
 
 (defn restore-version
   [project-id file-id id]
@@ -100,7 +103,8 @@
             (rx/take 1)
             (rx/mapcat #(rp/cmd! :take-file-snapshot {:file-id file-id :created-by "system" :label (dt/format (dt/now) :date-full)}))
             (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
-            (rx/map #(dw/initialize-file project-id file-id)))))))
+            (rx/map #(dw/initialize-file project-id file-id)))
+       (rx/of (ptk/event ::ev/event {::ev/name "restore-version"}))))))
 
 (defn delete-version
   [file-id id]
@@ -126,6 +130,8 @@
             params  {:id id
                      :label (dt/format (:created-at version) :date-full)}]
 
-        (->> (rp/cmd! :update-file-snapshot params)
-             (rx/mapcat #(rx/of (update-version-state {:editing id})
-                                (fetch-versions file-id))))))))
+        (rx/concat
+         (->> (rp/cmd! :update-file-snapshot params)
+              (rx/mapcat #(rx/of (update-version-state {:editing id})
+                                 (fetch-versions file-id))))
+         (rx/of (ptk/event ::ev/event {::ev/name "pin-version"})))))))
