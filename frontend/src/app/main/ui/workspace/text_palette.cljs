@@ -14,6 +14,7 @@
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.object :as obj]
    [cuerdas.core :as str]
@@ -111,7 +112,9 @@
         (mf/use-callback
          (mf/deps max-offset)
          (fn [event]
-           (let [delta (+ (.. event -nativeEvent -deltaY) (.. event -nativeEvent -deltaX))]
+           (let [event (dom/event->native-event event)
+                 delta (+ (.. ^js event -deltaY)
+                          (.. ^js event -deltaX))]
              (if (pos? delta)
                (on-right-arrow-click event)
                (on-left-arrow-click event)))))]

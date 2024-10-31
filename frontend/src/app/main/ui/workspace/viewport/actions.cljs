@@ -65,15 +65,15 @@
        (dom/stop-propagation bevent)
 
        (when-not @z?
-         (let [event  (.-nativeEvent bevent)
+         (let [event  (dom/event->native-event bevent)
                ctrl?  (kbd/ctrl? event)
                meta?  (kbd/meta? event)
                shift? (kbd/shift? event)
                alt?   (kbd/alt? event)
                mod?   (kbd/mod? event)
 
-               left-click?   (and (not panning) (= 1 (.-which event)))
-               middle-click? (and (not panning) (= 2 (.-which event)))]
+               left-click?   (and (not panning) (dom/left-mouse? bevent))
+               middle-click? (and (not panning) (dom/middle-mouse? bevent))]
 
            (cond
              (or middle-click? (and left-click? @space?))
@@ -120,12 +120,11 @@
   (mf/use-callback
    (mf/deps @hover @hover-ids selected @space? @z? read-only?)
    (fn [bevent]
-     (let [event (.-nativeEvent bevent)
+     (let [event  (dom/event->native-event bevent)
            shift? (kbd/shift? event)
-           mod?   (kbd/mod? event)
-           left-click?   (= 1 (.-which event))]
+           mod?   (kbd/mod? event)]
 
-       (when (and left-click?
+       (when (and (dom/left-mouse? bevent)
                   (not mod?)
                   (not shift?)
                   (not @space?))
@@ -275,7 +274,7 @@
        ;; Release pointer on mouse up
        (.releasePointerCapture target (.-pointerId event)))
 
-     (let [event (.-nativeEvent event)
+     (let [event (dom/event->native-event event)
            ctrl? (kbd/ctrl? event)
            shift? (kbd/shift? event)
            alt? (kbd/alt? event)
@@ -475,7 +474,7 @@
                                        (assoc :y final-y)))))
 
          (dnd/has-type? event "penpot/component")
-         (let [event (.-nativeEvent event)
+         (let [event (dom/event->native-event event)
                ctrl? (kbd/ctrl? event)
                shift? (kbd/shift? event)
                alt? (kbd/alt? event)

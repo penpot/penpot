@@ -15,6 +15,7 @@
    [app.main.render :as render]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
    [app.util.timers :as ts]
@@ -46,9 +47,10 @@
 
         on-scroll
         (fn [event]
-          (if (pos? (.. event -nativeEvent -deltaY))
-            (on-right-arrow-click event)
-            (on-left-arrow-click event)))
+          (let [event (dom/event->native-event event)]
+            (if (pos? (.-deltaY ^js event))
+              (on-right-arrow-click event)
+              (on-left-arrow-click event))))
 
         on-mount
         (fn []

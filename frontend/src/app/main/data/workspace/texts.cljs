@@ -6,7 +6,7 @@
 
 (ns app.main.data.workspace.texts
   (:require
-   ["penpot/vendor/text-editor-v2" :as editor.v2]
+   ["@penpot/text-editor" :as editor.v2]
    [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.data.macros :as dm]

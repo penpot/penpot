@@ -134,8 +134,8 @@
   (let [children    (-> (array/normalize-to-array children)
                         (array/without-nils))
 
-        is-button?  #(= :title-button (.. % -props -role))
-        is-content? #(= :content (.. % -props -role))
+        is-button?  #(as-> % $ (= :title-button (.. ^js $ -props -role)))
+        is-content? #(as-> % $ (= :content (.. ^js $ -props -role)))
 
         buttons     (array/filter is-button? children)
         content     (array/filter is-content? children)
@@ -222,7 +222,8 @@
 
 (defn set-drag-image
   [event item-ref num-selected]
-  (let [offset          (dom/get-offset-position (.-nativeEvent event))
+  (let [offset          (dom/get-offset-position
+                         (dom/event->native-event event))
         item-el         (mf/ref-val item-ref)
         counter-el      (create-counter-element num-selected)]
 
