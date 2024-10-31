@@ -16,8 +16,11 @@ if [ "$_BUILD_MODE" = "release" ]; then
     _CARGO_PARAMS="--release $_CARGO_PARAMS"
 fi
 
+echo kk $CARGO_PARAMS
+
 pushd $_SCRIPT_DIR;
 cargo build $_CARGO_PARAMS
+
 
 cp target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.js ../frontend/resources/public/js/
 cp target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.wasm ../frontend/resources/public/js/

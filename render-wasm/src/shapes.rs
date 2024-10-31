@@ -68,7 +68,7 @@ impl Shape {
     }
 }
 
-pub static mut SHAPES_BUFFER: [Shape; 2048] = [Shape {
+pub static mut SHAPES_BUFFER: [Shape; 3] = [Shape {
     selrect: Rect {
         x1: 0.0,
         y1: 0.0,
@@ -83,7 +83,7 @@ pub static mut SHAPES_BUFFER: [Shape; 2048] = [Shape {
         e: 0.0,
         f: 0.0,
     },
-}; 2048];
+}; 3];
 
 pub(crate) fn draw_all(state: &mut State) {
     let shapes;
@@ -92,9 +92,14 @@ pub(crate) fn draw_all(state: &mut State) {
     }
 
     for shape in shapes {
-        let selrect = shape.transformed_selrect();
-        let r = skia::Rect::new(selrect.x1, selrect.y1, selrect.x2, selrect.y2);
-
+        // let selrect = shape.transformed_selrect();
+        // let r = skia::Rect::new(selrect.x1, selrect.y1, selrect.x2, selrect.y2);
+        let r = skia::Rect::new(shape.selrect.x1, shape.selrect.y1, shape.selrect.x2, shape.selrect.y2);
+        
+        state.surface.canvas().save();
+        state.surface.canvas().translate((shape.transform.e, shape.transform.f));
+        state.surface.canvas().scale((shape.transform.a, shape.transform.d));       
         render_rect(&mut state.surface, r, skia::Color::RED);
+        state.surface.canvas().restore();
     }
 }
