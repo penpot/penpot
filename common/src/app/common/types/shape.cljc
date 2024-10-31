@@ -512,7 +512,6 @@
   contain at least :x :y :width :height."
   [{:keys [type] :as props}]
   (let [shape (make-minimal-shape type)
-
         ;; The props can be custom records that does not
         ;; work properly with without-nils, so we first make
         ;; it plain map for proceed

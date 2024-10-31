@@ -422,6 +422,13 @@
                     (assoc :type :multiple)
                     (cts/setup-shape)))
 
+        selrect (mf/with-memo [shapes]
+                  (-> shapes
+                      (gsh/shapes->rect)))
+
+        shape   (cts/setup-shape {:selrect selrect
+                                  :type :multiple})
+
         on-resize
         (mf/use-fn
          (mf/deps selected shape)
@@ -455,7 +462,14 @@
                 (-> shapes
                     (gsh/shapes->rect)
                     (assoc :type :multiple)
-                    (cts/setup-shape)))]
+                    (cts/setup-shape)))
+
+        selrect (mf/with-memo [shapes]
+                  (-> shapes
+                      (gsh/shapes->rect)))
+
+        shape   (cts/setup-shape {:selrect selrect
+                                  :type :multiple})]
 
     [:& controls-selection
      {:shape shape
