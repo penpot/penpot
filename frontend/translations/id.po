@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-10-30 11:07+0000\n"
+"PO-Revision-Date: 2024-11-01 06:04+0000\n"
 "Last-Translator: Linerly <linerly@proton.me>\n"
 "Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
 "frontend/id/>\n"
@@ -6082,3 +6082,27 @@ msgstr "Plugin tidak ada atau URL tidak benar."
 #: src/app/main/ui/static.cljs:262
 msgid "not-found.no-permission.you-can-ask.project"
 msgstr "Untuk mengakses proyek ini, Anda dapat menanyakan kepada pemilik tim."
+
+#: src/app/main/errors.cljs:219
+msgid "errors.migration-in-progress"
+msgstr " "
+
+#: src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:85
+msgid "exclude"
+msgstr " "
+
+#: src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:80
+msgid "intersection"
+msgstr " "
+
+#: src/app/main/ui/settings/access_tokens.cljs:152
+msgid "modals.create-access-token.token"
+msgstr " "
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:199
+msgid "shortcuts.toggle-rules"
+msgstr " "
+
+#: src/app/main/ui/settings/access_tokens.cljs:65
+msgid "dashboard.access-tokens.create.success"
+msgstr " "
