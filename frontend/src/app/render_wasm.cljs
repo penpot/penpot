@@ -123,14 +123,18 @@
 
 (defn apply-modifiers
   [objects modifiers]
-  (update-vals objects (fn [obj]
-    (let [id (:id obj)]
-      (if (contains? modifiers id)
-        ;; copy new transform matrix to the shape buffer
-        (let [shape-modifiers (dm/get-in modifiers [id :modifiers])
-              transform (ctm/modifiers->transform shape-modifiers)
-              buffer (.-buffer obj)]
-          (ctsi/write-transform buffer transform))
-          ;; reset transform matrix in the shape buffer
-          (ctsi/write-transform (.-buffer obj) (cgm/matrix)))
-      obj))))
+  (let [shapes (into [] xform (vals objects)) 
+        total-shapes (count shapes)]
+    (loop [index 0]
+      (when (< index total-shapes)
+        (let [shape (nth shapes index)
+              id (:id shape)
+              buffer (.-buffer shape)]
+          (if (contains? modifiers id)
+            ;; copy new transform matrix to the shape buffer
+            (let [shape-modifiers (dm/get-in modifiers [id :modifiers])
+                  transform (ctm/modifiers->transform shape-modifiers)]
+              (ctsi/write-transform buffer transform))
+            ;; reset transform matrix in the shape buffer
+            (ctsi/write-transform buffer (cgm/matrix))))
+        (recur (inc index))))))
