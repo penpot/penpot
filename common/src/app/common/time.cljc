@@ -27,6 +27,11 @@
   #?(:clj (Instant/now)
      :cljs (.local ^js DateTime)))
 
+#?(:clj
+   (defn is-after?
+     [one other]
+     (.isAfter one other)))
+
 (defn instant?
   [o]
   #?(:clj (instance? Instant o)
@@ -50,6 +55,8 @@
   [v]
   #?(:clj (.format DateTimeFormatter/ISO_INSTANT ^Instant v)
      :cljs (.toISO ^js v)))
+
+;; To check for valid date time we can just use the core inst? function
 
 #?(:cljs
    (extend-protocol IComparable

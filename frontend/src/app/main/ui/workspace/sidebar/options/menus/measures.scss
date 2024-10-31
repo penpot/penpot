@@ -109,6 +109,7 @@
 
 .size {
   @include flexRow;
+  position: relative;
 }
 
 .height,
@@ -186,6 +187,7 @@
   @extend .input-element;
   @include bodySmallTypography;
   width: $s-108;
+  position: relative;
 }
 
 .radius-4 {

@@ -1,0 +1,155 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.editable-select {
+  @extend .asset-element;
+  margin: 0;
+  display: flex;
+  height: calc($s-32 - 2px); // Fixes border being clipped by the input field
+  width: 100%;
+  padding: $s-8;
+  border-radius: $br-8;
+  position: relative;
+  cursor: pointer;
+
+  background: transparent;
+  &:hover {
+    background: transparent;
+  }
+  &:focus-within {
+    .token-pill {
+      background-color: var(--button-primary-background-color-rest);
+      color: var(--button-primary-foreground-color-rest);
+    }
+  }
+
+  .dropdown-button {
+    @include flexCenter;
+    margin-right: -$s-8;
+    padding-right: $s-8;
+    padding-left: 0;
+    aspect-ratio: 0.8 / 1;
+    width: auto;
+
+    svg {
+      @extend .button-icon-small;
+      transform: rotate(90deg);
+      stroke: var(--icon-foreground);
+    }
+  }
+
+  .custom-select-dropdown-list {
+    min-width: 150px;
+    width: 100%;
+    max-width: 200px;
+    margin-bottom: 0;
+  }
+
+  .token-pill {
+    background-color: rgb(94 107 120 / 25%);
+    border-radius: $br-4;
+    padding: $s-2 $s-6;
+    text-overflow: ellipsis;
+    flex: 0 0 auto;
+  }
+
+  .token-pill + input {
+    flex: 1 1 auto;
+    width: 0;
+  }
+
+  .custom-select-dropdown-left {
+    left: 0;
+    right: unset;
+  }
+
+  .custom-select-dropdown-right {
+    right: 0;
+    left: unset;
+  }
+
+  .custom-select-dropdown {
+    @extend .dropdown-wrapper;
+    max-height: $s-320;
+    width: auto;
+    margin-top: $s-4;
+
+    .separator {
+      margin: 0;
+      height: $s-12;
+    }
+
+    .dropdown-element {
+      @extend .dropdown-element-base;
+      color: var(--menu-foreground-color-rest);
+      padding: 0;
+      display: flex;
+
+      & > span {
+        display: flex;
+        justify-content: flex-start;
+        align-content: center;
+      }
+
+      .label,
+      .value {
+        width: fit-content;
+      }
+
+      .label {
+        text-transform: unset;
+        flex: 1;
+      }
+
+      .value {
+        text-align: right;
+        justify-content: flex-end;
+        flex: 0.6;
+      }
+
+      .check-icon {
+        @include flexCenter;
+        translate: -$s-4 0;
+        svg {
+          @extend .button-icon-small;
+          visibility: hidden;
+          stroke: var(--icon-foreground);
+        }
+      }
+
+      &.is-selected {
+        color: var(--menu-foreground-color);
+        .check-icon svg {
+          stroke: var(--menu-foreground-color);
+          visibility: visible;
+        }
+      }
+
+      &:hover {
+        background-color: var(--menu-background-color-hover);
+        color: var(--menu-foreground-color-hover);
+        .check-icon svg {
+          stroke: var(--menu-foreground-color-hover);
+        }
+      }
+      &.is-highlighted {
+        background-color: var(--button-primary-background-color-rest);
+        span {
+          color: var(--button-primary-foreground-color-rest);
+        }
+        .check-icon svg {
+          stroke: var(--button-primary-foreground-color-rest);
+        }
+      }
+    }
+  }
+}
+
+.editable-select-disabled {
+  pointer-events: none;
+}

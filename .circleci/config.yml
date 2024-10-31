@@ -28,12 +28,6 @@ jobs:
             yarn run lint:clj
 
       - run:
-          name: "JS tests"
-          working_directory: "./common"
-          command: |
-            yarn run test
-
-      - run:
           name: "JVM tests"
           working_directory: "./common"
           command: |

@@ -27,6 +27,7 @@
    [app.common.types.shape.path :as ctsp]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctsx]
+   [app.common.types.token :as cto]
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
@@ -189,6 +190,7 @@
    [:blur {:optional true} ::ctsb/blur]
    [:grow-type {:optional true}
     [::sm/one-of grow-types]]
+   [:applied-tokens {:optional true} ::cto/applied-tokens]
    [:plugin-data {:optional true} ::ctpg/plugin-data]])
 
 (def schema:group-attrs

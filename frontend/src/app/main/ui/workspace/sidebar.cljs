@@ -27,6 +27,7 @@
    [app.main.ui.workspace.sidebar.shortcuts :refer [shortcuts-container]]
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap]]
    [app.main.ui.workspace.sidebar.versions :refer [versions-toolbox]]
+   [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab]]
    [app.util.debug :as dbg]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -52,8 +53,11 @@
         mode-inspect?  (= options-mode :inspect)
         project        (mf/deref refs/workspace-project)
 
+        design-tokens? (mf/use-ctx muc/design-tokens)
+
         section        (cond (or mode-inspect? (contains? layout :layers)) :layers
-                             (contains? layout :assets) :assets)
+                             (contains? layout :assets) :assets
+                             (contains? layout :tokens) :tokens)
 
         shortcuts?     (contains? layout :shortcuts)
         show-debug?    (contains? layout :debug-panel)
@@ -97,6 +101,9 @@
         assets-tab
         (mf/html [:& assets-toolbox {:size (- size 58)}])
 
+        tokens-tab
+        (mf/html [:& tokens-sidebar-tab])
+
         tabs
         (if ^boolean mode-inspect?
           #js [#js {:label (tr "workspace.sidebar.layers")
@@ -107,7 +114,11 @@
                     :content layers-tab}
                #js {:label (tr "workspace.toolbar.assets")
                     :id "assets"
-                    :content assets-tab}])]
+                    :content assets-tab}
+               (when design-tokens?
+                 #js {:label "Tokens"
+                      :id "tokens"
+                      :content tokens-tab})])]
 
     [:& (mf/provider muc/sidebar) {:value :left}
      [:aside {:ref parent-ref

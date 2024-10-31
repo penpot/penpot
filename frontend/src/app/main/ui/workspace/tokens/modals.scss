@@ -1,0 +1,24 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.token-modal-wrapper {
+  @extend .modal-container-base;
+  @include menuShadow;
+  position: absolute;
+  width: auto;
+  min-width: auto;
+  z-index: 11;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.close-btn {
+  position: absolute;
+  top: $s-6;
+  right: $s-6;
+}

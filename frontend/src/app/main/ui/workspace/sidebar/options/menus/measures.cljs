@@ -12,7 +12,9 @@
    [app.common.logic.shapes :as cls]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [size-presets]]
+   [app.main.data.tokens :as dt]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.shapes :as dwsh]
@@ -24,6 +26,10 @@
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.tokens.core :as wtc]
+   [app.main.ui.workspace.tokens.editable-select :refer [editable-select]]
+   [app.main.ui.workspace.tokens.style-dictionary :as sd]
+   [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [clojure.set :refer [rename-keys union]]
@@ -95,6 +101,34 @@
 
         selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         selection-parents     (mf/deref selection-parents-ref)
+
+        tokens (sd/use-active-theme-sets-tokens)
+        tokens-by-type (mf/use-memo
+                        (mf/deps tokens)
+                        #(ctob/group-by-type tokens))
+
+        border-radius-tokens (:border-radius tokens-by-type)
+        border-radius-options (mf/use-memo
+                               (mf/deps shape border-radius-tokens)
+                               #(wtc/tokens->select-options
+                                 {:shape shape
+                                  :tokens border-radius-tokens
+                                  :attributes (wtty/token-attributes :border-radius)}))
+        sizing-tokens (:sizing tokens-by-type)
+        width-options (mf/use-memo
+                       (mf/deps shape sizing-tokens)
+                       #(wtc/tokens->select-options
+                         {:shape shape
+                          :tokens sizing-tokens
+                          :attributes (wtty/token-attributes :sizing)
+                          :selected-attributes #{:width}}))
+        height-options (mf/use-memo
+                        (mf/deps shape sizing-tokens)
+                        #(wtc/tokens->select-options
+                          {:shape shape
+                           :tokens sizing-tokens
+                           :attributes (wtty/token-attributes :sizing)
+                           :selected-attributes #{:height}}))
 
         flex-child?       (->> selection-parents (some ctl/flex-layout?))
         absolute?         (ctl/item-absolute? shape)
@@ -209,8 +243,20 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value attr]
-           (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                     (udw/update-dimensions ids attr value))))
+           (let [token-value (wtc/maybe-resolve-token-value value)
+                 undo-id (js/Symbol)]
+             (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                       (dwu/start-undo-transaction undo-id)
+                       (dwsh/update-shapes ids
+                                           (if token-value
+                                             #(assoc-in % [:applied-tokens attr] (:id value))
+                                             #(d/dissoc-in % [:applied-tokens attr]))
+                                           {:reg-objects? true
+                                            :attrs [:applied-tokens]})
+                       (udw/update-dimensions ids attr (or token-value value))
+                       (dwu/commit-undo-transaction undo-id)))))
+
+
 
         on-proportion-lock-change
         (mf/use-fn
@@ -256,7 +302,7 @@
                                    (update-fn shape)
                                    shape))
                                {:reg-objects? true
-                                :attrs [:rx :ry :r1 :r2 :r3 :r4]})))
+                                :attrs [:rx :ry :r1 :r2 :r3 :r4 :applied-tokens]})))
 
         on-switch-to-radius-1
         (mf/use-fn
@@ -281,11 +327,27 @@
              (on-switch-to-radius-4)
              (on-switch-to-radius-1))))
 
+        on-border-radius-token-unapply
+        (mf/use-fn
+         (mf/deps ids change-radius)
+         (fn [token]
+           (let [token-value (wtc/maybe-resolve-token-value token)]
+             (st/emit!
+              (change-radius (fn [shape]
+                               (-> (dt/unapply-token-id shape (wtty/token-attributes :border-radius))
+                                   (ctsr/set-radius-1 token-value))))))))
+
         on-radius-1-change
         (mf/use-fn
          (mf/deps ids change-radius)
          (fn [value]
-           (st/emit! (change-radius #(ctsr/set-radius-1 % value)))))
+           (let [token-value (wtc/maybe-resolve-token-value value)]
+             (st/emit!
+              (change-radius (fn [shape]
+                               (-> (dt/maybe-apply-token-to-shape {:token (when token-value value)
+                                                                   :shape shape
+                                                                   :attributes (wtty/token-attributes :border-radius)})
+                                   (ctsr/set-radius-1 (or token-value value)))))))))
 
         on-radius-multi-change
         (mf/use-fn
@@ -394,24 +456,34 @@
                                     :disabled disabled-width-sizing?)
                :title (tr "workspace.options.width")}
          [:span {:class (stl/css :icon-text)} "W"]
-         [:> numeric-input* {:min 0.01
-                             :no-validate true
-                             :placeholder (if (= :multiple (:width values)) (tr "settings.multiple") "--")
-                             :on-change on-width-change
-                             :disabled disabled-width-sizing?
-                             :class (stl/css :numeric-input)
-                             :value (:width values)}]]
+         [:& editable-select
+          {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
+           :class (stl/css :token-select)
+           :disabled disabled-width-sizing?
+           :on-change on-width-change
+           :on-token-remove #(on-width-change (wtc/maybe-resolve-token-value %))
+           :options width-options
+           :position :left
+           :value (:width values)
+           :input-props {:type "number"
+                         :no-validate true
+                         :min 0.01}}]]
         [:div {:class (stl/css-case :height true
                                     :disabled disabled-height-sizing?)
                :title (tr "workspace.options.height")}
          [:span {:class (stl/css :icon-text)} "H"]
-         [:> numeric-input* {:min 0.01
-                             :no-validate true
-                             :placeholder (if (= :multiple (:height values)) (tr "settings.multiple") "--")
-                             :on-change on-height-change
-                             :disabled disabled-height-sizing?
-                             :class (stl/css :numeric-input)
-                             :value (:height values)}]]
+         [:& editable-select
+          {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
+           :class (stl/css :token-select)
+           :disabled disabled-height-sizing?
+           :on-change on-height-change
+           :on-token-remove #(on-height-change (wtc/maybe-resolve-token-value %))
+           :options height-options
+           :position :right
+           :value (:height values)
+           :input-props {:type "number"
+                         :no-validate true
+                         :min 0.01}}]]
         [:button {:class (stl/css-case
                           :lock-size-btn true
                           :selected (true? proportion-lock)
@@ -468,13 +540,16 @@
               [:div {:class (stl/css :radius-1)
                      :title (tr "workspace.options.radius")}
                [:span {:class (stl/css :icon)}  i/corner-radius]
-               [:> numeric-input*
+               [:& editable-select
                 {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
-                 :ref radius-input-ref
-                 :min 0
+                 :class (stl/css :token-select)
                  :on-change on-radius-1-change
-                 :class (stl/css :numeric-input)
-                 :value (:rx values)}]]
+                 :on-token-remove on-border-radius-token-unapply
+                 :options border-radius-options
+                 :position :right
+                 :value (:rx values)
+                 :input-props {:type "number"
+                               :min 0}}]]
 
               @radius-multi?
               [:div {:class (stl/css :radius-1)

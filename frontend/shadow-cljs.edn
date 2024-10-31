@@ -8,8 +8,7 @@
   {:target :browser
    :output-dir "resources/public/js/"
    :asset-path "/js"
-   :devtools {:browser-inject :main
-              :watch-dir "resources/public"
+   :devtools {:watch-dir "resources/public"
               :reload-strategy :full}
    :build-options {:manifest-name "manifest.json"}
    :module-loader true
@@ -136,38 +135,37 @@
     :output-wrapper false
     :warnings {:fn-deprecated false}}}
 
-  :test-esm
-   {:target :esm
-    :output-dir "target/tests"
-    :runtime :custom
+  :test
+  {:target :esm
+   :output-dir "target/tests"
+   :runtime :custom
+   :js-options {:js-provider :import}
 
-    :modules
-    {:test {:init-fn frontend-tests.runner/init}}}
 
-    ;; :compiler-options
-    ;; {:output-feature-set :es2020
-    ;;  :warnings {:fn-deprecated false}}}
+   :modules
+   {:test {:init-fn frontend-tests.runner/init
+           :prepend-js "globalThis.navigator = {userAgent: \"\"}"}}}
 
   :lib-penpot
-   {:target :esm
-    :output-dir "resources/public/libs"
+  {:target :esm
+   :output-dir "resources/public/libs"
 
-    :modules
-    {:penpot {:exports {:renderPage app.libs.render/render-page-export
-                        :createFile app.libs.file-builder/create-file-export}}}
+   :modules
+   {:penpot {:exports {:renderPage app.libs.render/render-page-export
+                       :createFile app.libs.file-builder/create-file-export}}}
 
-    :compiler-options
-    {:output-feature-set :es2020
-     :output-wrapper false
-     :warnings {:fn-deprecated false}}
+   :compiler-options
+   {:output-feature-set :es2020
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}
 
-    :release
-    {:compiler-options
-     {:fn-invoke-direct true
-      :source-map true
-      :elide-asserts true
-      :anon-fn-naming-policy :off
-      :source-map-detail-level :all}}}
+   :release
+   {:compiler-options
+    {:fn-invoke-direct true
+     :source-map true
+     :elide-asserts true
+     :anon-fn-naming-policy :off
+     :source-map-detail-level :all}}}
 
   :bench
   {:target :node-script
@@ -184,24 +182,5 @@
    {:compiler-options
     {:fn-invoke-direct true
      :elide-asserts true
-     :anon-fn-naming-policy :off}}}
+     :anon-fn-naming-policy :off}}}}}
 
-  :test
-  {:target :node-test
-   :output-to "target/tests.cjs"
-   :output-dir "target/test/"
-   :ns-regexp "^frontend-tests.*-test$"
-   :autorun true
-
-   :js-options
-   {:entry-keys ["module" "browser" "main"]}
-
-   :compiler-options
-   {:output-feature-set :es2020
-    :output-wrapper false
-    :source-map true
-    :source-map-include-sources-content true
-    :source-map-detail-level :all
-    :warnings {:fn-deprecated false}}}
-
-  }}

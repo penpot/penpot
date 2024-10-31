@@ -30,6 +30,7 @@
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [app.main.ui.workspace.sidebar.collapsable-button :refer [collapsed-button]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
+   [app.main.ui.workspace.tokens.modals]
    [app.main.ui.workspace.viewport :refer [viewport]]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
@@ -179,6 +180,7 @@
         file-ready?      (mf/deref file-ready*)
 
         components-v2?   (features/use-feature "components/v2")
+        design-tokens?   (features/use-feature "design-tokens/v1")
 
         background-color (:background-color wglobal)]
 
@@ -207,15 +209,16 @@
       [:& (mf/provider ctx/current-team-id) {:value team-id}
        [:& (mf/provider ctx/current-page-id) {:value page-id}
         [:& (mf/provider ctx/components-v2) {:value components-v2?}
-         [:& (mf/provider ctx/workspace-read-only?) {:value read-only?}
-          [:& (mf/provider ctx/team-permissions) {:value permissions}
-           [:section {:class (stl/css :workspace)
-                      :style {:background-color background-color
-                              :touch-action "none"}}
-            [:& context-menu]
-            (if ^boolean file-ready?
-              [:& workspace-page {:page-id page-id
-                                  :file file
-                                  :wglobal wglobal
-                                  :layout layout}]
-              [:& workspace-loader])]]]]]]]]))
+         [:& (mf/provider ctx/design-tokens) {:value design-tokens?}
+          [:& (mf/provider ctx/workspace-read-only?) {:value read-only?}
+           [:& (mf/provider ctx/team-permissions) {:value permissions}
+            [:section {:class (stl/css :workspace)
+                       :style {:background-color background-color
+                               :touch-action "none"}}
+             [:& context-menu]
+             (if ^boolean file-ready?
+               [:& workspace-page {:page-id page-id
+                                   :file file
+                                   :wglobal wglobal
+                                   :layout layout}]
+               [:& workspace-loader])]]]]]]]]]))
