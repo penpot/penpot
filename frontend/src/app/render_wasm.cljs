@@ -34,7 +34,7 @@
 (def rect-size (+ 4 6))
 
 (defn set-objects
-  [objects]
+  [objects modifiers]
   ;; FIXME: maybe change the name of `_shapes_buffer` (?)
   (let [get-shapes-buffer-ptr
         (unchecked-get internal-module "_shapes_buffer")
@@ -61,8 +61,17 @@
 
     (loop [index 0]
       (when (< index total-shapes)
-        (let [shape (nth shapes index)]
-          (.set ^js mem (.-buffer shape) (* index rect-size))
+        (let [shape (nth shapes index)
+              id (:id shape)
+              buffer (.-buffer shape)]
+          (if (contains? modifiers id)
+            ;; copy new transform matrix to the shape buffer
+            (let [shape-modifiers (dm/get-in modifiers [id :modifiers])
+                  transform (ctm/modifiers->transform shape-modifiers)]
+              (ctsi/write-transform buffer transform))
+            ;; reset transform matrix in the shape buffer
+            (ctsi/write-transform buffer (cgm/matrix)))
+          (.set ^js mem buffer (* index rect-size))
           (recur (inc index)))))))
 
 (defn draw-objects
@@ -121,20 +130,3 @@
                  (js/console.error cause)
                  (p/resolved false)))))
 
-(defn apply-modifiers
-  [objects modifiers]
-  (let [shapes (into [] xform (vals objects)) 
-        total-shapes (count shapes)]
-    (loop [index 0]
-      (when (< index total-shapes)
-        (let [shape (nth shapes index)
-              id (:id shape)
-              buffer (.-buffer shape)]
-          (if (contains? modifiers id)
-            ;; copy new transform matrix to the shape buffer
-            (let [shape-modifiers (dm/get-in modifiers [id :modifiers])
-                  transform (ctm/modifiers->transform shape-modifiers)]
-              (ctsi/write-transform buffer transform))
-            ;; reset transform matrix in the shape buffer
-            (ctsi/write-transform buffer (cgm/matrix))))
-        (recur (inc index))))))

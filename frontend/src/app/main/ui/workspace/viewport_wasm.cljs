@@ -284,8 +284,7 @@
 
     (mf/with-effect [base-objects modifiers canvas-init?]
       (when @canvas-init?
-        (render.wasm/apply-modifiers base-objects modifiers)
-        (render.wasm/set-objects base-objects)
+        (render.wasm/set-objects base-objects modifiers)
         (render.wasm/draw-objects zoom vbox)))
 
     (mf/with-effect [vbox canvas-init?]
