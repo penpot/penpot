@@ -37,6 +37,7 @@
     "translations": "node ./scripts/translations.js",
     "build:app:libs": "esbuild --bundle --outfile=resources/public/js/libs.js --format=iife target/index.js --minify",
     "watch:app:libs": "esbuild --bundle --outfile=resources/public/js/libs.js --format=iife target/index.js --watch",
+    "watch:app": "concurrently \"clojure -M:dev:shadow-cljs watch main worker\" \"yarn run watch:app:libs\"",
     "watch": "yarn run watch:app:assets",
     "watch:app:assets": "node ./scripts/watch.js",
     "watch:storybook": "concurrently \"clojure -M:dev:shadow-cljs watch storybook\" \"storybook dev -p 6006 --no-open\" \"yarn run watch:storybook:assets\"",
