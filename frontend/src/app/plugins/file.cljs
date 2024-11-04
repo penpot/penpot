@@ -20,8 +20,7 @@
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
-   [beicon.v2.core :as rx]
-   [promesa.core :as p]))
+   [beicon.v2.core :as rx]))
 
 (deftype FileProxy [$plugin $id]
   Object
@@ -128,7 +127,7 @@
               file (u/proxy->file self)
               features (features/get-team-enabled-features @st/state)
               team-id  (:current-team-id @st/state)]
-          (p/create
+          (js/Promise.
            (fn [resolve reject]
              (->> (uw/ask-many!
                    {:cmd export-cmd

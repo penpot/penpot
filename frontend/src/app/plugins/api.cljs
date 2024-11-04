@@ -40,8 +40,7 @@
    [app.plugins.viewport :as viewport]
    [app.util.code-gen :as cg]
    [app.util.object :as obj]
-   [beicon.v2.core :as rx]
-   [promesa.core :as p]))
+   [beicon.v2.core :as rx]))
 
 ;;
 ;; PLUGINS PUBLIC API - The plugins will able to access this functions
@@ -174,7 +173,7 @@
 
       :else
       (let [file-id (:current-file-id @st/state)]
-        (p/create
+        (js/Promise.
          (fn [resolve reject]
            (->> (dwm/upload-media-url name file-id url)
                 (rx/take 1)
@@ -184,7 +183,7 @@
   (uploadMediaData
     [_ name data mime-type]
     (let [file-id (:current-file-id @st/state)]
-      (p/create
+      (js/Promise.
        (fn [resolve reject]
          (->> (dwm/process-blobs
                {:file-id file-id
