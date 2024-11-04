@@ -52,8 +52,7 @@
    [app.util.object :as obj]
    [app.util.path.format :as upf]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]
-   [promesa.core :as p]))
+   [cuerdas.core :as str]))
 
 (declare shape-proxy)
 (declare shape-proxy?)
@@ -542,7 +541,7 @@
                           :type      (:type value :png)
                           :suffix    (:suffix value "")
                           :scale     (:scale value 1)}]}]
-          (p/create
+          (js/Promise.
            (fn [resolve reject]
              (->> (rp/cmd! :export payload)
                   (rx/mapcat #(rp/cmd! :export {:cmd :get-resource :wait true :id (:id %) :blob? true}))
