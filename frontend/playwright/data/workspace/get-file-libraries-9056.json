@@ -1,0 +1,23 @@
+[
+  {
+    "~:features": {
+      "~#set": [
+        "layout/grid",
+        "styles/v2",
+        "fdata/pointer-map",
+        "fdata/objects-map",
+        "components/v2",
+        "fdata/shape-data-type"
+      ]
+    },
+    "~:is-indirect": false,
+    "~:name": "published component",
+    "~:revn": 3,
+    "~:modified-at": "~m1730103592325",
+    "~:vern": 0,
+    "~:id": "~u3622460c-3408-81e2-8005-2fc938010233",
+    "~:project-id": "~u3622460c-3408-81e2-8005-2fc9059741e0",
+    "~:synced-at": "~m1730103575856",
+    "~:created-at": "~m1730101410834"
+  }
+]
