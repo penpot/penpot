@@ -112,16 +112,20 @@ Token names should only contain letters and digits separated by . characters.")}
       (p/rejected {:errors [(wte/get-error-code :error.token/direct-self-reference)]})
 
       :else
-      (-> (update tokens token-name merge {:value value
-                                           :name token-name
-                                           :type (:type token)})
-          (sd/resolve-tokens+)
-          (p/then
-           (fn [resolved-tokens]
-             (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
-               (cond
-                 resolved-value (p/resolved resolved-token)
-                 :else (p/rejected {:errors (or errors (wte/get-error-code :error/unknown-error))})))))))))
+      (let [tokens' (cond-> tokens
+                      ;; Remove previous token when renaming a token
+                      (not= name-value (:name token)) (dissoc (:name token))
+                      :always (update token-name #(ctob/make-token (merge % {:value value
+                                                                             :name token-name
+                                                                             :type (:type token)}))))]
+        (-> tokens'
+            (sd/resolve-tokens-interactive+)
+            (p/then
+             (fn [resolved-tokens]
+               (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
+                 (cond
+                   resolved-value (p/resolved resolved-token)
+                   :else (p/rejected {:errors (or errors (wte/get-error-code :error/unknown-error))}))))))))))
 
 (defn use-debonced-resolve-callback
   "Resolves a token values using `StyleDictionary`.
@@ -200,8 +204,7 @@ Token names should only contain letters and digits separated by . characters.")}
 (mf/defc form
   {::mf/wrap-props false}
   [{:keys [token token-type action selected-token-set-id]}]
-  (let [validate-name? (mf/use-state (not (:id token)))
-        token (or token {:type token-type})
+  (let [token (or token {:type token-type})
         color? (wtt/color-token? token)
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
         active-theme-tokens (mf/deref refs/workspace-active-theme-sets-tokens)
@@ -218,6 +221,7 @@ Token names should only contain letters and digits separated by . characters.")}
                                         (d/dissoc-in token-path))))
 
         ;; Name
+        touched-name? (mf/use-state false)
         name-ref (mf/use-var (:name token))
         name-errors (mf/use-state nil)
         validate-name
@@ -233,15 +237,14 @@ Token names should only contain letters and digits separated by . characters.")}
          (debounce (fn [e]
                      (let [value (dom/get-target-val e)
                            errors (validate-name value)]
-                                                ;; Prevent showing error when just going to another field on a new token
-                       (when-not (and validate-name? (str/empty? value))
-                         (reset! validate-name? false)
+                       (when touched-name?
                          (reset! name-errors errors))))))
 
         on-update-name
         (mf/use-fn
          (mf/deps on-update-name-debounced)
          (fn [e]
+           (reset! touched-name? true)
            (reset! name-ref (dom/get-target-val e))
            (on-update-name-debounced e)))
 
@@ -310,10 +313,10 @@ Token names should only contain letters and digits separated by . characters.")}
          (mf/deps validate-name validate-descripion token resolved-tokens)
          (fn [e]
            (dom/prevent-default e)
-                     ;; We have to re-validate the current form values before submitting
-                     ;; because the validation is asynchronous/debounced
-                     ;; and the user might have edited a valid form to make it invalid,
-                     ;; and press enter before the next validations could return.
+           ;; We have to re-validate the current form values before submitting
+           ;; because the validation is asynchronous/debounced
+           ;; and the user might have edited a valid form to make it invalid,
+           ;; and press enter before the next validations could return.
            (let [final-name (finalize-name @name-ref)
                  valid-name?+ (-> (validate-name final-name) schema-validation->promise)
                  final-value (finalize-value @value-ref)
@@ -326,8 +329,8 @@ Token names should only contain letters and digits separated by . characters.")}
                                                  :token token
                                                  :tokens resolved-tokens})])
                  (p/finally (fn [result err]
-                                        ;; The result should be a vector of all resolved validations
-                                        ;; We do not handle the error case as it will be handled by the components validations
+                              ;; The result should be a vector of all resolved validations
+                              ;; We do not handle the error case as it will be handled by the components validations
                               (when (and (seq result) (not err))
                                 (st/emit! (dt/update-create-token {:token (ctob/make-token :name final-name
                                                                                            :type (or (:type token) token-type)
