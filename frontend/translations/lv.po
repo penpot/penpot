@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-02 14:00+0000\n"
+"PO-Revision-Date: 2024-11-05 17:00+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -1659,7 +1659,7 @@ msgstr "InVision"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:516, src/app/main/ui/dashboard/team.cljs:94, src/app/main/ui/dashboard/team.cljs:102, src/app/main/ui/dashboard/team.cljs:728
 msgid "labels.invitations"
-msgstr "Ielūgumi"
+msgstr "Uzaicinājumi"
 
 #: src/app/main/ui/settings/options.cljs:48
 msgid "labels.language"
@@ -2291,7 +2291,7 @@ msgstr "E-pasta ziņojumi, atdalīti ar komatiem"
 #: src/app/main/ui/dashboard/team.cljs:215
 msgid "modals.invite-member.repeated-invitation"
 msgstr ""
-"Dažas no e-pasta adresēm ir pašreizējiem komandas dalībniekiem. Ielūgumi "
+"Dažas no e-pasta adresēm ir pašreizējiem komandas dalībniekiem. Uzaicinājumi "
 "viņiem netiks nosūtīti."
 
 #: src/app/main/ui/dashboard/team.cljs:208
@@ -3465,7 +3465,7 @@ msgstr "Profils - Penpot"
 
 #: src/app/main/ui/dashboard/team.cljs:747
 msgid "title.team-invitations"
-msgstr "Ielūgumi - %s - Penpot"
+msgstr "Uzaicinājumi - %s - Penpot"
 
 #: src/app/main/ui/dashboard/team.cljs:512
 msgid "title.team-members"
@@ -5867,3 +5867,164 @@ msgid "not-found.no-permission.already-requested.or-others.file"
 msgstr ""
 "Jau ir pieprasīta piekļuve šai datnei vai šīs komandas citām datnēm vai "
 "projektiem."
+
+#: src/app/main/ui/onboarding/questions.cljs:80
+msgid "onboarding.questions.use.education"
+msgstr "Izglītība"
+
+#: src/app/main/ui/onboarding/questions.cljs:79
+msgid "onboarding.questions.use.work"
+msgstr "Darbs"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:219, src/app/main/ui/workspace/top_toolbar.cljs:220
+msgid "workspace.toolbar.toggle-toolbar"
+msgstr "Pārslēgt rīkjoslu"
+
+#: src/app/main/ui/workspace/plugins.cljs:171
+msgid "workspace.plugins.install"
+msgstr "Uzstādīt"
+
+#: src/app/main/ui/workspace/plugins.cljs:58
+msgid "workspace.plugins.button-open"
+msgstr "Atvērt"
+
+#: src/app/main/ui/onboarding/questions.cljs:345
+msgid "onboarding.questions.start-with.prototyping"
+msgstr "Prototipēšana"
+
+#: src/app/main/ui/onboarding/questions.cljs:341
+msgid "onboarding.questions.start-with.ui"
+msgstr "Izstrādāt lietotnes lietotāju saskarni/pieredzi"
+
+#: src/app/main/ui/onboarding/questions.cljs:370
+msgid "onboarding.questions.step4.title"
+msgstr "Kur Tu vēlētos sākt?"
+
+#: src/app/main/ui/static.cljs:253
+msgid "not-found.no-permission.already-requested.or-others.project"
+msgstr ""
+"Tu jau pieprasīji piekļuvi šim projektam vai šīs komandas citiem projektiem "
+"vai datnēm."
+
+#: src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.ask"
+msgstr "PIEPRASĪT PIEKĻUVI"
+
+#: src/app/main/ui/static.cljs:253
+msgid "not-found.no-permission.already-requested.project"
+msgstr "Tu jau pieprasīji piekļuvi šim projektam."
+
+#: src/app/main/ui/static.cljs:256
+msgid "not-found.no-permission.done.remember"
+msgstr ""
+"Jāatceras, ka, ja īpašnieks to ļauj, tiksi uzaicināts pievienoties komandai."
+
+#: src/app/main/ui/static.cljs:256
+msgid "not-found.no-permission.done.success"
+msgstr "Pieprasījums tika veiksmīgi nosūtīts."
+
+#: src/app/main/ui/static.cljs:259
+msgid "not-found.no-permission.file"
+msgstr "Nav piekļuves šai datnei."
+
+#: src/app/main/ui/static.cljs:43, src/app/main/ui/static.cljs:247, src/app/main/ui/static.cljs:250, src/app/main/ui/static.cljs:253, src/app/main/ui/static.cljs:256, src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.go-dashboard"
+msgstr "Doties uz savu Penpot"
+
+#: src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.if-approves"
+msgstr "Ja īpašnieks to ļauj, tiksi uzaicināts pievienoties komandai."
+
+#: src/app/main/ui/static.cljs:217, src/app/main/ui/static.cljs:222
+msgid "not-found.no-permission.penpot-file"
+msgstr "Penpot datne"
+
+#: src/app/main/ui/static.cljs:247, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.project"
+msgstr "Nav piekļuves šim projektam."
+
+#: src/app/main/ui/static.cljs:216, src/app/main/ui/static.cljs:220
+msgid "not-found.no-permission.project-name"
+msgstr "PROJEKTS"
+
+#: src/app/main/ui/static.cljs:259
+msgid "not-found.no-permission.you-can-ask.file"
+msgstr "Lai piekļūtu šai datnei, jāvaicā komandas īpašniekam."
+
+#: src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.you-can-ask.project"
+msgstr "Lai piekļūtu šim projektam, jāvaicā komandas īpašniekam."
+
+#: src/app/main/data/common.cljs:85
+msgid "notifications.by-code.maintenance"
+msgstr ""
+"Uzturēšanas pārtraukums: mēs 5 minūšu laikā nebūsim pieejami nelielas "
+"uzturēšanas dēļ."
+
+#: src/app/main/ui/onboarding/questions.cljs:94
+msgid "onboarding.questions.reasons.alternative"
+msgstr "Meklējot Figma, XD utml. aizstājēju"
+
+#: src/app/main/ui/onboarding/questions.cljs:88
+msgid "onboarding.questions.reasons.exploring"
+msgstr "Tikai izpētes nolūkos"
+
+#: src/app/main/ui/onboarding/questions.cljs:91
+msgid "onboarding.questions.reasons.fit"
+msgstr "Lai novērtētu, vai Penpot būs piemērota manai komandai"
+
+#: src/app/main/ui/onboarding/questions.cljs:97
+msgid "onboarding.questions.reasons.testing"
+msgstr "Pārbaudīšana pirms pašmitināšanas"
+
+#: src/app/main/ui/onboarding/questions.cljs:408
+msgid "onboarding.questions.referer.article"
+msgstr "Raksts (emuārs, ieraksts, biļetens)"
+
+#: src/app/main/ui/onboarding/questions.cljs:406
+msgid "onboarding.questions.referer.search"
+msgstr "Meklētājs (Google, Yahoo, Bing)"
+
+#: src/app/main/ui/onboarding/questions.cljs:407
+msgid "onboarding.questions.referer.social"
+msgstr "Sabiedriskie tīkli (X, LinkedIn, FB utml.)"
+
+#: src/app/main/ui/onboarding/questions.cljs:349
+msgid "onboarding.questions.start-with.code"
+msgstr "Īsta koda izveidošana no dizainiem"
+
+#: src/app/main/ui/onboarding/questions.cljs:347
+msgid "onboarding.questions.start-with.ds"
+msgstr "Dizaina sistēmu izveidošana"
+
+#: src/app/main/ui/onboarding/questions.cljs:287
+msgid "onboarding.questions.step3.title"
+msgstr "Pastāsti mums par savu darbu"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:525
+msgid "workspace.assets.grid-view"
+msgstr "Režģa skats"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:521
+msgid "workspace.assets.list-view"
+msgstr "Saraksta skats"
+
+#: src/app/main/ui/workspace/plugins.cljs:251
+msgid "workspace.plugins.permissions.content-read"
+msgstr "Lasīt datņu, kurām lietotājiem ir piekļuve, saturu."
+
+#: src/app/main/ui/workspace/plugins.cljs:245
+msgid "workspace.plugins.permissions.content-write"
+msgstr "Lasīt un mainīt datņu, kurām lietotājiem ir piekļuve, saturu."
+
+#: src/app/main/ui/workspace/plugins.cljs:271
+msgid "workspace.plugins.permissions.library-read"
+msgstr "Lasīt bibliotēkas un līdzekļus."
+
+#: src/app/main/ui/workspace/plugins.cljs:265
+msgid "workspace.plugins.permissions.library-write"
+msgstr "Lasīt un mainīt bibliotēkas un līdzekļus."
+
+#: src/app/main/ui/workspace/plugins.cljs:258
+msgid "workspace.plugins.permissions.user-read"
+msgstr "Lasīt pašreizējā lietotāja profila informāciju."
