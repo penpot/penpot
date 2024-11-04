@@ -2146,7 +2146,6 @@ msgstr "YouTube"
 msgid "media.choose-image"
 msgstr "Choose image"
 
-#, unused
 msgid "media.gradient"
 msgstr "Gradient"
 

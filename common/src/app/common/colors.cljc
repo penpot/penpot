@@ -478,3 +478,63 @@
         a (+ (* ah 100) (* av 10))
         b (+ (* bh 100) (* bv 10))]
     (compare a b)))
+
+(defn interpolate-color
+  [c1 c2 offset]
+  (cond
+    (<= offset (:offset c1)) (assoc c1 :offset offset)
+    (>= offset (:offset c2)) (assoc c2 :offset offset)
+
+    :else
+    (let [tr-offset (/ (- offset (:offset c1)) (- (:offset c2) (:offset c1)))
+          [r1 g1 b1] (hex->rgb (:color c1))
+          [r2 g2 b2] (hex->rgb (:color c2))
+          a1 (:opacity c1)
+          a2 (:opacity c2)
+          r (+ r1 (* (- r2 r1) tr-offset))
+          g (+ g1 (* (- g2 g1) tr-offset))
+          b (+ b1 (* (- b2 b1) tr-offset))
+          a (+ a1 (* (- a2 a1) tr-offset))]
+      {:color (rgb->hex [r g b])
+       :opacity a
+       :r r
+       :g g
+       :b b
+       :alpha a
+       :offset offset})))
+
+(defn- offset-spread
+  [from to num]
+  (->> (range 0 num)
+       (map #(mth/precision (+ from (* (/ (- to from) (dec num)) %)) 2))))
+
+(defn uniform-spread?
+  "Checks if the gradient stops are spread uniformly"
+  [stops]
+  (let [cs          (count stops)
+        from        (first stops)
+        to          (last stops)
+        expect-vals (offset-spread (:offset from) (:offset to) cs)
+
+        calculate-expected
+        (fn [expected-offset stop]
+          (and (mth/close? (:offset stop) expected-offset)
+               (let [ec (interpolate-color from to expected-offset)]
+                 (and (= (:color ec) (:color stop))
+                      (= (:opacity ec) (:opacity stop))))))]
+    (->> (map calculate-expected expect-vals stops)
+         (every? true?))))
+
+(defn uniform-spread
+  "Assign an uniform spread to the offset values for the gradient"
+  [from to num-stops]
+  (->> (offset-spread (:offset from) (:offset to) num-stops)
+       (mapv (fn [offset]
+               (interpolate-color from to offset)))))
+
+(defn interpolate-gradient
+  [stops offset]
+  (let [idx   (d/index-of-pred stops #(<= offset (:offset %)))
+        start (if (= idx 0) (first stops) (get stops (dec idx)))
+        end   (if (nil? idx) (last stops) (get stops idx))]
+    (interpolate-color start end offset)))

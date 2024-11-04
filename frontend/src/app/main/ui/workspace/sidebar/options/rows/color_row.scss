@@ -153,14 +153,6 @@
   }
 }
 
-.gradient-name-wrapper {
-  border-radius: 0 $br-8 $br-8 0;
-  .color-name {
-    @include flexRow;
-    border-radius: 0 $br-8 $br-8 0;
-  }
-}
-
 .library-name-wrapper {
   border-radius: $br-8;
 }

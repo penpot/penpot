@@ -19,7 +19,7 @@
    [potok.v2.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module
-(log/set-level! :debug)
+(log/set-level! :info)
 
 (def page-change?
   #{:add-page :mod-page :del-page :mov-page})
