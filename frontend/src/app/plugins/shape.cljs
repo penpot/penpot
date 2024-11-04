@@ -952,7 +952,7 @@
 
           ;; Geometry properties
           {:name "x"
-           :get #(-> % u/proxy->shape :x)
+           :get #(-> % u/proxy->shape :points grc/points->rect :x)
            :set
            (fn [self value]
              (let [id (obj/get self "$id")]
@@ -967,7 +967,7 @@
                  (st/emit! (dw/update-position id {:x value})))))}
 
           {:name "y"
-           :get #(-> % u/proxy->shape :y)
+           :get #(-> % u/proxy->shape :points grc/points->rect :y)
            :set
            (fn [self value]
              (let [id (obj/get self "$id")]
@@ -991,9 +991,10 @@
           {:name "parentX"
            :get (fn [self]
                   (let [shape (u/proxy->shape self)
+                        shape-x (-> shape :points grc/points->rect :x)
                         parent-id (:parent-id shape)
                         parent (u/locate-shape (obj/get self "$file") (obj/get self "$page") parent-id)]
-                    (- (:x shape) (:x parent))))
+                    (- shape-x (:x parent))))
            :set
            (fn [self value]
              (cond
@@ -1013,10 +1014,11 @@
           {:name "parentY"
            :get (fn [self]
                   (let [shape (u/proxy->shape self)
+                        shape-y (-> shape :points grc/points->rect :y)
                         parent-id (:parent-id shape)
                         parent (u/locate-shape (obj/get self "$file") (obj/get self "$page") parent-id)
                         parent-y (:y parent)]
-                    (- (:y shape) parent-y)))
+                    (- shape-y parent-y)))
            :set
            (fn [self value]
              (cond
@@ -1036,10 +1038,11 @@
           {:name "boardX"
            :get (fn [self]
                   (let [shape (u/proxy->shape self)
+                        shape-x (-> shape :points grc/points->rect :x)
                         frame-id (:parent-id shape)
                         frame (u/locate-shape (obj/get self "$file") (obj/get self "$page") frame-id)
                         frame-x (:x frame)]
-                    (- (:x shape) frame-x)))
+                    (- shape-x frame-x)))
            :set
            (fn [self value]
              (cond
@@ -1059,10 +1062,11 @@
           {:name "boardY"
            :get (fn [self]
                   (let [shape (u/proxy->shape self)
+                        shape-y (-> shape :points grc/points->rect :y)
                         frame-id (:parent-id shape)
                         frame (u/locate-shape (obj/get self "$file") (obj/get self "$page") frame-id)
                         frame-y (:y frame)]
-                    (- (:y shape) frame-y)))
+                    (- shape-y frame-y)))
            :set
            (fn [self value]
              (cond
@@ -1080,10 +1084,10 @@
                  (st/emit! (dw/update-position id {:y (+ frame-y value)})))))}
 
           {:name "width"
-           :get #(-> % u/proxy->shape :width)}
+           :get #(-> % u/proxy->shape :selrect :width)}
 
           {:name "height"
-           :get #(-> % u/proxy->shape :height)}
+           :get #(-> % u/proxy->shape :selrect :height)}
 
           {:name "bounds"
            :get #(-> % u/proxy->shape :points grc/points->rect format/format-bounds)}
