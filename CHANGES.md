@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2.3.1
+
+### :bug: Bugs fixed
+
+- Fix unexpected issue on interaction between plugins sandbox and
+  internal impl of promise
+
+
 ## 2.3.0
 
 ### :rocket: Epics and highlights
