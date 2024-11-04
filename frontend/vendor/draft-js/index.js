@@ -16,6 +16,8 @@ import {
   Modifier,
   RichTextEditorUtil,
   SelectionState,
+  convertFromRaw,
+  convertToRaw
 } from "draft-js";
 
 import DraftPasteProcessor from 'draft-js/lib/DraftPasteProcessor';
@@ -406,3 +408,8 @@ export function selectionEquals(selection, other) {
     selection.getFocusOffset() === other.getFocusOffset() &&
     selection.getIsBackward() === other.getIsBackward();
 }
+
+export {
+  convertToRaw,
+  convertFromRaw
+};

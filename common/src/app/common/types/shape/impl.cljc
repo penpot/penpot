@@ -158,9 +158,9 @@
      (if (= k :selrect)
        (let [buffer (clone-f32-array (.-buffer coll))]
          (write-selrect buffer v)
-         (ShapeWithBuffer. buffer (.-delegate coll)))
+         (ShapeWithBuffer. buffer (.-delegate ^ShapeWithBuffer coll)))
 
-       (let [delegate  (.-delegate coll)
+       (let [delegate  (.-delegate ^ShapeWithBuffer coll)
              delegate' (assoc delegate k v)]
          (if (identical? delegate' delegate)
            coll
@@ -170,7 +170,7 @@
 #?(:cljs
    (defn- impl-dissoc
      [coll k]
-     (let [delegate  (.-delegate coll)
+     (let [delegate  (.-delegate ^ShapeWithBuffer coll)
            delegate' (dissoc delegate k)]
        (if (identical? delegate delegate')
          coll

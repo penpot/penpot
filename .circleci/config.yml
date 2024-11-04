@@ -86,7 +86,7 @@ jobs:
           working_directory: "./frontend"
           command: |
             yarn install
-            yarn test
+            yarn run test
 
       - save_cache:
           paths:
@@ -99,10 +99,10 @@ jobs:
       - image: penpotapp/devenv:latest
 
     working_directory: ~/repo
-    resource_class: medium+
+    resource_class: large
 
     environment:
-      JAVA_OPTS: -Xmx4g -Xms100m -XX:+UseSerialGC
+      JAVA_OPTS: -Xmx6g -Xms2g
       NODE_OPTIONS: --max-old-space-size=4096
 
     steps:
@@ -120,8 +120,9 @@ jobs:
             yarn install
             yarn run build:app:assets
             yarn run build:app
+            yarn run build:app:libs
             yarn run playwright install --with-deps chromium
-            yarn run test:e2e
+            yarn run test:e2e -x --workers=4
 
   test-backend:
     docker:
