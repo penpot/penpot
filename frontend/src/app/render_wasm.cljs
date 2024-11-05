@@ -90,17 +90,6 @@
                        (cgm/matrix))
 
               offset (* index shape+modifier-size)]
-
-          ;; transform (gmt/multiply modifiers-transform shape-transform)]
-          ;; (if (contains? modifiers id)
-          ;;   ;; copy new transform matrix to the shape buffer
-          ;;   (let [shape-modifiers (dm/get-in modifiers [id :modifiers])
-          ;;         modifiers-transform (ctm/modifiers->transform shape-modifiers)
-          ;;         ]
-          ;;     (ctsi/write-transform buffer transform))
-          ;;   ;; reset transform matrix in the shape buffer
-          ;;   (ctsi/write-transform buffer (cgm/matrix)))
-
           (write-shape mem shape offset)
           (write-matrix mem matrix (+ offset 4))
           (recur (inc index)))))))

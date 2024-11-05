@@ -1,11 +1,6 @@
-use euclid::{self, Angle};
 use skia_safe as skia;
 
 use crate::render::{render_rect, State};
-
-pub struct WorldSpace;
-pub type TransformMatrix = euclid::Transform2D<f32, WorldSpace, WorldSpace>;
-pub type Point = euclid::Point2D<f32, WorldSpace>;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Rect {
@@ -13,27 +8,6 @@ pub struct Rect {
     pub y1: f32,
     pub x2: f32,
     pub y2: f32,
-}
-
-impl Rect {
-    fn new(top_left: Point, bottom_right: Point) -> Self {
-        Rect {
-            x1: top_left.x,
-            y1: top_left.y,
-            x2: bottom_right.x,
-            y2: bottom_right.y,
-        }
-    }
-
-    #[inline]
-    fn top_left(&self) -> Point {
-        Point::new(self.x1, self.y1)
-    }
-
-    #[inline]
-    fn bottom_right(&self) -> Point {
-        Point::new(self.x2, self.y2)
-    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -46,12 +20,6 @@ pub struct Transform {
     pub f: f32,
 }
 
-impl Into<TransformMatrix> for Transform {
-    fn into(self) -> TransformMatrix {
-        TransformMatrix::new(self.a, self.b, self.c, self.d, self.e, self.f)
-    }
-}
-
 #[derive(Debug, Clone, Copy)]
 pub struct Shape {
     pub selrect: Rect,
@@ -59,13 +27,19 @@ pub struct Shape {
 }
 
 impl Shape {
-    pub fn transformed_selrect(&self) -> Rect {
-        let matrix: TransformMatrix = self.transform.into();
-        println!("Raw selrect: {:?}", self.selrect);
-        let top_left = matrix.transform_point(self.selrect.top_left());
-        let bottom_right = matrix.transform_point(self.selrect.bottom_right());
+    #[inline]
+    fn translation(&self) -> (f32, f32) {
+        (self.transform.e, self.transform.f)
+    }
 
-        Rect::new(top_left, bottom_right)
+    #[inline]
+    fn scale(&self) -> (f32, f32) {
+        (self.transform.a, self.transform.d)
+    }
+
+    #[inline]
+    fn skew(&self) -> (f32, f32) {
+        (self.transform.c, self.transform.b)
     }
 }
 
@@ -87,7 +61,6 @@ pub static mut SHAPES_BUFFER: [Shape; 1024] = [Shape {
 }; 1024];
 
 pub(crate) fn draw_all(state: &mut State) {
-    println!("*****");
     let shapes;
     unsafe {
         shapes = SHAPES_BUFFER.iter();
@@ -96,16 +69,10 @@ pub(crate) fn draw_all(state: &mut State) {
     for shape in shapes {
         draw_shape(state, shape);
     }
-    println!("*****");
 }
 
 #[inline]
 fn draw_shape(state: &mut State, shape: &Shape) {
-    // let selrect = shape.transformed_selrect();
-    // let r = skia::Rect::new(selrect.x1, selrect.y1, selrect.x2, selrect.y2);
-    // println!("Transform: {:?}", shape.transform);
-    // println!("Selrect: {:?}", selrect);
-
     let r = skia::Rect::new(
         shape.selrect.x1,
         shape.selrect.y1,
@@ -113,18 +80,15 @@ fn draw_shape(state: &mut State, shape: &Shape) {
         shape.selrect.y2,
     );
 
-    // println!("{:?}", shape.transform);
-
     state.surface.canvas().save();
 
-    state
-        .surface
-        .canvas()
-        .translate((shape.transform.e, shape.transform.f));
-    state
-        .surface
-        .canvas()
-        .scale((shape.transform.a, shape.transform.d));
+    let mut matrix = skia::Matrix::new_identity();
+    matrix.set_scale_translate(shape.scale(), shape.translation());
+    let (skew_x, skew_y) = shape.skew();
+    matrix.set_skew_x(skew_x);
+    matrix.set_skew_y(skew_y);
+    state.surface.canvas().concat(&matrix);
+
     render_rect(&mut state.surface, r, skia::Color::RED);
 
     state.surface.canvas().restore();
