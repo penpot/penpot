@@ -5,10 +5,9 @@
  *
  * Copyright (c) KALEIDOS INC
  */
+import pkg from "draft-js";
 
-'use strict';
-
-import {
+export const {
   BlockMapBuilder,
   CharacterMetadata,
   CompositeDecorator,
@@ -18,9 +17,9 @@ import {
   SelectionState,
   convertFromRaw,
   convertToRaw
-} from "draft-js";
+} = pkg;
 
-import DraftPasteProcessor from 'draft-js/lib/DraftPasteProcessor';
+import DraftPasteProcessor from 'draft-js/lib/DraftPasteProcessor.js';
 import {Map, OrderedSet} from "immutable";
 
 function isDefined(v) {
@@ -408,8 +407,3 @@ export function selectionEquals(selection, other) {
     selection.getFocusOffset() === other.getFocusOffset() &&
     selection.getIsBackward() === other.getIsBackward();
 }
-
-export {
-  convertToRaw,
-  convertFromRaw
-};
