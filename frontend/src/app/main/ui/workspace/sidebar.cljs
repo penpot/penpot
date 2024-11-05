@@ -102,23 +102,30 @@
         (mf/html [:& assets-toolbox {:size (- size 58)}])
 
         tokens-tab
-        (mf/html [:& tokens-sidebar-tab])
+        (when design-tokens?
+          (mf/html [:& tokens-sidebar-tab]))
 
         tabs
         (if ^boolean mode-inspect?
           #js [#js {:label (tr "workspace.sidebar.layers")
                     :id "layers"
                     :content layers-tab}]
-          #js [#js {:label (tr "workspace.sidebar.layers")
-                    :id "layers"
-                    :content layers-tab}
-               #js {:label (tr "workspace.toolbar.assets")
-                    :id "assets"
-                    :content assets-tab}
-               (when design-tokens?
+          (if ^boolean design-tokens?
+            #js [#js {:label (tr "workspace.sidebar.layers")
+                      :id "layers"
+                      :content layers-tab}
+                 #js {:label (tr "workspace.toolbar.assets")
+                      :id "assets"
+                      :content assets-tab}
                  #js {:label "Tokens"
                       :id "tokens"
-                      :content tokens-tab})])]
+                      :content tokens-tab}]
+            #js [#js {:label (tr "workspace.sidebar.layers")
+                      :id "layers"
+                      :content layers-tab}
+                 #js {:label (tr "workspace.toolbar.assets")
+                      :id "assets"
+                      :content assets-tab}]))]
 
     [:& (mf/provider muc/sidebar) {:value :left}
      [:aside {:ref parent-ref
