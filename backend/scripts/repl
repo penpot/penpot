@@ -30,8 +30,7 @@ export PENPOT_FLAGS="\
        enable-access-tokens \
        enable-tiered-file-data-storage \
        enable-file-validation \
-       enable-file-schema-validation \
-       disable-feature-design-tokens";
+       enable-file-schema-validation";
 
 # Default deletion delay for devenv
 export PENPOT_DELETION_DELAY="24h"

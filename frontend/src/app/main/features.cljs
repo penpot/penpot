@@ -110,7 +110,9 @@
        (when *assert*
          (->> (rx/from cfeat/no-migration-features)
               ;; text editor v2 isn't enabled by default even in devenv
-              (rx/filter #(not (or (contains? cfeat/backend-only-features %) (= "text-editor/v2" %))))
+              (rx/filter #(not (or (contains? cfeat/backend-only-features %)
+                                   (= "text-editor/v2" %)
+                                   (= "design-tokens/v1" %))))
               (rx/observe-on :async)
               (rx/map enable-feature))))
 
