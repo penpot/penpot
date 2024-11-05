@@ -1,4 +1,4 @@
-use euclid;
+use euclid::{self, Angle};
 use skia_safe as skia;
 
 use crate::render::{render_rect, State};
@@ -61,6 +61,7 @@ pub struct Shape {
 impl Shape {
     pub fn transformed_selrect(&self) -> Rect {
         let matrix: TransformMatrix = self.transform.into();
+        println!("Raw selrect: {:?}", self.selrect);
         let top_left = matrix.transform_point(self.selrect.top_left());
         let bottom_right = matrix.transform_point(self.selrect.bottom_right());
 
@@ -68,7 +69,7 @@ impl Shape {
     }
 }
 
-pub static mut SHAPES_BUFFER: [Shape; 3] = [Shape {
+pub static mut SHAPES_BUFFER: [Shape; 1024] = [Shape {
     selrect: Rect {
         x1: 0.0,
         y1: 0.0,
@@ -83,23 +84,48 @@ pub static mut SHAPES_BUFFER: [Shape; 3] = [Shape {
         e: 0.0,
         f: 0.0,
     },
-}; 3];
+}; 1024];
 
 pub(crate) fn draw_all(state: &mut State) {
+    println!("*****");
     let shapes;
     unsafe {
         shapes = SHAPES_BUFFER.iter();
     }
 
     for shape in shapes {
-        // let selrect = shape.transformed_selrect();
-        // let r = skia::Rect::new(selrect.x1, selrect.y1, selrect.x2, selrect.y2);
-        let r = skia::Rect::new(shape.selrect.x1, shape.selrect.y1, shape.selrect.x2, shape.selrect.y2);
-        
-        state.surface.canvas().save();
-        state.surface.canvas().translate((shape.transform.e, shape.transform.f));
-        state.surface.canvas().scale((shape.transform.a, shape.transform.d));       
-        render_rect(&mut state.surface, r, skia::Color::RED);
-        state.surface.canvas().restore();
+        draw_shape(state, shape);
     }
+    println!("*****");
+}
+
+#[inline]
+fn draw_shape(state: &mut State, shape: &Shape) {
+    // let selrect = shape.transformed_selrect();
+    // let r = skia::Rect::new(selrect.x1, selrect.y1, selrect.x2, selrect.y2);
+    // println!("Transform: {:?}", shape.transform);
+    // println!("Selrect: {:?}", selrect);
+
+    let r = skia::Rect::new(
+        shape.selrect.x1,
+        shape.selrect.y1,
+        shape.selrect.x2,
+        shape.selrect.y2,
+    );
+
+    // println!("{:?}", shape.transform);
+
+    state.surface.canvas().save();
+
+    state
+        .surface
+        .canvas()
+        .translate((shape.transform.e, shape.transform.f));
+    state
+        .surface
+        .canvas()
+        .scale((shape.transform.a, shape.transform.d));
+    render_rect(&mut state.surface, r, skia::Color::RED);
+
+    state.surface.canvas().restore();
 }

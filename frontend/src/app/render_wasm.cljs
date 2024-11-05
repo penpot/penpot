@@ -11,6 +11,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.types.shape.impl :as ctsi]
    [app.common.types.modifiers :as ctm]
+    [app.common.geom.matrix :as gmt]
     [app.common.geom.shapes :as gsh]
    [app.common.geom.matrix :as cgm]
    [app.config :as cf]
@@ -63,14 +64,21 @@
       (when (< index total-shapes)
         (let [shape (nth shapes index)
               id (:id shape)
-              buffer (.-buffer shape)]
-          (if (contains? modifiers id)
-            ;; copy new transform matrix to the shape buffer
-            (let [shape-modifiers (dm/get-in modifiers [id :modifiers])
-                  transform (ctm/modifiers->transform shape-modifiers)]
-              (ctsi/write-transform buffer transform))
-            ;; reset transform matrix in the shape buffer
-            (ctsi/write-transform buffer (cgm/matrix)))
+              buffer (.-buffer shape)
+              transform (if (contains? modifiers id)
+                (let [shape-modifiers (dm/get-in modifiers [id :modifiers])]
+                  (ctm/modifiers->transform shape-modifiers))
+                (:transform shape))]
+              ;; transform (gmt/multiply modifiers-transform shape-transform)]
+          ;; (if (contains? modifiers id)
+          ;;   ;; copy new transform matrix to the shape buffer
+          ;;   (let [shape-modifiers (dm/get-in modifiers [id :modifiers])
+          ;;         modifiers-transform (ctm/modifiers->transform shape-modifiers)
+          ;;         ]
+          ;;     (ctsi/write-transform buffer transform))
+          ;;   ;; reset transform matrix in the shape buffer
+          ;;   (ctsi/write-transform buffer (cgm/matrix)))
+          (ctsi/write-transform buffer transform)
           (.set ^js mem buffer (* index rect-size))
           (recur (inc index)))))))
 
