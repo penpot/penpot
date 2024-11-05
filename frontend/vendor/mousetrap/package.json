@@ -2,14 +2,9 @@
   "name": "@penpot/mousetrap",
   "version": "1.6.5",
   "description": "Simple library for handling keyboard shortcuts",
-  "module": "index.js",
-  "scripts": {
-    "build": "esbuild --bundle --outfile=dist/index.js --format=esm index.js"
-  },
+  "main": "index.js",
+  "type": "module",
   "packageManager": "yarn@4.3.1",
   "author": "Craig Campbell",
-  "license": "Apache-2.0 WITH LLVM-exception",
-  "devDependencies": {
-    "esbuild": "^0.24.0"
-  }
+  "license": "Apache-2.0 WITH LLVM-exception"
 }
