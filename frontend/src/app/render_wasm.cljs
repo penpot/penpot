@@ -11,8 +11,8 @@
    [app.common.files.helpers :as cfh]
    [app.common.types.shape.impl :as ctsi]
    [app.common.types.modifiers :as ctm]
-    [app.common.geom.matrix :as gmt]
-    [app.common.geom.shapes :as gsh]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.shapes :as gsh]
    [app.common.geom.matrix :as cgm]
    [app.config :as cf]
    [promesa.core :as p]))
@@ -66,10 +66,10 @@
               id (:id shape)
               buffer (.-buffer shape)
               modifiers-transform (if (contains? modifiers id)
-                (let [shape-modifiers (dm/get-in modifiers [id :modifiers])]
-                  (ctm/modifiers->transform shape-modifiers))
-                (ctsi/write-transform buffer (cgm/matrix)))]
-              ;; transform (gmt/multiply modifiers-transform shape-transform)]
+                                    (let [shape-modifiers (dm/get-in modifiers [id :modifiers])]
+                                      (ctm/modifiers->transform shape-modifiers))
+                                    (ctsi/write-transform buffer (cgm/matrix)))]
+          ;; transform (gmt/multiply modifiers-transform shape-transform)]
           ;; (if (contains? modifiers id)
           ;;   ;; copy new transform matrix to the shape buffer
           ;;   (let [shape-modifiers (dm/get-in modifiers [id :modifiers])
