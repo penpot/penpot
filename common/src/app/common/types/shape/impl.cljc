@@ -15,6 +15,8 @@
    [app.common.transit :as t]
    [clojure.core :as c]))
 
+(def shape-size 4)
+
 (def enabled-wasm-ready-shape false)
 
 #?(:cljs
@@ -153,32 +155,32 @@
                       (- x2 x1)
                       (- y2 y1)))))
 
-#?(:cljs
-   (defn write-transform
-     "Write the transform (or identity if nil) into the buffer"
-     [data transform]
-     (assert (instance? Float32Array data) "expected instance of float32array")
-     (let [offset 4
-           matrix (if (nil? transform) (cgm/matrix) transform)]
-       (aset data (+ offset 0) (dm/get-prop matrix :a))
-       (aset data (+ offset 1) (dm/get-prop matrix :b))
-       (aset data (+ offset 2) (dm/get-prop matrix :c))
-       (aset data (+ offset 3) (dm/get-prop matrix :d))
-       (aset data (+ offset 4) (dm/get-prop matrix :e))
-       (aset data (+ offset 5) (dm/get-prop matrix :f)))))
+;; #?(:cljs
+;;    (defn write-transform
+;;      "Write the transform (or identity if nil) into the buffer"
+;;      [data transform]
+;;      (assert (instance? Float32Array data) "expected instance of float32array")
+;;      (let [offset 4
+;;            matrix (if (nil? transform) (cgm/matrix) transform)]
+;;        (aset data (+ offset 0) (dm/get-prop matrix :a))
+;;        (aset data (+ offset 1) (dm/get-prop matrix :b))
+;;        (aset data (+ offset 2) (dm/get-prop matrix :c))
+;;        (aset data (+ offset 3) (dm/get-prop matrix :d))
+;;        (aset data (+ offset 4) (dm/get-prop matrix :e))
+;;        (aset data (+ offset 5) (dm/get-prop matrix :f)))))
 
-#?(:cljs
-   (defn read-transform
-     "Read transform from internal buffer"
-     [^Float32Array buffer]
-     (let [offset 4
-           a (aget buffer (+ offset 0))
-           b (aget buffer (+ offset 1))
-           c (aget buffer (+ offset 2))
-           d (aget buffer (+ offset 3))
-           e (aget buffer (+ offset 4))
-           f (aget buffer (+ offset 5))]
-      (cgm/matrix a b c d e f))))
+;; #?(:cljs
+;;    (defn read-transform
+;;      "Read transform from internal buffer"
+;;      [^Float32Array buffer]
+;;      (let [offset 4
+;;            a (aget buffer (+ offset 0))
+;;            b (aget buffer (+ offset 1))
+;;            c (aget buffer (+ offset 2))
+;;            d (aget buffer (+ offset 3))
+;;            e (aget buffer (+ offset 4))
+;;            f (aget buffer (+ offset 5))]
+;;       (cgm/matrix a b c d e f))))
 
 #?(:cljs
    (defn- impl-assoc
@@ -187,7 +189,6 @@
        (let [buffer (clone-f32-array (.-buffer coll))]
          (write-selrect buffer v)
          (ShapeWithBuffer. buffer (.-delegate ^ShapeWithBuffer coll)))
-
        (let [delegate  (.-delegate ^ShapeWithBuffer coll)
              delegate' (assoc delegate k v)]
          (if (identical? delegate' delegate)
@@ -225,12 +226,9 @@
   #?(:cljs
      (if enabled-wasm-ready-shape
        (let [selrect (:selrect attrs)
-             transform (:transform attrs)
-             buffer-size (+ 4 6) ;; 4 f32 for selrect + 6 f32 for transform matrix
-             buffer  (new Float32Array buffer-size)]
+             buffer  (new Float32Array shape-size)]
          (write-selrect buffer selrect)
-         (write-transform buffer transform)
-         (ShapeWithBuffer. buffer (dissoc attrs :selrect :tranform)))
+         (ShapeWithBuffer. buffer (dissoc attrs :selrect)))
        (map->Shape attrs))
 
      :clj (map->Shape attrs)))

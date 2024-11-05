@@ -32,7 +32,26 @@
    (take 2048)))
 
 ;; Size in number of f32 values that represents the shape selrect (
-(def rect-size (+ 4 6))
+(def shape+modifier-size (+ ctsi/shape-size 6))
+
+(defn- write-shape
+  [mem shape offset]
+  (assert (instance? js/Float32Array mem) "expected instance of float32array")
+  (let [buffer (.-buffer ^js shape)]
+    (.set ^js mem buffer offset)))
+
+(defn- write-matrix
+  "Write the transform (or identity if nil) into the buffer"
+  [mem matrix offset]
+  (assert (instance? js/Float32Array mem) "expected instance of float32array")
+
+  (let [matrix (if (nil? matrix) (cgm/matrix) matrix)]
+    (aset mem (+ offset 0) (dm/get-prop matrix :a))
+    (aset mem (+ offset 1) (dm/get-prop matrix :b))
+    (aset mem (+ offset 2) (dm/get-prop matrix :c))
+    (aset mem (+ offset 3) (dm/get-prop matrix :d))
+    (aset mem (+ offset 4) (dm/get-prop matrix :e))
+    (aset mem (+ offset 5) (dm/get-prop matrix :f))))
 
 (defn set-objects
   [objects modifiers]
@@ -53,7 +72,7 @@
         (get-shapes-buffer-ptr)
 
         heap-size
-        (* rect-size total-shapes)
+        (* shape+modifier-size total-shapes)
 
         mem
         (js/Float32Array. (.-buffer heap)
@@ -62,13 +81,16 @@
 
     (loop [index 0]
       (when (< index total-shapes)
-        (let [shape (nth shapes index)
-              id (:id shape)
+        (let [shape  (nth shapes index)
+              id     (dm/get-prop shape :id)
               buffer (.-buffer shape)
-              modifiers-transform (if (contains? modifiers id)
-                                    (let [shape-modifiers (dm/get-in modifiers [id :modifiers])]
-                                      (ctm/modifiers->transform shape-modifiers))
-                                    (ctsi/write-transform buffer (cgm/matrix)))]
+              matrix (if (contains? modifiers id)
+                       (let [shape-modifiers (dm/get-in modifiers [id :modifiers])]
+                         (ctm/modifiers->transform shape-modifiers))
+                       (cgm/matrix))
+
+              offset (* index shape+modifier-size)]
+
           ;; transform (gmt/multiply modifiers-transform shape-transform)]
           ;; (if (contains? modifiers id)
           ;;   ;; copy new transform matrix to the shape buffer
@@ -78,8 +100,9 @@
           ;;     (ctsi/write-transform buffer transform))
           ;;   ;; reset transform matrix in the shape buffer
           ;;   (ctsi/write-transform buffer (cgm/matrix)))
-          (ctsi/write-transform buffer modifiers-transform)
-          (.set ^js mem buffer (* index rect-size))
+
+          (write-shape mem shape offset)
+          (write-matrix mem matrix (+ offset 4))
           (recur (inc index)))))))
 
 (defn draw-objects

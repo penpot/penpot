@@ -380,7 +380,6 @@
         (update :structure-parent #(d/concat-vec [] % (dm/get-prop new-modifiers :structure-parent)))
         (update :structure-child  #(d/concat-vec [] % (dm/get-prop new-modifiers :structure-child))))))
 
-
 ;; These are convenience methods to create single operation modifiers without the builder
 
 (defn move-modifiers
@@ -601,7 +600,6 @@
   (-> (dm/get-prop modifier :vector)
       (gmt/translate-matrix)
       (gmt/multiply! matrix)))
-
 
 (defn transform-resize!
   "Transforms a matrix by the resize modifier"
