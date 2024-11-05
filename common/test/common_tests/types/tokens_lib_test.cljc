@@ -748,31 +748,31 @@
         (t/is (= (:name (nth sets-list 3)) "group1/subgroup11/token-set-4"))
         (t/is (= (:name (nth sets-list 4)) "group2/token-set-5"))
 
-        (t/is (= (first node-set1) "token-set-1"))
+        (t/is (= (first node-set1) "S-token-set-1"))
         (t/is (= (ctob/group? (second node-set1)) false))
         (t/is (= (:name (second node-set1)) "token-set-1"))
 
-        (t/is (= (first node-group1) "group1"))
+        (t/is (= (first node-group1) "G-group1"))
         (t/is (= (ctob/group? (second node-group1)) true))
         (t/is (= (count (second node-group1)) 3))
 
-        (t/is (= (first node-set2) "token-set-2"))
+        (t/is (= (first node-set2) "S-token-set-2"))
         (t/is (= (ctob/group? (second node-set2)) false))
         (t/is (= (:name (second node-set2)) "group1/token-set-2"))
 
-        (t/is (= (first node-set3) "token-set-3"))
+        (t/is (= (first node-set3) "S-token-set-3"))
         (t/is (= (ctob/group? (second node-set3)) false))
         (t/is (= (:name (second node-set3)) "group1/token-set-3"))
 
-        (t/is (= (first node-subgroup11) "subgroup11"))
+        (t/is (= (first node-subgroup11) "G-subgroup11"))
         (t/is (= (ctob/group? (second node-subgroup11)) true))
         (t/is (= (count (second node-subgroup11)) 1))
 
-        (t/is (= (first node-set4) "token-set-4"))
+        (t/is (= (first node-set4) "S-token-set-4"))
         (t/is (= (ctob/group? (second node-set4)) false))
         (t/is (= (:name (second node-set4)) "group1/subgroup11/token-set-4"))
 
-        (t/is (= (first node-set5) "token-set-5"))
+        (t/is (= (first node-set5) "S-token-set-5"))
         (t/is (= (ctob/group? (second node-set5)) false))
         (t/is (= (:name (second node-set5)) "group2/token-set-5"))))
 
@@ -791,13 +791,13 @@
 
             sets-tree   (ctob/get-set-tree tokens-lib)
             sets-tree'  (ctob/get-set-tree tokens-lib')
-            group1'     (get sets-tree' "group1")
-            token-set   (get-in sets-tree ["group1" "token-set-2"])
-            token-set'  (get-in sets-tree' ["group1" "token-set-2"])]
+            group1'     (get sets-tree' "G-group1")
+            token-set   (get-in sets-tree ["G-group1" "S-token-set-2"])
+            token-set'  (get-in sets-tree' ["G-group1" "S-token-set-2"])]
 
         (t/is (= (ctob/set-count tokens-lib') 5))
         (t/is (= (count group1') 3))
-        (t/is (= (d/index-of (keys group1') "token-set-2") 0))
+        (t/is (= (d/index-of (keys group1') "S-token-set-2") 0))
         (t/is (= (:name token-set') "group1/token-set-2"))
         (t/is (= (:description token-set') "some description"))
         (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set)))))
@@ -818,16 +818,18 @@
 
             sets-tree   (ctob/get-set-tree tokens-lib)
             sets-tree'  (ctob/get-set-tree tokens-lib')
-            group1'     (get sets-tree' "group1")
-            token-set   (get-in sets-tree ["group1" "token-set-2"])
-            token-set'  (get-in sets-tree' ["group1" "updated-name"])]
+            group1'     (get sets-tree' "G-group1")
+            token-set   (get-in sets-tree ["G-group1" "S-token-set-2"])
+            token-set'  (get-in sets-tree' ["G-group1" "S-updated-name"])]
 
         (t/is (= (ctob/set-count tokens-lib') 5))
         (t/is (= (count group1') 3))
-        (t/is (= (d/index-of (keys group1') "updated-name") 0))
+        (t/is (= (d/index-of (keys group1') "S-updated-name") 0))
         (t/is (= (:name token-set') "group1/updated-name"))
         (t/is (= (:description token-set') nil))
-        (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set)))))
+        (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set)))
+        sets-tree'))
+
 
     (t/deftest move-set-of-group
       (let [tokens-lib  (-> (ctob/make-tokens-lib)
@@ -845,15 +847,15 @@
 
             sets-tree   (ctob/get-set-tree tokens-lib)
             sets-tree'  (ctob/get-set-tree tokens-lib')
-            group1'     (get sets-tree' "group1")
-            group2'     (get sets-tree' "group2")
-            token-set   (get-in sets-tree ["group1" "token-set-2"])
-            token-set'  (get-in sets-tree' ["group2" "updated-name"])]
+            group1'     (get sets-tree' "G-group1")
+            group2'     (get sets-tree' "G-group2")
+            token-set   (get-in sets-tree ["G-group1" "S-token-set-2"])
+            token-set'  (get-in sets-tree' ["G-group2" "S-updated-name"])]
 
         (t/is (= (ctob/set-count tokens-lib') 4))
         (t/is (= (count group1') 2))
         (t/is (= (count group2') 1))
-        (t/is (= (d/index-of (keys group2') "updated-name") 0))
+        (t/is (nil? (get group1' "S-updated-name")))
         (t/is (= (:name token-set') "group2/updated-name"))
         (t/is (= (:description token-set') nil))
         (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set)))))
@@ -1129,4 +1131,3 @@
              (t/is (= @with-prev-tokens-lib @tokens-lib)))
            (t/testing "fresh tokens library is also equal"
              (= @with-empty-tokens-lib @tokens-lib)))))))
-
