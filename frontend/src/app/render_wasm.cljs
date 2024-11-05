@@ -65,10 +65,10 @@
         (let [shape (nth shapes index)
               id (:id shape)
               buffer (.-buffer shape)
-              transform (if (contains? modifiers id)
+              modifiers-transform (if (contains? modifiers id)
                 (let [shape-modifiers (dm/get-in modifiers [id :modifiers])]
                   (ctm/modifiers->transform shape-modifiers))
-                (:transform shape))]
+                (ctsi/write-transform buffer (cgm/matrix)))]
               ;; transform (gmt/multiply modifiers-transform shape-transform)]
           ;; (if (contains? modifiers id)
           ;;   ;; copy new transform matrix to the shape buffer
@@ -78,7 +78,7 @@
           ;;     (ctsi/write-transform buffer transform))
           ;;   ;; reset transform matrix in the shape buffer
           ;;   (ctsi/write-transform buffer (cgm/matrix)))
-          (ctsi/write-transform buffer transform)
+          (ctsi/write-transform buffer modifiers-transform)
           (.set ^js mem buffer (* index rect-size))
           (recur (inc index)))))))
 
