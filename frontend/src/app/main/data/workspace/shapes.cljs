@@ -18,6 +18,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dc]
+   [app.main.data.events :as ev]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -129,7 +130,9 @@
                  (dwu/commit-undo-transaction undo-id))
           (when (cfh/text-shape? shape)
             (->> (rx/of (dwe/start-edition-mode (:id shape)))
-                 (rx/observe-on :async)))))))))
+                 (rx/observe-on :async)))
+          (when (cfh/frame-shape? shape)
+            (rx/of (ptk/event ::ev/event {::ev/name "add-frame"})))))))))
 
 (defn move-shapes-into-frame
   [frame-id shapes]

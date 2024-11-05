@@ -12,8 +12,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.main.store :as st]
-   [app.util.object :as obj]
-   [promesa.core :as p]))
+   [app.util.object :as obj]))
 
 (defn locate-file
   [id]
@@ -175,7 +174,7 @@
   []
   (let [ret-v (atom nil)
         ret-p
-        (p/create
+        (js/Promise.
          (fn [resolve _]
            (add-watch
             ret-v

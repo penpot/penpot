@@ -467,7 +467,7 @@
        #?(:clj (validate-shapes! data result items))
        result))))
 
-;; DEPRECATED: remove before 2.3 release
+;; DEPRECATED: remove after 2.3 release
 (defmethod process-change :set-option
   [data _]
   data)

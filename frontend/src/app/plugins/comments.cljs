@@ -19,13 +19,12 @@
    [app.plugins.shape :as shape]
    [app.plugins.user :as user]
    [app.plugins.utils :as u]
-   [beicon.v2.core :as rx]
-   [promesa.core :as p]))
+   [beicon.v2.core :as rx]))
 
 (deftype CommentProxy [$plugin $file $page $thread $id]
   Object
   (remove [_]
-    (p/create
+    (js/Promise.
      (fn [resolve reject]
        (cond
          (not (r/check-permission $plugin "comment:write"))
@@ -79,7 +78,7 @@
   Object
   (findComments
     [_]
-    (p/create
+    (js/Promise.
      (fn [resolve reject]
        (cond
          (not (r/check-permission $plugin "comment:read"))
@@ -106,7 +105,7 @@
       (u/display-not-valid :reply "Not valid")
 
       :else
-      (p/create
+      (js/Promise.
        (fn [resolve reject]
          (->> (rp/cmd! :create-comment {:thread-id $id :content content})
               (rx/subs! #(resolve (comment-proxy $plugin $file $page $id $users %)) reject))))))
@@ -121,9 +120,9 @@
         (u/display-not-valid :remove "Cannot change content from another user's comments")
 
         :else
-        (p/create
+        (js/Promise.
          (fn [resolve]
-           (p/create
+           (js/Promise.
             (st/emit! (dc/delete-comment-thread-on-workspace {:id $id} #(resolve))))))))))
 
 (defn comment-thread-proxy? [p]

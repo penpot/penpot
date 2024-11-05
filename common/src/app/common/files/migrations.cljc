@@ -13,6 +13,7 @@
    [app.common.files.defaults :as cfd]
    [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.path :as gsp]
@@ -1102,6 +1103,33 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
+
+(defn migrate-up-57
+  [data]
+  (letfn [(fix-thread-positions [positions]
+            (reduce-kv (fn [result id {:keys [position] :as data}]
+                         (let [data (cond
+                                      (gpt/point? position)
+                                      data
+
+                                      (and (map? position)
+                                           (gpt/valid-point-attrs? position))
+                                      (assoc data :position (gpt/point position))
+
+                                      :else
+                                      (assoc data :position (gpt/point 0 0)))]
+                           (assoc result id data)))
+                       positions
+                       positions))
+
+          (update-page [page]
+            (d/update-when page :comment-thread-positions fix-thread-positions))]
+
+    (-> data
+        (update :pages (fn [pages] (into [] (remove nil?) pages)))
+        (update :pages-index dissoc nil)
+        (update :pages-index update-vals update-page))))
+
 (def migrations
   "A vector of all applicable migrations"
   [{:id 2 :migrate-up migrate-up-2}
@@ -1149,4 +1177,6 @@
    {:id 53 :migrate-up migrate-up-26}
    {:id 54 :migrate-up migrate-up-54}
    {:id 55 :migrate-up migrate-up-55}
-   {:id 56 :migrate-up migrate-up-56}])
+   {:id 56 :migrate-up migrate-up-56}
+   {:id 57 :migrate-up migrate-up-57}])
+

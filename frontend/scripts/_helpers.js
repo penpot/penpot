@@ -180,12 +180,21 @@ export async function watch(baseDir, predicate, callback) {
   });
 }
 
+async function readManifestFile(path) {
+  const manifestPath = "resources/public/js/manifest.json";
+  let content = await fs.readFile(manifestPath, { encoding: "utf8" });
+  return JSON.parse(content);
+}
+
 async function readShadowManifest() {
   const ts = Date.now();
   try {
-    const manifestPath = "resources/public/js/manifest.json";
-    let content = await fs.readFile(manifestPath, { encoding: "utf8" });
-    content = JSON.parse(content);
+    const content1 = await readManifestFile(
+      "resources/public/js/manifest.json",
+    );
+    const content2 = await readManifestFile(
+      "resources/public/js/worker/manifest.json",
+    );
 
     const index = {
       ts: ts,
@@ -193,8 +202,12 @@ async function readShadowManifest() {
       polyfills: "js/polyfills.js?ts=" + ts,
     };
 
-    for (let item of content) {
+    for (let item of content1) {
       index[item.name] = "js/" + item["output-name"];
+    }
+
+    for (let item of content2) {
+      index["worker_" + item.name] = "js/worker/" + item["output-name"];
     }
 
     return index;
@@ -205,7 +218,7 @@ async function readShadowManifest() {
       polyfills: "js/polyfills.js?ts=" + ts,
       main: "js/main.js?ts=" + ts,
       shared: "js/shared.js?ts=" + ts,
-      worker: "js/worker.js?ts=" + ts,
+      worker_main: "js/worker/main.js?ts=" + ts,
       rasterizer: "js/rasterizer.js?ts=" + ts,
     };
   }
