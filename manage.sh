@@ -229,6 +229,7 @@ function usage {
     echo "- build-devenv-local               Build a local docker development oriented image"
     echo "- create-devenv                    Create the development oriented docker compose service."
     echo "- start-devenv                     Start the development oriented docker compose service."
+}
 
 function build-frontend-docker-images {
     rsync -avr --delete ./bundles/frontend/ ./docker/images/bundle-frontend/;
