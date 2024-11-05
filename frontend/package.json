@@ -40,6 +40,7 @@
     "watch:app": "concurrently \"clojure -M:dev:shadow-cljs watch main worker\" \"yarn run watch:app:libs\"",
     "watch": "yarn run watch:app:assets",
     "watch:app:assets": "node ./scripts/watch.js",
+    "watch:app": "clojure -M:dev:shadow-cljs watch main",
     "watch:storybook": "concurrently \"clojure -M:dev:shadow-cljs watch storybook\" \"storybook dev -p 6006 --no-open\" \"yarn run watch:storybook:assets\"",
     "watch:storybook:assets": "node ./scripts/watch-storybook.js"
   },
