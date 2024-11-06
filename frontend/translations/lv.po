@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-05 17:00+0000\n"
+"PO-Revision-Date: 2024-11-07 16:00+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -6028,3 +6028,99 @@ msgstr "Lasīt un mainīt bibliotēkas un līdzekļus."
 #: src/app/main/ui/workspace/plugins.cljs:258
 msgid "workspace.plugins.permissions.user-read"
 msgstr "Lasīt pašreizējā lietotāja profila informāciju."
+
+#: src/app/main/ui/onboarding/questions.cljs:81
+msgid "onboarding.questions.use.personal"
+msgstr "Savām vajadzībām"
+
+#: src/app/main/ui/onboarding/questions.cljs:343
+msgid "onboarding.questions.start-with.wireframing"
+msgstr "Karkasattēlošana"
+
+#: src/app/main/ui/workspace/plugins.cljs:166
+msgid "workspace.plugins.search-placeholder"
+msgstr "Ierakstīt spraudņa URL"
+
+#: src/app/main/ui/onboarding/questions.cljs:121
+msgid "onboarding.questions.step1.question1"
+msgstr "Kādam nolūkam Penpot tiks izmantota?"
+
+#: src/app/main/ui/onboarding/questions.cljs:115
+msgid "onboarding.questions.step1.title"
+msgstr "Palīdzi mums Tevi iepazīt"
+
+#: src/app/main/ui/workspace/main_menu.cljs:624
+msgid "workspace.plugins.menu.plugins-manager"
+msgstr "Spraudņu pārvaldnieks"
+
+#: src/app/main/ui/workspace/main_menu.cljs:777
+msgid "workspace.plugins.menu.title"
+msgstr "Spraudņi"
+
+#: src/app/main/ui/onboarding/questions.cljs:128
+msgid "onboarding.questions.step1.question2"
+msgstr "Kas šodien novedis Tevi pie Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs:117
+msgid "onboarding.questions.step1.subtitle"
+msgstr ""
+"Ļauj mums mazliet uzzināt par Tevi, lai palīdzētu mums panākt, lai Penpot "
+"Tev darbojas. Tavas atbildes palīdzēs mums noteikt svarīgas iespējas un "
+"norādīt Tev īsto uzsākšanas virzienu."
+
+#: src/app/main/ui/onboarding/questions.cljs:196
+msgid "onboarding.questions.step2.title"
+msgstr "Kuru no šiem rīkiem Tu izmanto visvairāk?"
+
+#: src/app/main/ui/onboarding/questions.cljs:289
+msgid "onboarding.questions.step3.question1"
+msgstr "Kāda veida darbu veic?"
+
+#: src/app/main/ui/onboarding/questions.cljs:429
+msgid "onboarding.questions.step5.title"
+msgstr "Kā uzzināji par Penpot?"
+
+#: src/app/main/ui/onboarding/questions.cljs:270
+msgid "onboarding.questions.team-size.freelancer"
+msgstr "Esmu brīvstrādnieks"
+
+#: src/app/main/ui/workspace/plugins.cljs:180
+#, markdown
+msgid "workspace.plugins.discover"
+msgstr "Atklāt [vairāk spraudņu](%s)"
+
+#: src/app/main/ui/workspace/plugins.cljs:187
+msgid "workspace.plugins.empty-plugins"
+msgstr "Vēl nav uzstādīts neviens spraudnis"
+
+#: src/app/main/ui/workspace/plugins.cljs:175
+msgid "workspace.plugins.error.url"
+msgstr "Spraudnis nepastāv vai URL ir nepareizs."
+
+#: src/app/main/ui/workspace/plugins.cljs:196
+msgid "workspace.plugins.installed-plugins"
+msgstr "Uzstādītie spraudņi"
+
+#: src/app/main/ui/workspace/plugins.cljs:274
+msgid "workspace.plugins.permissions.disclaimer"
+msgstr "Jāņem vērā, ka šo spraudni ir izveidojusi trešā puse."
+
+#: src/app/main/ui/workspace/plugins.cljs:236
+msgid "workspace.plugins.permissions.title"
+msgstr "ŠIS SPRAUDNIS PIEPRASA PIEKĻUVI:"
+
+#: src/app/main/ui/workspace/plugins.cljs:192
+msgid "workspace.plugins.plugin-list-link"
+msgstr "Spraudņu saraksts"
+
+#, unused
+msgid "workspace.plugins.success"
+msgstr "Spraudnis ir pareizi ielādēts."
+
+#: src/app/main/ui/workspace/plugins.cljs:160
+msgid "workspace.plugins.title"
+msgstr "Spraudņi"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:201, src/app/main/ui/workspace/top_toolbar.cljs:202
+msgid "workspace.toolbar.plugins"
+msgstr "Spraudņi (%s)"
