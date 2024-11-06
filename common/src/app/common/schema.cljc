@@ -681,8 +681,8 @@
      (let [pred int?
            pred (if (some? min)
                   (fn [v]
-                    (and (>= v min)
-                         (pred v)))
+                    (and (pred v)
+                         (>= v min)))
                   pred)
            pred (if (some? max)
                   (fn [v]
@@ -719,8 +719,8 @@
      (let [pred double?
            pred (if (some? min)
                   (fn [v]
-                    (and (>= v min)
-                         (pred v)))
+                    (and (pred v)
+                         (>= v min)))
                   pred)
            pred (if (some? max)
                   (fn [v]
@@ -749,8 +749,8 @@
      (let [pred number?
            pred (if (some? min)
                   (fn [v]
-                    (and (>= v min)
-                         (pred v)))
+                    (and (pred v)
+                         (>= v min)))
                   pred)
            pred (if (some? max)
                   (fn [v]
