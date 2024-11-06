@@ -74,3 +74,5 @@ node_modules
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+/render-wasm/target/
+/**/.yarn/*
