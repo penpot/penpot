@@ -226,6 +226,16 @@
                          :on-click do-toggle-thumbnail}])
        [:& menu-separator]])))
 
+(mf/defc context-menu-rename
+  [{:keys [shapes]}]
+  (let [do-rename #(st/emit! (dw/start-rename-selected))]
+    (when (= (count shapes) 1)
+      [:*
+       [:& menu-separator]
+       [:& menu-entry {:title (tr "workspace.shape.menu.rename")
+                       :shortcut (sc/get-tooltip :rename)
+                       :on-click do-rename}]])))
+
 (mf/defc context-menu-group
   [{:keys [shapes]}]
 
@@ -501,6 +511,7 @@
        [:> context-menu-layer-position props]
        [:> context-menu-flip props]
        [:> context-menu-thumbnail props]
+       [:> context-menu-rename props]
        [:> context-menu-group props]
        [:> context-focus-mode-menu props]
        [:> context-menu-path props]

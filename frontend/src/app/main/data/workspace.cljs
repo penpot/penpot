@@ -100,6 +100,7 @@
 
 (declare ^:private workspace-initialized)
 (declare ^:private libraries-fetched)
+(declare go-to-layout)
 
 ;; --- Initialize Workspace
 
@@ -809,6 +810,21 @@
 
           (d/not-empty? hover-guides)
           (rx/of (dwgu/remove-guides hover-guides)))))))
+
+
+;; --- Start renaming selected shape
+
+(defn start-rename-selected
+  "Rename selected shape."
+  []
+  (ptk/reify ::start-rename-selected
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [selected (wsh/lookup-selected state)
+            id       (first selected)]
+        (when (= (count selected) 1)
+          (rx/of (go-to-layout :layers)
+                 (start-rename-shape id)))))))
 
 ;; --- Shape Vertical Ordering
 

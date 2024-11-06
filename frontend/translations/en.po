@@ -5956,6 +5956,10 @@ msgstr "Bring to front"
 msgid "workspace.shape.menu.go-main"
 msgstr "Go to main component file"
 
+#: src/app/main/ui/workspace/context_menu.cljs:234
+msgid "workspace.shape.menu.rename"
+msgstr "Rename"
+
 #: src/app/main/ui/workspace/context_menu.cljs:261
 msgid "workspace.shape.menu.group"
 msgstr "Group"
