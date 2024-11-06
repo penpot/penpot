@@ -74,7 +74,8 @@
 
 (sm/register! ::color
   [:map
-   [:color {:optional true} token-name-ref]])
+   [:fill {:optional true} token-name-ref]
+   [:stroke-color {:optional true} token-name-ref]])
 
 (def color-keys (schema-keys ::color))
 
