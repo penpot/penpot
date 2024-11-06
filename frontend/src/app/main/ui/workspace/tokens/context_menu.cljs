@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
-   [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -185,6 +184,9 @@
                                                                           :r3 "Bottom Right"}
                                                        :on-update-shape-all wtch/update-shape-radius-all
                                                        :on-update-shape wtch/update-shape-radius-single-corner})
+     :color (fn [context-data]
+              [(generic-attribute-actions #{:fill} "Fill" (assoc context-data :on-update-shape wtch/update-fill))
+               (generic-attribute-actions #{:stroke-color} "Stroke" (assoc context-data :on-update-shape wtch/update-stroke-color))])
      :spacing spacing-attribute-actions
      :sizing sizing-attribute-actions
      :rotation (partial generic-attribute-actions #{:rotation} "Rotation")
