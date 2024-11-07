@@ -84,11 +84,19 @@
         (let [shape  (nth shapes index)
               id     (dm/get-prop shape :id)
               buffer (.-buffer shape)
-              matrix (if (contains? modifiers id)
-                       (let [shape-modifiers (dm/get-in modifiers [id :modifiers])]
-                         (ctm/modifiers->transform shape-modifiers))
-                       (cgm/matrix))
+              base-mod-matrix
+              (if (and (some? (:transform shape))
+                       (not (gmt/unit? (:transform shape))))
+                (gsh/transform-matrix shape)
+                (cgm/matrix))
 
+              dynamic-mod-matrix
+              (if (contains? modifiers id)
+                (let [shape-modifiers (dm/get-in modifiers [id :modifiers])]
+                  (ctm/modifiers->transform shape-modifiers))
+                (cgm/matrix))
+
+              matrix (gmt/multiply base-mod-matrix dynamic-mod-matrix)
               offset (* index shape+modifier-size)]
           (write-shape mem shape offset)
           (write-matrix mem matrix (+ offset 4))
