@@ -200,14 +200,18 @@
 
 (mf/defc add-set-button
   [{:keys [on-open style]}]
-  (let [{:keys [on-create]} (sets-context/use-context)
+  (let [{:keys [on-create new?]} (sets-context/use-context)
         on-click #(do
                     (on-open)
                     (on-create))]
     (if (= style "inline")
-      [:button {:on-click on-click
-                :class (stl/css :create-theme-button)}
-       (tr "workspace.token.create-one")]
+      (when-not new?
+        [:div {:class (stl/css :empty-sets-wrapper)}
+         [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
+          (tr "workspace.token.no-sets-yet")]
+         [:button {:on-click on-click
+                   :class (stl/css :create-theme-button)}
+          (tr "workspace.token.create-one")]])
       [:> icon-button* {:variant "ghost"
                         :icon "add"
                         :on-click on-click
@@ -232,14 +236,10 @@
                             :style "header"}]]]
       (when @open?
         [:& h/sortable-container {}
-         [:*
-          (when (empty? token-sets)
-            [:div {:class (stl/css :empty-sets-wrapper)}
-             [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
-              (tr "workspace.token.no-sets-yet")]
-             [:& add-set-button {:on-open on-open
-                                 :style "inline"}]])
-          [:& sets-list]]])]]))
+         (when (empty? token-sets)
+           [:& add-set-button {:on-open on-open
+                               :style "inline"}])
+         [:& sets-list]])]]))
 
 (mf/defc tokens-tab
   [_props]
