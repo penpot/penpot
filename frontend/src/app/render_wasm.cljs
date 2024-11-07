@@ -96,7 +96,7 @@
                   (ctm/modifiers->transform shape-modifiers))
                 (cgm/matrix))
 
-              matrix (gmt/multiply base-mod-matrix dynamic-mod-matrix)
+              matrix (gmt/multiply dynamic-mod-matrix base-mod-matrix)
               offset (* index shape+modifier-size)]
           (write-shape mem shape offset)
           (write-matrix mem matrix (+ offset 4))
