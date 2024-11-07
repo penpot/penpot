@@ -63,7 +63,7 @@
                      (ex/format-throwable cause :data? false :explain? false :header? false :summary? false))}
 
        (when-let [params (or (:request/params context) (:params context))]
-         {:params (pp/pprint-str params :length 30 :level 12)})
+         {:params (pp/pprint-str params :length 30 :level 13)})
 
        (when-let [value (:value context)]
          {:value (pp/pprint-str value :length 30 :level 12)})

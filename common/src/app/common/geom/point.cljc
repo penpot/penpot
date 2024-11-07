@@ -56,6 +56,9 @@
    [:x ::sm/safe-number]
    [:y ::sm/safe-number]])
 
+(def valid-point-attrs?
+  (sm/validator schema:point-attrs))
+
 (def valid-point?
   (sm/validator
    [:and [:fn point?] schema:point-attrs]))

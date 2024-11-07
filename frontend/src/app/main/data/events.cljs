@@ -6,7 +6,7 @@
 
 (ns app.main.data.events
   (:require
-   ["ua-parser-js" :as UAParser]
+   ["ua-parser-js" :as ua]
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.config :as cf]
@@ -38,7 +38,7 @@
 
 (defn- collect-context
   []
-  (let [uagent (UAParser.)]
+  (let [uagent (new ua/UAParser)]
     (merge
      {:app-version (:full cf/version)
       :locale @i18n/locale}

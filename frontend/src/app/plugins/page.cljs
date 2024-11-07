@@ -29,8 +29,7 @@
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]
-   [promesa.core :as p]))
+   [cuerdas.core :as str]))
 
 (deftype FlowProxy [$plugin $file $page $id]
   Object
@@ -288,7 +287,7 @@
                 (some? board)
                 (->  (update :x - (:x board))
                      (update :y - (:y board))))]
-          (p/create
+          (js/Promise.
            (fn [resolve]
              (st/emit!
               (dc/create-thread-on-workspace
@@ -315,10 +314,10 @@
       (u/display-not-valid :removeCommentThread "Plugin doesn't have 'content:write' permission")
 
       :else
-      (p/create
+      (js/Promise.
        (fn [resolve]
          (let [thread-id (obj/get thread "$id")]
-           (p/create
+           (js/Promise.
             (st/emit! (dc/delete-comment-thread-on-workspace {:id thread-id} #(resolve)))))))))
 
   (findCommentThreads
@@ -326,7 +325,7 @@
     (let [only-yours    (boolean (obj/get criteria "onlyYours" false))
           show-resolved (boolean (obj/get criteria "showResolved" true))
           user-id      (-> @st/state :profile :id)]
-      (p/create
+      (js/Promise.
        (fn [resolve reject]
          (cond
            (not (r/check-permission $plugin "comment:read"))

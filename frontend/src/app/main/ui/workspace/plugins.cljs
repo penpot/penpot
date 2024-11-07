@@ -16,6 +16,7 @@
    [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.plugins.register :as preg]
    [app.util.avatars :as avatars]
@@ -28,6 +29,15 @@
 
 (def ^:private close-icon
   (i/icon-xref :close (stl/css :close-icon)))
+
+(defn icon-url
+  "Creates an sanitizes de icon URL to display"
+  [host icon]
+  (dm/str host
+          (if (and (not (str/ends-with? host "/"))
+                   (not (str/starts-with? icon "/")))
+            "/" "")
+          icon))
 
 (mf/defc plugin-entry
   [{:keys [index manifest on-open-plugin on-remove-plugin]}]
@@ -49,15 +59,17 @@
     [:div {:class (stl/css :plugins-list-element)}
      [:div {:class (stl/css :plugin-icon)}
       [:img {:src (if (some? icon)
-                    (dm/str host icon)
+                    (icon-url host icon)
                     (avatars/generate {:name name}))}]]
      [:div {:class (stl/css :plugin-description)}
       [:div {:class (stl/css :plugin-title)} name]
       [:div {:class (stl/css :plugin-summary)} (d/nilv description "")]]
      [:button {:class (stl/css :open-button)
                :on-click handle-open-click} (tr "workspace.plugins.button-open")]
-     [:button {:class (stl/css :trash-button)
-               :on-click handle-delete-click} i/delete]]))
+     [:> icon-button* {:variant "ghost"
+                       :aria-label (tr "workspace.plugins.remove-plugin")
+                       :on-click handle-delete-click
+                       :icon "delete"}]]))
 
 (mf/defc plugin-management-dialog
   {::mf/register modal/components
@@ -389,7 +401,7 @@
       [:div {:class (stl/css :modal-title)}
        [:div {:class (stl/css :plugin-icon)}
         [:img {:src (if (some? icon)
-                      (dm/str host icon)
+                      (icon-url host icon)
                       (avatars/generate {:name name}))}]]
        (tr "workspace.plugins.try-out.title" (str/upper (:name plugin)))]
 

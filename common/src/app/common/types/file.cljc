@@ -26,8 +26,6 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape-tree :as ctst]
-   [app.common.types.token :as cto]
-   [app.common.types.token-theme :as ctt]
    [app.common.types.tokens-lib :as ctl]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as cty]
@@ -38,38 +36,64 @@
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(sm/register! ::media-object
+(def schema:media
+  "A schema that represents the file media object"
   [:map {:title "FileMediaObject"}
    [:id ::sm/uuid]
+   [:created-at ::sm/inst]
+   [:deleted-at {:optional true} ::sm/inst]
    [:name :string]
    [:width ::sm/safe-int]
    [:height ::sm/safe-int]
    [:mtype :string]
-   [:path {:optional true} [:maybe :string]]])
+   [:file-id {:optional true} ::sm/uuid]
+   [:media-id ::sm/uuid]
+   [:thumbnail-id {:optional true} ::sm/uuid]
+   [:is-local :boolean]])
 
-(sm/register! ::data
+(def schema:colors
+  [:map-of {:gen/max 5} ::sm/uuid ::ctc/color])
+
+(def schema:components
+  [:map-of {:gen/max 5} ::sm/uuid ::ctn/container])
+
+(def schema:typographies
+  [:map-of {:gen/max 2} ::sm/uuid ::cty/typography])
+
+(def schema:pages-index
+  [:map-of {:gen/max 5} ::sm/uuid ::ctp/page])
+
+(def schema:data
   [:map {:title "FileData"}
    [:pages [:vector ::sm/uuid]]
-   [:pages-index
-    [:map-of {:gen/max 5} ::sm/uuid ::ctp/page]]
-   [:colors {:optional true}
-    [:map-of {:gen/max 5} ::sm/uuid ::ctc/color]]
-   [:components {:optional true}
-    [:map-of {:gen/max 5} ::sm/uuid ::ctn/container]]
-   [:recent-colors {:optional true}
-    [:vector {:gen/max 3} ::ctc/recent-color]]
-   [:typographies {:optional true}
-    [:map-of {:gen/max 2} ::sm/uuid ::cty/typography]]
-   [:media {:optional true}
-    [:map-of {:gen/max 5} ::sm/uuid ::media-object]]
+   [:pages-index schema:pages-index]
+   [:colors {:optional true} schema:colors]
+   [:components {:optional true} schema:components]
+   [:typographies {:optional true} schema:typographies]
    [:plugin-data {:optional true} ::ctpg/plugin-data]
    [:tokens-lib {:optional true} ::ctl/tokens-lib]])
+
+(def schema:file
+  "A schema for validate a file data structure; data is optional
+  because sometimes we want to validate file without the data."
+  [:map {:title "file"}
+   [:id ::sm/uuid]
+   [:data {:optional true} schema:data]
+   [:features ::cfeat/features]])
+
+(sm/register! ::data schema:data)
+(sm/register! ::file schema:file)
+(sm/register! ::media schema:media)
+(sm/register! ::colors schema:colors)
+(sm/register! ::typographies schema:typographies)
+
+(sm/register! ::media-object schema:media)
 
 (def check-file-data!
   (sm/check-fn ::data))
 
 (def check-media-object!
-  (sm/check-fn ::media-object))
+  (sm/check-fn schema:media))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INITIALIZATION
@@ -112,6 +136,7 @@
                   :project-id project-id
                   :name name
                   :revn revn
+                  :vern 0
                   :is-shared is-shared
                   :version version
                   :data data

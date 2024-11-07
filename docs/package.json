@@ -1,0 +1,43 @@
+{
+  "name": "penpot-docs",
+  "version": "0.1.0",
+  "description": "Documentation about Penpot project.",
+  "scripts": {
+    "build": "eleventy",
+    "watch": "eleventy --watch",
+    "serve": "eleventy --serve",
+    "start": "eleventy --serve",
+    "debug": "DEBUG=* eleventy"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/penpot/penpot.git"
+  },
+  "author": {
+    "name": "Penpot",
+    "email": "hello@penpot.app",
+    "url": "https://penpot.app/"
+  },
+  "license": "SEE LICENSE IN <../LICENSE>",
+  "bugs": {
+    "url": "https://github.com/penpot/penpot/issues"
+  },
+  "homepage": "https://docs.penpot.app",
+  "dependencies": {
+    "@11ty/eleventy": "^2.0.1",
+    "@11ty/eleventy-navigation": "^0.3.5",
+    "@11ty/eleventy-plugin-rss": "^1.2.0",
+    "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.0",
+    "@tigersway/eleventy-plugin-ancestry": "^1.0.3",
+    "@types/markdown-it": "14.1.0",
+    "elasticlunr": "^0.9.5",
+    "eleventy-plugin-metagen": "^1.8.3",
+    "eleventy-plugin-nesting-toc": "^1.3.0",
+    "eleventy-plugin-youtube-embed": "^1.10.2",
+    "luxon": "^3.4.4",
+    "markdown-it": "^14.1.0",
+    "markdown-it-anchor": "^9.0.1",
+    "markdown-it-plantuml": "^1.4.1"
+  },
+  "packageManager": "yarn@4.3.1"
+}

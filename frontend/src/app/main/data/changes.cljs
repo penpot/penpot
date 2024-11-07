@@ -106,7 +106,7 @@
 (defn commit
   "Create a commit event instance"
   [{:keys [commit-id redo-changes undo-changes origin save-undo? features
-           file-id file-revn undo-group tags stack-undo? source]}]
+           file-id file-revn file-vern undo-group tags stack-undo? source]}]
 
   (dm/assert!
    "expect valid vector of changes for redo-changes"
@@ -126,6 +126,7 @@
                    :features features
                    :file-id file-id
                    :file-revn file-revn
+                   :file-vern file-vern
                    :changes redo-changes
                    :redo-changes redo-changes
                    :undo-changes undo-changes
@@ -160,6 +161,13 @@
       (:revn file)
       (dm/get-in state [:workspace-libraries file-id :revn]))))
 
+(defn- resolve-file-vern
+  [state file-id]
+  (let [file (:workspace-file state)]
+    (if (= (:id file) file-id)
+      (:vern file)
+      (dm/get-in state [:workspace-libraries file-id :vern]))))
+
 (defn commit-changes
   "Schedules a list of changes to execute now, and add the corresponding undo changes to
    the undo stack.
@@ -178,19 +186,23 @@
   (ptk/reify ::commit-changes
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id  (or file-id (:current-file-id state))
-            uchg     (vec undo-changes)
-            rchg     (vec redo-changes)
-            features (features/get-team-enabled-features state)]
+      (let [file-id     (or file-id (:current-file-id state))
+            uchg        (vec undo-changes)
+            rchg        (vec redo-changes)
+            features    (features/get-team-enabled-features state)
+            permissions (:permissions state)]
 
-        (rx/of (-> params
-                   (assoc :undo-group undo-group)
-                   (assoc :features features)
-                   (assoc :tags tags)
-                   (assoc :stack-undo? stack-undo?)
-                   (assoc :save-undo? save-undo?)
-                   (assoc :file-id file-id)
-                   (assoc :file-revn (resolve-file-revn state file-id))
-                   (assoc :undo-changes uchg)
-                   (assoc :redo-changes rchg)
-                   (commit)))))))
+        ;; Prevent commit changes by a viewer team member (it really should never happen)
+        (when (:can-edit permissions)
+          (rx/of (-> params
+                     (assoc :undo-group undo-group)
+                     (assoc :features features)
+                     (assoc :tags tags)
+                     (assoc :stack-undo? stack-undo?)
+                     (assoc :save-undo? save-undo?)
+                     (assoc :file-id file-id)
+                     (assoc :file-revn (resolve-file-revn state file-id))
+                     (assoc :file-vern (resolve-file-vern state file-id))
+                     (assoc :undo-changes uchg)
+                     (assoc :redo-changes rchg)
+                     (commit))))))))

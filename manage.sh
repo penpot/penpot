@@ -177,11 +177,58 @@ function build-exporter-bundle {
 
     rm -rf $bundle_dir;
     mv ./exporter/target $bundle_dir;
-
     echo $version > $bundle_dir/version.txt
     put-license-file $bundle_dir;
-
     echo ">> bundle exporter end";
+}
+
+function build-docs-bundle {
+    echo ">> bundle docs start";
+
+    mkdir -p ./bundles
+    local version=$(print-current-version);
+    local bundle_dir="./bundles/docs";
+
+    build "docs";
+
+    rm -rf $bundle_dir;
+    mv ./docs/_dist $bundle_dir;
+    echo $version > $bundle_dir/version.txt;
+    put-license-file $bundle_dir;
+    echo ">> bundle docs end";
+}
+
+
+function build-frontend-docker-images {
+    rsync -avr --delete ./bundles/frontend/ ./docker/images/bundle-frontend/;
+    pushd ./docker/images;
+    docker build -t penpotapp/frontend:$CURRENT_BRANCH -t penpotapp/frontend:latest -f Dockerfile.frontend .;
+    popd;
+}
+
+function build-backend-docker-images {
+    rsync -avr --delete ./bundles/backend/ ./docker/images/bundle-backend/;
+    pushd ./docker/images;
+    docker build -t penpotapp/backend:$CURRENT_BRANCH -t penpotapp/backend:latest -f Dockerfile.backend .;
+    popd;
+}
+
+function build-exporter-docker-images {
+    rsync -avr --delete ./bundles/exporter/ ./docker/images/bundle-exporter/;
+    pushd ./docker/images;
+    docker build -t penpotapp/exporter:$CURRENT_BRANCH -t penpotapp/exporter:latest -f Dockerfile.exporter .;
+    popd;
+}
+
+function usage {
+    echo "PENPOT build & release manager"
+    echo "USAGE: $0 OPTION"
+    echo "Options:"
+    echo "- pull-devenv                      Pulls docker development oriented image"
+    echo "- build-devenv                     Build docker development oriented image"
+    echo "- build-devenv-local               Build a local docker development oriented image"
+    echo "- create-devenv                    Create the development oriented docker compose service."
+    echo "- start-devenv                     Start the development oriented docker compose service."
 }
 
 function build-frontend-docker-images {
@@ -224,6 +271,7 @@ function usage {
     echo "- build-frontend-bundle            Build frontend bundle"
     echo "- build-backend-bundle             Build backend bundle."
     echo "- build-exporter-bundle            Build exporter bundle."
+    echo "- build-docs-bundle                Build docs bundle."
     echo ""
     echo "- build-docker-images              Build all docker images (frontend, backend and exporter)."
     echo "- build-frontend-docker-images     Build frontend docker images."
@@ -291,6 +339,10 @@ case $1 in
 
     build-exporter-bundle)
         build-exporter-bundle;
+        ;;
+
+    build-docs-bundle)
+        build-docs-bundle;
         ;;
 
     build-docker-images)

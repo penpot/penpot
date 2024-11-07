@@ -26,6 +26,7 @@
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox]]
    [app.main.ui.workspace.sidebar.shortcuts :refer [shortcuts-container]]
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap]]
+   [app.main.ui.workspace.sidebar.versions :refer [versions-toolbox]]
    [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab]]
    [app.util.debug :as dbg]
    [app.util.i18n :refer [tr]]
@@ -199,7 +200,17 @@
         props
         (mf/spread props
                    :on-change-section handle-change-section
-                   :on-expand handle-expand)]
+                   :on-expand handle-expand)
+
+        history-tab
+        (mf/html
+         [:article {:class (stl/css :history-tab)}
+          [:& history-toolbox {}]])
+
+        versions-tab
+        (mf/html
+         [:article {:class (stl/css :versions-tab)}
+          [:& versions-toolbox {}]])]
 
     [:& (mf/provider muc/sidebar) {:value :right}
      [:aside {:class (stl/css-case :right-settings-bar true
@@ -226,7 +237,15 @@
          [:& comments-sidebar]
 
          (true? is-history?)
-         [:> history-toolbox {}]
+         [:> tab-switcher* {:tabs #js [#js {:label "History" :id "history" :content versions-tab}
+                                       #js {:label "Actions" :id "actions" :content history-tab}]
+                            :default-selected "history"
+                            ;;:selected (name section)
+                            ;;:on-change-tab on-tab-change
+                            :class (stl/css :left-sidebar-tabs)
+                            ;;:action-button-position "start"
+                            ;;:action-button (mf/html [:& collapse-button {:on-click handle-collapse}])
+                            }]
 
          :else
          [:> options-toolbox props])]]]))

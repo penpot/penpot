@@ -17,6 +17,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -98,7 +99,7 @@
         content       (mf/use-state "")
 
         disabled? (or (str/blank? @content)
-                      (str/empty-or-nil? @content))
+                      (str/empty? @content))
 
         on-focus
         (mf/use-fn
@@ -158,7 +159,7 @@
         pos-y    (* (:y position) zoom)
 
         disabled? (or (str/blank? content)
-                      (str/empty-or-nil? content))
+                      (str/empty? content))
 
         on-esc
         (mf/use-fn
@@ -229,7 +230,7 @@
          (fn [] (on-submit @content)))
 
         disabled? (or (str/blank? @content)
-                      (str/empty-or-nil? @content))]
+                      (str/empty? @content))]
 
     [:div {:class (stl/css :edit-form)}
      [:& resizing-textarea {:value @content
@@ -335,9 +336,10 @@
                                        :global/checked (:is-resolved thread))} i/tick]])
 
        (when (= (:id profile) (:id owner))
-         [:div {:class (stl/css :options)
-                :on-click on-toggle-options}
-          i/menu])]
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "labels.options")
+                           :on-click on-toggle-options
+                           :icon "menu"}])]
 
       [:div {:class (stl/css :content)}
        (if @edition?

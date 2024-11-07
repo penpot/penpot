@@ -216,7 +216,7 @@
                                                  {:response-type :input-stream :sync? true})
           {:keys [size mtype]} (parse-and-validate response)
           path    (tmp/tempfile :prefix "penpot.media.download.")
-          written (io/write-to-file! body path :size size)]
+          written (io/write* path body :size size)]
 
       (when (not= written size)
         (ex/raise :type :internal

@@ -1,0 +1,13 @@
+{
+  "name": "@penpot/hljs",
+  "version": "1.0.0",
+  "description": "Penpot Hightlight.js ESM wrapper",
+  "main": "index.js",
+  "packageManager": "yarn@4.3.1",
+  "author": "Andrey Antukh",
+  "license": "MPL-2.0",
+  "type": "module",
+  "dependencies": {
+    "highlight.js": "^11.10.0"
+  }
+}

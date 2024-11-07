@@ -501,7 +501,8 @@
                                (cts/shape? shape-new))
                   (ex/raise :type :assertion
                             :code :data-validation
-                            :hint "invalid shape found after applying changes")))))]
+                            :hint "invalid shape found after applying changes"
+                            ::sm/explain (cts/explain-shape shape-new))))))]
 
     (->> (into #{} (map :page-id) items)
          (mapcat (fn [page-id]
@@ -549,7 +550,7 @@
        #?(:clj (validate-shapes! data result items))
        result))))
 
-;; DEPRECATED: remove before 2.3 release
+;; DEPRECATED: remove after 2.3 release
 (defmethod process-change :set-option
   [data _]
   data)

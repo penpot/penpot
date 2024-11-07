@@ -1,0 +1,10 @@
+{
+  "name": "@penpot/mousetrap",
+  "version": "1.6.5",
+  "description": "Simple library for handling keyboard shortcuts",
+  "main": "index.js",
+  "type": "module",
+  "packageManager": "yarn@4.3.1",
+  "author": "Craig Campbell",
+  "license": "Apache-2.0 WITH LLVM-exception"
+}

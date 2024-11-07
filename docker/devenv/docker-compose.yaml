@@ -101,7 +101,7 @@ services:
       - postgres_data_pg16:/var/lib/postgresql/data
 
   redis:
-    image: redis:7
+    image: redis:7.2
     hostname: "penpot-devenv-redis"
     container_name: "penpot-devenv-redis"
     restart: always

@@ -6,6 +6,7 @@
 
 @use "common/refactor/common-refactor.scss" as *;
 @use "./grid.scss" as g;
+@use "../ds/typography.scss" as t;
 
 .grid-empty-placeholder {
   border-radius: $br-12;
@@ -88,4 +89,15 @@
   color: var(--color-foreground-secondary);
   font-size: $fs-16;
   text-align: center;
+}
+
+.placeholder-markdown {
+  @include t.use-typography("body-large");
+  a {
+    color: var(--color-accent-primary);
+  }
+}
+
+.empty-placeholder-libraries {
+  margin: $s-16;
 }

@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
@@ -33,7 +32,6 @@
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
    [app.main.ui.workspace.tokens.modals]
    [app.main.ui.workspace.viewport :refer [viewport]]
-   [app.renderer-v2 :as renderer]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
@@ -165,13 +163,17 @@
 
   (let [layout           (mf/deref refs/workspace-layout)
         wglobal          (mf/deref refs/workspace-global)
-        read-only?       (mf/deref refs/workspace-read-only?)
 
+        team             (mf/deref refs/team)
         file             (mf/deref refs/workspace-file)
         project          (mf/deref refs/workspace-project)
 
         team-id          (:team-id project)
         file-name        (:name file)
+        permissions      (:permissions team)
+
+        read-only?       (mf/deref refs/workspace-read-only?)
+        read-only?       (or read-only? (not (:can-edit permissions)))
 
         file-ready*      (mf/with-memo [file-id]
                            (make-file-ready-ref file-id))
@@ -202,10 +204,6 @@
                   (ntf/hide)
                   (dw/finalize-file project-id file-id))))
 
-    (mf/with-effect [file-ready?]
-      (when (and file-ready? (contains? cf/flags :renderer-v2))
-        (renderer/print-msg "hello from wasm fn!")))
-
     [:& (mf/provider ctx/current-file-id) {:value file-id}
      [:& (mf/provider ctx/current-project-id) {:value project-id}
       [:& (mf/provider ctx/current-team-id) {:value team-id}
@@ -213,13 +211,14 @@
         [:& (mf/provider ctx/components-v2) {:value components-v2?}
          [:& (mf/provider ctx/design-tokens) {:value design-tokens?}
           [:& (mf/provider ctx/workspace-read-only?) {:value read-only?}
-           [:section {:class (stl/css :workspace)
-                      :style {:background-color background-color
-                              :touch-action "none"}}
-            [:& context-menu]
-            (if ^boolean file-ready?
-              [:& workspace-page {:page-id page-id
-                                  :file file
-                                  :wglobal wglobal
-                                  :layout layout}]
-              [:& workspace-loader])]]]]]]]]))
+           [:& (mf/provider ctx/team-permissions) {:value permissions}
+            [:section {:class (stl/css :workspace)
+                       :style {:background-color background-color
+                               :touch-action "none"}}
+             [:& context-menu]
+             (if ^boolean file-ready?
+               [:& workspace-page {:page-id page-id
+                                   :file file
+                                   :wglobal wglobal
+                                   :layout layout}]
+               [:& workspace-loader])]]]]]]]]]))

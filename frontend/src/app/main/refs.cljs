@@ -29,6 +29,12 @@
 (def profile
   (l/derived :profile st/state))
 
+(def team
+  (l/derived :team st/state))
+
+(def permissions
+  (l/derived :permissions st/state))
+
 (def teams
   (l/derived :teams st/state))
 
@@ -649,6 +655,9 @@
 (def current-file-id
   (l/derived :current-file-id st/state))
 
+(def current-project-id
+  (l/derived :current-project-id st/state))
+
 (def workspace-preview-blend
   (l/derived :workspace-preview-blend st/state))
 
@@ -662,4 +671,4 @@
   (l/derived :updating-library st/state))
 
 (def persistence-state
-  (l/derived (comp :status :workspace-persistence) st/state))
+  (l/derived (comp :status :persistence) st/state))

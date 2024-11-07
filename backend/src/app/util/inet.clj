@@ -8,7 +8,7 @@
   "INET addr parsing and validation helpers"
   (:require
    [cuerdas.core :as str]
-   [ring.request :as rreq])
+   [yetti.request :as yreq])
   (:import
    com.google.common.net.InetAddresses
    java.net.InetAddress))
@@ -27,11 +27,11 @@
 
 (defn parse-request
   [request]
-  (or (some-> (rreq/get-header request "x-real-ip")
+  (or (some-> (yreq/get-header request "x-real-ip")
               (normalize))
-      (some-> (rreq/get-header request "x-forwarded-for")
+      (some-> (yreq/get-header request "x-forwarded-for")
               (str/split #"\s*,\s*")
               (first)
               (normalize))
-      (some-> (rreq/remote-addr request)
+      (some-> (yreq/remote-addr request)
               (normalize))))
