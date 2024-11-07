@@ -26,6 +26,7 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.tokens-lib :as ctl]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
@@ -69,7 +70,8 @@
    [:colors {:optional true} schema:colors]
    [:components {:optional true} schema:components]
    [:typographies {:optional true} schema:typographies]
-   [:plugin-data {:optional true} ::ctpg/plugin-data]])
+   [:plugin-data {:optional true} ::ctpg/plugin-data]
+   [:tokens-lib {:optional true} ::ctl/tokens-lib]])
 
 (def schema:file
   "A schema for validate a file data structure; data is optional

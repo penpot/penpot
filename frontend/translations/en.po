@@ -1613,6 +1613,10 @@ msgstr "Canva"
 msgid "labels.close"
 msgstr "Close"
 
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "labels.collapse"
+msgstr "Collapse"
+
 #: src/app/main/ui/dashboard/comments.cljs:104, src/app/main/ui/viewer/comments.cljs:70, src/app/main/ui/workspace/comments.cljs:126
 msgid "labels.comments"
 msgstr "Comments"
@@ -2080,6 +2084,14 @@ msgstr "Team Leader"
 #: src/app/main/ui/onboarding/questions.cljs:257
 msgid "labels.team-member"
 msgstr "Team member"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "labels.themes"
+msgstr "Themes"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "labels.sets"
+msgstr "Sets"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:992, src/app/main/ui/workspace/main_menu.cljs:118
 msgid "labels.tutorials"
@@ -6358,6 +6370,114 @@ msgstr "Update"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.create-token"
+msgstr "Create new %s token"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.edit-token"
+msgstr "Edit token"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.resolved-value"
+msgstr "Resolved value: "
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.original-value"
+msgstr "Original value: "
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.no-themes"
+msgstr "There are no themes."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.create-one"
+msgstr "Create one."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.add set"
+msgstr "Add set"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.save-theme"
+msgstr "Save theme"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.create-theme-title"
+msgstr "Create theme"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.edit-theme-title"
+msgstr "Edit theme"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.delete-theme-title"
+msgstr "Delete theme"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.no-themes-currently"
+msgstr "You currently have no themes."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.create-new-theme"
+msgstr "Create your first theme now."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.new-theme"
+msgstr "New theme"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.themes"
+msgstr "Themes"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.theme-name"
+msgstr "Theme %s"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.no-sets"
+msgstr "No sets"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.num-sets"
+msgstr "%s sets"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.back-to-themes"
+msgstr "Back to theme list"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs
+msgid "workspace.token.edit-themes"
+msgstr "Edit themes"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs
+msgid "workspace.token.no-active-theme"
+msgstr "No theme active"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs
+msgid "workspace.token.active-themes"
+msgstr "%s active themes"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.grouping-set-alert"
+msgstr "Token Set grouping is not supported yet."
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.select-set"
+msgstr "Select set."
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.set-selection-theme"
+msgstr "Define what token sets should be used as part of this theme option:"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.no-sets-yet"
+msgstr "There are no sets yet."
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.no-sets-create"
+msgstr "There are no sets defined yet. Create one first."
 
 msgid "workspace.versions.button.save"
 msgstr "Save version"

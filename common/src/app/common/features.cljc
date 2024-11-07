@@ -50,6 +50,7 @@
     "styles/v2"
     "layout/grid"
     "plugins/runtime"
+    "design-tokens/v1"
     "text-editor/v2"})
 
 ;; A set of features enabled by default
@@ -84,6 +85,7 @@
         "layout/grid"
         "fdata/shape-data-type"
         "plugins/runtime"
+        "design-tokens/v1"
         "text-editor/v2"}
       (into frontend-only-features)))
 
@@ -104,6 +106,7 @@
     :feature-fdata-objects-map "fdata/objects-map"
     :feature-fdata-pointer-map "fdata/pointer-map"
     :feature-plugins "plugins/runtime"
+    :feature-design-tokens "design-tokens/v1"
     :feature-text-editor-v2 "text-editor/v2"
     nil))
 
@@ -312,5 +315,3 @@
                 :feature (first not-supported)
                 :hint (str/ffmt "paste features '%' not enabled on the application"
                                 (str/join "," not-supported))))))
-
-

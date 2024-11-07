@@ -69,11 +69,11 @@
 (defn group-assets
   "Convert a list of assets in a nested structure like this:
 
-    {'': [{assetA} {assetB}]
-     'group1': {'': [{asset1A} {asset1B}]
-                'subgroup11': {'': [{asset11A} {asset11B} {asset11C}]}
-                'subgroup12': {'': [{asset12A}]}}
-     'group2': {'subgroup21': {'': [{asset21A}}}}
+    {'': [assetA assetB]
+     'group1': {'': [asset1A asset1B]
+                'subgroup11': {'': [asset11A asset11B asset11C]}
+                'subgroup12': {'': [asset12A]}}
+     'group2': {'subgroup21': {'': [asset21A]}}}
   "
   [assets reverse-sort?]
   (when-not (empty? assets)

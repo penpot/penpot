@@ -1,0 +1,85 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+@import "./common.scss";
+
+.form-wrapper {
+  width: $s-384;
+}
+
+.button-row {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: end;
+  gap: $s-12;
+  padding-block-start: $s-8;
+}
+
+.with-delete {
+  grid-template-columns: 1fr auto auto;
+}
+
+.delete-btn {
+  justify-self: start;
+}
+
+.token-rows {
+  display: flex;
+  flex-direction: column;
+  gap: $s-16;
+}
+
+.input-row {
+  display: flex;
+  flex-direction: column;
+  gap: $s-4;
+}
+
+.labeled-input-label {
+  color: var(--color-foreground-primary);
+}
+
+.error {
+  padding: $s-4 $s-6;
+  margin-bottom: 0;
+  color: var(--status-color-error-500);
+}
+
+.resolved-value {
+  --input-hint-color: var(--color-foreground-primary);
+  margin-bottom: 0;
+  padding: $s-4 $s-6;
+  color: var(--input-hint-color);
+}
+
+.resolved-value-placeholder {
+  --input-hint-color: var(--color-foreground-secondary);
+}
+
+.resolved-value-error {
+  --input-hint-color: var(--status-color-error-500);
+}
+
+.color-bullet {
+  margin-right: $s-8;
+  cursor: pointer;
+}
+
+.color-bullet-placeholder {
+  width: var(--bullet-size, $s-16);
+  height: var(--bullet-size, $s-16);
+  min-width: var(--bullet-size, $s-16);
+  min-height: var(--bullet-size, $s-16);
+  margin-top: 0;
+  background-color: color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);
+  border-radius: $br-4;
+  cursor: pointer;
+}
+
+.form-modal-title {
+  color: var(--color-foreground-primary);
+}
