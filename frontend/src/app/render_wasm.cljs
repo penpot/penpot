@@ -14,16 +14,20 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.matrix :as cgm]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
-   [promesa.core :as p]))
+   [promesa.core :as p]
+   [app.util.object :as obj]))
 
 (def enabled?
   (contains? cf/flags :render-wasm))
 
+(def ^:dynamic *capture*)
+
 (set! app.common.types.shape.impl/enabled-wasm-ready-shape enabled?)
 
 (defonce internal-module #js {})
-(defonce internal-gpu-state #js {})
+(defonce internal-state #js {})
 
 ;; TODO: remove the `take` once we have the dynamic data structure in Rust
 (def xform
@@ -32,15 +36,15 @@
    (take 2048)))
 
 ;; Size in number of f32 values that represents the shape selrect (
-(def shape+modifier-size (+ ctsi/shape-size 6))
+#_(def shape+modifier-size (+ ctsi/shape-size 6))
 
-(defn- write-shape
+#_(defn- write-shape
   [mem shape offset]
   (assert (instance? js/Float32Array mem) "expected instance of float32array")
   (let [buffer (.-buffer ^js shape)]
     (.set ^js mem buffer offset)))
 
-(defn- write-matrix
+#_(defn- write-matrix
   "Write the transform (or identity if nil) into the buffer"
   [mem matrix offset]
   (assert (instance? js/Float32Array mem) "expected instance of float32array")
@@ -54,6 +58,23 @@
     (aset mem (+ offset 5) (dm/get-prop matrix :f))))
 
 (defn set-objects
+  [objects modifiers]
+  (let [shape-create-fn  (unchecked-get internal-module "_shape_create")
+        shape-create     (fn [state uuid]
+                        #_(js-debugger)
+                        (let [buffer (uuid/uuid->u32 uuid)]
+                          (js/console.log "_shape_create" shape-create-fn state uuid (unchecked-get buffer 0) (unchecked-get buffer 1) (unchecked-get buffer 2) (unchecked-get buffer 3))
+                          (shape-create-fn state (unchecked-get buffer 0) (unchecked-get buffer 1) (unchecked-get buffer 2) (unchecked-get buffer 3))))
+        shapes        (into [] xform (vals objects))
+        total-shapes  (count shapes)]
+    (loop [index 0]
+      (when (< index total-shapes)
+        (let [shape  (nth shapes index)
+              id     (dm/get-prop shape :id)]
+          (shape-create internal-state id)
+          (recur (inc index)))))))
+
+#_(defn set-objects
   [objects modifiers]
   ;; FIXME: maybe change the name of `_shapes_buffer` (?)
   (let [get-shapes-buffer-ptr
@@ -109,7 +130,7 @@
      (fn []
        (let [pan-x (- (dm/get-prop vbox :x))
              pan-y (- (dm/get-prop vbox :y))]
-         (draw-all-shapes internal-gpu-state zoom pan-x pan-y))))))
+         (draw-all-shapes internal-state zoom pan-x pan-y))))))
 
 (defn cancel-draw
   [frame-id]
@@ -144,7 +165,10 @@
 
     (set! (.-width canvas) (.-clientWidth ^js canvas))
     (set! (.-height canvas) (.-clientHeight ^js canvas))
-    (set! internal-gpu-state state)))
+
+    (obj/set! js/window "shape_list" (fn [] ((unchecked-get internal-module "_shape_list") internal-state)))
+
+    (set! internal-state state)))
 
 (defonce module
   (->> (js/dynamicImport "/js/render_wasm.js")

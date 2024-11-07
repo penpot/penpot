@@ -13,7 +13,9 @@ path = "src/main.rs"
 [dependencies]
 euclid = "0.22.11"
 gl = "0.14.0"
+lazy_static = "1.5.0"
 skia-safe = { version = "0.78.2", features = ["gl"] }
+uuid = { version = "1.11.0", features = ["v4"] }
 
 [profile.release]
 opt-level = "s"

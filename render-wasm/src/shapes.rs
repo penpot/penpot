@@ -1,6 +1,18 @@
-use skia_safe as skia;
+use uuid::Uuid;
 
-use crate::render::{render_rect, State};
+#[derive(Debug, Clone, Copy)]
+pub enum ShapeKind {
+    None,
+    Text,
+    Path,
+    SVGRaw,
+    Image,
+    Circle,
+    Rect,
+    Bool,
+    Group,
+    Frame,
+}
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Rect {
@@ -11,7 +23,7 @@ pub struct Rect {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Transform {
+pub struct Matrix {
     pub a: f32,
     pub b: f32,
     pub c: f32,
@@ -20,76 +32,40 @@ pub struct Transform {
     pub f: f32,
 }
 
+// #[derive(Debug, Clone, Copy)]
+// pub struct Transform {
+//     pub position: Vec2;
+//     pub scale: Vec2;
+//     pub skew: Vec2;
+//     pub rotation: f32;
+//     pub matrix: Matrix;
+// }
+
 #[derive(Debug, Clone, Copy)]
 pub struct Shape {
+    pub id: Uuid,
+    pub kind: ShapeKind,
     pub selrect: Rect,
-    pub transform: Transform,
+    pub matrix: Matrix,
+    // pub fills: Vec<ShapeFill>,
+    // pub strokes: Vec<ShapeStroke>,
+    // pub pathData: PathData,
+    // pub textContent: TextContent,
 }
 
 impl Shape {
     #[inline]
-    fn translation(&self) -> (f32, f32) {
-        (self.transform.e, self.transform.f)
+    pub fn translation(&self) -> (f32, f32) {
+        (self.matrix.e, self.matrix.f)
     }
 
     #[inline]
-    fn scale(&self) -> (f32, f32) {
-        (self.transform.a, self.transform.d)
+    pub fn scale(&self) -> (f32, f32) {
+        (self.matrix.a, self.matrix.d)
     }
 
     #[inline]
-    fn skew(&self) -> (f32, f32) {
-        (self.transform.c, self.transform.b)
+    pub fn skew(&self) -> (f32, f32) {
+        (self.matrix.c, self.matrix.b)
     }
-}
-
-pub static mut SHAPES_BUFFER: [Shape; 1024] = [Shape {
-    selrect: Rect {
-        x1: 0.0,
-        y1: 0.0,
-        x2: 0.0,
-        y2: 0.0,
-    },
-    transform: Transform {
-        a: 0.0,
-        b: 0.0,
-        c: 0.0,
-        d: 0.0,
-        e: 0.0,
-        f: 0.0,
-    },
-}; 1024];
-
-pub(crate) fn draw_all(state: &mut State) {
-    let shapes;
-    unsafe {
-        shapes = SHAPES_BUFFER.iter();
-    }
-
-    for shape in shapes {
-        draw_shape(state, shape);
-    }
-}
-
-#[inline]
-fn draw_shape(state: &mut State, shape: &Shape) {
-    let r = skia::Rect::new(
-        shape.selrect.x1,
-        shape.selrect.y1,
-        shape.selrect.x2,
-        shape.selrect.y2,
-    );
-
-    state.surface.canvas().save();
-
-    let mut matrix = skia::Matrix::new_identity();
-    matrix.set_scale_translate(shape.scale(), shape.translation());
-    let (skew_x, skew_y) = shape.skew();
-    matrix.set_skew_x(skew_x);
-    matrix.set_skew_y(skew_y);
-    state.surface.canvas().concat(&matrix);
-
-    render_rect(&mut state.surface, r, skia::Color::RED);
-
-    state.surface.canvas().restore();
 }

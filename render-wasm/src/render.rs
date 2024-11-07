@@ -1,6 +1,9 @@
 use skia_safe as skia;
 use skia_safe::gpu::{self, gl::FramebufferInfo, DirectContext};
 
+use crate::state::State;
+use crate::shapes::Shape;
+
 extern "C" {
     pub fn emscripten_GetProcAddress(
         name: *const ::std::os::raw::c_char,
@@ -10,25 +13,6 @@ extern "C" {
 pub struct GpuState {
     pub context: DirectContext,
     framebuffer_info: FramebufferInfo,
-}
-
-/// This struct holds the state of the Rust application between JS calls.
-///
-/// It is created by [init] and passed to the other exported functions. Note that rust-skia data
-/// structures are not thread safe, so a state must not be shared between different Web Workers.
-pub struct State {
-    pub gpu_state: GpuState,
-    pub surface: skia::Surface,
-}
-
-impl State {
-    pub fn new(gpu_state: GpuState, surface: skia::Surface) -> Self {
-        State { gpu_state, surface }
-    }
-
-    pub fn set_surface(&mut self, surface: skia::Surface) {
-        self.surface = surface;
-    }
 }
 
 pub(crate) fn init_gl() {
@@ -83,4 +67,59 @@ pub(crate) fn render_rect(surface: &mut skia::Surface, rect: skia::Rect, color: 
     paint.set_color(color);
     paint.set_anti_alias(true);
     surface.canvas().draw_rect(rect, &paint);
+}
+
+// FIXME: Utilizar este método me daba todo el rato el error
+// error[E0499]: cannot borrow `*state` as mutable more than once at a time
+#[inline]
+fn render_shape(state: &mut State, shape: &Shape) {
+    let r = skia::Rect::new(
+        shape.selrect.x1,
+        shape.selrect.y1,
+        shape.selrect.x2,
+        shape.selrect.y2,
+    );
+
+    state.surface.canvas().save();
+
+    let mut matrix = skia::Matrix::new_identity();
+    matrix.set_scale_translate(shape.scale(), shape.translation());
+    let (skew_x, skew_y) = shape.skew();
+    matrix.set_skew_x(skew_x);
+    matrix.set_skew_y(skew_y);
+    state.surface.canvas().concat(&matrix);
+
+    render_rect(&mut state.surface, r, skia::Color::RED);
+
+    state.surface.canvas().restore();
+}
+
+pub(crate) fn render_all(state: &mut State) {
+    let list = state.display_list.clone();
+    for id in list.iter() {
+        println!("Drawing shape {}", id);
+        // let shape: Option<Shape> = *state.shapes.get(id);
+        if let Some(shape) = state.shapes.get(id) {
+            render_shape(state, shape);
+        }
+        // let r = skia::Rect::new(
+        //     shape.selrect.x1,
+        //     shape.selrect.y1,
+        //     shape.selrect.x2,
+        //     shape.selrect.y2,
+        // );
+
+        // state.surface.canvas().save();
+
+        // let mut matrix = skia::Matrix::new_identity();
+        // matrix.set_scale_translate(shape.scale(), shape.translation());
+        // let (skew_x, skew_y) = shape.skew();
+        // matrix.set_skew_x(skew_x);
+        // matrix.set_skew_y(skew_y);
+        // state.surface.canvas().concat(&matrix);
+
+        // render_rect(&mut state.surface, r, skia::Color::RED);
+
+        // state.surface.canvas().restore();
+    }
 }
