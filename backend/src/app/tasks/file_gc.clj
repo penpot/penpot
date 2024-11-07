@@ -44,7 +44,7 @@
           f.data_ref_id
      FROM file_change AS f
     WHERE f.file_id = ?
-      AND f.label IS NOT NULL
+      AND f.data IS NOT NULL
     ORDER BY f.created_at ASC")
 
 (def ^:private sql:mark-file-media-object-deleted

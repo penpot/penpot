@@ -1,0 +1,270 @@
+{
+    "~:id": "~uaf2494d0-39ba-8184-8005-230999ec862d",
+    "~:file-id": "~uaf2494d0-39ba-8184-8005-230696f6df5c",
+    "~:created-at": "~m1729245873057",
+    "~:data": {
+        "~:options": {},
+        "~:objects": {
+            "~u00000000-0000-0000-0000-000000000000": {
+                "~#shape": {
+                    "~:y": 0,
+                    "~:hide-fill-on-export": false,
+                    "~:transform": {
+                        "~#matrix": {
+                            "~:a": 1.0,
+                            "~:b": 0.0,
+                            "~:c": 0.0,
+                            "~:d": 1.0,
+                            "~:e": 0.0,
+                            "~:f": 0.0
+                        }
+                    },
+                    "~:rotation": 0,
+                    "~:name": "Root Frame",
+                    "~:width": 0.01,
+                    "~:type": "~:frame",
+                    "~:points": [
+                        {
+                            "~#point": {
+                                "~:x": 0.0,
+                                "~:y": 0.0
+                            }
+                        },
+                        {
+                            "~#point": {
+                                "~:x": 0.01,
+                                "~:y": 0.0
+                            }
+                        },
+                        {
+                            "~#point": {
+                                "~:x": 0.01,
+                                "~:y": 0.01
+                            }
+                        },
+                        {
+                            "~#point": {
+                                "~:x": 0.0,
+                                "~:y": 0.01
+                            }
+                        }
+                    ],
+                    "~:proportion-lock": false,
+                    "~:transform-inverse": {
+                        "~#matrix": {
+                            "~:a": 1.0,
+                            "~:b": 0.0,
+                            "~:c": 0.0,
+                            "~:d": 1.0,
+                            "~:e": 0.0,
+                            "~:f": 0.0
+                        }
+                    },
+                    "~:id": "~u00000000-0000-0000-0000-000000000000",
+                    "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                    "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                    "~:strokes": [],
+                    "~:x": 0,
+                    "~:proportion": 1.0,
+                    "~:selrect": {
+                        "~#rect": {
+                            "~:x": 0,
+                            "~:y": 0,
+                            "~:width": 0.01,
+                            "~:height": 0.01,
+                            "~:x1": 0,
+                            "~:y1": 0,
+                            "~:x2": 0.01,
+                            "~:y2": 0.01
+                        }
+                    },
+                    "~:fills": [
+                        {
+                            "~:fill-color": "#FFFFFF",
+                            "~:fill-opacity": 1
+                        }
+                    ],
+                    "~:flip-x": null,
+                    "~:height": 0.01,
+                    "~:flip-y": null,
+                    "~:shapes": [
+                        "~u8611ed3e-43d1-80dc-8005-23069fddf984"
+                    ]
+                }
+            },
+            "~u8611ed3e-43d1-80dc-8005-23069fddf984": {
+                "~#shape": {
+                    "~:y": 128,
+                    "~:layout-grid-columns": [
+                        {
+                            "~:type": "~:flex",
+                            "~:value": 1
+                        },
+                        {
+                            "~:type": "~:flex",
+                            "~:value": 1
+                        }
+                    ],
+                    "~:hide-fill-on-export": false,
+                    "~:layout-gap-type": "~:multiple",
+                    "~:layout-padding": {
+                        "~:p1": 0,
+                        "~:p2": 0,
+                        "~:p3": 0,
+                        "~:p4": 0
+                    },
+                    "~:transform": {
+                        "~#matrix": {
+                            "~:a": 1.0,
+                            "~:b": 0.0,
+                            "~:c": 0.0,
+                            "~:d": 1.0,
+                            "~:e": 0.0,
+                            "~:f": 0.0
+                        }
+                    },
+                    "~:rotation": 0,
+                    "~:grow-type": "~:fixed",
+                    "~:layout": "~:grid",
+                    "~:hide-in-viewer": false,
+                    "~:name": "Board",
+                    "~:layout-align-items": "~:start",
+                    "~:width": 200,
+                    "~:layout-grid-cells": {
+                        "~u96353b58-4e42-8052-8005-230996dafe13": {
+                            "~:justify-self": "~:auto",
+                            "~:column": 1,
+                            "~:id": "~u96353b58-4e42-8052-8005-230996dafe13",
+                            "~:position": "~:auto",
+                            "~:column-span": 1,
+                            "~:align-self": "~:auto",
+                            "~:row": 1,
+                            "~:row-span": 1,
+                            "~:shapes": []
+                        },
+                        "~u96353b58-4e42-8052-8005-230996dafe14": {
+                            "~:justify-self": "~:auto",
+                            "~:column": 2,
+                            "~:id": "~u96353b58-4e42-8052-8005-230996dafe14",
+                            "~:position": "~:auto",
+                            "~:column-span": 1,
+                            "~:align-self": "~:auto",
+                            "~:row": 1,
+                            "~:row-span": 1,
+                            "~:shapes": []
+                        },
+                        "~u96353b58-4e42-8052-8005-230996dafe15": {
+                            "~:justify-self": "~:auto",
+                            "~:column": 1,
+                            "~:id": "~u96353b58-4e42-8052-8005-230996dafe15",
+                            "~:position": "~:auto",
+                            "~:column-span": 1,
+                            "~:align-self": "~:auto",
+                            "~:row": 2,
+                            "~:row-span": 1,
+                            "~:shapes": []
+                        },
+                        "~u96353b58-4e42-8052-8005-230996dafe16": {
+                            "~:justify-self": "~:auto",
+                            "~:column": 2,
+                            "~:id": "~u96353b58-4e42-8052-8005-230996dafe16",
+                            "~:position": "~:auto",
+                            "~:column-span": 1,
+                            "~:align-self": "~:auto",
+                            "~:row": 2,
+                            "~:row-span": 1,
+                            "~:shapes": []
+                        }
+                    },
+                    "~:layout-padding-type": "~:simple",
+                    "~:type": "~:frame",
+                    "~:points": [
+                        {
+                            "~#point": {
+                                "~:x": 128,
+                                "~:y": 128
+                            }
+                        },
+                        {
+                            "~#point": {
+                                "~:x": 328,
+                                "~:y": 128
+                            }
+                        },
+                        {
+                            "~#point": {
+                                "~:x": 328,
+                                "~:y": 328
+                            }
+                        },
+                        {
+                            "~#point": {
+                                "~:x": 128,
+                                "~:y": 328
+                            }
+                        }
+                    ],
+                    "~:proportion-lock": false,
+                    "~:layout-gap": {
+                        "~:row-gap": 0,
+                        "~:column-gap": 0
+                    },
+                    "~:transform-inverse": {
+                        "~#matrix": {
+                            "~:a": 1.0,
+                            "~:b": 0.0,
+                            "~:c": 0.0,
+                            "~:d": 1.0,
+                            "~:e": 0.0,
+                            "~:f": 0.0
+                        }
+                    },
+                    "~:layout-justify-content": "~:stretch",
+                    "~:id": "~u8611ed3e-43d1-80dc-8005-23069fddf984",
+                    "~:layout-justify-items": "~:start",
+                    "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                    "~:layout-align-content": "~:stretch",
+                    "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                    "~:strokes": [],
+                    "~:x": 128,
+                    "~:proportion": 1,
+                    "~:layout-grid-rows": [
+                        {
+                            "~:type": "~:flex",
+                            "~:value": 1
+                        },
+                        {
+                            "~:type": "~:flex",
+                            "~:value": 1
+                        }
+                    ],
+                    "~:selrect": {
+                        "~#rect": {
+                            "~:x": 128,
+                            "~:y": 128,
+                            "~:width": 200,
+                            "~:height": 200,
+                            "~:x1": 128,
+                            "~:y1": 128,
+                            "~:x2": 328,
+                            "~:y2": 328
+                        }
+                    },
+                    "~:fills": [
+                        {
+                            "~:fill-color": "#FFFFFF",
+                            "~:fill-opacity": 1
+                        }
+                    ],
+                    "~:layout-grid-dir": "~:row",
+                    "~:flip-x": null,
+                    "~:height": 200,
+                    "~:flip-y": null,
+                    "~:shapes": []
+                }
+            }
+        },
+        "~:id": "~uaf2494d0-39ba-8184-8005-230696f6df5d",
+        "~:name": "Page 1"
+    }
+}

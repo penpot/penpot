@@ -26,7 +26,7 @@ tmux send-keys -t penpot 'yarn run watch' enter
 tmux new-window -t penpot:1 -n 'frontend shadow'
 tmux select-window -t penpot:1
 tmux send-keys -t penpot 'cd penpot/frontend' enter C-l
-tmux send-keys -t penpot 'clojure -M:dev:shadow-cljs watch main' enter
+tmux send-keys -t penpot 'yarn run watch:app' enter
 
 tmux new-window -t penpot:2 -n 'exporter'
 tmux select-window -t penpot:2

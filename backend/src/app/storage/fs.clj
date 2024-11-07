@@ -6,7 +6,6 @@
 
 (ns app.storage.fs
   (:require
-   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uri :as u]
@@ -18,8 +17,12 @@
    [datoteka.io :as io]
    [integrant.core :as ig])
   (:import
+   java.io.InputStream
+   java.io.OutputStream
    java.nio.file.Files
    java.nio.file.Path))
+
+(set! *warn-on-reflection* true)
 
 ;; --- BACKEND INIT
 
@@ -58,9 +61,9 @@
     (when-not (fs/exists? (fs/parent full))
       (fs/create-dir (fs/parent full)))
 
-    (dm/with-open [src (io/input-stream content)
-                   dst (io/output-stream full)]
-      (io/copy! src dst))
+    (with-open [^InputStream src (io/input-stream content)]
+      (with-open [^OutputStream dst (io/output-stream full)]
+        (io/copy src dst)))
 
     object))
 
@@ -78,8 +81,8 @@
 
 (defmethod impl/get-object-bytes :fs
   [backend object]
-  (dm/with-open [input (impl/get-object-data backend object)]
-    (io/read-as-bytes input)))
+  (with-open [^InputStream input (impl/get-object-data backend object)]
+    (io/read input)))
 
 (defmethod impl/get-object-url :fs
   [{:keys [::uri] :as backend} {:keys [id] :as object} _]

@@ -7,11 +7,11 @@
 (ns common-tests.types.tokens-lib-test
   (:require
    #?(:clj [app.common.fressian :as fres])
+   #?(:clj [clojure.data.json :as json])
    [app.common.data :as d]
    [app.common.time :as dt]
    [app.common.transit :as tr]
    [app.common.types.tokens-lib :as ctob]
-   [clojure.data.json :as json]
    [clojure.test :as t]))
 
 (t/testing "token"
@@ -49,9 +49,9 @@
 
   (t/deftest find-token-value-references
     (t/testing "finds references inside curly braces in a string"
-     (t/is (= #{"foo" "bar"} (ctob/find-token-value-references "{foo} + {bar}")))
-     (t/testing "ignores extra text"
-       (t/is (= #{"foo.bar.baz"} (ctob/find-token-value-references "{foo.bar.baz} + something")))))
+      (t/is (= #{"foo" "bar"} (ctob/find-token-value-references "{foo} + {bar}")))
+      (t/testing "ignores extra text"
+        (t/is (= #{"foo.bar.baz"} (ctob/find-token-value-references "{foo.bar.baz} + something")))))
     (t/testing "ignores string without references"
       (t/is (nil? (ctob/find-token-value-references "1 + 2"))))
     (t/testing "handles edge-case for extra curly braces"
@@ -395,9 +395,8 @@
                           ;; Ignore this set
                           (ctob/add-set (ctob/make-token-set :name "inactive-set"))
                           (ctob/add-token-in-set "inactive-set" (ctob/make-token :name "inactive-set-token"
-                                                                                       :type :boolean
-                                                                                       :value true)))
-
+                                                                                 :type :boolean
+                                                                                 :value true)))
 
           expected-order (ctob/get-ordered-set-names tokens-lib)
           expected-tokens (ctob/get-active-themes-set-tokens tokens-lib)
@@ -425,13 +424,13 @@
 
           tokens-lib' (-> tokens-lib
                           (ctob/update-theme "" "test-token-theme"
-                                           (fn [token-theme]
-                                             (assoc token-theme
-                                                    :description "some description")))
+                                             (fn [token-theme]
+                                               (assoc token-theme
+                                                      :description "some description")))
                           (ctob/update-theme "" "not-existing-theme"
-                                           (fn [token-theme]
-                                             (assoc token-theme
-                                                    :description "no-effect"))))
+                                             (fn [token-theme]
+                                               (assoc token-theme
+                                                      :description "no-effect"))))
 
           token-theme   (ctob/get-theme tokens-lib "" "test-token-theme")
           token-theme'  (ctob/get-theme tokens-lib' "" "test-token-theme")]
@@ -472,20 +471,20 @@
       (t/is (nil? token-theme'))))
 
   (t/deftest toggle-set-in-theme
-      (let [tokens-lib   (-> (ctob/make-tokens-lib)
-                             (ctob/add-set (ctob/make-token-set :name "token-set-1"))
-                             (ctob/add-set (ctob/make-token-set :name "token-set-2"))
-                             (ctob/add-set (ctob/make-token-set :name "token-set-3"))
-                             (ctob/add-theme (ctob/make-token-theme :name "test-token-theme")))
-            tokens-lib'  (-> tokens-lib
-                             (ctob/toggle-set-in-theme "" "test-token-theme" "token-set-1")
-                             (ctob/toggle-set-in-theme "" "test-token-theme" "token-set-2")
-                             (ctob/toggle-set-in-theme "" "test-token-theme" "token-set-2"))
+    (let [tokens-lib   (-> (ctob/make-tokens-lib)
+                           (ctob/add-set (ctob/make-token-set :name "token-set-1"))
+                           (ctob/add-set (ctob/make-token-set :name "token-set-2"))
+                           (ctob/add-set (ctob/make-token-set :name "token-set-3"))
+                           (ctob/add-theme (ctob/make-token-theme :name "test-token-theme")))
+          tokens-lib'  (-> tokens-lib
+                           (ctob/toggle-set-in-theme "" "test-token-theme" "token-set-1")
+                           (ctob/toggle-set-in-theme "" "test-token-theme" "token-set-2")
+                           (ctob/toggle-set-in-theme "" "test-token-theme" "token-set-2"))
 
-            token-theme  (ctob/get-theme tokens-lib "" "test-token-theme")
-            token-theme' (ctob/get-theme tokens-lib' "" "test-token-theme")]
+          token-theme  (ctob/get-theme tokens-lib "" "test-token-theme")
+          token-theme' (ctob/get-theme tokens-lib' "" "test-token-theme")]
 
-        (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme))))))
+      (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme))))))
 
 
 (t/testing "serialization"
@@ -797,8 +796,8 @@
 
             tokens-lib' (-> tokens-lib
                             (ctob/update-set "group1/token-set-2"
-                                                      (fn [token-set]
-                                                        (assoc token-set :description "some description"))))
+                                             (fn [token-set]
+                                               (assoc token-set :description "some description"))))
 
             sets-tree   (ctob/get-set-tree tokens-lib)
             sets-tree'  (ctob/get-set-tree tokens-lib')
@@ -823,9 +822,9 @@
 
             tokens-lib' (-> tokens-lib
                             (ctob/update-set "group1/token-set-2"
-                                                      (fn [token-set]
-                                                        (assoc token-set
-                                                               :name "group1/updated-name"))))
+                                             (fn [token-set]
+                                               (assoc token-set
+                                                      :name "group1/updated-name"))))
 
             sets-tree   (ctob/get-set-tree tokens-lib)
             sets-tree'  (ctob/get-set-tree tokens-lib')
@@ -850,9 +849,9 @@
 
             tokens-lib' (-> tokens-lib
                             (ctob/update-set "group1/token-set-2"
-                                                      (fn [token-set]
-                                                        (assoc token-set
-                                                               :name "group2/updated-name"))))
+                                             (fn [token-set]
+                                               (assoc token-set
+                                                      :name "group2/updated-name"))))
 
             sets-tree   (ctob/get-set-tree tokens-lib)
             sets-tree'  (ctob/get-set-tree tokens-lib')
@@ -951,8 +950,8 @@
 
             tokens-lib'  (-> tokens-lib
                              (ctob/update-theme "group1" "token-theme-2"
-                                                       (fn [token-theme]
-                                                         (assoc token-theme :description "some description"))))
+                                                (fn [token-theme]
+                                                  (assoc token-theme :description "some description"))))
 
             themes-tree  (ctob/get-theme-tree tokens-lib)
             themes-tree' (ctob/get-theme-tree tokens-lib')
@@ -986,9 +985,9 @@
 
             tokens-lib'  (-> tokens-lib
                              (ctob/update-theme "group1" "token-theme-2"
-                                                       (fn [token-theme]
-                                                         (assoc token-theme
-                                                                :name "updated-name"))))
+                                                (fn [token-theme]
+                                                  (assoc token-theme
+                                                         :name "updated-name"))))
 
             themes-tree  (ctob/get-theme-tree tokens-lib)
             themes-tree' (ctob/get-theme-tree tokens-lib')
@@ -1013,10 +1012,10 @@
 
             tokens-lib'  (-> tokens-lib
                              (ctob/update-theme "group1" "token-theme-2"
-                                                       (fn [token-theme]
-                                                         (assoc token-theme
-                                                                :name "updated-name"
-                                                                :group "group2"))))
+                                                (fn [token-theme]
+                                                  (assoc token-theme
+                                                         :name "updated-name"
+                                                         :group "group2"))))
 
             themes-tree  (ctob/get-theme-tree tokens-lib)
             themes-tree' (ctob/get-theme-tree tokens-lib')
@@ -1049,93 +1048,95 @@
         (t/is (= (count themes-tree') 1))
         (t/is (nil? token-theme'))))))
 
-(t/testing "dtcg encoding/decoding"
-  (t/deftest decode-dtcg-json
-    (let [json (-> (slurp "test/common_tests/types/data/tokens-multi-set-example.json")
-                   (tr/decode-str))
-          lib (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json)
-          get-set-token (fn [set-name token-name]
-                          (some-> (ctob/get-set lib set-name)
-                                  (ctob/get-token token-name)
-                                  (dissoc :modified-at)))]
-      (t/is (= '("core" "light" "dark" "theme") (ctob/get-ordered-set-names lib)))
-      (t/testing "tokens exist in core set"
-        (t/is (= (get-set-token "core" "colors.red.600")
-                 {:name "colors.red.600"
-                  :type :color
-                  :value "#e53e3e"
-                  :description nil}))
-        (t/is (= (get-set-token "core" "spacing.multi-value")
-                 {:name "spacing.multi-value"
-                  :type :spacing
-                  :value "{dimension.sm} {dimension.xl}"
-                  :description "You can have multiple values in a single spacing token"}))
-        (t/is (= (get-set-token "theme" "button.primary.background")
-                 {:name "button.primary.background"
-                  :type :color
-                  :value "{accent.default}"
-                  :description nil})))
-      (t/testing "invalid tokens got discarded"
-        (t/is (nil? (get-set-token "typography" "H1.Bold"))))))
+#?(:clj
+   (t/testing "dtcg encoding/decoding"
+     (t/deftest decode-dtcg-json
+       (let [json (-> (slurp "test/common_tests/types/data/tokens-multi-set-example.json")
+                      (tr/decode-str))
+             lib (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json)
+             get-set-token (fn [set-name token-name]
+                             (some-> (ctob/get-set lib set-name)
+                                     (ctob/get-token token-name)
+                                     (dissoc :modified-at)))]
+         (t/is (= '("core" "light" "dark" "theme") (ctob/get-ordered-set-names lib)))
+         (t/testing "tokens exist in core set"
+           (t/is (= (get-set-token "core" "colors.red.600")
+                    {:name "colors.red.600"
+                     :type :color
+                     :value "#e53e3e"
+                     :description nil}))
+           (t/is (= (get-set-token "core" "spacing.multi-value")
+                    {:name "spacing.multi-value"
+                     :type :spacing
+                     :value "{dimension.sm} {dimension.xl}"
+                     :description "You can have multiple values in a single spacing token"}))
+           (t/is (= (get-set-token "theme" "button.primary.background")
+                    {:name "button.primary.background"
+                     :type :color
+                     :value "{accent.default}"
+                     :description nil})))
+         (t/testing "invalid tokens got discarded"
+           (t/is (nil? (get-set-token "typography" "H1.Bold"))))))
 
-  (t/deftest encode-dtcg-json
-    (let [tokens-lib (-> (ctob/make-tokens-lib)
-                         (ctob/add-set (ctob/make-token-set :name "core"
-                                                            :tokens {"colors.red.600"
-                                                                     (ctob/make-token
-                                                                      {:name "colors.red.600"
-                                                                       :type :color
-                                                                       :value "#e53e3e"})
-                                                                     "spacing.multi-value"
-                                                                     (ctob/make-token
-                                                                      {:name "spacing.multi-value"
-                                                                       :type :spacing
-                                                                       :value "{dimension.sm} {dimension.xl}"
-                                                                       :description "You can have multiple values in a single spacing token"})
-                                                                     "button.primary.background"
-                                                                     (ctob/make-token
-                                                                      {:name "button.primary.background"
-                                                                       :type :color
-                                                                       :value "{accent.default}"})})))
-          expected (ctob/encode-dtcg tokens-lib)]
-      (t/is (= {"core"
-                {"colors" {"red" {"600" {"$value" "#e53e3e"
-                                         "$type" "color"}}}
-                 "spacing"
-                 {"multi-value"
-                  {"$value" "{dimension.sm} {dimension.xl}"
-                   "$type" "spacing"
-                   "$description" "You can have multiple values in a single spacing token"}}
-                 "button"
-                 {"primary" {"background" {"$value" "{accent.default}"
-                                           "$type" "color"}}}}}
-               expected))))
+     (t/deftest encode-dtcg-json
+       (let [tokens-lib (-> (ctob/make-tokens-lib)
+                            (ctob/add-set (ctob/make-token-set :name "core"
+                                                               :tokens {"colors.red.600"
+                                                                        (ctob/make-token
+                                                                         {:name "colors.red.600"
+                                                                          :type :color
+                                                                          :value "#e53e3e"})
+                                                                        "spacing.multi-value"
+                                                                        (ctob/make-token
+                                                                         {:name "spacing.multi-value"
+                                                                          :type :spacing
+                                                                          :value "{dimension.sm} {dimension.xl}"
+                                                                          :description "You can have multiple values in a single spacing token"})
+                                                                        "button.primary.background"
+                                                                        (ctob/make-token
+                                                                         {:name "button.primary.background"
+                                                                          :type :color
+                                                                          :value "{accent.default}"})})))
+             expected (ctob/encode-dtcg tokens-lib)]
+         (t/is (= {"core"
+                   {"colors" {"red" {"600" {"$value" "#e53e3e"
+                                            "$type" "color"}}}
+                    "spacing"
+                    {"multi-value"
+                     {"$value" "{dimension.sm} {dimension.xl}"
+                      "$type" "spacing"
+                      "$description" "You can have multiple values in a single spacing token"}}
+                    "button"
+                    {"primary" {"background" {"$value" "{accent.default}"
+                                              "$type" "color"}}}}}
+                  expected))))
 
-  (t/deftest encode-decode-dtcg-json
-    (with-redefs [dt/now (constantly #inst "2024-10-16T12:01:20.257840055-00:00")]
-      (let [tokens-lib (-> (ctob/make-tokens-lib)
-                           (ctob/add-set (ctob/make-token-set :name "core"
-                                                              :tokens {"colors.red.600"
-                                                                       (ctob/make-token
-                                                                        {:name "colors.red.600"
-                                                                         :type :color
-                                                                         :value "#e53e3e"})
-                                                                       "spacing.multi-value"
-                                                                       (ctob/make-token
-                                                                        {:name "spacing.multi-value"
-                                                                         :type :spacing
-                                                                         :value "{dimension.sm} {dimension.xl}"
-                                                                         :description "You can have multiple values in a single spacing token"})
-                                                                       "button.primary.background"
-                                                                       (ctob/make-token
-                                                                        {:name "button.primary.background"
-                                                                         :type :color
-                                                                         :value "{accent.default}"})})))
-            encoded (ctob/encode-dtcg tokens-lib)
-            with-prev-tokens-lib (ctob/decode-dtcg-json tokens-lib encoded)
-            with-empty-tokens-lib (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) encoded)]
-        (t/testing "library got updated but data is equal"
-          (t/is (not= with-prev-tokens-lib tokens-lib))
-          (t/is (= @with-prev-tokens-lib @tokens-lib)))
-        (t/testing "fresh tokens library is also equal"
-          (= @with-empty-tokens-lib @tokens-lib))))))
+     (t/deftest encode-decode-dtcg-json
+       (with-redefs [dt/now (constantly #inst "2024-10-16T12:01:20.257840055-00:00")]
+         (let [tokens-lib (-> (ctob/make-tokens-lib)
+                              (ctob/add-set (ctob/make-token-set :name "core"
+                                                                 :tokens {"colors.red.600"
+                                                                          (ctob/make-token
+                                                                           {:name "colors.red.600"
+                                                                            :type :color
+                                                                            :value "#e53e3e"})
+                                                                          "spacing.multi-value"
+                                                                          (ctob/make-token
+                                                                           {:name "spacing.multi-value"
+                                                                            :type :spacing
+                                                                            :value "{dimension.sm} {dimension.xl}"
+                                                                            :description "You can have multiple values in a single spacing token"})
+                                                                          "button.primary.background"
+                                                                          (ctob/make-token
+                                                                           {:name "button.primary.background"
+                                                                            :type :color
+                                                                            :value "{accent.default}"})})))
+               encoded (ctob/encode-dtcg tokens-lib)
+               with-prev-tokens-lib (ctob/decode-dtcg-json tokens-lib encoded)
+               with-empty-tokens-lib (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) encoded)]
+           (t/testing "library got updated but data is equal"
+             (t/is (not= with-prev-tokens-lib tokens-lib))
+             (t/is (= @with-prev-tokens-lib @tokens-lib)))
+           (t/testing "fresh tokens library is also equal"
+             (= @with-empty-tokens-lib @tokens-lib)))))))
+

@@ -180,7 +180,7 @@
                                        :default-value (:group theme)
                                        :on-change (comp on-update-group dom/get-target-val)}
                          :render-right (when (seq theme-groups)
-                                         (mf/fnc []
+                                         (mf/fnc drop-down-button []
                                            [:button {:class (stl/css :group-drop-down-button)
                                                      :type "button"
                                                      :on-click (fn [e]

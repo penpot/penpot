@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -73,29 +74,27 @@
       AND status = 'new'
       AND scheduled_at > now()")
 
-(s/def ::label string?)
-(s/def ::task (s/or :kw keyword? :str string?))
-(s/def ::queue (s/or :kw keyword? :str string?))
-(s/def ::delay (s/or :int integer? :duration dt/duration?))
-(s/def ::priority integer?)
-(s/def ::max-retries integer?)
-(s/def ::dedupe boolean?)
+(def ^:private schema:options
+  [:map {:title "submit-options"}
+   [::task [:or ::sm/text :keyword]]
+   [::label {:optional true} ::sm/text]
+   [::delay {:optional true}
+    [:or ::sm/int ::dt/duration]]
+   [::queue {:optional true} [:or ::sm/text :keyword]]
+   [::priority {:optional true} ::sm/int]
+   [::max-retries {:optional true} ::sm/int]
+   [::dedupe {:optional true} ::sm/boolean]])
 
-(s/def ::submit-options
-  (s/and
-   (s/keys :req [::task]
-           :opt [::label ::delay ::queue ::priority ::max-retries ::dedupe])
-   (fn [{:keys [::dedupe ::label] :or {label ""}}]
-     (if dedupe
-       (not= label "")
-       true))))
+(def check-options!
+  (sm/check-fn schema:options))
 
 (defn submit!
   [& {:keys [::params ::task ::delay ::queue ::priority ::max-retries ::dedupe ::label]
       :or {delay 0 queue :default priority 100 max-retries 3 label ""}
       :as options}]
 
-  (us/verify! ::submit-options options)
+  (check-options! options)
+
   (let [duration  (dt/duration delay)
         interval  (db/interval duration)
         props     (db/tjson params)

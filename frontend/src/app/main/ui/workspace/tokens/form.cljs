@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.tokens.form
   (:require-macros [app.main.style :as stl])
   (:require
-   ["lodash.debounce" :as debounce]
    [app.common.colors :as c]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -30,6 +29,7 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.update :as wtu]
    [app.util.dom :as dom]
+   [app.util.functions :as uf]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [malli.core :as m]
@@ -57,7 +57,7 @@ Token names should only contain letters and digits separated by . characters.")}
 
 (defn token-name-schema
   "Generate a dynamic schema validation to check if a token path derived from the name already exists at `tokens-tree`."
-  [{:keys [token tokens-tree]}]
+  [{:keys [tokens-tree]}]
   (let [path-exists-schema
         (m/-simple-schema
          {:type :token/name-exists
@@ -234,7 +234,7 @@ Token names should only contain letters and digits separated by . characters.")}
 
         on-update-name-debounced
         (mf/use-fn
-         (debounce (fn [e]
+         (uf/debounce (fn [e]
                      (let [value (dom/get-target-val e)
                            errors (validate-name value)]
                        (when touched-name?
@@ -291,10 +291,10 @@ Token names should only contain letters and digits separated by . characters.")}
         description-errors (mf/use-state nil)
         validate-descripion (mf/use-fn #(m/explain token-description-schema %))
         on-update-description-debounced (mf/use-fn
-                                         (debounce (fn [e]
-                                                     (let [value (dom/get-target-val e)
-                                                           errors (validate-descripion value)]
-                                                       (reset! description-errors errors)))))
+                                         (uf/debounce (fn [e]
+                                                        (let [value (dom/get-target-val e)
+                                                              errors (validate-descripion value)]
+                                                          (reset! description-errors errors)))))
         on-update-description
         (mf/use-fn
          (mf/deps on-update-description-debounced)
@@ -388,7 +388,7 @@ Token names should only contain letters and digits separated by . characters.")}
                                                       :on-change on-update-value
                                                       :ref value-input-ref}
                                         :render-right (when color?
-                                                        (mf/fnc []
+                                                        (mf/fnc color-bullet []
                                                           [:div {:class (stl/css :color-bullet)
                                                                  :on-click #(swap! color-ramp-open? not)}
                                                            (if-let [hex (some-> @color tinycolor/valid-color tinycolor/->hex)]

@@ -12,8 +12,7 @@
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]
-   [rumext.v2 :as mf]
-   [app.common.data :as d]))
+   [rumext.v2 :as mf]))
 
 (l/set-level! "app.main.ui.workspace.tokens.style-dictionary" :warn)
 
@@ -62,7 +61,9 @@
 
 (defn process-sd-tokens
   "Converts a StyleDictionary dictionary with resolved tokens (aka `sd-tokens`) back to clojure.
-  The `get-origin-token` argument should be a function that takes an `sd-token` and returns the original penpot token, so we can merge the resolved attributes back in.
+  The `get-origin-token` argument should be a function that takes an
+  `sd-token` and returns the original penpot token, so we can merge
+  the resolved attributes back in.
 
   The `sd-token` will have references in `value` replaced with the computed value as a string.
   Here's an example for a `sd-token`:
@@ -81,7 +82,7 @@
     },
   }
   ```
-  
+
   We also convert `sd-token` value string into a unit that can be used as penpot shape attributes.
     - Dimensions like '12px' will be converted into numbers
     - Colors will be validated & converted to hex

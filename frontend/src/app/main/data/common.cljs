@@ -7,7 +7,11 @@
 (ns app.main.data.common
   "A general purpose events."
   (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.schema :as sm]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.team :as ctt]
    [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -15,6 +19,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.i18n :refer [tr]]
+   [app.util.router :as rt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -133,9 +138,31 @@
 ;; Exportations
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def ^:private schema:export-files
+  [:sequential {:title "Files"}
+   [:map {:title "FileParam"}
+    [:id ::sm/uuid]
+    [:name :string]
+    [:project-id ::sm/uuid]
+    [:is-shared ::sm/boolean]]])
+
+(def check-export-files!
+  (sm/check-fn schema:export-files))
+
+(def valid-export-formats
+  #{:binfile-v1 :binfile-v3 :legacy-zip})
+
 (defn export-files
-  [files binary?]
-  (ptk/reify ::request-file-export
+  [files format]
+  (dm/assert!
+   "expected valid files param"
+   (check-export-files! files))
+
+  (dm/assert!
+   "expected valid format"
+   (contains? valid-export-formats format))
+
+  (ptk/reify ::export-files
     ptk/WatchEvent
     (watch [_ state _]
       (let [features (features/get-team-enabled-features state)
@@ -144,16 +171,15 @@
              (rx/mapcat
               (fn [file]
                 (->> (rp/cmd! :has-file-libraries {:file-id (:id file)})
-                     (rx/map #(assoc file :has-libraries? %)))))
+                     (rx/map #(assoc file :has-libraries %)))))
              (rx/reduce conj [])
              (rx/map (fn [files]
                        (modal/show
                         {:type :export
                          :features features
                          :team-id team-id
-                         :has-libraries? (->> files (some :has-libraries?))
                          :files files
-                         :binary? binary?}))))))))
+                         :format format}))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Team Request
@@ -170,3 +196,47 @@
         (->> (rp/cmd! :create-team-access-request params)
              (rx/tap on-success)
              (rx/catch on-error))))))
+
+(defn- get-change-role-msg
+  [role]
+  (case role
+    :viewer (tr "dashboard.permissions-change.viewer")
+    :editor (tr "dashboard.permissions-change.editor")
+    :admin  (tr "dashboard.permissions-change.admin")
+    :owner  (tr "dashboard.permissions-change.owner")))
+
+(defn change-team-role
+  [{:keys [team-id role]}]
+  (dm/assert! (uuid? team-id))
+  (dm/assert! (contains? ctt/valid-roles role))
+
+  (ptk/reify ::change-team-role
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (ntf/info (get-change-role-msg role))))
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [permissions (get ctt/permissions-for-role role)]
+        (-> state
+            (update :permissions merge permissions)
+            (update-in [:team :permissions] merge permissions)
+            (d/update-in-when [:teams team-id :permissions] merge permissions))))))
+
+(defn team-membership-change
+  [{:keys [team-id team-name change]}]
+  (dm/assert! (uuid? team-id))
+  (ptk/reify ::team-membership-change
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (= :removed change)
+        (let [message (tr "dashboard.removed-from-team" team-name)
+              profile (:profile state)]
+          (rx/concat
+           (rx/of (rt/nav :dashboard-projects {:team-id (:default-team-id profile)}))
+           (->> (rx/of (ntf/info message))
+                ;; Delay so the navigation can finish
+                (rx/delay 250))))))))
+
+
+

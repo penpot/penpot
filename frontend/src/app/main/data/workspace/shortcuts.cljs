@@ -8,7 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.events :as ev]
-   [app.main.data.exports :as de]
+   [app.main.data.exports.assets :as de]
    [app.main.data.modal :as modal]
    [app.main.data.plugins :as dpl]
    [app.main.data.preview :as dp]
@@ -37,15 +37,17 @@
 ;; Shortcuts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn toggle-layout-flag
+(defn- toggle-layout-flag
   [flag]
   (-> (dw/toggle-layout-flag flag)
       (vary-meta assoc ::ev/origin "workspace-shortcuts")))
 
-(defn emit-when-no-readonly
+(defn- emit-when-no-readonly
   [& events]
-  (when-not (deref refs/workspace-read-only?)
-    (run! st/emit! events)))
+  (let [can-edit?  (:can-edit (deref refs/permissions))
+        read-only? (deref refs/workspace-read-only?)]
+    (when (and can-edit? (not read-only?))
+      (run! st/emit! events))))
 
 (def esc-pressed
   (ptk/reify ::esc-pressed
@@ -127,9 +129,12 @@
                           :subsections [:edit]
                           :fn #(st/emit! esc-pressed)}
 
-
    ;; MODIFY LAYERS
 
+   :rename               {:tooltip (ds/alt "N")
+                          :command "alt+n"
+                          :subsections [:edit]
+                          :fn #(emit-when-no-readonly (dw/start-rename-selected))}
 
    :group                {:tooltip (ds/meta "G")
                           :command (ds/c-mod "g")
@@ -324,7 +329,7 @@
    :toggle-focus-mode    {:command "f"
                           :tooltip "F"
                           :subsections [:basics :tools]
-                          :fn #(emit-when-no-readonly (dw/toggle-focus-mode))}
+                          :fn #(st/emit! (dw/toggle-focus-mode))}
 
    ;; ITEM ALIGNMENT
 

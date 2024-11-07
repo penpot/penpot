@@ -142,6 +142,8 @@
     [:quotes-font-variants-per-team {:optional true} ::sm/int]
     [:quotes-comment-threads-per-file {:optional true} ::sm/int]
     [:quotes-comments-per-file {:optional true} ::sm/int]
+    [:quotes-snapshots-per-file {:optional true} ::sm/int]
+    [:quotes-snapshots-per-team {:optional true} ::sm/int]
 
     [:auth-data-cookie-domain {:optional true} :string]
     [:auth-token-cookie-name {:optional true} :string]

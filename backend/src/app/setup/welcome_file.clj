@@ -10,6 +10,7 @@
    [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
+   [app.rpc.commands.files :as files]
    [app.rpc.commands.files-update :as fupdate]
    [app.rpc.commands.management :as management]
    [app.rpc.commands.profile :as profile]
@@ -51,9 +52,11 @@
                            :project-id (:default-project-id profile)}
           template-stream (tmpl/get-template-stream cfg "welcome")
           file-id         (-> (management/clone-template cfg params template-stream)
-                              first)]
+                              first)
+          file-name       (str fullname "'s first file")]
 
       (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+                        (files/rename-file conn {:id file-id :name file-name})
                         (fupdate/update-file! cfg file-id update-welcome-shape fullname)
                         (profile/update-profile-props cfg id {:welcome-file-id file-id})
                         (db/exec-one! conn [sql:mark-file-object-thumbnails-deleted file-id])

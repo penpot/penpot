@@ -6,11 +6,11 @@
 
 (ns app.renderer.svg
   (:require
+   ["svgo" :as svgo]
    ["xml-js" :as xml]
    [app.browser :as bw]
    [app.common.data :as d]
    [app.common.logging :as l]
-   [app.common.svg :as svg]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.util.mime :as mime]
@@ -319,7 +319,7 @@
                       result  (str/replace result "&nbsp;" "&#160;")
 
                       result  (if (contains? cf/flags :exporter-svgo)
-                                (svg/optimize result)
+                                (svgo/optimize result svgo/defaultOptions)
                                 result)]
 
                 ;; (println "------- ORIGIN:")

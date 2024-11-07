@@ -8,10 +8,7 @@
   {:target :browser
    :output-dir "resources/public/js/"
    :asset-path "/js"
-   :devtools {:preloads [preload devtools.preload]
-              :log false
-              :browser-inject :main
-              :watch-dir "resources/public"
+   :devtools {:watch-dir "resources/public"
               :reload-strategy :full}
    :build-options {:manifest-name "manifest.json"}
    :module-loader true
@@ -54,11 +51,6 @@
      :depends-on #{:shared}
      :init-fn app.render/init}
 
-    :worker
-    {:entries [app.worker]
-     :web-worker true
-     :depends-on #{:shared}}
-
     :rasterizer
     {:entries [app.rasterizer]
      :depends-on #{:shared}
@@ -66,9 +58,10 @@
 
    :js-options
    {:entry-keys ["module" "browser" "main"]
-    :resolve {"penpot/vendor/text-editor-v2"
-              {:target :file
-               :file   "vendor/text_editor_v2.js"}}}
+    :export-conditions ["module" "import", "browser" "require" "default"]
+    :js-provider :external
+    :external-index "target/index.js"
+    :external-index-format :esm}
 
    :compiler-options
    {:output-feature-set :es2020
@@ -80,6 +73,40 @@
    {:closure-defines {goog.DEBUG false
                       goog.debug.LOGGING_ENABLED true}
     :compiler-options
+    {:fn-invoke-direct true
+     :optimizations #shadow/env ["PENPOT_BUILD_OPTIMIZATIONS" :as :keyword :default :advanced]
+     :output-wrapper true
+     :rename-prefix-namespace "PENPOT"
+     :source-map true
+     :elide-asserts true
+     :anon-fn-naming-policy :off
+     :source-map-detail-level :all}}}
+
+  :worker
+  {:target :browser
+   :output-dir "resources/public/js/worker/"
+   :asset-path "/js/worker"
+   :devtools {:browser-inject :main
+              :watch-dir "resources/public"
+              :reload-strategy :full}
+   :build-options {:manifest-name "manifest.json"}
+   :modules
+   {:main
+    {:entries [app.worker]
+     :web-worker true
+     :depends-on #{}}}
+
+   :js-options
+   {:entry-keys ["module" "browser" "main"]
+    :export-conditions ["module" "import", "browser" "require" "default"]}
+
+   :compiler-options
+   {:output-feature-set :es2020
+    :output-wrapper false
+    :warnings {:fn-deprecated false}}
+
+   :release
+   {:compiler-options
     {:fn-invoke-direct true
      :optimizations #shadow/env ["PENPOT_BUILD_OPTIMIZATIONS" :as :keyword :default :advanced]
      :output-wrapper true
@@ -108,6 +135,17 @@
    {:output-feature-set :es2020
     :output-wrapper false
     :warnings {:fn-deprecated false}}}
+
+  :test
+  {:target :esm
+   :output-dir "target/tests"
+   :runtime :custom
+   :js-options {:js-provider :import}
+
+
+   :modules
+   {:test {:init-fn frontend-tests.runner/init
+           :prepend-js "globalThis.navigator = {userAgent: \"\"}"}}}
 
   :lib-penpot
   {:target :esm
@@ -145,35 +183,7 @@
    {:compiler-options
     {:fn-invoke-direct true
      :elide-asserts true
-     :anon-fn-naming-policy :off}}}
-
-  :test
-  {:target :node-test
-   :output-to "target/tests.cjs"
-   :output-dir "target/test/"
-   :ns-regexp "^frontend-tests.*-test$"
-   :autorun true
-
-   :js-options
-   {:entry-keys ["module" "browser" "main"]
-    :resolve {"penpot/vendor/text-editor-v2"
-              {:target :file
-               :file   "vendor/text_editor_v2.js"}}}
-
-   :compiler-options
-   {:output-feature-set :es2020
-    :output-wrapper false
-    :source-map true
-    :source-map-include-sources-content true
-    :source-map-detail-level :all
-    :warnings {:fn-deprecated false}}}
-
-  :test-esm
-  {:target :node-test
-   :output-to "target/tests-esm.cjs"
-   :output-dir "target/test-esm"
-   :ns-regexp "^token-tests.*-test$"
-   :autorun false
+     :anon-fn-naming-policy :off}}
 
    :devtools {:http-port 3460}
 

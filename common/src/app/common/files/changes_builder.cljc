@@ -20,8 +20,8 @@
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.shape.layout :as ctl]
-   [app.common.uuid :as uuid]
-   [app.common.types.tokens-lib :as ctob]))
+   [app.common.types.tokens-lib :as ctob]
+   [app.common.uuid :as uuid]))
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
 

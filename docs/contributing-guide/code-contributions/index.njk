@@ -1,0 +1,108 @@
+---
+title: 03· Core code contributions
+---
+
+<h1 id="code-contributions">Core code contributions</h1>
+
+<p class="main-paragraph">Details to know how to improve Penpot's core code</p>
+
+<p class="advice">
+Thinking of contributing to Penpot core but not sure where to start? We’ve made a curated selection of enhancements to help you with that. We believe that these tasks should be a great way to get started with Penpot development and quickly become an active contributor.
+<br><br>
+<a href="https://github.com/penpot/penpot/contribute" target="_blank">Here’s the list of enhancements labeled as "good first issue"</a>
+</p>
+
+<h3 id="code-contributions-techguide">Technical guide</h3>
+<p>Go to the <a href="/technical-guide">Technical guide</a> to get detailed explanations about how to get Penpot application and run it locally, to test it or make changes to it.</p>
+
+<h3 id="code-contributions-pull-requests">Pull requests</h3>
+<p>If you want propose a change or bug fix with the Pull-Request system firstly you should carefully read the <a href="#code-contributions-dco">DCO section</a> and format your commits accordingly.</p>
+<p>If you intend to fix a bug it's fine to submit a pull request right away but we still recommend to file an issue detailing what you're fixing. This is helpful in case we don't accept that specific fix but want to keep track of the issue.</p>
+<p>If you want to implement or start working in a new feature, please open a <b>question</b> / <b>discussion</b> issue for it. No pull-request will be accepted without previous chat about the changes, independently if it is a new feature, already planned feature or small quick win.</p>
+<p>If is going to be your first pull request, You can learn how from <a href="https://app.egghead.io/playlists/how-to-contribute-to-an-open-source-project-on-github" target="_blank">this free video series</a>.</p>
+<p>We will use the <code class="language-bash">easy fix</code> mark for tag for indicate issues that are easy for beginners.</p>
+
+<h3 id="code-contributions-commits">Commit message guidelines</h3>
+<p>We have very precise rules over how our git commit messages can be formatted.</p>
+<p>The commit message format is:</p>
+<pre>
+<code class="language-md">
+&lt;type&gt;  &lt;subject&gt;
+
+[body]
+
+[footer]
+</code>
+</pre>
+<p>Where type is:</p>
+<ul>
+<li><g-emoji class="g-emoji" alias="bug" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f41b.png"><img class="emoji" alt="bug" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/1f41b.png"></g-emoji> <code>:bug:</code> a commit that fixes a bug</li>
+<li><g-emoji class="g-emoji" alias="sparkles" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2728.png"><img class="emoji" alt="sparkles" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/2728.png"></g-emoji> <code>:sparkles:</code> a commit that adds an improvement</li>
+<li><g-emoji class="g-emoji" alias="tada" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f389.png"><img class="emoji" alt="tada" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/1f389.png"></g-emoji> <code>:tada:</code> a commit with new feature</li>
+<li><g-emoji class="g-emoji" alias="recycle" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/267b.png"><img class="emoji" alt="recycle" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/267b.png"></g-emoji> <code>:recycle:</code> a commit that introduces a refactor</li>
+<li><g-emoji class="g-emoji" alias="lipstick" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f484.png"><img class="emoji" alt="lipstick" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/1f484.png"></g-emoji> <code>:lipstick:</code> a commit with cosmetic changes</li>
+<li><g-emoji class="g-emoji" alias="ambulance" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f691.png"><img class="emoji" alt="ambulance" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/1f691.png"></g-emoji> <code>:ambulance:</code> a commit that fixes critical bug</li>
+<li><g-emoji class="g-emoji" alias="books" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f4da.png"><img class="emoji" alt="books" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/1f4da.png"></g-emoji> <code>:books:</code> a commit that improves or adds documentation</li>
+<li><g-emoji class="g-emoji" alias="construction" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f6a7.png"><img class="emoji" alt="construction" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/1f6a7.png"></g-emoji> <code>:construction:</code> a wip commit</li>
+<li><g-emoji class="g-emoji" alias="construction_worker" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f477.png"><img class="emoji" alt="construction_worker" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/1f477.png"></g-emoji> <code>:construction_worker:</code> a commit with CI related stuff</li>
+<li><g-emoji class="g-emoji" alias="boom" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f4a5.png"><img class="emoji" alt="boom" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/1f4a5.png"></g-emoji> <code>:boom:</code> a commit with breaking changes</li>
+<li><g-emoji class="g-emoji" alias="wrench" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f527.png"><img class="emoji" alt="wrench" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/1f527.png"></g-emoji> <code>:wrench:</code> a commit for config updates</li>
+<li><g-emoji class="g-emoji" alias="zap" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/26a1.png"><img class="emoji" alt="zap" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/26a1.png"></g-emoji> <code>:zap:</code> a commit with performance improvements</li>
+<li><g-emoji class="g-emoji" alias="whale" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f433.png"><img class="emoji" alt="whale" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/1f433.png"></g-emoji> <code>:whale:</code> a commit for docker related stuff</li>
+<li><g-emoji class="g-emoji" alias="rewind" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/23ea.png"><img class="emoji" alt="rewind" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/23ea.png"></g-emoji> <code>:rewind:</code> a commit that reverts changes</li>
+<li><g-emoji class="g-emoji" alias="paperclip" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/1f4ce.png"><img class="emoji" alt="paperclip" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/1f4ce.png"></g-emoji> <code>:paperclip:</code> a commit with other not relevant changes</li>
+<li><g-emoji class="g-emoji" alias="arrow_up" fallback-src="https://github.githubassets.com/images/icons/emoji/unicode/2b06.png"><img class="emoji" alt="arrow_up" height="20" width="20" src="https://github.githubassets.com/images/icons/emoji/unicode/2b06.png"></g-emoji> <code>:arrow_up:</code> a commit with dependencies updates</li>
+</ul>
+<p>More info:</p>
+<ul>
+<li><a href="https://gist.github.com/parmentf/035de27d6ed1dce0b36a">https://gist.github.com/parmentf/035de27d6ed1dce0b36a</a></li>
+<li><a href="https://gist.github.com/rxaviers/7360908">https://gist.github.com/rxaviers/7360908</a></li>
+</ul>
+<p>The subject should be:</p>
+<ul>
+<li>Use the imperative mood.</li>
+<li>Capitalize the first letter.</li>
+<li>Don't put a period at the end of the subject line.</li>
+<li>Put a blank line between the subject line and the body.</li>
+</ul>
+
+<h3 id="code-contributions-dco">Developer's Certificate of Origin (DCO)</h3>
+<p>By submitting code you are agree and can certify the below:</p>
+<pre>
+<code class="language-markdown">
+Developer's Certificate of Origin 1.1
+
+By making a contribution to this project, I certify that:
+
+(a) The contribution was created in whole or in part by me and I
+    have the right to submit it under the open source license
+    indicated in the file; or
+
+(b) The contribution is based upon previous work that, to the best
+    of my knowledge, is covered under an appropriate open source
+    license and I have the right under that license to submit that
+    work with modifications, whether created in whole or in part
+    by me, under the same open source license (unless I am
+    permitted to submit under a different license), as indicated
+    in the file; or
+
+(c) The contribution was provided directly to me by some other
+    person who certified (a), (b) or (c) and I have not modified
+    it.
+
+(d) I understand and agree that this project and the contribution
+    are public and that a record of the contribution (including all
+    personal information I submit with it, including my sign-off) is
+    maintained indefinitely and may be redistributed consistent with
+    this project or the open source license(s) involved.
+</code>
+</pre>
+
+<p>Then, all your code patches (<b>documentation are excluded</b>) should contain a sign-off at the end of the patch/commit description body. It can be automatically added on adding <code class="language-bash">-s</code> parameter to <code class="language-bash">git commit</code>.</p>
+<p>This is an example of the aspect of the line:</p>
+<pre>
+<code class="language-markdown">
+Signed-off-by: Andrey Antukh <niwi@niwi.nz>
+</code>
+</pre>
+<p>Please, use your real name (sorry, no pseudonyms or anonymous contributions are allowed).</p>

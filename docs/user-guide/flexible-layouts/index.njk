@@ -1,0 +1,280 @@
+---
+title: 08· Flexible Layouts
+---
+
+<h1 id="layouts">Flexible Layouts</h1>
+<p class="main-paragraph">Penpot's proposal tries to get as close as possible to the final output that we will see on the web. Design and development speak the same language in order to embrace web standards and improve communication between roles. At Penpot you have unique ways to create and manage adaptative layouts that have all the advantages of CSS standards.</p>
+
+
+<h2 id="layouts-flex">Flex Layout</h2>
+<p class="main-paragraph">Penpot's unique Flex Layout allows you to create flexible designs that can adapt automatically. Resize, fit, and fill content and containers without the need to do it manually.</p>
+
+<p class="advice">
+ To help you learn the fundamentals of Flex Layout <a href="https://penpot.app/design/layout" target="_blank">here’s a dedicated website</a> where you will find a <strong>video tutorial</strong> and a <strong>playground template</strong>.
+</p>
+
+<h3 id="layouts-flex-css">Flex Layout is based on Flexbox CSS standard</h3>
+<p>Penpot's Flex Layout is built over Flexbox, a CSS module that provides a more efficient way to lay out, align and distribute space among items in a container. There are many comprehensive explanations about Flexbox, if you are interested we recommend you to read the one at <a href="https://css-tricks.com/snippets/css/a-guide-to-flexbox/" target="_blank">CSS Tricks</a>.</p>
+<figure>
+<p><img src="/img/csstricks-00-basic-terminology.svg" alt="Flex Layout" /></p>
+<figcaption>Image from CSS Tricks</figcaption>
+</figure>
+
+
+<h3 id="layouts-flex-add">Add Flex Layout</h3>
+<p>You can add Flex Layout to any layer, group, board or a selection including any of these. Once Flex Layout Flex is added the selected elements will be contained into a board with the Flex Layout properties. You have several ways to do this:</p>
+<ul>
+  <li>From the Design panel at the right sidebar.</li>
+  <li>From the option at the selection menu (right click button).</li>
+  <li>Pressing <kbd>Ctrl/⌘</kbd> + <kbd>A</kbd>.</li>
+</ul>
+<figure><img src="/img/flexible-layouts/layouts-add.webp" alt="Adding Layouts" /></figure>
+
+
+<h3 id="layouts-flex-arrange-reorder">Arrange and reorder objects to a Flex Layout</h3>
+<p>To add an object to a Flex Layout you can just drag it at the position of your choice. You can also create or paste elements like in any regular board.</p>
+<p>To reorder elements you can drag them or use the <kbd>UP/DOWN</kbd> keystrokes.</p>
+<figure>
+  <video title="A video showing a layer being dragged to and moved through a flex flow" muted="" playsinline="" controls="" width="100%" poster="/img/flexible-layouts/layouts-flex-arrange.webp" height="auto">
+    <source src="/img/flexible-layouts/layouts-flex-arrange.mp4" type="video/mp4">
+  </video>
+</figure>
+
+
+<h3 id="layouts-flex-properties">Flex Layout properties</h3>
+<p>You have properties for direction, align, justify, gap, padding, margin and sizing. Those are the same properties that you can use with CSS Flexbox. You can <a href="https://css-tricks.com/snippets/css/a-guide-to-flexbox/#aa-flexbox-properties" target="_blank">read here detailed explanations about Flexbox properties</a>.</p>
+<figure><img src="/img/flexible-layouts/flex-properties.webp" alt="Flex Layout properties" /></figure>
+
+<h4>Flex Layout properties:</h4>
+<ul>
+  <li><strong>Direction:</strong> Row, reverse row, column, reverse column.</li>
+  <li><strong>Wrap (Direction):</strong> Align content start / center / end / space-around / space-between.</li>
+  <li><strong>Align items:</strong> Start, center, end.</li>
+  <li><strong>Justify content:</strong> start, center, end, space-between, space-around, space-evenly.</li>
+  <li><strong>Gap:</strong> Row, column.</li>
+  <li><strong>Padding:</strong> Top, right, bottom, left.</li>
+  <li><strong>Sizing:</strong> Fix/fit width, Fix/fit height.</li>
+</ul>
+
+<h3 id="layouts-flex-elements">Positioning Flex elements</h3>
+<h4>Position static:</h4>
+<p>Static position is the default option for flex elements, meaning that they will be included in the flex flow, using flex properties.</p>
+<figure><img src="/img/flexible-layouts/flex-properties-element.webp" alt="Flex Layout properties" /></figure>
+<h4>Absolute positioning:</h4>
+<p>Selecting absolute positioning will exclude the element from the Flex layout flow allowing you to freely position an element in a specific place regardless of the size of the layout where it belongs.</p>
+<figure><img src="/img/flexible-layouts/flex-properties-element-absolute.webp" alt="Flex Layout properties" /></figure>
+<h4>Z-index:</h4>
+<p>With the z-index option you can decide the order of overlapping elements while maintaining the layers order.</p>
+<figure>
+  <video title="A video showing how to change z-index for a layer in flex layout" muted="" playsinline="" controls="" width="100%" poster="/img/flexible-layouts/layouts-flex-zindex.webp" height="auto">
+    <source src="/img/flexible-layouts/layouts-flex-zindex.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h3 id="layouts-flex-spacing">Managing flex spacing</h3>
+<p>When creating Flex layouts, the spacing is predicted, helping you to maintain your design composition.</p>
+<figure>
+  <video title="Spacing automatically calculated when adding flex layout" muted="" playsinline="" controls="" width="100%" poster="/img/flexible-layouts/layouts-flex-spacing-add.webp" height="auto">
+    <source src="/img/flexible-layouts/layouts-flex-spacing-add.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<p>Set paddings, margins and gaps using their respective numeric inputs.</p>
+<p>You can also <strong>click and drag</strong> to resize them while visualizing the value that is being edited:</p>
+<ul>
+  <li>Hold <kbd>Shift/⇧</kbd> while dragging to change the value of opposite sides evenly.</li>
+  <li>Hold <kbd>Alt/⌥</kbd> while dragging to change the value of all sides evenly.</li>
+</ul>
+<figure>
+  <video title="Changing spacing with flex layout" muted="" playsinline="" controls="" width="100%" poster="/img/flexible-layouts/layouts-flex-spacing.webp" height="auto">
+    <source src="/img/flexible-layouts/layouts-flex-spacing.mp4" type="video/mp4">
+  </video>
+</figure>
+
+
+<h3 id="layouts-flex-code">Get code and specifications</h3>
+<p>Designing with Flex Layout generates <em>ready for production</em> code. Select the flex board or its inner elements and then open the <a href="/user-guide/inspect" target="_blank">Inspect tab</a> to obtain its properties, detailed info and raw code.</p>
+<figure><img src="/img/flexible-layouts/layouts-flex-code.gif" alt="Inspecting code at Penpot" /></figure>
+
+<h3 id="layouts-flex-examples">Flex Layout basic examples</h3>
+<h4>How to create a button</h4>
+<p>A classic example that will help you create flexible buttons that grow depending on its content.</p>
+<figure>
+  <video title="Creating a flexible button with flex layout" muted="" playsinline="" controls="" width="100%" poster="/img/flexible-layouts/layouts-flex-button.webp" height="auto">
+    <source src="/img/flexible-layouts/layouts-flex-button.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h4>How to create a list</h4>
+<p>Extremely useful for ordering list items. Remember to set <strong>fit height</strong> to the container so it can adapt to the number of items.</p>
+<figure>
+  <video title="Creating a list with Flex Layout" muted="" playsinline="" controls="" width="100%" poster="/img/flexible-layouts/layouts-flex-list.webp" height="auto">
+    <source src="/img/flexible-layouts/layouts-flex-list.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h4>Wrapping elements</h4>
+<p>Use the <strong>wrap</strong> property along with <strong>row</strong> direction to get the elements positioned in multiple lines.</p>
+<figure>
+  <video title="Wrapping elements with Flex Layout" muted="" playsinline="" controls="" width="100%" poster="/img/flexible-layouts/layouts-flex-wrap.webp" height="auto">
+    <source src="/img/flexible-layouts/layouts-flex-wrap.mp4" type="video/mp4">
+  </video>
+</figure>
+
+
+<h2 id="layouts-grid">Grid Layout</h2>
+<p class="main-paragraph">Grid Layout allows you to efficiently organize, align, and distribute items in 2-dimensional layouts. You can create rows and columns of elements, giving you fine-grained control over their expansion, alignment, and responsiveness to various screen sizes. It's a powerful tool for creating responsive designs.</p>
+<figure>
+  <video title="A video showing different layers being grouped and dragged around the Canvas" muted="" playsinline="" controls="" width="100%" poster="/img/flexible-layouts/layouts-grid-main.webp" height="auto">
+    <source src="/img/flexible-layouts/layouts-grid-main.mp4" type="video/mp4">
+  </video>
+  <figcaption>Rearranging cells in Grid Layout</figcaption>
+</figure>
+
+<h3 id="layouts-flex-css">Grid Layout is based on CSS Grid standard</h3>
+<p>Penpot's Grid Layout is built over CSS Grid, a fairly new CSS module. If you are interested to know more about this CSS module we recommend checking out the comprehensive explanation <a href="https://css-tricks.com/snippets/css/complete-guide-grid/" target="_blank">Guide to CSS Grid</a> at CSS Tricks.</p>
+
+
+<h3 id="layouts-grid-add">Add Grid Layout</h3>
+<p>You can add Grid Layout to any layer, group, board or selection. Once Grid Layout Flex is added the selected elements will be contained into a board that handles its space through Grid Layout properties. You have several ways to add Grid Layout:</p>
+<ul>
+  <li>From the Design panel at the right sidebar.</li>
+  <li>From the option at the selection menu (right click button).</li>
+  <li>Pressing <kbd>Ctrl/⌘</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd>.</li>
+</ul>
+<figure><img src="/img/layouts-add.webp" alt="Adding Layouts" /></figure>
+
+<h3 id="layouts-grid-terminology">Grid layout basic terminology</h3>
+<ul>
+  <li><strong>Container:</strong> The container is the parent element of all the grid items.</li>
+  <li><strong>Cell:</strong> A single unit of the grid. Cells are the children elements of a grid container.</li>
+  <li><strong>Area:</strong> A composition of any number of grid cells.</li>
+  <li><strong>Gap:</strong> The space between grid items (cells and areas), both horizontally and vertically.</li>
+  <li><strong>Row:</strong> The horizontal lines that define the rows of the grid.</li>
+  <li><strong>Column:</strong> The vertical lines that define the columns of the grid.</li>
+</ul>
+
+<h3 id="layouts-grid-properties">Grid Layout properties</h3>
+<p>There are properties both for Grid containers and  Grid items (cells, rows, cols). Those are the same properties that you can use with CSS Grid. You can <a href="https://css-tricks.com/snippets/css/complete-guide-grid/#aa-grid-properties" target="_blank">read here detailed explanations about CSS Grid properties</a>.</p>
+
+<h4>Grid containter properties</h4>
+<figure><img src="/img/flexible-layouts/grid-properties-container.webp" alt="Grid Layout properties" /></figure>
+<ul>
+  <li><strong>Direction:</strong> Row, column.</li>
+  <li><strong>Align items (vertically and horizontally):</strong> Start, center, end.</li>
+  <li><strong>Justify items (vertically and horizontally):</strong> Start, center, end, space-around, space-between, stretch.</li>
+  <li><strong>Gap:</strong> Row, column.</li>
+  <li><strong>Padding:</strong> Top, right, bottom, left, vertical, horizontal.</li>
+</ul>
+
+<h4>Grid cell properties</h4>
+<figure><img src="/img/flexible-layouts/grid-properties-cell.webp" alt="Grid Layout properties" /></figure>
+<strong>Auto, Manual and Area</strong>
+<p>These are different ways to manage the element's position that therefore have different code representation.</p>
+<ul>
+  <li><strong>Auto:</strong> The elements are positioned in order inside the cells so that if a new element enters the flow the rest get repositioned. This is the default behaviour.</li>
+  <li><strong>Manual:</strong> The elements are positioned in specific cells or areas. Elements inside area cells will have the css properties <code class="language-html">grid-column</code> and <code class="language-html">grid-row</code>.</li>
+  <li><strong>Area:</strong> A cell or area with an Area name. Areas behave as Manual cells.</li>
+</ul>
+
+<p><strong>Align self (vertically and horizontally):</strong> Start, center, end, stretch.</p>
+
+
+<h3 id="layouts-grid-elements">Placing grid elements</h3>
+<p>To place elements inside a grid layout, just drag them or paste them in a cell or area.</p>
+<p><strong>Tip:</strong> Drag an element over a grid and then press <kbd>Ctrl</kbd> to place it as auto. That way the layer will be positioned automatically in the first available cell or area.</p>
+<figure>
+  <video title="Placing elements in a grid Layout" muted="" playsinline="" controls="" width="100%" poster="/img/flexible-layouts/layouts-grid-place.webp" height="auto">
+    <source src="/img/flexible-layouts/layouts-grid-place.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h4>Grid element properties</h4>
+<ul>
+  <li><strong>Position:</strong> static, absolute.</li>
+  <li><strong>Width:</strong> fix, 100%.</li>
+  <li><strong>Margin:</strong> top, right, bottom, left.</li>
+</ul>
+
+
+<h3 id="layouts-grid-colsrows">Edit rows and columns</h3>
+<p>To edit grid layouts (rows, columns, units, cells, areas, etc) you can either select the board and press the "Edit grid" button or double click over the board.</p>
+<p>You have several ways to edit rows and columns:</p>
+
+<h4>Design sidebar</h4>
+<figure>
+  <video title="Edit rows and columns in a grid Layout" muted="" playsinline="" controls="" width="100%" poster="/img/flexible-layouts/layouts-grid-edit-sidebar.webp" height="auto">
+    <source src="/img/flexible-layouts/layouts-grid-edit-sidebar.mp4" type="video/mp4">
+  </video>
+</figure>
+<p>From the design sidebar you will be able to:</p>
+<ul>
+  <li><strong>Get info about columns and rows:</strong> Press the 3 dots besides the Columns or the Rows section to get details.</li>
+  <li><strong>Add columns and rows</strong>: Press the + button to add a column or a row.</li>
+  <li><strong>Delete columns and rows</strong>: Press the - button to delete a specific column or row.</li>
+  <li><strong>Drag columns and rows</strong>: You can reorder columns and rows by clicking and dragging over the drag icon.</li>
+  <li><strong>Change sizes and units</strong>: Change specific sizes and units of each row and column.</li>
+</ul>
+<p><strong>Tip:</strong> You cand drag columns and rows while leaving the elements in the same position if you perform the action while pressing <kbd>Ctrl</kbd>.</p>
+
+
+<h4>Design viewport</h4>
+<figure>
+  <video title="Edit rows and columns in a grid Layout" muted="" playsinline="" controls="" width="100%" poster="/img/flexible-layouts/layouts-grid-edit.webp" height="auto">
+    <source src="/img/flexible-layouts/layouts-grid-edit.mp4" type="video/mp4">
+  </video>
+</figure>
+<p>From the design viewport you will be able to:</p>
+<ul>
+  <li><strong>Add columns and rows</strong>: Press the + button at the end of the headers to add a column or a row.</li>
+  <li><strong>Drag columns and rows</strong>: To drag columns and rows hover a column or row header until the hand cursor is shown and then click and drag it.</li>
+  <li><strong>Change sizes and units</strong>: Drag the columns and rows numbers and change specific sizes and units on their headers.</li>
+</ul>
+<p><strong>Tip:</strong> You can drag columns and rows while leaving the elements in the same position if you perform the action while pressing <kbd>Ctrl</kbd>.</p>
+
+<h4>Contextual menu</h4>
+<p>To launch the contextual menu of rows and columns you can right click over a column or row header or left click on the menu button.</p>
+<p>From the contextual menu of rows and columns you will be able to:</p>
+<ul>
+  <li>Duplicate row/column</li>
+  <li>Add 1 row/column to the left</li>
+  <li>Add 1 row/column to the right</li>
+  <li>Delete row/column</li>
+  <li>Delete row/column and shapes</li>
+</ul>
+
+<h3 id="layouts-grid-units">Grid units</h3>
+<p>You can use different units at your grid columns and cells:</p>
+<ul>
+  <li><strong>FR:</strong> FR stands for "fractional unit", meaning "portion of the remaining space". If a grid has 2 columns being one 1fr and the other 3fr, the first one will take 25% of the space while the other 75%.</li>
+  <li><strong>Auto:</strong> The row/col size will be automatically set, relative to the items and the available space.</li>
+  <li><strong>Pixels:</strong> Well, we all know pixels, don't we?</li>
+</ul>
+
+<h3 id="layouts-grid-areas">Areas</h3>
+<p>Areas are compositions of any number of grid cells.</p>
+<figure>
+  <video title="Managing areas in grid Layout" muted="" playsinline="" controls="" width="100%" poster="/img/flexible-layouts/layouts-grid-area.webp" height="auto">
+    <source src="/img/flexible-layouts/layouts-grid-area.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h4>Create areas</h4>
+<p>You have two ways to create areas:</p>
+<p>1. Select more than one cell pressing left click while holding <kbd>Ctrl</kbd>, then press right click to open the menu and then press the option "Merge cells".</p>
+
+<p>2. Select one cell pressing left click, then hover near the limit to the cell you want to merge the selected cell with until the cursor changes. Then drag the cursor to merge the selected area to other areas in the same direction.</p>
+
+
+<h4>Name areas</h4>
+<p>To name an area, select the "Area" option at the grid cell properties (right sidebar) and fill the name of the area.</p>
+
+<h4>Undo areas</h4>
+<p>To turn areas back to regular cells, just select the "Auto" option at the grid cell properties (right sidebar).</p>
+
+<h3 id="layouts-grid-code">Grid code and specifications</h3>
+<p>Grid layout at Penpot behaves just like CSS Grid because it is actually using the CSS Grid standard. This means that you can just switch to <a href="/user-guide/inspect" target="_blank">Inspect mode</a>, get the code and use it in real websites.</p>
+<figure><img src="/img/flexible-layouts/layouts-grid-code.gif" alt="Inspecting code at Penpot" /></figure>
+
+
+

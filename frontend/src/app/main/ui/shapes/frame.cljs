@@ -68,8 +68,8 @@
 
         filter-id-blur     (dm/fmt "filter-blur-%" render-id)
         filter-id-shadows  (dm/fmt "filter-shadow-%" render-id)
-        filter-str-blur    (filters/filter-str filter-id-blur shape)
-        filter-str-shadows (filters/filter-str filter-id-shadows shape)
+        filter-str-blur    (filters/filter-str filter-id-blur (dissoc shape :shadow))
+        filter-str-shadows (filters/filter-str filter-id-shadows (dissoc shape :blur))
 
         x             (dm/get-prop shape :x)
         y             (dm/get-prop shape :y)

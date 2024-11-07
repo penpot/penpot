@@ -13,6 +13,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace :as udw]
+   [app.main.data.workspace.common :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -133,6 +134,7 @@
    ::mf/props :obj}
   [{:keys [selected shapes shapes-with-children page-id file-id on-change-section on-expand]}]
   (let [objects              (mf/deref refs/workspace-page-objects)
+        permissions          (mf/use-ctx ctx/team-permissions)
 
         selected-shapes      (into [] (keep (d/getf objects)) selected)
         first-selected-shape (first selected-shapes)
@@ -145,8 +147,8 @@
           (let [options-mode (keyword options-mode)]
             (st/emit! (udw/set-options-mode options-mode))
             (if (= options-mode :inspect)
-              (st/emit! :interrupt (udw/set-workspace-read-only true))
-              (st/emit! :interrupt (udw/set-workspace-read-only false)))))
+              (st/emit! :interrupt (dwc/set-workspace-read-only true))
+              (st/emit! :interrupt (dwc/set-workspace-read-only false)))))
 
         design-content
         (mf/html [:& design-menu {:selected selected
@@ -173,17 +175,21 @@
 
 
         tabs
-        #js [#js {:label (tr "workspace.options.design")
-                  :id "design"
-                  :content design-content}
+        (if (:can-edit permissions)
+          #js [#js {:label (tr "workspace.options.design")
+                    :id "design"
+                    :content design-content}
 
-             #js {:label (tr "workspace.options.prototype")
-                  :id "prototype"
-                  :content interactions-content}
+               #js {:label (tr "workspace.options.prototype")
+                    :id "prototype"
+                    :content interactions-content}
 
-             #js {:label (tr "workspace.options.inspect")
-                  :id "inspect"
-                  :content inspect-content}]]
+               #js {:label (tr "workspace.options.inspect")
+                    :id "inspect"
+                    :content inspect-content}]
+          #js [#js {:label (tr "workspace.options.inspect")
+                    :id "inspect"
+                    :content inspect-content}])]
 
     [:div {:class (stl/css :tool-window)}
      [:> tab-switcher* {:tabs tabs

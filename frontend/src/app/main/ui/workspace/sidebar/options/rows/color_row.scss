@@ -182,13 +182,3 @@
     margin-block-start: $s-2;
   }
 }
-
-.remove-btn,
-.select-btn {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  svg {
-    @extend .button-icon;
-  }
-}

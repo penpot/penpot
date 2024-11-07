@@ -225,7 +225,7 @@
   (letfn [(ttf->otf [data]
             (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix "")
                   foutput (fs/path (str finput ".otf"))
-                  _       (io/write-to-file! data finput)
+                  _       (io/write* finput data)
                   res     (sh/sh "fontforge" "-lang=ff" "-c"
                                  (str/fmt "Open('%s'); Generate('%s')"
                                           (str finput)
@@ -236,7 +236,7 @@
           (otf->ttf [data]
             (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix "")
                   foutput (fs/path (str finput ".ttf"))
-                  _       (io/write-to-file! data finput)
+                  _       (io/write* finput data)
                   res     (sh/sh "fontforge" "-lang=ff" "-c"
                                  (str/fmt "Open('%s'); Generate('%s')"
                                           (str finput)
@@ -250,14 +250,14 @@
             ;; command.
             (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix "")
                   foutput (fs/path (str finput ".woff"))
-                  _       (io/write-to-file! data finput)
+                  _       (io/write* finput data)
                   res     (sh/sh "sfnt2woff" (str finput))]
               (when (zero? (:exit res))
                 foutput)))
 
           (woff->sfnt [data]
             (let [finput  (tmp/tempfile :prefix "penpot" :suffix "")
-                  _       (io/write-to-file! data finput)
+                  _       (io/write* finput data)
                   res     (sh/sh "woff2sfnt" (str finput)
                                  :out-enc :bytes)]
               (when (zero? (:exit res))
