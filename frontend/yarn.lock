@@ -966,33 +966,30 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@penpot/draft-js@file:./vendor/draft-js::locator=frontend%40workspace%3A.":
-  version: 1.0.0
-  resolution: "@penpot/draft-js@file:./vendor/draft-js#./vendor/draft-js::hash=0c7c64&locator=frontend%40workspace%3A."
+"@penpot/draft-js@portal:./vendor/draft-js::locator=frontend%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "@penpot/draft-js@portal:./vendor/draft-js::locator=frontend%40workspace%3A."
   dependencies:
     draft-js: "penpot/draft-js.git#4a99b2a6020b2af97f6dc5fa1b4275ec16b559a0"
   peerDependencies:
     react: ">=0.17.0"
     react-dom: ">=0.17.0"
-  checksum: 10c0/31ecb6a977cbd6db99531e7a43736be2677e57abcd71dc5c0be19514a5194a2e69cf7810a4bc09ca087ed8dc4c5eed49aece23ba58eb50051924df06bf3b8698
   languageName: node
-  linkType: hard
+  linkType: soft
 
-"@penpot/hljs@file:./vendor/hljs::locator=frontend%40workspace%3A.":
-  version: 1.0.0
-  resolution: "@penpot/hljs@file:./vendor/hljs#./vendor/hljs::hash=997709&locator=frontend%40workspace%3A."
+"@penpot/hljs@portal:./vendor/hljs::locator=frontend%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "@penpot/hljs@portal:./vendor/hljs::locator=frontend%40workspace%3A."
   dependencies:
     highlight.js: "npm:^11.10.0"
-  checksum: 10c0/a9b1a507adf55b0f851a2cefa817fcd6af766babe4e00b729dec028415b44e3ea11f8b4248c71a961ed8ce0da0384f3912643f1023df56a8dd39743bbef05c76
   languageName: node
-  linkType: hard
+  linkType: soft
 
-"@penpot/mousetrap@file:./vendor/mousetrap::locator=frontend%40workspace%3A.":
-  version: 1.6.5
-  resolution: "@penpot/mousetrap@file:./vendor/mousetrap#./vendor/mousetrap::hash=fb789b&locator=frontend%40workspace%3A."
-  checksum: 10c0/2f279651f80e72987745e5e92a71edccfd63b14ffa3efe46d3505ae58ab6dfa3d0144de640fc20ccb0dfad0d448b7b73fd25c40fba64f61b7e92408159a20270
+"@penpot/mousetrap@portal:./vendor/mousetrap::locator=frontend%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "@penpot/mousetrap@portal:./vendor/mousetrap::locator=frontend%40workspace%3A."
   languageName: node
-  linkType: hard
+  linkType: soft
 
 "@penpot/svgo@penpot/svgo#c6fba7a4dcfbc27b643e7fc0c94fc98cf680b77b":
   version: 4.0.0
@@ -4392,9 +4389,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "frontend@workspace:."
   dependencies:
-    "@penpot/draft-js": "file:./vendor/draft-js"
-    "@penpot/hljs": "file:./vendor/hljs"
-    "@penpot/mousetrap": "file:./vendor/mousetrap"
+    "@penpot/draft-js": "portal:./vendor/draft-js"
+    "@penpot/hljs": "portal:./vendor/hljs"
+    "@penpot/mousetrap": "portal:./vendor/mousetrap"
     "@penpot/svgo": "penpot/svgo#c6fba7a4dcfbc27b643e7fc0c94fc98cf680b77b"
     "@penpot/text-editor": "penpot/penpot-text-editor#449e3322f3fa40b1318c9154afbbc7932a3cb766"
     "@playwright/test": "npm:1.48.1"
