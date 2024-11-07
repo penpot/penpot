@@ -632,7 +632,9 @@
    ::mf/wrap [mf/memo]}
   [{:keys [open-plugins on-close]}]
   (when (features/active-feature? @st/state "plugins/runtime")
-    (let [plugins (preg/plugins-list)]
+    (let [plugins                  (preg/plugins-list)
+          user-can-edit?           (:can-edit (deref refs/permissions))
+          permissions-peek         (deref refs/plugins-permissions-peek)]
       [:& dropdown-menu {:show true
                          :list-class (stl/css-case :sub-menu true :plugins true)
                          :on-close on-close}
@@ -653,24 +655,41 @@
        (when (d/not-empty? plugins)
          [:div {:class (stl/css :separator)}])
 
-       (for [[idx {:keys [name host] :as manifest}] (d/enumerate plugins)]
-         [:> dropdown-menu-item* {:key         (dm/str "plugins-menu-" idx)
-                                  :on-click    #(do
-                                                  (st/emit! (ptk/event ::ev/event {::ev/name "start-plugin"
-                                                                                   ::ev/origin "workspace:menu"
-                                                                                   :name name
-                                                                                   :host host}))
-                                                  (dp/open-plugin! manifest))
-                                  :class       (stl/css :submenu-item)
-                                  :on-key-down (fn [event]
-                                                 (when (kbd/enter? event)
-                                                   #(do
-                                                      (st/emit! (ptk/event ::ev/event {::ev/name "start-plugin"
-                                                                                       ::ev/origin "workspace:menu"
-                                                                                       :name name
-                                                                                       :host host}))
-                                                      (dp/open-plugin! manifest))))}
-          [:span {:class (stl/css :item-name)} name]])])))
+       (for [[idx {:keys [plugin-id name host permissions] :as manifest}] (d/enumerate plugins)]
+         (let [permissions        (or (get permissions-peek plugin-id) permissions)
+               is-edition-plugin? (or (contains? permissions "content:write")
+                                      (contains? permissions "library:write"))
+               can-open?          (or user-can-edit?
+                                      (not is-edition-plugin?))
+               on-click
+               (mf/use-fn
+                (mf/deps can-open? name host manifest user-can-edit?)
+                (fn [event]
+                  (if can-open?
+                    (do
+                      (st/emit! (ptk/event ::ev/event {::ev/name "start-plugin"
+                                                       ::ev/origin "workspace:menu"
+                                                       :name name
+                                                       :host host}))
+                      (dp/open-plugin! manifest user-can-edit?))
+                    (dom/stop-propagation event))))
+               on-key-down
+               (mf/use-fn
+                (mf/deps can-open? name host manifest user-can-edit?)
+                (fn [event]
+                  (when can-open?
+                    (when (kbd/enter? event)
+                      (st/emit! (ptk/event ::ev/event {::ev/name "start-plugin"
+                                                       ::ev/origin "workspace:menu"
+                                                       :name name
+                                                       :host host}))
+                      (dp/open-plugin! manifest user-can-edit?)))))]
+           [:> dropdown-menu-item* {:key         (dm/str "plugins-menu-" idx)
+                                    :on-click    on-click
+                                    :title       (when-not can-open? (tr "workspace.plugins.error.need-editor"))
+                                    :class       (stl/css-case :submenu-item true :menu-disabled (not can-open?))
+                                    :on-key-down on-key-down}
+            [:span {:class (stl/css :item-name)} name]]))])))
 
 (mf/defc menu
   {::mf/props :obj}
