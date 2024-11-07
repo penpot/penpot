@@ -66,8 +66,7 @@
    :compiler-options
    {:output-feature-set :es2020
     :output-wrapper false
-    :warnings {:fn-deprecated false}
-    :closure-defines {shadow.debug.LogLevel :warning}}
+    :warnings {:fn-deprecated false}}
 
    :release
    {:closure-defines {goog.DEBUG false
@@ -183,20 +182,4 @@
    {:compiler-options
     {:fn-invoke-direct true
      :elide-asserts true
-     :anon-fn-naming-policy :off}}
-
-   :devtools {:http-port 3460}
-
-   :js-options
-   {:entry-keys ["module" "browser" "main"]
-    :resolve {"penpot/vendor/text-editor-v2"
-              {:target :file
-               :file   "vendor/text_editor_v2.js"}}}
-
-   :compiler-options
-   {:output-feature-set :es2020
-    :output-wrapper false
-    :source-map true
-    :source-map-include-sources-content true
-    :source-map-detail-level :all
-    :warnings {:fn-deprecated false}}}}}
+     :anon-fn-naming-policy :off}}}}}
