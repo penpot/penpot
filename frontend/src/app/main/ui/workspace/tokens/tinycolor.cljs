@@ -4,7 +4,7 @@
   This library was chosen as it is already used by StyleDictionary,
   so there is no extra dependency cost and there was no clojure alternatives with all the necessary features."
   (:require
-   ["tinycolor2$default" :as tinycolor]))
+   ["tinycolor2" :as tinycolor]))
 
 (defn tinycolor? [^js x]
   (and (instance? tinycolor x) (.isValid x)))
