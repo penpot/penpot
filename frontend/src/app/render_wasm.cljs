@@ -11,6 +11,10 @@
    [app.common.files.helpers :as cfh]
    [app.common.types.shape.impl]
    [app.config :as cf]
+   [app.main.data.render-wasm :as drw]
+   [app.main.store :as st]
+   [app.util.debug :as dbg]
+   [app.util.dom :as dom]
    [promesa.core :as p]))
 
 (def enabled?
@@ -82,29 +86,67 @@
        :stencil true
        :alpha true})
 
-(defn clear-canvas
-  []
-  ;; TODO: perform corresponding cleaning
-  )
+(defn init-skia
+  [canvas]
+  (let [init-fn (unchecked-get internal-module "_init")
+        state   (init-fn (.-width ^js canvas)
+                         (.-height ^js canvas))]
+    (set! internal-gpu-state state)))
 
-(defn assign-canvas
+;; NOTE: This function can be called externally
+;; by the button in the context lost component (shown
+;; in viewport-wasm) or called internally by
+;; on-webgl-context
+(defn restore-canvas
+  [canvas]
+  (st/emit! (drw/context-restored))
+  ;; We need to reinitialize skia when the
+  ;; context is restored.
+  (init-skia canvas))
+
+;; Handles both events: webglcontextlost and
+;; webglcontextrestored
+(defn on-webgl-context
+  [event]
+  (dom/prevent-default event)
+  (if (= (.-type event) "webglcontextlost")
+    (st/emit! (drw/context-lost))
+    (restore-canvas (dom/get-target event))))
+
+(defn dispose-canvas
+  [canvas]
+  ;; TODO: perform corresponding cleaning
+  (.removeEventListener canvas "webglcontextlost" on-webgl-context)
+  (.removeEventListener canvas "webglcontextrestored" on-webgl-context))
+
+(defn init-debug-webgl-context-state
+  [context]
+  (let [context-extension (.getExtension ^js context "WEBGL_lose_context")
+        info-extension (.getExtension ^js context "WEBGL_debug_renderer_info")]
+    (set! (.-penpotGL js/window) #js {:context context-extension
+                                      :renderer info-extension})
+    (js/console.log "WEBGL_lose_context" context-extension)
+    (js/console.log "WEBGL_debug_renderer_info" info-extension)))
+
+(defn setup-canvas
   [canvas]
   (let [gl      (unchecked-get internal-module "GL")
-        init-fn (unchecked-get internal-module "_init")
-
         context (.getContext ^js canvas "webgl2" canvas-options)
 
         ;; Register the context with emscripten
         handle  (.registerContext ^js gl context #js {"majorVersion" 2})
-        _       (.makeContextCurrent ^js gl handle)
+        _       (.makeContextCurrent ^js gl handle)]
 
-        ;; Initialize Skia
-        state   (init-fn (.-width ^js canvas)
-                         (.-height ^js canvas))]
+    (when (dbg/enabled? :gl-context)
+      (init-debug-webgl-context-state context))
+
+    (.addEventListener canvas "webglcontextlost" on-webgl-context)
+    (.addEventListener canvas "webglcontextrestored" on-webgl-context)
 
     (set! (.-width canvas) (.-clientWidth ^js canvas))
     (set! (.-height canvas) (.-clientHeight ^js canvas))
-    (set! internal-gpu-state state)))
+
+    (init-skia canvas)))
 
 (defonce module
   (->> (js/dynamicImport "/js/render_wasm.js")

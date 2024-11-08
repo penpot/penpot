@@ -13,9 +13,11 @@
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.plugins :as dp]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.plugins.register :as preg]
@@ -40,14 +42,22 @@
           icon))
 
 (mf/defc plugin-entry
-  [{:keys [index manifest on-open-plugin on-remove-plugin]}]
+  [{:keys [index manifest user-can-edit on-open-plugin on-remove-plugin]}]
 
-  (let [{:keys [host icon name description]} manifest
+  (let [{:keys [plugin-id host icon name description permissions]} manifest
+        plugins-permissions-peek (deref refs/plugins-permissions-peek)
+        permissions              (or (get plugins-permissions-peek plugin-id)
+                                     permissions)
+        is-edition-plugin?       (or (contains? permissions "content:write")
+                                     (contains? permissions "library:write"))
+        can-open?                (or user-can-edit
+                                     (not is-edition-plugin?))
+
         handle-open-click
         (mf/use-callback
-         (mf/deps index manifest on-open-plugin)
+         (mf/deps index manifest on-open-plugin can-open?)
          (fn []
-           (when on-open-plugin
+           (when (and can-open? on-open-plugin)
              (on-open-plugin manifest))))
 
         handle-delete-click
@@ -64,8 +74,14 @@
      [:div {:class (stl/css :plugin-description)}
       [:div {:class (stl/css :plugin-title)} name]
       [:div {:class (stl/css :plugin-summary)} (d/nilv description "")]]
-     [:button {:class (stl/css :open-button)
-               :on-click handle-open-click} (tr "workspace.plugins.button-open")]
+
+
+     [:> button* {:class (stl/css :open-button)
+                  :variant "secondary"
+                  :on-click handle-open-click
+                  :title (when-not can-open? (tr "workspace.plugins.error.need-editor"))
+                  :disabled (not can-open?)} (tr "workspace.plugins.button-open")]
+
      [:> icon-button* {:variant "ghost"
                        :aria-label (tr "workspace.plugins.remove-plugin")
                        :on-click handle-delete-click
@@ -90,6 +106,8 @@
         error-url? (= :error-url input-status)
         error-manifest? (= :error-manifest input-status)
         error? (or error-url? error-manifest?)
+
+        user-can-edit? (:can-edit (deref refs/permissions))
 
         handle-close-dialog
         (mf/use-callback
@@ -137,7 +155,7 @@
                                             ::ev/origin "workspace:plugins"
                                             :name (:name manifest)
                                             :host (:host manifest)}))
-           (dp/open-plugin! manifest)
+           (dp/open-plugin! manifest user-can-edit?)
            (modal/hide!)))
 
         handle-remove-plugin
@@ -204,6 +222,7 @@
              [:& plugin-entry {:key (dm/str "plugin-" idx)
                                :index idx
                                :manifest manifest
+                               :user-can-edit user-can-edit?
                                :on-open-plugin handle-open-plugin
                                :on-remove-plugin handle-remove-plugin}])]])]]]))
 

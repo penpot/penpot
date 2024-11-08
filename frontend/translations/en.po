@@ -5859,6 +5859,10 @@ msgstr "Plugins"
 msgid "workspace.plugins.remove-plugin"
 msgstr "Remove plugin"
 
+#: src/app/main/data/plugins.cljs:78
+msgid "workspace.plugins.error.need-editor"
+msgstr "You need to be an editor to use this plugin"
+
 #: /src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1005
 msgid "workspace.shape.menu.add-layout"
 msgstr "Add layout"

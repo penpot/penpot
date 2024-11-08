@@ -116,6 +116,12 @@
 
 ;; ---- Workspace refs
 
+(def render-state
+  (l/derived :render-state st/state))
+
+(def render-context-lost?
+  (l/derived :lost render-state))
+
 (def workspace-local
   (l/derived :workspace-local st/state))
 
@@ -511,6 +517,11 @@
 
 (def workspace-selected-token-set-tokens
   (l/derived #(or (wtts/get-selected-token-set-tokens %) {}) st/state))
+
+(def plugins-permissions-peek
+  (l/derived (fn [state]
+               (dm/get-in state [:plugins-permissions-peek :data]))
+             st/state))
 
 ;; ---- Viewer refs
 
