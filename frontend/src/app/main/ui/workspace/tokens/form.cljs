@@ -388,7 +388,7 @@ Token names should only contain letters and digits separated by . characters.")}
                                                       :on-change on-update-value
                                                       :ref value-input-ref}
                                         :render-right (when color?
-                                                        (mf/fnc []
+                                                        (mf/fnc drop-down-button []
                                                           [:div {:class (stl/css :color-bullet)
                                                                  :on-click #(swap! color-ramp-open? not)}
                                                            (if-let [hex (some-> @color tinycolor/valid-color tinycolor/->hex)]

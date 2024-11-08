@@ -128,9 +128,9 @@
 
 (sm/register! ::dimensions
   (merge-schemas ::sizing
-                 ::spacing
-                 ::stroke-width
-                 ::border-radius))
+    ::spacing
+    ::stroke-width
+    ::border-radius))
 
 (def dimensions-keys (schema-keys ::dimensions))
 
@@ -145,8 +145,8 @@
 
 (sm/register! ::applied-tokens
   (merge-schemas ::tokens
-                 ::border-radius
-                 ::sizing
-                 ::spacing
-                 ::rotation
-                 ::dimensions))
+    ::border-radius
+    ::sizing
+    ::spacing
+    ::rotation
+    ::dimensions))
