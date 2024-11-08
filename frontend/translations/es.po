@@ -5837,6 +5837,10 @@ msgstr "Extensiones"
 msgid "workspace.plugins.remove-plugin"
 msgstr "Eliminar extensión"
 
+#: src/app/main/data/plugins.cljs:78
+msgid "workspace.plugins.error.need-editor"
+msgstr "Debes ser un editor para usar este plugin"
+
 #: /src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1005
 msgid "workspace.shape.menu.add-layout"
 msgstr "Añadir layout"

@@ -8,12 +8,22 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.store :as st]
    [app.plugins.register :as preg]
    [app.util.globals :as ug]
    [app.util.http :as http]
+   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
+
+(defn save-plugin-permissions-peek
+  [id permissions]
+  (ptk/reify ::save-plugin-permissions-peek
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:plugins-permissions-peek :data id] permissions))))
 
 (defn fetch-manifest
   [plugin-url]
@@ -59,15 +69,21 @@
       (.error js/console "Error" e))))
 
 (defn open-plugin!
-  [{:keys [url] :as manifest}]
+  [{:keys [url] :as manifest} user-can-edit?]
   (if url
     ;; If the saved manifest has a URL we fetch the manifest to check
     ;; for updates
     (->> (fetch-manifest url)
          (rx/subs!
           (fn [new-manifest]
-            (let [new-manifest (merge new-manifest (select-keys manifest [:plugin-id]))]
+            (let [new-manifest       (merge new-manifest (select-keys manifest [:plugin-id]))
+                  permissions        (:permissions new-manifest)
+                  is-edition-plugin? (or (contains? permissions "content:write")
+                                         (contains? permissions "library:write"))]
+              (st/emit! (save-plugin-permissions-peek (:plugin-id new-manifest) permissions))
               (cond
+                (and is-edition-plugin? (not user-can-edit?))
+                (st/emit! (ntf/warn (tr "workspace.plugins.error.need-editor")))
                 (not= (:permissions new-manifest) (:permissions manifest))
                 (modal/show!
                  :plugin-permissions-update
@@ -96,13 +112,21 @@
       (.error js/console "Error" e))))
 
 (defn close-current-plugin
-  []
+  [& {:keys [close-only-edition-plugins?]}]
   (ptk/reify ::close-current-plugin
     ptk/EffectEvent
     (effect [_ state _]
       (let [ids (dm/get-in state [:workspace-local :open-plugins])]
         (doseq [id ids]
-          (close-plugin! (preg/get-plugin id)))))))
+          (let [plugin             (preg/get-plugin id)
+                permissions        (or (dm/get-in state [:plugins-permissions-peek :data id])
+                                       (:permissions plugin))
+                is-edition-plugin? (or (contains? permissions "content:write")
+                                       (contains? permissions "library:write"))]
+
+            (when (or (not close-only-edition-plugins?)
+                      is-edition-plugin?)
+              (close-plugin! plugin))))))))
 
 (defn delay-open-plugin
   [plugin]
@@ -116,6 +140,38 @@
   (ptk/reify ::check-open-plugin
     ptk/WatchEvent
     (watch [_ state _]
-      (when-let [pid (::open-plugin state)]
-        (open-plugin! (preg/get-plugin pid))
-        (rx/of #(dissoc % ::open-plugin))))))
+      (let [user-can-edit? (dm/get-in state [:permissions :can-edit])]
+        (when-let [pid (::open-plugin state)]
+          (open-plugin! (preg/get-plugin pid) user-can-edit?)
+          (rx/of #(dissoc % ::open-plugin)))))))
+
+(defn- update-plugin-permissions-peek
+  [{:keys [plugin-id url]}]
+  (when url
+      ;; If the saved manifest has a URL we fetch the manifest to check
+      ;; for updates
+    (->> (fetch-manifest url)
+         (rx/subs!
+          (fn [new-manifest]
+            (let [permissions  (:permissions new-manifest)]
+              (when permissions
+                (st/emit! (save-plugin-permissions-peek plugin-id permissions)))))))))
+
+(defn update-plugins-permissions-peek
+  []
+  (ptk/reify ::update-plugins-permissions-peek
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [now        (dt/now)
+            expiration (dt/minus now (dt/duration {:days 1}))
+            updated-at (dm/get-in state [:plugins-permissions-peek :updated-at] 0)
+            expired?   (> expiration updated-at)]
+
+        (if expired?
+          (let [plugins (preg/plugins-list)]
+            (doseq [plugin plugins]
+              (update-plugin-permissions-peek plugin))
+            (-> state
+                (assoc-in [:plugins-permissions-peek :updated-at] now)))
+
+          state)))))

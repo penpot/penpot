@@ -518,6 +518,11 @@
 (def workspace-selected-token-set-tokens
   (l/derived #(or (wtts/get-selected-token-set-tokens %) {}) st/state))
 
+(def plugins-permissions-peek
+  (l/derived (fn [state]
+               (dm/get-in state [:plugins-permissions-peek :data]))
+             st/state))
+
 ;; ---- Viewer refs
 
 (defn lookup-viewer-objects-by-id

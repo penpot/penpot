@@ -14,6 +14,7 @@
    [app.main.data.changes :as dch]
    [app.main.data.common :as dc]
    [app.main.data.modal :as modal]
+   [app.main.data.plugins :as dpl]
    [app.main.data.websocket :as dws]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.edition :as dwe]
@@ -117,7 +118,8 @@
             (rx/delay 100))
        (if (= :viewer role)
          (rx/of (modal/hide)
-                (dwly/set-options-mode :inspect))
+                (dwly/set-options-mode :inspect)
+                (dpl/close-current-plugin {:close-only-edition-plugins? true}))
          (rx/of (dwly/set-options-mode :design)))))))
 
 (defn- process-message
