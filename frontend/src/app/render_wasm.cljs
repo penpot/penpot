@@ -27,7 +27,6 @@
 (set! app.common.types.shape.impl/enabled-wasm-ready-shape enabled?)
 
 (defonce internal-module #js {})
-(defonce internal-state #js {})
 
 ;; TODO: remove the `take` once we have the dynamic data structure in Rust
 (def xform
@@ -35,43 +34,57 @@
    (remove cfh/root?)
    (take 2048)))
 
-;; Size in number of f32 values that represents the shape selrect (
-#_(def shape+modifier-size (+ ctsi/shape-size 6))
+(defn create-shape
+  [id]
+  (let [buffer (uuid/uuid->u32 id)]
+    (._create_shape ^js internal-module (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))))
 
-#_(defn- write-shape
-  [mem shape offset]
-  (assert (instance? js/Float32Array mem) "expected instance of float32array")
-  (let [buffer (.-buffer ^js shape)]
-    (.set ^js mem buffer offset)))
+(defn use-shape
+  [id]
+  (let [buffer (uuid/uuid->u32 id)]
+    (._use_shape ^js internal-module (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))))
 
-#_(defn- write-matrix
-  "Write the transform (or identity if nil) into the buffer"
-  [mem matrix offset]
-  (assert (instance? js/Float32Array mem) "expected instance of float32array")
+(defn set-shape-selrect
+  [selrect]
+  (let [x1 (:x1 selrect)
+        y1 (:y1 selrect)
+        x2 (:x2 selrect)
+        y2 (:y2 selrect)]
+    (._set_shape_selrect ^js internal-module x1 y1 x2 y2)))
 
-  (let [matrix (if (nil? matrix) (cgm/matrix) matrix)]
-    (aset mem (+ offset 0) (dm/get-prop matrix :a))
-    (aset mem (+ offset 1) (dm/get-prop matrix :b))
-    (aset mem (+ offset 2) (dm/get-prop matrix :c))
-    (aset mem (+ offset 3) (dm/get-prop matrix :d))
-    (aset mem (+ offset 4) (dm/get-prop matrix :e))
-    (aset mem (+ offset 5) (dm/get-prop matrix :f))))
+(defn set-shape-transform
+  [transform]
+  (let [a (:a transform)
+        b (:b transform)
+        c (:c transform)
+        d (:d transform)
+        e (:e transform)
+        f (:f transform)]
+    (._set_shape_transform ^js internal-module a b c d e f)))
+
+(defn set-shape-rotation
+  [rotation]
+  (._set_shape_rotation ^js internal-module rotation))
+
+(defn set-shape-x
+  [x]
+  (._set_shape_x ^js internal-module x))
+
+(defn set-shape-y
+  [y]
+  (._set_shape_y ^js internal-module y))
 
 (defn set-objects
   [objects modifiers]
-  (let [shape-create-fn  (unchecked-get internal-module "_shape_create")
-        shape-create     (fn [state uuid]
-                        #_(js-debugger)
-                        (let [buffer (uuid/uuid->u32 uuid)]
-                          (js/console.log "_shape_create" shape-create-fn state uuid (unchecked-get buffer 0) (unchecked-get buffer 1) (unchecked-get buffer 2) (unchecked-get buffer 3))
-                          (shape-create-fn state (unchecked-get buffer 0) (unchecked-get buffer 1) (unchecked-get buffer 2) (unchecked-get buffer 3))))
-        shapes        (into [] xform (vals objects))
+  (let [shapes        (into [] xform (vals objects))
         total-shapes  (count shapes)]
     (loop [index 0]
       (when (< index total-shapes)
         (let [shape  (nth shapes index)
-              id     (dm/get-prop shape :id)]
-          (shape-create internal-state id)
+              id     (dm/get-prop shape :id)
+              selrect (dm/get-prop shape :selrect)]
+          (use-shape id)
+          (set-shape-selrect selrect)
           (recur (inc index)))))))
 
 #_(defn set-objects
@@ -125,12 +138,12 @@
 
 (defn draw-objects
   [zoom vbox]
-  (let [draw-all-shapes (unchecked-get internal-module "_draw_all_shapes")]
-    (js/requestAnimationFrame
-     (fn []
-       (let [pan-x (- (dm/get-prop vbox :x))
-             pan-y (- (dm/get-prop vbox :y))]
-         (draw-all-shapes internal-state zoom pan-x pan-y))))))
+  (js/requestAnimationFrame
+   (fn []
+     (let [pan-x (- (dm/get-prop vbox :x))
+           pan-y (- (dm/get-prop vbox :y))]
+       (js/console.log "_draw_all_shapes")
+       (._draw_all_shapes ^js internal-module zoom pan-x pan-y)))))
 
 (defn cancel-draw
   [frame-id]
@@ -160,15 +173,13 @@
         _       (.makeContextCurrent ^js gl handle)
 
         ;; Initialize Skia
-        state   (init-fn (.-width ^js canvas)
+        _       (init-fn (.-width ^js canvas)
                          (.-height ^js canvas))]
 
     (set! (.-width canvas) (.-clientWidth ^js canvas))
     (set! (.-height canvas) (.-clientHeight ^js canvas))
 
-    (obj/set! js/window "shape_list" (fn [] ((unchecked-get internal-module "_shape_list") internal-state)))
-
-    (set! internal-state state)))
+    (obj/set! js/window "shape_list" (fn [] ((unchecked-get internal-module "_shape_list"))))))
 
 (defonce module
   (->> (js/dynamicImport "/js/render_wasm.js")
@@ -182,3 +193,10 @@
                  (js/console.error cause)
                  (p/resolved false)))))
 
+(set! app.common.types.shape.impl/wasm-create-shape create-shape)
+(set! app.common.types.shape.impl/wasm-use-shape use-shape)
+(set! app.common.types.shape.impl/wasm-set-shape-selrect set-shape-selrect)
+(set! app.common.types.shape.impl/wasm-set-shape-transform set-shape-transform)
+(set! app.common.types.shape.impl/wasm-set-shape-x set-shape-x)
+(set! app.common.types.shape.impl/wasm-set-shape-y set-shape-y)
+(set! app.common.types.shape.impl/wasm-set-shape-rotation set-shape-rotation)

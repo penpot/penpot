@@ -1,7 +1,7 @@
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy)]
-pub enum ShapeKind {
+pub enum Kind {
     None,
     Text,
     Path,
@@ -12,6 +12,11 @@ pub enum ShapeKind {
     Bool,
     Group,
     Frame,
+}
+
+pub struct Point {
+    pub x: f32,
+    pub y: f32,
 }
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -41,14 +46,60 @@ pub struct Matrix {
 //     pub matrix: Matrix;
 // }
 
+#[derive(Clone, Copy)]
+pub struct ColorChannels {
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+}
+
+pub union Color {
+    rgba: u32,
+    channel: ColorChannels,
+}
+
+pub struct ColorStop {
+    offset: f32,
+    color: Color,
+}
+
+pub struct FillColor {
+    color: Color,
+}
+
+pub struct FillLinearGradient {
+    start: Point,
+    end: Point,
+    stops: Vec<ColorStop>,
+}
+
+pub struct FillRadialGradient {
+    stops: Vec<ColorStop>,
+}
+
+pub struct FillImage {
+
+}
+
+pub enum Fill {
+    Color(FillColor),
+    LinearGradient(FillLinearGradient)
+}
+
+pub enum Stroke {
+
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct Shape {
     pub id: Uuid,
-    pub kind: ShapeKind,
+    pub kind: Kind,
     pub selrect: Rect,
-    pub matrix: Matrix,
-    // pub fills: Vec<ShapeFill>,
-    // pub strokes: Vec<ShapeStroke>,
+    pub transform: Matrix,
+    pub rotation: f32,
+    // pub fills: Vec<Fill>,
+    // pub strokes: Vec<Stroke>,
     // pub pathData: PathData,
     // pub textContent: TextContent,
 }
@@ -56,16 +107,16 @@ pub struct Shape {
 impl Shape {
     #[inline]
     pub fn translation(&self) -> (f32, f32) {
-        (self.matrix.e, self.matrix.f)
+        (self.transform.e, self.transform.f)
     }
 
     #[inline]
     pub fn scale(&self) -> (f32, f32) {
-        (self.matrix.a, self.matrix.d)
+        (self.transform.a, self.transform.d)
     }
 
     #[inline]
     pub fn skew(&self) -> (f32, f32) {
-        (self.matrix.c, self.matrix.b)
+        (self.transform.c, self.transform.b)
     }
 }
