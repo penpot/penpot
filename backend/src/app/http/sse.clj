@@ -9,6 +9,7 @@
   (:refer-clojure :exclude [tap])
   (:require
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.transit :as t]
    [app.http.errors :as errors]
@@ -60,13 +61,10 @@
                         (try
                           (let [result (handler)]
                             (events/tap :end result))
-
-                          (catch java.io.EOFException cause
-                            (events/tap :error (errors/handle' cause request)))
                           (catch Throwable cause
-                            (l/err :hint "unexpected error on processing sse response"
-                                   :cause cause)
-                            (events/tap :error (errors/handle' cause request)))
+                            (events/tap :error (errors/handle' cause request))
+                            (when-not (ex/instance? java.io.EOFException cause)
+                              (l/err :hint "unexpected error on processing sse response" :cause cause)))
                           (finally
                             (sp/close! events/*channel*)
                             (px/await! listener)))))))}))

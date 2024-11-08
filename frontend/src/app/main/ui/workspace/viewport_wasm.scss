@@ -35,3 +35,13 @@
   right: 0;
   z-index: 10;
 }
+
+.context-lost {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: grid;
+  place-items: center;
+  cursor: default;
+}

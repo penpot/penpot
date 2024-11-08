@@ -326,7 +326,7 @@
 (def ^:private
   schema:move-files
   [:map {:title "move-files"}
-   [:ids ::sm/set-of-uuid]
+   [:ids [::sm/set {:min 1} ::sm/uuid]]
    [:project-id ::sm/uuid]])
 
 (sv/defmethod ::move-files
@@ -335,7 +335,7 @@
    ::webhooks/event? true
    ::sm/params schema:move-files}
   [cfg {:keys [::rpc/profile-id] :as params}]
-  (db/tx-run! cfg #(move-files % (assoc params :profile-id profile-id))))
+  (db/tx-run! cfg move-files (assoc params :profile-id profile-id)))
 
 ;; --- COMMAND: Move project
 

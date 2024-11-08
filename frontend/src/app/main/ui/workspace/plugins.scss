@@ -102,6 +102,7 @@
   @include flexCenter;
   width: $s-20;
   padding: 0 0 0 $s-8;
+
   svg {
     @extend .button-icon-small;
     stroke: var(--icon-foreground);
@@ -114,7 +115,9 @@
 }
 
 .open-button {
-  @extend .button-secondary;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   width: $s-68;
   min-width: $s-68;
   height: $s-32;

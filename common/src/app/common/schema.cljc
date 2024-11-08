@@ -275,7 +275,7 @@
               (= :set (:type s))
               (m/-collection-schema s)
 
-              (= :vec (:type s))
+              (= :vector (:type s))
               (m/-collection-schema s)
 
               :else
@@ -449,24 +449,12 @@
              (fn [value]
                (every? pred value)))
 
-
-           decode-string-child
-           (decoder kind string-transformer)
-
-           decode-string
+           decode
            (fn [v]
-             (let [v (if (string? v) (str/split v #"[\s,]+") v)
-                   x (comp xf:filter-word-strings (map decode-string-child))]
-               (into #{} x v)))
-
-           decode-json-child
-           (decoder kind json-transformer)
-
-           decode-json
-           (fn [v]
-             (let [v (if (string? v) (str/split v #"[\s,]+") v)
-                   x (comp xf:filter-word-strings (map decode-json-child))]
-               (into #{} x v)))
+             (if (string? v)
+               (let [v  (str/split v #"[\s,]+")]
+                 (into #{} xf:filter-word-strings v))
+               v))
 
            encode-string-child
            (encoder kind string-transformer)
@@ -475,14 +463,7 @@
            (fn [o]
              (if (set? o)
                (str/join ", " (map encode-string-child o))
-               o))
-
-           encode-json
-           (fn [o]
-             (if (set? o)
-               (vec o)
                o))]
-
 
        {:pred pred
         :empty #{}
@@ -491,10 +472,10 @@
          :description "Set of Strings"
          :error/message "should be a set of strings"
          :gen/gen (-> kind sg/generator sg/set)
-         :decode/string decode-string
-         :decode/json decode-json
+         :decode/string decode
+         :decode/json decode
          :encode/string encode-string
-         :encode/json encode-json
+         :encode/json identity
          ::oapi/type "array"
          ::oapi/format "set"
          ::oapi/items {:type "string"}
@@ -542,23 +523,12 @@
              (fn [value]
                (every? pred value)))
 
-           decode-string-child
-           (decoder kind string-transformer)
-
-           decode-json-child
-           (decoder kind json-transformer)
-
-           decode-string
+           decode
            (fn [v]
-             (let [v (if (string? v) (str/split v #"[\s,]+") v)
-                   x (comp xf:filter-word-strings (map decode-string-child))]
-               (into #{} x v)))
-
-           decode-json
-           (fn [v]
-             (let [v (if (string? v) (str/split v #"[\s,]+") v)
-                   x (comp xf:filter-word-strings (map decode-json-child))]
-               (into #{} x v)))
+             (if (string? v)
+               (let [v (str/split v #"[\s,]+")]
+                 (into #{} xf:filter-word-strings v))
+               v))
 
            encode-string-child
            (encoder kind string-transformer)
@@ -575,9 +545,10 @@
          :description "Set of Strings"
          :error/message "should be a set of strings"
          :gen/gen (-> kind sg/generator sg/set)
-         :decode/string decode-string
-         :decode/json decode-json
+         :decode/string decode
+         :decode/json decode
          :encode/string encode-string
+         :encode/json identity
          ::oapi/type "array"
          ::oapi/format "set"
          ::oapi/items {:type "string"}

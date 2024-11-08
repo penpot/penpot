@@ -17,20 +17,25 @@
 .menu-item {
   @extend .menu-item-base;
   cursor: pointer;
+
   .open-arrow {
     @include flexCenter;
+
     svg {
       @extend .button-icon;
       stroke: var(--icon-foreground);
     }
   }
+
   &:hover {
     color: var(--menu-foreground-color-hover);
+
     .open-arrow {
       svg {
         stroke: var(--menu-foreground-color-hover);
       }
     }
+
     .shortcut-key {
       color: var(--menu-shortcut-foreground-color-hover);
     }
@@ -46,6 +51,7 @@
 .shortcut {
   @extend .shortcut-base;
 }
+
 .shortcut-key {
   @extend .shortcut-key-base;
 }
@@ -59,11 +65,23 @@
 
   .submenu-item {
     @extend .menu-item-base;
+
     &:hover {
       color: var(--menu-foreground-color-hover);
+
       .shortcut-key {
         color: var(--menu-shortcut-foreground-color-hover);
       }
+    }
+  }
+
+  .menu-disabled {
+    color: var(--color-foreground-secondary);
+
+    &:hover {
+      cursor: default;
+      color: var(--color-foreground-secondary);
+      background-color: var(--menu-background-color);
     }
   }
 

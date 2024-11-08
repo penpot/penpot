@@ -89,7 +89,10 @@
     :display-touched
 
     ;; Show some visual indicators for bool shape
-    :bool-shapes})
+    :bool-shapes
+
+    ;; Show some information about the WebGL context.
+    :gl-context})
 
 (defn enable!
   [option]
