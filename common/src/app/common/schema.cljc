@@ -451,9 +451,18 @@
 
            decode
            (fn [v]
-             (if (string? v)
+             (cond
+               (string? v)
                (let [v  (str/split v #"[\s,]+")]
                  (into #{} xf:filter-word-strings v))
+
+               (set? v)
+               v
+
+               (coll? v)
+               (into #{} v)
+
+               :else
                v))
 
            encode-string-child
@@ -481,9 +490,7 @@
          ::oapi/items {:type "string"}
          ::oapi/unique-items true}}))})
 
-(register! ::set type:set)
-
-(register! ::vec
+(def type:vec
   {:type :vector
    :min 0
    :max 1
@@ -525,9 +532,18 @@
 
            decode
            (fn [v]
-             (if (string? v)
+             (cond
+               (string? v)
                (let [v (str/split v #"[\s,]+")]
-                 (into #{} xf:filter-word-strings v))
+                 (into [] xf:filter-word-strings v))
+
+               (vector? v)
+               v
+
+               (coll? v)
+               (into [] v)
+
+               :else
                v))
 
            encode-string-child
@@ -553,6 +569,9 @@
          ::oapi/format "set"
          ::oapi/items {:type "string"}
          ::oapi/unique-items true}}))})
+
+(register! ::set type:set)
+(register! ::vec type:vec)
 
 (register! ::set-of-strings
   {:type ::set-of-strings
