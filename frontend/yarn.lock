@@ -218,7 +218,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bundled-es-modules/glob@npm:^10.4.2":
+"@bundled-es-modules/glob@npm:^10.3.13":
   version: 10.4.2
   resolution: "@bundled-es-modules/glob@npm:10.4.2"
   dependencies:
@@ -234,7 +234,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bundled-es-modules/memfs@npm:^4.9.4":
+"@bundled-es-modules/memfs@npm:^4.8.1":
   version: 4.9.4
   resolution: "@bundled-es-modules/memfs@npm:4.9.4"
   dependencies:
@@ -763,62 +763,6 @@ __metadata:
   version: 0.1.1
   resolution: "@one-ini/wasm@npm:0.1.1"
   checksum: 10c0/54700e055037f1a63bfcc86d24822203b25759598c2c3e295d1435130a449108aebc119c9c2e467744767dbe0b6ab47a182c61aa1071ba7368f5e20ab197ba65
-  languageName: node
-  linkType: hard
-
-"@oven/bun-darwin-aarch64@npm:1.1.34":
-  version: 1.1.34
-  resolution: "@oven/bun-darwin-aarch64@npm:1.1.34"
-  conditions: os=darwin & cpu=arm64
-  languageName: node
-  linkType: hard
-
-"@oven/bun-darwin-x64-baseline@npm:1.1.34":
-  version: 1.1.34
-  resolution: "@oven/bun-darwin-x64-baseline@npm:1.1.34"
-  conditions: os=darwin & cpu=x64
-  languageName: node
-  linkType: hard
-
-"@oven/bun-darwin-x64@npm:1.1.34":
-  version: 1.1.34
-  resolution: "@oven/bun-darwin-x64@npm:1.1.34"
-  conditions: os=darwin & cpu=x64
-  languageName: node
-  linkType: hard
-
-"@oven/bun-linux-aarch64@npm:1.1.34":
-  version: 1.1.34
-  resolution: "@oven/bun-linux-aarch64@npm:1.1.34"
-  conditions: os=linux & cpu=arm64
-  languageName: node
-  linkType: hard
-
-"@oven/bun-linux-x64-baseline@npm:1.1.34":
-  version: 1.1.34
-  resolution: "@oven/bun-linux-x64-baseline@npm:1.1.34"
-  conditions: os=linux & cpu=x64
-  languageName: node
-  linkType: hard
-
-"@oven/bun-linux-x64@npm:1.1.34":
-  version: 1.1.34
-  resolution: "@oven/bun-linux-x64@npm:1.1.34"
-  conditions: os=linux & cpu=x64
-  languageName: node
-  linkType: hard
-
-"@oven/bun-windows-x64-baseline@npm:1.1.34":
-  version: 1.1.34
-  resolution: "@oven/bun-windows-x64-baseline@npm:1.1.34"
-  conditions: os=win32 & cpu=x64
-  languageName: node
-  linkType: hard
-
-"@oven/bun-windows-x64@npm:1.1.34":
-  version: 1.1.34
-  resolution: "@oven/bun-windows-x64@npm:1.1.34"
-  conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
 
@@ -2469,43 +2413,6 @@ __metadata:
   version: 3.0.0
   resolution: "builtin-status-codes@npm:3.0.0"
   checksum: 10c0/c37bbba11a34c4431e56bd681b175512e99147defbe2358318d8152b3a01df7bf25e0305873947e5b350073d5ef41a364a22b37e48f1fb6d2fe6d5286a0f348c
-  languageName: node
-  linkType: hard
-
-"bun@npm:^1.1.25":
-  version: 1.1.34
-  resolution: "bun@npm:1.1.34"
-  dependencies:
-    "@oven/bun-darwin-aarch64": "npm:1.1.34"
-    "@oven/bun-darwin-x64": "npm:1.1.34"
-    "@oven/bun-darwin-x64-baseline": "npm:1.1.34"
-    "@oven/bun-linux-aarch64": "npm:1.1.34"
-    "@oven/bun-linux-x64": "npm:1.1.34"
-    "@oven/bun-linux-x64-baseline": "npm:1.1.34"
-    "@oven/bun-windows-x64": "npm:1.1.34"
-    "@oven/bun-windows-x64-baseline": "npm:1.1.34"
-  dependenciesMeta:
-    "@oven/bun-darwin-aarch64":
-      optional: true
-    "@oven/bun-darwin-x64":
-      optional: true
-    "@oven/bun-darwin-x64-baseline":
-      optional: true
-    "@oven/bun-linux-aarch64":
-      optional: true
-    "@oven/bun-linux-x64":
-      optional: true
-    "@oven/bun-linux-x64-baseline":
-      optional: true
-    "@oven/bun-windows-x64":
-      optional: true
-    "@oven/bun-windows-x64-baseline":
-      optional: true
-  bin:
-    bun: bin/bun.exe
-    bunx: bin/bun.exe
-  checksum: 10c0/d7a69a3e6a7545d7c76edaf86633f23f791641732fb0f5a6378f1503d267d03a3353afcc01e735acb6981b12acc83827d73bca701f8e3f62183bb00ad7e22e9d
-  conditions: (os=darwin | os=linux | os=win32) & (cpu=arm64 | cpu=x64)
   languageName: node
   linkType: hard
 
@@ -4403,7 +4310,6 @@ __metadata:
     "@tokens-studio/sd-transforms": "npm:^0.16.1"
     "@types/node": "npm:^22.7.7"
     autoprefixer: "npm:^10.4.20"
-    bun: "npm:^1.1.25"
     compression: "npm:^1.7.4"
     concurrently: "npm:^9.0.1"
     date-fns: "npm:^4.1.0"
@@ -4454,7 +4360,7 @@ __metadata:
     shadow-cljs: "npm:2.28.18"
     source-map-support: "npm:^0.5.21"
     storybook: "npm:^8.3.6"
-    style-dictionary: "npm:^4.1.4"
+    style-dictionary: "npm:4.0.0-prerelease.34"
     svg-sprite: "npm:^2.0.4"
     tdigest: "npm:^0.1.2"
     tinycolor2: "npm:^1.6.0"
@@ -8590,13 +8496,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"style-dictionary@npm:^4.1.4":
-  version: 4.1.4
-  resolution: "style-dictionary@npm:4.1.4"
+"style-dictionary@npm:4.0.0-prerelease.34":
+  version: 4.0.0-prerelease.34
+  resolution: "style-dictionary@npm:4.0.0-prerelease.34"
   dependencies:
     "@bundled-es-modules/deepmerge": "npm:^4.3.1"
-    "@bundled-es-modules/glob": "npm:^10.4.2"
-    "@bundled-es-modules/memfs": "npm:^4.9.4"
+    "@bundled-es-modules/glob": "npm:^10.3.13"
+    "@bundled-es-modules/memfs": "npm:^4.8.1"
     "@zip.js/zip.js": "npm:^2.7.44"
     chalk: "npm:^5.3.0"
     change-case: "npm:^5.3.0"
@@ -8608,7 +8514,7 @@ __metadata:
     tinycolor2: "npm:^1.6.0"
   bin:
     style-dictionary: bin/style-dictionary.js
-  checksum: 10c0/b88e2f94615bc851e2e797e685863911dbb875d312bf1571a3be6b6a9dde7e0b324d83495f153446eceefe93ec119c80e2ca032a600818dcecc72174d285e429
+  checksum: 10c0/775d00c0e6aec7749dd5554c448550bc0793aaff9ab028d61ba219476ffa827d3e11866d326c34a27d3e848156b885e476beaade0909fe6b174a50e857dd5009
   languageName: node
   linkType: hard
 
