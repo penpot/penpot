@@ -128,24 +128,6 @@
         (.buildAllPlatforms "json")
         (p/then #(.-allTokens ^js %)))))
 
-(comment
-  (-> (StyleDictionary. default-config)
-      (enable-debug)
-      (add-tokens {"foo" (ctob/make-token :type :border-radius
-                                          :value "12px"
-                                          :name "foo")
-                   "bar" (ctob/make-token :type :border-radius
-                                          :value "{foo} * 2"
-                                          :name "foo")
-                   "color" (ctob/make-token :type :color
-                                            :value "red"
-                                            :name "color")})
-      (build-dictionary)
-      (p/finally (fn [x err]
-                   (js/console.log "x err" x err))))
-  nil)
-
-
 (defn resolve-tokens-tree+
   ([tokens-tree get-token]
    (resolve-tokens-tree+ tokens-tree get-token (StyleDictionary. default-config)))
