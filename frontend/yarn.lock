@@ -218,7 +218,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bundled-es-modules/glob@npm:^10.4.2":
+"@bundled-es-modules/glob@npm:^10.3.13":
   version: 10.4.2
   resolution: "@bundled-es-modules/glob@npm:10.4.2"
   dependencies:
@@ -234,7 +234,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@bundled-es-modules/memfs@npm:^4.9.4":
+"@bundled-es-modules/memfs@npm:^4.8.1":
   version: 4.9.4
   resolution: "@bundled-es-modules/memfs@npm:4.9.4"
   dependencies:
@@ -948,10 +948,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@penpot/text-editor@penpot/penpot-text-editor#449e3322f3fa40b1318c9154afbbc7932a3cb766":
+"@penpot/text-editor@penpot/penpot-text-editor#a100aad8d0efcbb070bed9144dbd2782547e78ba":
   version: 0.0.0
-  resolution: "@penpot/text-editor@https://github.com/penpot/penpot-text-editor.git#commit=449e3322f3fa40b1318c9154afbbc7932a3cb766"
-  checksum: 10c0/377fbd1fccc91ce532356601a27fe11afe19f169748127884f39a6b231a037e7e1e8b401149062e39219715901933771b7d752accaa52682fb141889c22dd1d3
+  resolution: "@penpot/text-editor@https://github.com/penpot/penpot-text-editor.git#commit=a100aad8d0efcbb070bed9144dbd2782547e78ba"
+  checksum: 10c0/328c827cd740c5e05df678083cfb1d2b6d006b56523daa0bd2a3c2936a0490a2ae4d0e69a3aec428674609a22a5fafdd5600aae1399cb3f4ed5b80e497c74a5c
   languageName: node
   linkType: hard
 
@@ -4300,7 +4300,7 @@ __metadata:
     "@penpot/hljs": "portal:./vendor/hljs"
     "@penpot/mousetrap": "portal:./vendor/mousetrap"
     "@penpot/svgo": "penpot/svgo#c6fba7a4dcfbc27b643e7fc0c94fc98cf680b77b"
-    "@penpot/text-editor": "penpot/penpot-text-editor#449e3322f3fa40b1318c9154afbbc7932a3cb766"
+    "@penpot/text-editor": "penpot/penpot-text-editor#a100aad8d0efcbb070bed9144dbd2782547e78ba"
     "@playwright/test": "npm:1.48.1"
     "@storybook/addon-essentials": "npm:^8.3.6"
     "@storybook/addon-themes": "npm:^8.3.6"
@@ -4360,7 +4360,7 @@ __metadata:
     shadow-cljs: "npm:2.28.18"
     source-map-support: "npm:^0.5.21"
     storybook: "npm:^8.3.6"
-    style-dictionary: "npm:^4.1.4"
+    style-dictionary: "npm:4.0.0-prerelease.34"
     svg-sprite: "npm:^2.0.4"
     tdigest: "npm:^0.1.2"
     tinycolor2: "npm:^1.6.0"
@@ -8496,13 +8496,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"style-dictionary@npm:^4.1.4":
-  version: 4.1.4
-  resolution: "style-dictionary@npm:4.1.4"
+"style-dictionary@npm:4.0.0-prerelease.34":
+  version: 4.0.0-prerelease.34
+  resolution: "style-dictionary@npm:4.0.0-prerelease.34"
   dependencies:
     "@bundled-es-modules/deepmerge": "npm:^4.3.1"
-    "@bundled-es-modules/glob": "npm:^10.4.2"
-    "@bundled-es-modules/memfs": "npm:^4.9.4"
+    "@bundled-es-modules/glob": "npm:^10.3.13"
+    "@bundled-es-modules/memfs": "npm:^4.8.1"
     "@zip.js/zip.js": "npm:^2.7.44"
     chalk: "npm:^5.3.0"
     change-case: "npm:^5.3.0"
@@ -8514,7 +8514,7 @@ __metadata:
     tinycolor2: "npm:^1.6.0"
   bin:
     style-dictionary: bin/style-dictionary.js
-  checksum: 10c0/b88e2f94615bc851e2e797e685863911dbb875d312bf1571a3be6b6a9dde7e0b324d83495f153446eceefe93ec119c80e2ca032a600818dcecc72174d285e429
+  checksum: 10c0/775d00c0e6aec7749dd5554c448550bc0793aaff9ab028d61ba219476ffa827d3e11866d326c34a27d3e848156b885e476beaade0909fe6b174a50e857dd5009
   languageName: node
   linkType: hard
 
