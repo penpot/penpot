@@ -119,7 +119,7 @@
     "rxjs": "8.0.0-alpha.14",
     "sax": "^1.4.1",
     "source-map-support": "^0.5.21",
-    "style-dictionary": "^4.1.4",
+    "style-dictionary": "4.0.0-prerelease.34",
     "tdigest": "^0.1.2",
     "tinycolor2": "npm:^1.6.0",
     "ua-parser-js": "2.0.0-rc.1",

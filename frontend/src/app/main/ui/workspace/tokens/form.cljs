@@ -235,10 +235,10 @@ Token names should only contain letters and digits separated by . characters.")}
         on-update-name-debounced
         (mf/use-fn
          (uf/debounce (fn [e]
-                     (let [value (dom/get-target-val e)
-                           errors (validate-name value)]
-                       (when touched-name?
-                         (reset! name-errors errors))))))
+                        (let [value (dom/get-target-val e)
+                              errors (validate-name value)]
+                          (when touched-name?
+                            (reset! name-errors errors))))))
 
         on-update-name
         (mf/use-fn
@@ -388,7 +388,7 @@ Token names should only contain letters and digits separated by . characters.")}
                                                       :on-change on-update-value
                                                       :ref value-input-ref}
                                         :render-right (when color?
-                                                        (mf/fnc color-bullet []
+                                                        (mf/fnc []
                                                           [:div {:class (stl/css :color-bullet)
                                                                  :on-click #(swap! color-ramp-open? not)}
                                                            (if-let [hex (some-> @color tinycolor/valid-color tinycolor/->hex)]
