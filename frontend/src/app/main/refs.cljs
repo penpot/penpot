@@ -116,6 +116,12 @@
 
 ;; ---- Workspace refs
 
+(def render-state
+  (l/derived :render-state st/state))
+
+(def render-context-lost?
+  (l/derived :lost render-state))
+
 (def workspace-local
   (l/derived :workspace-local st/state))
 

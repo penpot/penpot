@@ -111,6 +111,8 @@
         modifiers         (mf/deref refs/workspace-modifiers)
         text-modifiers    (mf/deref refs/workspace-text-modifier)
 
+        render-context-lost? (mf/deref refs/render-context-lost?)
+
         objects-modified  (mf/with-memo [base-objects text-modifiers modifiers]
                             (apply-modifiers-to-selected selected base-objects text-modifiers modifiers))
 
@@ -174,6 +176,8 @@
         grid-editing?     (and edition (ctl/grid-layout? base-objects edition))
 
         mode-inspect?       (= options-mode :inspect)
+
+        on-render-restore-context #(.reload js/location)
 
         on-click          (actions/on-click hover selected edition drawing-path? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
@@ -277,9 +281,9 @@
              (p/fmap (fn [ready?]
                        (when ready?
                          (reset! canvas-init? true)
-                         (render.wasm/assign-canvas canvas)))))
+                         (render.wasm/setup-canvas canvas)))))
         (fn []
-          (render.wasm/clear-canvas))))
+          (render.wasm/dispose-canvas canvas))))
 
     (mf/with-effect [objects-modified canvas-init?]
       (when @canvas-init?
@@ -635,4 +639,11 @@
          {:objects base-objects
           :zoom zoom
           :vbox vbox
-          :bottom-padding (when palete-size (+ palete-size 8))}]]]]]))
+          :bottom-padding (when palete-size (+ palete-size 8))}]]]]
+
+     (when render-context-lost?
+       [:div {:id "context-lost" :class (stl/css :context-lost)}
+        [:h1 "GL Error Screen"]
+        [:button
+         {:on-click on-render-restore-context}
+         "Restore context"]])]))
