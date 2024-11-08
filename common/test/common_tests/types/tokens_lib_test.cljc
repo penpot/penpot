@@ -398,7 +398,6 @@
                                                                                  :type :boolean
                                                                                  :value true)))
 
-
           expected-order (ctob/get-ordered-set-names tokens-lib)
           expected-tokens (ctob/get-active-themes-set-tokens tokens-lib)
           expected-token-names (mapv key expected-tokens)]
@@ -1140,3 +1139,4 @@
              (t/is (= @with-prev-tokens-lib @tokens-lib)))
            (t/testing "fresh tokens library is also equal"
              (= @with-empty-tokens-lib @tokens-lib)))))))
+

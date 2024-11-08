@@ -128,13 +128,20 @@
                       {:reg-objects? true
                        :attrs [:strokes]}))
 
-(defn update-color
-  [value shape-ids]
+(defn update-color [f value shape-ids]
   (let [color (some->> value
                        (tinycolor/valid-color)
                        (tinycolor/->hex)
                        (str "#"))]
-    (wdc/change-fill shape-ids {:color color} 0)))
+    (f shape-ids {:color color} 0)))
+
+(defn update-fill
+  [value shape-ids]
+  (update-color wdc/change-fill value shape-ids))
+
+(defn update-stroke-color
+  [value shape-ids]
+  (update-color wdc/change-stroke value shape-ids))
 
 (defn update-shape-dimensions [value shape-ids attributes]
   (ptk/reify ::update-shape-dimensions

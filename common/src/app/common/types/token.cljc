@@ -74,7 +74,8 @@
 
 (sm/register! ::color
   [:map
-   [:color {:optional true} token-name-ref]])
+   [:fill {:optional true} token-name-ref]
+   [:stroke-color {:optional true} token-name-ref]])
 
 (def color-keys (schema-keys ::color))
 
@@ -127,9 +128,9 @@
 
 (sm/register! ::dimensions
   (merge-schemas ::sizing
-    ::spacing
-    ::stroke-width
-    ::border-radius))
+                 ::spacing
+                 ::stroke-width
+                 ::border-radius))
 
 (def dimensions-keys (schema-keys ::dimensions))
 
@@ -144,8 +145,8 @@
 
 (sm/register! ::applied-tokens
   (merge-schemas ::tokens
-    ::border-radius
-    ::sizing
-    ::spacing
-    ::rotation
-    ::dimensions))
+                 ::border-radius
+                 ::sizing
+                 ::spacing
+                 ::rotation
+                 ::dimensions))
