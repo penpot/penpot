@@ -5,6 +5,7 @@
 ### :bug: Bugs fixed
 
 - Fix null pointer exception on number checking functions
+- Fix problem with grid layout ordering after moving [Taiga #9179](https://tree.taiga.io/project/penpot/issue/9179)
 
 ### :books: Documentation
 
