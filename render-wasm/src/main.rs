@@ -156,6 +156,7 @@ pub unsafe extern "C" fn set_shape_transform(a: f32, b: f32, c: f32, d: f32, e: 
         shape.transform.d = d;
         shape.transform.e = e;
         shape.transform.f = f;
+        println!("Set shape transform {:?}", shape.transform);
     }
 }
 

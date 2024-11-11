@@ -94,10 +94,10 @@ pub(crate) fn render_all(state: &mut State) {
 
         let mut matrix = skia::Matrix::new_identity();
         matrix.set_scale_translate(shape.scale(), shape.translation());
-
         let (skew_x, skew_y) = shape.skew();
         matrix.set_skew_x(skew_x);
         matrix.set_skew_y(skew_y);
+        println!("After skew: {:?}", matrix);
 
         state.render_state.surface.canvas().concat(&matrix);
 
