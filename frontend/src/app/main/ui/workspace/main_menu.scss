@@ -113,3 +113,10 @@
     top: $s-192;
   }
 }
+
+.item-icon {
+  svg {
+    @extend .button-icon;
+    stroke: var(--icon-foreground);
+  }
+}
