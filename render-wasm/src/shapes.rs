@@ -37,58 +37,17 @@ pub struct Matrix {
     pub f: f32,
 }
 
-// #[derive(Debug, Clone, Copy)]
-// pub struct Transform {
-//     pub position: Vec2;
-//     pub scale: Vec2;
-//     pub skew: Vec2;
-//     pub rotation: f32;
-//     pub matrix: Matrix;
-// }
-
-#[derive(Clone, Copy)]
-pub struct ColorChannels {
-    r: u8,
-    g: u8,
-    b: u8,
-    a: u8,
-}
-
-pub union Color {
-    rgba: u32,
-    channel: ColorChannels,
-}
-
-pub struct ColorStop {
-    offset: f32,
-    color: Color,
-}
-
-pub struct FillColor {
-    color: Color,
-}
-
-pub struct FillLinearGradient {
-    start: Point,
-    end: Point,
-    stops: Vec<ColorStop>,
-}
-
-pub struct FillRadialGradient {
-    stops: Vec<ColorStop>,
-}
-
-pub struct FillImage {
-
-}
-
-pub enum Fill {
-    Color(FillColor),
-    LinearGradient(FillLinearGradient)
-}
-
-pub enum Stroke {
-
+impl Matrix {
+    pub fn identity() -> Self {
+        Self {
+            a: 1.,
+            b: 0.,
+            c: 0.,
+            d: 1.,
+            e: 0.,
+            f: 0.,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -98,13 +57,19 @@ pub struct Shape {
     pub selrect: Rect,
     pub transform: Matrix,
     pub rotation: f32,
-    // pub fills: Vec<Fill>,
-    // pub strokes: Vec<Stroke>,
-    // pub pathData: PathData,
-    // pub textContent: TextContent,
 }
 
 impl Shape {
+    pub fn new(id: Uuid) -> Self {
+        Self {
+            id,
+            kind: Kind::Rect,
+            selrect: Rect::default(),
+            transform: Matrix::identity(),
+            rotation: 0.,
+        }
+    }
+
     #[inline]
     pub fn translation(&self) -> (f32, f32) {
         (self.transform.e, self.transform.f)

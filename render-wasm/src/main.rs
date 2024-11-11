@@ -92,25 +92,7 @@ pub extern "C" fn reset_canvas() {
 
 pub fn get_or_create_shape<'a>(shapes: &'a mut HashMap<Uuid, Shape>, id: Uuid) -> &'a mut Shape {
     if !shapes.contains_key(&id) {
-        let new_shape = Shape {
-            id: id,
-            kind: shapes::Kind::Rect,
-            selrect: Rect {
-                x1: 0.,
-                y1: 0.,
-                x2: 0.,
-                y2: 0.,
-            },
-            transform: Matrix {
-                a: 1.,
-                b: 0.,
-                c: 0.,
-                d: 1.,
-                e: 0.,
-                f: 0.,
-            },
-            rotation: 0.,
-        };
+        let new_shape = Shape::new(id);
         shapes.insert(id, new_shape);
     }
 
