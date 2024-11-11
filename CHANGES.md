@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## 2.3.2
+
+### :bug: Bugs fixed
+
+- Fix null pointer exception on number checking functions
+
+### :books: Documentation
+
+- Add initial documentation for Kubernetes
+
+
 ## 2.3.1
 
 ### :bug: Bugs fixed
