@@ -13,8 +13,7 @@
    [app.common.geom.matrix :as cgm]
    [app.common.record :as cr]
    [app.common.transit :as t]
-   [clojure.core :as c]
-   [okulary.core :as l]))
+   [clojure.core :as c]))
 
 (defonce ^:dynamic *wasm-sync* true)
 (defonce enabled-wasm-ready-shape false)

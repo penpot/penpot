@@ -115,6 +115,8 @@ pub(crate) fn render_all(state: &mut State) {
     println!("render_all {}", state.display_list.len());
     for id in state.display_list.iter() {
         if let Some(shape) = state.shapes.get(id) {
+            println!("Render shape {:?}", shape);
+
             let r = skia::Rect::new(
                 shape.selrect.x1,
                 shape.selrect.y1,
