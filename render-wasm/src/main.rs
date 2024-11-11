@@ -44,7 +44,6 @@ pub unsafe extern "C" fn draw_rect(x1: f32, y1: f32, x2: f32, y2: f32) {
 
 #[no_mangle]
 pub unsafe extern "C" fn draw_all_shapes(zoom: f32, pan_x: f32, pan_y: f32) {
-    println!("draw_all_shapes");
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
 
     reset_canvas();
@@ -104,11 +103,8 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     let id = uuid_from_u32_quartet(a, b, c, d);
     state.current_id = Some(id);
-    println!("UUID {:?}", state.current_id);
     let shapes = &mut state.shapes;
-    // NOTE: Check if we could
     state.current_shape = Some(get_or_create_shape(shapes, id));
-    println!("State.current_shape  {:?}", state.current_shape);
 }
 
 #[no_mangle]
@@ -116,13 +112,10 @@ pub unsafe extern "C" fn set_shape_selrect(x1: f32, y1: f32, x2: f32, y2: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
 
     if let Some(shape) = state.current_shape.as_deref_mut() {
-        println!("Set Shape SelRect {} {} {} {}", x1, y1, x2, y2);
         shape.selrect.x1 = x1;
         shape.selrect.y1 = y1;
         shape.selrect.x2 = x2;
         shape.selrect.y2 = y2;
-        println!("Set Shape SelRect {:?}", shape.selrect);
-        // println!("state.current_shape {:?}", state.current_shape);
     }
 }
 
@@ -167,14 +160,13 @@ pub unsafe extern "C" fn set_shape_transform(a: f32, b: f32, c: f32, d: f32, e: 
     }
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn list_shapes() {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    for id in (*state).display_list.iter_mut() {
-        let shape: Option<&Shape> = (*state).shapes.get(id);
-        println!("{}", shape.unwrap().id);
-    }
-}
+// #[no_mangle]
+// pub unsafe extern "C" fn list_shapes() {
+//     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+//     for id in (*state).display_list.iter_mut() {
+//         let shape: Option<&Shape> = (*state).shapes.get(id);
+//     }
+// }
 
 fn main() {
     render::init_gl();
