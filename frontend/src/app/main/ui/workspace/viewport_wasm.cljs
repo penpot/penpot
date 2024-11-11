@@ -287,7 +287,8 @@
 
     (mf/with-effect [base-objects modifiers canvas-init?]
       (when @canvas-init?
-        #_(render.wasm/set-objects base-objects modifiers)
+        ;; FIXME: review this to not call it but still do the first draw
+        ;; (render.wasm/set-objects base-objects modifiers)
         (render.wasm/draw-objects zoom vbox)))
 
     (mf/with-effect [vbox canvas-init?]

@@ -87,55 +87,6 @@
           (set-shape-selrect selrect)
           (recur (inc index)))))))
 
-#_(defn set-objects
-  [objects modifiers]
-  ;; FIXME: maybe change the name of `_shapes_buffer` (?)
-  (let [get-shapes-buffer-ptr
-        (unchecked-get internal-module "_shapes_buffer")
-
-        heap
-        (unchecked-get internal-module "HEAPF32")
-
-        shapes
-        (into [] xform (vals objects))
-
-        total-shapes
-        (count shapes)
-
-        heap-offset
-        (get-shapes-buffer-ptr)
-
-        heap-size
-        (* shape+modifier-size total-shapes)
-
-        mem
-        (js/Float32Array. (.-buffer heap)
-                          heap-offset
-                          heap-size)]
-
-    (loop [index 0]
-      (when (< index total-shapes)
-        (let [shape  (nth shapes index)
-              id     (dm/get-prop shape :id)
-              buffer (.-buffer shape)
-              base-mod-matrix
-              (if (and (some? (:transform shape))
-                       (not (gmt/unit? (:transform shape))))
-                (gsh/transform-matrix shape)
-                (cgm/matrix))
-
-              dynamic-mod-matrix
-              (if (contains? modifiers id)
-                (let [shape-modifiers (dm/get-in modifiers [id :modifiers])]
-                  (ctm/modifiers->transform shape-modifiers))
-                (cgm/matrix))
-
-              matrix (gmt/multiply dynamic-mod-matrix base-mod-matrix)
-              offset (* index shape+modifier-size)]
-          (write-shape mem shape offset)
-          (write-matrix mem matrix (+ offset 4))
-          (recur (inc index)))))))
-
 (defn draw-objects
   [zoom vbox]
   (js/requestAnimationFrame

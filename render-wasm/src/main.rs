@@ -3,13 +3,12 @@ pub mod shapes;
 pub mod state;
 pub mod utils;
 
-use std::borrow::Borrow;
 use std::collections::HashMap;
 
 use skia_safe as skia;
 use uuid::Uuid;
 
-use crate::shapes::{Matrix, Rect, Shape};
+use crate::shapes::Shape;
 use crate::state::State;
 use crate::utils::uuid_from_u32_quartet;
 

@@ -15,7 +15,7 @@
    [app.common.transit :as t]
    [clojure.core :as c]))
 
-(defonce ^:dynamic *wasm-sync* true)
+(defonce ^:dynamic *wasm-sync* false)
 (defonce enabled-wasm-ready-shape false)
 (defonce wasm-create-shape (constantly nil))
 (defonce wasm-use-shape (constantly nil))
@@ -118,8 +118,8 @@
      (when *wasm-sync*
        (wasm-use-shape (:id coll))
        (case k
-         :x nil #_(wasm-set-shape-x v)
-         :y nil #_(wasm-set-shape-y v)
+        ;;  :x nil (wasm-set-shape-x v)
+        ;;  :y nil (wasm-set-shape-y v)
          :selrect (wasm-set-shape-selrect v)
          :rotation (wasm-set-shape-rotation v)
          :transform (wasm-set-shape-transform v)

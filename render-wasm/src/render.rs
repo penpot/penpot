@@ -104,18 +104,5 @@ pub(crate) fn render_all(state: &mut State) {
         render_rect(&mut state.render_state.surface, r, skia::Color::RED);
 
         state.render_state.surface.canvas().restore();
-
-        // state.render_state.surface.canvas().save();
-
-        // let mut matrix = skia::Matrix::new_identity();
-        // matrix.set_scale_translate(shape.scale(), shape.translation());
-        // let (skew_x, skew_y) = shape.skew();
-        // matrix.set_skew_x(skew_x);
-        // matrix.set_skew_y(skew_y);
-        // state.render_state.surface.canvas().concat(&matrix);
-
-        // render_rect(&mut state.render_state.surface, r, skia::Color::RED);
-
-        // state.render_state.surface.canvas().restore();
     }
 }
