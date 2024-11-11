@@ -13,34 +13,24 @@ use crate::shapes::Shape;
 /// must not be shared between different Web Workers.
 pub(crate) struct State<'a> {
     pub render_state: RenderState,
-    pub current_id: Uuid,
-    pub current_shape: Option<&'a Shape>,
+    pub current_id: Option<Uuid>,
+    pub current_shape: Option<&'a mut Shape>,
     pub shapes: HashMap<Uuid, Shape>,
     pub display_list: Vec<Uuid>,
 }
 
 impl<'a> State<'a> {
-  pub fn with_capacity(width: i32, height: i32, capacity: usize) -> Self {
-    State {
-      render_state: RenderState::new(width, height),
-      current_id: None,
-      current_shape: None,
-      shapes: HashMap::with_capacity(capacity),
-      display_list: Vec::with_capacity(capacity)
+    pub fn with_capacity(width: i32, height: i32, capacity: usize) -> Self {
+        State {
+            render_state: RenderState::new(width, height),
+            current_id: None,
+            current_shape: None,
+            shapes: HashMap::with_capacity(capacity),
+            display_list: Vec::with_capacity(capacity),
+        }
     }
-  }
 
-  pub fn set_surface(&mut self, surface: skia::Surface) {
-      self.render_state.surface = surface;
-  }
+    pub fn set_surface(&mut self, surface: skia::Surface) {
+        self.render_state.surface = surface;
+    }
 }
-
-/*
-impl Iterator for State {
-  type Item = Shape;
-
-  pub fn next(&mut self) -> Option<Self::Item> {
-    self.display_list.iter().next()
-  }
-}
-*/

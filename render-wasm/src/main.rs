@@ -6,11 +6,11 @@ pub mod utils;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 
-use uuid::Uuid;
 use skia_safe as skia;
+use uuid::Uuid;
 
+use crate::shapes::{Matrix, Rect, Shape};
 use crate::state::State;
-use crate::shapes::{Shape, Rect, Matrix};
 use crate::utils::uuid_from_u32_quartet;
 
 static mut STATE: Option<Box<State>> = None;
@@ -49,7 +49,7 @@ pub unsafe extern "C" fn draw_all_shapes(zoom: f32, pan_x: f32, pan_y: f32) {
 
     reset_canvas();
     scale(zoom, zoom);
-    translate( pan_x, pan_y);
+    translate(pan_x, pan_y);
 
     render::render_all(state);
 
@@ -81,43 +81,58 @@ pub unsafe extern "C" fn scale(sx: f32, sy: f32) {
 #[no_mangle]
 pub extern "C" fn reset_canvas() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    state.render_state.surface.canvas().clear(skia_safe::Color::TRANSPARENT);
+    state
+        .render_state
+        .surface
+        .canvas()
+        .clear(skia_safe::Color::TRANSPARENT);
     state.render_state.surface.canvas().reset_matrix();
     // flush(state);
 }
 
-pub fn get_or_create_shape(shapes: &mut HashMap<Uuid, Shape>, id: Uuid) -> &Shape {
-    let shape = shapes.get(&id);
-    match shape {
-        Some(s) => s,
-        None => {
-            let s = Shape {
-                id: id,
-                kind: shapes::Kind::Rect,
-                selrect: Rect { x1: 0., y1: 0., x2: 0., y2: 0. },
-                transform: Matrix { a: 1., b: 0., c: 0., d: 1., e: 0., f: 0. },
-                rotation: 0.,
-            };
-            shapes.insert(id, s);
-            shapes.get(&id).unwrap()
-        }
+pub fn get_or_create_shape<'a>(shapes: &'a mut HashMap<Uuid, Shape>, id: Uuid) -> &'a mut Shape {
+    if !shapes.contains_key(&id) {
+        let new_shape = Shape {
+            id: id,
+            kind: shapes::Kind::Rect,
+            selrect: Rect {
+                x1: 0.,
+                y1: 0.,
+                x2: 0.,
+                y2: 0.,
+            },
+            transform: Matrix {
+                a: 1.,
+                b: 0.,
+                c: 0.,
+                d: 1.,
+                e: 0.,
+                f: 0.,
+            },
+            rotation: 0.,
+        };
+        shapes.insert(id, new_shape);
     }
+
+    shapes.get_mut(&id).unwrap()
 }
 
 #[no_mangle]
 pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    state.current_id = uuid_from_u32_quartet(a, b, c, d);
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    state.current_id = Some(id);
     println!("UUID {:?}", state.current_id);
     let shapes = &mut state.shapes;
     // NOTE: Check if we could
     state.current_shape = Some(get_or_create_shape(shapes, id));
-    println!("SHAPE IMPRIME CERO {:?}", state.current_shape);
-    println!("shape {:?}", shape);
+    println!("State.current_shape  {:?}", state.current_shape);
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn set_shape_selrect(x1: f32, y1: f32, x2: f32, y2: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+
     if let Some(shape) = state.current_shape.as_deref_mut() {
         println!("Set Shape SelRect {} {} {} {}", x1, y1, x2, y2);
         shape.selrect.x1 = x1;
@@ -131,14 +146,16 @@ pub unsafe extern "C" fn set_shape_selrect(x1: f32, y1: f32, x2: f32, y2: f32) {
 
 #[no_mangle]
 pub unsafe extern "C" fn set_shape_rotation(rotation: f32) {
-    if let Some(shape) = state.current_shape.as_mut() {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape.as_deref_mut() {
         shape.rotation = rotation;
     }
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn set_shape_x(x: f32) {
-    if let Some(shape) = state.current_shape.as_mut() {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape.as_deref_mut() {
         let width = shape.selrect.x2 - shape.selrect.x1;
         shape.selrect.x1 = x;
         shape.selrect.x2 = x + width;
@@ -147,7 +164,8 @@ pub unsafe extern "C" fn set_shape_x(x: f32) {
 
 #[no_mangle]
 pub unsafe extern "C" fn set_shape_y(y: f32) {
-    if let Some(shape) = state.current_shape.as_mut() {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape.as_deref_mut() {
         let height = shape.selrect.y2 - shape.selrect.y1;
         shape.selrect.y1 = y;
         shape.selrect.y2 = y + height;
@@ -156,7 +174,8 @@ pub unsafe extern "C" fn set_shape_y(y: f32) {
 
 #[no_mangle]
 pub unsafe extern "C" fn set_shape_transform(a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
-    if let Some(shape) = state.current_shape.as_mut() {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape.as_deref_mut() {
         shape.transform.a = a;
         shape.transform.b = b;
         shape.transform.c = c;
@@ -167,7 +186,8 @@ pub unsafe extern "C" fn set_shape_transform(a: f32, b: f32, c: f32, d: f32, e: 
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn list_shapes(state: *mut State) {
+pub unsafe extern "C" fn list_shapes() {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     for id in (*state).display_list.iter_mut() {
         let shape: Option<&Shape> = (*state).shapes.get(id);
         println!("{}", shape.unwrap().id);
