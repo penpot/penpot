@@ -169,10 +169,16 @@
                      :invitation-id (:id invitation)}
               event (-> (audit/event-from-rpc-params params)
                         (assoc ::audit/name "accept-team-invitation")
-                        (assoc ::audit/props props))]
+                        (assoc ::audit/props props))
+              ev-invitation-from (-> (audit/event-from-rpc-params params)
+                                     (assoc ::audit/profile-id (:created-by invitation))
+                                     (assoc ::audit/name "accept-team-invitation-from")
+                                     (assoc ::audit/props (assoc props :profile-id (:id profile)
+                                                                 :email (:email profile))))]
 
           (accept-invitation cfg claims invitation profile)
           (audit/submit! cfg event)
+          (audit/submit! cfg ev-invitation-from)
           (assoc claims :state :created))
 
         (ex/raise :type :validation
