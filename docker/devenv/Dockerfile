@@ -263,7 +263,8 @@ RUN set -eux; \
     chmod +x rustup-init; \
     ./rustup-init -y --no-modify-path --profile minimal --default-toolchain $RUST_VERSION --default-host ${rustArch}; \
     rm rustup-init; \
-    chmod -R a+w $RUSTUP_HOME $CARGO_HOME;
+    chmod -R a+w $RUSTUP_HOME $CARGO_HOME; \
+    rustup component add rustfmt;
 
 WORKDIR /usr/local
 
