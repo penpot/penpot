@@ -866,16 +866,28 @@ When `before-set-name` is nil, move set to bottom")
 #?(:clj
    (fres/add-handlers!
     {:name "penpot/token/v1"
+     :class Token
+     :wfn (fn [n w o]
+            (fres/write-tag! w n 1)
+            (fres/write-object! w (into {} o)))
      :rfn (fn [r]
             (let [obj (fres/read-object! r)]
               (map->Token obj)))}
 
     {:name "penpot/token-set/v1"
+     :class TokenSet
+     :wfn (fn [n w o]
+            (fres/write-tag! w n 1)
+            (fres/write-object! w (into {} o)))
      :rfn (fn [r]
             (let [obj (fres/read-object! r)]
               (map->TokenSet obj)))}
 
     {:name "penpot/token-theme/v1"
+     :class TokenTheme
+     :wfn (fn [n w o]
+            (fres/write-tag! w n 1)
+            (fres/write-object! w (into {} o)))
      :rfn (fn [r]
             (let [obj (fres/read-object! r)]
               (map->TokenTheme obj)))}
@@ -887,33 +899,6 @@ When `before-set-name` is nil, move set to bottom")
                   themes        (fres/read-object! r)
                   active-themes (fres/read-object! r)]
               (->TokensLib sets themes active-themes)))}
-
-    {:name "penpot/token/v1.1"
-     :class Token
-     :wfn (fn [n w o]
-            (fres/write-tag! w n 1)
-            (fres/write-object! w (into {} o)))
-     :rfn (fn [r]
-            (let [obj (fres/read-object! r)]
-              (map->Token obj)))}
-
-    {:name "penpot/token-set/v1.1"
-     :class TokenSet
-     :wfn (fn [n w o]
-            (fres/write-tag! w n 1)
-            (fres/write-object! w (into {} o)))
-     :rfn (fn [r]
-            (let [obj (fres/read-object! r)]
-              (map->TokenSet obj)))}
-
-    {:name "penpot/token-theme/v1.1"
-     :class TokenTheme
-     :wfn (fn [n w o]
-            (fres/write-tag! w n 1)
-            (fres/write-object! w (into {} o)))
-     :rfn (fn [r]
-            (let [obj (fres/read-object! r)]
-              (map->TokenTheme obj)))}
 
     {:name "penpot/tokens-lib/v1.1"
      :class TokensLib
