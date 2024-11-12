@@ -13,6 +13,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.types.shape-tree :as ctt]
+   [app.common.types.shape.impl :as shape.impl]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.features :as features]
@@ -111,10 +112,9 @@
         modifiers         (mf/deref refs/workspace-modifiers)
         text-modifiers    (mf/deref refs/workspace-text-modifier)
 
-        render-context-lost? (mf/deref refs/render-context-lost?)
-
         objects-modified  (mf/with-memo [base-objects text-modifiers modifiers]
-                            (apply-modifiers-to-selected selected base-objects text-modifiers modifiers))
+                            (binding [shape.impl/*wasm-sync* true]
+                              (apply-modifiers-to-selected selected base-objects text-modifiers modifiers)))
 
         selected-shapes   (keep (d/getf objects-modified) selected)
 
@@ -176,8 +176,6 @@
         grid-editing?     (and edition (ctl/grid-layout? base-objects edition))
 
         mode-inspect?       (= options-mode :inspect)
-
-        on-render-restore-context #(.reload js/location)
 
         on-click          (actions/on-click hover selected edition drawing-path? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
@@ -281,18 +279,18 @@
              (p/fmap (fn [ready?]
                        (when ready?
                          (reset! canvas-init? true)
-                         (render.wasm/setup-canvas canvas)))))
+                         (render.wasm/assign-canvas canvas)))))
         (fn []
-          (render.wasm/dispose-canvas canvas))))
+          (render.wasm/clear-canvas))))
 
-    (mf/with-effect [objects-modified canvas-init?]
+    (mf/with-effect [base-objects modifiers canvas-init?]
       (when @canvas-init?
-        (render.wasm/set-objects objects-modified)
+        ;; FIXME: review this to not call it but still do the first draw
+        ;; (render.wasm/set-objects base-objects modifiers)
         (render.wasm/draw-objects zoom vbox)))
 
     (mf/with-effect [vbox canvas-init?]
-      (let [frame-id (when @canvas-init? (do
-                                           (render.wasm/draw-objects zoom vbox)))]
+      (let [frame-id (when @canvas-init? (render.wasm/draw-objects zoom vbox))]
         (partial render.wasm/cancel-draw frame-id)))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool drawing-path?)
@@ -639,11 +637,4 @@
          {:objects base-objects
           :zoom zoom
           :vbox vbox
-          :bottom-padding (when palete-size (+ palete-size 8))}]]]]
-
-     (when render-context-lost?
-       [:div {:id "context-lost" :class (stl/css :context-lost)}
-        [:h1 "GL Error Screen"]
-        [:button
-         {:on-click on-render-restore-context}
-         "Restore context"]])]))
+          :bottom-padding (when palete-size (+ palete-size 8))}]]]]]))

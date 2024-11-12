@@ -1,33 +1,29 @@
 use skia_safe as skia;
 use skia_safe::gpu::{self, gl::FramebufferInfo, DirectContext};
 
+use crate::state::State;
+
 extern "C" {
     pub fn emscripten_GetProcAddress(
         name: *const ::std::os::raw::c_char,
     ) -> *const ::std::os::raw::c_void;
 }
 
-pub struct GpuState {
+pub(crate) struct GpuState {
     pub context: DirectContext,
     framebuffer_info: FramebufferInfo,
 }
 
-/// This struct holds the state of the Rust application between JS calls.
-///
-/// It is created by [init] and passed to the other exported functions. Note that rust-skia data
-/// structures are not thread safe, so a state must not be shared between different Web Workers.
-pub struct State {
+pub(crate) struct RenderState {
     pub gpu_state: GpuState,
     pub surface: skia::Surface,
 }
 
-impl State {
-    pub fn new(gpu_state: GpuState, surface: skia::Surface) -> Self {
-        State { gpu_state, surface }
-    }
-
-    pub fn set_surface(&mut self, surface: skia::Surface) {
-        self.surface = surface;
+impl RenderState {
+    pub fn new(width: i32, height: i32) -> RenderState {
+        let mut gpu_state = create_gpu_state();
+        let surface = create_surface(&mut gpu_state, width, height);
+        RenderState { gpu_state, surface }
     }
 }
 
@@ -83,4 +79,36 @@ pub(crate) fn render_rect(surface: &mut skia::Surface, rect: skia::Rect, color: 
     paint.set_color(color);
     paint.set_anti_alias(true);
     surface.canvas().draw_rect(rect, &paint);
+}
+
+pub(crate) fn render_all(state: &mut State) {
+    for shape in state.shapes.values() {
+        let r = skia::Rect::new(
+            shape.selrect.x1,
+            shape.selrect.y1,
+            shape.selrect.x2,
+            shape.selrect.y2,
+        );
+
+        state.render_state.surface.canvas().save();
+
+        // Check transform-matrix code from common/src/app/common/geom/shapes/transforms.cljc
+        let mut matrix = skia::Matrix::new_identity();
+        let (translate_x, translate_y) = shape.translation();
+        let (scale_x, scale_y) = shape.scale();        
+        let (skew_x, skew_y) = shape.skew();
+
+        matrix.set_all(scale_x, skew_x, translate_x, skew_y, scale_y, translate_y, 0., 0., 1.);
+
+        let mut center = r.center();
+        matrix.post_translate(center);
+        center.negate();
+        matrix.pre_translate(center);
+
+        state.render_state.surface.canvas().concat(&matrix);
+
+        render_rect(&mut state.render_state.surface, r, skia::Color::RED);
+
+        state.render_state.surface.canvas().restore();
+    }
 }
