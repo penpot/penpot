@@ -148,7 +148,8 @@
                             :open? open?}
       [:& cmm/asset-section-block {:role :title-button}
        [:button {:class (stl/css :action-button)
-                 :on-click on-popover-open-click}
+                 :on-click on-popover-open-click
+                 :title (str "Add token: " title)}
         i/add]]
       (when open?
         [:& cmm/asset-section-block {:role :content}
