@@ -192,8 +192,8 @@
          (mf/deps project-id (:id team))
          (fn []
            (st/emit! (dd/fetch-files {:project-id project-id})
-                     (dd/fetch-recent-files (:id team))
-                     (dd/fetch-projects (:id team))
+                     (dd/fetch-recent-files)
+                     (dd/fetch-projects)
                      (dd/clear-selected-files))))
 
         handle-create-click
@@ -303,17 +303,17 @@
         [:span {:class (stl/css :placeholder-label)} (tr "dashboard.show-all-files")]
         show-more-icon])]))
 
-
-(def recent-files-ref
+(def ref:recent-files
   (l/derived :dashboard-recent-files st/state))
 
 (mf/defc projects-section
-  [{:keys [team projects profile] :as props}]
+  {::mf/props :obj}
+  [{:keys [team projects profile]}]
 
   (let [projects            (->> (vals projects)
                                  (sort-by :modified-at)
                                  (reverse))
-        recent-map          (mf/deref recent-files-ref)
+        recent-map          (mf/deref ref:recent-files)
         permisions          (:permissions team)
 
         can-edit            (:can-edit permisions)
@@ -325,8 +325,6 @@
 
         is-my-penpot        (= (:default-team-id profile) (:id team))
         is-defalt-team?     (:is-default team)
-
-        team-id             (:id team)
 
         on-close
         (mf/use-fn
@@ -344,8 +342,8 @@
                     (:name team))]
         (dom/set-html-title (tr "title.dashboard.projects" tname))))
 
-    (mf/with-effect [team-id]
-      (st/emit! (dd/fetch-recent-files team-id)
+    (mf/with-effect []
+      (st/emit! (dd/fetch-recent-files)
                 (dd/clear-selected-files)))
 
     (when (seq projects)

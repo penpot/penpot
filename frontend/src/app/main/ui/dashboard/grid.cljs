@@ -529,9 +529,8 @@
 
         on-finish-import
         (mf/use-fn
-         (mf/deps team-id)
          (fn []
-           (st/emit! (dd/fetch-recent-files (:id team))
+           (st/emit! (dd/fetch-recent-files)
                      (dd/clear-selected-files))))
 
         import-files (use-import-file project-id on-finish-import)
@@ -571,10 +570,11 @@
              (reset! dragging? false))))
 
         on-drop-success
-        (fn []
-          (st/emit! (ntf/success (tr "dashboard.success-move-file"))
-                    (dd/fetch-recent-files (:id team))
-                    (dd/clear-selected-files)))
+        (mf/use-fn
+         (fn []
+           (st/emit! (ntf/success (tr "dashboard.success-move-file"))
+                     (dd/fetch-recent-files)
+                     (dd/clear-selected-files))))
 
         on-drop
         (mf/use-fn

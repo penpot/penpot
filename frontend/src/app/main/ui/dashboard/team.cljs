@@ -164,6 +164,7 @@
             (st/emit! (ntf/success (tr "notifications.invitation-email-sent"))))
 
           (st/emit! (modal/hide)
+                    (dd/fetch-team-members)
                     (dd/fetch-team-invitations)))
 
         on-error

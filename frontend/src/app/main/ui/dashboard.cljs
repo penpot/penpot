@@ -156,8 +156,8 @@
 
        nil)]))
 
-(def dashboard-initialized
-  (l/derived :current-team-id st/state))
+(def ref:dashboard-initialized
+  (l/derived :current-team-initialized st/state))
 
 (defn use-plugin-register
   [plugin-url team-id project-id]
@@ -237,7 +237,7 @@
 
         default-project (->> projects vals (d/seek :is-default))
 
-        initialized?   (mf/deref dashboard-initialized)]
+        initialized?   (mf/deref ref:dashboard-initialized)]
 
     (hooks/use-shortcuts ::dashboard sc/shortcuts)
 
