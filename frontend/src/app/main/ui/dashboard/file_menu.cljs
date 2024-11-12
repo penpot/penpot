@@ -255,18 +255,20 @@
                   :id      "file-move-multi"
                   :options    sub-options})
 
-               {:name    (tr "dashboard.export-binary-multi" file-count)
-                :id      "file-binary-export-multi"
-                :handler on-export-binary-files}
+               (when-not (contains? cf/flags :export-file-v3)
+                 {:name    (tr "dashboard.export-binary-multi" file-count)
+                  :id      "file-binary-export-multi"
+                  :handler on-export-binary-files})
 
                (when (contains? cf/flags :export-file-v3)
                  {:name    (tr "dashboard.export-binary-multi-v3" file-count)
                   :id      "file-binary-export-multi-v3"
                   :handler on-export-binary-files-v3})
 
-               {:name    (tr "dashboard.export-standard-multi" file-count)
-                :id      "file-standard-export-multi"
-                :handler on-export-standard-files}
+               (when-not (contains? cf/flags :export-file-v3)
+                 {:name    (tr "dashboard.export-standard-multi" file-count)
+                  :id      "file-standard-export-multi"
+                  :handler on-export-standard-files})
 
                (when (and (:is-shared file) can-edit)
                  {:name    (tr "labels.unpublish-multi-files" file-count)
@@ -312,18 +314,20 @@
 
                {:name   :separator}
 
-               {:name    (tr "dashboard.download-binary-file")
-                :id      "download-binary-file"
-                :handler on-export-binary-files}
+               (when-not (contains? cf/flags :export-file-v3)
+                 {:name    (tr "dashboard.download-binary-file")
+                  :id      "download-binary-file"
+                  :handler on-export-binary-files})
 
                (when (contains? cf/flags :export-file-v3)
                  {:name    (tr "dashboard.download-binary-file-v3")
                   :id      "download-binary-file-v3"
                   :handler on-export-binary-files-v3})
 
-               {:name    (tr "dashboard.download-standard-file")
-                :id      "download-standard-file"
-                :handler on-export-standard-files}
+               (when-not (contains? cf/flags :export-file-v3)
+                 {:name    (tr "dashboard.download-standard-file")
+                  :id      "download-standard-file"
+                  :handler on-export-standard-files})
 
                (when (and (not is-lib-page?) (not is-search-page?) can-edit)
                  {:name   :separator})
