@@ -4,7 +4,9 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.types.team)
+(ns app.common.types.team
+  (:require
+   [app.common.schema :as sm]))
 
 (def valid-roles
   #{:owner :admin :editor :viewer})
@@ -15,3 +17,4 @@
    :admin  {:can-edit true :is-admin true :is-owner false}
    :owner  {:can-edit true :is-admin true :is-owner true}})
 
+(sm/register! ::role [::sm/one-of valid-roles])

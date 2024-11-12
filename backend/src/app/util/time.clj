@@ -158,6 +158,7 @@
      :iso8601 (Instant/from (.parse DateTimeFormatter/ISO_INSTANT ^String s)))))
 
 (defn is-after?
+  "Analgous to: da > db"
   [da db]
   (.isAfter ^Instant da ^Instant db))
 
