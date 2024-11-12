@@ -6,7 +6,10 @@
 
 ### :boom: Breaking changes & Deprecations
 
-- Use [nginx-unprivileged](https://hub.docker.com/r/nginxinc/nginx-unprivileged) as base image for Penpot's frontend docker image. Now all the docker images runs with the same unprivileged user (penpot). Because of that, the default NGINX listen port now is 8080, instead of 80, so you will have to modify your infrastructure to apply this change.
+- Use [nginx-unprivileged](https://hub.docker.com/r/nginxinc/nginx-unprivileged) as base image for
+  Penpot's frontend docker image. Now all the docker images runs with the same unprivileged user
+  (penpot). Because of that, the default NGINX listen port now is 8080, instead of 80, so you will
+  have to modify your infrastructure to apply this change.
 
 ### :heart: Community contributions (Thank you!)
 
@@ -14,8 +17,18 @@
 
 - Viewer role for team members  [Taiga #1056 & #6590](https://tree.taiga.io/project/penpot/us/1056 & https://tree.taiga.io/project/penpot/us/6590)
 - File history versions management [Taiga](https://tree.taiga.io/project/penpot/us/187?milestone=411120)
+- Rename selected layer via keyboard shortcut and context menu option [Taiga #8882](https://tree.taiga.io/project/penpot/us/8882)
 
 ### :bug: Bugs fixed
+
+
+## 2.3.1
+
+### :bug: Bugs fixed
+
+- Fix unexpected issue on interaction between plugins sandbox and
+  internal impl of promise
+
 
 ## 2.3.0
 
