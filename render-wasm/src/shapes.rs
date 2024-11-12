@@ -1,31 +1,84 @@
-use crate::render::{render_rect, State};
-use skia_safe as skia;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy)]
-pub struct Selrect {
+pub enum Kind {
+    None,
+    Text,
+    Path,
+    SVGRaw,
+    Image,
+    Circle,
+    Rect,
+    Bool,
+    Group,
+    Frame,
+}
+
+pub struct Point {
+    pub x: f32,
+    pub y: f32,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Rect {
     pub x1: f32,
     pub y1: f32,
     pub x2: f32,
     pub y2: f32,
 }
 
-pub type Shape = Selrect; // temp
+#[derive(Debug, Clone, Copy)]
+pub struct Matrix {
+    pub a: f32,
+    pub b: f32,
+    pub c: f32,
+    pub d: f32,
+    pub e: f32,
+    pub f: f32,
+}
 
-pub static mut SHAPES_BUFFER: [Shape; 2048] = [Selrect {
-    x1: 0.0,
-    y1: 0.0,
-    x2: 0.0,
-    y2: 0.0,
-}; 2048];
+impl Matrix {
+    pub fn identity() -> Self {
+        Self {
+            a: 1.,
+            b: 0.,
+            c: 0.,
+            d: 1.,
+            e: 0.,
+            f: 0.,
+        }
+    }
+}
 
-pub(crate) fn draw_all(state: &mut State) {
-    let shapes;
-    unsafe {
-        shapes = SHAPES_BUFFER.iter();
+#[derive(Debug, Clone, Copy)]
+pub struct Shape {
+    pub id: Uuid,
+    pub kind: Kind,
+    pub selrect: Rect,
+    pub transform: Matrix,
+    pub rotation: f32,
+}
+
+impl Shape {
+    pub fn new(id: Uuid) -> Self {
+        Self {
+            id,
+            kind: Kind::Rect,
+            selrect: Rect::default(),
+            transform: Matrix::identity(),
+            rotation: 0.,
+        }
     }
 
-    for shape in shapes {
-        let r = skia::Rect::new(shape.x1, shape.y1, shape.x2, shape.y2);
-        render_rect(&mut state.surface, r, skia::Color::RED);
+    pub fn translation(&self) -> (f32, f32) {
+        (self.transform.e, self.transform.f)
+    }
+
+    pub fn scale(&self) -> (f32, f32) {
+        (self.transform.a, self.transform.d)
+    }
+
+    pub fn skew(&self) -> (f32, f32) {
+        (self.transform.c, self.transform.b)
     }
 }

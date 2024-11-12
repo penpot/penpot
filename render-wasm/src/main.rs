@@ -1,83 +1,161 @@
 pub mod render;
 pub mod shapes;
+pub mod state;
+pub mod utils;
+
+use std::collections::HashMap;
 
 use skia_safe as skia;
+use uuid::Uuid;
 
-use render::State;
+use crate::shapes::Shape;
+use crate::state::State;
+use crate::utils::uuid_from_u32_quartet;
+
+static mut STATE: Option<Box<State>> = None;
 
 /// This is called from JS after the WebGL context has been created.
 #[no_mangle]
-pub extern "C" fn init(width: i32, height: i32) -> Box<render::State> {
-    let mut gpu_state = render::create_gpu_state();
-    let surface = render::create_surface(&mut gpu_state, width, height);
-
-    let state = State::new(gpu_state, surface);
-
-    Box::new(state)
+pub extern "C" fn init(width: i32, height: i32) {
+    let state_box = Box::new(State::with_capacity(width, height, 2048));
+    unsafe {
+        STATE = Some(state_box);
+    }
 }
 
 /// This is called from JS when the window is resized.
 /// # Safety
 #[no_mangle]
-pub unsafe extern "C" fn resize_surface(state: *mut State, width: i32, height: i32) {
-    let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
-    let surface = render::create_surface(&mut state.gpu_state, width, height);
+pub unsafe extern "C" fn resize_surface(width: i32, height: i32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let surface = render::create_surface(&mut state.render_state.gpu_state, width, height);
     state.set_surface(surface);
 }
 
 /// Draws a rect at the specified coordinates with the give ncolor
 /// # Safety
 #[no_mangle]
-pub unsafe extern "C" fn draw_rect(state: *mut State, x1: f32, y1: f32, x2: f32, y2: f32) {
-    let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
+pub unsafe extern "C" fn draw_rect(x1: f32, y1: f32, x2: f32, y2: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     let r = skia::Rect::new(x1, y1, x2, y2);
-    render::render_rect(&mut state.surface, r, skia::Color::RED);
+    render::render_rect(&mut state.render_state.surface, r, skia::Color::RED);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn draw_all_shapes(state: *mut State, zoom: f32, pan_x: f32, pan_y: f32) {
-    let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
+pub unsafe extern "C" fn draw_all_shapes(zoom: f32, pan_x: f32, pan_y: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
 
-    reset_canvas(state);
-    scale(state, zoom, zoom);
-    translate(state, pan_x, pan_y);
+    reset_canvas();
+    scale(zoom, zoom);
+    translate(pan_x, pan_y);
 
-    shapes::draw_all(state);
+    render::render_all(state);
 
-    flush(state);
+    flush();
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn flush(state: *mut State) {
-    let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
+pub unsafe extern "C" fn flush() {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     state
+        .render_state
         .gpu_state
         .context
-        .flush_and_submit_surface(&mut state.surface, None);
+        .flush_and_submit_surface(&mut state.render_state.surface, None);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn translate(state: *mut State, dx: f32, dy: f32) {
-    (*state).surface.canvas().translate((dx, dy));
+pub unsafe extern "C" fn translate(dx: f32, dy: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    state.render_state.surface.canvas().translate((dx, dy));
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn scale(state: *mut State, sx: f32, sy: f32) {
-    (*state).surface.canvas().scale((sx, sy));
+pub unsafe extern "C" fn scale(sx: f32, sy: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    state.render_state.surface.canvas().scale((sx, sy));
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn reset_canvas(state: *mut State) {
-    let state = unsafe { state.as_mut() }.expect("got an invalid state pointer");
-    state.surface.canvas().clear(skia_safe::Color::TRANSPARENT);
-    state.surface.canvas().reset_matrix();
-    flush(state);
+pub extern "C" fn reset_canvas() {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    state
+        .render_state
+        .surface
+        .canvas()
+        .clear(skia_safe::Color::TRANSPARENT);
+    state.render_state.surface.canvas().reset_matrix();
+}
+
+pub fn get_or_create_shape<'a>(shapes: &'a mut HashMap<Uuid, Shape>, id: Uuid) -> &'a mut Shape {
+    if !shapes.contains_key(&id) {
+        let new_shape = Shape::new(id);
+        shapes.insert(id, new_shape);
+    }
+
+    shapes.get_mut(&id).unwrap()
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn shapes_buffer() -> *mut shapes::Shape {
-    let ptr = shapes::SHAPES_BUFFER.as_mut_ptr();
-    return ptr;
+pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    state.current_id = Some(id);
+    let shapes = &mut state.shapes;
+    state.current_shape = Some(get_or_create_shape(shapes, id));
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn set_shape_selrect(x1: f32, y1: f32, x2: f32, y2: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+
+    if let Some(shape) = state.current_shape.as_deref_mut() {
+        shape.selrect.x1 = x1;
+        shape.selrect.y1 = y1;
+        shape.selrect.x2 = x2;
+        shape.selrect.y2 = y2;
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn set_shape_rotation(rotation: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape.as_deref_mut() {
+        shape.rotation = rotation;
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn set_shape_x(x: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape.as_deref_mut() {
+        let width = shape.selrect.x2 - shape.selrect.x1;
+        shape.selrect.x1 = x;
+        shape.selrect.x2 = x + width;
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn set_shape_y(y: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape.as_deref_mut() {
+        let height = shape.selrect.y2 - shape.selrect.y1;
+        shape.selrect.y1 = y;
+        shape.selrect.y2 = y + height;
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn set_shape_transform(a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape.as_deref_mut() {
+        shape.transform.a = a;
+        shape.transform.b = b;
+        shape.transform.c = c;
+        shape.transform.d = d;
+        shape.transform.e = e;
+        shape.transform.f = f;
+    }
 }
 
 fn main() {
