@@ -195,6 +195,7 @@
        [:div {:class (stl/css :theme-select-wrapper)}
         [:& theme-select]
         [:> button* {:variant "secondary"
+                     :class (stl/css :edit-theme-button)
                      :on-click open-modal}
          (tr "labels.edit")]])]))
 
