@@ -49,7 +49,7 @@ pub unsafe extern "C" fn draw_all_shapes(zoom: f32, pan_x: f32, pan_y: f32) {
     scale(zoom, zoom);
     translate(pan_x, pan_y);
 
-    render::render_all(state);
+    render::render_shape(state, Uuid::nil());
 
     flush();
 }
@@ -126,26 +126,6 @@ pub unsafe extern "C" fn set_shape_rotation(rotation: f32) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_shape_x(x: f32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    if let Some(shape) = state.current_shape.as_deref_mut() {
-        let width = shape.selrect.x2 - shape.selrect.x1;
-        shape.selrect.x1 = x;
-        shape.selrect.x2 = x + width;
-    }
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn set_shape_y(y: f32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    if let Some(shape) = state.current_shape.as_deref_mut() {
-        let height = shape.selrect.y2 - shape.selrect.y1;
-        shape.selrect.y1 = y;
-        shape.selrect.y2 = y + height;
-    }
-}
-
-#[no_mangle]
 pub unsafe extern "C" fn set_shape_transform(a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape.as_deref_mut() {
@@ -156,6 +136,23 @@ pub unsafe extern "C" fn set_shape_transform(a: f32, b: f32, c: f32, d: f32, e: 
         shape.transform.e = e;
         shape.transform.f = f;
     }
+}
+
+#[no_mangle]
+pub extern "C" fn add_child_shape(a: u32, b: u32, c: u32, d: u32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    if let Some(shape) = state.current_shape.as_deref_mut() {
+      shape.shapes.push(id);
+  }
+}
+
+#[no_mangle]
+pub extern "C" fn clear_child_shapes() {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape.as_deref_mut() {
+      shape.shapes.clear();
+  }
 }
 
 fn main() {

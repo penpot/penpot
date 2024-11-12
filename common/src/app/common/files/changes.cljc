@@ -26,6 +26,7 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.impl :as shape.impl]
    [app.common.types.token :as cto]
    [app.common.types.token-theme :as ctot]
    [app.common.types.tokens-lib :as ctob]
@@ -540,7 +541,7 @@
    (when verify?
      (check-changes! items))
 
-   (binding [*touched-changes* (volatile! #{})]
+   (binding [*touched-changes* (volatile! #{}) shape.impl/*wasm-sync* true]
      (let [result (reduce #(or (process-change %1 %2) %1) data items)
            result (reduce process-touched-change result @*touched-changes*)]
        ;; Validate result shapes (only on the backend)

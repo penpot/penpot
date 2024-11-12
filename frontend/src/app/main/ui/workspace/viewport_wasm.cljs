@@ -283,10 +283,13 @@
         (fn []
           (render.wasm/clear-canvas))))
 
-    (mf/with-effect [base-objects modifiers canvas-init?]
+    (mf/with-effect [base-objects canvas-init?]
       (when @canvas-init?
-        ;; FIXME: review this to not call it but still do the first draw
-        ;; (render.wasm/set-objects base-objects modifiers)
+        (render.wasm/set-objects base-objects)
+        (render.wasm/draw-objects zoom vbox)))
+
+    (mf/with-effect [modifiers canvas-init?]
+      (when (and @canvas-init? modifiers)
         (render.wasm/draw-objects zoom vbox)))
 
     (mf/with-effect [vbox canvas-init?]

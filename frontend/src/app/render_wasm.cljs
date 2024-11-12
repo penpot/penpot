@@ -8,7 +8,6 @@
   "A WASM based render API"
   (:require
    [app.common.data.macros :as dm]
-   [app.common.files.helpers :as cfh]
    [app.common.types.shape.impl :as ctsi]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -25,7 +24,6 @@
 ;; TODO: remove the `take` once we have the dynamic data structure in Rust
 (def xform
   (comp
-   (remove cfh/root?)
    (take 2048)))
 
 (defn create-shape
@@ -60,13 +58,12 @@
   [rotation]
   (._set_shape_rotation ^js internal-module rotation))
 
-(defn set-shape-x
-  [x]
-  (._set_shape_x ^js internal-module x))
-
-(defn set-shape-y
-  [y]
-  (._set_shape_y ^js internal-module y))
+(defn set-shapes
+  [shape_ids]
+  (._clear_child_shapes ^js internal-module)
+  (doseq [id shape_ids]
+    (let [buffer (uuid/uuid->u32 id)]
+      (._add_child_shape ^js internal-module (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3)))))
 
 (defn set-objects
   [objects]
@@ -78,11 +75,13 @@
               id        (dm/get-prop shape :id)
               selrect   (dm/get-prop shape :selrect)
               rotation  (dm/get-prop shape :rotation)
-              transform (dm/get-prop shape :transform)]
+              transform (dm/get-prop shape :transform)
+              children  (dm/get-prop shape :shapes)]
           (use-shape id)
           (set-shape-selrect selrect)
           (set-shape-rotation rotation)
           (set-shape-transform transform)
+          (set-shapes children)
           (recur (inc index)))))))
 
 (defn draw-objects
@@ -144,3 +143,4 @@
 (set! app.common.types.shape.impl/wasm-set-shape-selrect set-shape-selrect)
 (set! app.common.types.shape.impl/wasm-set-shape-transform set-shape-transform)
 (set! app.common.types.shape.impl/wasm-set-shape-rotation set-shape-rotation)
+(set! app.common.types.shape.impl/wasm-set-shapes set-shapes)
