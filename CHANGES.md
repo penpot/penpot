@@ -22,6 +22,24 @@
 ### :bug: Bugs fixed
 
 
+## 2.3.3
+
+### :bug: Bugs fixed
+
+- Fix problem creating manual overlay interactions [Taiga #9146](https://tree.taiga.io/project/penpot/issue/9146)
+
+## 2.3.2
+
+### :bug: Bugs fixed
+
+- Fix null pointer exception on number checking functions
+- Fix problem with grid layout ordering after moving [Taiga #9179](https://tree.taiga.io/project/penpot/issue/9179)
+
+### :books: Documentation
+
+- Add initial documentation for Kubernetes
+
+
 ## 2.3.1
 
 ### :bug: Bugs fixed
