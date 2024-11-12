@@ -147,9 +147,11 @@
   Token references are strings delimited by curly braces.
   E.g.: {foo.bar.baz} -> foo.bar.baz"
   [token-value]
-  (some->> (re-seq #"\{([^}]*)\}" token-value)
-           (map second)
-           (into #{})))
+  (if (string? token-value)
+    (some->> (re-seq #"\{([^}]*)\}" token-value)
+             (map second)
+             (into #{}))
+    #{}))
 
 (defn token-value-self-reference?
   "Check if the token is self referencing with its `token-name` in `token-value`.

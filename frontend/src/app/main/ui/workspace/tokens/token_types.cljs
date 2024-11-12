@@ -24,7 +24,7 @@
    :color
    {:title "Color"
     :attributes ctt/color-keys
-    :on-update-shape wtch/update-color
+    :on-update-shape wtch/update-fill
     :modal {:key :tokens/color
             :fields [{:label "Color" :key :color}]}}
 
