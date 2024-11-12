@@ -157,7 +157,7 @@ Rel(ui_viewer, data_viewer, "Uses")
 * **auth** has the web components for the login, register, password recover,
   etc. screens.
 
-* **settings** has the web comonents for the user profile and settings screens.
+* **settings** has the web components for the user profile and settings screens.
 
 * **dashboard** has the web components for the dashboard and its subsections.
 
