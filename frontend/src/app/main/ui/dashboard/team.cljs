@@ -59,12 +59,15 @@
 
 (mf/defc header
   {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
-  [{:keys [section team invite-email]}]
+   ::mf/props :obj}
+  [{:keys [section team]}]
   (let [on-nav-members       (mf/use-fn #(st/emit! (dd/go-to-team-members)))
         on-nav-settings      (mf/use-fn #(st/emit! (dd/go-to-team-settings)))
         on-nav-invitations   (mf/use-fn #(st/emit! (dd/go-to-team-invitations)))
         on-nav-webhooks      (mf/use-fn #(st/emit! (dd/go-to-team-webhooks)))
+
+        route                (mf/deref refs/route)
+        invite-email         (-> route :query-params :invite-email)
 
         members-section?     (= section :dashboard-team-members)
         settings-section?    (= section :dashboard-team-settings)
@@ -74,14 +77,14 @@
 
         on-invite-member
         (mf/use-fn
-         (mf/deps team)
+         (mf/deps team invite-email)
          (fn []
            (st/emit! (modal/show {:type :invite-members
                                   :team team
                                   :origin :team
                                   :invite-email invite-email}))))]
 
-    (mf/with-effect []
+    (mf/with-effect [team invite-email]
       (when invite-email
         (on-invite-member)))
 
@@ -134,7 +137,7 @@
 (mf/defc invite-members-modal
   {::mf/register modal/components
    ::mf/register-as :invite-members
-   ::mf/wrap-props false}
+   ::mf/props :obj}
   [{:keys [team origin invite-email]}]
   (let [members-map (mf/deref refs/dashboard-team-members)
         perms       (:permissions team)
@@ -143,8 +146,10 @@
                       (get-available-roles perms))
         team-id     (:id team)
 
-        initial     (mf/with-memo [team-id]
-                      {:role "editor" :team-id team-id})
+        initial     (mf/with-memo [team-id invite-email]
+                      (if invite-email
+                        {:role "editor" :team-id team-id :emails #{invite-email}}
+                        {:role "editor" :team-id team-id}))
 
         form        (fm/use-form :schema schema:invite-member-form
                                  :initial initial)
@@ -230,8 +235,7 @@
                            :trim true
                            :valid-item-fn sm/parse-email
                            :caution-item-fn current-members-emails
-                           :label (tr "modals.invite-member.emails")
-                           :invite-email invite-email}]]
+                           :label (tr "modals.invite-member.emails")}]]
 
       [:div {:class (stl/css :action-buttons)}
        [:> fm/submit-button*
@@ -245,7 +249,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (mf/defc member-info
-  {::mf/wrap-props false}
+  {::mf/props :obj}
   [{:keys [member profile]}]
   (let [is-you? (= (:id profile) (:id member))]
     [:*
@@ -258,7 +262,7 @@
       [:div {:class (stl/css :member-email)} (:email member)]]]))
 
 (mf/defc rol-info
-  {::mf/wrap-props false}
+  {::mf/props :obj}
   [{:keys [member team on-set-admin on-set-editor on-set-owner on-set-viewer profile]}]
   (let [member-is-owner  (:is-owner member)
         member-is-admin  (and (:is-admin member) (not member-is-owner))
@@ -309,7 +313,7 @@
           (tr "labels.owner")])]]]))
 
 (mf/defc member-actions
-  {::mf/wrap-props false}
+  {::mf/props :obj}
   [{:keys [member team on-delete on-leave profile]}]
   (let [is-owner?   (:is-owner member)
         owner?      (dm/get-in team [:permissions :is-owner])
@@ -345,7 +349,7 @@
 
 (mf/defc team-member
   {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+   ::mf/props :obj}
   [{:keys [team member members profile]}]
 
   (let [member-id  (:id member)
@@ -479,7 +483,7 @@
                           :on-leave on-leave'}]]]))
 
 (mf/defc team-members
-  {::mf/wrap-props false}
+  {::mf/props :obj}
   [{:keys [members-map team profile]}]
   (let [members (mf/with-memo [members-map]
                   (->> (vals members-map)
@@ -510,8 +514,8 @@
           :members members-map}])]]))
 
 (mf/defc team-members-page
-  {::mf/wrap-props false}
-  [{:keys [team profile invite-email]}]
+  {::mf/props :obj}
+  [{:keys [team profile]}]
   (let [members-map (mf/deref refs/dashboard-team-members)]
 
     (mf/with-effect [team]
@@ -525,7 +529,7 @@
       (st/emit! (dd/fetch-team-members (:id team))))
 
     [:*
-     [:& header {:section :dashboard-team-members :team team :invite-email invite-email}]
+     [:& header {:section :dashboard-team-members :team team}]
      [:section {:class (stl/css :dashboard-container :dashboard-team-members)}
       [:& team-members
        {:profile profile
@@ -536,9 +540,9 @@
 ;; INVITATIONS SECTION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(mf/defc invitation-role-selector
-  {::mf/wrap-props false}
-  [{:keys [can-invite? role status on-change]}]
+(mf/defc invitation-role-selector*
+  {::mf/props :obj}
+  [{:keys [can-invite role status on-change]}]
   (let [show?   (mf/use-state false)
         label   (cond
                   (= role :owner)  (tr "labels.owner")
@@ -559,7 +563,7 @@
              (on-change role event))))]
 
     [:*
-     (if (and can-invite? (= status :pending))
+     (if (and can-invite (= status :pending))
        [:div {:class (stl/css :rol-selector :has-priv)
               :on-click on-show}
         [:span {:class (stl/css :rol-label)} label]
@@ -583,7 +587,7 @@
         (tr "labels.viewer")]]]]))
 
 (mf/defc invitation-actions
-  {::mf/wrap-props false}
+  {::mf/props :obj}
   [{:keys [invitation team-id]}]
   (let [show?   (mf/use-state false)
 
@@ -678,10 +682,11 @@
              :class (stl/css :action-dropdown-item)}
         (tr "labels.delete-invitation")]]]]))
 
-(mf/defc invitation-row
+(mf/defc invitation-row*
   {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
-  [{:keys [invitation can-invite? team-id] :as props}]
+   ::mf/private true
+   ::mf/props :obj}
+  [{:keys [invitation can-invite team-id]}]
 
   (let [expired? (:expired invitation)
         email    (:email invitation)
@@ -704,8 +709,8 @@
      [:div {:class (stl/css :table-field :field-email)} email]
 
      [:div {:class (stl/css :table-field :field-roles)}
-      [:& invitation-role-selector
-       {:can-invite? can-invite?
+      [:> invitation-role-selector*
+       {:can-invite can-invite
         :role role
         :status status
         :on-change on-change-role}]]
@@ -714,16 +719,16 @@
       [:& badge-notification {:type type :content badge-content}]]
 
      [:div {:class (stl/css :table-field :field-actions)}
-      (when can-invite?
+      (when can-invite
         [:& invitation-actions
          {:invitation invitation
           :team-id team-id}])]]))
 
 (mf/defc empty-invitation-table
-  [{:keys [can-invite?] :as props}]
+  [{:keys [can-invite] :as props}]
   [:div {:class (stl/css :empty-invitations)}
    [:span (tr "labels.no-invitations")]
-   (when can-invite?
+   (when can-invite
      [:> i18n/tr-html* {:content (tr "labels.no-invitations-hint")
                         :tag-name "span"}])])
 
@@ -731,7 +736,7 @@
   [{:keys [team invitations] :as props}]
   (let [owner?      (dm/get-in team [:permissions :is-owner])
         admin?      (dm/get-in team [:permissions :is-admin])
-        can-invite? (or owner? admin?)
+        can-invite (or owner? admin?)
         team-id     (:id team)]
 
     [:div {:class (stl/css :invitations)}
@@ -740,17 +745,17 @@
       [:div {:class (stl/css :title-field-role)} (tr "labels.role")]
       [:div {:class (stl/css :title-field-status)} (tr "labels.status")]]
      (if (empty? invitations)
-       [:& empty-invitation-table {:can-invite? can-invite?}]
+       [:& empty-invitation-table {:can-invite can-invite}]
        [:div {:class (stl/css :table-rows)}
         (for [invitation invitations]
-          [:& invitation-row
+          [:> invitation-row*
            {:key (:email invitation)
             :invitation invitation
-            :can-invite? can-invite?
+            :can-invite can-invite
             :team-id team-id}])])]))
 
 (mf/defc team-invitations-page
-  [{:keys [team] :as props}]
+  [{:keys [team]}]
   (let [invitations (mf/deref refs/dashboard-team-invitations)]
 
     (mf/with-effect [team]
@@ -794,7 +799,7 @@
 (mf/defc webhook-modal
   {::mf/register modal/components
    ::mf/register-as :webhook}
-  [{:keys [webhook] :as props}]
+  [{:keys [webhook]}]
 
   (let [initial (mf/with-memo []
                   (or (some-> webhook (update :uri str))
@@ -905,7 +910,7 @@
                     (tr "modals.create-webhook.submit-label"))}]]]]]]))
 
 (mf/defc webhooks-hero
-  {::mf/wrap-props false}
+  {::mf/props :obj}
   []
   [:div {:class (stl/css :webhooks-hero-container)}
    [:h2 {:class (stl/css :hero-title)}
@@ -939,18 +944,9 @@
               :class (stl/css :menu-disabled)}
        [:> icon* {:id "menu"}]])))
 
-(mf/defc last-delivery-icon
-  {::mf/wrap-props false}
-  [{:keys [success? text]}]
-  [:div {:class (stl/css :last-delivery-icon)
-         :title text}
-   (if success?
-     success-icon
-     warning-icon)])
-
 (mf/defc webhook-item
   {::mf/wrap [mf/memo]}
-  [{:keys [webhook permissions] :as props}]
+  [{:keys [webhook permissions]}]
   (let [error-code (:error-code webhook)
         id         (:id webhook)
         creator-id (:profile-id webhook)
@@ -1014,14 +1010,14 @@
         :can-edit can-edit}]]]))
 
 (mf/defc webhooks-list
-  {::mf/wrap-props false}
+  {::mf/props :obj}
   [{:keys [webhooks permissions]}]
   [:div {:class (stl/css :table-rows :webhook-table)}
    (for [webhook webhooks]
      [:& webhook-item {:webhook webhook :key (:id webhook) :permissions permissions}])])
 
 (mf/defc team-webhooks-page
-  {::mf/wrap-props false}
+  {::mf/props :obj}
   [{:keys [team]}]
   (let [webhooks (mf/deref refs/dashboard-team-webhooks)]
 
@@ -1051,7 +1047,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (mf/defc team-settings-page
-  {::mf/wrap-props false}
+  {::mf/props :obj}
   [{:keys [team]}]
   (let [finput      (mf/use-ref)
 
