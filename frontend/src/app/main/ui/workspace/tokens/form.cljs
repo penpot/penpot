@@ -381,7 +381,7 @@ Token names should only contain letters and digits separated by . characters.")}
 
       [:div {:class (stl/css :input-row)}
        ;; This should be remove when labeled-imput is modified
-       [:span {:class (stl/css :labeled-input-label)}  "value"]
+       [:span {:class (stl/css :labeled-input-label)}  "Value"]
        [:& tokens.common/labeled-input {:label "Value"
                                         :input-props {:default-value @value-ref
                                                       :on-blur on-update-value
