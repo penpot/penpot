@@ -73,7 +73,7 @@ impl Fill {
                 p.set_style(skia::PaintStyle::Fill);
                 p.set_anti_alias(true);
                 // TODO: get proper blend mode. See https://tree.taiga.io/project/penpot/task/9275
-                p.set_blend_mode(skia::BlendMode::DstOver);
+                p.set_blend_mode(skia::BlendMode::SrcOver);
                 p
             }
         }
@@ -83,7 +83,7 @@ impl Fill {
 #[derive(Debug, Clone)]
 pub struct Shape {
     pub id: Uuid,
-    pub shapes: Vec<Uuid>,
+    pub children: Vec::<Uuid>,
     pub kind: Kind,
     pub selrect: Rect,
     pub transform: Matrix,
@@ -95,7 +95,7 @@ impl Shape {
     pub fn new(id: Uuid) -> Self {
         Self {
             id,
-            shapes: vec![],
+            children: Vec::<Uuid>::new(),
             kind: Kind::Rect,
             selrect: Rect::default(),
             transform: Matrix::identity(),

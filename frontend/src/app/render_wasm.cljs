@@ -59,12 +59,12 @@
   [rotation]
   (._set_shape_rotation ^js internal-module rotation))
 
-(defn set-shapes
+(defn set-shape-children
   [shape_ids]
-  (._clear_child_shapes ^js internal-module)
+  (._clear_shape_children ^js internal-module)
   (doseq [id shape_ids]
     (let [buffer (uuid/uuid->u32 id)]
-      (._add_child_shape ^js internal-module (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3)))))
+      (._add_shape_child ^js internal-module (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3)))))
 
 (defn set-shape-fills
   [fills]
@@ -92,7 +92,7 @@
           (set-shape-rotation rotation)
           (set-shape-transform transform)
           (set-shape-fills fills)
-          (set-shapes children)
+          (set-shape-children children)
           (recur (inc index)))))))
 
 (defn draw-objects
@@ -155,4 +155,4 @@
 (set! app.common.types.shape.impl/wasm-set-shape-transform set-shape-transform)
 (set! app.common.types.shape.impl/wasm-set-shape-rotation set-shape-rotation)
 (set! app.common.types.shape.impl/wasm-set-shape-fills set-shape-fills)
-(set! app.common.types.shape.impl/wasm-set-shapes set-shapes)
+(set! app.common.types.shape.impl/wasm-set-shape-children set-shape-children)
