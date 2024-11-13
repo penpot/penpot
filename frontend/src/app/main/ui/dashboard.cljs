@@ -60,7 +60,7 @@
       (assoc :project-id (uuid project-id)))))
 
 (mf/defc dashboard-content
-  [{:keys [team projects project section search-term profile invite-email] :as props}]
+  [{:keys [team projects project section search-term profile] :as props}]
   (let [container       (mf/use-ref)
         content-width   (mf/use-state 0)
         project-id      (:id project)
@@ -143,7 +143,7 @@
        [:& libraries-page {:team team}]
 
        :dashboard-team-members
-       [:& team-members-page {:team team :profile profile :invite-email invite-email}]
+       [:& team-members-page {:team team :profile profile}]
 
        :dashboard-team-invitations
        [:& team-invitations-page {:team team}]
@@ -156,8 +156,8 @@
 
        nil)]))
 
-(def dashboard-initialized
-  (l/derived :current-team-id st/state))
+(def ref:dashboard-initialized
+  (l/derived :current-team-initialized st/state))
 
 (defn use-plugin-register
   [plugin-url team-id project-id]
@@ -231,16 +231,13 @@
 
         plugin-url     (-> route :query-params :plugin)
 
-        invite-email   (-> route :query-params :invite-email)
-
         team           (mf/deref refs/team)
-
         projects       (mf/deref refs/dashboard-projects)
         project        (get projects project-id)
 
         default-project (->> projects vals (d/seek :is-default))
 
-        initialized?   (mf/deref dashboard-initialized)]
+        initialized?   (mf/deref ref:dashboard-initialized)]
 
     (hooks/use-shortcuts ::dashboard sc/shortcuts)
 
@@ -287,5 +284,4 @@
               :project project
               :section section
               :search-term search-term
-              :team team
-              :invite-email invite-email}])])]]]))
+              :team team}])])]]]))

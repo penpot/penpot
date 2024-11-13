@@ -421,7 +421,7 @@ msgid "dashboard.download-binary-file"
 msgstr "Download Penpot file (.penpot)"
 
 msgid "dashboard.download-binary-file-v3"
-msgstr "Download Penpot file (.zip) (BETA)"
+msgstr "Download (.zip)"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:300, src/app/main/ui/workspace/main_menu.cljs:597
 msgid "dashboard.download-standard-file"

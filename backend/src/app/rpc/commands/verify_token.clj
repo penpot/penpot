@@ -8,6 +8,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
+   [app.common.types.team :as types.team]
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
@@ -16,7 +17,6 @@
    [app.main :as-alias main]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.profile :as profile]
-   [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.rpc.quotes :as quotes]
@@ -92,7 +92,7 @@
         params (merge
                 {:team-id team-id
                  :profile-id (:id member)}
-                (teams/role->params role))]
+                (get types.team/permissions-for-role role))]
 
     ;; Do not allow blocked users accept invitations.
     (when (:is-blocked member)
@@ -128,7 +128,7 @@
    [:iss :keyword]
    [:exp ::dt/instant]
    [:profile-id ::sm/uuid]
-   [:role teams/schema:role]
+   [:role ::types.team/role]
    [:team-id ::sm/uuid]
    [:member-email ::sm/email]
    [:member-id {:optional true} ::sm/uuid]])
