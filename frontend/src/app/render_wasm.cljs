@@ -10,12 +10,13 @@
    [app.common.data.macros :as dm]
    [app.common.types.shape.impl :as ctsi]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
+   [app.main.features :as features]
+   [app.main.store :as st]
    [app.util.object :as obj]
    [promesa.core :as p]))
 
 (def enabled?
-  (contains? cf/flags :render-wasm))
+  (features/active-feature? @st/state "render-wasm/v1"))
 
 (set! app.common.types.shape.impl/enabled-wasm-ready-shape enabled?)
 
