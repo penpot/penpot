@@ -121,7 +121,9 @@
            (let [name (-> (dom/get-current-target e)
                           (dom/get-data "name"))]
              (on-edit name))))
+
         on-toggle-set (fn [event]
+                        (dom/prevent-default event)
                         (dom/stop-propagation event)
                         (on-toggle name))
 
@@ -136,7 +138,6 @@
          :data {:name name}
          :draggable? true)]
     [:div {:ref dref
-           :role "button"
            :class (stl/css-case :set-item-container true
                                 :dnd-over (= (:over dprops) :center)
                                 :dnd-over-top (= (:over dprops) :top)
