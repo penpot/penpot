@@ -130,19 +130,19 @@ pub unsafe extern "C" fn set_shape_transform(a: f32, b: f32, c: f32, d: f32, e: 
 }
 
 #[no_mangle]
-pub extern "C" fn add_child_shape(a: u32, b: u32, c: u32, d: u32) {
+pub extern "C" fn add_shape_child(a: u32, b: u32, c: u32, d: u32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     let id = uuid_from_u32_quartet(a, b, c, d);
     if let Some(shape) = state.current_shape.as_deref_mut() {
-        shape.shapes.push(id);
+        shape.children.push(id);
     }
 }
 
 #[no_mangle]
-pub extern "C" fn clear_child_shapes() {
+pub extern "C" fn clear_shape_children() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape.as_deref_mut() {
-        shape.shapes.clear();
+        shape.children.clear();
     }
 }
 

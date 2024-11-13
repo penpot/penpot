@@ -84,7 +84,7 @@ pub(crate) fn render_shape_tree(state: &mut State, id: Uuid) {
     render_single_shape(&mut state.render_state.surface, shape);
 
     // draw all the children shapes
-    let shape_ids = shape.shapes.clone();
+    let shape_ids = shape.children.clone();
     for shape_id in shape_ids {
         render_shape_tree(state, shape_id);
     }
