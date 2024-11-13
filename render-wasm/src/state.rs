@@ -1,6 +1,5 @@
 use skia_safe as skia;
 use std::collections::HashMap;
-use std::vec::Vec;
 use uuid::Uuid;
 
 use crate::render::RenderState;
@@ -16,7 +15,6 @@ pub(crate) struct State<'a> {
     pub current_id: Option<Uuid>,
     pub current_shape: Option<&'a mut Shape>,
     pub shapes: HashMap<Uuid, Shape>,
-    pub display_list: Vec<Uuid>,
 }
 
 impl<'a> State<'a> {
@@ -26,7 +24,6 @@ impl<'a> State<'a> {
             current_id: None,
             current_shape: None,
             shapes: HashMap::with_capacity(capacity),
-            display_list: Vec::with_capacity(capacity),
         }
     }
 
