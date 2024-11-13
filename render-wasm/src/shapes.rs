@@ -50,9 +50,10 @@ impl Matrix {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Shape {
     pub id: Uuid,
+    pub shapes: Vec::<Uuid>,
     pub kind: Kind,
     pub selrect: Rect,
     pub transform: Matrix,
@@ -63,6 +64,7 @@ impl Shape {
     pub fn new(id: Uuid) -> Self {
         Self {
             id,
+            shapes: Vec::<Uuid>::new(),
             kind: Kind::Rect,
             selrect: Rect::default(),
             transform: Matrix::identity(),
