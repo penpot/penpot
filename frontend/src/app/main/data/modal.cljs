@@ -10,7 +10,6 @@
    [app.common.uuid :as uuid]
    [app.main.data.events :as ev]
    [app.main.store :as st]
-   [beicon.v2.core :as rx]
    [cljs.core :as c]
    [potok.v2.core :as ptk]))
 
@@ -30,12 +29,6 @@
        (-> props
            (dissoc :type)
            (assoc :name type)))
-
-     ptk/WatchEvent
-     (watch [_ _ _]
-       (rx/of (ptk/event
-               ::ev/event
-               {::ev/name "show-modal" :type type})))
 
      ptk/UpdateEvent
      (update [_ state]
