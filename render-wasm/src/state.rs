@@ -30,4 +30,18 @@ impl<'a> State<'a> {
     pub fn set_surface(&mut self, surface: skia::Surface) {
         self.render_state.surface = surface;
     }
+
+    pub fn use_shape(&'a mut self, id: Uuid) {
+        if !self.shapes.contains_key(&id) {
+            let new_shape = Shape::new(id);
+            self.shapes.insert(id, new_shape);
+        }
+
+        self.current_id = Some(id);
+        self.current_shape = self.shapes.get_mut(&id);
+    }
+
+    pub fn current_shape(&'a mut self) -> Option<&'a mut Shape> {
+        self.current_shape.as_deref_mut()
+    }
 }

@@ -75,6 +75,22 @@ pub(crate) fn create_surface(gpu_state: &mut GpuState, width: i32, height: i32) 
     .unwrap()
 }
 
+pub(crate) fn flush(state: &mut State) {
+    state
+        .render_state
+        .gpu_state
+        .context
+        .flush_and_submit_surface(&mut state.render_state.surface, None);
+}
+
+pub(crate) fn translate(state: &mut State, dx: f32, dy: f32) {
+    state.render_state.surface.canvas().translate((dx, dy));
+}
+
+pub(crate) fn scale(state: &mut State, sx: f32, sy: f32) {
+    state.render_state.surface.canvas().scale((sx, sy));
+}
+
 pub(crate) fn render_shape_tree(state: &mut State, id: Uuid) {
     let shape = state.shapes.get(&id).unwrap();
 
