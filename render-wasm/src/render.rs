@@ -75,14 +75,6 @@ pub(crate) fn create_surface(gpu_state: &mut GpuState, width: i32, height: i32) 
     .unwrap()
 }
 
-pub(crate) fn render_rect(surface: &mut skia::Surface, rect: skia::Rect, color: skia::Color) {
-    let mut paint = skia::Paint::default();
-    paint.set_style(skia::PaintStyle::Fill);
-    paint.set_color(color);
-    paint.set_anti_alias(true);
-    surface.canvas().draw_rect(rect, &paint);
-}
-
 pub(crate) fn render_shape_tree(state: &mut State, id: Uuid) {
     let shape = state.shapes.get(&id).unwrap();
 
@@ -133,9 +125,7 @@ fn render_single_shape(surface: &mut skia::Surface, shape: &Shape) {
 
     surface.canvas().concat(&matrix);
 
-    let mut color = skia::Color::RED;
-    if skew_x != 0. {
-        color = skia::Color::BLACK;
+    for fill in shape.fills() {
+        surface.canvas().draw_rect(r, &fill.to_paint());
     }
-    render_rect(surface, r, color);
 }

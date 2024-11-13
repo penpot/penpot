@@ -7,6 +7,7 @@
 (ns app.render-wasm
   "A WASM based render API"
   (:require
+   [app.common.colors :as cc]
    [app.common.data.macros :as dm]
    [app.common.types.shape.impl :as ctsi]
    [app.common.uuid :as uuid]
@@ -65,6 +66,14 @@
     (let [buffer (uuid/uuid->u32 id)]
       (._add_child_shape ^js internal-module (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3)))))
 
+(defn set-shape-fills
+  [fills]
+  (._clear_shape_fills ^js internal-module)
+  (doseq [fill (filter #(contains? % :fill-color) fills)]
+    (let [a       (:fill-opacity fill)
+          [r g b] (cc/hex->rgb (:fill-color fill))]
+      (._add_shape_solid_fill ^js internal-module r g b a))))
+
 (defn set-objects
   [objects]
   (let [shapes        (into [] xform (vals objects))
@@ -76,11 +85,13 @@
               selrect   (dm/get-prop shape :selrect)
               rotation  (dm/get-prop shape :rotation)
               transform (dm/get-prop shape :transform)
+              fills     (dm/get-prop shape :fills)
               children  (dm/get-prop shape :shapes)]
           (use-shape id)
           (set-shape-selrect selrect)
           (set-shape-rotation rotation)
           (set-shape-transform transform)
+          (set-shape-fills fills)
           (set-shapes children)
           (recur (inc index)))))))
 
@@ -143,4 +154,5 @@
 (set! app.common.types.shape.impl/wasm-set-shape-selrect set-shape-selrect)
 (set! app.common.types.shape.impl/wasm-set-shape-transform set-shape-transform)
 (set! app.common.types.shape.impl/wasm-set-shape-rotation set-shape-rotation)
+(set! app.common.types.shape.impl/wasm-set-shape-fills set-shape-fills)
 (set! app.common.types.shape.impl/wasm-set-shapes set-shapes)
