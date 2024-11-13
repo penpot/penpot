@@ -759,8 +759,8 @@
 ;; --- Mutation: Create Team Invitation
 
 (def sql:upsert-team-invitation
-  "insert into team_invitation(id, team_id, email_to, role, valid_until)
-   values (?, ?, ?, ?, ?)
+  "insert into team_invitation(id, team_id, email_to, role, valid_until, created_by)
+   values (?, ?, ?, ?, ?, ?)
        on conflict(team_id, email_to) do
           update set role = ?, valid_until = ?, updated_at = now()
    returning *")
@@ -853,6 +853,7 @@
             invitation (db/exec-one! conn [sql:upsert-team-invitation id
                                            (:id team) (str/lower email)
                                            (name role) expire
+                                           (:id profile)
                                            (name role) expire])
             updated?   (not= id (:id invitation))
             profile-id (:id profile)

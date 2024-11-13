@@ -686,10 +686,12 @@
                       (dp/open-plugin! manifest user-can-edit?)))))]
            [:> dropdown-menu-item* {:key         (dm/str "plugins-menu-" idx)
                                     :on-click    on-click
-                                    :title       (when-not can-open? (tr "workspace.plugins.error.need-editor"))
                                     :class       (stl/css-case :submenu-item true :menu-disabled (not can-open?))
                                     :on-key-down on-key-down}
-            [:span {:class (stl/css :item-name)} name]]))])))
+            [:span {:class (stl/css :item-name)} name]
+            (when-not can-open?
+              [:span {:class (stl/css :item-icon)
+                      :title (tr "workspace.plugins.error.need-editor")} i/help])]))])))
 
 (mf/defc menu
   {::mf/props :obj}

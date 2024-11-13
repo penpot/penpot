@@ -167,12 +167,24 @@
         (let [props {:team-id (:team-id claims)
                      :role (:role claims)
                      :invitation-id (:id invitation)}
-              event (-> (audit/event-from-rpc-params params)
-                        (assoc ::audit/name "accept-team-invitation")
-                        (assoc ::audit/props props))]
+
+              accept-invitation-event
+              (-> (audit/event-from-rpc-params params)
+                  (assoc ::audit/name "accept-team-invitation")
+                  (assoc ::audit/props props))
+
+              accept-invitation-from-event
+              (-> (audit/event-from-rpc-params params)
+                  (assoc ::audit/profile-id (:created-by invitation))
+                  (assoc ::audit/name "accept-team-invitation-from")
+                  (assoc ::audit/props (assoc props
+                                              :profile-id (:id profile)
+                                              :email (:email profile))))]
+
+          (audit/submit! cfg accept-invitation-event)
+          (audit/submit! cfg accept-invitation-from-event)
 
           (accept-invitation cfg claims invitation profile)
-          (audit/submit! cfg event)
           (assoc claims :state :created))
 
         (ex/raise :type :validation
