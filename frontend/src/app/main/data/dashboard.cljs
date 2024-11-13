@@ -1191,10 +1191,12 @@
                             {:name name
                              :team-id team-id})
             action-name   (if in-project? :create-file :create-project)
-            action        (if in-project? file-created project-created)]
+            action        (if in-project? file-created project-created)
+            can-edit?     (dm/get-in state [:permissions :can-edit])]
 
-        (->> (rp/cmd! action-name params)
-             (rx/map action))))))
+        (when can-edit?
+          (->> (rp/cmd! action-name params)
+               (rx/map action)))))))
 
 (defn open-selected-file
   []
