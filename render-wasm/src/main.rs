@@ -49,7 +49,7 @@ pub unsafe extern "C" fn draw_all_shapes(zoom: f32, pan_x: f32, pan_y: f32) {
     scale(zoom, zoom);
     translate(pan_x, pan_y);
 
-    render::render_shape(state, Uuid::nil());
+    render::render_shape_tree(state, Uuid::nil());
 
     flush();
 }
@@ -143,16 +143,16 @@ pub extern "C" fn add_child_shape(a: u32, b: u32, c: u32, d: u32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     let id = uuid_from_u32_quartet(a, b, c, d);
     if let Some(shape) = state.current_shape.as_deref_mut() {
-      shape.shapes.push(id);
-  }
+        shape.shapes.push(id);
+    }
 }
 
 #[no_mangle]
 pub extern "C" fn clear_child_shapes() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape.as_deref_mut() {
-      shape.shapes.clear();
-  }
+        shape.shapes.clear();
+    }
 }
 
 fn main() {

@@ -2,6 +2,7 @@ use skia_safe as skia;
 use skia_safe::gpu::{self, gl::FramebufferInfo, DirectContext};
 use uuid::Uuid;
 
+use crate::shapes::Shape;
 use crate::state::State;
 
 extern "C" {
@@ -82,8 +83,24 @@ pub(crate) fn render_rect(surface: &mut skia::Surface, rect: skia::Rect, color: 
     surface.canvas().draw_rect(rect, &paint);
 }
 
-pub(crate) fn render_shape(state: &mut State, id: Uuid) {
+pub(crate) fn render_shape_tree(state: &mut State, id: Uuid) {
     let shape = state.shapes.get(&id).unwrap();
+
+    // This is needed so the next non-children shape does not carry this shape's transform
+    state.render_state.surface.canvas().save();
+
+    render_single_shape(&mut state.render_state.surface, shape);
+
+    // draw all the children shapes
+    let shape_ids = shape.shapes.clone();
+    for shape_id in shape_ids {
+        render_shape_tree(state, shape_id);
+    }
+
+    state.render_state.surface.canvas().restore();
+}
+
+fn render_single_shape(surface: &mut skia::Surface, shape: &Shape) {
     let r = skia::Rect::new(
         shape.selrect.x1,
         shape.selrect.y1,
@@ -91,35 +108,34 @@ pub(crate) fn render_shape(state: &mut State, id: Uuid) {
         shape.selrect.y2,
     );
 
-    // TODO: check if this save and restore are really neaded or not
-    // state.render_state.surface.canvas().save();
-
     // Check transform-matrix code from common/src/app/common/geom/shapes/transforms.cljc
     let mut matrix = skia::Matrix::new_identity();
     let (translate_x, translate_y) = shape.translation();
-    let (scale_x, scale_y) = shape.scale();        
+    let (scale_x, scale_y) = shape.scale();
     let (skew_x, skew_y) = shape.skew();
 
-    matrix.set_all(scale_x, skew_x, translate_x, skew_y, scale_y, translate_y, 0., 0., 1.);
+    matrix.set_all(
+        scale_x,
+        skew_x,
+        translate_x,
+        skew_y,
+        scale_y,
+        translate_y,
+        0.,
+        0.,
+        1.,
+    );
 
     let mut center = r.center();
     matrix.post_translate(center);
     center.negate();
     matrix.pre_translate(center);
 
-    state.render_state.surface.canvas().concat(&matrix);
+    surface.canvas().concat(&matrix);
 
-    let mut color = skia::Color::RED;;
+    let mut color = skia::Color::RED;
     if skew_x != 0. {
-      color = skia::Color::BLACK;
+        color = skia::Color::BLACK;
     }
-    render_rect(&mut state.render_state.surface, r, color);
-
-    // state.render_state.surface.canvas().restore();
-
-    let shape_ids = shape.shapes.clone();
-
-    for shape_id in shape_ids {
-        render_shape(state, shape_id);
-    }
+    render_rect(surface, r, color);
 }

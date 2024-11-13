@@ -1,5 +1,7 @@
 use uuid::Uuid;
 
+use crate::state::State;
+
 #[derive(Debug, Clone, Copy)]
 pub enum Kind {
     None,
@@ -53,7 +55,7 @@ impl Matrix {
 #[derive(Debug, Clone)]
 pub struct Shape {
     pub id: Uuid,
-    pub shapes: Vec::<Uuid>,
+    pub shapes: Vec<Uuid>,
     pub kind: Kind,
     pub selrect: Rect,
     pub transform: Matrix,
