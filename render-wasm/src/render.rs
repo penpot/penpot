@@ -141,7 +141,10 @@ fn render_single_shape(surface: &mut skia::Surface, shape: &Shape) {
 
     surface.canvas().concat(&matrix);
 
+    // TODO: use blend mode for the shape as a whole, not in each fill
     for fill in shape.fills().rev() {
-        surface.canvas().draw_rect(r, &fill.to_paint());
+        let mut p = fill.to_paint();
+        p.set_blend_mode(shape.blend_mode.into());
+        surface.canvas().draw_rect(r, &p);
     }
 }

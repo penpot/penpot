@@ -72,7 +72,6 @@ impl Fill {
                 p.set_color(*color);
                 p.set_style(skia::PaintStyle::Fill);
                 p.set_anti_alias(true);
-                // TODO: get proper blend mode. See https://tree.taiga.io/project/penpot/task/9275
                 p.set_blend_mode(skia::BlendMode::SrcOver);
                 p
             }
@@ -80,15 +79,43 @@ impl Fill {
     }
 }
 
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct BlendMode(skia::BlendMode);
+
+impl Default for BlendMode {
+    fn default() -> Self {
+        BlendMode(skia::BlendMode::SrcOver)
+    }
+}
+
+impl From<i32> for BlendMode {
+    fn from(value: i32) -> Self {
+        if value <= skia::BlendMode::Luminosity as i32 {
+            unsafe { Self(std::mem::transmute(value)) }
+        } else {
+            Self::default()
+        }
+    }
+}
+
+impl Into<skia::BlendMode> for BlendMode {
+    fn into(self) -> skia::BlendMode {
+        match self {
+            Self(skia_blend) => skia_blend,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Shape {
     pub id: Uuid,
-    pub children: Vec::<Uuid>,
+    pub children: Vec<Uuid>,
     pub kind: Kind,
     pub selrect: Rect,
     pub transform: Matrix,
     pub rotation: f32,
     fills: Vec<Fill>,
+    pub blend_mode: BlendMode,
 }
 
 impl Shape {
@@ -101,6 +128,7 @@ impl Shape {
             transform: Matrix::identity(),
             rotation: 0.,
             fills: vec![],
+            blend_mode: BlendMode::default(),
         }
     }
 
@@ -126,5 +154,9 @@ impl Shape {
 
     pub fn clear_fills(&mut self) {
         self.fills.clear();
+    }
+
+    pub fn set_blend_mode(&mut self, mode: BlendMode) {
+        self.blend_mode = mode;
     }
 }

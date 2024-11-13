@@ -128,6 +128,14 @@ pub extern "C" fn clear_shape_fills() {
     }
 }
 
+#[no_mangle]
+pub extern "C" fn set_shape_blend_mode(mode: i32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape.set_blend_mode(shapes::BlendMode::from(mode));
+    }
+}
+
 fn main() {
     render::init_gl();
 }
