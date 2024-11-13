@@ -141,7 +141,7 @@ fn render_single_shape(surface: &mut skia::Surface, shape: &Shape) {
 
     surface.canvas().concat(&matrix);
 
-    for fill in shape.fills() {
+    for fill in shape.fills().rev() {
         surface.canvas().draw_rect(r, &fill.to_paint());
     }
 }
