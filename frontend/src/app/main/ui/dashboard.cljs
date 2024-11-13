@@ -90,7 +90,7 @@
 
         show-templates
         (and (contains? cf/flags :dashboard-templates-section)
-             (not (:can-edit permissions)))]
+             (:can-edit permissions))]
 
     (mf/with-effect []
       (let [key1 (events/listen js/window "resize" on-resize)]
