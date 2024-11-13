@@ -182,8 +182,7 @@
   (->> data-stream
        (rx/map (fn [data]
                  (try
-                   (-> (str/replace data "/" "-") ;; TODO Remove when token groups work
-                       (t/decode-str))
+                   (t/decode-str data)
                    (catch js/Error e
                      (throw (wte/error-ex-info :error.import/json-parse-error data e))))))
        (rx/map (fn [json-data]

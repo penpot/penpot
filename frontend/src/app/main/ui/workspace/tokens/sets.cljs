@@ -200,13 +200,9 @@
            context]
     :as _props}]
   (let [{:keys [editing? new? on-edit on-create on-reset] :as ctx} (or context (sets-context/use-context))
-        avoid-token-set-grouping #(str/replace % "/" "-")
         submit-token
         #(do
-           ;; TODO: We don't support set grouping for now so we rename sets for now
-           (when (str/includes? (:name %) "/")
-             (warn-on-try-create-token-set-group!))
-           (on-create-token-set (update % :name avoid-token-set-grouping))
+           (on-create-token-set %)
            (on-reset))]
     [:ul {:class (stl/css :sets-list)}
      (if (and
@@ -218,10 +214,7 @@
          (when token-set
            (let [update-token
                  #(do
-                  ;; TODO: We don't support set grouping for now so we rename sets for now
-                    (when (str/includes? (:name %) "/")
-                      (warn-on-try-create-token-set-group!))
-                    (on-update-token-set (avoid-token-set-grouping (:name token-set)) (update % :name avoid-token-set-grouping))
+                    (on-update-token-set (:name token-set) %)
                     (on-reset))]
              [:& sets-tree
               {:key (:name token-set)
