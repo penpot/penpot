@@ -89,12 +89,13 @@
         "text-editor/v2"}
       (into frontend-only-features)))
 
-(sm/register! ::features
-  [:schema
-   {:title "FileFeatures"
-    ::smdj/inline true
-    :gen/gen (smg/subseq supported-features)}
-   [::sm/set :string]])
+(sm/register!
+ ^{::sm/type ::features}
+ [:schema
+  {:title "FileFeatures"
+   ::smdj/inline true
+   :gen/gen (smg/subseq supported-features)}
+  [::sm/set :string]])
 
 (defn- flag->feature
   "Translate a flag to a feature name"

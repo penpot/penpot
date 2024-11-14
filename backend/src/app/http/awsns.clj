@@ -10,6 +10,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
+   [app.common.schema :as sm]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.http.client :as http]
@@ -18,7 +19,6 @@
    [app.tokens :as tokens]
    [app.worker :as-alias wrk]
    [clojure.data.json :as j]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.exec :as px]
@@ -30,10 +30,11 @@
 (declare parse-notification)
 (declare process-report)
 
-(defmethod ig/pre-init-spec ::routes [_]
-  (s/keys :req [::http/client
-                ::setup/props
-                ::db/pool]))
+(defmethod ig/assert-key ::routes
+  [_ params]
+  (assert (http/client? (::http/client params)) "expect a valid http client")
+  (assert (sm/valid? ::setup/props (::setup/props params)) "expected valid setup props")
+  (assert (db/pool? (::db/pool params)) "expect valid database pool"))
 
 (defmethod ig/init-key ::routes
   [_ cfg]

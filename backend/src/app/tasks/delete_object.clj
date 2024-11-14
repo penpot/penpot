@@ -12,7 +12,6 @@
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
 (def ^:dynamic *team-deletion* false)
@@ -113,8 +112,9 @@
   [_cfg props]
   (l/wrn :hint "not implementation found" :rel (:object props)))
 
-(defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req [::db/pool]))
+(defmethod ig/assert-key ::handler
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expected a valid database pool"))
 
 (defmethod ig/init-key ::handler
   [_ cfg]

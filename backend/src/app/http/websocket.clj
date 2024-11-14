@@ -18,7 +18,6 @@
    [app.msgbus :as mbus]
    [app.util.time :as dt]
    [app.util.websocket :as ws]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.exec.csp :as sp]
    [yetti.websocket :as yws]))
@@ -305,13 +304,17 @@
                                      ::profile-id profile-id
                                      ::session-id session-id)}))))
 
-(defmethod ig/pre-init-spec ::routes [_]
-  (s/keys :req [::mbus/msgbus
-                ::mtx/metrics
-                ::db/pool
-                ::session/manager]))
 
-(s/def ::routes vector?)
+(def ^:private schema:routes-params
+  [:map
+   ::mbus/msgbus
+   ::mtx/metrics
+   ::db/pool
+   ::session/manager])
+
+(defmethod ig/assert-key ::routes
+  [_ params]
+  (assert (sm/valid? schema:routes-params params)))
 
 (defmethod ig/init-key ::routes
   [_ cfg]

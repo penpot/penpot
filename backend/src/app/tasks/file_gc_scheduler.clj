@@ -12,7 +12,6 @@
    [app.db :as db]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
 (def ^:private
@@ -43,12 +42,13 @@
 
     {:processed total}))
 
-(defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req [::db/pool]))
+(defmethod ig/assert-key ::handler
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expected a valid database pool"))
 
-(defmethod ig/prep-key ::handler
-  [_ cfg]
-  (assoc cfg ::min-age (cf/get-deletion-delay)))
+(defmethod ig/expand-key ::handler
+  [k v]
+  {k (assoc v ::min-age (cf/get-deletion-delay))})
 
 (defmethod ig/init-key ::handler
   [_ cfg]

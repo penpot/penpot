@@ -25,14 +25,15 @@
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
 
-(sm/register! ::changes
-  [:map {:title "changes"}
-   [:redo-changes vector?]
-   [:undo-changes seq?]
-   [:origin {:optional true} any?]
-   [:save-undo? {:optional true} boolean?]
-   [:stack-undo? {:optional true} boolean?]
-   [:undo-group {:optional true} any?]])
+(sm/register!
+ ^{::sm/type ::changes}
+ [:map {:title "changes"}
+  [:redo-changes vector?]
+  [:undo-changes seq?]
+  [:origin {:optional true} any?]
+  [:save-undo? {:optional true} boolean?]
+  [:stack-undo? {:optional true} boolean?]
+  [:undo-group {:optional true} any?]])
 
 (def check-changes!
   (sm/check-fn ::changes))

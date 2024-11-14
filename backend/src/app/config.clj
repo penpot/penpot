@@ -26,11 +26,11 @@
   [_ data]
   (d/without-nils data))
 
-(defmethod ig/prep-key :default
-  [_ data]
-  (if (map? data)
-    (d/without-nils data)
-    data))
+(defmethod ig/expand-key :default
+  [k v]
+  {k (if (map? v)
+       (d/without-nils v)
+       v)})
 
 (def default
   {:database-uri "postgresql://postgres/penpot"
@@ -126,7 +126,7 @@
     [:worker-webhook-parallelism {:optional true} ::sm/int]
 
     [:database-password {:optional true} [:maybe :string]]
-    [:database-uri {:optional true} :string]
+    [:database-uri {:optional true} ::sm/uri]
     [:database-username {:optional true} [:maybe :string]]
     [:database-readonly {:optional true} ::sm/boolean]
     [:database-min-pool-size {:optional true} ::sm/int]
@@ -190,7 +190,7 @@
     [:profile-complaint-max-age {:optional true} ::dt/duration]
     [:profile-complaint-threshold {:optional true} ::sm/int]
 
-    [:redis-uri {:optional true} :string]
+    [:redis-uri {:optional true} ::sm/uri]
 
     [:email-domain-blacklist {:optional true} ::fs/path]
     [:email-domain-whitelist {:optional true} ::fs/path]
@@ -218,14 +218,14 @@
     [:storage-assets-fs-directory {:optional true} :string]
     [:storage-assets-s3-bucket {:optional true} :string]
     [:storage-assets-s3-region {:optional true} :keyword]
-    [:storage-assets-s3-endpoint {:optional true} :string]
+    [:storage-assets-s3-endpoint {:optional true} ::sm/uri]
     [:storage-assets-s3-io-threads {:optional true} ::sm/int]
 
     [:objects-storage-backend {:optional true} :keyword]
     [:objects-storage-fs-directory {:optional true} :string]
     [:objects-storage-s3-bucket {:optional true} :string]
     [:objects-storage-s3-region {:optional true} :keyword]
-    [:objects-storage-s3-endpoint {:optional true} :string]
+    [:objects-storage-s3-endpoint {:optional true} ::sm/uri]
     [:objects-storage-s3-io-threads {:optional true} ::sm/int]]))
 
 (def default-flags

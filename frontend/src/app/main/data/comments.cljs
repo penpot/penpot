@@ -95,7 +95,7 @@
   ([params]
    (create-thread-on-workspace params identity true))
   ([params on-thread-created open?]
-   (dm/assert! (sm/check! schema:create-thread-on-workspace params))
+   (dm/assert! (sm/check schema:create-thread-on-workspace params))
 
    (ptk/reify ::create-thread-on-workspace
      ptk/WatchEvent
@@ -149,7 +149,7 @@
 (defn create-thread-on-viewer
   [params]
   (dm/assert!
-   (sm/check! schema:create-thread-on-viewer params))
+   (sm/check schema:create-thread-on-viewer params))
 
   (ptk/reify ::create-thread-on-viewer
     ptk/WatchEvent
@@ -481,7 +481,7 @@
 (defn create-draft
   [params]
   (dm/assert!
-   (sm/check! schema:create-draft params))
+   (sm/check schema:create-draft params))
   (ptk/reify ::create-draft
     ptk/UpdateEvent
     (update [_ state]

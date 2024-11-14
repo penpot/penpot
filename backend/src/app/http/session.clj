@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.db :as db]
@@ -19,7 +19,6 @@
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [yetti.request :as yreq]))
@@ -51,21 +50,32 @@
   (update! [_ data])
   (delete! [_ key]))
 
-(s/def ::manager #(satisfies? ISessionManager %))
+(defn manager?
+  [o]
+  (satisfies? ISessionManager o))
+
+(sm/register!
+ {:type ::manager
+  :pred manager?})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; STORAGE IMPL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::session-params
-  (s/keys :req-un [::user-agent
-                   ::profile-id
-                   ::created-at]))
+(def ^:private schema:params
+  [:map {:title "session-params"}
+   [:user-agent ::sm/text]
+   [:profile-id ::sm/uuid]
+   [:created-at ::sm/inst]])
+
+(def ^:private valid-params?
+  (sm/validator schema:params))
 
 (defn- prepare-session-params
   [key params]
-  (us/assert! ::us/not-empty-string key)
-  (us/assert! ::session-params params)
+  (assert (string? key) "expected key to be a string")
+  (assert (not (str/blank? key)) "expected key to be not empty")
+  (assert (valid-params? params) "expected valid params")
 
   {:user-agent (:user-agent params)
    :profile-id (:profile-id params)
@@ -116,8 +126,9 @@
         (swap! cache dissoc token)
         nil))))
 
-(defmethod ig/pre-init-spec ::manager [_]
-  (s/keys :req [::db/pool]))
+(defmethod ig/assert-key ::manager
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expect valid database pool"))
 
 (defmethod ig/init-key ::manager
   [_ {:keys [::db/pool]}]
@@ -140,8 +151,8 @@
 
 (defn create-fn
   [{:keys [::manager ::setup/props]} profile-id]
-  (us/assert! ::manager manager)
-  (us/assert! ::us/uuid profile-id)
+  (assert (manager? manager) "expected valid session manager")
+  (assert (uuid? profile-id) "expected valid uuid for profile-id")
 
   (fn [request response]
     (let [uagent  (yreq/get-header request "user-agent")
@@ -157,7 +168,7 @@
 
 (defn delete-fn
   [{:keys [::manager]}]
-  (us/assert! ::manager manager)
+  (assert (manager? manager) "expected valid session manager")
   (fn [request response]
     (let [cname   (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
           cookie  (yreq/get-cookie request cname)]
@@ -198,7 +209,7 @@
 
 (defn- wrap-soft-auth
   [handler {:keys [::manager ::setup/props]}]
-  (us/assert! ::manager manager)
+  (assert (manager? manager) "expected valid session manager")
   (letfn [(handle-request [request]
             (try
               (let [token  (get-token request)
@@ -216,7 +227,7 @@
 
 (defn- wrap-authz
   [handler {:keys [::manager]}]
-  (us/assert! ::manager manager)
+  (assert (manager? manager) "expected valid session manager")
   (fn [request]
     (let [session  (get-session manager (::token request))
           request  (cond-> request
@@ -307,16 +318,17 @@
 ;; TASK: SESSION GC
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::tasks/max-age ::dt/duration)
+;; FIXME: MOVE
 
-(defmethod ig/pre-init-spec ::tasks/gc [_]
-  (s/keys :req [::db/pool]
-          :opt [::tasks/max-age]))
+(defmethod ig/assert-key ::tasks/gc
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expected valid database pool")
+  (assert (dt/duration? (::tasks/max-age params))))
 
-(defmethod ig/prep-key ::tasks/gc
-  [_ cfg]
+(defmethod ig/expand-key ::tasks/gc
+  [k v]
   (let [max-age (cf/get :auth-token-cookie-max-age default-cookie-max-age)]
-    (merge {::tasks/max-age max-age} (d/without-nils cfg))))
+    {k (merge {::tasks/max-age max-age} (d/without-nils v))}))
 
 (def ^:private
   sql:delete-expired

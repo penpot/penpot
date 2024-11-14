@@ -25,7 +25,7 @@
   com.cognitect/transit-clj {:mvn/version "1.0.333"}
   com.cognitect/transit-cljs {:mvn/version "0.8.280"}
   java-http-clj/java-http-clj {:mvn/version "0.4.3"}
-  integrant/integrant {:mvn/version "0.8.1"}
+  integrant/integrant {:mvn/version "0.13.1"}
 
   funcool/tubax {:mvn/version "2021.05.20-0"}
   funcool/cuerdas {:mvn/version "2023.11.09-407"}

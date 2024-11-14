@@ -211,7 +211,7 @@
 (defn- process-media-objects
   [{:keys [uris on-error] :as params}]
   (dm/assert!
-   (and (sm/check! schema:process-media-objects params)
+   (and (sm/check schema:process-media-objects params)
         (or (contains? params :blobs)
             (contains? params :uris))))
 
@@ -433,7 +433,7 @@
 (defn clone-media-object
   [{:keys [file-id object-id] :as params}]
   (dm/assert!
-   (sm/check! schema:clone-media-object params))
+   (sm/check schema:clone-media-object params))
 
   (ptk/reify ::clone-media-objects
     ptk/WatchEvent

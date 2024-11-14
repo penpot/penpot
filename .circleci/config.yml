@@ -161,7 +161,7 @@ jobs:
           name: "tests"
           working_directory: "./backend"
           command: |
-            clojure -M:dev:test
+            clojure -M:dev:test --reporter kaocha.report/documentation
 
           environment:
             PENPOT_TEST_DATABASE_URI: "postgresql://localhost/penpot_test"

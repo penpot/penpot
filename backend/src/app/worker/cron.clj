@@ -9,11 +9,11 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.db :as db]
    [app.util.time :as dt]
-   [app.worker :as-alias wrk]
+   [app.worker :as wrk]
    [app.worker.runner :refer [get-error-context]]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.core :as p]
@@ -82,7 +82,7 @@
 
 (defn- ms-until-valid
   [cron]
-  (s/assert dt/cron? cron)
+  (assert (dt/cron? cron) "expected cron instance")
   (let [now  (dt/now)
         next (dt/next-valid-instant-from cron now)]
     (dt/diff now next)))
@@ -98,21 +98,22 @@
 
     (swap! running #(into #{ft} (filter p/pending?) %))))
 
+(def ^:private schema:params
+  [:map
+   [::wrk/entries
+    [:vector
+     [:maybe
+      [:map
+       [:cron [:fn dt/cron?]]
+       [:task :keyword]
+       [:props {:optional true} :map]
+       [:id {:optional true} :keyword]]]]]
+   ::wrk/registry
+   ::db/pool])
 
-(s/def ::fn (s/or :var var? :fn fn?))
-(s/def ::id keyword?)
-(s/def ::cron dt/cron?)
-(s/def ::props (s/nilable map?))
-(s/def ::task keyword?)
-
-(s/def ::task-item
-  (s/keys :req-un [::cron ::task]
-          :opt-un [::props ::id]))
-
-(s/def ::wrk/entries (s/coll-of (s/nilable ::task-item)))
-
-(defmethod ig/pre-init-spec ::wrk/cron [_]
-  (s/keys :req [::db/pool ::wrk/entries ::wrk/registry]))
+(defmethod ig/assert-key ::wrk/cron
+  [_ params]
+  (assert (sm/check schema:params params)))
 
 (defmethod ig/init-key ::wrk/cron
   [_ {:keys [::wrk/entries ::wrk/registry ::db/pool] :as cfg}]
@@ -129,7 +130,7 @@
                        (map (fn [item]
                               (update item :task d/name)))
                        (map (fn [{:keys [task] :as item}]
-                              (let [f (get registry task)]
+                              (let [f (wrk/get-task registry task)]
                                 (when-not f
                                   (ex/raise :type :internal
                                             :code :task-not-found
