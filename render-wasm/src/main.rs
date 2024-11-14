@@ -4,12 +4,12 @@ pub mod state;
 pub mod utils;
 
 use skia_safe as skia;
-use uuid::Uuid;
 
 use crate::state::State;
 use crate::utils::uuid_from_u32_quartet;
 
 static mut STATE: Option<Box<State>> = None;
+
 extern "C" {
     fn emscripten_GetProcAddress(
         name: *const ::std::os::raw::c_char,
@@ -45,25 +45,13 @@ pub unsafe extern "C" fn resize_surface(width: i32, height: i32) {
 #[no_mangle]
 pub unsafe extern "C" fn draw_all_shapes(zoom: f32, pan_x: f32, pan_y: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-
-    reset_canvas();
-    render::scale(state, zoom, zoom);
-    render::translate(state, pan_x, pan_y);
-
-    render::render_shape_tree(state, Uuid::nil());
-
-    render::flush(state);
+    state.draw_all_shapes(zoom, pan_x, pan_y);
 }
 
 #[no_mangle]
 pub extern "C" fn reset_canvas() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    state
-        .render_state
-        .surface
-        .canvas()
-        .clear(skia_safe::Color::TRANSPARENT);
-    state.render_state.surface.canvas().reset_matrix();
+    state.render_state().reset_canvas();
 }
 
 #[no_mangle]

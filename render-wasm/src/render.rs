@@ -1,9 +1,5 @@
 use skia_safe as skia;
 use skia_safe::gpu::{self, gl::FramebufferInfo, DirectContext};
-use uuid::Uuid;
-
-use crate::shapes::Shape;
-use crate::state::State;
 
 struct GpuState {
     pub context: DirectContext,
@@ -66,78 +62,23 @@ impl RenderState {
         let surface = self.gpu_state.create_surface(width, height);
         self.surface = surface;
     }
-}
 
-pub(crate) fn flush(state: &mut State) {
-    state
-        .render_state
-        .gpu_state
-        .context
-        .flush_and_submit_surface(&mut state.render_state.surface, None);
-}
-
-pub(crate) fn translate(state: &mut State, dx: f32, dy: f32) {
-    state.render_state.surface.canvas().translate((dx, dy));
-}
-
-pub(crate) fn scale(state: &mut State, sx: f32, sy: f32) {
-    state.render_state.surface.canvas().scale((sx, sy));
-}
-
-pub(crate) fn render_shape_tree(state: &mut State, id: Uuid) {
-    let shape = state.shapes.get(&id).unwrap();
-
-    // This is needed so the next non-children shape does not carry this shape's transform
-    state.render_state.surface.canvas().save();
-
-    render_single_shape(&mut state.render_state.surface, shape);
-
-    // draw all the children shapes
-    let shape_ids = shape.children.clone();
-    for shape_id in shape_ids {
-        render_shape_tree(state, shape_id);
+    pub fn flush(&mut self) {
+        self.gpu_state
+            .context
+            .flush_and_submit_surface(&mut self.surface, None)
     }
 
-    state.render_state.surface.canvas().restore();
-}
+    pub fn translate(&mut self, dx: f32, dy: f32) {
+        self.surface.canvas().translate((dx, dy));
+    }
 
-fn render_single_shape(surface: &mut skia::Surface, shape: &Shape) {
-    let r = skia::Rect::new(
-        shape.selrect.x1,
-        shape.selrect.y1,
-        shape.selrect.x2,
-        shape.selrect.y2,
-    );
+    pub fn scale(&mut self, sx: f32, sy: f32) {
+        self.surface.canvas().scale((sx, sy));
+    }
 
-    // Check transform-matrix code from common/src/app/common/geom/shapes/transforms.cljc
-    let mut matrix = skia::Matrix::new_identity();
-    let (translate_x, translate_y) = shape.translation();
-    let (scale_x, scale_y) = shape.scale();
-    let (skew_x, skew_y) = shape.skew();
-
-    matrix.set_all(
-        scale_x,
-        skew_x,
-        translate_x,
-        skew_y,
-        scale_y,
-        translate_y,
-        0.,
-        0.,
-        1.,
-    );
-
-    let mut center = r.center();
-    matrix.post_translate(center);
-    center.negate();
-    matrix.pre_translate(center);
-
-    surface.canvas().concat(&matrix);
-
-    // TODO: use blend mode for the shape as a whole, not in each fill
-    for fill in shape.fills().rev() {
-        let mut p = fill.to_paint();
-        p.set_blend_mode(shape.blend_mode.into());
-        surface.canvas().draw_rect(r, &p);
+    pub fn reset_canvas(&mut self) {
+        self.surface.canvas().clear(skia_safe::Color::TRANSPARENT);
+        self.surface.canvas().reset_matrix();
     }
 }
