@@ -100,7 +100,7 @@
     "@penpot/hljs": "portal:./vendor/hljs",
     "@penpot/mousetrap": "portal:./vendor/mousetrap",
     "@penpot/svgo": "penpot/svgo#c6fba7a4dcfbc27b643e7fc0c94fc98cf680b77b",
-    "@penpot/text-editor": "penpot/penpot-text-editor#a100aad8d0efcbb070bed9144dbd2782547e78ba",
+    "@penpot/text-editor": "penpot/penpot-text-editor#bde5897782d31cefce56e9fea279cf54a429cb7d",
     "@tokens-studio/sd-transforms": "^0.16.1",
     "compression": "^1.7.4",
     "date-fns": "^4.1.0",
