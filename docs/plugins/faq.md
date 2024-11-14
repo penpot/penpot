@@ -65,7 +65,7 @@ You will be able to share your plugin with the <a target="_blank" href="https://
 
 ### My plugin works on my local machine, but I couldn’t install it on Penpot. What could be the problem?
 
-The url you that you need to provide in the plugin manager should look <a target="_blank" href="/plugins/create-a-plugin/#2.6.-step-6.-configure-the-manifest-file">like this</a>: <code class="language-bash">https:\/\/yourdomain.com/assents/manifest.json</code>
+The url you that you need to provide in the plugin manager should look <a target="_blank" href="/plugins/create-a-plugin/#2.6.-step-6.-configure-the-manifest-file">like this</a>: <code class="language-bash">https:\/\/yourdomain.com/assets/manifest.json</code>
 
 ### Where can I get support if I find a bug or an unexpected behavior?
 
