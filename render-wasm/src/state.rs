@@ -1,4 +1,4 @@
-use skia_safe as skia;
+use skia_safe::{self as skia, SamplingOptions};
 use std::collections::HashMap;
 use uuid::Uuid;
 
@@ -46,9 +46,14 @@ impl<'a> State<'a> {
         let shape = self.shapes.get(&id).unwrap();
 
         // This is needed so the next non-children shape does not carry this shape's transform
-        self.render_state.surface.canvas().save();
+        self.render_state.final_surface.canvas().save();
+        self.render_state.drawing_surface.canvas().save();
 
-        render_single_shape(&mut self.render_state.surface, shape);
+        render_single_shape(
+            &mut self.render_state.final_surface,
+            &mut self.render_state.drawing_surface,
+            shape,
+        );
 
         // draw all the children shapes
         let shape_ids = shape.children.clone();
@@ -56,7 +61,8 @@ impl<'a> State<'a> {
             self.render_shape_tree(shape_id);
         }
 
-        self.render_state.surface.canvas().restore();
+        self.render_state.final_surface.canvas().restore();
+        self.render_state.drawing_surface.canvas().restore();
     }
 
     pub fn use_shape(&'a mut self, id: Uuid) {
@@ -74,7 +80,7 @@ impl<'a> State<'a> {
     }
 }
 
-fn render_single_shape(surface: &mut skia::Surface, shape: &Shape) {
+fn render_single_shape(surface: &mut skia::Surface, offscreen: &mut skia::Surface, shape: &Shape) {
     let r = skia::Rect::new(
         shape.selrect.x1,
         shape.selrect.y1,
@@ -105,12 +111,18 @@ fn render_single_shape(surface: &mut skia::Surface, shape: &Shape) {
     center.negate();
     matrix.pre_translate(center);
 
-    surface.canvas().concat(&matrix);
+    offscreen.canvas().concat(&matrix);
 
-    // TODO: use blend mode for the shape as a whole, not in each fill
     for fill in shape.fills().rev() {
-        let mut p = fill.to_paint();
-        p.set_blend_mode(shape.blend_mode.into());
-        surface.canvas().draw_rect(r, &p);
+        offscreen.canvas().draw_rect(r, &fill.to_paint());
     }
+
+    let mut paint = skia::Paint::default();
+    paint.set_blend_mode(shape.blend_mode.into());
+    offscreen.draw(
+        &mut surface.canvas(),
+        (0.0, 0.0),
+        SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::None),
+        Some(&paint),
+    );
 }

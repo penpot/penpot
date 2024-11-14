@@ -79,23 +79,23 @@
   ;; These values correspond to skia::BlendMode representation
   ;; https://rust-skia.github.io/doc/skia_safe/enum.BlendMode.html
   (let [encoded-blend (case blend-mode
-    :normal 3
-    :darken 16
-    :multiply 24
-    :color-burn 19
-    :lighten 17
-    :screen 14
-    :color-dodge 18
-    :overlay 15
-    :soft-light 21
-    :hard-light 20
-    :difference 22
-    :exclusion 23
-    :hue 25
-    :saturation 26
-    :color 27
-    :luminosity 28
-    3)]
+                        :normal 3
+                        :darken 16
+                        :multiply 24
+                        :color-burn 19
+                        :lighten 17
+                        :screen 14
+                        :color-dodge 18
+                        :overlay 15
+                        :soft-light 21
+                        :hard-light 20
+                        :difference 22
+                        :exclusion 23
+                        :hue 25
+                        :saturation 26
+                        :color 27
+                        :luminosity 28
+                        3)]
     (._set_shape_blend_mode ^js internal-module encoded-blend)))
 
 (defn set-objects
