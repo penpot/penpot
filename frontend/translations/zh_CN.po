@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Chinese (Simplified) "
-"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hans/>\n"
+"PO-Revision-Date: 2024-10-01 15:16+0000\n"
+"Last-Translator: IsCycleBai <iscyclebai@outlook.com>\n"
+"Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
+"projects/penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 5.6-dev\n"
+"X-Generator: Weblate 5.8-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:132, src/app/main/ui/static.cljs:139, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -5549,3 +5549,136 @@ msgstr "更新"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "单击以闭合路径"
+
+#: src/app/main/ui/auth/login.cljs:163, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:87
+msgid "auth.work-email"
+msgstr "工作邮件地址"
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:267
+msgid "auth.check-mail"
+msgstr "请检查您的邮箱"
+
+#: src/app/main/ui/auth/register.cljs:247
+msgid "auth.register-account-tagline"
+msgstr "让我们知道在仪表板和电子邮件中如何称呼您。"
+
+#: src/app/main/ui/onboarding/questions.cljs:404
+msgid "labels.youtube"
+msgstr "YouTube"
+
+#: src/app/main/ui/auth/recovery_request.cljs:116
+msgid "not-found.login.sent-recovery-check"
+msgstr "检查您的邮箱并点击超链接以创建新的密码。"
+
+#: src/app/main/ui/static.cljs:133
+msgid "not-found.login.signup-free"
+msgstr "免费注册"
+
+#: src/app/main/ui/static.cljs:250
+msgid "not-found.no-permission.already-requested.file"
+msgstr "您已经申请了对此文件的访问权限。"
+
+#: src/app/main/ui/static.cljs:250
+msgid "not-found.no-permission.already-requested.or-others.file"
+msgstr "您已申请对此文件或该团队的其他文件或项目的访问权限。"
+
+#: src/app/main/ui/viewer/inspect/attributes/common.cljs:77
+msgid "media.image.short"
+msgstr "img"
+
+#: src/app/main/ui/workspace/plugins.cljs:287
+msgid "ds.confirm-allow"
+msgstr "允许"
+
+#, unused
+msgid "errors.field-min-length"
+msgstr "至少需要包含1个字符。"
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-not-all-whitespace"
+msgstr "名称必须包含除空格外的其他字符。"
+
+#: src/app/main/ui/onboarding/questions.cljs:248
+msgid "labels.graphic-design"
+msgstr "平面设计"
+
+#: src/app/main/ui/auth/verify_token.cljs:97, src/app/main/ui/dashboard/grid.cljs:102, src/app/main/ui/dashboard/grid.cljs:122, src/app/main/ui/dashboard/import.cljs:272, src/app/main/ui/dashboard/placeholder.cljs:45, src/app/main/ui/export.cljs:323, src/app/main/ui/viewer.cljs:637, src/app/main/ui/workspace.cljs:127
+msgid "labels.loading"
+msgstr "加载中…"
+
+#: src/app/main/ui/static.cljs:48, src/app/main/ui/static.cljs:120
+msgid "labels.login"
+msgstr "登录"
+
+#: src/app/main/ui/onboarding/questions.cljs:100, src/app/main/ui/onboarding/questions.cljs:175, src/app/main/ui/onboarding/questions.cljs:251, src/app/main/ui/onboarding/questions.cljs:261, src/app/main/ui/onboarding/questions.cljs:351, src/app/main/ui/onboarding/questions.cljs:409
+msgid "labels.other-short"
+msgstr "其他"
+
+#: src/app/main/ui/onboarding/questions.cljs:256
+msgid "labels.team-leader"
+msgstr "团队领导"
+
+#: src/app/main/ui/onboarding/questions.cljs:257
+msgid "labels.team-member"
+msgstr "团队成员"
+
+#: src/app/main/ui/static.cljs:270
+msgid "not-found.desc-message.error"
+msgstr "404错误"
+
+#: src/app/main/ui/static.cljs:271
+msgid "not-found.desc-message.doesnt-exist"
+msgstr "此页面不存在"
+
+#: src/app/main/ui/auth/recovery_request.cljs:114
+msgid "not-found.login.sent-recovery"
+msgstr "我们已将恢复电子邮件发送至"
+
+#: src/app/main/ui/static.cljs:134
+msgid "not-found.login.start-using"
+msgstr "并在数秒内开始使用 Penpot！"
+
+#: src/app/main/ui/static.cljs:253
+msgid "not-found.no-permission.already-requested.project"
+msgstr "您已经申请了对此项目的访问权限。"
+
+#: src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.ask"
+msgstr "请求访问权限"
+
+#: src/app/main/ui/static.cljs:253
+msgid "not-found.no-permission.already-requested.or-others.project"
+msgstr "您已经申请了对该项目或该团队的其他项目或文件的访问权限。"
+
+#: src/app/main/ui/static.cljs:256
+msgid "not-found.no-permission.done.remember"
+msgstr "请记住，如果团队所有者允许，您将被邀请加入此团队。"
+
+#: src/app/main/ui/static.cljs:256
+msgid "not-found.no-permission.done.success"
+msgstr "您的请求已发送！"
+
+#: src/app/main/ui/static.cljs:259
+msgid "not-found.no-permission.file"
+msgstr "您没有针对此文件的访问权限。"
+
+#: src/app/main/ui/static.cljs:217, src/app/main/ui/static.cljs:222
+msgid "not-found.no-permission.penpot-file"
+msgstr "Penpot文件"
+
+#: src/app/main/ui/static.cljs:43, src/app/main/ui/static.cljs:247, src/app/main/ui/static.cljs:250, src/app/main/ui/static.cljs:253, src/app/main/ui/static.cljs:256, src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.go-dashboard"
+msgstr "前往您的Penpot"
+
+#: src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.if-approves"
+msgstr "如果所有者允许，您会被邀请加入此团队。"
+
+#: src/app/main/ui/static.cljs:247, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.project"
+msgstr "您没有针对此项目的访问权限。"
+
+#: src/app/main/ui/static.cljs:216, src/app/main/ui/static.cljs:220
+msgid "not-found.no-permission.project-name"
+msgstr "项目"

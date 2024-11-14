@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-08-23 09:16+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-08-26 11:09+0000\n"
+"Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
 "Language: tr\n"
@@ -2727,12 +2727,10 @@ msgid "onboarding.questions.reasons.testing"
 msgstr "Kendim barındırmadan önce test ediyorum"
 
 #: src/app/main/ui/onboarding/questions.cljs:349
-#, fuzzy
 msgid "onboarding.questions.start-with.code"
-msgstr "Gerçek kod tasarımları oluşturma"
+msgstr "Tasarımlardan gerçek kod oluşturma"
 
 #: src/app/main/ui/onboarding/questions.cljs:347
-#, fuzzy
 msgid "onboarding.questions.start-with.ds"
 msgstr "Tasarım Sistemleri Oluşturma"
 
@@ -5967,3 +5965,198 @@ msgstr "Yolu kapatmak için tıklayın"
 
 #~ msgid "workspace.options.layout-item.title.min-w"
 #~ msgstr "Asgari genişlik"
+
+#: src/app/main/data/common.cljs:85
+msgid "notifications.by-code.maintenance"
+msgstr "Bakım arası: 5 dakika içinde kısa bir bakım için kapalı olacağız."
+
+#: src/app/main/ui/onboarding/questions.cljs:408
+msgid "onboarding.questions.referer.article"
+msgstr "Makale (Blog, Yazı, Bülten)"
+
+#: src/app/main/ui/onboarding/questions.cljs:406
+msgid "onboarding.questions.referer.search"
+msgstr "Arama Motoru (Google, Yahoo, Bing)"
+
+#: src/app/main/ui/onboarding/questions.cljs:407
+msgid "onboarding.questions.referer.social"
+msgstr "Sosyal Medya (X, Linkedin, FB, vb.)"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:525
+msgid "workspace.assets.grid-view"
+msgstr "Izgara görünümü"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:521
+msgid "workspace.assets.list-view"
+msgstr "Liste görünümü"
+
+#: src/app/main/ui/workspace/plugins.cljs:180
+#, markdown
+msgid "workspace.plugins.discover"
+msgstr "Keşfet [daha fazla eklenti](%s)"
+
+#: src/app/main/ui/workspace/plugins.cljs:251
+msgid "workspace.plugins.permissions.content-read"
+msgstr "Kullanıcıların erişebildiği dosyaların içeriğini oku."
+
+#: src/app/main/ui/workspace/plugins.cljs:274
+msgid "workspace.plugins.permissions.disclaimer"
+msgstr "Bu eklentinin harici bir tarafça oluşturulduğunu unutmayın."
+
+#: src/app/main/ui/workspace/plugins.cljs:271
+msgid "workspace.plugins.permissions.library-read"
+msgstr "Kütüphanelerinizi ve varlıklarınızı oku."
+
+#: src/app/main/ui/workspace/plugins.cljs:236
+msgid "workspace.plugins.permissions.title"
+msgstr "BU EKLENTİ ŞUNLARA ERİŞİM İSTİYOR:"
+
+#: src/app/main/ui/workspace/plugins.cljs:258
+msgid "workspace.plugins.permissions.user-read"
+msgstr "Geçerli kullanıcının profil bilgilerini oku."
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-max-length"
+msgstr "En fazla 1 karakter içermelidir."
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-not-all-whitespace"
+msgstr "Ad boşluk dışında bir karakter içermelidir."
+
+#: src/app/main/ui/static.cljs:48, src/app/main/ui/static.cljs:120
+msgid "labels.login"
+msgstr "Oturum aç"
+
+#, unused
+msgid "labels.ok"
+msgstr "Tamam"
+
+#: src/app/main/ui/static.cljs:271
+msgid "not-found.desc-message.doesnt-exist"
+msgstr "Bu sayfa yok"
+
+#: src/app/main/ui/static.cljs:270
+msgid "not-found.desc-message.error"
+msgstr "404 hatası"
+
+#: src/app/main/ui/auth/recovery_request.cljs:114
+msgid "not-found.login.sent-recovery"
+msgstr "Şu adrese bir kurtarma e-postası gönderdik"
+
+#: src/app/main/ui/auth/recovery_request.cljs:116
+msgid "not-found.login.sent-recovery-check"
+msgstr ""
+"E- posta kutunuza bakın ve yeni bir parola oluşturmak için bağlantıya "
+"tıklayın."
+
+#: src/app/main/ui/static.cljs:133
+msgid "not-found.login.signup-free"
+msgstr "Ücretsiz kaydolun"
+
+#: src/app/main/ui/static.cljs:134
+msgid "not-found.login.start-using"
+msgstr "Ve saniyeler içinde Penpot kullanmaya başlayın!"
+
+#: src/app/main/ui/static.cljs:56
+msgid "not-found.made-with-love"
+msgstr "Aşkla ve Açık Kaynakla Yapıldı"
+
+#: src/app/main/ui/static.cljs:250
+msgid "not-found.no-permission.already-requested.file"
+msgstr "Bu dosyaya zaten erişim talep ettiniz."
+
+#: src/app/main/ui/static.cljs:250
+msgid "not-found.no-permission.already-requested.or-others.file"
+msgstr ""
+"Bu dosyaya veya bu takımın diğer dosyalarına veya projelerine zaten erişim "
+"talep ettiniz."
+
+#: src/app/main/ui/static.cljs:253
+msgid "not-found.no-permission.already-requested.project"
+msgstr "Bu projeye zaten erişim talep ettiniz."
+
+#: src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.ask"
+msgstr "ERİŞİM İSTE"
+
+#: src/app/main/ui/static.cljs:256
+msgid "not-found.no-permission.done.success"
+msgstr "Talebiniz doğru bir şekilde gönderildi!"
+
+#: src/app/main/ui/static.cljs:259
+msgid "not-found.no-permission.file"
+msgstr "Bu dosyaya erişiminiz yok."
+
+#: src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.if-approves"
+msgstr "Sahibi izin verirse takıma davet edileceksiniz."
+
+#: src/app/main/ui/static.cljs:217, src/app/main/ui/static.cljs:222
+msgid "not-found.no-permission.penpot-file"
+msgstr "Penpot dosyası"
+
+#: src/app/main/ui/static.cljs:247, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.project"
+msgstr "Bu projeye erişiminiz yok."
+
+#: src/app/main/ui/static.cljs:216, src/app/main/ui/static.cljs:220
+msgid "not-found.no-permission.project-name"
+msgstr "PROJE"
+
+#: src/app/main/ui/static.cljs:259
+msgid "not-found.no-permission.you-can-ask.file"
+msgstr "Bu dosyaya erişimi takım sahibinden isteyebilirsiniz."
+
+#: src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.you-can-ask.project"
+msgstr "Bu projeye erişimi takım sahibinden isteyebilirsiniz."
+
+#: src/app/main/ui/workspace/plugins.cljs:287
+msgid "ds.confirm-allow"
+msgstr "İzin ver"
+
+#, unused
+msgid "errors.field-min-length"
+msgstr "En az 1 karakter içermelidir."
+
+#: src/app/main/ui/static.cljs:54
+msgid "labels.copyright"
+msgstr "Kaleidos @2024"
+
+#: src/app/main/ui/auth/verify_token.cljs:97, src/app/main/ui/dashboard/grid.cljs:102, src/app/main/ui/dashboard/grid.cljs:122, src/app/main/ui/dashboard/import.cljs:272, src/app/main/ui/dashboard/placeholder.cljs:45, src/app/main/ui/export.cljs:323, src/app/main/ui/viewer.cljs:637, src/app/main/ui/workspace.cljs:127
+msgid "labels.loading"
+msgstr "Yükleniyor…"
+
+#: src/app/main/ui/static.cljs:253
+msgid "not-found.no-permission.already-requested.or-others.project"
+msgstr ""
+"Bu projeye veya bu takımın diğer projelerine veya dosyalarına zaten erişim "
+"talep ettiniz."
+
+#: src/app/main/ui/static.cljs:121
+msgid "not-found.login.free"
+msgstr ""
+"Penpot, Tasarım ve Kod arasında işbirliği için özgür ve açık kaynaklı bir "
+"tasarım aracıdır"
+
+#: src/app/main/ui/static.cljs:256
+msgid "not-found.no-permission.done.remember"
+msgstr "Unutmayın, sahibi izin verirse takıma davet edileceksiniz."
+
+#: src/app/main/ui/workspace/plugins.cljs:265
+msgid "workspace.plugins.permissions.library-write"
+msgstr "Kütüphanelerinizi ve varlıklarınızı oku ve değiştir."
+
+#: src/app/main/ui/static.cljs:43, src/app/main/ui/static.cljs:247, src/app/main/ui/static.cljs:250, src/app/main/ui/static.cljs:253, src/app/main/ui/static.cljs:256, src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.go-dashboard"
+msgstr "Penpot'unuza gidin"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:201, src/app/main/ui/workspace/top_toolbar.cljs:202
+msgid "workspace.toolbar.plugins"
+msgstr "Eklentiler (%s)"
+
+#: src/app/main/ui/workspace/plugins.cljs:245
+msgid "workspace.plugins.permissions.content-write"
+msgstr "Kullanıcıların erişebildiği dosyaların içeriğini oku ve değiştir."

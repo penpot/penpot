@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Czech "
-"<https://hosted.weblate.org/projects/penpot/frontend/cs/>\n"
+"PO-Revision-Date: 2024-09-28 06:15+0000\n"
+"Last-Translator: \"Amerey.eu\" <info@amerey.eu>\n"
+"Language-Team: Czech <https://hosted.weblate.org/projects/penpot/frontend/cs/"
+">\n"
 "Language: cs\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=((n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2);\n"
-"X-Generator: Weblate 5.6-dev\n"
+"X-Generator: Weblate 5.8-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:132, src/app/main/ui/static.cljs:139, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -50,7 +50,7 @@ msgstr "Jméno a příjmení"
 
 #: src/app/main/ui/auth/register.cljs:136, src/app/main/ui/static.cljs:142, src/app/main/ui/viewer/login.cljs:101
 msgid "auth.login-here"
-msgstr "Přihlaste se zde"
+msgstr "Přihlaste se zde."
 
 #: src/app/main/ui/auth/login.cljs:186
 msgid "auth.login-submit"
@@ -559,10 +559,6 @@ msgstr "Ups! Tento soubor se nepodařilo importovat"
 msgid "dashboard.import.import-error"
 msgstr "Při importu souboru došlo k problému. Soubor nebyl importován."
 
-#: src/app/main/ui/dashboard/import.cljs:497
-msgid "dashboard.import.import-message"
-msgstr "Soubory %s byly úspěšně importovány."
-
 #: src/app/main/ui/dashboard/import.cljs:485, src/app/main/ui/dashboard/import.cljs:492
 msgid "dashboard.import.import-warning"
 msgstr "Některé soubory obsahovaly neplatné objekty, které byly odstraněny."
@@ -732,17 +728,9 @@ msgstr "Vyberte téma"
 msgid "dashboard.show-all-files"
 msgstr "Zobrazit všechny soubory"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:96
-msgid "dashboard.success-delete-file"
-msgstr "Váš soubor byl úspěšně smazán"
-
 #: src/app/main/ui/dashboard/project_menu.cljs:59
 msgid "dashboard.success-delete-project"
 msgstr "Váš projekt byl úspěšně smazán"
-
-#: src/app/main/ui/dashboard/file_menu.cljs:91
-msgid "dashboard.success-duplicate-file"
-msgstr "Váš soubor byl úspěšně duplikován"
 
 #: src/app/main/ui/dashboard/project_menu.cljs:33
 msgid "dashboard.success-duplicate-project"
@@ -2367,10 +2355,6 @@ msgstr "Odebrat „%s“ jako sdílenou knihovnu"
 #: src/app/main/ui/workspace/nudge.cljs:53
 msgid "modals.small-nudge"
 msgstr "Malé posunutí"
-
-#: src/app/main/ui/delete_shared.cljs:52
-msgid "modals.unpublish-shared-confirm.accept"
-msgstr "Zrušit publikování"
 
 #: src/app/main/ui/delete_shared.cljs:47
 msgid "modals.unpublish-shared-confirm.message"
@@ -5503,3 +5487,606 @@ msgstr "Aktualizace"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Kliknutím zavřete cestu"
+
+#: src/app/main/ui/auth/login.cljs:276
+msgid "auth.login-tagline"
+msgstr ""
+"Penpot je bezplatný open-source návrhářský nástroj pro spolupráci v oblasti "
+"designu a kódu"
+
+#: src/app/main/ui/auth/register.cljs:123
+msgid "auth.register-tagline"
+msgstr ""
+"S bezplatným účtem Penpot můžete vytvářet neomezený počet týmů a "
+"spolupracovat s dalšími designéry a vývojáři na tolika projektech, kolik "
+"chcete. "
+
+#: src/app/main/ui/auth/register.cljs:247
+msgid "auth.register-account-tagline"
+msgstr "Dejte nám vědět, jak bychom vám měli říkat."
+
+#: src/app/main/ui/auth/register.cljs:246
+msgid "auth.register-account-title"
+msgstr "Vaše jméno"
+
+#: src/app/main/ui/onboarding/questions.cljs:128
+msgid "onboarding.questions.step1.question2"
+msgstr "Co vás přivádí k Penpotu?"
+
+#: src/app/main/ui/onboarding/questions.cljs:80
+msgid "onboarding.questions.use.education"
+msgstr "Vzdělání"
+
+#: src/app/main/ui/onboarding/questions.cljs:97
+msgid "onboarding.questions.reasons.testing"
+msgstr "Testuji před vlastním hostováním"
+
+#: src/app/main/ui/onboarding/questions.cljs:88
+msgid "onboarding.questions.reasons.exploring"
+msgstr "Jen prozkoumávám"
+
+#: src/app/main/ui/onboarding/questions.cljs:270
+msgid "onboarding.questions.team-size.freelancer"
+msgstr "Jsem freelancer"
+
+#: src/app/main/ui/onboarding/questions.cljs:345
+msgid "onboarding.questions.start-with.prototyping"
+msgstr "Prototypování"
+
+#: src/app/main/ui/onboarding/questions.cljs:341
+msgid "onboarding.questions.start-with.ui"
+msgstr "Design UI/UX aplikace"
+
+#: src/app/main/ui/onboarding/questions.cljs:343
+msgid "onboarding.questions.start-with.wireframing"
+msgstr "Wireframing"
+
+#: src/app/main/ui/onboarding/questions.cljs:370
+msgid "onboarding.questions.step4.title"
+msgstr "Kde byste chtěli začít?"
+
+#: src/app/main/ui/onboarding/questions.cljs:404
+msgid "labels.youtube"
+msgstr "YouTube"
+
+#: src/app/main/ui/onboarding/questions.cljs:349
+msgid "onboarding.questions.start-with.code"
+msgstr "Vytváření reálného kódu z návrhů"
+
+#: src/app/main/ui/onboarding/questions.cljs:347
+msgid "onboarding.questions.start-with.ds"
+msgstr "Vytváření designových systémů"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:191
+msgid "shortcuts.toggle-guides"
+msgstr "Zobrazit / Skrýt vodítka"
+
+#: src/app/main/ui/workspace/context_menu.cljs:629
+msgid "workspace.context-menu.grid-cells.merge"
+msgstr "Sloučit buňky"
+
+#: src/app/main/ui/workspace/context_menu.cljs:594
+msgid "workspace.context-menu.grid-track.column.add-after"
+msgstr "Přidat 1 sloupec vpravo"
+
+#: src/app/main/ui/workspace/context_menu.cljs:596
+msgid "workspace.context-menu.grid-track.column.delete-shapes"
+msgstr "Smazat sloupec a tvary"
+
+#: src/app/main/ui/workspace/main_menu.cljs:207
+msgid "workspace.header.menu.disable-snap-ruler-guides"
+msgstr "Zakázat přichycení na vodítka pravítek"
+
+#: src/app/main/ui/workspace/main_menu.cljs:336
+msgid "workspace.header.menu.hide-guides"
+msgstr "Skrýt vodítka"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:477
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "Zobrazit možnosti mezer uvnitř všech stran"
+
+#: src/app/main/ui/workspace/libraries.cljs:290
+msgid "workspace.libraries.loading"
+msgstr "Načítání…"
+
+#: src/app/main/ui/workspace/libraries.cljs:249
+msgid "workspace.libraries.unlink-library-btn"
+msgstr "Odpojit knihovnu"
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:35
+#, markdown
+msgid "workspace.top-bar.view-only"
+msgstr "**Kontrola kódu** (Pouze zobrazení)"
+
+#: src/app/main/ui/workspace/plugins.cljs:187
+msgid "workspace.plugins.empty-plugins"
+msgstr "Zatím nejsou nainstalovány žádné pluginy"
+
+#: src/app/main/ui/workspace/plugins.cljs:171
+msgid "workspace.plugins.install"
+msgstr "Instalovat"
+
+#: src/app/main/ui/workspace/plugins.cljs:196
+msgid "workspace.plugins.installed-plugins"
+msgstr "Nainstalované pluginy"
+
+#: src/app/main/ui/workspace/plugins.cljs:175
+msgid "workspace.plugins.error.url"
+msgstr "Plugin neexistuje nebo adresa URL není správná."
+
+#: src/app/main/ui/workspace/plugins.cljs:160
+msgid "workspace.plugins.title"
+msgstr "Pluginy"
+
+#: src/app/main/ui/workspace/plugins.cljs:58
+msgid "workspace.plugins.button-open"
+msgstr "Otevřít"
+
+#, unused
+msgid "workspace.plugins.success"
+msgstr "Plugin správně načten."
+
+#: src/app/main/ui/auth/register.cljs:156
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr ""
+"Souhlasím se [smluvními podmínkami](%s) a [zásadami ochrany soukromí](%s)."
+
+#, unused
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr ""
+"Soubor s aktivovanými komponentami v2, ale tento tým je zatím nepodporuje."
+
+#: src/app/main/data/users.cljs:702, src/app/main/ui/auth/register.cljs:53
+msgid "errors.email-domain-not-allowed"
+msgstr "Doména není povolena"
+
+#: src/app/main/ui/onboarding/questions.cljs:405
+msgid "labels.event"
+msgstr "Událost"
+
+#: src/app/main/ui/onboarding/questions.cljs:100, src/app/main/ui/onboarding/questions.cljs:175, src/app/main/ui/onboarding/questions.cljs:251, src/app/main/ui/onboarding/questions.cljs:261, src/app/main/ui/onboarding/questions.cljs:351, src/app/main/ui/onboarding/questions.cljs:409
+msgid "labels.other-short"
+msgstr "Ostatní"
+
+#: src/app/main/ui/onboarding/questions.cljs:94
+msgid "onboarding.questions.reasons.alternative"
+msgstr "Hledám alternativu k Figmě, XD atd"
+
+#: src/app/main/ui/onboarding/questions.cljs:121
+msgid "onboarding.questions.step1.question1"
+msgstr "K čemu budete Penpot používat?"
+
+#: src/app/main/ui/onboarding/questions.cljs:115
+msgid "onboarding.questions.step1.title"
+msgstr "Pomozte nám se s vámi seznámit"
+
+#: src/app/main/ui/onboarding/questions.cljs:81
+msgid "onboarding.questions.use.personal"
+msgstr "Osobní"
+
+#: src/app/main/ui/onboarding/questions.cljs:79
+msgid "onboarding.questions.use.work"
+msgstr "Pracovní"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:195
+msgid "shortcuts.toggle-layout-grid"
+msgstr "Přidat/odebrat rozložení mřížky"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:198
+msgid "shortcuts.toggle-rulers"
+msgstr "Zobrazit / Skrýt pravítka"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:201
+msgid "shortcuts.toggle-snap-ruler-guide"
+msgstr "Přichytit k vodítkům pravítek"
+
+#: src/app/main/ui/workspace/context_menu.cljs:637
+msgid "workspace.context-menu.grid-cells.create-board"
+msgstr "Vytvořit tabuli"
+
+#: src/app/main/ui/workspace/context_menu.cljs:593
+msgid "workspace.context-menu.grid-track.column.add-before"
+msgstr "Přidat 1 sloupec vlevo"
+
+#: src/app/main/ui/workspace/main_menu.cljs:337
+msgid "workspace.header.menu.show-guides"
+msgstr "Zobrazit vodítka"
+
+#: src/app/main/ui/workspace/main_menu.cljs:279
+msgid "workspace.header.menu.toggle-dark-theme"
+msgstr "Přepnout na tmavý motiv"
+
+#: src/app/main/ui/workspace/main_menu.cljs:777
+msgid "workspace.plugins.menu.title"
+msgstr "Pluginy"
+
+#: src/app/main/ui/workspace/plugins.cljs:258
+msgid "workspace.plugins.permissions.user-read"
+msgstr "Číst informace o profilu aktuálního uživatele."
+
+#: src/app/main/ui/workspace/plugins.cljs:192
+msgid "workspace.plugins.plugin-list-link"
+msgstr "Seznam pluginů"
+
+#: src/app/main/ui/workspace/plugins.cljs:166
+msgid "workspace.plugins.search-placeholder"
+msgstr "Napište adresu URL pluginu"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:201, src/app/main/ui/workspace/top_toolbar.cljs:202
+msgid "workspace.toolbar.plugins"
+msgstr "Pluginy (%s)"
+
+#: src/app/main/ui/auth/login.cljs:273
+msgid "auth.login-account-title"
+msgstr "Přihlásit se do mého účtu"
+
+#: src/app/main/data/users.cljs:700
+msgid "errors.auth-provider-not-allowed"
+msgstr "Poskytovatel autorizace není pro tento profil povolen"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:271
+msgid "settings.select-this-color"
+msgstr "Vyberte položky pomocí tohoto stylu"
+
+#: src/app/main/ui/workspace/context_menu.cljs:634
+msgid "workspace.context-menu.grid-cells.area"
+msgstr "Vytvořit oblast"
+
+#: src/app/main/ui/workspace/context_menu.cljs:595
+msgid "workspace.context-menu.grid-track.column.delete"
+msgstr "Smazat sloupec"
+
+#: src/app/main/ui/workspace/context_menu.cljs:592
+msgid "workspace.context-menu.grid-track.column.duplicate"
+msgstr "Duplikovat sloupec"
+
+#: src/app/main/ui/workspace/context_menu.cljs:601
+msgid "workspace.context-menu.grid-track.row.add-after"
+msgstr "Přidat 1 řádek níže"
+
+#: src/app/main/ui/workspace/context_menu.cljs:600
+msgid "workspace.context-menu.grid-track.row.add-before"
+msgstr "Přidat 1 řádek výše"
+
+#: src/app/main/ui/workspace/context_menu.cljs:602
+msgid "workspace.context-menu.grid-track.row.delete"
+msgstr "Smazat řádek"
+
+#: src/app/main/ui/workspace/context_menu.cljs:603
+msgid "workspace.context-menu.grid-track.row.delete-shapes"
+msgstr "Smazat řádek a tvary"
+
+#: src/app/main/ui/workspace/context_menu.cljs:599
+msgid "workspace.context-menu.grid-track.row.duplicate"
+msgstr "Duplikovat řádek"
+
+#: src/app/main/ui/workspace/main_menu.cljs:278
+msgid "workspace.header.menu.toggle-light-theme"
+msgstr "Přepnout na světlý motiv"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1300
+msgid "workspace.layout_grid.editor.top-bar.locate.tooltip"
+msgstr "Vyhledat rozložení mřížky"
+
+#: src/app/main/ui/workspace/libraries.cljs:282
+msgid "workspace.libraries.shared-library-btn"
+msgstr "Připojit knihovnu"
+
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:267
+msgid "auth.check-mail"
+msgstr "Zkontrolujte svůj e-mail"
+
+#: src/app/main/ui/auth/login.cljs:163, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:87
+msgid "auth.work-email"
+msgstr "Pracovní email"
+
+#: src/app/main/ui/workspace/plugins.cljs:287
+msgid "ds.confirm-allow"
+msgstr "Povolit"
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-max-length"
+msgstr "Musí obsahovat maximálně 1 znak."
+
+#, unused
+msgid "errors.field-min-length"
+msgstr "Musí obsahovat alespoň 1 znak."
+
+#: src/app/main/ui/settings/team-form.cljs, src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/settings/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-not-all-whitespace"
+msgstr "Název musí obsahovat jiný znak než mezeru."
+
+#: src/app/main/ui/static.cljs:54
+msgid "labels.copyright"
+msgstr "Kaleidos @2024"
+
+#: src/app/main/ui/onboarding/questions.cljs:260
+msgid "labels.director"
+msgstr "Ředitel"
+
+#: src/app/main/ui/onboarding/questions.cljs:248
+msgid "labels.graphic-design"
+msgstr "Grafický design"
+
+#: src/app/main/ui/auth/verify_token.cljs:97, src/app/main/ui/dashboard/grid.cljs:102, src/app/main/ui/dashboard/grid.cljs:122, src/app/main/ui/dashboard/import.cljs:272, src/app/main/ui/dashboard/placeholder.cljs:45, src/app/main/ui/export.cljs:323, src/app/main/ui/viewer.cljs:637, src/app/main/ui/workspace.cljs:127
+msgid "labels.loading"
+msgstr "Načítání…"
+
+#: src/app/main/ui/static.cljs:48, src/app/main/ui/static.cljs:120
+msgid "labels.login"
+msgstr "Přihlášení"
+
+#, unused
+msgid "labels.ok"
+msgstr "Ok"
+
+#: src/app/main/ui/onboarding/questions.cljs:245
+msgid "labels.product-design"
+msgstr "Produktový nebo UX design"
+
+#: src/app/main/ui/onboarding/questions.cljs:256
+msgid "labels.team-leader"
+msgstr "Vedoucí týmu"
+
+#: src/app/main/ui/onboarding/questions.cljs:257
+msgid "labels.team-member"
+msgstr "Člen týmu"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:334
+msgid "media.keep-aspect-ratio"
+msgstr "Zachovat poměr stran"
+
+#: src/app/main/ui/delete_shared.cljs:48
+msgid "modals.move-shared-confirm.message"
+msgid_plural "modals.move-shared-confirm.message"
+msgstr[0] "Opravdu chcete tuto knihovnu přesunout?"
+msgstr[1] "Opravdu chcete přesunout tyto knihovny?"
+msgstr[2] "Opravdu chcete přesunout tyto knihovny?"
+
+#: src/app/main/ui/delete_shared.cljs:43
+msgid "modals.move-shared-confirm.title"
+msgid_plural "modals.move-shared-confirm.title"
+msgstr[0] "Přesunout knihovnu"
+msgstr[1] "Přesunout knihovny"
+msgstr[2] "Přesunout knihovny"
+
+#: src/app/main/ui/static.cljs:271
+msgid "not-found.desc-message.doesnt-exist"
+msgstr "Tato stránka neexistuje"
+
+#: src/app/main/ui/static.cljs:270
+msgid "not-found.desc-message.error"
+msgstr "Chyba 404"
+
+#: src/app/main/ui/static.cljs:121
+msgid "not-found.login.free"
+msgstr ""
+"Penpot je bezplatný a open-source návrhářský nástroj pro spolupráci mezi "
+"designem a kódem"
+
+#: src/app/main/ui/auth/recovery_request.cljs:114
+msgid "not-found.login.sent-recovery"
+msgstr "Odeslali jsme obnovovací e-mail na adresu"
+
+#: src/app/main/ui/auth/recovery_request.cljs:116
+msgid "not-found.login.sent-recovery-check"
+msgstr "Zkontrolujte svůj e-mail a kliknutím na odkaz vytvořte nové heslo."
+
+#: src/app/main/ui/static.cljs:133
+msgid "not-found.login.signup-free"
+msgstr "Zaregistrujte se zdarma"
+
+#: src/app/main/ui/static.cljs:56
+msgid "not-found.made-with-love"
+msgstr "Vytvořeno s LÁSKOU a Open Source"
+
+#: src/app/main/ui/static.cljs:134
+msgid "not-found.login.start-using"
+msgstr "A začněte používat Penpot během několika sekund!"
+
+#: src/app/main/ui/static.cljs:253
+msgid "not-found.no-permission.already-requested.or-others.project"
+msgstr ""
+"Již jste požádali o přístup k tomuto projektu nebo jiným projektům nebo "
+"souborům tohoto týmu."
+
+#: src/app/main/ui/static.cljs:253
+msgid "not-found.no-permission.already-requested.project"
+msgstr "Již jste požádali o přístup k tomuto projektu."
+
+#: src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.ask"
+msgstr "POŽÁDAT O PŘÍSTUP"
+
+#: src/app/main/ui/static.cljs:250
+msgid "not-found.no-permission.already-requested.file"
+msgstr "O přístup k tomuto souboru jste již požádali."
+
+#: src/app/main/ui/static.cljs:250
+msgid "not-found.no-permission.already-requested.or-others.file"
+msgstr ""
+"Již jste požádali o přístup k tomuto souboru nebo jiným souborům nebo "
+"projektům tohoto týmu."
+
+#: src/app/main/ui/static.cljs:256
+msgid "not-found.no-permission.done.remember"
+msgstr "Pamatujte, že pokud to vlastník dovolí, budete pozváni do týmu."
+
+#: src/app/main/ui/static.cljs:256
+msgid "not-found.no-permission.done.success"
+msgstr "Vaše žádost byla správně odeslána!"
+
+#: src/app/main/ui/static.cljs:259
+msgid "not-found.no-permission.file"
+msgstr "K tomuto souboru nemáte přístup."
+
+#: src/app/main/ui/static.cljs:43, src/app/main/ui/static.cljs:247, src/app/main/ui/static.cljs:250, src/app/main/ui/static.cljs:253, src/app/main/ui/static.cljs:256, src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.go-dashboard"
+msgstr "Přejděte na svůj Penpot"
+
+#: src/app/main/ui/static.cljs:259, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.if-approves"
+msgstr "Pokud to vlastník dovolí, budete pozváni do týmu."
+
+#: src/app/main/ui/static.cljs:217, src/app/main/ui/static.cljs:222
+msgid "not-found.no-permission.penpot-file"
+msgstr "Soubor Penpot"
+
+#: src/app/main/ui/static.cljs:247, src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.project"
+msgstr "K tomuto projektu nemáte přístup."
+
+#: src/app/main/ui/static.cljs:216, src/app/main/ui/static.cljs:220
+msgid "not-found.no-permission.project-name"
+msgstr "PROJEKT"
+
+#: src/app/main/ui/static.cljs:259
+msgid "not-found.no-permission.you-can-ask.file"
+msgstr ""
+"Chcete-li získat přístup k tomuto souboru, můžete požádat vlastníka týmu."
+
+#: src/app/main/ui/static.cljs:262
+msgid "not-found.no-permission.you-can-ask.project"
+msgstr ""
+"Chcete-li získat přístup k tomuto projektu, můžete požádat vlastníka týmu."
+
+#: src/app/main/data/common.cljs:85
+msgid "notifications.by-code.maintenance"
+msgstr "Přestávka na údržbu: do 5 minut budeme mimo provoz na krátkou údržbu."
+
+#: src/app/main/ui/onboarding/questions.cljs:91
+msgid "onboarding.questions.reasons.fit"
+msgstr "Zjišťuji, zda se Penpot hodí pro můj tým"
+
+#: src/app/main/ui/onboarding/questions.cljs:406
+msgid "onboarding.questions.referer.search"
+msgstr "Vyhledávač (Google, Yahoo, Bing)"
+
+#: src/app/main/ui/onboarding/questions.cljs:408
+msgid "onboarding.questions.referer.article"
+msgstr "Článek (blog, příspěvek, newsletter)"
+
+#: src/app/main/ui/onboarding/questions.cljs:407
+msgid "onboarding.questions.referer.social"
+msgstr "Sociální sítě (X, Linkedin, FB atd.)"
+
+#: src/app/main/ui/onboarding/questions.cljs:117
+msgid "onboarding.questions.step1.subtitle"
+msgstr ""
+"Řekněte nám něco o sobě, abyste nám pomohli nastavit Penpot pro vás. Vaše "
+"odpovědi nám pomohou stanovit priority nových funkcí a nasměrovat vás "
+"správným směrem, abyste mohli začít."
+
+#: src/app/main/ui/onboarding/questions.cljs:196
+msgid "onboarding.questions.step2.title"
+msgstr "Který z těchto nástrojů používáte nejčastěji?"
+
+#: src/app/main/ui/onboarding/questions.cljs:289
+msgid "onboarding.questions.step3.question1"
+msgstr "Jakou práci děláte?"
+
+#: src/app/main/ui/onboarding/questions.cljs:287
+msgid "onboarding.questions.step3.title"
+msgstr "Řekněte nám o své práci"
+
+#: src/app/main/ui/onboarding/questions.cljs:429
+msgid "onboarding.questions.step5.title"
+msgstr "Jak jste se dozvěděli o Penpot?"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:32
+msgid "onboarding.team-modal.team-definition"
+msgstr "Co je tým?"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:200
+msgid "shortcuts.toggle-snap-guides"
+msgstr "Přichytit na vodítka"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:203
+msgid "shortcuts.toggle-theme"
+msgstr "Změnit motiv"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:176
+msgid "workspace.assets.filter"
+msgstr "Filtr"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:525
+msgid "workspace.assets.grid-view"
+msgstr "Zobrazení mřížky"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:521
+msgid "workspace.assets.list-view"
+msgstr "Zobrazení seznamu"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:193
+msgid "workspace.assets.sort"
+msgstr "Seřadit"
+
+#: src/app/main/ui/workspace/main_menu.cljs:208
+msgid "workspace.header.menu.enable-snap-ruler-guides"
+msgstr "Přichytit k vodítkům pravítek"
+
+#: src/app/main/ui/workspace/plugins.cljs:180
+#, markdown
+msgid "workspace.plugins.discover"
+msgstr "Objevte [další pluginy](%s)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:624
+msgid "workspace.plugins.menu.plugins-manager"
+msgstr "Správce pluginů"
+
+#: src/app/main/ui/workspace/plugins.cljs:251
+msgid "workspace.plugins.permissions.content-read"
+msgstr "Číst obsah souborů, ke kterým mají uživatelé přístup."
+
+#: src/app/main/ui/workspace/plugins.cljs:245
+msgid "workspace.plugins.permissions.content-write"
+msgstr "Číst a upravovat obsah souborů, ke kterým mají uživatelé přístup."
+
+#: src/app/main/ui/workspace/plugins.cljs:274
+msgid "workspace.plugins.permissions.disclaimer"
+msgstr "Všimněte si, že tento plugin byl vytvořen externí stranou."
+
+#: src/app/main/ui/workspace/plugins.cljs:236
+msgid "workspace.plugins.permissions.title"
+msgstr "TENTO PLUGIN POŽADUJE PŘÍSTUP K:"
+
+#: src/app/main/ui/workspace/plugins.cljs:271
+msgid "workspace.plugins.permissions.library-read"
+msgstr "Číst vaše knihovny a položky."
+
+#: src/app/main/ui/workspace/plugins.cljs:265
+msgid "workspace.plugins.permissions.library-write"
+msgstr "Číst a upravovat vaše knihovny a položky."
+
+#: src/app/main/ui/workspace/context_menu.cljs:435
+msgid "workspace.shape.menu.remove-grid"
+msgstr "Odebrat rozložení mřížky"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:219, src/app/main/ui/workspace/top_toolbar.cljs:220
+msgid "workspace.toolbar.toggle-toolbar"
+msgstr "Přepnout panel nástrojů"
+
+#: src/app/main/ui/delete_shared.cljs:53
+msgid "modals.move-shared-confirm.accept"
+msgid_plural "modals.move-shared-confirm.accept"
+msgstr[0] "Přesunout"
+msgstr[1] "Přesunout"
+msgstr[2] "Přesunout"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:167
+msgid "shortcuts.scale"
+msgstr "Měřítko"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:221
+msgid "workspace.assets.sidebar.components"
+msgid_plural "workspace.assets.sidebar.components"
+msgstr[0] "1 komponenta"
+msgstr[1] "%s komponenty"
+msgstr[2] "%s komponent"
+
+#: src/app/main/ui/viewer/inspect/attributes/common.cljs:77
+msgid "media.image.short"
+msgstr "obr"
