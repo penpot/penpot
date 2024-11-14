@@ -51,7 +51,8 @@
     "layout/grid"
     "plugins/runtime"
     "design-tokens/v1"
-    "text-editor/v2"})
+    "text-editor/v2"
+    "render-wasm/v1"})
 
 ;; A set of features enabled by default
 (def default-features
@@ -67,7 +68,8 @@
 (def frontend-only-features
   #{"styles/v2"
     "plugins/runtime"
-    "text-editor/v2"})
+    "text-editor/v2"
+    "render-wasm/v1"})
 
 ;; Features that are mainly backend only or there are a proper
 ;; fallback when frontend reports no support for it
@@ -84,9 +86,7 @@
         "fdata/pointer-map"
         "layout/grid"
         "fdata/shape-data-type"
-        "plugins/runtime"
-        "design-tokens/v1"
-        "text-editor/v2"}
+        "design-tokens/v1"}
       (into frontend-only-features)))
 
 (sm/register!
@@ -109,6 +109,7 @@
     :feature-plugins "plugins/runtime"
     :feature-design-tokens "design-tokens/v1"
     :feature-text-editor-v2 "text-editor/v2"
+    :feature-render-wasm "render-wasm/v1"
     nil))
 
 (defn migrate-legacy-features
