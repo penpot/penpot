@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-14 11:14+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-11-15 12:00+0000\n"
+"Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
 "Language: he\n"
@@ -5527,9 +5527,11 @@ msgid "workspace.plugins.permissions.content-write"
 msgstr "קריאה ושינוי התוכן של קבצים שלמשתמשים יש גישה אליהם."
 
 #: src/app/main/ui/workspace/plugins.cljs:323
-#, fuzzy
 msgid "workspace.plugins.permissions.disclaimer"
-msgstr "נא לשים לב שהתוסף הזה נוצר על ידי גוף חיצוני."
+msgstr ""
+"נא לשים לב שהתוסף הזה נוצר על ידי גוף חיצוני, לכן כדאי לוודא שהוא אמין לפי "
+"שמעניקים לו גישה. פרטיות ואבטחת המידע שלך חשובים לנו. במקרה של ספק נא ליצור "
+"קשר עם התמיכה."
 
 #: src/app/main/ui/workspace/plugins.cljs:263
 msgid "workspace.plugins.permissions.library-read"
@@ -5540,9 +5542,8 @@ msgid "workspace.plugins.permissions.library-write"
 msgstr "קריאה ושינוי הספריות והמשאבים שלך."
 
 #: src/app/main/ui/workspace/plugins.cljs:316
-#, fuzzy
 msgid "workspace.plugins.permissions.title"
-msgstr "התוסף הזה רוצה לגשת אל:"
+msgstr "התוסף ‚%s’ רוצה לגשת אל:"
 
 #: src/app/main/ui/workspace/plugins.cljs:250
 msgid "workspace.plugins.permissions.user-read"
@@ -6060,3 +6061,19 @@ msgstr "עדכון"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
+
+#: src/app/main/ui/dashboard/files.cljs:190, src/app/main/ui/dashboard/projects.cljs:284
+msgid "dashboard.empty-placeholder-drafts-subtitle"
+msgstr "כשאחד או אחת מחברי הצוות יוצרים טיוטה, היא תוצג כאן."
+
+#: src/app/main/ui/dashboard/files.cljs:186, src/app/main/ui/dashboard/projects.cljs:280
+msgid "dashboard.empty-placeholder-files-title"
+msgstr "אין קבצים עדיין."
+
+#: src/app/main/ui/dashboard/files.cljs:185, src/app/main/ui/dashboard/projects.cljs:279
+msgid "dashboard.empty-placeholder-drafts-title"
+msgstr "אין טיוטות עדיין."
+
+#: src/app/main/ui/dashboard/files.cljs:191, src/app/main/ui/dashboard/projects.cljs:285
+msgid "dashboard.empty-placeholder-files-subtitle"
+msgstr "כשחבר או חברה במיזם יוצרים קובץ, הוא יופיע כאן."
