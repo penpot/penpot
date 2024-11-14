@@ -19,6 +19,7 @@ export NODE_ENV=production;
 yarn install || exit 1;
 rm -rf resources/public;
 rm -rf target/dist;
+mkdir -p resources/public/js;
 
 yarn run build:wasm || exit 1;
 yarn run build:app:main --config-merge "{:release-version \"${CURRENT_HASH}-${TS}\"}" $EXTRA_PARAMS || exit 1
