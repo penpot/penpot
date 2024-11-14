@@ -51,7 +51,6 @@
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
-   [app.render-wasm :as render.wasm]
    [app.util.debug :as dbg]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
@@ -657,6 +656,7 @@
 
 (mf/defc viewport
   [props]
-  (if ^boolean render.wasm/enabled?
-    [:& viewport.wasm/viewport props]
-    [:& viewport-classic props]))
+  (let [wasm-renderer-enabled? (features/use-feature "render-wasm/v1")]
+    (if ^boolean wasm-renderer-enabled?
+      [:& viewport.wasm/viewport props]
+      [:& viewport-classic props])))

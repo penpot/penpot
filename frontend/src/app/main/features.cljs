@@ -12,6 +12,7 @@
    [app.common.logging :as log]
    [app.config :as cf]
    [app.main.store :as st]
+   [app.render-wasm :as render.wasm]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -110,7 +111,7 @@
        (when *assert*
          (->> (rx/from cfeat/no-migration-features)
               ;; text editor v2 isn't enabled by default even in devenv
-              ;; wasm render v1 isn't enabled by default even in devenv              
+              ;; wasm render v1 isn't enabled by default even in devenv
               (rx/filter #(not (or (contains? cfeat/backend-only-features %)
                                    (= "text-editor/v2" %)
                                    (= "render-wasm/v1" %)
@@ -120,6 +121,11 @@
 
      ptk/EffectEvent
      (effect [_ state _]
+       (let [features (get-team-enabled-features state)]
+         (if (contains? features "render-wasm/v1")
+           (render.wasm/initialize true)
+           (render.wasm/initialize false)))
+
        (log/trc :hint "initialized features"
                 :team (str/join "," (:features-team state))
                 :runtime (str/join "," (:features-runtime state)))))))
