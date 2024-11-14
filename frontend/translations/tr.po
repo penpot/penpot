@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-08-26 11:09+0000\n"
-"Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
-"Language-Team: Turkish "
-"<https://hosted.weblate.org/projects/penpot/frontend/tr/>\n"
+"PO-Revision-Date: 2024-11-14 11:14+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
+"tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.7.1-dev\n"
+"X-Generator: Weblate 5.9-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:154, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -5564,6 +5564,7 @@ msgid "workspace.plugins.permissions.content-write"
 msgstr "Kullanıcıların erişebildiği dosyaların içeriğini oku ve değiştir."
 
 #: src/app/main/ui/workspace/plugins.cljs:323
+#, fuzzy
 msgid "workspace.plugins.permissions.disclaimer"
 msgstr "Bu eklentinin harici bir tarafça oluşturulduğunu unutmayın."
 
@@ -5576,6 +5577,7 @@ msgid "workspace.plugins.permissions.library-write"
 msgstr "Kütüphanelerinizi ve varlıklarınızı oku ve değiştir."
 
 #: src/app/main/ui/workspace/plugins.cljs:316
+#, fuzzy
 msgid "workspace.plugins.permissions.title"
 msgstr "BU EKLENTİ ŞUNLARA ERİŞİM İSTİYOR:"
 
