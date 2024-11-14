@@ -27,10 +27,6 @@ impl<'a> State<'a> {
         }
     }
 
-    pub fn set_surface(&mut self, surface: skia::Surface) {
-        self.render_state.surface = surface;
-    }
-
     pub fn use_shape(&'a mut self, id: Uuid) {
         if !self.shapes.contains_key(&id) {
             let new_shape = Shape::new(id);

@@ -5,74 +5,67 @@ use uuid::Uuid;
 use crate::shapes::Shape;
 use crate::state::State;
 
-extern "C" {
-    pub fn emscripten_GetProcAddress(
-        name: *const ::std::os::raw::c_char,
-    ) -> *const ::std::os::raw::c_void;
-}
-
-pub(crate) struct GpuState {
+struct GpuState {
     pub context: DirectContext,
     framebuffer_info: FramebufferInfo,
 }
 
+impl GpuState {
+    fn new() -> Self {
+        let interface = skia_safe::gpu::gl::Interface::new_native().unwrap();
+        let context = skia_safe::gpu::direct_contexts::make_gl(interface, None).unwrap();
+        let framebuffer_info = {
+            let mut fboid: gl::types::GLint = 0;
+            unsafe { gl::GetIntegerv(gl::FRAMEBUFFER_BINDING, &mut fboid) };
+
+            FramebufferInfo {
+                fboid: fboid.try_into().unwrap(),
+                format: skia_safe::gpu::gl::Format::RGBA8.into(),
+                protected: skia_safe::gpu::Protected::No,
+            }
+        };
+
+        GpuState {
+            context,
+            framebuffer_info,
+        }
+    }
+
+    /// Create a Skia surface that will be used for rendering.
+    fn create_surface(&mut self, width: i32, height: i32) -> skia::Surface {
+        let backend_render_target =
+            gpu::backend_render_targets::make_gl((width, height), 1, 8, self.framebuffer_info);
+
+        gpu::surfaces::wrap_backend_render_target(
+            &mut self.context,
+            &backend_render_target,
+            skia_safe::gpu::SurfaceOrigin::BottomLeft,
+            skia_safe::ColorType::RGBA8888,
+            None,
+            None,
+        )
+        .unwrap()
+    }
+}
+
 pub(crate) struct RenderState {
-    pub gpu_state: GpuState,
+    gpu_state: GpuState,
     pub surface: skia::Surface,
 }
 
 impl RenderState {
     pub fn new(width: i32, height: i32) -> RenderState {
-        let mut gpu_state = create_gpu_state();
-        let surface = create_surface(&mut gpu_state, width, height);
+        // This needs to be done once per WebGL context.
+        let mut gpu_state = GpuState::new();
+        let surface = gpu_state.create_surface(width, height);
+
         RenderState { gpu_state, surface }
     }
-}
 
-pub(crate) fn init_gl() {
-    unsafe {
-        gl::load_with(|addr| {
-            let addr = std::ffi::CString::new(addr).unwrap();
-            emscripten_GetProcAddress(addr.into_raw() as *const _) as *const _
-        });
+    pub fn resize(&mut self, width: i32, height: i32) {
+        let surface = self.gpu_state.create_surface(width, height);
+        self.surface = surface;
     }
-}
-
-/// This needs to be done once per WebGL context.
-pub(crate) fn create_gpu_state() -> GpuState {
-    let interface = skia_safe::gpu::gl::Interface::new_native().unwrap();
-    let context = skia_safe::gpu::direct_contexts::make_gl(interface, None).unwrap();
-    let framebuffer_info = {
-        let mut fboid: gl::types::GLint = 0;
-        unsafe { gl::GetIntegerv(gl::FRAMEBUFFER_BINDING, &mut fboid) };
-
-        FramebufferInfo {
-            fboid: fboid.try_into().unwrap(),
-            format: skia_safe::gpu::gl::Format::RGBA8.into(),
-            protected: skia_safe::gpu::Protected::No,
-        }
-    };
-
-    GpuState {
-        context,
-        framebuffer_info,
-    }
-}
-
-/// Create the Skia surface that will be used for rendering.
-pub(crate) fn create_surface(gpu_state: &mut GpuState, width: i32, height: i32) -> skia::Surface {
-    let backend_render_target =
-        gpu::backend_render_targets::make_gl((width, height), 1, 8, gpu_state.framebuffer_info);
-
-    gpu::surfaces::wrap_backend_render_target(
-        &mut gpu_state.context,
-        &backend_render_target,
-        skia_safe::gpu::SurfaceOrigin::BottomLeft,
-        skia_safe::ColorType::RGBA8888,
-        None,
-        None,
-    )
-    .unwrap()
 }
 
 pub(crate) fn flush(state: &mut State) {

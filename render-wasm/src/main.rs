@@ -10,6 +10,20 @@ use crate::state::State;
 use crate::utils::uuid_from_u32_quartet;
 
 static mut STATE: Option<Box<State>> = None;
+extern "C" {
+    fn emscripten_GetProcAddress(
+        name: *const ::std::os::raw::c_char,
+    ) -> *const ::std::os::raw::c_void;
+}
+
+fn init_gl() {
+    unsafe {
+        gl::load_with(|addr| {
+            let addr = std::ffi::CString::new(addr).unwrap();
+            emscripten_GetProcAddress(addr.into_raw() as *const _) as *const _
+        });
+    }
+}
 
 /// This is called from JS after the WebGL context has been created.
 #[no_mangle]
@@ -25,8 +39,7 @@ pub extern "C" fn init(width: i32, height: i32) {
 #[no_mangle]
 pub unsafe extern "C" fn resize_surface(width: i32, height: i32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    let surface = render::create_surface(&mut state.render_state.gpu_state, width, height);
-    state.set_surface(surface);
+    state.render_state.resize(width, height);
 }
 
 #[no_mangle]
@@ -137,5 +150,5 @@ pub extern "C" fn set_shape_blend_mode(mode: i32) {
 }
 
 fn main() {
-    render::init_gl();
+    init_gl();
 }
