@@ -7,6 +7,8 @@ else
     export _BUILD_MODE=${1:-debug};
 fi
 
+export PATH="/usr/local/cargo/bin:$PATH";
+
 export EMSDK_QUIET=1
 export EMCC_CFLAGS="--no-entry -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s MAX_WEBGL_VERSION=2 -s MODULARIZE=1 -s EXPORT_NAME=createRustSkiaModule -s EXPORTED_RUNTIME_METHODS=GL -s ENVIRONMENT=web -s EXPORT_ES6=1 -sMODULARIZE"
 
