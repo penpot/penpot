@@ -29,7 +29,10 @@ mkdir -p target/dist;
 rsync -avr resources/public/ target/dist/
 
 sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/dist/index.html;
+sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/dist/render.html;
+sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/dist/rasterizer.html;
 sed -i -re "s/\%buildDate\%/$BUILD_DATE/g" ./target/dist/index.html;
+sed -i -re "s/\%buildDate\%/$BUILD_DATE/g" ./target/dist/rasterizer.html;
 sed -i "s/version=develop/version=$CURRENT_VERSION/g" ./target/dist/js/render_wasm.js;
 
 if [ "$INCLUDE_STORYBOOK" = "yes" ];  then
