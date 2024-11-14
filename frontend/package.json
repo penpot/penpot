@@ -20,6 +20,7 @@
     "build:app:assets": "node ./scripts/build-app-assets.js",
     "build:storybook": "yarn run build:storybook:assets && yarn run build:storybook:cljs && storybook build",
     "build:storybook:assets": "node ./scripts/build-storybook-assets.js",
+    "build:wasm": "../render-wasm/build",
     "build:storybook:cljs": "clojure -M:dev:shadow-cljs compile storybook",
     "build:app:libs": "node ./scripts/build-libs.js",
     "build:app:main": "clojure -M:dev:shadow-cljs release main worker",

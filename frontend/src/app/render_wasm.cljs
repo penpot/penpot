@@ -11,15 +11,12 @@
    [app.common.data.macros :as dm]
    [app.common.types.shape.impl :as ctsi]
    [app.common.uuid :as uuid]
-   [app.main.features :as features]
-   [app.main.store :as st]
    [app.util.object :as obj]
    [promesa.core :as p]))
 
-(def enabled?
-  (features/active-feature? @st/state "render-wasm/v1"))
-
-(set! app.common.types.shape.impl/enabled-wasm-ready-shape enabled?)
+(defn initialize
+  [enabled?]
+  (set! app.common.types.shape.impl/enabled-wasm-ready-shape enabled?))
 
 (defonce internal-module #js {})
 
@@ -139,16 +136,18 @@
     (obj/set! js/window "shape_list" (fn [] ((unchecked-get internal-module "_shape_list"))))))
 
 (defonce module
-  (->> (js/dynamicImport "/js/render_wasm.js")
-       (p/mcat (fn [module]
-                 (let [default (unchecked-get module "default")]
-                   (default))))
-       (p/fmap (fn [module]
-                 (set! internal-module module)
-                 true))
-       (p/merr (fn [cause]
-                 (js/console.error cause)
-                 (p/resolved false)))))
+  (if (exists? js/dynamicImport)
+    (->> (js/dynamicImport "/js/render_wasm.js")
+         (p/mcat (fn [module]
+                   (let [default (unchecked-get module "default")]
+                     (default))))
+         (p/fmap (fn [module]
+                   (set! internal-module module)
+                   true))
+         (p/merr (fn [cause]
+                   (js/console.error cause)
+                   (p/resolved false))))
+    (p/resolved false)))
 
 (set! app.common.types.shape.impl/wasm-create-shape create-shape)
 (set! app.common.types.shape.impl/wasm-use-shape use-shape)
