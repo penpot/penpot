@@ -72,6 +72,35 @@
                   (fetch-versions file-id)))))
          (rx/of (ptk/event ::ev/event {::ev/name "create-version"})))))))
 
+(defn create-version-from-plugins
+  [file-id label resolve reject]
+  (dm/assert! (uuid? file-id))
+  (ptk/reify ::create-version-plugins
+    ptk/WatchEvent
+    (watch [_ _ _]
+      ;; Force persist before creating snapshot, otherwise we could loss changes
+      (->> (rx/concat
+            (rx/of ::dwp/force-persist)
+            (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
+                 (rx/filter #(or (nil? %) (= :saved %)))
+                 (rx/take 1)
+                 (rx/mapcat #(rp/cmd! :create-file-snapshot {:file-id file-id :label label}))
+
+                 (rx/mapcat
+                  (fn [{:keys [id]}]
+                    (->> (rp/cmd! :get-file-snapshots {:file-id file-id})
+                         (rx/take 1)
+                         (rx/map (fn [versions] (d/seek #(= id (:id %)) versions))))))
+                 (rx/tap resolve)
+                 (rx/ignore))
+            (rx/of (ptk/event ::ev/event {::ev/origin "plugins"
+                                          ::ev/name "create-version"})))
+
+           ;; On error reject the promise and empty the stream
+           (rx/catch (fn [error]
+                       (reject error)
+                       (rx/empty)))))))
+
 (defn rename-version
   [file-id id label]
   (dm/assert! (uuid? file-id))

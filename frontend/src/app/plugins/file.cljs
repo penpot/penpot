@@ -6,22 +6,114 @@
 
 (ns app.plugins.file
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.record :as crc]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.exports.files :as exports.files]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.versions :as dwv]
    [app.main.features :as features]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.worker :as uw]
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
+   [app.plugins.user :as user]
    [app.plugins.utils :as u]
    [app.util.http :as http]
    [app.util.object :as obj]
+   [app.util.time :as dt]
    [beicon.v2.core :as rx]))
+
+(declare file-version-proxy)
+
+(deftype FileVersionProxy [$plugin $file $version $data]
+  Object
+  (restore
+    [_]
+    (cond
+      (not (r/check-permission $plugin "content:write"))
+      (u/display-not-valid :restore "Plugin doesn't have 'content:write' permission")
+
+      :else
+      (let [project-id (:current-project-id @st/state)]
+        (st/emit! (dwv/restore-version project-id $file $version)))))
+
+  (remove
+    [_]
+    (js/Promise.
+     (fn [resolve reject]
+       (cond
+         (not (r/check-permission $plugin "content:write"))
+         (u/reject-not-valid reject :remove "Plugin doesn't have 'content:write' permission")
+
+         :else
+         (->> (rp/cmd! :delete-file-snapshot {:id $version})
+              (rx/subs! #(resolve) reject))))))
+
+  (pin
+    [_]
+    (js/Promise.
+     (fn [resolve reject]
+       (cond
+         (not (r/check-permission $plugin "content:write"))
+         (u/reject-not-valid reject :pin "Plugin doesn't have 'content:write' permission")
+
+         (not= "system" (:created-by $data))
+         (u/reject-not-valid reject :pin "Only auto-saved versions can be pinned")
+
+         :else
+         (let [params  {:id $version
+                        :label (dt/format (:created-at $data) :date-full)}]
+           (->> (rx/zip (rp/cmd! :get-team-users {:file-id $file})
+                        (rp/cmd! :update-file-snapshot params))
+                (rx/subs! (fn [[users data]]
+                            (let [users (d/index-by :id users)]
+                              (resolve (file-version-proxy $plugin $file users data))))
+                          reject))))))))
+
+(defn file-version-proxy
+  [plugin-id file-id users data]
+  (let [data (atom data)]
+    (crc/add-properties!
+     (FileVersionProxy. plugin-id file-id (:id @data) data)
+     {:name "$plugin" :enumerable false :get (constantly plugin-id)}
+     {:name "$file" :enumerable false :get (constantly file-id)}
+     {:name "$version" :enumerable false :get (constantly (:id @data))}
+     {:name "$data" :enumerable false :get (constantly @data)}
+
+     {:name "label"
+      :get (fn [_] (:label @data))
+      :set
+      (fn [_ value]
+        (cond
+          (not (r/check-permission plugin-id "content:write"))
+          (u/display-not-valid :label "Plugin doesn't have 'content:write' permission")
+
+          (or (not (string? value)) (empty? value))
+          (u/display-not-valid :label value)
+
+          :else
+          (do (swap! data assoc :label value :created-by "user")
+              (->> (rp/cmd! :update-file-snapshot {:id (:id @data) :label value})
+                   (rx/take 1)
+                   (rx/subs! identity)))))}
+
+     {:name "createdBy"
+      :get (fn [_]
+             (when-let [user-data (get users (:profile-id @data))]
+               (user/user-proxy plugin-id user-data)))}
+
+     {:name "createdAt"
+      :get (fn [_]
+             (.toJSDate ^js (:created-at @data)))}
+
+     {:name "isAutosave"
+      :get (fn [_]
+             (= "system" (:created-by @data)))})))
 
 (deftype FileProxy [$plugin $id]
   Object
@@ -157,7 +249,58 @@
                                     :response-type :buffer}))))
                   (rx/take 1)
                   (rx/map (fn [data] (js/Uint8Array. data)))
-                  (rx/subs! resolve reject)))))))))
+                  (rx/subs! resolve reject))))))))
+
+
+  (findVersions
+    [_ criteria]
+    (let [user (obj/get criteria "createdBy" nil)]
+      (js/Promise.
+       (fn [resolve reject]
+         (cond
+           (not (r/check-permission $plugin "content:read"))
+           (u/reject-not-valid reject :findVersions "Plugin doesn't have 'content:read' permission")
+
+           (and (not user) (not (user/user-proxy? user)))
+           (u/reject-not-valid reject :findVersions-user "Created by user is not a valid user object")
+
+           :else
+           (->> (rx/zip (rp/cmd! :get-team-users {:file-id $id})
+                        (rp/cmd! :get-file-snapshots {:file-id $id}))
+                (rx/take 1)
+                (rx/subs!
+                 (fn [[users snapshots]]
+                   (let [users (d/index-by :id users)]
+                     (->> snapshots
+                          (filter #(= (dm/str (:profile-id %)) (obj/get user "id")))
+                          (map #(file-version-proxy $plugin $id users %))
+                          (sequence)
+                          (apply array)
+                          (resolve))))
+                 reject)))))))
+
+  (saveVersion
+    [_ label]
+    (let [users-promise
+          (js/Promise.
+           (fn [resolve reject]
+             (->> (rp/cmd! :get-team-users {:file-id $id})
+                  (rx/subs! resolve reject))))
+
+          create-version-promise
+          (js/Promise.
+           (fn [resolve reject]
+             (cond
+               (not (r/check-permission $plugin "content:write"))
+               (u/reject-not-valid reject :findVersions "Plugin doesn't have 'content:write' permission")
+
+               :else
+               (st/emit! (dwv/create-version-from-plugins $id label resolve reject)))))]
+      (-> (js/Promise.all #js [users-promise create-version-promise])
+          (.then
+           (fn [[users data]]
+             (let [users (d/index-by :id users)]
+               (file-version-proxy $plugin $id users data))))))))
 
 (crc/define-properties!
   FileProxy
@@ -182,5 +325,3 @@
 
    {:name "pages"
     :get #(.getPages ^js %)}))
-
-
