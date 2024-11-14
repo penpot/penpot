@@ -354,11 +354,11 @@ msgstr "pẹ́ńpọtì rẹ"
 msgid "dashboard.delete-team"
 msgstr "pa ẹgbẹ́ rẹ́"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:318, src/app/main/ui/workspace/main_menu.cljs:602
+#: src/app/main/ui/dashboard/file_menu.cljs:318, src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/workspace/main_menu.cljs:603, src/app/main/ui/workspace/main_menu.cljs:612
 msgid "dashboard.download-binary-file"
 msgstr "sọ fáìlí pẹ́ńpọtì kalẹ̀ (.penpot)"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:328, src/app/main/ui/workspace/main_menu.cljs:619
+#: src/app/main/ui/dashboard/file_menu.cljs:328, src/app/main/ui/workspace/main_menu.cljs:621
 msgid "dashboard.download-standard-file"
 msgstr "sọ fáìlì ìpéwọ̀n kalẹ̀ (.svg + .json)"
 
@@ -370,11 +370,11 @@ msgstr "ṣe ẹ̀dà"
 msgid "dashboard.duplicate-multi"
 msgstr "ṣe ẹ̀dà %s fáìlì"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:259
+#: src/app/main/ui/dashboard/file_menu.cljs:259, src/app/main/ui/dashboard/file_menu.cljs:264
 msgid "dashboard.export-binary-multi"
 msgstr "sọ àwọn fáìlì pẹ́ẹ́pọtì kalẹ́ %s (.pẹ́ńpọtì)"
 
-#: src/app/main/ui/workspace/main_menu.cljs:627
+#: src/app/main/ui/workspace/main_menu.cljs:629
 msgid "dashboard.export-frames"
 msgstr "fi bọọdù ráńṣẹ bí i PDF"
 
@@ -416,42 +416,42 @@ msgstr "àṣàyàn ìfiránṣẹ́"
 msgid "dashboard.export-standard-multi"
 msgstr "danlóòdù %s àwọn ojúlówó fáìli  (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:152
+#: src/app/main/ui/exports/files.cljs:157
 msgid "dashboard.export.detail"
 msgstr "* ó le ní àwọn ẹ̀yà ara, àwòrán àti àwon àwọ̀ àti / tàbí àtẹ̀jáde."
 
-#: src/app/main/ui/exports/files.cljs:160
+#: src/app/main/ui/exports/files.cljs:165
 msgid "dashboard.export.options.all.message"
 msgstr ""
 "àwọn fáìli tí ó wà nínú yàrá ìkàwé pípín á dàpọ̀ mọ́ ti ìfiráńṣẹ́, fún "
 "síṣetọ́jútheir linkage ìsopọ̀ wọn."
 
-#: src/app/main/ui/exports/files.cljs:161
+#: src/app/main/ui/exports/files.cljs:166
 msgid "dashboard.export.options.all.title"
 msgstr "ṣe ìfiráńṣẹ́ yàrá ìkàwé pípín"
 
-#: src/app/main/ui/exports/files.cljs:162
+#: src/app/main/ui/exports/files.cljs:167
 msgid "dashboard.export.options.detach.message"
 msgstr ""
 "Shared libraries will not be included in the export and no assets will be "
 "yàrá ìkàwé pípín kò ní sí nínú ti ìfiráńṣẹ́ àti pé kò ni ohun ìní kan   tí "
 "a ó fi kún yàrá ìkàwé. "
 
-#: src/app/main/ui/exports/files.cljs:163
+#: src/app/main/ui/exports/files.cljs:168
 msgid "dashboard.export.options.detach.title"
 msgstr "ṣe ìtọ́jú ohun ìní iyàrá ìkàwé pípín bí i nǹkan tó jẹ́ kókó"
 
-#: src/app/main/ui/exports/files.cljs:164
+#: src/app/main/ui/exports/files.cljs:169
 msgid "dashboard.export.options.merge.message"
 msgstr ""
 "á fi fáìlì rẹ ráńṣẹ́ pẹ̀lú gbogbo àwọn ohun ìní tó wà láyìíka ni a ó papọ̀ "
 "sínú fáìlì yàrá ìkàwé."
 
-#: src/app/main/ui/exports/files.cljs:165
+#: src/app/main/ui/exports/files.cljs:170
 msgid "dashboard.export.options.merge.title"
 msgstr "da ohun ìní yàrá ìkàwé pípín pọ̀ mọ́ fáìlì yàrá ìkàwé"
 
-#: src/app/main/ui/exports/files.cljs:143
+#: src/app/main/ui/exports/files.cljs:148
 msgid "dashboard.export.title"
 msgstr "fi àwọn fáìlì ráńṣẹ"
 
@@ -825,7 +825,7 @@ msgstr "àwọn fọ́ǹtì  %s kò ṣe kójọpọ̀"
 msgid "errors.cannot-upload"
 msgstr "kò le ọpulóòdù fáìlì ìgbéròyìn-jáde."
 
-#: src/app/main/data/workspace.cljs:1665
+#: src/app/main/data/workspace.cljs:1672
 msgid "errors.clipboard-not-implemented"
 msgstr "a ṣàwákiri rẹ kò le ṣe iṣẹ́ yìí"
 
@@ -1326,7 +1326,7 @@ msgstr ""
 msgid "labels.bad-gateway.main-message"
 msgstr "Ọ̀nà-àbáwọle búburú"
 
-#: src/app/main/data/common.cljs:131, src/app/main/ui/dashboard/change_owner.cljs:68, src/app/main/ui/dashboard/import.cljs:489, src/app/main/ui/dashboard/team.cljs:906, src/app/main/ui/delete_shared.cljs:35, src/app/main/ui/exports/assets.cljs:168, src/app/main/ui/exports/files.cljs:187, src/app/main/ui/settings/access_tokens.cljs:177, src/app/main/ui/viewer/share_link.cljs:205, src/app/main/ui/workspace/sidebar/assets/groups.cljs:145, src/app/main/ui/workspace/tokens/form.cljs:429, src/app/main/ui/workspace/tokens/modals/themes.cljs:203
+#: src/app/main/data/common.cljs:131, src/app/main/ui/dashboard/change_owner.cljs:68, src/app/main/ui/dashboard/import.cljs:489, src/app/main/ui/dashboard/team.cljs:906, src/app/main/ui/delete_shared.cljs:35, src/app/main/ui/exports/assets.cljs:168, src/app/main/ui/exports/files.cljs:192, src/app/main/ui/settings/access_tokens.cljs:177, src/app/main/ui/viewer/share_link.cljs:205, src/app/main/ui/workspace/sidebar/assets/groups.cljs:145, src/app/main/ui/workspace/tokens/form.cljs:429, src/app/main/ui/workspace/tokens/modals/themes.cljs:203
 msgid "labels.cancel"
 msgstr "Párẹ́"
 
@@ -1334,7 +1334,7 @@ msgstr "Párẹ́"
 msgid "labels.canva"
 msgstr "Káńfà"
 
-#: src/app/main/ui/dashboard/projects.cljs:96, src/app/main/ui/exports/files.cljs:205, src/app/main/ui/settings/access_tokens.cljs:172, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:176, src/app/main/ui/workspace/comments.cljs:129, src/app/main/ui/workspace/libraries.cljs:538, src/app/main/ui/workspace/sidebar/debug.cljs:40, src/app/main/ui/workspace/sidebar/layers.cljs:299, src/app/main/ui/workspace/tokens/modals/themes.cljs:366, src/app/main/ui/workspace/tokens/modals.cljs:56
+#: src/app/main/ui/dashboard/projects.cljs:96, src/app/main/ui/exports/files.cljs:210, src/app/main/ui/settings/access_tokens.cljs:172, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:176, src/app/main/ui/workspace/comments.cljs:129, src/app/main/ui/workspace/libraries.cljs:538, src/app/main/ui/workspace/sidebar/debug.cljs:40, src/app/main/ui/workspace/sidebar/layers.cljs:299, src/app/main/ui/workspace/tokens/modals/themes.cljs:366, src/app/main/ui/workspace/tokens/modals.cljs:56
 msgid "labels.close"
 msgstr "Tì í"
 
@@ -1350,7 +1350,7 @@ msgstr "Agbègbè"
 msgid "labels.confirm-password"
 msgstr "Jẹ́rìísí"
 
-#: src/app/main/ui/dashboard/import.cljs:495, src/app/main/ui/exports/files.cljs:192, src/app/main/ui/onboarding/newsletter.cljs:101
+#: src/app/main/ui/dashboard/import.cljs:495, src/app/main/ui/exports/files.cljs:197, src/app/main/ui/onboarding/newsletter.cljs:101
 msgid "labels.continue"
 msgstr "Tẹ̀ síwájú"
 
@@ -2438,7 +2438,7 @@ msgstr "Sàtunkọ"
 msgid "shortcut-subsection.general-viewer"
 msgstr "àbùdá"
 
-#: src/app/main/ui/workspace/main_menu.cljs:775, src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
+#: src/app/main/ui/workspace/main_menu.cljs:777, src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
 msgid "shortcut-subsection.main-menu"
 msgstr "Akojọ ólórì aṣyn"
 
@@ -3323,23 +3323,23 @@ msgstr "Tọ̀jú awọn ólòrí"
 msgid "workspace.header.menu.hide-textpalette"
 msgstr "Tọ̀jú awọn fọnti paleti"
 
-#: src/app/main/ui/workspace/main_menu.cljs:801
+#: src/app/main/ui/workspace/main_menu.cljs:803
 msgid "workspace.header.menu.option.edit"
 msgstr "Satunkọ"
 
-#: src/app/main/ui/workspace/main_menu.cljs:790
+#: src/app/main/ui/workspace/main_menu.cljs:792
 msgid "workspace.header.menu.option.file"
 msgstr "Faili"
 
-#: src/app/main/ui/workspace/main_menu.cljs:847
+#: src/app/main/ui/workspace/main_menu.cljs:849
 msgid "workspace.header.menu.option.help-info"
 msgstr "Iranlọwọ ati alaye"
 
-#: src/app/main/ui/workspace/main_menu.cljs:823
+#: src/app/main/ui/workspace/main_menu.cljs:825
 msgid "workspace.header.menu.option.preferences"
 msgstr "Awọn àyánfẹ̀"
 
-#: src/app/main/ui/workspace/main_menu.cljs:812
+#: src/app/main/ui/workspace/main_menu.cljs:814
 msgid "workspace.header.menu.option.view"
 msgstr "Wiwo"
 

@@ -10,6 +10,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.config :as cf]
    [app.main.data.exports.files :as fexp]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
@@ -106,9 +107,13 @@
                      (swap! state* update :files mark-file-error (:file-id msg))
 
                      (= :finish (:type msg))
-                     (do
+                     (let [mtype (if (contains? cf/flags :export-file-v3)
+                                   "application/penpot"
+                                   (:mtype msg))
+                           fname (:filename msg)
+                           uri   (:uri msg)]
                        (swap! state* update :files mark-file-success (:file-id msg))
-                       (dom/trigger-download-uri (:filename msg) (:mtype msg) (:uri msg)))))))))
+                       (dom/trigger-download-uri fname mtype uri))))))))
 
         on-cancel
         (mf/use-fn

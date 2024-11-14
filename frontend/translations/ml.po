@@ -207,7 +207,7 @@ msgstr "പകർപ്പ്"
 msgid "dashboard.duplicate-multi"
 msgstr "%s ഫയലുകളുടെ പകർപ്പ്"
 
-#: src/app/main/ui/workspace/main_menu.cljs:627
+#: src/app/main/ui/workspace/main_menu.cljs:629
 msgid "dashboard.export-frames"
 msgstr "ആർട്ട്ബോർഡുകൾ പിഡിഎഫായി എക്സ്പോർട്ട് ചെയ്യുക"
 
@@ -223,7 +223,7 @@ msgstr "പെൻപോട്ട് %s ഫയലുകൾ എക്സ്പോ�
 msgid "dashboard.export-shapes"
 msgstr "എക്സ്പോർട്ട്"
 
-#: src/app/main/ui/exports/files.cljs:152
+#: src/app/main/ui/exports/files.cljs:157
 msgid "dashboard.export.detail"
 msgstr "* ഘടകങ്ങൾ, ഗ്രാഫിക്സ്, നിറങ്ങൾ അല്ലെങ്കിൽ മുദ്രണകലകൾ എന്നിവ ഉൾപ്പെടാം."
 

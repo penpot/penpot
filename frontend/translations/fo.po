@@ -285,11 +285,11 @@ msgstr "Títt Penpot"
 msgid "dashboard.delete-team"
 msgstr "Strika toymi"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:318, src/app/main/ui/workspace/main_menu.cljs:602
+#: src/app/main/ui/dashboard/file_menu.cljs:318, src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/workspace/main_menu.cljs:603, src/app/main/ui/workspace/main_menu.cljs:612
 msgid "dashboard.download-binary-file"
 msgstr "Heinta Penpot fílu (.penpot)"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:328, src/app/main/ui/workspace/main_menu.cljs:619
+#: src/app/main/ui/dashboard/file_menu.cljs:328, src/app/main/ui/workspace/main_menu.cljs:621
 msgid "dashboard.download-standard-file"
 msgstr "Heinta standarafílu (.svg + .json)"
 
@@ -301,11 +301,11 @@ msgstr "Tvítøka"
 msgid "dashboard.duplicate-multi"
 msgstr "Tvítak %s fílur"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:259
+#: src/app/main/ui/dashboard/file_menu.cljs:259, src/app/main/ui/dashboard/file_menu.cljs:264
 msgid "dashboard.export-binary-multi"
 msgstr "Heinta %s Penpot fílur (.penpot)"
 
-#: src/app/main/ui/workspace/main_menu.cljs:627
+#: src/app/main/ui/workspace/main_menu.cljs:629
 msgid "dashboard.export-frames"
 msgstr "Útflyt borð sum PDF"
 
@@ -341,11 +341,11 @@ msgstr "Valt til útflyting"
 msgid "dashboard.export-standard-multi"
 msgstr "Heinta %s standarafílur (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:161
+#: src/app/main/ui/exports/files.cljs:166
 msgid "dashboard.export.options.all.title"
 msgstr "Útflyt deild søvn"
 
-#: src/app/main/ui/exports/files.cljs:143
+#: src/app/main/ui/exports/files.cljs:148
 msgid "dashboard.export.title"
 msgstr "Útflyt fílur"
 
@@ -676,6 +676,6 @@ msgstr "%s - Penpot"
 msgid "title.settings.profile"
 msgstr "Vangamynd - Penpot"
 
-#: src/app/main/ui/workspace/main_menu.cljs:790
+#: src/app/main/ui/workspace/main_menu.cljs:792
 msgid "workspace.header.menu.option.file"
 msgstr "Fílu"

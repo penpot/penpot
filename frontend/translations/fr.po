@@ -418,11 +418,11 @@ msgstr "Votre Penpot"
 msgid "dashboard.delete-team"
 msgstr "Supprimer l’équipe"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:318, src/app/main/ui/workspace/main_menu.cljs:602
+#: src/app/main/ui/dashboard/file_menu.cljs:318, src/app/main/ui/dashboard/file_menu.cljs:323, src/app/main/ui/workspace/main_menu.cljs:603, src/app/main/ui/workspace/main_menu.cljs:612
 msgid "dashboard.download-binary-file"
 msgstr "Télécharger le fichier Penpot (.penpot)"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:328, src/app/main/ui/workspace/main_menu.cljs:619
+#: src/app/main/ui/dashboard/file_menu.cljs:328, src/app/main/ui/workspace/main_menu.cljs:621
 msgid "dashboard.download-standard-file"
 msgstr "Télécharger le fichier standard (.svg + .json)"
 
@@ -434,11 +434,11 @@ msgstr "Dupliquer"
 msgid "dashboard.duplicate-multi"
 msgstr "Dupliquer %s fichiers"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:259
+#: src/app/main/ui/dashboard/file_menu.cljs:259, src/app/main/ui/dashboard/file_menu.cljs:264
 msgid "dashboard.export-binary-multi"
 msgstr "Télécharger %s fichiers Penpot (.penpot)"
 
-#: src/app/main/ui/workspace/main_menu.cljs:627
+#: src/app/main/ui/workspace/main_menu.cljs:629
 msgid "dashboard.export-frames"
 msgstr "Exporter les plans de travail au format PDF"
 
@@ -480,53 +480,53 @@ msgstr "Exporter la sélection"
 msgid "dashboard.export-standard-multi"
 msgstr "Télécharger %s fichiers standards (.svg + .json)"
 
-#: src/app/main/ui/exports/files.cljs:152
+#: src/app/main/ui/exports/files.cljs:157
 msgid "dashboard.export.detail"
 msgstr ""
 "* Peut inclure les composants, éléments graphiques, couleurs et/ou polices "
 "de caractère."
 
-#: src/app/main/ui/exports/files.cljs:151
+#: src/app/main/ui/exports/files.cljs:156
 msgid "dashboard.export.explain"
 msgstr ""
 "Un ou plusieurs fichiers que vous souhaitez exporter utilisent des "
 "bibliothèques partagées. Que voulez-vous faire avec leurs ressources ?"
 
-#: src/app/main/ui/exports/files.cljs:160
+#: src/app/main/ui/exports/files.cljs:165
 msgid "dashboard.export.options.all.message"
 msgstr ""
 "Les fichiers avec des bibliothèques partagées seront inclus dans "
 "l'exportation, en maintenant leur liaison."
 
-#: src/app/main/ui/exports/files.cljs:161
+#: src/app/main/ui/exports/files.cljs:166
 msgid "dashboard.export.options.all.title"
 msgstr "Exporter les bibliothèques partagées"
 
-#: src/app/main/ui/exports/files.cljs:162
+#: src/app/main/ui/exports/files.cljs:167
 msgid "dashboard.export.options.detach.message"
 msgstr ""
 "Les bibliothèques partagées ne seront pas incluses dans l'exportation et "
 "aucune ressource ne sera ajoutée à la librairie. "
 
-#: src/app/main/ui/exports/files.cljs:163
+#: src/app/main/ui/exports/files.cljs:168
 msgid "dashboard.export.options.detach.title"
 msgstr ""
 "Considérer les ressources des bibliothèques partagées comme des objets "
 "basiques"
 
-#: src/app/main/ui/exports/files.cljs:164
+#: src/app/main/ui/exports/files.cljs:169
 msgid "dashboard.export.options.merge.message"
 msgstr ""
 "Votre fichier sera exporté avec toutes les ressources externes fusionnées "
 "dans la bibliothèque de fichiers."
 
-#: src/app/main/ui/exports/files.cljs:165
+#: src/app/main/ui/exports/files.cljs:170
 msgid "dashboard.export.options.merge.title"
 msgstr ""
 "Inclure les ressources des bibliothèques partagées dans les bibliothèques "
 "de fichiers"
 
-#: src/app/main/ui/exports/files.cljs:143
+#: src/app/main/ui/exports/files.cljs:148
 msgid "dashboard.export.title"
 msgstr "Exporter les fichiers"
 
@@ -949,7 +949,7 @@ msgstr "Les polices %s n'ont pas pu être chargées"
 msgid "errors.cannot-upload"
 msgstr "Impossible de télécharger le fichier média."
 
-#: src/app/main/data/workspace.cljs:1665
+#: src/app/main/data/workspace.cljs:1672
 msgid "errors.clipboard-not-implemented"
 msgstr "Votre navigateur ne peut pas effectuer cette opération"
 
@@ -1509,7 +1509,7 @@ msgstr ""
 msgid "labels.bad-gateway.main-message"
 msgstr "Bad Gateway"
 
-#: src/app/main/data/common.cljs:131, src/app/main/ui/dashboard/change_owner.cljs:68, src/app/main/ui/dashboard/import.cljs:489, src/app/main/ui/dashboard/team.cljs:906, src/app/main/ui/delete_shared.cljs:35, src/app/main/ui/exports/assets.cljs:168, src/app/main/ui/exports/files.cljs:187, src/app/main/ui/settings/access_tokens.cljs:177, src/app/main/ui/viewer/share_link.cljs:205, src/app/main/ui/workspace/sidebar/assets/groups.cljs:145, src/app/main/ui/workspace/tokens/form.cljs:429, src/app/main/ui/workspace/tokens/modals/themes.cljs:203
+#: src/app/main/data/common.cljs:131, src/app/main/ui/dashboard/change_owner.cljs:68, src/app/main/ui/dashboard/import.cljs:489, src/app/main/ui/dashboard/team.cljs:906, src/app/main/ui/delete_shared.cljs:35, src/app/main/ui/exports/assets.cljs:168, src/app/main/ui/exports/files.cljs:192, src/app/main/ui/settings/access_tokens.cljs:177, src/app/main/ui/viewer/share_link.cljs:205, src/app/main/ui/workspace/sidebar/assets/groups.cljs:145, src/app/main/ui/workspace/tokens/form.cljs:429, src/app/main/ui/workspace/tokens/modals/themes.cljs:203
 msgid "labels.cancel"
 msgstr "Annuler"
 
@@ -1517,7 +1517,7 @@ msgstr "Annuler"
 msgid "labels.canva"
 msgstr "Canevas"
 
-#: src/app/main/ui/dashboard/projects.cljs:96, src/app/main/ui/exports/files.cljs:205, src/app/main/ui/settings/access_tokens.cljs:172, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:176, src/app/main/ui/workspace/comments.cljs:129, src/app/main/ui/workspace/libraries.cljs:538, src/app/main/ui/workspace/sidebar/debug.cljs:40, src/app/main/ui/workspace/sidebar/layers.cljs:299, src/app/main/ui/workspace/tokens/modals/themes.cljs:366, src/app/main/ui/workspace/tokens/modals.cljs:56
+#: src/app/main/ui/dashboard/projects.cljs:96, src/app/main/ui/exports/files.cljs:210, src/app/main/ui/settings/access_tokens.cljs:172, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:176, src/app/main/ui/workspace/comments.cljs:129, src/app/main/ui/workspace/libraries.cljs:538, src/app/main/ui/workspace/sidebar/debug.cljs:40, src/app/main/ui/workspace/sidebar/layers.cljs:299, src/app/main/ui/workspace/tokens/modals/themes.cljs:366, src/app/main/ui/workspace/tokens/modals.cljs:56
 msgid "labels.close"
 msgstr "Fermer"
 
@@ -1533,7 +1533,7 @@ msgstr "Communauté"
 msgid "labels.confirm-password"
 msgstr "Confirmer le mot de passe"
 
-#: src/app/main/ui/dashboard/import.cljs:495, src/app/main/ui/exports/files.cljs:192, src/app/main/ui/onboarding/newsletter.cljs:101
+#: src/app/main/ui/dashboard/import.cljs:495, src/app/main/ui/exports/files.cljs:197, src/app/main/ui/onboarding/newsletter.cljs:101
 msgid "labels.continue"
 msgstr "Continuer"
 
@@ -2949,7 +2949,7 @@ msgstr "Générique"
 msgid "shortcut-subsection.general-viewer"
 msgstr "Générique"
 
-#: src/app/main/ui/workspace/main_menu.cljs:775, src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
+#: src/app/main/ui/workspace/main_menu.cljs:777, src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
 msgid "shortcut-subsection.main-menu"
 msgstr "Menu principal"
 
@@ -4043,23 +4043,23 @@ msgstr "Masquer les règles"
 msgid "workspace.header.menu.hide-textpalette"
 msgstr "Masquer la palette de polices"
 
-#: src/app/main/ui/workspace/main_menu.cljs:801
+#: src/app/main/ui/workspace/main_menu.cljs:803
 msgid "workspace.header.menu.option.edit"
 msgstr "Éditer"
 
-#: src/app/main/ui/workspace/main_menu.cljs:790
+#: src/app/main/ui/workspace/main_menu.cljs:792
 msgid "workspace.header.menu.option.file"
 msgstr "Fichier"
 
-#: src/app/main/ui/workspace/main_menu.cljs:847
+#: src/app/main/ui/workspace/main_menu.cljs:849
 msgid "workspace.header.menu.option.help-info"
 msgstr "Aide et information"
 
-#: src/app/main/ui/workspace/main_menu.cljs:823
+#: src/app/main/ui/workspace/main_menu.cljs:825
 msgid "workspace.header.menu.option.preferences"
 msgstr "Préférences"
 
-#: src/app/main/ui/workspace/main_menu.cljs:812
+#: src/app/main/ui/workspace/main_menu.cljs:814
 msgid "workspace.header.menu.option.view"
 msgstr "Vue"
 
@@ -5420,11 +5420,11 @@ msgstr "Installer"
 msgid "workspace.plugins.installed-plugins"
 msgstr "Extensions installées"
 
-#: src/app/main/ui/workspace/main_menu.cljs:649
+#: src/app/main/ui/workspace/main_menu.cljs:651
 msgid "workspace.plugins.menu.plugins-manager"
 msgstr "Manager d'extensions"
 
-#: src/app/main/ui/workspace/main_menu.cljs:835
+#: src/app/main/ui/workspace/main_menu.cljs:837
 msgid "workspace.plugins.menu.title"
 msgstr "Extensions"
 

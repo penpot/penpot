@@ -261,8 +261,8 @@
                   :handler on-export-binary-files})
 
                (when (contains? cf/flags :export-file-v3)
-                 {:name    (tr "dashboard.export-binary-multi-v3" file-count)
-                  :id      "file-binary-export-multi-v3"
+                 {:name    (tr "dashboard.export-binary-multi" file-count)
+                  :id      "file-binary-export-multi"
                   :handler on-export-binary-files-v3})
 
                (when-not (contains? cf/flags :export-file-v3)
@@ -320,8 +320,8 @@
                   :handler on-export-binary-files})
 
                (when (contains? cf/flags :export-file-v3)
-                 {:name    (tr "dashboard.download-binary-file-v3")
-                  :id      "download-binary-file-v3"
+                 {:name    (tr "dashboard.download-binary-file")
+                  :id      "download-binary-file"
                   :handler on-export-binary-files-v3})
 
                (when-not (contains? cf/flags :export-file-v3)

@@ -389,7 +389,7 @@ msgstr "Ok"
 msgid "ds.confirm-title"
 msgstr "Er du sikker?"
 
-#: src/app/main/data/workspace.cljs:1665
+#: src/app/main/data/workspace.cljs:1672
 msgid "errors.clipboard-not-implemented"
 msgstr "Din browser kan ikke gøre denne operation"
 
