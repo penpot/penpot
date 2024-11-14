@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-09-28 06:15+0000\n"
-"Last-Translator: \"Amerey.eu\" <info@amerey.eu>\n"
-"Language-Team: Czech "
-"<https://hosted.weblate.org/projects/penpot/frontend/cs/>\n"
+"PO-Revision-Date: 2024-11-14 11:14+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: Czech <https://hosted.weblate.org/projects/penpot/frontend/cs/"
+">\n"
 "Language: cs\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=((n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2);\n"
-"X-Generator: Weblate 5.8-dev\n"
+"X-Generator: Weblate 5.9-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:154, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -5548,6 +5548,7 @@ msgid "workspace.plugins.permissions.content-write"
 msgstr "Číst a upravovat obsah souborů, ke kterým mají uživatelé přístup."
 
 #: src/app/main/ui/workspace/plugins.cljs:323
+#, fuzzy
 msgid "workspace.plugins.permissions.disclaimer"
 msgstr "Všimněte si, že tento plugin byl vytvořen externí stranou."
 
@@ -5560,6 +5561,7 @@ msgid "workspace.plugins.permissions.library-write"
 msgstr "Číst a upravovat vaše knihovny a položky."
 
 #: src/app/main/ui/workspace/plugins.cljs:316
+#, fuzzy
 msgid "workspace.plugins.permissions.title"
 msgstr "TENTO PLUGIN POŽADUJE PŘÍSTUP K:"
 
