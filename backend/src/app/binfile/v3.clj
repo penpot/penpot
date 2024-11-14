@@ -296,7 +296,7 @@
 
     (doseq [thumbnail thumbnails]
       (let [data (cth/parse-object-id (:object-id thumbnail))
-            path (str "files/" file-id "/thumbnails/" (:page-id data)
+            path (str "files/" file-id "/thumbnails/" (:tag data) "/" (:page-id data)
                       "/" (:frame-id data) ".json")
             data (-> data
                      (assoc :media-id (:media-id thumbnail))
@@ -459,11 +459,12 @@
 
 (defn- match-thumbnail-entry-fn
   [file-id]
-  (let [pattern (str "^files/" file-id "/thumbnails/([^/]+)/([^/]+).json$")
+  (let [pattern (str "^files/" file-id "/thumbnails/([^/]+)/([^/]+)/([^/]+).json$")
         pattern (re-pattern pattern)]
     (fn [entry]
-      (when-let [[_ page-id frame-id] (re-matches pattern (zip-entry-name entry))]
+      (when-let [[_ tag page-id frame-id] (re-matches pattern (zip-entry-name entry))]
         {:entry entry
+         :tag tag
          :page-id (parse-uuid page-id)
          :frame-id (parse-uuid frame-id)
          :file-id file-id}))))
@@ -603,12 +604,13 @@
 (defn- read-file-thumbnails
   [{:keys [::input ::file-id ::entries] :as cfg}]
   (->> (keep (match-thumbnail-entry-fn file-id) entries)
-       (reduce (fn [result {:keys [page-id frame-id entry]}]
+       (reduce (fn [result {:keys [page-id frame-id tag entry]}]
                  (let [object (->> (read-entry input entry)
                                    (decode-file-thumbnail)
                                    (validate-file-thumbnail))]
                    (if (and (= frame-id (:frame-id object))
-                            (= page-id (:page-id object)))
+                            (= page-id (:page-id object))
+                            (= tag (:tag object)))
                      (conj result object)
                      result)))
                [])
@@ -788,7 +790,6 @@
           media-id  (bfc/lookup-index (:media-id item))
           object-id (-> (assoc item :file-id file-id)
                         (cth/fmt-object-id))
-
           params    {:file-id file-id
                      :object-id object-id
                      :tag (:tag item)
@@ -901,6 +902,11 @@
             (let [cfg (assoc cfg ::output output)]
               (export-files cfg)
               (export-storage-objects cfg)))))
+
+      (catch java.util.zip.ZipException cause
+        (vreset! cs cause)
+        (vreset! ab true)
+        (throw cause))
 
       (catch java.io.IOException _cause
         ;; Do nothing, EOF means client closes connection abruptly
