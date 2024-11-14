@@ -182,3 +182,8 @@
       (cond-> (u/join public-uri "assets/by-file-media-id/")
         (true? thumbnail?) (u/join (dm/str id "/thumbnail"))
         (false? thumbnail?) (u/join (dm/str id)))))))
+
+(defn resolve-static-asset
+  [path]
+  (let [uri (u/join public-uri path)]
+    (assoc uri :query (dm/str "version=" (:full version)))))

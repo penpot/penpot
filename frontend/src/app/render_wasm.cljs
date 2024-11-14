@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.types.shape.impl :as ctsi]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.util.object :as obj]
    [promesa.core :as p]))
 
@@ -137,16 +138,17 @@
 
 (defonce module
   (if (exists? js/dynamicImport)
-    (->> (js/dynamicImport "/js/render_wasm.js")
-         (p/mcat (fn [module]
-                   (let [default (unchecked-get module "default")]
-                     (default))))
-         (p/fmap (fn [module]
-                   (set! internal-module module)
-                   true))
-         (p/merr (fn [cause]
-                   (js/console.error cause)
-                   (p/resolved false))))
+    (let [uri (cf/resolve-static-asset "js/render_wasm.js")]
+      (->> (js/dynamicImport (str uri))
+           (p/mcat (fn [module]
+                     (let [default (unchecked-get module "default")]
+                       (default))))
+           (p/fmap (fn [module]
+                     (set! internal-module module)
+                     true))
+           (p/merr (fn [cause]
+                     (js/console.error cause)
+                     (p/resolved false)))))
     (p/resolved false)))
 
 (set! app.common.types.shape.impl/wasm-create-shape create-shape)
