@@ -293,7 +293,7 @@ msgstr "Dublikatas"
 msgid "dashboard.duplicate-multi"
 msgstr "Dubliuoti %s failus"
 
-#: src/app/main/ui/workspace/main_menu.cljs:627
+#: src/app/main/ui/workspace/main_menu.cljs:629
 msgid "dashboard.export-frames"
 msgstr "Eksportuokite darbalaukius į PDF"
 
@@ -331,49 +331,49 @@ msgstr "Nėra elementų su eksporto nustatymais."
 msgid "dashboard.export-shapes.title"
 msgstr "Eksportuoti pažymėtą sritį"
 
-#: src/app/main/ui/exports/files.cljs:152
+#: src/app/main/ui/exports/files.cljs:157
 msgid "dashboard.export.detail"
 msgstr "* Gali apimti komponentus, grafiką, spalvas ir (arba) tipografiją."
 
-#: src/app/main/ui/exports/files.cljs:151
+#: src/app/main/ui/exports/files.cljs:156
 msgid "dashboard.export.explain"
 msgstr ""
 "Viename ar keliuose failuose, kuriuos norite eksportuoti, naudojamos "
 "bendros bibliotekos. Ką norite daryti su jų komponentais*?"
 
-#: src/app/main/ui/exports/files.cljs:160
+#: src/app/main/ui/exports/files.cljs:165
 msgid "dashboard.export.options.all.message"
 msgstr ""
 "failai su bendromis bibliotekomis bus įtraukti į eksportą, išlaikant jų "
 "susiejimą."
 
-#: src/app/main/ui/exports/files.cljs:161
+#: src/app/main/ui/exports/files.cljs:166
 msgid "dashboard.export.options.all.title"
 msgstr "Eksportuoti bendrai naudojamas bibliotekas"
 
-#: src/app/main/ui/exports/files.cljs:162
+#: src/app/main/ui/exports/files.cljs:167
 msgid "dashboard.export.options.detach.message"
 msgstr ""
 "Bendrai naudojamos bibliotekos nebus įtrauktos į eksportą ir į biblioteką "
 "nebus pridėta jokių išteklių. "
 
-#: src/app/main/ui/exports/files.cljs:163
+#: src/app/main/ui/exports/files.cljs:168
 msgid "dashboard.export.options.detach.title"
 msgstr ""
 "Bendrai naudojamus bibliotekos komponentus traktuokite kaip pagrindinius "
 "objektus"
 
-#: src/app/main/ui/exports/files.cljs:164
+#: src/app/main/ui/exports/files.cljs:169
 msgid "dashboard.export.options.merge.message"
 msgstr ""
 "Jūsų failas bus eksportuotas su visais išoriniais komponentais, sujungtais "
 "į failų biblioteką."
 
-#: src/app/main/ui/exports/files.cljs:165
+#: src/app/main/ui/exports/files.cljs:170
 msgid "dashboard.export.options.merge.title"
 msgstr "Įtraukti bendrai naudojamus bibliotekos komponentus į failų bibliotekas"
 
-#: src/app/main/ui/exports/files.cljs:143
+#: src/app/main/ui/exports/files.cljs:148
 msgid "dashboard.export.title"
 msgstr "Eksportuoti failus"
 
