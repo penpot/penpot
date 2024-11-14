@@ -263,9 +263,9 @@
    ::http.client/client
    ::db/pool
    ::mbus/msgbus
-   ::ldap/provider
    ::sto/storage
    ::mtx/metrics
+   [::ldap/provider [:maybe ::ldap/provider]]
    [::climit [:maybe ::climit]]
    [::rlimit [:maybe ::rlimit]]
    ::setup/props])
