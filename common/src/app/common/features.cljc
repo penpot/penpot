@@ -57,7 +57,8 @@
   #{"fdata/shape-data-type"
     "styles/v2"
     "layout/grid"
-    "components/v2"})
+    "components/v2"
+    "plugins/runtime"})
 
 ;; A set of features which only affects on frontend and can be enabled
 ;; and disabled freely by the user any time. This features does not
