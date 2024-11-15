@@ -1,4 +1,4 @@
-use skia_safe::{self as skia, SamplingOptions};
+use skia_safe::{self as skia, Color, SamplingOptions};
 use std::collections::HashMap;
 use uuid::Uuid;
 
@@ -49,11 +49,13 @@ impl<'a> State<'a> {
         self.render_state.final_surface.canvas().save();
         self.render_state.drawing_surface.canvas().save();
 
-        render_single_shape(
-            &mut self.render_state.final_surface,
-            &mut self.render_state.drawing_surface,
-            shape,
-        );
+        if id != Uuid::nil() {
+            render_single_shape(
+                &mut self.render_state.final_surface,
+                &mut self.render_state.drawing_surface,
+                shape,
+            );
+        }
 
         // draw all the children shapes
         let shape_ids = shape.children.clone();
@@ -80,7 +82,11 @@ impl<'a> State<'a> {
     }
 }
 
-fn render_single_shape(surface: &mut skia::Surface, offscreen: &mut skia::Surface, shape: &Shape) {
+fn render_single_shape(
+    final_surface: &mut skia::Surface,
+    offscreen: &mut skia::Surface,
+    shape: &Shape,
+) {
     let r = skia::Rect::new(
         shape.selrect.x1,
         shape.selrect.y1,
@@ -120,9 +126,10 @@ fn render_single_shape(surface: &mut skia::Surface, offscreen: &mut skia::Surfac
     let mut paint = skia::Paint::default();
     paint.set_blend_mode(shape.blend_mode.into());
     offscreen.draw(
-        &mut surface.canvas(),
+        &mut final_surface.canvas(),
         (0.0, 0.0),
         SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::None),
         Some(&paint),
     );
+    offscreen.canvas().clear(Color::TRANSPARENT);
 }
