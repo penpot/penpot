@@ -92,7 +92,11 @@ impl RenderState {
     pub fn reset_canvas(&mut self) {
         self.drawing_surface
             .canvas()
-            .clear(skia_safe::Color::TRANSPARENT);
-        self.drawing_surface.canvas().reset_matrix();
+            .clear(skia_safe::Color::TRANSPARENT)
+            .reset_matrix();
+        self.final_surface
+            .canvas()
+            .clear(skia_safe::Color::TRANSPARENT)
+            .reset_matrix();
     }
 }
