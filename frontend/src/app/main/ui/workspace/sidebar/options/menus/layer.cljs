@@ -11,10 +11,13 @@
    [app.common.data.macros :as dm]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.render-wasm.api :as wasm.api]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -32,24 +35,30 @@
 (mf/defc layer-menu
   {::mf/wrap-props false}
   [props]
-  (let [ids                (unchecked-get props "ids")
-        values             (unchecked-get props "values")
+  (let [ids                    (unchecked-get props "ids")
+        values                 (unchecked-get props "values")
 
-        hidden?            (:hidden values)
-        blocked?           (:blocked values)
+        hidden?                (:hidden values)
+        blocked?               (:blocked values)
 
-        current-blend-mode (or (:blend-mode values) :normal)
-        current-opacity    (opacity->string (:opacity values))
+        current-blend-mode     (or (:blend-mode values) :normal)
+        current-opacity        (opacity->string (:opacity values))
 
-        state*             (mf/use-state
-                            {:selected-blend-mode current-blend-mode
-                             :option-highlighted? false
-                             :preview-complete? true})
+        state*                 (mf/use-state
+                                {:selected-blend-mode current-blend-mode
+                                 :option-highlighted? false
+                                 :preview-complete? true})
 
-        state               (deref state*)
-        selected-blend-mode (get state :selected-blend-mode)
-        option-highlighted? (get state :option-highlighted?)
-        preview-complete?   (get state :preview-complete?)
+        state                  (deref state*)
+        selected-blend-mode    (get state :selected-blend-mode)
+        option-highlighted?    (get state :option-highlighted?)
+        preview-complete?      (get state :preview-complete?)
+        wasm-renderer-enabled? (features/use-feature "render-wasm/v1")
+
+        shapes (->
+                (wsh/lookup-page-objects @st/state)
+                (select-keys ids)
+                vals)
 
         on-change
         (mf/use-fn
@@ -75,6 +84,12 @@
            (swap! state* assoc
                   :preview-complete? false
                   :option-highlighted? true)
+
+           (when wasm-renderer-enabled?
+             (doseq [shape shapes]
+               (wasm.api/use-shape (:id shape))
+               (wasm.api/set-shape-blend-mode value)))
+
            (st/emit! (dw/set-preview-blend-mode ids value))))
 
         handle-blend-mode-leave
