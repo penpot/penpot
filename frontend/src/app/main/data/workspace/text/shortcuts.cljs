@@ -12,6 +12,7 @@
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -113,18 +114,24 @@
 
 (defn calculate-text-values
   [shape]
-  (let [state-map     (deref refs/workspace-editor-state)
-        editor-state  (get state-map (:id shape))]
+  (let [state-map    (if (features/active-feature? @st/state "text-editor/v2")
+                                                  (deref refs/workspace-v2-editor-state)
+                                                  (deref refs/workspace-editor-state))
+        editor-state  (get state-map (:id shape))
+        editor-instance (when (features/active-feature? @st/state "text-editor/v2")
+                          (deref refs/workspace-editor))]
     (d/merge
      (dwt/current-root-values
       {:shape shape
        :attrs txt/root-attrs})
      (dwt/current-paragraph-values
       {:editor-state editor-state
+       :editor-instance editor-instance
        :shape shape
        :attrs txt/paragraph-attrs})
      (dwt/current-text-values
       {:editor-state editor-state
+       :editor-instance editor-instance
        :shape shape
        :attrs txt/text-node-attrs}))))
 
