@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-14 11:14+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-11-16 13:00+0000\n"
+"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
 "Language: nl\n"
@@ -5589,9 +5589,12 @@ msgid "workspace.plugins.permissions.content-write"
 msgstr "Lees en wijzig de inhoud van bestanden waartoe gebruikers toegang hebben."
 
 #: src/app/main/ui/workspace/plugins.cljs:323
-#, fuzzy
 msgid "workspace.plugins.permissions.disclaimer"
-msgstr "Merk op dat deze plug-in is gemaakt door een externe partij."
+msgstr ""
+"Houd er rekening mee dat deze plug-in is gemaakt door een externe partij, "
+"dus zorg ervoor dat je deze vertrouwt voordat je toegang verleent. Privacy "
+"van jouw gegevens en beveiliging zijn belangrijk voor ons. Als je je zorgen "
+"maakt, neem dan contact op met ondersteuning."
 
 #: src/app/main/ui/workspace/plugins.cljs:263
 msgid "workspace.plugins.permissions.library-read"
@@ -5602,9 +5605,8 @@ msgid "workspace.plugins.permissions.library-write"
 msgstr "Jouw bibliotheken en middelen lezen en aanpassen."
 
 #: src/app/main/ui/workspace/plugins.cljs:316
-#, fuzzy
 msgid "workspace.plugins.permissions.title"
-msgstr "DEZE PLUGIN WIL TOEGANG TOT:"
+msgstr "PLUG-IN '%s' WIL TOEGANG TOT:"
 
 #: src/app/main/ui/workspace/plugins.cljs:250
 msgid "workspace.plugins.permissions.user-read"
@@ -6122,3 +6124,462 @@ msgstr "Bijwerken"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik om het pad te sluiten"
+
+#: src/app/main/ui/dashboard/files.cljs:185, src/app/main/ui/dashboard/projects.cljs:279
+msgid "dashboard.empty-placeholder-drafts-title"
+msgstr "Nog geen concepten."
+
+#: src/app/main/ui/dashboard/files.cljs:186, src/app/main/ui/dashboard/projects.cljs:280
+msgid "dashboard.empty-placeholder-files-title"
+msgstr "Nog geen bestanden."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:39
+#, markdown
+msgid "dashboard.empty-placeholder-libraries"
+msgstr ""
+"Hier verschijnen bibliotheken die aan het project zijn toegevoegd. Probeer "
+"je bestanden te delen of voeg ze toe vanuit onze [Bibliotheken en sjablonen] "
+"(https://penpot.app/libraries-templates)."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:271
+msgid "settings.remove-color"
+msgstr "Kleur verwijderen"
+
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:495
+msgid "workspace.assets.colors.add-color"
+msgstr "Kleur toevoegen"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:532
+msgid "workspace.assets.components.add-component"
+msgstr "Component toevoegen"
+
+#: src/app/main/ui/workspace/libraries.cljs:300
+msgid "workspace.libraries.more-templates"
+msgstr "Je kun hier "
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:195
+msgid "workspace.options.export.add-export"
+msgstr "Export toevoegen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:207, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:242
+msgid "workspace.options.export.remove-export"
+msgstr "Export verwijderen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:154
+msgid "workspace.options.flows.remove-flow"
+msgstr "Stroomdiagram verwijderen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:323
+msgid "workspace.options.guides.add-guide"
+msgstr "Hulplijn toevoegen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:187
+msgid "workspace.options.guides.remove-guide"
+msgstr "Hulplijn verwijderen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:171
+msgid "workspace.options.stroke.add-stroke"
+msgstr "Streekkleur toevoegen"
+
+#: src/app/main/ui/workspace/plugins.cljs:376
+msgid "workspace.plugins.permissions-update.warning"
+msgstr ""
+"De plug-in is gewijzigd sinds je hem voor het laatst hebt geopend. Het wil "
+"nu ook toegang krijgen tot:"
+
+#: src/app/main/ui/workspace/plugins.cljs:283
+msgid "workspace.plugins.permissions.allow-download"
+msgstr "Bestandsdownloads starten."
+
+#: src/app/main/ui/workspace/plugins.cljs:276
+msgid "workspace.plugins.permissions.comment-read"
+msgstr "Jouw opmerkingen en antwoorden lezen."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:47
+msgid "workspace.token.create-new-theme"
+msgstr "Maak nu je eerste thema aan."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:194, src/app/main/ui/workspace/tokens/sidebar.cljs:210
+msgid "workspace.token.create-one"
+msgstr "Maak er een aan."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:155, src/app/main/ui/workspace/tokens/modals/themes.cljs:239
+msgid "workspace.token.create-theme-title"
+msgstr "Thema aanmaken"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:362
+msgid "workspace.token.create-token"
+msgstr "Nieuw %s token aanmaken"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:147
+msgid "workspace.token.delete-theme-title"
+msgstr "Thema verwijderen"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+#, unused
+msgid "workspace.token.theme-name"
+msgstr "Thema %s"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:193, src/app/main/ui/workspace/tokens/form.cljs:196, src/app/main/ui/workspace/tokens/sidebar.cljs:67
+msgid "workspace.token.resolved-value"
+msgstr "Besloten waarde: "
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:208
+msgid "workspace.token.save-theme"
+msgstr "Thema opslaan"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:172
+msgid "workspace.token.select-set"
+msgstr "Verzameling kiezen."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:318
+msgid "workspace.token.set-selection-theme"
+msgstr ""
+"Bepaal welke tokenverzamelingen moeten worden gebruikt als onderdeel van "
+"deze thema-optie:"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:193
+msgid "workspace.versions.autosaved.entry"
+msgstr "%s autom. opgeslagen versies"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:187
+msgid "workspace.versions.autosaved.version"
+msgstr "Autom. opgeslagen %s"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:224
+msgid "workspace.versions.button.pin"
+msgstr "Versie vastmaken"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:219
+msgid "workspace.versions.button.restore"
+msgstr "Versie herstellen"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:354
+msgid "workspace.versions.empty"
+msgstr "Er zijn nog geen versies"
+
+#: src/app/main/ui/dashboard/files.cljs:190, src/app/main/ui/dashboard/projects.cljs:284
+msgid "dashboard.empty-placeholder-drafts-subtitle"
+msgstr ""
+"Zodra een projectlid een concept heeft gemaakt, wordt het hier weergegeven."
+
+#: src/app/main/ui/dashboard/files.cljs:191, src/app/main/ui/dashboard/projects.cljs:285
+msgid "dashboard.empty-placeholder-files-subtitle"
+msgstr ""
+"Zodra een projectlid een bestand heeft gemaakt, wordt het hier weergegeven."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:35
+msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
+msgstr "Hier verschijnen bibliotheken die aan het project zijn toegevoegd."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:32
+msgid "dashboard.empty-placeholder-libraries-title"
+msgstr "Nog geen bibliotheken."
+
+#: src/app/main/ui/dashboard/fonts.cljs:444
+msgid "dashboard.fonts.empty-placeholder-viewer"
+msgstr "Nog geen aangepaste lettertypen."
+
+#: src/app/main/data/common.cljs:205
+msgid "dashboard.permissions-change.admin"
+msgstr "Je bent nu een beheerder van dit team."
+
+#: src/app/main/data/common.cljs:204
+msgid "dashboard.permissions-change.editor"
+msgstr "Je bent nu redacteur van dit team."
+
+#: src/app/main/data/common.cljs:206
+msgid "dashboard.permissions-change.owner"
+msgstr "Je bent nu eigenaar van dit team."
+
+#: src/app/main/data/common.cljs:203
+msgid "dashboard.permissions-change.viewer"
+msgstr "Je bent nu een lezer in dit team."
+
+#: src/app/main/data/common.cljs:233
+msgid "dashboard.removed-from-team"
+msgstr "Je maakt geen deel meer uit van het team “%s“."
+
+#: src/app/main/ui/dashboard/team.cljs:181, src/app/main/ui/onboarding/team_choice.cljs:100
+msgid "errors.maximum-invitations-by-request-reached"
+msgstr ""
+"Het maximale (%s) aantal e-mails dat in één verzoek kan worden uitgenodigd, "
+"is bereikt"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:153
+msgid "labels.collapse"
+msgstr "Samenvouwen"
+
+#: src/app/main/ui/comments.cljs:340, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:295, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:324
+msgid "labels.options"
+msgstr "Opties"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:149, src/app/main/ui/workspace/sidebar/versions.cljs:288
+msgid "labels.restore"
+msgstr "Herstellen"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:229
+msgid "labels.sets"
+msgstr "Verzamelingen"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:187
+msgid "labels.themes"
+msgstr "Thema's"
+
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:408
+msgid "workspace.assets.typography.add-typography"
+msgstr "Typografie toevoegen"
+
+#: src/app/main/ui/workspace/right_header.cljs:255
+msgid "workspace.header.share"
+msgstr "Delen"
+
+#: src/app/main/ui/workspace/libraries.cljs:304
+msgid "workspace.libraries.more-templates-link"
+msgstr "meer sjablonen zoeken"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+msgid "workspace.options.blur-options.add-blur"
+msgstr "Vervaging toevoegen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
+msgid "workspace.options.blur-options.remove-blur"
+msgstr "Vervaging verwijderen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:108
+msgid "workspace.options.blur-options.toggle-blur"
+msgstr "Vervaging wisselen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:150
+msgid "workspace.options.fill.add-fill"
+msgstr "Vulkleur toevoegen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:163
+msgid "workspace.options.fill.remove-fill"
+msgstr "Vulling verwijderen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:183
+msgid "workspace.options.guides.toggle-guide"
+msgstr "Hulplijn wisselen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:735
+msgid "workspace.options.interactions.add-interaction"
+msgstr "Interactie toevoegen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:177, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:315
+msgid "workspace.options.shadow-options.remove-shadow"
+msgstr "Schaduw verwijderen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:184
+msgid "workspace.options.stroke.remove-stroke"
+msgstr "Streek verwijderen"
+
+#: src/app/main/ui/workspace/plugins.cljs:196
+msgid "workspace.plugins.error.manifest"
+msgstr "Het plug-in-manifest is onjuist."
+
+#: src/app/main/data/plugins.cljs:86, src/app/main/ui/workspace/main_menu.cljs:696, src/app/main/ui/workspace/plugins.cljs:82
+msgid "workspace.plugins.error.need-editor"
+msgstr "Je moet een redacteur zijn om deze plug-in te gebruiken"
+
+#: src/app/main/ui/workspace/plugins.cljs:372
+msgid "workspace.plugins.permissions-update.title"
+msgstr "DEZE PLUGIN UPDATEN"
+
+#: src/app/main/ui/workspace/plugins.cljs:270
+msgid "workspace.plugins.permissions.comment-write"
+msgstr "Lees en wijzig jouw opmerkingen en antwoord in jouw naam."
+
+#: src/app/main/ui/workspace/plugins.cljs:86
+msgid "workspace.plugins.remove-plugin"
+msgstr "Plug-in verwijderen"
+
+#: src/app/main/ui/workspace/plugins.cljs:436
+msgid "workspace.plugins.try-out.cancel"
+msgstr "NIET NU"
+
+#: src/app/main/ui/workspace/plugins.cljs:429
+msgid "workspace.plugins.try-out.message"
+msgstr ""
+"Wil je even kijken? Het wordt geopend in een nieuw concept voor je huidige "
+"team. (Zo niet, dan vindt je het altijd in de geïnstalleerde plug-ins van "
+"elk bestand.)"
+
+#: src/app/main/ui/workspace/plugins.cljs:425
+msgid "workspace.plugins.try-out.title"
+msgstr "PLUG-IN '%s' IS GEÏNSTALLEERD VOOR JE GEBRUIKER!"
+
+#: src/app/main/ui/workspace/plugins.cljs:442
+msgid "workspace.plugins.try-out.try"
+msgstr "PLUG-IN UITPROBEREN"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1004, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1030
+msgid "workspace.shape.menu.add-layout"
+msgstr "Lay-out toevoegen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1022
+msgid "workspace.shape.menu.remove-layout"
+msgstr "Lay-out verwijderen"
+
+#: src/app/main/ui/workspace/context_menu.cljs:235
+msgid "workspace.shape.menu.rename"
+msgstr "Naam wijzigen"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:229
+msgid "workspace.sidebar.sitemap.add-page"
+msgstr "Pagina toevoegen"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:84
+msgid "workspace.token.active-themes"
+msgstr "%s actieve thema's"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:310
+msgid "workspace.token.back-to-themes"
+msgstr "Terug naar themalijst"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:302
+msgid "workspace.token.edit-theme-title"
+msgstr "Thema bewerken"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:72
+msgid "workspace.token.edit-themes"
+msgstr "Thema's bewerken"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:186
+msgid "workspace.token.grouping-set-alert"
+msgstr "Groepering van tokenverzamelingen is nog niet ondersteund."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:142
+msgid "workspace.token.no-sets"
+msgstr "Geen verzamelingen"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:216
+msgid "workspace.token.no-sets-create"
+msgstr "Er zijn nog geen verzamelingen gedefinieerd. Maak er eerst een aan."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:239
+msgid "workspace.token.no-sets-yet"
+msgstr "Er zijn nog geen verzamelingen."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:191
+msgid "workspace.token.no-themes"
+msgstr "Er zijn geen thema's."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:133
+msgid "workspace.token.num-sets"
+msgstr "%s verzamelingen"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:66
+msgid "workspace.token.original-value"
+msgstr "Oorspronkelijke waarde: "
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:345, src/app/main/ui/workspace/sidebar/versions.cljs:347
+msgid "workspace.versions.button.save"
+msgstr "Versie opslaan"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:190
+msgid "workspace.versions.expand-snapshot"
+msgstr "Snapshots uitbreiden"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:327
+msgid "workspace.versions.filter.all"
+msgstr "Alle versies"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:326
+msgid "workspace.versions.filter.label"
+msgstr "Versiefilter"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:334
+msgid "workspace.versions.filter.user"
+msgstr "%s's versies"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:340
+msgid "workspace.versions.loading"
+msgstr "Laden…"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:283
+msgid "workspace.versions.restore-warning"
+msgstr "Wil je deze versie herstellen?"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:207
+msgid "workspace.versions.snapshot-menu"
+msgstr "Snapshot-menu openen"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:138
+msgid "workspace.versions.version-menu"
+msgstr "Versie-menu openen"
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+#, markdown, unused
+msgid "dashboard.empty-placeholder-libraries-subtitle"
+msgstr ""
+"Hier verschijnen bibliotheken die aan het project zijn toegevoegd. Probeer "
+"je bestanden te delen of voeg ze toe vanuit onze [Bibliotheken en sjablonen] "
+"(https://penpot.app/libraries-templates)."
+
+#: src/app/main/ui/dashboard/fonts.cljs:445
+msgid "dashboard.fonts.empty-placeholder-viewer-sub"
+msgstr ""
+"Zodra een projectlid een aangepast lettertype heeft geüpload, wordt het hier "
+"weergegeven."
+
+#: src/app/main/ui/dashboard/team.cljs:944
+msgid "dashboard.webhooks.cant-edit"
+msgstr "Je kunt alleen door jou gemaakte webhooks verwijderen of wijzigen."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1051
+#, unused
+msgid "labels.add"
+msgstr "Toevoegen"
+
+#: src/app/main/ui/dashboard/team.cljs:216
+msgid "modals.invite-team-member.text"
+msgstr ""
+"Je kunt leden uitnodigen voor het team zodat ze toegang hebben tot dit "
+"bestand en alle teambestanden."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:173
+msgid "workspace.options.shadow-options.toggle-shadow"
+msgstr "Schaduw wisselen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.interactions.remove-interaction"
+msgstr "Interactie verwijderen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:176, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:182
+msgid "workspace.options.layer-options.toggle-layer"
+msgstr "Laagzichtbaarheid wisselen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:302
+msgid "workspace.options.shadow-options.add-shadow"
+msgstr "Schaduw toevoegen"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+#, unused
+msgid "workspace.token.add set"
+msgstr "Verzameling toevoegen"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:361
+msgid "workspace.token.edit-token"
+msgstr "Token bewerken"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:52
+msgid "workspace.token.new-theme"
+msgstr "Nieuw thema"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:88
+msgid "workspace.token.no-active-theme"
+msgstr "Geen thema actief"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43
+msgid "workspace.token.no-themes-currently"
+msgstr "Je hebt momenteel geen thema's."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:39, src/app/main/ui/workspace/tokens/modals/themes.cljs:84
+msgid "workspace.token.themes"
+msgstr "Thema's"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:328
+msgid "workspace.versions.filter.mine"
+msgstr "Mijn versies"
