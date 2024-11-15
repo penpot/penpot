@@ -11,9 +11,9 @@
   },
   "~:permissions": {
     "~:type": "~:membership",
-    "~:is-owner": true,
-    "~:is-admin": true,
-    "~:can-edit": true
+    "~:is-owner": false,
+    "~:is-admin": false,
+    "~:can-edit": false
   },
   "~:name": "Default",
   "~:modified-at": "~m1713533116375",

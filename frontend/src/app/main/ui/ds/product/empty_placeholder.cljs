@@ -27,7 +27,7 @@
   [{:keys [class title subtitle type children] :rest props}]
 
   (let [class (dm/str class " " (stl/css :empty-placeholder))
-        props (mf/spread-props props {:class class})
+        props (mf/spread-props props {:class class :data-testid "empty-placeholder"})
         type  (or type 1)
         decoration-type (dm/str "empty-placeholder-" (str type))]
     [:> "div" props
