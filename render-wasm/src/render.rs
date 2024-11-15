@@ -146,7 +146,7 @@ impl RenderState {
         self.drawing_surface.draw(
             &mut self.final_surface.canvas(),
             (0.0, 0.0),
-            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::None),
+            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
             Some(&paint),
         );
         self.drawing_surface
