@@ -1,5 +1,9 @@
-use skia_safe as skia;
 use skia_safe::gpu::{self, gl::FramebufferInfo, DirectContext};
+use skia_safe::{self as skia};
+use std::collections::HashMap;
+use uuid::Uuid;
+
+use crate::shapes::Shape;
 
 struct GpuState {
     pub context: DirectContext,
@@ -98,5 +102,93 @@ impl RenderState {
             .canvas()
             .clear(skia_safe::Color::TRANSPARENT)
             .reset_matrix();
+    }
+
+    pub fn render_single_shape(&mut self, shape: &Shape) {
+        let r = skia::Rect::new(
+            shape.selrect.x1,
+            shape.selrect.y1,
+            shape.selrect.x2,
+            shape.selrect.y2,
+        );
+
+        // Check transform-matrix code from common/src/app/common/geom/shapes/transforms.cljc
+        let mut matrix = skia::Matrix::new_identity();
+        let (translate_x, translate_y) = shape.translation();
+        let (scale_x, scale_y) = shape.scale();
+        let (skew_x, skew_y) = shape.skew();
+
+        matrix.set_all(
+            scale_x,
+            skew_x,
+            translate_x,
+            skew_y,
+            scale_y,
+            translate_y,
+            0.,
+            0.,
+            1.,
+        );
+
+        let mut center = r.center();
+        matrix.post_translate(center);
+        center.negate();
+        matrix.pre_translate(center);
+
+        self.drawing_surface.canvas().concat(&matrix);
+
+        for fill in shape.fills().rev() {
+            self.drawing_surface.canvas().draw_rect(r, &fill.to_paint());
+        }
+
+        let mut paint = skia::Paint::default();
+        paint.set_blend_mode(shape.blend_mode.into());
+        self.drawing_surface.draw(
+            &mut self.final_surface.canvas(),
+            (0.0, 0.0),
+            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::None),
+            Some(&paint),
+        );
+        self.drawing_surface
+            .canvas()
+            .clear(skia::Color::TRANSPARENT);
+    }
+
+    pub fn draw_all_shapes(
+        &mut self,
+        zoom: f32,
+        pan_x: f32,
+        pan_y: f32,
+        shapes: &HashMap<Uuid, Shape>,
+    ) {
+        self.reset_canvas();
+
+        self.scale(zoom, zoom);
+        self.translate(pan_x, pan_y);
+
+        self.render_shape_tree(Uuid::nil(), shapes);
+
+        self.flush();
+    }
+
+    fn render_shape_tree(&mut self, id: Uuid, shapes: &HashMap<Uuid, Shape>) {
+        let shape = shapes.get(&id).unwrap();
+
+        // This is needed so the next non-children shape does not carry this shape's transform
+        self.final_surface.canvas().save();
+        self.drawing_surface.canvas().save();
+
+        if id != Uuid::nil() {
+            self.render_single_shape(shape);
+        }
+
+        // draw all the children shapes
+        let shape_ids = shape.children.clone();
+        for shape_id in shape_ids {
+            self.render_shape_tree(shape_id, shapes);
+        }
+
+        self.final_surface.canvas().restore();
+        self.drawing_surface.canvas().restore();
     }
 }
