@@ -403,7 +403,7 @@ msgstr "Eksportuj pliki"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:311
 msgid "dashboard.fonts.deleted-placeholder"
-msgstr "Font usunięty"
+msgstr "Czcionka usunięta"
 
 #: src/app/main/ui/dashboard/fonts.cljs:207
 msgid "dashboard.fonts.dismiss-all"
@@ -411,34 +411,34 @@ msgstr "Odrzuć wszystko"
 
 #: src/app/main/ui/dashboard/fonts.cljs:441
 msgid "dashboard.fonts.empty-placeholder"
-msgstr "Niestandardowe fonty, które prześlesz, pojawią się tutaj."
+msgstr "Niestandardowe czcionki, które prześlesz, pojawią się tutaj."
 
 #: src/app/main/ui/dashboard/fonts.cljs:195
 msgid "dashboard.fonts.fonts-added"
 msgid_plural "dashboard.fonts.fonts-added"
-msgstr[0] "1 font dodany"
-msgstr[1] "%s fonty dodane"
-msgstr[2] "%s fontów dodanych"
+msgstr[0] "1 czcionka dodana"
+msgstr[1] "%s czcionki dodane"
+msgstr[2] "%s czcionki dodane"
 
 #: src/app/main/ui/dashboard/fonts.cljs:171
 #, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
-"Każdy przesłany tutaj web font zostanie dodany do listy rodzin fontów "
-"dostępnych we właściwościach tekstowych plików tego zespołu. Fonty o tej "
-"samej nazwie rodziny zostaną zgrupowane jako **pojedyncza rodzina fontów**. "
-"Możesz przesyłać fonty w następujących formatach: **TTF, OTF i WOFF** "
+"Każda przesłana tutaj czcionka zostanie dodana do listy rodzin czcionek "
+"dostępnych we właściwościach tekstowych plików tego zespołu. Czcionki o tej "
+"samej nazwie rodziny zostaną zgrupowane jako **pojedyncza rodzina czcionek**. "
+"Możesz przesyłać czcionki w następujących formatach: **TTF, OTF i WOFF** "
 "(potrzebny będzie tylko jeden)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:183
 #, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"Powinieneś przesyłać tylko fonty, których jesteś właścicielem lub posiadasz "
+"Powinieneś przesyłać tylko czcionki, których jesteś właścicielem lub posiadasz "
 "licencję na używanie w Penpot. Dowiedz się więcej w sekcji dotyczącej praw "
 "do treści w [Warunkach świadczenia usług Penpot] "
 "(https://penpot.app/terms.html). Możesz też przeczytać o [licencjonowaniu "
-"fontów](https://www.typography.com/faq)."
+"czcionek](https://www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:203
 msgid "dashboard.fonts.upload-all"
@@ -522,7 +522,7 @@ msgstr "wczytywanie Twoich plików…"
 
 #: src/app/main/ui/dashboard/fonts.cljs:435
 msgid "dashboard.loading-fonts"
-msgstr "wczytywanie Twoich fontów…"
+msgstr "wczytywanie Twoich czcionek…"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/dashboard/project_menu.cljs:100
 msgid "dashboard.move-to"
@@ -770,11 +770,11 @@ msgstr "Wygląda na to, że nie jesteś uwierzytelniony lub sesja wygasła."
 
 #: src/app/main/data/fonts.cljs:189
 msgid "errors.bad-font"
-msgstr "Nie można załadować fontu %s"
+msgstr "Nie można załadować czcionki %s"
 
 #: src/app/main/data/fonts.cljs:188
 msgid "errors.bad-font-plural"
-msgstr "Nie można załadować fontów %s"
+msgstr "Nie można załadować czcionek %s"
 
 #: src/app/main/data/workspace.cljs:1672
 msgid "errors.clipboard-not-implemented"
@@ -1121,15 +1121,15 @@ msgstr "Typografia"
 
 #: src/app/main/ui/viewer/inspect/attributes/text.cljs:89, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:297
 msgid "inspect.attributes.typography.font-family"
-msgstr "Rodzina fontów"
+msgstr "Rodzina czcionek"
 
 #: src/app/main/ui/viewer/inspect/attributes/text.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:315
 msgid "inspect.attributes.typography.font-size"
-msgstr "Rozmiar fontu"
+msgstr "Rozmiar czcionki"
 
 #: src/app/main/ui/viewer/inspect/attributes/text.cljs:98, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:331
 msgid "inspect.attributes.typography.font-style"
-msgstr "Styl fontu"
+msgstr "Styl czcionki"
 
 #: src/app/main/ui/viewer/inspect/attributes/text.cljs:134, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:384
 msgid "inspect.attributes.typography.letter-spacing"
@@ -1259,7 +1259,7 @@ msgstr "Aktywny"
 
 #: src/app/main/ui/dashboard/fonts.cljs:176
 msgid "labels.add-custom-font"
-msgstr "Dodaj niestandardowy font"
+msgstr "Dodaj niestandardową czcionkę"
 
 #: src/app/main/ui/dashboard/team.cljs:128, src/app/main/ui/dashboard/team.cljs:310, src/app/main/ui/dashboard/team.cljs:550, src/app/main/ui/dashboard/team.cljs:580, src/app/main/ui/onboarding/team_choice.cljs:66
 msgid "labels.admin"
@@ -1338,7 +1338,7 @@ msgstr "Wprowadź nazwę nowego zespołu"
 
 #, unused
 msgid "labels.custom-fonts"
-msgstr "Niestandardowe fonty"
+msgstr "Niestandardowe czcionki"
 
 #: src/app/main/ui/settings/sidebar.cljs:73
 msgid "labels.dashboard"
@@ -1398,11 +1398,11 @@ msgstr "Opinia wysłana"
 
 #: src/app/main/ui/dashboard/fonts.cljs:418
 msgid "labels.font-family"
-msgstr "Rodzina fontów"
+msgstr "Rodzina czcionek"
 
 #, unused
 msgid "labels.font-providers"
-msgstr "Dostawcy fontów"
+msgstr "Dostawcy czcionek"
 
 #: src/app/main/ui/dashboard/fonts.cljs:419
 msgid "labels.font-variants"
@@ -1410,7 +1410,7 @@ msgstr "Style"
 
 #: src/app/main/ui/dashboard/fonts.cljs:53, src/app/main/ui/dashboard/sidebar.cljs:811
 msgid "labels.fonts"
-msgstr "Fonty"
+msgstr "Czcionki"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:1015, src/app/main/ui/workspace/main_menu.cljs:146
 msgid "labels.github-repo"
@@ -1438,7 +1438,7 @@ msgstr "Nieaktywny"
 
 #: src/app/main/ui/dashboard/fonts.cljs:416
 msgid "labels.installed-fonts"
-msgstr "Zainstalowane fonty"
+msgstr "Zainstalowane czcionki"
 
 #: src/app/main/ui/static.cljs:422
 msgid "labels.internal-error.desc-message"
@@ -1604,7 +1604,7 @@ msgstr "Zapisz"
 
 #: src/app/main/ui/dashboard/fonts.cljs:421
 msgid "labels.search-font"
-msgstr "Szukaj fontu"
+msgstr "Szukaj czcionki"
 
 #: src/app/main/ui/settings/feedback.cljs:79
 msgid "labels.send"
@@ -1672,7 +1672,7 @@ msgstr "Wgraj"
 
 #: src/app/main/ui/dashboard/fonts.cljs:170
 msgid "labels.upload-custom-fonts"
-msgstr "Wgraj niestandardowe fonty"
+msgstr "Wgraj niestandardowe czcionki"
 
 #: src/app/main/ui/dashboard/fonts.cljs:241
 msgid "labels.uploading"
@@ -1819,22 +1819,22 @@ msgstr "Usuwanie %s plików"
 #: src/app/main/ui/dashboard/fonts.cljs:345
 msgid "modals.delete-font-variant.message"
 msgstr ""
-"Czy na pewno chcesz usunąć ten styl fontu? Nie zostanie załadowany, jeśli "
+"Czy na pewno chcesz usunąć ten styl czcionki? Nie zostanie załadowany, jeśli "
 "jest używany w pliku."
 
 #: src/app/main/ui/dashboard/fonts.cljs:344
 msgid "modals.delete-font-variant.title"
-msgstr "Usuwanie stylu fontu"
+msgstr "Usuwanie stylu czcionki"
 
 #: src/app/main/ui/dashboard/fonts.cljs:331
 msgid "modals.delete-font.message"
 msgstr ""
-"Czy na pewno chcesz usunąć ten font? Nie zostanie załadowany, jeśli jest "
-"używany w pliku."
+"Czy na pewno chcesz usunąć tę czcionkę? Nie zostanie załadowana, jeśli jest "
+"używana w pliku."
 
 #: src/app/main/ui/dashboard/fonts.cljs:330
 msgid "modals.delete-font.title"
-msgstr "Usuwanie fontu"
+msgstr "Usuwanie czcionki"
 
 #: src/app/main/ui/workspace/context_menu.cljs:533, src/app/main/ui/workspace/sidebar/sitemap.cljs:46
 msgid "modals.delete-page.body"
@@ -2138,7 +2138,7 @@ msgstr ""
 msgid "onboarding-v2.newsletter.news"
 msgstr ""
 "Wysyłaj mi wiadomości o Penpot (posty na blogach, samouczki wideo, "
-"transmisje...)."
+"transmisje na żywo...)."
 
 #: src/app/main/ui/onboarding/newsletter.cljs:91
 msgid "onboarding-v2.newsletter.privacy1"
@@ -2821,11 +2821,11 @@ msgstr "%s - Penpot"
 
 #: src/app/main/ui/dashboard/fonts.cljs:38
 msgid "title.dashboard.font-providers"
-msgstr "Dostawcy Fontów - %s - Penpot"
+msgstr "Dostawcy Czcionek - %s - Penpot"
 
 #: src/app/main/ui/dashboard/fonts.cljs:37
 msgid "title.dashboard.fonts"
-msgstr "Fonty - %s - Penpot"
+msgstr "Czcionki - %s - Penpot"
 
 #: src/app/main/ui/dashboard/projects.cljs:343
 msgid "title.dashboard.projects"
@@ -3067,7 +3067,7 @@ msgstr "Typografia"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 #, unused
 msgid "workspace.assets.typography.font-id"
-msgstr "Font"
+msgstr "Czcionka"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:515
 msgid "workspace.assets.typography.font-size"
@@ -3181,7 +3181,7 @@ msgstr "Ukryj linijki"
 
 #: src/app/main/ui/workspace/main_menu.cljs:373
 msgid "workspace.header.menu.hide-textpalette"
-msgstr "Ukryj paletę fontów"
+msgstr "Ukryj paletę czcionek"
 
 #: src/app/main/ui/workspace/main_menu.cljs:803
 msgid "workspace.header.menu.option.edit"
@@ -3225,7 +3225,7 @@ msgstr "Pokaż linijki"
 
 #: src/app/main/ui/workspace/main_menu.cljs:374
 msgid "workspace.header.menu.show-textpalette"
-msgstr "Pokaż paletę fontów"
+msgstr "Pokaż paletę czcionek"
 
 #: src/app/main/ui/viewer/header.cljs:98, src/app/main/ui/workspace/right_header.cljs:125
 msgid "workspace.header.reset-zoom"
@@ -4088,7 +4088,7 @@ msgstr "Obrót"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:181
 msgid "workspace.options.search-font"
-msgstr "Szukaj fontu"
+msgstr "Szukaj czcionki"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:749
 msgid "workspace.options.select-a-shape"
