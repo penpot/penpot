@@ -508,16 +508,6 @@
               (update :object-id #(str/replace-first % #"^(.*?)/" (str file-id "/")))))
         thumbnails))
 
-(defn- clean-features
-  [file]
-  (update file :features (fn [features]
-                           (if (set? features)
-                             (-> features
-                                 (cfeat/migrate-legacy-features)
-                                 (set/difference cfeat/frontend-only-features)
-                                 (set/difference cfeat/backend-only-features))
-                             #{}))))
-
 (defmethod read-section :v1/files
   [{:keys [::db/conn ::input ::project-id ::bfc/overwrite ::name] :as system}]
 
@@ -528,7 +518,7 @@
           file-id    (:id file)
           file-id'   (bfc/lookup-index file-id)
 
-          file       (clean-features file)
+          file       (bfc/clean-file-features file)
           thumbnails (:thumbnails file)]
 
       (when (not= file-id expected-file-id)

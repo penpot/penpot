@@ -134,6 +134,16 @@
                          (update :data feat.fdata/process-pointers deref)
                          (update :data feat.fdata/process-objects (partial into {}))))))))
 
+(defn clean-file-features
+  [file]
+  (update file :features (fn [features]
+                           (if (set? features)
+                             (-> features
+                                 (cfeat/migrate-legacy-features)
+                                 (set/difference cfeat/frontend-only-features)
+                                 (set/difference cfeat/backend-only-features))
+                             #{}))))
+
 (defn get-project
   [cfg project-id]
   (db/get cfg :project {:id project-id}))

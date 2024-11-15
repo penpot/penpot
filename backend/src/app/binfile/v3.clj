@@ -12,6 +12,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.features :as cfeat]
    [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.schema :as sm]
@@ -55,7 +56,8 @@
      [:map
       [:id ::sm/uuid]
       [:name :string]
-      [:project-id ::sm/uuid]]]]
+      [:project-id ::sm/uuid]
+      [:features ::cfeat/features]]]]
 
    [:relations {:optional true}
     [:vector
@@ -203,7 +205,10 @@
           (dissoc :libraries))
 
       embed-assets
-      (update :data #(bfc/embed-assets cfg % file-id)))))
+      (update :data #(bfc/embed-assets cfg % file-id))
+
+      :always
+      (bfc/clean-file-features))))
 
 (defn- resolve-extension
   [mtype]
@@ -259,7 +264,8 @@
     (vswap! bfc/*state* update :files assoc file-id
             {:id file-id
              :project-id (:project-id file)
-             :name (:name file)})
+             :name (:name file)
+             :features (:features file)})
 
     (let [file (cond-> (dissoc file :data)
                  (:options data)
