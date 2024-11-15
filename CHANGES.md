@@ -35,6 +35,8 @@
 ### :bug: Bugs fixed
 
 - Fix problem creating manual overlay interactions [Taiga #9146](https://tree.taiga.io/project/penpot/issue/9146)
+- Fix plugins list default URL
+- Activate plugins feature by default
 
 ## 2.3.2
 
