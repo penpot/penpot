@@ -514,6 +514,7 @@
                            (if (set? features)
                              (-> features
                                  (cfeat/migrate-legacy-features)
+                                 (set/difference cfeat/frontend-only-features)
                                  (set/difference cfeat/backend-only-features))
                              #{}))))
 

@@ -445,8 +445,11 @@
                            (fn [features]
                              (let [features (cfeat/check-supported-features! features)]
                                (-> (::features cfg #{})
-                                   (set/difference cfeat/frontend-only-features)
-                                   (set/union features))))))
+                                   (set/union features)
+                                   ;; We never want to store
+                                   ;; frontend-only features on file
+                                   (set/difference cfeat/frontend-only-features))))))
+
 
         _      (when (contains? cf/flags :file-schema-validation)
                  (fval/validate-file-schema! file))
