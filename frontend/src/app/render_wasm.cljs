@@ -102,8 +102,9 @@
                         :saturation 26
                         :color 27
                         :luminosity 28
-                        3)]
-    (._set_shape_blend_mode ^js internal-module encoded-blend)))
+                        3)
+        set-shape-blend-mode (unchecked-get internal-module "_set_shape_blend_mode")]
+    (^function set-shape-blend-mode encoded-blend)))
 
 (defn set-objects
   [objects]
