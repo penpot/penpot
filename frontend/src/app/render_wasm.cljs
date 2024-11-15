@@ -12,7 +12,6 @@
    [app.common.types.shape.impl :as ctsi]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.util.object :as obj]
    [promesa.core :as p]))
 
 (defn initialize
@@ -28,21 +27,24 @@
 
 (defn create-shape
   [id]
-  (let [buffer (uuid/uuid->u32 id)]
-    (._create_shape ^js internal-module (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))))
+  (let [buffer       (uuid/uuid->u32 id)
+        create-shape (unchecked-get internal-module "_create_shape")]
+    (^function create-shape (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))))
 
 (defn use-shape
   [id]
-  (let [buffer (uuid/uuid->u32 id)]
-    (._use_shape ^js internal-module (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))))
+  (let [buffer    (uuid/uuid->u32 id)
+        use-shape (unchecked-get internal-module "_use_shape")]
+    (^function use-shape (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))))
 
 (defn set-shape-selrect
   [selrect]
   (let [x1 (:x1 selrect)
         y1 (:y1 selrect)
         x2 (:x2 selrect)
-        y2 (:y2 selrect)]
-    (._set_shape_selrect ^js internal-module x1 y1 x2 y2)))
+        y2 (:y2 selrect)
+        set-shape-selrect (unchecked-get internal-module "_set_shape_selrect")]
+    (^function set-shape-selrect x1 y1 x2 y2)))
 
 (defn set-shape-transform
   [transform]
@@ -51,27 +53,33 @@
         c (:c transform)
         d (:d transform)
         e (:e transform)
-        f (:f transform)]
-    (._set_shape_transform ^js internal-module a b c d e f)))
+        f (:f transform)
+        set-shape-transform (unchecked-get internal-module "_set_shape_transform")]
+    (^function set-shape-transform a b c d e f)))
 
 (defn set-shape-rotation
   [rotation]
-  (._set_shape_rotation ^js internal-module rotation))
+  (let [set-shape-rotation (unchecked-get internal-module "_set_shape_rotation")]
+    (^function set-shape-rotation rotation)))
 
 (defn set-shape-children
   [shape_ids]
-  (._clear_shape_children ^js internal-module)
-  (doseq [id shape_ids]
-    (let [buffer (uuid/uuid->u32 id)]
-      (._add_shape_child ^js internal-module (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3)))))
+  (let [clear-shape-children (unchecked-get internal-module "_clear_shape_children")
+        add-shape-child      (unchecked-get internal-module "_add_shape_child")]
+    (^function clear-shape-children)
+    (doseq [id shape_ids]
+      (let [buffer (uuid/uuid->u32 id)]
+        (^function add-shape-child (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))))))
 
 (defn set-shape-fills
   [fills]
-  (._clear_shape_fills ^js internal-module)
-  (doseq [fill (filter #(contains? % :fill-color) fills)]
-    (let [a       (:fill-opacity fill)
-          [r g b] (cc/hex->rgb (:fill-color fill))]
-      (._add_shape_solid_fill ^js internal-module r g b a))))
+  (let [clear-shape-fills (unchecked-get internal-module "_clear_shape_fills")
+        add-shape-fill    (unchecked-get internal-module "_add_shape_solid_fill")]
+    (^function clear-shape-fills)
+    (doseq [fill (filter #(contains? % :fill-color) fills)]
+      (let [a       (:fill-opacity fill)
+            [r g b] (cc/hex->rgb (:fill-color fill))]
+        (^function add-shape-fill r g b a)))))
 
 (defn set-objects
   [objects]
@@ -98,9 +106,10 @@
   [zoom vbox]
   (js/requestAnimationFrame
    (fn []
-     (let [pan-x (- (dm/get-prop vbox :x))
-           pan-y (- (dm/get-prop vbox :y))]
-       (._draw_all_shapes ^js internal-module zoom pan-x pan-y)))))
+     (let [pan-x           (- (dm/get-prop vbox :x))
+           pan-y           (- (dm/get-prop vbox :y))
+           draw-all-shapes (unchecked-get internal-module "_draw_all_shapes")]
+       (^function draw-all-shapes zoom pan-x pan-y)))))
 
 (defn cancel-draw
   [frame-id]
@@ -129,12 +138,10 @@
         handle  (.registerContext ^js gl context #js {"majorVersion" 2})]
     (.makeContextCurrent ^js gl handle)
     ;; Initialize Skia
-    (init-fn (.-width ^js canvas)
-             (.-height ^js canvas))
+    (^function init-fn (.-width ^js canvas)
+                       (.-height ^js canvas))
     (set! (.-width canvas) (.-clientWidth ^js canvas))
-    (set! (.-height canvas) (.-clientHeight ^js canvas))
-
-    (obj/set! js/window "shape_list" (fn [] ((unchecked-get internal-module "_shape_list"))))))
+    (set! (.-height canvas) (.-clientHeight ^js canvas))))
 
 (defonce module
   (if (exists? js/dynamicImport)
