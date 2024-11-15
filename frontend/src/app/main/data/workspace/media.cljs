@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.media
   (:require
+   ["@penpot/svgo$default" :as svgo]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -14,7 +15,6 @@
    [app.common.logging :as log]
    [app.common.math :as mth]
    [app.common.schema :as sm]
-   [app.common.svg :refer [optimize]]
    [app.common.svg.shapes-builder :as csvg.shapes-builder]
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
@@ -37,15 +37,15 @@
    [promesa.core :as p]
    [tubax.core :as tubax]))
 
-(def ^:private svgo-config
-  {:multipass false
-   :plugins ["safeAndFastPreset"]})
+(defn- optimize
+  [input]
+  (svgo/optimize input svgo/defaultOptions))
 
 (defn svg->clj
   [[name text]]
   (try
     (let [text (if (contains? cf/flags :frontend-svgo)
-                 (optimize text svgo-config)
+                 (optimize text)
                  text)
           data (-> (tubax/xml->clj text)
                    (assoc :name name))]
@@ -211,7 +211,7 @@
 (defn- process-media-objects
   [{:keys [uris on-error] :as params}]
   (dm/assert!
-   (and (sm/check! schema:process-media-objects params)
+   (and (sm/check schema:process-media-objects params)
         (or (contains? params :blobs)
             (contains? params :uris))))
 
@@ -433,7 +433,7 @@
 (defn clone-media-object
   [{:keys [file-id object-id] :as params}]
   (dm/assert!
-   (sm/check! schema:clone-media-object params))
+   (sm/check schema:clone-media-object params))
 
   (ptk/reify ::clone-media-objects
     ptk/WatchEvent

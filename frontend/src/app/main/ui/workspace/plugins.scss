@@ -102,6 +102,7 @@
   @include flexCenter;
   width: $s-20;
   padding: 0 0 0 $s-8;
+
   svg {
     @extend .button-icon-small;
     stroke: var(--icon-foreground);
@@ -114,22 +115,13 @@
 }
 
 .open-button {
-  @extend .button-secondary;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   width: $s-68;
   min-width: $s-68;
   height: $s-32;
   text-transform: uppercase;
-}
-
-.trash-button {
-  @extend .button-tertiary;
-  width: $s-32;
-  height: $s-32;
-
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
 }
 
 .plugins-list {

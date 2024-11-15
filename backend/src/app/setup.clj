@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.main :as-alias main]
@@ -17,7 +17,6 @@
    [app.setup.templates]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
 (defn- generate-random-key
@@ -73,12 +72,10 @@
     (db/run! system (fn [{:keys [::db/conn]}]
                       (db/exec-one! conn [sql:add-prop prop value false value false])))))
 
-(s/def ::key ::us/string)
-(s/def ::props (s/map-of ::us/keyword some?))
-
-(defmethod ig/pre-init-spec ::props [_]
-  (s/keys :req [::db/pool]
-          :opt [::key]))
+(defmethod ig/assert-key ::props
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expected valid database pool")
+  (assert (string? (::key params)) "expected valid key string"))
 
 (defmethod ig/init-key ::props
   [_ {:keys [::db/pool ::key] :as cfg}]
@@ -94,3 +91,7 @@
           (assoc :secret-key secret)
           (assoc :tokens-key (keys/derive secret :salt "tokens"))
           (update :instance-id handle-instance-id conn (db/read-only? pool))))))
+
+
+;; FIXME
+(sm/register! ::props :any)

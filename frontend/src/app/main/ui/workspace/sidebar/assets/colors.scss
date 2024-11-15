@@ -11,18 +11,6 @@
 // the elements are not part of the same cascade).
 $assets-button-width: $s-28;
 
-.assets-btn {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $assets-button-width;
-  padding: 0;
-  border-radius: $br-8;
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
-}
-
 .colors-group {
   margin-top: $s-4;
 }

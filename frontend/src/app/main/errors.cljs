@@ -21,6 +21,9 @@
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
+;; From app.main.data.workspace we can use directly because it causes a circular dependency
+(def reload-file nil)
+
 (defn- print-data!
   [data]
   (-> data
@@ -136,6 +139,9 @@
                   :type :toast
                   :level :error
                   :timeout 3000})))
+
+    (= code :vern-conflict)
+    (st/emit! (reload-file))
 
     :else
     (st/async-emit! (rt/assign-exception error))))

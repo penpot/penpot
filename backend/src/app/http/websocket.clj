@@ -18,10 +18,8 @@
    [app.msgbus :as mbus]
    [app.util.time :as dt]
    [app.util.websocket :as ws]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.exec.csp :as sp]
-   [ring.websocket :as rws]
    [yetti.websocket :as yws]))
 
 (def recv-labels
@@ -113,7 +111,6 @@
         fsub (::file-subscription @state)
         tsub (::team-subscription @state)
         msg  {:type :disconnect
-              :subs-id profile-id
               :profile-id profile-id
               :session-id session-id}]
 
@@ -138,9 +135,7 @@
   (l/trace :fn "handle-message" :event "subscribe-team" :team-id team-id :conn-id id)
   (let [prev-subs (get @state ::team-subscription)
         channel   (sp/chan :buf (sp/dropping-buffer 64)
-                           :xf  (comp
-                                 (remove #(= (:session-id %) session-id))
-                                 (map #(assoc % :subs-id team-id))))]
+                           :xf  (remove #(= (:session-id %) session-id)))]
 
     (sp/pipe channel output-ch false)
     (mbus/sub! msgbus :topic team-id :chan channel)
@@ -159,8 +154,7 @@
   (l/trace :fn "handle-message" :event "subscribe-file" :file-id file-id :conn-id id)
   (let [psub (::file-subscription @state)
         fch  (sp/chan :buf (sp/dropping-buffer 64)
-                      :xf  (comp (remove #(= (:session-id %) session-id))
-                                 (map #(assoc % :subs-id file-id))))]
+                      :xf  (remove #(= (:session-id %) session-id)))]
 
     (let [subs {:file-id file-id :channel fch :topic file-id}]
       (swap! state assoc ::file-subscription subs))
@@ -191,7 +185,6 @@
     ;; Notifify the rest of participants of the new connection.
     (let [message {:type :join-file
                    :file-id file-id
-                   :subs-id file-id
                    :session-id session-id
                    :profile-id profile-id}]
       (mbus/pub! msgbus :topic file-id :message message))))
@@ -303,7 +296,7 @@
       :else
       (do
         (l/trace :hint "websocket request" :profile-id profile-id :session-id session-id)
-        {::rws/listener (ws/listener request
+        {::yws/listener (ws/listener request
                                      ::ws/on-rcv-message (partial on-rcv-message cfg)
                                      ::ws/on-snd-message (partial on-snd-message cfg)
                                      ::ws/on-connect (partial on-connect cfg)
@@ -311,13 +304,17 @@
                                      ::profile-id profile-id
                                      ::session-id session-id)}))))
 
-(defmethod ig/pre-init-spec ::routes [_]
-  (s/keys :req [::mbus/msgbus
-                ::mtx/metrics
-                ::db/pool
-                ::session/manager]))
 
-(s/def ::routes vector?)
+(def ^:private schema:routes-params
+  [:map
+   ::mbus/msgbus
+   ::mtx/metrics
+   ::db/pool
+   ::session/manager])
+
+(defmethod ig/assert-key ::routes
+  [_ params]
+  (assert (sm/valid? schema:routes-params params)))
 
 (defmethod ig/init-key ::routes
   [_ cfg]

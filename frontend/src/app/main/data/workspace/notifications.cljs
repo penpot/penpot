@@ -12,9 +12,15 @@
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
-   [app.main.data.common :refer [handle-notification]]
+   [app.main.data.common :as dc]
+   [app.main.data.modal :as modal]
+   [app.main.data.plugins :as dpl]
    [app.main.data.websocket :as dws]
+   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.edition :as dwe]
+   [app.main.data.workspace.layout :as dwly]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.texts :as dwt]
    [app.util.globals :refer [global]]
    [app.util.mouse :as mse]
    [app.util.object :as obj]
@@ -24,12 +30,16 @@
    [clojure.set :as set]
    [potok.v2.core :as ptk]))
 
+;; From app.main.data.workspace we can use directly because it causes a circular dependency
+(def reload-file nil)
+
 ;; FIXME: this ns should be renamed to something different
 
 (declare process-message)
 (declare handle-presence)
 (declare handle-pointer-update)
 (declare handle-file-change)
+(declare handle-file-restore)
 (declare handle-library-change)
 (declare handle-pointer-send)
 (declare handle-export-update)
@@ -56,15 +66,16 @@
                              (->> (rx/from initmsg)
                                   (rx/map dws/send))
 
+
                              ;; Subscribe to notifications of the subscription
                              (->> stream
                                   (rx/filter (ptk/type? ::dws/message))
                                   (rx/map deref)
-                                  (rx/filter (fn [{:keys [subs-id] :as msg}]
-                                               (or (= subs-id uuid/zero)
-                                                   (= subs-id profile-id)
-                                                   (= subs-id team-id)
-                                                   (= subs-id file-id))))
+                                  (rx/filter (fn [{:keys [topic] :as msg}]
+                                               (or (= topic uuid/zero)
+                                                   (= topic profile-id)
+                                                   (= topic team-id)
+                                                   (= topic file-id))))
                                   (rx/map process-message))
 
                              ;; On reconnect, send again the subscription messages
@@ -92,17 +103,39 @@
 
         (rx/concat stream (rx/of (dws/send endmsg)))))))
 
+(defn- handle-change-team-role
+  [{:keys [role] :as msg}]
+  (ptk/reify ::handle-change-team-role
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/concat
+       (rx/of :interrupt
+              (dwe/clear-edition-mode)
+              (dwc/set-workspace-read-only false))
+       (->> (rx/of (dc/change-team-role msg)
+                   ::dwt/update-editor-state)
+            ;; Delay so anything that launched :interrupt can finish
+            (rx/delay 100))
+       (if (= :viewer role)
+         (rx/of (modal/hide)
+                (dwly/set-options-mode :inspect)
+                (dpl/close-current-plugin {:close-only-edition-plugins? true}))
+         (rx/of (dwly/set-options-mode :design)))))))
+
 (defn- process-message
   [{:keys [type] :as msg}]
   (case type
-    :join-file      (handle-presence msg)
-    :leave-file     (handle-presence msg)
-    :presence       (handle-presence msg)
-    :disconnect     (handle-presence msg)
-    :pointer-update (handle-pointer-update msg)
-    :file-change    (handle-file-change msg)
-    :library-change (handle-library-change msg)
-    :notification   (handle-notification msg)
+    :join-file              (handle-presence msg)
+    :leave-file             (handle-presence msg)
+    :presence               (handle-presence msg)
+    :disconnect             (handle-presence msg)
+    :pointer-update         (handle-pointer-update msg)
+    :file-change            (handle-file-change msg)
+    :file-restore           (handle-file-restore msg)
+    :library-change         (handle-library-change msg)
+    :notification           (dc/handle-notification msg)
+    :team-role-change       (handle-change-team-role msg)
+    :team-membership-change (dc/team-membership-change msg)
     nil))
 
 (defn- handle-pointer-send
@@ -204,13 +237,14 @@
    [:file-id ::sm/uuid]
    [:session-id ::sm/uuid]
    [:revn :int]
+   [:vern :int]
    [:changes ::cpc/changes]])
 
 (def ^:private check-file-change-params!
   (sm/check-fn schema:handle-file-change))
 
 (defn handle-file-change
-  [{:keys [file-id changes revn] :as msg}]
+  [{:keys [file-id changes revn vern] :as msg}]
 
   (dm/assert!
    "expected valid parameters"
@@ -225,12 +259,40 @@
       ;; The commit event is responsible to apply the data localy
       ;; and update the persistence internal state with the updated
       ;; file-revn
+
       (rx/of (dch/commit {:file-id file-id
                           :file-revn revn
+                          :file-vern vern
                           :save-undo? false
                           :source :remote
                           :redo-changes (vec changes)
                           :undo-changes []})))))
+
+(def ^:private
+  schema:handle-file-restore
+  [:map {:title "handle-file-restore"}
+   [:type :keyword]
+   [:file-id ::sm/uuid]
+   [:vern :int]])
+
+(def ^:private check-file-restore-params!
+  (sm/check-fn schema:handle-file-restore))
+
+(defn handle-file-restore
+  [{:keys [file-id vern] :as msg}]
+
+  (dm/assert!
+   "expected valid parameters"
+   (check-file-restore-params! msg))
+
+  (ptk/reify ::handle-file-restore
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [curr-file-id    (:current-file-id state)
+            curr-vern       (dm/get-in state [:workspace-file :vern])
+            reload?         (and (= file-id curr-file-id) (not= vern curr-vern))]
+        (when reload?
+          (rx/of (reload-file)))))))
 
 (def ^:private schema:handle-library-change
   [:map {:title "handle-library-change"}

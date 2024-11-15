@@ -47,8 +47,9 @@
    [mockery.core :as mk]
    [promesa.core :as p]
    [promesa.exec :as px]
-   [ring.response :as rres]
-   [yetti.request :as yrq])
+   [ring.core.protocols :as rcp]
+   [yetti.request :as yrq]
+   [yetti.response :as yres])
   (:import
    java.io.PipedInputStream
    java.io.PipedOutputStream
@@ -122,7 +123,7 @@
                              [:app.main/default :app.worker/runner]
                              [:app.main/webhook :app.worker/runner]))
           _      (ig/load-namespaces system)
-          system (-> (ig/prep system)
+          system (-> (ig/expand system)
                      (ig/init))]
       (try
         (binding [*system* system
@@ -311,6 +312,7 @@
                        (#'files.update/update-file* system
                                                     {:id file-id
                                                      :revn revn
+                                                     :vern 0
                                                      :file file
                                                      :features (:features file)
                                                      :changes changes
@@ -326,11 +328,13 @@
                   :id file-id
                   :session-id (uuid/random)
                   :revn revn
+                  :vern 0
                   :features features
                   :changes changes}
         out      (command! params)]
     (t/is (nil? (:error out)))
     (:result out)))
+
 
 (defn create-webhook*
   ([params] (create-webhook* *system* params))
@@ -396,7 +400,11 @@
   (db/tx-run! *system* (fn [{:keys [::db/conn] :as cfg}]
                          (let [tasks (->> (db/exec! conn [sql:pending-tasks])
                                           (map #'app.worker.runner/decode-task-row))]
-                           (run! (partial #'app.worker.runner/run-task cfg) tasks)))))
+                           (doseq [task tasks]
+                             (let [cfg (-> cfg
+                                           (assoc :app.worker.runner/queue (:queue task))
+                                           (assoc :app.worker.runner/id 0))]
+                               (#'app.worker.runner/run-task cfg task)))))))
 
 ;; --- UTILS
 
@@ -547,15 +555,16 @@
 
 (defn consume-sse
   [callback]
-  (let [{:keys [::rres/status ::rres/body ::rres/headers] :as response} (callback {})
+  (let [{:keys [::yres/status ::yres/body ::yres/headers] :as response} (callback {})
         output (PipedOutputStream.)
         input  (PipedInputStream. output)]
 
     (try
-      (px/exec! :virtual #(rres/-write-body-to-stream body nil output))
+      (px/exec! :virtual #(rcp/write-body-to-stream body nil output))
       (into []
             (map (fn [event]
                    (let [[item1 item2] (re-seq #"(.*): (.*)\n?" event)]
+
                      [(keyword (nth item1 2))
                       (tr/decode-str (nth item2 2))])))
             (-> (slurp' input)

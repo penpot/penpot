@@ -39,11 +39,10 @@
         (t/is (nil? error))
         (t/is (map? result))
         (t/is (contains? (meta result) :app.http/headers))
-        (t/is (contains? (meta result) :app.rpc.cond/key))
 
         (let [etag (-> result meta :app.http/headers (get "etag"))
               {:keys [error result]} (th/command! (assoc params ::cond/key etag))]
           (t/is (nil? error))
           (t/is (fn? result))
-          (t/is (= 304 (-> (result nil) :ring.response/status))))))))
+          (t/is (= 304 (-> (result nil) :yetti.response/status))))))))
 

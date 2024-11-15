@@ -25,15 +25,15 @@
                clojure.lang.IPersistentMap
                clojure.lang.IDeref)
 
-(sm/register! ::fs/path
-  {:type ::fs/path
-   :pred fs/path?
-   :type-properties
-   {:title "path"
-    :description "filesystem path"
-    :error/message "expected a valid fs path instance"
-    :error/code "errors.invalid-path"
-    :gen/gen (sg/generator :string)
-    :decode/string fs/path
-    ::oapi/type "string"
-    ::oapi/format "unix-path"}})
+(sm/register!
+ {:type ::fs/path
+  :pred fs/path?
+  :type-properties
+  {:title "path"
+   :description "filesystem path"
+   :error/message "expected a valid fs path instance"
+   :error/code "errors.invalid-path"
+   :gen/gen (sg/generator :string)
+   :decode/string fs/path
+   ::oapi/type "string"
+   ::oapi/format "unix-path"}})

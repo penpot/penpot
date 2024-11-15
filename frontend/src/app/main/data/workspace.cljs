@@ -70,12 +70,13 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.viewport :as dwv]
    [app.main.data.workspace.zoom :as dwz]
+   [app.main.errors]
    [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
    [app.main.repo :as rp]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
-   [app.renderer-v2 :as renderer]
+   [app.render-wasm :as render.wasm]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -100,6 +101,7 @@
 
 (declare ^:private workspace-initialized)
 (declare ^:private libraries-fetched)
+(declare go-to-layout)
 
 ;; --- Initialize Workspace
 
@@ -263,14 +265,21 @@
     (watch [_ _ stream]
       (->> (rp/cmd! :get-project {:id project-id})
            (rx/mapcat (fn [project]
-                        (->> (rp/cmd! :get-team {:id (:team-id project)})
-                             (rx/mapcat (fn [team]
-                                          (let [bundle {:team team
-                                                        :project project
-                                                        :file-id file-id
-                                                        :project-id project-id}]
-                                            (rx/of (du/set-current-team team)
-                                                   (ptk/data-event ::bundle-stage-1 bundle))))))))
+                        (rx/concat
+                         ;; Wait the wasm module to be loaded or failed to
+                         ;; load. We need to wait the promise to be resolved
+                         ;; before continue with the next workspace loading
+                         ;; steps
+                         (->> (rx/from render.wasm/module)
+                              (rx/ignore))
+                         (->> (rp/cmd! :get-team {:id (:team-id project)})
+                              (rx/mapcat (fn [team]
+                                           (let [bundle {:team team
+                                                         :project project
+                                                         :file-id file-id
+                                                         :project-id project-id}]
+                                             (rx/of (du/set-current-team team)
+                                                    (ptk/data-event ::bundle-stage-1 bundle)))))))))
            (rx/take-until
             (rx/filter (ptk/type? ::fetch-bundle) stream))))))
 
@@ -353,12 +362,11 @@
       (let [stoper-s (rx/filter (ptk/type? ::finalize-file) stream)]
         (rx/merge
          (rx/of (ntf/hide)
+                ;; We initialize the features without knowning the
+                ;; team specific features in this step.
                 (features/initialize)
                 (dcm/retrieve-comment-threads file-id)
                 (fetch-bundle project-id file-id))
-
-         (when (contains? cf/flags :renderer-v2)
-           (rx/of (renderer/init)))
 
          (->> stream
               (rx/filter dch/commit?)
@@ -378,6 +386,19 @@
     (effect [_ _ _]
       (let [name (dm/str "workspace-" file-id)]
         (unchecked-set ug/global "name" name)))))
+
+(defn reload-file
+  []
+  (ptk/reify ::reload-file
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id    (:current-file-id state)
+            project-id (:current-project-id state)]
+        (rx/of (initialize-file project-id file-id))))))
+
+;; We need to inject this so there are no cycles
+(set! app.main.data.workspace.notifications/reload-file reload-file)
+(set! app.main.errors/reload-file reload-file)
 
 (defn finalize-file
   [_project-id file-id]
@@ -796,6 +817,21 @@
 
           (d/not-empty? hover-guides)
           (rx/of (dwgu/remove-guides hover-guides)))))))
+
+
+;; --- Start renaming selected shape
+
+(defn start-rename-selected
+  "Rename selected shape."
+  []
+  (ptk/reify ::start-rename-selected
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [selected (wsh/lookup-selected state)
+            id       (first selected)]
+        (when (= (count selected) 1)
+          (rx/of (go-to-layout :layers)
+                 (start-rename-shape id)))))))
 
 ;; --- Shape Vertical Ordering
 
@@ -2106,24 +2142,7 @@
                          (pcb/mod-page {:background (:color color)}))]
          (rx/of (dch/commit-changes changes)))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Read only
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn set-workspace-read-only
-  [read-only?]
-  (ptk/reify ::set-workspace-read-only
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-global :read-only?] read-only?))
-
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (if read-only?
-        (rx/of :interrupt
-               (remove-layout-flag :colorpalette)
-               (remove-layout-flag :textpalette))
-        (rx/empty)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Measurements

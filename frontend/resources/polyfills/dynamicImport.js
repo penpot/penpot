@@ -1,5 +1,7 @@
-if (!('dynamicImport' in window)) {
-  window.dynamicImport = function(uri) {
+if (!('dynamicImport' in globalThis)) {
+  globalThis.dynamicImport = function(uri) {
     return import(uri);
   }
 };
+
+var global = globalThis;

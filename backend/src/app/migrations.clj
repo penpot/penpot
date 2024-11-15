@@ -11,7 +11,6 @@
    [app.db :as db]
    [app.migrations.clj.migration-0023 :as mg0023]
    [app.util.migrations :as mg]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
 (def migrations
@@ -412,7 +411,22 @@
     :fn (mg/resource "app/migrations/sql/0129-mod-file-change-table.sql")}
 
    {:name "0130-mod-file-change-table"
-    :fn (mg/resource "app/migrations/sql/0130-mod-file-change-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0130-mod-file-change-table.sql")}
+
+   {:name "0131-mod-webhook-table"
+    :fn (mg/resource "app/migrations/sql/0131-mod-webhook-table.sql")}
+
+   {:name "0132-mod-file-change-table"
+    :fn (mg/resource "app/migrations/sql/0132-mod-file-change-table.sql")}
+
+   {:name "0133-mod-file-table"
+    :fn (mg/resource "app/migrations/sql/0133-mod-file-table.sql")}
+
+   {:name "0134-mod-file-change-table"
+    :fn (mg/resource "app/migrations/sql/0134-mod-file-change-table.sql")}
+
+   {:name "0135-mod-team-invitation-table.sql"
+    :fn (mg/resource "app/migrations/sql/0135-mod-team-invitation-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
@@ -420,9 +434,9 @@
     (mg/setup! conn)
     (mg/migrate! conn {:name name :steps migrations})))
 
-(defmethod ig/pre-init-spec ::migrations
-  [_]
-  (s/keys :req [::db/pool]))
+(defmethod ig/assert-key ::migrations
+  [_ {:keys [::db/pool]}]
+  (assert (db/pool? pool) "expected valid pool"))
 
 (defmethod ig/init-key ::migrations
   [module {:keys [::db/pool]}]

@@ -9,6 +9,7 @@
   (:refer-clojure :exclude [tap])
   (:require
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.transit :as t]
    [app.http.errors :as errors]
@@ -16,7 +17,7 @@
    [promesa.exec :as px]
    [promesa.exec.csp :as sp]
    [promesa.util :as pu]
-   [ring.response :as rres])
+   [yetti.response :as yres])
   (:import
    java.io.OutputStream))
 
@@ -49,24 +50,21 @@
 (defn response
   [handler & {:keys [buf] :or {buf 32} :as opts}]
   (fn [request]
-    {::rres/headers default-headers
-     ::rres/status 200
-     ::rres/body (reify rres/StreamableResponseBody
-                   (-write-body-to-stream [_ _ output]
-                     (binding [events/*channel* (sp/chan :buf buf :xf (keep encode))]
-                       (let [listener (events/start-listener
-                                       (partial write! output)
-                                       (partial pu/close! output))]
-                         (try
-                           (let [result (handler)]
-                             (events/tap :end result))
-
-                           (catch java.io.EOFException cause
-                             (events/tap :error (errors/handle' cause request)))
-                           (catch Throwable cause
-                             (l/err :hint "unexpected error on processing sse response"
-                                    :cause cause)
-                             (events/tap :error (errors/handle' cause request)))
-                           (finally
-                             (sp/close! events/*channel*)
-                             (px/await! listener)))))))}))
+    {::yres/headers default-headers
+     ::yres/status 200
+     ::yres/body (yres/stream-body
+                  (fn [_ output]
+                    (binding [events/*channel* (sp/chan :buf buf :xf (keep encode))]
+                      (let [listener (events/start-listener
+                                      (partial write! output)
+                                      (partial pu/close! output))]
+                        (try
+                          (let [result (handler)]
+                            (events/tap :end result))
+                          (catch Throwable cause
+                            (events/tap :error (errors/handle' cause request))
+                            (when-not (ex/instance? java.io.EOFException cause)
+                              (l/err :hint "unexpected error on processing sse response" :cause cause)))
+                          (finally
+                            (sp/close! events/*channel*)
+                            (px/await! listener)))))))}))

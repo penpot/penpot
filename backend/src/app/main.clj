@@ -9,6 +9,7 @@
    [app.auth.ldap :as-alias ldap]
    [app.auth.oidc :as-alias oidc]
    [app.auth.oidc.providers :as-alias oidc.providers]
+   [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.config :as cf]
    [app.db :as-alias db]
@@ -28,6 +29,7 @@
    [app.msgbus :as-alias mbus]
    [app.redis :as-alias rds]
    [app.rpc :as-alias rpc]
+   [app.rpc.climit :as-alias climit]
    [app.rpc.doc :as-alias rpc.doc]
    [app.setup :as-alias setup]
    [app.srepl :as-alias srepl]
@@ -169,7 +171,7 @@
    {::db/uri        (cf/get :database-uri)
     ::db/username   (cf/get :database-username)
     ::db/password   (cf/get :database-password)
-    ::db/read-only? (cf/get :database-readonly false)
+    ::db/read-only  (cf/get :database-readonly false)
     ::db/min-size   (cf/get :database-min-pool-size 0)
     ::db/max-size   (cf/get :database-max-pool-size 60)
     ::mtx/metrics   (ig/ref ::mtx/metrics)}
@@ -245,7 +247,7 @@
     :base-dn        (cf/get :ldap-base-dn)
     :bind-dn        (cf/get :ldap-bind-dn)
     :bind-password  (cf/get :ldap-bind-password)
-    :enabled?       (contains? cf/flags :login-with-ldap)}
+    :enabled        (contains? cf/flags :login-with-ldap)}
 
    ::oidc.providers/google
    {}
@@ -302,9 +304,11 @@
     ::http.assets/cache-max-agesignature-max-age (dt/duration {:hours 24 :minutes 5})
     ::sto/storage  (ig/ref ::sto/storage)}
 
-   :app.rpc/climit
-   {::mtx/metrics  (ig/ref ::mtx/metrics)
-    ::wrk/executor (ig/ref ::wrk/executor)}
+   ::rpc/climit
+   {::mtx/metrics        (ig/ref ::mtx/metrics)
+    ::wrk/executor       (ig/ref ::wrk/executor)
+    ::climit/config      (cf/get :rpc-climit-config)
+    ::climit/enabled     (contains? cf/flags :rpc-climit)}
 
    :app.rpc/rlimit
    {::wrk/executor (ig/ref ::wrk/executor)}
@@ -319,7 +323,6 @@
     ::mtx/metrics        (ig/ref ::mtx/metrics)
     ::mbus/msgbus        (ig/ref ::mbus/msgbus)
     ::rds/redis          (ig/ref ::rds/redis)
-    ::svgo/optimizer     (ig/ref ::svgo/optimizer)
 
     ::rpc/climit         (ig/ref ::rpc/climit)
     ::rpc/rlimit         (ig/ref ::rpc/rlimit)
@@ -330,7 +333,7 @@
     ::email/whitelist    (ig/ref ::email/whitelist)}
 
    :app.rpc.doc/routes
-   {:methods (ig/ref :app.rpc/methods)}
+   {:app.rpc/methods (ig/ref :app.rpc/methods)}
 
    :app.rpc/routes
    {::rpc/methods     (ig/ref :app.rpc/methods)
@@ -379,8 +382,7 @@
     ::email/default-from     (cf/get :smtp-default-from)}
 
    ::email/handler
-   {::email/sendmail (ig/ref ::email/sendmail)
-    ::mtx/metrics    (ig/ref ::mtx/metrics)}
+   {::email/sendmail (ig/ref ::email/sendmail)}
 
    :app.tasks.tasks-gc/handler
    {::db/pool (ig/ref ::db/pool)}
@@ -429,9 +431,6 @@
     ;; NOTE: this dependency is only necessary for proper initialization ordering, props
     ;; module requires the migrations to run before initialize.
     ::migrations (ig/ref :app.migrations/migrations)}
-
-   ::svgo/optimizer
-   {}
 
    :app.loggers.audit.archive-task/handler
    {::setup/props        (ig/ref ::setup/props)
@@ -488,10 +487,7 @@
    {::wrk/registry            (ig/ref ::wrk/registry)
     ::db/pool                 (ig/ref ::db/pool)
     ::wrk/entries
-    [{:cron #app/cron "0 0 * * * ?" ;; hourly
-      :task :file-xlog-gc}
-
-     {:cron #app/cron "0 0 0 * * ?" ;; daily
+    [{:cron #app/cron "0 0 0 * * ?" ;; daily
       :task :session-gc}
 
      {:cron #app/cron "0 0 0 * * ?" ;; daily
@@ -523,11 +519,13 @@
    ::wrk/dispatcher
    {::rds/redis   (ig/ref ::rds/redis)
     ::mtx/metrics (ig/ref ::mtx/metrics)
-    ::db/pool     (ig/ref ::db/pool)}
+    ::db/pool     (ig/ref ::db/pool)
+    ::wrk/tenant  (cf/get :tenant)}
 
    [::default ::wrk/runner]
    {::wrk/parallelism (cf/get ::worker-default-parallelism 1)
     ::wrk/queue       :default
+    ::wrk/tenant      (cf/get :tenant)
     ::rds/redis       (ig/ref ::rds/redis)
     ::wrk/registry    (ig/ref ::wrk/registry)
     ::mtx/metrics     (ig/ref ::mtx/metrics)
@@ -536,6 +534,7 @@
    [::webhook ::wrk/runner]
    {::wrk/parallelism (cf/get ::worker-webhook-parallelism 1)
     ::wrk/queue       :webhooks
+    ::wrk/tenant      (cf/get :tenant)
     ::rds/redis       (ig/ref ::rds/redis)
     ::wrk/registry    (ig/ref ::wrk/registry)
     ::mtx/metrics     (ig/ref ::mtx/metrics)
@@ -553,7 +552,7 @@
                              (-> system-config
                                  (cond-> (contains? cf/flags :backend-worker)
                                    (merge worker-config))
-                                 (ig/prep)
+                                 (ig/expand)
                                  (ig/init))))
   (l/inf :hint "welcome to penpot"
          :flags (str/join "," (map name cf/flags))
@@ -566,7 +565,7 @@
   (alter-var-root #'system (fn [sys]
                              (when sys (ig/halt! sys))
                              (-> config
-                                 (ig/prep)
+                                 (ig/expand)
                                  (ig/init)))))
 
 (defn stop
@@ -622,12 +621,6 @@
 
       (deref p))
     (catch Throwable cause
-      (binding [*out* *err*]
-        (println "==== ERROR ===="))
-      (.printStackTrace cause)
-      (when-let [cause' (ex-cause cause)]
-        (binding [*out* *err*]
-          (println "==== CAUSE ===="))
-        (.printStackTrace cause'))
+      (ex/print-throwable cause)
       (px/sleep 500)
       (System/exit -1))))

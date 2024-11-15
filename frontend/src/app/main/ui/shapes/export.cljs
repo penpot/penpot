@@ -175,6 +175,7 @@
   [:> "penpot:flows" #js {}
    (for [{:keys [id name starting-frame]} (vals flows)]
      [:> "penpot:flow" #js {:id id
+                            :key id
                             :name name
                             :starting-frame starting-frame}])])
 

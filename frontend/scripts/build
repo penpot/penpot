@@ -20,15 +20,20 @@ yarn install || exit 1;
 rm -rf resources/public;
 rm -rf target/dist;
 
-clojure -M:dev:shadow-cljs release main --config-merge "{:release-version \"${CURRENT_HASH}-${TS}\"}" $EXTRA_PARAMS || exit 1
-
+yarn run build:app:main --config-merge "{:release-version \"${CURRENT_HASH}-${TS}\"}" $EXTRA_PARAMS || exit 1
+yarn run build:wasm || exit 1;
+yarn run build:app:libs || exit 1;
 yarn run build:app:assets || exit 1;
 
 mkdir -p target/dist;
 rsync -avr resources/public/ target/dist/
 
 sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/dist/index.html;
+sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/dist/render.html;
+sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./target/dist/rasterizer.html;
 sed -i -re "s/\%buildDate\%/$BUILD_DATE/g" ./target/dist/index.html;
+sed -i -re "s/\%buildDate\%/$BUILD_DATE/g" ./target/dist/rasterizer.html;
+sed -i "s/version=develop/version=$CURRENT_VERSION/g" ./target/dist/js/render_wasm.js;
 
 if [ "$INCLUDE_STORYBOOK" = "yes" ];  then
     # build storybook

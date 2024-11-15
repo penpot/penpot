@@ -17,6 +17,7 @@
    [app.common.schema.desc-js-like :as-alias smdj]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
+   [app.common.uri :as uri]
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
@@ -35,7 +36,8 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [promesa.exec :as px]))
 
 ;; --- FEATURES
 
@@ -181,6 +183,7 @@
    [:comment-thread-seqn [::sm/int {:min 0}]]
    [:name [:string {:max 250}]]
    [:revn [::sm/int {:min 0}]]
+   [:vern [::sm/int {:min 0}]]
    [:modified-at ::dt/instant]
    [:is-shared ::sm/boolean]
    [:project-id ::sm/uuid]
@@ -243,16 +246,16 @@
       file)))
 
 (defn get-file
-  [{:keys [::db/conn] :as cfg} id & {:keys [project-id
-                                            migrate?
-                                            include-deleted?
-                                            lock-for-update?]
-                                     :or {include-deleted? false
-                                          lock-for-update? false
-                                          migrate? true}}]
-  (dm/assert!
-   "expected cfg with valid connection"
-   (db/connection-map? cfg))
+  [{:keys [::db/conn ::wrk/executor] :as cfg} id
+   & {:keys [project-id
+             migrate?
+             include-deleted?
+             lock-for-update?]
+      :or {include-deleted? false
+           lock-for-update? false
+           migrate? true}}]
+
+  (assert (db/connection? conn) "expected cfg with valid connection")
 
   (let [params (merge {:id id}
                       (when (some? project-id)
@@ -261,55 +264,76 @@
                             {::db/check-deleted (not include-deleted?)
                              ::db/remove-deleted (not include-deleted?)
                              ::sql/for-update lock-for-update?})
-                    (feat.fdata/resolve-file-data cfg)
-                    (decode-row))]
+                    (feat.fdata/resolve-file-data cfg))
+
+        ;; NOTE: we perform the file decoding in a separate thread
+        ;; because it has heavy and synchronous operations for
+        ;; decoding file body that are not very friendly with virtual
+        ;; threads.
+        file   (px/invoke! executor #(decode-row file))]
+
     (if (and migrate? (fmg/need-migration? file))
       (migrate-file cfg file)
       file)))
 
 (defn get-minimal-file
   [cfg id & {:as opts}]
-  (let [opts (assoc opts ::sql/columns [:id :modified-at :deleted-at :revn :data-ref-id :data-backend])]
+  (let [opts (assoc opts ::sql/columns [:id :modified-at :deleted-at :revn :vern :data-ref-id :data-backend])]
     (db/get cfg :file {:id id} opts)))
 
+(defn- get-minimal-file-with-perms
+  [cfg {:keys [:id ::rpc/profile-id]}]
+  (let [mfile (get-minimal-file cfg id)
+        perms (get-permissions cfg profile-id id)]
+    (assoc mfile :permissions perms)))
+
 (defn get-file-etag
-  [{:keys [::rpc/profile-id]} {:keys [modified-at revn]}]
-  (str profile-id (dt/format-instant modified-at :iso) revn))
+  [{:keys [::rpc/profile-id]} {:keys [modified-at revn vern permissions]}]
+  (str profile-id "/" revn "/" vern "/"
+       (dt/format-instant modified-at :iso)
+       "/"
+       (uri/map->query-string permissions)))
 
 (sv/defmethod ::get-file
   "Retrieve a file by its ID. Only authenticated users."
   {::doc/added "1.17"
-   ::cond/get-object #(get-minimal-file %1 (:id %2))
+   ::cond/get-object #(get-minimal-file-with-perms %1 %2)
    ::cond/key-fn get-file-etag
    ::sm/params schema:get-file
-   ::sm/result schema:file-with-permissions}
-  [cfg {:keys [::rpc/profile-id id project-id] :as params}]
-  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                    (let [perms (get-permissions conn profile-id id)]
-                      (check-read-permissions! perms)
-                      (let [team (teams/get-team conn
-                                                 :profile-id profile-id
-                                                 :project-id project-id
-                                                 :file-id id)
+   ::sm/result schema:file-with-permissions
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id project-id] :as params}]
+  ;; The COND middleware makes initial request for a file and
+  ;; permissions when the incoming request comes with an
+  ;; ETAG. When ETAG does not matches, the request is resolved
+  ;; and this code is executed, in this case the permissions
+  ;; will be already prefetched and we just reuse them instead
+  ;; of making an additional database queries.
+  (let [perms (or (:permissions (::cond/object params))
+                  (get-permissions conn profile-id id))]
+    (check-read-permissions! perms)
 
-                            file (-> (get-file cfg id :project-id project-id)
-                                     (assoc :permissions perms)
-                                     (check-version!))
+    (let [team (teams/get-team conn
+                               :profile-id profile-id
+                               :project-id project-id
+                               :file-id id)
 
-                            _    (-> (cfeat/get-team-enabled-features cf/flags team)
-                                     (cfeat/check-client-features! (:features params))
-                                     (cfeat/check-file-features! (:features file) (:features params)))
+          file (-> (get-file cfg id :project-id project-id)
+                   (assoc :permissions perms)
+                   (check-version!))]
 
-                            ;; This operation is needed for backward comapatibility with frontends that
-                            ;; does not support pointer-map resolution mechanism; this just resolves the
-                            ;; pointers on backend and return a complete file.
-                            file (if (and (contains? (:features file) "fdata/pointer-map")
-                                          (not (contains? (:features params) "fdata/pointer-map")))
-                                   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
-                                     (update file :data feat.fdata/process-pointers deref))
-                                   file)]
+      (-> (cfeat/get-team-enabled-features cf/flags team)
+          (cfeat/check-client-features! (:features params))
+          (cfeat/check-file-features! (:features file) (:features params)))
 
-                        (vary-meta file assoc ::cond/key (get-file-etag params file)))))))
+      ;; This operation is needed for backward comapatibility with frontends that
+      ;; does not support pointer-map resolution mechanism; this just resolves the
+      ;; pointers on backend and return a complete file.
+      (if (and (contains? (:features file) "fdata/pointer-map")
+               (not (contains? (:features params) "fdata/pointer-map")))
+        (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
+          (update file :data feat.fdata/process-pointers deref))
+        file))))
 
 ;; --- COMMAND QUERY: get-file-fragment (by id)
 
@@ -355,6 +379,7 @@
           f.modified_at,
           f.name,
           f.revn,
+          f.vern,
           f.is_shared,
           ft.media_id AS thumbnail_id
      from file as f
@@ -504,6 +529,7 @@
 (def ^:private sql:team-shared-files
   "select f.id,
           f.revn,
+          f.vern,
           f.data,
           f.project_id,
           f.created_at,
@@ -587,6 +613,7 @@
           l.deleted_at,
           l.name,
           l.revn,
+          l.vern,
           l.synced_at
      FROM libs AS l
     WHERE l.deleted_at IS NULL OR l.deleted_at > now();")
@@ -648,6 +675,7 @@
   "with recent_files as (
      select f.id,
             f.revn,
+            f.vern,
             f.project_id,
             f.created_at,
             f.modified_at,

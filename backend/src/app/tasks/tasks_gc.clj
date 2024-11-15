@@ -11,19 +11,19 @@
    [app.common.logging :as l]
    [app.config :as cf]
    [app.db :as db]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
 (def ^:private
   sql:delete-completed-tasks
   "DELETE FROM task WHERE scheduled_at < now() - ?::interval")
 
-(defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req [::db/pool]))
+(defmethod ig/assert-key ::handler
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expected a valid database pool"))
 
-(defmethod ig/prep-key ::handler
-  [_ cfg]
-  (assoc cfg ::min-age (cf/get-deletion-delay)))
+(defmethod ig/expand-key ::handler
+  [k v]
+  {k (assoc v ::min-age (cf/get-deletion-delay))})
 
 (defmethod ig/init-key ::handler
   [_ {:keys [::db/pool ::min-age] :as cfg}]

@@ -222,7 +222,7 @@
    ::webhooks/event? true}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id team-id is-pinned] :as params}]
   (db/with-atomic [conn pool]
-    (check-edition-permissions! conn profile-id id)
+    (check-read-permissions! conn profile-id id)
     (db/exec-one! conn [sql:update-project-pin team-id id profile-id is-pinned is-pinned])
     nil))
 

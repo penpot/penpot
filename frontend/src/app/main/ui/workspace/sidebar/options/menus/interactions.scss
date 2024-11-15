@@ -16,16 +16,6 @@
   @include flexColumn;
 }
 
-.add-interaction-btn {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
-}
-
 .help-content {
   padding: $s-32 0;
   width: $s-200;
@@ -67,15 +57,6 @@
 
 .element-set {
   @include flexColumn;
-}
-
-.add-flow-btn {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  svg {
-    @extend .button-icon;
-  }
 }
 
 .interactions-info {
@@ -362,15 +343,5 @@
   &.editing {
     background-color: var(--input-background-color-active);
     border: $s-1 solid var(--input-border-color-active);
-  }
-}
-
-.remove-flow-btn {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  min-width: $s-28;
-  svg {
-    @extend .button-icon;
   }
 }

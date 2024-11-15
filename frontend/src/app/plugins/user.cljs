@@ -75,6 +75,12 @@
      {:name "avatarUrl"
       :get (fn [_] (cfg/resolve-profile-photo-url data))})))
 
+(defn user-proxy?
+  [p]
+  (or (instance? UserProxy p)
+      (current-user-proxy? p)
+      (active-user-proxy? p)))
+
 (defn user-proxy
   [plugin-id data]
   (-> (UserProxy. plugin-id)

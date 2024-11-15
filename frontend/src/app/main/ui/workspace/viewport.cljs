@@ -28,6 +28,7 @@
    [app.main.ui.workspace.shapes.text.text-edition-outline :refer [text-edition-outline]]
    [app.main.ui.workspace.shapes.text.v2-editor :as editor-v2]
    [app.main.ui.workspace.shapes.text.viewport-texts-html :as stvh]
+   [app.main.ui.workspace.viewport-wasm :as viewport.wasm]
    [app.main.ui.workspace.viewport.actions :as actions]
    [app.main.ui.workspace.viewport.comments :as comments]
    [app.main.ui.workspace.viewport.debug :as wvd]
@@ -73,7 +74,7 @@
    objects
    selected))
 
-(mf/defc viewport
+(mf/defc viewport-classic
   [{:keys [selected wglobal wlocal layout file palete-size] :as props}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
@@ -95,7 +96,11 @@
 
         vbox'             (mf/use-debounce 100 vbox)
 
+        permissions       (mf/use-ctx ctx/team-permissions)
+        read-only?        (mf/use-ctx ctx/workspace-read-only?)
+
         ;; DEREFS
+
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
 
@@ -168,12 +173,11 @@
         text-editing?     (and edition (= :text (get-in base-objects [edition :type])))
         grid-editing?     (and edition (ctl/grid-layout? base-objects edition))
 
-        workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
         mode-inspect?       (= options-mode :inspect)
 
         on-click          (actions/on-click hover selected edition drawing-path? drawing-tool space? selrect z?)
-        on-context-menu   (actions/on-context-menu hover hover-ids workspace-read-only?)
-        on-double-click   (actions/on-double-click hover hover-ids hover-top-frame-id drawing-path? base-objects edition drawing-tool z? workspace-read-only?)
+        on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
+        on-double-click   (actions/on-double-click hover hover-ids hover-top-frame-id drawing-path? base-objects edition drawing-tool z? read-only?)
 
         comp-inst-ref     (mf/use-ref false)
         on-drag-enter     (actions/on-drag-enter comp-inst-ref)
@@ -181,19 +185,19 @@
         on-drag-end       (actions/on-drag-over comp-inst-ref)
         on-drop           (actions/on-drop file comp-inst-ref)
         on-pointer-down   (actions/on-pointer-down @hover selected edition drawing-tool text-editing? node-editing? grid-editing?
-                                                   drawing-path? create-comment? space? panning z? workspace-read-only?)
+                                                   drawing-path? create-comment? space? panning z? read-only?)
 
         on-pointer-up     (actions/on-pointer-up disable-paste)
 
         on-pointer-enter  (actions/on-pointer-enter in-viewport?)
         on-pointer-leave  (actions/on-pointer-leave in-viewport?)
         on-pointer-move   (actions/on-pointer-move move-stream)
-        on-move-selected  (actions/on-move-selected hover hover-ids selected space? z? workspace-read-only?)
-        on-menu-selected  (actions/on-menu-selected hover hover-ids selected workspace-read-only?)
+        on-move-selected  (actions/on-move-selected hover hover-ids selected space? z? read-only?)
+        on-menu-selected  (actions/on-menu-selected hover hover-ids selected read-only?)
 
         on-frame-enter    (actions/on-frame-enter frame-hover)
         on-frame-leave    (actions/on-frame-leave frame-hover)
-        on-frame-select   (actions/on-frame-select selected workspace-read-only?)
+        on-frame-select   (actions/on-frame-select selected read-only?)
 
         disable-events?          (contains? layout :comments)
         show-comments?           (= drawing-tool :comments)
@@ -253,7 +257,8 @@
              (= (:layout selected-frame) :flex)
              (zero? (:rotation first-shape)))
 
-        selecting-first-level-frame? (and single-select? (cfh/root-frame? first-shape))
+        selecting-first-level-frame?
+        (and single-select? (cfh/root-frame? first-shape))
 
         offset-x (if selecting-first-level-frame?
                    (:x first-shape)
@@ -266,9 +271,9 @@
 
         rule-area-size (/ rulers/ruler-area-size zoom)]
 
-    (hooks/setup-dom-events zoom disable-paste in-viewport? workspace-read-only? drawing-tool drawing-path?)
+    (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)
-    (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing? z? workspace-read-only?)
+    (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool drawing-path? node-editing? z? read-only?)
     (hooks/setup-keyboard alt? mod? space? z? shift?)
     (hooks/setup-hover-shapes page-id move-stream base-objects transform selected mod? hover measure-hover
                               hover-ids hover-top-frame-id @hover-disabled? focus zoom show-measures?)
@@ -277,7 +282,8 @@
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
 
     [:div {:class (stl/css :viewport) :style #js {"--zoom" zoom} :data-testid "viewport"}
-     [:& top-bar/top-bar {:layout layout}]
+     (when (:can-edit permissions)
+       [:& top-bar/top-bar {:layout layout}])
      [:div {:class (stl/css :viewport-overlays)}
       ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap
       ;; inside a foreign object "dummy" so this awkward behaviour is take into account
@@ -286,12 +292,13 @@
         [:div {:style {:pointer-events (when-not (dbg/enabled? :html-text) "none")
                        ;; some opacity because to debug auto-width events will fill the screen
                        :opacity 0.6}}
-         [:& stvh/viewport-texts
-          {:key (dm/str "texts-" page-id)
-           :page-id page-id
-           :objects objects
-           :modifiers modifiers
-           :edition edition}]]]]
+         (when (and (:can-edit permissions) (not read-only?))
+           [:& stvh/viewport-texts
+            {:key (dm/str "texts-" page-id)
+             :page-id page-id
+             :objects objects
+             :modifiers modifiers
+             :edition edition}])]]]
 
       (when show-comments?
         [:& comments/comments-layer {:vbox vbox
@@ -338,7 +345,7 @@
       (when (dbg/enabled? :show-export-metadata)
         [:& use/export-page {:page page}])
 
-      ;; We need a "real" background shape so layer transforms work properly in firefox
+        ;; We need a "real" background shape so layer transforms work properly in firefox
       [:rect {:width (:width vbox 0)
               :height (:height vbox 0)
               :x (:x vbox 0)
@@ -347,7 +354,7 @@
 
       [:& (mf/provider ctx/current-vbox) {:value vbox'}
        [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
-         ;; Render root shape
+          ;; Render root shape
         [:& shapes/root-shape {:key page-id
                                :objects base-objects
                                :active-frames @active-frames}]]]]
@@ -646,3 +653,10 @@
           :zoom zoom
           :vbox vbox
           :bottom-padding (when palete-size (+ palete-size 8))}]]]]]))
+
+(mf/defc viewport
+  [props]
+  (let [wasm-renderer-enabled? (features/use-feature "render-wasm/v1")]
+    (if ^boolean wasm-renderer-enabled?
+      [:& viewport.wasm/viewport props]
+      [:& viewport-classic props])))

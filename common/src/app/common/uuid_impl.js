@@ -122,7 +122,6 @@ goog.scope(function() {
     };
   })();
 
-
   self.v4 = (function () {
     const arr = new Uint8Array(16);
 
@@ -211,7 +210,6 @@ goog.scope(function() {
     return factory;
   })();
 
-
   self.short_v8 = function(uuid) {
     const buff = encoding.hexToBuffer(uuid);
     const short =  new Uint8Array(buff, 4);
@@ -222,5 +220,41 @@ goog.scope(function() {
     const most = mostSigBits.toString("16").padStart(16, "0");
     const least = leastSigBits.toString("16").padStart(16, "0");
     return `${most.substring(0, 8)}-${most.substring(8, 12)}-${most.substring(12)}-${least.substring(0, 4)}-${least.substring(4)}`;
-  }
+  };
+
+  self.get_u32 = (function() {
+    const UUID_BYTE_SIZE = 16;
+    const ab = new ArrayBuffer(UUID_BYTE_SIZE);
+    const u32buffer = new Uint32Array(ab);
+    const HYPHEN = '-'.charCodeAt(0);
+    const A = 'a'.charCodeAt(0);
+    const A_SUB = A - 10;
+    const ZERO = '0'.charCodeAt(0);
+    const MAX_DIGIT = 8;
+    const HALF_BITS = 4;
+    return function(uuid) {
+      let digit = 0;
+      let numDigit = 0;
+      let u32index = 0;
+      let u32 = 0;
+      for (let i = 0; i < uuid.length; i++) {
+        const charCode = uuid.charCodeAt(i);
+        if (charCode === HYPHEN) continue;
+        if (charCode >= A) {
+          digit = charCode - A_SUB;
+        } else {
+          digit = charCode - ZERO;
+        }
+        numDigit++;
+        const bitPos = (MAX_DIGIT - numDigit) * HALF_BITS;
+        u32 |= (digit << bitPos);
+        if (numDigit === MAX_DIGIT) {
+          u32buffer[u32index++] = u32;
+          u32 = 0;
+          numDigit = 0;
+        }
+      }
+      return u32buffer;
+    }
+  })();
 });

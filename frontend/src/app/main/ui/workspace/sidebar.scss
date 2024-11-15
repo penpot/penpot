@@ -109,3 +109,8 @@ $width-settings-bar-max: $s-500;
     --collapse-icon-color: var(--color-foreground-primary);
   }
 }
+
+.versions-tab {
+  width: 100%;
+  overflow: hidden;
+}

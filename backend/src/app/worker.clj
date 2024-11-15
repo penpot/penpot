@@ -8,15 +8,13 @@
   "Async tasks abstraction (impl)."
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.logging :as l]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.metrics :as mtx]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]))
 
@@ -25,6 +23,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TASKS REGISTRY
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defprotocol IRegistry
+  (get-task [_ name]))
 
 (defn- wrap-with-metrics
   [f metrics tname]
@@ -39,21 +40,37 @@
                        :val (inst-ms (tp))
                        :labels labels})))))))
 
-(s/def ::registry (s/map-of ::us/string fn?))
-(s/def ::tasks (s/map-of keyword? fn?))
+(def ^:private schema:tasks
+  [:map-of :keyword ::sm/fn])
 
-(defmethod ig/pre-init-spec ::registry [_]
-  (s/keys :req [::mtx/metrics ::tasks]))
+(def ^:private valid-tasks?
+  (sm/validator schema:tasks))
+
+(defmethod ig/assert-key ::registry
+  [_ params]
+  (assert (mtx/metrics? (::mtx/metrics params)) "expected valid metrics instance")
+  (assert (valid-tasks? (::tasks params)) "expected a valid map of tasks"))
 
 (defmethod ig/init-key ::registry
   [_ {:keys [::mtx/metrics ::tasks]}]
   (l/inf :hint "registry initialized" :tasks (count tasks))
-  (reduce-kv (fn [registry k f]
-               (let [tname (name k)]
-                 (l/trc :hint "register task" :name tname)
-                 (assoc registry tname (wrap-with-metrics f metrics tname))))
-             {}
-             tasks))
+  (let [tasks (reduce-kv (fn [registry k f]
+                           (let [tname (name k)]
+                             (l/trc :hint "register task" :name tname)
+                             (assoc registry tname (wrap-with-metrics f metrics tname))))
+                         {}
+                         tasks)]
+    (reify
+      clojure.lang.Counted
+      (count [_] (count tasks))
+
+      IRegistry
+      (get-task [_ name]
+        (get tasks (d/name name))))))
+
+(sm/register!
+ {:type ::registry
+  :pred #(satisfies? IRegistry %)})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SUBMIT API
@@ -73,29 +90,27 @@
       AND status = 'new'
       AND scheduled_at > now()")
 
-(s/def ::label string?)
-(s/def ::task (s/or :kw keyword? :str string?))
-(s/def ::queue (s/or :kw keyword? :str string?))
-(s/def ::delay (s/or :int integer? :duration dt/duration?))
-(s/def ::priority integer?)
-(s/def ::max-retries integer?)
-(s/def ::dedupe boolean?)
+(def ^:private schema:options
+  [:map {:title "submit-options"}
+   [::task [:or ::sm/text :keyword]]
+   [::label {:optional true} ::sm/text]
+   [::delay {:optional true}
+    [:or ::sm/int ::dt/duration]]
+   [::queue {:optional true} [:or ::sm/text :keyword]]
+   [::priority {:optional true} ::sm/int]
+   [::max-retries {:optional true} ::sm/int]
+   [::dedupe {:optional true} ::sm/boolean]])
 
-(s/def ::submit-options
-  (s/and
-   (s/keys :req [::task]
-           :opt [::label ::delay ::queue ::priority ::max-retries ::dedupe])
-   (fn [{:keys [::dedupe ::label] :or {label ""}}]
-     (if dedupe
-       (not= label "")
-       true))))
+(def check-options!
+  (sm/check-fn schema:options))
 
 (defn submit!
   [& {:keys [::params ::task ::delay ::queue ::priority ::max-retries ::dedupe ::label]
       :or {delay 0 queue :default priority 100 max-retries 3 label ""}
       :as options}]
 
-  (us/verify! ::submit-options options)
+  (check-options! options)
+
   (let [duration  (dt/duration delay)
         interval  (db/interval duration)
         props     (db/tjson params)
@@ -125,5 +140,6 @@
   [{:keys [::task ::params] :as cfg}]
   (assert (contains? cfg :app.worker/registry)
           "missing worker registry on `cfg`")
-  (let [task-fn (dm/get-in cfg [:app.worker/registry (name task)])]
+  (let [registry (get cfg ::registry)
+        task-fn  (get-task registry task)]
     (task-fn {:props params})))

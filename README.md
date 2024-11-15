@@ -10,7 +10,7 @@
 
 <p align="center">
 <a href="https://www.mozilla.org/en-US/MPL/2.0" rel="nofollow"><img alt="License: MPL-2.0" src="https://img.shields.io/badge/MPL-2.0-blue.svg" style="max-width:100%;"></a>
-<a href="https://gitter.im/penpot/community" rel="nofollow"><img alt="Gitter" src="https://badges.gitter.im/sereno-xyz/community.svg" style="max-width:100%;"></a>
+<a href="https://community.penpot.app" rel="nofollow"><img alt="Penpot Community" src="https://img.shields.io/discourse/posts?server=https%3A%2F%2Fcommunity.penpot.app" style="max-width:100%;"></a>
 <a href="https://tree.taiga.io/project/penpot/" title="Managed with Taiga.io" rel="nofollow"><img alt="Managed with Taiga.io" src="https://img.shields.io/badge/managed%20with-TAIGA.io-709f14.svg" style="max-width:100%;"></a>
 <a href="https://gitpod.io/#https://github.com/penpot/penpot" rel="nofollow"><img alt="Gitpod ready-to-code" src="https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod" style="max-width:100%;"></a>
 </p>

@@ -4,7 +4,15 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@mixin font-face($style-name, $file, $unicode-range, $weight: unquote("normal"), $style: unquote("normal")) {
+@use "sass:string";
+
+@mixin font-face(
+  $style-name,
+  $file,
+  $unicode-range,
+  $weight: unquote("normal"),
+  $style: string.unquote("normal")
+) {
   $filepath: "/fonts/" + $file;
 
   @font-face {
@@ -12,8 +20,8 @@
     src:
       url($filepath + ".woff2") format("woff2"),
       url($filepath + ".ttf") format("truetype");
-    font-weight: unquote($weight);
-    font-style: unquote($style);
+    font-weight: string.unquote($weight);
+    font-style: string.unquote($style);
     @if $unicode-range {
       unicode-range: $unicode-range;
     }

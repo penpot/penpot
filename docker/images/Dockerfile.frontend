@@ -1,5 +1,7 @@
-FROM nginx:1.23
-LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
+FROM nginxinc/nginx-unprivileged:1.27.1
+LABEL maintainer="Penpot <docker@penpot.app>"
+
+USER root
 
 RUN set -ex; \
     useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
@@ -12,5 +14,13 @@ ADD ./files/nginx.conf /etc/nginx/nginx.conf.template
 ADD ./files/nginx-mime.types /etc/nginx/mime.types
 ADD ./files/nginx-entrypoint.sh /entrypoint.sh
 
+RUN chown -R 1001:0 /var/cache/nginx; \
+    chmod -R g+w /var/cache/nginx; \
+    chown -R 1001:0 /etc/nginx; \
+    chmod -R g+w /etc/nginx; \
+    chown -R 1001:0 /var/www; \
+    chmod -R g+w /var/www;
+
+USER penpot:penpot
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]

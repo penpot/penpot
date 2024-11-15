@@ -12,13 +12,15 @@
    [app.common.files.helpers :as cfh]
    [app.common.logging :as log]
    [app.common.schema :as sm]
+   [app.common.types.team :as ctt]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.main.data.common :refer [handle-notification]]
+   [app.main.data.common :as dc]
    [app.main.data.events :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.media :as di]
+   [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.data.websocket :as dws]
    [app.main.features :as features]
@@ -42,6 +44,7 @@
 
 (declare fetch-projects)
 (declare fetch-team-members)
+(declare process-message)
 
 (defn initialize
   [{:keys [id]}]
@@ -52,13 +55,14 @@
       (let [prev-team-id (:current-team-id state)]
         (cond-> state
           (not= prev-team-id id)
-          (-> (dissoc :current-team-id)
+          (-> (dissoc :current-team-initialized)
               (dissoc :dashboard-files)
               (dissoc :dashboard-projects)
               (dissoc :dashboard-shared-files)
               (dissoc :dashboard-recent-files)
               (dissoc :dashboard-team-members)
               (dissoc :dashboard-team-stats)
+              (assoc :current-team-id id)
               (update :workspace-global dissoc :default-font)))))
 
     ptk/WatchEvent
@@ -70,18 +74,17 @@
               ;; fetch teams must be first in case the team doesn't exist
               (ptk/watch (du/fetch-teams) state stream)
               (ptk/watch (df/load-team-fonts id) state stream)
-              (ptk/watch (fetch-projects id) state stream)
-              (ptk/watch (fetch-team-members id) state stream)
-              (ptk/watch (du/fetch-users {:team-id id}) state stream)
+              (ptk/watch (fetch-projects) state stream)
+              (ptk/watch (fetch-team-members) state stream)
+              (ptk/watch (du/fetch-users) state stream)
 
               (->> stream
                    (rx/filter (ptk/type? ::dws/message))
                    (rx/map deref)
-                   (rx/filter (fn [{:keys [subs-id type] :as msg}]
-                                (and (or (= subs-id uuid/zero)
-                                         (= subs-id profile-id))
-                                     (= :notification type))))
-                   (rx/map handle-notification))
+                   (rx/filter (fn [{:keys [topic] :as msg}]
+                                (or (= topic uuid/zero)
+                                    (= topic profile-id))))
+                   (rx/map process-message))
 
               ;; Once the teams are fecthed, initialize features related
               ;; to currently active team
@@ -90,7 +93,9 @@
                    (rx/observe-on :async)
                    (rx/mapcat deref)
                    (rx/filter #(= id (:id %)))
-                   (rx/map du/set-current-team)))
+                   (rx/mapcat (fn [team]
+                                (rx/of (du/set-current-team team)
+                                       #(assoc % :current-team-initialized true))))))
 
              (rx/take-until stopper))))))
 
@@ -112,12 +117,15 @@
       (assoc state :dashboard-team-members (d/index-by :id members)))))
 
 (defn fetch-team-members
-  [team-id]
-  (ptk/reify ::fetch-team-members
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :get-team-members {:team-id team-id})
-           (rx/map team-members-fetched)))))
+  ([] (fetch-team-members nil))
+  ([team-id]
+   (ptk/reify ::fetch-team-members
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [team-id (or team-id (:current-team-id state))]
+         (assert (uuid? team-id) "expected team-id to be resolved")
+         (->> (rp/cmd! :get-team-members {:team-id team-id})
+              (rx/map team-members-fetched)))))))
 
 ;; --- EVENT: fetch-team-stats
 
@@ -183,12 +191,13 @@
         (assoc state :dashboard-projects projects)))))
 
 (defn fetch-projects
-  [team-id]
+  []
   (ptk/reify ::fetch-projects
     ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :get-projects {:team-id team-id})
-           (rx/map projects-fetched)))))
+    (watch [_ state _]
+      (let [team-id (:current-team-id state)]
+        (->> (rp/cmd! :get-projects {:team-id team-id})
+             (rx/map projects-fetched))))))
 
 ;; --- EVENT: search
 
@@ -282,15 +291,13 @@
             (update :dashboard-files d/merge files))))))
 
 (defn fetch-recent-files
-  ([] (fetch-recent-files nil))
-  ([team-id]
-   (ptk/reify ::fetch-recent-files
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [team-id (or team-id (:current-team-id state))]
-         (->> (rp/cmd! :get-team-recent-files {:team-id team-id})
-              (rx/map recent-files-fetched)))))))
-
+  []
+  (ptk/reify ::fetch-recent-files
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [team-id (:current-team-id state)]
+        (->> (rp/cmd! :get-team-recent-files {:team-id team-id})
+             (rx/map recent-files-fetched))))))
 
 ;; --- EVENT: fetch-template-files
 
@@ -480,7 +487,8 @@
 (defn update-team-member-role
   [{:keys [role member-id] :as params}]
   (dm/assert! (uuid? member-id))
-  (dm/assert! (keyword? role)) ;  FIXME: validate proper role?
+  (dm/assert! (contains? ctt/valid-roles role))
+
   (ptk/reify ::update-team-member-role
     ptk/WatchEvent
     (watch [_ state _]
@@ -488,7 +496,7 @@
             params  (assoc params :team-id team-id)]
         (->> (rp/cmd! :update-team-member-role params)
              (rx/mapcat (fn [_]
-                          (rx/of (fetch-team-members team-id)
+                          (rx/of (fetch-team-members)
                                  (du/fetch-teams)
                                  (ptk/data-event ::ev/event
                                                  {::ev/name "update-team-member-role"
@@ -506,7 +514,7 @@
             params  (assoc params :team-id team-id)]
         (->> (rp/cmd! :delete-team-member params)
              (rx/mapcat (fn [_]
-                          (rx/of (fetch-team-members team-id)
+                          (rx/of (fetch-team-members)
                                  (du/fetch-teams)
                                  (ptk/data-event ::ev/event
                                                  {::ev/name "delete-team-member"
@@ -602,7 +610,7 @@
    (sm/check-email! email))
 
   (dm/assert! (uuid? team-id))
-  (dm/assert! (keyword? role)) ;; FIXME validate role
+  (dm/assert! (contains? ctt/valid-roles role))
 
   (ptk/reify ::update-team-invitation-role
     IDeref
@@ -1188,10 +1196,12 @@
                             {:name name
                              :team-id team-id})
             action-name   (if in-project? :create-file :create-project)
-            action        (if in-project? file-created project-created)]
+            action        (if in-project? file-created project-created)
+            can-edit?     (dm/get-in state [:permissions :can-edit])]
 
-        (->> (rp/cmd! action-name params)
-             (rx/map action))))))
+        (when can-edit?
+          (->> (rp/cmd! action-name params)
+               (rx/map action)))))))
 
 (defn open-selected-file
   []
@@ -1203,3 +1213,23 @@
           (let [file (get-in state [:dashboard-files (first files)])]
             (rx/of (go-to-workspace file)))
           (rx/empty))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Notifications
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- handle-change-team-role
+  [params]
+  (ptk/reify ::handle-change-team-role
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (dc/change-team-role params)
+             (modal/hide)))))
+
+(defn- process-message
+  [{:keys [type] :as msg}]
+  (case type
+    :notification           (dc/handle-notification msg)
+    :team-role-change       (handle-change-team-role msg)
+    :team-membership-change (dc/team-membership-change msg)
+    nil))

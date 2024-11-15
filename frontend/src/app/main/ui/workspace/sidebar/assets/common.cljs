@@ -22,7 +22,7 @@
    [app.main.refs :as refs]
    [app.main.render :refer [component-svg component-svg-thumbnail]]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
+   [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
@@ -111,14 +111,13 @@
 (mf/defc assets-context-menu
   {::mf/wrap-props false}
   [{:keys [options state on-close]}]
-  [:& context-menu-a11y
+  [:> context-menu*
    {:show (:open? state)
-    :fixed? (or (not= (:top state) 0) (not= (:left state) 0))
+    :fixed (or (not= (:top state) 0) (not= (:left state) 0))
     :on-close on-close
     :top (:top state)
     :left (:left state)
-    :options options
-    :workspace? true}])
+    :options options}])
 
 (mf/defc section-icon
   {::mf/wrap-props false}
@@ -131,12 +130,12 @@
 
 (mf/defc asset-section
   {::mf/wrap-props false}
-  [{:keys [children file-id title section assets-count open?]}]
+  [{:keys [children file-id title section assets-count icon open?]}]
   (let [children    (-> (array/normalize-to-array children)
                         (array/without-nils))
 
-        is-button?  #(= :title-button (.. % -props -role))
-        is-content? #(= :content (.. % -props -role))
+        is-button?  #(as-> % $ (= :title-button (.. ^js $ -props -role)))
+        is-content? #(as-> % $ (= :content (.. ^js $ -props -role)))
 
         buttons     (array/filter is-button? children)
         content     (array/filter is-content? children)
@@ -152,7 +151,7 @@
         (mf/html
          [:span {:class (stl/css :title-name)}
           [:span {:class (stl/css :section-icon)}
-           [:& section-icon {:section section}]]
+           [:& (or icon section-icon) {:section section}]]
           [:span {:class (stl/css :section-name)}
            title]
 
@@ -223,7 +222,8 @@
 
 (defn set-drag-image
   [event item-ref num-selected]
-  (let [offset          (dom/get-offset-position (.-nativeEvent event))
+  (let [offset          (dom/get-offset-position
+                         (dom/event->native-event event))
         item-el         (mf/ref-val item-ref)
         counter-el      (create-counter-element num-selected)]
 

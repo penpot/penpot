@@ -16,6 +16,8 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
+(set! *warn-on-infer* false)
+
 (mf/defc tab-element
   {::mf/wrap-props false}
   [{:keys [children]}]

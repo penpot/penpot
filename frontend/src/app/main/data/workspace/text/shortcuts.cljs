@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.text.shortcuts
   (:require
    [app.common.data :as d]
+   [app.common.files.helpers :as cfh]
    [app.common.text :as txt]
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace.texts :as dwt]
@@ -188,14 +189,20 @@
       props)))
 
 (defn- update-attrs-when-no-readonly [props]
-  (let [undo-id (js/Symbol)
-        read-only?           (deref refs/workspace-read-only?)
-        shapes-with-children (deref refs/selected-shapes-with-children)
-        text-shapes          (filter #(= (:type %) :text) shapes-with-children)
-        props                (if (> (count text-shapes) 1)
-                               (blend-props text-shapes props)
-                               props)]
-    (when (and (not read-only?) text-shapes)
+  (let [undo-id     (js/Symbol)
+
+        can-edit?   (:can-edit (deref refs/permissions))
+        read-only?  (deref refs/workspace-read-only?)
+
+        text-shapes (->> (deref refs/selected-shapes-with-children)
+                         (filter cfh/text-shape?)
+                         (not-empty))
+
+        props       (if (> (count text-shapes) 1)
+                      (blend-props text-shapes props)
+                      props)]
+
+    (when (and can-edit? (not read-only?) text-shapes)
       (st/emit! (dwu/start-undo-transaction undo-id))
       (run! #(update-attrs % props) text-shapes)
       (st/emit! (dwu/commit-undo-transaction undo-id)))))

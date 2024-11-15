@@ -18,7 +18,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
-   [app.main.ui.icons :as i]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry]]
@@ -272,9 +272,10 @@
 
         apply-typography
         (mf/use-fn
-         (mf/deps file-id)
+         (mf/deps file-id read-only?)
          (fn [typography _event]
-           (st/emit! (dwt/apply-typography typography file-id))))
+           (when-not read-only?
+             (st/emit! (dwt/apply-typography typography file-id)))))
 
         create-group
         (mf/use-fn
@@ -403,9 +404,10 @@
       (when local?
         [:& cmm/asset-section-block {:role :title-button}
          (when-not read-only?
-           [:button {:class (stl/css :assets-btn)
-                     :on-click add-typography}
-            i/add])])
+           [:> icon-button* {:variant "ghost"
+                             :aria-label (tr "workspace.assets.typography.add-typography")
+                             :on-click add-typography
+                             :icon "add"}])])
 
       [:& cmm/asset-section-block {:role :content}
        [:& typographies-group {:file-id file-id
@@ -433,27 +435,27 @@
           {:on-close on-close-menu
            :state @menu-state
            :options [(when-not (or multi-typographies? multi-assets?)
-                       {:option-name    (tr "workspace.assets.rename")
-                        :id             "assets-rename-typography"
-                        :option-handler handle-rename-typography-clicked})
+                       {:name    (tr "workspace.assets.rename")
+                        :id      "assets-rename-typography"
+                        :handler handle-rename-typography-clicked})
 
                      (when-not (or multi-typographies? multi-assets?)
-                       {:option-name    (tr "workspace.assets.edit")
-                        :id             "assets-edit-typography"
-                        :option-handler handle-edit-typography-clicked})
+                       {:name    (tr "workspace.assets.edit")
+                        :id      "assets-edit-typography"
+                        :handler handle-edit-typography-clicked})
 
-                     {:option-name    (tr "workspace.assets.delete")
-                      :id             "assets-delete-typography"
-                      :option-handler handle-delete-typography}
+                     {:name    (tr "workspace.assets.delete")
+                      :id      "assets-delete-typography"
+                      :handler handle-delete-typography}
 
                      (when-not multi-assets?
-                       {:option-name    (tr "workspace.assets.group")
-                        :id             "assets-group-typography"
-                        :option-handler on-group})]}]
+                       {:name    (tr "workspace.assets.group")
+                        :id      "assets-group-typography"
+                        :handler on-group})]}]
 
          [:& cmm/assets-context-menu
           {:on-close on-close-menu
            :state @menu-state
-           :options [{:option-name   "show info"
-                      :id             "assets-rename-typography"
-                      :option-handler handle-edit-typography-clicked}]}])]]]))
+           :options [{:name   "show info"
+                      :id     "assets-rename-typography"
+                      :handler handle-edit-typography-clicked}]}])]]]))

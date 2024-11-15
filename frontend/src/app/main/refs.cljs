@@ -12,8 +12,10 @@
    [app.common.files.helpers :as cph]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
+   [app.main.ui.workspace.tokens.token-set :as wtts]
    [okulary.core :as l]))
 
 ;; ---- Global refs
@@ -26,6 +28,12 @@
 
 (def profile
   (l/derived :profile st/state))
+
+(def team
+  (l/derived :team st/state))
+
+(def permissions
+  (l/derived :permissions st/state))
 
 (def teams
   (l/derived :teams st/state))
@@ -107,6 +115,12 @@
              st/state))
 
 ;; ---- Workspace refs
+
+(def render-state
+  (l/derived :render-state st/state))
+
+(def render-context-lost?
+  (l/derived :lost render-state))
 
 (def workspace-local
   (l/derived :workspace-local st/state))
@@ -198,6 +212,9 @@
 
 (def context-menu
   (l/derived :context-menu workspace-local))
+
+(def token-context-menu
+  (l/derived :token-context-menu workspace-local))
 
 ;; page item that it is being edited
 (def editing-page-item
@@ -442,6 +459,70 @@
              ids)))
    st/state =))
 
+;; ---- Token refs
+
+(def tokens-lib
+  (l/derived :tokens-lib workspace-data))
+
+(def workspace-token-theme-groups
+  (l/derived (d/nilf ctob/get-theme-groups) tokens-lib))
+
+(defn workspace-token-theme
+  [group name]
+  (l/derived
+   (fn [lib]
+     (when lib
+       (ctob/get-theme lib group name)))
+   tokens-lib))
+
+(def workspace-token-theme-tree-no-hidden
+  (l/derived (fn [lib]
+               (or
+                (some-> lib
+                        (ctob/delete-theme ctob/hidden-token-theme-group ctob/hidden-token-theme-name)
+                        (ctob/get-theme-tree))
+                []))
+             tokens-lib))
+
+(def workspace-token-themes
+  (l/derived #(or (some-> % ctob/get-themes) []) tokens-lib))
+
+(def workspace-token-themes-no-hidden
+  (l/derived #(remove ctob/hidden-temporary-theme? %) workspace-token-themes))
+
+(def workspace-selected-token-set-id
+  (l/derived wtts/get-selected-token-set-id st/state))
+
+(def workspace-ordered-token-sets
+  (l/derived #(or (some-> % ctob/get-sets) []) tokens-lib))
+
+(def workspace-active-theme-paths
+  (l/derived (d/nilf ctob/get-active-theme-paths) tokens-lib))
+
+(def workspace-active-theme-paths-no-hidden
+  (l/derived #(disj % ctob/hidden-token-theme-path) workspace-active-theme-paths))
+
+(def workspace-active-set-names
+  (l/derived (d/nilf ctob/get-active-themes-set-names) tokens-lib))
+
+(def workspace-active-theme-sets-tokens
+  (l/derived #(or (some-> % ctob/get-active-themes-set-tokens) {}) tokens-lib))
+
+(def workspace-selected-token-set-token
+  (fn [token-name]
+    (l/derived
+     #(some-> (wtts/get-selected-token-set %)
+              (ctob/get-token token-name))
+     st/state)))
+
+(def workspace-selected-token-set-tokens
+  (l/derived #(or (wtts/get-selected-token-set-tokens %) {}) st/state))
+
+(def plugins-permissions-peek
+  (l/derived (fn [state]
+               (dm/get-in state [:plugins-permissions-peek :data]))
+             st/state))
+
 ;; ---- Viewer refs
 
 (defn lookup-viewer-objects-by-id
@@ -585,6 +666,9 @@
 (def current-file-id
   (l/derived :current-file-id st/state))
 
+(def current-project-id
+  (l/derived :current-project-id st/state))
+
 (def workspace-preview-blend
   (l/derived :workspace-preview-blend st/state))
 
@@ -598,4 +682,4 @@
   (l/derived :updating-library st/state))
 
 (def persistence-state
-  (l/derived (comp :status :workspace-persistence) st/state))
+  (l/derived (comp :status :persistence) st/state))

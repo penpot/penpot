@@ -9,6 +9,7 @@
    [app.auth.oidc :as-alias oidc]
    [app.common.data :as d]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.db :as-alias db]
    [app.http.access-token :as actoken]
@@ -24,14 +25,13 @@
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as-alias rpc.doc]
    [app.setup :as-alias setup]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.exec :as px]
    [reitit.core :as r]
    [reitit.middleware :as rr]
-   [ring.request :as rreq]
-   [ring.response :as-alias rres]
-   [yetti.adapter :as yt]))
+   [yetti.adapter :as yt]
+   [yetti.request :as yreq]
+   [yetti.response :as-alias yres]))
 
 (declare router-handler)
 
@@ -39,31 +39,28 @@
 ;; HTTP SERVER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::handler fn?)
-(s/def ::router some?)
-(s/def ::port integer?)
-(s/def ::host string?)
-(s/def ::name string?)
+(def default-params
+  {::port 6060
+   ::host "0.0.0.0"
+   ::max-body-size (* 1024 1024 30)             ; default 30 MiB
+   ::max-multipart-body-size (* 1024 1024 120)}) ; default 120 MiB
 
-(s/def ::max-body-size integer?)
-(s/def ::max-multipart-body-size integer?)
-(s/def ::io-threads integer?)
+(defmethod ig/expand-key ::server
+  [k v]
+  {k (merge default-params (d/without-nils v))})
 
-(defmethod ig/prep-key ::server
-  [_ cfg]
-  (merge {::port 6060
-          ::host "0.0.0.0"
-          ::max-body-size (* 1024 1024 30)             ; default 30 MiB
-          ::max-multipart-body-size (* 1024 1024 120)} ; default 120 MiB
-         (d/without-nils cfg)))
+(def ^:private schema:server-params
+  [:map
+   [::port ::sm/int]
+   [::host ::sm/text]
+   [::max-body-size {:optional true} ::sm/int]
+   [::max-multipart-body-size {:optional true} ::sm/int]
+   [::router {:optional true} [:fn r/router?]]
+   [::handler {:optional true} ::sm/fn]])
 
-(defmethod ig/pre-init-spec ::server [_]
-  (s/keys :req [::port ::host]
-          :opt [::max-body-size
-                ::max-multipart-body-size
-                ::router
-                ::handler
-                ::io-threads]))
+(defmethod ig/assert-key ::server
+  [_ params]
+  (assert (sm/check schema:server-params params)))
 
 (defmethod ig/init-key ::server
   [_ {:keys [::handler ::router ::host ::port] :as cfg}]
@@ -100,12 +97,12 @@
 
 (defn- not-found-handler
   [_]
-  {::rres/status 404})
+  {::yres/status 404})
 
 (defn- router-handler
   [router]
   (letfn [(resolve-handler [request]
-            (if-let [match (r/match-by-path router (rreq/path request))]
+            (if-let [match (r/match-by-path router (yreq/path request))]
               (let [params  (:path-params match)
                     result  (:result match)
                     handler (or (:handler result) not-found-handler)
@@ -114,11 +111,11 @@
               (partial not-found-handler request)))
 
           (on-error [cause request]
-            (let [{:keys [::rres/body] :as response} (errors/handle cause request)]
+            (let [{:keys [::yres/body] :as response} (errors/handle cause request)]
               (cond-> response
                 (map? body)
-                (-> (update ::rres/headers assoc "content-type" "application/transit+json")
-                    (assoc ::rres/body (t/encode-str body {:type :json-verbose}))))))]
+                (-> (update ::yres/headers assoc "content-type" "application/transit+json")
+                    (assoc ::yres/body (t/encode-str body {:type :json-verbose}))))))]
 
     (fn [request]
       (let [handler (resolve-handler request)]
@@ -131,18 +128,26 @@
 ;; HTTP ROUTER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod ig/pre-init-spec ::router [_]
-  (s/keys :req [::session/manager
-                ::ws/routes
-                ::rpc/routes
-                ::rpc.doc/routes
-                ::oidc/routes
-                ::setup/props
-                ::assets/routes
-                ::debug/routes
-                ::db/pool
-                ::mtx/routes
-                ::awsns/routes]))
+(def ^:private schema:routes
+  [:vector :any])
+
+(def ^:private schema:router-params
+  [:map
+   [::ws/routes schema:routes]
+   [::rpc/routes schema:routes]
+   [::rpc.doc/routes schema:routes]
+   [::oidc/routes schema:routes]
+   [::assets/routes schema:routes]
+   [::debug/routes schema:routes]
+   [::mtx/routes schema:routes]
+   [::awsns/routes schema:routes]
+   ::session/manager
+   ::setup/props
+   ::db/pool])
+
+(defmethod ig/assert-key ::router
+  [_ params]
+  (assert (sm/check schema:router-params params)))
 
 (defmethod ig/init-key ::router
   [_ cfg]

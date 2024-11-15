@@ -1,0 +1,47 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+.viewport {
+  cursor: none;
+  grid-column: 1 / span 2;
+  grid-row: 1 / span 2;
+  overflow: hidden;
+  position: relative;
+}
+
+.viewport-controls {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.render-shapes {
+  height: 100%;
+  position: absolute;
+  width: 100%;
+}
+
+.viewport-overlays {
+  cursor: initial;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 10;
+}
+
+.context-lost {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: grid;
+  place-items: center;
+  cursor: default;
+}

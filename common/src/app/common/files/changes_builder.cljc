@@ -20,18 +20,20 @@
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]))
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
 
-(sm/register! ::changes
-  [:map {:title "changes"}
-   [:redo-changes vector?]
-   [:undo-changes seq?]
-   [:origin {:optional true} any?]
-   [:save-undo? {:optional true} boolean?]
-   [:stack-undo? {:optional true} boolean?]
-   [:undo-group {:optional true} any?]])
+(sm/register!
+ ^{::sm/type ::changes}
+ [:map {:title "changes"}
+  [:redo-changes vector?]
+  [:undo-changes seq?]
+  [:origin {:optional true} any?]
+  [:save-undo? {:optional true} boolean?]
+  [:stack-undo? {:optional true} boolean?]
+  [:undo-group {:optional true} any?]])
 
 (def check-changes!
   (sm/check-fn ::changes))
@@ -758,6 +760,116 @@
     (-> changes
         (update :redo-changes conj {:type :del-typography :id typography-id})
         (update :undo-changes conj {:type :add-typography :typography prev-typography})
+        (apply-changes-local))))
+
+(defn add-temporary-token-theme
+  [changes token-theme]
+  (-> changes
+      (update :redo-changes conj {:type :add-temporary-token-theme :token-theme token-theme})
+      (update :undo-changes conj {:type :delete-temporary-token-theme :id (:id token-theme) :name (:name token-theme)})
+      (apply-changes-local)))
+
+(defn update-active-token-themes
+  [changes token-active-theme-ids prev-token-active-theme-ids]
+  (-> changes
+      (update :redo-changes conj {:type :update-active-token-themes :theme-ids token-active-theme-ids})
+      (update :undo-changes conj {:type :update-active-token-themes :theme-ids prev-token-active-theme-ids})
+      (apply-changes-local)))
+
+(defn add-token-theme
+  [changes token-theme]
+  (-> changes
+      (update :redo-changes conj {:type :add-token-theme :token-theme token-theme})
+      (update :undo-changes conj {:type :del-token-theme :group (:group token-theme) :name (:name token-theme)})
+      (apply-changes-local)))
+
+(defn update-token-theme
+  [changes token-theme prev-token-theme]
+  (let [name (or (:name prev-token-theme)
+                 (:name token-theme))
+        group (or (:group prev-token-theme)
+                  (:group token-theme))]
+    (-> changes
+        (update :redo-changes conj {:type :mod-token-theme :group group :name name :token-theme token-theme})
+        (update :undo-changes conj {:type :mod-token-theme :group group :name name :token-theme (or prev-token-theme token-theme)})
+        (apply-changes-local))))
+
+(defn delete-token-theme
+  [changes group name]
+  (assert-library! changes)
+  (let [library-data (::library-data (meta changes))
+        prev-token-theme (some-> (get library-data :tokens-lib)
+                                 (ctob/get-theme group name))]
+    (-> changes
+        (update :redo-changes conj {:type :del-token-theme :group group :name name})
+        (update :undo-changes conj {:type :add-token-theme :token-theme prev-token-theme})
+        (apply-changes-local))))
+
+(defn add-token-set
+  [changes token-set]
+  (-> changes
+      (update :redo-changes conj {:type :add-token-set :token-set token-set})
+      (update :undo-changes conj {:type :del-token-set :name (:name token-set)})
+      (apply-changes-local)))
+
+(defn update-token-set
+  [changes token-set prev-token-set]
+  (-> changes
+      (update :redo-changes conj {:type :mod-token-set :name (:name prev-token-set) :token-set token-set})
+      (update :undo-changes conj {:type :mod-token-set :name (:name token-set) :token-set (or prev-token-set token-set)})
+      (apply-changes-local)))
+
+(defn delete-token-set
+  [changes token-set-name]
+  (assert-library! changes)
+  (let [library-data (::library-data (meta changes))
+        prev-token-theme (some-> (get library-data :tokens-lib)
+                                 (ctob/get-set token-set-name))]
+    (-> changes
+        (update :redo-changes conj {:type :del-token-set :name token-set-name})
+        (update :undo-changes conj {:type :add-token-set :token-set prev-token-theme})
+        (apply-changes-local))))
+
+(defn move-token-set-before
+  [changes set-name before-set-name prev-before-set-name]
+  (-> changes
+      (update :redo-changes conj {:type :move-token-set-before :set-name set-name :before-set-name before-set-name})
+      (update :undo-changes conj {:type :move-token-set-before :set-name set-name :before-set-name prev-before-set-name})
+      (apply-changes-local)))
+
+(defn set-tokens-lib
+  [changes tokens-lib]
+  (let [library-data (::library-data (meta changes))
+        prev-tokens-lib (get library-data :tokens-lib)]
+    (-> changes
+        (update :redo-changes conj {:type :set-tokens-lib :tokens-lib tokens-lib})
+        (update :undo-changes conj {:type :set-tokens-lib :tokens-lib prev-tokens-lib})
+        (apply-changes-local))))
+
+(defn add-token
+  [changes set-name token]
+  (-> changes
+      (update :redo-changes conj {:type :add-token :set-name set-name :token token})
+      (update :undo-changes conj {:type :del-token :set-name set-name :name (:name token)})
+      (apply-changes-local)))
+
+(defn update-token
+  [changes set-name token prev-token]
+  (-> changes
+      (update :redo-changes conj {:type :mod-token :set-name set-name :name (:name prev-token) :token token})
+      (update :undo-changes conj {:type :mod-token :set-name set-name :name (:name token) :token (or prev-token token)})
+      (apply-changes-local)))
+
+(defn delete-token
+  [changes set-name token-name]
+  (assert-library! changes)
+  (let [library-data (::library-data (meta changes))
+        prev-token (some-> (get library-data :tokens-lib)
+                           (ctob/get-set set-name)
+                           (ctob/get-token token-name))]
+    (-> changes
+        (update :redo-changes conj {:type :del-token :set-name set-name :name token-name})
+        (update :undo-changes conj {:type :add-token :set-name set-name :token prev-token})
         (apply-changes-local))))
 
 (defn add-component
