@@ -20,6 +20,7 @@
 (defonce wasm-set-shape-transform (constantly nil))
 (defonce wasm-set-shape-rotation (constantly nil))
 (defonce wasm-set-shape-fills (constantly nil))
+(defonce wasm-set-shape-blend-mode (constantly nil))
 (defonce wasm-set-shape-children (constantly nil))
 
 (cr/defrecord Shape [id name type x y width height rotation selrect points
@@ -115,11 +116,12 @@
      (when *wasm-sync*
        (wasm-use-shape (:id coll))
        (case k
-         :selrect   (wasm-set-shape-selrect v)
-         :rotation  (wasm-set-shape-rotation v)
-         :transform (wasm-set-shape-transform v)
-         :fills     (wasm-set-shape-fills v)
-         :shapes    (wasm-set-shape-children v)
+         :selrect    (wasm-set-shape-selrect v)
+         :rotation   (wasm-set-shape-rotation v)
+         :transform  (wasm-set-shape-transform v)
+         :fills      (wasm-set-shape-fills v)
+         :blend-mode (wasm-set-shape-blend-mode v)
+         :shapes     (wasm-set-shape-children v)
          nil))
      (let [delegate  (.-delegate ^ShapeProxy coll)
            delegate' (assoc delegate k v)]

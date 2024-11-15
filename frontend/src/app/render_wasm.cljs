@@ -81,24 +81,50 @@
             [r g b] (cc/hex->rgb (:fill-color fill))]
         (^function add-shape-fill r g b a)))))
 
+(defn set-shape-blend-mode
+  [blend-mode]
+  ;; These values correspond to skia::BlendMode representation
+  ;; https://rust-skia.github.io/doc/skia_safe/enum.BlendMode.html
+  (let [encoded-blend (case blend-mode
+                        :normal 3
+                        :darken 16
+                        :multiply 24
+                        :color-burn 19
+                        :lighten 17
+                        :screen 14
+                        :color-dodge 18
+                        :overlay 15
+                        :soft-light 21
+                        :hard-light 20
+                        :difference 22
+                        :exclusion 23
+                        :hue 25
+                        :saturation 26
+                        :color 27
+                        :luminosity 28
+                        3)]
+    (._set_shape_blend_mode ^js internal-module encoded-blend)))
+
 (defn set-objects
   [objects]
   (let [shapes        (into [] xform (vals objects))
         total-shapes  (count shapes)]
     (loop [index 0]
       (when (< index total-shapes)
-        (let [shape     (nth shapes index)
-              id        (dm/get-prop shape :id)
-              selrect   (dm/get-prop shape :selrect)
-              rotation  (dm/get-prop shape :rotation)
-              transform (dm/get-prop shape :transform)
-              fills     (dm/get-prop shape :fills)
-              children  (dm/get-prop shape :shapes)]
+        (let [shape      (nth shapes index)
+              id         (dm/get-prop shape :id)
+              selrect    (dm/get-prop shape :selrect)
+              rotation   (dm/get-prop shape :rotation)
+              transform  (dm/get-prop shape :transform)
+              fills      (dm/get-prop shape :fills)
+              children   (dm/get-prop shape :shapes)
+              blend-mode (dm/get-prop shape :blend-mode)]
           (use-shape id)
           (set-shape-selrect selrect)
           (set-shape-rotation rotation)
           (set-shape-transform transform)
           (set-shape-fills fills)
+          (set-shape-blend-mode blend-mode)
           (set-shape-children children)
           (recur (inc index)))))))
 
@@ -164,4 +190,5 @@
 (set! app.common.types.shape.impl/wasm-set-shape-transform set-shape-transform)
 (set! app.common.types.shape.impl/wasm-set-shape-rotation set-shape-rotation)
 (set! app.common.types.shape.impl/wasm-set-shape-fills set-shape-fills)
+(set! app.common.types.shape.impl/wasm-set-shape-blend-mode set-shape-blend-mode)
 (set! app.common.types.shape.impl/wasm-set-shape-children set-shape-children)
