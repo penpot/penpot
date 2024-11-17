@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-15 12:00+0000\n"
+"PO-Revision-Date: 2024-11-17 14:00+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -6077,3 +6077,433 @@ msgstr "אין טיוטות עדיין."
 #: src/app/main/ui/dashboard/files.cljs:191, src/app/main/ui/dashboard/projects.cljs:285
 msgid "dashboard.empty-placeholder-files-subtitle"
 msgstr "כשחבר או חברה במיזם יוצרים קובץ, הוא יופיע כאן."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:35
+msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
+msgstr "ספריות שנוספו למיזם תופענה כאן."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:39
+#, markdown
+msgid "dashboard.empty-placeholder-libraries"
+msgstr ""
+"ספריות שנוספו למיזם תופענה כאן. כדאי לנסות לשתף את הקבצים שלך או להוסיף מ["
+"הספריות והתבניות](https://penpot.app/libraries-templates) שלנו."
+
+#: src/app/main/data/common.cljs:205
+msgid "dashboard.permissions-change.admin"
+msgstr "מונית לנהל את הצוות הזה."
+
+#: src/app/main/data/common.cljs:204
+msgid "dashboard.permissions-change.editor"
+msgstr "מונית לערוך בצוות הזה."
+
+#: src/app/main/data/common.cljs:206
+msgid "dashboard.permissions-change.owner"
+msgstr "מונית לבעלי הצוות הזה."
+
+#: src/app/main/ui/workspace/libraries.cljs:304
+msgid "workspace.libraries.more-templates-link"
+msgstr "תבניות נוספות כאן"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:195
+msgid "workspace.options.export.add-export"
+msgstr "הוספת ייצוא"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:150
+msgid "workspace.options.fill.add-fill"
+msgstr "הוספת צבע מילוי"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:176, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:182
+msgid "workspace.options.layer-options.toggle-layer"
+msgstr "הצגת/הסתרת שכבה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:184
+msgid "workspace.options.stroke.remove-stroke"
+msgstr "הסרת מתאר"
+
+#: src/app/main/ui/workspace/plugins.cljs:196
+msgid "workspace.plugins.error.manifest"
+msgstr "המצהר/מניפסט של התוסף שגוי."
+
+#: src/app/main/ui/workspace/plugins.cljs:376
+msgid "workspace.plugins.permissions-update.warning"
+msgstr "התוסף הזה השתנה מאז שפתחת אותו. עכשיו הוא רוצה גם לגשת אל:"
+
+#: src/app/main/ui/workspace/plugins.cljs:283
+msgid "workspace.plugins.permissions.allow-download"
+msgstr "התחלת הורדות קבצים."
+
+#: src/app/main/ui/workspace/plugins.cljs:372
+msgid "workspace.plugins.permissions-update.title"
+msgstr "לעדכן את התוסף הזה"
+
+#: src/app/main/ui/workspace/plugins.cljs:270
+msgid "workspace.plugins.permissions.comment-write"
+msgstr "לקרוא ולשנות את ההערות שלך ולהגיב בשמך."
+
+#: src/app/main/ui/workspace/plugins.cljs:86
+msgid "workspace.plugins.remove-plugin"
+msgstr "הסרת תוסף"
+
+#: src/app/main/ui/workspace/plugins.cljs:442
+msgid "workspace.plugins.try-out.try"
+msgstr "התנסות בתוסף"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1004, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1030
+msgid "workspace.shape.menu.add-layout"
+msgstr "הוספת פריסה"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:229
+msgid "workspace.sidebar.sitemap.add-page"
+msgstr "הוספת עמוד"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:361
+msgid "workspace.token.edit-token"
+msgstr "עריכת אסימון"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:186
+msgid "workspace.token.grouping-set-alert"
+msgstr "אין עדיין תמיכה בקיבוץ סדרות אסימונים."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:52
+msgid "workspace.token.new-theme"
+msgstr "ערכת עיצוב חדשה"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:88
+msgid "workspace.token.no-active-theme"
+msgstr "אין ערכת עיצוב פעילה"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:133
+msgid "workspace.token.num-sets"
+msgstr "%s סדרות"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:66
+msgid "workspace.token.original-value"
+msgstr "ערך מקורי: "
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43
+msgid "workspace.token.no-themes-currently"
+msgstr "אין לך ערכות עיצוב עדיין."
+
+#: src/app/main/ui/workspace/tokens/form.cljs:193, src/app/main/ui/workspace/tokens/form.cljs:196, src/app/main/ui/workspace/tokens/sidebar.cljs:67
+msgid "workspace.token.resolved-value"
+msgstr "ערך פתור: "
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:208
+msgid "workspace.token.save-theme"
+msgstr "שמירת ערכת עיצוב"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:172
+msgid "workspace.token.select-set"
+msgstr "בחירה ערכה."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:39, src/app/main/ui/workspace/tokens/modals/themes.cljs:84
+msgid "workspace.token.themes"
+msgstr "ערכות עיצוב"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+#, unused
+msgid "workspace.token.theme-name"
+msgstr "ערכת עיצוב %s"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:334
+msgid "workspace.versions.filter.user"
+msgstr "הגרסה של %s"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:328
+msgid "workspace.versions.filter.mine"
+msgstr "הגרסאות שלי"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:326
+msgid "workspace.versions.filter.label"
+msgstr "מסנן גרסאות"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:327
+msgid "workspace.versions.filter.all"
+msgstr "כל הגרסאות"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:32
+msgid "dashboard.empty-placeholder-libraries-title"
+msgstr "אין ספריות עדיין."
+
+#: src/app/main/ui/dashboard/fonts.cljs:444
+msgid "dashboard.fonts.empty-placeholder-viewer"
+msgstr "אין גופנים מותאמים אישית עדיין."
+
+#: src/app/main/ui/dashboard/team.cljs:944
+msgid "dashboard.webhooks.cant-edit"
+msgstr "אפשר למחוק או לשנות את ההתליות שיצרת."
+
+#: src/app/main/ui/comments.cljs:340, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:295, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:324
+msgid "labels.options"
+msgstr "אפשרויות"
+
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:495
+msgid "workspace.assets.colors.add-color"
+msgstr "הוספת צבע"
+
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:408
+msgid "workspace.assets.typography.add-typography"
+msgstr "הוספת טיפוגרפיה"
+
+#: src/app/main/ui/workspace/right_header.cljs:255
+msgid "workspace.header.share"
+msgstr "שיתוף"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:735
+msgid "workspace.options.interactions.add-interaction"
+msgstr "הוספת אינטראקציה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:173
+msgid "workspace.options.shadow-options.toggle-shadow"
+msgstr "הצגת/הסתרת הצללה"
+
+#: src/app/main/ui/workspace/plugins.cljs:436
+msgid "workspace.plugins.try-out.cancel"
+msgstr "לא עכשיו"
+
+#: src/app/main/ui/workspace/plugins.cljs:425
+msgid "workspace.plugins.try-out.title"
+msgstr "תוסף ‚%s’ מותקן למשתמש שלך!"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1022
+msgid "workspace.shape.menu.remove-layout"
+msgstr "הסרת פריסה"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:216
+msgid "workspace.token.no-sets-create"
+msgstr "עדיין לא מוגדרות סדרות. נא ליצור אחת קודם."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:142
+msgid "workspace.token.no-sets"
+msgstr "אין סדרות"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:362
+msgid "workspace.token.create-token"
+msgstr "יצירת אסימון %s חדש"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:155, src/app/main/ui/workspace/tokens/modals/themes.cljs:239
+msgid "workspace.token.create-theme-title"
+msgstr "יצירת ערכת עיצוב"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:194, src/app/main/ui/workspace/tokens/sidebar.cljs:210
+msgid "workspace.token.create-one"
+msgstr "ליצור אחד."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:47
+msgid "workspace.token.create-new-theme"
+msgstr "אפשר ליצור את ערכת העיצוב הראשונה שלך עכשיו."
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:187
+msgid "workspace.versions.autosaved.version"
+msgstr "%s נשמר אוטומטית"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:193
+msgid "workspace.versions.autosaved.entry"
+msgstr "%s גרסאות שנשמרות אוטומטית"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:138
+msgid "workspace.versions.version-menu"
+msgstr "פתיחת תפריט גרסאות"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:190
+msgid "workspace.versions.expand-snapshot"
+msgstr "הרחבת תמונות מצב"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:207
+msgid "workspace.versions.snapshot-menu"
+msgstr "פתיחת תפריט תמונת מצב"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:283
+msgid "workspace.versions.restore-warning"
+msgstr "לשחזר את הגרסה הזאת?"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:340
+msgid "workspace.versions.loading"
+msgstr "בטעינה…"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:219
+msgid "workspace.versions.button.restore"
+msgstr "שחזור גרסה"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:532
+msgid "workspace.assets.components.add-component"
+msgstr "הוספת רכיב"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:345, src/app/main/ui/workspace/sidebar/versions.cljs:347
+msgid "workspace.versions.button.save"
+msgstr "שמירת גרסה"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:354
+msgid "workspace.versions.empty"
+msgstr "אין גרסאות עדיין"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:224
+msgid "workspace.versions.button.pin"
+msgstr "נעיצת גרסה"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:191
+msgid "workspace.token.no-themes"
+msgstr "אין ערכות עיצוב."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:239
+msgid "workspace.token.no-sets-yet"
+msgstr "אין סדרות עדיין."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1051
+#, unused
+msgid "labels.add"
+msgstr "הוספה"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:149, src/app/main/ui/workspace/sidebar/versions.cljs:288
+msgid "labels.restore"
+msgstr "שחזור"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:153
+msgid "labels.collapse"
+msgstr "צמצום"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:229
+msgid "labels.sets"
+msgstr "סדרות"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:187
+msgid "labels.themes"
+msgstr "ערכות עיצוב"
+
+#: src/app/main/ui/dashboard/team.cljs:216
+msgid "modals.invite-team-member.text"
+msgstr ""
+"אפשר להזמין חברים לצוות כדי שיוכלו לגשת לקובץ הזה ולהיחשף לכל שאר קובצי "
+"הצוות."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:271
+msgid "settings.remove-color"
+msgstr "הסרת צבע"
+
+#: src/app/main/ui/workspace/libraries.cljs:300
+msgid "workspace.libraries.more-templates"
+msgstr "אפשר לחפש "
+
+#: src/app/main/data/common.cljs:203
+msgid "dashboard.permissions-change.viewer"
+msgstr "מונית לצפות בצוות הזה."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:108
+msgid "workspace.options.blur-options.toggle-blur"
+msgstr "החלת/הסרת טשטוש"
+
+#: src/app/main/data/common.cljs:233
+msgid "dashboard.removed-from-team"
+msgstr "נגרעת מהצוות „%s”."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:318
+msgid "workspace.token.set-selection-theme"
+msgstr "נא להגדיר באילו סדרות אסימונים להשתמש כחלק מאפשרות ערכת העיצוב הזאת:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:154
+msgid "workspace.options.flows.remove-flow"
+msgstr "הסרת זרימה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.interactions.remove-interaction"
+msgstr "הסרת אינטראקציה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+msgid "workspace.options.blur-options.add-blur"
+msgstr "הוספת טשטוש"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:323
+msgid "workspace.options.guides.add-guide"
+msgstr "הוספת קו מנחה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:302
+msgid "workspace.options.shadow-options.add-shadow"
+msgstr "הוספת הצללה"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:310
+msgid "workspace.token.back-to-themes"
+msgstr "חזרה לרשימת ערכות העיצוב"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
+msgid "workspace.options.blur-options.remove-blur"
+msgstr "הסרת טשטוש"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:207, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:242
+msgid "workspace.options.export.remove-export"
+msgstr "הסרת ייצוא"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:163
+msgid "workspace.options.fill.remove-fill"
+msgstr "הסרת מילוי"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:187
+msgid "workspace.options.guides.remove-guide"
+msgstr "הסרת קו מנחה"
+
+#: src/app/main/ui/workspace/plugins.cljs:276
+msgid "workspace.plugins.permissions.comment-read"
+msgstr "קריאת התגובות שלך ומתן מענה עליהן."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:183
+msgid "workspace.options.guides.toggle-guide"
+msgstr "הצגת/הסתרת קו מנחה"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:171
+msgid "workspace.options.stroke.add-stroke"
+msgstr "הוספת צבע מתאר"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:177, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:315
+msgid "workspace.options.shadow-options.remove-shadow"
+msgstr "הסרת הצללה"
+
+#: src/app/main/ui/workspace/plugins.cljs:429
+msgid "workspace.plugins.try-out.message"
+msgstr ""
+"מעניין אותך להציץ? בחירה בזה תיפתח בטיוטה חדשה לצוות הנוכחי שלך. (אם לא, "
+"תמיד אפשר למצוא אותו בתוספים המותקנים של כל קובץ שהוא.)"
+
+#: src/app/main/data/plugins.cljs:86, src/app/main/ui/workspace/main_menu.cljs:696, src/app/main/ui/workspace/plugins.cljs:82
+msgid "workspace.plugins.error.need-editor"
+msgstr "צריך הרשאות עריכה כדי להשתמש בתוסף הזה"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:84
+msgid "workspace.token.active-themes"
+msgstr "%s ערכות עיצוב פעילות"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+#, unused
+msgid "workspace.token.add set"
+msgstr "הוספת סדרה"
+
+#: src/app/main/ui/workspace/context_menu.cljs:235
+msgid "workspace.shape.menu.rename"
+msgstr "שינוי שם"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:302
+msgid "workspace.token.edit-theme-title"
+msgstr "עריכת ערכת עיצוב"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:147
+msgid "workspace.token.delete-theme-title"
+msgstr "מחיקת ערכת עיצוב"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:72
+msgid "workspace.token.edit-themes"
+msgstr "עריכת ערכות עיצוב"
+
+#: src/app/main/ui/dashboard/fonts.cljs:445
+msgid "dashboard.fonts.empty-placeholder-viewer-sub"
+msgstr "לאחר העלאת גופן בהתאמה אישית על ידי חברים, הוא יוצג כאן."
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+#, markdown, unused
+msgid "dashboard.empty-placeholder-libraries-subtitle"
+msgstr ""
+"ספריות שנוספו למיזם תופענה כאן. כדאי לנסות לשתף את הקבצים שלך או להוסיף מ["
+"הספריות והתבניות](https://penpot.app/libraries-templates) שלנו."
+
+#: src/app/main/ui/dashboard/team.cljs:181, src/app/main/ui/onboarding/team_choice.cljs:100
+msgid "errors.maximum-invitations-by-request-reached"
+msgstr "הגעת למספר הכתובות המרבי (%s) שאפשר להזמין בבקשה אחת"
