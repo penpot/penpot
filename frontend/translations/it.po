@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-16 13:00+0000\n"
+"PO-Revision-Date: 2024-11-17 14:01+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
@@ -303,7 +303,7 @@ msgstr "Duplica"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:249
 msgid "dashboard.duplicate-multi"
-msgstr "Duplicare %s file"
+msgstr "Duplica %s file"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:259, src/app/main/ui/dashboard/file_menu.cljs:264
 msgid "dashboard.export-binary-multi"
@@ -311,7 +311,7 @@ msgstr "Scarica %s file Penpot (.penpot)"
 
 #: src/app/main/ui/workspace/main_menu.cljs:629
 msgid "dashboard.export-frames"
-msgstr "Esportare le tavole da disegno in PDF"
+msgstr "Esporta le tavole da disegno in PDF"
 
 #: src/app/main/ui/exports/assets.cljs:206
 msgid "dashboard.export-frames.title"
@@ -319,7 +319,7 @@ msgstr "Esporta in PDF"
 
 #, unused
 msgid "dashboard.export-multi"
-msgstr "Esportare %s file Penpot"
+msgstr "Esporta %s file Penpot"
 
 #: src/app/main/ui/exports/assets.cljs:113
 msgid "dashboard.export-multiple.selected"
@@ -399,7 +399,7 @@ msgstr "Font mancante"
 
 #: src/app/main/ui/dashboard/fonts.cljs:207
 msgid "dashboard.fonts.dismiss-all"
-msgstr "Chiudere tutto"
+msgstr "Chiudi tutto"
 
 #: src/app/main/ui/dashboard/fonts.cljs:441
 msgid "dashboard.fonts.empty-placeholder"
@@ -437,7 +437,7 @@ msgstr "Carica tutto"
 
 #: src/app/main/ui/dashboard/import.cljs:452, src/app/main/ui/dashboard/project_menu.cljs:108
 msgid "dashboard.import"
-msgstr "Importare file Penpot"
+msgstr "Importa file Penpot"
 
 #: src/app/main/ui/dashboard/import.cljs:288, src/app/worker/import.cljs:843, src/app/worker/import.cljs:846
 msgid "dashboard.import.analyze-error"
@@ -517,15 +517,15 @@ msgstr "caricamento dei font …"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/dashboard/project_menu.cljs:100
 msgid "dashboard.move-to"
-msgstr "Sposta verso"
+msgstr "Sposta in"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:254
 msgid "dashboard.move-to-multi"
-msgstr "Sposta %s file verso"
+msgstr "Sposta %s file in"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:233
 msgid "dashboard.move-to-other-team"
-msgstr "Sposta verso un altro team"
+msgstr "Sposta in un altro team"
 
 #: src/app/main/ui/dashboard/files.cljs:101, src/app/main/ui/dashboard/projects.cljs:251, src/app/main/ui/dashboard/projects.cljs:252
 msgid "dashboard.new-file"
@@ -666,7 +666,7 @@ msgstr "Scrivi per cercare"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:308, src/app/main/ui/workspace/main_menu.cljs:578
 msgid "dashboard.unpublish-shared"
-msgstr "Spubblicare la libreria"
+msgstr "Annulla pubblicazione libreria"
 
 #: src/app/main/ui/settings/options.cljs:68
 msgid "dashboard.update-settings"
@@ -1113,7 +1113,7 @@ msgstr "Accetto"
 
 #: src/app/main/ui/dashboard/fonts.cljs:176
 msgid "labels.add-custom-font"
-msgstr "Aggiungere un carattere personalizzato"
+msgstr "Aggiungi un carattere personalizzato"
 
 #: src/app/main/ui/dashboard/team.cljs:128, src/app/main/ui/dashboard/team.cljs:310, src/app/main/ui/dashboard/team.cljs:550, src/app/main/ui/dashboard/team.cljs:580, src/app/main/ui/onboarding/team_choice.cljs:66
 msgid "labels.admin"
@@ -1148,7 +1148,7 @@ msgstr "Annulla"
 
 #: src/app/main/ui/dashboard/projects.cljs:96, src/app/main/ui/exports/files.cljs:210, src/app/main/ui/settings/access_tokens.cljs:172, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:176, src/app/main/ui/workspace/comments.cljs:129, src/app/main/ui/workspace/libraries.cljs:538, src/app/main/ui/workspace/sidebar/debug.cljs:40, src/app/main/ui/workspace/sidebar/layers.cljs:299, src/app/main/ui/workspace/tokens/modals/themes.cljs:366, src/app/main/ui/workspace/tokens/modals.cljs:56
 msgid "labels.close"
-msgstr "Chiudere"
+msgstr "Chiudi"
 
 #: src/app/main/ui/dashboard/comments.cljs:104, src/app/main/ui/viewer/comments.cljs:70, src/app/main/ui/workspace/comments.cljs:127
 msgid "labels.comments"
@@ -1404,7 +1404,7 @@ msgstr "Note di versione"
 #: src/app/main/ui/workspace/libraries.cljs, src/app/main/ui/dashboard/team.cljs
 #, unused
 msgid "labels.remove"
-msgstr "Rimuovere"
+msgstr "Rimuovi"
 
 #: src/app/main/ui/dashboard/team.cljs:345
 msgid "labels.remove-member"
@@ -1412,11 +1412,11 @@ msgstr "Rimuovi membro"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:288, src/app/main/ui/dashboard/project_menu.cljs:87, src/app/main/ui/dashboard/sidebar.cljs:539, src/app/main/ui/workspace/sidebar/assets/groups.cljs:153, src/app/main/ui/workspace/sidebar/versions.cljs:146, src/app/main/ui/workspace/tokens/sets_context_menu.cljs:43
 msgid "labels.rename"
-msgstr "Rinominare"
+msgstr "Rinomina"
 
 #: src/app/main/ui/dashboard/team_form.cljs:99
 msgid "labels.rename-team"
-msgstr "Rinominare il team"
+msgstr "Rinomina il team"
 
 #: src/app/main/ui/dashboard/team.cljs:681
 msgid "labels.resend-invitation"
@@ -1432,7 +1432,7 @@ msgstr "Ruolo"
 
 #: src/app/main/ui/dashboard/fonts.cljs:382, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:191, src/app/main/ui/workspace/tokens/form.cljs:433
 msgid "labels.save"
-msgstr "Salvare"
+msgstr "Salva"
 
 #: src/app/main/ui/dashboard/fonts.cljs:421
 msgid "labels.search-font"
@@ -1440,7 +1440,7 @@ msgstr "Cerca un font"
 
 #: src/app/main/ui/settings/feedback.cljs:79
 msgid "labels.send"
-msgstr "Inviare"
+msgstr "Invia"
 
 #: src/app/main/ui/settings/feedback.cljs:79
 msgid "labels.sending"
@@ -1496,11 +1496,11 @@ msgstr "Aggiorna team"
 
 #: src/app/main/ui/dashboard/fonts.cljs:242
 msgid "labels.upload"
-msgstr "Caricare"
+msgstr "Carica"
 
 #: src/app/main/ui/dashboard/fonts.cljs:170
 msgid "labels.upload-custom-fonts"
-msgstr "Caricare font personalizzati"
+msgstr "Carica font personalizzati"
 
 #: src/app/main/ui/dashboard/fonts.cljs:241
 msgid "labels.uploading"
@@ -1512,7 +1512,7 @@ msgstr "Visualizzatore"
 
 #: src/app/main/ui/comments.cljs:197
 msgid "labels.write-new-comment"
-msgstr "Scrivere un nuovo commento"
+msgstr "Scrivi un nuovo commento"
 
 #: src/app/main/ui/dashboard/team.cljs:262
 msgid "labels.you"
@@ -1538,7 +1538,7 @@ msgstr ""
 
 #: src/app/main/data/common.cljs:129
 msgid "modals.add-shared-confirm.message"
-msgstr "Aggiungere \"%s\" come libreria condivisa"
+msgstr "Aggiungi \"%s\" come libreria condivisa"
 
 #: src/app/main/ui/workspace/nudge.cljs:60
 msgid "modals.big-nudge"
@@ -1572,7 +1572,7 @@ msgstr "Annulla e mantieni il mio account"
 
 #: src/app/main/ui/settings/delete_account.cljs:64
 msgid "modals.delete-account.confirm"
-msgstr "Sì, cancellare il mio account"
+msgstr "Sì, cancella il mio account"
 
 #: src/app/main/ui/settings/delete_account.cljs:53
 msgid "modals.delete-account.info"
@@ -1792,7 +1792,7 @@ msgstr ""
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 #, unused
 msgid "modals.remove-shared-confirm.message"
-msgstr "Elimina \"%s\" come Libreria Condivisa"
+msgstr "Elimina \"%s\" come libreria condivisa"
 
 #: src/app/main/ui/workspace/nudge.cljs:53
 msgid "modals.small-nudge"
@@ -2135,7 +2135,7 @@ msgstr[1] "Esporta %s elementi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:57
 msgid "workspace.options.interaction-close-overlay-dest"
-msgstr "Chiudi sovrapposizione sfondo: %s"
+msgstr "Chiudi sovrapposizione: %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:462
 msgid "workspace.options.interaction-delay"
@@ -2270,7 +2270,7 @@ msgstr "Sposta"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:136
 msgid "shortcuts.move-fast-down"
-msgstr "Sposta rapidamente verso il basso"
+msgstr "Sposta rapidamente in basso"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:139
 msgid "shortcuts.move-fast-up"
@@ -2310,11 +2310,11 @@ msgstr "LIBRERIE IN QUESTO FILE"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:314
 msgid "workspace.libraries.text.multiple-typography-tooltip"
-msgstr "Scollega tutte le tipografie"
+msgstr "Scollega tutti gli elementi tipografici"
 
 #: src/app/main/ui/workspace/libraries.cljs:84, src/app/main/ui/workspace/libraries.cljs:104
 msgid "workspace.libraries.typography"
-msgstr "%s tipografie"
+msgstr "%s elementi tipografici"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:87, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:105
 msgid "workspace.options.blur-options.title"
@@ -2469,7 +2469,7 @@ msgstr "pagine"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:150
 msgid "workspace.options.constraints.bottom"
-msgstr "Basso"
+msgstr "Inferiore"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:182
 msgid "workspace.options.flows.add-flow-start"
@@ -3296,7 +3296,7 @@ msgstr "libreria locale"
 
 #: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:408
 msgid "workspace.assets.typography.add-typography"
-msgstr "Aggiungi tipografia"
+msgstr "Aggiungi elemento tipografico"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs
 #, unused
@@ -3402,7 +3402,7 @@ msgstr "Chiudi al click esterno"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:378
 msgid "workspace.options.interaction-close-overlay"
-msgstr "Chiudi sovrapposizione sfondo"
+msgstr "Chiudi sovrapposizione"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:52, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:54, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:386
 msgid "workspace.options.interaction-none"
@@ -4169,7 +4169,7 @@ msgstr "Destra"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:149
 msgid "workspace.options.constraints.top"
-msgstr "Alto"
+msgstr "Superiore"
 
 #: src/app/main/ui/workspace/sidebar/options.cljs:179
 msgid "workspace.options.design"
@@ -4206,7 +4206,7 @@ msgstr "Flusso"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:164
 msgid "workspace.options.flows.flow-starts"
-msgstr "Inizio flussi"
+msgstr "Inizi flusso"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:154
 msgid "workspace.options.flows.remove-flow"
@@ -4588,7 +4588,7 @@ msgstr "Separa nodi"
 
 #: src/app/main/ui/viewer/interactions.cljs:315
 msgid "viewer.header.show-interactions-on-click"
-msgstr "Mostra interazione al click"
+msgstr "Mostra interazioni al click"
 
 #: src/app/main/ui/workspace/colorpicker.cljs:234
 msgid "workspace.libraries.colors.rgba"
@@ -4733,7 +4733,7 @@ msgstr "File"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:311
 msgid "workspace.libraries.text.multiple-typography"
-msgstr "Tipografie multiple"
+msgstr "Elementi tipografici multipli"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:745
 msgid "workspace.options.add-interaction"
@@ -4971,7 +4971,7 @@ msgstr "Allinea orizzontalmente al centro (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:74
 msgid "workspace.align.hdistribute"
-msgstr "Distribuisci orizzontalmente al centro (%s)"
+msgstr "Distribuisci spaziatura orizzontale (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:50
 msgid "workspace.align.hleft"
@@ -6396,11 +6396,11 @@ msgstr "Mostra interazioni"
 
 #: src/app/main/ui/dashboard/team.cljs:985
 msgid "webhooks.last-delivery.success"
-msgstr "L'ultima invio è avvenuto con successo."
+msgstr "L'ultimo invio è avvenuto con successo."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:91
 msgid "workspace.align.vcenter"
-msgstr "Allinea verticalmente al centro(%s)"
+msgstr "Allinea verticalmente al centro (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:104
 msgid "workspace.align.vdistribute"
@@ -6425,7 +6425,7 @@ msgstr "Librerie condivise"
 
 #: src/app/main/ui/dashboard/grid.cljs:142, src/app/main/ui/dashboard/grid.cljs:197, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:400, src/app/main/ui/workspace/sidebar/assets.cljs:151
 msgid "workspace.assets.typography"
-msgstr "Tipografie"
+msgstr "Elementi tipografici"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:59
 msgid "workspace.layout_grid.editor.title"
@@ -6453,7 +6453,7 @@ msgstr "Sostituisci componente"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:151
 msgid "workspace.options.constraints.topbottom"
-msgstr "Alto e Basso"
+msgstr "Superiore e Inferiore"
 
 #: src/app/main/ui/viewer/inspect/exports.cljs:147
 msgid "workspace.options.export"
