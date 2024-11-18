@@ -31,7 +31,7 @@ impl<'a> State<'a> {
                 zoom: 1.,
                 width: 0.,
                 height: 0.,
-            }
+            },
         }
     }
 
@@ -40,13 +40,11 @@ impl<'a> State<'a> {
     }
 
     pub fn navigate(&mut self) {
-        self.render_state
-            .navigate(&self.view, &self.shapes);
+        self.render_state.navigate(&self.view, &self.shapes);
     }
 
     pub fn draw_all_shapes(&mut self) {
-        self.render_state
-            .draw_all_shapes(&self.view, &self.shapes);
+        self.render_state.draw_all_shapes(&self.view, &self.shapes);
     }
 
     pub fn use_shape(&'a mut self, id: Uuid) {
@@ -61,5 +59,21 @@ impl<'a> State<'a> {
 
     pub fn current_shape(&'a mut self) -> Option<&'a mut Shape> {
         self.current_shape.as_deref_mut()
+    }
+
+    pub fn set_view(&mut self, zoom: f32, pan: (f32, f32), size: (f32, f32)) {
+        let (x, y) = pan;
+        self.view.x = x;
+        self.view.y = y;
+
+        self.view.zoom = zoom;
+
+        let (w, h) = size;
+        if self.view.width != w || self.view.height != h {
+            self.view.width = w;
+            self.view.height = h;
+
+            self.render_state.resize(w as i32, h as i32);
+        }
     }
 }
