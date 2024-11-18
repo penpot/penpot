@@ -1604,6 +1604,10 @@ msgstr "Bad Gateway"
 msgid "labels.cancel"
 msgstr "Cancel"
 
+#: src/app/main/ui/comments.cljs:147
+msgid "labels.post"
+msgstr "Post"
+
 #: src/app/main/ui/onboarding/questions.cljs:171
 msgid "labels.canva"
 msgstr "Canva"
@@ -1616,9 +1620,24 @@ msgstr "Close"
 msgid "labels.collapse"
 msgstr "Collapse"
 
+msgid "labels.comment"
+msgstr "Comment"
+
 #: src/app/main/ui/dashboard/comments.cljs:104, src/app/main/ui/viewer/comments.cljs:70, src/app/main/ui/workspace/comments.cljs:127
 msgid "labels.comments"
 msgstr "Comments"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications"
+msgstr "Notifications"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.view-notifications"
+msgstr "View notifications"
+
+#: src/app/main/ui/comments.cljs:446
+msgid "labels.mark-comment-as-solved"
+msgstr "Mark as solved"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:985, src/app/main/ui/workspace/main_menu.cljs:114
 msgid "labels.community"

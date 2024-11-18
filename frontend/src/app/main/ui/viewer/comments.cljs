@@ -206,30 +206,33 @@
      [:div {:class (stl/css :viewer-comments-container)}
       [:div {:class (stl/css :threads)}
        (for [item threads]
-         [:& cmt/thread-bubble
-          {:thread item
-           :position-modifier modifier1
-           :zoom zoom
-           :on-click on-bubble-click
-           :open? (= (:id item) (:open local))
-           :key (:seqn item)
-           :origin :viewer}])
+         [:& cmt/comment-floating-bubble {:thread item
+                                          :users users
+                                          :position-modifier modifier1
+                                          :zoom zoom
+                                          :on-click on-bubble-click
+                                          :open? (= (:id item) (:open local))
+                                          :key (:seqn item)
+                                          :origin :viewer}])
 
        (when-let [thread (get threads-map open-thread-id)]
-         [:& cmt/thread-comments
-          {:thread thread
-           :position-modifier modifier1
-           :viewport {:offset-x 0 :offset-y 0 :width (:width vsize) :height (:height vsize)}
-           :users users
-           :zoom zoom}])
+         [:& cmt/comment-floating-thread {:thread thread
+                                          :position-modifier modifier1
+                                          :viewport {:offset-x 0
+                                                     :offset-y 0
+                                                     :width (:width vsize)
+                                                     :height (:height vsize)}
+                                          :users users
+                                          :zoom zoom}])
 
        (when-let [draft (:draft local)]
-         [:& cmt/draft-thread
-          {:draft draft
-           :position-modifier modifier1
-           :on-cancel on-draft-cancel
-           :on-submit on-draft-submit
-           :zoom zoom}])]]]))
+         [:& cmt/comment-floating-new-thread {:draft draft
+                                              :users users
+                                              :profile profile
+                                              :position-modifier modifier1
+                                              :on-cancel on-draft-cancel
+                                              :on-submit on-draft-submit
+                                              :zoom zoom}])]]]))
 
 (mf/defc comments-sidebar
   [{:keys [users frame page]}]

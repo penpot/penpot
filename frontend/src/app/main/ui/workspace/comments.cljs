@@ -146,16 +146,14 @@
 
       (if (seq tgroups)
         [:div {:class (stl/css :thread-groups)}
-         [:& cmt/comment-thread-group
-          {:group (first tgroups)
-           :on-thread-click on-thread-click
-           :users users}]
+         [:& cmt/comment-thread-cover-group {:group (first tgroups)
+                                             :on-thread-click on-thread-click
+                                             :users users}]
          (for [tgroup (rest tgroups)]
-           [:& cmt/comment-thread-group
-            {:group tgroup
-             :on-thread-click on-thread-click
-             :users users
-             :key (:page-id tgroup)}])]
+           [:& cmt/comment-thread-cover-group {:group tgroup
+                                               :on-thread-click on-thread-click
+                                               :users users
+                                               :key (:page-id tgroup)}])]
 
         [:div {:class (stl/css :thread-group-placeholder)}
          [:span {:class (stl/css :placeholder-icon)} i/comments]

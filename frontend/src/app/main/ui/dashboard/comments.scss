@@ -44,21 +44,16 @@
 }
 
 .comment-button {
-  @include buttonStyle;
-  @include flexCenter;
-  border-radius: $br-8;
-  height: $s-32;
-  width: $s-32;
-  --comment-icon-small-foreground-color: var(--icon-foreground);
-
-  &.unread,
-  &.open {
-    --comment-icon-small-foreground-color: var(--icon-foreground-selected);
-  }
-
-  &:hover {
-    background-color: var(--color-background-quaternary);
-    --comment-icon-small-foreground-color: var(--icon-foreground-active);
+  position: relative;
+  .unread {
+    position: absolute;
+    width: $s-8;
+    height: $s-8;
+    border: $s-2 solid var(--color-background-tertiary);
+    border-radius: 50%;
+    background: red;
+    top: $s-6;
+    right: $s-6;
   }
 }
 
@@ -99,14 +94,4 @@
   line-height: 1.28;
   flex-grow: 1;
   text-transform: uppercase;
-}
-
-.close-btn {
-  @include buttonStyle;
-  @include flexCenter;
-}
-
-.close-icon {
-  @extend .button-icon;
-  stroke: var(--icon-foreground);
 }

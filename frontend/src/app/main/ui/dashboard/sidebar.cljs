@@ -1042,7 +1042,6 @@
       (when (and team profile)
         [:& comments-icon
          {:profile profile
-          :show? show-comments?
           :on-show-comments handle-show-comments}])]]))
 
 (mf/defc sidebar

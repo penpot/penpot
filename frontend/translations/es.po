@@ -1610,6 +1610,10 @@ msgstr "Error del servidor (Bad Gateway)"
 msgid "labels.cancel"
 msgstr "Cancelar"
 
+#: src/app/main/ui/comments.cljs:147
+msgid "labels.post"
+msgstr "Publicar"
+
 #: src/app/main/ui/onboarding/questions.cljs:171
 msgid "labels.canva"
 msgstr "Canva"
@@ -1622,9 +1626,24 @@ msgstr "Cerrar"
 msgid "labels.collapse"
 msgstr "Colapsar"
 
+msgid "labels.comment"
+msgstr "Comentario"
+
 #: src/app/main/ui/dashboard/comments.cljs:104, src/app/main/ui/viewer/comments.cljs:70, src/app/main/ui/workspace/comments.cljs:127
 msgid "labels.comments"
 msgstr "Comentarios"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications"
+msgstr "Notificaciones"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.view-notifications"
+msgstr "Ver notificaciones"
+
+#: src/app/main/ui/comments.cljs:446
+msgid "labels.mark-comment-as-solved"
+msgstr "Marcar como resuelto"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:985, src/app/main/ui/workspace/main_menu.cljs:114
 msgid "labels.community"
