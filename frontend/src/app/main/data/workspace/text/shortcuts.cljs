@@ -115,8 +115,8 @@
 (defn calculate-text-values
   [shape]
   (let [state-map    (if (features/active-feature? @st/state "text-editor/v2")
-                                                  (deref refs/workspace-v2-editor-state)
-                                                  (deref refs/workspace-editor-state))
+                       (deref refs/workspace-v2-editor-state)
+                       (deref refs/workspace-editor-state))
         editor-state  (get state-map (:id shape))
         editor-instance (when (features/active-feature? @st/state "text-editor/v2")
                           (deref refs/workspace-editor))]
