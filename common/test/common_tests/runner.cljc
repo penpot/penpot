@@ -40,7 +40,8 @@
    [common-tests.types.shape-decode-encode-test]
    [common-tests.types.tokens-lib-test]
    [common-tests.types.types-component-test]
-   [common-tests.types.types-libraries-test]))
+   [common-tests.types.types-libraries-test]
+   [common-tests.uuid-test]))
 
 #?(:cljs (enable-console-print!))
 
@@ -80,10 +81,11 @@
    'common-tests.svg-path-test
    'common-tests.svg-test
    'common-tests.text-test
+   'common-tests.time-test
    'common-tests.types-modifiers-test
    'common-tests.types-shape-interactions-test
    'common-tests.types.shape-decode-encode-test
+   'common-tests.types.tokens-lib-test
    'common-tests.types.types-component-test
    'common-tests.types.types-libraries-test
-   'common-tests.types.tokens-lib-test
-   'common-tests.time-test))
+   'common-tests.uuid-test))
