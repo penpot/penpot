@@ -117,7 +117,7 @@
        (rx/of (ptk/event ::ev/event {::ev/name "rename-version"}))))))
 
 (defn restore-version
-  [project-id file-id id]
+  [project-id file-id id origin]
   (dm/assert! (uuid? project-id))
   (dm/assert! (uuid? file-id))
   (dm/assert! (uuid? id))
@@ -132,7 +132,17 @@
             (rx/take 1)
             (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
             (rx/map #(dw/initialize-file project-id file-id)))
-       (rx/of (ptk/event ::ev/event {::ev/name "restore-version"}))))))
+       (case origin
+         :version
+         (rx/of (ptk/event ::ev/event {::ev/name "restore-pin-version"}))
+
+         :snapshot
+         (rx/of (ptk/event ::ev/event {::ev/name "restore-autosave"}))
+
+         :plugin
+         (rx/of (ptk/event ::ev/event {::ev/name "restore-version-plugin"}))
+
+         (rx/empty))))))
 
 (defn delete-version
   [file-id id]

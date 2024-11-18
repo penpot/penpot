@@ -40,7 +40,7 @@
 
       :else
       (let [project-id (:current-project-id @st/state)]
-        (st/emit! (dwv/restore-version project-id $file $version)))))
+        (st/emit! (dwv/restore-version project-id $file $version :plugin)))))
 
   (remove
     [_]
