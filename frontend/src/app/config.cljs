@@ -90,7 +90,6 @@
       "unknown"
       date)))
 
-
 ;; --- Global Config Vars
 
 (def default-theme  "default")
