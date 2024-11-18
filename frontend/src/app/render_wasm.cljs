@@ -27,13 +27,13 @@
 
 (defn create-shape
   [id]
-  (let [buffer       (uuid/uuid->u32 id)
+  (let [buffer       (uuid/get-u32 id)
         create-shape (unchecked-get internal-module "_create_shape")]
     (^function create-shape (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))))
 
 (defn use-shape
   [id]
-  (let [buffer    (uuid/uuid->u32 id)
+  (let [buffer    (uuid/get-u32 id)
         use-shape (unchecked-get internal-module "_use_shape")]
     (^function use-shape (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))))
 
@@ -68,7 +68,7 @@
         add-shape-child      (unchecked-get internal-module "_add_shape_child")]
     (^function clear-shape-children)
     (doseq [id shape_ids]
-      (let [buffer (uuid/uuid->u32 id)]
+      (let [buffer (uuid/get-u32 id)]
         (^function add-shape-child (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))))))
 
 (defn set-shape-fills

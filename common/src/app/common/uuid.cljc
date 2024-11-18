@@ -17,32 +17,32 @@
            java.util.UUID
            java.nio.ByteBuffer)))
 
-(def zero #uuid "00000000-0000-0000-0000-000000000000")
-
-(defn zero?
-  [v]
-  (= zero v))
+(defn uuid
+  "Parse string uuid representation into proper UUID instance."
+  [s]
+  #?(:clj (UUID/fromString s)
+     :cljs (c/uuid s)))
 
 (defn next
   []
   #?(:clj (UUIDv8/create)
-     :cljs (impl/v8)))
+     :cljs (uuid (impl/v8))))
 
 (defn random
   "Alias for clj-uuid/v4."
   []
   #?(:clj (UUID/randomUUID)
-     :cljs (impl/v4)))
-
-(defn uuid
-  "Parse string uuid representation into proper UUID instance."
-  [s]
-  #?(:clj (UUID/fromString s)
-     :cljs (c/parse-uuid s)))
+     :cljs (uuid (impl/v4))))
 
 (defn custom
-  ([a] #?(:clj (UUID. 0 a) :cljs (c/parse-uuid (impl/custom 0 a))))
-  ([b a] #?(:clj (UUID. b a) :cljs (c/parse-uuid (impl/custom b a)))))
+  ([a] #?(:clj (UUID. 0 a) :cljs (uuid (impl/custom 0 a))))
+  ([b a] #?(:clj (UUID. b a) :cljs (uuid (impl/custom b a)))))
+
+(def zero (uuid "00000000-0000-0000-0000-000000000000"))
+
+(defn zero?
+  [v]
+  (= zero v))
 
 #?(:clj
    (defn get-word-high
@@ -54,32 +54,41 @@
      [id]
      (.getLeastSignificantBits ^UUID id)))
 
-#?(:clj
-   (defn get-bytes
-     [^UUID o]
+(defn get-bytes
+  [^UUID o]
+  #?(:clj
      (let [buf (ByteBuffer/allocate 16)]
        (.putLong buf (.getMostSignificantBits o))
        (.putLong buf (.getLeastSignificantBits o))
-       (.array buf))))
+       (.array buf))
+     :cljs
+     (impl/getBytes (.-uuid o))))
 
-#?(:clj
-   (defn from-bytes
-     [^bytes o]
+(defn from-bytes
+  [^bytes o]
+  #?(:clj
      (let [buf (ByteBuffer/wrap o)]
        (UUID. ^long (.getLong buf)
-              ^long (.getLong buf)))))
+              ^long (.getLong buf)))
+     :cljs
+     (uuid (impl/fromBytes o))))
 
 #?(:cljs
    (defn uuid->short-id
      "Return a shorter string of a safe subset of bytes of an uuid encoded
      with base62. It is only safe to use with uuid v4 and penpot custom v8"
      [id]
-     (impl/short-v8 (dm/str id))))
+     (impl/shortV8 (dm/str id))))
 
 #?(:cljs
-   (defn uuid->u32
-     [id]
-     (impl/get-u32 (dm/str id))))
+   (defn get-u32
+     [this]
+     (let [buffer (unchecked-get this "__u32_buffer")]
+       (if (nil? buffer)
+         (let [buffer (impl/getUnsignedInt32Array (.-uuid ^UUID this))]
+           (unchecked-set this "__u32_buffer" buffer)
+           buffer)
+         buffer))))
 
 #?(:clj
    (defn hash-int
@@ -88,4 +97,3 @@
            b (.getLeastSignificantBits ^UUID id)]
        (+ (clojure.lang.Murmur3/hashLong a)
           (clojure.lang.Murmur3/hashLong b)))))
-
