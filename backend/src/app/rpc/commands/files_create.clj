@@ -111,13 +111,15 @@
         ;; features, because some features can be enabled
         ;; globally, but the team is still not migrated properly.
         features (-> (cfeat/get-team-enabled-features cf/flags team)
-                     (cfeat/check-client-features! (:features params)))
+                     (cfeat/check-client-features! (:features params))
+                     (set/difference cfeat/frontend-only-features))
 
         ;; We also include all no migration features declared by
         ;; client; that enables the ability to enable a runtime
         ;; feature on frontend and make it permanent on file
         features (-> (:features params #{})
                      (set/intersection cfeat/no-migration-features)
+                     (set/difference cfeat/frontend-only-features)
                      (set/union features))
 
         params   (-> params

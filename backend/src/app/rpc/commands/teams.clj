@@ -30,7 +30,8 @@
    [app.storage :as sto]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.worker :as wrk]))
+   [app.worker :as wrk]
+   [clojure.set :as set]))
 
 ;; --- Helpers & Specs
 
@@ -416,6 +417,7 @@
                       ::quotes/profile-id profile-id})
 
   (let [features (-> (cfeat/get-enabled-features cf/flags)
+                     (set/difference cfeat/frontend-only-features)
                      (cfeat/check-client-features! (:features params)))
         params   (-> params
                      (assoc :profile-id profile-id)

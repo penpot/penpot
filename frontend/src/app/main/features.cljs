@@ -33,10 +33,13 @@
 
 (defn get-team-enabled-features
   [state]
-  (-> global-enabled-features
-      (set/union (:features-runtime state #{}))
-      (set/intersection cfeat/no-migration-features)
-      (set/union (:features-team state #{}))))
+  (let [runtime-features (:features-runtime state #{})
+        team-features    (->> (:features-team state #{})
+                              (into #{} cfeat/xf-remove-ephimeral))]
+    (-> global-enabled-features
+        (set/union runtime-features)
+        (set/intersection cfeat/no-migration-features)
+        (set/union team-features))))
 
 (def features-ref
   (l/derived get-team-enabled-features st/state =))
@@ -124,9 +127,9 @@
        (let [features (get-team-enabled-features state)]
          (if (contains? features "render-wasm/v1")
            (render.wasm/initialize true)
-           (render.wasm/initialize false)))
+           (render.wasm/initialize false))
 
-       (log/trc :hint "initialized features"
-                :team (str/join "," (:features-team state))
-                :runtime (str/join "," (:features-runtime state)))))))
+         (log/inf :hint "initialized"
+                  :enabled (str/join "," features)
+                  :runtime (str/join "," (:features-runtime state))))))))
 
