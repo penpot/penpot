@@ -35,7 +35,7 @@
     "lint:scss:fix": "yarn run prettier -c resources/styles -c src/**/*.scss -w",
     "build:test": "clojure -M:dev:shadow-cljs compile test",
     "test": "yarn run build:test && node target/tests/test.js",
-    "watch:test": "concurrently \"clojure -M:dev:shadow-cljs watch test\" \"nodemon -w target/tests/test.js --exec 'sleep 2 && node target/tests/test.js'\"",
+    "watch:test": "mkdir -p target/tests && concurrently \"clojure -M:dev:shadow-cljs watch test\" \"nodemon -C -d 2 -w target/tests --exec 'node target/tests/test.js'\"",
     "test:e2e": "playwright test --project default",
     "translations": "node ./scripts/translations.js",
     "watch:app:assets": "node ./scripts/watch.js",

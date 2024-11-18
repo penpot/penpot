@@ -27,10 +27,22 @@
   #?(:clj (Instant/now)
      :cljs (.local ^js DateTime)))
 
-#?(:clj
-   (defn is-after?
-     [one other]
-     (.isAfter one other)))
+(defn is-after?
+  "Analgous to: da > db"
+  [da db]
+  (let [result (compare da db)]
+    (cond
+      (neg? result) false
+      (zero? result) false
+      :else true)))
+
+(defn is-before?
+  [da db]
+  (let [result (compare da db)]
+    (cond
+      (neg? result)   true
+      (zero? result)  false
+      :else false)))
 
 (defn instant?
   [o]
