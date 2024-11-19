@@ -29,6 +29,8 @@ impl<'a> State<'a> {
                 x: 0.,
                 y: 0.,
                 zoom: 1.,
+                width: 0.,
+                height: 0.,
             }
         }
     }
@@ -37,9 +39,14 @@ impl<'a> State<'a> {
         &mut self.render_state
     }
 
-    pub fn draw_all_shapes(&mut self, zoom: f32, pan_x: f32, pan_y: f32) {
+    pub fn navigate(&mut self) {
         self.render_state
-            .draw_all_shapes(zoom, pan_x, pan_y, &self.shapes);
+            .navigate(&self.view, &self.shapes);
+    }
+
+    pub fn draw_all_shapes(&mut self) {
+        self.render_state
+            .draw_all_shapes(&self.view, &self.shapes);
     }
 
     pub fn use_shape(&'a mut self, id: Uuid) {

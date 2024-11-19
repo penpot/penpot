@@ -4,6 +4,8 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::shapes::Shape;
+use crate::view::View;
+use crate::images::Image;
 
 struct GpuState {
     pub context: DirectContext,
@@ -48,10 +50,16 @@ impl GpuState {
     }
 }
 
+pub(crate) struct CachedSurfaceImage {
+  pub image: Image,
+  pub view: View,
+}
+
 pub(crate) struct RenderState {
     gpu_state: GpuState,
     pub final_surface: skia::Surface,
     pub drawing_surface: skia::Surface,
+    pub cached_surface_image: Option<CachedSurfaceImage>,
 }
 
 impl RenderState {
@@ -67,6 +75,7 @@ impl RenderState {
             gpu_state,
             final_surface,
             drawing_surface,
+            cached_surface_image: None,
         }
     }
 
@@ -154,19 +163,58 @@ impl RenderState {
             .clear(skia::Color::TRANSPARENT);
     }
 
-    pub fn draw_all_shapes(
+    pub fn navigate(
         &mut self,
-        zoom: f32,
-        pan_x: f32,
-        pan_y: f32,
+        view: &View,
         shapes: &HashMap<Uuid, Shape>,
     ) {
         self.reset_canvas();
 
-        self.scale(zoom, zoom);
-        self.translate(pan_x, pan_y);
+        if let Some(cached_surface_image) = &self.cached_surface_image {
+            // If we are drawing something bigger than the visible let's do a redraw
+            if (view.x > cached_surface_image.view.x) ||
+                (-view.x + view.width > -cached_surface_image.view.x + cached_surface_image.view.width) ||
+                (view.y > cached_surface_image.view.y) ||
+                (-view.y + view.height > -cached_surface_image.view.y + cached_surface_image.view.height) {         
+                self.draw_all_shapes(view, shapes);
+            }
+            else {
 
+                let image = &cached_surface_image.image;
+                let paint = skia::Paint::default();
+                self.final_surface.canvas().save();
+                self.drawing_surface.canvas().save();
+
+                let navigate_zoom = view.zoom / cached_surface_image.view.zoom;          
+                let navigate_x =  cached_surface_image.view.zoom * (view.x - cached_surface_image.view.x);
+                let navigate_y =  cached_surface_image.view.zoom * (view.y - cached_surface_image.view.y);
+
+                self.final_surface.canvas().scale((navigate_zoom, navigate_zoom));
+                self.final_surface.canvas().translate((navigate_x, navigate_y));
+                self.final_surface.canvas().draw_image(image.clone(), (0, 0), Some(&paint));
+
+                self.final_surface.canvas().restore();
+                self.drawing_surface.canvas().restore();
+            }
+        }
+
+        self.flush();
+    }
+
+    pub fn draw_all_shapes(
+        &mut self,
+        view: &View,
+        shapes: &HashMap<Uuid, Shape>,
+    ) {
+        self.reset_canvas();
+        self.scale(view.zoom, view.zoom);
+        self.translate(view.x, view.y);
         self.render_shape_tree(Uuid::nil(), shapes);
+
+        self.cached_surface_image = Some(CachedSurfaceImage {
+            image: self.final_surface.image_snapshot(),
+            view: view.clone(),
+        });
 
         self.flush();
     }
