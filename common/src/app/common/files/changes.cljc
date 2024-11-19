@@ -410,6 +410,11 @@
       [:type [:= :add-token-set]]
       [:token-set ::ctot/token-set]]]
 
+    [:add-token-sets
+     [:map {:title "AddTokenSetsChange"}
+      [:type [:= :add-token-sets]]
+      [:token-sets [:sequential ::ctot/token-set]]]]
+
     [:mod-token-set
      [:map {:title "ModTokenSetChange"}
       [:type [:= :mod-token-set]]
@@ -426,6 +431,11 @@
      [:map {:title "DelTokenSetChange"}
       [:type [:= :del-token-set]]
       [:name :string]]]
+
+    [:del-token-set-path
+     [:map {:title "DelTokenSetPathChange"}
+      [:type [:= :del-token-set-path]]
+      [:path :string]]]
 
     [:set-tokens-lib
      [:map {:title "SetTokensLib"}
@@ -1046,6 +1056,12 @@
                                 (ctob/ensure-tokens-lib)
                                 (ctob/add-set (ctob/make-token-set token-set)))))
 
+(defmethod process-change :add-token-sets
+  [data {:keys [token-sets]}]
+  (update data :tokens-lib #(-> %
+                                (ctob/ensure-tokens-lib)
+                                (ctob/add-sets (map ctob/make-token-set token-sets)))))
+
 (defmethod process-change :mod-token-set
   [data {:keys [name token-set]}]
   (update data :tokens-lib (fn [lib]
@@ -1065,6 +1081,12 @@
   (update data :tokens-lib #(-> %
                                 (ctob/ensure-tokens-lib)
                                 (ctob/delete-set name))))
+
+(defmethod process-change :del-token-set-path
+  [data {:keys [path]}]
+  (update data :tokens-lib #(-> %
+                                (ctob/ensure-tokens-lib)
+                                (ctob/delete-set-path path))))
 
 ;; === Operations
 
