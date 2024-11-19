@@ -10,6 +10,8 @@
 
 ### :sparkles: New features
 
+- New gradients UI with multi-stop support.
+
 ### :bug: Bugs fixed
 
 

@@ -46,7 +46,7 @@
   (if (= v :multiple) nil v))
 
 (mf/defc color-row
-  [{:keys [index color disable-gradient disable-opacity disable-image on-change
+  [{:keys [index color disable-gradient disable-opacity disable-image disable-picker on-change
            on-reorder on-detach on-open on-close on-remove
            disable-drag on-focus on-blur select-only select-on-focus]}]
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
@@ -72,8 +72,7 @@
         editing-text?  (deref editing-text*)
 
         opacity?
-        (and (not gradient-color?)
-             (not multiple-colors?)
+        (and (not multiple-colors?)
              (not library-color?)
              (not disable-opacity))
 
@@ -134,7 +133,7 @@
 
         handle-click-color
         (mf/use-fn
-         (mf/deps disable-gradient disable-opacity disable-image on-change on-close on-open)
+         (mf/deps disable-gradient disable-opacity disable-image disable-picker on-change on-close on-open)
          (fn [color event]
            (let [color (cond
                          multiple-colors?
@@ -166,7 +165,8 @@
              (when (fn? on-open)
                (on-open color))
 
-             (modal/show! :colorpicker props))))
+             (when-not disable-picker
+               (modal/show! :colorpicker props)))))
 
         prev-color (h/use-previous color)
 
@@ -187,8 +187,8 @@
                                 :name (str "Color row" index)})
                         [nil nil])]
 
-    (mf/with-effect [color prev-color]
-      (when (not= prev-color color)
+    (mf/with-effect [color prev-color disable-picker]
+      (when (and (not disable-picker) (not= prev-color color))
         (modal/update-props! :colorpicker {:data (parse-color color)})))
 
     [:div {:class (stl/css-case

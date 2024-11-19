@@ -28,6 +28,17 @@
   height: $s-40;
 }
 
+.top-actions-right {
+  display: flex;
+  gap: $s-8;
+}
+
+.opacity-input-wrapper {
+  @extend .input-element;
+  @include bodySmallTypography;
+  width: $s-68;
+}
+
 .picker-btn {
   @include buttonStyle;
   @include flexCenter;
