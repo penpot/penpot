@@ -442,7 +442,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; QUOTE: SNAPSHOTS-PER-FILE
+;; QUOTE: SNAPSHOTS-PER-TEAM
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private schema:snapshots-per-team
@@ -470,6 +470,57 @@
       (assoc ::default (cf/get :quotes-snapshots-per-team Integer/MAX_VALUE))
       (assoc ::quote-sql [sql:get-quotes-2 target team-id profile-id profile-id])
       (assoc ::count-sql [sql:get-snapshots-per-team team-id])
+      (generic-check!)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; QUOTE: TEAM-ACCESS-REQUESTS-PER-TEAM
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private schema:team-access-requests-per-team
+  [:map
+   [::profile-id ::sm/uuid]
+   [::team-id ::sm/uuid]])
+
+(def ^:private valid-team-access-requests-per-team-quote?
+  (sm/lazy-validator schema:team-access-requests-per-team))
+
+(def ^:private sql:get-team-access-requests-per-team
+  "SELECT count(*) AS total
+     FROM team_access_request AS tar
+    WHERE tar.team_id = ?")
+
+(defmethod check-quote ::team-access-requests-per-team
+  [{:keys [::profile-id ::team-id ::target] :as quote}]
+  (assert (valid-team-access-requests-per-team-quote? quote) "invalid quote parameters")
+  (-> quote
+      (assoc ::default (cf/get :quotes-team-access-requests-per-team Integer/MAX_VALUE))
+      (assoc ::quote-sql [sql:get-quotes-2 target team-id profile-id profile-id])
+      (assoc ::count-sql [sql:get-team-access-requests-per-team team-id])
+      (generic-check!)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; QUOTE: TEAM-ACCESS-REQUESTS-PER-REQUESTER
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private schema:team-access-requests-per-requester
+  [:map
+   [::profile-id ::sm/uuid]])
+
+(def ^:private valid-team-access-requests-per-requester-quote?
+  (sm/lazy-validator schema:team-access-requests-per-requester))
+
+(def ^:private sql:get-team-access-requests-per-requester
+  "SELECT count(*) AS total
+     FROM team_access_request AS tar
+    WHERE tar.requester_id = ?")
+
+(defmethod check-quote ::team-access-requests-per-requester
+  [{:keys [::profile-id ::target] :as quote}]
+  (assert (valid-team-access-requests-per-requester-quote? quote) "invalid quote parameters")
+  (-> quote
+      (assoc ::default (cf/get :quotes-team-access-requests-per-requester Integer/MAX_VALUE))
+      (assoc ::quote-sql [sql:get-quotes-1 target profile-id])
+      (assoc ::count-sql [sql:get-team-access-requests-per-requester profile-id])
       (generic-check!)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
