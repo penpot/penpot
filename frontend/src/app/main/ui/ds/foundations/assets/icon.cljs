@@ -62,6 +62,7 @@
 (def ^:icon-id boolean-flatten "boolean-flatten")
 (def ^:icon-id boolean-intersection "boolean-intersection")
 (def ^:icon-id boolean-union "boolean-union")
+(def ^:icon-id broken-link "broken-link")
 (def ^:icon-id bug "bug")
 (def ^:icon-id character-a "character-a")
 (def ^:icon-id character-b "character-b")

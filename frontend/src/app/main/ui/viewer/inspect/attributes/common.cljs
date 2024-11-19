@@ -70,7 +70,7 @@
           [:div {:class (stl/css :bullet-wrapper)
                  :style #js {"--bullet-size" "16px"}}
            [:& cb/color-bullet {:color color
-                                :mini? true}]]
+                                :mini true}]]
 
           [:div {:class (stl/css :format-wrapper)}
            [:div {:class (stl/css :image-format)}
@@ -102,7 +102,7 @@
        [:div {:class (stl/css :bullet-wrapper)
               :style #js {"--bullet-size" "16px"}}
         [:& cb/color-bullet {:color color
-                             :mini? true}]]
+                             :mini true}]]
 
        [:div {:class (stl/css :format-wrapper)}
         (when-not (and on-change-format (or (:gradient color) image))

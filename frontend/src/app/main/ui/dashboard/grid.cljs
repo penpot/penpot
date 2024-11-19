@@ -180,7 +180,7 @@
                  [:& bc/color-bullet {:color {:color (:color color)
                                               :id (:id color)
                                               :opacity (:opacity color)}
-                                      :mini? true}]
+                                      :mini true}]
                  [:div {:class (stl/css :name-block)}
                   [:span {:class (stl/css :color-name)} (:name color)]
                   (when-not (= (:name color) default-name)

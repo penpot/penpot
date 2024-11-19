@@ -6242,10 +6242,6 @@ msgstr "%s sets"
 msgid "workspace.token.original-value"
 msgstr "Valor original: "
 
-#: src/app/main/ui/workspace/tokens/form.cljs:193, src/app/main/ui/workspace/tokens/form.cljs:196, src/app/main/ui/workspace/tokens/sidebar.cljs:67
-msgid "workspace.token.resolved-value"
-msgstr "Valor resuelto: "
-
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:208
 msgid "workspace.token.save-theme"
 msgstr "Guardar tema"
@@ -6573,9 +6569,9 @@ msgstr "Crear un token de %s"
 msgid "workspace.token.edit-token"
 msgstr "Editar token"
 
-#: src/app/main/ui/workspace/tokens/form.cljs
+#: src/app/main/ui/workspace/tokens/form.cljs ,src/app/main/ui/workspace/tokens/token_pill.cljs
 msgid "workspace.token.resolved-value"
-msgstr "Valor resuelto: "
+msgstr "Valor resuelto: %s"
 
 #: src/app/main/ui/workspace/tokens/form.cljs
 msgid "workspace.token.token-name"
@@ -6603,7 +6599,7 @@ msgstr "Añade una Descripción (opcional)"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs
 msgid "workspace.token.original-value"
-msgstr "Valor original: "
+msgstr "Valor original: %s"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs
 msgid "workspace.token.no-themes"

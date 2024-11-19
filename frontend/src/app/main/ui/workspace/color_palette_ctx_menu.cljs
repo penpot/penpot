@@ -44,7 +44,7 @@
                    :style #js {"--bullet-size" "20px"}}
              (for [[i {:keys [color id gradient]}] (map-indexed vector (take 7 colors))]
                [:& cb/color-bullet {:key (dm/str "color-" i)
-                                    :mini? true
+                                    :mini true
                                     :color {:color color :id id :gradient gradient}}])]]]))
 
       [:li {:class (stl/css-case :file-library true
@@ -68,7 +68,7 @@
                :style #js {"--bullet-size" "20px"}}
          (for [[i color] (map-indexed vector (take 7 (vals file-colors)))]
            [:& cb/color-bullet {:key (dm/str "color-" i)
-                                :mini? true
+                                :mini true
                                 :color color}])]]]
 
       [:li {:class (stl/css :recent-colors true
@@ -90,5 +90,5 @@
                :style #js {"--bullet-size" "20px"}}
          (for [[idx color] (map-indexed vector (take 7 (reverse recent-colors)))]
            [:& cb/color-bullet {:key (str "color-" idx)
-                                :mini? true
+                                :mini true
                                 :color color}])]]]]]))
