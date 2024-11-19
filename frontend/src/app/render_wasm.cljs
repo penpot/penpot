@@ -7,11 +7,11 @@
 (ns app.render-wasm
   "A WASM based render API"
   (:require
-   [app.common.colors :as cc]
    [app.common.data.macros :as dm]
    [app.common.types.shape.impl :as ctsi]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.render-wasm.helpers :as h]
    [promesa.core :as p]))
 
 (defn initialize
@@ -20,95 +20,100 @@
 
 (defonce internal-module #js {})
 
-;; TODO: remove the `take` once we have the dynamic data structure in Rust
-(def xform
-  (comp
-   (take 2048)))
-
 (defn create-shape
   [id]
-  (let [buffer       (uuid/get-u32 id)
-        create-shape (unchecked-get internal-module "_create_shape")]
-    (^function create-shape (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))))
+  (let [buffer (uuid/get-u32 id)]
+    (h/call internal-module "_create_shape"
+            (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))))
 
 (defn use-shape
   [id]
-  (let [buffer    (uuid/get-u32 id)
-        use-shape (unchecked-get internal-module "_use_shape")]
-    (^function use-shape (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))))
+  (let [buffer (uuid/get-u32 id)]
+    (h/call internal-module "_use_shape"
+            (aget buffer 0)
+            (aget buffer 1)
+            (aget buffer 2)
+            (aget buffer 3))))
 
 (defn set-shape-selrect
   [selrect]
-  (let [x1 (dm/get-prop selrect :x1)
-        y1 (dm/get-prop selrect :y1)
-        x2 (dm/get-prop selrect :x2)
-        y2 (dm/get-prop selrect :y2)
-        set-shape-selrect (unchecked-get internal-module "_set_shape_selrect")]
-    (^function set-shape-selrect x1 y1 x2 y2)))
+  (h/call internal-module "_set_shape_selrect"
+          (dm/get-prop selrect :x1)
+          (dm/get-prop selrect :y1)
+          (dm/get-prop selrect :x2)
+          (dm/get-prop selrect :y2)))
 
 (defn set-shape-transform
   [transform]
-  (let [a (dm/get-prop transform :a)
-        b (dm/get-prop transform :b)
-        c (dm/get-prop transform :c)
-        d (dm/get-prop transform :d)
-        e (dm/get-prop transform :e)
-        f (dm/get-prop transform :f)
-        set-shape-transform (unchecked-get internal-module "_set_shape_transform")]
-    (^function set-shape-transform a b c d e f)))
+  (h/call internal-module "_set_shape_transform"
+          (dm/get-prop transform :a)
+          (dm/get-prop transform :b)
+          (dm/get-prop transform :c)
+          (dm/get-prop transform :d)
+          (dm/get-prop transform :e)
+          (dm/get-prop transform :f)))
 
 (defn set-shape-rotation
   [rotation]
-  (let [set-shape-rotation (unchecked-get internal-module "_set_shape_rotation")]
-    (^function set-shape-rotation rotation)))
+  (h/call internal-module "_set_shape_rotation" rotation))
 
 (defn set-shape-children
-  [shape_ids]
-  (let [clear-shape-children (unchecked-get internal-module "_clear_shape_children")
-        add-shape-child      (unchecked-get internal-module "_add_shape_child")]
-    (^function clear-shape-children)
-    (doseq [id shape_ids]
-      (let [buffer (uuid/get-u32 id)]
-        (^function add-shape-child (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))))))
+  [shape-ids]
+  (h/call internal-module "_clear_shape_children")
+  (run! (fn [id]
+          (let [buffer (uuid/get-u32 id)]
+            (h/call internal-module "_add_shape_child"
+                    (aget buffer 0)
+                    (aget buffer 1)
+                    (aget buffer 2)
+                    (aget buffer 3))))
+        shape-ids))
 
 (defn set-shape-fills
   [fills]
-  (let [clear-shape-fills (unchecked-get internal-module "_clear_shape_fills")
-        add-shape-fill    (unchecked-get internal-module "_add_shape_solid_fill")]
-    (^function clear-shape-fills)
-    (doseq [fill (filter #(contains? % :fill-color) fills)]
-      (let [a       (:fill-opacity fill)
-            [r g b] (cc/hex->rgb (:fill-color fill))]
-        (^function add-shape-fill r g b a)))))
+  (h/call internal-module "_clear_shape_fills")
+  (run! (fn [fill]
+          (let [opacity (:fill-opacity fill)
+                color   (:fill-color fill)]
+            (when ^boolean color
+              (let [rgb     (js/parseInt (subs color 1) 16)
+                    r       (bit-shift-right rgb 16)
+                    g       (bit-and (bit-shift-right rgb 8) 255)
+                    b       (bit-and rgb 255)]
+                (h/call internal-module "_add_shape_solid_fill" r g b opacity)))))
+        fills))
+
+(defn- translate-blend-mode
+  [blend-mode]
+  (case blend-mode
+    :normal 3
+    :darken 16
+    :multiply 24
+    :color-burn 19
+    :lighten 17
+    :screen 14
+    :color-dodge 18
+    :overlay 15
+    :soft-light 21
+    :hard-light 20
+    :difference 22
+    :exclusion 23
+    :hue 25
+    :saturation 26
+    :color 27
+    :luminosity 28
+    3))
 
 (defn set-shape-blend-mode
   [blend-mode]
   ;; These values correspond to skia::BlendMode representation
   ;; https://rust-skia.github.io/doc/skia_safe/enum.BlendMode.html
-  (let [encoded-blend (case blend-mode
-                        :normal 3
-                        :darken 16
-                        :multiply 24
-                        :color-burn 19
-                        :lighten 17
-                        :screen 14
-                        :color-dodge 18
-                        :overlay 15
-                        :soft-light 21
-                        :hard-light 20
-                        :difference 22
-                        :exclusion 23
-                        :hue 25
-                        :saturation 26
-                        :color 27
-                        :luminosity 28
-                        3)
-        set-shape-blend-mode (unchecked-get internal-module "_set_shape_blend_mode")]
-    (^function set-shape-blend-mode encoded-blend)))
+  (h/call internal-module "_set_shape_blend_mode" (translate-blend-mode blend-mode)))
 
 (defn set-objects
   [objects]
-  (let [shapes        (into [] xform (vals objects))
+  (let [shapes        (into [] (vals objects))
+
         total-shapes  (count shapes)]
     (loop [index 0]
       (when (< index total-shapes)
@@ -133,10 +138,9 @@
   [zoom vbox]
   (js/requestAnimationFrame
    (fn []
-     (let [pan-x           (- (dm/get-prop vbox :x))
-           pan-y           (- (dm/get-prop vbox :y))
-           draw-all-shapes (unchecked-get internal-module "_draw_all_shapes")]
-       (^function draw-all-shapes zoom pan-x pan-y)))))
+     (let [pan-x (- (dm/get-prop vbox :x))
+           pan-y (- (dm/get-prop vbox :y))]
+       (h/call internal-module "_draw_all_shapes" zoom pan-x pan-y)))))
 
 (defn cancel-draw
   [frame-id]
