@@ -301,7 +301,7 @@
      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
       (tr "workspace.token.edit-theme-title")]
 
-     [:form {:on-submit on-save-form}
+     [:form {:on-submit on-save-form :class (stl/css :edit-theme-form)}
       [:div {:class (stl/css :edit-theme-wrapper)}
        [:button {:on-click on-back
                  :class (stl/css :back-btn)
