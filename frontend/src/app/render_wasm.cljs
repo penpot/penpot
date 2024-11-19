@@ -39,21 +39,21 @@
 
 (defn set-shape-selrect
   [selrect]
-  (let [x1 (:x1 selrect)
-        y1 (:y1 selrect)
-        x2 (:x2 selrect)
-        y2 (:y2 selrect)
+  (let [x1 (dm/get-prop selrect :x1)
+        y1 (dm/get-prop selrect :y1)
+        x2 (dm/get-prop selrect :x2)
+        y2 (dm/get-prop selrect :y2)
         set-shape-selrect (unchecked-get internal-module "_set_shape_selrect")]
     (^function set-shape-selrect x1 y1 x2 y2)))
 
 (defn set-shape-transform
   [transform]
-  (let [a (:a transform)
-        b (:b transform)
-        c (:c transform)
-        d (:d transform)
-        e (:e transform)
-        f (:f transform)
+  (let [a (dm/get-prop transform :a)
+        b (dm/get-prop transform :b)
+        c (dm/get-prop transform :c)
+        d (dm/get-prop transform :d)
+        e (dm/get-prop transform :e)
+        f (dm/get-prop transform :f)
         set-shape-transform (unchecked-get internal-module "_set_shape_transform")]
     (^function set-shape-transform a b c d e f)))
 
