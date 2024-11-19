@@ -12,7 +12,7 @@
    [app.common.logging :as log]
    [app.config :as cf]
    [app.main.store :as st]
-   [app.render-wasm :as render.wasm]
+   [app.render-wasm :as wasm]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -126,8 +126,8 @@
      (effect [_ state _]
        (let [features (get-team-enabled-features state)]
          (if (contains? features "render-wasm/v1")
-           (render.wasm/initialize true)
-           (render.wasm/initialize false))
+           (wasm/initialize true)
+           (wasm/initialize false))
 
          (log/inf :hint "initialized"
                   :enabled (str/join "," features)

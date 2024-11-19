@@ -12,8 +12,8 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
+   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctt]
-   [app.common.types.shape.impl :as shape.impl]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.features :as features]
@@ -49,7 +49,7 @@
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
-   [app.render-wasm :as render.wasm]
+   [app.render-wasm.api :as wasm.api]
    [app.util.debug :as dbg]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
@@ -113,7 +113,7 @@
         text-modifiers    (mf/deref refs/workspace-text-modifier)
 
         objects-modified  (mf/with-memo [base-objects text-modifiers modifiers]
-                            (binding [shape.impl/*wasm-sync* true]
+                            (binding [cts/*wasm-sync* true]
                               (apply-modifiers-to-selected selected base-objects text-modifiers modifiers)))
 
         selected-shapes   (keep (d/getf objects-modified) selected)
@@ -275,26 +275,26 @@
 
     (mf/with-effect []
       (when-let [canvas (mf/ref-val canvas-ref)]
-        (->> render.wasm/module
+        (->> wasm.api/module
              (p/fmap (fn [ready?]
                        (when ready?
                          (reset! canvas-init? true)
-                         (render.wasm/assign-canvas canvas)))))
+                         (wasm.api/assign-canvas canvas)))))
         (fn []
-          (render.wasm/clear-canvas))))
+          (wasm.api/clear-canvas))))
 
     (mf/with-effect [base-objects canvas-init?]
       (when @canvas-init?
-        (render.wasm/set-objects base-objects)
-        (render.wasm/draw-objects zoom vbox)))
+        (wasm.api/set-objects base-objects)
+        (wasm.api/draw-objects zoom vbox)))
 
     (mf/with-effect [modifiers canvas-init?]
       (when (and @canvas-init? modifiers)
-        (render.wasm/draw-objects zoom vbox)))
+        (wasm.api/draw-objects zoom vbox)))
 
     (mf/with-effect [vbox canvas-init?]
-      (let [frame-id (when @canvas-init? (render.wasm/draw-objects zoom vbox))]
-        (partial render.wasm/cancel-draw frame-id)))
+      (let [frame-id (when @canvas-init? (wasm.api/draw-objects zoom vbox))]
+        (partial wasm.api/cancel-draw frame-id)))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)
