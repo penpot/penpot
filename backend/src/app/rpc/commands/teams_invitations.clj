@@ -532,17 +532,20 @@
         team-owner (get-team-owner conn team-id)
 
         file       (when (some? file-id)
-                     (get-file-for-team-access-request cfg file-id))
+                     (get-file-for-team-access-request cfg file-id))]
 
-        request    (upsert-team-access-request conn team-id profile-id)]
-
-    ;; FIXME missing quotes
+    (-> cfg
+        (assoc ::quotes/profile-id profile-id)
+        (assoc ::quotes/team-id team-id)
+        (quotes/check! {::quotes/id ::quotes/team-access-requests-per-team}
+                       {::quotes/id ::quotes/team-access-requests-per-requester}))
 
     (teams/check-profile-muted conn requester)
     (teams/check-email-bounce conn (:email team-owner) false)
     (teams/check-email-spam conn (:email team-owner) true)
 
-    (let [factory (cond
+    (let [request (upsert-team-access-request conn team-id profile-id)
+          factory (cond
                     (and (some? file) (:is-default team) is-viewer)
                     eml/request-file-access-yourpenpot-view
 
@@ -565,9 +568,9 @@
                   :team-id team-id
                   :file-name (:name file)
                   :file-id file-id
-                  :page-id (:page-id file)}))
+                  :page-id (:page-id file)})
 
-    (with-meta {:request request}
-      {::audit/props {:request 1}})))
+      (with-meta {:request request}
+        {::audit/props {:request 1}}))))
 
 

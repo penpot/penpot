@@ -171,6 +171,7 @@
                               (and (some? drawing-obj) (= :path (:type drawing-obj))))
         node-editing?     (and edition (= :path (get-in base-objects [edition :type])))
         text-editing?     (and edition (= :text (get-in base-objects [edition :type])))
+
         grid-editing?     (and edition (ctl/grid-layout? base-objects edition))
 
         mode-inspect?       (= options-mode :inspect)

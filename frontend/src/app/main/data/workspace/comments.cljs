@@ -15,6 +15,7 @@
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dcm]
    [app.main.data.events :as ev]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwco]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -60,7 +61,11 @@
       (let [local (:comments-local state)]
         (cond
           (:draft local) (rx/of (dcm/close-thread))
-          (:open local)  (rx/of (dcm/close-thread)))))))
+          (:open local)  (rx/of (dcm/close-thread))
+
+          :else
+          (rx/of (dw/clear-edition-mode)
+                 (dw/deselect-all true)))))))
 
 ;; Event responsible of the what should be executed when user clicked
 ;; on the comments layer. An option can be create a new draft thread,

@@ -529,13 +529,6 @@
   (or (d/not-empty? (dm/get-prop modifiers :geometry-child))
       (d/not-empty? (dm/get-prop modifiers :structure-child))))
 
-(defn only-move?
-  "Returns true if there are only move operations"
-  [modifiers]
-  (let [move-op? #(= :move (dm/get-prop % :type))]
-    (and (every? move-op? (dm/get-prop modifiers :geometry-child))
-         (every? move-op? (dm/get-prop modifiers :geometry-parent)))))
-
 (defn has-geometry?
   [modifiers]
   (or (d/not-empty? (dm/get-prop modifiers :geometry-parent))
@@ -549,6 +542,14 @@
 (defn has-structure-child?
   [modifiers]
   (d/not-empty? (dm/get-prop modifiers :structure-child)))
+
+(defn only-move?
+  "Returns true if there are only move operations"
+  [modifiers]
+  (let [move-op? #(= :move (dm/get-prop % :type))]
+    (and (not (has-structure? modifiers))
+         (every? move-op? (dm/get-prop modifiers :geometry-child))
+         (every? move-op? (dm/get-prop modifiers :geometry-parent)))))
 
 ;; Extract subsets of modifiers
 
