@@ -27,6 +27,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.token :as cto]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
@@ -1479,6 +1480,44 @@
                                        [{:type :set-remote-synced
                                          :remote-synced (:remote-synced shape)}]}))))))
 
+(defn- update-tokens
+  "Token synchronization algorithm. Copy the applied tokens that have changed
+   in the origin shape to the dest shape (applying or removing as necessary).
+   
+   Only the given token attributes are synced."
+  [changes container dest-shape orig-shape token-attrs]
+  (let [orig-tokens  (get orig-shape :applied-tokens {})
+        dest-tokens  (get dest-shape :applied-tokens {})
+        dest-tokens' (reduce (fn [dest-tokens' token-attr]
+                               (let [orig-token (get orig-tokens token-attr)
+                                     dest-token (get dest-tokens token-attr)]
+                                 (if (= orig-token dest-token)
+                                   dest-tokens'
+                                   (if (nil? orig-token)
+                                     (dissoc dest-tokens' token-attr)
+                                     (assoc dest-tokens' token-attr orig-token)))))
+                             dest-tokens
+                             token-attrs)]
+    (if (= dest-tokens dest-tokens')
+      changes
+      (-> changes
+          (update :redo-changes conj (make-change
+                                      container
+                                      {:type :mod-obj
+                                       :id (:id dest-shape)
+                                       :operations [{:type :set
+                                                     :attr :applied-tokens
+                                                     :val dest-tokens'
+                                                     :ignore-touched true}]}))
+          (update :undo-changes conj (make-change
+                                      container
+                                      {:type :mod-obj
+                                       :id (:id dest-shape)
+                                       :operations [{:type :set
+                                                     :attr :applied-tokens
+                                                     :val dest-tokens
+                                                     :ignore-touched true}]}))))))
+
 (defn- update-attrs
   "The main function that implements the attribute sync algorithm. Copy
   attributes that have changed in the origin shape to the dest shape.
@@ -1511,37 +1550,41 @@
     (loop [attrs (->> (seq (keys ctk/sync-attrs))
                       ;; We don't update the flex-child attrs
                       (remove ctk/swap-keep-attrs)
-
                       ;; We don't do automatic update of the `layout-grid-cells` property.
                       (remove #(= :layout-grid-cells %)))
+           applied-tokens #{}
            roperations []
            uoperations '()]
 
       (let [attr (first attrs)]
         (if (nil? attr)
-          (if (empty? roperations)
+          (if (and (empty? roperations) (empty? applied-tokens))
             changes
             (let [all-parents (cfh/get-parent-ids (:objects container)
                                                   (:id dest-shape))]
-              (-> changes
-                  (update :redo-changes conj (make-change
-                                              container
-                                              {:type :mod-obj
-                                               :id (:id dest-shape)
-                                               :operations roperations}))
-                  (update :redo-changes conj (make-change
-                                              container
-                                              {:type :reg-objects
-                                               :shapes all-parents}))
-                  (update :undo-changes conj (make-change
-                                              container
-                                              {:type :mod-obj
-                                               :id (:id dest-shape)
-                                               :operations (vec uoperations)}))
-                  (update :undo-changes concat [(make-change
-                                                 container
-                                                 {:type :reg-objects
-                                                  :shapes all-parents})]))))
+              (cond-> changes
+                (seq roperations)
+                (-> (update :redo-changes conj (make-change
+                                                container
+                                                {:type :mod-obj
+                                                 :id (:id dest-shape)
+                                                 :operations roperations}))
+                    (update :redo-changes conj (make-change
+                                                container
+                                                {:type :reg-objects
+                                                 :shapes all-parents}))
+                    (update :undo-changes conj (make-change
+                                                container
+                                                {:type :mod-obj
+                                                 :id (:id dest-shape)
+                                                 :operations (vec uoperations)}))
+                    (update :undo-changes concat [(make-change
+                                                   container
+                                                   {:type :reg-objects
+                                                    :shapes all-parents})]))
+                (seq applied-tokens)
+                (update-tokens container dest-shape origin-shape applied-tokens))))
+
           (let [;; position-data is a special case because can be affected by :geometry-group and :content-group
                 ;; so, if the position-data changes but the geometry is touched we need to reset the position-data
                 ;; so it's calculated again
@@ -1564,14 +1607,21 @@
                             :val (get dest-shape attr)
                             :ignore-touched true}
 
-                attr-group (get ctk/sync-attrs attr)]
+                attr-group (get ctk/sync-attrs attr)
 
+                token-attrs (cto/shape-attr->token-attrs attr)
+                applied-tokens' (cond-> applied-tokens
+                                  (not (and (touched attr-group)
+                                            omit-touched?))
+                                  (into token-attrs))]
             (if (or (= (get origin-shape attr) (get dest-shape attr))
                     (and (touched attr-group) omit-touched?))
               (recur (next attrs)
+                     applied-tokens'
                      roperations
                      uoperations)
               (recur (next attrs)
+                     applied-tokens'
                      (conj roperations roperation)
                      (conj uoperations uoperation)))))))))
 

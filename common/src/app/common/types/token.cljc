@@ -163,3 +163,14 @@
   ::spacing
   ::rotation
   ::dimensions])
+
+(defn shape-attr->token-attrs
+  [shape-attr]
+  (cond
+    (= :fills shape-attr) #{:fill}
+    (= :strokes shape-attr) #{:stroke-color :stroke-width}
+    (border-radius-keys shape-attr) #{shape-attr}
+    (sizing-keys shape-attr) #{shape-attr}
+    (opacity-keys shape-attr) #{shape-attr}
+    (spacing-keys shape-attr) #{shape-attr}
+    (rotation-keys shape-attr) #{shape-attr}))
