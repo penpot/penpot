@@ -11,7 +11,7 @@ import commands from "./commands/index.js";
 import ChangeController from './controllers/ChangeController.js';
 import SelectionController from './controllers/SelectionController.js';
 import { createSelectionImposterFromClientRects } from './selection/Imposter.js';
-import { addEventListeners, removeEventListeners } from "./Event";
+import { addEventListeners, removeEventListeners } from "./Event.js";
 import { createRoot, createEmptyRoot } from './content/dom/Root.js';
 import { createParagraph, fixParagraph, getParagraph } from './content/dom/Paragraph.js';
 import { createEmptyInline, createInline } from './content/dom/Inline.js';

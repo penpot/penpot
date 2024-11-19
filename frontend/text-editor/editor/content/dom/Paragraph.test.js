@@ -12,8 +12,8 @@ import {
   splitParagraph,
   splitParagraphAtNode,
   isEmptyParagraph,
-} from "./Paragraph";
-import { createInline, isInline } from "./Inline";
+} from "./Paragraph.js";
+import { createInline, isInline } from "./Inline.js";
 
 /* @vitest-environment jsdom */
 describe("Paragraph", () => {

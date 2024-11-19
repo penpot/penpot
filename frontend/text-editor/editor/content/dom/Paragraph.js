@@ -11,7 +11,7 @@ import {
   isElement,
   isOffsetAtStart,
   isOffsetAtEnd,
-} from "./Element";
+} from "./Element.js";
 import {
   isInline,
   isLikeInline,
@@ -21,11 +21,11 @@ import {
   createEmptyInline,
   isInlineEnd,
   splitInline,
-} from "./Inline";
-import { createLineBreak, isLineBreak } from "./LineBreak";
-import { setStyles } from "./Style";
-import { createRandomId } from "./Element";
-import { isEmptyTextNode, isTextNode } from './TextNode';
+} from "./Inline.js";
+import { createLineBreak, isLineBreak } from "./LineBreak.js";
+import { setStyles } from "./Style.js";
+import { createRandomId } from "./Element.js";
+import { isEmptyTextNode, isTextNode } from './TextNode.js';
 
 export const TAG = "DIV";
 export const TYPE = "paragraph";

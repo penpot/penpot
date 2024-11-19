@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
-import { createEmptyInline, createInline, getInline, getInlineLength, isInline, isInlineEnd, isInlineStart, isLikeInline, splitInline, TAG, TYPE } from "./Inline";
-import { createLineBreak } from "./LineBreak";
+import { createEmptyInline, createInline, getInline, getInlineLength, isInline, isInlineEnd, isInlineStart, isLikeInline, splitInline, TAG, TYPE } from "./Inline.js";
+import { createLineBreak } from "./LineBreak.js";
 
 /* @vitest-environment jsdom */
 describe("Inline", () => {

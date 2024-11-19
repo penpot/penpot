@@ -6,10 +6,10 @@
  * Copyright (c) KALEIDOS INC
  */
 
-import { createElement, isElement } from "./Element";
-import { createEmptyParagraph, isParagraph } from "./Paragraph";
-import { setStyles } from "./Style";
-import { createRandomId } from "./Element";
+import { createElement, isElement } from "./Element.js";
+import { createEmptyParagraph, isParagraph } from "./Paragraph.js";
+import { setStyles } from "./Style.js";
+import { createRandomId } from "./Element.js";
 
 export const TAG = "DIV";
 export const TYPE = "root";

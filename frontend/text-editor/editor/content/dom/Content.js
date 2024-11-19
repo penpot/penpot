@@ -6,13 +6,13 @@
  * Copyright (c) KALEIDOS INC
  */
 
-import { createInline } from "./Inline";
+import { createInline } from "./Inline.js";
 import {
   createEmptyParagraph,
   createParagraph,
   isLikeParagraph,
-} from "./Paragraph";
-import { isDisplayBlock, normalizeStyles } from "./Style";
+} from "./Paragraph.js";
+import { isDisplayBlock, normalizeStyles } from "./Style.js";
 
 /**
  * Maps any HTML into a valid content DOM element.

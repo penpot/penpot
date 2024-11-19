@@ -6,7 +6,7 @@
  * Copyright (c) KALEIDOS INC
  */
 
-import { setStyles } from "./Style";
+import { setStyles } from "./Style.js";
 
 /**
  * @typedef {Object} CreateElementOptions

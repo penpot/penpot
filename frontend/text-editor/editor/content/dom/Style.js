@@ -6,7 +6,7 @@
  * Copyright (c) KALEIDOS INC
  */
 
-import { getFills } from "./Color";
+import { getFills } from "./Color.js";
 
 const DEFAULT_FONT_SIZE = "16px";
 const DEFAULT_LINE_HEIGHT = "1.2";

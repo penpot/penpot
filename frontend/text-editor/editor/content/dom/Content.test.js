@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { mapContentFragmentFromHTML, mapContentFragmentFromString } from './Content';
+import { mapContentFragmentFromHTML, mapContentFragmentFromString } from './Content.js';
 
 /* @vitest-environment jsdom */
 describe('Content', () => {

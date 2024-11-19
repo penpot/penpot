@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { createElement, isElement, createRandomId, isOffsetAtStart, isOffsetAtEnd } from "./Element";
+import { createElement, isElement, createRandomId, isOffsetAtStart, isOffsetAtEnd } from "./Element.js";
 
 /* @vitest-environment jsdom */
 describe("Element", () => {

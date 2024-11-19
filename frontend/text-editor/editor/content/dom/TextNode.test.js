@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
-import { isTextNode, getTextNodeLength } from './TextNode';
-import { createLineBreak } from './LineBreak';
+import { isTextNode, getTextNodeLength } from './TextNode.js';
+import { createLineBreak } from './LineBreak.js';
 
 /* @vitest-environment jsdom */
 describe("TextNode", () => {

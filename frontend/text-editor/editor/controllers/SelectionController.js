@@ -6,7 +6,7 @@
  * Copyright (c) KALEIDOS INC
  */
 
-import { createLineBreak, isLineBreak } from "~/editor/content/dom/LineBreak";
+import { createLineBreak, isLineBreak } from "../content/dom/LineBreak.js";
 import {
   createInline,
   createInlineFrom,
@@ -19,7 +19,7 @@ import {
   mergeInlines,
   splitInline,
   createEmptyInline,
-} from "~/editor/content/dom/Inline";
+} from "../content/dom/Inline.js";
 import {
   createEmptyParagraph,
   isEmptyParagraph,
@@ -32,21 +32,21 @@ import {
   splitParagraphAtNode,
   mergeParagraphs,
   fixParagraph,
-} from "~/editor/content/dom/Paragraph";
+} from "../content/dom/Paragraph.js";
 import {
   removeBackward,
   removeForward,
   replaceWith,
   insertInto,
   removeSlice,
-} from "~/editor/content/Text";
-import { getTextNodeLength, getClosestTextNode, isTextNode } from "~/editor/content/dom/TextNode";
-import TextNodeIterator from "~/editor/content/dom/TextNodeIterator";
-import TextEditor from "~/editor/TextEditor";
-import CommandMutations from "~/editor/commands/CommandMutations";
-import { setRootStyles } from "~/editor/content/dom/Root";
-import { SelectionDirection } from "./SelectionDirection";
-import SafeGuard from './SafeGuard';
+} from "../content/Text.js";
+import { getTextNodeLength, getClosestTextNode, isTextNode } from "../content/dom/TextNode.js";
+import TextNodeIterator from "../content/dom/TextNodeIterator.js";
+import TextEditor from "../TextEditor.js";
+import CommandMutations from "../commands/CommandMutations.js";
+import { setRootStyles } from "../content/dom/Root.js";
+import { SelectionDirection } from "./SelectionDirection.js";
+import SafeGuard from "./SafeGuard.js";
 
 const SAFE_GUARD = true;
 const SAFE_GUARD_TIME = true;

@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { createEmptyRoot, createRoot, setRootStyles, TAG, TYPE } from './Root'
+import { createEmptyRoot, createRoot, setRootStyles, TAG, TYPE } from './Root.js'
 
 /* @vitest-environment jsdom */
 describe("Root", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { createLineBreak } from './LineBreak';
+import { createLineBreak } from './LineBreak.js';
 
 /* @vitest-environment jsdom */
 describe('LineBreak', () => {

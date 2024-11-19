@@ -11,10 +11,10 @@ import {
   isElement,
   isOffsetAtStart,
   isOffsetAtEnd,
-} from "./Element";
-import { createLineBreak, isLineBreak } from "./LineBreak";
-import { setStyles, mergeStyles } from "./Style";
-import { createRandomId } from "./Element";
+} from "./Element.js";
+import { createLineBreak, isLineBreak } from "./LineBreak.js";
+import { setStyles, mergeStyles } from "./Style.js";
+import { createRandomId } from "./Element.js";
 
 export const TAG = "SPAN";
 export const TYPE = "inline";

@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vitest";
-import { getStyles, isDisplayBlock, isDisplayInline, setStyle, setStyles } from "./Style";
+import { getStyles, isDisplayBlock, isDisplayInline, setStyle, setStyles } from "./Style.js";
 
 /* @vitest-environment jsdom */
 describe("Style", () => {

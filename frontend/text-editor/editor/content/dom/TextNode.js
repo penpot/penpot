@@ -6,10 +6,10 @@
  * Copyright (c) KALEIDOS INC
  */
 
-import { isInline } from "./Inline";
-import { isLineBreak } from "./LineBreak";
-import { isParagraph } from "./Paragraph";
-import { isRoot } from "./Root";
+import { isInline } from "./Inline.js";
+import { isLineBreak } from "./LineBreak.js";
+import { isParagraph } from "./Paragraph.js";
+import { isRoot } from "./Root.js";
 
 /**
  * Returns true if the node is "like"

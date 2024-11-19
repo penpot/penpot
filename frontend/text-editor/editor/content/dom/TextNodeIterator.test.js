@@ -1,9 +1,9 @@
 import { describe, test, expect } from "vitest";
-import TextNodeIterator from "./TextNodeIterator";
-import { createInline } from "./Inline";
-import { createParagraph } from "./Paragraph";
-import { createRoot } from "./Root";
-import { createLineBreak } from "./LineBreak";
+import TextNodeIterator from "./TextNodeIterator.js";
+import { createInline } from "./Inline.js";
+import { createParagraph } from "./Paragraph.js";
+import { createRoot } from "./Root.js";
+import { createLineBreak } from "./LineBreak.js";
 
 /* @vitest-environment jsdom */
 describe("TextNodeIterator", () => {
