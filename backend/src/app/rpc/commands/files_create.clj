@@ -111,8 +111,7 @@
         ;; features, because some features can be enabled
         ;; globally, but the team is still not migrated properly.
         features (-> (cfeat/get-team-enabled-features cf/flags team)
-                     (cfeat/check-client-features! (:features params))
-                     (set/difference cfeat/frontend-only-features))
+                     (cfeat/check-client-features! (:features params)))
 
         ;; We also include all no migration features declared by
         ;; client; that enables the ability to enable a runtime
@@ -124,7 +123,7 @@
 
         params   (-> params
                      (assoc :profile-id profile-id)
-                     (assoc :features features))]
+                     (assoc :features (set/difference features cfeat/frontend-only-features)))]
 
     (quotes/check! cfg {::quotes/id ::quotes/files-per-project
                         ::quotes/team-id team-id

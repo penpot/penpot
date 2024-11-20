@@ -155,6 +155,7 @@
         team-features    (into #{} xf-remove-ephimeral (:features team))]
     (-> enabled-features
         (set/intersection no-migration-features)
+        (set/difference frontend-only-features)
         (set/union team-features))))
 
 (defn check-client-features!

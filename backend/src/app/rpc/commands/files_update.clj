@@ -139,8 +139,7 @@
 
                           features (-> (cfeat/get-team-enabled-features cf/flags team)
                                        (cfeat/check-client-features! (:features params))
-                                       (cfeat/check-file-features! (:features file) (:features params))
-                                       (set/difference cfeat/frontend-only-features))
+                                       (cfeat/check-file-features! (:features file) (:features params)))
 
                           changes  (if changes-with-metadata
                                      (->> changes-with-metadata (mapcat :changes) vec)
@@ -148,7 +147,7 @@
 
                           params   (-> params
                                        (assoc :profile-id profile-id)
-                                       (assoc :features features)
+                                       (assoc :features (set/difference features cfeat/frontend-only-features))
                                        (assoc :team team)
                                        (assoc :file file)
                                        (assoc :changes changes))
