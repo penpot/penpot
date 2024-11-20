@@ -263,8 +263,8 @@
               :editing? (constantly true)
               :on-select (constantly nil)
               :on-edit (constantly nil)
-              :on-edit-submit on-create-token-set
-              :on-cancel on-reset}])]))]))
+              :on-edit-reset on-reset
+              :on-edit-submit on-create-token-set}])]))]))
 
 (mf/defc sets-list
   [{:keys []}]
