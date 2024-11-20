@@ -101,7 +101,11 @@
       :fills      (api/set-shape-fills v)
       :blend-mode (api/set-shape-blend-mode v)
       :shapes     (api/set-shape-children v)
-      nil))
+      nil)
+    ;; when something synced with wasm
+    ;; is modified, we need to request
+    ;; a new render.
+    (api/request-render))
   (let [delegate  (.-delegate ^ShapeProxy self)
         delegate' (assoc delegate k v)]
     (if (identical? delegate' delegate)

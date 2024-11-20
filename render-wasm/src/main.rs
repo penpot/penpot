@@ -2,6 +2,7 @@ pub mod render;
 pub mod shapes;
 pub mod state;
 pub mod utils;
+pub mod view;
 
 use skia_safe as skia;
 
@@ -43,15 +44,23 @@ pub unsafe extern "C" fn resize_surface(width: i32, height: i32) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn draw_all_shapes(zoom: f32, pan_x: f32, pan_y: f32) {
+pub unsafe extern "C" fn render() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    state.draw_all_shapes(zoom, pan_x, pan_y);
+    state.draw_all_shapes(state.view.zoom, state.view.x, state.view.y);
 }
 
 #[no_mangle]
 pub extern "C" fn reset_canvas() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     state.render_state().reset_canvas();
+}
+
+#[no_mangle]
+pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    state.view.x = x;
+    state.view.y = y;
+    state.view.zoom = zoom;
 }
 
 #[no_mangle]

@@ -285,16 +285,11 @@
 
     (mf/with-effect [base-objects canvas-init?]
       (when @canvas-init?
-        (wasm.api/set-objects base-objects)
-        (wasm.api/draw-objects zoom vbox)))
-
-    (mf/with-effect [modifiers canvas-init?]
-      (when (and @canvas-init? modifiers)
-        (wasm.api/draw-objects zoom vbox)))
+        (wasm.api/set-objects base-objects)))
 
     (mf/with-effect [vbox canvas-init?]
-      (let [frame-id (when @canvas-init? (wasm.api/draw-objects zoom vbox))]
-        (partial wasm.api/cancel-draw frame-id)))
+      (when @canvas-init?
+        (wasm.api/set-view zoom vbox)))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)
