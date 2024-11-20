@@ -26,9 +26,10 @@
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(sm/register! ::blur
-  [:map {:title "Blur"}
-   [:id ::sm/uuid]
-   [:type [:= :layer-blur]]
-   [:value ::sm/safe-number]
-   [:hidden :boolean]])
+(sm/register!
+ ^{::sm/type ::blur}
+ [:map {:title "Blur"}
+  [:id ::sm/uuid]
+  [:type [:= :layer-blur]]
+  [:value ::sm/safe-number]
+  [:hidden :boolean]])

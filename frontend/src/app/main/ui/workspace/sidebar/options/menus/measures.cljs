@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.shapes :as cls]
+   [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.tokens-lib :as ctob]
@@ -248,19 +249,20 @@
          (fn [value attr]
            (let [token-value (wtc/maybe-resolve-token-value value)
                  undo-id (js/Symbol)]
-             (if-not design-tokens?
-               (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                         (udw/update-dimensions ids attr (or token-value value)))
-               (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                         (dwu/start-undo-transaction undo-id)
-                         (dwsh/update-shapes ids
-                                             (if token-value
-                                               #(assoc-in % [:applied-tokens attr] (:id value))
-                                               #(d/dissoc-in % [:applied-tokens attr]))
-                                             {:reg-objects? true
-                                              :attrs [:applied-tokens]})
-                         (udw/update-dimensions ids attr (or token-value value))
-                         (dwu/commit-undo-transaction undo-id))))))
+             (binding [cts/*wasm-sync* true]
+               (if-not design-tokens?
+                 (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                           (udw/update-dimensions ids attr (or token-value value)))
+                 (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                           (dwu/start-undo-transaction undo-id)
+                           (dwsh/update-shapes ids
+                                               (if token-value
+                                                 #(assoc-in % [:applied-tokens attr] (:id value))
+                                                 #(d/dissoc-in % [:applied-tokens attr]))
+                                               {:reg-objects? true
+                                                :attrs [:applied-tokens]})
+                           (udw/update-dimensions ids attr (or token-value value))
+                           (dwu/commit-undo-transaction undo-id)))))))
 
         on-proportion-lock-change
         (mf/use-fn
@@ -283,7 +285,8 @@
          (mf/deps ids)
          (fn [value attr]
            (st/emit! (udw/trigger-bounding-box-cloaking ids))
-           (doall (map #(do-position-change %1 %2 value attr) shapes frames))))
+           (binding [cts/*wasm-sync* true]
+             (doall (map #(do-position-change %1 %2 value attr) shapes frames)))))
 
         ;; ROTATION
 
@@ -291,8 +294,9 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value]
-           (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                     (udw/increase-rotation ids value))))
+           (binding [cts/*wasm-sync* true]
+             (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                       (udw/increase-rotation ids value)))))
 
         ;; RADIUS
 

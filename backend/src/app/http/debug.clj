@@ -26,7 +26,6 @@
    [app.util.blob :as blob]
    [app.util.template :as tmpl]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.io :as io]
    [emoji.core :as emj]
@@ -473,8 +472,10 @@
            (ex/raise :type :authentication
                      :code :only-admins-allowed)))))})
 
-(defmethod ig/pre-init-spec ::routes [_]
-  (s/keys :req [::db/pool ::session/manager]))
+(defmethod ig/assert-key ::routes
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expected a valid database pool")
+  (assert (session/manager? (::session/manager params)) "expected a valid session manager"))
 
 (defmethod ig/init-key ::routes
   [_ {:keys [::db/pool] :as cfg}]

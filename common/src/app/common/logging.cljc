@@ -48,9 +48,8 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.pprint :as pp]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uuid :as uuid]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [promesa.exec :as px]
    [promesa.util :as pu])
@@ -203,17 +202,19 @@
         (map vec)
         (remove (fn [[k _]] (contains? reserved-props k)))))
 
-(s/def ::id ::us/uuid)
-(s/def ::props any? #_d/ordered-map?)
-(s/def ::context (s/nilable (s/map-of keyword? any?)))
-(s/def ::level #{:trace :debug :info :warn :error :fatal})
-(s/def ::logger string?)
-(s/def ::timestamp ::us/integer)
-(s/def ::cause (s/nilable ex/exception?))
-(s/def ::message delay?)
-(s/def ::record
-  (s/keys :req [::id ::props ::logger ::level]
-          :opt [::cause ::context]))
+(def ^:private schema:record
+  [:map
+   [::id ::sm/uuid]
+   [::props :any]
+   [::logger :string]
+   [::timestamp ::sm/int]
+   [::level [:enum :trace :debug :info :warn :error :fatal]]
+   [::message [:fn delay?]]
+   [::cause {:optional true} [:maybe [:fn ex/exception?]]]
+   [::context {:optional true} [:maybe [:map-of :keyword :any]]]])
+
+(def valid-record?
+  (sm/validator schema:record))
 
 (defn current-timestamp
   []

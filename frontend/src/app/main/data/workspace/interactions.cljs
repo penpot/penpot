@@ -206,14 +206,16 @@
      (watch [_ _ _]
        (let [interactions (ctsi/update-interaction (:interactions shape) index update-fn)
              interaction (nth interactions index)]
-         (rx/of (dwsh/update-shapes
-                 [(:id shape)]
-                 (fn [shape]
-                   (assoc shape :interactions interactions))
-                 options)
+         (rx/of
+          (dwsh/update-shapes
+           [(:id shape)]
+           (fn [shape]
+             (-> shape
+                 (update :interactions ctsi/update-interaction index update-fn)))
+           options)
 
-                (when (some? (:destination interaction))
-                  (dwsh/update-shapes [(:destination interaction)] cls/show-in-viewer options))))))))
+          (when (some? (:destination interaction))
+            (dwsh/update-shapes [(:destination interaction)] cls/show-in-viewer options))))))))
 
 (defn remove-all-interactions-nav-to
   "Remove all interactions that navigate to the given frame."

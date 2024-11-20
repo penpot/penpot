@@ -948,12 +948,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@penpot/text-editor@penpot/penpot-text-editor#a100aad8d0efcbb070bed9144dbd2782547e78ba":
-  version: 0.0.0
-  resolution: "@penpot/text-editor@https://github.com/penpot/penpot-text-editor.git#commit=a100aad8d0efcbb070bed9144dbd2782547e78ba"
-  checksum: 10c0/328c827cd740c5e05df678083cfb1d2b6d006b56523daa0bd2a3c2936a0490a2ae4d0e69a3aec428674609a22a5fafdd5600aae1399cb3f4ed5b80e497c74a5c
+"@penpot/text-editor@portal:./text-editor::locator=frontend%40workspace%3A.":
+  version: 0.0.0-use.local
+  resolution: "@penpot/text-editor@portal:./text-editor::locator=frontend%40workspace%3A."
   languageName: node
-  linkType: hard
+  linkType: soft
 
 "@pkgjs/parseargs@npm:^0.11.0":
   version: 0.11.0
@@ -4300,7 +4299,7 @@ __metadata:
     "@penpot/hljs": "portal:./vendor/hljs"
     "@penpot/mousetrap": "portal:./vendor/mousetrap"
     "@penpot/svgo": "penpot/svgo#c6fba7a4dcfbc27b643e7fc0c94fc98cf680b77b"
-    "@penpot/text-editor": "penpot/penpot-text-editor#a100aad8d0efcbb070bed9144dbd2782547e78ba"
+    "@penpot/text-editor": "portal:./text-editor"
     "@playwright/test": "npm:1.48.1"
     "@storybook/addon-essentials": "npm:^8.3.6"
     "@storybook/addon-themes": "npm:^8.3.6"

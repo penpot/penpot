@@ -11,10 +11,9 @@ name = "render_wasm"
 path = "src/main.rs"
 
 [dependencies]
-emscripten-functions = "0.2.3"
-emscripten-functions-sys = "4.1.67"
 gl = "0.14.0"
 skia-safe = { version = "0.78.2", features = ["gl"] }
+uuid = { version = "1.11.0", features = ["v4"] }
 
 [profile.release]
 opt-level = "s"

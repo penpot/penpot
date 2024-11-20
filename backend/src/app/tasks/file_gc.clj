@@ -27,7 +27,6 @@
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.set :as set]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
 (declare ^:private get-file)
@@ -315,8 +314,10 @@
 ;; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req [::db/pool ::sto/storage]))
+(defmethod ig/assert-key ::handler
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expected a valid database pool")
+  (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage to be provided"))
 
 (defmethod ig/init-key ::handler
   [_ cfg]

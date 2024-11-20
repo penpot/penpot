@@ -93,7 +93,7 @@
   [{:keys [sender-id] :as message}]
   (dm/assert!
    "expected valid message"
-   (sm/check! schema:message message))
+   (sm/check schema:message message))
   (.postMessage js/self (wm/encode {:reply-to sender-id
                                     :dropped true})))
 

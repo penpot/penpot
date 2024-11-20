@@ -38,6 +38,4 @@
     (t/is (= (ctk/get-swap-slot s3) #uuid "9cc181fa-5eef-8084-8004-7bb2ab45fd1f"))
     (t/is (= (ctk/get-swap-slot s4) #uuid "9cc181fa-5eef-8084-8004-7bb2ab45fd1f"))
     (t/is (= (ctk/get-swap-slot s5) #uuid "9cc181fa-5eef-8084-8004-7bb2ab45fd1f"))
-    #?(:clj
-       (t/is (thrown-with-msg? IllegalArgumentException #"Invalid UUID string"
-                               (ctk/get-swap-slot s6))))))
+    (t/is (nil? (ctk/get-swap-slot s6)))))

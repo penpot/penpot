@@ -12,7 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.db :as db]
@@ -32,7 +32,6 @@
    [buddy.sign.jwk :as jwk]
    [buddy.sign.jwt :as jwt]
    [clojure.set :as set]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [yetti.request :as yreq]
@@ -140,8 +139,9 @@
         (l/warn :hint "unable to retrieve JWKs (unexpected exception)"
                 :cause cause)))))
 
-(defmethod ig/pre-init-spec ::providers/generic [_]
-  (s/keys :req [::http/client]))
+(defmethod ig/assert-key ::providers/generic
+  [_ params]
+  (assert (http/client? (::http/client params)) "expected a valid http client"))
 
 (defmethod ig/init-key ::providers/generic
   [_ cfg]
@@ -197,6 +197,10 @@
 ;; GITHUB AUTH PROVIDER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- int-in-range?
+  [val start end]
+  (and (<= start val) (< val end)))
+
 (defn- retrieve-github-email
   [cfg tdata props]
   (or (some-> props :github/email)
@@ -207,7 +211,7 @@
 
             {:keys [status body]} (http/req! cfg params {:sync? true})]
 
-        (when-not (s/int-in-range? 200 300 status)
+        (when-not (int-in-range? status 200 300)
           (ex/raise :type :internal
                     :code :unable-to-retrieve-github-emails
                     :hint "unable to retrieve github emails"
@@ -217,8 +221,9 @@
 
         (->> body json/decode (filter :primary) first :email))))
 
-(defmethod ig/pre-init-spec ::providers/github [_]
-  (s/keys :req [::http/client]))
+(defmethod ig/assert-key ::providers/github
+  [_ params]
+  (assert (http/client? (::http/client params)) "expected a valid http client"))
 
 (defmethod ig/init-key ::providers/github
   [_ cfg]
@@ -394,7 +399,7 @@
            :status (:status response)
            :body   (:body response))
 
-    (when-not (s/int-in-range? 200 300 (:status response))
+    (when-not (int-in-range? (:status response) 200 300)
       (ex/raise :type :internal
                 :code :unable-to-retrieve-user-info
                 :hint "unable to retrieve user info"
@@ -418,15 +423,15 @@
       (l/warn :hint "unable to get user info from JWT token (unexpected exception)"
               :cause cause))))
 
-(s/def ::backend ::us/not-empty-string)
-(s/def ::email ::us/not-empty-string)
-(s/def ::fullname ::us/not-empty-string)
-(s/def ::props (s/map-of ::us/keyword any?))
-(s/def ::info
-  (s/keys :req-un [::backend
-                   ::email
-                   ::fullname
-                   ::props]))
+(def ^:private schema:info
+  [:map
+   [:backend ::sm/text]
+   [:email ::sm/email]
+   [:fullname ::sm/text]
+   [:props [:map-of :keyword :any]]])
+
+(def ^:private valid-info?
+  (sm/validator schema:info))
 
 (defn- get-info
   [{:keys [::provider ::setup/props] :as cfg} {:keys [params] :as request}]
@@ -444,7 +449,7 @@
 
     (l/trc :hint "user info" :info info)
 
-    (when-not (s/valid? ::info info)
+    (when-not (valid-info? info)
       (l/warn :hint "received incomplete profile info object (please set correct scopes)" :info info)
       (ex/raise :type :internal
                 :code :incomplete-user-info
@@ -655,46 +660,37 @@
                        :provider provider
                        :hint "provider not configured"))))))})
 
-(s/def ::client-id ::us/string)
-(s/def ::client-secret ::us/string)
-(s/def ::base-uri ::us/string)
-(s/def ::token-uri ::us/string)
-(s/def ::auth-uri ::us/string)
-(s/def ::user-uri ::us/string)
-(s/def ::scopes ::us/set-of-strings)
-(s/def ::roles ::us/set-of-strings)
-(s/def ::roles-attr ::us/string)
-(s/def ::email-attr ::us/string)
-(s/def ::name-attr ::us/string)
+(def ^:private schema:provider
+  [:map {:title "provider"}
+   [:client-id ::sm/text]
+   [:client-secret ::sm/text]
+   [:base-uri {:optional true} ::sm/text]
+   [:token-uri {:optional true} ::sm/text]
+   [:auth-uri {:optional true} ::sm/text]
+   [:user-uri {:optional true} ::sm/text]
+   [:scopes {:optional true}
+    [::sm/set ::sm/text]]
+   [:roles {:optional true}
+    [::sm/set ::sm/text]]
+   [:roles-attr {:optional true} ::sm/text]
+   [:email-attr {:optional true} ::sm/text]
+   [:name-attr {:optional true} ::sm/text]])
 
-(s/def ::provider
-  (s/keys :req-un [::client-id
-                   ::client-secret]
-          :opt-un [::base-uri
-                   ::token-uri
-                   ::auth-uri
-                   ::user-uri
-                   ::scopes
-                   ::roles
-                   ::roles-attr
-                   ::email-attr
-                   ::name-attr]))
+(def ^:private schema:routes-params
+  [:map
+   ::session/manager
+   ::http/client
+   ::setup/props
+   ::db/pool
+   [::providers [:map-of :keyword [:maybe schema:provider]]]])
 
-(s/def ::providers (s/map-of ::us/keyword (s/nilable ::provider)))
-
-(s/def ::routes vector?)
-
-(defmethod ig/pre-init-spec ::routes
-  [_]
-  (s/keys :req [::session/manager
-                ::http/client
-                ::setup/props
-                ::db/pool
-                ::providers]))
+(defmethod ig/assert-key ::routes
+  [_ params]
+  (assert (sm/check schema:routes-params params)))
 
 (defmethod ig/init-key ::routes
   [_ cfg]
-  (let [cfg (update cfg :provider d/without-nils)]
+  (let [cfg (update cfg :providers d/without-nils)]
     ["" {:middleware [[session/authz cfg]
                       [provider-lookup cfg]]}
      ["/auth/oauth"

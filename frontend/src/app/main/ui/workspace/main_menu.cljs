@@ -593,13 +593,14 @@
        (for [sc (scd/split-sc (sc/get-tooltip :export-shapes))]
          [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
 
-     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
-                              :on-click    on-export-file
-                              :on-key-down on-export-file-key-down
-                              :data-format "binfile-v1"
-                              :id          "file-menu-binary-file"}
-      [:span {:class (stl/css :item-name)}
-       (tr "dashboard.download-binary-file")]]
+     (when-not (contains? cf/flags :export-file-v3)
+       [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                                :on-click    on-export-file
+                                :on-key-down on-export-file-key-down
+                                :data-format "binfile-v1"
+                                :id          "file-menu-binary-file"}
+        [:span {:class (stl/css :item-name)}
+         (tr "dashboard.download-binary-file")]])
 
      (when (contains? cf/flags :export-file-v3)
        [:> dropdown-menu-item* {:class (stl/css :submenu-item)
@@ -608,15 +609,16 @@
                                 :data-format "binfile-v3"
                                 :id          "file-menu-binary-file"}
         [:span {:class (stl/css :item-name)}
-         (tr "dashboard.download-binary-file-v3")]])
+         (tr "dashboard.download-binary-file")]])
 
-     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
-                              :on-click    on-export-file
-                              :on-key-down on-export-file-key-down
-                              :data-format "legacy-zip"
-                              :id          "file-menu-standard-file"}
-      [:span {:class (stl/css :item-name)}
-       (tr "dashboard.download-standard-file")]]
+     (when-not (contains? cf/flags :export-file-v3)
+       [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                                :on-click    on-export-file
+                                :on-key-down on-export-file-key-down
+                                :data-format "legacy-zip"
+                                :id          "file-menu-standard-file"}
+        [:span {:class (stl/css :item-name)}
+         (tr "dashboard.download-standard-file")]])
 
      (when (seq frames)
        [:> dropdown-menu-item* {:class (stl/css :submenu-item)
@@ -686,10 +688,12 @@
                       (dp/open-plugin! manifest user-can-edit?)))))]
            [:> dropdown-menu-item* {:key         (dm/str "plugins-menu-" idx)
                                     :on-click    on-click
-                                    :title       (when-not can-open? (tr "workspace.plugins.error.need-editor"))
                                     :class       (stl/css-case :submenu-item true :menu-disabled (not can-open?))
                                     :on-key-down on-key-down}
-            [:span {:class (stl/css :item-name)} name]]))])))
+            [:span {:class (stl/css :item-name)} name]
+            (when-not can-open?
+              [:span {:class (stl/css :item-icon)
+                      :title (tr "workspace.plugins.error.need-editor")} i/help])]))])))
 
 (mf/defc menu
   {::mf/props :obj}

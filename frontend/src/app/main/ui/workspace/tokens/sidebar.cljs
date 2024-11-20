@@ -219,10 +219,20 @@
                         :on-click on-click
                         :aria-label (tr "workspace.token.add set")}])))
 
+(mf/defc theme-sets-list
+  [{:keys [on-open]}]
+  (let [token-sets (mf/deref refs/workspace-ordered-token-sets)
+        {:keys [new?] :as ctx} (sets-context/use-context)]
+    (if (and (empty? token-sets)
+             (not new?))
+      [:& add-set-button {:on-open on-open
+                          :style "inline"}]
+      [:& h/sortable-container {}
+       [:& sets-list]])))
+
 (mf/defc themes-sets-tab
   [{:keys [resize-height]}]
-  (let [token-sets (mf/deref refs/workspace-ordered-token-sets)
-        open? (mf/use-state true)
+  (let [open? (mf/use-state true)
         on-open (mf/use-fn #(reset! open? true))]
     [:& sets-context/provider {}
      [:& sets-context-menu]
@@ -238,12 +248,7 @@
                        :on-collapsed #(swap! open? not)}
          [:& add-set-button {:on-open on-open
                              :style "header"}]]]
-       (when @open?
-         (if (empty? token-sets)
-           [:& add-set-button {:on-open on-open
-                               :style "inline"}]
-           [:& h/sortable-container {}
-            [:& sets-list]]))]]]))
+       [:& theme-sets-list {:on-open on-open}]]]]))
 
 (mf/defc tokens-tab
   [_props]

@@ -15,6 +15,7 @@
    [app.common.math :as mth]
    [app.common.text :as txt]
    [app.common.types.modifiers :as ctm]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.modifiers :as mdwm]
    [app.main.data.workspace.texts :as dwt]
    [app.main.fonts :as fonts]
@@ -184,7 +185,7 @@
         (mf/use-fn
          (fn [shape node]
            ;; Unique to indentify the pending state
-           (let [uid (js/Symbol)]
+           (let [uid (uuid/next)]
              (swap! pending-update* assoc uid (:id shape))
              (p/then
               (update-text-shape shape node)

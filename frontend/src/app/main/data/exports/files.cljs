@@ -31,14 +31,14 @@
     [:project-id ::sm/uuid]
     [:is-shared ::sm/boolean]]])
 
-(def check-export-files!
+(def check-export-files
   (sm/check-fn schema:export-files))
 
 (defn export-files
   [files format]
   (dm/assert!
    "expected valid files param"
-   (check-export-files! files))
+   (check-export-files files))
 
   (dm/assert!
    "expected valid format"

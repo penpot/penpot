@@ -198,39 +198,6 @@ function build-docs-bundle {
     echo ">> bundle docs end";
 }
 
-
-function build-frontend-docker-images {
-    rsync -avr --delete ./bundles/frontend/ ./docker/images/bundle-frontend/;
-    pushd ./docker/images;
-    docker build -t penpotapp/frontend:$CURRENT_BRANCH -t penpotapp/frontend:latest -f Dockerfile.frontend .;
-    popd;
-}
-
-function build-backend-docker-images {
-    rsync -avr --delete ./bundles/backend/ ./docker/images/bundle-backend/;
-    pushd ./docker/images;
-    docker build -t penpotapp/backend:$CURRENT_BRANCH -t penpotapp/backend:latest -f Dockerfile.backend .;
-    popd;
-}
-
-function build-exporter-docker-images {
-    rsync -avr --delete ./bundles/exporter/ ./docker/images/bundle-exporter/;
-    pushd ./docker/images;
-    docker build -t penpotapp/exporter:$CURRENT_BRANCH -t penpotapp/exporter:latest -f Dockerfile.exporter .;
-    popd;
-}
-
-function usage {
-    echo "PENPOT build & release manager"
-    echo "USAGE: $0 OPTION"
-    echo "Options:"
-    echo "- pull-devenv                      Pulls docker development oriented image"
-    echo "- build-devenv                     Build docker development oriented image"
-    echo "- build-devenv-local               Build a local docker development oriented image"
-    echo "- create-devenv                    Create the development oriented docker compose service."
-    echo "- start-devenv                     Start the development oriented docker compose service."
-}
-
 function build-frontend-docker-images {
     rsync -avr --delete ./bundles/frontend/ ./docker/images/bundle-frontend/;
     pushd ./docker/images;

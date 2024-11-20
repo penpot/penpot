@@ -11,14 +11,13 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.transit :as t]
-   [app.config :as cf]
    [app.db :as db]
    [app.metrics :as mtx]
    [app.redis :as rds]
    [app.util.time :as dt]
-   [app.worker :as-alias wrk]
-   [clojure.spec.alpha :as s]
+   [app.worker :as wrk]
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.exec :as px]))
@@ -51,7 +50,7 @@
            :runner-id id
            :retry (:retry-num task))
     (let [tpoint  (dt/tpoint)
-          task-fn (get registry (:name task))
+          task-fn (wrk/get-task registry (:name task))
           result  (if task-fn
                     (task-fn task)
                     {:status :completed :task task})
@@ -92,7 +91,7 @@
               {:status :retry :task task :error cause})))))))
 
 (defn- run-task!
-  [{:keys [::rds/rconn ::id] :as cfg} task-id]
+  [{:keys [::id ::timeout] :as cfg} task-id]
   (loop [task (get-task cfg task-id)]
     (cond
       (ex/exception? task)
@@ -102,13 +101,13 @@
           (l/wrn :hint "connection error on retrieving task from database (retrying in some instants)"
                  :id id
                  :cause task)
-          (px/sleep (::rds/timeout rconn))
+          (px/sleep timeout)
           (recur (get-task cfg task-id)))
         (do
           (l/err :hint "unhandled exception on retrieving task from database (retrying in some instants)"
                  :id id
                  :cause task)
-          (px/sleep (::rds/timeout rconn))
+          (px/sleep timeout)
           (recur (get-task cfg task-id))))
 
       (nil? task)
@@ -182,17 +181,17 @@
                   (do
                     (l/wrn :hint "database exeption on processing task result (retrying in some instants)"
                            :cause cause)
-                    (px/sleep (::rds/timeout rconn))
+                    (px/sleep timeout)
                     (recur result))
                   (do
                     (l/err :hint "unhandled exception on processing task result (retrying in some instants)"
                            :cause cause)
-                    (px/sleep (::rds/timeout rconn))
+                    (px/sleep timeout)
                     (recur result))))))]
 
     (try
-      (let [queue       (str/ffmt "taskq:%" queue)
-            [_ payload] (rds/blpop! rconn timeout queue)]
+      (let [key       (str/ffmt "taskq:%" queue)
+            [_ payload] (rds/blpop rconn timeout [key])]
         (some-> payload
                 decode-payload
                 run-task-loop))
@@ -211,16 +210,15 @@
           (l/err :hint "unhandled exception" :cause cause))))))
 
 (defn- start-thread!
-  [{:keys [::rds/redis ::id ::queue] :as cfg}]
+  [{:keys [::rds/redis ::id ::queue ::wrk/tenant] :as cfg}]
   (px/thread
     {:name (format "penpot/worker/runner:%s" id)}
     (l/inf :hint "started" :id id :queue queue)
     (try
       (dm/with-open [rconn (rds/connect redis)]
-        (let [tenant (cf/get :tenant "main")
-              cfg    (-> cfg
-                         (assoc ::queue (str/ffmt "%:%" tenant queue))
+        (let [cfg    (-> cfg
                          (assoc ::rds/rconn rconn)
+                         (assoc ::queue (str/ffmt "%:%" tenant queue))
                          (assoc ::timeout (dt/duration "5s")))]
           (loop []
             (when (px/interrupted?)
@@ -243,20 +241,23 @@
                :id id
                :queue queue)))))
 
-(s/def ::wrk/queue keyword?)
+(def ^:private schema:params
+  [:map
+   [::wrk/parallelism {:optional true} ::sm/int]
+   [::wrk/queue :keyword]
+   [::wrk/tenant ::sm/text]
+   ::wrk/registry
+   ::mtx/metrics
+   ::db/pool
+   ::rds/redis])
 
-(defmethod ig/pre-init-spec ::runner [_]
-  (s/keys :req [::wrk/parallelism
-                ::mtx/metrics
-                ::db/pool
-                ::rds/redis
-                ::wrk/queue
-                ::wrk/registry]))
+(defmethod ig/assert-key ::wrk/runner
+  [_ params]
+  (assert (sm/check schema:params params)))
 
-(defmethod ig/prep-key ::wrk/runner
-  [_ cfg]
-  (merge {::wrk/parallelism 1}
-         (d/without-nils cfg)))
+(defmethod ig/expand-key ::wrk/runner
+  [k v]
+  {k (merge {::wrk/parallelism 1} (d/without-nils v))})
 
 (defmethod ig/init-key ::wrk/runner
   [_ {:keys [::db/pool ::wrk/queue ::wrk/parallelism] :as cfg}]

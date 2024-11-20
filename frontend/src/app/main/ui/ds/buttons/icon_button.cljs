@@ -15,6 +15,7 @@
 (def ^:private schema:icon-button
   [:map
    [:class {:optional true} :string]
+   [:icon-class {:optional true} :string]
    [:icon
     [:and :string [:fn #(contains? icon-list %)]]]
    [:aria-label :string]
@@ -24,7 +25,7 @@
 (mf/defc icon-button*
   {::mf/props :obj
    ::mf/schema schema:icon-button}
-  [{:keys [class icon variant aria-label children] :rest props}]
+  [{:keys [class icon icon-class variant aria-label children] :rest props}]
   (let [variant (or variant "primary")
         class (dm/str class " " (stl/css-case :icon-button true
                                               :icon-button-primary (= variant "primary")
@@ -33,4 +34,4 @@
                                               :icon-button-action (= variant "action")
                                               :icon-button-destructive (= variant "destructive")))
         props (mf/spread-props props {:class class :title aria-label})]
-    [:> "button" props [:> icon* {:id icon :aria-label aria-label}] children]))
+    [:> "button" props [:> icon* {:id icon :aria-label aria-label :class icon-class}] children]))

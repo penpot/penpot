@@ -25,7 +25,6 @@
    [app.db :as db]
    [app.storage :as-alias sto]
    [app.storage.impl :as impl]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
 (def ^:private sql:has-team-font-variant-refs
@@ -226,8 +225,9 @@
 ;; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req [::db/pool]))
+(defmethod ig/assert-key ::handler
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expect valid storage"))
 
 (defmethod ig/init-key ::handler
   [_ cfg]

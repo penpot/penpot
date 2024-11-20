@@ -8,18 +8,20 @@
   (:require
    [app.common.schema :as sm]))
 
-(sm/register! ::token-theme
-  [:map {:title "TokenTheme"}
-   [:name :string]
-   [:group :string]
-   [:description [:maybe :string]]
-   [:is-source :boolean]
-   [:modified-at {:optional true} ::sm/inst]
-   [:sets :any]])
+(sm/register!
+ ^{::sm/type ::token-theme}
+ [:map {:title "TokenTheme"}
+  [:name :string]
+  [:group :string]
+  [:description [:maybe :string]]
+  [:is-source :boolean]
+  [:modified-at {:optional true} ::sm/inst]
+  [:sets :any]])
 
-(sm/register! ::token-set
-  [:map {:title "TokenSet"}
-   [:name :string]
-   [:description {:optional true} [:maybe :string]]
-   [:modified-at {:optional true} ::sm/inst]
-   [:tokens :any]])
+(sm/register!
+ ^{::sm/type ::token-set}
+ [:map {:title "TokenSet"}
+  [:name :string]
+  [:description {:optional true} [:maybe :string]]
+  [:modified-at {:optional true} ::sm/inst]
+  [:tokens :any]])
