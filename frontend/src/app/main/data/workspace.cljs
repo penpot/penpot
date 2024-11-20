@@ -76,7 +76,7 @@
    [app.main.repo :as rp]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
-   [app.render-wasm :as render.wasm]
+   [app.render-wasm :as wasm]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -270,7 +270,7 @@
                          ;; load. We need to wait the promise to be resolved
                          ;; before continue with the next workspace loading
                          ;; steps
-                         (->> (rx/from render.wasm/module)
+                         (->> (rx/from wasm/module)
                               (rx/ignore))
                          (->> (rp/cmd! :get-team {:id (:team-id project)})
                               (rx/mapcat (fn [team]
