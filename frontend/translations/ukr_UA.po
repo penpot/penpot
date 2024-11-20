@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-14 11:14+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-11-21 11:00+0000\n"
+"Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
 "Language: ukr_UA\n"
@@ -5685,3 +5685,180 @@ msgstr "Оновити"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Натисність щоб закінчити шлях"
+
+#: src/app/main/ui/dashboard/files.cljs:190, src/app/main/ui/dashboard/projects.cljs:284
+msgid "dashboard.empty-placeholder-drafts-subtitle"
+msgstr "Як тільки учасник проекту створить чернетку, вона з'явиться тут."
+
+#: src/app/main/ui/dashboard/files.cljs:186, src/app/main/ui/dashboard/projects.cljs:280
+msgid "dashboard.empty-placeholder-files-title"
+msgstr "Файлів ще немає."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:39
+#, markdown
+msgid "dashboard.empty-placeholder-libraries"
+msgstr ""
+"Додані до проєкту бібліотеки з'являться тут. Можете поширити власні файли чи "
+"додати з нашої [сторінки Бібліотек та шаблонів](https://penpot.app/libraries-"
+"templates)."
+
+#: src/app/main/ui/dashboard/files.cljs:185, src/app/main/ui/dashboard/projects.cljs:279
+msgid "dashboard.empty-placeholder-drafts-title"
+msgstr "Чернеток ще немає."
+
+#: src/app/main/ui/dashboard/files.cljs:191, src/app/main/ui/dashboard/projects.cljs:285
+msgid "dashboard.empty-placeholder-files-subtitle"
+msgstr "Як тільки учасник проекту створить файл, він буде відображений тут."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:32
+msgid "dashboard.empty-placeholder-libraries-title"
+msgstr "Бібліотек ще немає."
+
+#: src/app/main/data/common.cljs:206
+msgid "dashboard.permissions-change.owner"
+msgstr "Відтепер ви власник цієї команди."
+
+#: src/app/main/data/common.cljs:203
+msgid "dashboard.permissions-change.viewer"
+msgstr "Відтепер ви спостерігач у цій команді."
+
+#: src/app/main/data/common.cljs:205
+msgid "dashboard.permissions-change.admin"
+msgstr "Відтепер ви адміністратор цієї команди."
+
+#: src/app/main/data/common.cljs:204
+msgid "dashboard.permissions-change.editor"
+msgstr "Відтепер ви редактор цієї команди."
+
+#: src/app/main/data/common.cljs:233
+msgid "dashboard.removed-from-team"
+msgstr "Більше ви не є частиною команди \"%s\"."
+
+#: src/app/main/ui/comments.cljs:340, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:295, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:324
+msgid "labels.options"
+msgstr "Параметри"
+
+#: src/app/main/ui/delete_shared.cljs:52
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Зняти з публікації поширену сторінку"
+msgstr[1] "Зняти з публікації декілька поширених сторінок"
+msgstr[2] "Зняти з публікації поширені сторінки"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:271
+msgid "settings.remove-color"
+msgstr "Видалити колір"
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+#, markdown, unused
+msgid "dashboard.empty-placeholder-libraries-subtitle"
+msgstr ""
+"Додані до проєкту бібліотеки з'являться тут. Можете поширити власні файли чи "
+"додати з нашої [сторінки Бібліотек та шаблонів](https://penpot.app/libraries-"
+"templates)."
+
+#: src/app/main/ui/dashboard/fonts.cljs:445
+msgid "dashboard.fonts.empty-placeholder-viewer-sub"
+msgstr ""
+"Як тільки учасник проєкту завантажить користувацький шрифт, він буде "
+"відображений тут."
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:149, src/app/main/ui/workspace/sidebar/versions.cljs:288
+msgid "labels.restore"
+msgstr "Відновити"
+
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:495
+msgid "workspace.assets.colors.add-color"
+msgstr "Додати колір"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:532
+msgid "workspace.assets.components.add-component"
+msgstr "Додати компонент"
+
+#: src/app/main/ui/workspace/right_header.cljs:255
+msgid "workspace.header.share"
+msgstr "Поділитись"
+
+#: src/app/main/ui/workspace/libraries.cljs:304
+msgid "workspace.libraries.more-templates-link"
+msgstr "більше шаблонів тут"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+msgid "workspace.options.blur-options.add-blur"
+msgstr "Додати розмиття"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
+msgid "workspace.options.blur-options.remove-blur"
+msgstr "Видалити розмиття"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:108
+msgid "workspace.options.blur-options.toggle-blur"
+msgstr "Перемикання розмивання"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:195
+msgid "workspace.options.export.add-export"
+msgstr "Додати експортування"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:207, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:242
+msgid "workspace.options.export.remove-export"
+msgstr "Видалити експортування"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:735
+msgid "workspace.options.interactions.add-interaction"
+msgstr "Додати взаємодію"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.interactions.remove-interaction"
+msgstr "Видалити взаємодію"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:35
+msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
+msgstr "Додані до проєкту бібліотеки з'являться тут."
+
+#: src/app/main/ui/dashboard/fonts.cljs:444
+msgid "dashboard.fonts.empty-placeholder-viewer"
+msgstr "Користувацьких шрифтів ще немає."
+
+#: src/app/main/ui/dashboard/team.cljs:944
+msgid "dashboard.webhooks.cant-edit"
+msgstr "Ви можете видаляти або редагувати лише створені вами вебхуки."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:229
+msgid "labels.sets"
+msgstr "Набори"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1051
+#, unused
+msgid "labels.add"
+msgstr "Додати"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:187
+msgid "labels.themes"
+msgstr "Теми"
+
+#: src/app/main/ui/dashboard/team.cljs:216
+msgid "modals.invite-team-member.text"
+msgstr ""
+"Ви можете запросити учасників до команди для того щоб вони мали доступ до "
+"цього та інших файлів команди."
+
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:408
+msgid "workspace.assets.typography.add-typography"
+msgstr "Додати типографіку"
+
+#: src/app/main/ui/workspace/libraries.cljs:300
+msgid "workspace.libraries.more-templates"
+msgstr "Ви можете шукати "
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:150
+msgid "workspace.options.fill.add-fill"
+msgstr "Додати колір заливки"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:163
+msgid "workspace.options.fill.remove-fill"
+msgstr "Видалити заливку"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:154
+msgid "workspace.options.flows.remove-flow"
+msgstr "Видалити потік"
