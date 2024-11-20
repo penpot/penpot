@@ -881,11 +881,9 @@
          (rx/of
           (dwu/start-undo-transaction undo-id)
           (update-component shape-id undo-group)
-          (sync-file current-file-id file-id :components (:component-id shape) undo-group)
-          (update-component-thumbnail-sync state component-id file-id "frame")
-          (update-component-thumbnail-sync state component-id file-id "component")
+          (sync-file current-file-id file-id :components component-id undo-group)
           (when (not current-file?)
-            (sync-file file-id file-id :components (:component-id shape) undo-group))
+            (sync-file file-id file-id :components component-id undo-group))
           (dwu/commit-undo-transaction undo-id)))))))
 
 (defn launch-component-sync
@@ -937,9 +935,9 @@
       ;; in the grid creating new rows/columns to make space
       (let [file      (wsh/get-file state file-id)
             libraries (wsh/get-libraries state)
-            page    (wsh/lookup-page state)
-            objects (wsh/lookup-page-objects state)
-            parent (get objects (:parent-id shape))
+            page      (wsh/lookup-page state)
+            objects   (wsh/lookup-page-objects state)
+            parent    (get objects (:parent-id shape))
 
             ;; If the target parent is a grid layout we need to pass the target cell
             target-cell (when (ctl/grid-layout? parent)
