@@ -60,9 +60,8 @@
       :default-value default-value}]))
 
 (mf/defc sets-tree-set-group
-  [{:keys [label tree-depth tree-path selected? collapsed? on-select editing? on-edit on-edit-submit]}]
+  [{:keys [label tree-depth tree-path selected? collapsed? on-select editing? on-edit on-edit-reset on-edit-submit]}]
   (let [editing?' (editing? tree-path)
-        {:keys [on-create on-reset] :as ctx} (sets-context/use-context)
         on-click
         (mf/use-fn
          (mf/deps editing? tree-path)
@@ -103,15 +102,14 @@
      (if editing?'
        [:& editing-label
         {:default-value label
-         :on-cancel on-reset
-         :on-create on-reset
+         :on-cancel on-edit-reset
+         :on-create on-edit-reset
          :on-submit #(on-edit-submit)}]
        [:div {:class (stl/css :set-name)} label])]))
 
 (mf/defc sets-tree-set
-  [{:keys [set label tree-depth tree-path selected? on-select active? on-toggle editing? on-edit on-edit-submit]}]
+  [{:keys [set label tree-depth tree-path selected? on-select active? on-toggle editing? on-edit on-edit-reset on-edit-submit]}]
   (let [set-name (.-name set)
-        {:keys [on-reset] :as ctx} (sets-context/use-context)
         editing?' (editing? tree-path)
         active?' (active? set-name)
         on-click
@@ -148,8 +146,8 @@
      (if editing?'
        [:& editing-label
         {:default-value label
-         :on-cancel on-reset
-         :on-create on-reset
+         :on-cancel on-edit-reset
+         :on-create on-edit-reset
          :on-submit #(on-edit-submit set-name (ctob/update-name set %))}]
        [:*
         [:div {:class (stl/css :set-name)} label]
@@ -165,7 +163,7 @@
                       :id ic/tick}])]])]))
 
 (mf/defc sets-tree
-  [{:keys [set-path set-node tree-depth tree-path on-select selected? on-toggle active? editing? on-edit on-edit-submit]
+  [{:keys [set-path set-node tree-depth tree-path on-select selected? on-toggle active? editing? on-edit on-edit-reset on-edit-submit]
     :or {tree-depth 0}
     :as props}]
   (let [[set-prefix set-path'] (some-> set-path (ctob/split-set-prefix))
@@ -191,6 +189,7 @@
          :editing? editing?
          :on-toggle on-toggle
          :on-edit on-edit
+         :on-edit-reset on-edit-reset
          :on-edit-submit on-edit-submit}]
        set-group?
        [:& sets-tree-set-group
@@ -202,6 +201,7 @@
          :tree-depth tree-depth
          :editing? editing?
          :on-edit on-edit
+         :on-edit-reset on-edit-reset
          :on-edit-submit on-edit-submit}])
      (when children?
        (for [[set-path set-node] set-node
@@ -218,6 +218,7 @@
            :active? active?
            :editing? editing?
            :on-edit on-edit
+           :on-edit-reset on-edit-reset
            :on-edit-submit on-edit-submit}]))]))
 
 (mf/defc controlled-sets-list
@@ -231,7 +232,7 @@
            on-select
            context]
     :as _props}]
-  (let [{:keys [editing? new? on-edit on-create on-reset] :as ctx} (or context (sets-context/use-context))]
+  (let [{:keys [editing? new? on-edit on-reset] :as ctx} (or context (sets-context/use-context))]
     [:ul {:class (stl/css :sets-list)}
      (if (and
           (= origin "theme-modal")
@@ -251,6 +252,7 @@
             :on-toggle on-toggle-token-set
             :editing? editing?
             :on-edit on-edit
+            :on-edit-reset on-reset
             :on-edit-submit on-update-token-set}]
           (when new?
             [:& sets-tree-set
