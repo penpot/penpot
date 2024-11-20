@@ -41,7 +41,8 @@
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]
-   [shadow.resource]))
+   [shadow.resource]
+   [app.main.data.tokens :as wdt]))
 
 (def lens:token-type-open-status
   (l/derived (l/in [:workspace-tokens :open-status]) st/state))
@@ -219,28 +220,30 @@
                         :aria-label (tr "workspace.token.add set")}])))
 
 (mf/defc themes-sets-tab
-  []
+  [{:keys [resize-height]}]
   (let [token-sets (mf/deref refs/workspace-ordered-token-sets)
         open? (mf/use-state true)
         on-open (mf/use-fn #(reset! open? true))]
     [:& sets-context/provider {}
      [:& sets-context-menu]
-     [:div {:class (stl/css :sets-sidebar)}
-      [:& themes-header]
-      [:div {:class (stl/css :sidebar-header)}
-       [:& title-bar {:collapsable true
-                      :collapsed (not @open?)
-                      :all-clickable true
-                      :title (tr "labels.sets")
-                      :on-collapsed #(swap! open? not)}
-        [:& add-set-button {:on-open on-open
-                            :style "header"}]]]
-      (when @open?
-        [:& h/sortable-container {}
-         (when (empty? token-sets)
+     [:article {:class (stl/css :sets-section-wrapper)
+                :style {"--resize-height" (str resize-height "px")}}
+      [:div {:class (stl/css :sets-sidebar)}
+       [:& themes-header]
+       [:div {:class (stl/css :sidebar-header)}
+        [:& title-bar {:collapsable true
+                       :collapsed (not @open?)
+                       :all-clickable true
+                       :title (tr "labels.sets")
+                       :on-collapsed #(swap! open? not)}
+         [:& add-set-button {:on-open on-open
+                             :style "header"}]]]
+       (when @open?
+         (if (empty? token-sets)
            [:& add-set-button {:on-open on-open
-                               :style "inline"}])
-         [:& sets-list]])]]))
+                               :style "inline"}]
+           [:& h/sortable-container {}
+            [:& sets-list]]))]]]))
 
 (mf/defc tokens-tab
   [_props]
@@ -343,15 +346,14 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [_props]
-  (let [{on-pointer-down-pages :on-pointer-down
+  (let [tokens-tab? (not (mf/deref refs/workspace-token-set-group-selected?))
+        {on-pointer-down-pages :on-pointer-down
          on-lost-pointer-capture-pages :on-lost-pointer-capture
          on-pointer-move-pages :on-pointer-move
          size-pages-opened :size}
         (use-resize-hook :tokens 200 38 400 :y false nil)]
     [:div {:class (stl/css :sidebar-wrapper)}
-     [:article {:class (stl/css :sets-section-wrapper)
-                :style {"--resize-height" (str size-pages-opened "px")}}
-      [:& themes-sets-tab]]
+     [:& themes-sets-tab {:resize-height size-pages-opened}]
      [:article {:class (stl/css :tokens-section-wrapper)}
       [:div {:class (stl/css :resize-area-horiz)
              :on-pointer-down on-pointer-down-pages

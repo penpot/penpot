@@ -254,7 +254,7 @@
   [{:keys [state set-state]}]
   (let [{:keys [theme-path]} @state
         [_ theme-group theme-name] theme-path
-        token-sets (mf/deref refs/workspace-ordered-token-sets)
+        token-sets (mf/deref refs/workspace-token-sets-tree)
         theme (mf/deref (refs/workspace-token-theme theme-group theme-name))
         on-back #(set-state (constantly {:type :themes-overview}))
         on-submit #(st/emit! (wdt/update-token-theme [(:group theme) (:name theme)] %))
