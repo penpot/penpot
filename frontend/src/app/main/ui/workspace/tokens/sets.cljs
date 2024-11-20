@@ -30,7 +30,7 @@
 (defn on-update-token-set [set-name token-set]
   (st/emit! (wdt/update-token-set set-name token-set)))
 
-(defn on-create-token-set [token-set]
+(defn on-create-token-set [_ token-set]
   (st/emit! (wdt/create-token-set token-set)))
 
 (mf/defc editing-label
@@ -111,7 +111,7 @@
 (mf/defc sets-tree-set
   [{:keys [set label tree-depth tree-path selected? on-select active? on-toggle editing? on-edit on-edit-submit]}]
   (let [set-name (.-name set)
-        {:keys [on-create on-reset] :as ctx} (sets-context/use-context)
+        {:keys [on-reset] :as ctx} (sets-context/use-context)
         editing?' (editing? tree-path)
         active?' (active? set-name)
         on-click
@@ -242,15 +242,27 @@
                 (empty? token-sets))
          [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message-sets)}
           (tr "workspace.token.no-sets-create")]
-         [:& sets-tree
-          {:set-node token-sets
-           :selected? token-set-selected?
-           :on-select on-select
-           :active? token-set-active?
-           :on-toggle on-toggle-token-set
-           :editing? editing?
-           :on-edit on-edit
-           :on-edit-submit on-update-token-set}]))]))
+         [:*
+          [:& sets-tree
+           {:set-node token-sets
+            :selected? token-set-selected?
+            :on-select on-select
+            :active? token-set-active?
+            :on-toggle on-toggle-token-set
+            :editing? editing?
+            :on-edit on-edit
+            :on-edit-submit on-update-token-set}]
+          (when new?
+            [:& sets-tree-set
+             {:set (ctob/make-token-set :name "")
+              :label ""
+              :selected? (constantly true)
+              :active? (constantly true)
+              :editing? (constantly true)
+              :on-select (constantly nil)
+              :on-edit (constantly nil)
+              :on-edit-submit on-create-token-set
+              :on-cancel on-reset}])]))]))
 
 (mf/defc sets-list
   [{:keys []}]

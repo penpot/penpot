@@ -205,10 +205,7 @@
   (let [{:keys [on-create new?]} (sets-context/use-context)
         on-click #(do
                     (on-open)
-                    (let [set-path (some-> (js/prompt "Token Set Path")
-                                           (str/trim))]
-                      (when-not (str/empty? set-path)
-                        (st/emit! (wdt/create-token-set {:name set-path})))))]
+                    (on-create))]
     (if (= style "inline")
       (when-not new?
         [:div {:class (stl/css :empty-sets-wrapper)}
