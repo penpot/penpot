@@ -7,6 +7,7 @@
  */
 
 import {
+  createRandomId,
   createElement,
   isElement,
   isOffsetAtStart,
@@ -24,8 +25,6 @@ import {
 } from "./Inline.js";
 import { createLineBreak, isLineBreak } from "./LineBreak.js";
 import { setStyles } from "./Style.js";
-import { createRandomId } from "./Element.js";
-import { isEmptyTextNode, isTextNode } from './TextNode.js';
 
 export const TAG = "DIV";
 export const TYPE = "paragraph";

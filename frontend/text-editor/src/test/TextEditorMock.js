@@ -1,7 +1,7 @@
-import { createRoot } from "~/editor/content/dom/Root";
-import { createParagraph } from "~/editor/content/dom/Paragraph";
-import { createEmptyInline, createInline } from "~/editor/content/dom/Inline";
-import { createLineBreak } from "~/editor/content/dom/LineBreak";
+import { createRoot } from "../editor/content/dom/Root.js";
+import { createParagraph } from "../editor/content/dom/Paragraph.js";
+import { createEmptyInline, createInline } from "../editor/content/dom/Inline.js";
+import { createLineBreak } from "../editor/content/dom/LineBreak.js";
 
 export class TextEditorMock extends EventTarget {
   /**

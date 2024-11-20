@@ -1,25 +1,22 @@
 import { resolve } from "node:path";
 import { defineConfig } from "vite";
-import { coverageConfigDefaults } from 'vitest/config'
+import { coverageConfigDefaults } from "vitest/config"
 
 export default defineConfig({
+  root: "./src",
   resolve: {
     alias: {
-      "~": resolve("."),
+      "~": resolve("./src"),
     },
   },
   build: {
-    minify: false,
+    minify: true,
     sourcemap: true,
     lib: {
-      entry: "editor/TextEditor.js",
+      entry: "src/editor/TextEditor.js",
       name: "TextEditor",
       fileName: "TextEditor",
       formats: ["es"],
-    },
-    terserOptions: {
-      compress: true,
-      mangle: true,
     },
   },
   test: {

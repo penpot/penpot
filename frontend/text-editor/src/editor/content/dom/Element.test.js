@@ -1,11 +1,17 @@
 import { describe, test, expect } from "vitest";
-import { createElement, isElement, createRandomId, isOffsetAtStart, isOffsetAtEnd } from "./Element.js";
+import {
+  createElement,
+  isElement,
+  createRandomId,
+  isOffsetAtStart,
+  isOffsetAtEnd,
+} from "./Element.js";
 
 /* @vitest-environment jsdom */
 describe("Element", () => {
   test("createRandomId should create a new random id", () => {
     const randomId = createRandomId();
-    expect(typeof randomId).toBe('string');
+    expect(typeof randomId).toBe("string");
     expect(randomId.length).toBeGreaterThan(0);
     expect(randomId.length).toBeLessThan(12);
   });
@@ -20,8 +26,8 @@ describe("Element", () => {
     const element = createElement("div", {
       attributes: {
         "aria-multiline": true,
-        "role": "textbox"
-      }
+        role: "textbox",
+      },
     });
     expect(element.ariaMultiLine).toBe("true");
     expect(element.role).toBe("textbox");
@@ -30,8 +36,8 @@ describe("Element", () => {
   test("createElement should create a new element with data- properties", () => {
     const element = createElement("div", {
       data: {
-        itype: "root"
-      }
+        itype: "root",
+      },
     });
     expect(element.dataset.itype).toBe("root");
   });
@@ -41,14 +47,14 @@ describe("Element", () => {
       styles: {
         "text-decoration": "underline",
       },
-      allowedStyles: [["text-decoration"]]
+      allowedStyles: [["text-decoration"]],
     });
     expect(element.style.textDecoration).toBe("underline");
   });
 
   test("createElement should create a new element with a child", () => {
     const element = createElement("div", {
-      children: new Text("Hello, World!")
+      children: new Text("Hello, World!"),
     });
     expect(element.textContent).toBe("Hello, World!");
   });
@@ -59,16 +65,18 @@ describe("Element", () => {
         createElement("div", {
           children: [
             createElement("div", {
-              children: new Text("Hello, World!")
-            })
-          ]
-        })
+              children: new Text("Hello, World!"),
+            }),
+          ],
+        }),
       ],
     });
     expect(element.textContent).toBe("Hello, World!");
     expect(element.firstChild.nodeType).toBe(Node.ELEMENT_NODE);
     expect(element.firstChild.firstChild.nodeType).toBe(Node.ELEMENT_NODE);
-    expect(element.firstChild.firstChild.firstChild.nodeType).toBe(Node.TEXT_NODE);
+    expect(element.firstChild.firstChild.firstChild.nodeType).toBe(
+      Node.TEXT_NODE,
+    );
   });
 
   test("isElement returns true if the passed element is the expected element", () => {
@@ -81,9 +89,9 @@ describe("Element", () => {
   });
 
   test("isOffsetAtStart should return true when offset is 0", () => {
-    const element = createElement('span', {
-      children: new Text("Hello")
-    })
+    const element = createElement("span", {
+      children: new Text("Hello"),
+    });
     expect(isOffsetAtStart(element, 0)).toBe(true);
   });
 

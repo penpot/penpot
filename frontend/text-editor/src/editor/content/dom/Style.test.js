@@ -1,5 +1,11 @@
 import { describe, test, expect, vi } from "vitest";
-import { getStyles, isDisplayBlock, isDisplayInline, setStyle, setStyles } from "./Style.js";
+import {
+  getStyles,
+  isDisplayBlock,
+  isDisplayInline,
+  setStyle,
+  setStyles,
+} from "./Style.js";
 
 /* @vitest-environment jsdom */
 describe("Style", () => {
@@ -39,16 +45,16 @@ describe("Style", () => {
 
   test("getStyles should retrieve a list of allowed styles", () => {
     const element = document.createElement("div");
-    element.style.display = 'block';
-    element.style.textDecoration = 'underline';
-    element.style.fontSize = '32px';
+    element.style.display = "block";
+    element.style.textDecoration = "underline";
+    element.style.fontSize = "32px";
     const textDecorationStyles = getStyles(element, [["text-decoration"]]);
     expect(textDecorationStyles).toStrictEqual({
-      "text-decoration": "underline"
+      "text-decoration": "underline",
     });
     const displayStyles = getStyles(element, [["display"]]);
     expect(displayStyles).toStrictEqual({
-      "display": "block",
+      display: "block",
     });
     const fontSizeStyles = getStyles(element, [["font-size", "px"]]);
     expect(fontSizeStyles).toStrictEqual({

@@ -1,12 +1,24 @@
 import { describe, test, expect } from "vitest";
-import { createEmptyInline, createInline, getInline, getInlineLength, isInline, isInlineEnd, isInlineStart, isLikeInline, splitInline, TAG, TYPE } from "./Inline.js";
+import {
+  createEmptyInline,
+  createInline,
+  getInline,
+  getInlineLength,
+  isInline,
+  isInlineEnd,
+  isInlineStart,
+  isLikeInline,
+  splitInline,
+  TAG,
+  TYPE,
+} from "./Inline.js";
 import { createLineBreak } from "./LineBreak.js";
 
 /* @vitest-environment jsdom */
 describe("Inline", () => {
   test("createInline should throw when passed an invalid child", () => {
     expect(() => createInline("Hello, World!")).toThrowError(
-      "Invalid inline child"
+      "Invalid inline child",
     );
   });
 
@@ -44,7 +56,7 @@ describe("Inline", () => {
     expect(isInline(a)).toBe(false);
     const b = null;
     expect(isInline(b)).toBe(false);
-    const c = document.createElement('span');
+    const c = document.createElement("span");
     expect(isInline(c)).toBe(false);
   });
 
@@ -82,11 +94,11 @@ describe("Inline", () => {
 
   test("getInline ", () => {
     expect(getInline(null)).toBe(null);
-  })
+  });
 
   test("getInlineLength throws when the passed node is not an inline", () => {
-    const inline = document.createElement('div');
-    expect(() => getInlineLength(inline)).toThrowError('Invalid inline');
+    const inline = document.createElement("div");
+    expect(() => getInlineLength(inline)).toThrowError("Invalid inline");
   });
 
   test("getInlineLength returns the length of the inline content", () => {
