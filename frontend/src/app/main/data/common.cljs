@@ -12,7 +12,6 @@
    [app.common.schema :as sm]
    [app.common.types.components-list :as ctkl]
    [app.common.types.team :as ctt]
-   [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.features :as features]
@@ -75,15 +74,13 @@
     (watch [_ _ _]
       (case code
         :upgrade-version
-        (when (or (not= (:version params) (:full cf/version))
-                  (true? (:force params)))
-          (rx/of (ntf/dialog
-                  :content (tr "notifications.by-code.upgrade-version")
-                  :controls :inline-actions
-                  :type :inline
-                  :level level
-                  :actions [{:label "Refresh" :callback force-reload!}]
-                  :tag :notification)))
+        (rx/of (ntf/dialog
+                :content (tr "notifications.by-code.upgrade-version")
+                :controls :inline-actions
+                :type :inline
+                :level level
+                :actions [{:label "Refresh" :callback force-reload!}]
+                :tag :notification))
 
         :maintenance
         (rx/of (ntf/dialog
