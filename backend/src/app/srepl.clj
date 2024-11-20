@@ -8,7 +8,6 @@
   "Server Repl."
   (:require
    [app.common.logging :as l]
-   [app.common.spec :as us]
    [app.config :as cf]
    [app.srepl.cli]
    [app.srepl.main]
@@ -16,7 +15,6 @@
    [app.util.locks :as locks]
    [clojure.core.server :as ccs]
    [clojure.main :as cm]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
 (defn- repl-init
@@ -44,16 +42,14 @@
 
 ;; --- State initialization
 
-(s/def ::port ::us/integer)
-(s/def ::host ::us/not-empty-string)
+(defmethod ig/assert-key ::server
+  [_ params]
+  (assert (int? (::port params)) "expected valid port")
+  (assert (string? (::host params)) "expected valid host"))
 
-(defmethod ig/pre-init-spec ::server
-  [_]
-  (s/keys :req [::host ::port]))
-
-(defmethod ig/prep-key ::server
-  [[type _] cfg]
-  (assoc cfg ::flag (keyword (str (name type) "-server"))))
+(defmethod ig/expand-key ::server
+  [[type :as k] v]
+  {k (assoc v ::flag (keyword (str (name type) "-server")))})
 
 (defmethod ig/init-key ::server
   [[type _] {:keys [::flag ::port ::host] :as cfg}]

@@ -13,7 +13,6 @@
    [app.db :as db]
    [app.storage :as sto]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
 (def ^:private sql:get-profiles
@@ -318,14 +317,16 @@
         (recur (+ total result))
         total))))
 
-(defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req [::db/pool ::sto/storage]))
+(defmethod ig/assert-key ::handler
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expected a valid database pool")
+  (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage to be provided"))
 
-(defmethod ig/prep-key ::handler
-  [_ cfg]
-  (assoc cfg
-         ::min-age (cf/get-deletion-delay)
-         ::chunk-size 50))
+(defmethod ig/expand-key ::handler
+  [k v]
+  {k (assoc v
+            ::min-age (cf/get-deletion-delay)
+            ::chunk-size 50)})
 
 (defmethod ig/init-key ::handler
   [_ cfg]

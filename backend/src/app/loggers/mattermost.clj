@@ -9,12 +9,10 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.spec :as us]
    [app.config :as cf]
    [app.http.client :as http]
    [app.loggers.database :as ldb]
    [app.util.json :as json]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.exec :as px]
    [promesa.exec.csp :as sp]))
@@ -54,7 +52,7 @@
 
 (defn record->report
   [{:keys [::l/context ::l/id ::l/cause] :as record}]
-  (us/assert! ::l/record record)
+  (assert (l/valid-record? record) "expectd valid log record")
   {:id               id
    :tenant           (cf/get :tenant)
    :host             (cf/get :host)
@@ -75,8 +73,9 @@
       (catch Throwable cause
         (l/warn :hint "unhandled error" :cause cause)))))
 
-(defmethod ig/pre-init-spec ::reporter [_]
-  (s/keys :req [::http/client]))
+(defmethod ig/assert-key ::reporter
+  [_ params]
+  (assert (http/client? (::http/client params)) "expect valid http client"))
 
 (defmethod ig/init-key ::reporter
   [_ cfg]

@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 
-export _BUILD_MODE=${1:-debug};
+if [ "$NODE_ENV" = "production" ];  then
+    export _BUILD_MODE="release";
+else
+    export _BUILD_MODE=${1:-debug};
+fi
 
-export EMSDK_QUIET=1
 export EMCC_CFLAGS="--no-entry -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s MAX_WEBGL_VERSION=2 -s MODULARIZE=1 -s EXPORT_NAME=createRustSkiaModule -s EXPORTED_RUNTIME_METHODS=GL -s ENVIRONMENT=web -s EXPORT_ES6=1 -sMODULARIZE"
 
-source /usr/local/emsdk/emsdk_env.sh;
+EMSDK_QUIET=1 . /usr/local/emsdk/emsdk_env.sh;
+. /usr/local/cargo/env
+
+export EM_CACHE="/tmp/emsdk_cache";
 
 set -x
 
@@ -21,5 +27,7 @@ cargo build $_CARGO_PARAMS
 
 cp target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.js ../frontend/resources/public/js/
 cp target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.wasm ../frontend/resources/public/js/
+
+sed -i "s/render_wasm.wasm/render_wasm.wasm?version=develop/g" ../frontend/resources/public/js/render_wasm.js;
 
 popd

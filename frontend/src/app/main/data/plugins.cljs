@@ -155,7 +155,10 @@
           (fn [new-manifest]
             (let [permissions  (:permissions new-manifest)]
               (when permissions
-                (st/emit! (save-plugin-permissions-peek plugin-id permissions)))))))))
+                (st/emit! (save-plugin-permissions-peek plugin-id permissions)))))
+          (fn [_err]
+            ;; on error do nothing
+            )))))
 
 (defn update-plugins-permissions-peek
   []

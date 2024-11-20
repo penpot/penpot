@@ -274,10 +274,11 @@
          (fn [id label]
            (st/emit! (dwv/rename-version file-id id label))))
 
+
         handle-restore-version
         (mf/use-fn
          (mf/deps project-id file-id)
-         (fn [id]
+         (fn [origin id]
            (st/emit!
             (ntf/dialog
              :content (tr "workspace.versions.restore-warning")
@@ -287,8 +288,20 @@
                         :callback #(st/emit! (ntf/hide))}
                        {:label (tr "labels.restore")
                         :type :primary
-                        :callback #(st/emit! (dwv/restore-version project-id file-id id))}]
+                        :callback #(st/emit! (dwv/restore-version project-id file-id id origin))}]
              :tag :restore-dialog))))
+
+        handle-restore-version-pinned
+        (mf/use-fn
+         (mf/deps handle-restore-version)
+         (fn [id]
+           (handle-restore-version :version id)))
+
+        handle-restore-version-snapshot
+        (mf/use-fn
+         (mf/deps handle-restore-version)
+         (fn [id]
+           (handle-restore-version :snapshot id)))
 
         handle-delete-version
         (mf/use-fn
@@ -362,7 +375,7 @@
                                   :editing? (= (:id entry) editing)
                                   :profile (get users (:profile-id entry))
                                   :on-rename-version handle-rename-version
-                                  :on-restore-version handle-restore-version
+                                  :on-restore-version handle-restore-version-pinned
                                   :on-delete-version handle-delete-version}]
 
                :snapshot
@@ -371,7 +384,7 @@
                                    :entry entry
                                    :is-expanded (contains? @expanded idx-entry)
                                    :on-toggle-expand handle-toggle-expand
-                                   :on-restore-snapshot handle-restore-version
+                                   :on-restore-snapshot handle-restore-version-snapshot
                                    :on-pin-snapshot handle-pin-version}]
 
                nil))])])]))

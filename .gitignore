@@ -74,5 +74,5 @@ node_modules
 /playwright-report/
 /blob-report/
 /playwright/.cache/
-/frontend/vendor/draft-js/.yarn/
-/frontend/vendor/hljs/.yarn
+/render-wasm/target/
+/**/.yarn/*

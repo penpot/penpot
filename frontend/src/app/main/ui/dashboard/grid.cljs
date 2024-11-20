@@ -457,12 +457,14 @@
         on-drop
         (mf/use-fn
          (fn [e]
-           (when (and (not (dnd/has-type? e "penpot/files"))
-                      (or (dnd/has-type? e "Files")
-                          (dnd/has-type? e "application/x-moz-file")))
-             (dom/prevent-default e)
-             (reset! dragging? false)
-             (import-files (.-files (.-dataTransfer e))))))]
+           (if can-edit
+             (when (and (not (dnd/has-type? e "penpot/files"))
+                        (or (dnd/has-type? e "Files")
+                            (dnd/has-type? e "application/x-moz-file")))
+               (dom/prevent-default e)
+               (reset! dragging? false)
+               (import-files (.-files (.-dataTransfer e))))
+             (dom/prevent-default e))))]
 
     [:div {:class (stl/css :dashboard-grid)
            :dragabble (dm/str can-edit)
@@ -527,9 +529,8 @@
 
         on-finish-import
         (mf/use-fn
-         (mf/deps team-id)
          (fn []
-           (st/emit! (dd/fetch-recent-files (:id team))
+           (st/emit! (dd/fetch-recent-files)
                      (dd/clear-selected-files))))
 
         import-files (use-import-file project-id on-finish-import)
@@ -569,31 +570,34 @@
              (reset! dragging? false))))
 
         on-drop-success
-        (fn []
-          (st/emit! (ntf/success (tr "dashboard.success-move-file"))
-                    (dd/fetch-recent-files (:id team))
-                    (dd/clear-selected-files)))
+        (mf/use-fn
+         (fn []
+           (st/emit! (ntf/success (tr "dashboard.success-move-file"))
+                     (dd/fetch-recent-files)
+                     (dd/clear-selected-files))))
 
         on-drop
         (mf/use-fn
-         (mf/deps files selected-files)
+         (mf/deps files selected-files can-edit)
          (fn [e]
-           (cond
-             (dnd/has-type? e "penpot/files")
-             (do
-               (reset! dragging? false)
-               (when (not= selected-project project-id)
-                 (let [data  {:ids (into #{} (keys selected-files))
-                              :project-id project-id}
-                       mdata {:on-success on-drop-success}]
-                   (st/emit! (dd/move-files (with-meta data mdata))))))
+           (if can-edit
+             (cond
+               (dnd/has-type? e "penpot/files")
+               (do
+                 (reset! dragging? false)
+                 (when (not= selected-project project-id)
+                   (let [data  {:ids (into #{} (keys selected-files))
+                                :project-id project-id}
+                         mdata {:on-success on-drop-success}]
+                     (st/emit! (dd/move-files (with-meta data mdata))))))
 
-             (or (dnd/has-type? e "Files")
-                 (dnd/has-type? e "application/x-moz-file"))
-             (do
-               (dom/prevent-default e)
-               (reset! dragging? false)
-               (import-files (.-files (.-dataTransfer e)))))))]
+               (or (dnd/has-type? e "Files")
+                   (dnd/has-type? e "application/x-moz-file"))
+               (do
+                 (dom/prevent-default e)
+                 (reset! dragging? false)
+                 (import-files (.-files (.-dataTransfer e)))))
+             (dom/prevent-default e))))]
 
     [:div {:class (stl/css :dashboard-grid)
            :dragabble (dm/str can-edit)

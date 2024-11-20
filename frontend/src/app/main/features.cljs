@@ -12,6 +12,7 @@
    [app.common.logging :as log]
    [app.config :as cf]
    [app.main.store :as st]
+   [app.render-wasm :as wasm]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -32,10 +33,13 @@
 
 (defn get-team-enabled-features
   [state]
-  (-> global-enabled-features
-      (set/union (:features-runtime state #{}))
-      (set/intersection cfeat/no-migration-features)
-      (set/union (:features-team state #{}))))
+  (let [runtime-features (:features-runtime state #{})
+        team-features    (->> (:features-team state #{})
+                              (into #{} cfeat/xf-remove-ephimeral))]
+    (-> global-enabled-features
+        (set/union runtime-features)
+        (set/intersection cfeat/no-migration-features)
+        (set/union team-features))))
 
 (def features-ref
   (l/derived get-team-enabled-features st/state =))
@@ -110,15 +114,22 @@
        (when *assert*
          (->> (rx/from cfeat/no-migration-features)
               ;; text editor v2 isn't enabled by default even in devenv
+              ;; wasm render v1 isn't enabled by default even in devenv
               (rx/filter #(not (or (contains? cfeat/backend-only-features %)
                                    (= "text-editor/v2" %)
+                                   (= "render-wasm/v1" %)
                                    (= "design-tokens/v1" %))))
               (rx/observe-on :async)
               (rx/map enable-feature))))
 
      ptk/EffectEvent
      (effect [_ state _]
-       (log/trc :hint "initialized features"
-                :team (str/join "," (:features-team state))
-                :runtime (str/join "," (:features-runtime state)))))))
+       (let [features (get-team-enabled-features state)]
+         (if (contains? features "render-wasm/v1")
+           (wasm/initialize true)
+           (wasm/initialize false))
+
+         (log/inf :hint "initialized"
+                  :enabled (str/join "," features)
+                  :runtime (str/join "," (:features-runtime state))))))))
 

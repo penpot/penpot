@@ -147,7 +147,7 @@
 
                           params   (-> params
                                        (assoc :profile-id profile-id)
-                                       (assoc :features features)
+                                       (assoc :features (set/difference features cfeat/frontend-only-features))
                                        (assoc :team team)
                                        (assoc :file file)
                                        (assoc :changes changes))

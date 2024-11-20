@@ -9,7 +9,6 @@
    [app.common.logging :as l]
    [app.config :as cf]
    [app.db :as db]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
 ;; Get the latest available snapshots without exceeding the total
@@ -51,8 +50,9 @@
              :current (count snapshots)
              :deleted (db/get-update-count result)))))
 
-(defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req [::db/pool]))
+(defmethod ig/assert-key ::handler
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expected a valid database pool"))
 
 (defmethod ig/init-key ::handler
   [_ cfg]

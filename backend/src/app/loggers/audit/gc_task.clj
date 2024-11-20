@@ -8,7 +8,6 @@
   (:require
    [app.common.logging :as l]
    [app.db :as db]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
 (def ^:private sql:clean-archived
@@ -22,8 +21,9 @@
     (l/debug :hint "delete archived audit log entries" :deleted result)
     result))
 
-(defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req [::db/pool]))
+(defmethod ig/assert-key ::handler
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "valid database pool expected"))
 
 (defmethod ig/init-key ::handler
   [_ cfg]

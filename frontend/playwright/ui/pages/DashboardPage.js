@@ -259,6 +259,11 @@ export class DashboardPage extends BaseWebSocketPage {
     await expect(this.mainHeading).toHaveText("Drafts");
   }
 
+  async goToFonts() {
+    await this.page.goto(`#/dashboard/team/${DashboardPage.anyTeamId}/fonts`);
+    await expect(this.mainHeading).toHaveText("Fonts");
+  }
+
   async goToAccount() {
     await this.userAccount.click();
 

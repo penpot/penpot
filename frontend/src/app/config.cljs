@@ -90,7 +90,6 @@
       "unknown"
       date)))
 
-
 ;; --- Global Config Vars
 
 (def default-theme  "default")
@@ -110,7 +109,7 @@
 (def privacy-policy-uri   (obj/get global "penpotPrivacyPolicyURI" "https://penpot.app/privacy"))
 (def flex-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
 (def grid-help-uri        (obj/get global "penpotGridHelpURI" "https://help.penpot.app/user-guide/flexible-layouts/"))
-(def plugins-list-uri     (obj/get global "penpotPluginsListUri" "https://penpot-docs-plugins.pages.dev/plugins/getting-started/#examples"))
+(def plugins-list-uri     (obj/get global "penpotPluginsListUri" "https://penpot.app/penpothub/plugins"))
 (def plugins-whitelist    (into #{} (obj/get global "penpotPluginsWhitelist" [])))
 
 (defn- normalize-uri
@@ -182,3 +181,8 @@
       (cond-> (u/join public-uri "assets/by-file-media-id/")
         (true? thumbnail?) (u/join (dm/str id "/thumbnail"))
         (false? thumbnail?) (u/join (dm/str id)))))))
+
+(defn resolve-static-asset
+  [path]
+  (let [uri (u/join public-uri path)]
+    (assoc uri :query (dm/str "version=" (:full version)))))

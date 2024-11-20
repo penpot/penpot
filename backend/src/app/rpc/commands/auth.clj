@@ -383,7 +383,9 @@
         invitation (when-let [token (:invitation-token params)]
                      (tokens/verify (::setup/props cfg) {:token token :iss :team-invitation}))
 
-        props      (audit/profile->props profile)
+        props      (-> (audit/profile->props profile)
+                       (assoc :from-invitation (some? invitation)))
+
 
         create-welcome-file-when-needed
         (fn []

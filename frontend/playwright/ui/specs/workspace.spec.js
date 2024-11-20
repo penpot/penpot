@@ -225,3 +225,28 @@ test("Bug 9066 - Problem with grid layout", async ({ page }) => {
     page.getByTestId("children-6ad3e6b9-c5a0-80cf-8005-283bbe378bcb"),
   ).toHaveText(["CBCDEF"]);
 });
+
+test("User have toolbar", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+  await workspacePage.goToWorkspace();
+
+  await expect(page.getByTitle("toggle toolbar")).toBeVisible();
+  await expect(page.getByTitle("design")).toBeVisible();
+});
+
+test("User have edition menu entries", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+  await workspacePage.goToWorkspace();
+
+  await page.getByTitle("Main menu").click();
+  await page.getByText("file").last().click();
+
+  await expect(page.getByText("Add as Shared Library")).toBeVisible();
+
+  await page.getByText("edit").click();
+
+  await expect(page.getByText("Undo")).toBeVisible();
+  await expect(page.getByText("Redo")).toBeVisible();
+});

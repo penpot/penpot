@@ -76,6 +76,7 @@
    [app.main.repo :as rp]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
+   [app.render-wasm :as wasm]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -264,14 +265,21 @@
     (watch [_ _ stream]
       (->> (rp/cmd! :get-project {:id project-id})
            (rx/mapcat (fn [project]
-                        (->> (rp/cmd! :get-team {:id (:team-id project)})
-                             (rx/mapcat (fn [team]
-                                          (let [bundle {:team team
-                                                        :project project
-                                                        :file-id file-id
-                                                        :project-id project-id}]
-                                            (rx/of (du/set-current-team team)
-                                                   (ptk/data-event ::bundle-stage-1 bundle))))))))
+                        (rx/concat
+                         ;; Wait the wasm module to be loaded or failed to
+                         ;; load. We need to wait the promise to be resolved
+                         ;; before continue with the next workspace loading
+                         ;; steps
+                         (->> (rx/from wasm/module)
+                              (rx/ignore))
+                         (->> (rp/cmd! :get-team {:id (:team-id project)})
+                              (rx/mapcat (fn [team]
+                                           (let [bundle {:team team
+                                                         :project project
+                                                         :file-id file-id
+                                                         :project-id project-id}]
+                                             (rx/of (du/set-current-team team)
+                                                    (ptk/data-event ::bundle-stage-1 bundle)))))))))
            (rx/take-until
             (rx/filter (ptk/type? ::fetch-bundle) stream))))))
 
@@ -354,12 +362,11 @@
       (let [stoper-s (rx/filter (ptk/type? ::finalize-file) stream)]
         (rx/merge
          (rx/of (ntf/hide)
+                ;; We initialize the features without knowning the
+                ;; team specific features in this step.
                 (features/initialize)
                 (dcm/retrieve-comment-threads file-id)
                 (fetch-bundle project-id file-id))
-
-        ;;  (when (contains? cf/flags :renderer-v2)
-        ;;    (rx/of (renderer/init)))
 
          (->> stream
               (rx/filter dch/commit?)

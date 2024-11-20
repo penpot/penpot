@@ -420,14 +420,25 @@
   (into [] (distinct) (conj coll item)))
 
 (mf/defc multi-input
-  [{:keys [form label class name trim valid-item-fn caution-item-fn on-submit invite-email] :as props}]
+  [{:keys [form label class name trim valid-item-fn caution-item-fn on-submit] :as props}]
   (let [form       (or form (mf/use-ctx form-ctx))
         input-name (get props :name)
         touched?   (get-in @form [:touched input-name])
         error      (get-in @form [:errors input-name])
         focus?     (mf/use-state false)
 
-        items      (mf/use-state [])
+        items      (mf/use-state
+                    (fn []
+                      (let [initial (get-in @form [:data input-name])]
+                        (if (or (vector? initial)
+                                (set? initial))
+                          (mapv (fn [val]
+                                  {:text val
+                                   :valid (valid-item-fn val)
+                                   :caution (caution-item-fn val)})
+                                initial)
+                          []))))
+
         value      (mf/use-state "")
         result     (hooks/use-equal-memo @items)
 
@@ -527,13 +538,8 @@
       (let [val (cond-> @value trim str/trim)
             values (conj-dedup result {:text val :valid (valid-item-fn val)})
             values (filterv #(:valid %) values)]
-        (update-form! values)))
 
-    (mf/with-effect []
-      (when invite-email
-        (swap! items conj-dedup {:text (str/trim invite-email)
-                                 :valid (valid-item-fn invite-email)
-                                 :caution (caution-item-fn invite-email)})))
+        (update-form! values)))
 
     [:div {:class klass}
      [:input {:id (name input-name)

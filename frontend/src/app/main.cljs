@@ -30,6 +30,7 @@
    [app.util.i18n :as i18n]
    [app.util.theme :as theme]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [debug]
    [features]
    [potok.v2.core :as ptk]
@@ -38,11 +39,11 @@
 (log/setup! {:app :info})
 
 (when (= :browser cf/target)
-  (log/info :message "Welcome to penpot"
-            :version (:full cf/version)
+  (log/info :version (:full cf/version)
             :asserts *assert*
             :build-date cf/build-date
-            :public-uri (dm/str cf/public-uri)))
+            :public-uri (dm/str cf/public-uri))
+  (log/info :flags (str/join "," (map name cf/flags))))
 
 (declare reinit)
 
