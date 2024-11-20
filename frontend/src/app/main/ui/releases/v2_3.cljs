@@ -41,7 +41,7 @@
            "The introduction of our brand new Plugin system allows you to access even richer ecosystem of capabilities."]
 
           [:p  {:class (stl/css :feature-content)}
-           "We are beyond excitement about how this will further involve the Penpot community in building the best design and prototyping platform."]
+           "We are beyond excited about how this will further involve the Penpot community in building the best design and prototyping platform."]
 
           [:p  {:class (stl/css :feature-content)}
            "Let’s dive in!"]]
@@ -69,7 +69,7 @@
            "Penpot Plugins encourage developers to easily customize and expand the platform using standard web technologies like JavaScript, CSS, and HTML."]
 
           [:p {:class (stl/css :feature-content)}
-           "Find everything you need in ouor full comprehensive documentation to start building your plugins now!"]]
+           "Find everything you need in our full comprehensive documentation to start building your plugins now!"]]
 
          [:div {:class (stl/css :navigation)}
           [:& c/navigation-bullets
@@ -101,7 +101,7 @@
            "Be sure to keep an eye on our evolving " [:a {:href "https://penpot.app/penpothub" :target "_blank"} "Penpot Hub"] " to pick the ones that are best suited to enhance your workflow."]
 
           [:p {:class (stl/css :feature-content)}
-           "This is just the beginning of a myriad of possibilities. Let’s build this community together <3."]]
+           "This is just the beginning of a myriad of possibilities. Let’s build this community together ❤️."]]
 
          [:div {:class (stl/css :navigation)}
 
