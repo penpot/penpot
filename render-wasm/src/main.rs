@@ -1,9 +1,11 @@
-pub mod images;
 pub mod render;
 pub mod shapes;
 pub mod state;
 pub mod utils;
 pub mod view;
+pub mod math;
+pub mod images;
+pub mod debug;
 
 use skia_safe as skia;
 
@@ -29,8 +31,8 @@ fn init_gl() {
 
 /// This is called from JS after the WebGL context has been created.
 #[no_mangle]
-pub extern "C" fn init(width: i32, height: i32) {
-    let state_box = Box::new(State::with_capacity(width, height, 2048));
+pub extern "C" fn init(width: i32, height: i32, debug: u32) {
+    let state_box = Box::new(State::with_capacity(width, height, debug, 2048));
     unsafe {
         STATE = Some(state_box);
     }
@@ -39,7 +41,7 @@ pub extern "C" fn init(width: i32, height: i32) {
 #[no_mangle]
 pub unsafe extern "C" fn render() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    state.draw_all_shapes();
+    state.render_all();
 }
 
 #[no_mangle]
@@ -55,9 +57,27 @@ pub extern "C" fn reset_canvas() {
 }
 
 #[no_mangle]
-pub extern "C" fn set_view(zoom: f32, x: f32, y: f32, width: f32, height: f32) {
+pub extern  "C" fn resize_canvas(width: i32, height: i32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    state.set_view(zoom, (x, y), (width, height));
+    state.resize(width, height);
+}
+
+#[no_mangle]
+pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    state.viewbox.set_all(zoom, x, y);
+}
+
+#[no_mangle]
+pub extern "C" fn set_view_zoom(zoom: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    state.viewbox.set_zoom(zoom);
+}
+
+#[no_mangle]
+pub extern "C" fn set_view_xy(x: f32, y: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    state.viewbox.set_xy(x, y);
 }
 
 #[no_mangle]
@@ -68,14 +88,11 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_shape_selrect(x1: f32, y1: f32, x2: f32, y2: f32) {
+pub unsafe extern "C" fn set_shape_selrect(left: f32, top: f32, right: f32, bottom: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
 
     if let Some(shape) = state.current_shape() {
-        shape.selrect.x1 = x1;
-        shape.selrect.y1 = y1;
-        shape.selrect.x2 = x2;
-        shape.selrect.y2 = y2;
+        shape.selrect.set_ltrb(left, top, right, bottom);
     }
 }
 

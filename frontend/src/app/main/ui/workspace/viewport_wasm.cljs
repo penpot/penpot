@@ -285,6 +285,10 @@
         (fn []
           (wasm.api/clear-canvas))))
 
+    (mf/with-effect [vport]
+      (when @canvas-init?
+        (wasm.api/resize-canvas (:width vport) (:height vport))))
+
     (mf/with-effect [base-objects canvas-init?]
       (when @canvas-init?
         (wasm.api/set-objects base-objects)))

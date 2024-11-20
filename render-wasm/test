@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+cargo test --bin render_wasm -- --show-output

@@ -1,4 +1,5 @@
 use skia_safe as skia;
+use crate::math;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy)]
@@ -13,19 +14,6 @@ pub enum Kind {
     Bool,
     Group,
     Frame,
-}
-
-pub struct Point {
-    pub x: f32,
-    pub y: f32,
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Rect {
-    pub x1: f32,
-    pub y1: f32,
-    pub x2: f32,
-    pub y2: f32,
 }
 
 type Color = skia::Color;
@@ -111,7 +99,7 @@ pub struct Shape {
     pub id: Uuid,
     pub children: Vec<Uuid>,
     pub kind: Kind,
-    pub selrect: Rect,
+    pub selrect: math::Rect,
     pub transform: Matrix,
     pub rotation: f32,
     fills: Vec<Fill>,
@@ -124,7 +112,7 @@ impl Shape {
             id,
             children: Vec::<Uuid>::new(),
             kind: Kind::Rect,
-            selrect: Rect::default(),
+            selrect: math::Rect::new_empty(),
             transform: Matrix::identity(),
             rotation: 0.,
             fills: vec![],
