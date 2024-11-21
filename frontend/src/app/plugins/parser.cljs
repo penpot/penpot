@@ -66,7 +66,7 @@
 ;;  height: number;
 ;;  mtype?: string;
 ;;  id: string;
-;;  keepApectRatio?: boolean;
+;;  keepAspectRatio?: boolean;
 ;;}
 (defn parse-image-data
   [^js image-data]
@@ -77,7 +77,7 @@
       :width (obj/get image-data "width")
       :height (obj/get image-data "height")
       :mtype (obj/get image-data "mtype")
-      :keep-aspect-ratio (obj/get image-data "keepApectRatio")})))
+      :keep-aspect-ratio (obj/get image-data "keepAspectRatio")})))
 
 ;; export type Gradient = {
 ;;   type: 'linear' | 'radial';
