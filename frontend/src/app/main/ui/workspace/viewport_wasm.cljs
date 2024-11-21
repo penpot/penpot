@@ -271,7 +271,9 @@
                    (:y first-shape)
                    (:y selected-frame))
 
-        rule-area-size (/ rulers/ruler-area-size zoom)]
+        rule-area-size (/ rulers/ruler-area-size zoom)
+        preview-blend (-> refs/workspace-preview-blend
+                          (mf/deref))]
 
     (mf/with-effect []
       (when-let [canvas (mf/ref-val canvas-ref)]
@@ -286,6 +288,10 @@
     (mf/with-effect [base-objects canvas-init?]
       (when @canvas-init?
         (wasm.api/set-objects base-objects)))
+
+    (mf/with-effect [preview-blend canvas-init?]
+      (when (and @canvas-init? preview-blend)
+        (wasm.api/request-render)))
 
     (mf/with-effect [vbox canvas-init?]
       (when @canvas-init?
