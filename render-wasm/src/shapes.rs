@@ -1,5 +1,5 @@
-use skia_safe as skia;
 use crate::math;
+use skia_safe as skia;
 use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy)]

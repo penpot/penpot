@@ -1,12 +1,12 @@
-use skia_safe as skia;
 use skia::gpu::{self, gl::FramebufferInfo, DirectContext};
+use skia_safe as skia;
 use std::collections::HashMap;
 use uuid::Uuid;
 
+use crate::debug;
+use crate::images::Image;
 use crate::shapes::Shape;
 use crate::view::Viewbox;
-use crate::images::Image;
-use crate::debug;
 
 struct GpuState {
     pub context: DirectContext,
@@ -52,8 +52,8 @@ impl GpuState {
 }
 
 pub(crate) struct CachedSurfaceImage {
-  pub image: Image,
-  pub viewbox: Viewbox,
+    pub image: Image,
+    pub viewbox: Viewbox,
 }
 
 pub(crate) struct RenderState {
@@ -154,7 +154,9 @@ impl RenderState {
         self.drawing_surface.canvas().concat(&matrix);
 
         for fill in shape.fills().rev() {
-            self.drawing_surface.canvas().draw_rect(shape.selrect, &fill.to_paint());
+            self.drawing_surface
+                .canvas()
+                .draw_rect(shape.selrect, &fill.to_paint());
         }
 
         let mut paint = skia::Paint::default();
@@ -170,36 +172,39 @@ impl RenderState {
             .clear(skia::Color::TRANSPARENT);
     }
 
-    pub fn navigate(
-        &mut self,
-        viewbox: &Viewbox,
-        shapes: &HashMap<Uuid, Shape>,
-        debug: u32,
-    ) {
+    pub fn navigate(&mut self, viewbox: &Viewbox, shapes: &HashMap<Uuid, Shape>, debug: u32) {
         self.reset_canvas();
         if let Some(cached_surface_image) = &self.cached_surface_image {
             // If we are drawing something bigger than the visible let's do a redraw
-            if (viewbox.x > cached_surface_image.viewbox.x) ||
-            (-viewbox.x + viewbox.area.width() > -cached_surface_image.viewbox.x + cached_surface_image.viewbox.area.width()) ||
-            (viewbox.y > cached_surface_image.viewbox.y) ||
-            (-viewbox.y + viewbox.area.height() > -cached_surface_image.viewbox.y + cached_surface_image.viewbox.area.height())
+            if (viewbox.x > cached_surface_image.viewbox.x)
+                || (-viewbox.x + viewbox.area.width()
+                    > -cached_surface_image.viewbox.x + cached_surface_image.viewbox.area.width())
+                || (viewbox.y > cached_surface_image.viewbox.y)
+                || (-viewbox.y + viewbox.area.height()
+                    > -cached_surface_image.viewbox.y + cached_surface_image.viewbox.area.height())
             {
                 self.render_all(viewbox, shapes, debug);
-            }
-            else
-            {
+            } else {
                 let image = &cached_surface_image.image;
                 let paint = skia::Paint::default();
                 self.final_surface.canvas().save();
                 self.drawing_surface.canvas().save();
 
                 let navigate_zoom = viewbox.zoom / cached_surface_image.viewbox.zoom;
-                let navigate_x =  cached_surface_image.viewbox.zoom * (viewbox.x - cached_surface_image.viewbox.x);
-                let navigate_y =  cached_surface_image.viewbox.zoom * (viewbox.y - cached_surface_image.viewbox.y);
+                let navigate_x = cached_surface_image.viewbox.zoom
+                    * (viewbox.x - cached_surface_image.viewbox.x);
+                let navigate_y = cached_surface_image.viewbox.zoom
+                    * (viewbox.y - cached_surface_image.viewbox.y);
 
-                self.final_surface.canvas().scale((navigate_zoom, navigate_zoom));
-                self.final_surface.canvas().translate((navigate_x, navigate_y));
-                self.final_surface.canvas().draw_image(image.clone(), (0, 0), Some(&paint));
+                self.final_surface
+                    .canvas()
+                    .scale((navigate_zoom, navigate_zoom));
+                self.final_surface
+                    .canvas()
+                    .translate((navigate_x, navigate_y));
+                self.final_surface
+                    .canvas()
+                    .draw_image(image.clone(), (0, 0), Some(&paint));
 
                 self.final_surface.canvas().restore();
                 self.drawing_surface.canvas().restore();
@@ -247,13 +252,11 @@ impl RenderState {
     fn render_debug_shape(&mut self, shape: &Shape, intersected: bool) {
         let mut paint = skia::Paint::default();
         paint.set_style(skia::PaintStyle::Stroke);
-        paint.set_color(
-            if intersected {
-                skia::Color::from_argb(255, 255, 255, 0)
-            } else {
-                skia::Color::from_argb(255, 0, 255, 255)
-            }
-        );
+        paint.set_color(if intersected {
+            skia::Color::from_argb(255, 255, 255, 0)
+        } else {
+            skia::Color::from_argb(255, 0, 255, 255)
+        });
         paint.set_stroke_width(1.);
         let mut scaled_rect = shape.selrect.clone();
         let x = 100. + scaled_rect.x() * 0.2;
@@ -273,7 +276,6 @@ impl RenderState {
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
             Some(&paint),
         );
-
     }
 
     fn render_shape_tree(&mut self, id: &Uuid, viewbox: &Viewbox, shapes: &HashMap<Uuid, Shape>) {

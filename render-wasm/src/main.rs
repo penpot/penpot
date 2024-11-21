@@ -1,11 +1,11 @@
+pub mod debug;
+pub mod images;
+pub mod math;
 pub mod render;
 pub mod shapes;
 pub mod state;
 pub mod utils;
 pub mod view;
-pub mod math;
-pub mod images;
-pub mod debug;
 
 use skia_safe as skia;
 
@@ -57,7 +57,7 @@ pub extern "C" fn reset_canvas() {
 }
 
 #[no_mangle]
-pub extern  "C" fn resize_canvas(width: i32, height: i32) {
+pub extern "C" fn resize_canvas(width: i32, height: i32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     state.resize(width, height);
 }

@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use uuid::Uuid;
 
+use crate::math;
 use crate::render::RenderState;
 use crate::shapes::Shape;
 use crate::view::Viewbox;
-use crate::math;
 
 /// This struct holds the state of the Rust application between JS calls.
 ///
@@ -35,7 +35,7 @@ impl<'a> State<'a> {
                 width: width as f32,
                 height: height as f32,
                 area: math::Rect::new_empty(),
-            }
+            },
         }
     }
 
