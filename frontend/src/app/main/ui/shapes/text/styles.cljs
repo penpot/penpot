@@ -49,11 +49,16 @@
 
 (defn generate-paragraph-styles
   [_shape data]
-  (let [line-height (:line-height data 1.2)
+  (let [line-height (:line-height data)
+        line-height
+        (if (and (some? line-height) (not= "" line-height))
+          line-height
+          (:line-height txt/default-text-attrs))
+
         text-align  (:text-align data "start")
         base        #js {;; Fix a problem when exporting HTML
                          :fontSize 0 ;;(str (:font-size data (:font-size txt/default-text-attrs)) "px")
-                         :lineHeight (:line-height data (:line-height txt/default-text-attrs))
+                         :lineHeight line-height
                          :margin 0}]
 
     (cond-> base
