@@ -1081,7 +1081,7 @@
   [data {:keys [name]}]
   (update data :tokens-lib #(-> %
                                 (ctob/ensure-tokens-lib)
-                                (ctob/delete-set name))))
+                                (ctob/delete-set-path name))))
 
 (defmethod process-change :del-token-set-path
   [data {:keys [path]}]

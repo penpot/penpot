@@ -361,7 +361,6 @@
   (add-set [_ token-set] "add a set to the library, at the end")
   (add-sets [_ token-set] "add a collection of sets to the library, at the end")
   (update-set [_ set-name f] "modify a set in the ilbrary")
-  (delete-set [_ set-name] "delete a set in the library")
   (delete-set-path [_ set-path] "delete a set in the library")
   (move-set-before [_ set-name before-set-name] "move a set with `set-name` before a set with `before-set-name` in the library.
 When `before-set-name` is nil, move set to bottom")
