@@ -129,10 +129,10 @@
                        :attrs [:strokes]}))
 
 (defn update-color [f value shape-ids]
-  (let [color (some->> value
-                       (tinycolor/valid-color)
-                       (tinycolor/->hex)
-                       (str "#"))]
+  (when-let [color (some->> value
+                            (tinycolor/valid-color)
+                            (tinycolor/->hex)
+                            (str "#"))]
     (f shape-ids {:color color} 0)))
 
 (defn update-fill
