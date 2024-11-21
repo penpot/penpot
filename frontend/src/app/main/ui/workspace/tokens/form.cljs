@@ -15,18 +15,19 @@
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
-   [app.main.ui.workspace.tokens.common :as tokens.common]
+   [app.main.ui.workspace.tokens.components.controls.input-token-color-bullet :refer [input-token-color-bullet*]]
+   [app.main.ui.workspace.tokens.components.controls.input-tokens :refer [input-tokens*]]
    [app.main.ui.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
+   [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.main.ui.workspace.tokens.update :as wtu]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
@@ -205,6 +206,7 @@ Token names should only contain letters and digits separated by . characters.")}
   {::mf/wrap-props false}
   [{:keys [token token-type action selected-token-set-id]}]
   (let [token (or token {:type token-type})
+        token-properties (wtty/get-token-properties token)
         color? (wtt/color-token? token)
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
         active-theme-tokens (mf/deref refs/workspace-active-theme-sets-tokens)
@@ -345,7 +347,7 @@ Token names should only contain letters and digits separated by . characters.")}
          (fn [e]
            (dom/prevent-default e)
            (modal/hide!)
-           (st/emit! (dt/delete-token selected-token-set-id (:name token)))))
+           (st/emit! (dt/delete-token (ctob/set-path->set-name selected-token-set-id) (:name token)))))
 
         on-cancel
         (mf/use-fn
@@ -362,14 +364,17 @@ Token names should only contain letters and digits separated by . characters.")}
          (tr "workspace.token.create-token" token-type))]
 
       [:div {:class (stl/css :input-row)}
-       ;; This should be remove when labeled-imput is modified
-       [:span {:class (stl/css :labeled-input-label)} "Name"]
-       [:& tokens.common/labeled-input {:label "Name"
-                                        :error? @name-errors
-                                        :input-props {:default-value @name-ref
-                                                      :auto-focus true
-                                                      :on-blur on-update-name
-                                                      :on-change on-update-name}}]
+       (let [token-title (str/lower (:title token-properties))]
+         [:> input-tokens*
+          {:id "token-name"
+           :placeholder (tr "workspace.token.enter-token-name", token-title)
+           :error (boolean @name-errors)
+           :auto-focus true
+           :label (tr "workspace.token.token-name")
+           :default-value @name-ref
+           :on-blur on-update-name
+           :on-change on-update-name}])
+
        (for [error (->> (:errors @name-errors)
                         (map #(-> (assoc @name-errors :errors [%])
                                   (me/humanize))))]
@@ -380,34 +385,31 @@ Token names should only contain letters and digits separated by . characters.")}
           error])]
 
       [:div {:class (stl/css :input-row)}
-       ;; This should be remove when labeled-imput is modified
-       [:span {:class (stl/css :labeled-input-label)}  "value"]
-       [:& tokens.common/labeled-input {:label "Value"
-                                        :input-props {:default-value @value-ref
-                                                      :on-blur on-update-value
-                                                      :on-change on-update-value
-                                                      :ref value-input-ref}
-                                        :render-right (when color?
-                                                        (mf/fnc drop-down-button []
-                                                          [:div {:class (stl/css :color-bullet)
-                                                                 :on-click #(swap! color-ramp-open? not)}
-                                                           (if-let [hex (some-> @color tinycolor/valid-color tinycolor/->hex)]
-                                                             [:& color-bullet {:color hex
-                                                                               :mini? true}]
-                                                             [:div {:class (stl/css :color-bullet-placeholder)}])]))}]
+       [:> input-tokens*
+        {:id "token-value"
+         :placeholder (tr "workspace.token.enter-token-value")
+         :label (tr "workspace.token.token-value")
+         :default-value @value-ref
+         :external-ref value-input-ref
+         :on-change on-update-value
+         :on-blur on-update-value}
+        (when color?
+          [:> input-token-color-bullet*
+           {:color @color :on-click #(swap! color-ramp-open? not)}])]
        (when @color-ramp-open?
          [:& ramp {:color (some-> (or @token-resolve-result (:value token))
                                   (tinycolor/valid-color))
                    :on-change on-update-color}])
        [:& token-value-or-errors {:result-or-errors @token-resolve-result}]]
 
-
       [:div {:class (stl/css :input-row)}
-       ;; This should be remove when labeled-imput is modified
-       [:span {:class (stl/css :labeled-input-label)}  "Description"]
-       [:& tokens.common/labeled-input {:label "Description"
-                                        :input-props {:default-value @description-ref
-                                                      :on-change on-update-description}}]
+       [:> input-tokens*
+        {:id "token-description"
+         :placeholder (tr "workspace.token.enter-token-description")
+         :label (tr "workspace.token.token-description")
+         :default-value @description-ref
+         :on-blur on-update-description
+         :on-change on-update-description}]
        (when @description-errors
          [:> text* {:as "p"
                     :typography "body-small"

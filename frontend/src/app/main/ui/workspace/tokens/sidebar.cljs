@@ -195,51 +195,59 @@
        [:div {:class (stl/css :theme-select-wrapper)}
         [:& theme-select]
         [:> button* {:variant "secondary"
+                     :class (stl/css :edit-theme-button)
                      :on-click open-modal}
          (tr "labels.edit")]])]))
 
 (mf/defc add-set-button
   [{:keys [on-open style]}]
-  (let [{:keys [on-create]} (sets-context/use-context)
+  (let [{:keys [on-create new?]} (sets-context/use-context)
         on-click #(do
                     (on-open)
                     (on-create))]
     (if (= style "inline")
-      [:button {:on-click on-click
-                :class (stl/css :create-theme-button)}
-       (tr "workspace.token.create-one")]
+      (when-not new?
+        [:div {:class (stl/css :empty-sets-wrapper)}
+         [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
+          (tr "workspace.token.no-sets-yet")]
+         [:button {:on-click on-click
+                   :class (stl/css :create-theme-button)}
+          (tr "workspace.token.create-one")]])
       [:> icon-button* {:variant "ghost"
                         :icon "add"
                         :on-click on-click
                         :aria-label (tr "workspace.token.add set")}])))
 
-(mf/defc themes-sets-tab
-  []
+(mf/defc theme-sets-list
+  [{:keys [on-open]}]
   (let [token-sets (mf/deref refs/workspace-ordered-token-sets)
-        open? (mf/use-state true)
+        {:keys [new?] :as ctx} (sets-context/use-context)]
+    (if (and (empty? token-sets)
+             (not new?))
+      [:& add-set-button {:on-open on-open
+                          :style "inline"}]
+      [:& h/sortable-container {}
+       [:& sets-list]])))
+
+(mf/defc themes-sets-tab
+  [{:keys [resize-height]}]
+  (let [open? (mf/use-state true)
         on-open (mf/use-fn #(reset! open? true))]
     [:& sets-context/provider {}
      [:& sets-context-menu]
-     [:div {:class (stl/css :sets-sidebar)}
-      [:& themes-header]
-      [:div {:class (stl/css :sidebar-header)}
-       [:& title-bar {:collapsable true
-                      :collapsed (not @open?)
-                      :all-clickable true
-                      :title (tr "labels.sets")
-                      :on-collapsed #(swap! open? not)}
-        [:& add-set-button {:on-open on-open
-                            :style "header"}]]]
-      (when @open?
-        [:& h/sortable-container {}
-         [:*
-          (when (empty? token-sets)
-            [:div {:class (stl/css :empty-sets-wrapper)}
-             [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
-              (tr "workspace.token.no-sets-yet")]
-             [:& add-set-button {:on-open on-open
-                                 :style "inline"}]])
-          [:& sets-list]]])]]))
+     [:article {:class (stl/css :sets-section-wrapper)
+                :style {"--resize-height" (str resize-height "px")}}
+      [:div {:class (stl/css :sets-sidebar)}
+       [:& themes-header]
+       [:div {:class (stl/css :sidebar-header)}
+        [:& title-bar {:collapsable true
+                       :collapsed (not @open?)
+                       :all-clickable true
+                       :title (tr "labels.sets")
+                       :on-collapsed #(swap! open? not)}
+         [:& add-set-button {:on-open on-open
+                             :style "header"}]]]
+       [:& theme-sets-list {:on-open on-open}]]]]))
 
 (mf/defc tokens-tab
   [_props]
@@ -348,13 +356,11 @@
          size-pages-opened :size}
         (use-resize-hook :tokens 200 38 400 :y false nil)]
     [:div {:class (stl/css :sidebar-wrapper)}
-     [:article {:class (stl/css :sets-section-wrapper)
-                :style {"--resize-height" (str size-pages-opened "px")}}
-      [:& themes-sets-tab]]
+     [:& themes-sets-tab {:resize-height size-pages-opened}]
      [:article {:class (stl/css :tokens-section-wrapper)}
       [:div {:class (stl/css :resize-area-horiz)
              :on-pointer-down on-pointer-down-pages
              :on-lost-pointer-capture on-lost-pointer-capture-pages
              :on-pointer-move on-pointer-move-pages}]
-      [:& tokens-tab]
-      [:& import-export-button]]]))
+      [:& tokens-tab]]
+     [:& import-export-button]]))

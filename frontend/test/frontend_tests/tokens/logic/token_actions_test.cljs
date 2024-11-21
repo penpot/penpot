@@ -1,12 +1,10 @@
 (ns frontend-tests.tokens.logic.token-actions-test
   (:require
-   [app.common.logging :as log]
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.shapes :as cths]
    [app.common.types.tokens-lib :as ctob]
    [app.main.ui.workspace.tokens.changes :as wtch]
-   [app.main.ui.workspace.tokens.token :as wtt]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
@@ -14,10 +12,7 @@
    [frontend-tests.tokens.helpers.tokens :as toht]))
 
 (t/use-fixtures :each
-  {:before (fn []
-             ;; Ignore rxjs async errors
-             (log/set-level! "app.main.data.changes" :error)
-             (thp/reset-idmap!))})
+  {:before thp/reset-idmap!})
 
 (defn setup-file []
   (cthf/sample-file :file-1 :page-label :page-1))
