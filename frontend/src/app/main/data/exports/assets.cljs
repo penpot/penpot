@@ -7,6 +7,7 @@
 (ns app.main.data.exports.assets
   (:require
    [app.common.uuid :as uuid]
+   [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.persistence :as dwp]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -247,6 +248,12 @@
               (rx/map #(clear-export-state @resource-id))
               (rx/take-until (rx/delay 6000 stopper))))))))
 
+(defn request-export
+  [{:keys [exports] :as params}]
+  (if (= 1 (count exports))
+    (request-simple-export (assoc params :export (first exports)))
+    (request-multiple-export params)))
+
 (defn retry-last-export
   []
   (ptk/reify ::retry-last-export
@@ -256,3 +263,16 @@
         (when (seq params)
           (rx/of (request-multiple-export params)))))))
 
+(defn export-shapes-event
+  [exports origin]
+  (let [types (reduce (fn [counts {:keys [type]}]
+                        (if (#{:png :pdf :svg :jpeg} type)
+                          (update counts type inc)
+                          counts))
+                      {:png 0, :pdf 0, :svg 0, :jpeg 0}
+                      exports)]
+    (ptk/event
+     ::ev/event (merge types
+                       {::ev/name "export-shapes"
+                        ::ev/origin origin
+                        :num-shapes (count exports)}))))
