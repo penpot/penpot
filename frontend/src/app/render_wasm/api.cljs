@@ -11,6 +11,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.render-wasm.helpers :as h]
+   [app.util.functions :as fns]
    [promesa.core :as p]))
 
 (defonce internal-frame-id nil)
@@ -119,15 +120,17 @@
   ;; https://rust-skia.github.io/doc/skia_safe/enum.BlendMode.html
   (h/call internal-module "_set_shape_blend_mode" (translate-blend-mode blend-mode)))
 
+(def debounce_render (fns/debounce render 100))
+
 (defn set-view
   [zoom vbox]
-  (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-  (request-render))
+  (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)) (:width vbox) (:height vbox))
+  (h/call internal-module "_navigate")
+  (debounce_render))
 
 (defn set-objects
   [objects]
   (let [shapes        (into [] (vals objects))
-
         total-shapes  (count shapes)]
     (loop [index 0]
       (when (< index total-shapes)
