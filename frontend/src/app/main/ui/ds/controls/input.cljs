@@ -23,9 +23,10 @@
 
 (mf/defc input*
   {::mf/props :obj
+   ::mf/forward-ref true
    ::mf/schema schema:input}
-  [{:keys [icon class type ref] :rest props}]
-  (let [ref (or ref (mf/use-ref))
+  [{:keys [icon class type external-ref] :rest props}]
+  (let [ref (or external-ref (mf/use-ref))
         type (or type "text")
         icon-class (stl/css-case :input true
                                  :input-with-icon (some? icon))

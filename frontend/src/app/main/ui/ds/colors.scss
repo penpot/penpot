@@ -83,7 +83,7 @@ $grayish-red: #bfbfbf;
   --color-foreground-primary: #{$black};
   --color-foreground-secondary: #{$blue-teal-700};
 
-  --color-shadow: #{color.change($blue-teal-700, $alpha: 0.2)};
+  --color-shadow-dark: #{color.change($gray-200, $alpha: 0.6)};
   --color-overlay-default: #{$white-60};
   --color-overlay-onboarding: #{$white-90};
   --color-canvas: #{$grayish-red};
@@ -115,7 +115,7 @@ $grayish-red: #bfbfbf;
   --color-foreground-primary: #{$white};
   --color-foreground-secondary: #{$grayish-blue-500};
 
-  --color-shadow: #{color.change($black, $alpha: 0.6)};
+  --color-shadow-dark: #{color.change($black, $alpha: 0.6)};
   --color-overlay-default: #{$gray-950-60};
   --color-overlay-onboarding: #{$gray-950-90};
   --color-canvas: #{$grayish-red};

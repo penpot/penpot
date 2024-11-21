@@ -51,7 +51,7 @@
 (mf/defc color-bullet
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
-  [{:keys [color on-click mini? area]}]
+  [{:keys [color on-click mini area]}]
   (let [read-only? (nil? on-click)
         on-click
         (mf/use-fn
@@ -73,7 +73,7 @@
         [:div
          {:class (stl/css-case
                   :color-bullet true
-                  :mini mini?
+                  :mini mini
                   :is-library-color (some? id)
                   :is-not-library-color (nil? id)
                   :is-gradient (some? gradient)
