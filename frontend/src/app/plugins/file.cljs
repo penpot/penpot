@@ -28,92 +28,88 @@
    [app.util.time :as dt]
    [beicon.v2.core :as rx]))
 
-(declare file-version-proxy)
-
-(deftype FileVersionProxy [$plugin $file $version $data]
-  Object
-  (restore
-    [_]
-    (cond
-      (not (r/check-permission $plugin "content:write"))
-      (u/display-not-valid :restore "Plugin doesn't have 'content:write' permission")
-
-      :else
-      (let [project-id (:current-project-id @st/state)]
-        (st/emit! (dwv/restore-version project-id $file $version :plugin)))))
-
-  (remove
-    [_]
-    (js/Promise.
-     (fn [resolve reject]
-       (cond
-         (not (r/check-permission $plugin "content:write"))
-         (u/reject-not-valid reject :remove "Plugin doesn't have 'content:write' permission")
-
-         :else
-         (->> (rp/cmd! :delete-file-snapshot {:id $version})
-              (rx/subs! #(resolve) reject))))))
-
-  (pin
-    [_]
-    (js/Promise.
-     (fn [resolve reject]
-       (cond
-         (not (r/check-permission $plugin "content:write"))
-         (u/reject-not-valid reject :pin "Plugin doesn't have 'content:write' permission")
-
-         (not= "system" (:created-by $data))
-         (u/reject-not-valid reject :pin "Only auto-saved versions can be pinned")
-
-         :else
-         (let [params  {:id $version
-                        :label (dt/format (:created-at $data) :date-full)}]
-           (->> (rx/zip (rp/cmd! :get-team-users {:file-id $file})
-                        (rp/cmd! :update-file-snapshot params))
-                (rx/subs! (fn [[users data]]
-                            (let [users (d/index-by :id users)]
-                              (resolve (file-version-proxy $plugin $file users data))))
-                          reject))))))))
-
 (defn file-version-proxy
   [plugin-id file-id users data]
   (let [data (atom data)]
-    (crc/add-properties!
-     (FileVersionProxy. plugin-id file-id (:id @data) data)
-     {:name "$plugin" :enumerable false :get (constantly plugin-id)}
-     {:name "$file" :enumerable false :get (constantly file-id)}
-     {:name "$version" :enumerable false :get (constantly (:id @data))}
-     {:name "$data" :enumerable false :get (constantly @data)}
+    (obj/reify {:name "FileVersionProxy"}
+      :$plugin  {:get (fn [] plugin-id) :enumerable false}
+      :$file    {:get (fn [] file-id) :enumerable false}
+      :$version {:get (fn [] (:id @data)) :enumerable false}
+      :$data    {:get (fn [] @data) :enumerable false}
 
-     {:name "label"
-      :get (fn [_] (:label @data))
-      :set
-      (fn [_ value]
+      :label
+      {:get #(:label @data)
+       :set
+       (fn [value]
+         (cond
+           (not (r/check-permission plugin-id "content:write"))
+           (u/display-not-valid :label "Plugin doesn't have 'content:write' permission")
+
+           (or (not (string? value)) (empty? value))
+           (u/display-not-valid :label value)
+
+           :else
+           (do (swap! data assoc :label value :created-by "user")
+               (->> (rp/cmd! :update-file-snapshot {:id (:id @data) :label value})
+                    (rx/take 1)
+                    (rx/subs! identity)))))}
+
+      :createdBy
+      {:get
+       (fn []
+         (when-let [user-data (get users (:profile-id @data))]
+           (user/user-proxy plugin-id user-data)))}
+
+      :createdAt
+      {:get #(.toJSDate ^js (:created-at @data))}
+
+      :isAutosave
+      {:get #(= "system" (:created-by @data))}
+
+      :restore
+      (fn []
         (cond
           (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :label "Plugin doesn't have 'content:write' permission")
-
-          (or (not (string? value)) (empty? value))
-          (u/display-not-valid :label value)
+          (u/display-not-valid :restore "Plugin doesn't have 'content:write' permission")
 
           :else
-          (do (swap! data assoc :label value :created-by "user")
-              (->> (rp/cmd! :update-file-snapshot {:id (:id @data) :label value})
-                   (rx/take 1)
-                   (rx/subs! identity)))))}
+          (let [project-id (:current-project-id @st/state)
+                version-id (get @data :id)]
+            (st/emit! (dwv/restore-version project-id file-id version-id :plugin)))))
 
-     {:name "createdBy"
-      :get (fn [_]
-             (when-let [user-data (get users (:profile-id @data))]
-               (user/user-proxy plugin-id user-data)))}
+      :remove
+      (fn []
+        (js/Promise.
+         (fn [resolve reject]
+           (cond
+             (not (r/check-permission plugin-id "content:write"))
+             (u/reject-not-valid reject :remove "Plugin doesn't have 'content:write' permission")
 
-     {:name "createdAt"
-      :get (fn [_]
-             (.toJSDate ^js (:created-at @data)))}
+             :else
+             (let [version-id (:id @data)]
+               (->> (rp/cmd! :delete-file-snapshot {:id version-id})
+                    (rx/subs! #(resolve) reject)))))))
 
-     {:name "isAutosave"
-      :get (fn [_]
-             (= "system" (:created-by @data)))})))
+      :pin
+      (fn []
+        (js/Promise.
+         (fn [resolve reject]
+           (cond
+             (not (r/check-permission plugin-id "content:write"))
+             (u/reject-not-valid reject :pin "Plugin doesn't have 'content:write' permission")
+
+             (not= "system" (:created-by @data))
+             (u/reject-not-valid reject :pin "Only auto-saved versions can be pinned")
+
+             :else
+             (let [params  {:id (:id @data)
+                            :label (dt/format (:created-at @data) :date-full)}]
+               (->> (rx/zip (rp/cmd! :get-team-users {:file-id file-id})
+                            (rp/cmd! :update-file-snapshot params))
+                    (rx/subs! (fn [[users data]]
+                                (let [users (d/index-by :id users)]
+                                  (resolve (file-version-proxy plugin-id file-id users @data))))
+                              reject))))))))))
 
 (deftype FileProxy [$plugin $id]
   Object
