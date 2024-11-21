@@ -3,6 +3,7 @@ use uuid::Uuid;
 
 use crate::render::RenderState;
 use crate::shapes::Shape;
+use crate::view::View;
 
 /// This struct holds the state of the Rust application between JS calls.
 ///
@@ -14,6 +15,7 @@ pub(crate) struct State<'a> {
     pub current_id: Option<Uuid>,
     pub current_shape: Option<&'a mut Shape>,
     pub shapes: HashMap<Uuid, Shape>,
+    pub view: View,
 }
 
 impl<'a> State<'a> {
@@ -23,6 +25,11 @@ impl<'a> State<'a> {
             current_id: None,
             current_shape: None,
             shapes: HashMap::with_capacity(capacity),
+            view: View {
+                x: 0.,
+                y: 0.,
+                zoom: 1.,
+            }
         }
     }
 
