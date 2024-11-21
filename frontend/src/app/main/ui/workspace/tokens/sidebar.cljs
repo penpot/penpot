@@ -41,8 +41,7 @@
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]
-   [shadow.resource]
-   [app.main.data.tokens :as wdt]))
+   [shadow.resource]))
 
 (def lens:token-type-open-status
   (l/derived (l/in [:workspace-tokens :open-status]) st/state))
@@ -351,8 +350,7 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [_props]
-  (let [tokens-tab? (not (mf/deref refs/workspace-token-set-group-selected?))
-        {on-pointer-down-pages :on-pointer-down
+  (let [{on-pointer-down-pages :on-pointer-down
          on-lost-pointer-capture-pages :on-lost-pointer-capture
          on-pointer-move-pages :on-pointer-move
          size-pages-opened :size}

@@ -639,11 +639,11 @@ When `before-set-name` is nil, move set to bottom")
                             (d/oassoc-in-before path path' set')
                             (d/dissoc-in path))
                         (walk/postwalk
-                          (fn [form]
-                            (if (instance? TokenTheme form)
-                              (update-set-name form (:name set) (:name set'))
-                              form))
-                          themes)
+                         (fn [form]
+                           (if (instance? TokenTheme form)
+                             (update-set-name form (:name set) (:name set'))
+                             form))
+                         themes)
                         active-themes)
             (TokensLib. (d/oassoc-in sets path set')
                         themes

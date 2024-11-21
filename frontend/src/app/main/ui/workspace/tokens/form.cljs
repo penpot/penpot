@@ -11,7 +11,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
-   [app.main.ui.workspace.tokens.common :as tokens.common]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
