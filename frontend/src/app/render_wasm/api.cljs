@@ -13,13 +13,27 @@
    [app.render-wasm.helpers :as h]
    [promesa.core :as p]))
 
+(defonce internal-frame-id nil)
 (defonce internal-module #js {})
 
-(defn create-shape
-  [id]
-  (let [buffer (uuid/get-u32 id)]
-    (h/call internal-module "_create_shape"
-            (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))))
+;; This should never be called from the outside.
+;; This function receives a "time" parameter that we're not using but maybe in the future could be useful (it is the time since
+;; the window started rendering elements so it could be useful to measure time between frames).
+(defn- render
+  [_]
+  (h/call internal-module "_render")
+  (set! internal-frame-id nil))
+
+(defn cancel-render
+  []
+  (when internal-frame-id
+    (js/cancelAnimationFrame internal-frame-id)
+    (set! internal-frame-id nil)))
+
+(defn request-render
+  []
+  (when internal-frame-id (cancel-render))
+  (set! internal-frame-id (js/requestAnimationFrame render)))
 
 (defn use-shape
   [id]
@@ -105,6 +119,11 @@
   ;; https://rust-skia.github.io/doc/skia_safe/enum.BlendMode.html
   (h/call internal-module "_set_shape_blend_mode" (translate-blend-mode blend-mode)))
 
+(defn set-view
+  [zoom vbox]
+  (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+  (request-render))
+
 (defn set-objects
   [objects]
   (let [shapes        (into [] (vals objects))
@@ -127,23 +146,11 @@
           (set-shape-fills fills)
           (set-shape-blend-mode blend-mode)
           (set-shape-children children)
-          (recur (inc index)))))))
-
-(defn draw-objects
-  [zoom vbox]
-  (js/requestAnimationFrame
-   (fn []
-     (let [pan-x (- (dm/get-prop vbox :x))
-           pan-y (- (dm/get-prop vbox :y))]
-       (h/call internal-module "_draw_all_shapes" zoom pan-x pan-y)))))
-
-(defn cancel-draw
-  [frame-id]
-  (when (some? frame-id)
-    (js/cancelAnimationFrame frame-id)))
+          (recur (inc index))))))
+  (request-render))
 
 (def ^:private canvas-options
-  #js {:antialias true
+  #js {:antialias false
        :depth true
        :stencil true
        :alpha true})
