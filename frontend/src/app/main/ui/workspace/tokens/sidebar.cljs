@@ -260,8 +260,12 @@
         active-theme-tokens (sd/use-active-theme-sets-tokens)
 
         tokens (sd/use-resolved-workspace-tokens)
-        token-groups (mf/with-memo [tokens]
-                       (sorted-token-groups tokens))]
+
+        selected-token-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
+
+        token-groups (mf/with-memo [tokens selected-token-set-tokens]
+                       (-> (select-keys tokens (keys selected-token-set-tokens))
+                           (sorted-token-groups)))]
     [:*
      [:& token-context-menu]
      [:& title-bar {:all-clickable true
