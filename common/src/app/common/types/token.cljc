@@ -150,6 +150,15 @@
 
 (def rotation-keys (schema-keys ::rotation))
 
+(def all-keys (set/union color-keys
+                         border-radius-keys
+                         stroke-width-keys
+                         sizing-keys
+                         opacity-keys
+                         spacing-keys
+                         dimensions-keys
+                         rotation-keys))
+
 (sm/register!
  ^{::sm/type ::tokens}
  [:map {:title "Applied Tokens"}])
@@ -174,3 +183,11 @@
     (opacity-keys shape-attr) #{shape-attr}
     (spacing-keys shape-attr) #{shape-attr}
     (rotation-keys shape-attr) #{shape-attr}))
+
+(defn token-attr->shape-attr
+  [token-attr]
+  (case token-attr
+    :fill :fills
+    :stroke-color :strokes
+    :stroke-width :strokes
+    token-attr))
