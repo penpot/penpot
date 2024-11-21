@@ -1,9 +1,9 @@
+pub mod images;
 pub mod render;
 pub mod shapes;
 pub mod state;
 pub mod utils;
 pub mod view;
-pub mod images;
 
 use skia_safe as skia;
 
@@ -36,14 +36,6 @@ pub extern "C" fn init(width: i32, height: i32) {
     }
 }
 
-/// This is called from JS when the window is resized.
-/// # Safety
-#[no_mangle]
-pub unsafe extern "C" fn resize_surface(width: i32, height: i32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    state.render_state.resize(width, height);
-}
-
 #[no_mangle]
 pub unsafe extern "C" fn render() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
@@ -51,7 +43,7 @@ pub unsafe extern "C" fn render() {
 }
 
 #[no_mangle]
-    pub unsafe extern "C" fn navigate() {
+pub unsafe extern "C" fn navigate() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     state.navigate();
 }
@@ -65,11 +57,7 @@ pub extern "C" fn reset_canvas() {
 #[no_mangle]
 pub extern "C" fn set_view(zoom: f32, x: f32, y: f32, width: f32, height: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    state.view.zoom = zoom;
-    state.view.x = x;
-    state.view.y = y;
-    state.view.width = width;
-    state.view.height = height;
+    state.set_view(zoom, (x, y), (width, height));
 }
 
 #[no_mangle]
