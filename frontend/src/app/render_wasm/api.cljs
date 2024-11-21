@@ -120,13 +120,13 @@
   ;; https://rust-skia.github.io/doc/skia_safe/enum.BlendMode.html
   (h/call internal-module "_set_shape_blend_mode" (translate-blend-mode blend-mode)))
 
-(def debounce_render (fns/debounce render 100))
+(def debounce-render (fns/debounce render 100))
 
 (defn set-view
   [zoom vbox]
-  (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)) (:width vbox) (:height vbox))
+  (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
   (h/call internal-module "_navigate")
-  (debounce_render))
+  (debounce-render))
 
 (defn set-objects
   [objects]
@@ -163,6 +163,10 @@
   ;; TODO: perform corresponding cleaning
   )
 
+(defn resize-canvas
+  [width height]
+  (h/call internal-module "_resize_canvas" width height))
+
 (defn assign-canvas
   [canvas]
   (let [gl      (unchecked-get internal-module "GL")
@@ -175,7 +179,8 @@
     (.makeContextCurrent ^js gl handle)
     ;; Initialize Skia
     (^function init-fn (.-width ^js canvas)
-                       (.-height ^js canvas))
+                       (.-height ^js canvas)
+                       1)
     (set! (.-width canvas) (.-clientWidth ^js canvas))
     (set! (.-height canvas) (.-clientHeight ^js canvas))))
 
