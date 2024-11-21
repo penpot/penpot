@@ -4359,7 +4359,7 @@ __metadata:
     shadow-cljs: "npm:2.28.18"
     source-map-support: "npm:^0.5.21"
     storybook: "npm:^8.3.6"
-    style-dictionary: "npm:4.0.0-prerelease.34"
+    style-dictionary: "npm:4.0.0-prerelease.36"
     svg-sprite: "npm:^2.0.4"
     tdigest: "npm:^0.1.2"
     tinycolor2: "npm:^1.6.0"
@@ -8495,9 +8495,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"style-dictionary@npm:4.0.0-prerelease.34":
-  version: 4.0.0-prerelease.34
-  resolution: "style-dictionary@npm:4.0.0-prerelease.34"
+"style-dictionary@npm:4.0.0-prerelease.36":
+  version: 4.0.0-prerelease.36
+  resolution: "style-dictionary@npm:4.0.0-prerelease.36"
   dependencies:
     "@bundled-es-modules/deepmerge": "npm:^4.3.1"
     "@bundled-es-modules/glob": "npm:^10.3.13"
@@ -8513,7 +8513,7 @@ __metadata:
     tinycolor2: "npm:^1.6.0"
   bin:
     style-dictionary: bin/style-dictionary.js
-  checksum: 10c0/775d00c0e6aec7749dd5554c448550bc0793aaff9ab028d61ba219476ffa827d3e11866d326c34a27d3e848156b885e476beaade0909fe6b174a50e857dd5009
+  checksum: 10c0/8707b3cced5ee7a858c425b296b53f3b9055f388839ab77ec94f9ed012ca99db43ce28fb540cec1659b92680a2769b1ed24d9af891ea98b9b298895341781f30
   languageName: node
   linkType: hard
 
