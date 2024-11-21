@@ -71,7 +71,10 @@
       :on-context-menu on-context-menu
       :disabled errors?}
      (when-let [color (if (seq (ctob/find-token-value-references (:value token)))
-                        (wtt/resolved-value-hex theme-token)
+                        (or
+                         (wtt/resolved-value-hex theme-token)
+                         ;; Fallback when the current set is inactive and has a reference that resolves in this inactive set
+                         (wtt/resolved-value-hex token))
                         (wtt/resolved-value-hex token))]
        [:& color-bullet {:color color
                          :mini? true}])
