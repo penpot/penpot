@@ -70,7 +70,10 @@
       :on-context-menu on-context-menu
       :disabled errors?}
      (when-let [color (if (seq (ctob/find-token-value-references (:value token)))
-                        (wtt/resolved-value-hex theme-token)
+                        (or
+                         (wtt/resolved-value-hex theme-token)
+                         ;; Fallback when the current set is inactive and has a reference that resolves in this inactive set
+                         (wtt/resolved-value-hex token))
                         (wtt/resolved-value-hex token))]
        [:& color-bullet {:color color
                          :mini? true}])
@@ -259,8 +262,12 @@
         active-theme-tokens (sd/use-active-theme-sets-tokens)
 
         tokens (sd/use-resolved-workspace-tokens)
-        token-groups (mf/with-memo [tokens]
-                       (sorted-token-groups tokens))]
+
+        selected-token-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
+
+        token-groups (mf/with-memo [tokens selected-token-set-tokens]
+                       (-> (select-keys tokens (keys selected-token-set-tokens))
+                           (sorted-token-groups)))]
     [:*
      [:& token-context-menu]
      [:& title-bar {:all-clickable true
