@@ -283,6 +283,11 @@ Token names should only contain letters and digits separated by . characters.")}
                            (set! (.-value (mf/ref-val value-input-ref)) hex-value)
                            (on-update-value-debounced hex-value)))
 
+        on-display-colorpicker (mf/use-fn
+                                (mf/deps color-ramp-open?)
+                                (fn []
+                                  (swap! color-ramp-open? not)))
+
         value-error? (seq (:errors @token-resolve-result))
         valid-value-field? (and
                             (not value-error?)
@@ -393,9 +398,9 @@ Token names should only contain letters and digits separated by . characters.")}
          :external-ref value-input-ref
          :on-change on-update-value
          :on-blur on-update-value}
-        (when color?
-          [:> input-token-color-bullet*
-           {:color @color :on-click #(swap! color-ramp-open? not)}])]
+        [:> input-token-color-bullet*
+         {:color @color :on-click on-display-colorpicker}]]
+
        (when @color-ramp-open?
          [:& ramp {:color (some-> (or @token-resolve-result (:value token))
                                   (tinycolor/valid-color))
