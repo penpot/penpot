@@ -53,9 +53,13 @@ impl<'a> State<'a> {
             .navigate(&self.viewbox, &self.shapes, self.debug);
     }
 
-    pub fn render_all(&mut self) {
-        self.render_state
-            .render_all(&self.viewbox, &self.shapes, self.debug);
+    pub fn render_all(&mut self, generate_cached_surface_image: bool) {
+        self.render_state.render_all(
+            &self.viewbox,
+            &self.shapes,
+            generate_cached_surface_image,
+            self.debug,
+        );
     }
 
     pub fn use_shape(&'a mut self, id: Uuid) {
