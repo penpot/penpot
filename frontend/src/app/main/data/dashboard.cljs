@@ -1118,6 +1118,9 @@
          (rx/of (rt/nav :dashboard-projects {:team-id team-id}))))))
   ([team-id]
    (ptk/reify ::go-to-projects-1
+     ptk/UpdateEvent
+     (update [_ state]
+       (assoc state :current-team-id team-id))
      ptk/WatchEvent
      (watch [_ _ _]
        (rx/of (rt/nav :dashboard-projects {:team-id team-id}))))))
