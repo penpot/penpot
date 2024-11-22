@@ -7,7 +7,6 @@
 (ns app.plugins.comments
   (:require
    [app.common.geom.point :as gpt]
-   [app.common.record :as crc]
    [app.common.spec :as us]
    [app.main.data.comments :as dc]
    [app.main.data.workspace.comments :as dwc]
@@ -19,159 +18,170 @@
    [app.plugins.shape :as shape]
    [app.plugins.user :as user]
    [app.plugins.utils :as u]
+   [app.util.object :as obj]
    [beicon.v2.core :as rx]))
 
-(deftype CommentProxy [$plugin $file $page $thread $id]
-  Object
-  (remove [_]
-    (js/Promise.
-     (fn [resolve reject]
-       (cond
-         (not (r/check-permission $plugin "comment:write"))
-         (do
-           (u/display-not-valid :remove "Plugin doesn't have 'comment:write' permission")
-           (reject "Plugin doesn't have 'comment:write' permission"))
-
-         :else
-         (->> (rp/cmd! :delete-comment {:id $id})
-              (rx/tap #(st/emit! (dc/retrieve-comment-threads $file)))
-              (rx/subs! #(resolve) reject)))))))
-
 (defn comment-proxy? [p]
-  (instance? CommentProxy p))
+  (obj/type-of? p "CommentProxy"))
 
 (defn comment-proxy
   [plugin-id file-id page-id thread-id users data]
   (let [data* (atom data)]
-    (crc/add-properties!
-     (CommentProxy. plugin-id file-id page-id thread-id (:id data))
-     {:name "$plugin" :enumerable false :get (constantly plugin-id)}
-     {:name "$file" :enumerable false :get (constantly file-id)}
-     {:name "$page" :enumerable false :get (constantly page-id)}
-     {:name "$thread" :enumerable false :get (constantly thread-id)}
-     {:name "$id" :enumerable false :get (constantly (:id data))}
+    (obj/reify {:name "CommentProxy"}
+      ;; Private properties
+      :$plugin {:enumerable false :get (fn [] plugin-id)}
+      :$file {:enumerable false :get (fn [] file-id)}
+      :$page {:enumerable false :get (fn [] page-id)}
+      :$thread {:enumerable false :get (fn [] thread-id)}
+      :$id {:enumerable false :get (fn [] (:id data))}
 
-     {:name "user" :get (fn [_] (user/user-proxy plugin-id (get users (:owner-id data))))}
-     {:name "date" :get (fn [_] (:created-at data))}
+      ;; Public properties
+      :user
+      {:get
+       (fn [] (user/user-proxy plugin-id (get users (:owner-id data))))}
 
-     {:name "content"
-      :get (fn [_] (:content @data*))
-      :set
-      (fn [_ content]
-        (let [profile (:profile @st/state)]
-          (cond
-            (or (not (string? content)) (empty? content))
-            (u/display-not-valid :content "Not valid")
+      :date
+      {:get
+       (fn [] (:created-at data))}
 
-            (not= (:id profile) (:owner-id data))
-            (u/display-not-valid :content "Cannot change content from another user's comments")
+      :content
+      {:get
+       (fn [] (:content @data*))
 
-            (not (r/check-permission plugin-id "comment:write"))
-            (u/display-not-valid :content "Plugin doesn't have 'comment:write' permission")
+       :set
+       (fn [content]
+         (let [profile (:profile @st/state)]
+           (cond
+             (or (not (string? content)) (empty? content))
+             (u/display-not-valid :content "Not valid")
 
-            :else
-            (->> (rp/cmd! :update-comment {:id (:id data) :content content})
-                 (rx/tap #(st/emit! (dc/retrieve-comment-threads file-id)))
-                 (rx/subs! #(swap! data* assoc :content content))))))})))
+             (not= (:id profile) (:owner-id data))
+             (u/display-not-valid :content "Cannot change content from another user's comments")
 
-(deftype CommentThreadProxy [$plugin $file $page $users $id owner]
-  Object
-  (findComments
-    [_]
-    (js/Promise.
-     (fn [resolve reject]
-       (cond
-         (not (r/check-permission $plugin "comment:read"))
-         (do
-           (u/display-not-valid :findComments "Plugin doesn't have 'comment:read' permission")
-           (reject "Plugin doesn't have 'comment:read' permission"))
+             (not (r/check-permission plugin-id "comment:write"))
+             (u/display-not-valid :content "Plugin doesn't have 'comment:write' permission")
 
-         :else
-         (->> (rp/cmd! :get-comments {:thread-id $id})
-              (rx/subs!
-               (fn [comments]
-                 (resolve
-                  (format/format-array
-                   #(comment-proxy $plugin $file $page $id $users %) comments)))
-               reject))))))
+             :else
+             (->> (rp/cmd! :update-comment {:id (:id data) :content content})
+                  (rx/tap #(st/emit! (dc/retrieve-comment-threads file-id)))
+                  (rx/subs! #(swap! data* assoc :content content))))))}
 
-  (reply
-    [_ content]
-    (cond
-      (not (r/check-permission $plugin "comment:write"))
-      (u/display-not-valid :reply "Plugin doesn't have 'comment:write' permission")
-
-      (or (not (string? content)) (empty? content))
-      (u/display-not-valid :reply "Not valid")
-
-      :else
-      (js/Promise.
-       (fn [resolve reject]
-         (->> (rp/cmd! :create-comment {:thread-id $id :content content})
-              (rx/subs! #(resolve (comment-proxy $plugin $file $page $id $users %)) reject))))))
-
-  (remove [_]
-    (let [profile (:profile @st/state)]
-      (cond
-        (not (r/check-permission $plugin "comment:write"))
-        (u/display-not-valid :remove "Plugin doesn't have 'comment:write' permission")
-
-        (not= (:id profile) owner)
-        (u/display-not-valid :remove "Cannot change content from another user's comments")
-
-        :else
+      ;; Public methods
+      :remove
+      (fn []
         (js/Promise.
-         (fn [resolve]
-           (js/Promise.
-            (st/emit! (dc/delete-comment-thread-on-workspace {:id $id} #(resolve))))))))))
+         (fn [resolve reject]
+           (cond
+             (not (r/check-permission plugin-id "comment:write"))
+             (do
+               (u/display-not-valid :remove "Plugin doesn't have 'comment:write' permission")
+               (reject "Plugin doesn't have 'comment:write' permission"))
+
+             :else
+             (->> (rp/cmd! :delete-comment {:id (:id data)})
+                  (rx/tap #(st/emit! (dc/retrieve-comment-threads file-id)))
+                  (rx/subs! #(resolve) reject)))))))))
 
 (defn comment-thread-proxy? [p]
-  (instance? CommentThreadProxy p))
+  (obj/type-of? p "CommentThreadProxy"))
 
 (defn comment-thread-proxy
   [plugin-id file-id page-id users data]
   (let [data* (atom data)]
-    (crc/add-properties!
-     (CommentThreadProxy. plugin-id file-id page-id users (:id data) (:owner-id data))
-     {:name "$plugin" :enumerable false :get (constantly plugin-id)}
-     {:name "$file" :enumerable false :get (constantly file-id)}
-     {:name "$page" :enumerable false :get (constantly page-id)}
-     {:name "$id" :enumerable false :get (constantly (:id data))}
-     {:name "$users" :enumerable false :get (constantly users)}
-     {:name "page" :enumerable false :get (fn [_] (u/locate-page file-id page-id))}
+    (obj/reify {:name "CommentThreadProxy"}
+      :$plugin {:enumerable false :get (fn [] plugin-id)}
+      :$file {:enumerable false :get (fn [] file-id)}
+      :$page {:enumerable false :get (fn [] page-id)}
+      :$id {:enumerable false :get (fn [] (:id data))}
+      :$users {:enumerable false :get (fn [] users)}
 
-     {:name "seqNumber" :get (fn [_] (:seqn data))}
-     {:name "owner" :get (fn [_] (user/user-proxy plugin-id (get users (:owner-id data))))}
-     {:name "board" :get (fn [_] (shape/shape-proxy plugin-id file-id page-id (:frame-id data)))}
+      :page {:enumerable false :get #(u/locate-page file-id page-id)}
+      :seqNumber {:get #(:seqn data)}
+      :owner {:get #(user/user-proxy plugin-id (get users (:owner-id data)))}
+      :board {:get #(shape/shape-proxy plugin-id file-id page-id (:frame-id data))}
 
-     {:name "position"
-      :get (fn [_] (format/format-point (:position @data*)))
-      :set
-      (fn [_ position]
-        (let [position (parser/parse-point position)]
-          (cond
-            (or (not (us/safe-number? (:x position))) (not (us/safe-number? (:y position))))
-            (u/display-not-valid :position "Not valid point")
+      :position
+      {:get
+       (fn []
+         (format/format-point (:position @data*)))
 
-            (not (r/check-permission plugin-id "comment:write"))
-            (u/display-not-valid :position "Plugin doesn't have 'comment:write' permission")
+       :set
+       (fn [position]
+         (let [position (parser/parse-point position)]
+           (cond
+             (or (not (us/safe-number? (:x position))) (not (us/safe-number? (:y position))))
+             (u/display-not-valid :position "Not valid point")
 
-            :else
-            (do (st/emit! (dwc/update-comment-thread-position @data* [(:x position) (:y position)]))
-                (swap! data* assoc :position (gpt/point position))))))}
+             (not (r/check-permission plugin-id "comment:write"))
+             (u/display-not-valid :position "Plugin doesn't have 'comment:write' permission")
 
-     {:name "resolved"
-      :get (fn [_] (:is-resolved @data*))
-      :set
-      (fn [_ is-resolved]
+             :else
+             (do (st/emit! (dwc/update-comment-thread-position @data* [(:x position) (:y position)]))
+                 (swap! data* assoc :position (gpt/point position))))))}
+
+      :resolved
+      {:get
+       (fn [] (:is-resolved @data*))
+
+       :set
+       (fn [is-resolved]
+         (cond
+           (not (boolean? is-resolved))
+           (u/display-not-valid :resolved "Not a boolean type")
+
+           (not (r/check-permission plugin-id "comment:write"))
+           (u/display-not-valid :resolved "Plugin doesn't have 'comment:write' permission")
+
+           :else
+           (do (st/emit! (dc/update-comment-thread (assoc @data* :is-resolved is-resolved)))
+               (swap! data* assoc :is-resolved is-resolved))))}
+
+      :findComments
+      (fn []
+        (js/Promise.
+         (fn [resolve reject]
+           (cond
+             (not (r/check-permission plugin-id "comment:read"))
+             (do
+               (u/display-not-valid :findComments "Plugin doesn't have 'comment:read' permission")
+               (reject "Plugin doesn't have 'comment:read' permission"))
+
+             :else
+             (->> (rp/cmd! :get-comments {:thread-id (:id data)})
+                  (rx/subs!
+                   (fn [comments]
+                     (resolve
+                      (format/format-array
+                       #(comment-proxy plugin-id file-id page-id (:id data) users %) comments)))
+                   reject))))))
+
+      :reply
+      (fn [content]
         (cond
-          (not (boolean? is-resolved))
-          (u/display-not-valid :resolved "Not a boolean type")
-
           (not (r/check-permission plugin-id "comment:write"))
-          (u/display-not-valid :resolved "Plugin doesn't have 'comment:write' permission")
+          (u/display-not-valid :reply "Plugin doesn't have 'comment:write' permission")
+
+          (or (not (string? content)) (empty? content))
+          (u/display-not-valid :reply "Not valid")
 
           :else
-          (do (st/emit! (dc/update-comment-thread (assoc @data* :is-resolved is-resolved)))
-              (swap! data* assoc :is-resolved is-resolved))))})))
+          (js/Promise.
+           (fn [resolve reject]
+             (->> (rp/cmd! :create-comment {:thread-id (:id data) :content content})
+                  (rx/subs! #(resolve (comment-proxy plugin-id file-id page-id (:id data) users %)) reject))))))
 
+      :remove
+      (fn []
+        (let [profile (:profile @st/state)
+              owner (get users (:owner-id data))]
+          (cond
+            (not (r/check-permission plugin-id "comment:write"))
+            (u/display-not-valid :remove "Plugin doesn't have 'comment:write' permission")
+
+            (not= (:id profile) owner)
+            (u/display-not-valid :remove "Cannot change content from another user's comments")
+
+            :else
+            (js/Promise.
+             (fn [resolve]
+               (st/emit! (dc/delete-comment-thread-on-workspace {:id (:id data)} #(resolve)))))))))))

@@ -12,7 +12,6 @@
    [app.common.files.changes-builder :as cb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
-   [app.common.record :as cr]
    [app.common.schema :as sm]
    [app.common.text :as txt]
    [app.common.types.color :as ctc]
@@ -59,406 +58,432 @@
     (st/emit! (ch/commit-changes changes))
     (shape/shape-proxy plugin-id (:id shape))))
 
-(deftype PenpotContext [$plugin]
-  Object
-  (addListener
-    [_ type callback props]
-    (events/add-listener type $plugin callback props))
+(defn create-context
+  [plugin-id]
+  (obj/reify {:name "PenpotContext"}
+    ;; Private properties
+    :$plugin {:enumerable false :get (fn [] plugin-id)}
 
-  (removeListener
-    [_ listener-id]
-    (events/remove-listener listener-id))
+    ;; Public properties
+    :root
+    {:this true
+     :get #(.getRoot ^js %)}
 
-  (getViewport
-    [_]
-    (viewport/viewport-proxy $plugin))
+    :currentFile
+    {:this true
+     :get #(.getFile ^js %)}
 
-  (getFile
-    [_]
-    (when (some? (:current-file-id @st/state))
-      (file/file-proxy $plugin (:current-file-id @st/state))))
+    :currentPage
+    {:this true
+     :get #(.getPage ^js %)}
 
-  (getPage
-    [_]
-    (let [file-id (:current-file-id @st/state)
-          page-id (:current-page-id @st/state)]
-      (when (and (some? file-id) (some? page-id))
-        (page/page-proxy $plugin file-id page-id))))
+    :theme
+    {:this true
+     :get #(.getTheme ^js %)}
 
-  (getSelectedShapes
-    [_]
-    (let [selection (get-in @st/state [:workspace-local :selected])]
-      (apply array (sequence (map (partial shape/shape-proxy $plugin)) selection))))
+    :selection
+    {:this true
+     :get #(.getSelectedShapes ^js %)
+     :set
+     (fn [_ shapes]
+       (cond
+         (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+         (u/display-not-valid :selection shapes)
 
-  (shapesColors
-    [_ shapes]
-    (cond
-      (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-      (u/display-not-valid :shapesColors-shapes shapes)
+         :else
+         (let [ids (into (d/ordered-set) (map #(obj/get % "$id")) shapes)]
+           (st/emit! (dws/select-shapes ids)))))}
 
-      :else
-      (let [objects (u/locate-objects)
-            shapes (->> shapes
-                        (map #(obj/get % "$id"))
-                        (mapcat #(cfh/get-children-with-self objects %)))
-            file-id (:current-file-id @st/state)
-            shared-libs (:workspace-libraries @st/state)]
+    :viewport
+    {:this true
+     :get #(.getViewport ^js %)}
 
-        (->> (ctc/extract-all-colors shapes file-id shared-libs)
-             (group-by :attrs)
-             (format/format-array format/format-color-result)))))
+    :currentUser
+    {:this true
+     :get #(.getCurrentUser ^js %)}
 
-  (replaceColor
-    [_ shapes old-color new-color]
+    :activeUsers
+    {:this true
+     :get #(.getActiveUsers ^js %)}
 
-    (let [old-color (parser/parse-color old-color)
-          new-color (parser/parse-color new-color)]
+    :fonts
+    {:get (fn [] (fonts/fonts-subcontext plugin-id))}
+
+    :library
+    {:get (fn [] (library/library-subcontext plugin-id))}
+
+    :history
+    {:get (fn [] (history/history-subcontext plugin-id))}
+
+    ;; Methods
+
+    :addListener
+    (fn [type callback props]
+      (events/add-listener type plugin-id callback props))
+
+    :removeListener
+    (fn [listener-id]
+      (events/remove-listener listener-id))
+
+    :getViewport
+    (fn []
+      (viewport/viewport-proxy plugin-id))
+
+    :getFile
+    (fn []
+      (when (some? (:current-file-id @st/state))
+        (file/file-proxy plugin-id (:current-file-id @st/state))))
+
+    :getPage
+    (fn []
+      (let [file-id (:current-file-id @st/state)
+            page-id (:current-page-id @st/state)]
+        (when (and (some? file-id) (some? page-id))
+          (page/page-proxy plugin-id file-id page-id))))
+
+    :getSelectedShapes
+    (fn []
+      (let [selection (get-in @st/state [:workspace-local :selected])]
+        (apply array (sequence (map (partial shape/shape-proxy plugin-id)) selection))))
+
+    :shapesColors
+    (fn [shapes]
       (cond
         (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-        (u/display-not-valid :replaceColor-shapes shapes)
-
-        (not (sm/validate ::ctc/color old-color))
-        (u/display-not-valid :replaceColor-oldColor old-color)
-
-        (not (sm/validate ::ctc/color new-color))
-        (u/display-not-valid :replaceColor-newColor new-color)
+        (u/display-not-valid :shapesColors-shapes shapes)
 
         :else
-        (let [file-id (:current-file-id @st/state)
-              shared-libs (:workspace-libraries @st/state)
-              objects (u/locate-objects)
-              shapes
-              (->> shapes
-                   (map #(obj/get % "$id"))
-                   (mapcat #(cfh/get-children-with-self objects %)))
+        (let [objects (u/locate-objects)
+              shapes (->> shapes
+                          (map #(obj/get % "$id"))
+                          (mapcat #(cfh/get-children-with-self objects %)))
+              file-id (:current-file-id @st/state)
+              shared-libs (:workspace-libraries @st/state)]
 
-              shapes-by-color
-              (->> (ctc/extract-all-colors shapes file-id shared-libs)
-                   (group-by :attrs))]
-          (st/emit! (dwc/change-color-in-selected new-color (get shapes-by-color old-color) old-color))))))
+          (->> (ctc/extract-all-colors shapes file-id shared-libs)
+               (group-by :attrs)
+               (format/format-array format/format-color-result)))))
 
-  (getRoot
-    [_]
-    (when (and (some? (:current-file-id @st/state))
-               (some? (:current-page-id @st/state)))
-      (shape/shape-proxy $plugin uuid/zero)))
+    :replaceColor
+    (fn  [shapes old-color new-color]
+      (let [old-color (parser/parse-color old-color)
+            new-color (parser/parse-color new-color)]
+        (cond
+          (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+          (u/display-not-valid :replaceColor-shapes shapes)
 
-  (getTheme
-    [_]
-    (let [theme (get-in @st/state [:profile :theme])]
-      (if (or (not theme) (= theme "default"))
-        "dark"
-        (get-in @st/state [:profile :theme]))))
+          (not (sm/validate ::ctc/color old-color))
+          (u/display-not-valid :replaceColor-oldColor old-color)
 
-  (getCurrentUser
-    [_]
-    (user/current-user-proxy $plugin (:session-id @st/state)))
+          (not (sm/validate ::ctc/color new-color))
+          (u/display-not-valid :replaceColor-newColor new-color)
 
-  (getActiveUsers
-    [_]
-    (apply array
-           (->> (:workspace-presence @st/state)
-                (vals)
-                (remove #(= (:id %) (:session-id @st/state)))
-                (map #(user/active-user-proxy $plugin (:id %))))))
+          :else
+          (let [file-id (:current-file-id @st/state)
+                shared-libs (:workspace-libraries @st/state)
+                objects (u/locate-objects)
+                shapes
+                (->> shapes
+                     (map #(obj/get % "$id"))
+                     (mapcat #(cfh/get-children-with-self objects %)))
 
-  (uploadMediaUrl
-    [_ name url]
-    (cond
-      (not (string? name))
-      (u/display-not-valid :uploadMedia-name name)
+                shapes-by-color
+                (->> (ctc/extract-all-colors shapes file-id shared-libs)
+                     (group-by :attrs))]
+            (st/emit! (dwc/change-color-in-selected new-color (get shapes-by-color old-color) old-color))))))
 
-      (not (string? url))
-      (u/display-not-valid :uploadMedia-url url)
+    :getRoot
+    (fn []
+      (when (and (some? (:current-file-id @st/state))
+                 (some? (:current-page-id @st/state)))
+        (shape/shape-proxy plugin-id uuid/zero)))
 
-      :else
+    :getTheme
+    (fn []
+      (let [theme (get-in @st/state [:profile :theme])]
+        (if (or (not theme) (= theme "default"))
+          "dark"
+          (get-in @st/state [:profile :theme]))))
+
+    :getCurrentUser
+    (fn []
+      (user/current-user-proxy plugin-id (:session-id @st/state)))
+
+    :getActiveUsers
+    (fn []
+      (apply array
+             (->> (:workspace-presence @st/state)
+                  (vals)
+                  (remove #(= (:id %) (:session-id @st/state)))
+                  (map #(user/active-user-proxy plugin-id (:id %))))))
+
+    :uploadMediaUrl
+    (fn  [name url]
+      (cond
+        (not (string? name))
+        (u/display-not-valid :uploadMedia-name name)
+
+        (not (string? url))
+        (u/display-not-valid :uploadMedia-url url)
+
+        :else
+        (let [file-id (:current-file-id @st/state)]
+          (js/Promise.
+           (fn [resolve reject]
+             (->> (dwm/upload-media-url name file-id url)
+                  (rx/take 1)
+                  (rx/map format/format-image)
+                  (rx/subs! resolve reject)))))))
+
+    :uploadMediaData
+    (fn [name data mime-type]
       (let [file-id (:current-file-id @st/state)]
         (js/Promise.
          (fn [resolve reject]
-           (->> (dwm/upload-media-url name file-id url)
+           (->> (dwm/process-blobs
+                 {:file-id file-id
+                  :local? false
+                  :name name
+                  :blobs [(js/Blob. #js [data] #js {:type mime-type})]
+                  :on-image identity
+                  :on-svg identity})
                 (rx/take 1)
                 (rx/map format/format-image)
-                (rx/subs! resolve reject)))))))
+                (rx/subs! resolve reject))))))
 
-  (uploadMediaData
-    [_ name data mime-type]
-    (let [file-id (:current-file-id @st/state)]
-      (js/Promise.
-       (fn [resolve reject]
-         (->> (dwm/process-blobs
-               {:file-id file-id
-                :local? false
-                :name name
-                :blobs [(js/Blob. #js [data] #js {:type mime-type})]
-                :on-image identity
-                :on-svg identity})
-              (rx/take 1)
-              (rx/map format/format-image)
-              (rx/subs! resolve reject))))))
+    :group
+    (fn [shapes]
+      (cond
+        (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+        (u/display-not-valid :group-shapes shapes)
 
-  (group
-    [_ shapes]
-    (cond
-      (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-      (u/display-not-valid :group-shapes shapes)
+        :else
+        (let [file-id (:current-file-id @st/state)
+              page-id (:current-page-id @st/state)
+              id (uuid/next)
+              ids (into #{} (map #(obj/get % "$id")) shapes)]
+          (st/emit! (dwg/group-shapes id ids))
+          (shape/shape-proxy plugin-id file-id page-id id))))
 
-      :else
-      (let [file-id (:current-file-id @st/state)
-            page-id (:current-page-id @st/state)
-            id (uuid/next)
-            ids (into #{} (map #(obj/get % "$id")) shapes)]
-        (st/emit! (dwg/group-shapes id ids))
-        (shape/shape-proxy $plugin file-id page-id id))))
+    :ungroup
+    (fn [group & rest]
+      (cond
+        (not (shape/shape-proxy? group))
+        (u/display-not-valid :ungroup group)
 
-  (ungroup
-    [_ group & rest]
+        (and (some? rest) (not (every? shape/shape-proxy? rest)))
+        (u/display-not-valid :ungroup rest)
 
-    (cond
-      (not (shape/shape-proxy? group))
-      (u/display-not-valid :ungroup group)
+        :else
+        (let [shapes (concat [group] rest)
+              ids (into #{} (map #(obj/get % "$id")) shapes)]
+          (st/emit! (dwg/ungroup-shapes ids)))))
 
-      (and (some? rest) (not (every? shape/shape-proxy? rest)))
-      (u/display-not-valid :ungroup rest)
+    :createBoard
+    (fn []
+      (create-shape plugin-id :frame))
 
-      :else
-      (let [shapes (concat [group] rest)
-            ids (into #{} (map #(obj/get % "$id")) shapes)]
-        (st/emit! (dwg/ungroup-shapes ids)))))
+    :createRectangle
+    (fn []
+      (create-shape plugin-id :rect))
 
-  (createBoard
-    [_]
-    (create-shape $plugin :frame))
+    :createEllipse
+    (fn []
+      (create-shape plugin-id :circle))
 
-  (createRectangle
-    [_]
-    (create-shape $plugin :rect))
-
-  (createEllipse
-    [_]
-    (create-shape $plugin :circle))
-
-  (createPath
-    [_]
-    (let [page-id (:current-page-id @st/state)
-          page (dm/get-in @st/state [:workspace-data :pages-index page-id])
-          shape (cts/setup-shape
-                 {:type :path
-                  :content [{:command :move-to :params {:x 0 :y 0}}
-                            {:command :line-to :params {:x 100 :y 100}}]})
-          changes
-          (-> (cb/empty-changes)
-              (cb/with-page page)
-              (cb/with-objects (:objects page))
-              (cb/add-object shape))]
-      (st/emit! (ch/commit-changes changes))
-      (shape/shape-proxy $plugin (:id shape))))
-
-  (createText
-    [_ text]
-    (cond
-      (or (not (string? text)) (empty? text))
-      (u/display-not-valid :createText text)
-
-      :else
-      (let [file-id (:current-file-id @st/state)
-            page-id (:current-page-id @st/state)
+    :createPath
+    (fn []
+      (let [page-id (:current-page-id @st/state)
             page (dm/get-in @st/state [:workspace-data :pages-index page-id])
-            shape (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
-                      (txt/change-text text)
-                      (assoc :position-data nil))
+            shape (cts/setup-shape
+                   {:type :path
+                    :content [{:command :move-to :params {:x 0 :y 0}}
+                              {:command :line-to :params {:x 100 :y 100}}]})
             changes
             (-> (cb/empty-changes)
                 (cb/with-page page)
                 (cb/with-objects (:objects page))
                 (cb/add-object shape))]
         (st/emit! (ch/commit-changes changes))
-        (shape/shape-proxy $plugin file-id page-id (:id shape)))))
+        (shape/shape-proxy plugin-id (:id shape))))
 
-  (createShapeFromSvg
-    [_ svg-string]
-    (cond
-      (or (not (string? svg-string)) (empty? svg-string))
-      (u/display-not-valid :createShapeFromSvg svg-string)
-
-      :else
-      (let [id (uuid/next)
-            file-id (:current-file-id @st/state)
-            page-id (:current-page-id @st/state)]
-        (st/emit! (dwm/create-svg-shape id "svg" svg-string (gpt/point 0 0)))
-        (shape/shape-proxy $plugin file-id page-id id))))
-
-  (createBoolean [_ bool-type shapes]
-    (let [bool-type (keyword bool-type)]
+    :createText
+    (fn [text]
       (cond
-        (not (contains? cts/bool-types bool-type))
-        (u/display-not-valid :createBoolean-boolType bool-type)
-
-        (or (not (array? shapes)) (empty? shapes) (not (every? shape/shape-proxy? shapes)))
-        (u/display-not-valid :createBoolean-shapes shapes)
+        (or (not (string? text)) (empty? text))
+        (u/display-not-valid :createText text)
 
         :else
-        (let [ids (into #{} (map #(obj/get % "$id")) shapes)
-              id-ret (atom nil)]
-          (st/emit! (dwb/create-bool bool-type ids {:id-ret id-ret}))
-          (shape/shape-proxy $plugin @id-ret)))))
+        (let [file-id (:current-file-id @st/state)
+              page-id (:current-page-id @st/state)
+              page (dm/get-in @st/state [:workspace-data :pages-index page-id])
+              shape (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
+                        (txt/change-text text)
+                        (assoc :position-data nil))
+              changes
+              (-> (cb/empty-changes)
+                  (cb/with-page page)
+                  (cb/with-objects (:objects page))
+                  (cb/add-object shape))]
+          (st/emit! (ch/commit-changes changes))
+          (shape/shape-proxy plugin-id file-id page-id (:id shape)))))
 
-  (generateMarkup
-    [_ shapes options]
-    (let [type (d/nilv (obj/get options "type") "html")]
+    :createShapeFromSvg
+    (fn [svg-string]
       (cond
-        (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-        (u/display-not-valid :generateMarkup-shapes shapes)
-
-        (and (some? type) (not (contains? #{"html" "svg"} type)))
-        (u/display-not-valid :generateMarkup-type type)
+        (or (not (string? svg-string)) (empty? svg-string))
+        (u/display-not-valid :createShapeFromSvg svg-string)
 
         :else
-        (let [objects (u/locate-objects)
-              shapes (into [] (map u/proxy->shape) shapes)]
-          (cg/generate-markup-code objects type shapes)))))
+        (let [id (uuid/next)
+              file-id (:current-file-id @st/state)
+              page-id (:current-page-id @st/state)]
+          (st/emit! (dwm/create-svg-shape id "svg" svg-string (gpt/point 0 0)))
+          (shape/shape-proxy plugin-id file-id page-id id))))
 
-  (generateStyle
-    [_ shapes options]
-    (let [type (d/nilv (obj/get options "type") "css")
-          prelude? (d/nilv (obj/get options "withPrelude") false)
-          children? (d/nilv (obj/get options "includeChildren") true)]
+    :createBoolean
+    (fn [bool-type shapes]
+      (let [bool-type (keyword bool-type)]
+        (cond
+          (not (contains? cts/bool-types bool-type))
+          (u/display-not-valid :createBoolean-boolType bool-type)
+
+          (or (not (array? shapes)) (empty? shapes) (not (every? shape/shape-proxy? shapes)))
+          (u/display-not-valid :createBoolean-shapes shapes)
+
+          :else
+          (let [ids (into #{} (map #(obj/get % "$id")) shapes)
+                id-ret (atom nil)]
+            (st/emit! (dwb/create-bool bool-type ids {:id-ret id-ret}))
+            (shape/shape-proxy plugin-id @id-ret)))))
+
+    :generateMarkup
+    (fn [shapes options]
+      (let [type (d/nilv (obj/get options "type") "html")]
+        (cond
+          (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+          (u/display-not-valid :generateMarkup-shapes shapes)
+
+          (and (some? type) (not (contains? #{"html" "svg"} type)))
+          (u/display-not-valid :generateMarkup-type type)
+
+          :else
+          (let [objects (u/locate-objects)
+                shapes (into [] (map u/proxy->shape) shapes)]
+            (cg/generate-markup-code objects type shapes)))))
+
+    :generateStyle
+    (fn [shapes options]
+      (let [type (d/nilv (obj/get options "type") "css")
+            prelude? (d/nilv (obj/get options "withPrelude") false)
+            children? (d/nilv (obj/get options "includeChildren") true)]
+        (cond
+          (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+          (u/display-not-valid :generateStyle-shapes shapes)
+
+          (and (some? type) (not (contains? #{"css"} type)))
+          (u/display-not-valid :generateStyle-type type)
+
+          (and (some? prelude?) (not (boolean? prelude?)))
+          (u/display-not-valid :generateStyle-withPrelude prelude?)
+
+          (and (some? children?) (not (boolean? children?)))
+          (u/display-not-valid :generateStyle-includeChildren children?)
+
+          :else
+          (let [objects (u/locate-objects)
+                shapes
+                (->> (into #{} (map u/proxy->shape) shapes)
+                     (cfh/clean-loops objects))
+
+                shapes-with-children
+                (if children?
+                  (->> shapes
+                       (mapcat #(cfh/get-children-with-self objects (:id %))))
+                  shapes)]
+            (cg/generate-style-code
+             objects type shapes shapes-with-children {:with-prelude? prelude?})))))
+
+    :openViewer
+    (fn []
+      (let [params {:page-id (:current-page-id @st/state)
+                    :file-id (:current-file-id @st/state)
+                    :section "interactions"}]
+        (st/emit! (dw/go-to-viewer params))))
+
+    :createPage
+    (fn []
+      (let [file-id (:current-file-id @st/state)
+            id (uuid/next)]
+        (st/emit! (dw/create-page {:page-id id :file-id file-id}))
+        (page/page-proxy plugin-id file-id id)))
+    :openPage
+    (fn [page]
+      (let [id (obj/get page "$id")]
+        (st/emit! (dw/go-to-page id))))
+
+    :alignHorizontal
+    (fn [shapes direction]
+      (let [dir (case direction
+                  "left"   :hleft
+                  "center" :hcenter
+                  "right"  :hright
+                  nil)]
+        (cond
+          (nil? dir)
+          (u/display-not-valid :alignHorizontal-direction "Direction not valid")
+
+          (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+          (u/display-not-valid :alignHorizontal-shapes "Not valid shapes")
+
+          :else
+          (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
+            (st/emit! (dw/align-objects dir ids))))))
+
+    :alignVertical
+    (fn [shapes direction]
+      (let [dir (case direction
+                  "top"   :vtop
+                  "center" :vcenter
+                  "bottom"  :vbottom
+                  nil)]
+        (cond
+          (nil? dir)
+          (u/display-not-valid :alignVertical-direction "Direction not valid")
+
+          (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
+          (u/display-not-valid :alignVertical-shapes "Not valid shapes")
+
+          :else
+          (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
+            (st/emit! (dw/align-objects dir ids))))))
+
+    :distributeHorizontal
+    (fn [shapes]
       (cond
         (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-        (u/display-not-valid :generateStyle-shapes shapes)
-
-        (and (some? type) (not (contains? #{"css"} type)))
-        (u/display-not-valid :generateStyle-type type)
-
-        (and (some? prelude?) (not (boolean? prelude?)))
-        (u/display-not-valid :generateStyle-withPrelude prelude?)
-
-        (and (some? children?) (not (boolean? children?)))
-        (u/display-not-valid :generateStyle-includeChildren children?)
-
-        :else
-        (let [objects (u/locate-objects)
-              shapes
-              (->> (into #{} (map u/proxy->shape) shapes)
-                   (cfh/clean-loops objects))
-
-              shapes-with-children
-              (if children?
-                (->> shapes
-                     (mapcat #(cfh/get-children-with-self objects (:id %))))
-                shapes)]
-          (cg/generate-style-code
-           objects type shapes shapes-with-children {:with-prelude? prelude?})))))
-
-  (openViewer
-    [_]
-    (let [params {:page-id (:current-page-id @st/state)
-                  :file-id (:current-file-id @st/state)
-                  :section "interactions"}]
-      (st/emit! (dw/go-to-viewer params))))
-
-  (createPage
-    [_]
-    (let [file-id (:current-file-id @st/state)
-          id (uuid/next)]
-      (st/emit! (dw/create-page {:page-id id :file-id file-id}))
-      (page/page-proxy $plugin file-id id)))
-
-  (openPage
-    [_ page]
-    (let [id (obj/get page "$id")]
-      (st/emit! (dw/go-to-page id))))
-
-  (alignHorizontal
-    [_ shapes direction]
-    (let [dir (case direction
-                "left"   :hleft
-                "center" :hcenter
-                "right"  :hright
-                nil)]
-      (cond
-        (nil? dir)
-        (u/display-not-valid :alignHorizontal-direction "Direction not valid")
-
-        (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-        (u/display-not-valid :alignHorizontal-shapes "Not valid shapes")
+        (u/display-not-valid :distributeHorizontal-shapes "Not valid shapes")
 
         :else
         (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
-          (st/emit! (dw/align-objects dir ids))))))
+          (st/emit! (dw/distribute-objects :horizontal ids)))))
 
-  (alignVertical
-    [_ shapes direction]
-    (let [dir (case direction
-                "top"   :vtop
-                "center" :vcenter
-                "bottom"  :vbottom
-                nil)]
+    :distributeVertical
+    (fn [shapes]
       (cond
-        (nil? dir)
-        (u/display-not-valid :alignVertical-direction "Direction not valid")
-
         (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-        (u/display-not-valid :alignVertical-shapes "Not valid shapes")
+        (u/display-not-valid :distributeVertical-shapes "Not valid shapes")
 
         :else
         (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
-          (st/emit! (dw/align-objects dir ids))))))
+          (st/emit! (dw/distribute-objects :vertical ids)))))
 
-  (distributeHorizontal
-    [_ shapes]
-    (cond
-      (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-      (u/display-not-valid :distributeHorizontal-shapes "Not valid shapes")
-
-      :else
-      (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
-        (st/emit! (dw/distribute-objects :horizontal ids)))))
-
-  (distributeVertical
-    [_ shapes]
-    (cond
-      (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-      (u/display-not-valid :distributeVertical-shapes "Not valid shapes")
-
-      :else
-      (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
-        (st/emit! (dw/distribute-objects :vertical ids)))))
-
-  (flatten
-    [_ shapes]
-    (cond
-      (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-      (u/display-not-valid :flatten-shapes "Not valid shapes")
-
-      :else
-      (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
-        (st/emit! (dw/convert-selected-to-path ids))))))
-
-(defn create-context
-  [plugin-id]
-  (cr/add-properties!
-   (PenpotContext. plugin-id)
-   {:name "$plugin" :enumerable false :get (constantly plugin-id)}
-   {:name "root" :get #(.getRoot ^js %)}
-   {:name "currentFile" :get #(.getFile ^js %)}
-   {:name "currentPage" :get #(.getPage ^js %)}
-   {:name "theme" :get #(.getTheme ^js %)}
-
-   {:name "selection"
-    :get #(.getSelectedShapes ^js %)
-    :set
-    (fn [_ shapes]
+    :flatten
+    (fn [shapes]
       (cond
         (or (not (array? shapes)) (not (every? shape/shape-proxy? shapes)))
-        (u/display-not-valid :selection shapes)
+        (u/display-not-valid :flatten-shapes "Not valid shapes")
 
         :else
-        (let [ids (into (d/ordered-set) (map #(obj/get % "$id")) shapes)]
-          (st/emit! (dws/select-shapes ids)))))}
-
-   {:name "viewport" :get #(.getViewport ^js %)}
-   {:name "currentUser" :get #(.getCurrentUser ^js %)}
-   {:name "activeUsers" :get #(.getActiveUsers ^js %)}
-   {:name "fonts" :get (fn [_] (fonts/fonts-subcontext plugin-id))}
-   {:name "library" :get (fn [_] (library/library-subcontext plugin-id))}
-   {:name "history" :get (fn [_] (history/history-subcontext plugin-id))}))
+        (let [ids (into #{} (map #(obj/get % "$id")) shapes)]
+          (st/emit! (dw/convert-selected-to-path ids)))))))

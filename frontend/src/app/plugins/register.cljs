@@ -45,7 +45,7 @@
           (conj "content:read")
 
           (contains? permissions "library:write")
-          (conj "content:write")
+          (conj "library:read")
 
           (contains? permissions "comment:write")
           (conj "comment:read"))
