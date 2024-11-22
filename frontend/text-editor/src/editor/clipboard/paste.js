@@ -6,7 +6,7 @@
  * Copyright (c) KALEIDOS INC
  */
 
-import { mapContentFragmentFromHTML, mapContentFragmentFromString } from '../content/dom/Content.js';
+import { mapContentFragmentFromHTML, mapContentFragmentFromString } from "../content/dom/Content.js";
 
 /**
  * When the user pastes some HTML, what we do is generate

@@ -8,15 +8,15 @@
 
 import clipboard from "./clipboard/index.js";
 import commands from "./commands/index.js";
-import ChangeController from './controllers/ChangeController.js';
-import SelectionController from './controllers/SelectionController.js';
-import { createSelectionImposterFromClientRects } from './selection/Imposter.js';
+import ChangeController from "./controllers/ChangeController.js";
+import SelectionController from "./controllers/SelectionController.js";
+import { createSelectionImposterFromClientRects } from "./selection/Imposter.js";
 import { addEventListeners, removeEventListeners } from "./Event.js";
-import { createRoot, createEmptyRoot } from './content/dom/Root.js';
-import { createParagraph, fixParagraph, getParagraph } from './content/dom/Paragraph.js';
-import { createEmptyInline, createInline } from './content/dom/Inline.js';
-import { isLineBreak } from './content/dom/LineBreak.js';
-import LayoutType from './layout/LayoutType.js';
+import { createRoot, createEmptyRoot } from "./content/dom/Root.js";
+import { createParagraph } from "./content/dom/Paragraph.js";
+import { createEmptyInline, createInline } from "./content/dom/Inline.js";
+import { isLineBreak } from "./content/dom/LineBreak.js";
+import LayoutType from "./layout/LayoutType.js";
 
 /**
  * Text Editor.

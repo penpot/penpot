@@ -18,9 +18,9 @@ import { createInline, isInline } from "./Inline.js";
 /* @vitest-environment jsdom */
 describe("Paragraph", () => {
   test("createParagraph should throw when passed invalid children", () => {
-    expect(() => createParagraph([
-      "Whatever"
-    ])).toThrowError("Invalid paragraph children");
+    expect(() => createParagraph(["Whatever"])).toThrowError(
+      "Invalid paragraph children",
+    );
   });
 
   test("createEmptyParagraph should create a new empty paragraph", () => {
@@ -33,30 +33,30 @@ describe("Paragraph", () => {
 
   test("isParagraph should return true when the passed node is a paragraph", () => {
     expect(isParagraph(null)).toBe(false);
-    expect(isParagraph(document.createElement('div'))).toBe(false);
-    expect(isParagraph(document.createElement('h1'))).toBe(false);
+    expect(isParagraph(document.createElement("div"))).toBe(false);
+    expect(isParagraph(document.createElement("h1"))).toBe(false);
     expect(isParagraph(createEmptyParagraph())).toBe(true);
-    expect(isParagraph(createParagraph([
-      createInline(new Text('Hello, World!'))
-    ]))).toBe(true);
+    expect(
+      isParagraph(createParagraph([createInline(new Text("Hello, World!"))])),
+    ).toBe(true);
   });
 
   test("isLikeParagraph should return true when node looks like a paragraph", () => {
-    const p = document.createElement('p');
+    const p = document.createElement("p");
     expect(isLikeParagraph(p)).toBe(true);
-    const div = document.createElement('div');
+    const div = document.createElement("div");
     expect(isLikeParagraph(div)).toBe(true);
-    const h1 = document.createElement('h1');
+    const h1 = document.createElement("h1");
     expect(isLikeParagraph(h1)).toBe(true);
-    const h2 = document.createElement('h2');
+    const h2 = document.createElement("h2");
     expect(isLikeParagraph(h2)).toBe(true);
-    const h3 = document.createElement('h3');
+    const h3 = document.createElement("h3");
     expect(isLikeParagraph(h3)).toBe(true);
-    const h4 = document.createElement('h4');
+    const h4 = document.createElement("h4");
     expect(isLikeParagraph(h4)).toBe(true);
-    const h5 = document.createElement('h5');
+    const h5 = document.createElement("h5");
     expect(isLikeParagraph(h5)).toBe(true);
-    const h6 = document.createElement('h6');
+    const h6 = document.createElement("h6");
     expect(isLikeParagraph(h6)).toBe(true);
   });
 
@@ -69,7 +69,7 @@ describe("Paragraph", () => {
 
   test("getParagraph should return null if there aren't closer paragraph nodes", () => {
     const text = new Text("Hello, World!");
-    const whatever = document.createElement('div');
+    const whatever = document.createElement("div");
     whatever.appendChild(text);
     expect(getParagraph(text)).toBe(null);
   });
@@ -81,7 +81,7 @@ describe("Paragraph", () => {
 
   test("isParagraphStart should return true on a paragraph", () => {
     const paragraph = createParagraph([
-      createInline(new Text("Hello, World!"))
+      createInline(new Text("Hello, World!")),
     ]);
     expect(isParagraphStart(paragraph.firstChild.firstChild, 0)).toBe(true);
   });
@@ -162,11 +162,10 @@ describe("Paragraph", () => {
 
     const nonEmptyInline = document.createElement("span");
     nonEmptyInline.dataset.itype = "inline";
-    nonEmptyInline.appendChild(new Text('Not empty!'));
+    nonEmptyInline.appendChild(new Text("Not empty!"));
     const nonEmptyParagraph = document.createElement("div");
     nonEmptyParagraph.dataset.itype = "paragraph";
     nonEmptyParagraph.appendChild(nonEmptyInline);
     expect(isEmptyParagraph(nonEmptyParagraph)).toBe(false);
-
   });
 });

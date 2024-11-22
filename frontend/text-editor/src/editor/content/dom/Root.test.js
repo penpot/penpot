@@ -1,11 +1,11 @@
 import { describe, test, expect } from "vitest";
-import { createEmptyRoot, createRoot, setRootStyles, TAG, TYPE } from './Root.js'
+import { createEmptyRoot, createRoot, setRootStyles, TAG, TYPE } from "./Root.js";
 
 /* @vitest-environment jsdom */
 describe("Root", () => {
   test("createRoot should throw when passed invalid children", () => {
     expect(() => createRoot(["Whatever"])).toThrowError(
-      "Invalid root children"
+      "Invalid root children",
     );
   });
 
@@ -16,18 +16,20 @@ describe("Root", () => {
     expect(emptyRoot.dataset.itype).toBe(TYPE);
     expect(emptyRoot.firstChild).toBeInstanceOf(HTMLDivElement);
     expect(emptyRoot.firstChild.firstChild).toBeInstanceOf(HTMLSpanElement);
-    expect(emptyRoot.firstChild.firstChild.firstChild).toBeInstanceOf(HTMLBRElement);
+    expect(emptyRoot.firstChild.firstChild.firstChild).toBeInstanceOf(
+      HTMLBRElement,
+    );
   });
 
   test("setRootStyles should apply only the styles of root to the root", () => {
     const emptyRoot = createEmptyRoot();
     setRootStyles(emptyRoot, {
       ["--vertical-align"]: "top",
-      ["font-size"]: "25px"
+      ["font-size"]: "25px",
     });
     expect(emptyRoot.style.getPropertyValue("--vertical-align")).toBe("top");
     // We expect this style to be empty because we don't apply it
     // to the root.
     expect(emptyRoot.style.getPropertyValue("font-size")).toBe("");
-  })
+  });
 });

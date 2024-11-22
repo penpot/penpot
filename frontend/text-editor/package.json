@@ -3,11 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "main": "editor/TextEditor.js",
+  "main": "src/editor/TextEditor.js",
   "scripts": {
     "dev": "vite",
-    "build": "./scripts/build.sh",
-    "preview": "vite preview",
     "coverage": "vitest run --coverage",
     "test": "vitest --run",
     "test:watch": "vitest",
@@ -23,6 +21,7 @@
     "esbuild": "^0.24.0",
     "jsdom": "^25.0.0",
     "playwright": "^1.45.1",
+    "prettier": "^3.3.3",
     "vite": "^5.3.1",
     "vitest": "^1.6.0"
   },

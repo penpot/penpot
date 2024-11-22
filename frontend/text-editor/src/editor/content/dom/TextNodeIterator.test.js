@@ -10,11 +10,11 @@ describe("TextNodeIterator", () => {
   test("Create a new TextNodeIterator with an invalid root should throw", () => {
     expect(() => new TextNodeIterator(null)).toThrowError("Invalid root node");
     expect(() => new TextNodeIterator(Infinity)).toThrowError(
-      "Invalid root node"
+      "Invalid root node",
     );
     expect(() => new TextNodeIterator(1)).toThrowError("Invalid root node");
     expect(() => new TextNodeIterator("hola")).toThrowError(
-      "Invalid root node"
+      "Invalid root node",
     );
   });
 
@@ -26,7 +26,10 @@ describe("TextNodeIterator", () => {
         createInline(new Text("Whatever")),
       ]),
       createParagraph([createInline(createLineBreak())]),
-      createParagraph([createInline(new Text("This is a ")), createInline(new Text("test"))]),
+      createParagraph([
+        createInline(new Text("This is a ")),
+        createInline(new Text("test")),
+      ]),
       createParagraph([createInline(new Text("Hi!"))]),
     ]);
 

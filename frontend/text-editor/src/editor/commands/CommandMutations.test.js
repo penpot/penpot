@@ -1,5 +1,5 @@
-import { describe, test, expect } from 'vitest';
-import CommandMutations from './CommandMutations';
+import { describe, test, expect } from "vitest";
+import CommandMutations from "./CommandMutations.js";
 
 describe("CommandMutations", () => {
   test("should create a new CommandMutations", () => {
@@ -67,5 +67,5 @@ describe("CommandMutations", () => {
     expect(mutations.added).toBe(null);
     expect(mutations.updated).toBe(null);
     expect(mutations.removed).toBe(null);
-  })
+  });
 });
