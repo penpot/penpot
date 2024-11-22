@@ -173,7 +173,7 @@
         (let [definition (first params)]
           (if (some? definition)
             (let [definition (if (map? definition)
-                               (assoc definition :name (name ckey) :this false)
+                               (c/merge {:this false} (assoc definition :name (name ckey)))
                                (-> {:enumerable false}
                                    (c/merge (meta definition))
                                    (assoc :name (name ckey))
@@ -210,6 +210,16 @@
         :else
         (throw (ex-info "invalid params" {}))))))
 
+#?(:cljs
+   (def type-symbol
+     (js/Symbol.for "penpot.reify:type")))
+
+#?(:cljs
+   (defn type-of?
+     [o t]
+     (let [o (get o type-symbol)]
+       (= o t))))
+
 (defmacro reify
   "A domain specific variation of reify that creates anonymous objects
   on demand with the ability to assign protocol implementations and
@@ -223,6 +233,10 @@
                             [`{:name ~'js/Symbol.toStringTag
                                :this false
                                :enumerable false
+                               :get (fn [] ~tname)}
+                             `{:name type-symbol
+                               :this false
+                               :enumerable false
                                :get (fn [] ~tname)}])
                         ~@properties)
        (let [~obj-sym ~(if-let [definitions (seq definitions)]
@@ -230,6 +244,4 @@
                             ~@(mapcat (fn [[k v]] (cons k v)) definitions))
                          obj-sym)]
 
-         (cljs.core/specify! ~obj-sym
-           cljs.core/IMeta
-           (~'-meta [_#] ~tmeta))))))
+         (cljs.core/specify! ~obj-sym)))))

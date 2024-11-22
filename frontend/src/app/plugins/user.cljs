@@ -41,23 +41,28 @@
 
 
 (defn current-user-proxy? [p]
-  (instance? CurrentUserProxy p))
+  (obj/type-of? p "CurrentUserProxy"))
 
 (defn current-user-proxy
   [plugin-id session-id]
-  (-> (CurrentUserProxy. plugin-id)
+  (-> (obj/reify {:name "CurrentUserProxy"}
+        :$plugin {:enumerable false :get (fn [] plugin-id)})
       (add-session-properties session-id)))
 
 (defn active-user-proxy? [p]
-  (instance? ActiveUserProxy p))
+  (obj/type-of? p "ActiveUserProxy"))
 
 (defn active-user-proxy
   [plugin-id session-id]
-  (-> (ActiveUserProxy. plugin-id)
-      (add-session-properties session-id)
-      (crc/add-properties!
-       {:name "position" :get (fn [_] (-> (u/locate-presence session-id) :point format/format-point))}
-       {:name "zoom" :get (fn [_] (-> (u/locate-presence session-id) :zoom))})))
+  (-> (obj/reify {:name "ActiveUserProxy"}
+        :$plugin {:enumerable false :get (fn [] plugin-id)}
+
+        :position
+        {:get (fn [] (-> (u/locate-presence session-id) :point format/format-point))}
+
+        :zoom
+        {:get (fn [] (-> (u/locate-presence session-id) :zoom))})
+      (add-session-properties session-id)))
 
 (defn- add-user-properties
   [user-proxy data]
@@ -75,13 +80,14 @@
      {:name "avatarUrl"
       :get (fn [_] (cfg/resolve-profile-photo-url data))})))
 
-(defn user-proxy?
-  [p]
-  (or (instance? UserProxy p)
-      (current-user-proxy? p)
-      (active-user-proxy? p)))
-
 (defn user-proxy
   [plugin-id data]
-  (-> (UserProxy. plugin-id)
+  (-> (obj/reify {:name "UserProxy"}
+        :$plugin {:enumerable false :get (fn [] plugin-id)})
       (add-user-properties data)))
+
+(defn user-proxy?
+  [p]
+  (or (obj/type-of? p "UserProxy")
+      (current-user-proxy? p)
+      (active-user-proxy? p)))
