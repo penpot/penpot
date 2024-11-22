@@ -6742,6 +6742,18 @@ msgstr "There are no sets yet."
 msgid "workspace.token.no-sets-create"
 msgstr "There are no sets defined yet. Create one first."
 
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.delete"
+msgstr "Delete token"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.duplicate"
+msgstr "Duplicate token"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.edit"
+msgstr "Edit token"
+
 msgid "workspace.versions.button.save"
 msgstr "Save version"
 

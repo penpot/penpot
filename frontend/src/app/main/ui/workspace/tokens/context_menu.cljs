@@ -8,17 +8,19 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [tr]]
    [app.util.timers :as timers]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
@@ -58,7 +60,7 @@
         all-action (let [props {:attributes attributes
                                 :token token
                                 :shape-ids shape-ids}]
-                     {:title "All"
+                     {:title (tr "labels.all")
                       :selected? all-selected?
                       :action #(if all-selected?
                                  (st/emit! (wtch/unapply-token props))
@@ -96,7 +98,7 @@
         vertical-padding-selected? (and
                                     (not all-selected?)
                                     (every? selected-pred vertical-attributes))
-        padding-items [{:title "All"
+        padding-items [{:title (tr "labels.all")
                         :selected? all-selected?
                         :action (fn []
                                   (let [props {:attributes all-padding-attrs
@@ -199,6 +201,7 @@
                      {:title "Sizing" :submenu :sizing}
                      :separator
                      {:title "Border Radius" :submenu :border-radius}]
+                    [:separator]
                     (stroke-width context-data)
                     [:separator]
                     (generic-attribute-actions #{:x} "X" (assoc context-data :on-update-shape wtch/update-shape-position))
@@ -206,11 +209,8 @@
 
 (defn default-actions [{:keys [token selected-token-set-path]}]
   (let [{:keys [modal]} (wtty/get-token-properties token)]
-    [{:title "Delete Token"
-      :action #(st/emit! (dt/delete-token (ctob/set-path->set-name selected-token-set-path) (:name token)))}
-     {:title "Duplicate Token"
-      :action #(st/emit! (dt/duplicate-token (:name token)))}
-     {:title "Edit Token"
+    [{:title (tr "workspace.token.edit")
+      :no-selectable true
       :action (fn [event]
                 (let [{:keys [key fields]} modal]
                   (st/emit! dt/hide-token-context-menu)
@@ -222,9 +222,11 @@
                                     :action "edit"
                                     :selected-token-set-path selected-token-set-path
                                     :token token})))}
-     {:title "Duplicate Token"
+     {:title (tr "workspace.token.duplicate")
+      :no-selectable true
       :action #(st/emit! (dt/duplicate-token (:name token)))}
-     {:title "Delete Token"
+     {:title (tr "workspace.token.delete")
+      :no-selectable true
       :action #(st/emit! (-> selected-token-set-path
                              ctob/prefixed-set-path-string->set-name-string
                              (dt/delete-token (:name token))))}]))
@@ -236,6 +238,12 @@
      attribute-actions
      (when (seq attribute-actions) [:separator])
      (default-actions context-data))))
+
+(defn submenu-actions-selection-actions [{:keys [type token] :as context-data}]
+  (let [with-actions (get shape-attribute-actions-map (or type (:type token)))
+        attribute-actions (if with-actions (with-actions context-data) [])]
+    (concat
+     attribute-actions)))
 
 ;; Components ------------------------------------------------------------------
 
@@ -249,69 +257,93 @@
 
 (mf/defc menu-entry
   {::mf/props :obj}
-  [{:keys [title value on-click selected? children submenu-offset]}]
+  [{:keys [title value on-click selected? children submenu-offset submenu-direction no-selectable]}]
   (let [submenu-ref (mf/use-ref nil)
         hovering?   (mf/use-ref false)
         on-pointer-enter
-        (mf/use-callback
+        (mf/use-fn
          (fn []
            (mf/set-ref-val! hovering? true)
            (when-let [submenu-node (mf/ref-val submenu-ref)]
              (dom/set-css-property! submenu-node "display" "block"))))
+
         on-pointer-leave
-        (mf/use-callback
+        (mf/use-fn
          (fn []
            (mf/set-ref-val! hovering? false)
            (when-let [submenu-node (mf/ref-val submenu-ref)]
              (timers/schedule 50 #(when-not (mf/ref-val hovering?)
                                     (dom/set-css-property! submenu-node "display" "none"))))))
+
         set-dom-node
-        (mf/use-callback
+        (mf/use-fn
          (fn [dom]
            (let [submenu-node (mf/ref-val submenu-ref)]
-             (when (and (some? dom) (some? submenu-node))
-               (dom/set-css-property! submenu-node "top" (str (.-offsetTop dom) "px"))))))]
-    [:li
-     {:class (stl/css :context-menu-item)
-      :ref set-dom-node
-      :data-value value
-      :on-click on-click
-      :on-pointer-enter on-pointer-enter
-      :on-pointer-leave on-pointer-leave}
+             (when (and (some? dom) (some? submenu-node) (= submenu-direction "up"))
+               (dom/set-css-property! submenu-node "top" "unset"))
+             (when (and (some? dom) (some? submenu-node) (= submenu-direction "down"))
+               (dom/set-css-property! submenu-node "top" (dm/str (.-offsetTop dom) "px"))))))]
+
+    (mf/use-effect
+     (mf/deps submenu-direction)
+     (fn []
+       (let [submenu-node (mf/ref-val submenu-ref)]
+         (when (= submenu-direction "up")
+           (dom/set-css-property! submenu-node "top" "unset")))))
+
+    [:li {:class (stl/css :context-menu-item)
+          :ref set-dom-node
+          :data-value value
+          :on-click on-click
+          :on-pointer-enter on-pointer-enter
+          :on-pointer-leave on-pointer-leave}
      (when selected?
-       [:span {:class (stl/css :icon-wrapper)}
-        [:span {:class (stl/css :selected-icon)} i/tick]])
-     [:span {:class (stl/css :title)} title]
+       [:> icon* {:id "tick" :size "s" :class (stl/css :icon-wrapper)}])
+     [:span {:class (stl/css-case :item-text true
+                                  :item-with-icon-space (and
+                                                         (not selected?)
+                                                         (not no-selectable)))}
+      title]
      (when children
        [:*
-        [:span {:class (stl/css :submenu-icon)} i/arrow]
+        [:> icon* {:id "arrow" :size "s"}]
         [:ul {:class (stl/css :token-context-submenu)
+              :data-direction submenu-direction
               :ref submenu-ref
+              ;; Under review: This distances are arbitrary, 
+              ;; https://tree.taiga.io/project/penpot/task/9627
               :style {:display "none"
-                      :top 0
-                      :left (str submenu-offset "px")}
+                      :--dist (if (= submenu-direction "down")
+                                "-80px"
+                                "80px")
+                      :left (dm/str submenu-offset "px")}
               :on-context-menu prevent-default}
          children]])]))
 
 (mf/defc menu-tree
-  [{:keys [selected-shapes] :as context-data}]
+  [{:keys [selected-shapes submenu-offset submenu-direction type] :as context-data}]
   (let [entries (if (seq selected-shapes)
-                  (selection-actions context-data)
+                  (if (some? type)
+                    (submenu-actions-selection-actions context-data)
+                    (selection-actions context-data))
                   (default-actions context-data))]
-    (for [[index {:keys [title action selected? submenu] :as entry}] (d/enumerate entries)]
-      [:* {:key (str title " " index)}
+    (for [[index {:keys [title action selected? submenu no-selectable] :as entry}] (d/enumerate entries)]
+      [:* {:key (dm/str title " " index)}
        (cond
          (= :separator entry) [:li {:class (stl/css :separator)}]
          submenu [:& menu-entry {:title title
-                                 :submenu-offset (:submenu-offset context-data)}
+                                 :no-selectable true
+                                 :submenu-direction submenu-direction
+                                 :submenu-offset submenu-offset}
                   [:& menu-tree (assoc context-data :type submenu)]]
          :else [:& menu-entry
                 {:title title
                  :on-click action
+                 :no-selectable no-selectable
                  :selected? selected?}])])))
 
 (mf/defc token-context-menu-tree
-  [{:keys [width] :as mdata}]
+  [{:keys [width direction] :as mdata}]
   (let [objects (mf/deref refs/workspace-page-objects)
         selected (mf/deref refs/selected-shapes)
         selected-shapes (into [] (keep (d/getf objects)) selected)
@@ -320,27 +352,51 @@
         selected-token-set-path (mf/deref refs/workspace-selected-token-set-path)]
     [:ul {:class (stl/css :context-list)}
      [:& menu-tree {:submenu-offset width
+                    :submenu-direction direction
                     :token token
                     :selected-token-set-path selected-token-set-path
                     :selected-shapes selected-shapes}]]))
 
 (mf/defc token-context-menu
   []
-  (let [mdata (mf/deref tokens-menu-ref)
-        top (+ (get-in mdata [:position :y]) 5)
-        left (+ (get-in mdata [:position :x]) 5)
-        width (mf/use-state 0)
-        dropdown-ref (mf/use-ref)]
+  (let [mdata               (mf/deref tokens-menu-ref)
+        is-open?            (boolean mdata)
+        width               (mf/use-state 0)
+        dropdown-ref        (mf/use-ref)
+        dropdown-direction* (mf/use-state "down")
+        dropdown-direction  (deref dropdown-direction*)
+        dropdown-direction-change* (mf/use-ref 0)
+        top                 (+ (get-in mdata [:position :y]) 5)
+        left                (+ (get-in mdata [:position :x]) 5)]
+
     (mf/use-effect
-     (mf/deps mdata)
+     (mf/deps is-open?)
      (fn []
        (when-let [node (mf/ref-val dropdown-ref)]
          (reset! width (.-offsetWidth node)))))
-    [:& dropdown {:show (boolean mdata)
+
+    (mf/with-effect [is-open?]
+      (when (and (not= 0 (mf/ref-val dropdown-direction-change*)) (= false is-open?))
+        (reset! dropdown-direction* "down")
+        (mf/set-ref-val! dropdown-direction-change* 0)))
+
+    (mf/with-effect [is-open? dropdown-ref]
+      (let [dropdown-element (mf/ref-val dropdown-ref)]
+        (when (and (= 0 (mf/ref-val dropdown-direction-change*)) dropdown-element)
+          (let [is-outside? (dom/is-element-outside? dropdown-element)]
+            (reset! dropdown-direction* (if is-outside? "up" "down"))
+            (mf/set-ref-val! dropdown-direction-change* (inc (mf/ref-val dropdown-direction-change*)))))))
+
+    [:& dropdown {:show is-open?
                   :on-close #(st/emit! dt/hide-token-context-menu)}
      [:div {:class (stl/css :token-context-menu)
             :ref dropdown-ref
-            :style {:top top :left left}
+            :data-direction dropdown-direction
+            :style {:--bottom (if (= dropdown-direction "up")
+                                "40px"
+                                "unset")
+                    :--top (dm/str top "px")
+                    :left (dm/str left "px")}
             :on-context-menu prevent-default}
       (when mdata
-        [:& token-context-menu-tree (assoc mdata :offset @width)])]]))
+        [:& token-context-menu-tree (assoc mdata :width @width :direction dropdown-direction)])]]))

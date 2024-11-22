@@ -129,7 +129,7 @@
 
 (mf/defc asset-section
   {::mf/wrap-props false}
-  [{:keys [children file-id title section assets-count icon open?]}]
+  [{:keys [children file-id title section assets-count icon open? on-click]}]
   (let [children    (-> (array/normalize-to-array children)
                         (array/without-nils))
 
@@ -159,7 +159,8 @@
 
     [:div {:class (stl/css-case :asset-section true
                                 :opened (and (< 0 assets-count)
-                                             open?))}
+                                             open?))
+           :on-click on-click}
      [:& title-bar
       {:collapsable   (< 0 assets-count)
        :collapsed     (not open?)

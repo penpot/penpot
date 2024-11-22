@@ -79,9 +79,10 @@
                          (fn [event token]
                            (dom/prevent-default event)
                            (dom/stop-propagation event)
-                           (st/emit! (dt/show-token-context-menu {:type :token
-                                                                  :position (dom/get-client-position event)
-                                                                  :token-name (:name token)}))))
+                           (st/emit! (dt/show-token-context-menu
+                                      {:type :token
+                                       :position (dom/get-client-position event)
+                                       :token-name (:name token)}))))
 
         on-toggle-open-click (mf/use-fn
                               (mf/deps open? tokens)
@@ -249,7 +250,8 @@
      [:& token-context-menu]
      [:& title-bar {:all-clickable true
                     :title "TOKENS"}]
-     (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups) (:empty token-groups))]
+     (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
+                                                               (:empty token-groups))]
        [:& token-component {:key token-key
                             :type token-key
                             :selected-shapes selected-shapes
@@ -276,6 +278,10 @@
            (reset! show-menu* false)))
 
         input-ref (mf/use-ref)
+        on-option-click
+        (mf/use-fn
+         #(.click (mf/ref-val input-ref)))
+
         on-import
         (fn [event]
           (let [file (-> event .-target .-files (aget 0))]
@@ -313,7 +319,7 @@
                         :on-close close-menu
                         :list-class (stl/css :import-export-menu)}
       [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
-                               :on-click #(.click (mf/ref-val input-ref))}
+                               :on-click on-option-click}
        (tr "labels.import")]
 
       [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
