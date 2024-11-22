@@ -400,6 +400,9 @@ msgstr "Add as Shared Library"
 msgid "dashboard.show-version-history"
 msgstr "Version history"
 
+msgid "dashboard.create-version-menu"
+msgstr "Pin this version"
+
 #: src/app/main/ui/settings/profile.cljs:72
 msgid "dashboard.change-email"
 msgstr "Change email"
