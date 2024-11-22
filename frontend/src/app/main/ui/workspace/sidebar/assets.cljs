@@ -133,23 +133,23 @@
 
         options
         [{:name    (tr "workspace.assets.box-filter-all")
-          :id      "section-all"
+          :id      "all"
           :handler on-section-filter-change}
          {:name    (tr "workspace.assets.components")
-          :id      "section-components"
+          :id      "components"
           :handler on-section-filter-change}
 
          (when (not components-v2)
            {:name    (tr "workspace.assets.graphics")
-            :id      "section-graphics"
+            :id      "graphics"
             :handler on-section-filter-change})
 
          {:name    (tr "workspace.assets.colors")
-          :id      "section-colors"
+          :id      "colors"
           :handler on-section-filter-change}
 
          {:name    (tr "workspace.assets.typography")
-          :id      "section-typographies"
+          :id      "typographies"
           :handler on-section-filter-change}]]
 
     [:article  {:class (stl/css :assets-bar)}
