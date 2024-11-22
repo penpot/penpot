@@ -6565,3 +6565,9 @@ msgstr "Open version menu"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "workspace.versions.tab.history"
+msgstr "History"
+
+msgid "workspace.versions.tab.actions"
+msgstr "Actions"

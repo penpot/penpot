@@ -113,4 +113,5 @@ $width-settings-bar-max: $s-500;
 .versions-tab {
   width: 100%;
   overflow: hidden;
+  height: calc(100vh - $s-88);
 }

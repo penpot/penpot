@@ -6560,3 +6560,9 @@ msgstr "Abrir menu de versiones"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "workspace.versions.tab.history"
+msgstr "Histórico"
+
+msgid "workspace.versions.tab.actions"
+msgstr "Acciones"

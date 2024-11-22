@@ -8,6 +8,10 @@
 
 .version-toolbox {
   padding: $s-8;
+  height: 100%;
+  display: grid;
+  overflow: hidden;
+  grid-template-rows: auto auto 1fr;
 }
 
 .versions-entry-empty {
@@ -49,6 +53,8 @@
   display: flex;
   flex-direction: column;
   gap: $s-6;
+  overflow: auto;
+  margin: 0;
 }
 
 .version-entry {
