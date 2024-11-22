@@ -1,4 +1,5 @@
 use skia::gpu::{self, gl::FramebufferInfo, DirectContext};
+use skia::Contains;
 use skia_safe as skia;
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -54,6 +55,8 @@ impl GpuState {
 pub(crate) struct CachedSurfaceImage {
     pub image: Image,
     pub viewbox: Viewbox,
+    // is_complete indicates if stored image renders the complete shape tree
+    pub is_complete: bool,
 }
 
 pub(crate) struct RenderState {
@@ -176,14 +179,17 @@ impl RenderState {
         self.reset_canvas();
         if let Some(cached_surface_image) = &self.cached_surface_image {
             // If we are drawing something bigger than the visible let's do a redraw
-            if (viewbox.x > cached_surface_image.viewbox.x)
-                || (-viewbox.x + viewbox.area.width()
-                    > -cached_surface_image.viewbox.x + cached_surface_image.viewbox.area.width())
-                || (viewbox.y > cached_surface_image.viewbox.y)
-                || (-viewbox.y + viewbox.area.height()
-                    > -cached_surface_image.viewbox.y + cached_surface_image.viewbox.area.height())
+            if !cached_surface_image.is_complete
+                && ((viewbox.x > cached_surface_image.viewbox.x)
+                    || (-viewbox.x + viewbox.area.width()
+                        > -cached_surface_image.viewbox.x
+                            + cached_surface_image.viewbox.area.width())
+                    || (viewbox.y > cached_surface_image.viewbox.y)
+                    || (-viewbox.y + viewbox.area.height()
+                        > -cached_surface_image.viewbox.y
+                            + cached_surface_image.viewbox.area.height()))
             {
-                self.render_all(viewbox, shapes, debug);
+                self.render_all(viewbox, shapes, true, debug);
             } else {
                 let image = &cached_surface_image.image;
                 let paint = skia::Paint::default();
@@ -218,16 +224,20 @@ impl RenderState {
         &mut self,
         viewbox: &Viewbox,
         shapes: &HashMap<Uuid, Shape>,
+        generate_cached_surface_image: bool,
         debug: u32, // Debug flags
     ) {
         self.reset_canvas();
         self.scale(viewbox.zoom, viewbox.zoom);
         self.translate(viewbox.x, viewbox.y);
-        self.render_shape_tree(&Uuid::nil(), viewbox, shapes);
-        self.cached_surface_image = Some(CachedSurfaceImage {
-            image: self.final_surface.image_snapshot(),
-            viewbox: viewbox.clone(),
-        });
+        let is_complete = self.render_shape_tree(&Uuid::nil(), viewbox, shapes);
+        if generate_cached_surface_image || self.cached_surface_image.is_none() {
+            self.cached_surface_image = Some(CachedSurfaceImage {
+                image: self.final_surface.image_snapshot(),
+                viewbox: viewbox.clone(),
+                is_complete,
+            });
+        }
         if debug & debug::DEBUG_VISIBLE == debug::DEBUG_VISIBLE {
             self.render_debug(viewbox);
         }
@@ -278,15 +288,22 @@ impl RenderState {
         );
     }
 
-    fn render_shape_tree(&mut self, id: &Uuid, viewbox: &Viewbox, shapes: &HashMap<Uuid, Shape>) {
+    // Returns a boolean indicating if the viewbox contains the rendered shapes
+    fn render_shape_tree(
+        &mut self,
+        id: &Uuid,
+        viewbox: &Viewbox,
+        shapes: &HashMap<Uuid, Shape>,
+    ) -> bool {
         let shape = shapes.get(&id).unwrap();
+        let mut is_complete = viewbox.area.contains(shape.selrect);
 
         if !id.is_nil() {
             if !shape.selrect.intersects(viewbox.area) {
                 self.render_debug_shape(shape, false);
                 // TODO: This means that not all the shapes are renderer so we
                 // need to call a render_all on the zoom out.
-                return;
+                return is_complete;
             } else {
                 self.render_debug_shape(shape, true);
             }
@@ -303,10 +320,11 @@ impl RenderState {
         // draw all the children shapes
         let shape_ids = shape.children.iter();
         for shape_id in shape_ids {
-            self.render_shape_tree(shape_id, viewbox, shapes);
+            is_complete = self.render_shape_tree(shape_id, viewbox, shapes) && is_complete;
         }
 
         self.final_surface.canvas().restore();
         self.drawing_surface.canvas().restore();
+        return is_complete;
     }
 }

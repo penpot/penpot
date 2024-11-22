@@ -25,6 +25,11 @@
   (h/call internal-module "_render")
   (set! internal-frame-id nil))
 
+(defn- render-without-cache
+  [_]
+  (h/call internal-module "_render_without_cache")
+  (set! internal-frame-id nil))
+
 (defn cancel-render
   []
   (when internal-frame-id
@@ -120,13 +125,13 @@
   ;; https://rust-skia.github.io/doc/skia_safe/enum.BlendMode.html
   (h/call internal-module "_set_shape_blend_mode" (translate-blend-mode blend-mode)))
 
-(def debounce-render (fns/debounce render 100))
+(def debounce-render-without-cache (fns/debounce render-without-cache 100))
 
 (defn set-view
   [zoom vbox]
   (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
   (h/call internal-module "_navigate")
-  (debounce-render))
+  (debounce-render-without-cache))
 
 (defn set-objects
   [objects]
