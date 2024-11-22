@@ -398,8 +398,9 @@ Token names should only contain letters and digits separated by . characters.")}
          :external-ref value-input-ref
          :on-change on-update-value
          :on-blur on-update-value}
-        [:> input-token-color-bullet*
-         {:color @color :on-click on-display-colorpicker}]]
+        (when color?
+          [:> input-token-color-bullet*
+           {:color @color :on-click on-display-colorpicker}])]
 
        (when @color-ramp-open?
          [:& ramp {:color (some-> (or @token-resolve-result (:value token))
