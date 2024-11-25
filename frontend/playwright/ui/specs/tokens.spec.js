@@ -5,21 +5,27 @@ test.beforeEach(async ({ page }) => {
   await WorkspacePage.init(page);
 });
 
+const setupFileWithTokens = async (page) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    "get-team?id=*",
+    "workspace/get-team-tokens.json",
+  );
+
+  await workspacePage.goToWorkspace();
+
+  const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+  await tokensTabButton.click();
+
+  return { workspacePage };
+};
+
 test.describe("Tokens: Tab", () => {
   test("Clicking tokens tab button opens tokens sidebar tab", async ({
     page,
   }) => {
-    const workspacePage = new WorkspacePage(page);
-    await workspacePage.setupEmptyFile();
-    await workspacePage.mockRPC(
-      "get-team?id=*",
-      "workspace/get-team-tokens.json",
-    );
-
-    await workspacePage.goToWorkspace();
-
-    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
-    await tokensTabButton.click();
+    const { workspacePage } = await setupFileWithTokens(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
@@ -30,17 +36,7 @@ test.describe("Tokens: Tab", () => {
   test("User creates color token and auto created set show up in the sidebar", async ({
     page,
   }) => {
-    const workspacePage = new WorkspacePage(page);
-    await workspacePage.setupEmptyFile();
-    await workspacePage.mockRPC(
-      "get-team?id=*",
-      "workspace/get-team-tokens.json",
-    );
-
-    await workspacePage.goToWorkspace();
-
-    const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
-    await tokensTabButton.click();
+    const { workspacePage } = await setupFileWithTokens(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
     await tokensTabPanel.getByTitle("Add token: Color").click();
@@ -59,9 +55,14 @@ test.describe("Tokens: Tab", () => {
     await valueField.click();
     await valueField.fill("red");
 
-    const submitButtonSelector = `button[type="submit"]:enabled`;
-    await page.waitForSelector(submitButtonSelector);
-    await page.locator(submitButtonSelector).click();
+    const submitButton = workspacePage.tokensUpdateCreateModal.getByRole(
+      "button",
+      {
+        name: "Save",
+      },
+    );
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
 
     await expect(tokensTabPanel.getByText("color.primary")).toBeEnabled();
 
@@ -77,7 +78,7 @@ test.describe("Tokens: Tab", () => {
     await valueField.click();
     await valueField.fill("{color.primary}");
 
-    await page.waitForSelector(submitButtonSelector);
+    await expect(submitButton).toBeEnabled();
     await nameField.press("Enter");
 
     const referenceToken = tokensTabPanel.getByText("color.secondary");
