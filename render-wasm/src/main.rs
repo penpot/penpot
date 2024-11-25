@@ -44,9 +44,7 @@ pub extern "C" fn set_render_options(debug: u32, dpr: f32) {
     let render_state = state.render_state();
 
     render_state.set_debug_flags(debug);
-    if dpr > 1.0 {
-        render_state.set_dpr(Some(dpr));
-    }
+    render_state.set_dpr(dpr);
 }
 
 #[no_mangle]
@@ -74,7 +72,7 @@ pub extern "C" fn reset_canvas() {
 }
 
 #[no_mangle]
-pub extern "C" fn resize_canvas(width: i32, height: i32) {
+pub extern "C" fn resize_viewbox(width: i32, height: i32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     state.resize(width, height);
 }
@@ -82,19 +80,19 @@ pub extern "C" fn resize_canvas(width: i32, height: i32) {
 #[no_mangle]
 pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    state.viewbox.set_all(zoom, x, y);
+    state.render_state().viewbox.set_all(zoom, x, y);
 }
 
 #[no_mangle]
 pub extern "C" fn set_view_zoom(zoom: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    state.viewbox.set_zoom(zoom);
+    state.render_state().viewbox.set_zoom(zoom);
 }
 
 #[no_mangle]
 pub extern "C" fn set_view_xy(x: f32, y: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    state.viewbox.set_xy(x, y);
+    state.render_state().viewbox.set_pan_xy(x, y);
 }
 
 #[no_mangle]

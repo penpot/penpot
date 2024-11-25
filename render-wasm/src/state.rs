@@ -1,10 +1,8 @@
 use std::collections::HashMap;
 use uuid::Uuid;
 
-use crate::math;
 use crate::render::RenderState;
 use crate::shapes::Shape;
-use crate::view::Viewbox;
 
 /// This struct holds the state of the Rust application between JS calls.
 ///
@@ -16,7 +14,6 @@ pub(crate) struct State<'a> {
     pub current_id: Option<Uuid>,
     pub current_shape: Option<&'a mut Shape>,
     pub shapes: HashMap<Uuid, Shape>,
-    pub viewbox: Viewbox,
 }
 
 impl<'a> State<'a> {
@@ -26,20 +23,11 @@ impl<'a> State<'a> {
             current_id: None,
             current_shape: None,
             shapes: HashMap::with_capacity(capacity),
-            viewbox: Viewbox {
-                pan_x: 0.,
-                pan_y: 0.,
-                zoom: 1.,
-                width: width as f32,
-                height: height as f32,
-                area: math::Rect::new_empty(),
-            },
         }
     }
 
     pub fn resize(&mut self, width: i32, height: i32) {
         self.render_state.resize(width, height);
-        self.viewbox.set_wh(width as f32, height as f32);
     }
 
     pub fn render_state(&'a mut self) -> &'a mut RenderState {
@@ -48,15 +36,12 @@ impl<'a> State<'a> {
 
     pub fn navigate(&mut self) {
         // TODO: propagate error to main fn
-        let _ = self
-            .render_state
-            .navigate(&self.viewbox, &self.shapes)
-            .unwrap();
+        let _ = self.render_state.navigate(&self.shapes).unwrap();
     }
 
     pub fn render_all(&mut self, generate_cached_surface_image: bool) {
         self.render_state
-            .render_all(&self.viewbox, &self.shapes, generate_cached_surface_image);
+            .render_all(&self.shapes, generate_cached_surface_image);
     }
 
     pub fn use_shape(&'a mut self, id: Uuid) {

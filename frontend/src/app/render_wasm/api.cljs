@@ -18,6 +18,9 @@
 (defonce internal-module #js {})
 (defonce use-dpr? (contains? cf/flags :render-wasm-dpr))
 
+(def dpr
+  (if use-dpr? js/window.devicePixelRatio 1.0))
+
 ;; This should never be called from the outside.
 ;; This function receives a "time" parameter that we're not using but maybe in the future could be useful (it is the time since
 ;; the window started rendering elements so it could be useful to measure time between frames).
@@ -170,31 +173,31 @@
        :stencil true
        :alpha true})
 
+
 (defn clear-canvas
   []
   ;; TODO: perform corresponding cleaning
   )
 
-(defn resize-canvas
+(defn resize-viewbox
   [width height]
-  (h/call internal-module "_resize_canvas" width height))
+  (h/call internal-module "_resize_viewbox" width height))
 
 (defn assign-canvas
   [canvas]
   (let [gl      (unchecked-get internal-module "GL")
         context (.getContext ^js canvas "webgl2" canvas-options)
-        dpr     (when use-dpr? js/window.devicePixelRatio)
 
         ;; Register the context with emscripten
         handle  (.registerContext ^js gl context #js {"majorVersion" 2})]
     (.makeContextCurrent ^js gl handle)
 
     ;; Initialize Wasm Render Engine
-    (h/call internal-module "_init" (.-width ^js canvas) (.-height ^js canvas))
-    (h/call internal-module "_set_render_options" 0x01 (or dpr 0))
+    (h/call internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
+    (h/call internal-module "_set_render_options" 0x01 dpr))
 
-    (set! (.-width canvas) (.-clientWidth ^js canvas))
-    (set! (.-height canvas) (.-clientHeight ^js canvas))))
+  (set! (.-width canvas) (* dpr (.-clientWidth ^js canvas)))
+  (set! (.-height canvas) (* dpr (.-clientHeight ^js canvas))))
 
 (defonce module
   (if (exists? js/dynamicImport)
