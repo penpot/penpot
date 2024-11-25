@@ -269,17 +269,19 @@
 
 (mf/defc component-item-thumbnail
   "Component that renders the thumbnail image or the original SVG."
-  {::mf/wrap-props false}
+  {::mf/props :obj}
   [{:keys [file-id root-shape component container class]}]
-  (let [page-id   (:main-instance-page component)
-        root-id   (:main-instance-id component)
+  (let [page-id (:main-instance-page component)
+        root-id (:main-instance-id component)
+        retry   (mf/use-state 0)
 
-        retry (mf/use-state 0)
+        thumbnail-uri*
+        (mf/with-memo [file-id page-id root-id]
+          (let [object-id (thc/fmt-object-id file-id page-id root-id "component")]
+            (refs/workspace-thumbnail-by-id object-id)))
 
-        thumbnail-uri* (mf/with-memo [file-id page-id root-id]
-                         (let [object-id (thc/fmt-object-id file-id page-id root-id "component")]
-                           (refs/workspace-thumbnail-by-id object-id)))
-        thumbnail-uri  (mf/deref thumbnail-uri*)
+        thumbnail-uri
+        (mf/deref thumbnail-uri*)
 
         on-error
         (mf/use-fn
