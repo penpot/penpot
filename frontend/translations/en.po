@@ -1721,6 +1721,10 @@ msgstr "Expired"
 msgid "labels.export"
 msgstr "Export"
 
+#: src/app/main/ui/exports/assets.cljs:177
+msgid "labels.import"
+msgstr "Import"
+
 #: src/app/main/ui/settings/feedback.cljs:48
 msgid "labels.feedback-disabled"
 msgstr "Feedback disabled"
@@ -6612,6 +6616,10 @@ msgstr "Create one."
 #: src/app/main/ui/workspace/tokens/sidebar.cljs
 msgid "workspace.token.add set"
 msgstr "Add set"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.tools"
+msgstr "Tools"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs
 msgid "workspace.token.save-theme"

@@ -164,6 +164,7 @@
 (def ^:icon-id icon "icon")
 (def ^:icon-id img "img")
 (def ^:icon-id info "info")
+(def ^:icon-id import-export "import-export")
 (def ^:icon-id interaction "interaction")
 (def ^:icon-id join-nodes "join-nodes")
 (def ^:icon-id justify-content-column-around "justify-content-column-around")

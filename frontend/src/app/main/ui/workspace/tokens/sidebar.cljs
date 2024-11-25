@@ -333,6 +333,7 @@
                                               (js/JSON.stringify nil 2)
                                               (wapi/create-blob "application/json"))]
                       (dom/trigger-download "tokens.json" tokens-blob)))]
+
     [:div {:class (stl/css :import-export-button-wrapper)}
      [:input {:type "file"
               :ref input-ref
@@ -340,20 +341,20 @@
               :id "file-input"
               :accept ".json"
               :on-change on-import}]
-     [:button {:class (stl/css :import-export-button)
-               :on-click open-menu}
-      download-icon
-      "Tokens"]
+     [:> button* {:on-click open-menu
+                  :icon "import-export"
+                  :variant "secondary"}
+      (tr "workspace.token.tools")]
      [:& dropdown-menu {:show show-menu?
                         :on-close close-menu
                         :list-class (stl/css :import-export-menu)}
       [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                :on-click #(.click (mf/ref-val input-ref))}
-       "Import"]
+       (tr "labels.import")]
 
       [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                :on-click on-export}
-       "Export"]]]))
+       (tr "labels.export")]]]))
 
 (mf/defc tokens-sidebar-tab
   {::mf/wrap [mf/memo]

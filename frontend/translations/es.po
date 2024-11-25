@@ -1727,6 +1727,11 @@ msgstr "Expirada"
 msgid "labels.export"
 msgstr "Exportar"
 
+
+#: src/app/main/ui/exports/assets.cljs:177
+msgid "labels.import"
+msgstr "Importar"
+
 #: src/app/main/ui/settings/feedback.cljs:48
 msgid "labels.feedback-disabled"
 msgstr "El modulo de recepción de opiniones esta deshabilitado"
@@ -6611,6 +6616,10 @@ msgstr "Crear uno."
 #: src/app/main/ui/workspace/tokens/sidebar.cljs
 msgid "workspace.token.add set"
 msgstr "Añadir set"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.tools"
+msgstr "Herramientas"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs
 msgid "workspace.token.save-theme"

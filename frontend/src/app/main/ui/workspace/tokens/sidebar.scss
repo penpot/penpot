@@ -119,26 +119,9 @@
   flex-direction: row;
   align-items: end;
   justify-content: end;
-  padding: $s-16;
-  margin-top: $s-8;
+  padding: $s-8;
   background-color: var(--color-background-primary);
   box-shadow: var(--el-shadow-dark);
-}
-
-.import-export-button {
-  @extend .button-secondary;
-  display: flex;
-  align-items: center;
-  padding: $s-6 $s-8;
-  text-transform: uppercase;
-  gap: $s-8;
-
-  .download-icon {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-    width: 20px;
-    height: 20px;
-  }
 }
 
 .import-export-menu {
