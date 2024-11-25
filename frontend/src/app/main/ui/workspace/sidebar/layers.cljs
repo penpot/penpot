@@ -12,6 +12,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -335,7 +336,7 @@
                    :on-click add-filter}
               [:div {:class (stl/css :filter-menu-item-name-wrapper)}
                [:span {:class (stl/css :filter-menu-item-icon)}
-                i/board]
+                (if (cf/external-feature-flag "boards-01" "test") i/board-2 i/board)]
                [:span {:class (stl/css :filter-menu-item-name)}
                 (tr "workspace.sidebar.layers.frames")]]
 

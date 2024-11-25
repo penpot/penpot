@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.config :as cf]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -154,7 +155,7 @@
     :circle i/elipse
     :text i/text
     :path i/path
-    :frame i/board
+    :frame (if (cf/external-feature-flag "boards-01" "test") i/board-2 i/board)
     :group i/group
     :color i/drop-icon
     :typography i/text-palette
