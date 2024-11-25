@@ -226,8 +226,8 @@
    [:priority {:optional true} [:enum :high :low]]
    [:extra-data {:optional true} ::sm/text]])
 
-(def ^:private valid-context?
-  (sm/validator schema:context))
+(def ^:private check-context
+  (sm/check-fn schema:context))
 
 (defn template-factory
   [& {:keys [id schema]}]
@@ -236,10 +236,8 @@
                    (sm/check-fn schema)
                    (constantly nil))]
     (fn [context]
-      (assert (valid-context? context) "expected a valid context")
-      (check-fn context)
-
-      (let [email (build-email-template id context)]
+      (let [context (-> context check-context check-fn)
+            email   (build-email-template id context)]
         (when-not email
           (ex/raise :type :internal
                     :code :email-template-does-not-exists
@@ -271,7 +269,7 @@
   "Schedule an already defined email to be sent using asynchronously
   using worker task."
   [{:keys [::conn ::factory] :as context}]
-  (assert (db/connection? conn) "expected a valid database connection")
+  (assert (db/connectable? conn) "expected a valid database connection or pool")
 
   (let [email (if factory
                 (factory context)
@@ -348,7 +346,7 @@
    [:subject ::sm/text]
    [:content ::sm/text]])
 
-(def feedback
+(def user-feedback
   "A profile feedback email."
   (template-factory
    :id ::feedback

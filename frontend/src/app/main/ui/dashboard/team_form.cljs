@@ -73,7 +73,9 @@
   {::mf/register modal/components
    ::mf/register-as :team-form}
   [{:keys [team] :as props}]
-  (let [initial (mf/use-memo (fn [] (or team {})))
+  (let [initial (mf/use-memo (fn []
+                               (or (some-> team (select-keys [:name :id]))
+                                   {})))
         form    (fm/use-form :schema schema:team-form
                              :initial initial)
         handle-keydown
