@@ -275,7 +275,11 @@
         preview-blend (-> refs/workspace-preview-blend
                           (mf/deref))]
 
-    (mf/with-effect []
+    ;; NOTE: We need this page-id dependency to react to it and reset the
+    ;;       canvas, even though we are not using `page-id` inside the hook.
+    ;;       We think moving this out to a handler will make the render code
+    ;;       harder to follow through.
+    (mf/with-effect [page-id]
       (when-let [canvas (mf/ref-val canvas-ref)]
         (->> wasm.api/module
              (p/fmap (fn [ready?]
