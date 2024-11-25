@@ -396,6 +396,10 @@ msgstr "The token has no expiration date"
 msgid "dashboard.add-shared"
 msgstr "Add as Shared Library"
 
+#: src/app/main/ui/workspace/main_menu.cljs:607
+msgid "dashboard.show-version-history"
+msgstr "Version history"
+
 #: src/app/main/ui/settings/profile.cljs:72
 msgid "dashboard.change-email"
 msgstr "Change email"

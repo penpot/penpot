@@ -398,6 +398,10 @@ msgstr "El token no tiene fecha de expiración"
 msgid "dashboard.add-shared"
 msgstr "Añadir como Biblioteca Compartida"
 
+#: src/app/main/ui/workspace/main_menu.cljs:607
+msgid "dashboard.show-version-history"
+msgstr "Histórico de versiones"
+
 #: src/app/main/ui/settings/profile.cljs:72
 msgid "dashboard.change-email"
 msgstr "Cambiar correo"

@@ -524,6 +524,19 @@
            (when (kbd/enter? event)
              (on-add-shared event))))
 
+        on-show-version-history
+        (mf/use-fn
+         (mf/deps file-id)
+         (fn [_]
+           (st/emit! (dw/toggle-layout-flag :document-history))))
+
+        on-show-version-history-key-down
+        (mf/use-fn
+         (mf/deps on-show-version-history)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-show-version-history event))))
+
         on-export-shapes
         (mf/use-fn #(st/emit! (de/show-workspace-export-dialog {:origin "workspace:menu"})))
 
@@ -575,14 +588,23 @@
                                   :on-click    on-remove-shared
                                   :on-key-down on-remove-shared-key-down
                                   :id          "file-menu-remove-shared"}
-          [:span {:class (stl/css :item-name)} (tr "dashboard.unpublish-shared")]])
+          [:span {:class (stl/css :item-name)}
+           (tr "dashboard.unpublish-shared")]])
 
        (when can-edit
          [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                                   :on-click    on-add-shared
                                   :on-key-down on-add-shared-key-down
                                   :id          "file-menu-add-shared"}
-          [:span {:class (stl/css :item-name)} (tr "dashboard.add-shared")]]))
+          [:span {:class (stl/css :item-name)}
+           (tr "dashboard.add-shared")]]))
+
+     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                              :on-click    on-show-version-history
+                              :on-key-down on-show-version-history-key-down
+                              :id          "file-menu-show-version-history"}
+      [:span {:class (stl/css :item-name)}
+       (tr "dashboard.show-version-history")]]
 
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                               :on-click    on-export-shapes

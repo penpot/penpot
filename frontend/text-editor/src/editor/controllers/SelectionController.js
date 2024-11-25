@@ -16,7 +16,6 @@ import {
   isInlineStart,
   isInlineEnd,
   setInlineStyles,
-  mergeInlines,
   splitInline,
   createEmptyInline,
 } from "../content/dom/Inline.js";
@@ -29,7 +28,6 @@ import {
   isParagraphEnd,
   setParagraphStyles,
   splitParagraph,
-  splitParagraphAtNode,
   mergeParagraphs,
   fixParagraph,
 } from "../content/dom/Paragraph.js";
@@ -47,9 +45,6 @@ import CommandMutations from "../commands/CommandMutations.js";
 import { setRootStyles } from "../content/dom/Root.js";
 import { SelectionDirection } from "./SelectionDirection.js";
 import SafeGuard from "./SafeGuard.js";
-
-const SAFE_GUARD = true;
-const SAFE_GUARD_TIME = true;
 
 /**
  * Supported options for the SelectionController.
