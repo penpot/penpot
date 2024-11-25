@@ -168,7 +168,7 @@
              objects  (get page :objects)
              frame    (cfh/get-root-frame objects (:id shape))
 
-             flows    (get page :objects)
+             flows    (get page :flows)
              flow     (ctp/get-frame-flow flows (:id frame))]
          (rx/concat
           (rx/of (dwsh/update-shapes
@@ -177,14 +177,14 @@
                     (let [new-interaction (-> ctsi/default-interaction
                                               (ctsi/set-destination destination)
                                               (assoc :position-relative-to (:id shape)))]
-                      (cls/add-new-interaction shape new-interaction))))
+                      (cls/add-new-interaction shape new-interaction)))))
 
-                 (when destination
-                   (dwsh/update-shapes [destination] cls/show-in-viewer))
+          (when destination
+            (rx/of (dwsh/update-shapes [destination] cls/show-in-viewer)))
 
-                 (when (and (not (connected-frame? objects (:id frame)))
-                            (nil? flow))
-                   (add-flow (:id frame))))))))))
+          (when (and (not (connected-frame? objects (:id frame)))
+                     (nil? flow))
+            (rx/of (add-flow (:id frame))))))))))
 
 (defn remove-interaction
   ([shape index]

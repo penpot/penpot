@@ -409,12 +409,14 @@
         ;; Resize parent containers that need to
         (pcb/resize-parents parents))))
 
-(defn change-show-in-viewer [shape hide?]
+(defn change-show-in-viewer
+  [shape hide?]
   (assoc shape :hide-in-viewer hide?))
 
-(defn add-new-interaction [shape interaction]
-  (-> shape
-      (update :interactions ctsi/add-interaction interaction)))
+(defn add-new-interaction
+  [shape interaction]
+  (update shape :interactions ctsi/add-interaction interaction))
 
-(defn show-in-viewer [shape]
+(defn show-in-viewer
+  [shape]
   (dissoc shape :hide-in-viewer))
