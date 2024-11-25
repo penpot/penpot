@@ -338,7 +338,7 @@
 ;; used to render thumbnails on assets panel.
 (mf/defc component-svg
   {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
-  [{:keys [objects root-shape show-grids? zoom class] :or {zoom 1} :as props}]
+  [{:keys [objects root-shape show-grids? is-hidden zoom class] :or {zoom 1} :as props}]
   (when root-shape
     (let [root-shape-id (:id root-shape)
           include-metadata (mf/use-ctx export/include-metadata-ctx)
@@ -381,13 +381,14 @@
              :xmlns:penpot (when include-metadata "https://penpot.app/xmlns")
              :fill "none"}
 
-       [:*
-        [:> shape-container {:shape root-shape'}
-         [:& (mf/provider muc/is-component?) {:value true}
-          [:& root-shape-wrapper {:shape root-shape' :view-box vbox}]]]
+       (when-not is-hidden
+         [:*
+          [:> shape-container {:shape root-shape'}
+           [:& (mf/provider muc/is-component?) {:value true}
+            [:& root-shape-wrapper {:shape root-shape' :view-box vbox}]]]
 
-        (when show-grids?
-          [:& empty-grids {:root-shape-id root-shape-id :objects objects}])]])))
+          (when show-grids?
+            [:& empty-grids {:root-shape-id root-shape-id :objects objects}])])])))
 
 (mf/defc component-svg-thumbnail
   {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}

@@ -237,15 +237,11 @@
          [:& comments-sidebar]
 
          (true? is-history?)
-         [:> tab-switcher* {:tabs #js [#js {:label "History" :id "history" :content versions-tab}
-                                       #js {:label "Actions" :id "actions" :content history-tab}]
-                            :default-selected "history"
-                            ;;:selected (name section)
-                            ;;:on-change-tab on-tab-change
-                            :class (stl/css :left-sidebar-tabs)
-                            ;;:action-button-position "start"
-                            ;;:action-button (mf/html [:& collapse-button {:on-click handle-collapse}])
-                            }]
+         [:> tab-switcher*
+          {:tabs #js [#js {:label (tr "workspace.versions.tab.history") :id "history" :content versions-tab}
+                      #js {:label (tr "workspace.versions.tab.actions") :id "actions" :content history-tab}]
+           :default-selected "history"
+           :class (stl/css :left-sidebar-tabs)}]
 
          :else
          [:> options-toolbox props])]]]))

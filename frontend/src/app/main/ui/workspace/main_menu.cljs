@@ -24,6 +24,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.versions :as dwv]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -537,6 +538,19 @@
            (when (kbd/enter? event)
              (on-show-version-history event))))
 
+        on-pin-version
+        (mf/use-fn
+         (mf/deps file-id)
+         (fn [_]
+           (st/emit! (dwv/create-version file-id))))
+
+        on-pin-version-key-down
+        (mf/use-fn
+         (mf/deps on-pin-version)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-pin-version event))))
+
         on-export-shapes
         (mf/use-fn #(st/emit! (de/show-workspace-export-dialog {:origin "workspace:menu"})))
 
@@ -599,12 +613,23 @@
           [:span {:class (stl/css :item-name)}
            (tr "dashboard.add-shared")]]))
 
+     [:div {:class (stl/css :separator)}]
+
+     [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                              :on-click    on-pin-version
+                              :on-key-down on-pin-version-key-down
+                              :id          "file-menu-show-version-history"}
+      [:span {:class (stl/css :item-name)}
+       (tr "dashboard.create-version-menu")]]
+
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                               :on-click    on-show-version-history
                               :on-key-down on-show-version-history-key-down
                               :id          "file-menu-show-version-history"}
       [:span {:class (stl/css :item-name)}
        (tr "dashboard.show-version-history")]]
+
+     [:div {:class (stl/css :separator)}]
 
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                               :on-click    on-export-shapes

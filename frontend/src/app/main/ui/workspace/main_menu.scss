@@ -43,9 +43,12 @@
 }
 
 .separator {
-  margin-top: $s-8;
+  border-top: $s-1 solid var(--color-background-quaternary);
   height: $s-4;
-  border-top: $s-1 solid var(--color-background-secondary);
+  left: calc(-1 * $s-4);
+  margin-top: $s-8;
+  position: relative;
+  width: calc(100% + $s-8);
 }
 
 .shortcut {
