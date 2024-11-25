@@ -74,14 +74,13 @@
 
 (mf/defc file-library-content
   {::mf/wrap-props false}
-  [{:keys [file local? open-status-ref on-clear-selection]}]
+  [{:keys [file local? open-status-ref on-clear-selection filters]}]
   (let [components-v2      (mf/use-ctx ctx/components-v2)
         open-status        (mf/deref open-status-ref)
 
         file-id            (:id file)
         project-id         (:project-id file)
 
-        filters            (mf/use-ctx cmm/assets-filters)
         filters-section    (:section filters)
 
         filters-term       (:term filters)
