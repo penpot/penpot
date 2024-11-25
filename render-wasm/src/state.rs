@@ -12,7 +12,6 @@ use crate::view::Viewbox;
 /// Note that rust-skia data structures are not thread safe, so a state
 /// must not be shared between different Web Workers.
 pub(crate) struct State<'a> {
-    pub debug: u32,
     pub render_state: RenderState,
     pub current_id: Option<Uuid>,
     pub current_shape: Option<&'a mut Shape>,
@@ -21,9 +20,8 @@ pub(crate) struct State<'a> {
 }
 
 impl<'a> State<'a> {
-    pub fn with_capacity(width: i32, height: i32, debug: u32, capacity: usize) -> Self {
+    pub fn new(width: i32, height: i32, capacity: usize) -> Self {
         State {
-            debug,
             render_state: RenderState::new(width, height),
             current_id: None,
             current_shape: None,
@@ -49,17 +47,12 @@ impl<'a> State<'a> {
     }
 
     pub fn navigate(&mut self) {
-        self.render_state
-            .navigate(&self.viewbox, &self.shapes, self.debug);
+        self.render_state.navigate(&self.viewbox, &self.shapes);
     }
 
     pub fn render_all(&mut self, generate_cached_surface_image: bool) {
-        self.render_state.render_all(
-            &self.viewbox,
-            &self.shapes,
-            generate_cached_surface_image,
-            self.debug,
-        );
+        self.render_state
+            .render_all(&self.viewbox, &self.shapes, generate_cached_surface_image);
     }
 
     pub fn use_shape(&'a mut self, id: Uuid) {

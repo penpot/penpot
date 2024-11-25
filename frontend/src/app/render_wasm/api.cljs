@@ -181,17 +181,17 @@
 (defn assign-canvas
   [canvas]
   (let [gl      (unchecked-get internal-module "GL")
-        init-fn (unchecked-get internal-module "_init")
-
         context (.getContext ^js canvas "webgl2" canvas-options)
+        dpr     js/window.devicePixelRatio
 
         ;; Register the context with emscripten
         handle  (.registerContext ^js gl context #js {"majorVersion" 2})]
     (.makeContextCurrent ^js gl handle)
-    ;; Initialize Skia
-    (^function init-fn (.-width ^js canvas)
-                       (.-height ^js canvas)
-                       1)
+
+    ;; Initialize Wasm Render Engine
+    (h/call internal-module "_init" (.-width ^js canvas) (.-height ^js canvas))
+    (h/call internal-module "_set_render_options" 0x01 (or dpr 0))
+
     (set! (.-width canvas) (.-clientWidth ^js canvas))
     (set! (.-height canvas) (.-clientHeight ^js canvas))))
 

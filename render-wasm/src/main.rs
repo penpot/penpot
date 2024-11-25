@@ -1,11 +1,11 @@
-pub mod debug;
-pub mod images;
-pub mod math;
-pub mod render;
-pub mod shapes;
-pub mod state;
-pub mod utils;
-pub mod view;
+mod debug;
+mod images;
+mod math;
+mod render;
+mod shapes;
+mod state;
+mod utils;
+mod view;
 
 use skia_safe as skia;
 
@@ -31,10 +31,21 @@ fn init_gl() {
 
 /// This is called from JS after the WebGL context has been created.
 #[no_mangle]
-pub extern "C" fn init(width: i32, height: i32, debug: u32) {
-    let state_box = Box::new(State::with_capacity(width, height, debug, 2048));
+pub extern "C" fn init(width: i32, height: i32) {
+    let state_box = Box::new(State::new(width, height, 2048));
     unsafe {
         STATE = Some(state_box);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn set_render_options(debug: u32, dpr: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let render_state = state.render_state();
+
+    render_state.set_debug_flags(debug);
+    if dpr > 1.0 {
+        render_state.set_dpr(Some(dpr));
     }
 }
 

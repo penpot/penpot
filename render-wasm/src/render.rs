@@ -59,12 +59,25 @@ pub(crate) struct CachedSurfaceImage {
     pub is_complete: bool,
 }
 
+#[derive(Debug, Default, Copy, Clone, PartialEq)]
+struct RenderOptions {
+    debug_flags: u32,
+    dpr: Option<f32>,
+}
+
+impl RenderOptions {
+    pub fn is_debug_visible(&self) -> bool {
+        self.debug_flags & debug::DEBUG_VISIBLE == debug::DEBUG_VISIBLE
+    }
+}
+
 pub(crate) struct RenderState {
     gpu_state: GpuState,
     pub final_surface: skia::Surface,
     pub drawing_surface: skia::Surface,
     pub debug_surface: skia::Surface,
     pub cached_surface_image: Option<CachedSurfaceImage>,
+    options: RenderOptions,
 }
 
 impl RenderState {
@@ -85,7 +98,16 @@ impl RenderState {
             drawing_surface,
             debug_surface,
             cached_surface_image: None,
+            options: RenderOptions::default(),
         }
+    }
+
+    pub fn set_debug_flags(&mut self, debug: u32) {
+        self.options.debug_flags = debug;
+    }
+
+    pub fn set_dpr(&mut self, dpr: Option<f32>) {
+        self.options.dpr = dpr;
     }
 
     pub fn resize(&mut self, width: i32, height: i32) {
@@ -176,7 +198,7 @@ impl RenderState {
             .clear(skia::Color::TRANSPARENT);
     }
 
-    pub fn navigate(&mut self, viewbox: &Viewbox, shapes: &HashMap<Uuid, Shape>, debug: u32) {
+    pub fn navigate(&mut self, viewbox: &Viewbox, shapes: &HashMap<Uuid, Shape>) {
         self.reset_canvas();
         if let Some(cached_surface_image) = &self.cached_surface_image {
             // If we are drawing something bigger than the visible let's do a redraw
@@ -190,7 +212,7 @@ impl RenderState {
                         > -cached_surface_image.viewbox.y
                             + cached_surface_image.viewbox.area.height()))
             {
-                self.render_all(viewbox, shapes, true, debug);
+                self.render_all(viewbox, shapes, true);
             } else {
                 let image = &cached_surface_image.image;
                 let paint = skia::Paint::default();
@@ -226,11 +248,11 @@ impl RenderState {
         viewbox: &Viewbox,
         shapes: &HashMap<Uuid, Shape>,
         generate_cached_surface_image: bool,
-        debug: u32, // Debug flags
     ) {
         self.reset_canvas();
         self.scale(viewbox.zoom, viewbox.zoom);
         self.translate(viewbox.x, viewbox.y);
+
         let is_complete = self.render_shape_tree(&Uuid::nil(), viewbox, shapes);
         if generate_cached_surface_image || self.cached_surface_image.is_none() {
             self.cached_surface_image = Some(CachedSurfaceImage {
@@ -239,7 +261,8 @@ impl RenderState {
                 is_complete,
             });
         }
-        if debug & debug::DEBUG_VISIBLE == debug::DEBUG_VISIBLE {
+
+        if self.options.is_debug_visible() {
             self.render_debug(viewbox);
         }
 
@@ -251,12 +274,14 @@ impl RenderState {
         paint.set_style(skia::PaintStyle::Stroke);
         paint.set_color(skia::Color::from_argb(255, 255, 0, 255));
         paint.set_stroke_width(1.);
+
         let mut scaled_rect = viewbox.area.clone();
         let x = 100. + scaled_rect.x() * 0.2;
         let y = 100. + scaled_rect.y() * 0.2;
         let width = scaled_rect.width() * 0.2;
         let height = scaled_rect.height() * 0.2;
         scaled_rect.set_xywh(x, y, width, height);
+
         self.debug_surface.canvas().draw_rect(scaled_rect, &paint);
     }
 
@@ -269,12 +294,14 @@ impl RenderState {
             skia::Color::from_argb(255, 0, 255, 255)
         });
         paint.set_stroke_width(1.);
+
         let mut scaled_rect = shape.selrect.clone();
         let x = 100. + scaled_rect.x() * 0.2;
         let y = 100. + scaled_rect.y() * 0.2;
         let width = scaled_rect.width() * 0.2;
         let height = scaled_rect.height() * 0.2;
         scaled_rect.set_xywh(x, y, width, height);
+
         self.debug_surface.canvas().draw_rect(scaled_rect, &paint);
     }
 
