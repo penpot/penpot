@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-14 11:14+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-11-25 20:01+0000\n"
+"Last-Translator: Linerly <linerly@proton.me>\n"
 "Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
 "frontend/id/>\n"
 "Language: id\n"
@@ -335,7 +335,6 @@ msgid "dashboard.access-tokens.create-success"
 msgstr "Token akses berhasil dibuat."
 
 #: src/app/main/ui/settings/access_tokens.cljs:65
-#, fuzzy
 msgid "dashboard.access-tokens.create.success"
 msgstr " "
 
@@ -1053,7 +1052,6 @@ msgstr ""
 "tinggi)."
 
 #: src/app/main/errors.cljs:228
-#, fuzzy
 msgid "errors.migration-in-progress"
 msgstr " "
 
@@ -1157,7 +1155,6 @@ msgid "errors.wrong-old-password"
 msgstr "Kata sandi lama tidak benar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:85
-#, fuzzy
 msgid "exclude"
 msgstr " "
 
@@ -1465,7 +1462,6 @@ msgid "inspect.tabs.info"
 msgstr "Info"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:80
-#, fuzzy
 msgid "intersection"
 msgstr " "
 
@@ -2156,7 +2152,6 @@ msgid "modals.create-access-token.title"
 msgstr "Buat token baru"
 
 #: src/app/main/ui/settings/access_tokens.cljs:152
-#, fuzzy
 msgid "modals.create-access-token.token"
 msgstr " "
 
@@ -3646,7 +3641,6 @@ msgid "shortcuts.toggle-rulers"
 msgstr "Tampilkan / Sembunyikan penggaris"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:199
-#, fuzzy
 msgid "shortcuts.toggle-rules"
 msgstr " "
 
@@ -6107,3 +6101,11 @@ msgstr "Perbarui"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik untuk menutup jalur"
+
+#: src/app/main/ui/dashboard/files.cljs:185, src/app/main/ui/dashboard/projects.cljs:279
+msgid "dashboard.empty-placeholder-drafts-title"
+msgstr "Belum ada draf."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:119
+msgid "workspace.token.theme"
+msgstr "  "
