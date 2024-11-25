@@ -450,7 +450,9 @@
   (ptk/reify ::update-team
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:teams id :name] name))
+      (-> state
+          (assoc-in [:teams id :name] name)
+          (assoc-in [:team :name] name)))
 
     ptk/WatchEvent
     (watch [_ _ _]
