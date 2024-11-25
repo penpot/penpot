@@ -5,8 +5,9 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::debug;
-use crate::images::Image;
+use crate::shapes::Fill;
 use crate::shapes::Shape;
+use crate::shapes::{draw_image_in_container, Image};
 use crate::view::Viewbox;
 
 struct GpuState {
@@ -97,6 +98,7 @@ pub(crate) struct RenderState {
     pub cached_surface_image: Option<CachedSurfaceImage>,
     options: RenderOptions,
     pub viewbox: Viewbox,
+    pub images: HashMap<String, Image>,
 }
 
 impl RenderState {
@@ -119,6 +121,7 @@ impl RenderState {
             cached_surface_image: None,
             options: RenderOptions::default(),
             viewbox: Viewbox::new(width as f32, height as f32),
+            images: HashMap::with_capacity(2048),
         }
     }
 
@@ -210,9 +213,22 @@ impl RenderState {
         self.drawing_surface.canvas().concat(&matrix);
 
         for fill in shape.fills().rev() {
-            self.drawing_surface
-                .canvas()
-                .draw_rect(shape.selrect, &fill.to_paint(&shape.selrect));
+            if let Fill::Image(image_fill) = fill {
+                let image = self.images.get(&image_fill.id.to_string());
+                if let Some(image) = image {
+                    draw_image_in_container(
+                        &self.drawing_surface.canvas(),
+                        &image,
+                        (image_fill.width, image_fill.height),
+                        shape.selrect,
+                        &fill.to_paint(&shape.selrect),
+                    );
+                }
+            } else {
+                self.drawing_surface
+                    .canvas()
+                    .draw_rect(shape.selrect, &fill.to_paint(&shape.selrect));
+            }
         }
 
         let mut paint = skia::Paint::default();

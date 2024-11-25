@@ -13,6 +13,9 @@
    [app.config :as cf]
    [app.render-wasm.helpers :as h]
    [app.util.functions :as fns]
+   [app.util.http :as http]
+   [app.util.webapi :as wapi]
+   [beicon.v2.core :as rx]
    [goog.object :as gobj]
    [promesa.core :as p]))
 
@@ -109,17 +112,45 @@
                     (aget buffer 3))))
         shape-ids))
 
+(defn- store-image
+  [id]
+  (let [buffer (uuid/get-u32 id)
+        url    (cf/resolve-file-media {:id id})]
+    (->> (http/send! {:method :get
+                      :uri url
+                      :response-type :blob})
+         (rx/map :body)
+         (rx/mapcat wapi/read-file-as-array-buffer)
+         (rx/map (fn [image]
+                   (let [image-size (.-byteLength image)
+                         image-ptr  (h/call internal-module "_alloc_bytes" image-size)
+                         heap       (gobj/get ^js internal-module "HEAPU8")
+                         mem        (js/Uint8Array. (.-buffer heap) image-ptr image-size)]
+                     (.set mem (js/Uint8Array. image))
+                     (h/call internal-module "_store_image"
+                             (aget buffer 0)
+                             (aget buffer 1)
+                             (aget buffer 2)
+                             (aget buffer 3)
+                             image-ptr
+                             image-size)
+                     true))))))
+
 (defn set-shape-fills
   [fills]
   (h/call internal-module "_clear_shape_fills")
-  (run! (fn [fill]
-          (let [opacity (or (:fill-opacity fill) 1.0)
-                color   (:fill-color fill)
-                gradient (:fill-color-gradient fill)]
-            (when ^boolean color
+  (keep (fn [fill]
+          (let [opacity  (or (:fill-opacity fill) 1.0)
+                color    (:fill-color fill)
+                gradient (:fill-color-gradient fill)
+                image    (:fill-image fill)]
+
+            (cond
+              (some? color)
               (let [rgba (rgba-from-hex color opacity)]
-                (h/call internal-module "_add_shape_solid_fill" rgba)))
-            (when (and (some? gradient)  (= (:type gradient) :linear))
+                (h/call internal-module "_add_shape_solid_fill" rgba))
+
+              (and (some? gradient)  (= (:type gradient) :linear))
               (let [stops     (:stops gradient)
                     n-stops   (count stops)
                     mem-size  (* 5 n-stops)
@@ -137,8 +168,22 @@
                                                                          offset (:offset stop)]
                                                                      [r g b a (* 100 offset)]))
                                                                  stops)))))
+                (h/call internal-module "_add_shape_fill_stops" stops-ptr n-stops))
 
-                (h/call internal-module "_add_shape_fill_stops" stops-ptr n-stops)))))
+              (some? image)
+              (let [id            (dm/get-prop image :id)
+                    buffer        (uuid/get-u32 id)
+                    cached-image? (h/call internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
+                (h/call internal-module "_add_shape_image_fill"
+                        (aget buffer 0)
+                        (aget buffer 1)
+                        (aget buffer 2)
+                        (aget buffer 3)
+                        opacity
+                        (dm/get-prop image :width)
+                        (dm/get-prop image :height))
+                (when (== cached-image? 0)
+                  (store-image id))))))
         fills))
 
 (defn- translate-blend-mode
@@ -183,28 +228,35 @@
 (defn set-objects
   [objects]
   (let [shapes        (into [] (vals objects))
-        total-shapes  (count shapes)]
-    (loop [index 0]
-      (when (< index total-shapes)
-        (let [shape      (nth shapes index)
-              id         (dm/get-prop shape :id)
-              selrect    (dm/get-prop shape :selrect)
-              rotation   (dm/get-prop shape :rotation)
-              transform  (dm/get-prop shape :transform)
-              fills      (dm/get-prop shape :fills)
-              children   (dm/get-prop shape :shapes)
-              blend-mode (dm/get-prop shape :blend-mode)
-              opacity    (dm/get-prop shape :opacity)]
-          (use-shape id)
-          (set-shape-selrect selrect)
-          (set-shape-rotation rotation)
-          (set-shape-transform transform)
-          (set-shape-fills fills)
-          (set-shape-blend-mode blend-mode)
-          (set-shape-children children)
-          (set-shape-opacity opacity)
-          (recur (inc index))))))
-  (request-render))
+        total-shapes  (count shapes)
+        pending
+        (loop [index 0 pending []]
+          (if (< index total-shapes)
+            (let [shape      (nth shapes index)
+                  id         (dm/get-prop shape :id)
+                  selrect    (dm/get-prop shape :selrect)
+                  rotation   (dm/get-prop shape :rotation)
+                  transform  (dm/get-prop shape :transform)
+                  fills      (dm/get-prop shape :fills)
+                  children   (dm/get-prop shape :shapes)
+                  blend-mode (dm/get-prop shape :blend-mode)
+                  opacity    (dm/get-prop shape :opacity)]
+              (use-shape id)
+              (set-shape-selrect selrect)
+              (set-shape-rotation rotation)
+              (set-shape-transform transform)
+              (set-shape-blend-mode blend-mode)
+              (set-shape-children children)
+              (set-shape-opacity opacity)
+              (let [pending-fills (doall (set-shape-fills fills))]
+                (recur (inc index) (into pending pending-fills))))
+            pending))]
+    (request-render)
+    (when-let [pending (seq pending)]
+      (->> (rx/from pending)
+           (rx/mapcat identity)
+           (rx/reduce conj [])
+           (rx/subs! request-render)))))
 
 (def ^:private canvas-options
   #js {:antialias false

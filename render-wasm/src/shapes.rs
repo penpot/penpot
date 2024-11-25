@@ -4,8 +4,10 @@ use uuid::Uuid;
 
 mod blend;
 mod fills;
+mod images;
 pub use blend::*;
 pub use fills::*;
+pub use images::*;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Kind {

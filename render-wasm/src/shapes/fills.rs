@@ -2,6 +2,7 @@ use skia_safe as skia;
 
 use super::Color;
 use crate::math;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Gradient {
@@ -41,9 +42,18 @@ impl Gradient {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct ImageFill {
+    pub id: Uuid,
+    pub alpha: u8,
+    pub height: f32,
+    pub width: f32,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Fill {
     Solid(Color),
     LinearGradient(Gradient),
+    Image(ImageFill),
 }
 
 impl Fill {
@@ -54,6 +64,15 @@ impl Fill {
             opacity,
             colors: vec![],
             offsets: vec![],
+        })
+    }
+
+    pub fn new_image_fill(id: Uuid, alpha: u8, height: f32, width: f32) -> Self {
+        Self::Image(ImageFill {
+            id,
+            alpha,
+            height,
+            width,
         })
     }
 
@@ -73,6 +92,14 @@ impl Fill {
                 p.set_alpha((gradient.opacity * 255.) as u8);
                 p.set_style(skia::PaintStyle::Fill);
                 p.set_blend_mode(skia::BlendMode::SrcOver);
+                p
+            }
+            Self::Image(image_fill) => {
+                let mut p = skia::Paint::default();
+                p.set_style(skia::PaintStyle::Fill);
+                p.set_anti_alias(true);
+                p.set_blend_mode(skia::BlendMode::SrcOver);
+                p.set_alpha(image_fill.alpha);
                 p
             }
         }
