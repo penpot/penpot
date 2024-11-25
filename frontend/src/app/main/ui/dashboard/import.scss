@@ -64,6 +64,7 @@
 }
 
 .file-entry {
+  display: flex;
   .file-name {
     @include flexRow;
     .file-icon {
@@ -114,6 +115,8 @@
   }
   .error-message,
   .progress-message {
+    display: flex;
+    align-items: center;
     height: $s-32;
     color: var(--modal-text-foreground-color);
   }
