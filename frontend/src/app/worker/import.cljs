@@ -799,7 +799,8 @@
                     (rx/merge-map
                      (fn [body]
                        (let [mtype (parse-mtype body)]
-                         (if (= "application/zip" mtype)
+                         (cond
+                           (= "application/zip" mtype)
                            (->> (uz/load body)
                                 (rx/merge-map read-zip-manifest)
                                 (rx/map
@@ -808,7 +809,13 @@
                                      (let [manifest (decode-manifest manifest)]
                                        (assoc file :type :binfile-v3 :files (:files manifest)))
                                      (assoc file :type :legacy-zip :body body)))))
-                           (rx/of (assoc file :type :binfile-v1))))))
+
+                           (= "application/octet-stream" mtype)
+                           (rx/of (assoc file :type :binfile-v1))
+
+                           :else
+                           (rx/of (assoc file :type :unknown))))))
+
                     (rx/share))]
 
     (->> (rx/merge
@@ -837,9 +844,10 @@
                                                   (assoc :status :success))))))))
 
           (->> stream
-               (rx/filter (fn [data] (= "other" (:type data))))
+               (rx/filter (fn [data] (= :unknown (:type data))))
                (rx/map (fn [_]
                          {:uri (:uri file)
+                          :status :error
                           :error (tr "dashboard.import.analyze-error")}))))
 
          (rx/catch (fn [cause]
