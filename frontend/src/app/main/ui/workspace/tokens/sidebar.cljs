@@ -239,7 +239,8 @@
         on-open (mf/use-fn #(reset! open? true))]
     [:& sets-context/provider {}
      [:& sets-context-menu]
-     [:article {:class (stl/css :sets-section-wrapper)
+     [:article {:data-testid "token-themes-sets-sidebar"
+                :class (stl/css :sets-section-wrapper)
                 :style {"--resize-height" (str resize-height "px")}}
       [:div {:class (stl/css :sets-sidebar)}
        [:& themes-header]

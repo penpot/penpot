@@ -27,7 +27,9 @@ test.describe("Tokens: Tab", () => {
     await expect(tokensTabPanel).toHaveText(/Themes/);
   });
 
-  test("Created color token shows up in the sidebar", async ({ page }) => {
+  test("User creates color token and auto created set show up in the sidebar", async ({
+    page,
+  }) => {
     const workspacePage = new WorkspacePage(page);
     await workspacePage.setupEmptyFile();
     await workspacePage.mockRPC(
@@ -83,5 +85,17 @@ test.describe("Tokens: Tab", () => {
 
     // Tokens tab panel should have two tokens with the color red / #ff0000
     await expect(tokensTabPanel.getByTitle("#ff0000")).toHaveCount(2);
+
+    // Global set has been auto created and is active
+    await expect(
+      workspacePage.tokenThemesSetsSidebar.getByRole("button", {
+        name: "Global",
+      }),
+    ).toHaveCount(1);
+    await expect(
+      workspacePage.tokenThemesSetsSidebar.getByRole("button", {
+        name: "Global",
+      }),
+    ).toHaveAttribute("aria-checked", "true");
   });
 });

@@ -111,7 +111,7 @@
   [{:keys [set label tree-depth tree-path selected? on-select active? on-toggle editing? on-edit on-edit-reset on-edit-submit]}]
   (let [set-name (.-name set)
         editing?' (editing? tree-path)
-        active?' (active? set-name)
+        active?' (some? (active? set-name))
         on-click
         (mf/use-fn
          (mf/deps editing?' tree-path)
@@ -138,7 +138,8 @@
                                 :selected-set selected?)
            :on-click on-click
            :on-double-click #(on-edit tree-path)
-           :on-context-menu on-context-menu}
+           :on-context-menu on-context-menu
+           :aria-checked active?'}
      [:> icon*
       {:id "document"
        :class (stl/css-case :icon true
