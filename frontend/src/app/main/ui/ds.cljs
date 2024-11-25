@@ -9,6 +9,7 @@
    [app.config :as cf]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list]]
@@ -37,6 +38,7 @@
        :Loader loader*
        :RawSvg raw-svg*
        :Select select*
+       :Combobox combobox*
        :Text text*
        :TabSwitcher tab-switcher*
        :Toast toast*
