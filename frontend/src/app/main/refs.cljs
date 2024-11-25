@@ -13,6 +13,7 @@
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
    [app.main.ui.workspace.tokens.token-set :as wtts]
@@ -588,7 +589,8 @@
   [object-id]
   (l/derived
    (fn [state]
-     (dm/get-in state [:workspace-thumbnails object-id]))
+     (some-> (dm/get-in state [:workspace-thumbnails object-id])
+             (cf/resolve-media)))
    st/state))
 
 (def workspace-text-modifier

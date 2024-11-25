@@ -57,15 +57,6 @@
                       component)]
       [root-shape container])))
 
-
-    ;; NOTE: We don't schedule the thumbnail generation on idle right now
-    ;; until we can queue and handle thumbnail batching properly.
-#_(mf/with-effect []
-    (when-not (some? thumbnail-uri)
-      (tm/schedule-on-idle
-       #(st/emit! (dwl/update-component-thumbnail (:id component) file-id)))))
-
-
 (mf/defc components-item
   {::mf/wrap-props false}
   [{:keys [component renaming listing-thumbs? selected

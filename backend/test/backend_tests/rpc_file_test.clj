@@ -1090,8 +1090,7 @@
         (t/is (contains? result :file-id))
 
         (t/is (= (:id file) (:file-id result)))
-        (t/is (str/starts-with? (get-in result [:page :objects frame1-id :thumbnail])
-                                "http://localhost:3449/assets/by-id/"))
+        (t/is (uuid? (get-in result [:page :objects frame1-id :thumbnail-id])))
         (t/is (= [] (get-in result [:page :objects frame1-id :shapes]))))
 
       ;; Delete thumbnail data

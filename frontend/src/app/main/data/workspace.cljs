@@ -199,18 +199,21 @@
 
                ;; Load libraries
                (->> (rp/cmd! :get-file-libraries {:file-id file-id})
-                    (rx/mapcat identity)
-                    (rx/merge-map
-                     (fn [{:keys [id synced-at]}]
-                       (->> (rp/cmd! :get-file {:id id :features features})
-                            (rx/map #(assoc % :synced-at synced-at)))))
-                    (rx/merge-map fpmap/resolve-file)
-                    (rx/merge-map
-                     (fn [{:keys [id] :as file}]
-                       (->> (rp/cmd! :get-file-object-thumbnails {:file-id id :tag "component"})
-                            (rx/map #(assoc file :thumbnails %)))))
-                    (rx/reduce conj [])
-                    (rx/map libraries-fetched)))
+                    (rx/mapcat (fn [libraries]
+                                 (rx/merge
+                                  (->> (rx/from libraries)
+                                       (rx/merge-map
+                                        (fn [{:keys [id synced-at]}]
+                                          (->> (rp/cmd! :get-file {:id id :features features})
+                                               (rx/map #(assoc % :synced-at synced-at)))))
+                                       (rx/merge-map fpmap/resolve-file)
+                                       (rx/reduce conj [])
+                                       (rx/map libraries-fetched))
+                                  (->> (rx/from libraries)
+                                       (rx/map :id)
+                                       (rx/mapcat (fn [file-id]
+                                                    (rp/cmd! :get-file-object-thumbnails {:file-id file-id :tag "component"})))
+                                       (rx/map dwl/library-thumbnails-fetched)))))))
 
               (rx/of (with-meta (workspace-initialized)
                        {:file-id file-id})))

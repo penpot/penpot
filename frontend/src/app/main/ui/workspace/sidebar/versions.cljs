@@ -134,7 +134,8 @@
               time   (dt/timeago (:created-at entry) {:locale locale})]
           [:span {:class (stl/css :date)} time])]]
 
-      [:> icon-button* {:variant "ghost"
+      [:> icon-button* {:class (stl/css :version-entry-options)
+                        :variant "ghost"
                         :aria-label (tr "workspace.versions.version-menu")
                         :on-click handle-open-menu
                         :icon "menu"}]]
