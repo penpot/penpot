@@ -164,6 +164,7 @@ impl RenderState {
 
         let mut paint = skia::Paint::default();
         paint.set_blend_mode(shape.blend_mode.into());
+        paint.set_alpha_f(shape.opacity);
         self.drawing_surface.draw(
             &mut self.final_surface.canvas(),
             (0.0, 0.0),

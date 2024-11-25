@@ -104,6 +104,7 @@ pub struct Shape {
     pub rotation: f32,
     fills: Vec<Fill>,
     pub blend_mode: BlendMode,
+    pub opacity: f32,
 }
 
 impl Shape {
@@ -117,6 +118,7 @@ impl Shape {
             rotation: 0.,
             fills: vec![],
             blend_mode: BlendMode::default(),
+            opacity: 1.,
         }
     }
 

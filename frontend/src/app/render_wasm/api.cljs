@@ -125,6 +125,10 @@
   ;; https://rust-skia.github.io/doc/skia_safe/enum.BlendMode.html
   (h/call internal-module "_set_shape_blend_mode" (translate-blend-mode blend-mode)))
 
+(defn set-shape-opacity
+  [opacity]
+  (h/call internal-module "_set_shape_opacity" (or opacity 1)))
+
 (def debounce-render-without-cache (fns/debounce render-without-cache 100))
 
 (defn set-view
@@ -146,7 +150,8 @@
               transform  (dm/get-prop shape :transform)
               fills      (dm/get-prop shape :fills)
               children   (dm/get-prop shape :shapes)
-              blend-mode (dm/get-prop shape :blend-mode)]
+              blend-mode (dm/get-prop shape :blend-mode)
+              opacity    (dm/get-prop shape :opacity)]
           (use-shape id)
           (set-shape-selrect selrect)
           (set-shape-rotation rotation)
@@ -154,6 +159,7 @@
           (set-shape-fills fills)
           (set-shape-blend-mode blend-mode)
           (set-shape-children children)
+          (set-shape-opacity opacity)
           (recur (inc index))))))
   (request-render))
 
