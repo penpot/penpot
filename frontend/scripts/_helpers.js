@@ -508,6 +508,7 @@ export async function compileStyles() {
   const start = process.hrtime();
 
   log.info("init: compile styles");
+
   let result = await compileSassAll(worker);
   result = concatSass(result);
 
