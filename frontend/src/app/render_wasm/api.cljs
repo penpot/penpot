@@ -16,6 +16,7 @@
 
 (defonce internal-frame-id nil)
 (defonce internal-module #js {})
+(defonce use-dpr? (contains? cf/flags :render-wasm-dpr))
 
 ;; This should never be called from the outside.
 ;; This function receives a "time" parameter that we're not using but maybe in the future could be useful (it is the time since
@@ -182,7 +183,7 @@
   [canvas]
   (let [gl      (unchecked-get internal-module "GL")
         context (.getContext ^js canvas "webgl2" canvas-options)
-        dpr     js/window.devicePixelRatio
+        dpr     (when use-dpr? js/window.devicePixelRatio)
 
         ;; Register the context with emscripten
         handle  (.registerContext ^js gl context #js {"majorVersion" 2})]
