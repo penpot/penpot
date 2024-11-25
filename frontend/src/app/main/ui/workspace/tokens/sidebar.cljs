@@ -148,7 +148,8 @@
                             :open? open?}
       [:& cmm/asset-section-block {:role :title-button}
        [:button {:class (stl/css :action-button)
-                 :on-click on-popover-open-click}
+                 :on-click on-popover-open-click
+                 :title (str "Add token: " title)}
         i/add]]
       (when open?
         [:& cmm/asset-section-block {:role :content}
@@ -238,7 +239,8 @@
         on-open (mf/use-fn #(reset! open? true))]
     [:& sets-context/provider {}
      [:& sets-context-menu]
-     [:article {:class (stl/css :sets-section-wrapper)
+     [:article {:data-testid "token-themes-sets-sidebar"
+                :class (stl/css :sets-section-wrapper)
                 :style {"--resize-height" (str resize-height "px")}}
       [:div {:class (stl/css :sets-sidebar)}
        [:& themes-header]

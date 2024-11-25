@@ -48,7 +48,8 @@
                      (fn []
                        (modal/hide!)))]
     [:div {:class (stl/css :token-modal-wrapper)
-           :style wrapper-style}
+           :style wrapper-style
+           :data-testid "token-update-create-modal"}
      [:> icon-button* {:on-click close-modal
                        :class (stl/css :close-btn)
                        :icon i/close

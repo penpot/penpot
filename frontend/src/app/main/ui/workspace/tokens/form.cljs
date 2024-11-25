@@ -360,8 +360,8 @@ Token names should only contain letters and digits separated by . characters.")}
            (dom/prevent-default e)
            (modal/hide!)))]
 
-    [:form  {:class (stl/css :form-wrapper)
-             :on-submit on-submit}
+    [:form {:class (stl/css :form-wrapper)
+            :on-submit on-submit}
      [:div {:class (stl/css :token-rows)}
       [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :form-modal-title)}
        (if (= action "edit")
