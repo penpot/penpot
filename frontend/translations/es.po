@@ -402,6 +402,9 @@ msgstr "Añadir como Biblioteca Compartida"
 msgid "dashboard.show-version-history"
 msgstr "Histórico de versiones"
 
+msgid "dashboard.create-version-menu"
+msgstr "Guardar esta versión"
+
 #: src/app/main/ui/settings/profile.cljs:72
 msgid "dashboard.change-email"
 msgstr "Cambiar correo"
@@ -6560,3 +6563,9 @@ msgstr "Abrir menu de versiones"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "workspace.versions.tab.history"
+msgstr "Histórico"
+
+msgid "workspace.versions.tab.actions"
+msgstr "Acciones"

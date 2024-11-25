@@ -400,6 +400,9 @@ msgstr "Add as Shared Library"
 msgid "dashboard.show-version-history"
 msgstr "Version history"
 
+msgid "dashboard.create-version-menu"
+msgstr "Pin this version"
+
 #: src/app/main/ui/settings/profile.cljs:72
 msgid "dashboard.change-email"
 msgstr "Change email"
@@ -6565,3 +6568,9 @@ msgstr "Open version menu"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "workspace.versions.tab.history"
+msgstr "History"
+
+msgid "workspace.versions.tab.actions"
+msgstr "Actions"
