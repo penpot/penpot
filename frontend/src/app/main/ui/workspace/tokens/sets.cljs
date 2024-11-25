@@ -119,6 +119,7 @@
          (fn [event]
            (dom/stop-propagation event)
            (when-not editing?'
+             (on-toggle set-name)
              (on-select tree-path))))
 
         on-context-menu
@@ -132,6 +133,7 @@
               (wdt/show-token-set-context-menu
                {:position (dom/get-client-position event)
                 :tree-path tree-path})))))]
+
     [:div {;; :ref dref
            :role "button"
            :data-testid "tokens-set-item"
@@ -154,9 +156,8 @@
          :on-submit #(on-edit-submit set-name (ctob/update-name set %))}]
        [:*
         [:div {:class (stl/css :set-name)} label]
-        [:button {:on-click (fn [event]
-                              (dom/stop-propagation event)
-                              (on-toggle set-name))
+        [:button {:on-click on-click
+                  :type "button"
                   :class (stl/css-case :checkbox-style true
                                        :checkbox-checked-style active?')}
          (when active?'
