@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-14 11:14+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-11-25 20:01+0000\n"
+"Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -6079,3 +6079,88 @@ msgstr "Aktualisieren"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:150
+msgid "workspace.options.fill.add-fill"
+msgstr "Füllfarbe hinzufügen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:302
+msgid "workspace.options.shadow-options.add-shadow"
+msgstr "Schatten hinzufügen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:177, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:315
+msgid "workspace.options.shadow-options.remove-shadow"
+msgstr "Schatten entfernen"
+
+#: src/app/main/ui/dashboard/fonts.cljs:444
+msgid "dashboard.fonts.empty-placeholder-viewer"
+msgstr "Noch keine eigenen Schriftarten vorhanden."
+
+#: src/app/main/ui/dashboard/team.cljs:944
+msgid "dashboard.webhooks.cant-edit"
+msgstr "Sie können nur von Ihnen erstellte Webhooks löschen oder ändern."
+
+#: src/app/main/data/common.cljs:233
+msgid "dashboard.removed-from-team"
+msgstr "Sie sind nicht mehr Teil des Teams “%s“."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:271
+msgid "settings.remove-color"
+msgstr "Farbe entfernen"
+
+#: src/app/main/ui/workspace/plugins.cljs:196
+msgid "workspace.plugins.error.manifest"
+msgstr "Das Plugin-Manifest ist falsch."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:32
+msgid "dashboard.empty-placeholder-libraries-title"
+msgstr "Noch keine Bibliotheken vorhanden."
+
+#: src/app/main/data/common.cljs:204
+msgid "dashboard.permissions-change.editor"
+msgstr "Sie sind jetzt ein Redakteur in diesem Team."
+
+#: src/app/main/data/common.cljs:203
+msgid "dashboard.permissions-change.viewer"
+msgstr "Sie sind jetzt ein Zuschauer in diesem Team."
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:153
+msgid "labels.collapse"
+msgstr "Zusammenklappen"
+
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:495
+msgid "workspace.assets.colors.add-color"
+msgstr "Farbe hinzufügen"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:532
+msgid "workspace.assets.components.add-component"
+msgstr "Komponente hinzufügen"
+
+#: src/app/main/ui/workspace/right_header.cljs:255
+msgid "workspace.header.share"
+msgstr "Teilen"
+
+#: src/app/main/ui/workspace/libraries.cljs:304
+msgid "workspace.libraries.more-templates-link"
+msgstr "weitere Vorlagen sind hier"
+
+#: src/app/main/ui/comments.cljs:340, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:295, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:324
+msgid "labels.options"
+msgstr "Optionen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1051
+#, unused
+msgid "labels.add"
+msgstr "Hinzufügen"
+
+#: src/app/main/ui/dashboard/files.cljs:186, src/app/main/ui/dashboard/projects.cljs:280
+msgid "dashboard.empty-placeholder-files-title"
+msgstr "Noch keine Dateien vorhanden."
+
+#: src/app/main/data/common.cljs:205
+msgid "dashboard.permissions-change.admin"
+msgstr "Sie sind jetzt ein Admin in diesem Team."
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:149, src/app/main/ui/workspace/sidebar/versions.cljs:288
+msgid "labels.restore"
+msgstr "Wiederherstellen"
