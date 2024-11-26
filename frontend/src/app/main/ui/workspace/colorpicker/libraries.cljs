@@ -22,6 +22,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc libraries
@@ -76,8 +77,14 @@
 
         on-color-click
         (mf/use-fn
-         (mf/deps state)
+         (mf/deps state @selected)
          (fn [event]
+           (when-not (= :recent @selected)
+             (st/emit! (ptk/event
+                        ::ev/event
+                        {::ev/name "use-library-color"
+                         ::ev/origin "colorpicker"
+                         :external-library (not= :file @selected)})))
            (on-select-color state event)))]
 
     ;; Load library colors when the select is changed

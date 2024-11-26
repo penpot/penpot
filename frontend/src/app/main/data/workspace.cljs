@@ -2016,6 +2016,8 @@
                                 (map :id)
                                 (pcb/resize-parents changes))
 
+              orig-shapes  (map (d/getf all-objects) selected)
+
               selected     (into (d/ordered-set)
                                  (comp
                                   (filter add-obj?)
@@ -2028,13 +2030,22 @@
                              (some? drop-cell)
                              (pcb/update-shapes [parent-id]
                                                 #(ctl/add-children-to-cell % selected all-objects drop-cell)))
+
               undo-id      (js/Symbol)]
 
-          (rx/of (dwu/start-undo-transaction undo-id)
-                 (dch/commit-changes changes)
-                 (dws/select-shapes selected)
-                 (ptk/data-event :layout/update {:ids [frame-id]})
-                 (dwu/commit-undo-transaction undo-id)))))))
+          (rx/concat
+           (->> (filter ctk/instance-head? orig-shapes)
+                (map (fn [{:keys [component-file]}]
+                       (ptk/event ::ev/event
+                                  {::ev/name "use-library-component"
+                                   ::ev/origin "paste"
+                                   :external-library (not= file-id component-file)})))
+                (rx/from))
+           (rx/of (dwu/start-undo-transaction undo-id)
+                  (dch/commit-changes changes)
+                  (dws/select-shapes selected)
+                  (ptk/data-event :layout/update {:ids [frame-id]})
+                  (dwu/commit-undo-transaction undo-id))))))))
 
 (defn as-content [text]
   (let [paragraphs (->> (str/lines text)
