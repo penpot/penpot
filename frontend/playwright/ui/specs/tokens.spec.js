@@ -106,7 +106,7 @@ test.describe("Tokens: Tokens Tab", () => {
 });
 
 test.describe("Tokens: Sets Tab", () => {
-  const createSet = async (sidebar, setName) => {
+  const createSet = async (sidebar, setName, finalKey = "Enter") => {
     const tokensTabButton = sidebar
       .getByRole("button", { name: "Add set" })
       .click();
@@ -114,7 +114,7 @@ test.describe("Tokens: Sets Tab", () => {
     const setInput = sidebar.locator("input:focus");
     await expect(setInput).toBeVisible();
     await setInput.fill(setName);
-    await setInput.press("Enter");
+    await setInput.press(finalKey);
   };
 
   test("User creates sets tree structure by entering a set path", async ({
@@ -133,6 +133,9 @@ test.describe("Tokens: Sets Tab", () => {
 
     await createSet(tokenThemesSetsSidebar, "core/colors/light");
     await createSet(tokenThemesSetsSidebar, "core/colors/dark");
+
+    // User cancels during editing
+    await createSet(tokenThemesSetsSidebar, "core/colors/dark", "Escape");
 
     await expect(tokenSetItems).toHaveCount(2);
     await expect(tokenSetGroupItems).toHaveCount(2);
