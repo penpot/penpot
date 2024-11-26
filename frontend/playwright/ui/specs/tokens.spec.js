@@ -22,6 +22,8 @@ const setupFileWithTokens = async (page) => {
     workspacePage,
     tokensUpdateCreateModal: workspacePage.tokensUpdateCreateModal,
     tokenThemesSetsSidebar: workspacePage.tokenThemesSetsSidebar,
+    tokenSetItems: workspacePage.tokenSetItems,
+    tokenSetGroupItems: workspacePage.tokenSetGroupItems,
   };
 };
 
@@ -100,5 +102,39 @@ test.describe("Tokens: Tokens Tab", () => {
         name: "Global",
       }),
     ).toHaveAttribute("aria-checked", "true");
+  });
+});
+
+test.describe("Tokens: Sets Tab", () => {
+  const createSet = async (sidebar, setName) => {
+    const tokensTabButton = sidebar
+      .getByRole("button", { name: "Add set" })
+      .click();
+
+    const setInput = sidebar.locator("input:focus");
+    await expect(setInput).toBeVisible();
+    await setInput.fill(setName);
+    await setInput.press("Enter");
+  };
+
+  test("User creates sets tree structure by entering a set path", async ({
+    page,
+  }) => {
+    const {
+      workspacePage,
+      tokenThemesSetsSidebar,
+      tokenSetItems,
+      tokenSetGroupItems,
+    } = await setupFileWithTokens(page);
+
+    const tokensTabButton = tokenThemesSetsSidebar
+      .getByRole("button", { name: "Add set" })
+      .click();
+
+    await createSet(tokenThemesSetsSidebar, "core/colors/light");
+    await createSet(tokenThemesSetsSidebar, "core/colors/dark");
+
+    await expect(tokenSetItems).toHaveCount(2);
+    await expect(tokenSetGroupItems).toHaveCount(2);
   });
 });

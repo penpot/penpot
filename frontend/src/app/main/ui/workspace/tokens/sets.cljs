@@ -83,6 +83,7 @@
                 :tree-path tree-path})))))]
     [:div {;; :ref dref
            :role "button"
+           :data-testid "tokens-set-group-item"
            :style {"--tree-depth" tree-depth}
            :class (stl/css-case :set-item-container true
                                 :selected-set selected?)
@@ -133,6 +134,7 @@
                 :tree-path tree-path})))))]
     [:div {;; :ref dref
            :role "button"
+           :data-testid "tokens-set-item"
            :style {"--tree-depth" tree-depth}
            :class (stl/css-case :set-item-container true
                                 :selected-set selected?)
