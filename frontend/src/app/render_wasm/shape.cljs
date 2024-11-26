@@ -8,6 +8,7 @@
   (:require
    [app.common.transit :as t]
    [app.common.types.shape :as shape]
+   ;; [app.common.svg.path :as path]
    [app.render-wasm.api :as api]
    [clojure.core :as c]
    [cuerdas.core :as str]))
@@ -16,7 +17,11 @@
 (declare ^:private impl-conj)
 (declare ^:private impl-dissoc)
 
-(deftype ShapeProxy [delegate]
+(defn map-entry
+  [k v]
+  (cljs.core/MapEntry. k v nil))
+
+(deftype ShapeProxy [id type delegate]
   Object
   (toString [coll]
     (str "{" (str/join ", " (for [[k v] coll] (str k " " v))) "}"))
@@ -29,7 +34,7 @@
 
   IWithMeta
   (-with-meta [_ meta]
-    (ShapeProxy. (with-meta delegate meta)))
+    (ShapeProxy. id type (with-meta delegate meta)))
 
   IMeta
   (-meta [_] (meta delegate))
@@ -49,7 +54,9 @@
 
   ISeqable
   (-seq [_]
-    (c/-seq delegate))
+    (cons (map-entry :id id)
+          (cons (map-entry :type type)
+                (c/-seq delegate))))
 
   ICounted
   (-count [_]
@@ -60,18 +67,28 @@
     (-lookup coll k nil))
 
   (-lookup [_ k not-found]
-    (c/-lookup delegate k not-found))
+    (case k
+      :id id
+      :type type
+      (c/-lookup delegate k not-found)))
 
   IFind
   (-find [_ k]
-    (c/-find delegate k))
+    (case k
+      :id
+      (map-entry :id id)
+      :type
+      (map-entry :type type)
+      (c/-find delegate k)))
 
   IAssociative
   (-assoc [coll k v]
     (impl-assoc coll k v))
 
   (-contains-key? [_ k]
-    (contains? delegate k))
+    (or (= k :id)
+        (= k :type)
+        (contains? delegate k)))
 
   IMap
   (-dissoc [coll k]
@@ -79,7 +96,7 @@
 
   IFn
   (-invoke [coll k]
-    (-lookup coll k))
+    (-lookup coll k nil))
 
   (-invoke [coll k not-found]
     (-lookup coll k not-found))
@@ -107,19 +124,44 @@
     ;; is modified, we need to request
     ;; a new render.
     (api/request-render))
-  (let [delegate  (.-delegate ^ShapeProxy self)
-        delegate' (assoc delegate k v)]
-    (if (identical? delegate' delegate)
-      self
-      (ShapeProxy. delegate'))))
+  (case k
+    :id
+    (ShapeProxy. v
+                 (.-type ^ShapeProxy self)
+                 (.-delegate ^ShapeProxy self))
+    :type
+    (ShapeProxy. (.-id ^ShapeProxy self)
+                 v
+                 (.-delegate ^ShapeProxy self))
+
+    (let [delegate  (.-delegate ^ShapeProxy self)
+          delegate' (assoc delegate k v)]
+      (if (identical? delegate' delegate)
+        self
+        (ShapeProxy. (.-id ^ShapeProxy self)
+                     (.-type ^ShapeProxy self)
+                     delegate')))))
 
 (defn- impl-dissoc
   [self k]
-  (let [delegate  (.-delegate ^ShapeProxy self)
-        delegate' (dissoc delegate k)]
-    (if (identical? delegate delegate')
-      self
-      (ShapeProxy. delegate'))))
+  (case k
+    :id
+    (ShapeProxy. nil
+                 (.-type ^ShapeProxy self)
+                 (.-delegate ^ShapeProxy self))
+    :type
+    (ShapeProxy. (.-id ^ShapeProxy self)
+                 nil
+                 (.-delegate ^ShapeProxy self))
+
+    :else
+    (let [delegate  (.-delegate ^ShapeProxy self)
+          delegate' (dissoc delegate k)]
+      (if (identical? delegate delegate')
+        self
+        (ShapeProxy. (.-id ^ShapeProxy self)
+                     (.-type ^ShapeProxy self)
+                     delegate')))))
 
 (defn- impl-conj
   [self entry]
@@ -137,7 +179,9 @@
 (defn create-shape
   "Instanciate a shape from a map"
   [attrs]
-  (ShapeProxy. attrs))
+  (ShapeProxy. (:id attrs)
+               (:type attrs)
+               (dissoc attrs :id :type)))
 
 (t/add-handlers!
  ;; We only add a write handler, read handler uses the dynamic dispatch
