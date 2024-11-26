@@ -207,7 +207,7 @@
                           (st/emit! (dw/create-page {:file-id file-id :project-id project-id}))
                           (-> event dom/get-current-target dom/blur!)))
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
-        permissions    (mf/use-ctx ctx/team-permissions)]
+        permissions    (mf/use-ctx ctx/permissions)]
 
     [:div {:class (stl/css :sitemap)
            :style #js {"--height" (str size "px")}}

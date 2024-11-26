@@ -24,7 +24,7 @@
 (defn- on-success
   [profile]
   (st/emit! (ntf/success (tr "notifications.profile-saved"))
-            (du/profile-fetched profile)))
+            (du/initialize-profile profile)))
 
 (defn- on-submit
   [form _event]

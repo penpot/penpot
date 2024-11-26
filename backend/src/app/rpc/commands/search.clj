@@ -9,7 +9,6 @@
    [app.common.schema :as sm]
    [app.db :as db]
    [app.rpc :as-alias rpc]
-   [app.rpc.commands.files :refer [resolve-public-uri]]
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]))
 
@@ -61,7 +60,7 @@
                (if-let [media-id (:media-id row)]
                  (-> row
                      (dissoc :media-id)
-                     (assoc :thumbnail-uri (resolve-public-uri media-id)))
+                     (assoc :thumbnail-id media-id))
                  (dissoc row :media-id))))))
 
 (def ^:private schema:search-files

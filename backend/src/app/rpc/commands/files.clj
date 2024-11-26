@@ -575,7 +575,7 @@
                          (if-let [media-id (:media-id row)]
                            (-> row
                                (dissoc :media-id)
-                               (assoc :thumbnail-uri (resolve-public-uri media-id)))
+                               (assoc :thumbnail-id media-id))
                            (dissoc row :media-id))))
                   (map #(assoc % :library-summary (get-library-summary cfg %)))
                   (map #(dissoc % :data))))))

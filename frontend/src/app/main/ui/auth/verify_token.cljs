@@ -6,6 +6,7 @@
 
 (ns app.main.ui.auth.verify-token
   (:require
+   [app.main.data.auth :as da]
    [app.main.data.notifications :as ntf]
    [app.main.data.users :as du]
    [app.main.repo :as rp]
@@ -25,7 +26,7 @@
   [data]
   (let [msg (tr "dashboard.notifications.email-verified-successfully")]
     (ts/schedule 1000 #(st/emit! (ntf/success msg)))
-    (st/emit! (du/login-from-token data))))
+    (st/emit! (da/login-from-token data))))
 
 (defmethod handle-token :change-email
   [_data]
@@ -36,7 +37,7 @@
 
 (defmethod handle-token :auth
   [tdata]
-  (st/emit! (du/login-from-token tdata)))
+  (st/emit! (da/login-from-token tdata)))
 
 (defmethod handle-token :team-invitation
   [tdata]

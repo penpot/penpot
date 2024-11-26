@@ -43,6 +43,7 @@
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
    [app.main.data.plugins :as dp]
+   [app.main.data.team :as dtm]
    [app.main.data.users :as du]
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.collapse :as dwco]
@@ -167,6 +168,7 @@
 
         (->> (rx/concat
               ;; Initialize notifications
+              ;; FIXME: this should not be initialized here looks like
               (rx/of (dwn/initialize team-id file-id)
                      (dwsl/initialize))
 
@@ -174,11 +176,11 @@
               ;; fully loadad before mark workspace as initialized
               (rx/merge
                (->> stream
-                    (rx/filter (ptk/type? ::df/team-fonts-loaded))
+                    (rx/filter (ptk/type? ::df/fonts-loaded))
                     (rx/take 1)
                     (rx/ignore))
 
-               (rx/of (df/load-team-fonts team-id))
+               (rx/of (df/fetch-fonts))
 
                ;; FIXME: move to bundle fetch stages
 
@@ -275,20 +277,29 @@
                          ;; steps
                          (->> (rx/from wasm/module)
                               (rx/ignore))
+
                          (->> (rp/cmd! :get-team {:id (:team-id project)})
                               (rx/mapcat (fn [team]
                                            (let [bundle {:team team
                                                          :project project
                                                          :file-id file-id
                                                          :project-id project-id}]
-                                             (rx/of (du/set-current-team team)
+                                             ;; FIXME: this should not be handled here, pending
+                                             ;; refactor of urls and team initialization
+                                             ;; normalization
+                                             (rx/of (dtm/set-current-team team)
                                                     (ptk/data-event ::bundle-stage-1 bundle)))))))))
            (rx/take-until
             (rx/filter (ptk/type? ::fetch-bundle) stream))))))
 
 (defn- fetch-bundle-stage-2
-  [{:keys [file-id project-id] :as bundle}]
+  [{:keys [file-id project-id project] :as bundle}]
   (ptk/reify ::fetch-bundle-stage-2
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update :projects assoc project-id project)))
+
     ptk/WatchEvent
     (watch [_ state stream]
       (let [features (features/get-team-enabled-features state)
@@ -419,7 +430,6 @@
            :workspace-media-objects
            :workspace-persistence
            :workspace-presence
-           :workspace-project
            :workspace-ready?
            :workspace-undo)
           (update :workspace-global dissoc :read-only?)
@@ -1148,9 +1158,9 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [project-id (get-in state [:workspace-project :id])
-            file-id    (get-in state [:workspace-file :id])
-            page-id    (get state :current-page-id)
+      (let [project-id (:current-project-id state)
+            file-id    (:current-file-id state)
+            page-id    (:current-page-id state)
             pparams    {:file-id file-id :project-id project-id}
             qparams    {:page-id page-id :layout (name layout)}]
         (rx/of (rt/nav :workspace pparams qparams))))))
@@ -1300,9 +1310,10 @@
       (let [components-v2 (features/active-feature? state "components/v2")]
         (if components-v2
           (rx/of (go-to-main-instance nil component-id))
-          (let [project-id    (get-in state [:workspace-project :id])
-                file-id       (get-in state [:workspace-file :id])
-                page-id       (get state :current-page-id)
+          (let [file-id       (:current-file-id state)
+                project-id    (:current-project-id state)
+                page-id       (:current-page-id state)
+
                 pparams       {:file-id file-id :project-id project-id}
                 qparams       {:page-id page-id :layout :assets}]
             (rx/of (rt/nav :workspace pparams qparams)
@@ -1322,9 +1333,9 @@
   (ptk/reify ::show-component-in-assets
     ptk/WatchEvent
     (watch [_ state _]
-      (let [project-id     (get-in state [:workspace-project :id])
-            file-id        (get-in state [:workspace-file :id])
-            page-id        (get state :current-page-id)
+      (let [project-id     (:current-project-id state)
+            file-id        (:current-file-id state)
+            page-id        (:current-page-id state)
             pparams        {:file-id file-id :project-id project-id}
             qparams        {:page-id page-id :layout :assets}
             component-path (cfh/split-path (get-in state [:workspace-data :components component-id :path]))

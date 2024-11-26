@@ -10,8 +10,8 @@
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.config :as cf]
+   [app.main.data.auth :as da]
    [app.main.data.notifications :as ntf]
-   [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.auth.login :as login]
@@ -194,7 +194,7 @@
                  (st/emit! (rt/nav :auth-verify-token {} {:token token})))
 
                (:is-active params)
-               (st/emit! (du/login-from-register))
+               (st/emit! (da/login-from-register))
 
                :else
                (do

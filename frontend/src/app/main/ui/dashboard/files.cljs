@@ -126,24 +126,30 @@
                            :on-menu-close on-menu-close
                            :on-import on-import}])]]))
 
-(mf/defc files-section
+(mf/defc files-section*
   {::mf/props :obj}
   [{:keys [project team]}]
-  (let [files-map        (mf/deref refs/dashboard-files)
-        can-edit?        (-> team :permissions :can-edit)
-        project-id       (:id project)
-        is-draft-proyect (:is-default project)
+  (let [files            (mf/deref refs/files)
+        project-id       (get project :id)
 
-        [rowref limit] (hooks/use-dynamic-grid-item-width)
+        files            (mf/with-memo [project-id files]
+                           (->> (vals files)
+                                (filter #(= project-id (:project-id %)))
+                                (sort-by :modified-at)
+                                (reverse)))
 
-        files     (mf/with-memo [project-id files-map]
-                    (->> (vals files-map)
-                         (filter #(= project-id (:project-id %)))
-                         (sort-by :modified-at)
-                         (reverse)))
-        file-count (or (count files) 0)
+
+        can-edit?          (-> team :permissions :can-edit)
+        project-id         (:id project)
+        is-draft-proyect   (:is-default project)
+
+        [rowref limit]     (hooks/use-dynamic-grid-item-width)
+
+        file-count         (or (count files) 0)
         empty-state-viewer (and (not can-edit?)
                                 (= 0 file-count))
+
+        selected-files     (mf/deref refs/selected-files)
 
         on-file-created
         (mf/use-fn
@@ -191,6 +197,7 @@
                                             (tr "dashboard.empty-placeholder-files-subtitle"))}]
         [:& grid {:project project
                   :files files
+                  :selected-files selected-files
                   :can-edit can-edit?
                   :origin :files
                   :create-fn create-file

@@ -157,8 +157,8 @@
          [:div {:class (stl/css :template-link-title)} (tr "dashboard.libraries-and-templates")]
          [:div {:class (stl/css :template-link-text)} (tr "dashboard.libraries-and-templates.explore")]]]]]]))
 
-(mf/defc templates-section
-  {::mf/wrap-props false}
+(mf/defc templates-section*
+  {::mf/props :obj}
   [{:keys [default-project-id profile project-id team-id]}]
   (let [templates      (mf/deref builtin-templates)
         templates      (mf/with-memo [templates]

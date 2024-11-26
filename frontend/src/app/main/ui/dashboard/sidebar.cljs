@@ -7,15 +7,15 @@
 (ns app.main.ui.dashboard.sidebar
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.spec :as us]
    [app.config :as cf]
+   [app.main.data.auth :as da]
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
-   [app.main.data.users :as du]
+   [app.main.data.team :as dtm]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
@@ -29,7 +29,6 @@
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.object :as obj]
    [app.util.router :as rt]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
@@ -80,6 +79,7 @@
                            :dragging? false})
 
         local             @local*
+
         on-click
         (mf/use-fn
          (mf/deps item)
@@ -348,15 +348,17 @@
         go-webhooks    #(st/emit! (dd/go-to-team-webhooks))
         go-settings    #(st/emit! (dd/go-to-team-settings))
 
-        members-map    (mf/deref refs/dashboard-team-members)
-        members        (vals members-map)
-        can-rename?    (or (get-in team [:permissions :is-owner]) (get-in team [:permissions :is-admin]))
+        members        (get team :members)
+        permissions    (get team :permissions)
+        can-rename?    (or (:is-owner permissions)
+                           (:is-admin permissions))
 
         on-success
         (fn []
+          ;; FIXME: this should be handled in the event, not here
           (st/emit! (dd/go-to-projects (:default-team-id profile))
                     (modal/hide)
-                    (du/fetch-teams)))
+                    (dtm/fetch-teams)))
 
         on-error
         (fn [{:keys [code] :as error}]
@@ -377,15 +379,15 @@
          (mf/deps on-success on-error)
          (fn [member-id]
            (let [params (cond-> {} (uuid? member-id) (assoc :reassign-to member-id))]
-             (st/emit! (dd/leave-team (with-meta params
-                                        {:on-success on-success
-                                         :on-error on-error}))))))
+             (st/emit! (dtm/leave-current-team (with-meta params
+                                                 {:on-success on-success
+                                                  :on-error on-error}))))))
         delete-fn
         (mf/use-fn
          (mf/deps team on-success on-error)
          (fn []
-           (st/emit! (dd/delete-team (with-meta team {:on-success on-success
-                                                      :on-error on-error})))))
+           (st/emit! (dtm/delete-team (with-meta team {:on-success on-success
+                                                       :on-error on-error})))))
         on-rename-clicked
         (mf/use-fn
          (mf/deps team)
@@ -406,7 +408,7 @@
         (mf/use-fn
          (mf/deps team profile leave-fn)
          (fn []
-           (st/emit! (dd/fetch-team-members (:id team))
+           (st/emit! (dtm/fetch-members)
                      (modal/show
                       {:type :leave-and-reassign
                        :profile profile
@@ -590,6 +592,10 @@
                                (when (get-in team [:permissions :is-owner])
                                  "teams-options-delete-team")]
 
+
+        ;; _ (prn "--------------- sidebar-team-switch")
+        ;; _ (app.common.pprint/pprint teams)
+
         handle-show-team-click
         (fn [event]
           (dom/stop-propagation event)
@@ -679,12 +685,12 @@
       [:& team-options-dropdown {:team team
                                  :profile profile}]]]))
 
-(mf/defc sidebar-content
-  [{:keys [projects profile section team project search-term] :as props}]
+(mf/defc sidebar-content*
+  {::mf/private true
+   ::mf/props :obj}
+  [{:keys [projects profile section team project search-term default-project] :as props}]
   (let [default-project-id
-        (->> (vals projects)
-             (d/seek :is-default)
-             (:id))
+        (get default-project :id)
 
         projects?   (= section :dashboard-projects)
         fonts?      (= section :dashboard-fonts)
@@ -763,7 +769,7 @@
                            (dom/focus! libs-title)
                            (dom/set-attribute! libs-title "tabindex" "-1")))))))
         pinned-projects
-        (->> (vals projects)
+        (->> projects
              (remove :is-default)
              (filter :is-pinned))]
 
@@ -826,11 +832,12 @@
          pin-icon
          [:span {:class (stl/css :empty-text)} (tr "dashboard.no-projects-placeholder")]])]]))
 
-(mf/defc profile-section
-  [{:keys [profile team] :as props}]
+(mf/defc profile-section*
+  {::mf/props :obj}
+  [{:keys [profile team]}]
   (let [show*  (mf/use-state false)
         show   (deref show*)
-        photo (cf/resolve-profile-photo-url profile)
+        photo  (cf/resolve-profile-photo-url profile)
 
         on-click
         (mf/use-fn
@@ -875,14 +882,13 @@
            (when (kbd/enter? event)
              (reset! show* true))))
 
-        handle-close
+        on-close
         (fn [event]
           (dom/stop-propagation event)
           (reset! show* false))
 
         handle-key-down-profile
         (mf/use-fn
-         (mf/deps on-click)
          (fn [event]
            (when (kbd/enter? event)
              (on-click :settings-profile event))))
@@ -910,34 +916,27 @@
              (show-release-notes))))
 
         handle-feedback-click
-        (mf/use-fn
-         (mf/deps on-click)
-         #(on-click :settings-feedback %))
+        (mf/use-fn #(on-click :settings-feedback %))
 
         handle-feedback-keydown
         (mf/use-fn
-         (mf/deps on-click)
          (fn [event]
            (when (kbd/enter? event)
              (on-click :settings-feedback event))))
 
         handle-logout-click
         (mf/use-fn
-         (mf/deps on-click)
-         #(on-click (du/logout) %))
+         #(on-click (da/logout) %))
 
         handle-logout-keydown
         (mf/use-fn
-         (mf/deps on-click)
          (fn [event]
            (when (kbd/enter? event)
-             (on-click (du/logout) event))))
+             (on-click (da/logout) event))))
 
         handle-set-profile
         (mf/use-fn
-         (mf/deps on-click)
-         (fn [event]
-           (on-click :settings-profile event)))]
+         #(on-click :settings-profile %))]
 
     [:*
      (when (and team profile)
@@ -959,7 +958,9 @@
               :alt (:fullname profile)}]
        [:span {:class (stl/css :profile-fullname)} (:fullname profile)]]
 
-      [:& dropdown-menu {:on-close handle-close :show show :list-class (stl/css :profile-dropdown)}
+      [:& dropdown-menu {:on-close on-close
+                         :show show
+                         :list-class (stl/css :profile-dropdown)}
        [:li {:tab-index (if show "0" "-1")
              :class (stl/css :profile-dropdown-item)
              :on-click handle-set-profile
@@ -1045,15 +1046,13 @@
           :show? show-comments?
           :on-show-comments handle-show-comments}])]]))
 
-(mf/defc sidebar
-  {::mf/wrap-props false
+(mf/defc sidebar*
+  {::mf/props :obj
    ::mf/wrap [mf/memo]}
-  [props]
-  (let [team    (obj/get props "team")
-        profile (obj/get props "profile")]
-    [:nav {:class (stl/css :dashboard-sidebar) :data-testid "dashboard-sidebar"}
-     [:> sidebar-content props]
-     [:& profile-section
-      {:profile profile
-       :team team}]]))
+  [{:keys [team profile] :as props}]
+  [:nav {:class (stl/css :dashboard-sidebar) :data-testid "dashboard-sidebar"}
+   [:> sidebar-content* props]
+   [:> profile-section*
+    {:profile profile
+     :team team}]])
 

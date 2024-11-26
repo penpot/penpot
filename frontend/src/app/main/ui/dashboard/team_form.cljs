@@ -8,10 +8,10 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.schema :as sm]
-   [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.data.team :as dtm]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
@@ -51,7 +51,7 @@
   (let [mdata  {:on-success (partial on-create-success form)
                 :on-error   (partial on-error form)}
         params {:name (get-in @form [:clean-data :name])}]
-    (st/emit! (-> (dd/create-team (with-meta params mdata))
+    (st/emit! (-> (dtm/create-team (with-meta params mdata))
                   (with-meta {::ev/origin :dashboard})))))
 
 (defn- on-update-submit
@@ -59,7 +59,7 @@
   (let [mdata  {:on-success (partial on-update-success form)
                 :on-error   (partial on-error form)}
         team   (get @form :clean-data)]
-    (st/emit! (dd/update-team (with-meta team mdata))
+    (st/emit! (dtm/update-team (with-meta team mdata))
               (modal/hide))))
 
 (defn- on-submit
