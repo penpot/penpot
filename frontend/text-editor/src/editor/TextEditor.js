@@ -223,7 +223,9 @@ export class TextEditor extends EventTarget {
    * @param {FocusEvent} e
    */
   #onFocus = (e) => {
-    this.#selectionController.restoreSelection();
+    if (!this.#selectionController.restoreSelection()) {
+      this.selectAll();
+    }
     if (this.#selectionImposterElement) {
       this.#selectionImposterElement.replaceChildren();
     }
