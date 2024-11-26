@@ -18,14 +18,19 @@ const setupFileWithTokens = async (page) => {
   const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
   await tokensTabButton.click();
 
-  return { workspacePage };
+  return {
+    workspacePage,
+    tokensUpdateCreateModal: workspacePage.tokensUpdateCreateModal,
+    tokenThemesSetsSidebar: workspacePage.tokenThemesSetsSidebar,
+  };
 };
 
-test.describe("Tokens: Tab", () => {
+test.describe("Tokens: Tokens Tab", () => {
   test("Clicking tokens tab button opens tokens sidebar tab", async ({
     page,
   }) => {
-    const { workspacePage } = await setupFileWithTokens(page);
+    const { workspacePage, tokensUpdateCreateModal, tokenThemesSetsSidebar } =
+      await setupFileWithTokens(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
@@ -36,18 +41,18 @@ test.describe("Tokens: Tab", () => {
   test("User creates color token and auto created set show up in the sidebar", async ({
     page,
   }) => {
-    const { workspacePage } = await setupFileWithTokens(page);
+    const { workspacePage, tokensUpdateCreateModal, tokenThemesSetsSidebar } =
+      await setupFileWithTokens(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
     await tokensTabPanel.getByTitle("Add token: Color").click();
 
     // Create color token with mouse
 
-    await expect(workspacePage.tokensUpdateCreateModal).toBeVisible();
+    await expect(tokensUpdateCreateModal).toBeVisible();
 
-    const nameField = workspacePage.tokensUpdateCreateModal.getByLabel("Name");
-    const valueField =
-      workspacePage.tokensUpdateCreateModal.getByLabel("Value");
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    const valueField = tokensUpdateCreateModal.getByLabel("Value");
 
     await nameField.click();
     await nameField.fill("color.primary");
@@ -55,12 +60,9 @@ test.describe("Tokens: Tab", () => {
     await valueField.click();
     await valueField.fill("red");
 
-    const submitButton = workspacePage.tokensUpdateCreateModal.getByRole(
-      "button",
-      {
-        name: "Save",
-      },
-    );
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
 
@@ -69,7 +71,7 @@ test.describe("Tokens: Tab", () => {
     // Create token referencing the previous one with keyboard
 
     await tokensTabPanel.getByTitle("Add token: Color").click();
-    await expect(workspacePage.tokensUpdateCreateModal).toBeVisible();
+    await expect(tokensUpdateCreateModal).toBeVisible();
 
     await nameField.click();
     await nameField.fill("color.secondary");
@@ -89,12 +91,12 @@ test.describe("Tokens: Tab", () => {
 
     // Global set has been auto created and is active
     await expect(
-      workspacePage.tokenThemesSetsSidebar.getByRole("button", {
+      tokenThemesSetsSidebar.getByRole("button", {
         name: "Global",
       }),
     ).toHaveCount(1);
     await expect(
-      workspacePage.tokenThemesSetsSidebar.getByRole("button", {
+      tokenThemesSetsSidebar.getByRole("button", {
         name: "Global",
       }),
     ).toHaveAttribute("aria-checked", "true");
