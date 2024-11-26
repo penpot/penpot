@@ -2,8 +2,8 @@ use skia_safe as skia;
 
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct Viewbox {
-    pub x: f32,
-    pub y: f32,
+    pub pan_x: f32,
+    pub pan_y: f32,
     pub width: f32,
     pub height: f32,
     pub zoom: f32,
@@ -11,13 +11,13 @@ pub(crate) struct Viewbox {
 }
 
 impl Viewbox {
-    pub fn set_all(&mut self, zoom: f32, x: f32, y: f32) -> &Self {
-        self.x = x;
-        self.y = y;
+    pub fn set_all(&mut self, zoom: f32, x: f32, y: f32) -> &mut Self {
+        self.pan_x = x;
+        self.pan_y = y;
         self.zoom = zoom;
         self.area.set_xywh(
-            -self.x,
-            -self.y,
+            -self.pan_x,
+            -self.pan_y,
             self.width / self.zoom,
             self.height / self.zoom,
         );
@@ -31,9 +31,9 @@ impl Viewbox {
         self
     }
 
-    pub fn set_xy(&mut self, x: f32, y: f32) -> &Self {
-        self.x = x;
-        self.y = y;
+    pub fn set_xy(&mut self, x: f32, y: f32) -> &mut Self {
+        self.pan_x = x;
+        self.pan_y = y;
         self.area.left = -x;
         self.area.top = -y;
         self

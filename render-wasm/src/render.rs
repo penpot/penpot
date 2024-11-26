@@ -55,8 +55,13 @@ impl GpuState {
 pub(crate) struct CachedSurfaceImage {
     pub image: Image,
     pub viewbox: Viewbox,
-    // is_complete indicates if stored image renders the complete shape tree
-    pub is_complete: bool,
+    has_all_shapes: bool,
+}
+
+impl CachedSurfaceImage {
+    fn is_dirty(&self, viewbox: &Viewbox) -> bool {
+        !self.has_all_shapes && !self.viewbox.area.contains(viewbox.area)
+    }
 }
 
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
@@ -198,49 +203,20 @@ impl RenderState {
             .clear(skia::Color::TRANSPARENT);
     }
 
-    pub fn navigate(&mut self, viewbox: &Viewbox, shapes: &HashMap<Uuid, Shape>) {
-        self.reset_canvas();
-        if let Some(cached_surface_image) = &self.cached_surface_image {
-            // If we are drawing something bigger than the visible let's do a redraw
-            if !cached_surface_image.is_complete
-                && ((viewbox.x > cached_surface_image.viewbox.x)
-                    || (-viewbox.x + viewbox.area.width()
-                        > -cached_surface_image.viewbox.x
-                            + cached_surface_image.viewbox.area.width())
-                    || (viewbox.y > cached_surface_image.viewbox.y)
-                    || (-viewbox.y + viewbox.area.height()
-                        > -cached_surface_image.viewbox.y
-                            + cached_surface_image.viewbox.area.height()))
-            {
+    pub fn navigate(
+        &mut self,
+        viewbox: &Viewbox,
+        shapes: &HashMap<Uuid, Shape>,
+    ) -> Result<(), String> {
+        if let Some(cached_surface_image) = self.cached_surface_image.as_ref() {
+            if cached_surface_image.is_dirty(viewbox) {
                 self.render_all(viewbox, shapes, true);
             } else {
-                let image = &cached_surface_image.image;
-                let paint = skia::Paint::default();
-                self.final_surface.canvas().save();
-                self.drawing_surface.canvas().save();
-
-                let navigate_zoom = viewbox.zoom / cached_surface_image.viewbox.zoom;
-                let navigate_x = cached_surface_image.viewbox.zoom
-                    * (viewbox.x - cached_surface_image.viewbox.x);
-                let navigate_y = cached_surface_image.viewbox.zoom
-                    * (viewbox.y - cached_surface_image.viewbox.y);
-
-                self.final_surface
-                    .canvas()
-                    .scale((navigate_zoom, navigate_zoom));
-                self.final_surface
-                    .canvas()
-                    .translate((navigate_x, navigate_y));
-                self.final_surface
-                    .canvas()
-                    .draw_image(image.clone(), (0, 0), Some(&paint));
-
-                self.final_surface.canvas().restore();
-                self.drawing_surface.canvas().restore();
+                self.render_all_from_cache(viewbox)?;
             }
         }
 
-        self.flush();
+        Ok(())
     }
 
     pub fn render_all(
@@ -251,14 +227,14 @@ impl RenderState {
     ) {
         self.reset_canvas();
         self.scale(viewbox.zoom, viewbox.zoom);
-        self.translate(viewbox.x, viewbox.y);
+        self.translate(viewbox.pan_x, viewbox.pan_y);
 
         let is_complete = self.render_shape_tree(&Uuid::nil(), viewbox, shapes);
         if generate_cached_surface_image || self.cached_surface_image.is_none() {
             self.cached_surface_image = Some(CachedSurfaceImage {
                 image: self.final_surface.image_snapshot(),
                 viewbox: viewbox.clone(),
-                is_complete,
+                has_all_shapes: is_complete,
             });
         }
 
@@ -267,6 +243,41 @@ impl RenderState {
         }
 
         self.flush();
+    }
+
+    fn render_all_from_cache(&mut self, viewbox: &Viewbox) -> Result<(), String> {
+        self.reset_canvas();
+
+        let cached = self
+            .cached_surface_image
+            .as_ref()
+            .ok_or("Uninitialized cached surface image")?;
+
+        let image = &cached.image;
+        let paint = skia::Paint::default();
+        self.final_surface.canvas().save();
+        self.drawing_surface.canvas().save();
+
+        let navigate_zoom = viewbox.zoom / cached.viewbox.zoom;
+        let navigate_x = cached.viewbox.zoom * (viewbox.pan_x - cached.viewbox.pan_x);
+        let navigate_y = cached.viewbox.zoom * (viewbox.pan_y - cached.viewbox.pan_y);
+
+        self.final_surface
+            .canvas()
+            .scale((navigate_zoom, navigate_zoom));
+        self.final_surface
+            .canvas()
+            .translate((navigate_x, navigate_y));
+        self.final_surface
+            .canvas()
+            .draw_image(image.clone(), (0, 0), Some(&paint));
+
+        self.final_surface.canvas().restore();
+        self.drawing_surface.canvas().restore();
+
+        self.flush();
+
+        Ok(())
     }
 
     fn render_debug_view(&mut self, viewbox: &Viewbox) {

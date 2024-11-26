@@ -27,8 +27,8 @@ impl<'a> State<'a> {
             current_shape: None,
             shapes: HashMap::with_capacity(capacity),
             viewbox: Viewbox {
-                x: 0.,
-                y: 0.,
+                pan_x: 0.,
+                pan_y: 0.,
                 zoom: 1.,
                 width: width as f32,
                 height: height as f32,
@@ -47,7 +47,11 @@ impl<'a> State<'a> {
     }
 
     pub fn navigate(&mut self) {
-        self.render_state.navigate(&self.viewbox, &self.shapes);
+        // TODO: propagate error to main fn
+        let _ = self
+            .render_state
+            .navigate(&self.viewbox, &self.shapes)
+            .unwrap();
     }
 
     pub fn render_all(&mut self, generate_cached_surface_image: bool) {
