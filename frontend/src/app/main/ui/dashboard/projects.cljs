@@ -43,8 +43,10 @@
 (def ^:private menu-icon
   (i/icon-xref :menu (stl/css :menu-icon)))
 
-(mf/defc header
-  {::mf/wrap [mf/memo]}
+(mf/defc header*
+  {::mf/wrap [mf/memo]
+   ::mf/props :obj
+   ::mf/private true}
   [{:keys [can-edit]}]
   (let [on-click (mf/use-fn #(st/emit! (dd/create-project)))]
     [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
@@ -96,27 +98,30 @@
                :aria-label (tr "labels.close")}
       close-icon]]))
 
-(def builtin-templates
-  (l/derived :builtin-templates st/state))
-
-(mf/defc project-item
-  [{:keys [project first? team files can-edit] :as props}]
+(mf/defc project-item*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [project is-first team files can-edit]}]
   (let [locale     (mf/deref i18n/locale)
-        file-count (or (:count project) 0)
+
         project-id (:id project)
-        is-draft-proyect (:is-default project)
         team-id    (:id team)
-        empty-state-viewer (and (not can-edit)
-                                (= 0 file-count))
+
+        file-count (or (:count project) 0)
+        is-draft?  (:is-default project)
+        empty?     (and (not can-edit)
+                        (= 0 file-count))
 
         dstate     (mf/deref refs/dashboard-local)
         edit-id    (:project-for-edit dstate)
 
         local      (mf/use-state {:menu-open false
                                   :menu-pos nil
-                                  :edition? (= (:id project) edit-id)})
+                                  :edition (= (:id project) edit-id)})
 
-        [rowref limit] (hooks/use-dynamic-grid-item-width)
+        [rowref limit]
+        (hooks/use-dynamic-grid-item-width)
+
         on-nav
         (mf/use-fn
          (mf/deps project-id team-id)
@@ -152,7 +157,7 @@
         (mf/use-fn #(swap! local assoc :menu-open false))
 
         on-edit-open
-        (mf/use-fn #(swap! local assoc :edition? true))
+        (mf/use-fn #(swap! local assoc :edition true))
 
         on-edit
         (mf/use-fn
@@ -162,7 +167,7 @@
              (when-not (str/empty? name)
                (st/emit! (-> (dd/rename-project (assoc project :name name))
                              (with-meta {::ev/origin "dashboard"}))))
-             (swap! local assoc :edition? false))))
+             (swap! local assoc :edition false))))
 
         on-file-created
         (mf/use-fn
@@ -212,10 +217,10 @@
              (on-menu-click event))))
         title-width (/ 100 limit)]
 
-    [:article {:class (stl/css-case :dashboard-project-row true :first first?)}
+    [:article {:class (stl/css-case :dashboard-project-row true :first is-first)}
      [:header {:class (stl/css :project)}
       [:div {:class (stl/css :project-name-wrapper)}
-       (if (:edition? @local)
+       (if (:edition @local)
          [:& inline-edition {:content (:name project)
                              :on-end on-edit}]
          [:h2 {:on-click on-nav
@@ -230,7 +235,6 @@
             (:name project))])
 
        [:div {:class (stl/css :info-wrapper)}
-
 
         ;; We group these two spans under a div to avoid having extra space between them.
         [:div
@@ -274,13 +278,13 @@
             :on-import on-import}])]]]
 
      [:div {:class (stl/css :grid-container) :ref rowref}
-      (if empty-state-viewer
-        [:> empty-placeholder* {:title (if is-draft-proyect
+      (if ^boolean empty?
+        [:> empty-placeholder* {:title (if ^boolean is-draft?
                                          (tr "dashboard.empty-placeholder-drafts-title")
                                          (tr "dashboard.empty-placeholder-files-title"))
                                 :class (stl/css :placeholder-placement)
                                 :type 1
-                                :subtitle (if is-draft-proyect
+                                :subtitle (if ^boolean is-draft?
                                             (tr "dashboard.empty-placeholder-drafts-subtitle")
                                             (tr "dashboard.empty-placeholder-files-subtitle"))}]
 
@@ -303,16 +307,19 @@
         [:span {:class (stl/css :placeholder-label)} (tr "dashboard.show-all-files")]
         show-more-icon])]))
 
-(def ref:recent-files
-  (l/derived :dashboard-recent-files st/state))
+(def ^:private ref:recent-files
+  (l/derived :recent-files st/state))
 
-(mf/defc projects-section
+(mf/defc projects-section*
   {::mf/props :obj}
   [{:keys [team projects profile]}]
 
-  (let [projects            (->> (vals projects)
-                                 (sort-by :modified-at)
-                                 (reverse))
+  (let [projects
+        (mf/with-memo [projects]
+          (->> projects
+               (sort-by :modified-at)
+               (reverse)))
+
         recent-map          (mf/deref ref:recent-files)
         permisions          (:permissions team)
 
@@ -334,7 +341,7 @@
                                                  ::ev/origin "dashboard"}))))]
 
     (mf/with-effect [show-team-hero?]
-      (swap! storage/global assoc ::show-team-hero show-team-hero?))
+      (swap! storage/global assoc ::show-eam-hero show-team-hero?))
 
     (mf/with-effect [team]
       (let [tname (if (:is-default team)
@@ -348,7 +355,7 @@
 
     (when (seq projects)
       [:*
-       [:& header {:can-edit can-edit}]
+       [:> header* {:can-edit can-edit}]
        [:div {:class (stl/css :projects-container)}
         [:*
          (when (and show-team-hero?
@@ -368,9 +375,9 @@
                           (->> (vals recent-map)
                                (filterv #(= id (:project-id %)))
                                (sort-by :modified-at #(compare %2 %1))))]
-              [:& project-item {:project project
-                                :team team
-                                :files files
-                                :can-edit can-edit
-                                :first? (= project (first projects))
-                                :key id}]))]]]])))
+              [:> project-item* {:project project
+                                 :team team
+                                 :files files
+                                 :can-edit can-edit
+                                 :is-first (= project (first projects))
+                                 :key id}]))]]]])))

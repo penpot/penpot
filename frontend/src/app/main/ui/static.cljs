@@ -19,7 +19,7 @@
    [app.main.ui.auth.login :refer [login-methods]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page recovery-sent-page]]
    [app.main.ui.auth.register :as register]
-   [app.main.ui.dashboard.sidebar :refer [sidebar]]
+   [app.main.ui.dashboard.sidebar :refer [sidebar*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
    [app.main.ui.icons :as i]
@@ -267,7 +267,7 @@
 
        [:div {:class (stl/css :dashboard)}
         [:div {:class (stl/css :dashboard-sidebar)}
-         [:& sidebar
+         [:> sidebar*
           {:team nil
            :projects []
            :project (:default-project-id profile)

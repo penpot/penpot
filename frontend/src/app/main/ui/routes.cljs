@@ -11,7 +11,7 @@
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.main.data.users :as du]
+   [app.main.data.team :as dtm]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.router :as rt]
@@ -119,7 +119,11 @@
                          (st/emit! (rt/nav :auth-login))
 
                          empty-path?
-                         (st/emit! (rt/nav :dashboard-projects {:team-id (du/get-current-team-id profile)} (u/query-string->map qs)))
+                         (let [team-id (or (dtm/get-last-team-id)
+                                           (:default-team-id profile))]
+                           (st/emit! (rt/nav :dashboard-projects
+                                             {:team-id team-id}
+                                             (u/query-string->map qs))))
 
                          :else
                          (st/emit! (rt/assign-exception {:type :not-found})))))))))

@@ -59,10 +59,10 @@
           (adapt-font-id [variant]
             (update variant :font-id #(str "custom-" %)))]
 
-    (ptk/reify ::team-fonts-loaded
+    (ptk/reify ::fonts-loaded
       ptk/UpdateEvent
       (update [_ state]
-        (assoc state :dashboard-fonts (d/index-by :id fonts)))
+        (assoc state :fonts (d/index-by :id fonts)))
 
       ptk/EffectEvent
       (effect [_ _ _]
@@ -72,13 +72,14 @@
                          (mapv prepare-font))]
           (fonts/register! :custom fonts))))))
 
-(defn load-team-fonts
-  [team-id]
+(defn fetch-fonts
+  []
   (ptk/reify ::load-team-fonts
     ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :get-font-variants {:team-id team-id})
-           (rx/map fonts-fetched)))))
+    (watch [_ state _]
+      (let [team-id (:current-team-id state)]
+        (->> (rp/cmd! :get-font-variants {:team-id team-id})
+             (rx/map fonts-fetched))))))
 
 (defn process-upload
   "Given a seq of blobs and the team id, creates a ready-to-use fonts
@@ -90,12 +91,15 @@
                   variant         (or (.getEnglishName ^js font "preferredSubfamily")
                                       (.getEnglishName ^js font "fontSubfamily"))
 
-                 ;; Vertical metrics determine the baseline in a text and the space between lines of text.
-                 ;; For historical reasons, there are three pairs of ascender/descender values, known as hhea, OS/2 and uSWin metrics.
-                 ;; Depending on the font, operating system and application a different set will be used to render text on the screen.
-                 ;; On Mac, Safari and Chrome use the hhea values to render text. Firefox will respect the useTypoMetrics setting and will use the OS/2 if it is set.
-                 ;; If the useTypoMetrics is not set, Firefox will also use metrics from the hhea table.
-                 ;; On Windows, all browsers use the usWin metrics, but respect the useTypoMetrics setting and if set will use the OS/2 values.
+                 ;; Vertical metrics determine the baseline in a text and the space between lines of
+                 ;; text. For historical reasons, there are three pairs of ascender/descender
+                 ;; values, known as hhea, OS/2 and uSWin metrics. Depending on the font, operating
+                 ;; system and application a different set will be used to render text on the
+                 ;; screen. On Mac, Safari and Chrome use the hhea values to render text. Firefox
+                 ;; will respect the useTypoMetrics setting and will use the OS/2 if it is set.  If
+                 ;; the useTypoMetrics is not set, Firefox will also use metrics from the hhea
+                 ;; table. On Windows, all browsers use the usWin metrics, but respect the
+                 ;; useTypoMetrics setting and if set will use the OS/2 values.
 
                   hhea-ascender   (abs (-> ^js font .-tables .-hhea .-ascender))
                   hhea-descender  (abs (-> ^js font .-tables .-hhea .-descender))
@@ -239,7 +243,7 @@
   (ptk/reify ::add-font
     ptk/UpdateEvent
     (update [_ state]
-      (update state :dashboard-fonts assoc (:id font) font))
+      (update state :fonts assoc (:id font) font))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -260,13 +264,10 @@
     (update [_ state]
       ;; Update all variants that has the same font-id with the new
       ;; name in the local state.
-      (update state :dashboard-fonts
-              (fn [fonts]
-                (d/mapm (fn [_ font]
-                          (cond-> font
-                            (= id (:font-id font))
-                            (assoc :font-family name)))
-                        fonts))))
+      (update state :fonts update-vals (fn [font]
+                                         (cond-> font
+                                           (= id (:font-id font))
+                                           (assoc :font-family name)))))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -285,10 +286,11 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (update state :dashboard-fonts
+      (update state :fonts
               (fn [variants]
                 (d/removem (fn [[_id variant]]
                              (= (:font-id variant) font-id)) variants))))
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
@@ -305,7 +307,7 @@
   (ptk/reify ::delete-font-variants
     ptk/UpdateEvent
     (update [_ state]
-      (update state :dashboard-fonts
+      (update state :fonts
               (fn [variants]
                 (d/removem (fn [[_ variant]]
                              (= (:id variant) id))

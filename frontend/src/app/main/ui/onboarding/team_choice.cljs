@@ -9,8 +9,8 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
-   [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
+   [app.main.data.team :as dtm]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
@@ -117,7 +117,7 @@
            (let [mdata  {:on-success on-success
                          :on-error   on-error}
                  params {:name name}]
-             (st/emit! (-> (dd/create-team (with-meta params mdata))
+             (st/emit! (-> (dtm/create-team (with-meta params mdata))
                            (with-meta {::ev/origin :onboarding-without-invitations}))
                        (ptk/data-event ::ev/event
                                        {::ev/name "onboarding-step"
@@ -133,7 +133,7 @@
            (let [mdata  {:on-success on-success
                          :on-error   on-error}]
 
-             (st/emit! (-> (dd/create-team-with-invitations (with-meta params mdata))
+             (st/emit! (-> (dtm/create-team-with-invitations (with-meta params mdata))
                            (with-meta {::ev/origin :onboarding-with-invitations}))
                        (ptk/data-event ::ev/event
                                        {::ev/name "onboarding-step"

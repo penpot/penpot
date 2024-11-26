@@ -110,6 +110,10 @@ export class DashboardPage extends BaseWebSocketPage {
       "get-project-files?project-id=*",
       "dashboard/get-project-files.json",
     );
+
+    await this.mockRPC(/assets\/by-id/gi, "dashboard/thumbnail.png", {
+      contentType: "image/png",
+    });
   }
 
   async setupNewProject() {

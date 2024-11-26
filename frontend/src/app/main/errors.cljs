@@ -10,9 +10,9 @@
    [app.common.exceptions :as ex]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
+   [app.main.data.auth :as da]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
-   [app.main.data.users :as du]
    [app.main.store :as st]
    [app.util.globals :as glob]
    [app.util.i18n :refer [tr]]
@@ -116,7 +116,7 @@
     (if show-oops?
       (st/async-emit! (rt/assign-exception e))
       (do
-        (st/emit! (du/logout {:capture-redirect true}))
+        (st/emit! (da/logout))
         (ts/schedule 500 #(st/emit! (ntf/warn msg)))))))
 
 ;; Error that happens on an active business model validation does not

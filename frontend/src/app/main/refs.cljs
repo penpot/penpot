@@ -31,10 +31,14 @@
   (l/derived :profile st/state))
 
 (def team
-  (l/derived :team st/state))
+  (l/derived (fn [state]
+               (let [team-id (:current-team-id state)
+                     teams   (:teams state)]
+                 (get teams team-id)))
+             st/state))
 
 (def permissions
-  (l/derived :permissions st/state))
+  (l/derived :permissions team))
 
 (def teams
   (l/derived :teams st/state))
@@ -54,68 +58,37 @@
 (def persistence
   (l/derived :persistence st/state))
 
-;; ---- Dashboard refs
+(def projects
+  (l/derived :projects st/state))
 
-(def dashboard-local
-  (l/derived :dashboard-local st/state))
+(def files
+  (l/derived :files st/state))
 
-(def dashboard-fonts
-  (l/derived :dashboard-fonts st/state))
+(def shared-files
+  (l/derived :shared-files st/state))
 
-(def dashboard-projects
-  (l/derived :dashboard-projects st/state))
-
-(def dashboard-files
-  (l/derived :dashboard-files st/state))
-
-(def dashboard-shared-files
-  (l/derived :dashboard-shared-files st/state))
-
-(def dashboard-search-result
-  (l/derived :dashboard-search-result st/state))
-
-(def dashboard-team-stats
-  (l/derived :dashboard-team-stats st/state))
-
-(def dashboard-team-members
-  (l/derived :dashboard-team-members st/state))
-
-(def dashboard-team-invitations
-  (l/derived :dashboard-team-invitations st/state))
-
-(def dashboard-team-webhooks
-  (l/derived :dashboard-team-webhooks st/state))
-
-(def dashboard-selected-project
-  (l/derived (fn [state]
-               (dm/get-in state [:dashboard-local :selected-project]))
-             st/state))
-
-(defn- dashboard-extract-selected
+(defn extract-selected-files
   [files selected]
   (let [get-file #(get files %)
         sim-file #(select-keys % [:id :name :project-id :is-shared])
         xform    (comp (keep get-file)
                        (map sim-file))]
-    (->> (into #{} xform selected)
+    (->> (sequence xform selected)
          (d/index-by :id))))
 
-(def dashboard-selected-search
+(def selected-files
   (l/derived (fn [state]
-               ;; we need to this because :dashboard-search-result is a list
-               ;; of maps and we need a map of maps (using :id as key).
-               (let [files (d/index-by :id (:dashboard-search-result state))]
-                 (->> (dm/get-in state [:dashboard-local :selected-files])
-                      (dashboard-extract-selected files))))
+               (let [selected (get state :selected-files)
+                     files    (get state :files)]
+                 (extract-selected-files files selected)))
              st/state))
 
-(def dashboard-selected-files
-  (l/derived (fn [state]
-               (->> (dm/get-in state [:dashboard-local :selected-files])
-                    (dashboard-extract-selected (:dashboard-files state))))
-             st/state))
+(def selected-project
+  (l/derived :selected-project st/state))
 
-;; ---- Workspace refs
+
+(def dashboard-local
+  (l/derived :dashboard-local st/state))
 
 (def render-state
   (l/derived :render-state st/state))

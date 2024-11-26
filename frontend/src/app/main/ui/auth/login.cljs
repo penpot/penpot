@@ -10,8 +10,8 @@
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.config :as cf]
+   [app.main.data.auth :as da]
    [app.main.data.notifications :as ntf]
-   [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.button-link :as bl]
@@ -43,7 +43,7 @@
 
 (defn create-demo-profile
   []
-  (st/emit! (du/create-demo-profile)))
+  (st/emit! (da/create-demo-profile)))
 
 (defn- store-login-redirect
   [save-login-redirect]
@@ -140,7 +140,7 @@
            (let [params (with-meta (:clean-data @form)
                           {:on-error on-error
                            :on-success on-success})]
-             (st/emit! (du/login params)))))
+             (st/emit! (da/login params)))))
 
         on-submit-ldap
         (mf/use-callback
@@ -154,7 +154,7 @@
                  params (with-meta params
                           {:on-error on-error
                            :on-success on-success})]
-             (st/emit! (du/login-with-ldap params)))))
+             (st/emit! (da/login-with-ldap params)))))
 
         default-recovery-req
         (mf/use-fn

@@ -8,19 +8,16 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.media :as di]
-   [app.main.data.notifications :as ntf]
-   [app.main.data.websocket :as ws]
-   [app.main.features :as features]
+   [app.main.data.team :as-alias dtm]
    [app.main.repo :as rp]
-   [app.plugins.register :as register]
-   [app.util.i18n :as i18n :refer [tr]]
+   [app.plugins.register :as plugins.register]
+   [app.util.i18n :as i18n]
    [app.util.router :as rt]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
@@ -40,7 +37,7 @@
    [:lang {:optional true} :string]
    [:theme {:optional true} :string]])
 
-(def check-profile!
+(def check-profile
   (sm/check-fn schema:profile))
 
 ;; --- HELPERS
@@ -49,98 +46,31 @@
   [{:keys [id]}]
   (and (uuid? id) (not= id uuid/zero)))
 
-(defn get-current-team-id
-  [profile]
-  (let [team-id (::current-team-id storage/user)]
-    (or team-id (:default-team-id profile))))
-
-(defn set-current-team!
-  [team-id]
-  (if (nil? team-id)
-    (swap! storage/user dissoc ::current-team-id)
-    (swap! storage/user assoc ::current-team-id team-id)))
-
-;; --- EVENT: fetch-teams
-
-(defn teams-fetched
-  [teams]
-  (ptk/reify ::teams-fetched
-    IDeref
-    (-deref [_] teams)
-
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :teams (d/index-by :id teams)))
-
-    ptk/EffectEvent
-    (effect [_ _ _]
-      ;; Check if current team-id is part of available teams
-      ;; if not, dissoc it from storage.
-
-      (let [ids (into #{} (map :id) teams)]
-        (when-let [ctid (::current-team-id storage/user)]
-          (when-not (contains? ids ctid)
-            (swap! storage/user dissoc ::current-team-id)))))))
-
-(defn fetch-teams
-  []
-  (ptk/reify ::fetch-teams
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :get-teams)
-           (rx/map teams-fetched)))))
-
-(defn set-current-team
-  [team]
-  (ptk/reify ::set-current-team
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc :team team)
-          (assoc :permissions (:permissions team))
-          (assoc :current-team-id (:id team))))
-
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (features/initialize (:features team #{}))))
-
-    ptk/EffectEvent
-    (effect [_ _ _]
-      (set-current-team! (:id team)))))
-
 ;; --- EVENT: fetch-profile
 
-(declare logout)
-
-(def profile-fetched?
-  (ptk/type? ::profile-fetched))
-
-(defn profile-fetched
+(defn initialize-profile
+  "Initialize profile state, only logged-in profile data should be
+  passed to this event"
   [{:keys [id] :as profile}]
-  (ptk/reify ::profile-fetched
+  (ptk/reify ::initialize-profile
     IDeref
     (-deref [_] profile)
 
     ptk/UpdateEvent
     (update [_ state]
-      (cond-> state
-        (is-authenticated? profile)
-        (-> (assoc :profile-id id)
-            (assoc :profile profile))))
+      (-> state
+          (assoc :profile-id id)
+          (assoc :profile profile)))
 
     ptk/EffectEvent
     (effect [_ state _]
-      (let [profile          (:profile state)
-            email            (:email profile)
-            previous-profile (:profile storage/user)
-            previous-email   (:email previous-profile)]
-        (when profile
-          (swap! storage/user assoc :profile profile)
-          (i18n/set-locale! (:lang profile))
-          (when (not= previous-email email)
-            (set-current-team! nil))
+      (let [profile (:profile state)]
+        (swap! storage/user assoc :profile profile)
+        (i18n/set-locale! (:lang profile))
+        (plugins.register/init)))))
 
-          (register/init))))))
+(def profile-fetched?
+  (ptk/type? ::profile-fetched))
 
 (defn- on-fetch-profile-exception
   [cause]
@@ -160,212 +90,8 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :get-profile)
-           (rx/map profile-fetched)
+           (rx/map (partial ptk/data-event ::profile-fetched))
            (rx/catch on-fetch-profile-exception)))))
-
-;; --- EVENT: login
-
-(defn- logged-in
-  "This is the main event that is executed once we have logged in
-  profile. The profile can proceed from standard login or from
-  accepting invitation, or third party auth signup or singin."
-  [profile]
-  (letfn [(get-redirect-events []
-            (let [team-id         (get-current-team-id profile)
-                  welcome-file-id (dm/get-in profile [:props :welcome-file-id])
-                  redirect-href   (:login-redirect @storage/session)
-                  current-href    (rt/get-current-href)]
-
-              (cond
-                (some? redirect-href)
-                (binding [storage/*sync* true]
-                  (swap! storage/session dissoc :login-redirect)
-                  (if (= current-href redirect-href)
-                    (rx/of (rt/reload true))
-                    (rx/of (rt/nav-raw :href redirect-href))))
-
-                (some? welcome-file-id)
-                (rx/of (rt/nav' :workspace {:project-id (:default-project-id profile)
-                                            :file-id welcome-file-id})
-                       (update-profile-props {:welcome-file-id nil}))
-
-                :else
-                (rx/of (rt/nav' :dashboard-projects {:team-id team-id})))))]
-
-    (ptk/reify ::logged-in
-      ev/Event
-      (-data [_]
-        {::ev/name "signin"
-         ::ev/type "identify"
-         :email (:email profile)
-         :auth-backend (:auth-backend profile)
-         :fullname (:fullname profile)
-         :is-muted (:is-muted profile)
-         :default-team-id (:default-team-id profile)
-         :default-project-id (:default-project-id profile)})
-
-      ptk/WatchEvent
-      (watch [_ _ _]
-        (when (is-authenticated? profile)
-          (->> (rx/concat
-                (rx/of (profile-fetched profile)
-                       (fetch-teams)
-                       (ws/initialize))
-                (get-redirect-events))
-               (rx/observe-on :async)))))))
-
-(declare login-from-register)
-
-(defn login
-  [{:keys [email password invitation-token] :as data}]
-  (ptk/reify ::login
-    ptk/WatchEvent
-    (watch [_ _ stream]
-      (let [{:keys [on-error on-success]
-             :or {on-error rx/throw
-                  on-success identity}} (meta data)
-
-            params {:email email
-                    :password password
-                    :invitation-token invitation-token}]
-
-        ;; NOTE: We can't take the profile value from login because
-        ;; there are cases when login is successful but the cookie is
-        ;; not set properly (because of possible misconfiguration).
-        ;; So, we proceed to make an additional call to fetch the
-        ;; profile, and ensure that cookie is set correctly. If
-        ;; profile fetch is successful, we mark the user logged in, if
-        ;; the returned profile is an NOT authenticated profile, we
-        ;; proceed to logout and show an error message.
-
-        (->> (rp/cmd! :login-with-password (d/without-nils params))
-             (rx/merge-map (fn [data]
-                             (rx/merge
-                              (rx/of (fetch-profile))
-                              (->> stream
-                                   (rx/filter profile-fetched?)
-                                   (rx/take 1)
-                                   (rx/map deref)
-                                   (rx/filter (complement is-authenticated?))
-                                   (rx/tap on-error)
-                                   (rx/map #(ex/raise :type :authentication))
-                                   (rx/observe-on :async))
-
-                              (->> stream
-                                   (rx/filter profile-fetched?)
-                                   (rx/take 1)
-                                   (rx/map deref)
-                                   (rx/filter is-authenticated?)
-                                   (rx/map (fn [profile]
-                                             (with-meta (merge data profile)
-                                               {::ev/source "login"})))
-                                   (rx/tap on-success)
-                                   (rx/map logged-in)
-                                   (rx/observe-on :async)))))
-             (rx/catch on-error))))))
-
-(def ^:private schema:login-with-ldap
-  [:map {:title "login-with-ldap"}
-   [:email ::sm/email]
-   [:password :string]])
-
-(defn login-with-ldap
-  [params]
-
-  (dm/assert!
-   "expected valid params"
-   (sm/check schema:login-with-ldap params))
-
-  (ptk/reify ::login-with-ldap
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [{:keys [on-error on-success]
-             :or {on-error rx/throw
-                  on-success identity}} (meta params)]
-        (->> (rp/cmd! :login-with-ldap params)
-             (rx/tap on-success)
-             (rx/map (fn [profile]
-                       (-> profile
-                           (with-meta {::ev/source "login-with-ldap"})
-                           (logged-in))))
-             (rx/catch on-error))))))
-
-(defn login-from-token
-  "Used mainly as flow continuation after token validation."
-  [{:keys [profile] :as tdata}]
-  (ptk/reify ::login-from-token
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rx/of (logged-in (with-meta profile {::ev/source "login-with-token"})))
-           ;; NOTE: we need this to be asynchronous because the effect
-           ;; should be called before proceed with the login process
-           (rx/observe-on :async)))
-
-    ptk/EffectEvent
-    (effect [_ _ _]
-      (set-current-team! nil))))
-
-(defn login-from-register
-  "Event used mainly for mark current session as logged-in in after the
-  user successfully registered using third party auth provider (in this
-  case we dont need to verify the email)."
-  []
-  (ptk/reify ::login-from-register
-    ptk/WatchEvent
-    (watch [_ _ stream]
-      (rx/merge
-       (rx/of (fetch-profile))
-       (->> stream
-            (rx/filter (ptk/type? ::profile-fetched))
-            (rx/take 1)
-            (rx/map deref)
-            (rx/map (fn [profile]
-                      (with-meta profile
-                        {::ev/source "register"})))
-            (rx/map logged-in)
-            (rx/observe-on :async))))))
-
-;; --- EVENT: logout
-
-(defn logged-out
-  ([] (logged-out {}))
-  ([_params]
-   (ptk/reify ::logged-out
-     ptk/UpdateEvent
-     (update [_ state]
-       (select-keys state [:route :router :session-id :history]))
-
-     ptk/WatchEvent
-     (watch [_ _ _]
-       (rx/merge
-        ;; NOTE: We need the `effect` of the current event to be
-        ;; executed before the redirect.
-        (->> (rx/of (rt/nav :auth-login))
-             (rx/observe-on :async))
-        (rx/of (ws/finalize))))
-
-     ptk/EffectEvent
-     (effect [_ _ _]
-       ;; We prefer to keek some stuff in the storage like the current-team-id and the profile
-       (swap! storage/user (constantly {}))))))
-
-(defn logout
-  ([] (logout {}))
-  ([params]
-   (ptk/reify ::logout
-     ev/Event
-     (-data [_] {})
-
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [profile-id (:profile-id state)]
-         (->> (rx/interval 500)
-              (rx/take 1)
-              (rx/mapcat (fn [_]
-                           (->> (rp/cmd! :logout {:profile-id profile-id})
-                                (rx/delay-at-least 300)
-                                (rx/catch (constantly (rx/of 1))))))
-              (rx/map #(logged-out params))))))))
 
 ;; --- Update Profile
 
@@ -386,7 +112,7 @@
   [data]
   (dm/assert!
    "expected valid profile data"
-   (check-profile! data))
+   (check-profile data))
 
   (ptk/reify ::update-profile
     ptk/WatchEvent
@@ -589,6 +315,9 @@
 
 ;; --- EVENT: request-account-deletion
 
+(def profile-deleted?
+  (ptk/type? ::profile-deleted))
+
 (defn request-account-deletion
   [params]
   (ptk/reify ::request-account-deletion
@@ -599,7 +328,8 @@
                   on-success identity}} (meta params)]
         (->> (rp/cmd! :delete-profile {})
              (rx/tap on-success)
-             (rx/map logged-out)
+             (rx/map (fn [_]
+                       (ptk/data-event ::profile-deleted params)))
              (rx/catch on-error)
              (rx/delay-at-least 300))))))
 
@@ -651,16 +381,6 @@
         (->> (rp/cmd! :recover-profile data)
              (rx/tap on-success)
              (rx/catch on-error))))))
-
-;; --- EVENT: crete-demo-profile
-
-(defn create-demo-profile
-  []
-  (ptk/reify ::create-demo-profile
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :create-demo-profile {})
-           (rx/map login)))))
 
 ;; --- EVENT: fetch-team-webhooks
 
@@ -716,28 +436,3 @@
              (rx/tap on-success)
              (rx/catch on-error))))))
 
-(defn show-redirect-error
-  "A helper event that interprets the OIDC redirect errors on the URI
-  and shows an appropriate error message using the notification
-  banners."
-  [error]
-  (ptk/reify ::show-redirect-error
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (when-let [hint (case error
-                        "registration-disabled"
-                        (tr "errors.registration-disabled")
-                        "profile-blocked"
-                        (tr "errors.profile-blocked")
-                        "auth-provider-not-allowed"
-                        (tr "errors.auth-provider-not-allowed")
-                        "email-domain-not-allowed"
-                        (tr "errors.email-domain-not-allowed")
-
-                        ;; We explicitly do not show any error here, it a explicit user operation.
-                        "unable-to-auth"
-                        nil
-
-                        (tr "errors.generic"))]
-
-        (rx/of (ntf/warn hint))))))

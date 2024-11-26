@@ -10,9 +10,9 @@
    [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
-   [app.main.data.users :as du]
+   [app.main.data.team :as dtm]
    [app.main.store :as st]
-   [app.main.ui.dashboard.sidebar :refer [profile-section]]
+   [app.main.ui.dashboard.sidebar :refer [profile-section*]]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -58,7 +58,8 @@
         options?       (= section :settings-options)
         feedback?      (= section :settings-feedback)
         access-tokens? (= section :settings-access-tokens)
-        team-id        (du/get-current-team-id profile)
+        team-id        (or (dtm/get-last-team-id)
+                           (:default-team-id profile))
 
         go-dashboard
         (mf/use-fn
@@ -119,5 +120,5 @@
   [:div {:class (stl/css :dashboard-sidebar :settings)}
    [:& sidebar-content {:profile profile
                         :section section}]
-   [:& profile-section {:profile profile}]])
+   [:> profile-section* {:profile profile}]])
 

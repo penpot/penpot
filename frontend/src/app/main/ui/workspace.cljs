@@ -214,7 +214,7 @@
         [:& (mf/provider ctx/components-v2) {:value components-v2?}
          [:& (mf/provider ctx/design-tokens) {:value design-tokens?}
           [:& (mf/provider ctx/workspace-read-only?) {:value read-only?}
-           [:& (mf/provider ctx/team-permissions) {:value permissions}
+           [:& (mf/provider ctx/permissions) {:value permissions}
             [:section {:class (stl/css :workspace)
                        :style {:background-color background-color
                                :touch-action "none"}}

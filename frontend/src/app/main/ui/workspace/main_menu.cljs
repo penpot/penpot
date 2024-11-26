@@ -425,7 +425,7 @@
   (let [select-all (mf/use-fn #(st/emit! (dw/select-all)))
         undo       (mf/use-fn #(st/emit! dwu/undo))
         redo       (mf/use-fn #(st/emit! dwu/redo))
-        perms      (mf/use-ctx ctx/team-permissions)
+        perms      (mf/use-ctx ctx/permissions)
         can-edit   (:can-edit perms)]
 
     [:& dropdown-menu {:show true
@@ -488,7 +488,7 @@
         frames       (->> (cfh/get-immediate-children objects uuid/zero)
                           (filterv cfh/frame-shape?))
 
-        perms        (mf/use-ctx ctx/team-permissions)
+        perms        (mf/use-ctx ctx/permissions)
         can-edit     (:can-edit perms)
 
         on-remove-shared
