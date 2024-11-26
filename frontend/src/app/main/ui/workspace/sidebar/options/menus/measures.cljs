@@ -13,9 +13,9 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
+   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [size-presets]]
-   [app.main.data.tokens :as dt]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.shapes :as dwsh]
@@ -342,7 +342,7 @@
            (let [token-value (wtc/maybe-resolve-token-value token)]
              (st/emit!
               (change-radius (fn [shape]
-                               (-> (dt/unapply-token-id shape (wtty/token-attributes :border-radius))
+                               (-> (cto/unapply-token-id shape (wtty/token-attributes :border-radius))
                                    (ctsr/set-radius-1 token-value))))))))
 
         on-radius-1-change
@@ -352,9 +352,9 @@
            (let [token-value (wtc/maybe-resolve-token-value value)]
              (st/emit!
               (change-radius (fn [shape]
-                               (-> (dt/maybe-apply-token-to-shape {:token (when token-value value)
-                                                                   :shape shape
-                                                                   :attributes (wtty/token-attributes :border-radius)})
+                               (-> (cto/maybe-apply-token-to-shape {:token (when token-value value)
+                                                                    :shape shape
+                                                                    :attributes (wtty/token-attributes :border-radius)})
                                    (ctsr/set-radius-1 (or token-value value)))))))))
 
         on-radius-multi-change
