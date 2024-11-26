@@ -390,7 +390,7 @@ Token names should only contain letters and digits separated by . characters.")}
          :placeholder (tr "workspace.token.enter-token-value")
          :label (tr "workspace.token.token-value")
          :default-value @value-ref
-         :external-ref value-input-ref
+         :ref value-input-ref
          :on-change on-update-value
          :on-blur on-update-value}
         (when color?
