@@ -25,19 +25,18 @@
   {::mf/props :obj
    ::mf/forward-ref true
    ::mf/schema schema::input-tokens}
-  [{:keys [class label external-ref id error value children] :rest props}]
-  (let [ref (or external-ref (mf/use-ref))
+  [{:keys [class label id error value children] :rest props} ref]
+  (let [ref   (or ref (mf/use-ref))
         props (mf/spread-props props {:id id
                                       :type "text"
                                       :class (stl/css :input)
                                       :aria-invalid error
                                       :value value
-                                      :external-ref ref})]
-    [:div {:class (dm/str class " "
-                          (stl/css-case :wrapper true
-                                        :input-error error))}
+                                      :ref ref})]
+    [:div {:class (dm/str class " " (stl/css-case :wrapper true
+                                                  :input-error error))}
      [:label {:for id :class (stl/css :label)} label]
      [:div {:class (stl/css :input-wrapper)}
-      (when children
+      (when (some? children)
         [:div {:class (stl/css :input-swatch)} children])
       [:> input* props]]]))
