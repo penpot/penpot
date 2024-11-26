@@ -207,7 +207,7 @@
 (defn default-actions [{:keys [token selected-token-set-id]}]
   (let [{:keys [modal]} (wtty/get-token-properties token)]
     [{:title "Delete Token"
-      :action #(st/emit! (dt/delete-token (ctob/set-path->set-name selected-token-set-id) (:name token)))}
+      :action #(st/emit! (dt/delete-token (ctob/prefixed-set-full-path->set-name-name selected-token-set-id) (:name token)))}
      {:title "Duplicate Token"
       :action #(st/emit! (dt/duplicate-token (:name token)))}
      {:title "Edit Token"

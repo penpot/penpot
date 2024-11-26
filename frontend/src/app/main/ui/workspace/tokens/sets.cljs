@@ -167,7 +167,7 @@
   [{:keys [set-path set-node tree-depth tree-path on-select selected? on-toggle active? editing? on-edit on-edit-reset on-edit-submit]
     :or {tree-depth 0}
     :as props}]
-  (let [[set-prefix set-path'] (some-> set-path (ctob/split-set-prefix))
+  (let [[set-prefix set-path'] (some-> set-path (ctob/split-set-str-path-prefix))
         set? (instance? ctob/TokenSet set-node)
         set-group? (= ctob/set-group-prefix set-prefix)
         root? (= tree-depth 0)

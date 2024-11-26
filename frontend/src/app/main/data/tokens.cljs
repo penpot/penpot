@@ -100,7 +100,7 @@
   (ptk/reify ::set-selected-token-set-id-from-name
     ptk/UpdateEvent
     (update [_ state]
-      (->> (ctob/set-name->set-path-string token-set-name)
+      (->> (ctob/set-name->prefixed-set-name token-set-name)
            (wtts/assoc-selected-token-set-id state)))))
 
 (defn create-token-theme [token-theme]

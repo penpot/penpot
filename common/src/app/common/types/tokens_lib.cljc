@@ -186,46 +186,51 @@
 (defn join-set-path [set-path]
   (join-path set-path set-separator))
 
-(defn split-set-prefix [set-path]
+(defn split-set-str-path-prefix
+  "Split set-path
+
+  E.g.: \"S-some-set\"   -> [\"S-\" \"some-set\"]
+        \"G-some-group\" -> [\"G-\" \"some-group\"]"
+  [set-path]
   (some->> set-path
            (re-matches #"^([SG]-)(.*)")
            (rest)))
 
-(defn add-set-prefix [set-name]
+(defn add-set-path-prefix [set-name]
   (str set-prefix set-name))
 
-(defn add-set-group-prefix [group-path]
+(defn add-set-path-group-prefix [group-path]
   (str set-group-prefix group-path))
 
-(defn add-token-set-paths-prefix
+(defn set-full-path->set-prefixed-full-path
   "Returns token-set paths with prefixes to differentiate between sets and set-groups.
 
   Sets will be prefixed with `set-prefix` (S-).
   Set groups will be prefixed with `set-group-prefix` (G-)."
-  [paths]
-  (let [set-path (mapv add-set-group-prefix (butlast paths))
-        set-name (add-set-prefix (last paths))]
+  [full-path]
+  (let [set-path (mapv add-set-path-group-prefix (butlast full-path))
+        set-name (add-set-path-prefix (last full-path))]
     (conj set-path set-name)))
 
-(defn split-token-set-path [token-set-path]
-  (split-path token-set-path set-separator))
+(defn split-token-set-path [path]
+  (split-path path set-separator))
 
-(defn split-token-set-name [token-set-name]
-  (-> (split-token-set-path token-set-name)
-      (add-token-set-paths-prefix)))
+(defn set-full-name->prefixed-full-path [set-full-name]
+  (-> (split-token-set-path set-full-name)
+      (set-full-path->set-prefixed-full-path)))
 
-(defn get-token-set-path [token-set]
+(defn get-token-set-prefixed-path [token-set]
   (let [path (get-path token-set set-separator)]
-    (add-token-set-paths-prefix path)))
+    (set-full-path->set-prefixed-full-path path)))
 
-(defn set-name->set-path-string [set-name]
-  (-> (split-token-set-name set-name)
+(defn set-name->prefixed-set-name [set-name]
+  (-> (set-full-name->prefixed-full-path set-name)
       (join-set-path)))
 
-(defn set-path->set-name [set-path]
+(defn prefixed-set-full-path->set-name-name [set-path]
   (->> (split-token-set-path set-path)
        (map (fn [path-part]
-              (or (-> (split-set-prefix path-part)
+              (or (-> (split-set-str-path-prefix path-part)
                       (second))
                   path-part)))
        (join-set-path)))
@@ -313,7 +318,7 @@
     (vals tokens))
 
   (get-set-path [_]
-    (set-name->set-path-string name))
+    (set-name->prefixed-set-name name))
 
   (get-tokens-tree [_]
     (tokens-tree tokens))
@@ -627,7 +632,7 @@ When `before-set-name` is nil, move set to bottom")
   ITokenSets
   (add-set [_ token-set]
     (dm/assert! "expected valid token set" (check-token-set! token-set))
-    (let [path (get-token-set-path token-set)]
+    (let [path (get-token-set-prefixed-path token-set)]
       (TokensLib. (d/oassoc-in sets path token-set)
                   themes
                   active-themes)))
@@ -639,12 +644,12 @@ When `before-set-name` is nil, move set to bottom")
      this token-sets))
 
   (update-set [this set-name f]
-    (let [path (split-token-set-name set-name)
+    (let [path (set-full-name->prefixed-full-path set-name)
           set  (get-in sets path)]
       (if set
         (let [set' (-> (make-token-set (f set))
                        (assoc :modified-at (dt/now)))
-              path' (get-token-set-path set')
+              path' (get-token-set-prefixed-path set')
               name-changed? (not= (:name set) (:name set'))]
           (check-token-set! set')
           (if name-changed?
@@ -681,10 +686,10 @@ When `before-set-name` is nil, move set to bottom")
 
   ;; TODO Handle groups and nesting
   (move-set-before [this set-name before-set-name]
-    (let [source-path (split-token-set-name set-name)
+    (let [source-path (set-full-name->prefixed-full-path set-name)
           token-set (-> (get-set this set-name)
                         (assoc :modified-at (dt/now)))
-          target-path (split-token-set-name before-set-name)]
+          target-path (set-full-name->prefixed-full-path before-set-name)]
       (if before-set-name
         (TokensLib. (d/oassoc-in-before sets target-path source-path token-set)
                     themes
@@ -717,7 +722,7 @@ When `before-set-name` is nil, move set to bottom")
     (count (get-sets this)))
 
   (get-set [_ set-name]
-    (let [path (split-token-set-name set-name)]
+    (let [path (set-full-name->prefixed-full-path set-name)]
       (get-in sets path)))
 
   (get-neighbor-set-name [this set-name index-offset]
