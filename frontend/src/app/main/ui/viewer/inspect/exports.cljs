@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.main.data.events :as ev]
    [app.main.data.exports.assets :as de]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -18,7 +17,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr c]]
    [app.util.keyboard :as kbd]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc exports
@@ -63,15 +61,9 @@
                                 :object-id (-> shapes first :id)}
                                (cond-> share-id (assoc :share-id share-id)))
                   exports  (mapv #(merge % defaults) @exports)]
-              (if (= 1 (count exports))
-                (st/emit!
-                 (de/request-simple-export {:export (first exports)})
-                 (ptk/event
-                  ::ev/event {::ev/name "export-shapes" ::ev/origin "viewer" :num-shapes 1}))
-                (st/emit!
-                 (de/request-multiple-export {:exports exports})
-                 (ptk/event
-                  ::ev/event {::ev/name "export-shapes" ::ev/origin "viewer" :num-shapes (count exports)}))))))
+              (st/emit!
+               (de/request-export {:exports exports})
+               (de/export-shapes-event exports "viewer")))))
 
         add-export
         (mf/use-callback

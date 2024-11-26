@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.main.data.events :as ev]
    [app.main.data.exports.assets :as de]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
@@ -21,7 +20,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer  [tr c]]
    [app.util.keyboard :as kbd]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def exports-attrs
@@ -66,21 +64,20 @@
              ;; I can select multiple shapes all of them with no export settings and one of them with only one
              ;; In that situation we must export it directly
              (if (and (= 1 (count shapes-with-exports)) (= 1 (-> shapes-with-exports first :exports count)))
-               (let [shape    (-> shapes-with-exports first)
-                     export   (-> shape :exports first)
-                     sname    (:name shape)
-                     suffix   (:suffix export)
-                     defaults {:page-id page-id
-                               :file-id file-id
-                               :name sname
-                               :object-id (:id (first shapes-with-exports))}]
-                 (cond-> sname
-                   (some? suffix)
-                   (str suffix))
+               (let [shape       (-> shapes-with-exports first)
+                     export      (-> shape :exports first)
+                     suffix      (:suffix export)
+                     sname       (cond-> (:name shape)
+                                   (some? suffix)
+                                   (str suffix))
+                     defaults    {:page-id page-id
+                                  :file-id file-id
+                                  :name sname
+                                  :object-id (:id (first shapes-with-exports))}
+                     full-export (merge export defaults)]
                  (st/emit!
-                  (de/request-simple-export {:export (merge export defaults)})
-                  (ptk/event
-                   ::ev/event {::ev/name "export-shapes" ::ev/origin "workspace:sidebar" :num-shapes 1})))
+                  (de/request-simple-export {:export full-export})
+                  (de/export-shapes-event [full-export] "workspace:sidebar")))
                (st/emit!
                 (de/show-workspace-export-dialog {:selected (reverse ids) :origin "workspace:sidebar"})))
 
@@ -92,16 +89,11 @@
                              :name sname
                              :object-id (first ids)}
                    exports  (mapv #(merge % defaults) exports)]
-               (if (= 1 (count exports))
-                 (let [export (first exports)]
-                   (st/emit!
-                    (de/request-simple-export {:export export})
-                    (ptk/event
-                     ::ev/event {::ev/name "export-shapes" ::ev/origin "workspace:sidebar" :num-shapes 1})))
-                 (st/emit!
-                  (de/request-multiple-export {:exports exports})
-                  (ptk/event
-                   ::ev/event {::ev/name "export-shapes" ::ev/origin "workspace:sidebar" :num-shapes (count exports)})))))))
+
+               (st/emit!
+                (de/request-export {:exports exports})
+                (de/export-shapes-event exports "workspace:sidebar"))))))
+
 
         ;; TODO: maybe move to specific events for avoid to have this logic here?
         add-export
