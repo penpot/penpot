@@ -358,9 +358,23 @@
 ;; === TokenSets (collection)
 
 (defprotocol ITokenSets
+  "Collection of sets and set groups.
+
+  Naming conventions:
+    Set name:                the complete name as a string, without prefix \"some-group/some-subgroup/some-set\".
+    Set final name or fname: the last part of the name \"some-set\".
+    Set path:                the groups part of the name, as a vector [\"some-group\" \"some-subgroup\"].
+    Set path str:            the set path as a string \"some-group/some-subgroup\".
+    Set full path:           the path including the fname, as a vector [\"some-group\", \"some-subgroup\", \"some-set\"].
+    Set full path str:       the set full path as a string \"some-group/some-subgroup/some-set\".
+
+    Set prefix:                        the two-characters prefix added to a full path item \"G-\" / \"S-\".
+    Prefixed set path or ppath:        a path wit added prefixes [\"G-some-group\", \"G-some-subgroup\"].
+    Prefixed set full path or pfpath:  a full path wit prefixes [\"G-some-group\", \"G-some-subgroup\", \"S-some-set\"].
+    Prefixed set final name or pfname: a final name with prefix \"S-some-set\"."
   (add-set [_ token-set] "add a set to the library, at the end")
   (add-sets [_ token-set] "add a collection of sets to the library, at the end")
-  (update-set [_ set-name f] "modify a set in the ilbrary")
+  (update-set [_ set-name f] "modify a set in the library")
   (delete-set-path [_ set-path] "delete a set in the library")
   (move-set-before [_ set-name before-set-name] "move a set with `set-name` before a set with `before-set-name` in the library.
 When `before-set-name` is nil, move set to bottom")
