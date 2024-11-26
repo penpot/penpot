@@ -14,7 +14,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
-   [app.main.data.profile :as du]
+   [app.main.data.profile :as dp]
    [app.main.data.team :as dtm]
    [app.main.data.websocket :as ws]
    [app.main.repo :as rp]
@@ -47,7 +47,7 @@
               (if-let [file-id (get props :welcome-file-id)]
                 (rx/of (rt/nav' :workspace {:project-id (:default-project-id profile)
                                             :file-id file-id})
-                       (du/update-profile-props {:welcome-file-id nil}))
+                       (dp/update-profile-props {:welcome-file-id nil}))
 
                 (let [teams   (into #{} (map :id) teams)
                       team-id (dtm/get-last-team-id)
@@ -71,7 +71,7 @@
       ptk/WatchEvent
       (watch [_ _ stream]
         (->> (rx/merge
-              (rx/of (du/initialize-profile profile)
+              (rx/of (dp/initialize-profile profile)
                      (ws/initialize)
                      (dtm/fetch-teams))
 
@@ -110,9 +110,9 @@
         (->> (rp/cmd! :login-with-password (d/without-nils params))
              (rx/merge-map (fn [data]
                              (rx/merge
-                              (rx/of (du/fetch-profile))
+                              (rx/of (dp/fetch-profile))
                               (->> stream
-                                   (rx/filter du/profile-fetched?)
+                                   (rx/filter dp/profile-fetched?)
                                    (rx/take 1)
                                    (rx/map deref)
                                    (rx/filter (complement is-authenticated?))
@@ -121,7 +121,7 @@
                                    (rx/observe-on :async))
 
                               (->> stream
-                                   (rx/filter du/profile-fetched?)
+                                   (rx/filter dp/profile-fetched?)
                                    (rx/take 1)
                                    (rx/map deref)
                                    (rx/filter is-authenticated?)
@@ -179,9 +179,9 @@
     ptk/WatchEvent
     (watch [_ _ stream]
       (rx/merge
-       (rx/of (du/fetch-profile))
+       (rx/of (dp/fetch-profile))
        (->> stream
-            (rx/filter du/profile-fetched?)
+            (rx/filter dp/profile-fetched?)
             (rx/take 1)
             (rx/map deref)
             (rx/filter is-authenticated?)
