@@ -10,7 +10,7 @@
    [app.common.schema :as sm]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
-   [app.main.data.users :as du]
+   [app.main.data.profile :as du]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.components.forms :as fm]

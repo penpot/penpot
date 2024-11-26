@@ -8,8 +8,8 @@
   (:require
    [app.main.data.dashboard :as dd]
    [app.main.data.events :as ev]
+   [app.main.data.profile :as du]
    [app.main.data.shortcuts :as ds]
-   [app.main.data.users :as du]
    [app.main.store :as st]))
 
 (def shortcuts

@@ -7,7 +7,7 @@
 (ns app.main.ui.releases
   (:require
    [app.main.data.modal :as modal]
-   [app.main.data.users :as du]
+   [app.main.data.profile :as du]
    [app.main.store :as st]
    [app.main.ui.releases.common :as rc]
    [app.main.ui.releases.v1-10]

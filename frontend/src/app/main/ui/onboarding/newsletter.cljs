@@ -9,7 +9,7 @@
   (:require
    [app.main.data.events :as-alias ev]
    [app.main.data.notifications :as ntf]
-   [app.main.data.users :as du]
+   [app.main.data.profile :as du]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
