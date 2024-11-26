@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.data.users
+(ns app.main.data.profile
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]

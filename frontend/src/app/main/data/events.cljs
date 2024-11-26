@@ -182,7 +182,7 @@
                      (rx/filter #(pos? (count %)))
                      (rx/debounce 2000))
                 (->> stream
-                     (rx/filter (ptk/type? :app.main.data.users/logout))
+                     (rx/filter (ptk/type? :app.main.data.profile/logout))
                      (rx/observe-on :async)))
                (rx/map (fn [_]
                          (into [] (take max-buffer-size) @buffer)))

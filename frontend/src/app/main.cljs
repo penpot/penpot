@@ -12,7 +12,7 @@
    [app.config :as cf]
    [app.main.data.auth :as da]
    [app.main.data.events :as ev]
-   [app.main.data.users :as du]
+   [app.main.data.profile :as du]
    [app.main.data.websocket :as ws]
    [app.main.errors]
    [app.main.features :as feat]

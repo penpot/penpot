@@ -16,7 +16,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.modal :as modal]
-   [app.main.data.users :as du]
+   [app.main.data.profile :as du]
    [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]

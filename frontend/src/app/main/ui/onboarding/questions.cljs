@@ -12,7 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.main.data.events :as-alias ev]
-   [app.main.data.users :as du]
+   [app.main.data.profile :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]

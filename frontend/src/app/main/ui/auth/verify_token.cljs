@@ -8,7 +8,7 @@
   (:require
    [app.main.data.auth :as da]
    [app.main.data.notifications :as ntf]
-   [app.main.data.users :as du]
+   [app.main.data.profile :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.ds.product.loader :refer [loader*]]

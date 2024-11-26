@@ -9,7 +9,7 @@
   (:require
    [app.common.schema :as sm]
    [app.main.data.notifications :as ntf]
-   [app.main.data.users :as du]
+   [app.main.data.profile :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
