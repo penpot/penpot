@@ -12,6 +12,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.render-wasm.helpers :as h]
+   [app.util.debug :as dbg]
    [app.util.functions :as fns]
    [app.util.http :as http]
    [app.util.webapi :as wapi]
@@ -279,9 +280,16 @@
   [width height]
   (h/call internal-module "_resize_viewbox" width height))
 
+(defn- debug-flags
+  []
+  (let [debug-options 0]
+    (when (dbg/enabled? :wasm-viewbox)
+      (bit-or debug-options 2r00000000000000000000000000000001))))
+
 (defn assign-canvas
   [canvas]
   (let [gl      (unchecked-get internal-module "GL")
+        flags   (debug-flags)
         context (.getContext ^js canvas "webgl2" canvas-options)
 
         ;; Register the context with emscripten
@@ -290,7 +298,7 @@
 
     ;; Initialize Wasm Render Engine
     (h/call internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
-    (h/call internal-module "_set_render_options" 0x01 dpr))
+    (h/call internal-module "_set_render_options" flags dpr))
 
   (set! (.-width canvas) (* dpr (.-clientWidth ^js canvas)))
   (set! (.-height canvas) (* dpr (.-clientHeight ^js canvas))))
