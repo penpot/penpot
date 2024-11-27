@@ -42,7 +42,7 @@
 
 (mf/defc token-update-create-modal
   {::mf/wrap-props false}
-  [{:keys [x y position token token-type action selected-token-set-id] :as _args}]
+  [{:keys [x y position token token-type action selected-token-set-path] :as _args}]
   (let [wrapper-style (use-viewport-position-style x y position)
         close-modal (mf/use-fn
                      (fn []
@@ -57,7 +57,7 @@
                        :aria-label (tr "labels.close")}]
      [:& form {:token token
                :action action
-               :selected-token-set-id selected-token-set-id
+               :selected-token-set-path selected-token-set-path
                :token-type token-type}]]))
 
 ;; Modals ----------------------------------------------------------------------

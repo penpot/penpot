@@ -36,15 +36,15 @@
 
 ;; === Set selection
 
-(defn get-selected-token-set-id [state]
-  (or (get-in state [:workspace-local :selected-token-set-id])
+(defn get-selected-token-set-path [state]
+  (or (get-in state [:workspace-local :selected-token-set-path])
       (some-> (get-workspace-tokens-lib state)
               (ctob/get-sets)
               (first)
               (ctob/get-set-prefixed-path-string))))
 
 (defn get-selected-token-set-node [state]
-  (when-let [path (some-> (get-selected-token-set-id state)
+  (when-let [path (some-> (get-selected-token-set-path state)
                           (ctob/split-token-set-path))]
     (some-> (get-workspace-tokens-lib state)
             (ctob/get-in-set-tree path))))
@@ -66,5 +66,5 @@
 (defn token-group-selected? [state]
   (some? (get-selected-token-set-group state)))
 
-(defn assoc-selected-token-set-id [state id]
-  (assoc-in state [:workspace-local :selected-token-set-id] id))
+(defn assoc-selected-token-set-path [state id]
+  (assoc-in state [:workspace-local :selected-token-set-path] id))

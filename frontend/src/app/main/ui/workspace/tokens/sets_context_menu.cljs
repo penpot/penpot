@@ -38,7 +38,7 @@
   [{:keys [tree-path]}]
   (let [{:keys [on-edit]} (sets-context/use-context)
         edit-name (mf/use-fn #(on-edit tree-path))
-        delete-set (mf/use-fn #(st/emit! (wdt/delete-token-set-prefix-full-path tree-path)))]
+        delete-set (mf/use-fn #(st/emit! (wdt/delete-token-set-path tree-path)))]
     [:ul {:class (stl/css :context-list)}
      [:& menu-entry {:title (tr "labels.rename") :on-click edit-name}]
      [:& menu-entry {:title (tr "labels.delete")  :on-click delete-set}]]))

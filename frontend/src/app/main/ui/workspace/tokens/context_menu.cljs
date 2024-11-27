@@ -204,10 +204,10 @@
                     (generic-attribute-actions #{:x} "X" (assoc context-data :on-update-shape wtch/update-shape-position))
                     (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape wtch/update-shape-position))))}))
 
-(defn default-actions [{:keys [token selected-token-set-id]}]
+(defn default-actions [{:keys [token selected-token-set-path]}]
   (let [{:keys [modal]} (wtty/get-token-properties token)]
     [{:title "Delete Token"
-      :action #(st/emit! (dt/delete-token (ctob/prefixed-set-full-path->set-name-name selected-token-set-id) (:name token)))}
+      :action #(st/emit! (dt/delete-token (ctob/prefixed-set-full-path->set-name-name selected-token-set-path) (:name token)))}
      {:title "Duplicate Token"
       :action #(st/emit! (dt/duplicate-token (:name token)))}
      {:title "Edit Token"
@@ -220,7 +220,7 @@
                                     :position :right
                                     :fields fields
                                     :action "edit"
-                                    :selected-token-set-id selected-token-set-id
+                                    :selected-token-set-path selected-token-set-path
                                     :token token})))}]))
 
 (defn selection-actions [{:keys [type token] :as context-data}]
@@ -311,11 +311,11 @@
         selected-shapes (into [] (keep (d/getf objects)) selected)
         token-name (:token-name mdata)
         token (mf/deref (refs/workspace-selected-token-set-token token-name))
-        selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)]
+        selected-token-set-path (mf/deref refs/workspace-selected-token-set-path)]
     [:ul {:class (stl/css :context-list)}
      [:& menu-tree {:submenu-offset width
                     :token token
-                    :selected-token-set-id selected-token-set-id
+                    :selected-token-set-path selected-token-set-path
                     :selected-shapes selected-shapes}]]))
 
 (mf/defc token-context-menu

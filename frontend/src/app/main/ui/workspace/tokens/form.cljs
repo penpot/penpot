@@ -204,7 +204,7 @@ Token names should only contain letters and digits separated by . characters.")}
 
 (mf/defc form
   {::mf/wrap-props false}
-  [{:keys [token token-type action selected-token-set-id]}]
+  [{:keys [token token-type action selected-token-set-path]}]
   (let [token (or token {:type token-type})
         token-properties (wtty/get-token-properties token)
         color? (wtt/color-token? token)
@@ -348,11 +348,11 @@ Token names should only contain letters and digits separated by . characters.")}
                                 (modal/hide!))))))))
         on-delete-token
         (mf/use-fn
-         (mf/deps selected-token-set-id)
+         (mf/deps selected-token-set-path)
          (fn [e]
            (dom/prevent-default e)
            (modal/hide!)
-           (st/emit! (dt/delete-token (ctob/prefixed-set-full-path->set-name-name selected-token-set-id) (:name token)))))
+           (st/emit! (dt/delete-token (ctob/prefixed-set-full-path->set-name-name selected-token-set-path) (:name token)))))
 
         on-cancel
         (mf/use-fn
