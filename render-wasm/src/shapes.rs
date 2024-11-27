@@ -150,3 +150,21 @@ impl Shape {
         self.blend_mode = mode;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn any_shape() -> Shape {
+        Shape::new(Uuid::nil())
+    }
+
+    #[test]
+    fn add_fill_pushes_a_new_fill() {
+        let mut shape = any_shape();
+        assert_eq!(shape.fills.len(), 0);
+
+        shape.add_fill(Fill::Solid(Color::TRANSPARENT));
+        assert_eq!(shape.fills.get(0), Some(&Fill::Solid(Color::TRANSPARENT)))
+    }
+}
