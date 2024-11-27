@@ -60,7 +60,6 @@
 (mf/defc frame-container
   {::mf/wrap-props false}
   [props]
-
   (let [shape         (unchecked-get props "shape")
         children      (unchecked-get props "children")
 
