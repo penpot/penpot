@@ -219,14 +219,14 @@
          update-token-set-change
          (wtu/update-workspace-tokens))))))
 
-(defn delete-token-set-path [token-set-path]
+(defn delete-token-set-path [prefixed-full-set-path]
   (ptk/reify ::delete-token-set-path
     ptk/WatchEvent
     (watch [it state _]
       (let [data (get state :workspace-data)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/delete-token-set-path token-set-path))]
+                        (pcb/delete-token-set-path prefixed-full-set-path))]
         (rx/of
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))

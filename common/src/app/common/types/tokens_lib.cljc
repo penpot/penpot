@@ -387,7 +387,7 @@ When `before-set-name` is nil, move set to bottom")
   (get-set-tree [_] "get a nested tree of all sets in the library")
   (get-in-set-tree [_ path] "get `path` in nested tree of all sets in the library")
   (get-sets [_] "get an ordered sequence of all sets in the library")
-  (get-path-sets [_ path] "get an ordered sequence of sets at `path` in the library")
+  (get-sets-at-prefix-path [_ path] "get an ordered sequence of sets at `path` in the library")
   (get-ordered-set-names [_] "get an ordered sequence of all sets names in the library")
   (get-set [_ set-name] "get one set looking for name")
   (get-neighbor-set-name [_ set-name index-offset] "get neighboring set name offset by `index-offset`"))
@@ -644,18 +644,18 @@ When `before-set-name` is nil, move set to bottom")
      this token-sets))
 
   (update-set [this set-name f]
-    (let [path (set-full-name->prefixed-full-path set-name)
-          set  (get-in sets path)]
+    (let [prefixed-full-path (set-full-name->prefixed-full-path set-name)
+          set (get-in sets prefixed-full-path)]
       (if set
         (let [set' (-> (make-token-set (f set))
                        (assoc :modified-at (dt/now)))
-              path' (get-token-set-prefixed-path set')
+              prefixed-full-path' (get-token-set-prefixed-path set')
               name-changed? (not= (:name set) (:name set'))]
           (check-token-set! set')
           (if name-changed?
             (TokensLib. (-> sets
-                            (d/oassoc-in-before path path' set')
-                            (d/dissoc-in path))
+                            (d/oassoc-in-before prefixed-full-path prefixed-full-path' set')
+                            (d/dissoc-in prefixed-full-path))
                         (walk/postwalk
                          (fn [form]
                            (if (instance? TokenTheme form)
@@ -663,7 +663,7 @@ When `before-set-name` is nil, move set to bottom")
                              form))
                          themes)
                         active-themes)
-            (TokensLib. (d/oassoc-in sets path set')
+            (TokensLib. (d/oassoc-in sets prefixed-full-path set')
                         themes
                         active-themes)))
         this)))
@@ -710,7 +710,7 @@ When `before-set-name` is nil, move set to bottom")
     (->> (tree-seq d/ordered-map? vals sets)
          (filter (partial instance? TokenSet))))
 
-  (get-path-sets [_ path]
+  (get-sets-at-prefix-path [_ path]
     (some->> (get-in sets (split-token-set-path path))
              (tree-seq d/ordered-map? vals)
              (filter (partial instance? TokenSet))))

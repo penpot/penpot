@@ -820,13 +820,13 @@
       (apply-changes-local)))
 
 (defn delete-token-set-path
-  [changes token-set-path]
+  [changes prefixed-full-set-path]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
         prev-token-sets (some-> (get library-data :tokens-lib)
-                                (ctob/get-path-sets token-set-path))]
+                                (ctob/get-sets-at-prefix-path prefixed-full-set-path))]
     (-> changes
-        (update :redo-changes conj {:type :del-token-set-path :path token-set-path})
+        (update :redo-changes conj {:type :del-token-set-path :path prefixed-full-set-path})
         (update :undo-changes conj {:type :add-token-sets :token-sets prev-token-sets})
         (apply-changes-local))))
 
