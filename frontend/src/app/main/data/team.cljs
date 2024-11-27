@@ -127,7 +127,7 @@
 
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stopper (rx/filter (ptk/type? ::finalize) stream)]
+      (let [stopper (rx/filter (ptk/type? ::finalize-team) stream)]
         (->> (rx/merge
               (rx/of (fetch-teams))
               (->> stream
