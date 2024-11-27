@@ -210,6 +210,8 @@ export function getStyleFromDeclaration(style, styleName, styleUnit) {
   const styleValueAsNumber = parseFloat(styleValue);
   if (styleName === "font-size") {
     return getStyleFontSize(styleValueAsNumber, styleValue);
+  } else if (styleName === "line-height") {
+    return styleValue
   }
   if (Number.isNaN(styleValueAsNumber)) {
     return styleValue;
