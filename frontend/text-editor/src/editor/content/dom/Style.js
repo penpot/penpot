@@ -150,6 +150,7 @@ export function normalizeStyles(node, styleDefaults) {
   }
   return styleDeclaration
 }
+
 /**
  * Sets a single style property value of an element.
  *

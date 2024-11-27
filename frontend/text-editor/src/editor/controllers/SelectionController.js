@@ -1469,8 +1469,8 @@ export class SelectionController extends EventTarget {
     let previousNode = null;
     let nextNode = null;
 
-    // This is the simplest case, when the startNode and the endNode
-    // are the same and they're a textNode.
+    // This is the simplest case, when the startNode and
+    // the endNode are the same and they're textNodes.
     if (startNode === endNode) {
       this.#textNodeIterator.currentNode = startNode;
       previousNode = this.#textNodeIterator.previousNode();
@@ -1513,15 +1513,17 @@ export class SelectionController extends EventTarget {
     do {
       SafeGuard.update();
 
-      const currentNode = this.#textNodeIterator.currentNode;
+      const { currentNode } = this.#textNodeIterator;
 
       // We retrieve the inline and paragraph of the
       // current node.
-      const inline = getInline(this.#textNodeIterator.currentNode);
-      const paragraph = getParagraph(this.#textNodeIterator.currentNode);
+      const inline = getInline(currentNode);
+      const paragraph = getParagraph(currentNode);
+      affectedInlines.add(inline);
+      affectedParagraphs.add(paragraph);
 
       let shouldRemoveNodeCompletely = false;
-      if (this.#textNodeIterator.currentNode === startNode) {
+      if (currentNode === startNode) {
         if (startOffset === 0) {
           // We should remove this node completely.
           shouldRemoveNodeCompletely = true;
@@ -1529,7 +1531,7 @@ export class SelectionController extends EventTarget {
           // We should remove this node partially.
           currentNode.nodeValue = currentNode.nodeValue.slice(0, startOffset);
         }
-      } else if (this.#textNodeIterator.currentNode === endNode) {
+      } else if (currentNode === endNode) {
         if (isLineBreak(endNode)
          || (isTextNode(endNode)
           && endOffset === endNode.nodeValue.length)) {
@@ -1552,13 +1554,11 @@ export class SelectionController extends EventTarget {
         if (currentNode === startNode) {
           continue;
         }
-        if (currentNode === endNode) {
-          break;
-        }
 
         if (inline.childNodes.length === 0) {
           inline.remove();
         }
+
         if (paragraph !== startParagraph && paragraph.children.length === 0) {
           paragraph.remove();
         }
@@ -1579,13 +1579,16 @@ export class SelectionController extends EventTarget {
       }
     }
 
-    if (startInline.childNodes.length === 0 && endInline.childNodes.length > 0) {
+    if (startInline.childNodes.length === 0
+     && endInline.childNodes.length > 0) {
       startInline.remove();
       return this.collapse(endNode, 0);
-    } else if (startInline.childNodes.length > 0 && endInline.childNodes.length === 0) {
+    } else if (startInline.childNodes.length > 0
+     && endInline.childNodes.length === 0) {
       endInline.remove();
       return this.collapse(startNode, startOffset);
-    } else if (startInline.childNodes.length === 0 && endInline.childNodes.length === 0) {
+    } else if (startInline.childNodes.length === 0
+     && endInline.childNodes.length === 0) {
       const previousInline = startInline.previousElementSibling;
       const nextInline = endInline.nextElementSibling;
       startInline.remove();
@@ -1642,6 +1645,14 @@ export class SelectionController extends EventTarget {
         if (endText.length > 0) {
           const endInline = createInline(endText, inline.style);
           midInline.after(endInline);
+        }
+
+        // NOTE: This is necessary because sometimes
+        // inlines are splitted from the beginning
+        // to a mid offset and then the starting node
+        // remains empty.
+        if (inline.firstChild.nodeValue === "") {
+          inline.remove();
         }
 
         // FIXME: This can change focus <-> anchor order.
