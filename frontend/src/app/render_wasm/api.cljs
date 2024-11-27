@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
+   [app.common.svg.path :as path]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.render-wasm.helpers :as h]
@@ -186,6 +187,18 @@
                   (store-image id))))))
         fills))
 
+(defn set-shape-path-content
+  [content]
+  (let [buffer (path/content->buffer content)
+        size (.-byteLength buffer)
+        ptr (h/call internal-module "_alloc_bytes" size)
+        heap      (gobj/get ^js internal-module "HEAPU8")
+        mem       (js/Uint8Array. (.-buffer heap) ptr size)]
+    (.set mem (js/Uint8Array. buffer)
+    (h/call internal-module "_set_shape_path_content" (count content))
+    (js/console.log mem)
+    (js/console.log buffer))))
+
 (defn- translate-blend-mode
   [blend-mode]
   (case blend-mode
@@ -237,6 +250,7 @@
         (loop [index 0 pending []]
           (if (< index total-shapes)
             (let [shape      (nth shapes index)
+                  type       (dm/get-prop shape :type)
                   id         (dm/get-prop shape :id)
                   selrect    (dm/get-prop shape :selrect)
                   rotation   (dm/get-prop shape :rotation)
@@ -245,7 +259,8 @@
                   children   (dm/get-prop shape :shapes)
                   blend-mode (dm/get-prop shape :blend-mode)
                   opacity    (dm/get-prop shape :opacity)
-                  hidden     (dm/get-prop shape :hidden)]
+                  hidden     (dm/get-prop shape :hidden)
+                  content    (dm/get-prop shape :content)]
 
               (use-shape id)
               (set-shape-selrect selrect)
@@ -255,6 +270,7 @@
               (set-shape-children children)
               (set-shape-opacity opacity)
               (set-shape-hidden hidden)
+              (when (and (some? content) (= type :path)) (set-shape-path-content content))
               (let [pending-fills (doall (set-shape-fills fills))]
                 (recur (inc index) (into pending pending-fills))))
             pending))]
@@ -282,9 +298,9 @@
 
 (defn- debug-flags
   []
-  (let [debug-options 0]
-    (when (dbg/enabled? :wasm-viewbox)
-      (bit-or debug-options 2r00000000000000000000000000000001))))
+    (cond-> 0
+      (dbg/enabled? :wasm-viewbox)
+      (bit-or 2r00000000000000000000000000000001)))
 
 (defn assign-canvas
   [canvas]
