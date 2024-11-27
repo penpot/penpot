@@ -215,20 +215,20 @@
 (defn split-token-set-path [path]
   (split-path path set-separator))
 
-(defn set-full-name->prefixed-full-path [set-full-name]
-  (-> (split-token-set-path set-full-name)
+(defn set-full-name->prefixed-full-path [set-full-name-string]
+  (-> (split-token-set-path set-full-name-string)
       (set-full-path->set-prefixed-full-path)))
 
 (defn get-token-set-prefixed-path [token-set]
   (let [path (get-path token-set set-separator)]
     (set-full-path->set-prefixed-full-path path)))
 
-(defn set-name->prefixed-set-name [set-name]
-  (-> (set-full-name->prefixed-full-path set-name)
+(defn set-name-string->prefixed-set-path-string [set-name-string]
+  (-> (set-full-name->prefixed-full-path set-name-string)
       (join-set-path)))
 
-(defn prefixed-set-full-path->set-name-name [set-path]
-  (->> (split-token-set-path set-path)
+(defn prefixed-set-path-string->set-name-string [set-path-string]
+  (->> (split-token-set-path set-path-string)
        (map (fn [path-part]
               (or (-> (split-set-str-path-prefix path-part)
                       (second))
@@ -318,7 +318,7 @@
     (vals tokens))
 
   (get-set-prefixed-path-string [_]
-    (set-name->prefixed-set-name name))
+    (set-name-string->prefixed-set-path-string name))
 
   (get-tokens-tree [_]
     (tokens-tree tokens))
@@ -668,18 +668,19 @@ When `before-set-name` is nil, move set to bottom")
                         active-themes)))
         this)))
 
-  (delete-set-path [_ set-path]
-    (let [path (split-token-set-path set-path)
-          set-node (get-in sets path)
-          set-group? (not (instance? TokenSet set-node))]
-      (TokensLib. (d/dissoc-in sets path)
+  (delete-set-path [_ prefixed-set-name]
+    (let [prefixed-set-path (split-token-set-path prefixed-set-name)
+          set-node (get-in sets prefixed-set-path)
+          set-group? (not (instance? TokenSet set-node))
+          set-name-string (prefixed-set-path-string->set-name-string prefixed-set-name)]
+      (TokensLib. (d/dissoc-in sets prefixed-set-path)
                   ;; TODO: When deleting a set-group, also deactivate the child sets
                   (if set-group?
                     themes
                     (walk/postwalk
                      (fn [form]
                        (if (instance? TokenTheme form)
-                         (disable-set form set-path)
+                         (disable-set form set-name-string)
                          form))
                      themes))
                   active-themes)))

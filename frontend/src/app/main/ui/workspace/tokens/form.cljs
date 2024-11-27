@@ -352,7 +352,7 @@ Token names should only contain letters and digits separated by . characters.")}
          (fn [e]
            (dom/prevent-default e)
            (modal/hide!)
-           (st/emit! (dt/delete-token (ctob/prefixed-set-full-path->set-name-name selected-token-set-path) (:name token)))))
+           (st/emit! (dt/delete-token (ctob/prefixed-set-path-string->set-name-string selected-token-set-path) (:name token)))))
 
         on-cancel
         (mf/use-fn
