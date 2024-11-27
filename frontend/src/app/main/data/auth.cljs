@@ -12,7 +12,7 @@
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
    [app.main.data.profile :as du]
    [app.main.data.team :as dtm]

@@ -10,7 +10,7 @@
    [app.common.data.macros :as dm]
    [app.config :as cf]
    [app.main.data.dashboard :as dd]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]

@@ -12,7 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.types.page :as ctp]
    [app.main.data.changes :as dwc]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.workspace.state-helpers :as wsh]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))

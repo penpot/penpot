@@ -13,7 +13,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.common :as dcm]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.files :as fexp]
    [app.main.data.modal :as modal]

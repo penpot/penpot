@@ -13,7 +13,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.types.shape-tree :as ctst]
    [app.config :as cfg]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]

@@ -11,7 +11,7 @@
    [app.common.transit :as t]
    [app.common.uri :as u]
    [app.config :as cf]
-   [app.main.data.events :as-alias ev]
+   [app.main.data.event :as-alias ev]
    [app.util.http :as http]
    [app.util.sse :as sse]
    [beicon.v2.core :as rx]

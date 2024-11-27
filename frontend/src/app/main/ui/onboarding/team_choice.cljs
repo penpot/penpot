@@ -9,7 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.profile :as du]
    [app.main.data.team :as dtm]
    [app.main.store :as st]

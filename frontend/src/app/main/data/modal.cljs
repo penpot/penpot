@@ -8,7 +8,7 @@
   (:refer-clojure :exclude [update])
   (:require
    [app.common.uuid :as uuid]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.store :as st]
    [cljs.core :as c]
    [potok.v2.core :as ptk]))

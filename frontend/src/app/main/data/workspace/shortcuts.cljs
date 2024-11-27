@@ -7,7 +7,7 @@
 (ns app.main.data.workspace.shortcuts
   (:require
    [app.common.data.macros :as dm]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.exports.assets :as de]
    [app.main.data.modal :as modal]
    [app.main.data.plugins :as dpl]

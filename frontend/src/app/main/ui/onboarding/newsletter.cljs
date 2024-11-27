@@ -7,7 +7,7 @@
 (ns app.main.ui.onboarding.newsletter
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.main.data.events :as-alias ev]
+   [app.main.data.event :as-alias ev]
    [app.main.data.notifications :as ntf]
    [app.main.data.profile :as du]
    [app.main.store :as st]

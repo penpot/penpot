@@ -12,7 +12,7 @@
    [app.common.types.team :as ctt]
    [app.common.uri :as u]
    [app.config :as cf]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.media :as di]
    [app.main.features :as features]
    [app.main.repo :as rp]

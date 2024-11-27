@@ -10,7 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.uri :as u]
    [app.config :as cf]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.util.browser-history :as bhistory]
    [app.util.dom :as dom]
    [app.util.globals :as globals]

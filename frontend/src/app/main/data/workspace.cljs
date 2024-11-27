@@ -37,7 +37,7 @@
    [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dcm]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
