@@ -479,6 +479,9 @@ export class SelectionController extends EventTarget {
    * Selects all content.
    */
   selectAll() {
+    if (this.#textEditor.isEmpty) {
+      return this
+    }
     this.#selection.selectAllChildren(this.#textEditor.root);
     return this;
   }
