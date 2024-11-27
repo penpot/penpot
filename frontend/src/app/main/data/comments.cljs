@@ -55,6 +55,19 @@
 (declare retrieve-comment-threads)
 (declare refresh-comment-thread)
 
+(def r-mentions #"@\[([^\]]*)\]\(([^\)]*)\)")
+
+(defn extract-mentions
+  "Retrieves the mentions in the content as an array of uuids"
+  [content]
+  (->> (re-seq r-mentions content)
+       (mapv (fn [[_ _ id]] (uuid/uuid id)))))
+
+(defn update-mentions
+  "Updates the params object with the mentiosn"
+  [{:keys [content] :as props}]
+  (assoc props :mentions (extract-mentions content)))
+
 (defn created-thread-on-workspace
   ([params]
    (created-thread-on-workspace params true))
@@ -103,7 +116,9 @@
        (let [page-id (:current-page-id state)
              objects (wsh/lookup-page-objects state page-id)
              frame-id (ctst/get-frame-id-by-position objects (:position params))
-             params (assoc params :frame-id frame-id)]
+             params (-> params
+                        (update-mentions)
+                        (assoc :frame-id frame-id))]
          (->> (rp/cmd! :create-comment-thread params)
               (rx/mapcat #(rp/cmd! :get-comment-thread {:file-id (:file-id %) :id (:id %)}))
               (rx/tap on-thread-created)
@@ -156,7 +171,9 @@
     (watch [_ state _]
       (let [share-id (-> state :viewer-local :share-id)
             frame-id (:frame-id params)
-            params (assoc params :share-id share-id :frame-id frame-id)]
+            params (-> params
+                       (update-mentions)
+                       (assoc :share-id share-id :frame-id frame-id))]
         (->> (rp/cmd! :create-comment-thread params)
              (rx/mapcat #(rp/cmd! :get-comment-thread {:file-id (:file-id %) :id (:id %) :share-id share-id}))
              (rx/map created-thread-on-viewer)
@@ -228,9 +245,15 @@
     (watch [_ state _]
       (let [share-id (-> state :viewer-local :share-id)
             created  (fn [comment state]
-                       (update-in state [:comments (:id thread)] assoc (:id comment) comment))]
+                       (update-in state [:comments (:id thread)] assoc (:id comment) comment))
+
+            params
+            (-> {:thread-id (:id thread)
+                 :content content
+                 :share-id share-id}
+                (update-mentions))]
         (rx/concat
-         (->> (rp/cmd! :create-comment {:thread-id (:id thread) :content content :share-id share-id})
+         (->> (rp/cmd! :create-comment params)
               (rx/map (fn [comment] (partial created comment)))
               (rx/catch (fn [{:keys [type code] :as cause}]
                           (if (and (= type :restriction)
@@ -260,8 +283,10 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-id (:current-file-id state)
-            share-id (-> state :viewer-local :share-id)]
-        (->> (rp/cmd! :update-comment {:id id :content content :share-id share-id})
+            share-id (-> state :viewer-local :share-id)
+            params (-> {:id id :content content :share-id share-id}
+                       (update-mentions))]
+        (->> (rp/cmd! :update-comment params)
              (rx/catch #(rx/throw {:type :comment-error}))
              (rx/map #(retrieve-comment-threads file-id)))))))
 

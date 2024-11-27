@@ -653,6 +653,28 @@
       (into new-elems)
       (into (drop index coll))))
 
+(defn interleave-all
+  "Like interleave, but stops when the longest seq is done, instead of the shortest."
+  ([] ())
+  ([c1] (lazy-seq c1))
+  ([c1 c2]
+   (lazy-seq
+    (let [s1 (seq c1) s2 (seq c2)]
+      (cond
+        ;; Interleave as it
+        (and s1 s2)
+        (cons (first s1)
+              (cons (first s2)
+                    (interleave-all (rest s1) (rest s2))))
+        ;; s2 is empty, we return s1
+        s1 s1
+        ;; s1 is empty
+        s2 s2))))
+  ([c1 c2 & colls]
+   (lazy-seq
+    (let [ss (filter identity (map seq (conj colls c2 c1)))]
+      (c/concat (map first ss) (apply interleave-all (map rest ss)))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Parsing / Conversion
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

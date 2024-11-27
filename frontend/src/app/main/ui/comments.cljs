@@ -10,6 +10,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.math :as mth]
+   [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.comments :as dcm]
    [app.main.data.modal :as modal]
@@ -18,16 +20,379 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [app.util.object :as obj]
    [app.util.time :as dt]
+   [app.util.webapi :as wapi]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
+(def mentions-context (mf/create-context nil))
+
+(def r-mentions-split #"@\[[^\]]*\]\([^\)]*\)")
+(def r-mentions #"@\[([^\]]*)\]\(([^\)]*)\)")
+
+(defn parse-comment
+  [comment]
+  (d/interleave-all
+   (->> (str/split comment r-mentions-split)
+        (map #(hash-map :type :text :content %)))
+
+   (->> (re-seq r-mentions comment)
+        (map (fn [[_ user id]]
+               {:type :mention
+                :content user
+                :data {:id id}})))))
+
 (def comments-local-options (l/derived :options refs/comments-local))
+
+(defn create-text-node
+  ([]
+   (create-text-node ""))
+  ([text]
+   (-> (dom/create-element "span")
+       (dom/set-data! "type" "text")
+       (dom/set-html! (if (empty? text) "&#8203;" text)))))
+
+(defn create-mention-node
+  [user]
+  (-> (dom/create-element "span")
+      (dom/set-data! "type" "mention")
+      (dom/set-data! "user-id" (-> user :id str))
+      (obj/set! "textContent" (-> user :fullname))))
+
+(defn current-text-node
+  [node]
+  (let [selection     (wapi/get-selection)
+        anchor-node   (wapi/get-anchor-node selection)
+        anchor-offset (wapi/get-anchor-offset selection)]
+    (when (and node (.contains node anchor-node))
+      (let [span-node
+            (if (instance? js/Text anchor-node)
+              (dom/get-parent anchor-node)
+              anchor-node)
+
+            container   (dom/get-parent span-node)]
+        (when (= node container)
+          [span-node anchor-offset])))))
+
+(defn parse-nodes
+  [node]
+  (->> (dom/get-children node)
+       (map
+        (fn [node]
+          (cond
+            (and (instance? js/HTMLElement node) (dom/get-data node "user-id"))
+            (str/ffmt "@[%](%)" (.-textContent node) (dom/get-data node "user-id"))
+
+            :else
+            (.-textContent node))))
+       (str/join "")))
+
+(mf/defc comment-input
+  {::mf/wrap-props false}
+  [props]
+
+  (let [value            (d/nilv (unchecked-get props "value") "")
+        prev-value       (h/use-previous value)
+
+        local-ref    (mf/use-ref nil)
+        mentions-str (mf/use-ctx mentions-context)
+
+        cur-mention  (mf/use-var nil)
+
+        on-focus         (unchecked-get props "on-focus")
+        on-blur          (unchecked-get props "on-blur")
+        placeholder      (unchecked-get props "placeholder")
+        on-change        (unchecked-get props "on-change")
+        on-esc           (unchecked-get props "on-esc")
+        on-ctrl-enter    (unchecked-get props "on-ctrl-enter")
+        max-length       (unchecked-get props "max-length")
+        autofocus?       (unchecked-get props "autofocus")
+
+        init-input
+        (mf/use-callback
+         (fn [node]
+           (mf/set-ref-val! local-ref node)
+           (when node
+             (let [empty-node (create-text-node)]
+               (dom/append-child! node empty-node)))))
+
+        handle-input
+        (mf/use-callback
+         (mf/deps on-change)
+         (fn []
+           (let [node     (mf/ref-val local-ref)
+                 children (dom/get-children node)]
+             (doseq [child-node children]
+               (when (not= (.-tagName child-node) "SPAN")
+                 (.remove child-node)))
+
+             (when (= 0 (.-length children))
+               (dom/append-child! node (create-text-node)))
+
+             (let [new-input (parse-nodes node)]
+               (when (and on-change (<= (count new-input) max-length))
+                 (on-change new-input))))))
+
+        handle-select
+        (mf/use-callback
+         (fn []
+           (let [node (mf/ref-val local-ref)
+                 [span-node offset] (current-text-node node)]
+             (when span-node
+               (let [node-text (subs (dom/get-text span-node) 0 offset)
+
+                     current-at-symbol
+                     (str/last-index-of (subs node-text 0 offset) "@")
+
+                     mention-text
+                     (subs node-text current-at-symbol)]
+
+                 (if (re-matches #"@\w*" mention-text)
+                   (do
+                     (reset! cur-mention mention-text)
+                     (rx/push! mentions-str {:type :display-mentions})
+                     (let [mention (subs mention-text 1)]
+                       (when (d/not-empty? mention)
+                         (rx/push! mentions-str {:type :filter-mentions :data mention}))))
+                   (do
+                     (reset! cur-mention nil)
+                     (rx/push! mentions-str {:type :hide-mentions}))))))))
+
+        handle-focus
+        (mf/use-callback
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/set-css-property! (mf/ref-val local-ref) "--placeholder" "")
+           (when on-focus
+             (on-focus event))))
+
+        handle-blur
+        (mf/use-callback
+         (mf/deps value)
+         (fn [event]
+           (when (empty? value)
+             (let [node (mf/ref-val local-ref)]
+               (dom/set-css-property! node "--placeholder" (dm/str "\"" placeholder "\""))))
+
+           (when on-blur
+             (on-blur event))))
+
+        handle-insert-mention
+        (fn [data]
+          (let [node (mf/ref-val local-ref)
+                [span-node offset] (current-text-node node)]
+            (when span-node
+              (let [node-text
+                    (dom/get-text span-node)
+
+                    current-at-symbol
+                    (str/last-index-of (subs node-text 0 offset) "@")
+
+                    mention
+                    (re-find #"@\w*" (subs node-text current-at-symbol))
+
+                    prefix
+                    (subs node-text 0 current-at-symbol)
+
+                    suffix
+                    (subs node-text (+ current-at-symbol (count mention)))
+
+                    mention-span (create-mention-node (:user data))
+                    after-span (create-text-node suffix)
+                    sel (wapi/get-selection)]
+
+                (dom/set-html! span-node prefix)
+                (dom/insert-after! node span-node mention-span)
+                (dom/insert-after! node mention-span after-span)
+                (wapi/select-all-children! sel after-span)
+                (wapi/collapse-end! sel)
+
+                (when on-change
+                  (on-change (parse-nodes node)))))))
+
+        handle-key-down
+        (mf/use-fn
+         (mf/deps on-esc on-ctrl-enter handle-select)
+         (fn [event]
+           (handle-select event)
+           (cond
+             (and @cur-mention (kbd/enter? event))
+             (do (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (rx/push! mentions-str {:type :insert-selected-mention}))
+
+             (and @cur-mention (kbd/down-arrow? event))
+             (do (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (rx/push! mentions-str {:type :insert-next-mention}))
+
+             (and @cur-mention (kbd/up-arrow? event))
+             (do (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (rx/push! mentions-str {:type :insert-prev-mention}))
+
+             (and @cur-mention (kbd/esc? event))
+             (do (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (rx/push! mentions-str {:type :hide-mentions}))
+
+             (and (kbd/esc? event) (fn? on-esc))
+             (on-esc event)
+
+             (and (kbd/mod? event) (kbd/enter? event) (fn? on-ctrl-enter))
+             (on-ctrl-enter event))))]
+
+    (mf/use-layout-effect
+     (mf/deps autofocus?)
+     (fn []
+       (when autofocus?
+         (dom/focus! (mf/ref-val local-ref)))))
+
+    ;; Creates the handlers for selection
+    (mf/use-effect
+     (mf/deps handle-select)
+     (fn []
+       (let [handle-select* handle-select]
+         (js/document.addEventListener "selectionchange" handle-select*)
+         #(js/document.removeEventListener "selectionchange" handle-select*))))
+
+    ;; Effect to communicate with the mentions panel
+    (mf/use-effect
+     (fn []
+       (when mentions-str
+         (->> mentions-str
+              (rx/subs!
+               (fn [{:keys [type data]}]
+                 (case type
+                   :insert-mention
+                   (handle-insert-mention data)
+
+                   nil)))))))
+
+    ;; Auto resize input to display the comment
+    (mf/use-layout-effect
+     nil
+     (fn []
+       (let [node (mf/ref-val local-ref)]
+         (set! (.-height (.-style node)) "0")
+         (set! (.-height (.-style node)) (str (+ 2 (.-scrollHeight node)) "px")))))
+
+    (mf/use-effect
+     (mf/deps value prev-value)
+     (fn []
+       (let [node (mf/ref-val local-ref)]
+         (when (and (d/not-empty? prev-value) (empty? value))
+           (dom/set-html! node "")
+           (dom/append-child! node (create-text-node))
+           (dom/focus! node))
+
+         (when (some? node)
+           (if (empty? value)
+             (dom/set-css-property! node "--placeholder" (dm/str "\"" placeholder "\""))
+             (dom/set-css-property! node "--placeholder" ""))))))
+
+    [:div
+     {:class (stl/css :comment-input)
+      :content-editable "plaintext-only"
+      :suppress-content-editable-warning true
+      :on-input handle-input
+      :ref init-input
+      :on-key-down handle-key-down
+      :on-focus handle-focus
+      :on-blur handle-blur}]))
+
+(mf/defc mentions-panel
+  [{:keys [users]}]
+
+  (let [mentions-str (mf/use-ctx mentions-context)
+
+        mention-state
+        (mf/use-state {:display? false
+                       :mention-filter ""
+                       :selected 0})
+
+        {:keys [display? mention-filter selected]} @mention-state
+
+        mentions-users
+        (mf/use-memo
+         (mf/deps mention-filter)
+         #(->> (vals users)
+               (filter
+                (fn [{:keys [fullname email]}]
+                  (or (not mention-filter)
+                      (empty? mention-filter)
+                      (str/includes? (str/lower fullname) (str/lower mention-filter))
+                      (str/includes? (str/lower email) (str/lower mention-filter)))))
+               (take 4)
+               (into [])))
+
+        selected (mth/clamp selected 0 (dec (count mentions-users)))
+
+        handle-click-mention
+        (mf/use-callback
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (let [id (-> (dom/get-current-target event)
+                        (dom/get-data "user-id")
+                        (uuid/uuid))]
+             (rx/push! mentions-str {:type :insert-mention
+                                     :data {:user (get users id)}}))))]
+
+    (mf/use-effect
+     (mf/deps mentions-users selected)
+     (fn []
+       (let [sub
+             (->> mentions-str
+                  (rx/subs!
+                   (fn [{:keys [type data]}]
+                     (case type
+                       ;; Display the mentions dialog
+                       :display-mentions
+                       (swap! mention-state assoc :display? true)
+
+                       ;; Hide mentions
+                       :hide-mentions
+                       (swap! mention-state assoc :display? false :mention-filter "")
+
+                       ;; Filter the metions by some characters
+                       :filter-mentions
+                       (swap! mention-state assoc :mention-filter data)
+
+                       :insert-selected-mention
+                       (rx/push! mentions-str {:type :insert-mention
+                                               :data {:user (get mentions-users selected)}})
+
+                       :insert-next-mention
+                       (swap! mention-state update :selected #(mth/clamp (inc %) 0 (dec (count mentions-users))))
+
+                       :insert-prev-mention
+                       (swap! mention-state update :selected #(mth/clamp (dec %) 0 (dec (count mentions-users))))
+
+                       ;;
+                       nil))))]
+         #(rx/dispose! sub))))
+
+    (when display?
+      [:div {:class (stl/css :comments-mentions-choice)}
+       (for [[idx {:keys [id fullname email] :as user}] (d/enumerate mentions-users)]
+         [:div {:key id
+                :on-pointer-down handle-click-mention
+                :data-user-id (dm/str id)
+                :class (stl/css-case :comments-mentions-entry true
+                                     :is-selected (= selected idx))}
+          [:img {:class (stl/css :comments-mentions-avatar)
+                 :src (cfg/resolve-profile-photo-url user)}]
+          [:div {:class (stl/css :comments-mentions-name)} fullname]
+          [:div {:class (stl/css :comments-mentions-email)} email]])])))
 
 (mf/defc resizing-textarea
   {::mf/wrap-props false}
@@ -123,16 +488,29 @@
          (mf/deps thread @content)
          (fn []
            (st/emit! (dcm/add-comment thread @content))
-           (on-cancel)))]
+           (on-cancel)))
+
+        on-esc
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (on-cancel)
+           (st/emit! :interrupt)))]
+
     [:div {:class (stl/css :reply-form)}
-     [:& resizing-textarea {:value @content
-                            :placeholder "Reply"
-                            :on-blur on-blur
-                            :on-focus on-focus
-                            :select-on-focus? false
-                            :on-ctrl-enter on-submit
-                            :on-change on-change
-                            :max-length 750}]
+     [:&
+      comment-input
+      ;;resizing-textarea
+      {:value @content
+       :placeholder "Reply"
+       :on-blur on-blur
+       :on-focus on-focus
+       :select-on-focus? false
+       :on-ctrl-enter on-submit
+       :on-change on-change
+       :on-esc on-esc
+       :max-length 750}]
+
      (when (or @show-buttons? (seq @content))
        [:div {:class (stl/css :buttons-wrapper)}
         [:input.btn-secondary
@@ -150,7 +528,9 @@
 
 (mf/defc draft-thread
   [{:keys [draft zoom on-cancel on-submit position-modifier]}]
-  (let [position (cond-> (:position draft)
+  (let [mentions-str (mf/use-memo #(rx/subject))
+        users (mf/deref refs/current-file-comments-users)
+        position (cond-> (:position draft)
                    (some? position-modifier)
                    (gpt/transform position-modifier))
         content  (:content draft)
@@ -181,7 +561,7 @@
          (mf/deps draft)
          (partial on-submit draft))]
 
-    [:*
+    [:& (mf/provider mentions-context) {:value mentions-str}
      [:div
       {:class (stl/css :floating-thread-bubble)
        :data-testid "floating-thread-bubble"
@@ -194,14 +574,16 @@
                     :left (str (+ pos-x 28) "px")}
             :on-click dom/stop-propagation}
       [:div {:class (stl/css :reply-form)}
-       [:& resizing-textarea {:placeholder (tr "labels.write-new-comment")
-                              :value (or content "")
-                              :autofocus true
-                              :select-on-focus? false
-                              :on-esc on-esc
-                              :on-change on-change
-                              :on-ctrl-enter on-submit
-                              :max-length 750}]
+       [:& ;;resizing-textarea
+        comment-input
+        {:placeholder (tr "labels.write-new-comment")
+         :value (or content "")
+         :autofocus true
+         :select-on-focus? false
+         :on-esc on-esc
+         :on-change on-change
+         :on-ctrl-enter on-submit
+         :max-length 750}]
        [:div {:class (stl/css :buttons-wrapper)}
 
         [:input {:on-click on-esc
@@ -214,7 +596,9 @@
                  :value "Post"
                  :class (stl/css-case :post-btn true
                                       :global/disabled disabled?)
-                 :disabled disabled?}]]]]]))
+                 :disabled disabled?}]]]
+
+      [:& mentions-panel {:users users}]]]))
 
 (mf/defc edit-form
   [{:keys [content on-submit on-cancel] :as props}]
@@ -233,13 +617,15 @@
                       (str/empty? @content))]
 
     [:div {:class (stl/css :edit-form)}
-     [:& resizing-textarea {:value @content
-                            :autofocus true
-                            :select-on-focus true
-                            :select-on-focus? false
-                            :on-ctrl-enter on-submit*
-                            :on-change on-change
-                            :max-length 750}]
+     [:& comment-input
+      ;;resizing-textarea
+      {:value @content
+       :autofocus true
+       :select-on-focus true
+       :select-on-focus? false
+       :on-ctrl-enter on-submit*
+       :on-change on-change
+       :max-length 750}]
      [:div {:class (stl/css :buttons-wrapper)}
       [:input  {:type "button"
                 :value "Cancel"
@@ -258,6 +644,8 @@
         profile  (mf/deref refs/profile)
         options  (mf/deref comments-local-options)
         edition? (mf/use-state false)
+
+        comment-elements (mf/use-memo #(parse-comment (:content comment)))
 
         on-toggle-options
         (mf/use-fn
@@ -346,7 +734,14 @@
          [:& edit-form {:content (:content comment)
                         :on-submit on-submit
                         :on-cancel on-cancel}]
-         [:span {:class (stl/css :text)} (:content comment)])]]
+         (for [[idx {:keys [type content]}] (d/enumerate comment-elements)]
+           (case type
+             [:span
+              {:key idx
+               :class (stl/css-case
+                       :comment-text (= type :text)
+                       :comment-mention (= type :mention))}
+              content])))]]
 
      [:& dropdown {:show (= options (:id comment))
                    :on-close on-hide-options}
@@ -373,7 +768,7 @@
         w (:width viewport)
         h (:height viewport)
         comment-width 284 ;; TODO: this is the width set via CSS in an outer container…
-                          ;; We should probably do this in a different way.
+        ;; We should probably do this in a different way.
         orientation-left? (>= (+ base-x comment-width (:x bubble-margin)) w)
         orientation-top? (>= base-y (/ h 2))
         h-dir (if orientation-left? :left :right)
@@ -389,12 +784,14 @@
         thread-id    (:id thread)
         thread-pos   (:position thread)
 
+        mentions-str (mf/use-memo #(rx/subject))
+
         base-pos     (cond-> thread-pos
                        (some? position-modifier)
                        (gpt/transform position-modifier))
 
         max-height   (when (some? viewport) (int (* (:height viewport) 0.75)))
-                          ;; We should probably look for a better way of doing this.
+        ;; We should probably look for a better way of doing this.
         bubble-margin {:x 24 :y 0}
         pos          (offset-position base-pos viewport zoom bubble-margin)
 
@@ -423,28 +820,33 @@
       (when-let [node (mf/ref-val ref)]
         (dom/scroll-into-view-if-needed! node)))
 
-    (when (some? comment)
-      [:div {:class (stl/css-case :thread-content true
-                                  :thread-content-left (= (:h-dir pos) :left)
-                                  :thread-content-top (= (:v-dir pos) :top))
-             :id (str "thread-" thread-id)
-             :style {:left (str pos-x "px")
-                     :top (str pos-y "px")
-                     :max-height max-height}
-             :on-click dom/stop-propagation}
+    [:& (mf/provider mentions-context) {:value mentions-str}
+     (when (some? comment)
+       [:div {:class (stl/css-case :thread-content true
+                                   :thread-content-left (= (:h-dir pos) :left)
+                                   :thread-content-top (= (:v-dir pos) :top))
+              :id (str "thread-" thread-id)
+              :style {:left (str pos-x "px")
+                      :top (str pos-y "px")
+                      :max-height max-height}
+              :on-click dom/stop-propagation}
 
-       [:div {:class (stl/css :comments)}
-        [:& comment-item {:comment comment
+        [:div {:class (stl/css :comments)}
+         [:& comment-item {:comment comment
                           :profiles profiles
-                          :thread thread
-                          :origin origin}]
-        (for [item (rest comments)]
-          [:* {:key (dm/str (:id item))}
-           [:& comment-item {:comment item
+                           :thread thread
+                           :origin origin}]
+         (for [item (rest comments)]
+           [:* {:key (dm/str (:id item))}
+            [:& comment-item {:comment item
                              :profiles profiles
-                             :origin origin}]])]
-       [:& reply-form {:thread thread}]
-       [:div {:ref ref}]])))
+                              :origin origin}]])]
+
+        [:& reply-form {:thread thread}]
+
+        [:div {:ref ref}]
+
+        [:& mentions-panel {:users users}]])]))
 
 (defn use-buble
   [zoom {:keys [position frame-id]}]
@@ -575,6 +977,8 @@
 (mf/defc comment-thread
   [{:keys [item profiles on-click]}]
   (let [owner (get profiles (:owner-id item))
+        comment-elements (mf/use-memo #(parse-comment (:content item)))
+
         on-click*
         (mf/use-fn
          (mf/deps item)
@@ -597,7 +1001,16 @@
        [:div {:class (stl/css :fullname)} (:fullname owner)]
        [:div {:class (stl/css :timeago)} (dt/timeago (:modified-at item))]]]
      [:div {:class (stl/css :content)}
-      (:content item)]
+      (for [[idx {:keys [type content]}] (d/enumerate comment-elements)]
+        (case type
+          [:span
+           {:key idx
+            :class (stl/css-case
+                    :comment-text (= type :text)
+                    :comment-mention (= type :mention))}
+           content]))]
+
+
      [:div {:class (stl/css :replies)}
       (let [unread (:count-unread-comments item ::none)
             total  (:count-comments item 1)]

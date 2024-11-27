@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as log]
+   [app.util.globals :as globals]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -264,3 +265,51 @@
        (catch :default e (reject e))))))
 
 (def empty-png-size (memoize empty-png-size*))
+
+
+
+
+(defn create-range
+  []
+  (let [document globals/document]
+    (.createRange document)))
+
+(defn select-contents!
+  [range node]
+  (when (and range node)
+    (.selectNodeContents range node))
+  range)
+
+(defn select-all-children!
+  [^js selection ^js node]
+  (.selectAllChildren selection node))
+
+(defn get-selection
+  []
+  (when-let [document globals/document]
+    (.getSelection document)))
+
+(defn get-anchor-node
+  [^js selection]
+  (when selection
+    (.-anchorNode selection)))
+
+(defn get-anchor-offset
+  [^js selection]
+  (when selection
+    (.-anchorOffset selection)))
+
+(defn remove-all-ranges!
+  [sel]
+  (.removeAllRanges sel)
+  sel)
+
+(defn add-range!
+  [sel range]
+  (.addRange sel range)
+  sel)
+
+(defn collapse-end!
+  [sel]
+  (.collapseToEnd sel)
+  sel)

@@ -426,7 +426,10 @@
     :fn (mg/resource "app/migrations/sql/0134-mod-file-change-table.sql")}
 
    {:name "0135-mod-team-invitation-table.sql"
-    :fn (mg/resource "app/migrations/sql/0135-mod-team-invitation-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0135-mod-team-invitation-table.sql")}
+
+   {:name "0136-mod-comments-mentions.sql"
+    :fn (mg/resource "app/migrations/sql/0136-mod-comments-mentions.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]
