@@ -16,7 +16,7 @@
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.interactions :as ctsi]
    [app.main.data.comments :as dcm]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
    [app.main.features :as features]
    [app.main.repo :as rp]

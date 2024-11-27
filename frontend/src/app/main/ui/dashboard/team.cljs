@@ -12,7 +12,7 @@
    [app.common.schema :as sm]
    [app.config :as cfg]
    [app.main.data.dashboard :as dd]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.team :as dtm]

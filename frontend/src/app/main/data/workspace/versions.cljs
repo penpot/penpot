@@ -8,7 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.persistence :as dwp]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]

@@ -12,7 +12,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.media :as cm]
    [app.config :as cf]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]

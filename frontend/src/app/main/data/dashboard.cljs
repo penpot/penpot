@@ -14,7 +14,7 @@
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.main.data.common :as dc]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.modal :as modal]
    [app.main.data.websocket :as dws]

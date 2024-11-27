@@ -12,7 +12,7 @@
    [app.common.logging :as log]
    [app.common.media :as cm]
    [app.common.uuid :as uuid]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
    [app.main.fonts :as fonts]
    [app.main.repo :as rp]

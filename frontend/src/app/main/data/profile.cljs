@@ -12,7 +12,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.media :as di]
    [app.main.data.team :as-alias dtm]
    [app.main.repo :as rp]

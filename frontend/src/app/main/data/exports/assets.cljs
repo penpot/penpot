@@ -7,7 +7,7 @@
 (ns app.main.data.exports.assets
   (:require
    [app.common.uuid :as uuid]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.persistence :as dwp]
    [app.main.data.workspace.state-helpers :as wsh]

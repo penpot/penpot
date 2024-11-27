@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.data.events
+(ns app.main.data.event
   (:require
    ["ua-parser-js" :as ua]
    [app.common.data :as d]

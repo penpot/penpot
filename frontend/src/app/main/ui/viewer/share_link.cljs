@@ -12,7 +12,7 @@
    [app.common.logging :as log]
    [app.config :as cf]
    [app.main.data.common :as dc]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.refs :as refs]

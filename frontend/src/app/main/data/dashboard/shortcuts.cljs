@@ -7,7 +7,7 @@
 (ns app.main.data.dashboard.shortcuts
   (:require
    [app.main.data.dashboard :as dd]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.profile :as du]
    [app.main.data.shortcuts :as ds]
    [app.main.store :as st]))

@@ -11,7 +11,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.auth :as da]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.profile :as du]
    [app.main.data.websocket :as ws]
    [app.main.errors]
