@@ -49,9 +49,10 @@ export function mapContentFragmentFromDocument(document, root, styleDefaults) {
       }
     }
 
-    currentParagraph.appendChild(
-      createInline(new Text(currentNode.nodeValue), currentStyle)
-    );
+    const inline = createInline(new Text(currentNode.nodeValue), currentStyle);
+    const fontSize = inline.style.getPropertyValue("font-size");
+    if (!fontSize) console.warn("font-size", fontSize);
+    currentParagraph.appendChild(inline);
 
     currentNode = nodeIterator.nextNode();
   }
