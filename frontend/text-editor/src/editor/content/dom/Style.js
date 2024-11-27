@@ -174,12 +174,30 @@ export function setStyle(element, styleName, styleValue, styleUnit) {
 }
 
 /**
+ * Returns the value of the font size
+ *
+ * @param {number} styleValueAsNumber
+ * @param {string} styleValue
+ * @returns {string}
+ */
+function getStyleFontSize(styleValueAsNumber, styleValue) {
+  if (styleValue.endsWith("pt")) {
+    return (styleValueAsNumber * 1.3333).toFixed();
+  } else if (styleValue.endsWith("em")) {
+    return (styleValueAsNumber * baseSize).toFixed();
+  } else if (styleValue.endsWith("%")) {
+    return ((styleValueAsNumber / 100) * baseSize).toFixed();
+  }
+  return styleValueAsNumber.toFixed();
+}
+
+/**
  * Returns the value of a style from a declaration.
  *
  * @param {CSSStyleDeclaration} style
  * @param {string} styleName
  * @param {string|undefined} [styleUnit]
- * @returns {*}
+ * @returns {string}
  */
 export function getStyleFromDeclaration(style, styleName, styleUnit) {
   if (styleName.startsWith("--")) {
@@ -189,7 +207,14 @@ export function getStyleFromDeclaration(style, styleName, styleUnit) {
   if (styleValue.endsWith(styleUnit)) {
     return styleValue.slice(0, -styleUnit.length);
   }
-  return styleValue;
+  const styleValueAsNumber = parseFloat(styleValue);
+  if (styleName === "font-size") {
+    return getStyleFontSize(styleValueAsNumber, styleValue);
+  }
+  if (Number.isNaN(styleValueAsNumber)) {
+    return styleValue;
+  }
+  return styleValueAsNumber.toFixed();
 }
 
 /**
