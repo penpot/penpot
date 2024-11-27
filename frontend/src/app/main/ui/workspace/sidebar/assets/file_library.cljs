@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.data.events :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.undo :as dwu]
@@ -29,6 +30,7 @@
    [app.util.router :as rt]
    [cuerdas.core :as str]
    [okulary.core :as l]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def lens:open-status
@@ -50,7 +52,15 @@
         (mf/use-fn
          (mf/deps file-id open?)
          (fn []
-           (st/emit! (dw/set-assets-section-open file-id :library (not open?)))))]
+           (st/emit! (dw/set-assets-section-open file-id :library (not open?)))))
+
+        on-click
+        (mf/use-fn
+         (fn [ev]
+           (dom/stop-propagation ev)
+           (st/emit!
+            (ptk/event ::ev/event {::ev/name "navigate-to-library-file"}))))]
+
     [:div  {:class (stl/css-case :library-title true
                                  :open open?)}
      [:& title-bar {:collapsable    true
@@ -65,11 +75,11 @@
                                       (mf/html [:div {:class (stl/css :special-title)}
                                                 file-name]))}
       (when-not local?
-        [:span {:title "Open library file"}
+        [:span {:title (tr "workspace.assets.open-library")}
          [:a {:class (stl/css :file-link)
               :href (str "#" url)
               :target "_blank"
-              :on-click dom/stop-propagation}
+              :on-click on-click}
           i/open-link]])]]))
 
 (mf/defc file-library-content
