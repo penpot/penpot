@@ -267,30 +267,34 @@
   [project-id file-id]
   (ptk/reify ::fetch-bundle-stage-1
     ptk/WatchEvent
-    (watch [_ _ stream]
-      (->> (rp/cmd! :get-project {:id project-id})
-           (rx/mapcat (fn [project]
-                        (rx/concat
-                         ;; Wait the wasm module to be loaded or failed to
-                         ;; load. We need to wait the promise to be resolved
-                         ;; before continue with the next workspace loading
-                         ;; steps
-                         (->> (rx/from wasm/module)
-                              (rx/ignore))
+    (watch [_ state stream]
+      (let [render-wasm? (features/active-feature? state "render-wasm/v1")]
+        (->> (rp/cmd! :get-project {:id project-id})
+             (rx/mapcat (fn [project]
+                          (rx/concat
+                           ;; Wait the wasm module to be loaded or failed to
+                           ;; load. We need to wait the promise to be resolved
+                           ;; before continue with the next workspace loading
+                           ;; steps
 
-                         (->> (rp/cmd! :get-team {:id (:team-id project)})
-                              (rx/mapcat (fn [team]
-                                           (let [bundle {:team team
-                                                         :project project
-                                                         :file-id file-id
-                                                         :project-id project-id}]
-                                             ;; FIXME: this should not be handled here, pending
-                                             ;; refactor of urls and team initialization
-                                             ;; normalization
-                                             (rx/of (dtm/set-current-team team)
-                                                    (ptk/data-event ::bundle-stage-1 bundle)))))))))
-           (rx/take-until
-            (rx/filter (ptk/type? ::fetch-bundle) stream))))))
+                           (if ^boolean render-wasm?
+                             (->> (rx/from @wasm/module)
+                                  (rx/ignore))
+                             (rx/empty))
+
+                           (->> (rp/cmd! :get-team {:id (:team-id project)})
+                                (rx/mapcat (fn [team]
+                                             (let [bundle {:team team
+                                                           :project project
+                                                           :file-id file-id
+                                                           :project-id project-id}]
+                                               ;; FIXME: this should not be handled here, pending
+                                               ;; refactor of urls and team initialization
+                                               ;; normalization
+                                               (rx/of (dtm/set-current-team team)
+                                                      (ptk/data-event ::bundle-stage-1 bundle)))))))))
+             (rx/take-until
+              (rx/filter (ptk/type? ::fetch-bundle) stream)))))))
 
 (defn- fetch-bundle-stage-2
   [{:keys [file-id project-id project] :as bundle}]
