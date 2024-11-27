@@ -41,7 +41,7 @@
       (some-> (get-workspace-tokens-lib state)
               (ctob/get-sets)
               (first)
-              (ctob/get-set-path))))
+              (ctob/get-set-prefixed-path-string))))
 
 (defn get-selected-token-set-node [state]
   (when-let [path (some-> (get-selected-token-set-id state)

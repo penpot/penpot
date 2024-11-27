@@ -268,7 +268,7 @@
   (delete-token [_ token-name] "delete a token from the list")
   (get-token [_ token-name] "return token by token-name")
   (get-tokens [_] "return an ordered sequence of all tokens in the set")
-  (get-set-path [_] "returns name of set converted to the path with prefix identifiers")
+  (get-set-prefixed-path-string [_] "convert set name to prefixed full path string")
   (get-tokens-tree [_] "returns a tree of tokens split & nested by their name path")
   (get-dtcg-tokens-tree [_] "returns tokens tree formated to the dtcg spec"))
 
@@ -317,7 +317,7 @@
   (get-tokens [_]
     (vals tokens))
 
-  (get-set-path [_]
+  (get-set-prefixed-path-string [_]
     (set-name->prefixed-set-name name))
 
   (get-tokens-tree [_]
