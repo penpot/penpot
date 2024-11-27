@@ -449,6 +449,32 @@
    :id ::request-team-access
    :schema schema:request-team-access))
 
+(def ^:private schema:comment-mention
+  [:map
+   [:name ::sm/text]
+   [:source-user ::sm/text]
+   [:comment-reference ::sm/text]
+   [:comment-content ::sm/text]
+   [:comment-url ::sm/text]])
+
+(def comment-mention
+  (template-factory
+   :id ::comment-mention
+   :schema schema:comment-mention))
+
+(def ^:private schema:comment-thread
+  [:map
+   [:name ::sm/text]
+   [:source-user ::sm/text]
+   [:comment-reference ::sm/text]
+   [:comment-content ::sm/text]
+   [:comment-url ::sm/text]])
+
+(def comment-thread
+  (template-factory
+   :id ::comment-thread
+   :schema schema:comment-thread))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; BOUNCE/COMPLAINS HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -286,18 +286,18 @@
 ;; implemented in UI)
 
 (def sql:team-users
-  "select pf.id, pf.fullname, pf.photo_id
+  "select pf.id, pf.fullname, pf.photo_id, pf.email
      from profile as pf
     inner join team_profile_rel as tpr on (tpr.profile_id = pf.id)
     where tpr.team_id = ?
     union
-   select pf.id, pf.fullname, pf.photo_id
+   select pf.id, pf.fullname, pf.photo_id, pf.email
      from profile as pf
     inner join project_profile_rel as ppr on (ppr.profile_id = pf.id)
     inner join project as p on (ppr.project_id = p.id)
     where p.team_id = ?
    union
-   select pf.id, pf.fullname, pf.photo_id
+   select pf.id, pf.fullname, pf.photo_id, pf.email
      from profile as pf
     inner join file_profile_rel as fpr on (fpr.profile_id = pf.id)
     inner join file as f on (fpr.file_id = f.id)

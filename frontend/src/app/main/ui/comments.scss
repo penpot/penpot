@@ -111,6 +111,10 @@
   white-space: pre-wrap;
 }
 
+.comment-mention {
+  color: var(--color-accent-primary);
+}
+
 .replies {
   display: flex;
   gap: $s-8;
@@ -142,7 +146,6 @@
 // thread-content
 .thread-content {
   position: absolute;
-  overflow-y: auto;
   width: $s-284;
   padding: $s-12;
   padding-inline-end: $s-8;
@@ -155,10 +158,13 @@
   --translate-x: 0%;
   --translate-y: 0%;
   transform: translate(var(--translate-x), var(--translate-y));
+
   .comments {
     display: flex;
     flex-direction: column;
     gap: $s-24;
+    overflow-y: auto;
+    max-height: $s-320;
   }
 }
 
@@ -173,6 +179,7 @@
 
 .comment-container {
   position: relative;
+  padding-bottom: $s-8;
   .comment {
     @include bodySmallTypography;
     .author {
@@ -257,5 +264,102 @@
       width: $s-92;
       margin-bottom: 0;
     }
+  }
+}
+
+.comments-mentions-choice {
+  background: #212426;
+  border-radius: 8px;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  left: -2px;
+  margin-top: 20px;
+  overflow: hidden;
+  padding: $s-2;
+  position: absolute;
+  width: calc(100% + 4px);
+}
+
+.comments-mentions-entry {
+  cursor: pointer;
+  display: grid;
+  grid-template-areas:
+    "avatar name"
+    "avatar email";
+  grid-template-columns: $s-32 1fr;
+  column-gap: $s-8;
+  padding: $s-4 $s-12;
+  border-radius: $br-6;
+  border: 1px solid transparent;
+
+  &:hover {
+    background: black;
+  }
+
+  .comments-mentions-avatar {
+    grid-area: avatar;
+    border-radius: 50%;
+  }
+
+  .comments-mentions-name {
+    grid-area: name;
+    font-size: $fs-12;
+    color: white;
+  }
+
+  .comments-mentions-email {
+    grid-area: email;
+    font-size: $fs-12;
+    color: #8f9da3;
+  }
+
+  &.is-selected {
+    border: 1px solid var(--color-accent-primary);
+    background: black;
+  }
+}
+
+
+.comment-input {
+  @include bodySmallTypography;
+  line-height: 1.45;
+  height: $s-36;
+  width: 100%;
+  max-width: $s-260;
+  margin-bottom: $s-8;
+  padding: $s-8;
+  color: var(--input-foreground-color-active);
+  resize: vertical;
+
+  // resize: none;
+
+  background: var(--input-background-color);
+  border-radius: $br-8;
+  background-color: var(--input-background-color);
+  border: $s-1 solid var(--input-border-color);
+  color: var(--input-foreground-color);
+
+  // display: block;
+  //flex-direction: column;
+  //align-items: initial;
+  overflow-y: auto;
+
+  &:focus {
+    border: $s-1 solid var(--input-border-color-active);
+    outline: none;
+  }
+
+  [data-type='mention'] {
+    color: var(--color-accent-primary);
+  }
+
+  [data-type='text'] {
+    color: var(--color-foreground-primary);
+  }
+
+
+  &::before {
+    content: var(--placeholder);
   }
 }
