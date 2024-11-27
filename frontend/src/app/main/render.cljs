@@ -99,7 +99,7 @@
       [{:keys [shape]}]
       (let [thumbnails? (mf/use-ctx muc/render-thumbnails)
             childs      (mapv (d/getf objects) (:shapes shape))]
-        (if (and thumbnails? (some? (:thumbnail shape)))
+        (if (and thumbnails? (some? (:thumbnail-id shape)))
           [:& frame/frame-thumbnail {:shape shape :bounds (:children-bounds shape)}]
           [:& frame-shape {:shape shape :childs childs}])))))
 
