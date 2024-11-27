@@ -881,6 +881,12 @@
          (rx/of
           (dwu/start-undo-transaction undo-id)
           (update-component shape-id undo-group)
+
+          ;; These two calls are necessary for properly sync thumbnails
+          ;; when a main component does not live in the same page
+          (update-component-thumbnail-sync state component-id file-id "frame")
+          (update-component-thumbnail-sync state component-id file-id "component")
+
           (sync-file current-file-id file-id :components component-id undo-group)
           (when (not current-file?)
             (sync-file file-id file-id :components component-id undo-group))
