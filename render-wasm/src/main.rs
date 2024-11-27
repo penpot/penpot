@@ -103,16 +103,15 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_shape_selrect(left: f32, top: f32, right: f32, bottom: f32) {
+pub extern "C" fn set_shape_selrect(left: f32, top: f32, right: f32, bottom: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-
     if let Some(shape) = state.current_shape() {
         shape.selrect.set_ltrb(left, top, right, bottom);
     }
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_shape_rotation(rotation: f32) {
+pub extern "C" fn set_shape_rotation(rotation: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.rotation = rotation;
@@ -120,7 +119,7 @@ pub unsafe extern "C" fn set_shape_rotation(rotation: f32) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_shape_transform(a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
+pub extern "C" fn set_shape_transform(a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.transform.a = a;
@@ -130,6 +129,16 @@ pub unsafe extern "C" fn set_shape_transform(a: f32, b: f32, c: f32, d: f32, e: 
         shape.transform.e = e;
         shape.transform.f = f;
     }
+}
+
+#[no_mangle]
+pub extern "C" fn set_shape_path_content() {
+    // TODO:
+    // 1. Reservar un espacio de intercambio en la memoria de Rust.
+    // 2. Pasar el puntero a JS.
+    // 3. Copiar el ArrayBuffer de `content->buffer` a ese puntero.
+    // 4. Leer ese espacio de intercambio desde Rust.
+    // 5.
 }
 
 #[no_mangle]

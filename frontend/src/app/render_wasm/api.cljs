@@ -12,6 +12,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.render-wasm.helpers :as h]
+   [app.render-wasm.path :as path]
    [app.util.debug :as dbg]
    [app.util.functions :as fns]
    [app.util.http :as http]
@@ -186,6 +187,10 @@
                   (store-image id))))))
         fills))
 
+(defn set-shape-path-content
+  [content]
+  (js/console.log "set-shape-path-content" content (path/content->buffer content)))
+
 (defn- translate-blend-mode
   [blend-mode]
   (case blend-mode
@@ -282,9 +287,9 @@
 
 (defn- debug-flags
   []
-  (let [debug-options 0]
-    (when (dbg/enabled? :wasm-viewbox)
-      (bit-or debug-options 2r00000000000000000000000000000001))))
+    (cond-> 0
+      (dbg/enabled? :wasm-viewbox)
+      (bit-or 2r00000000000000000000000000000001)))
 
 (defn assign-canvas
   [canvas]
