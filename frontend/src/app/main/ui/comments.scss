@@ -248,7 +248,115 @@
 }
 
 .form-buttons-wrapper {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
   justify-content: flex-end;
   gap: $s-8;
+}
+
+.open-mentions-button {
+  cursor: pointer;
+  stroke: none;
+  fill: var(--color-foreground-secondary);
+
+  &.is-toggled {
+    fill: var(--color-accent-primary);
+  }
+}
+
+.comments-mentions-choice {
+  background: var(--color-background-tertiary);
+  border-radius: $s-8;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  left: calc(-1 * $s-2);
+  margin-top: $s-8;
+  overflow: hidden;
+  padding: $s-2;
+  position: absolute;
+  top: 100%;
+  width: calc(100% + $s-4);
+}
+
+.comments-mentions-entry {
+  cursor: pointer;
+  display: grid;
+  grid-template-areas:
+    "avatar name"
+    "avatar email";
+  grid-template-columns: $s-32 1fr;
+  column-gap: $s-8;
+  margin: $s-4 $s-8;
+  padding: 0 $s-4;
+  border-radius: $br-8;
+  border: $s-1 solid transparent;
+
+  &:hover {
+    background: var(--color-background-quaternary);
+  }
+
+  .comments-mentions-avatar {
+    grid-area: avatar;
+    border-radius: 50%;
+  }
+
+  .comments-mentions-name {
+    grid-area: name;
+    font-size: $fs-12;
+    color: var(--color-foreground-primary);
+  }
+
+  .comments-mentions-email {
+    grid-area: email;
+    font-size: $fs-12;
+    color: var(--color-foreground-secondary);
+  }
+
+  &.is-selected {
+    border: 1px solid var(--color-accent-primary-muted);
+    background: var(--color-background-quaternary);
+  }
+}
+
+.comment-input {
+  @include bodySmallTypography;
+  background: var(--input-background-color);
+  border-radius: $br-8;
+  border: $s-1 solid var(--input-border-color);
+  color: var(--input-foreground-color);
+  height: $s-36;
+  margin-bottom: $s-8;
+  max-width: $s-260;
+  overflow-y: auto;
+  padding: $s-8;
+  resize: vertical;
+  width: 100%;
+
+  &:focus {
+    border: $s-1 solid var(--input-border-color-active);
+    outline: none;
+  }
+
+  [data-type="mention"] {
+    color: var(--color-accent-primary);
+  }
+
+  [data-type="text"] {
+    color: var(--color-foreground-primary);
+  }
+
+  &::before {
+    content: var(--placeholder);
+  }
+}
+
+.comment-mention {
+  color: var(--color-accent-primary);
+}
+
+.comments-mentions-empty {
+  font-size: $fs-12;
+  color: var(--color-foreground-secondary);
+  padding: $s-6 $s-8;
 }

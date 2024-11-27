@@ -90,4 +90,5 @@
 (def backspace? (is-key? "Backspace"))
 (def home? (is-key? "Home"))
 (def tab? (is-key? "Tab"))
+(def delete? (is-key? "Delete"))
 
