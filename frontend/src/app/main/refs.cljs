@@ -493,9 +493,6 @@
 (def workspace-selected-token-set-path
   (l/derived wtts/get-selected-token-set-path st/state))
 
-(def workspace-token-set-group-selected?
-  (l/derived wtts/token-group-selected? st/state))
-
 (def workspace-ordered-token-sets
   (l/derived #(or (some-> % ctob/get-sets) []) tokens-lib))
 
