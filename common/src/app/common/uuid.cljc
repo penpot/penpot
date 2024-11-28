@@ -94,7 +94,7 @@
      [this]
      (let [buffer (unchecked-get this "__u32_buffer")]
        (if (nil? buffer)
-         (let [buffer (get-unsigned-parts (.-uuid ^UUID this))]
+         (let [buffer (get-unsigned-parts this)]
            (unchecked-set this "__u32_buffer" buffer)
            buffer)
          buffer))))

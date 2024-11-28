@@ -153,8 +153,6 @@
     (ShapeProxy. (.-id ^ShapeProxy self)
                  nil
                  (.-delegate ^ShapeProxy self))
-
-    :else
     (let [delegate  (.-delegate ^ShapeProxy self)
           delegate' (dissoc delegate k)]
       (if (identical? delegate delegate')
