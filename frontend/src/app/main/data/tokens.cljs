@@ -89,11 +89,11 @@
     (get (:tokens workspace-data) id)))
 
 (defn set-selected-token-set-path
-  [id]
+  [full-path]
   (ptk/reify ::set-selected-token-set-path
     ptk/UpdateEvent
     (update [_ state]
-      (wtts/assoc-selected-token-set-path state id))))
+      (wtts/assoc-selected-token-set-path state full-path))))
 
 (defn set-selected-token-set-path-from-name
   [token-set-name]

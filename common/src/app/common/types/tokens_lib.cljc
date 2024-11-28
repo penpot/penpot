@@ -215,8 +215,8 @@
 (defn split-token-set-path [path]
   (split-path path set-separator))
 
-(defn set-full-name->prefixed-full-path [set-full-name-string]
-  (-> (split-token-set-path set-full-name-string)
+(defn set-full-name->prefixed-full-path [full-path-str]
+  (-> (split-token-set-path full-path-str)
       (set-full-path->set-prefixed-full-path)))
 
 (defn get-token-set-prefixed-path [token-set]
