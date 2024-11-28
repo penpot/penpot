@@ -224,6 +224,11 @@
   [{:keys [team-id team-name change]}]
   (dm/assert! (uuid? team-id))
   (ptk/reify ::team-membership-change
+    ptk/UpdateEvent
+    (update [_ state]
+      ;; FIXME: Remove on 2.5
+      (assoc state :current-team-id (dm/get-in state [:profile :default-team-id])))
+
     ptk/WatchEvent
     (watch [_ state _]
       (when (= :removed change)

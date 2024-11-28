@@ -1122,6 +1122,7 @@
    (ptk/reify ::go-to-projects-1
      ptk/UpdateEvent
      (update [_ state]
+       ;; FIXME: Remove on 2.5
        (assoc state :current-team-id team-id))
      ptk/WatchEvent
      (watch [_ _ _]
