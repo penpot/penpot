@@ -90,9 +90,6 @@
        :aria-label (tr "labels.collapse")
        :icon (if @collapsed? "arrow-right" "arrow-down")
        :variant "action"}]
-     [:> icon*
-      {:id "group"
-       :class (stl/css :icon)}]
      (if editing?'
        [:& editing-label
         {:default-value label
