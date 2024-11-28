@@ -301,7 +301,7 @@
 (defn update-dimensions
   "Change size of shapes, from the sideber options form.
   Will ignore pixel snap used in the options side panel"
-  [ids attr value]
+  [ids attr value & options]
   (dm/assert! (number? value))
   (dm/assert!
    "expected valid coll of uuids"
@@ -324,7 +324,7 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dwm/apply-modifiers)))))
+      (rx/of (dwm/apply-modifiers options)))))
 
 (defn change-orientation
   "Change orientation of shapes, from the sidebar options form.
@@ -402,7 +402,7 @@
   "Rotate shapes a fixed angle, from a keyboard action."
   ([ids rotation]
    (increase-rotation ids rotation nil))
-  ([ids rotation params]
+  ([ids rotation params & options]
    (ptk/reify ::increase-rotation
      ptk/WatchEvent
      (watch [_ state _]
@@ -411,7 +411,7 @@
              shapes  (->> ids (map #(get objects %)))]
          (rx/concat
           (rx/of (dwm/set-delta-rotation-modifiers rotation shapes params))
-          (rx/of (dwm/apply-modifiers))))))))
+          (rx/of (dwm/apply-modifiers options))))))))
 
 
 ;; -- Move ----------------------------------------------------------

@@ -260,13 +260,13 @@
             (rx/of (with-meta event (meta it)))))))))
 
 (defn update-layout
-  [ids changes]
+  [ids changes & options]
   (ptk/reify ::update-layout
     ptk/WatchEvent
     (watch [_ _ _]
       (let [undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
-               (dwsh/update-shapes ids (d/patch-object changes))
+               (dwsh/update-shapes ids (d/patch-object changes) options)
                (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))
 
@@ -516,7 +516,7 @@
       (assoc :layout-item-v-sizing :fix))))
 
 (defn update-layout-child
-  [ids changes]
+  [ids changes & options]
   (ptk/reify ::update-layout-child
     ptk/WatchEvent
     (watch [_ state _]
@@ -525,8 +525,8 @@
             parent-ids (->> ids (map #(cfh/get-parent-id objects %)))
             undo-id (js/Symbol)]
         (rx/of (dwu/start-undo-transaction undo-id)
-               (dwsh/update-shapes ids (d/patch-object changes))
-               (dwsh/update-shapes children-ids (partial fix-child-sizing objects changes))
+               (dwsh/update-shapes ids (d/patch-object changes) options)
+               (dwsh/update-shapes children-ids (partial fix-child-sizing objects changes) options)
                (dwsh/update-shapes
                 parent-ids
                 (fn [parent objects]
@@ -534,7 +534,7 @@
                       (fix-parent-sizing objects (set ids) changes)
                       (cond-> (ctl/grid-layout? parent)
                         (ctl/assign-cells objects))))
-                {:with-objects? true})
+                (merge options {:with-objects? true}))
                (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))
 
