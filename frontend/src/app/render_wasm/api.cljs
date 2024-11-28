@@ -16,6 +16,10 @@
 
 (defonce internal-frame-id nil)
 (defonce internal-module #js {})
+(defonce use-dpr? (contains? cf/flags :render-wasm-dpr))
+
+(def dpr
+  (if use-dpr? js/window.devicePixelRatio 1.0))
 
 ;; This should never be called from the outside.
 ;; This function receives a "time" parameter that we're not using but maybe in the future could be useful (it is the time since
@@ -169,31 +173,31 @@
        :stencil true
        :alpha true})
 
+
 (defn clear-canvas
   []
   ;; TODO: perform corresponding cleaning
   )
 
-(defn resize-canvas
+(defn resize-viewbox
   [width height]
-  (h/call internal-module "_resize_canvas" width height))
+  (h/call internal-module "_resize_viewbox" width height))
 
 (defn assign-canvas
   [canvas]
   (let [gl      (unchecked-get internal-module "GL")
-        init-fn (unchecked-get internal-module "_init")
-
         context (.getContext ^js canvas "webgl2" canvas-options)
 
         ;; Register the context with emscripten
         handle  (.registerContext ^js gl context #js {"majorVersion" 2})]
     (.makeContextCurrent ^js gl handle)
-    ;; Initialize Skia
-    (^function init-fn (.-width ^js canvas)
-                       (.-height ^js canvas)
-                       1)
-    (set! (.-width canvas) (.-clientWidth ^js canvas))
-    (set! (.-height canvas) (.-clientHeight ^js canvas))))
+
+    ;; Initialize Wasm Render Engine
+    (h/call internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
+    (h/call internal-module "_set_render_options" 0x01 dpr))
+
+  (set! (.-width canvas) (* dpr (.-clientWidth ^js canvas)))
+  (set! (.-height canvas) (* dpr (.-clientHeight ^js canvas))))
 
 (defonce module
   (if (exists? js/dynamicImport)

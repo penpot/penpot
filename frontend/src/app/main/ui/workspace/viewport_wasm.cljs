@@ -270,7 +270,6 @@
         offset-y (if selecting-first-level-frame?
                    (:y first-shape)
                    (:y selected-frame))
-
         rule-area-size (/ rulers/ruler-area-size zoom)
         preview-blend (-> refs/workspace-preview-blend
                           (mf/deref))]
@@ -291,7 +290,7 @@
 
     (mf/with-effect [vport]
       (when @canvas-init?
-        (wasm.api/resize-canvas (:width vport) (:height vport))))
+        (wasm.api/resize-viewbox (:width vport) (:height vport))))
 
     (mf/with-effect [base-objects canvas-init?]
       (when @canvas-init?
@@ -351,8 +350,8 @@
                :ref canvas-ref
                :class (stl/css :render-shapes)
                :key (dm/str "render" page-id)
-               :width (:width vport 0)
-               :height (:height vport 0)
+               :width (* wasm.api/dpr (:width vport 0))
+               :height (* wasm.api/dpr (:height vport 0))
                :style {:background-color background
                        :pointer-events "none"}}]
 
