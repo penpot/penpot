@@ -60,16 +60,8 @@
       :default-value default-value}]))
 
 (mf/defc sets-tree-set-group
-  [{:keys [label tree-depth tree-path selected? collapsed? on-select editing? on-edit on-edit-reset on-edit-submit]}]
+  [{:keys [label tree-depth tree-path selected? collapsed? editing? on-edit on-edit-reset on-edit-submit]}]
   (let [editing?' (editing? tree-path)
-        on-click
-        (mf/use-fn
-         (mf/deps editing? tree-path)
-         (fn [event]
-           (dom/stop-propagation event)
-           (when-not (editing? tree-path)
-             (on-select tree-path))))
-
         on-context-menu
         (mf/use-fn
          (mf/deps editing? tree-path)
@@ -86,12 +78,13 @@
            :data-testid "tokens-set-group-item"
            :style {"--tree-depth" tree-depth}
            :class (stl/css-case :set-item-container true
+                                :set-item-group true
                                 :selected-set selected?)
-           :on-click on-click
            :on-context-menu on-context-menu
            :on-double-click #(on-edit tree-path)}
      [:> icon-button*
-      {:on-click (fn [event]
+      {:class (stl/css :set-item-group-collapse-button)
+       :on-click (fn [event]
                    (.stopPropagation event)
                    (swap! collapsed? not))
        :aria-label (tr "labels.collapse")
