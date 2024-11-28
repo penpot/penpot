@@ -80,8 +80,7 @@
            :class (stl/css-case :set-item-container true
                                 :set-item-group true
                                 :selected-set selected?)
-           :on-context-menu on-context-menu
-           :on-double-click #(on-edit tree-path)}
+           :on-context-menu on-context-menu}
      [:> icon-button*
       {:class (stl/css :set-item-group-collapse-button)
        :on-click (fn [event]
@@ -96,7 +95,9 @@
          :on-cancel on-edit-reset
          :on-create on-edit-reset
          :on-submit #(on-edit-submit)}]
-       [:div {:class (stl/css :set-name)} label])]))
+       [:div {:class (stl/css :set-name)
+              :on-double-click #(on-edit tree-path)}
+        label])]))
 
 (mf/defc sets-tree-set
   [{:keys [set label tree-depth tree-path selected? on-select active? on-toggle editing? on-edit on-edit-reset on-edit-submit]}]
@@ -131,7 +132,6 @@
            :class (stl/css-case :set-item-container true
                                 :selected-set selected?)
            :on-click on-click
-           :on-double-click #(on-edit tree-path)
            :on-context-menu on-context-menu
            :aria-checked active?'}
      [:> icon*
@@ -145,9 +145,13 @@
          :on-create on-edit-reset
          :on-submit #(on-edit-submit set-name (ctob/update-name set %))}]
        [:*
-        [:div {:class (stl/css :set-name)} label]
-        [:button {:on-click on-click
-                  :type "button"
+        [:div {:class (stl/css :set-name)
+               :on-double-click #(on-edit tree-path)}
+         label]
+        [:button {:type "button"
+                  :on-click (fn [event]
+                              (dom/stop-propagation event)
+                              (on-toggle set-name))
                   :class (stl/css-case :checkbox-style true
                                        :checkbox-checked-style active?')}
          (when active?'
