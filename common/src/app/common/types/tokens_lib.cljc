@@ -183,24 +183,24 @@
 
 (def set-separator "/")
 
-(defn join-set-path [set-path]
-  (join-path set-path set-separator))
+(defn join-set-path [path]
+  (join-path path set-separator))
 
 (defn split-set-str-path-prefix
   "Split set-path
 
   E.g.: \"S-some-set\"   -> [\"S-\" \"some-set\"]
         \"G-some-group\" -> [\"G-\" \"some-group\"]"
-  [set-path]
-  (some->> set-path
+  [path-str]
+  (some->> path-str
            (re-matches #"^([SG]-)(.*)")
            (rest)))
 
-(defn add-set-path-prefix [set-name]
-  (str set-prefix set-name))
+(defn add-set-path-prefix [set-name-str]
+  (str set-prefix set-name-str))
 
-(defn add-set-path-group-prefix [group-path]
-  (str set-group-prefix group-path))
+(defn add-set-path-group-prefix [group-path-str]
+  (str set-group-prefix group-path-str))
 
 (defn set-full-path->set-prefixed-full-path
   "Returns token-set paths with prefixes to differentiate between sets and set-groups.
@@ -223,12 +223,12 @@
   (let [path (get-path token-set set-separator)]
     (set-full-path->set-prefixed-full-path path)))
 
-(defn set-name-string->prefixed-set-path-string [set-name-string]
-  (-> (set-full-name->prefixed-full-path set-name-string)
+(defn set-name-string->prefixed-set-path-string [name-str]
+  (-> (set-full-name->prefixed-full-path name-str)
       (join-set-path)))
 
-(defn prefixed-set-path-string->set-name-string [set-path-string]
-  (->> (split-token-set-path set-path-string)
+(defn prefixed-set-path-string->set-name-string [path-str]
+  (->> (split-token-set-path path-str)
        (map (fn [path-part]
               (or (-> (split-set-str-path-prefix path-part)
                       (second))
