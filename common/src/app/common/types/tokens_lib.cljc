@@ -215,8 +215,8 @@
 (defn split-token-set-path [path]
   (split-path path set-separator))
 
-(defn set-full-name->prefixed-full-path [full-path-str]
-  (-> (split-token-set-path full-path-str)
+(defn set-name->prefixed-full-path [name-str]
+  (-> (split-token-set-path name-str)
       (set-full-path->set-prefixed-full-path)))
 
 (defn get-token-set-prefixed-path [token-set]
@@ -224,7 +224,7 @@
     (set-full-path->set-prefixed-full-path path)))
 
 (defn set-name-string->prefixed-set-path-string [name-str]
-  (-> (set-full-name->prefixed-full-path name-str)
+  (-> (set-name->prefixed-full-path name-str)
       (join-set-path)))
 
 (defn prefixed-set-path-string->set-name-string [path-str]
@@ -644,7 +644,7 @@ When `before-set-name` is nil, move set to bottom")
      this token-sets))
 
   (update-set [this set-name f]
-    (let [prefixed-full-path (set-full-name->prefixed-full-path set-name)
+    (let [prefixed-full-path (set-name->prefixed-full-path set-name)
           set (get-in sets prefixed-full-path)]
       (if set
         (let [set' (-> (make-token-set (f set))
@@ -687,10 +687,10 @@ When `before-set-name` is nil, move set to bottom")
 
   ;; TODO Handle groups and nesting
   (move-set-before [this set-name before-set-name]
-    (let [source-path (set-full-name->prefixed-full-path set-name)
+    (let [source-path (set-name->prefixed-full-path set-name)
           token-set (-> (get-set this set-name)
                         (assoc :modified-at (dt/now)))
-          target-path (set-full-name->prefixed-full-path before-set-name)]
+          target-path (set-name->prefixed-full-path before-set-name)]
       (if before-set-name
         (TokensLib. (d/oassoc-in-before sets target-path source-path token-set)
                     themes
@@ -723,7 +723,7 @@ When `before-set-name` is nil, move set to bottom")
     (count (get-sets this)))
 
   (get-set [_ set-name]
-    (let [path (set-full-name->prefixed-full-path set-name)]
+    (let [path (set-name->prefixed-full-path set-name)]
       (get-in sets path)))
 
   (get-neighbor-set-name [this set-name index-offset]
