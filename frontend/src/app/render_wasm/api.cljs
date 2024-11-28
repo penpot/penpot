@@ -92,14 +92,29 @@
   [fills]
   (h/call internal-module "_clear_shape_fills")
   (run! (fn [fill]
-          (let [opacity (:fill-opacity fill)
-                color   (:fill-color fill)]
+          (let [opacity (or (:fill-opacity fill) 1.0)
+                color   (:fill-color fill)
+                gradient (:fill-color-gradient fill)]
             (when ^boolean color
               (let [rgb     (js/parseInt (subs color 1) 16)
                     r       (bit-shift-right rgb 16)
                     g       (bit-and (bit-shift-right rgb 8) 255)
                     b       (bit-and rgb 255)]
-                (h/call internal-module "_add_shape_solid_fill" r g b opacity)))))
+                (h/call internal-module "_add_shape_solid_fill" r g b opacity)))
+            (when (and (some? gradient)  (= (:type gradient) :linear))
+              (h/call internal-module "_add_shape_linear_fill"
+                      (:start-x gradient)
+                      (:start-y gradient)
+                      (:end-x gradient)
+                      (:end-y gradient)
+                      opacity)
+              (run! (fn [stop]
+                      (let [rgb (js/parseInt (subs (:color stop) 1) 16)
+                            r (bit-shift-right rgb 16)
+                            g (bit-and (bit-shift-right rgb 8) 255)
+                            b (bit-and rgb 255)
+                            a (:opacity stop)]
+                        (h/call internal-module "_add_shape_fill_stop" r g b a (:offset stop)))) (:stops gradient)))))
         fills))
 
 (defn- translate-blend-mode

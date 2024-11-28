@@ -4,16 +4,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Kind {
-    None,
-    Text,
-    Path,
-    SVGRaw,
-    Image,
-    Circle,
     Rect,
-    Bool,
-    Group,
-    Frame,
 }
 
 type Color = skia::Color;
@@ -42,8 +33,41 @@ impl Matrix {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct Gradient {
+    colors: Vec<Color>,
+    offsets: Vec<f32>,
+    opacity: f32,
+    start: (f32, f32),
+    end: (f32, f32),
+}
+
+impl Gradient {
+    fn to_shader(&self, rect: &math::Rect) -> skia::Shader {
+        let start = (
+            rect.left + self.start.0 * rect.width(),
+            rect.top + self.start.1 * rect.height(),
+        );
+        let end = (
+            rect.left + self.end.0 * rect.width(),
+            rect.top + self.end.1 * rect.height(),
+        );
+        let shader = skia::shader::Shader::linear_gradient(
+            (start, end),
+            self.colors.as_slice(),
+            self.offsets.as_slice(),
+            skia::TileMode::Clamp,
+            None,
+            None,
+        )
+        .unwrap();
+        shader
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Fill {
-    Solid(Color), // TODO: add more fills here
+    Solid(Color),
+    LinearGradient(Gradient),
 }
 
 impl From<Color> for Fill {
@@ -53,13 +77,31 @@ impl From<Color> for Fill {
 }
 
 impl Fill {
-    pub fn to_paint(&self) -> skia::Paint {
+    pub fn new_linear_gradient(start: (f32, f32), end: (f32, f32), opacity: f32) -> Self {
+        Self::LinearGradient(Gradient {
+            start,
+            end,
+            opacity,
+            colors: vec![],
+            offsets: vec![],
+        })
+    }
+
+    pub fn to_paint(&self, rect: &math::Rect) -> skia::Paint {
         match self {
             Self::Solid(color) => {
                 let mut p = skia::Paint::default();
                 p.set_color(*color);
                 p.set_style(skia::PaintStyle::Fill);
                 p.set_anti_alias(true);
+                p.set_blend_mode(skia::BlendMode::SrcOver);
+                p
+            }
+            Self::LinearGradient(gradient) => {
+                let mut p = skia::Paint::default();
+                p.set_shader(gradient.to_shader(&rect));
+                p.set_alpha((gradient.opacity * 255.) as u8);
+                p.set_style(skia::PaintStyle::Fill);
                 p.set_blend_mode(skia::BlendMode::SrcOver);
                 p
             }
@@ -95,6 +137,7 @@ impl Into<skia::BlendMode> for BlendMode {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Shape {
     pub id: Uuid,
     pub children: Vec<Uuid>,
@@ -144,6 +187,19 @@ impl Shape {
 
     pub fn clear_fills(&mut self) {
         self.fills.clear();
+    }
+
+    pub fn add_gradient_stop(&mut self, color: skia::Color, offset: f32) -> Result<(), String> {
+        let fill = self.fills.last_mut().ok_or("Shape has no fills")?;
+        let gradient = match fill {
+            Fill::LinearGradient(g) => Ok(g),
+            _ => Err("Active fill is not a gradient"),
+        }?;
+
+        gradient.colors.push(color);
+        gradient.offsets.push(offset);
+
+        Ok(())
     }
 
     pub fn set_blend_mode(&mut self, mode: BlendMode) {
