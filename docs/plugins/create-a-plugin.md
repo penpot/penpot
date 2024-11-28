@@ -176,6 +176,32 @@ And then add the following scripts to your <code class="language-js">package.jso
 }
 ```
 
+However, if you encounter issues with the dev script when accessing the preview URL, it's likely caused by <code class="language-js">vite build --watch</code> and <code class="language-js">vite preview</code> running simultaneously without coordination. Here are two solutions to address this:
+
+##### Sequential Commands
+You can adjust your dev script to ensure the build completes before the preview server starts:
+
+```json
+"dev": "vite build && vite preview"
+```
+
+##### Concurrent Execution with Task Runner
+If you prefer running both commands simultaneously, you can use a task runner like concurrently. First, install it:
+
+```bash
+$ npm i -D concurrently        # install as dev dependency
+```
+
+Then update your dev script:
+
+```json
+"dev": "concurrently -k \"vite build --watch\" \"vite preview\""
+```
+The -k flag ensures both processes terminate together if one is stopped.
+
+Both approaches let you test your plugin live efficiently while avoiding potential conflicts between the build and preview processes.
+
+
 #### Esbuild
 
 ```bash
