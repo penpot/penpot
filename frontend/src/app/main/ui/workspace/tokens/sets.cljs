@@ -72,7 +72,7 @@
              (st/emit!
               (wdt/show-token-set-context-menu
                {:position (dom/get-client-position event)
-                :tree-path tree-path})))))]
+                :prefixed-set-path tree-path})))))]
     [:div {;; :ref dref
            :role "button"
            :data-testid "tokens-set-group-item"
@@ -123,8 +123,7 @@
              (st/emit!
               (wdt/show-token-set-context-menu
                {:position (dom/get-client-position event)
-                :tree-path tree-path})))))]
-
+                :prefixed-set-path tree-path})))))]
     [:div {;; :ref dref
            :role "button"
            :data-testid "tokens-set-item"
