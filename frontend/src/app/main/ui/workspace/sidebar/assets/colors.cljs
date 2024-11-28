@@ -70,7 +70,12 @@
          (fn [event]
            (st/emit!
             (dwl/add-recent-color color)
-            (dc/apply-color-from-palette color (kbd/alt? event)))))
+            (dc/apply-color-from-palette color (kbd/alt? event))
+            (ptk/event
+             ::ev/event
+             {::ev/name "use-library-color"
+              ::ev/origin "sidebar"
+              :external-library (not local?)}))))
 
         rename-color
         (mf/use-fn

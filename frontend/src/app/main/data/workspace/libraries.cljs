@@ -586,7 +586,7 @@
   in the given file library. Then selects the newly created instance."
   ([file-id component-id position]
    (instantiate-component file-id component-id position nil))
-  ([file-id component-id position {:keys [start-move? initial-point id-ref]}]
+  ([file-id component-id position {:keys [start-move? initial-point id-ref origin]}]
    (dm/assert! (uuid? file-id))
    (dm/assert! (uuid? component-id))
    (dm/assert! (gpt/point? position))
@@ -600,6 +600,8 @@
              changes   (-> (pcb/empty-changes it (:id page))
                            (pcb/with-objects objects))
 
+             current-file-id (:current-file-id state)
+
              [new-shape changes]
              (cll/generate-instantiate-component changes
                                                  objects
@@ -608,12 +610,18 @@
                                                  position
                                                  page
                                                  libraries)
+
              undo-id (js/Symbol)]
 
          (when id-ref
            (reset! id-ref (:id new-shape)))
 
-         (rx/of (dwu/start-undo-transaction undo-id)
+         (rx/of (ptk/event
+                 ::ev/event
+                 {::ev/name "use-library-component"
+                  ::ev/origin origin
+                  :external-library (not= file-id current-file-id)})
+                (dwu/start-undo-transaction undo-id)
                 (dch/commit-changes changes)
                 (ptk/data-event :layout/update {:ids [(:id new-shape)]})
                 (dws/select-shapes (d/ordered-set (:id new-shape)))
