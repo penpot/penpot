@@ -8,6 +8,7 @@
   "A WASM based render API"
   (:require
    [app.common.data.macros :as dm]
+   [app.common.math :as mth]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.render-wasm.helpers :as h]
@@ -33,6 +34,14 @@
   [_]
   (h/call internal-module "_render_without_cache")
   (set! internal-frame-id nil))
+
+(defn- rgba-from-hex
+  "Takes a hex color in #rrggbb format, and an opacity value from 0 to 1 and returns its 32-bit rgba representation"
+  [hex opacity]
+  (let [rgb (js/parseInt (subs hex 1) 16)
+        a (mth/floor (* (or opacity 1) 0xff))]
+        ;; rgba >>> 0 so we have an unsigned representation
+    (unsigned-bit-shift-right (bit-or (bit-shift-left a 24) rgb) 0)))
 
 (defn cancel-render
   []
@@ -96,11 +105,8 @@
                 color   (:fill-color fill)
                 gradient (:fill-color-gradient fill)]
             (when ^boolean color
-              (let [rgb     (js/parseInt (subs color 1) 16)
-                    r       (bit-shift-right rgb 16)
-                    g       (bit-and (bit-shift-right rgb 8) 255)
-                    b       (bit-and rgb 255)]
-                (h/call internal-module "_add_shape_solid_fill" r g b opacity)))
+              (let [rgba (rgba-from-hex color opacity)]
+                (h/call internal-module "_add_shape_solid_fill" rgba)))
             (when (and (some? gradient)  (= (:type gradient) :linear))
               (h/call internal-module "_add_shape_linear_fill"
                       (:start-x gradient)
@@ -109,12 +115,8 @@
                       (:end-y gradient)
                       opacity)
               (run! (fn [stop]
-                      (let [rgb (js/parseInt (subs (:color stop) 1) 16)
-                            r (bit-shift-right rgb 16)
-                            g (bit-and (bit-shift-right rgb 8) 255)
-                            b (bit-and rgb 255)
-                            a (:opacity stop)]
-                        (h/call internal-module "_add_shape_fill_stop" r g b a (:offset stop)))) (:stops gradient)))))
+                      (let [rgba (rgba-from-hex (:color stop) (:opacity stop))]
+                        (h/call internal-module "_add_shape_fill_stop" rgba (:offset stop)))) (:stops gradient)))))
         fills))
 
 (defn- translate-blend-mode

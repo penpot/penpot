@@ -150,11 +150,10 @@ pub extern "C" fn clear_shape_children() {
 }
 
 #[no_mangle]
-pub extern "C" fn add_shape_solid_fill(r: u8, g: u8, b: u8, a: f32) {
+pub extern "C" fn add_shape_solid_fill(raw_color: u32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
-        let alpha: u8 = (a * 0xff as f32).floor() as u8;
-        let color = skia::Color::from_argb(alpha, r, g, b);
+        let color = skia::Color::new(raw_color);
         shape.add_fill(shapes::Fill::from(color));
     }
 }
@@ -178,11 +177,10 @@ pub extern "C" fn add_shape_linear_fill(
 }
 
 #[no_mangle]
-pub extern "C" fn add_shape_fill_stop(r: u8, g: u8, b: u8, a: f32, offset: f32) {
+pub extern "C" fn add_shape_fill_stop(raw_color: u32, offset: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
-        let alpha: u8 = (a * 0xff as f32).floor() as u8;
-        let color = skia::Color::from_argb(alpha, r, g, b);
+        let color = skia::Color::new(raw_color);
         shape
             .add_gradient_stop(color, offset)
             .expect("got no fill or an invalid one");
