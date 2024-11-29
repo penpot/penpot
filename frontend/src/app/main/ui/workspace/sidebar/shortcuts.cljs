@@ -163,6 +163,7 @@
     (tr "shortcuts.paste")
     (tr "shortcuts.prev-frame")
     (tr "shortcuts.redo")
+    (tr "shortcuts.rename")
     (tr "shortcuts.reset-zoom")
     (tr "shortcuts.scale")
     (tr "shortcuts.search-placeholder")

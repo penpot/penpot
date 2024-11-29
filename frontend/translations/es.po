@@ -3625,6 +3625,9 @@ msgstr "Tablero anterior"
 msgid "shortcuts.redo"
 msgstr "Rehacer"
 
+msgid "shortcuts.rename"
+msgstr "Renombrar"
+
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:166
 msgid "shortcuts.reset-zoom"
 msgstr "Reiniciar zoom"
