@@ -150,6 +150,7 @@ export function normalizeStyles(node, styleDefaults) {
   }
   return styleDeclaration
 }
+
 /**
  * Sets a single style property value of an element.
  *
@@ -210,6 +211,8 @@ export function getStyleFromDeclaration(style, styleName, styleUnit) {
   const styleValueAsNumber = parseFloat(styleValue);
   if (styleName === "font-size") {
     return getStyleFontSize(styleValueAsNumber, styleValue);
+  } else if (styleName === "line-height") {
+    return styleValue
   }
   if (Number.isNaN(styleValueAsNumber)) {
     return styleValue;
