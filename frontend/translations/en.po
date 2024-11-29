@@ -6576,3 +6576,57 @@ msgstr "History"
 
 msgid "workspace.versions.tab.actions"
 msgstr "Actions"
+
+msgid "dashboard.notifications.notifications-saved"
+msgstr "Notification settings updated"
+
+msgid "title.settings.notifications"
+msgstr "Notifications - Penpot"
+
+msgid "dashboard.settings.notifications.title"
+msgstr "Notifications"
+
+msgid "dashboard.settings.notifications.dashboard.title"
+msgstr "Dashboard Notifications"
+
+msgid "dashboard.settings.notifications.dashboard-comments.title"
+msgstr "File comments"
+
+msgid "dashboard.settings.notifications.dashboard-comments.all"
+msgstr "All comments, mentions and replies"
+
+msgid "dashboard.settings.notifications.dashboard-comments.partial"
+msgstr "Only mentions and replies"
+
+msgid "dashboard.settings.notifications.dashboard-comments.none"
+msgstr "None"
+
+msgid "dashboard.settings.notifications.email.title"
+msgstr "Email Notifications"
+
+msgid "dashboard.settings.notifications.email-comments.title"
+msgstr "File comments"
+
+msgid "dashboard.settings.notifications.email-comments.all"
+msgstr "All comments, mentions and replies"
+
+msgid "dashboard.settings.notifications.email-comments.partial"
+msgstr "Only mentions and replies"
+
+msgid "dashboard.settings.notifications.email-comments.none"
+msgstr "None"
+
+msgid "dashboard.settings.notifications.email-invites.title"
+msgstr "Invites and requests"
+
+msgid "dashboard.settings.notifications.email-invites.all"
+msgstr "All types of invites and requests"
+
+msgid "dashboard.settings.notifications.email-invites.none"
+msgstr "None"
+
+msgid "dashboard.settings.notifications.submit"
+msgstr "Update settings"
+
+msgid "labels.notifications"
+msgstr "Notifications"

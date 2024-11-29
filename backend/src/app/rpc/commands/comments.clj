@@ -37,7 +37,7 @@
 (def r-mentions #"@\[([^\]]*)\]\(([^\)]*)\)")
 
 (defn- format-comment
-  [content]
+  [{:keys [content]}]
   (->> (d/interleave-all
         (str/split content r-mentions-split)
         (->> (re-seq r-mentions content)
@@ -52,6 +52,96 @@
   [{:keys [seqn]} {:keys [file-name page-name]}]
   (str/ffmt "#%, %, %" seqn file-name page-name))
 
+(defn decode-user-row
+  [user]
+  (-> user
+      (d/update-when :props db/decode-transit-pgobject)
+      (update
+       :mention-email?
+       (fn [{:keys [props]}]
+         (not= :none (-> props :notifications :email-comments))))
+
+      (update
+       :notification-email?
+       (fn [{:keys [props]}]
+         (= :all (-> props :notifications :email-comments))))))
+
+(defn get-team-users
+  [conn team-id]
+  (->> (teams/get-users+props conn team-id)
+       (map decode-user-row)
+       (d/index-by :id)))
+
+(defn send-comment-emails!
+  [conn {:keys [profile-id team-id] :as params} comment thread]
+
+  (let [team-users (get-team-users conn team-id)
+        source-user (->> (db/query conn :profile {:id profile-id} {:columns [:fullname]}) first :fullname)
+
+        comment-reference (format-comment-ref thread params)
+        comment-content (format-comment comment)
+        comment-url (format-comment-url params)
+
+        ;; Users mentioned in this comment
+        comment-mentions
+        (-> (set (:mentions comment))
+            (set/difference #{profile-id}))
+
+        ;; Users mentioned in this thread
+        thread-mentions
+        (-> (set (:mentions thread))
+            ;; Remove the mentions in the thread because we're already sending a
+            ;; notification
+            (set/difference comment-mentions)
+            (set/difference #{profile-id}))
+
+        ;; All users
+        notificate-users-ids
+        (-> (set (keys team-users))
+            (set/difference comment-mentions)
+            (set/difference thread-mentions)
+            (set/difference #{profile-id}))]
+
+    (doseq [mention comment-mentions]
+      (let [{:keys [fullname email mention-email?]} (get team-users mention)]
+        (when mention-email?
+          (eml/send!
+           {::eml/conn conn
+            ::eml/factory eml/comment-mention
+            :to email
+            :name fullname
+            :source-user source-user
+            :comment-reference comment-reference
+            :comment-content comment-content
+            :comment-url comment-url}))))
+
+    ;; Send to the thread users
+    (doseq [mention thread-mentions]
+      (let [{:keys [fullname email mention-email?]} (get team-users mention)]
+        (when mention-email?
+          (eml/send!
+           {::eml/conn conn
+            ::eml/factory eml/comment-thread
+            :to email
+            :name fullname
+            :source-user source-user
+            :comment-reference comment-reference
+            :comment-content comment-content
+            :comment-url comment-url}))))
+
+    ;; Send to users with the "all" flag activated
+    (doseq [user-id notificate-users-ids]
+      (let [{:keys [fullname email notification-email?]} (get team-users user-id)]
+        (when notification-email?
+          (eml/send!
+           {::eml/conn conn
+            ::eml/factory eml/comment-notification
+            :to email
+            :name fullname
+            :source-user source-user
+            :comment-reference comment-reference
+            :comment-content comment-content
+            :comment-url comment-url}))))))
 
 (defn- decode-row
   [{:keys [participants position mentions] :as row}]
@@ -374,7 +464,7 @@
 
 (defn- create-comment-thread
   [{:keys [::db/conn] :as cfg}
-   {:keys [profile-id file-id page-id page-name created-at position content mentions frame-id] :as params}]
+   {:keys [profile-id file-id page-id page-name created-at position content mentions frame-id team-id] :as params}]
 
   (let [;; NOTE: we take the next seq number from a separate query
         ;; because we need to lock the file for avoid race conditions
@@ -387,27 +477,29 @@
 
         seqn      (get-next-seqn conn file-id)
         thread-id (uuid/next)
-        thread    (db/insert! conn :comment-thread
-                              {:id thread-id
-                               :file-id file-id
-                               :owner-id profile-id
-                               :participants (db/tjson #{profile-id})
-                               :page-name page-name
-                               :page-id page-id
-                               :created-at created-at
-                               :modified-at created-at
-                               :seqn seqn
-                               :position (db/pgpoint position)
-                               :frame-id frame-id
-                               :mentions (db/encode-pgarray mentions conn "uuid")})
-        comment   (db/insert! conn :comment
-                              {:id (uuid/next)
-                               :thread-id thread-id
-                               :owner-id profile-id
-                               :created-at created-at
-                               :modified-at created-at
-                               :mentions (db/encode-pgarray mentions conn "uuid")
-                               :content content})]
+        thread    (-> (db/insert! conn :comment-thread
+                                  {:id thread-id
+                                   :file-id file-id
+                                   :owner-id profile-id
+                                   :participants (db/tjson #{profile-id})
+                                   :page-name page-name
+                                   :page-id page-id
+                                   :created-at created-at
+                                   :modified-at created-at
+                                   :seqn seqn
+                                   :position (db/pgpoint position)
+                                   :frame-id frame-id
+                                   :mentions (db/encode-pgarray mentions conn "uuid")})
+                      (decode-row))
+        comment   (-> (db/insert! conn :comment
+                                  {:id (uuid/next)
+                                   :thread-id thread-id
+                                   :owner-id profile-id
+                                   :created-at created-at
+                                   :modified-at created-at
+                                   :mentions (db/encode-pgarray mentions conn "uuid")
+                                   :content content})
+                      (decode-row))]
 
     ;; Make the current thread as read.
     (upsert-comment-thread-status! conn profile-id thread-id created-at)
@@ -419,22 +511,7 @@
                 {::db/return-keys false})
 
     ;; Send mentions emails
-    (let [source-user (->> (db/query conn :profile {:id profile-id} {:columns [:fullname]}) first :fullname)
-          mentions (-> (set mentions)
-                       (set/difference #{profile-id}))
-          mentions-profiles (get-mentions-profiles conn mentions)]
-
-      (doseq [mention mentions]
-        (let [{:keys [fullname email]} (get mentions-profiles mention)]
-          (eml/send!
-           {::eml/conn conn
-            ::eml/factory eml/comment-mention
-            :to email
-            :name fullname
-            :source-user source-user
-            :comment-reference (format-comment-ref thread params)
-            :comment-content (format-comment content)
-            :comment-url (format-comment-url params)}))))
+    (send-comment-emails! conn params comment thread)
 
     (-> thread
         (select-keys [:id :file-id :page-id :mentions])
@@ -548,54 +625,14 @@
          ;; current thread.
          (upsert-comment-thread-status! conn profile-id thread-id request-at)
 
-         (let [source-user (->> (db/query conn :profile {:id profile-id} {:columns [:fullname]}) first :fullname)
-               file-id (:file-id thread)
-               page-id (:page-id thread)
-
-               comment-mentions (-> (set mentions)
-                                    (set/difference #{profile-id}))
-               thread-mentions
-               (-> (set (:mentions thread))
-                   ;; Remove the mentions in the thread because we're already sending a
-                   ;; notification
-                   (set/difference comment-mentions)
-                   (set/difference #{profile-id}))
-
-               mentions-profiles
-               (get-mentions-profiles conn (set/union comment-mentions thread-mentions))
-
-               params {:project-id project-id
-                       :file-id file-id
-                       :page-id page-id
+         (let [params {:project-id project-id
+                       :profile-id profile-id
                        :team-id team-id
+                       :file-id (:file-id thread)
+                       :page-id (:page-id thread)
                        :file-name file-name
                        :page-name page-name}]
-
-           ;; Send mentions emails
-           (doseq [mention comment-mentions]
-             (let [{:keys [fullname email]} (get mentions-profiles mention)]
-               (eml/send!
-                {::eml/conn conn
-                 ::eml/factory eml/comment-mention
-                 :to email
-                 :name fullname
-                 :source-user source-user
-                 :comment-reference (format-comment-ref thread params)
-                 :comment-content (format-comment content)
-                 :comment-url (format-comment-url params)})))
-
-           ;; Send to the thread users
-           (doseq [mention thread-mentions]
-             (let [{:keys [fullname email]} (get mentions-profiles mention)]
-               (eml/send!
-                {::eml/conn conn
-                 ::eml/factory eml/comment-thread
-                 :to email
-                 :name fullname
-                 :source-user source-user
-                 :comment-reference (format-comment-ref thread params)
-                 :comment-content (format-comment content)
-                 :comment-url (format-comment-url params)}))))
+           (send-comment-emails! conn params comment thread))
 
          (vary-meta comment assoc ::audit/props props))))))
 
