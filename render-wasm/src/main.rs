@@ -154,7 +154,7 @@ pub extern "C" fn add_shape_solid_fill(raw_color: u32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         let color = skia::Color::new(raw_color);
-        shape.add_fill(shapes::Fill::from(color));
+        shape.add_fill(shapes::Fill::Solid(color));
     }
 }
 
