@@ -25,7 +25,7 @@
   (st/emit! (wdt/toggle-token-set {:token-set-name token-set-name})))
 
 (defn on-select-token-set-click [tree-path]
-  (st/emit! (wdt/set-selected-token-set-id tree-path)))
+  (st/emit! (wdt/set-selected-token-set-path tree-path)))
 
 (defn on-update-token-set [set-name token-set]
   (st/emit! (wdt/update-token-set set-name token-set)))
@@ -83,6 +83,7 @@
                 :tree-path tree-path})))))]
     [:div {;; :ref dref
            :role "button"
+           :data-testid "tokens-set-group-item"
            :style {"--tree-depth" tree-depth}
            :class (stl/css-case :set-item-container true
                                 :selected-set selected?)
@@ -133,6 +134,7 @@
                 :tree-path tree-path})))))]
     [:div {;; :ref dref
            :role "button"
+           :data-testid "tokens-set-item"
            :style {"--tree-depth" tree-depth}
            :class (stl/css-case :set-item-container true
                                 :selected-set selected?)
@@ -167,7 +169,7 @@
   [{:keys [set-path set-node tree-depth tree-path on-select selected? on-toggle active? editing? on-edit on-edit-reset on-edit-submit]
     :or {tree-depth 0}
     :as props}]
-  (let [[set-prefix set-path'] (some-> set-path (ctob/split-set-prefix))
+  (let [[set-prefix set-path'] (some-> set-path (ctob/split-set-str-path-prefix))
         set? (instance? ctob/TokenSet set-node)
         set-group? (= ctob/set-group-prefix set-prefix)
         root? (= tree-depth 0)
@@ -270,11 +272,11 @@
 (mf/defc sets-list
   [{:keys []}]
   (let [token-sets (mf/deref refs/workspace-token-sets-tree)
-        selected-token-set-id (mf/deref refs/workspace-selected-token-set-id)
+        selected-token-set-path (mf/deref refs/workspace-selected-token-set-path)
         token-set-selected? (mf/use-fn
-                             (mf/deps token-sets selected-token-set-id)
+                             (mf/deps token-sets selected-token-set-path)
                              (fn [tree-path]
-                               (= tree-path selected-token-set-id)))
+                               (= tree-path selected-token-set-path)))
         active-token-set-names (mf/deref refs/workspace-active-set-names)
         token-set-active? (mf/use-fn
                            (mf/deps active-token-set-names)

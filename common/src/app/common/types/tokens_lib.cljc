@@ -183,49 +183,54 @@
 
 (def set-separator "/")
 
-(defn join-set-path [set-path]
-  (join-path set-path set-separator))
+(defn join-set-path [path]
+  (join-path path set-separator))
 
-(defn split-set-prefix [set-path]
-  (some->> set-path
+(defn split-set-str-path-prefix
+  "Split set-path
+
+  E.g.: \"S-some-set\"   -> [\"S-\" \"some-set\"]
+        \"G-some-group\" -> [\"G-\" \"some-group\"]"
+  [path-str]
+  (some->> path-str
            (re-matches #"^([SG]-)(.*)")
            (rest)))
 
-(defn add-set-prefix [set-name]
-  (str set-prefix set-name))
+(defn add-set-path-prefix [set-name-str]
+  (str set-prefix set-name-str))
 
-(defn add-set-group-prefix [group-path]
-  (str set-group-prefix group-path))
+(defn add-set-path-group-prefix [group-path-str]
+  (str set-group-prefix group-path-str))
 
-(defn add-token-set-paths-prefix
+(defn set-full-path->set-prefixed-full-path
   "Returns token-set paths with prefixes to differentiate between sets and set-groups.
 
   Sets will be prefixed with `set-prefix` (S-).
   Set groups will be prefixed with `set-group-prefix` (G-)."
-  [paths]
-  (let [set-path (mapv add-set-group-prefix (butlast paths))
-        set-name (add-set-prefix (last paths))]
+  [full-path]
+  (let [set-path (mapv add-set-path-group-prefix (butlast full-path))
+        set-name (add-set-path-prefix (last full-path))]
     (conj set-path set-name)))
 
-(defn split-token-set-path [token-set-path]
-  (split-path token-set-path set-separator))
+(defn split-token-set-path [path]
+  (split-path path set-separator))
 
-(defn split-token-set-name [token-set-name]
-  (-> (split-token-set-path token-set-name)
-      (add-token-set-paths-prefix)))
+(defn set-name->prefixed-full-path [name-str]
+  (-> (split-token-set-path name-str)
+      (set-full-path->set-prefixed-full-path)))
 
-(defn get-token-set-path [token-set]
+(defn get-token-set-prefixed-path [token-set]
   (let [path (get-path token-set set-separator)]
-    (add-token-set-paths-prefix path)))
+    (set-full-path->set-prefixed-full-path path)))
 
-(defn set-name->set-path-string [set-name]
-  (-> (split-token-set-name set-name)
+(defn set-name-string->prefixed-set-path-string [name-str]
+  (-> (set-name->prefixed-full-path name-str)
       (join-set-path)))
 
-(defn set-path->set-name [set-path]
-  (->> (split-token-set-path set-path)
+(defn prefixed-set-path-string->set-name-string [path-str]
+  (->> (split-token-set-path path-str)
        (map (fn [path-part]
-              (or (-> (split-set-prefix path-part)
+              (or (-> (split-set-str-path-prefix path-part)
                       (second))
                   path-part)))
        (join-set-path)))
@@ -263,7 +268,7 @@
   (delete-token [_ token-name] "delete a token from the list")
   (get-token [_ token-name] "return token by token-name")
   (get-tokens [_] "return an ordered sequence of all tokens in the set")
-  (get-set-path [_] "returns name of set converted to the path with prefix identifiers")
+  (get-set-prefixed-path-string [_] "convert set name to prefixed full path string")
   (get-tokens-tree [_] "returns a tree of tokens split & nested by their name path")
   (get-dtcg-tokens-tree [_] "returns tokens tree formated to the dtcg spec"))
 
@@ -312,8 +317,8 @@
   (get-tokens [_]
     (vals tokens))
 
-  (get-set-path [_]
-    (set-name->set-path-string name))
+  (get-set-prefixed-path-string [_]
+    (set-name-string->prefixed-set-path-string name))
 
   (get-tokens-tree [_]
     (tokens-tree tokens))
@@ -358,9 +363,23 @@
 ;; === TokenSets (collection)
 
 (defprotocol ITokenSets
+  "Collection of sets and set groups.
+
+  Naming conventions:
+    Set name:                the complete name as a string, without prefix \"some-group/some-subgroup/some-set\".
+    Set final name or fname: the last part of the name \"some-set\".
+    Set path:                the groups part of the name, as a vector [\"some-group\" \"some-subgroup\"].
+    Set path str:            the set path as a string \"some-group/some-subgroup\".
+    Set full path:           the path including the fname, as a vector [\"some-group\", \"some-subgroup\", \"some-set\"].
+    Set full path str:       the set full path as a string \"some-group/some-subgroup/some-set\".
+
+    Set prefix:                        the two-characters prefix added to a full path item \"G-\" / \"S-\".
+    Prefixed set path or ppath:        a path wit added prefixes [\"G-some-group\", \"G-some-subgroup\"].
+    Prefixed set full path or pfpath:  a full path wit prefixes [\"G-some-group\", \"G-some-subgroup\", \"S-some-set\"].
+    Prefixed set final name or pfname: a final name with prefix \"S-some-set\"."
   (add-set [_ token-set] "add a set to the library, at the end")
   (add-sets [_ token-set] "add a collection of sets to the library, at the end")
-  (update-set [_ set-name f] "modify a set in the ilbrary")
+  (update-set [_ set-name f] "modify a set in the library")
   (delete-set-path [_ set-path] "delete a set in the library")
   (move-set-before [_ set-name before-set-name] "move a set with `set-name` before a set with `before-set-name` in the library.
 When `before-set-name` is nil, move set to bottom")
@@ -368,7 +387,7 @@ When `before-set-name` is nil, move set to bottom")
   (get-set-tree [_] "get a nested tree of all sets in the library")
   (get-in-set-tree [_ path] "get `path` in nested tree of all sets in the library")
   (get-sets [_] "get an ordered sequence of all sets in the library")
-  (get-path-sets [_ path] "get an ordered sequence of sets at `path` in the library")
+  (get-sets-at-prefix-path [_ path] "get an ordered sequence of sets at `path` in the library")
   (get-ordered-set-names [_] "get an ordered sequence of all sets names in the library")
   (get-set [_ set-name] "get one set looking for name")
   (get-neighbor-set-name [_ set-name index-offset] "get neighboring set name offset by `index-offset`"))
@@ -613,7 +632,7 @@ When `before-set-name` is nil, move set to bottom")
   ITokenSets
   (add-set [_ token-set]
     (dm/assert! "expected valid token set" (check-token-set! token-set))
-    (let [path (get-token-set-path token-set)]
+    (let [path (get-token-set-prefixed-path token-set)]
       (TokensLib. (d/oassoc-in sets path token-set)
                   themes
                   active-themes)))
@@ -625,18 +644,18 @@ When `before-set-name` is nil, move set to bottom")
      this token-sets))
 
   (update-set [this set-name f]
-    (let [path (split-token-set-name set-name)
-          set  (get-in sets path)]
+    (let [prefixed-full-path (set-name->prefixed-full-path set-name)
+          set (get-in sets prefixed-full-path)]
       (if set
         (let [set' (-> (make-token-set (f set))
                        (assoc :modified-at (dt/now)))
-              path' (get-token-set-path set')
+              prefixed-full-path' (get-token-set-prefixed-path set')
               name-changed? (not= (:name set) (:name set'))]
           (check-token-set! set')
           (if name-changed?
             (TokensLib. (-> sets
-                            (d/oassoc-in-before path path' set')
-                            (d/dissoc-in path))
+                            (d/oassoc-in-before prefixed-full-path prefixed-full-path' set')
+                            (d/dissoc-in prefixed-full-path))
                         (walk/postwalk
                          (fn [form]
                            (if (instance? TokenTheme form)
@@ -644,33 +663,34 @@ When `before-set-name` is nil, move set to bottom")
                              form))
                          themes)
                         active-themes)
-            (TokensLib. (d/oassoc-in sets path set')
+            (TokensLib. (d/oassoc-in sets prefixed-full-path set')
                         themes
                         active-themes)))
         this)))
 
-  (delete-set-path [_ set-path]
-    (let [path (split-token-set-path set-path)
-          set-node (get-in sets path)
-          set-group? (not (instance? TokenSet set-node))]
-      (TokensLib. (d/dissoc-in sets path)
+  (delete-set-path [_ prefixed-set-name]
+    (let [prefixed-set-path (split-token-set-path prefixed-set-name)
+          set-node (get-in sets prefixed-set-path)
+          set-group? (not (instance? TokenSet set-node))
+          set-name-string (prefixed-set-path-string->set-name-string prefixed-set-name)]
+      (TokensLib. (d/dissoc-in sets prefixed-set-path)
                   ;; TODO: When deleting a set-group, also deactivate the child sets
                   (if set-group?
                     themes
                     (walk/postwalk
                      (fn [form]
                        (if (instance? TokenTheme form)
-                         (disable-set form set-path)
+                         (disable-set form set-name-string)
                          form))
                      themes))
                   active-themes)))
 
   ;; TODO Handle groups and nesting
   (move-set-before [this set-name before-set-name]
-    (let [source-path (split-token-set-name set-name)
+    (let [source-path (set-name->prefixed-full-path set-name)
           token-set (-> (get-set this set-name)
                         (assoc :modified-at (dt/now)))
-          target-path (split-token-set-name before-set-name)]
+          target-path (set-name->prefixed-full-path before-set-name)]
       (if before-set-name
         (TokensLib. (d/oassoc-in-before sets target-path source-path token-set)
                     themes
@@ -691,7 +711,7 @@ When `before-set-name` is nil, move set to bottom")
     (->> (tree-seq d/ordered-map? vals sets)
          (filter (partial instance? TokenSet))))
 
-  (get-path-sets [_ path]
+  (get-sets-at-prefix-path [_ path]
     (some->> (get-in sets (split-token-set-path path))
              (tree-seq d/ordered-map? vals)
              (filter (partial instance? TokenSet))))
@@ -703,7 +723,7 @@ When `before-set-name` is nil, move set to bottom")
     (count (get-sets this)))
 
   (get-set [_ set-name]
-    (let [path (split-token-set-name set-name)]
+    (let [path (set-name->prefixed-full-path set-name)]
       (get-in sets path)))
 
   (get-neighbor-set-name [this set-name index-offset]
