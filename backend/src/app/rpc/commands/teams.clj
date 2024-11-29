@@ -308,6 +308,30 @@
   [conn team-id]
   (db/exec! conn [sql:team-users team-id team-id team-id]))
 
+;; Get the users but add the props property
+(def sql:team-users+props
+  "select pf.id, pf.fullname, pf.photo_id, pf.email, pf.props
+     from profile as pf
+    inner join team_profile_rel as tpr on (tpr.profile_id = pf.id)
+    where tpr.team_id = ?
+    union
+   select pf.id, pf.fullname, pf.photo_id, pf.email, pf.props
+     from profile as pf
+    inner join project_profile_rel as ppr on (ppr.profile_id = pf.id)
+    inner join project as p on (ppr.project_id = p.id)
+    where p.team_id = ?
+   union
+   select pf.id, pf.fullname, pf.photo_id, pf.email, pf.props
+     from profile as pf
+    inner join file_profile_rel as fpr on (fpr.profile_id = pf.id)
+    inner join file as f on (fpr.file_id = f.id)
+    inner join project as p on (f.project_id = p.id)
+    where p.team_id = ?")
+
+(defn get-users+props
+  [conn team-id]
+  (db/exec! conn [sql:team-users+props team-id team-id team-id]))
+
 (def sql:get-team-by-file
   "SELECT t.*
      FROM team AS t

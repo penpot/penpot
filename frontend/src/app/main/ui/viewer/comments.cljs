@@ -226,6 +226,7 @@
        (when-let [draft (:draft local)]
          [:& cmt/draft-thread
           {:draft draft
+           :profiles users
            :position-modifier modifier1
            :on-cancel on-draft-cancel
            :on-submit on-draft-submit

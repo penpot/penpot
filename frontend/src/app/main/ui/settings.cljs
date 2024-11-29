@@ -20,6 +20,7 @@
    [app.main.ui.settings.options :refer [options-page]]
    [app.main.ui.settings.password :refer [password-page]]
    [app.main.ui.settings.profile :refer [profile-page]]
+   [app.main.ui.settings.notifications :refer [notifications-page]]
    [app.main.ui.settings.sidebar :refer [sidebar]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -67,4 +68,7 @@
           [:& options-page]
 
           :settings-access-tokens
-          [:& access-tokens-page])]]]]))
+         [:& access-tokens-page]
+
+         :settings-notifications
+         [:& notifications-page])]]]]))

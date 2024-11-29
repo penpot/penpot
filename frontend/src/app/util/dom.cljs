@@ -474,6 +474,11 @@
   (when (some? node)
     (.focus node)))
 
+(defn focus?
+  [^js node]
+  (and node
+       (= (.-activeElement js/document) node)))
+
 (defn blur!
   [^js node]
   (when (some? node)

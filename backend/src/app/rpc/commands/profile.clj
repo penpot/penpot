@@ -41,6 +41,12 @@
 (declare strip-private-attrs)
 (declare verify-password)
 
+(def schema:props-notifications
+  [:map {:title "props-notifications"}
+   [:dashboard-comments [::sm/one-of #{:all :partial :none}]]
+   [:email-comments [::sm/one-of #{:all :partial :none}]]
+   [:email-invites [::sm/one-of #{:all :none}]]])
+
 (def schema:props
   [:map {:title "ProfileProps"}
    [:plugins {:optional true} schema:plugin-registry]
@@ -51,7 +57,8 @@
    [:v2-info-shown {:optional true} ::sm/boolean]
    [:welcome-file-id {:optional true} [:maybe ::sm/boolean]]
    [:release-notes-viewed {:optional true}
-    [::sm/text {:max 100}]]])
+    [::sm/text {:max 100}]]
+   [:notifications {:optional true} schema:props-notifications]])
 
 (def schema:profile
   [:map {:title "Profile"}
@@ -198,6 +205,44 @@
     (db/update! conn :profile
                 {:password (derive-password cfg password)}
                 {:id id})
+    nil))
+
+
+;; --- MUTATION: Update notifications
+
+(def ^:private
+  schema:update-profile-notifications
+  [:map {:title "update-profile-notifications"}
+   [:dashboard-comments [::sm/one-of #{:all :partial :none}]]
+   [:email-comments [::sm/one-of #{:all :partial :none}]]
+   [:email-invites [::sm/one-of #{:all :none}]]])
+
+(declare update-notifications!)
+
+(sv/defmethod ::update-profile-notifications
+  {::doc/added "2.4.0"
+   ::sm/params schema:update-profile-notifications
+   ::climit/id :auth/global}
+  [cfg {:keys [::rpc/profile-id] :as params}]
+  (db/tx-run! cfg update-notifications! (assoc params :profile-id profile-id)))
+
+(defn- update-notifications!
+  [{:keys [::db/conn] :as cfg} {:keys [profile-id dashboard-comments email-comments email-invites]}]
+  (let [profile (get-profile conn profile-id)
+
+        notifications
+        {:dashboard-comments dashboard-comments
+         :email-comments email-comments
+         :email-invites email-invites}]
+
+    (db/update!
+     conn :profile
+     {:props
+      (-> (:props profile)
+          (assoc :notifications notifications)
+          (db/tjson))}
+     {:id (:id profile)})
+
     nil))
 
 ;; --- MUTATION: Update Photo

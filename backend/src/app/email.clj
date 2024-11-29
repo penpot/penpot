@@ -475,6 +475,19 @@
    :id ::comment-thread
    :schema schema:comment-thread))
 
+(def ^:private schema:comment-notification
+  [:map
+   [:name ::sm/text]
+   [:source-user ::sm/text]
+   [:comment-reference ::sm/text]
+   [:comment-content ::sm/text]
+   [:comment-url ::sm/text]])
+
+(def comment-notification
+  (template-factory
+   :id ::comment-notification
+   :schema schema:comment-notification))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; BOUNCE/COMPLAINS HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

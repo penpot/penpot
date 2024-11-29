@@ -43,6 +43,9 @@
 (def ^:private go-settings-access-tokens
   #(st/emit! (rt/nav :settings-access-tokens)))
 
+(def ^:private go-settings-notifications
+  #(st/emit! (rt/nav :settings-notifications)))
+
 (defn- show-release-notes
   [event]
   (let [version (:main cf/version)]
@@ -60,6 +63,7 @@
         options?       (= section :settings-options)
         feedback?      (= section :settings-feedback)
         access-tokens? (= section :settings-access-tokens)
+        notifications? (= section :settings-notifications)
         team-id        (or (dtm/get-last-team-id)
                            (:default-team-id profile))
 
@@ -88,6 +92,11 @@
                                   :settings-item true)
              :on-click go-settings-password}
         [:span {:class (stl/css :element-title)} (tr "labels.password")]]
+
+       [:li {:class (stl/css-case :current notifications?
+                                  :settings-item true)
+             :on-click go-settings-notifications}
+        [:span {:class (stl/css :element-title)} (tr "labels.notifications")]]
 
        [:li {:class (stl/css-case :current options?
                                   :settings-item true)

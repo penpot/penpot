@@ -33,7 +33,8 @@
     ["/password"      :settings-password]
     ["/feedback"      :settings-feedback]
     ["/options"       :settings-options]
-    ["/access-tokens" :settings-access-tokens]]
+    ["/access-tokens" :settings-access-tokens]
+    ["/notifications" :settings-notifications]]
 
    ["/frame-preview" :frame-preview]
 

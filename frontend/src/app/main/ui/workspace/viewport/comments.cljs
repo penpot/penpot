@@ -90,6 +90,7 @@
 
        (when-let [draft (:comment drawing)]
          [:& cmt/draft-thread {:draft draft
+                               :profiles profiles
                                :on-cancel on-draft-cancel
                                :on-submit on-draft-submit
                                :zoom zoom}])]]]))
