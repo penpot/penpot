@@ -195,13 +195,16 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [share-id (-> state :viewer-local :share-id)]
-        (->> (rp/cmd! :update-comment-thread {:id id :is-resolved is-resolved :share-id share-id})
-             (rx/catch (fn [{:keys [type code] :as cause}]
-                         (if (and (= type :restriction)
-                                  (= code :max-quote-reached))
-                           (rx/throw cause)
-                           (rx/throw {:type :comment-error}))))
-             (rx/ignore))))))
+        (rx/concat
+         (when is-resolved (rx/of
+                            (ptk/event ::ev/event {::ev/name "resolve-comment-thread" :thread-id id})))
+         (->> (rp/cmd! :update-comment-thread {:id id :is-resolved is-resolved :share-id share-id})
+              (rx/catch (fn [{:keys [type code] :as cause}]
+                          (if (and (= type :restriction)
+                                   (= code :max-quote-reached))
+                            (rx/throw cause)
+                            (rx/throw {:type :comment-error}))))
+              (rx/ignore)))))))
 
 (defn add-comment
   [thread content]

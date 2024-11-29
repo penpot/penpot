@@ -17,6 +17,7 @@
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
+   [app.main.data.events :as ev]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
@@ -168,6 +169,7 @@
              objects  (get page :objects)
              frame    (cfh/get-root-frame objects (:id shape))
 
+             first?   (not-any? #(seq (:interactions %)) (vals objects))
              flows    (get page :flows)
              flow     (ctp/get-frame-flow flows (:id frame))]
          (rx/concat
@@ -184,7 +186,10 @@
 
           (when (and (not (connected-frame? objects (:id frame)))
                      (nil? flow))
-            (rx/of (add-flow (:id frame))))))))))
+            (rx/of (add-flow (:id frame))))
+          (when first?
+            ;; When the first interaction of the page is created we emit the event "create-prototype"
+            (rx/of (ptk/event ::ev/event {::ev/name "create-prototype"})))))))))
 
 (defn remove-interaction
   ([shape index]

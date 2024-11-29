@@ -4069,7 +4069,7 @@ msgstr "local library"
 msgid "workspace.assets.not-found"
 msgstr "No assets found"
 
-#, unused
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:68
 msgid "workspace.assets.open-library"
 msgstr "Open library file"
 

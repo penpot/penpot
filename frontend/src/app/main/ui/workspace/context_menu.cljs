@@ -38,6 +38,7 @@
    [app.util.i18n :refer [tr] :as i18n]
    [app.util.timers :as timers]
    [okulary.core :as l]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def menu-ref
@@ -532,7 +533,9 @@
                                :title (tr "modals.delete-page.title")
                                :message (tr "modals.delete-page.body")
                                :on-accept delete-fn}))
-        do-duplicate #(st/emit! (dw/duplicate-page id))
+        do-duplicate #(st/emit!
+                       (dw/duplicate-page id)
+                       (ptk/event ::ev/event {::ev/name "duplicate-page"}))
         do-rename #(st/emit! (dw/start-rename-page-item id))]
 
     [:*

@@ -9,7 +9,9 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.component :as ctk]
+   [app.main.data.events :as ev]
    [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.ui.components.shape-icon :as sir]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.icons :as i]
@@ -18,6 +20,7 @@
    [app.main.ui.viewer.inspect.selection-feedback :refer [resolve-shapes]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn- get-libraries
@@ -63,7 +66,9 @@
          (fn [new-section]
            (reset! section (keyword new-section))
            (when on-change-section
-             (on-change-section (keyword new-section)))))
+             (on-change-section (keyword new-section))
+             (st/emit!
+              (ptk/event ::ev/event {::ev/name "change-inspect-tab" :tab new-section})))))
 
         handle-expand
         (mf/use-fn
