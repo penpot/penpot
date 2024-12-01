@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-21 11:00+0000\n"
+"PO-Revision-Date: 2024-12-02 12:00+0000\n"
 "Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
@@ -5862,3 +5862,112 @@ msgstr "Видалити заливку"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:154
 msgid "workspace.options.flows.remove-flow"
 msgstr "Видалити потік"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, unused
+msgid "workspace.options.layer-options.title.group"
+msgstr "Згрупувати шари"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, fuzzy, unused
+msgid "workspace.options.layout.gap"
+msgstr "Проміжок"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, unused
+msgid "workspace.options.layout.padding-all"
+msgstr "Усі сторони"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, fuzzy, unused
+msgid "workspace.options.layout.top"
+msgstr "Вгору"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:159
+msgid "workspace.options.more-colors"
+msgstr "Більше кольорів"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:161
+msgid "workspace.options.opacity"
+msgstr "Непрозорість"
+
+#: src/app/main/ui/dashboard/team.cljs:181, src/app/main/ui/onboarding/team_choice.cljs:100
+msgid "errors.maximum-invitations-by-request-reached"
+msgstr ""
+"Дрсягнуто максимальної кількості поштових скриньок, на які можна надіслати "
+"запрошення (максимум %s скриньок)"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:153
+msgid "labels.collapse"
+msgstr "Згорнути"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:323
+#, fuzzy
+msgid "workspace.options.guides.add-guide"
+msgstr "Додати вказівну"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:187
+#, fuzzy
+msgid "workspace.options.guides.remove-guide"
+msgstr "Додати вказівну"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:183
+#, fuzzy
+msgid "workspace.options.guides.toggle-guide"
+msgstr "Перемкнути вказівну"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:176, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:182
+msgid "workspace.options.layer-options.toggle-layer"
+msgstr "Перемкнути видімість шару"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs
+#, unused
+msgid "workspace.options.layout-item.advanced-ops"
+msgstr "Додаткові параметри"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, fuzzy, unused
+msgid "workspace.options.layout.right"
+msgstr "Право"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:136
+msgid "workspace.options.more-lib-colors"
+msgstr "Більше кольорів бібліотеки"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:531
+msgid "workspace.options.layout-item.layout-item-max-w"
+msgstr "Макс. Ширина"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, fuzzy, unused
+msgid "workspace.options.layout.padding"
+msgstr "Відступ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs
+#, unused
+msgid "workspace.options.layer-options.title.multiple"
+msgstr "Обрані шари"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:564
+msgid "workspace.options.layout-item.layout-item-max-h"
+msgstr "Макс. Висота"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, fuzzy, unused
+msgid "workspace.options.layout.padding-simple"
+msgstr "Простий відступ"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, fuzzy, unused
+msgid "workspace.options.layout.space-around"
+msgstr "відступ навколо"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
+#, fuzzy, unused
+msgid "workspace.options.layout.space-between"
+msgstr "відступ між"
+
+#: src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs
+#, unused
+msgid "workspace.options.position"
+msgstr "Розташування"
