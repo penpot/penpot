@@ -182,35 +182,32 @@ pub extern "C" fn add_shape_fill_stops(ptr: *mut shapes::RawStopData, n_stops: u
 
     if let Some(shape) = state.current_shape() {
         let len = n_stops as usize;
-        let buffer_size = std::mem::size_of::<shapes::RawStopData>() * len;
 
         unsafe {
             let buffer = Vec::<shapes::RawStopData>::from_raw_parts(ptr, len, len);
             shape
                 .add_gradient_stops(buffer)
                 .expect("could not add gradient stops");
-            mem::free(ptr as *mut u8, buffer_size);
+            mem::free_bytes();
         }
     }
 }
 
 #[no_mangle]
-pub extern "C" fn store_image(a: u32, b: u32, c: u32, d: u32, ptr: *mut u8, size: u32) {
-    if ptr.is_null() || size == 0 {
-        panic!("Invalid data, null pointer or zero size");
-    }
+pub extern "C" fn store_image(a: u32, b: u32, c: u32, d: u32, size: u32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     let id = uuid_from_u32_quartet(a, b, c, d);
 
     unsafe {
-        let image_bytes = Vec::<u8>::from_raw_parts(ptr, size as usize, size as usize);
+        let image_bytes =
+            Vec::<u8>::from_raw_parts(mem::buffer_ptr(), size as usize, size as usize);
         match state.render_state().add_image(id, &image_bytes) {
             Err(msg) => {
                 eprintln!("{}", msg);
             }
             _ => {}
         }
-        mem::free(ptr as *mut u8, size as usize * std::mem::size_of::<u8>());
+        mem::free_bytes();
     }
 }
 

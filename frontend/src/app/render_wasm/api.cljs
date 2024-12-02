@@ -132,7 +132,6 @@
                              (aget buffer 1)
                              (aget buffer 2)
                              (aget buffer 3)
-                             image-ptr
                              image-size)
                      true))))))
 
