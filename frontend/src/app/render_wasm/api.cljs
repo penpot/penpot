@@ -13,6 +13,7 @@
    [app.config :as cf]
    [app.render-wasm.helpers :as h]
    [app.util.functions :as fns]
+   [goog.object :as gobj]
    [promesa.core :as p]))
 
 (defonce internal-frame-id nil)
@@ -42,6 +43,17 @@
         a (mth/floor (* (or opacity 1) 0xff))]
         ;; rgba >>> 0 so we have an unsigned representation
     (unsigned-bit-shift-right (bit-or (bit-shift-left a 24) rgb) 0)))
+
+(defn- rgba-bytes-from-hex
+  "Takes a hex color in #rrggbb format, and an opacity value from 0 to 1 and returns an array with its r g b a values"
+  [hex opacity]
+  (let [rgb (js/parseInt (subs hex 1) 16)
+        a (mth/floor (* (or opacity 1) 0xff))
+        ;; rgba >>> 0 so we have an unsigned representation
+        r (bit-shift-right rgb 16)
+        g (bit-and (bit-shift-right rgb 8) 255)
+        b (bit-and rgb 255)]
+    [r g b a]))
 
 (defn cancel-render
   []
@@ -108,15 +120,25 @@
               (let [rgba (rgba-from-hex color opacity)]
                 (h/call internal-module "_add_shape_solid_fill" rgba)))
             (when (and (some? gradient)  (= (:type gradient) :linear))
-              (h/call internal-module "_add_shape_linear_fill"
-                      (:start-x gradient)
-                      (:start-y gradient)
-                      (:end-x gradient)
-                      (:end-y gradient)
-                      opacity)
-              (run! (fn [stop]
-                      (let [rgba (rgba-from-hex (:color stop) (:opacity stop))]
-                        (h/call internal-module "_add_shape_fill_stop" rgba (:offset stop)))) (:stops gradient)))))
+              (let [stops     (:stops gradient)
+                    n-stops   (count stops)
+                    mem-size  (* 5 n-stops)
+                    stops-ptr (h/call internal-module "_alloc_bytes" mem-size)
+                    heap      (gobj/get ^js internal-module "HEAPU8")
+                    mem       (js/Uint8Array. (.-buffer heap) stops-ptr mem-size)]
+                (h/call internal-module "_add_shape_linear_fill"
+                        (:start-x gradient)
+                        (:start-y gradient)
+                        (:end-x gradient)
+                        (:end-y gradient)
+                        opacity)
+                (.set mem (js/Uint8Array. (clj->js (flatten (map (fn [stop]
+                                                                   (let [[r g b a] (rgba-bytes-from-hex (:color stop) (:opacity stop))
+                                                                         offset (:offset stop)]
+                                                                     [r g b a (* 100 offset)]))
+                                                                 stops)))))
+
+                (h/call internal-module "_add_shape_fill_stops" stops-ptr n-stops)))))
         fills))
 
 (defn- translate-blend-mode
