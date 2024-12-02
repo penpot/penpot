@@ -2,21 +2,17 @@ use crate::math;
 use skia_safe as skia;
 use uuid::Uuid;
 
+mod blend;
+mod fills;
+pub use blend::*;
+pub use fills::*;
+
 #[derive(Debug, Clone, Copy)]
 pub enum Kind {
-    None,
-    Text,
-    Path,
-    SVGRaw,
-    Image,
-    Circle,
     Rect,
-    Bool,
-    Group,
-    Frame,
 }
 
-type Color = skia::Color;
+pub type Color = skia::Color;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Matrix {
@@ -41,60 +37,8 @@ impl Matrix {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum Fill {
-    Solid(Color), // TODO: add more fills here
-}
-
-impl From<Color> for Fill {
-    fn from(value: Color) -> Self {
-        Self::Solid(value)
-    }
-}
-
-impl Fill {
-    pub fn to_paint(&self) -> skia::Paint {
-        match self {
-            Self::Solid(color) => {
-                let mut p = skia::Paint::default();
-                p.set_color(*color);
-                p.set_style(skia::PaintStyle::Fill);
-                p.set_anti_alias(true);
-                p.set_blend_mode(skia::BlendMode::SrcOver);
-                p
-            }
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub struct BlendMode(skia::BlendMode);
-
-impl Default for BlendMode {
-    fn default() -> Self {
-        BlendMode(skia::BlendMode::SrcOver)
-    }
-}
-
-impl From<i32> for BlendMode {
-    fn from(value: i32) -> Self {
-        if value <= skia::BlendMode::Luminosity as i32 {
-            unsafe { Self(std::mem::transmute(value)) }
-        } else {
-            Self::default()
-        }
-    }
-}
-
-impl Into<skia::BlendMode> for BlendMode {
-    fn into(self) -> skia::BlendMode {
-        match self {
-            Self(skia_blend) => skia_blend,
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Shape {
     pub id: Uuid,
     pub children: Vec<Uuid>,
@@ -144,6 +88,18 @@ impl Shape {
 
     pub fn clear_fills(&mut self) {
         self.fills.clear();
+    }
+
+    pub fn add_gradient_stop(&mut self, color: skia::Color, offset: f32) -> Result<(), String> {
+        let fill = self.fills.last_mut().ok_or("Shape has no fills")?;
+        let gradient = match fill {
+            Fill::LinearGradient(g) => Ok(g),
+            _ => Err("Active fill is not a gradient"),
+        }?;
+
+        gradient.add_stop(color, offset);
+
+        Ok(())
     }
 
     pub fn set_blend_mode(&mut self, mode: BlendMode) {

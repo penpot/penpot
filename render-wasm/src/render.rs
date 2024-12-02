@@ -212,7 +212,7 @@ impl RenderState {
         for fill in shape.fills().rev() {
             self.drawing_surface
                 .canvas()
-                .draw_rect(shape.selrect, &fill.to_paint());
+                .draw_rect(shape.selrect, &fill.to_paint(&shape.selrect));
         }
 
         let mut paint = skia::Paint::default();
