@@ -3621,6 +3621,9 @@ msgstr "Previous board"
 msgid "shortcuts.redo"
 msgstr "Redo"
 
+msgid "shortcuts.rename"
+msgstr "Rename"
+
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:166
 msgid "shortcuts.reset-zoom"
 msgstr "Reset zoom"
