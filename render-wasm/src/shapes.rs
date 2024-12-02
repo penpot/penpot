@@ -92,14 +92,16 @@ impl Shape {
         self.fills.clear();
     }
 
-    pub fn add_gradient_stop(&mut self, color: skia::Color, offset: f32) -> Result<(), String> {
+    pub fn add_gradient_stops(&mut self, buffer: Vec<RawStopData>) -> Result<(), String> {
         let fill = self.fills.last_mut().ok_or("Shape has no fills")?;
         let gradient = match fill {
             Fill::LinearGradient(g) => Ok(g),
             _ => Err("Active fill is not a gradient"),
         }?;
 
-        gradient.add_stop(color, offset);
+        for stop in buffer.into_iter() {
+            gradient.add_stop(stop.color(), stop.offset());
+        }
 
         Ok(())
     }

@@ -1,6 +1,6 @@
 mod debug;
 mod math;
-pub mod mem;
+mod mem;
 mod render;
 mod shapes;
 mod state;
@@ -177,33 +177,20 @@ pub extern "C" fn add_shape_linear_fill(
     }
 }
 
-#[derive(Debug)]
-pub struct RawStopData {
-    color: [u8; 4],
-    offset: u8,
-}
-
 #[no_mangle]
-pub extern "C" fn add_shape_fill_stops(ptr: *mut RawStopData, n_stops: i32) {
+pub extern "C" fn add_shape_fill_stops(ptr: *mut shapes::RawStopData, n_stops: u32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+
     if let Some(shape) = state.current_shape() {
+        let len = n_stops as usize;
+        let buffer_size = std::mem::size_of::<shapes::RawStopData>() * len;
+
         unsafe {
-            let buf = Vec::<RawStopData>::from_raw_parts(ptr, n_stops as usize, n_stops as usize);
-            for raw_stop in buf.iter() {
-                let color = skia::Color::from_argb(
-                    raw_stop.color[3],
-                    raw_stop.color[0],
-                    raw_stop.color[1],
-                    raw_stop.color[2],
-                );
-                shape
-                    .add_gradient_stop(color, (raw_stop.offset as f32) / 100.)
-                    .expect("got no fill or an invalid one");
-            }
-            mem::free(
-                ptr as *mut u8,
-                n_stops as usize * std::mem::size_of::<RawStopData>(),
-            );
+            let buffer = Vec::<shapes::RawStopData>::from_raw_parts(ptr, len, len);
+            shape
+                .add_gradient_stops(buffer)
+                .expect("could not add gradient stops");
+            mem::free(ptr as *mut u8, buffer_size);
         }
     }
 }

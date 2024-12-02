@@ -4,6 +4,23 @@ use super::Color;
 use crate::math;
 use uuid::Uuid;
 
+#[derive(Debug)]
+#[repr(C)]
+pub struct RawStopData {
+    color: [u8; 4],
+    offset: u8,
+}
+
+impl RawStopData {
+    pub fn color(&self) -> skia::Color {
+        skia::Color::from_argb(self.color[3], self.color[0], self.color[1], self.color[2])
+    }
+
+    pub fn offset(&self) -> f32 {
+        self.offset as f32 / 100.0
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Gradient {
     colors: Vec<Color>,
