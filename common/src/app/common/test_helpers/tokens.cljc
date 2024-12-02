@@ -23,6 +23,39 @@
   [file f]
   (ctf/update-file-data file #(update % :tokens-lib f)))
 
+(defn- set-stroke-width
+  [shape stroke-width]
+  (let [strokes (if (seq (:strokes shape))
+                  (:strokes shape)
+                  [{:stroke-style :solid
+                    :stroke-alignment :inner
+                    :stroke-width 1
+                    :stroke-color "#000000"
+                    :stroke-opacity 1}])
+        new-strokes (update strokes 0 assoc :stroke-width stroke-width)]
+    (ctn/set-shape-attr shape :strokes new-strokes {:ignore-touched true})))
+
+(defn- set-stroke-color
+  [shape stroke-color]
+  (let [strokes (if (seq (:strokes shape))
+                  (:strokes shape)
+                  [{:stroke-style :solid
+                    :stroke-alignment :inner
+                    :stroke-width 1
+                    :stroke-color "#000000"
+                    :stroke-opacity 1}])
+        new-strokes (update strokes 0 assoc :stroke-color stroke-color)]
+    (ctn/set-shape-attr shape :strokes new-strokes {:ignore-touched true})))
+
+(defn- set-fill-color
+  [shape fill-color]
+  (let [fills (if (seq (:fills shape))
+                (:fills shape)
+                [{:fill-color "#000000"
+                  :fill-opacity 1}])
+        new-fills (update fills 0 assoc :fill-color fill-color)]
+    (ctn/set-shape-attr shape :fills new-fills {:ignore-touched true})))
+
 (defn apply-token-to-shape
   [file shape-label token-name token-attrs shape-attrs resolved-value]
   (let [page   (thf/current-page file)
@@ -32,7 +65,11 @@
                                             :token {:name token-name}
                                             :attributes token-attrs})
                  (reduce (fn [shape attr]
-                           (ctn/set-shape-attr shape attr resolved-value {:ignore-touched true}))
+                           (case attr
+                             :stroke-width (set-stroke-width shape resolved-value)
+                             :stroke-color (set-stroke-color shape resolved-value)
+                             :fill (set-fill-color shape resolved-value)
+                             (ctn/set-shape-attr shape attr resolved-value {:ignore-touched true})))
                          $
                          shape-attrs))]
 
