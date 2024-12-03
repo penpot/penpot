@@ -313,7 +313,7 @@
 
            :borderRadius
            {:this true
-            :get #(-> % u/proxy->shape :rx)
+            :get #(-> % u/proxy->shape :r1)
             :set
             (fn [self value]
               (let [id (obj/get self "$id")
