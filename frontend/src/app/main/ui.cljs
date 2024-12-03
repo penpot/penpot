@@ -6,16 +6,20 @@
 
 (ns app.main.ui
   (:require
+   [app.common.data :as d]
    [app.config :as cf]
+   [app.main.data.common :as dcm]
    [app.main.data.team :as dtm]
    [app.main.refs :as refs]
+   [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.debug.icons-preview :refer [icons-preview]]
+   [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.error-boundary :refer [error-boundary*]]
    [app.main.ui.exports.files]
    [app.main.ui.frame-preview :as frame-preview]
-   [app.main.ui.icons :as i]
    [app.main.ui.notifications :as notifications]
    [app.main.ui.onboarding.newsletter :refer [onboarding-newsletter]]
    [app.main.ui.onboarding.questions :refer [questions-modal]]
@@ -24,6 +28,8 @@
    [app.main.ui.static :as static]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def auth-page
@@ -43,6 +49,79 @@
 
 (def workspace-page
   (mf/lazy-component app.main.ui.workspace/workspace*))
+
+(mf/defc workspace-legacy-redirect*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [project-id file-id page-id layout]}]
+  (mf/with-effect []
+    (->> (rp/cmd! :get-project {:id project-id})
+         (rx/subs! (fn [{:keys [team-id]}]
+                     (st/emit! (dcm/go-to-workspace :team-id team-id
+                                                    :file-id file-id
+                                                    :page-id page-id
+                                                    :layout layout)))
+                   ptk/handle-error)))
+
+  [:> loader*
+   {:title (tr "labels.loading")
+    :overlay true}])
+
+(mf/defc dashboard-legacy-redirect*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [section team-id project-id search-term plugin-url]}]
+  (let [section (case section
+                  :dashboard-legacy-search
+                  :dashboard-search
+                  :dashboard-legacy-projects
+                  :dashboard-recent
+                  :dashboard-legacy-files
+                  :dashboard-files
+                  :dashboard-legacy-libraries
+                  :dashboard-libraries
+                  :dashboard-legacy-fonts
+                  :dashboard-fonts
+                  :dashboard-legacy-font-providers
+                  :dashboard-font-providers
+                  :dashboard-legacy-team-members
+                  :dashboard-members
+                  :dashboard-legacy-team-invitations
+                  :dashboard-invitations
+                  :dashboard-legacy-team-webhooks
+                  :dashboard-webhooks
+                  :dashboard-legacy-team-settings
+                  :dashboard-settings)]
+
+    (mf/with-effect []
+      (let [params {:team-id team-id
+                    :project-id project-id
+                    :search-term search-term
+                    :plugin plugin-url}]
+        (st/emit! (rt/nav section (d/without-nils params)))))
+
+    [:> loader*
+     {:title (tr "labels.loading")
+      :overlay true}]))
+
+(mf/defc viewer-legacy-redirect*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [page-id file-id section index share-id interactions-mode frame-id share]}]
+  (mf/with-effect []
+    (let [params {:page-id page-id
+                  :file-id file-id
+                  :section section
+                  :index index
+                  :share-id share-id
+                  :interactions-mode interactions-mode
+                  :frame-id frame-id
+                  :share share}]
+      (st/emit! (rt/nav :viewer (d/without-nils params)))))
+
+  [:> loader*
+   {:title (tr "labels.loading")
+    :overlay true}])
 
 (mf/defc team-container*
   {::mf/props :obj
@@ -160,72 +239,9 @@
                                :plugin-url plugin-url
                                :project-id project-id}]]])
 
-       (:dashboard-legacy-search
-        :dashboard-legacy-projects
-        :dashboard-legacy-files
-        :dashboard-legacy-libraries
-        :dashboard-legacy-fonts
-        :dashboard-legacy-font-providers
-        :dashboard-legacy-team-members
-        :dashboard-legacy-team-invitations
-        :dashboard-legacy-team-webhooks
-        :dashboard-legacy-team-settings)
-       (let [team-id     (some-> params :path :team-id uuid)
-             project-id  (some-> params :path :project-id uuid)
-             search-term (some-> params :query :search-term)
-             plugin-url  (some-> params :query :plugin)
-             section     (case section
-                           :dashboard-legacy-search
-                           :dashboard-search
-                           :dashboard-legacy-projects
-                           :dashboard-recent
-                           :dashboard-legacy-files
-                           :dashboard-files
-                           :dashboard-legacy-libraries
-                           :dashboard-libraries
-                           :dashboard-legacy-fonts
-                           :dashboard-fonts
-                           :dashboard-legacy-font-providers
-                           :dashboard-font-providers
-                           :dashboard-legacy-team-members
-                           :dashboard-members
-                           :dashboard-legacy-team-invitations
-                           :dashboard-invitations
-                           :dashboard-legacy-team-webhooks
-                           :dashboard-webhooks
-                           :dashboard-legacy-team-settings
-                           :dashboard-settings)]
-         [:?
-          #_[:& app.main.ui.releases/release-notes-modal {:version "2.3"}]
-          #_[:& app.main.ui.onboarding/onboarding-templates-modal]
-          #_[:& app.main.ui.onboarding/onboarding-modal]
-          #_[:& app.main.ui.onboarding.team-choice/onboarding-team-modal]
-
-          (cond
-            show-question-modal?
-            [:& questions-modal]
-
-            show-newsletter-modal?
-            [:& onboarding-newsletter]
-
-            show-team-modal?
-            [:& onboarding-team-modal {:go-to-team? true}]
-
-            show-release-modal?
-            [:& release-notes-modal {:version (:main cf/version)}])
-
-          [:> team-container* {:team-id team-id}
-           [:> dashboard-page {:profile profile
-                               :section section
-                               :team-id team-id
-                               :search-term search-term
-                               :plugin-url plugin-url
-                               :project-id project-id}]]])
-
        :workspace
        (let [params     (get params :query)
              team-id    (some-> params :team-id uuid)
-             project-id (some-> params :project-id uuid)
              file-id    (some-> params :file-id uuid)
              page-id    (some-> params :page-id uuid)
              layout     (some-> params :layout keyword)]
@@ -245,35 +261,7 @@
               [:& release-notes-modal {:version (:main cf/version)}]))
 
           [:> team-container* {:team-id team-id}
-           [:> workspace-page {:project-id project-id
-                               :team-id team-id
-                               :file-id file-id
-                               :page-id page-id
-                               :layout-name layout
-                               :key file-id}]]])
-
-       :workspace-legacy
-       (let [project-id (some-> params :path :project-id uuid)
-             file-id    (some-> params :path :file-id uuid)
-             page-id    (some-> params :query :page-id uuid)
-             layout     (some-> params :query :layout keyword)]
-         [:? {}
-          (when (cf/external-feature-flag "onboarding-03" "test")
-            (cond
-              show-question-modal?
-              [:& questions-modal]
-
-              show-newsletter-modal?
-              [:& onboarding-newsletter]
-
-              show-team-modal?
-              [:& onboarding-team-modal {:go-to-team? false}]
-
-              show-release-modal?
-              [:& release-notes-modal {:version (:main cf/version)}]))
-
-          [:*
-           [:> workspace-page {:project-id project-id
+           [:> workspace-page {:team-id team-id
                                :file-id file-id
                                :page-id page-id
                                :layout-name layout
@@ -304,37 +292,60 @@
             :interactions-mode imode
             :share share}]])
 
+
+       :workspace-legacy
+       (let [project-id (some-> params :path :project-id uuid)
+             file-id    (some-> params :path :file-id uuid)
+             page-id    (some-> params :query :page-id uuid)
+             layout     (some-> params :query :layout keyword)]
+
+         [:> workspace-legacy-redirect*
+          {:project-id project-id
+           :file-id file-id
+           :page-id page-id
+           :layout layout}])
+
+       (:dashboard-legacy-search
+        :dashboard-legacy-projects
+        :dashboard-legacy-files
+        :dashboard-legacy-libraries
+        :dashboard-legacy-fonts
+        :dashboard-legacy-font-providers
+        :dashboard-legacy-team-members
+        :dashboard-legacy-team-invitations
+        :dashboard-legacy-team-webhooks
+        :dashboard-legacy-team-settings)
+       (let [team-id     (some-> params :path :team-id uuid)
+             project-id  (some-> params :path :project-id uuid)
+             search-term (some-> params :query :search-term)
+             plugin-url  (some-> params :query :plugin)]
+         [:> dashboard-legacy-redirect*
+          {:team-id team-id
+           :section section
+           :project-id project-id
+           :search-term search-term
+           :plugin-url plugin-url}])
+
        :viewer-legacy
        (let [{:keys [query-params path-params]} route
              {:keys [index share-id section page-id interactions-mode frame-id share]
               :or {section :interactions interactions-mode :show-on-click}} query-params
              {:keys [file-id]} path-params]
-         [:? {}
-          (if (:token query-params)
-            [:> static/error-container* {}
-             [:div.image i/detach]
-             [:div.main-message (tr "viewer.breaking-change.message")]
-             [:div.desc-message (tr "viewer.breaking-change.description")]]
 
-            [:> viewer-page
-             {:page-id page-id
-              :file-id file-id
-              :section section
-              :index index
-              :share-id share-id
-              :interactions-mode (keyword interactions-mode)
-              :show-interactions (case (keyword interactions-mode)
-                                   :hide false
-                                   :show true
-                                   :show-on-click false)
-              :frame-id frame-id
-              :share share}])])
+         [:> viewer-legacy-redirect*
+          {:page-id page-id
+           :file-id file-id
+           :section section
+           :index index
+           :share-id share-id
+           :interactions-mode (keyword interactions-mode)
+           :frame-id frame-id
+           :share share}])
 
        :frame-preview
        [:& frame-preview/frame-preview]
 
        nil)]))
-
 
 (mf/defc app
   []
