@@ -38,7 +38,11 @@ export default {
       exclude: ["options", "defaultSelected"],
     },
   },
-  render: ({ ...args }) => <Combobox {...args} />,
+  render: ({ ...args }) => (
+    <div style={{ padding: "5px" }}>
+      <Combobox {...args} />
+    </div>
+  ),
 };
 
 export const Default = {

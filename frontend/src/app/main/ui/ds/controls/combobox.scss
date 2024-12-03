@@ -29,10 +29,6 @@
 }
 
 .combobox {
-  &:focus-visible {
-    --combobox-outline-color: var(--color-accent-primary);
-  }
-
   &:disabled {
     --combobox-bg-color: var(--color-background-primary);
     --combobox-border-color: var(--color-background-quaternary);
@@ -52,6 +48,10 @@
   background: var(--combobox-bg-color);
   color: var(--combobox-fg-color);
   appearance: none;
+}
+
+.focused {
+  --combobox-outline-color: var(--color-accent-primary);
 }
 
 .arrow {

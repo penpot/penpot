@@ -68,16 +68,6 @@
   [{:keys [options class disabled default-selected on-change] :rest props}]
   (let [open* (mf/use-state false)
         open  (deref open*)
-        on-click
-        (mf/use-fn
-         (mf/deps disabled)
-         (fn [event]
-           (dom/stop-propagation event)
-           (when-not disabled
-            (if (= "INPUT" (.-tagName (.-target event)))
-              (reset! open* true)
-              (swap! open* not)
-            ))))
 
         selected* (mf/use-state  default-selected)
         selected  (deref selected*)
@@ -88,6 +78,9 @@
         filter* (mf/use-state "")
         filter  (deref filter*)
 
+        has-focus* (mf/use-state false)
+        has-focus (deref has-focus*)
+
         dropdown-options
          (mf/use-memo
          (mf/deps options filter)
@@ -97,6 +90,18 @@
                                 (let [lower-option (.toLowerCase (obj/get option "id"))
                                       lower-filter (.toLowerCase filter)]
                                   (.includes lower-option lower-filter)))))))
+
+        on-click
+        (mf/use-fn
+         (mf/deps disabled)
+         (fn [event]
+           (dom/stop-propagation event)
+           (when-not disabled
+            (reset! has-focus* true)
+            (if (= "INPUT" (.-tagName (.-target event)))
+              (reset! open* true)
+              (swap! open* not)
+            ))))
 
         on-option-click
         (mf/use-fn
@@ -131,7 +136,8 @@
                     outside? (not (.contains (mf/ref-val combobox-ref) target))]
                 (when outside?
                   (reset! focused* nil)
-                  (reset! open* false)))))
+                  (reset! open* false)
+                  (reset! has-focus* false)))))
 
         on-key-down
         (mf/use-fn
@@ -186,6 +192,7 @@
                                       :aria-expanded open
                                       :disabled disabled
                                       :on-click on-click
+                                      :on-focus (fn [_] (reset! has-focus* true))
                                       :on-blur on-blur})
 
         selected-option (get-option options selected)
@@ -196,7 +203,10 @@
     (mf/with-effect [options]
       (mf/set-ref-val! options-ref options))
 
-    [:div {:class (stl/css :combobox-wrapper) :ref combobox-ref}
+    [:div {:ref combobox-ref :class (stl/css-case
+                    :combobox-wrapper true
+                    :focused has-focus)}
+
      [:> :div props
       [:span {:class (stl/css-case :combobox-header true
                                    :header-icon (some? icon))}

@@ -11,6 +11,8 @@
 
 .option-list {
   --options-dropdown-bg-color: var(--color-background-tertiary);
+  --combobox-outline-color: none;
+
   position: absolute;
   right: 0;
   top: $sz-36;
