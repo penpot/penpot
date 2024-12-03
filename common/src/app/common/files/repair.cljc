@@ -434,8 +434,10 @@
           (assoc shape :type :frame
                  :fills []
                  :hide-in-viewer true
-                 :rx 0
-                 :ry 0))]
+                 :r1 0
+                 :r2 0
+                 :r3 0
+                 :r4 0))]
 
     (log/dbg :hint "repairing shape :instance-head-not-frame" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)

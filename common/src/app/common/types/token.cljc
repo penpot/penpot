@@ -84,8 +84,6 @@
 (sm/register!
  ^{::sm/type ::border-radius}
  [:map
-  [:rx {:optional true} token-name-ref]
-  [:ry {:optional true} token-name-ref]
   [:r1 {:optional true} token-name-ref]
   [:r2 {:optional true} token-name-ref]
   [:r3 {:optional true} token-name-ref]

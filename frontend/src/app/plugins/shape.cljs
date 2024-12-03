@@ -313,11 +313,10 @@
 
            :borderRadius
            {:this true
-            :get #(-> % u/proxy->shape :rx)
+            :get #(-> % u/proxy->shape :r1)
             :set
             (fn [self value]
-              (let [id (obj/get self "$id")
-                    shape (u/proxy->shape self)]
+              (let [id (obj/get self "$id")]
                 (cond
                   (or (not (us/safe-int? value)) (< value 0))
                   (u/display-not-valid :borderRadius value)
@@ -325,21 +324,15 @@
                   (not (r/check-permission plugin-id "content:write"))
                   (u/display-not-valid :borderRadius "Plugin doesn't have 'content:write' permission")
 
-                  (or (not (ctsr/has-radius? shape)) (ctsr/radius-4? shape))
-                  (st/emit! (dwsh/update-shapes [id] #(-> %
-                                                          ctsr/switch-to-radius-1
-                                                          (ctsr/set-radius-1 value))))
-
                   :else
-                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-1 % value))))))}
+                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-all-corners % value))))))}
 
            :borderRadiusTopLeft
            {:this true
             :get #(-> % u/proxy->shape :r1)
             :set
             (fn [self value]
-              (let [id (obj/get self "$id")
-                    shape (u/proxy->shape self)]
+              (let [id (obj/get self "$id")]
                 (cond
                   (not (us/safe-int? value))
                   (u/display-not-valid :borderRadiusTopLeft value)
@@ -347,21 +340,15 @@
                   (not (r/check-permission plugin-id "content:write"))
                   (u/display-not-valid :borderRadiusTopLeft "Plugin doesn't have 'content:write' permission")
 
-                  (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
-                  (st/emit! (dwsh/update-shapes [id] #(-> %
-                                                          (ctsr/switch-to-radius-4)
-                                                          (ctsr/set-radius-4 :r1 value))))
-
                   :else
-                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-4 % :r1 value))))))}
+                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-single-corner % :r1 value))))))}
 
            :borderRadiusTopRight
            {:this true
             :get #(-> % u/proxy->shape :r2)
             :set
             (fn [self value]
-              (let [id (obj/get self "$id")
-                    shape (u/proxy->shape self)]
+              (let [id (obj/get self "$id")]
                 (cond
                   (not (us/safe-int? value))
                   (u/display-not-valid :borderRadiusTopRight value)
@@ -369,21 +356,15 @@
                   (not (r/check-permission plugin-id "content:write"))
                   (u/display-not-valid :borderRadiusTopRight "Plugin doesn't have 'content:write' permission")
 
-                  (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
-                  (st/emit! (dwsh/update-shapes [id] #(-> %
-                                                          (ctsr/switch-to-radius-4)
-                                                          (ctsr/set-radius-4 :r2 value))))
-
                   :else
-                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-4 % :r2 value))))))}
+                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-single-corner % :r2 value))))))}
 
            :borderRadiusBottomRight
            {:this true
             :get #(-> % u/proxy->shape :r3)
             :set
             (fn [self value]
-              (let [id (obj/get self "$id")
-                    shape (u/proxy->shape self)]
+              (let [id (obj/get self "$id")]
                 (cond
                   (not (us/safe-int? value))
                   (u/display-not-valid :borderRadiusBottomRight value)
@@ -391,21 +372,15 @@
                   (not (r/check-permission plugin-id "content:write"))
                   (u/display-not-valid :borderRadiusBottomRight "Plugin doesn't have 'content:write' permission")
 
-                  (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
-                  (st/emit! (dwsh/update-shapes [id] #(-> %
-                                                          (ctsr/switch-to-radius-4)
-                                                          (ctsr/set-radius-4 :r3 value))))
-
                   :else
-                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-4 % :r3 value))))))}
+                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-single-corner % :r3 value))))))}
 
            :borderRadiusBottomLeft
            {:this true
             :get #(-> % u/proxy->shape :r4)
             :set
             (fn [self value]
-              (let [id (obj/get self "$id")
-                    shape (u/proxy->shape self)]
+              (let [id (obj/get self "$id")]
                 (cond
                   (not (us/safe-int? value))
                   (u/display-not-valid :borderRadiusBottomLeft value)
@@ -413,13 +388,8 @@
                   (not (r/check-permission plugin-id "content:write"))
                   (u/display-not-valid :borderRadiusBottomLeft "Plugin doesn't have 'content:write' permission")
 
-                  (or (not (ctsr/has-radius? shape)) (not (ctsr/radius-4? shape)))
-                  (st/emit! (dwsh/update-shapes [id] #(-> %
-                                                          (ctsr/switch-to-radius-4)
-                                                          (ctsr/set-radius-4 :r4 value))))
-
                   :else
-                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-4 % :r4 value))))))}
+                  (st/emit! (dwsh/update-shapes [id] #(ctsr/set-radius-to-single-corner % :r4 value))))))}
 
            :opacity
            {:this true
