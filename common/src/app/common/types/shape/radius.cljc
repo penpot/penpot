@@ -22,19 +22,23 @@
 ;; shapes that has border radius, and so it hasn't :rx nor :r1.
 ;; In this case operations must leave shape untouched.
 
-(defn has-radius?
+(defn has-radius-old?
   [shape]
   (contains? (get editable-attrs (:type shape)) :rx))
 
+(defn has-radius?
+  [shape]
+  (contains? (get editable-attrs (:type shape)) :r1))
+
+(defn all-equal?
+  [shape]
+  (= (:r1 shape) (:r2 shape) (:r3 shape) (:r4 shape)))
+
 (defn radius-mode
   [shape]
-  (if (:r1 shape)
-    :radius-4
-    :radius-1))
-
-(defn radius-1?
-  [shape]
-  (and (:rx shape) (not= (:rx shape) 0)))
+  (if (all-equal? shape)
+    :radius-1
+    :radius-4))
 
 (defn radius-4?
   [shape]
@@ -44,32 +48,22 @@
            (not= (:r3 shape) 0)
            (not= (:r4 shape) 0))))
 
-(defn all-equal?
-  [shape]
-  (= (:r1 shape) (:r2 shape) (:r3 shape) (:r4 shape)))
-
 (defn switch-to-radius-1
   [shape]
   (let [r (if (all-equal? shape) (:r1 shape) 0)]
-    (-> shape
-        (assoc :rx r :ry r)
-        (dissoc :r1 :r2 :r3 :r4))))
+    (assoc shape :r1 r :r2 r :r3 r  :r4 r)))
 
 (defn switch-to-radius-4
   [shape]
   (let [rx (:rx shape 0)]
     (-> (assoc shape :r1 rx :r2 rx :r3 rx :r4 rx)
-        (dissoc :rx :ry))))
+        (dissoc :rx))))
+
 
 (defn set-radius-1
   [shape value]
-  (cond-> shape
-    (:r1 shape)
-    (-> (dissoc :r1 :r2 :r3 :r4)
-        (assoc :rx 0 :ry 0))
-
-    :always
-    (assoc :rx value :ry value)))
+  (-> shape
+      (assoc :r1 value :r2 value :r3 value :r4 value)))
 
 (defn set-radius-4
   [shape attr value]
@@ -80,10 +74,4 @@
                (:flip-y shape)
                (get {:r1 :r4 :r2 :r3 :r3 :r2 :r4 :r1}))]
 
-    (cond-> shape
-      (:rx shape)
-      (-> (dissoc :rx :rx)
-          (assoc :r1 0 :r2 0 :r3 0 :r4 0))
-
-      :always
-      (assoc attr value))))
+    (assoc shape attr value)))

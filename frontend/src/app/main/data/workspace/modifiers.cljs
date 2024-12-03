@@ -522,8 +522,8 @@
                            :points
                            :x
                            :y
-                           :rx
-                           :ry
+                          ;;  :rx
+                          ;;  :ry
                            :r1
                            :r2
                            :r3

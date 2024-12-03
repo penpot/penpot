@@ -43,9 +43,9 @@
 
 (defn shape-corners-1
   "Retrieve the effective value for the corner given a single value for corner."
-  [{:keys [width height rx] :as shape}]
-  (if (and (some? rx) (not (mth/almost-zero? rx)))
-    (fix-radius width height rx)
+  [{:keys [width height r1] :as shape}]
+  (if (and (some? r1) (not (mth/almost-zero? r1)))
+    (fix-radius width height r1)
     0))
 
 (defn shape-corners-4
@@ -55,10 +55,10 @@
     (fix-radius width height r1 r2 r3 r4)
     [r1 r2 r3 r4]))
 
-(defn update-corners-scale-1
-  "Scales round corners (using a single value)"
-  [shape scale]
-  (update shape :rx * scale))
+;; (defn update-corners-scale-1
+;;   "Scales round corners (using a single value)"
+;;   [shape scale]
+;;   (update shape :r1 * scale))
 
 (defn update-corners-scale-4
   "Scales round corners (using four values)"
@@ -72,9 +72,4 @@
 (defn update-corners-scale
   "Scales round corners"
   [shape scale]
-  (cond-> shape
-    (and (some? (:rx shape)) (> (:rx shape) 0))
-    (update-corners-scale-1 scale)
-
-    (and (some? (:r1 shape)) (> (:r1 shape) 0))
-    (update-corners-scale-4 scale)))
+  (update-corners-scale-4 shape scale))

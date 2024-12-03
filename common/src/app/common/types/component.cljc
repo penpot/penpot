@@ -64,9 +64,9 @@
    :stroke-width            :stroke-group
    :fill-color              :fill-group
    :fill-opacity            :fill-group
-
    :rx                      :radius-group
    :ry                      :radius-group
+
    :r1                      :radius-group
    :r2                      :radius-group
    :r3                      :radius-group
