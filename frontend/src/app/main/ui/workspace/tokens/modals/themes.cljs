@@ -271,6 +271,11 @@
                              (mf/deps theme-state)
                              (fn [set-name]
                                (swap! theme-state #(ctob/toggle-set % set-name))))
+        on-click-token-set (mf/use-callback
+                            (mf/deps on-toggle-token-set)
+                            (fn [prefixed-set-path-str]
+                              (let [set-name (ctob/prefixed-set-path-string->set-name-string prefixed-set-path-str)]
+                                (on-toggle-token-set set-name))))
         on-change-field (fn [field value]
                           (swap! theme-state #(assoc % field value)))
         on-save-form (mf/use-callback
@@ -322,7 +327,7 @@
          {:token-sets token-sets
           :token-set-selected? (constantly false)
           :token-set-active? token-set-active?
-          :on-select on-toggle-token-set
+          :on-select on-click-token-set
           :on-toggle-token-set on-toggle-token-set
           :origin "theme-modal"
           :context sets-context/static-context}]]

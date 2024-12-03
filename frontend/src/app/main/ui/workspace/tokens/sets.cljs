@@ -60,16 +60,8 @@
       :default-value default-value}]))
 
 (mf/defc sets-tree-set-group
-  [{:keys [label tree-depth tree-path selected? collapsed? on-select editing? on-edit on-edit-reset on-edit-submit]}]
+  [{:keys [label tree-depth tree-path selected? collapsed? editing? on-edit on-edit-reset on-edit-submit]}]
   (let [editing?' (editing? tree-path)
-        on-click
-        (mf/use-fn
-         (mf/deps editing? tree-path)
-         (fn [event]
-           (dom/stop-propagation event)
-           (when-not (editing? tree-path)
-             (on-select tree-path))))
-
         on-context-menu
         (mf/use-fn
          (mf/deps editing? tree-path)
@@ -80,33 +72,34 @@
              (st/emit!
               (wdt/show-token-set-context-menu
                {:position (dom/get-client-position event)
-                :tree-path tree-path})))))]
-    [:div {;; :ref dref
-           :role "button"
+                :prefixed-set-path tree-path})))))
+        on-click (mf/use-fn
+                  (fn [event]
+                    (dom/stop-propagation event)
+                    (swap! collapsed? not)))]
+    [:div {:role "button"
            :data-testid "tokens-set-group-item"
            :style {"--tree-depth" tree-depth}
            :class (stl/css-case :set-item-container true
+                                :set-item-group true
                                 :selected-set selected?)
-           :on-click on-click
-           :on-context-menu on-context-menu
-           :on-double-click #(on-edit tree-path)}
+           :on-context-menu on-context-menu}
      [:> icon-button*
-      {:on-click (fn [event]
-                   (.stopPropagation event)
-                   (swap! collapsed? not))
+      {:class (stl/css :set-item-group-collapse-button)
+       :on-click on-click
        :aria-label (tr "labels.collapse")
        :icon (if @collapsed? "arrow-right" "arrow-down")
        :variant "action"}]
-     [:> icon*
-      {:id "group"
-       :class (stl/css :icon)}]
      (if editing?'
        [:& editing-label
         {:default-value label
          :on-cancel on-edit-reset
          :on-create on-edit-reset
-         :on-submit #(on-edit-submit)}]
-       [:div {:class (stl/css :set-name)} label])]))
+         ;; TODO Implement set group renaming
+         :on-submit (constantly nil)}]
+       [:div {:class (stl/css :set-name)
+              :on-double-click #(on-edit tree-path)}
+        label])]))
 
 (mf/defc sets-tree-set
   [{:keys [set label tree-depth tree-path selected? on-select active? on-toggle editing? on-edit on-edit-reset on-edit-submit]}]
@@ -119,9 +112,7 @@
          (fn [event]
            (dom/stop-propagation event)
            (when-not editing?'
-             (on-toggle set-name)
              (on-select tree-path))))
-
         on-context-menu
         (mf/use-fn
          (mf/deps editing?' tree-path)
@@ -132,16 +123,17 @@
              (st/emit!
               (wdt/show-token-set-context-menu
                {:position (dom/get-client-position event)
-                :tree-path tree-path})))))]
-
-    [:div {;; :ref dref
-           :role "button"
+                :prefixed-set-path tree-path})))))
+        on-checkbox-click (mf/use-fn
+                           (fn [event]
+                             (dom/stop-propagation event)
+                             (on-toggle set-name)))]
+    [:div {:role "button"
            :data-testid "tokens-set-item"
            :style {"--tree-depth" tree-depth}
            :class (stl/css-case :set-item-container true
                                 :selected-set selected?)
            :on-click on-click
-           :on-double-click #(on-edit tree-path)
            :on-context-menu on-context-menu
            :aria-checked active?'}
      [:> icon*
@@ -155,9 +147,11 @@
          :on-create on-edit-reset
          :on-submit #(on-edit-submit set-name (ctob/update-name set %))}]
        [:*
-        [:div {:class (stl/css :set-name)} label]
-        [:button {:on-click on-click
-                  :type "button"
+        [:div {:class (stl/css :set-name)
+               :on-double-click #(on-edit tree-path)}
+         label]
+        [:button {:type "button"
+                  :on-click on-checkbox-click
                   :class (stl/css-case :checkbox-style true
                                        :checkbox-checked-style active?')}
          (when active?'
@@ -170,9 +164,9 @@
   [{:keys [set-path set-node tree-depth tree-path on-select selected? on-toggle active? editing? on-edit on-edit-reset on-edit-submit]
     :or {tree-depth 0}
     :as props}]
-  (let [[set-prefix set-path'] (some-> set-path (ctob/split-set-str-path-prefix))
+  (let [[set-path-prefix set-fname] (some-> set-path (ctob/split-set-str-path-prefix))
         set? (instance? ctob/TokenSet set-node)
-        set-group? (= ctob/set-group-prefix set-prefix)
+        set-group? (= ctob/set-group-prefix set-path-prefix)
         root? (= tree-depth 0)
         collapsed? (mf/use-state false)
         children? (and
@@ -187,7 +181,7 @@
          :active? active?
          :selected? (selected? tree-path)
          :on-select on-select
-         :label set-path'
+         :label set-fname
          :tree-path (or tree-path set-path)
          :tree-depth tree-depth
          :editing? editing?
@@ -199,7 +193,7 @@
        [:& sets-tree-set-group
         {:selected? (selected? tree-path)
          :on-select on-select
-         :label set-path'
+         :label set-fname
          :collapsed? collapsed?
          :tree-path (or tree-path set-path)
          :tree-depth tree-depth

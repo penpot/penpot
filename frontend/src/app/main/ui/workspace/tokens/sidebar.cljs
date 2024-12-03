@@ -245,11 +245,7 @@
       [:div {:class (stl/css :sets-sidebar)}
        [:& themes-header]
        [:div {:class (stl/css :sidebar-header)}
-        [:& title-bar {:collapsable true
-                       :collapsed (not @open?)
-                       :all-clickable true
-                       :title (tr "labels.sets")
-                       :on-collapsed #(swap! open? not)}
+        [:& title-bar {:title (tr "labels.sets")}
          [:& add-set-button {:on-open on-open
                              :style "header"}]]]
        [:& theme-sets-list {:on-open on-open}]]]]))
