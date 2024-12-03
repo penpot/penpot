@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.assets :as dwa]
@@ -86,6 +87,13 @@
         section        (:section filters)
         ordering       (:ordering filters)
         reverse-sort?  (= :desc ordering)
+        num-libs       (count (mf/deref refs/workspace-libraries))
+
+        show-templates-04-test1?
+        (and (cf/external-feature-flag "templates-04" "test1") (zero? num-libs))
+
+        show-templates-04-test2?
+        (and (cf/external-feature-flag "templates-04" "test2") (zero? num-libs))
 
         toggle-ordering
         (mf/use-fn
@@ -155,12 +163,25 @@
     [:article  {:class (stl/css :assets-bar)}
      [:div {:class (stl/css :assets-header)}
       (when-not ^boolean read-only?
-        [:button {:class (stl/css :libraries-button)
-                  :on-click show-libraries-dialog
-                  :data-testid "libraries"}
-         [:span {:class (stl/css :libraries-icon)}
-          i/library]
-         (tr "workspace.assets.libraries")])
+        (cond
+          show-templates-04-test1?
+          [:button {:class (stl/css :libraries-button)
+                    :on-click show-libraries-dialog
+                    :data-testid "libraries"}
+           (tr "workspace.assets.add-library")]
+          show-templates-04-test2?
+          [:button {:class (stl/css :add-library-button)
+                    :on-click show-libraries-dialog
+                    :data-testid "libraries"}
+           (tr "workspace.assets.add-library")]
+          :else
+          [:button {:class (stl/css :libraries-button)
+                    :on-click show-libraries-dialog
+                    :data-testid "libraries"}
+           [:span {:class (stl/css :libraries-icon)}
+            i/library]
+           (tr "workspace.assets.libraries")]))
+
 
       [:div {:class (stl/css :search-wrapper)}
        [:& search-bar {:on-change on-search-term-change
