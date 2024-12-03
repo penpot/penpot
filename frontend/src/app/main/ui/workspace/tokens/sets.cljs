@@ -72,9 +72,11 @@
              (st/emit!
               (wdt/show-token-set-context-menu
                {:position (dom/get-client-position event)
-                :prefixed-set-path tree-path})))))]
-    [:div {;; :ref dref
-           :role "button"
+                :prefixed-set-path tree-path})))))
+        on-click (fn [event]
+                   (.stopPropagation event)
+                   (swap! collapsed? not))]
+    [:div {:role "button"
            :data-testid "tokens-set-group-item"
            :style {"--tree-depth" tree-depth}
            :class (stl/css-case :set-item-container true
@@ -83,18 +85,17 @@
            :on-context-menu on-context-menu}
      [:> icon-button*
       {:class (stl/css :set-item-group-collapse-button)
-       :on-click (fn [event]
-                   (.stopPropagation event)
-                   (swap! collapsed? not))
+       :on-click on-click
        :aria-label (tr "labels.collapse")
        :icon (if @collapsed? "arrow-right" "arrow-down")
        :variant "action"}]
      (if editing?'
-       [:& editing-label
-        {:default-value label
-         :on-cancel on-edit-reset
-         :on-create on-edit-reset
-         :on-submit #(on-edit-submit)}]
+       (let [on-submit #(on-edit-submit)]
+         [:& editing-label
+          {:default-value label
+           :on-cancel on-edit-reset
+           :on-create on-edit-reset
+           :on-submit on-submit}])
        [:div {:class (stl/css :set-name)
               :on-double-click #(on-edit tree-path)}
         label])]))
@@ -122,8 +123,7 @@
               (wdt/show-token-set-context-menu
                {:position (dom/get-client-position event)
                 :prefixed-set-path tree-path})))))]
-    [:div {;; :ref dref
-           :role "button"
+    [:div {:role "button"
            :data-testid "tokens-set-item"
            :style {"--tree-depth" tree-depth}
            :class (stl/css-case :set-item-container true
@@ -141,21 +141,22 @@
          :on-cancel on-edit-reset
          :on-create on-edit-reset
          :on-submit #(on-edit-submit set-name (ctob/update-name set %))}]
-       [:*
-        [:div {:class (stl/css :set-name)
-               :on-double-click #(on-edit tree-path)}
-         label]
-        [:button {:type "button"
-                  :on-click (fn [event]
-                              (dom/stop-propagation event)
-                              (on-toggle set-name))
-                  :class (stl/css-case :checkbox-style true
-                                       :checkbox-checked-style active?')}
-         (when active?'
-           [:> icon* {:aria-label (tr "workspace.token.select-set")
-                      :class (stl/css :check-icon)
-                      :size "s"
-                      :id ic/tick}])]])]))
+       (let [on-checkbox-click (fn [event]
+                                 (dom/stop-propagation event)
+                                 (on-toggle set-name))]
+         [:*
+          [:div {:class (stl/css :set-name)
+                 :on-double-click #(on-edit tree-path)}
+           label]
+          [:button {:type "button"
+                    :on-click on-checkbox-click
+                    :class (stl/css-case :checkbox-style true
+                                         :checkbox-checked-style active?')}
+           (when active?'
+             [:> icon* {:aria-label (tr "workspace.token.select-set")
+                        :class (stl/css :check-icon)
+                        :size "s"
+                        :id ic/tick}])]]))]))
 
 (mf/defc sets-tree
   [{:keys [set-path set-node tree-depth tree-path on-select selected? on-toggle active? editing? on-edit on-edit-reset on-edit-submit]
