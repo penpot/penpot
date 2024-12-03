@@ -110,9 +110,7 @@
          (fn [event]
            (dom/stop-propagation event)
            (when-not editing?'
-             (on-toggle set-name)
              (on-select tree-path))))
-
         on-context-menu
         (mf/use-fn
          (mf/deps editing?' tree-path)
@@ -163,9 +161,9 @@
   [{:keys [set-path set-node tree-depth tree-path on-select selected? on-toggle active? editing? on-edit on-edit-reset on-edit-submit]
     :or {tree-depth 0}
     :as props}]
-  (let [[set-prefix set-path'] (some-> set-path (ctob/split-set-str-path-prefix))
+  (let [[set-path-prefix set-fname] (some-> set-path (ctob/split-set-str-path-prefix))
         set? (instance? ctob/TokenSet set-node)
-        set-group? (= ctob/set-group-prefix set-prefix)
+        set-group? (= ctob/set-group-prefix set-path-prefix)
         root? (= tree-depth 0)
         collapsed? (mf/use-state false)
         children? (and
@@ -180,7 +178,7 @@
          :active? active?
          :selected? (selected? tree-path)
          :on-select on-select
-         :label set-path'
+         :label set-fname
          :tree-path (or tree-path set-path)
          :tree-depth tree-depth
          :editing? editing?
@@ -192,7 +190,7 @@
        [:& sets-tree-set-group
         {:selected? (selected? tree-path)
          :on-select on-select
-         :label set-path'
+         :label set-fname
          :collapsed? collapsed?
          :tree-path (or tree-path set-path)
          :tree-depth tree-depth
