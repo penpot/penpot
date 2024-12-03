@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.sets-context-menu
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.types.tokens-lib :as ctob]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -40,6 +41,8 @@
         edit-name (mf/use-fn #(on-edit prefixed-set-path))
         delete-set (mf/use-fn #(st/emit! (wdt/delete-token-set-path prefixed-set-path)))]
     [:ul {:class (stl/css :context-list)}
+     (when (ctob/prefixed-set-path-final-group? prefixed-set-path)
+       [:& menu-entry {:title "Add set to this group" :on-click js/console.log}])
      [:& menu-entry {:title (tr "labels.rename") :on-click edit-name}]
      [:& menu-entry {:title (tr "labels.delete")  :on-click delete-set}]]))
 

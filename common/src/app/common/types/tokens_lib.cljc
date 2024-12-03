@@ -215,6 +215,10 @@
 (defn split-token-set-path [path]
   (split-path path set-separator))
 
+(defn get-token-set-final-name [path]
+  (-> (split-token-set-path path)
+      (last)))
+
 (defn set-name->prefixed-full-path [name-str]
   (-> (split-token-set-path name-str)
       (set-full-path->set-prefixed-full-path)))
@@ -222,6 +226,11 @@
 (defn get-token-set-prefixed-path [token-set]
   (let [path (get-path token-set set-separator)]
     (set-full-path->set-prefixed-full-path path)))
+
+(defn get-prefixed-token-set-final-prefix [prefixed-path-str]
+  (some-> (get-token-set-final-name prefixed-path-str)
+          (split-set-str-path-prefix)
+          (first)))
 
 (defn set-name-string->prefixed-set-path-string [name-str]
   (-> (set-name->prefixed-full-path name-str)
@@ -234,6 +243,16 @@
                       (second))
                   path-part)))
        (join-set-path)))
+
+(defn prefixed-set-path-final-group?
+  "Predicate if the given prefixed path string ends with a group."
+  [prefixed-path-str]
+  (= (get-prefixed-token-set-final-prefix prefixed-path-str) set-group-prefix))
+
+(defn prefixed-set-path-final-set?
+  "Predicate if the given prefixed path string ends with a set."
+  [prefixed-path-str]
+  (= (get-prefixed-token-set-final-prefix prefixed-path-str) set-prefix))
 
 (defn tokens-tree
   "Convert tokens into a nested tree with their `:name` as the path.
