@@ -4064,6 +4064,9 @@ msgstr "Nombre del grupo"
 msgid "workspace.assets.libraries"
 msgstr "Bibliotecas"
 
+msgid "workspace.assets.add-library"
+msgstr "Añadir biblioteca"
+
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:523
 msgid "workspace.assets.list-view"
 msgstr "Ver como lista"
