@@ -267,7 +267,8 @@
             (when (= flow-id (:id current-flow))
               [:span {:class (stl/css :icon)} i/tick])])]]])))
 
-(mf/defc interactions-menu
+(mf/defc interactions-menu*
+  {::mf/props :obj}
   [{:keys [interactions-mode]}]
   (let [show-dropdown?  (mf/use-state false)
         toggle-dropdown (mf/use-fn #(swap! show-dropdown? not))
@@ -281,6 +282,7 @@
                               (keyword))]
              (dom/stop-propagation event)
              (st/emit! (dv/set-interactions-mode mode)))))]
+
     [:div {:on-click toggle-dropdown
            :class (stl/css :view-options)}
      [:span {:class (stl/css :dropdown-title)} (tr "viewer.header.interactions")]

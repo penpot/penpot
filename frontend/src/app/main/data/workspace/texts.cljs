@@ -27,7 +27,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
-   [app.util.router :as rt]
+   [app.main.router :as rt]
    [app.util.text-editor :as ted]
    [app.util.text.content.styles :as styles]
    [app.util.timers :as ts]

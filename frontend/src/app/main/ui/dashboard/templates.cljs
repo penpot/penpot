@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.config :as cf]
+   [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -18,7 +19,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.router :as rt]
    [app.util.storage :as storage]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
@@ -43,9 +43,9 @@
                                     :section section})
 
              (when-not (some? project-id)
-               (rt/nav :dashboard-files
-                       {:team-id team-id
-                        :project-id default-project-id}))))]
+               (dcm/go-to-dashboard-recent
+                :team-id team-id
+                :project-id default-project-id))))]
 
     (st/emit!
      (ptk/event ::ev/event {::ev/name "import-template-launch"

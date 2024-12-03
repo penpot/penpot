@@ -7,33 +7,16 @@
 (ns app.main.ui.routes
   (:require
    [app.common.data.macros :as dm]
-   [app.common.spec :as us]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.team :as dtm]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
-   [app.util.router :as rt]
    [beicon.v2.core :as rx]
-   [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
-
-(s/def ::page-id ::us/uuid)
-(s/def ::file-id ::us/uuid)
-(s/def ::section ::us/keyword)
-(s/def ::index ::us/integer)
-(s/def ::token (s/nilable ::us/not-empty-string))
-(s/def ::share-id ::us/uuid)
-
-(s/def ::viewer-path-params
-  (s/keys :req-un [::file-id]))
-
-(s/def ::viewer-query-params
-  (s/keys :opt-un [::index ::share-id ::section ::page-id]))
-
-(s/def ::any any?)
 
 (def routes
   [["/auth"
@@ -53,11 +36,10 @@
     ["/access-tokens" :settings-access-tokens]]
 
    ["/frame-preview" :frame-preview]
-   ["/view/:file-id"
-    {:name :viewer
-     :conform
-     {:path-params ::viewer-path-params
-      :query-params ::viewer-query-params}}]
+
+   ["/view" :viewer]
+
+   ["/view/:file-id" :viewer-legacy]
 
    (when *assert*
      ["/debug/icons-preview" :debug-icons-preview])
@@ -65,33 +47,32 @@
    ;; Used for export
    ["/render-sprite/:file-id" :render-sprite]
 
-   ["/dashboard/team/:team-id"
-    ["/members"              :dashboard-team-members]
-    ["/invitations"          :dashboard-team-invitations]
-    ["/webhooks"             :dashboard-team-webhooks]
-    ["/settings"             :dashboard-team-settings]
-    ["/projects"             :dashboard-projects]
+   ["/dashboard"
+    ["/members"              :dashboard-members]
+    ["/invitations"          :dashboard-invitations]
+    ["/webhooks"             :dashboard-webhooks]
+    ["/settings"             :dashboard-settings]
+    ["/recent"               :dashboard-recent]
     ["/search"               :dashboard-search]
     ["/fonts"                :dashboard-fonts]
     ["/fonts/providers"      :dashboard-font-providers]
     ["/libraries"            :dashboard-libraries]
-    ["/projects/:project-id" :dashboard-files]]
+    ["/files"                :dashboard-files]]
 
-   ["/workspace/:project-id/:file-id" :workspace]])
+   ["/dashboard/team/:team-id"
+    ["/members"              :dashboard-legacy-team-members]
+    ["/invitations"          :dashboard-legacy-team-invitations]
+    ["/webhooks"             :dashboard-legacy-team-webhooks]
+    ["/settings"             :dashboard-legacy-team-settings]
+    ["/projects"             :dashboard-legacy-projects]
+    ["/search"               :dashboard-legacy-search]
+    ["/fonts"                :dashboard-legacy-fonts]
+    ["/fonts/providers"      :dashboard-legacy-font-providers]
+    ["/libraries"            :dashboard-legacy-libraries]
+    ["/projects/:project-id" :dashboard-legacy-files]]
 
-(defn- match-path
-  [router path]
-  (when-let [match (rt/match router path)]
-    (if-let [conform (get-in match [:data :conform])]
-      (let [spath  (get conform :path-params ::any)
-            squery (get conform :query-params ::any)]
-        (try
-          (-> (dissoc match :params)
-              (assoc :path-params (us/conform spath (get match :path-params))
-                     :query-params (us/conform squery (get match :query-params))))
-          (catch :default _
-            nil)))
-      match)))
+   ["/workspace" :workspace]
+   ["/workspace/:project-id/:file-id" :workspace-legacy]])
 
 (defn on-navigate
   [router path]
@@ -99,8 +80,9 @@
         [base-path qs] (str/split path "?")
         location-path (dm/str (.-origin location) (.-pathname location))
         valid-location? (= location-path (dm/str cf/public-uri))
-        match (match-path router path)
+        match (rt/match router path)
         empty-path? (or (= base-path "") (= base-path "/"))]
+
     (cond
       (not valid-location?)
       (st/emit! (rt/assign-exception {:type :not-found}))
@@ -121,9 +103,9 @@
                          empty-path?
                          (let [team-id (or (dtm/get-last-team-id)
                                            (:default-team-id profile))]
-                           (st/emit! (rt/nav :dashboard-projects
-                                             {:team-id team-id}
-                                             (u/query-string->map qs))))
+                           (st/emit! (rt/nav :dashboard-recent
+                                             (-> (u/query-string->map qs)
+                                                 (assoc :team-id team-id)))))
 
                          :else
                          (st/emit! (rt/assign-exception {:type :not-found})))))))))

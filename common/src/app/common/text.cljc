@@ -412,7 +412,6 @@
           (recur (when continue? (rest styles)) taking? to result))
         result))))
 
-
 (defn content->text
   "Given a root node of a text content extracts the texts with its associated styles"
   [content]

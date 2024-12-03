@@ -13,10 +13,11 @@
    [app.main.data.auth :as da]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.data.workspace :as-alias dw]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.util.globals :as glob]
    [app.util.i18n :refer [tr]]
-   [app.util.router :as rt]
    [app.util.timers :as ts]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
@@ -141,7 +142,7 @@
                   :timeout 3000})))
 
     (= code :vern-conflict)
-    (st/emit! (reload-file))
+    (st/emit! (ptk/event ::dw/reload-current-file))
 
     :else
     (st/async-emit! (rt/assign-exception error))))
@@ -211,7 +212,6 @@
 
   (ts/schedule
    #(st/emit! (rt/assign-exception error))))
-
 
 (defn- redirect-to-dashboard
   []

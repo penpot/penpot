@@ -7,11 +7,13 @@
 (ns app.main.ui.workspace.comments
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.main.data.comments :as dcm]
+   [app.main.data.comments :as dcmt]
+   [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.refs :as refs]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -37,14 +39,14 @@
            (let [mode (-> (dom/get-current-target event)
                           (dom/get-data "value")
                           (keyword))]
-             (st/emit! (dcm/update-filters {:mode mode})))))
+             (st/emit! (dcmt/update-filters {:mode mode})))))
 
         update-show
         (mf/use-fn
          (mf/deps cshow)
          (fn []
            (let [mode (if (= :pending cshow) :all :pending)]
-             (st/emit! (dcm/update-filters {:show mode})))))]
+             (st/emit! (dcmt/update-filters {:show mode})))))]
 
     [:ul {:class (stl/css-case :comment-mode-dropdown true
                                :viewer-dropdown from-viewer)}
@@ -68,13 +70,13 @@
       [:span {:class (stl/css :label)}  (tr "labels.hide-resolved-comments")]
       [:span {:class (stl/css :icon)} i/tick]]]))
 
-(mf/defc comments-sidebar
+(mf/defc comments-sidebar*
   {::mf/props :obj}
-  [{:keys [users threads page-id from-viewer]}]
+  [{:keys [profiles threads page-id from-viewer]}]
   (let [threads-map (mf/deref refs/threads-ref)
         profile     (mf/deref refs/profile)
-        users-refs  (mf/deref refs/current-file-comments-users)
-        users       (or users users-refs)
+        profiles'   (mf/deref refs/profiles)
+        profiles    (or profiles profiles')
         local       (mf/deref refs/comments-local)
 
         state*      (mf/use-state false)
@@ -84,7 +86,7 @@
                       (->> (vals threads-map)
                            (sort-by :modified-at)
                            (reverse)
-                           (dcm/apply-filters local profile))
+                           (dcmt/apply-filters local profile))
                       threads)
 
         close-section
@@ -92,12 +94,12 @@
          (mf/deps from-viewer)
          (fn []
            (if from-viewer
-             (st/emit! (dcm/update-options {:show-sidebar? false}))
+             (st/emit! (dcmt/update-options {:show-sidebar? false}))
              (st/emit! (dw/clear-edition-mode)
                        (dw/deselect-all true)))))
 
         tgroups     (->> threads
-                         (dcm/group-threads-by-page))
+                         (dcmt/group-threads-by-page))
 
         page-id     (or page-id (mf/use-ctx ctx/current-page-id))
 
@@ -112,14 +114,16 @@
          (mf/deps page-id)
          (fn [thread]
            (when (not= page-id (:page-id thread))
-             (st/emit! (dw/go-to-page (:page-id thread))))
+             (st/emit! (dcm/go-to-workspace :page-id (:page-id thread)
+                                            ::rt/new-window true)))
            (tm/schedule
             (fn []
               (st/emit! (when (not= page-id (:page-id thread))
                           (dw/select-for-drawing :comments))
                         (dwcm/center-to-comment-thread thread)
-                        (-> (dcm/open-thread thread)
+                        (-> (dcmt/open-thread thread)
                             (with-meta {::ev/origin "workspace"})))))))]
+
     [:div  {:class (stl/css-case :comments-section true
                                  :from-viewer  from-viewer)}
      [:div {:class (stl/css-case :comments-section-title true
@@ -149,12 +153,12 @@
          [:& cmt/comment-thread-group
           {:group (first tgroups)
            :on-thread-click on-thread-click
-           :users users}]
+           :profiles profiles}]
          (for [tgroup (rest tgroups)]
            [:& cmt/comment-thread-group
             {:group tgroup
              :on-thread-click on-thread-click
-             :users users
+             :profiles profiles
              :key (:page-id tgroup)}])]
 
         [:div {:class (stl/css :thread-group-placeholder)}

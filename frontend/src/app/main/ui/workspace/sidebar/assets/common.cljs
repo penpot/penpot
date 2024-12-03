@@ -391,20 +391,18 @@
            (do-update-remote-component))
 
         do-show-in-assets
-        #(st/emit! (if components-v2
-                     (dw/show-component-in-assets component-id)
-                     (dw/go-to-component component-id)))
+        #(st/emit! (dw/show-component-in-assets component-id))
 
         do-create-annotation
         #(st/emit! (dw/set-annotations-id-for-create id))
 
         do-show-local-component
-        #(st/emit! (dw/go-to-component component-id))
+        #(st/emit! (dwl/go-to-local-component component-id))
 
+        ;; When the show-remote is after a restore, the component may still be deleted
         do-show-remote-component
-        #(let [comp (find-component shape true)] ;; When the show-remote is after a restore, the component may still be deleted
-           (when comp
-             (st/emit! (dwl/nav-to-component-file library-id comp))))
+        #(when-let [comp (find-component shape true)]
+           (st/emit! (dwl/go-to-component-file library-id comp)))
 
         do-show-component
         (fn []

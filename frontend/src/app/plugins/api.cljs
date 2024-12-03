@@ -18,12 +18,14 @@
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as ch]
+   [app.main.data.common :as dcm]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.media :as dwm]
    [app.main.data.workspace.selection :as dws]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.plugins.events :as events]
    [app.plugins.file :as file]
@@ -409,7 +411,7 @@
       (let [params {:page-id (:current-page-id @st/state)
                     :file-id (:current-file-id @st/state)
                     :section "interactions"}]
-        (st/emit! (dw/go-to-viewer params))))
+        (st/emit! (dcm/go-to-viewer params))))
 
     :createPage
     (fn []
@@ -420,7 +422,7 @@
     :openPage
     (fn [page]
       (let [id (obj/get page "$id")]
-        (st/emit! (dw/go-to-page id))))
+        (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window true))))
 
     :alignHorizontal
     (fn [shapes direction]

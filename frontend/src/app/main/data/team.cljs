@@ -6,6 +6,7 @@
 
 (ns app.main.data.team
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.schema :as sm]
@@ -16,7 +17,7 @@
    [app.main.data.media :as di]
    [app.main.features :as features]
    [app.main.repo :as rp]
-   [app.util.router :as rt]
+   [app.main.router :as rt]
    [app.util.storage :as storage]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
@@ -57,7 +58,9 @@
   (ptk/reify ::members-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:teams team-id] assoc :members members))))
+      (-> state
+          (update-in [:teams team-id] assoc :members members)
+          (update :profiles merge (d/index-by :id members))))))
 
 (defn fetch-members
   []
@@ -145,6 +148,7 @@
         (if (= team-id' team-id)
           (-> state
               (dissoc :current-team-id)
+              (dissoc :shared-files)
               (dissoc :fonts))
           state)))))
 
@@ -219,6 +223,26 @@
       (let [team-id (:current-team-id state)]
         (->> (rp/cmd! :get-webhooks {:team-id team-id})
              (rx/map (partial webhooks-fetched team-id)))))))
+
+(defn- shared-files-fetched
+  [files]
+  (ptk/reify ::shared-files-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [files (d/index-by :id files)]
+        (assoc state :shared-files files)))))
+
+(defn fetch-shared-files
+  "Event mainly used for fetch a list of shared libraries for a team,
+  this list does not includes the content of the library per se.  It
+  is used mainly for show available libraries and a summary of it."
+  []
+  (ptk/reify ::fetch-shared-files
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [team-id (:current-team-id state)]
+        (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
+             (rx/map shared-files-fetched))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Modification
@@ -334,7 +358,7 @@
   (when reassign-to
     (assert (uuid? reassign-to) "expect a valid uuid for `reassign-to`"))
 
-  (ptk/reify ::leave-team
+  (ptk/reify ::leave-current-team
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (get state :current-team-id)
@@ -405,7 +429,7 @@
 
         (->> (rp/cmd! :get-team-invitation-token params)
              (rx/map (fn [params]
-                       (rt/resolve router :auth-verify-token {} params)))
+                       (rt/resolve router :auth-verify-token params)))
              (rx/map (fn [fragment]
                        (assoc cf/public-uri :fragment fragment)))
              (rx/tap (fn [uri]
@@ -529,6 +553,7 @@
                            (on-success)
                            (rx/of (fetch-webhooks)))))
              (rx/catch on-error))))))
+
 
 
 

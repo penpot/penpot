@@ -27,10 +27,6 @@
    (-> (lookup-page state page-id)
        (get :objects))))
 
-(defn lookup-viewer-objects
-  ([state page-id]
-   (dm/get-in state [:viewer :pages page-id :objects])))
-
 (defn lookup-library-objects
   [state file-id page-id]
   (dm/get-in state [:workspace-libraries file-id :data :pages-index page-id :objects]))

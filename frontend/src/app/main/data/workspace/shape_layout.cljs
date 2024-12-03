@@ -110,13 +110,15 @@
                                          :undo-group undo-group})))
           (rx/empty))))))
 
-(defn initialize
+(defn initialize-shape-layout
   []
-  (ptk/reify ::initialize
+  (ptk/reify ::initialize-shape-layout
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stopper (rx/filter (ptk/type? ::finalize) stream)]
+      (let [stopper (rx/filter (ptk/type? ::finalize-shape-layout) stream)]
         (->> stream
+             ;; FIXME: we don't need use types for simple signaling,
+             ;; we can just use a keyword for it
              (rx/filter (ptk/type? :layout/update))
              (rx/map deref)
              ;; We buffer the updates to the layout so if there are many changes at the same time
@@ -129,9 +131,9 @@
                   (update-layout-positions {:ids ids}))))
              (rx/take-until stopper))))))
 
-(defn finalize
+(defn finalize-shape-layout
   []
-  (ptk/reify ::finalize))
+  (ptk/data-event ::finalize-shape-layout))
 
 (defn create-layout-from-id
   [id type & {:keys [from-frame? calculate-params?] :or {from-frame? false calculate-params? true}}]

@@ -36,17 +36,18 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.changes :as dch]
-   [app.main.data.comments :as dcm]
+   [app.main.data.comments :as dcmt]
+   [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
-   [app.main.data.persistence :as dps]
    [app.main.data.plugins :as dp]
    [app.main.data.profile :as du]
-   [app.main.data.team :as dtm]
+   [app.main.data.project :as dpj]
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.collapse :as dwco]
+   [app.main.data.workspace.colors :as dwcl]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.fix-broken-shapes :as fbs]
@@ -75,6 +76,7 @@
    [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
    [app.render-wasm :as wasm]
@@ -82,7 +84,6 @@
    [app.util.globals :as ug]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.router :as rt]
    [app.util.storage :as storage]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
@@ -101,12 +102,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare ^:private workspace-initialized)
+(declare ^:private fetch-libraries)
 (declare ^:private libraries-fetched)
-(declare go-to-layout)
+(declare ^:private preload-data-uris)
+
+;; (declare go-to-layout)
 
 ;; --- Initialize Workspace
 
-(defn initialize-layout
+(defn initialize-workspace-layout
   [lname]
   (ptk/reify ::initialize-layout
     ptk/UpdateEvent
@@ -121,105 +125,45 @@
         (rx/of (layout/ensure-layout lname))
         (rx/of (layout/ensure-layout :layers))))))
 
-(defn- workspace-initialized
-  []
-  (ptk/reify ::workspace-initialized
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc :workspace-undo {})
-          (assoc :workspace-ready? true)))
+(defn- datauri->blob-uri
+  [uri]
+  (->> (http/send! {:uri uri
+                    :response-type :blob
+                    :method :get})
+       (rx/map :body)
+       (rx/map (fn [blob] (wapi/create-uri blob)))))
 
-    ptk/WatchEvent
-    (watch [_ state _]
-      (rx/of
-       (when (and (not (boolean (-> state :profile :props :v2-info-shown)))
-                  (features/active-feature? state "components/v2"))
-         (modal/show :v2-info {}))
-       (dp/check-open-plugin)
-       (fdf/fix-deleted-fonts)
-       (fbs/fix-broken-shapes)))))
+(defn- get-file-object-thumbnails
+  [file-id]
+  (->> (rp/cmd! :get-file-object-thumbnails {:file-id file-id})
+       (rx/mapcat (fn [thumbnails]
+                    (->> (rx/from thumbnails)
+                         (rx/mapcat (fn [[k v]]
+                                      ;; we only need to fetch the thumbnail if
+                                      ;; it is a data:uri, otherwise we can just
+                                      ;; use the value as is.
+                                      (if (str/starts-with? v "data:")
+                                        (->> (datauri->blob-uri v)
+                                             (rx/map (fn [uri] [k uri])))
+                                        (rx/of [k v])))))))
+       (rx/reduce conj {})))
 
-(defn- workspace-data-loaded
-  [data]
-  (ptk/reify ::workspace-data-loaded
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [data (d/removem (comp t/pointer? val) data)]
-        (assoc state :workspace-data data)))))
-
-(defn- bundle-fetched
-  [{:keys [features file thumbnails project team team-users comments-users]}]
-  (ptk/reify ::bundle-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc :users (d/index-by :id team-users))
-          (assoc :workspace-thumbnails thumbnails)
-          (assoc :workspace-file (dissoc file :data))
-          (assoc :workspace-project project)
-          (assoc :current-file-comments-users (d/index-by :id comments-users))))
-
-    ptk/WatchEvent
-    (watch [_ _ stream]
-      (let [team-id   (:id team)
-            file-id   (:id file)
-            stopper  (rx/filter (ptk/type? ::bundle-fetched) stream)]
-
-        (->> (rx/concat
-              ;; Initialize notifications
-              ;; FIXME: this should not be initialized here looks like
-              (rx/of (dwn/initialize team-id file-id)
-                     (dwsl/initialize))
-
-              ;; Load team fonts. We must ensure custom fonts are
-              ;; fully loadad before mark workspace as initialized
-              (rx/merge
-               (->> stream
-                    (rx/filter (ptk/type? ::df/fonts-loaded))
-                    (rx/take 1)
-                    (rx/ignore))
-
-               (rx/of (df/fetch-fonts))
-
-               ;; FIXME: move to bundle fetch stages
-
-               ;; Load main file
-               (->> (fpmap/resolve-file file)
-                    (rx/map :data)
-                    (rx/mapcat (fn [{:keys [pages-index] :as data}]
-                                 (->> (rx/from (seq pages-index))
-                                      (rx/mapcat
-                                       (fn [[id page]]
-                                         (let [page (update page :objects ctst/start-page-index)]
-                                           (->> (uw/ask! {:cmd :initialize-page-index :page page})
-                                                (rx/map (fn [_] [id page]))))))
-                                      (rx/reduce conj {})
-                                      (rx/map (fn [pages-index]
-                                                (assoc data :pages-index pages-index))))))
-                    (rx/map workspace-data-loaded))
-
-               ;; Load libraries
-               (->> (rp/cmd! :get-file-libraries {:file-id file-id})
-                    (rx/mapcat (fn [libraries]
-                                 (rx/merge
-                                  (->> (rx/from libraries)
-                                       (rx/merge-map
-                                        (fn [{:keys [id synced-at]}]
-                                          (->> (rp/cmd! :get-file {:id id :features features})
-                                               (rx/map #(assoc % :synced-at synced-at)))))
-                                       (rx/merge-map fpmap/resolve-file)
-                                       (rx/reduce conj [])
-                                       (rx/map libraries-fetched))
-                                  (->> (rx/from libraries)
-                                       (rx/map :id)
-                                       (rx/mapcat (fn [file-id]
-                                                    (rp/cmd! :get-file-object-thumbnails {:file-id file-id :tag "component"})))
-                                       (rx/map dwl/library-thumbnails-fetched)))))))
-
-              (rx/of (with-meta (workspace-initialized)
-                       {:file-id file-id})))
-             (rx/take-until stopper))))))
+(defn- resolve-file
+  [file]
+  (->> (fpmap/resolve-file file)
+       (rx/map :data)
+       (rx/mapcat
+        (fn [{:keys [pages-index] :as data}]
+          (->> (rx/from (seq pages-index))
+               (rx/mapcat
+                (fn [[id page]]
+                  (let [page (update page :objects ctst/start-page-index)]
+                    (->> (uw/ask! {:cmd :initialize-page-index :page page})
+                         (rx/map (fn [_] [id page]))))))
+               (rx/reduce conj {})
+               (rx/map (fn [pages-index]
+                         (let [data (assoc data :pages-index pages-index)]
+                           (assoc file :data (d/removem (comp t/pointer? val) data))))))))))
 
 (defn- libraries-fetched
   [libraries]
@@ -240,193 +184,180 @@
           (rx/concat (rx/timer 1000)
                      (rx/of (dwl/notify-sync-file file-id))))))))
 
-(defn- datauri->blob-uri
-  [uri]
-  (->> (http/send! {:uri uri
-                    :response-type :blob
-                    :method :get})
-       (rx/map :body)
-       (rx/map (fn [blob] (wapi/create-uri blob)))))
-
-(defn- fetch-file-object-thumbnails
+(defn- fetch-libraries
   [file-id]
-  (->> (rp/cmd! :get-file-object-thumbnails {:file-id file-id})
-       (rx/mapcat (fn [thumbnails]
-                    (->> (rx/from thumbnails)
-                         (rx/mapcat (fn [[k v]]
-                                      ;; we only need to fetch the thumbnail if
-                                      ;; it is a data:uri, otherwise we can just
-                                      ;; use the value as is.
-                                      (if (str/starts-with? v "data:")
-                                        (->> (datauri->blob-uri v)
-                                             (rx/map (fn [uri] [k uri])))
-                                        (rx/of [k v])))))))
-       (rx/reduce conj {})))
-
-(defn- fetch-bundle-stage-1
-  [project-id file-id]
-  (ptk/reify ::fetch-bundle-stage-1
+  (ptk/reify ::fetch-libries
     ptk/WatchEvent
-    (watch [_ state stream]
-      (let [render-wasm? (features/active-feature? state "render-wasm/v1")]
-        (->> (rp/cmd! :get-project {:id project-id})
-             (rx/mapcat (fn [project]
-                          (rx/concat
-                           ;; Wait the wasm module to be loaded or failed to
-                           ;; load. We need to wait the promise to be resolved
-                           ;; before continue with the next workspace loading
-                           ;; steps
+    (watch [_ state _]
+      (let [features (features/get-team-enabled-features state)]
+        (->> (rp/cmd! :get-file-libraries {:file-id file-id})
+             (rx/mapcat
+              (fn [libraries]
+                (rx/merge
+                 (->> (rx/from libraries)
+                      (rx/merge-map
+                       (fn [{:keys [id synced-at]}]
+                         (->> (rp/cmd! :get-file {:id id :features features})
+                              (rx/map #(assoc % :synced-at synced-at)))))
+                      (rx/merge-map resolve-file)
+                      (rx/reduce conj [])
+                      (rx/map libraries-fetched))
+                 (->> (rx/from libraries)
+                      (rx/map :id)
+                      (rx/mapcat (fn [file-id]
+                                   (rp/cmd! :get-file-object-thumbnails {:file-id file-id :tag "component"})))
+                      (rx/map dwl/library-thumbnails-fetched))))))))))
 
-                           (if ^boolean render-wasm?
-                             (->> (rx/from @wasm/module)
-                                  (rx/ignore))
-                             (rx/empty))
-
-                           (->> (rp/cmd! :get-team {:id (:team-id project)})
-                                (rx/mapcat (fn [team]
-                                             (let [bundle {:team team
-                                                           :project project
-                                                           :file-id file-id
-                                                           :project-id project-id}]
-                                               ;; FIXME: this should not be handled here, pending
-                                               ;; refactor of urls and team initialization
-                                               ;; normalization
-                                               (rx/of (dtm/set-current-team team)
-                                                      (ptk/data-event ::bundle-stage-1 bundle)))))))))
-             (rx/take-until
-              (rx/filter (ptk/type? ::fetch-bundle) stream)))))))
-
-(defn- fetch-bundle-stage-2
-  [{:keys [file-id project-id project] :as bundle}]
-  (ptk/reify ::fetch-bundle-stage-2
+(defn- workspace-initialized
+  []
+  (ptk/reify ::workspace-initialized
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update :projects assoc project-id project)))
+          (assoc :workspace-undo {})
+          (assoc :workspace-ready true)))
 
     ptk/WatchEvent
-    (watch [_ state stream]
-      (let [features (features/get-team-enabled-features state)
+    (watch [_ state _]
+      (rx/of
+       (when (and (not (boolean (-> state :profile :props :v2-info-shown)))
+                  (features/active-feature? state "components/v2"))
+         (modal/show :v2-info {}))
+       (dp/check-open-plugin)
+       (fdf/fix-deleted-fonts)
+       (fbs/fix-broken-shapes)))))
 
-            ;; WTF is this?
-            share-id (-> state :viewer-local :share-id)]
-        (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features :project-id project-id})
-                     (fetch-file-object-thumbnails file-id)
-                     (rp/cmd! :get-team-users {:file-id file-id})
-                     (rp/cmd! :get-profiles-for-file-comments {:file-id file-id :share-id share-id}))
-             (rx/take 1)
-             (rx/map (fn [[file thumbnails team-users comments-users]]
-                       (let [bundle (-> bundle
-                                        (assoc :file file)
-                                        (assoc :features features)
-                                        (assoc :thumbnails thumbnails)
-                                        (assoc :team-users team-users)
-                                        (assoc :comments-users comments-users))]
-                         (ptk/data-event ::bundle-stage-2 bundle))))
-             (rx/take-until
-              (rx/filter (ptk/type? ::fetch-bundle) stream)))))))
+(defn- bundle-fetched
+  [{:keys [features file thumbnails]}]
+  (ptk/reify ::bundle-fetched
+    IDeref
+    (-deref [_]
+      {:features features
+       :file file
+       :thumbnails thumbnails})
 
-(declare go-to-component)
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc :thumbnails thumbnails)
+          (assoc :workspace-file (dissoc file :data))
+          (assoc :workspace-data (:data file))))
+
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [team-id    (:current-team-id state)
+            file-id    (:id file)]
+
+        (rx/of (dwn/initialize team-id file-id)
+               (dwsl/initialize-shape-layout)
+               (fetch-libraries file-id))))))
 
 (defn- fetch-bundle
   "Multi-stage file bundle fetch coordinator"
-  [project-id file-id]
+  [file-id]
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rx/merge
-            (rx/of (fetch-bundle-stage-1 project-id file-id))
+      (let [features     (features/get-team-enabled-features state)
+            render-wasm? (contains? features "render-wasm/v1")
+            stopper-s    (rx/filter (ptk/type? ::finalize-workspace) stream)]
 
-            (->> stream
-                 (rx/filter (ptk/type? ::bundle-stage-1))
-                 (rx/observe-on :async)
-                 (rx/map deref)
-                 (rx/map fetch-bundle-stage-2))
+        (->> (rx/concat
+              ;; Firstly load wasm module if it is enabled and fonts
+              (rx/merge
+               (if ^boolean render-wasm?
+                 (->> (rx/from @wasm/module)
+                      (rx/ignore))
+                 (rx/empty))
 
-            (->> stream
-                 (rx/filter (ptk/type? ::bundle-stage-2))
-                 (rx/observe-on :async)
-                 (rx/map deref)
-                 (rx/map bundle-fetched))
+               (->> stream
+                    (rx/filter (ptk/type? ::df/fonts-loaded))
+                    (rx/take 1)
+                    (rx/ignore))
+               (rx/of (df/fetch-fonts)))
 
-            (when-let [component-id (get-in state [:route :query-params :component-id])]
-              (->> stream
-                   (rx/filter (ptk/type? ::workspace-initialized))
-                   (rx/observe-on :async)
+              ;; Then fetch file and thumbnails
+              (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
+                           (get-file-object-thumbnails file-id))
                    (rx/take 1)
-                   (rx/map #(go-to-component (uuid/uuid component-id))))))
+                   (rx/mapcat
+                    (fn [[file thumbnails]]
+                      (->> (resolve-file file)
+                           (rx/map (fn [file]
+                                     {:file file
+                                      :features features
+                                      :thumbnails thumbnails})))))
+                   (rx/map bundle-fetched)))
 
-           (rx/take-until
-            (rx/filter (ptk/type? ::fetch-bundle) stream))))))
+             (rx/take-until stopper-s))))))
 
-(defn initialize-file
-  [project-id file-id]
-  (dm/assert! (uuid? project-id))
-  (dm/assert! (uuid? file-id))
+(defn initialize-workspace
+  [file-id]
+  (assert (uuid? file-id) "expected valud uuid for `file-id`")
 
-  (ptk/reify ::initialize-file
+  (ptk/reify ::initialize-workspace
     ptk/UpdateEvent
     (update [_ state]
       (assoc state
              :recent-colors (:recent-colors storage/user)
-             :workspace-ready? false
+             :workspace-ready false
              :current-file-id file-id
-             :current-project-id project-id
              :workspace-presence {}))
 
     ptk/WatchEvent
-    (watch [_ _ stream]
-      (log/debug :hint "initialize-file" :file-id file-id)
-      (let [stoper-s (rx/filter (ptk/type? ::finalize-file) stream)]
-        (rx/merge
-         (rx/of (ntf/hide)
-                ;; We initialize the features without knowning the
-                ;; team specific features in this step.
-                (features/initialize)
-                (dcm/retrieve-comment-threads file-id)
-                (fetch-bundle project-id file-id))
+    (watch [_ state stream]
+      (log/debug :hint "initialize-workspace" :file-id file-id)
+      (let [stoper-s (rx/filter (ptk/type? ::finalize-workspace) stream)
+            rparams  (rt/get-params state)]
 
-         (->> stream
-              (rx/filter dch/commit?)
-              (rx/map deref)
-              (rx/mapcat (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo?]}]
-                           (if (and save-undo? (seq undo-changes))
-                             (let [entry {:undo-changes undo-changes
-                                          :redo-changes redo-changes
-                                          :undo-group undo-group
-                                          :tags tags}]
-                               (rx/of (dwu/append-undo entry stack-undo?)))
-                             (rx/empty))))
+        (->> (rx/merge
+              (rx/of (ntf/hide)
+                     (dcmt/retrieve-comment-threads file-id)
+                     (dcmt/fetch-profiles)
+                     (fetch-bundle file-id))
 
-              (rx/take-until stoper-s)))))
+              (->> stream
+                   (rx/filter (ptk/type? ::bundle-fetched))
+                   (rx/take 1)
+                   (rx/map deref)
+                   (rx/mapcat (fn [{:keys [file]}]
+                                (rx/of (dpj/initialize-project (:project-id file))
+                                       (-> (workspace-initialized)
+                                           (with-meta {:file-id file-id}))))))
+
+              (when-let [component-id (some-> rparams :component-id parse-uuid)]
+                (->> stream
+                     (rx/filter (ptk/type? ::workspace-initialized))
+                     (rx/observe-on :async)
+                     (rx/take 1)
+                     (rx/map #(dwl/go-to-local-component :id component-id))))
+
+              (->> stream
+                   (rx/filter dch/commit?)
+                   (rx/map deref)
+                   (rx/mapcat (fn [{:keys [save-undo? undo-changes redo-changes undo-group tags stack-undo?]}]
+                                (if (and save-undo? (seq undo-changes))
+                                  (let [entry {:undo-changes undo-changes
+                                               :redo-changes redo-changes
+                                               :undo-group undo-group
+                                               :tags tags}]
+                                    (rx/of (dwu/append-undo entry stack-undo?)))
+                                  (rx/empty))))))
+             (rx/take-until stoper-s))))
 
     ptk/EffectEvent
     (effect [_ _ _]
       (let [name (dm/str "workspace-" file-id)]
         (unchecked-set ug/global "name" name)))))
 
-(defn reload-file
-  []
-  (ptk/reify ::reload-file
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [file-id    (:current-file-id state)
-            project-id (:current-project-id state)]
-        (rx/of (initialize-file project-id file-id))))))
-
-;; We need to inject this so there are no cycles
-(set! app.main.data.workspace.notifications/reload-file reload-file)
-(set! app.main.errors/reload-file reload-file)
-
-(defn finalize-file
-  [_project-id file-id]
+(defn finalize-workspace
+  [file-id]
   (ptk/reify ::finalize-file
     ptk/UpdateEvent
     (update [_ state]
       (-> state
           (dissoc
            :current-file-id
-           :current-project-id
            :workspace-data
            :workspace-editor-state
            :workspace-file
@@ -434,22 +365,37 @@
            :workspace-media-objects
            :workspace-persistence
            :workspace-presence
-           :workspace-ready?
+           :workspace-ready
            :workspace-undo)
           (update :workspace-global dissoc :read-only?)
           (assoc-in [:workspace-global :options-mode] :design)))
 
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of (dwn/finalize file-id)
-             (dwsl/finalize)))))
+    (watch [_ state _]
+      (let [project-id (:current-project-id state)]
 
-(declare go-to-page)
-(declare ^:private preload-data-uris)
+        (rx/of (dwn/finalize file-id)
+               (dpj/finalize-project project-id)
+               (dwsl/finalize-shape-layout)
+               (dwcl/stop-picker)
+               (modal/hide)
+               (ntf/hide))))))
+
+(defn- reload-current-file
+  []
+  (ptk/reify ::reload-current-file
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id (:current-file-id state)]
+        (rx/of (initialize-workspace file-id))))))
+
+;; Make this event callable through dynamic resolution
+(defmethod ptk/resolve ::reload-current-file [_ _] (reload-current-file))
 
 (defn initialize-page
   [page-id]
-  (dm/assert! (uuid? page-id))
+  (assert (uuid? page-id) "expected valid uuid for `page-id`")
+
   (ptk/reify ::initialize-page
     ptk/UpdateEvent
     (update [_ state]
@@ -464,30 +410,20 @@
 
               ;; FIXME: this should be done on `initialize-layout` (?)
               (update :workspace-layout layout/load-layout-flags)
-              (update :workspace-global layout/load-layout-state)
-
-              (update :workspace-global assoc :background-color (-> page :options :background))
-              (update-in [:route :params :query] assoc :page-id (dm/str id))))
+              (update :workspace-global layout/load-layout-state)))
 
         state))
 
     ptk/WatchEvent
     (watch [_ state _]
-      ;; NOTE: there are cases between files navigation when this
-      ;; event is emmited but the page-index is still not loaded, so
-      ;; we only need to proceed when page-index is properly loaded
-      (when-let [pindex (-> state :workspace-data :pages-index)]
-        (if (contains? pindex page-id)
-          (let [file-id (:current-file-id state)]
-            (rx/of (preload-data-uris page-id)
-                   (dwth/watch-state-changes file-id page-id)
-                   (dwl/watch-component-changes)))
-          (let [page-id (dm/get-in state [:workspace-data :pages 0])]
-            (rx/of (go-to-page page-id))))))))
+      (let [file-id (:current-file-id state)]
+        (rx/of (preload-data-uris page-id)
+               (dwth/watch-state-changes file-id page-id)
+               (dwl/watch-component-changes))))))
 
 (defn finalize-page
   [page-id]
-  (dm/assert! (uuid? page-id))
+  (assert (uuid? page-id) "expected valid uuid for `page-id`")
   (ptk/reify ::finalize-page
     ptk/UpdateEvent
     (update [_ state]
@@ -683,7 +619,7 @@
 
         (rx/of (dch/commit-changes changes)
                (when (= id (:current-page-id state))
-                 go-to-file))))))
+                 (go-to-file)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WORKSPACE File Actions
@@ -847,7 +783,7 @@
       (let [selected (wsh/lookup-selected state)
             id       (first selected)]
         (when (= (count selected) 1)
-          (rx/of (go-to-layout :layers)
+          (rx/of (dcm/go-to-workspace :layout :layers)
                  (start-rename-shape id)))))))
 
 ;; --- Shape Vertical Ordering
@@ -1111,76 +1047,17 @@
           (rx/of (dwsh/update-shapes selected #(assoc % :proportion-lock true)))
           (rx/of (dwsh/update-shapes selected #(update % :proportion-lock not))))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Navigation
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defn workspace-focus-lost
   []
   (ptk/reify ::workspace-focus-lost
     ptk/UpdateEvent
     (update [_ state]
+      ;; FIXME: remove the `?` from show-distances?
       (assoc-in state [:workspace-global :show-distances?] false))))
 
-(defn navigate-to-project
-  [project-id]
-  (ptk/reify ::navigate-to-project
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [page-ids (get-in state [:projects project-id :pages])
-            params {:project project-id :page (first page-ids)}]
-        (rx/of (rt/nav :workspace/page params))))))
-
-(defn go-to-page
-  ([]
-   (ptk/reify ::go-to-page
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [project-id (:current-project-id state)
-             file-id    (:current-file-id state)
-             page-id    (get-in state [:workspace-data :pages 0])
-
-             pparams    {:file-id file-id :project-id project-id}
-             qparams    {:page-id page-id}]
-         (rx/of (rt/nav' :workspace pparams qparams))))))
-  ([page-id]
-   (dm/assert! (uuid? page-id))
-   (ptk/reify ::go-to-page-2
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [project-id (:current-project-id state)
-             file-id    (:current-file-id state)
-             pparams    {:file-id file-id :project-id project-id}
-             qparams    {:page-id page-id}]
-         (rx/of (rt/nav :workspace pparams qparams)))))))
-
-(defn go-to-layout
-  [layout]
-  (ptk/reify ::go-to-layout
-    IDeref
-    (-deref [_] {:layout layout})
-
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [project-id (:current-project-id state)
-            file-id    (:current-file-id state)
-            page-id    (:current-page-id state)
-            pparams    {:file-id file-id :project-id project-id}
-            qparams    {:page-id page-id :layout (name layout)}]
-        (rx/of (rt/nav :workspace pparams qparams))))))
-
-(defn navigate-to-library
-  "Open a new tab, and navigate to the workspace with the provided file"
-  [library-id]
-  (ptk/reify ::navigate-to-file
-    ptk/WatchEvent
-    (watch [_ state _]
-      (when-let [file (dm/get-in state [:workspace-libraries library-id])]
-        (let [params {:rname :workspace
-                      :path-params {:project-id (:project-id file)
-                                    :file-id (:id file)}
-                      :query-params {:page-id (dm/get-in file [:data :pages 0])}}]
-          (rx/of (rt/nav-new-window* params)))))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Navigation
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn set-assets-section-open
   [file-id section open?]
@@ -1242,111 +1119,18 @@
          (update-in state [:workspace-assets :selected] dissoc file-id)
          (update state :workspace-assets dissoc :selected))))))
 
-(defn go-to-main-instance
-  [file-id component-id]
-  (dm/assert!
-   "expected uuid type for `file-id` parameter (nilable)"
-   (or (nil? file-id)
-       (uuid? file-id)))
-
-  (dm/assert!
-   "expected uuid type for `component-id` parameter"
-   (uuid? component-id))
-
-  (ptk/reify ::go-to-main-instance
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [current-file-id    (:current-file-id state)
-            current-page-id    (:current-page-id state)
-            current-project-id (:current-project-id state)
-            file-id            (or file-id current-file-id)
-
-            select-and-zoom
-            (fn [shape-id]
-              (rx/of (dws/select-shapes (d/ordered-set shape-id))
-                     dwz/zoom-to-selected-shape))
-
-            redirect-to-page
-            (fn [page-id shape-id]
-              (rx/concat
-               (rx/of (go-to-page page-id))
-               (->> stream
-                    (rx/filter (ptk/type? ::initialize-page))
-                    (rx/take 1)
-                    (rx/observe-on :async))
-               (select-and-zoom shape-id)))
-
-            redirect-to-file
-            (fn [file-id page-id]
-              (let [pparams {:file-id file-id :project-id current-project-id}
-                    qparams {:page-id page-id}]
-                (rx/merge
-                 (rx/of (rt/nav :workspace pparams qparams))
-                 (->> stream
-                      (rx/filter (ptk/type? ::workspace-initialized))
-                      (rx/map meta)
-                      (rx/filter #(= file-id (:file-id %)))
-                      (rx/take 1)
-                      (rx/observe-on :async)
-                      (rx/map #(go-to-main-instance file-id component-id))))))]
-
-        (if (= file-id current-file-id)
-          (let [component (dm/get-in state [:workspace-data :components component-id])
-                page-id   (:main-instance-page component)
-                shape-id (:main-instance-id component)]
-            (when (some? page-id)
-              (if (= page-id current-page-id)
-                (select-and-zoom shape-id)
-                (redirect-to-page page-id shape-id))))
-
-          (let [component (dm/get-in state [:workspace-libraries file-id :data :components component-id])]
-            (some->> (:main-instance-page component)
-                     (redirect-to-file file-id))))))))
-
-(defn go-to-component
-  [component-id]
-  (ptk/reify ::go-to-component
-    IDeref
-    (-deref [_] {:layout :assets})
-
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [components-v2 (features/active-feature? state "components/v2")]
-        (if components-v2
-          (rx/of (go-to-main-instance nil component-id))
-          (let [file-id       (:current-file-id state)
-                project-id    (:current-project-id state)
-                page-id       (:current-page-id state)
-
-                pparams       {:file-id file-id :project-id project-id}
-                qparams       {:page-id page-id :layout :assets}]
-            (rx/of (rt/nav :workspace pparams qparams)
-                   (set-assets-section-open file-id :library true)
-                   (set-assets-section-open file-id :components true)
-                   (select-single-asset file-id component-id :components))))))
-
-    ptk/EffectEvent
-    (effect [_ state _]
-      (let [components-v2 (features/active-feature? state "components/v2")
-            wrapper-id    (str "component-shape-id-" component-id)]
-        (when-not components-v2
-          (tm/schedule-on-idle #(dom/scroll-into-view-if-needed! (dom/get-element wrapper-id))))))))
-
 (defn show-component-in-assets
   [component-id]
+
   (ptk/reify ::show-component-in-assets
     ptk/WatchEvent
     (watch [_ state _]
-      (let [project-id     (:current-project-id state)
-            file-id        (:current-file-id state)
-            page-id        (:current-page-id state)
-            pparams        {:file-id file-id :project-id project-id}
-            qparams        {:page-id page-id :layout :assets}
-            component-path (cfh/split-path (get-in state [:workspace-data :components component-id :path]))
-            paths          (map (fn [i] (cfh/join-path (take (inc i) component-path))) (range (count component-path)))]
+      (let [component-path (cfh/split-path (get-in state [:workspace-data :components component-id :path]))
+            paths          (map (fn [i] (cfh/join-path (take (inc i) component-path))) (range (count component-path)))
+            file-id        (:current-file-id state)]
         (rx/concat
          (rx/from (map #(set-assets-group-open file-id :components % true) paths))
-         (rx/of (rt/nav :workspace pparams qparams)
+         (rx/of (dcm/go-to-workspace :layout :assets)
                 (set-assets-section-open file-id :library true)
                 (set-assets-section-open file-id :components true)
                 (select-single-asset file-id component-id :components)))))
@@ -1355,55 +1139,6 @@
     (effect [_ _ _]
       (let [wrapper-id (str "component-shape-id-" component-id)]
         (tm/schedule-on-idle #(dom/scroll-into-view-if-needed! (dom/get-element wrapper-id)))))))
-
-(def go-to-file
-  (ptk/reify ::go-to-file
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [{:keys [id project-id data] :as file} (:workspace-file state)
-            page-id (get-in data [:pages 0])
-            pparams {:project-id project-id :file-id id}
-            qparams {:page-id page-id}]
-        (rx/of (rt/nav :workspace pparams qparams))))))
-
-(defn go-to-viewer
-  ([] (go-to-viewer {}))
-  ([{:keys [file-id page-id section frame-id]}]
-   (ptk/reify ::go-to-viewer
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [{:keys [current-file-id current-page-id]} state
-             pparams {:file-id (or file-id current-file-id)}
-             qparams (cond-> {:page-id (or page-id current-page-id)}
-                       (some? section)
-                       (assoc :section section)
-                       (some? frame-id)
-                       (assoc :frame-id frame-id))]
-         (rx/of ::dps/force-persist
-                (rt/nav-new-window* {:rname :viewer
-                                     :path-params pparams
-                                     :query-params qparams
-                                     :name (str "viewer-" (:file-id pparams))})))))))
-
-(defn go-to-dashboard
-  ([] (go-to-dashboard nil))
-  ([{:keys [team-id]}]
-   (ptk/reify ::go-to-dashboard
-     ptk/WatchEvent
-     (watch [_ state _]
-       (when-let [team-id (or team-id (:current-team-id state))]
-         (rx/of ::dps/force-persist
-                (rt/nav :dashboard-projects {:team-id team-id})))))))
-
-(defn go-to-dashboard-fonts
-  []
-  (ptk/reify ::go-to-dashboard-fonts
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (rx/of ::dps/force-persist
-               (rt/nav :dashboard-fonts {:team-id team-id}))))))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Context Menu
@@ -1640,8 +1375,8 @@
                        (rx/catch on-copy-error)
                        (rx/ignore)))
 
-                ;; FIXME: this is to support Firefox versions below 116 that don't support `ClipboardItem`
-                ;; after the version 116 is less common we could remove this.
+                ;; FIXME: this is to support Firefox versions below 116 that don't support
+                ;; `ClipboardItem` after the version 116 is less common we could remove this.
                 ;; https://caniuse.com/?search=ClipboardItem
                 (->> (rx/from shapes)
                      (rx/merge-map (partial prepare-object objects frame-id))
@@ -1924,7 +1659,8 @@
                                 ;; the pasted object doesn't fit we try to:
                                 ;;
                                 ;; - Align it to the limits on the x and y axis
-                                ;; - Respect the distance of the object to the right and bottom in the original frame
+                                ;; - Respect the distance of the object to the right
+                                ;;   and bottom in the original frame
                                 (gpt/point paste-x paste-y))]
                     [frame-id delta (dec (count (:shapes selected-frame-obj)))]))
 

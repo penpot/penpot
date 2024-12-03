@@ -13,7 +13,8 @@
    [app.common.schema :as sm]
    [app.common.types.shape-tree :as ctst]
    [app.main.data.changes :as dch]
-   [app.main.data.comments :as dcm]
+   [app.main.data.comments :as dcmt]
+   [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwco]
@@ -23,7 +24,6 @@
    [app.main.repo :as rp]
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
-   [app.util.router :as rt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -38,7 +38,7 @@
     (watch [_ _ stream]
       (let [stopper (rx/filter #(= ::finalize %) stream)]
         (rx/merge
-         (rx/of (dcm/retrieve-comment-threads file-id))
+         (rx/of (dcmt/retrieve-comment-threads file-id))
          (->> stream
               (rx/filter mse/mouse-event?)
               (rx/filter mse/mouse-click-event?)
@@ -60,8 +60,8 @@
     (watch [_ state _]
       (let [local (:comments-local state)]
         (cond
-          (:draft local) (rx/of (dcm/close-thread))
-          (:open local)  (rx/of (dcm/close-thread))
+          (:draft local) (rx/of (dcmt/close-thread))
+          (:open local)  (rx/of (dcmt/close-thread))
 
           :else
           (rx/of (dw/clear-edition-mode)
@@ -78,19 +78,19 @@
     (watch [_ state _]
       (let [local (:comments-local state)]
         (if (some? (:open local))
-          (rx/of (dcm/close-thread))
+          (rx/of (dcmt/close-thread))
           (let [page-id (:current-page-id state)
                 file-id (:current-file-id state)
                 params  {:position position
                          :page-id page-id
                          :file-id file-id}]
-            (rx/of (dcm/create-draft params))))))))
+            (rx/of (dcmt/create-draft params))))))))
 
 (defn center-to-comment-thread
   [{:keys [position] :as thread}]
   (dm/assert!
    "expected valid comment thread"
-   (dcm/check-comment-thread! thread))
+   (dcmt/check-comment-thread! thread))
 
   (ptk/reify ::center-to-comment-thread
     ptk/UpdateEvent
@@ -109,22 +109,21 @@
   [thread]
   (dm/assert!
    "expected valid comment thread"
-   (dcm/check-comment-thread! thread))
+   (dcmt/check-comment-thread! thread))
   (ptk/reify ::open-comment-thread
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [pparams {:project-id (:project-id thread)
-                     :file-id (:file-id thread)}
-            qparams {:page-id (:page-id thread)}]
-        (rx/merge
-         (rx/of (rt/nav :workspace pparams qparams))
-         (->> stream
-              (rx/filter (ptk/type? ::dwv/initialize-viewport))
-              (rx/take 1)
-              (rx/mapcat #(rx/of (center-to-comment-thread thread)
-                                 (dwd/select-for-drawing :comments)
-                                 (with-meta (dcm/open-thread thread)
-                                   {::ev/origin "workspace"})))))))))
+      (rx/merge
+       (rx/of (dcm/go-to-workspace :file-id (:file-id thread)
+                                   :page-id (:page-id thread)))
+
+       (->> stream
+            (rx/filter (ptk/type? ::dwv/initialize-viewport))
+            (rx/take 1)
+            (rx/mapcat #(rx/of (center-to-comment-thread thread)
+                               (dwd/select-for-drawing :comments)
+                               (with-meta (dcmt/open-thread thread)
+                                 {::ev/origin "workspace"}))))))))
 
 (defn update-comment-thread-position
   ([thread  [new-x new-y]]
@@ -133,7 +132,7 @@
   ([thread  [new-x new-y] frame-id]
    (dm/assert!
     "expected valid comment thread"
-    (dcm/check-comment-thread! thread))
+    (dcmt/check-comment-thread! thread))
    (ptk/reify ::update-comment-thread-position
      ptk/WatchEvent
      (watch [it state _]

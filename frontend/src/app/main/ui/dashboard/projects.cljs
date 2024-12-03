@@ -8,9 +8,11 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.geom.point :as gpt]
+   [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
+   [app.main.data.project :as dpj]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [line-grid]]
@@ -23,7 +25,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.router :as rt]
    [app.util.storage :as storage]
    [app.util.time :as dt]
    [cuerdas.core :as str]
@@ -62,7 +63,7 @@
   {::mf/wrap [mf/memo]
    ::mf/props :obj}
   [{:keys [team on-close]}]
-  (let [on-nav-members-click (mf/use-fn #(st/emit! (dd/go-to-team-members)))
+  (let [on-nav-members-click (mf/use-fn #(st/emit! (dcm/go-to-dashboard-members)))
 
         on-invite
         (mf/use-fn
@@ -105,7 +106,6 @@
   (let [locale     (mf/deref i18n/locale)
 
         project-id (:id project)
-        team-id    (:id team)
 
         file-count (or (:count project) 0)
         is-draft?  (:is-default project)
@@ -124,11 +124,10 @@
 
         on-nav
         (mf/use-fn
-         (mf/deps project-id team-id)
+         (mf/deps project-id)
          (fn []
-           (st/emit! (rt/nav :dashboard-files
-                             {:team-id team-id
-                              :project-id project-id}))))
+           (st/emit! (dcm/go-to-dashboard-files :project-id project-id))))
+
         toggle-pin
         (mf/use-fn
          (mf/deps project)
@@ -171,11 +170,9 @@
 
         on-file-created
         (mf/use-fn
-         (fn [data]
-           (let [pparams {:project-id (:project-id data)
-                          :file-id (:id data)}
-                 qparams {:page-id (get-in data [:data :pages 0])}]
-             (st/emit! (rt/nav :workspace pparams qparams)))))
+         (fn [{:keys [id data]}]
+           (let [page-id (get-in data [:pages 0])]
+             (st/emit! (dcm/go-to-workspace :file-id id :page-id page-id)))))
 
         create-file
         (mf/use-fn
@@ -194,9 +191,9 @@
 
         on-import
         (mf/use-fn
-         (mf/deps project-id (:id team))
+         (mf/deps project-id)
          (fn []
-           (st/emit! (dd/fetch-files {:project-id project-id})
+           (st/emit! (dpj/fetch-files project-id)
                      (dd/fetch-recent-files)
                      (dd/fetch-projects)
                      (dd/clear-selected-files))))

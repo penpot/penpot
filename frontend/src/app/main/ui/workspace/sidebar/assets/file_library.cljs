@@ -14,6 +14,7 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
@@ -27,54 +28,53 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.router :as rt]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-(def lens:open-status
+(def ^:private ref:open-status
   (l/derived (l/in [:workspace-assets :open-status]) st/state))
 
-(def lens:selected
+(def ^:private ref:selected
   (-> (l/in [:workspace-assets :selected])
       (l/derived st/state)))
 
-(mf/defc file-library-title
-  {::mf/wrap-props false}
-  [{:keys [open? local? project-id file-id page-id file-name]}]
+(mf/defc file-library-title*
+  {::mf/props :obj}
+  [{:keys [is-open is-local file-id page-id file-name]}]
   (let [router     (mf/deref refs/router)
+        team-id    (mf/use-ctx ctx/current-team-id)
         url        (rt/resolve router :workspace
-                               {:project-id project-id
-                                :file-id file-id}
-                               {:page-id page-id})
+                               {:team-id team-id
+                                :file-id file-id
+                                :page-id page-id})
         toggle-open
         (mf/use-fn
-         (mf/deps file-id open?)
+         (mf/deps file-id is-open)
          (fn []
-           (st/emit! (dw/set-assets-section-open file-id :library (not open?)))))
+           (st/emit! (dw/set-assets-section-open file-id :library (not is-open)))))
 
         on-click
         (mf/use-fn
          (fn [ev]
            (dom/stop-propagation ev)
-           (st/emit!
-            (ptk/event ::ev/event {::ev/name "navigate-to-library-file"}))))]
+           (st/emit! (ptk/data-event ::ev/event {::ev/name "navigate-to-library-file"}))))]
 
     [:div  {:class (stl/css-case :library-title true
-                                 :open open?)}
+                                 :open is-open)}
      [:& title-bar {:collapsable    true
-                    :collapsed      (not open?)
+                    :collapsed      (not is-open)
                     :all-clickable  true
                     :on-collapsed   toggle-open
-                    :title          (if local?
+                    :title          (if is-local
                                       (mf/html [:div {:class (stl/css :special-title)}
                                                 (tr "workspace.assets.local-library")])
                                       ;; Do we need to add shared info here?
 
                                       (mf/html [:div {:class (stl/css :special-title)}
                                                 file-name]))}
-      (when-not local?
+      (when-not is-local
         [:span {:title (tr "workspace.assets.open-library")}
          [:a {:class (stl/css :file-link)
               :href (str "#" url)
@@ -138,7 +138,7 @@
 
         selected-lens      (mf/with-memo [file-id]
                              (-> (l/key file-id)
-                                 (l/derived lens:selected)))
+                                 (l/derived ref:selected)))
 
         selected           (mf/deref selected-lens)
 
@@ -329,17 +329,15 @@
          (some #(> 60 (count %)) [filtered-components filtered-colors filtered-media filtered-typographies]))))
 
 (mf/defc file-library
-  {::mf/wrap-props false}
+  {::mf/props :obj}
   [{:keys [file local? default-open? filters]}]
   (let [file-id         (:id file)
         file-name       (:name file)
-        shared?         (:is-shared file)
-        project-id      (:project-id file)
         page-id         (dm/get-in file [:data :pages 0])
 
         open-status-ref (mf/with-memo [file-id]
                           (-> (l/key file-id)
-                              (l/derived lens:open-status)))
+                              (l/derived ref:open-status)))
         open-status      (mf/deref open-status-ref)
         force-open-lib?  (force-lib-open? file-id filters)
 
@@ -356,14 +354,12 @@
     [:div {:class (stl/css :tool-window)
            :on-context-menu dom/prevent-default
            :on-click unselect-all}
-     [:& file-library-title
-      {:project-id project-id
-       :file-id file-id
+     [:> file-library-title*
+      {:file-id file-id
        :page-id page-id
        :file-name file-name
-       :open? open?
-       :local? local?
-       :shared? shared?}]
+       :is-open open?
+       :is-local local?}]
      (when ^boolean open?
        [:& file-library-content
         {:file file

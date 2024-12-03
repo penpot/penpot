@@ -603,3 +603,18 @@
              (filter (fn [comment] (some #(= % (:frame-id comment)) frame-ids?)))
              (map update-comment-thread-frame)
              (rx/from))))))
+
+(defn fetch-profiles
+  "Fetch or refresh all profile data for comments of the current file"
+  []
+  (ptk/reify ::fetch-comments-profiles
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id (:current-file-id state)
+            share-id (or (-> state :viewer-local :share-id)
+                         (:current-share-id state))]
+        (->> (rp/cmd! :get-profiles-for-file-comments {:file-id file-id :share-id share-id})
+             (rx/map (fn [profiles]
+                       #(update % :profiles merge (d/index-by :id profiles)))))))))
+
+

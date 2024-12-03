@@ -16,12 +16,12 @@
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.refs :as refs]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.router :as rt]
    [app.util.webapi :as wapi]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -69,17 +69,16 @@
                                      (= (:pages %) pages))
                                slinks)]
             (when slink
-              (let [pparams (:path-params route)
-                    page-id (d/seek #(contains? (:pages slink) %) page-ids)
-                    qparams (-> (:query-params route)
+              (let [page-id (d/seek #(contains? (:pages slink) %) page-ids)
+                    params  (-> (:query-params route)
                                 (assoc :share-id (:id slink))
                                 (assoc :page-id page-id)
                                 (assoc :index "0"))
-                    qparams (if (nil? zoom-type)
-                              (dissoc qparams :zoom)
-                              (assoc qparams :zoom zoom-type))
+                    params  (if (nil? zoom-type)
+                              (dissoc params :zoom)
+                              (assoc params :zoom zoom-type))
 
-                    href    (rt/resolve router :viewer pparams qparams)]
+                    href    (rt/resolve router :viewer params)]
                 (dm/str (assoc cf/public-uri :fragment href))))))
 
         on-close

@@ -37,7 +37,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.router :as rt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -68,7 +67,7 @@
         (mf/use-fn #(dom/open-new-window "https://penpot.app/terms"))
 
         nav-to-feedback
-        (mf/use-fn #(st/emit! (rt/nav-new-window* {:rname :settings-feedback})))
+        (mf/use-fn #(st/emit! (dcm/go-to-feedback)))
 
         plugins?
         (features/active-feature? @st/state "plugins/runtime")
@@ -540,9 +539,8 @@
 
         on-pin-version
         (mf/use-fn
-         (mf/deps file-id)
          (fn [_]
-           (st/emit! (dwv/create-version file-id))))
+           (st/emit! (dwv/create-version))))
 
         on-pin-version-key-down
         (mf/use-fn

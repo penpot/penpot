@@ -220,7 +220,7 @@
           {:thread thread
            :position-modifier modifier1
            :viewport {:offset-x 0 :offset-y 0 :width (:width vsize) :height (:height vsize)}
-           :users users
+           :profiles users
            :zoom zoom}])
 
        (when-let [draft (:draft local)]
@@ -231,10 +231,11 @@
            :on-submit on-draft-submit
            :zoom zoom}])]]]))
 
-(mf/defc comments-sidebar
-  [{:keys [users frame page]}]
+(mf/defc comments-sidebar*
+  {::mf/props :obj}
+  [{:keys [profiles frame page]}]
   (let [profile     (mf/deref refs/profile)
-        local      (mf/deref refs/comments-local)
+        local       (mf/deref refs/comments-local)
         threads-map (mf/deref refs/comment-threads)
         threads     (->> (vals threads-map)
                          (dcm/apply-filters local profile)
@@ -242,4 +243,8 @@
                                    (gsh/has-point? frame position))))]
     [:aside {:class (stl/css :comments-sidebar)}
      [:div {:class (stl/css :settings-bar-inside)}
-      [:& wc/comments-sidebar {:from-viewer true :users users :threads threads :page-id (:id page)}]]]))
+      [:> wc/comments-sidebar*
+       {:from-viewer true
+        :profiles profiles
+        :threads threads
+        :page-id (:id page)}]]]))

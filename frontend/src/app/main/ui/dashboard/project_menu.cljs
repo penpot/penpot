@@ -6,6 +6,7 @@
 
 (ns app.main.ui.dashboard.project-menu
   (:require
+   [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -16,7 +17,6 @@
    [app.main.ui.dashboard.import :as udi]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.router :as rt]
    [rumext.v2 :as mf]))
 
 (mf/defc project-menu*
@@ -32,9 +32,9 @@
         on-duplicate-success
         (fn [new-project]
           (st/emit! (ntf/success (tr "dashboard.success-duplicate-project"))
-                    (rt/nav :dashboard-files
-                            {:team-id (:team-id new-project)
-                             :project-id (:id new-project)})))
+                    (dcm/go-to-dashboard-files
+                     :team-id (:team-id new-project)
+                     :project-id (:id new-project))))
 
         on-duplicate
         (fn []
@@ -46,7 +46,7 @@
 
         on-move-success
         (fn [team-id]
-          (st/emit! (dd/go-to-projects team-id)))
+          (st/emit! (dcm/go-to-dashboard-recent :team-id team-id)))
 
         on-move
         (fn [team-id]
@@ -57,9 +57,10 @@
 
         delete-fn
         (fn [_]
-          (st/emit! (ntf/success (tr "dashboard.success-delete-project"))
-                    (dd/delete-project project)
-                    (dd/go-to-projects (:team-id project))))
+          (let [team-id (:team-id project)]
+            (st/emit! (ntf/success (tr "dashboard.success-delete-project"))
+                      (dd/delete-project project)
+                      (dcm/go-to-dashboard-recent :team-id team-id))))
 
         on-delete
         #(st/emit!

@@ -7,15 +7,16 @@
 (ns app.main.ui.auth.verify-token
   (:require
    [app.main.data.auth :as da]
+   [app.main.data.common :as dcm]
    [app.main.data.notifications :as ntf]
    [app.main.data.profile :as du]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.static :as static]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.router :as rt]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
@@ -43,15 +44,16 @@
   [tdata]
   (case (:state tdata)
     :created
-    (st/emit!
-     (ntf/success (tr "auth.notifications.team-invitation-accepted"))
-     (du/fetch-profile)
-     (rt/nav :dashboard-projects {:team-id (:team-id tdata)}))
+    (let [team-id (:team-id tdata)]
+      (st/emit!
+       (ntf/success (tr "auth.notifications.team-invitation-accepted"))
+       (du/fetch-profile)
+       (dcm/go-to-dashboard-recent :team-id team-id)))
 
     :pending
     (let [token    (:invitation-token tdata)
           route-id (:redirect-to tdata :auth-register)]
-      (st/emit! (rt/nav route-id {} {:invitation-token token})))))
+      (st/emit! (rt/nav route-id {:invitation-token token})))))
 
 (defmethod handle-token :default
   [_tdata]

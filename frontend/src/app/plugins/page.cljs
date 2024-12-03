@@ -14,10 +14,12 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.data.comments :as dc]
+   [app.main.data.common :as dcm]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.guides :as dwgu]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.repo :as rp]
+   [app.main.router :as-alias rt]
    [app.main.store :as st]
    [app.plugins.comments :as pc]
    [app.plugins.format :as format]
@@ -266,7 +268,7 @@
         (u/display-not-valid :openPage "Plugin doesn't have 'content:read' permission")
 
         :else
-        (st/emit! (dw/go-to-page id))))
+        (st/emit! (dcm/go-to-workspace :page-id id ::rt/new-window true))))
 
     :createFlow
     (fn [name frame]

@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.schema :as sm]
+   [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -18,7 +19,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.router :as rt]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
@@ -28,15 +28,15 @@
 
 (defn- on-create-success
   [_form response]
-  (let [msg "Team created successfully"]
-    (st/emit! (ntf/success msg)
-              (modal/hide)
-              (rt/nav :dashboard-projects {:team-id (:id response)}))))
+  (let [message "Team created successfully"
+        team-id (:id response)]
+    (st/emit! (ntf/success message)
+              (dcm/go-to-dashboard-recent :team-id team-id))))
 
 (defn- on-update-success
   [_form _response]
-  (let [msg "Team created successfully"]
-    (st/emit! (ntf/success msg)
+  (let [message "Team created successfully"]
+    (st/emit! (ntf/success message)
               (modal/hide))))
 
 (defn- on-error

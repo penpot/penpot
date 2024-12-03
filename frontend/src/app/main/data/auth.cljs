@@ -12,14 +12,15 @@
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
+   [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
    [app.main.data.profile :as dp]
    [app.main.data.team :as dtm]
    [app.main.data.websocket :as ws]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.router :as rt]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -45,8 +46,9 @@
                   (rx/of (rt/reload true))
                   (rx/of (rt/nav-raw :href redirect-href))))
               (if-let [file-id (get props :welcome-file-id)]
-                (rx/of (rt/nav' :workspace {:project-id (:default-project-id profile)
-                                            :file-id file-id})
+                (rx/of (dcm/go-to-workspace
+                        :file-id file-id
+                        :team-id (:default-team-id profile))
                        (dp/update-profile-props {:welcome-file-id nil}))
 
                 (let [teams   (into #{} (map :id) teams)
@@ -54,7 +56,7 @@
                       team-id (if (and team-id (contains? teams team-id))
                                 team-id
                                 (:default-team-id profile))]
-                  (rx/of (rt/nav' :dashboard-projects {:team-id team-id}))))))]
+                  (rx/of (dcm/go-to-dashboard-recent {:team-id team-id}))))))]
 
     (ptk/reify ::logged-in
       ev/Event

@@ -13,13 +13,13 @@
    [app.main.data.auth :as da]
    [app.main.data.notifications :as ntf]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.auth.login :as login]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.router :as rt]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
@@ -74,7 +74,7 @@
                  on-success (fn [data]
                               (if (fn? on-success-callback)
                                 (on-success-callback data)
-                                (st/emit! (rt/nav :auth-register-validate {} data))))]
+                                (st/emit! (rt/nav :auth-register-validate data))))]
 
              (->> (rp/cmd! :prepare-register-profile cdata)
                   (rx/map #(merge % params))
@@ -131,7 +131,7 @@
    [:div {:class (stl/css :links)}
     [:div {:class (stl/css :account)}
      [:span {:class (stl/css :account-text)} (tr "auth.already-have-account") " "]
-     [:& lk/link {:action  #(st/emit! (rt/nav :auth-login {} params))
+     [:& lk/link {:action  #(st/emit! (rt/nav :auth-login params))
                   :class (stl/css :account-link)
                   :data-testid "login-here-link"}
       (tr "auth.login-here")]]
@@ -191,7 +191,7 @@
              (cond
                (some? (:invitation-token params))
                (let [token (:invitation-token params)]
-                 (st/emit! (rt/nav :auth-verify-token {} {:token token})))
+                 (st/emit! (rt/nav :auth-verify-token {:token token})))
 
                (:is-active params)
                (st/emit! (da/login-from-register))
@@ -257,7 +257,7 @@
 
    [:div {:class (stl/css :links)}
     [:div {:class (stl/css :go-back)}
-     [:& lk/link {:action  #(st/emit! (rt/nav :auth-register {} {}))
+     [:& lk/link {:action  #(st/emit! (rt/nav :auth-register {}))
                   :class (stl/css :go-back-link)}
       (tr "labels.go-back")]]]])
 

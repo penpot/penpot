@@ -16,9 +16,9 @@
    [app.main.data.media :as di]
    [app.main.data.team :as-alias dtm]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.plugins.register :as plugins.register]
    [app.util.i18n :as i18n]
-   [app.util.router :as rt]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))

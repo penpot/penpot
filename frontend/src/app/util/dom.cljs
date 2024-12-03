@@ -17,6 +17,7 @@
    [app.util.webapi :as wapi]
    [cuerdas.core :as str]
    [goog.dom :as dom]
+   [potok.v2.core :as ptk]
    [promesa.core :as p])
   (:import goog.events.BrowserEvent))
 
@@ -853,3 +854,10 @@
         measures (.measureText context-2d text)]
     {:descent (.-actualBoundingBoxDescent measures)
      :ascent (.-actualBoundingBoxAscent measures)}))
+
+(defmethod ptk/resolve ::focus-element
+  [_ {:keys [name]}]
+  (ptk/reify ::focus-element
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (focus! (get-element name)))))

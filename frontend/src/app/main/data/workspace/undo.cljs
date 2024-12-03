@@ -13,8 +13,8 @@
    [app.common.schema :as sm]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.changes :as dch]
+   [app.main.data.common :as dcm]
    [app.main.data.workspace.state-helpers :as wsh]
-   [app.util.router :as rt]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -290,14 +290,8 @@
   (ptk/reify ::assure-valid-current-page
     ptk/WatchEvent
     (watch [_ state _]
-      (let [current_page (:current-page-id state)
-            pages        (get-in state [:workspace-data :pages])
-            exists? (some #(= current_page %) pages)
-
-            project-id (:current-project-id state)
-            file-id    (:current-file-id state)
-            pparams    {:file-id file-id :project-id project-id}
-            qparams    {:page-id (first pages)}]
-        (if exists?
+      (let [page-id (:current-page-id state)
+            pages   (dm/get-in state [:workspace-data :pages])]
+        (if (contains? pages page-id)
           (rx/empty)
-          (rx/of (rt/nav :workspace pparams qparams)))))))
+          (rx/of (dcm/go-to-workspace :page-id (first pages))))))))

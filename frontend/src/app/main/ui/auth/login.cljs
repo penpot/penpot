@@ -13,6 +13,7 @@
    [app.main.data.auth :as da]
    [app.main.data.notifications :as ntf]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.button-link :as bl]
    [app.main.ui.components.forms :as fm]
@@ -22,7 +23,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as k]
-   [app.util.router :as rt]
    [app.util.storage :as s]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
@@ -124,7 +124,7 @@
         (mf/use-fn
          (fn [data]
            (when-let [token (:invitation-token data)]
-             (st/emit! (rt/nav :auth-verify-token {} {:token token})))))
+             (st/emit! (rt/nav :auth-verify-token {:token token})))))
 
         on-success
         (fn [data]
@@ -283,7 +283,7 @@
   [{:keys [params] :as props}]
   (let [go-register
         (mf/use-fn
-         #(st/emit! (rt/nav :auth-register {} params)))]
+         #(st/emit! (rt/nav :auth-register params)))]
 
     [:div {:class (stl/css :auth-form-wrapper)}
      [:h1 {:class (stl/css :auth-title)

@@ -22,13 +22,13 @@
 ;; ---- Global refs
 
 (def route
-  (l/derived :route st/state))
+  (l/derived (l/key :route) st/state))
 
 (def router
-  (l/derived :router st/state))
+  (l/derived (l/key :router) st/state))
 
 (def profile
-  (l/derived :profile st/state))
+  (l/derived (l/key :profile) st/state))
 
 (def team
   (l/derived (fn [state]
@@ -37,11 +37,18 @@
                  (get teams team-id)))
              st/state))
 
+(def project
+  (l/derived (fn [state]
+               (let [project-id (:current-project-id state)
+                     projects   (:projects state)]
+                 (get projects project-id)))
+             st/state))
+
 (def permissions
-  (l/derived :permissions team))
+  (l/derived (l/key :permissions) team))
 
 (def teams
-  (l/derived :teams st/state))
+  (l/derived (l/key :teams) st/state))
 
 (def exception
   (l/derived :exception st/state))
@@ -65,7 +72,12 @@
   (l/derived :files st/state))
 
 (def shared-files
+  "A derived state that points to the current list of shared
+  files (without the content, only summary)"
   (l/derived :shared-files st/state))
+
+(def libraries
+  (l/derived :libraries st/state))
 
 (defn extract-selected-files
   [files selected]
@@ -85,7 +97,6 @@
 
 (def selected-project
   (l/derived :selected-project st/state))
-
 
 (def dashboard-local
   (l/derived :dashboard-local st/state))
@@ -242,12 +253,6 @@
 
 (def workspace-file-typography
   (l/derived :typographies workspace-data))
-
-(def workspace-project
-  (l/derived :workspace-project st/state))
-
-(def workspace-shared-files
-  (l/derived :workspace-shared-files st/state))
 
 (def workspace-local-library
   (l/derived (fn [state]
@@ -505,12 +510,16 @@
 
 ;; ---- Viewer refs
 
+(defn get-viewer-objects
+  [state page-id]
+  (dm/get-in state [:viewer :pages page-id :objects]))
+
 (defn lookup-viewer-objects-by-id
   [page-id]
-  (l/derived #(wsh/lookup-viewer-objects % page-id) st/state =))
+  (l/derived #(get-viewer-objects % page-id) st/state =))
 
 (def viewer-data
-  (l/derived :viewer st/state))
+  (l/derived (l/key :viewer) st/state))
 
 (def viewer-file
   (l/derived :file viewer-data))
@@ -536,14 +545,8 @@
 (def comments-local
   (l/derived :comments-local st/state))
 
-(def users
-  (l/derived :users st/state))
-
-(def current-file-comments-users
-  (l/derived :current-file-comments-users st/state))
-
-(def current-team-comments-users
-  (l/derived :current-team-comments-users st/state))
+(def profiles
+  (l/derived :profiles st/state))
 
 (def viewer-fullscreen?
   (l/derived (fn [state]
@@ -555,14 +558,11 @@
                (dm/get-in state [:viewer-local :zoom-type]))
              st/state))
 
-(def workspace-thumbnails
-  (l/derived :workspace-thumbnails st/state))
-
 (defn workspace-thumbnail-by-id
   [object-id]
   (l/derived
    (fn [state]
-     (some-> (dm/get-in state [:workspace-thumbnails object-id])
+     (some-> (dm/get-in state [:thumbnails object-id])
              (cf/resolve-media)))
    st/state))
 
@@ -608,34 +608,8 @@
           (every? (partial ctl/grid-layout-immediate-child? objects))))
    workspace-page-objects =))
 
-;; FIXME: move to viewer.inspect.code
-(defn get-flex-child-viewer
-  [ids page-id]
-  (l/derived
-   (fn [state]
-     (let [objects (wsh/lookup-viewer-objects state page-id)]
-       (into []
-             (comp (map (d/getf objects))
-                   (filter (partial ctl/flex-layout-immediate-child? objects)))
-             ids)))
-   st/state =))
-
-;; FIXME: move to viewer.inspect.code
-(defn get-viewer-objects
-  ([]
-   (let [route      (deref route)
-         page-id    (:page-id (:query-params route))]
-     (get-viewer-objects page-id)))
-  ([page-id]
-   (l/derived
-    (fn [state]
-      (let [objects (wsh/lookup-viewer-objects state page-id)]
-        objects))
-    st/state =)))
-
 (def colorpicker
   (l/derived :colorpicker st/state))
-
 
 (def workspace-grid-edition
   (l/derived :workspace-grid-edition st/state))
@@ -644,6 +618,7 @@
   [id]
   (l/derived #(get % id) workspace-grid-edition))
 
+;; FIXME: remove
 (def current-file-id
   (l/derived :current-file-id st/state))
 

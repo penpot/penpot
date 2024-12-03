@@ -18,10 +18,17 @@
            java.nio.ByteBuffer)))
 
 (defn uuid
-  "Parse string uuid representation into proper UUID instance."
+  "Creates an UUID instance from string, expectes valid uuid strings,
+  the existense of validation is implementation detail"
   [s]
   #?(:clj (UUID/fromString s)
      :cljs (c/uuid s)))
+
+(defn parse
+  "Parse string uuid representation into proper UUID instance, validates input"
+  [s]
+  #?(:clj (UUID/fromString s)
+     :cljs (c/parse-uuid s)))
 
 (defn next
   []

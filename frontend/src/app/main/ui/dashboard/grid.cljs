@@ -12,8 +12,11 @@
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
    [app.config :as cf]
+   [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.notifications :as ntf]
+   [app.main.data.project :as dpj]
+   [app.main.data.team :as dtm]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.rasterizer :as thr]
@@ -79,8 +82,7 @@
         revn         (get file :revn)
         thumbnail-id (get file :thumbnail-id)
 
-        ;; FIXME: revisit maybe bug
-        bg-color     (dm/get-in file [:data :options :background])
+        bg-color     (dm/get-in file [:data :background])
 
         container    (mf/use-ref)
         visible?     (h/use-visible container :once? true)]
@@ -270,12 +272,12 @@
 
         on-navigate
         (mf/use-fn
-         (mf/deps file)
+         (mf/deps file-id)
          (fn [event]
            (let [menu-icon (mf/ref-val menu-ref)
                  target    (dom/get-target event)]
              (when-not (dom/child? target menu-icon)
-               (st/emit! (dd/go-to-workspace file))))))
+               (st/emit! (dcm/go-to-workspace :file-id file-id))))))
 
         on-drag-start
         (mf/use-fn
@@ -427,9 +429,11 @@
         on-finish-import
         (mf/use-fn
          (fn []
-           (st/emit! (dd/fetch-files {:project-id project-id})
-                     (dd/fetch-shared-files)
+           (st/emit! (dpj/fetch-files project-id)
+                     (dtm/fetch-shared-files)
                      (dd/clear-selected-files))))
+
+
 
         import-files (use-import-file project-id on-finish-import)
 

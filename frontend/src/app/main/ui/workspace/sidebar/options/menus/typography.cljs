@@ -12,9 +12,9 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.text :as txt]
+   [app.main.data.common :as dcm]
    [app.main.data.fonts :as fts]
    [app.main.data.shortcuts :as dsc]
-   [app.main.data.workspace :as dw]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
@@ -564,7 +564,7 @@
          (mf/deps file-id)
          (fn []
            (when file-id
-             (st/emit! (dw/navigate-to-library file-id)))))
+             (st/emit! (dcm/go-to-workspace :file-id file-id)))))
 
         on-key-down
         (mf/use-fn

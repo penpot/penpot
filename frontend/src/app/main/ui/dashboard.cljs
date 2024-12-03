@@ -16,6 +16,7 @@
    [app.main.data.notifications :as notif]
    [app.main.data.plugins :as dp]
    [app.main.refs :as refs]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.files :refer [files-section*]]
@@ -33,7 +34,6 @@
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
-   [app.util.router :as rt]
    [beicon.v2.core :as rx]
    [goog.events :as events]
    [okulary.core :as l]
@@ -84,7 +84,7 @@
            :on-click clear-selected-fn
            :ref container}
      (case section
-       :dashboard-projects
+       :dashboard-recent
        [:*
         [:> projects-section*
          {:team team
@@ -126,16 +126,16 @@
        [:> libraries-page* {:team team
                             :default-project default-project}]
 
-       :dashboard-team-members
+       :dashboard-members
        [:> team-members-page* {:team team :profile profile}]
 
-       :dashboard-team-invitations
+       :dashboard-invitations
        [:> team-invitations-page* {:team team}]
 
-       :dashboard-team-webhooks
+       :dashboard-webhooks
        [:> webhooks-page* {:team team}]
 
-       :dashboard-team-settings
+       :dashboard-settings
        [:> team-settings-page* {:team team :profile profile}]
 
        nil)]))
@@ -151,8 +151,9 @@
           (st/emit!
            (dp/delay-open-plugin plugin)
            (rt/nav :workspace
-                   {:project-id project-id :file-id id}
-                   {:page-id (dm/get-in data [:pages 0])})))
+                   {:page-id (dm/get-in data [:pages 0])
+                    :project-id project-id
+                    :file-id id})))
 
         create-file!
         (fn [plugin]
@@ -182,11 +183,11 @@
             :on-accept
             #(do (preg/install-plugin! plugin)
                  (st/emit! (modal/hide)
-                           (rt/nav :dashboard-projects {:team-id team-id})
+                           (rt/nav :dashboard-recent {:team-id team-id})
                            (open-try-out-dialog plugin)))
             :on-close
             #(st/emit! (modal/hide)
-                       (rt/nav :dashboard-projects {:team-id team-id}))}))]
+                       (rt/nav :dashboard-recent {:team-id team-id}))}))]
 
     (mf/with-layout-effect
       [plugin-url team-id project-id]
@@ -204,7 +205,7 @@
 
 (mf/defc dashboard*
   {::mf/props :obj}
-  [{:keys [profile project-id team-id search-term plugin-url route-name]}]
+  [{:keys [profile project-id team-id search-term plugin-url section]}]
   (let [team            (mf/deref refs/team)
         projects        (mf/deref refs/projects)
 
@@ -253,7 +254,7 @@
         :project project
         :default-project default-project
         :profile profile
-        :section route-name
+        :section section
         :search-term search-term}]
       (when (seq projects)
         [:> dashboard-content*
@@ -261,6 +262,6 @@
           :profile profile
           :project project
           :default-project default-project
-          :section route-name
+          :section section
           :search-term search-term
           :team team}])]]))

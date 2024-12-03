@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.dashboard :as dd]
+   [app.main.data.team :as dtm]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid]]
@@ -41,7 +42,7 @@
         (dom/set-html-title (tr "title.dashboard.shared-libraries" tname))))
 
     (mf/with-effect [team]
-      (st/emit! (dd/fetch-shared-files)
+      (st/emit! (dtm/fetch-shared-files)
                 (dd/clear-selected-files)))
 
     [:*

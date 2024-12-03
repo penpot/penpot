@@ -6,6 +6,7 @@
 
 (ns app.main.data.dashboard.shortcuts
   (:require
+   [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.event :as ev]
    [app.main.data.profile :as du]
@@ -16,17 +17,17 @@
   {:go-to-search       {:tooltip (ds/meta "F")
                         :command (ds/c-mod "f")
                         :subsections [:navigation-dashboard]
-                        :fn #(st/emit! (dd/go-to-search))}
+                        :fn #(st/emit! (dcm/go-to-dashboard-search))}
 
    :go-to-drafts       {:tooltip "G D"
                         :command "g d"
                         :subsections [:navigation-dashboard]
-                        :fn #(st/emit! (dd/go-to-drafts))}
+                        :fn #(st/emit! (dcm/go-to-dashboard-files :project-id :default))}
 
    :go-to-libs         {:tooltip "G L"
                         :command "g l"
                         :subsections [:navigation-dashboard]
-                        :fn #(st/emit! (dd/go-to-libs))}
+                        :fn #(st/emit! (dcm/go-to-dashboard-libraries))}
 
    :create-new-project {:tooltip "+"
                         :command "+"

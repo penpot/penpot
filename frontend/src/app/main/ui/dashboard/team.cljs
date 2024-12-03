@@ -11,7 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.config :as cfg]
-   [app.main.data.dashboard :as dd]
+   [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -62,10 +62,10 @@
   {::mf/wrap [mf/memo]
    ::mf/props :obj}
   [{:keys [section team]}]
-  (let [on-nav-members       (mf/use-fn #(st/emit! (dd/go-to-team-members)))
-        on-nav-settings      (mf/use-fn #(st/emit! (dd/go-to-team-settings)))
-        on-nav-invitations   (mf/use-fn #(st/emit! (dd/go-to-team-invitations)))
-        on-nav-webhooks      (mf/use-fn #(st/emit! (dd/go-to-team-webhooks)))
+  (let [on-nav-members       (mf/use-fn #(st/emit! (dcm/go-to-dashboard-members)))
+        on-nav-settings      (mf/use-fn #(st/emit! (dcm/go-to-dashboard-settings)))
+        on-nav-invitations   (mf/use-fn #(st/emit! (dcm/go-to-dashboard-invitations)))
+        on-nav-webhooks      (mf/use-fn #(st/emit! (dcm/go-to-dashboard-webhooks)))
 
         route                (mf/deref refs/route)
         invite-email         (-> route :query-params :invite-email)
@@ -375,7 +375,7 @@
              (st/emit! (modal/show params)))))
 
         on-success
-        (mf/use-fn (fn [] (rx/of (dd/go-to-default-team))))
+        (mf/use-fn #(rx/of (dcm/go-to-dashboard-recent :team-id :default)))
 
         on-error
         (mf/use-fn

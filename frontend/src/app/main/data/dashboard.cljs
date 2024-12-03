@@ -13,18 +13,15 @@
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
-   [app.main.data.common :as dc]
+   [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
    [app.main.data.modal :as modal]
    [app.main.data.websocket :as dws]
    [app.main.features :as features]
    [app.main.repo :as rp]
-   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.router :as rt]
    [app.util.sse :as sse]
-   [app.util.storage :as storage]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
@@ -114,55 +111,6 @@
           (->> (rp/cmd! :search-files params)
                (rx/map (fn [result]
                          #(assoc % :search-result result)))))))))
-
-;; --- EVENT: files
-
-(defn files-fetched
-  [project-id files]
-  (letfn [(remove-project-files [files]
-            (reduce-kv (fn [result id file]
-                         (cond-> result
-                           (= (:project-id file) project-id) (dissoc id)))
-                       files
-                       files))]
-    (ptk/reify ::files-fetched
-      ptk/UpdateEvent
-      (update [_ state]
-        (-> state
-            (update :files
-                    (fn [files']
-                      (reduce #(assoc %1 (:id %2) %2)
-                              (remove-project-files files')
-                              files)))
-            (assoc-in [:projects project-id :count] (count files)))))))
-
-(defn fetch-files
-  [{:keys [project-id] :as params}]
-  (dm/assert! (uuid? project-id))
-  (ptk/reify ::fetch-files
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :get-project-files {:project-id project-id})
-           (rx/map #(files-fetched project-id %))))))
-
-;; --- EVENT: shared-files
-
-(defn shared-files-fetched
-  [files]
-  (ptk/reify ::shared-files-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [files (d/index-by :id files)]
-        (assoc state :shared-files files)))))
-
-(defn fetch-shared-files
-  []
-  (ptk/reify ::fetch-shared-files
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
-             (rx/map shared-files-fetched))))))
 
 ;; --- EVENT: recent-files
 
@@ -630,133 +578,6 @@
              (rx/tap on-success)
              (rx/catch on-error))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Navigation
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn go-to-workspace
-  [{:keys [id project-id] :as file}]
-  (ptk/reify ::go-to-workspace
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [pparams {:project-id project-id :file-id id}]
-        (rx/of (rt/nav :workspace pparams))))))
-
-
-(defn go-to-files
-  ([project-id] (go-to-files project-id nil))
-  ([project-id team-id]
-   (ptk/reify ::go-to-files
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [team-id (or team-id (:current-team-id state))]
-         (rx/of (rt/nav :dashboard-files {:team-id team-id
-                                          :project-id project-id})))))))
-
-(defn go-to-search
-  ([] (go-to-search nil))
-  ([term]
-   (ptk/reify ::go-to-search
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [team-id (:current-team-id state)]
-         (if (empty? term)
-           (do
-             (dom/focus! (dom/get-element "search-input"))
-             (rx/of (rt/nav :dashboard-search
-                            {:team-id team-id})))
-           (rx/of (rt/nav :dashboard-search
-                          {:team-id team-id}
-                          {:search-term term})))))
-
-     ptk/EffectEvent
-     (effect [_ _ _]
-       (dom/focus! (dom/get-element "search-input"))))))
-
-(defn go-to-projects
-  [team-id]
-  (ptk/reify ::go-to-projects
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (or team-id (:current-team-id state))]
-        (rx/of (rt/nav :dashboard-projects {:team-id team-id}))))))
-
-(defn go-to-default-team
-  "High-level component for redirect to the current profile default
-  team and hide all modals"
-  []
-  (ptk/reify ::go-to-default-team
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (dm/get-in state [:profile :default-team-id])]
-        (rx/of (go-to-projects team-id)
-               (modal/hide))))))
-
-
-(defn go-to-current-team
-  "High-level component for redirect to the current profile default
-  team and hide all modals"
-  []
-  (ptk/reify ::go-to-current-team
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (or (::current-team-id storage/user)
-                        (dm/get-in state [:profile :default-team-id]))]
-        (rx/of (go-to-projects team-id)
-               (modal/hide))))))
-
-(defn go-to-team-members
-  []
-  (ptk/reify ::go-to-team-members
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (rx/of (rt/nav :dashboard-team-members {:team-id team-id}))))))
-
-(defn go-to-team-invitations
-  []
-  (ptk/reify ::go-to-team-invitations
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (rx/of (rt/nav :dashboard-team-invitations {:team-id team-id}))))))
-
-(defn go-to-team-webhooks
-  []
-  (ptk/reify ::go-to-team-webhooks
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (rx/of (rt/nav :dashboard-team-webhooks {:team-id team-id}))))))
-
-(defn go-to-team-settings
-  []
-  (ptk/reify ::go-to-team-settings
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (rx/of (rt/nav :dashboard-team-settings {:team-id team-id}))))))
-
-(defn go-to-drafts
-  []
-  (ptk/reify ::go-to-drafts
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)
-            projects (:projects state)
-            default-project (d/seek :is-default (vals projects))]
-        (when default-project
-          (rx/of (rt/nav :dashboard-files {:team-id team-id
-                                           :project-id (:id default-project)})))))))
-
-(defn go-to-libs
-  []
-  (ptk/reify ::go-to-libs
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (rx/of (rt/nav :dashboard-libraries {:team-id team-id}))))))
-
 (defn create-element
   []
   (ptk/reify ::create-element
@@ -793,8 +614,7 @@
     (watch [_ state _]
       (let [[file-id :as files] (get state :selected-files)]
         (if (= 1 (count files))
-          (let [file (dm/get-in state [files file-id])]
-            (rx/of (go-to-workspace file)))
+          (rx/of (dcm/go-to-workspace :file-id file-id))
           (rx/empty))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -806,13 +626,13 @@
   (ptk/reify ::handle-change-team-role
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dc/change-team-role params)
+      (rx/of (dcm/change-team-role params)
              (modal/hide)))))
 
 (defn- process-message
   [{:keys [type] :as msg}]
   (case type
-    :notification           (dc/handle-notification msg)
+    :notification           (dcm/handle-notification msg)
     :team-role-change       (handle-change-team-role msg)
-    :team-membership-change (dc/team-membership-change msg)
+    :team-membership-change (dcm/team-membership-change msg)
     nil))

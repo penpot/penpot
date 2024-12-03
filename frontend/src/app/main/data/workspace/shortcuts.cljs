@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.shortcuts
   (:require
    [app.common.data.macros :as dm]
+   [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.exports.assets :as de]
    [app.main.data.modal :as modal]
@@ -440,17 +441,18 @@
    :toggle-layers        {:tooltip (ds/alt "L")
                           :command (ds/a-mod "l")
                           :subsections [:panels]
-                          :fn #(st/emit! (dw/go-to-layout :layers))}
+                          :fn #(st/emit! (dcm/go-to-workspace :layout :layers))}
 
    :toggle-assets        {:tooltip (ds/alt "I")
                           :command (ds/a-mod "i")
                           :subsections [:panels]
-                          :fn #(st/emit! (dw/go-to-layout :assets))}
+                          :fn #(st/emit! (dcm/go-to-workspace :layout :assets))}
 
    :toggle-history       {:tooltip (ds/alt "H")
                           :command (ds/a-mod "h")
                           :subsections [:panels]
-                          :fn #(emit-when-no-readonly (dw/go-to-layout :document-history))}
+                          :fn #(emit-when-no-readonly
+                                (dcm/go-to-workspace :layout :document-history))}
 
    :toggle-colorpalette  {:tooltip (ds/alt "P")
                           :command (ds/a-mod "p")
@@ -516,22 +518,22 @@
    :open-viewer          {:tooltip "G V"
                           :command "g v"
                           :subsections [:navigation-workspace]
-                          :fn #(st/emit! (dw/go-to-viewer))}
+                          :fn #(st/emit! (dcm/go-to-viewer))}
 
    :open-inspect         {:tooltip "G I"
                           :command "g i"
                           :subsections [:navigation-workspace]
-                          :fn #(st/emit! (dw/go-to-viewer {:section :inspect}))}
+                          :fn #(st/emit! (dcm/go-to-viewer :section :inspect))}
 
    :open-comments        {:tooltip "G C"
                           :command "g c"
                           :subsections [:navigation-workspace]
-                          :fn #(st/emit! (dw/go-to-viewer {:section :comments}))}
+                          :fn #(st/emit! (dcm/go-to-viewer :section :comments))}
 
    :open-dashboard       {:tooltip "G D"
                           :command "g d"
                           :subsections [:navigation-workspace]
-                          :fn #(st/emit! (dw/go-to-dashboard))}
+                          :fn #(st/emit! (dcm/go-to-dashboard-recent))}
 
    :select-prev          {:tooltip (ds/shift "tab")
                           :command "shift+tab"

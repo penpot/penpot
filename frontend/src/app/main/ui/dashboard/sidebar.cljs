@@ -11,12 +11,14 @@
    [app.common.spec :as us]
    [app.config :as cf]
    [app.main.data.auth :as da]
+   [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.team :as dtm]
    [app.main.refs :as refs]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
    [app.main.ui.components.link :refer [link]]
@@ -29,7 +31,6 @@
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.router :as rt]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
@@ -73,32 +74,34 @@
         edit-id          (:project-for-edit dstate)
 
         local*           (mf/use-state
-                          {:menu-open false
-                           :menu-pos nil
-                           :edition? (= (:id item) edit-id)
-                           :dragging? false})
+                          #(do {:menu-open false
+                                :menu-pos nil
+                                :edition? (= (:id item) edit-id)
+                                :dragging? false}))
 
-        local             @local*
+        local            (deref local*)
+
+        project-id       (get item :id)
 
         on-click
         (mf/use-fn
-         (mf/deps item)
+         (mf/deps project-id)
          (fn []
-           (st/emit! (dd/go-to-files (:id item)))))
+           (st/emit! (dcm/go-to-dashboard-files :project-id project-id))))
 
         on-key-down
         (mf/use-fn
-         (mf/deps item)
+         (mf/deps project-id)
          (fn [event]
            (when (kbd/enter? event)
-             (st/emit! (dd/go-to-files (:id item))
-                       (ts/schedule-on-idle
-                        (fn []
-                          (let [project-title (dom/get-element (str (:id item)))]
-                            (when project-title
-                              (dom/set-attribute! project-title "tabindex" "0")
-                              (dom/focus! project-title)
-                              (dom/set-attribute! project-title "tabindex" "-1")))))))))
+             (st/emit!
+              (dcm/go-to-dashboard-files :project-id project-id)
+              (ts/schedule-on-idle
+               (fn []
+                 (when-let [title (dom/get-element (str project-id))]
+                   (dom/set-attribute! title "tabindex" "0")
+                   (dom/focus! title)
+                   (dom/set-attribute! title "tabindex" "-1"))))))))
 
         on-menu-click
         (mf/use-fn
@@ -148,9 +151,10 @@
 
         on-drop-success
         (mf/use-fn
-         (mf/deps (:id item))
-         #(st/emit! (ntf/success (tr "dashboard.success-move-file"))
-                    (dd/go-to-files (:id item))))
+         (mf/deps project-id)
+         (fn [_]
+           (st/emit! (dcm/go-to-dashboard-files :project-id project-id)
+                     (ntf/success (tr "dashboard.success-move-file")))))
 
         on-drop
         (mf/use-fn
@@ -201,19 +205,18 @@
 
         on-search-change
         (mf/use-fn
-         (mf/deps team-id)
          (fn [event]
            (let [value (dom/get-target-val event)]
-             (emit! (dd/go-to-search value)))))
+             (emit! (dcm/go-to-dashboard-search :term value)))))
 
         on-clear-click
         (mf/use-fn
          (mf/deps team-id)
          (fn [e]
+           (emit! (dcm/go-to-dashboard-search))
            (let [search-input (dom/get-element "search-input")]
              (dom/clean-value! search-input)
              (dom/focus! search-input)
-             (emit! (dd/go-to-search))
              (dom/prevent-default e)
              (dom/stop-propagation e))))
 
@@ -278,7 +281,8 @@
          (fn [event]
            (let [team-id (-> (dom/get-current-target event)
                              (dom/get-data "value"))]
-             (st/emit! (dd/go-to-projects team-id)))))
+
+             (st/emit! (dcm/go-to-dashboard-recent :team-id team-id)))))
 
         handle-select-default
         (mf/use-fn
@@ -343,10 +347,10 @@
 
 (mf/defc team-options-dropdown
   [{:keys [team profile] :as props}]
-  (let [go-members     #(st/emit! (dd/go-to-team-members))
-        go-invitations #(st/emit! (dd/go-to-team-invitations))
-        go-webhooks    #(st/emit! (dd/go-to-team-webhooks))
-        go-settings    #(st/emit! (dd/go-to-team-settings))
+  (let [go-members     #(st/emit! (dcm/go-to-dashboard-members))
+        go-invitations #(st/emit! (dcm/go-to-dashboard-invitations))
+        go-webhooks    #(st/emit! (dcm/go-to-dashboard-webhooks))
+        go-settings    #(st/emit! (dcm/go-to-dashboard-settings))
 
         members        (get team :members)
         permissions    (get team :permissions)
@@ -356,9 +360,9 @@
         on-success
         (fn []
           ;; FIXME: this should be handled in the event, not here
-          (st/emit! (dd/go-to-projects (:default-team-id profile))
-                    (modal/hide)
-                    (dtm/fetch-teams)))
+          (let [team-id (:default-team-id profile)]
+            (rx/of (dcm/go-to-dashboard-recent :team-id team-id)
+                   (modal/hide))))
 
         on-error
         (fn [{:keys [code] :as error}]
@@ -692,38 +696,38 @@
   (let [default-project-id
         (get default-project :id)
 
-        projects?   (= section :dashboard-projects)
+        team-id     (get team :id)
+
+        projects?   (= section :dashboard-recent)
         fonts?      (= section :dashboard-fonts)
         libs?       (= section :dashboard-libraries)
         drafts?     (and (= section :dashboard-files)
                          (= (:id project) default-project-id))
 
         go-projects
-        (mf/use-fn
-         (mf/deps team)
-         #(st/emit! (rt/nav :dashboard-projects {:team-id (:id team)})))
+        (mf/use-fn #(st/emit! (dcm/go-to-dashboard-recent)))
 
         go-projects-with-key
         (mf/use-fn
-         (mf/deps team)
-         #(st/emit! (rt/nav :dashboard-projects {:team-id (:id team)})
-                    (ts/schedule-on-idle
-                     (fn []
-                       (let [projects-title (dom/get-element "dashboard-projects-title")]
-                         (when projects-title
-                           (dom/set-attribute! projects-title "tabindex" "0")
-                           (dom/focus! projects-title)
-                           (dom/set-attribute! projects-title "tabindex" "-1")))))))
+         (mf/deps team-id)
+         (fn []
+           (st/emit! (dcm/go-to-dashboard-recent :team-id team-id)
+                     (ts/schedule-on-idle
+                      (fn []
+                        (when-let [projects-title (dom/get-element "dashboard-projects-title")]
+                          (dom/set-attribute! projects-title "tabindex" "0")
+                          (dom/focus! projects-title)
+                          (dom/set-attribute! projects-title "tabindex" "-1")))))))
 
         go-fonts
         (mf/use-fn
-         (mf/deps team)
-         #(st/emit! (rt/nav :dashboard-fonts {:team-id (:id team)})))
+         (mf/deps team-id)
+         #(st/emit! (dcm/go-to-dashboard-fonts :team-id team-id)))
 
         go-fonts-with-key
         (mf/use-fn
          (mf/deps team)
-         #(st/emit! (rt/nav :dashboard-fonts {:team-id (:id team)})
+         #(st/emit! (dcm/go-to-dashboard-fonts :team-id team-id)
                     (ts/schedule-on-idle
                      (fn []
                        (let [font-title (dom/get-element "dashboard-fonts-title")]
@@ -733,34 +737,31 @@
                            (dom/set-attribute! font-title "tabindex" "-1")))))))
         go-drafts
         (mf/use-fn
-         (mf/deps team default-project-id)
+         (mf/deps team-id default-project-id)
          (fn []
-           (st/emit! (rt/nav :dashboard-files
-                             {:team-id (:id team)
-                              :project-id default-project-id}))))
+           (st/emit! (dcm/go-to-dashboard-files :team-id team-id :project-id default-project-id))))
 
         go-drafts-with-key
         (mf/use-fn
-         (mf/deps team default-project-id)
-         #(st/emit! (rt/nav :dashboard-files {:team-id (:id team)
-                                              :project-id default-project-id})
-                    (ts/schedule-on-idle
-                     (fn []
-                       (let [drafts-title (dom/get-element "dashboard-drafts-title")]
-                         (when drafts-title
-                           (dom/set-attribute! drafts-title "tabindex" "0")
-                           (dom/focus! drafts-title)
-                           (dom/set-attribute! drafts-title "tabindex" "-1")))))))
+         (mf/deps team-id default-project-id)
+         (fn []
+           (st/emit! (dcm/go-to-dashboard-files :team-id team-id :project-id default-project-id))
+           (ts/schedule-on-idle
+            (fn []
+              (when-let [title (dom/get-element "dashboard-drafts-title")]
+                (dom/set-attribute! title "tabindex" "0")
+                (dom/focus! title)
+                (dom/set-attribute! title "tabindex" "-1"))))))
 
         go-libs
         (mf/use-fn
-         (mf/deps team)
-         #(st/emit! (rt/nav :dashboard-libraries {:team-id (:id team)})))
+         (mf/deps team-id)
+         #(st/emit! (dcm/go-to-dashboard-libraries :team-id team-id)))
 
         go-libs-with-key
         (mf/use-fn
-         (mf/deps team)
-         #(st/emit! (rt/nav :dashboard-libraries {:team-id (:id team)})
+         (mf/deps team-id)
+         #(st/emit! (dcm/go-to-dashboard-libraries :team-id team-id)
                     (ts/schedule-on-idle
                      (fn []
                        (let [libs-title (dom/get-element "dashboard-libraries-title")]

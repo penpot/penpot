@@ -25,9 +25,10 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(mf/defc assets-libraries
+(mf/defc assets-libraries*
   {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+   ::mf/props :obj
+   ::mf/private true}
   [{:keys [filters]}]
   (let [libraries (mf/deref refs/workspace-libraries)
         libraries (mf/with-memo [libraries]
@@ -193,4 +194,4 @@
        [:& (mf/provider cmm/assets-toggle-list-style) {:value toggle-list-style}
         [:*
          [:& assets-local-library {:filters filters}]
-         [:& assets-libraries {:filters filters}]]]]]]))
+         [:> assets-libraries* {:filters filters}]]]]]]))

@@ -25,7 +25,7 @@
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
-   [app.main.ui.viewer.comments :refer [comments-layer comments-sidebar]]
+   [app.main.ui.viewer.comments :refer [comments-layer comments-sidebar*]]
    [app.main.ui.viewer.header :as header]
    [app.main.ui.viewer.inspect :as inspect]
    [app.main.ui.viewer.interactions :as interactions]
@@ -129,8 +129,8 @@
        :comment-sidebar show-sidebar?}]
 
      (when show-sidebar?
-       [:& comments-sidebar
-        {:users users
+       [:> comments-sidebar*
+        {:profiles users
          :frame frame
          :page page}])]))
 
@@ -274,9 +274,9 @@
                           :page page
                           :zoom zoom}])]])
 
-(mf/defc viewer-content
-  {::mf/wrap-props false}
-  [{:keys [data page-id share-id section index interactions-mode share] :as props}]
+(mf/defc viewer-content*
+  {::mf/props :obj}
+  [{:keys [data page-id share-id section index interactions-mode share]}]
   (let [{:keys [file users project permissions]} data
         allowed (or
                  (= section :interactions)
@@ -620,8 +620,8 @@
 
 ;; --- Component: Viewer
 
-(mf/defc viewer
-  {::mf/wrap-props false}
+(mf/defc viewer*
+  {::mf/props :obj}
   [{:keys [file-id share-id page-id] :as props}]
   (mf/with-effect [file-id page-id share-id]
     (let [params {:file-id file-id
@@ -630,9 +630,10 @@
       (st/emit! (dv/initialize params))
       (fn []
         (st/emit! (dv/finalize params)))))
+
   (if-let [data (mf/deref refs/viewer-data)]
     (let [props (obj/merge props #js {:data data :key (dm/str file-id)})]
-      [:> viewer-content props])
+      [:> viewer-content* props])
 
     [:> loader*  {:title (tr "labels.loading")
                   :overlay true}]))

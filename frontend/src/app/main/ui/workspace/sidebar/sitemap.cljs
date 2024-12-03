@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.data.common :as dcm]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
@@ -34,7 +35,7 @@
   (let [input-ref    (mf/use-ref)
         id           (:id page)
         delete-fn    (mf/use-fn (mf/deps id) #(st/emit! (dw/delete-page id)))
-        navigate-fn  (mf/use-fn (mf/deps id) #(st/emit! :interrupt (dw/go-to-page id)))
+        navigate-fn  (mf/use-fn (mf/deps id) #(st/emit! :interrupt (dcm/go-to-workspace :page-id id)))
         read-only?   (mf/use-ctx ctx/workspace-read-only?)
 
         on-delete
