@@ -143,6 +143,14 @@
   [value shape-ids]
   (update-color wdc/change-stroke value shape-ids))
 
+(defn update-fill-stroke [value shape-ids attributes]
+  (ptk/reify ::update-fill-stroke
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of
+       (when (:fill attributes) (update-fill value shape-ids))
+       (when (:stroke-color attributes) (update-stroke-color value shape-ids))))))
+
 (defn update-shape-dimensions [value shape-ids attributes]
   (ptk/reify ::update-shape-dimensions
     ptk/WatchEvent
