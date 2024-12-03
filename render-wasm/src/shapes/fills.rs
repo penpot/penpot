@@ -60,10 +60,20 @@ impl Gradient {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ImageFill {
-    pub id: Uuid,
-    pub alpha: u8,
-    pub height: f32,
-    pub width: f32,
+    id: Uuid,
+    opacity: u8,
+    height: i32,
+    width: i32,
+}
+
+impl ImageFill {
+    pub fn size(&self) -> (i32, i32) {
+        (self.width, self.height)
+    }
+
+    pub fn id(&self) -> Uuid {
+        self.id
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -84,10 +94,10 @@ impl Fill {
         })
     }
 
-    pub fn new_image_fill(id: Uuid, alpha: u8, height: f32, width: f32) -> Self {
+    pub fn new_image_fill(id: Uuid, opacity: u8, (width, height): (i32, i32)) -> Self {
         Self::Image(ImageFill {
             id,
-            alpha,
+            opacity,
             height,
             width,
         })
@@ -116,7 +126,7 @@ impl Fill {
                 p.set_style(skia::PaintStyle::Fill);
                 p.set_anti_alias(true);
                 p.set_blend_mode(skia::BlendMode::SrcOver);
-                p.set_alpha(image_fill.alpha);
+                p.set_alpha(image_fill.opacity);
                 p
             }
         }

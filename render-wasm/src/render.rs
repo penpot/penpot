@@ -98,7 +98,7 @@ pub(crate) struct RenderState {
     pub cached_surface_image: Option<CachedSurfaceImage>,
     options: RenderOptions,
     pub viewbox: Viewbox,
-    pub images: HashMap<String, Image>,
+    images: HashMap<Uuid, Image>,
 }
 
 impl RenderState {
@@ -123,6 +123,18 @@ impl RenderState {
             viewbox: Viewbox::new(width as f32, height as f32),
             images: HashMap::with_capacity(2048),
         }
+    }
+
+    pub fn add_image(&mut self, id: Uuid, image_data: &[u8]) -> Result<(), String> {
+        let image_data = skia::Data::new_copy(image_data);
+        let image = Image::from_encoded(image_data).ok_or("Error decoding image data")?;
+
+        self.images.insert(id, image);
+        Ok(())
+    }
+
+    pub fn has_image(&mut self, id: &Uuid) -> bool {
+        self.images.contains_key(id)
     }
 
     pub fn set_debug_flags(&mut self, debug: u32) {
@@ -214,12 +226,12 @@ impl RenderState {
 
         for fill in shape.fills().rev() {
             if let Fill::Image(image_fill) = fill {
-                let image = self.images.get(&image_fill.id.to_string());
+                let image = self.images.get(&image_fill.id());
                 if let Some(image) = image {
                     draw_image_in_container(
                         &self.drawing_surface.canvas(),
                         &image,
-                        (image_fill.width, image_fill.height),
+                        image_fill.size(),
                         shape.selrect,
                         &fill.to_paint(&shape.selrect),
                     );
