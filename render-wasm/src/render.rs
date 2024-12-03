@@ -198,13 +198,11 @@ impl RenderState {
     }
 
     pub fn render_single_shape(&mut self, shape: &Shape) {
-        // Check transform-matrix code from common/src/app/common/geom/shapes/transforms.cljc
-        let mut matrix = skia::Matrix::new_identity();
+        let mut transform = skia::Matrix::new_identity();
         let (translate_x, translate_y) = shape.translation();
         let (scale_x, scale_y) = shape.scale();
         let (skew_x, skew_y) = shape.skew();
-
-        matrix.set_all(
+        transform.set_all(
             scale_x,
             skew_x,
             translate_x,
@@ -216,10 +214,12 @@ impl RenderState {
             1.,
         );
 
-        let mut center = shape.selrect.center();
-        matrix.post_translate(center);
-        center.negate();
+        // Check transform-matrix code from common/src/app/common/geom/shapes/transforms.cljc
+        let center = shape.selrect.center();
+        let mut matrix = skia::Matrix::new_identity();
         matrix.pre_translate(center);
+        matrix.pre_concat(&transform);
+        matrix.pre_translate(-center);
 
         self.drawing_surface.canvas().concat(&matrix);
 
