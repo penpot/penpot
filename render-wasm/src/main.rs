@@ -1,5 +1,4 @@
 mod debug;
-mod images;
 mod math;
 pub mod mem;
 mod render;
@@ -10,6 +9,7 @@ mod view;
 
 use skia_safe as skia;
 
+use crate::shapes::Image;
 use crate::state::State;
 use crate::utils::uuid_from_u32_quartet;
 
@@ -205,6 +205,59 @@ pub extern "C" fn add_shape_fill_stops(ptr: *mut RawStopData, n_stops: i32) {
                 n_stops as usize * std::mem::size_of::<RawStopData>(),
             );
         }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn store_image(a: u32, b: u32, c: u32, d: u32, ptr: *mut u8, size: u32) {
+    if ptr.is_null() || size == 0 {
+        panic!("Invalid data, null pointer or zero size");
+    }
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let render_state = state.render_state();
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    unsafe {
+        let image_bytes = Vec::<u8>::from_raw_parts(ptr, size as usize, size as usize);
+        let image_data = skia::Data::new_copy(&*image_bytes);
+        match Image::from_encoded(image_data) {
+            Some(image) => {
+                render_state.images.insert(id.to_string(), image);
+            }
+            None => {
+                eprintln!("Error on image decoding");
+            }
+        }
+        mem::free(ptr as *mut u8, size as usize * std::mem::size_of::<u8>());
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn is_image_cached(a: u32, b: u32, c: u32, d: u32) -> bool {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let render_state = state.render_state();
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    render_state.images.contains_key(&id.to_string())
+}
+
+#[no_mangle]
+pub extern "C" fn add_shape_image_fill(
+    a: u32,
+    b: u32,
+    c: u32,
+    d: u32,
+    alpha: f32,
+    width: f32,
+    height: f32,
+) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    if let Some(shape) = state.current_shape() {
+        shape.add_fill(shapes::Fill::new_image_fill(
+            id,
+            (alpha * 0xff as f32).floor() as u8,
+            height,
+            width,
+        ));
     }
 }
 
