@@ -91,12 +91,12 @@
        :icon (if @collapsed? "arrow-right" "arrow-down")
        :variant "action"}]
      (if editing?'
-       (let [on-submit #(on-edit-submit)]
-         [:& editing-label
-          {:default-value label
-           :on-cancel on-edit-reset
-           :on-create on-edit-reset
-           :on-submit on-submit}])
+       [:& editing-label
+        {:default-value label
+         :on-cancel on-edit-reset
+         :on-create on-edit-reset
+         ;; TODO Implement set group renaming
+         :on-submit (constantly nil)}]
        [:div {:class (stl/css :set-name)
               :on-double-click #(on-edit tree-path)}
         label])]))
