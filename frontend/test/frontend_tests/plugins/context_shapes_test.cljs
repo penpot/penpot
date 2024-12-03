@@ -113,11 +113,10 @@
       (t/testing " - borderRadius"
         (set! (.-borderRadius shape) 10)
         (t/is (= (.-borderRadius shape) 10))
-        (t/is (= (get-in @store (get-shape-path :rx)) 10))
+        (t/is (= (get-in @store (get-shape-path :r1)) 10))
 
         (set! (.-borderRadiusTopLeft shape) 20)
         (t/is (= (.-borderRadiusTopLeft shape) 20))
-        (t/is (= (get-in @store (get-shape-path :rx)) nil))
         (t/is (= (get-in @store (get-shape-path :r1)) 20))
         (t/is (= (get-in @store (get-shape-path :r2)) 10))
         (t/is (= (get-in @store (get-shape-path :r3)) 10))
@@ -130,7 +129,6 @@
         (t/is (= (.-borderRadiusBottomRight shape) 40))
         (t/is (= (.-borderRadiusBottomLeft shape) 50))
 
-        (t/is (= (get-in @store (get-shape-path :rx)) nil))
         (t/is (= (get-in @store (get-shape-path :r1)) 20))
         (t/is (= (get-in @store (get-shape-path :r2)) 30))
         (t/is (= (get-in @store (get-shape-path :r3)) 40))
