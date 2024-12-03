@@ -102,6 +102,10 @@
            {:type :frame
             :x (:x srect)
             :y (:y srect)
+            :r1 0
+            :r2 0
+            :r3 0
+            :r4 0
             :width (:width srect)
             :height (:height srect)}
 
@@ -164,10 +168,15 @@
   [changes frame-id parent-id objects index frame-name without-fill? target-cell-id]
 
   (let [base-parent (get objects parent-id)
+        _ (prn "prepare create empty")
 
         attrs       {:type :frame
                      :x 0
                      :y 0
+                     :r1 0
+                     :r2 0
+                     :r3 0
+                     :r4 0
                      :width 0.01
                      :height 0.01}
 

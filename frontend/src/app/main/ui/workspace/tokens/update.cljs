@@ -17,6 +17,7 @@
 (def filter-existing-values? false)
 
 (def attributes->shape-update
+  ;; ASK FLORIAN
   {#{:rx :ry} (fn [v ids _] (wtch/update-shape-radius-all v ids))
    #{:r1 :r2 :r3 :r4} wtch/update-shape-radius-single-corner
    #{:fill} wtch/update-fill

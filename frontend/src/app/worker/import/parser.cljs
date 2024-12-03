@@ -541,16 +541,13 @@
         r3 (get-meta node :r3 d/parse-double)
         r4 (get-meta node :r4 d/parse-double)
 
-        rx (-> (get svg-data :rx 0) d/parse-double)
-        ry (-> (get svg-data :ry 0) d/parse-double)]
+        rx (-> (get svg-data :rx 0) d/parse-double)]
 
     (cond-> props
       (some? r1)
-      (assoc :r1 r1 :r2 r2 :r3 r3 :r4 r4
-             :rx nil :ry nil)
-
+      (assoc :r1 r1 :r2 r2 :r3 r3 :r4 r4)
       (and (nil? r1) (some? rx))
-      (assoc :rx rx :ry ry))))
+      (assoc :r1 rx :r2 rx :r3 rx :r4 rx))))
 
 (defn add-image-data
   [props type node]

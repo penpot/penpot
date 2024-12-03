@@ -55,11 +55,6 @@
     (fix-radius width height r1 r2 r3 r4)
     [r1 r2 r3 r4]))
 
-;; (defn update-corners-scale-1
-;;   "Scales round corners (using a single value)"
-;;   [shape scale]
-;;   (update shape :r1 * scale))
-
 (defn update-corners-scale-4
   "Scales round corners (using four values)"
   [shape scale]

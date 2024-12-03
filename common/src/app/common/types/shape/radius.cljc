@@ -22,9 +22,9 @@
 ;; shapes that has border radius, and so it hasn't :rx nor :r1.
 ;; In this case operations must leave shape untouched.
 
-(defn has-radius-old?
+(defn can-get-border-radius?
   [shape]
-  (contains? (get editable-attrs (:type shape)) :rx))
+  (contains? #{:rect :frame} (:type shape)))
 
 (defn has-radius?
   [shape]
@@ -40,32 +40,14 @@
     :radius-1
     :radius-4))
 
-(defn radius-4?
-  [shape]
-  (and (:r1 shape)
-       (or (not= (:r1 shape) 0)
-           (not= (:r2 shape) 0)
-           (not= (:r3 shape) 0)
-           (not= (:r4 shape) 0))))
-
-(defn switch-to-radius-1
-  [shape]
-  (let [r (if (all-equal? shape) (:r1 shape) 0)]
-    (assoc shape :r1 r :r2 r :r3 r  :r4 r)))
-
-(defn switch-to-radius-4
-  [shape]
-  (let [rx (:rx shape 0)]
-    (-> (assoc shape :r1 rx :r2 rx :r3 rx :r4 rx)
-        (dissoc :rx))))
-
-
-(defn set-radius-1
+(defn set-radius-to-all-corners
   [shape value]
-  (-> shape
-      (assoc :r1 value :r2 value :r3 value :r4 value)))
+  ;; Only Apply changes to shapes that support Border Radius
+  (cond-> shape
+    (can-get-border-radius? shape)
+    (assoc :r1 value :r2 value :r3 value :r4 value)))
 
-(defn set-radius-4
+(defn set-radius-to-single-corner
   [shape attr value]
   (let [attr (cond->> attr
                (:flip-x shape)
@@ -73,5 +55,7 @@
 
                (:flip-y shape)
                (get {:r1 :r4 :r2 :r3 :r3 :r2 :r4 :r1}))]
-
-    (assoc shape attr value)))
+    ;; Only Apply changes to shapes that support border Radius
+    (cond-> shape
+      (can-get-border-radius? shape)
+      (assoc attr value))))

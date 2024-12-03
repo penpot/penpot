@@ -419,6 +419,10 @@
    :strokes []
    :name "Board"
    :shapes []
+   :r1 0
+   :r2 0
+   :r3 0
+   :r4 0
    :hide-fill-on-export false})
 
 (def ^:private minimal-circle-attrs

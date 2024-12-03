@@ -47,13 +47,13 @@
            (let []
              (st/emit!
               (change-radius (fn [shape]
-                               (ctsr/set-radius-1 shape value)))))))
+                               (ctsr/set-radius-to-all-corners shape value)))))))
 
         on-radius-4-change
         (mf/use-fn
          (mf/deps ids change-radius)
          (fn [value attr]
-           (st/emit! (change-radius #(ctsr/set-radius-4 % attr value)))))
+           (st/emit! (change-radius #(ctsr/set-radius-to-single-corner % attr value)))))
 
         on-radius-r1-change #(on-radius-4-change % :r1)
         on-radius-r2-change #(on-radius-4-change % :r2)
