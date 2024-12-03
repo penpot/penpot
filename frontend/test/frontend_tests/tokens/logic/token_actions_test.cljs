@@ -129,6 +129,38 @@
              (t/testing "while :r4 was kept with borderRadius.sm"
                (t/is (= (:r4 (:applied-tokens rect-1')) (:name token-sm)))))))))))
 
+(t/deftest test-apply-color
+  (t/testing "applies color token and updates the shape fill and stroke-color"
+    (t/async
+     done
+     (let [color-token {:name "color.primary"
+                        :value "red"
+                        :type :color}
+           file (-> (setup-file-with-tokens)
+                    (update-in [:data :tokens-lib]
+                               #(ctob/add-token-in-set % "Set A" (ctob/make-token color-token))))
+           store (ths/setup-store file)
+           rect-1 (cths/get-shape file :rect-1)
+           events [(wtch/apply-token {:shape-ids [(:id rect-1)]
+                                      :attributes #{:color}
+                                      :token (toht/get-token file "color.primary")
+                                      :on-update-shape wtch/update-fill})
+                   (wtch/apply-token {:shape-ids [(:id rect-1)]
+                                      :attributes #{:stroke-color}
+                                      :token (toht/get-token file "color.primary")
+                                      :on-update-shape wtch/update-stroke-color})]]
+       (tohs/run-store-async
+        store done events
+        (fn [new-state]
+          (let [file' (ths/get-file-from-store new-state)
+                token-target' (toht/get-token file' "rotation.medium")
+                rect-1' (cths/get-shape file' :rect-1)]
+            (t/is (some? (:applied-tokens rect-1')))
+            (t/is (= (:fill (:applied-tokens rect-1')) (:name token-target')))
+            (t/is (= (get-in rect-1' [:fills 0 :fill-color]) "#ff0000"))
+            (t/is (= (:stroke (:applied-tokens rect-1')) (:name token-target')))
+            (t/is (= (get-in rect-1' [:strokes 0 :stroke-color]) "#ff0000")))))))))
+
 (t/deftest test-apply-dimensions
   (t/testing "applies dimensions token and updates the shapes width and height"
     (t/async
