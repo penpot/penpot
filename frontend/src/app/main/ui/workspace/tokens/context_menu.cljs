@@ -206,11 +206,7 @@
 
 (defn default-actions [{:keys [token selected-token-set-path]}]
   (let [{:keys [modal]} (wtty/get-token-properties token)]
-    [{:title "Delete Token"
-      :action #(st/emit! (dt/delete-token (ctob/prefixed-set-path-string->set-name-string selected-token-set-path) (:name token)))}
-     {:title "Duplicate Token"
-      :action #(st/emit! (dt/duplicate-token (:name token)))}
-     {:title "Edit Token"
+    [{:title "Edit Token"
       :action (fn [event]
                 (let [{:keys [key fields]} modal]
                   (st/emit! dt/hide-token-context-menu)
@@ -221,7 +217,13 @@
                                     :fields fields
                                     :action "edit"
                                     :selected-token-set-path selected-token-set-path
-                                    :token token})))}]))
+                                    :token token})))}
+     {:title "Duplicate Token"
+      :action #(st/emit! (dt/duplicate-token (:name token)))}
+     {:title "Delete Token"
+      :action #(st/emit! (-> selected-token-set-path
+                             ctob/prefixed-set-path-string->set-name-string
+                             (dt/delete-token (:name token))))}]))
 
 (defn selection-actions [{:keys [type token] :as context-data}]
   (let [with-actions (get shape-attribute-actions-map (or type (:type token)))
