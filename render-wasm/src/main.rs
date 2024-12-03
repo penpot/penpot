@@ -263,6 +263,14 @@ pub extern "C" fn set_shape_opacity(opacity: f32) {
     }
 }
 
+#[no_mangle]
+pub extern "C" fn set_shape_hidden(hidden: bool) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape.hidden = hidden;
+    }
+}
+
 fn main() {
     init_gl();
 }

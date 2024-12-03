@@ -389,7 +389,7 @@ impl RenderState {
         let mut is_complete = self.viewbox.area.contains(shape.selrect);
 
         if !id.is_nil() {
-            if !shape.selrect.intersects(self.viewbox.area) {
+            if !shape.selrect.intersects(self.viewbox.area) || shape.hidden {
                 self.render_debug_shape(shape, false);
                 // TODO: This means that not all the shapes are renderer so we
                 // need to call a render_all on the zoom out.

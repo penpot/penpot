@@ -51,6 +51,7 @@ pub struct Shape {
     fills: Vec<Fill>,
     pub blend_mode: BlendMode,
     pub opacity: f32,
+    pub hidden: bool,
 }
 
 impl Shape {
@@ -65,6 +66,7 @@ impl Shape {
             fills: vec![],
             blend_mode: BlendMode::default(),
             opacity: 1.,
+            hidden: false,
         }
     }
 
