@@ -60,10 +60,10 @@ npm install @penpot/plugin-types
 
 If you're using typescript, don't forget to add <code class="language-js">@penpot/plugin-types</code> to your typings in your <code class="language-js">tsconfig.json</code>.
 
-```js
+```json
 {
   "compilerOptions": {
-    // ...
+    [...]
     "typeRoots": ["./node_modules/@types", "./node_modules/@penpot"],
     "types": ["plugin-types"],
   }
@@ -148,7 +148,7 @@ If you're using Vite you can simply edit the configuration file and add the buil
 
 ```ts
 export default defineConfig({
-  // ...
+[...]
   build: {
     rollupOptions: {
       input: {
@@ -168,12 +168,11 @@ export default defineConfig({
 
 And then add the following scripts to your <code class="language-js">package.json</code>:
 
-```js
+```json
 "scripts": {
-  "dev": "vite dev",
+  "dev": "vite build --watch & vite preview",
   "build": "tsc && vite build",
-  "preview": "npm run build && vite preview",
-  // ...
+  [...]
 }
 ```
 
@@ -191,11 +190,11 @@ esbuild your-folder/plugin.ts --minify --outfile=your-folder/public/plugin.js
 
 You can add it to your <code class="language-js">package.json</code> scripts so you don't need to manually re-run the build:
 
-```js
+```json
   "scripts": {
     "start": "npm run build:plugin && ng serve",
     "build:plugin": "esbuild your-folder/plugin.ts --minify --outfile=your-folder/public/plugin.js"
-    // ...
+    [...]
   },
 ```
 
