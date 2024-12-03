@@ -73,9 +73,10 @@
               (wdt/show-token-set-context-menu
                {:position (dom/get-client-position event)
                 :prefixed-set-path tree-path})))))
-        on-click (fn [event]
-                   (.stopPropagation event)
-                   (swap! collapsed? not))]
+        on-click (mf/use-fn
+                  (fn [event]
+                    (dom/stop-propagation event)
+                    (swap! collapsed? not)))]
     [:div {:role "button"
            :data-testid "tokens-set-group-item"
            :style {"--tree-depth" tree-depth}
@@ -122,7 +123,11 @@
              (st/emit!
               (wdt/show-token-set-context-menu
                {:position (dom/get-client-position event)
-                :prefixed-set-path tree-path})))))]
+                :prefixed-set-path tree-path})))))
+        on-checkbox-click (mf/use-fn
+                           (fn [event]
+                             (dom/stop-propagation event)
+                             (on-toggle set-name)))]
     [:div {:role "button"
            :data-testid "tokens-set-item"
            :style {"--tree-depth" tree-depth}
@@ -141,22 +146,19 @@
          :on-cancel on-edit-reset
          :on-create on-edit-reset
          :on-submit #(on-edit-submit set-name (ctob/update-name set %))}]
-       (let [on-checkbox-click (fn [event]
-                                 (dom/stop-propagation event)
-                                 (on-toggle set-name))]
-         [:*
-          [:div {:class (stl/css :set-name)
-                 :on-double-click #(on-edit tree-path)}
-           label]
-          [:button {:type "button"
-                    :on-click on-checkbox-click
-                    :class (stl/css-case :checkbox-style true
-                                         :checkbox-checked-style active?')}
-           (when active?'
-             [:> icon* {:aria-label (tr "workspace.token.select-set")
-                        :class (stl/css :check-icon)
-                        :size "s"
-                        :id ic/tick}])]]))]))
+       [:*
+        [:div {:class (stl/css :set-name)
+               :on-double-click #(on-edit tree-path)}
+         label]
+        [:button {:type "button"
+                  :on-click on-checkbox-click
+                  :class (stl/css-case :checkbox-style true
+                                       :checkbox-checked-style active?')}
+         (when active?'
+           [:> icon* {:aria-label (tr "workspace.token.select-set")
+                      :class (stl/css :check-icon)
+                      :size "s"
+                      :id ic/tick}])]])]))
 
 (mf/defc sets-tree
   [{:keys [set-path set-node tree-depth tree-path on-select selected? on-toggle active? editing? on-edit on-edit-reset on-edit-submit]
