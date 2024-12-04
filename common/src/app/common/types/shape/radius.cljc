@@ -9,17 +9,14 @@
    [app.common.types.shape.attrs :refer [editable-attrs]]))
 
 ;; There are some shapes that admit border radius, as rectangles
-;; frames and images. Those shapes may define the radius of the corners in two modes:
-;; - radius-1 all corners have the same radius (although we store two
-;;   values :rx and :ry because svg uses it this way).
-;; - radius-4 each corner (top-left, top-right, bottom-right, bottom-left)
-;;   has an independent value. SVG does not allow this directly, so we
-;;   emulate it with paths.
-
-;; A shape never will have both :rx and :r1 simultaneously
+;; frames components and images. 
+;; Those shapes may define the radius of the corners with four values:
+;; One for each corner (top-left, top-right, bottom-right, bottom-left)
+;; has an independent value. SVG does not allow this directly, so we
+;; emulate it with paths.
 
 ;; All operations take into account that the shape may not be a one of those
-;; shapes that has border radius, and so it hasn't :rx nor :r1.
+;; shapes that has border radius, and so it hasn't :r1.
 ;; In this case operations must leave shape untouched.
 
 (defn can-get-border-radius?
