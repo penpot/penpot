@@ -62,54 +62,92 @@ export default {
     const waitOptionsPresent = async () => {
       const options = await canvas.findByTestId("combobox-options")
       expect(options).toBeVisible();
+
+      return options;
     }
 
     await userEvent.clear(input);
 
-    // await step("Toggle dropdown on click arrow button", async () => {
-    //   await userEvent.click(button);
+    await step("Toggle dropdown on click arrow button", async () => {
+      await userEvent.click(button);
 
-    //   const options = await getOptions();
-    //   expect(options).toBeVisible();
-    //   expect(combobox).toHaveAttribute("aria-expanded", "true");
+      await waitOptionsPresent();
+      expect(combobox).toHaveAttribute("aria-expanded", "true");
 
 
-    //   await userEvent.click(button);
-    //   expect(options).not.toBeVisible();
-    //   expect(combobox).toHaveAttribute("aria-expanded", "false");
-    // });
+      await userEvent.click(button);
+      await waitOptionNotPresent();
+      expect(combobox).toHaveAttribute("aria-expanded", "false");
+    });
 
-    // await step("Toggle dropdown with arrow down and ESC", async () => {
-    //   userEvent.click(input);
+    await step("Navigation keys", async () => {
+        // Arrow down
+      await userEvent.click(input);
+      await waitOptionsPresent();
 
-    //   await waitOptionsPresent();
+      await userEvent.keyboard("{ArrowDown}");
+      await userEvent.keyboard("{ArrowDown}");
+      await userEvent.keyboard("{Enter}");
 
-    //   await userEvent.keyboard("{Escape}");
-    //   expect(combobox).toHaveAttribute("aria-expanded", "false");
-    //   await waitOptionNotPresent();
+      expect(input).toHaveValue("February");
 
-    //   await userEvent.keyboard("{ArrowDown}");
-    //   await waitOptionsPresent();
-    //   expect(combobox).toHaveAttribute("aria-expanded", "true");
+      // Arrow up
+      await userEvent.keyboard("{ArrowDown}");
+      await waitOptionsPresent();
 
-    //   await userEvent.keyboard("{Escape}");
-    //   await waitOptionNotPresent();
-    //   expect(combobox).toHaveAttribute("aria-expanded", "false");
-    // });
+      await userEvent.keyboard("{ArrowUp}");
+      await userEvent.keyboard("{ArrowUp}");
 
-    // await step("Filter with 'Ju' and select July", async () => {
-    //   await userEvent.type(input, "Ju");
+      await userEvent.keyboard("{Enter}");
 
-    //   const options = await getOptions();
-    //   expect(options).toHaveLength(2);
+      expect(input).toHaveValue("November");
 
-    //   await userEvent.keyboard("{ArrowDown}");
-    //   await userEvent.keyboard("{ArrowDown}");
+      // Home
+      await userEvent.keyboard("{ArrowDown}");
+      await waitOptionsPresent();
 
-    //   await userEvent.keyboard("{Enter}");
+      await userEvent.keyboard("{ArrowDown}");
+      await userEvent.keyboard("{ArrowDown}");
+      await userEvent.keyboard("{Home}");
+      await userEvent.keyboard("{Enter}");
 
-    //   expect(input).toHaveValue("July");
-    // });
+      expect(input).toHaveValue("January");
+
+
+      await userEvent.clear(input);
+    });
+
+    await step("Toggle dropdown with arrow down and ESC", async () => {
+      userEvent.click(input);
+
+      await waitOptionsPresent();
+
+      await userEvent.keyboard("{Escape}");
+      expect(combobox).toHaveAttribute("aria-expanded", "false");
+      await waitOptionNotPresent();
+
+      await userEvent.keyboard("{ArrowDown}");
+      await waitOptionsPresent();
+      expect(combobox).toHaveAttribute("aria-expanded", "true");
+
+      await userEvent.keyboard("{Escape}");
+      await waitOptionNotPresent();
+      expect(combobox).toHaveAttribute("aria-expanded", "false");
+    });
+
+    await step("Filter with 'Ju' and select July", async () => {
+      await userEvent.type(input, "Ju");
+
+      const options = await canvas.findAllByTestId("dropdown-option");
+      expect(options).toHaveLength(2);
+
+      await userEvent.keyboard("{ArrowDown}");
+      await userEvent.keyboard("{ArrowDown}");
+
+      await userEvent.keyboard("{Enter}");
+
+      expect(input).toHaveValue("July");
+    });
 
     await step("Close dropdown when focus out", async () => {
       await userEvent.click(button);

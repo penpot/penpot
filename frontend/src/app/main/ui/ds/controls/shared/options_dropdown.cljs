@@ -27,7 +27,8 @@
            :role "option"
            :id id
            :on-click on-click
-           :data-id id}
+           :data-id id
+           :data-testid "dropdown-option"}
 
    (when (some? icon)
      [:> icon*

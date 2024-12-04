@@ -153,15 +153,25 @@
                     index   (array/find-index #(= (deref focused*) (obj/get % "id")) options)]
                (dom/stop-propagation event)
 
+               (when (< len 0)
+                 (reset! index len))
+
                (cond
                  (kbd/home? event)
                  (handle-focus-change options focused* 0 options-nodes-refs)
 
-                 (kbd/up-arrow? event)
-                 (handle-focus-change options focused* (mod (- index 1) len) options-nodes-refs)
+                  (kbd/up-arrow? event)
+                  (let [new-index (if (= index -1)
+                                    (dec len)
+                                    (mod (- index 1) len))]
+                    (handle-focus-change options focused* new-index options-nodes-refs))
 
-                 (kbd/down-arrow? event)
-                 (handle-focus-change options focused* (mod (+ index 1) len) options-nodes-refs)
+
+                  (kbd/down-arrow? event)
+                  (let [new-index (if (= index -1)
+                                    0
+                                    (mod (+ index 1) len))]
+                    (handle-focus-change options focused* new-index options-nodes-refs))
 
                  (or (kbd/space? event) (kbd/enter? event))
                  (when (deref open*)
