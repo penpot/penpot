@@ -11,7 +11,6 @@
   display: grid;
   width: 100%;
   height: 100%;
-  padding-left: $s-12;
 }
 
 .tab-spacing {
@@ -41,7 +40,7 @@
 }
 
 .design-options {
-  padding-inline-end: $s-12;
+  padding-inline: $s-12;
 }
 
 .inspect {
@@ -49,5 +48,6 @@
 }
 
 .options-tab-switcher {
-  --tabs-nav-padding-inline-end: 12px;
+  --tabs-nav-padding-inline-start: #{$s-12};
+  --tabs-nav-padding-inline-end: #{$s-12};
 }
