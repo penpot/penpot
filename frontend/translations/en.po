@@ -1565,6 +1565,9 @@ msgstr "Active"
 msgid "labels.add"
 msgstr "Add"
 
+msgid "labels.adding"
+msgstr "Adding..."
+
 #: src/app/main/ui/dashboard/fonts.cljs:176
 msgid "labels.add-custom-font"
 msgstr "Add custom font"
@@ -4594,6 +4597,15 @@ msgstr "see all changes"
 #: src/app/main/ui/workspace/libraries.cljs:524
 msgid "workspace.libraries.updates"
 msgstr "UPDATES"
+
+msgid "workspace.libraries.empty.no-libraries"
+msgstr "There are no Shared Libraries at you team, you can look for"
+
+msgid "workspace.libraries.empty.some-templates"
+msgstr "some templates in here"
+
+msgid "workspace.libraries.empty.add-some"
+msgstr "Or add some of these to try:"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:745
 msgid "workspace.options.add-interaction"
