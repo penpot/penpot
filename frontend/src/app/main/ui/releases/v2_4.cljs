@@ -35,13 +35,13 @@
 
          [:div {:class (stl/css :features-block)}
           [:span {:class (stl/css :feature-title)}
-           "Penpot can now be extended by using Plugins!XX"]
+           "At Penpot we are at full speed!"]
 
           [:p  {:class (stl/css :feature-content)}
-           "The introduction of our brand new Plugin system allows you to access even richer ecosystem of capabilities."]
+           "With the release of the long-awaited Plugins System still fresh, this 2.4 brings improvements in a wide range of areas that will serve a variety of use cases."]
 
           [:p  {:class (stl/css :feature-content)}
-           "We are beyond excited about how this will further involve the Penpot community in building the best design and prototyping platform."]
+           "This release combines some of the most requested features—such as versioning and the viewer-only role—with performance improvements and a new .penpot format that will streamline the export of files and assets."]
 
           [:p  {:class (stl/css :feature-content)}
            "Let’s dive in!"]]
@@ -54,61 +54,87 @@
      [:div {:class (stl/css-case :modal-overlay true)}
       [:div.animated {:class klass}
        [:div {:class (stl/css :modal-container)}
-        [:img {:src "images/features/2.3-img-slide-1.gif"
+        [:img {:src "images/features/2.4-viewer.gif"
                :class (stl/css :start-image)
                :border "0"
-               :alt "Build Plugins to enhance your workflow"}]
+               :alt "Viewer role, designed to enhance collaboration"}]
 
         [:div {:class (stl/css :modal-content)}
          [:div {:class (stl/css :modal-header)}
           [:h1 {:class (stl/css :modal-title)}
-           "Build Plugins and enhance your workflow"]]
+           "Viewer role, designed to enhance collaboration"]]
 
          [:div {:class (stl/css :feature)}
           [:p {:class (stl/css :feature-content)}
-           "Penpot Plugins encourage developers to easily customize and expand the platform using standard web technologies like JavaScript, CSS, and HTML."]
+           "Collaboration takes many forms, and sometimes the risk of making unwanted or accidental adjustments can be a barrier to engaging with a design file."]
 
           [:p {:class (stl/css :feature-content)}
-           "Find everything you need in our full comprehensive documentation to start building your plugins now!"]]
+           "Now, you can invite members to your teams who only need to view and comment on files. Team members, stakeholders, developers… pick your case. Anyone who doesn't need to edit can participate confidently."]]
 
          [:div {:class (stl/css :navigation)}
           [:& c/navigation-bullets
            {:slide slide
             :navigate navigate
-            :total 2}]
+            :total 3}]
 
           [:button {:on-click next
                     :class (stl/css :next-btn)} "Continue"]]]]]]
-
 
      1
      [:div {:class (stl/css-case :modal-overlay true)}
       [:div.animated {:class klass}
        [:div {:class (stl/css :modal-container)}
-        [:img {:src "images/features/2.3-img-slide-2.gif"
+        [:img {:src "images/features/2.4-history.gif"
                :class (stl/css :start-image)
                :border "0"
-               :alt "Plugins are safe and extremely easy to use"}]
+               :alt "A timeline for your design process"}]
 
         [:div {:class (stl/css :modal-content)}
          [:div {:class (stl/css :modal-header)}
           [:h1 {:class (stl/css :modal-title)}
-           "Plugins are safe and extremely easy to use"]]
+           "A timeline for your design process"]]
+
          [:div {:class (stl/css :feature)}
           [:p {:class (stl/css :feature-content)}
-           "Penpot plugins are quite easy to install."]
-          [:p {:class (stl/css :feature-content)}
-           "Be sure to keep an eye on our evolving " [:a {:href "https://penpot.app/penpothub" :target "_blank"} "Penpot Hub"] " to pick the ones that are best suited to enhance your workflow."]
+           "Version History allows you to save different stages of your design process, so you can revisit them whenever needed."]
 
           [:p {:class (stl/css :feature-content)}
-           "This is just the beginning of a myriad of possibilities. Let’s build this community together ❤️."]]
+           "Some versions are saved automatically, serving as an invaluable emergency backup. Additionally, you can manually save versions, giving you full control over the timeline associated with a file. This way, you can always restore specific versions that you've intentionally saved."]]
+
+         [:div {:class (stl/css :navigation)}
+          [:& c/navigation-bullets
+           {:slide slide
+            :navigate navigate
+            :total 3}]
+
+          [:button {:on-click next
+                    :class (stl/css :next-btn)} "Continue"]]]]]]
+
+     2
+     [:div {:class (stl/css-case :modal-overlay true)}
+      [:div.animated {:class klass}
+       [:div {:class (stl/css :modal-container)}
+        [:img {:src "images/features/2.4-format.gif"
+               :class (stl/css :start-image)
+               :border "0"
+               :alt "New export format: fast and open"}]
+
+        [:div {:class (stl/css :modal-content)}
+         [:div {:class (stl/css :modal-header)}
+          [:h1 {:class (stl/css :modal-title)}
+           "New export format: fast and open"]]
+         [:div {:class (stl/css :feature)}
+          [:p {:class (stl/css :feature-content)}
+           "The new .penpot format will streamline the import and export of files and assets by being more efficient and interoperable."] 
+          [:p {:class (stl/css :feature-content)}
+           "This format replaces the previous two—so no more choosing between them or accidentally picking the wrong one! It's better for both scenarios: if you just need to import or export files quickly, it’ll be a bit faster. And if you want to extract data (like a list of color assets), this new format is much easier to read."]]
 
          [:div {:class (stl/css :navigation)}
 
           [:& c/navigation-bullets
            {:slide slide
             :navigate navigate
-            :total 2}]
+            :total 3}]
 
           [:button {:on-click finish
                     :class (stl/css :next-btn)} "Let's go"]]]]]])))
