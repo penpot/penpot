@@ -21,6 +21,7 @@
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.ds.storybook :as sb]
+   [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.util.i18n :as i18n]))
 
 
@@ -40,6 +41,7 @@
        :Text text*
        :TabSwitcher tab-switcher*
        :Toast toast*
+       :Swatch swatch*
        ;; meta / misc
        :meta #js {:icons (clj->js (sort icon-list))
                   :svgs (clj->js (sort raw-svg-list))
