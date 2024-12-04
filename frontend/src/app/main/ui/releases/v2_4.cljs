@@ -20,7 +20,7 @@
      [:div {:class (stl/css-case :modal-overlay true)}
       [:div.animated {:class klass}
        [:div {:class (stl/css :modal-container)}
-        [:img {:src "images/features/2.3-slide-0.png"
+        [:img {:src "images/features/2.4-slide-0.jpg"
                :class (stl/css :start-image)
                :border "0"
                :alt "A graphic illustration with Penpot style"}]
