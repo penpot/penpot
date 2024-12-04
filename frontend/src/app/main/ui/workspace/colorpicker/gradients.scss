@@ -18,8 +18,8 @@
   height: 100%;
   display: flex;
   align-items: center;
-  padding: $s-12;
   position: relative;
+  padding: 0 var(--sp-m);
 }
 
 .gradient-background {
@@ -89,6 +89,7 @@
 .gradient-options {
   display: flex;
   justify-content: space-between;
+  padding: 0 var(--sp-m);
 }
 
 .gradient-options-buttons {
@@ -110,7 +111,7 @@
   max-height: $s-180;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: $s-1 0;
+  padding: 0 0 var(--sp-s) var(--sp-m);
 }
 
 .gradient-stops-entry {
@@ -120,60 +121,23 @@
   border-radius: $br-12;
   border: $s-1 solid transparent;
 
-  &:hover .reorder-icon {
-    visibility: visible;
-  }
+  position: relative;
 
   &.is-selected {
     border-color: var(--color-accent-primary-muted);
   }
 
-  &.dnd-over-top .reorder-separator-top {
-    display: block;
+  &:hover {
+    --reorder-icon-visibility: visible;
   }
 
-  &.dnd-over-bot .reorder-separator-bottom {
-    display: block;
+  &.dnd-over-top {
+    --reorder-top-display: block;
   }
-}
 
-.reorder {
-  cursor: grab;
-  display: flex;
-  flex-direction: column;
-  height: $s-36;
-  justify-content: center;
-  left: calc(-1 * $s-2);
-  margin-top: calc(-1 * $s-2);
-  position: absolute;
-  width: $s-16;
-}
-
-.reorder-icon {
-  height: $s-16;
-  pointer-events: none;
-  stroke: var(--color-foreground-secondary);
-  visibility: hidden;
-}
-
-.reorder-separator-top {
-  border-color: var(--color-accent-primary);
-  display: none;
-  left: 0;
-  margin-left: $s-12;
-  margin-top: calc(-1 * $s-6);
-  position: absolute;
-  width: calc(100% - $s-24);
-}
-
-.reorder-separator-bottom {
-  border-color: var(--color-accent-primary);
-  display: none;
-  left: 0;
-  margin-left: $s-12;
-  margin-top: $s-36;
-  position: absolute;
-  width: calc(100% - $s-24);
+  &.dnd-over-bot {
+    --reorder-bottom-display: block;
+  }
 }
 
 .offset-input-wrapper {
@@ -185,9 +149,9 @@
 .gradient-separator {
   border-color: var(--color-background-quaternary);
   border-width: $s-3;
-  margin-left: -4%;
+  margin-left: calc(var(--sp-m) / 2);
   position: relative;
-  width: 108%;
+  width: calc(100% - var(--sp-m));
 }
 
 .gradient-preview-stop-preview {

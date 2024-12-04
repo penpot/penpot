@@ -12,9 +12,9 @@
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.reorder-handler :refer [reorder-handler]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
@@ -140,14 +140,7 @@
                                 :dnd-over-top (= (:over dprops) :top)
                                 :dnd-over-bot (= (:over dprops) :bot))}
 
-     [:div {:ref dref
-            :class (stl/css :reorder)}
-      [:> icon*
-       {:id i/reorder
-        :class (stl/css :reorder-icon)
-        :aria-hidden true}]]
-     [:hr {:class (stl/css :reorder-separator-top)}]
-     [:hr {:class (stl/css :reorder-separator-bottom)}]
+     [:& reorder-handler {:ref dref}]
 
      [:div {:class (stl/css :offset-input-wrapper)}
       [:span {:class (stl/css :icon-text)} "%"]

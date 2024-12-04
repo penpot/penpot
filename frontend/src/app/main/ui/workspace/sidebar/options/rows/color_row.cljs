@@ -18,6 +18,7 @@
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.color-input :refer [color-input*]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.reorder-handler :refer [reorder-handler]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.formats :as fmt]
@@ -27,7 +28,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
-
 
 (def ^:private detach-icon
   (i/icon-xref :detach (stl/css :detach-icon)))
@@ -194,8 +194,12 @@
     [:div {:class (stl/css-case
                    :color-data true
                    :dnd-over-top (= (:over dprops) :top)
-                   :dnd-over-bot (= (:over dprops) :bot))
-           :ref dref}
+                   :dnd-over-bot (= (:over dprops) :bot))}
+
+     ;; Drag handler
+     (when (some? on-reorder)
+       [:& reorder-handler {:ref dref}])
+
      [:div {:class (stl/css :color-info)}
       [:div {:class (stl/css-case :color-name-wrapper true
                                   :no-opacity (or disable-opacity
