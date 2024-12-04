@@ -16,7 +16,8 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.modal :as modal]
-   [app.main.data.users :as du]
+   [app.main.data.profile :as du]
+   [app.main.data.team :as dtm]
    [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
@@ -103,10 +104,10 @@
      [:li {:class (stl/css :element-count)}
       (tr "workspace.libraries.typography" typography-count)])])
 
-
-(mf/defc libraries-tab
-  {::mf/wrap-props false}
-  [{:keys [file-id shared? linked-libraries shared-libraries]}]
+(mf/defc libraries-tab*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [file-id is-shared linked-libraries shared-libraries]}]
   (let [search-term*   (mf/use-state "")
         search-term    (deref search-term*)
         library-ref    (mf/with-memo [file-id]
@@ -127,7 +128,7 @@
         shared-libraries
         (mf/with-memo [shared-libraries linked-libraries file-id search-term]
           (when shared-libraries
-            (->> shared-libraries
+            (->> (vals shared-libraries)
                  (remove #(= (:id %) file-id))
                  (remove #(contains? linked-libraries (:id %)))
                  (filter #(matches-search (:name %) search-term))
@@ -219,7 +220,7 @@
                                        :graphics-count (count media)
                                        :colors-count (count colors)
                                        :typography-count (count typographies)}]]]
-        (if ^boolean shared?
+        (if ^boolean is-shared
           [:input {:class (stl/css :item-unpublish)
                    :type "button"
                    :value (tr "common.unpublish")
@@ -348,8 +349,9 @@
                         :colors colors
                         :typographies typographies}]))
 
-(mf/defc updates-tab
-  {::mf/wrap-props false}
+(mf/defc updates-tab*
+  {::mf/props :obj
+   ::mf/private true}
   [{:keys [file-id file-data libraries]}]
   (let [summary?*  (mf/use-state true)
         summary?   (deref summary?*)
@@ -487,11 +489,9 @@
   {::mf/register modal/components
    ::mf/register-as :libraries-dialog}
   [{:keys [starting-tab] :as props :or {starting-tab :libraries}}]
-  (let [project        (mf/deref refs/workspace-project)
-        file-data      (mf/deref refs/workspace-data)
+  (let [file-data      (mf/deref refs/workspace-data)
         file           (mf/deref ref:workspace-file)
 
-        team-id        (:team-id project)
         file-id        (:id file)
         shared?        (:is-shared file)
 
@@ -499,37 +499,44 @@
         libraries      (mf/with-memo [libraries]
                          (d/removem (fn [[_ val]] (:is-indirect val)) libraries))
 
-        ;; NOTE: we really don't need react on shared files
         shared-libraries
-        (mf/deref refs/workspace-shared-files)
+        (mf/deref refs/shared-files)
 
         close-dialog-outside
-        (mf/use-fn (fn [event]
-                     (when (= (dom/get-target event) (dom/get-current-target event))
-                       (modal/hide!))))
+        (mf/use-fn
+         (fn [event]
+           (when (= (dom/get-target event) (dom/get-current-target event))
+             (modal/hide!))))
 
         close-dialog
-        (mf/use-fn (fn [_]
-                     (modal/hide!)
-                     (modal/disallow-click-outside!)))
+        (mf/use-fn
+         (fn [_]
+           (modal/hide!)
+           (modal/disallow-click-outside!)))
+
+        libraries-tab
+        (mf/html [:> libraries-tab*
+                  {:file-id file-id
+                   :is-shared shared?
+                   :linked-libraries libraries
+                   :shared-libraries shared-libraries}])
+
+        updates-tab
+        (mf/html [:> updates-tab*
+                  {:file-id file-id
+                   :file-data file-data
+                   :libraries libraries}])
 
         tabs
         #js [#js {:label (tr "workspace.libraries.libraries")
                   :id "libraries"
-                  :content (mf/html [:& libraries-tab {:file-id file-id
-                                                       :shared? shared?
-                                                       :linked-libraries libraries
-                                                       :shared-libraries shared-libraries}])}
-
+                  :content libraries-tab}
              #js {:label (tr "workspace.libraries.updates")
                   :id "updates"
-                  :content (mf/html [:& updates-tab {:file-id file-id
-                                                     :file-data file-data
-                                                     :libraries libraries}])}]]
+                  :content updates-tab}]]
 
-    (mf/with-effect [team-id]
-      (when team-id
-        (st/emit! (dwl/fetch-shared-files {:team-id team-id}))))
+    (mf/with-effect []
+      (st/emit! (dtm/fetch-shared-files)))
 
     [:div {:class (stl/css :modal-overlay) :on-click close-dialog-outside :data-testid "libraries-modal"}
      [:div {:class (stl/css :modal-dialog)}

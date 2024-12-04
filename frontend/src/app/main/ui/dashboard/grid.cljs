@@ -12,8 +12,11 @@
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
    [app.config :as cf]
+   [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.notifications :as ntf]
+   [app.main.data.project :as dpj]
+   [app.main.data.team :as dtm]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.rasterizer :as thr]
@@ -71,11 +74,18 @@
        (rx/mapcat thr/render)
        (rx/mapcat (partial persist-thumbnail file-id revn))))
 
-(mf/defc grid-item-thumbnail
-  {::mf/wrap-props false}
-  [{:keys [file-id revn thumbnail-id background-color can-edit]}]
-  (let [container (mf/use-ref)
-        visible?  (h/use-visible container :once? true)]
+(mf/defc grid-item-thumbnail*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [can-edit file]}]
+  (let [file-id      (get file :id)
+        revn         (get file :revn)
+        thumbnail-id (get file :thumbnail-id)
+
+        bg-color     (dm/get-in file [:data :background])
+
+        container    (mf/use-ref)
+        visible?     (h/use-visible container :once? true)]
 
     (mf/with-effect [file-id revn visible? thumbnail-id]
       (when (and visible? (not thumbnail-id))
@@ -89,7 +99,7 @@
                                     :message (ex-message cause)))))))
 
     [:div {:class (stl/css :grid-item-th)
-           :style {:background-color background-color}
+           :style {:background-color bg-color}
            :ref container}
      (when visible?
        (if thumbnail-id
@@ -108,10 +118,9 @@
 (def ^:private menu-icon
   (i/icon-xref :menu (stl/css :menu-icon)))
 
-(mf/defc grid-item-library
-  {::mf/wrap [mf/memo]}
-  [{:keys [file] :as props}]
-
+(mf/defc grid-item-library*
+  {::mf/props :obj}
+  [{:keys [file]}]
   (mf/with-effect [file]
     (when file
       (let [font-ids (map :font-id (get-in file [:library-summary :typographies :sample] []))]
@@ -231,16 +240,12 @@
     (dom/set-text! counter-el (str file-count))
     counter-el))
 
-(mf/defc grid-item
-  {:wrap [mf/memo]}
-  [{:keys [file origin library-view? can-edit] :as props}]
+(mf/defc grid-item*
+  {::mf/props :obj}
+  [{:keys [file origin can-edit selected-files]}]
   (let [file-id         (:id file)
 
-        ;; FIXME: this breaks react hooks rule, hooks should never to
-        ;; be in a conditional code
-        selected-files  (if (= origin :search)
-                          (mf/deref refs/dashboard-selected-search)
-                          (mf/deref refs/dashboard-selected-files))
+        is-library-view (= origin :libraries)
 
         dashboard-local (mf/deref refs/dashboard-local)
         file-menu-open? (:menu-open dashboard-local)
@@ -267,12 +272,12 @@
 
         on-navigate
         (mf/use-fn
-         (mf/deps file)
+         (mf/deps file-id)
          (fn [event]
            (let [menu-icon (mf/ref-val menu-ref)
                  target    (dom/get-target event)]
              (when-not (dom/child? target menu-icon)
-               (st/emit! (dd/go-to-workspace file))))))
+               (st/emit! (dcm/go-to-workspace :file-id file-id))))))
 
         on-drag-start
         (mf/use-fn
@@ -354,9 +359,12 @@
                (on-select event)) ;; TODO Fix this
              )))]
 
-    [:li {:class (stl/css-case :grid-item true :project-th true :library library-view?)}
+    [:li {:class (stl/css-case :grid-item true
+                               :project-th true
+                               :library is-library-view)}
      [:div
-      {:class (stl/css-case :selected selected? :library library-view?)
+      {:class (stl/css-case :selected selected?
+                            :library is-library-view)
        :ref node-ref
        :role "button"
        :title (:name file)
@@ -369,16 +377,11 @@
 
       [:div {:class (stl/css :overlay)}]
 
-      (if library-view?
-        [:& grid-item-library {:file file}]
-        [:& grid-item-thumbnail
-         {:file-id (:id file)
-          :can-edit can-edit
-          :revn (:revn file)
-          :thumbnail-id (:thumbnail-id file)
-          :background-color (dm/get-in file [:data :options :background])}])
+      (if ^boolean is-library-view
+        [:> grid-item-library* {:file file}]
+        [:> grid-item-thumbnail* {:file file :can-edit can-edit}])
 
-      (when (and (:is-shared file) (not library-view?))
+      (when (and (:is-shared file) (not is-library-view))
         [:div {:class (stl/css :item-badge)} i/library])
 
       [:div {:class (stl/css :info-wrapper)}
@@ -417,7 +420,8 @@
                             :parent-id (dm/str file-id "-action-menu")}]])]]]]]))
 
 (mf/defc grid
-  [{:keys [files project origin limit library-view? create-fn can-edit] :as props}]
+  {::mf/props :obj}
+  [{:keys [files project origin limit create-fn can-edit selected-files]}]
   (let [dragging?  (mf/use-state false)
         project-id (:id project)
         node-ref   (mf/use-var nil)
@@ -425,9 +429,11 @@
         on-finish-import
         (mf/use-fn
          (fn []
-           (st/emit! (dd/fetch-files {:project-id project-id})
-                     (dd/fetch-shared-files)
+           (st/emit! (dpj/fetch-files project-id)
+                     (dtm/fetch-shared-files)
                      (dd/clear-selected-files))))
+
+
 
         import-files (use-import-file project-id on-finish-import)
 
@@ -484,13 +490,12 @@
           (when @dragging?
             [:li {:class (stl/css :grid-item)}])
           (for [item slice]
-            [:& grid-item
+            [:> grid-item*
              {:file item
-              :key (:id item)
-              :navigate? true
+              :key (dm/str (:id item))
               :origin origin
-              :can-edit can-edit
-              :library-view? library-view?}])])
+              :selected-files selected-files
+              :can-edit can-edit}])])
 
        :else
        [:& empty-placeholder
@@ -510,13 +515,12 @@
        [:li {:class (stl/css :grid-item :dragged)}])
 
      (for [item (take limit files)]
-       [:& grid-item
+       [:> grid-item*
         {:id (:id item)
          :file item
          :selected-files selected-files
          :can-edit can-edit
-         :key (:id item)
-         :navigate? false}])]))
+         :key (dm/str (:id item))}])]))
 
 (mf/defc line-grid
   [{:keys [project team files limit create-fn can-edit] :as props}]
@@ -524,8 +528,8 @@
         project-id       (:id project)
         team-id          (:id team)
 
-        selected-files   (mf/deref refs/dashboard-selected-files)
-        selected-project (mf/deref refs/dashboard-selected-project)
+        selected-files   (mf/deref refs/selected-files)
+        selected-project (mf/deref refs/selected-project)
 
         on-finish-import
         (mf/use-fn

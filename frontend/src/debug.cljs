@@ -16,6 +16,7 @@
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dwc]
+   [app.main.data.common :as dcm]
    [app.main.data.dashboard.shortcuts]
    [app.main.data.preview :as dp]
    [app.main.data.viewer.shortcuts]
@@ -232,7 +233,7 @@
 (defn ^:export select-by-object-id
   [object-id]
   (let [[_ page-id shape-id _] (str/split object-id #"/")]
-    (st/emit! (dw/go-to-page (uuid/uuid page-id)))
+    (st/emit! (dcm/go-to-workspace :page-id (uuid/uuid page-id)))
     (st/emit! (dws/select-shape (uuid/uuid shape-id)))))
 
 (defn ^:export select-by-id

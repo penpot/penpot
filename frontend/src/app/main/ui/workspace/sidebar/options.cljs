@@ -134,7 +134,7 @@
    ::mf/props :obj}
   [{:keys [selected shapes shapes-with-children page-id file-id on-change-section on-expand]}]
   (let [objects              (mf/deref refs/workspace-page-objects)
-        permissions          (mf/use-ctx ctx/team-permissions)
+        permissions          (mf/use-ctx ctx/permissions)
 
         selected-shapes      (into [] (keep (d/getf objects)) selected)
         first-selected-shape (first selected-shapes)

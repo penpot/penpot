@@ -15,6 +15,7 @@
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
+   [app.main.data.common :as dcm]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.refs :as refs]
@@ -291,7 +292,7 @@
              (when (dom/left-mouse? event)
                (dom/prevent-default event)
                (dom/stop-propagation event)
-               (st/emit! (dw/go-to-viewer params))))))
+               (st/emit! (dcm/go-to-viewer params))))))
 
         on-double-click
         (mf/use-fn

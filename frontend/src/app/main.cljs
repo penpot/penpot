@@ -10,8 +10,9 @@
    [app.common.logging :as log]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.main.data.events :as ev]
-   [app.main.data.users :as du]
+   [app.main.data.auth :as da]
+   [app.main.data.event :as ev]
+   [app.main.data.profile :as dp]
    [app.main.data.websocket :as ws]
    [app.main.errors]
    [app.main.features :as feat]
@@ -66,14 +67,14 @@
   authenticated user; proceed to fetch teams."
   [stream]
   (rx/merge
-   (rx/of (du/fetch-profile))
+   (rx/of (dp/fetch-profile))
    (->> stream
-        (rx/filter (ptk/type? ::profile-fetched))
+        (rx/filter dp/profile-fetched?)
         (rx/take 1)
         (rx/map deref)
         (rx/mapcat (fn [profile]
-                     (if (du/is-authenticated? profile)
-                       (rx/of (du/fetch-teams))
+                     (if (dp/is-authenticated? profile)
+                       (rx/of (dp/initialize-profile profile))
                        (rx/empty))))
         (rx/observe-on :async))))
 
@@ -92,19 +93,24 @@
 
        (initialize-profile stream)
 
+       ;; Watch for profile deletion events
+       (->> stream
+            (rx/filter dp/profile-deleted?)
+            (rx/map da/logged-out))
+
        ;; Once profile is fetched, initialize all penpot application
        ;; routes
        (->> stream
-            (rx/filter du/profile-fetched?)
+            (rx/filter dp/profile-fetched?)
             (rx/take 1)
             (rx/map #(rt/init-routes)))
 
        ;; Once profile fetched and the current user is authenticated,
        ;; proceed to initialize the websockets connection.
        (->> stream
-            (rx/filter du/profile-fetched?)
+            (rx/filter dp/profile-fetched?)
             (rx/map deref)
-            (rx/filter du/is-authenticated?)
+            (rx/filter dp/is-authenticated?)
             (rx/take 1)
             (rx/map #(ws/initialize)))))))
 

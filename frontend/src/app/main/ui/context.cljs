@@ -33,4 +33,4 @@
 (def is-component?        (mf/create-context false))
 (def sidebar              (mf/create-context nil))
 
-(def team-permissions     (mf/create-context nil))
+(def permissions          (mf/create-context nil))

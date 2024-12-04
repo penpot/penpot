@@ -13,7 +13,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.config :as cfg]
-   [app.main.data.events :as-alias ev]
+   [app.main.data.event :as-alias ev]
    [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace.colors :as dc]

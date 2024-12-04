@@ -291,16 +291,17 @@
   (set! (.-height canvas) (* dpr (.-clientHeight ^js canvas))))
 
 (defonce module
-  (if (exists? js/dynamicImport)
-    (let [uri (cf/resolve-static-asset "js/render_wasm.js")]
-      (->> (js/dynamicImport (str uri))
-           (p/mcat (fn [module]
-                     (let [default (unchecked-get module "default")]
-                       (default))))
-           (p/fmap (fn [module]
-                     (set! internal-module module)
-                     true))
-           (p/merr (fn [cause]
-                     (js/console.error cause)
-                     (p/resolved false)))))
-    (p/resolved false)))
+  (delay
+    (if (exists? js/dynamicImport)
+      (let [uri (cf/resolve-static-asset "js/render_wasm.js")]
+        (->> (js/dynamicImport (str uri))
+             (p/mcat (fn [module]
+                       (let [default (unchecked-get module "default")]
+                         (default))))
+             (p/fmap (fn [module]
+                       (set! internal-module module)
+                       true))
+             (p/merr (fn [cause]
+                       (js/console.error cause)
+                       (p/resolved false)))))
+      (p/resolved false))))

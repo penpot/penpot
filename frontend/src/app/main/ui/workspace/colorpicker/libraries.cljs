@@ -10,7 +10,7 @@
    [app.common.colors :as c]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
    [app.main.refs :as refs]

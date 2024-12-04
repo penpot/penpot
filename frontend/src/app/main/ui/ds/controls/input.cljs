@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list]]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
@@ -25,17 +26,25 @@
   {::mf/props :obj
    ::mf/forward-ref true
    ::mf/schema schema:input}
-  [{:keys [icon class type external-ref] :rest props}]
-  (let [ref (or external-ref (mf/use-ref))
-        type (or type "text")
-        icon-class (stl/css-case :input true
-                                 :input-with-icon (some? icon))
-        props (mf/spread-props props {:class icon-class :ref ref :type type})
-        handle-icon-click (mf/use-fn (mf/deps ref)
-                                     (fn [_]
-                                       (let [input-node (mf/ref-val ref)]
-                                         (dom/select-node input-node)
-                                         (dom/focus! input-node))))]
-    [:> "span" {:class (dm/str class " " (stl/css :container))}
-     (when icon [:> icon* {:id icon :class (stl/css :icon) :on-click handle-icon-click}])
-     [:> "input" props]]))
+  [{:keys [icon class type] :rest props} ref]
+  (let [ref   (or ref (mf/use-ref))
+        type  (d/nilv type "text")
+        props (mf/spread-props props
+                               :class (stl/css-case
+                                       :input true
+                                       :input-with-icon (some? icon))
+                               :ref ref
+                               :type type)
+
+        on-icon-click
+        (mf/use-fn
+         (mf/deps ref)
+         (fn [_event]
+           (let [input-node (mf/ref-val ref)]
+             (dom/select-node input-node)
+             (dom/focus! input-node))))]
+
+    [:> :span {:class (dm/str class " " (stl/css :container))}
+     (when (some? icon)
+       [:> icon* {:id icon :class (stl/css :icon) :on-click on-icon-click}])
+     [:> :input props]]))

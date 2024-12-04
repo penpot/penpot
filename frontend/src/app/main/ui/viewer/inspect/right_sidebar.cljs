@@ -9,7 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.component :as ctk]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.shape-icon :as sir]

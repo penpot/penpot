@@ -8,7 +8,8 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.config :as cf]
-   [app.main.data.events :as ev]
+   [app.main.data.common :as dcm]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as scd]
    [app.main.data.workspace :as dw]
@@ -169,7 +170,7 @@
            (let [params {:page-id page-id
                          :file-id file-id
                          :section "interactions"}]
-             (st/emit! (dw/go-to-viewer params)))))
+             (st/emit! (dcm/go-to-viewer params)))))
 
         active-comments
         (mf/use-fn

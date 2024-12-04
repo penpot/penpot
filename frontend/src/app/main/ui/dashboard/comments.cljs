@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.comments :as dcm]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -63,7 +63,7 @@
 (mf/defc comments-section
   [{:keys [profile team show? on-hide-comments]}]
   (let [threads-map    (mf/deref refs/comment-threads)
-        users          (mf/deref refs/current-team-comments-users)
+        profiles       (mf/deref refs/profiles)
         team-id        (:id team)
 
         tgroups        (->> (vals threads-map)
@@ -114,13 +114,13 @@
            {:group (first tgroups)
             :on-thread-click on-navigate
             :show-file-name true
-            :users users}]
+            :profiles profiles}]
           (for [tgroup (rest tgroups)]
             [:& cmt/comment-thread-group
              {:group tgroup
               :on-thread-click on-navigate
               :show-file-name true
-              :users users
+              :profiles profiles
               :key (:page-id tgroup)}])]
 
          [:div {:class (stl/css :thread-groups-placeholder)}

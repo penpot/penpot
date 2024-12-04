@@ -9,18 +9,18 @@
    [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
-   [app.main.data.events :as-alias ev]
+   [app.main.data.event :as-alias ev]
    [app.main.data.exports.files :as fexp]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.context :as ctx]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.router :as rt]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
@@ -85,10 +85,9 @@
 
         on-new-tab
         (fn [_]
-          (let [path-params  {:project-id (:project-id file)
-                              :file-id (:id file)}]
-            (st/emit! (rt/nav-new-window* {:rname :workspace
-                                           :path-params path-params}))))
+          (st/emit! (dcm/go-to-workspace
+                     {:file-id (:id file)
+                      ::rt/new-window true})))
 
         on-duplicate
         (fn [_]
@@ -134,7 +133,9 @@
             (st/emit! (ntf/success (tr "dashboard.success-move-files")))
             (st/emit! (ntf/success (tr "dashboard.success-move-file"))))
           (if (or navigate (not= team-id current-team-id))
-            (st/emit! (dd/go-to-files team-id project-id))
+            (st/emit! (dcm/go-to-dashboard-files
+                       {:project-id project-id
+                        :team-id team-id}))
             (st/emit! (dd/fetch-recent-files)
                       (dd/clear-selected-files))))
 

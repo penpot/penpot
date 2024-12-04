@@ -70,14 +70,15 @@
 
       :restore
       (fn []
-        (cond
-          (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :restore "Plugin doesn't have 'content:write' permission")
+        (js/Promise.
+         (fn [resolve reject]
+           (cond
+             (not (r/check-permission plugin-id "content:write"))
+             (u/reject-not-valid reject :restore "Plugin doesn't have 'content:write' permission")
 
-          :else
-          (let [project-id (:current-project-id @st/state)
-                version-id (get @data :id)]
-            (st/emit! (dwv/restore-version project-id file-id version-id :plugin)))))
+             :else
+             (let [version-id (get @data :id)]
+               (st/emit! (dwv/restore-version-from-plugin file-id version-id resolve reject)))))))
 
       :remove
       (fn []
@@ -90,7 +91,8 @@
              :else
              (let [version-id (:id @data)]
                (->> (rp/cmd! :delete-file-snapshot {:id version-id})
-                    (rx/subs! #(resolve) reject)))))))
+                    (rx/map (constantly nil))
+                    (rx/subs! resolve reject)))))))
 
       :pin
       (fn []

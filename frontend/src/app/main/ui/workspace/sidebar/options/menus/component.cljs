@@ -277,7 +277,6 @@
                      (assoc file :data data))))]
     (l/derived get-libraries st/state)))
 
-
 (defn- find-common-path
   ([components]
    (let [paths (map (comp cfh/split-path :path) components)]

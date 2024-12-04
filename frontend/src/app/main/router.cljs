@@ -4,13 +4,13 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.util.router
+(ns app.main.router
   (:refer-clojure :exclude [resolve])
   (:require
    [app.common.data.macros :as dm]
    [app.common.uri :as u]
    [app.config :as cf]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.util.browser-history :as bhistory]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
@@ -28,11 +28,10 @@
   (r/map->Match data))
 
 (defn resolve
-  ([router id] (resolve router id {} {}))
-  ([router id path-params] (resolve router id path-params {}))
-  ([router id path-params query-params]
-   (when-let [match (r/match-by-name router id path-params)]
-     (r/match->path match query-params))))
+  ([router id] (resolve router id {}))
+  ([router id params]
+   (when-let [match (r/match-by-name router id)]
+     (r/match->path match params))))
 
 (defn create
   [routes]
@@ -63,6 +62,9 @@
 (defn navigated
   [match]
   (ptk/reify ::navigated
+    IDeref
+    (-deref [_] match)
+
     ev/Event
     (-data [_]
       (let [route  (dm/get-in match [:data :name])
@@ -77,25 +79,29 @@
           (assoc :route match)
           (dissoc :exception)))))
 
-(defn navigate*
-  [id path-params query-params replace]
+(defn navigate
+  [id params & {:keys [::replace ::new-window] :as options}]
   (ptk/reify ::navigate
     IDeref
     (-deref [_]
       {:id id
-       :path-params path-params
-       :query-params query-params
-       :replace replace})
+       :params params
+       :options options})
 
     ptk/EffectEvent
     (effect [_ state _]
       (let [router  (:router state)
             history (:history state)
-            path    (resolve router id path-params query-params)]
-        (ts/asap
-         #(if ^boolean replace
-            (bhistory/replace-token! history path)
-            (bhistory/set-token! history path)))))))
+            path    (resolve router id params)]
+
+        (if ^boolean new-window
+          (let [name   (or (::window-name options) "_blank")
+                uri    (assoc cf/public-uri :fragment path)]
+            (dom/open-new-window uri name nil))
+          (ts/asap
+           #(if ^boolean replace
+              (bhistory/replace-token! history path)
+              (bhistory/set-token! history path))))))))
 
 (defn assign-exception
   [error]
@@ -107,27 +113,14 @@
         (assoc state :exception error)))))
 
 (defn nav
-  ([id] (nav id nil nil))
-  ([id path-params] (nav id path-params nil))
-  ([id path-params query-params] (navigate* id path-params query-params false)))
+  ([id] (navigate id nil))
+  ([id params] (navigate id params))
+  ([id params & {:as options}]
+   (navigate id params options)))
 
-(defn nav'
-  ([id] (nav id nil nil))
-  ([id path-params] (nav id path-params nil))
-  ([id path-params query-params] (navigate* id path-params query-params true)))
-
-(def navigate nav)
-
-(defn nav-new-window*
-  [{:keys [rname path-params query-params name]}]
-  (ptk/reify ::nav-new-window
-    ptk/EffectEvent
-    (effect [_ state _]
-      (let [router (:router state)
-            path   (resolve router rname path-params query-params)
-            name   (or name "_blank")
-            uri    (assoc cf/public-uri :fragment path)]
-        (dom/open-new-window uri name nil)))))
+(defn get-params
+  [state]
+  (dm/get-in state [:route :params :query]))
 
 (defn nav-back
   []

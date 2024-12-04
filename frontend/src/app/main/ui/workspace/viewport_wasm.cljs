@@ -94,7 +94,7 @@
                 show-distances?
                 picking-color?]} wglobal
 
-        permissions       (mf/use-ctx ctx/team-permissions)
+        permissions       (mf/use-ctx ctx/permissions)
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
 
         ;; DEREFS

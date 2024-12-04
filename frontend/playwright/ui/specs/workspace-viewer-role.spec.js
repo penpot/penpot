@@ -7,11 +7,7 @@ test.beforeEach(async ({ page }) => {
 
   const workspacePage = new WorkspacePage(page);
   await workspacePage.setupEmptyFile(page);
-  await WorkspacePage.mockRPC(
-    page,
-    "get-team?id=*",
-    "workspace/get-team-role-viewer.json",
-  );
+  await WorkspacePage.mockRPC(page, "get-teams", "get-teams-role-viewer.json");
 
   await workspacePage.goToWorkspace();
 });

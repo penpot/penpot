@@ -13,13 +13,13 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.common :as dcm]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.files :as fexp]
    [app.main.data.modal :as modal]
    [app.main.data.plugins :as dp]
+   [app.main.data.profile :as du]
    [app.main.data.shortcuts :as scd]
-   [app.main.data.users :as du]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shortcuts :as sc]
@@ -37,7 +37,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.router :as rt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -68,7 +67,7 @@
         (mf/use-fn #(dom/open-new-window "https://penpot.app/terms"))
 
         nav-to-feedback
-        (mf/use-fn #(st/emit! (rt/nav-new-window* {:rname :settings-feedback})))
+        (mf/use-fn #(st/emit! (dcm/go-to-feedback)))
 
         plugins?
         (features/active-feature? @st/state "plugins/runtime")
@@ -425,7 +424,7 @@
   (let [select-all (mf/use-fn #(st/emit! (dw/select-all)))
         undo       (mf/use-fn #(st/emit! dwu/undo))
         redo       (mf/use-fn #(st/emit! dwu/redo))
-        perms      (mf/use-ctx ctx/team-permissions)
+        perms      (mf/use-ctx ctx/permissions)
         can-edit   (:can-edit perms)]
 
     [:& dropdown-menu {:show true
@@ -488,7 +487,7 @@
         frames       (->> (cfh/get-immediate-children objects uuid/zero)
                           (filterv cfh/frame-shape?))
 
-        perms        (mf/use-ctx ctx/team-permissions)
+        perms        (mf/use-ctx ctx/permissions)
         can-edit     (:can-edit perms)
 
         on-remove-shared
@@ -540,9 +539,8 @@
 
         on-pin-version
         (mf/use-fn
-         (mf/deps file-id)
          (fn [_]
-           (st/emit! (dwv/create-version file-id))))
+           (st/emit! (dwv/create-version))))
 
         on-pin-version-key-down
         (mf/use-fn

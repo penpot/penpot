@@ -16,6 +16,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.plugins :as dpl]
    [app.main.data.websocket :as dws]
+   [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.layout :as dwly]
@@ -29,9 +30,6 @@
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [potok.v2.core :as ptk]))
-
-;; From app.main.data.workspace we can use directly because it causes a circular dependency
-(def reload-file nil)
 
 ;; FIXME: this ns should be renamed to something different
 
@@ -292,7 +290,7 @@
             curr-vern       (dm/get-in state [:workspace-file :vern])
             reload?         (and (= file-id curr-file-id) (not= vern curr-vern))]
         (when reload?
-          (rx/of (reload-file)))))))
+          (rx/of (ptk/event ::dw/reload-current-file)))))))
 
 (def ^:private schema:handle-library-change
   [:map {:title "handle-library-change"}

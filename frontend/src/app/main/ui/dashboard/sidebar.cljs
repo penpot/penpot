@@ -7,16 +7,18 @@
 (ns app.main.ui.dashboard.sidebar
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.spec :as us]
    [app.config :as cf]
+   [app.main.data.auth :as da]
+   [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
-   [app.main.data.users :as du]
+   [app.main.data.team :as dtm]
    [app.main.refs :as refs]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
    [app.main.ui.components.link :refer [link]]
@@ -29,8 +31,6 @@
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.object :as obj]
-   [app.util.router :as rt]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
@@ -74,31 +74,34 @@
         edit-id          (:project-for-edit dstate)
 
         local*           (mf/use-state
-                          {:menu-open false
-                           :menu-pos nil
-                           :edition? (= (:id item) edit-id)
-                           :dragging? false})
+                          #(do {:menu-open false
+                                :menu-pos nil
+                                :edition? (= (:id item) edit-id)
+                                :dragging? false}))
 
-        local             @local*
+        local            (deref local*)
+
+        project-id       (get item :id)
+
         on-click
         (mf/use-fn
-         (mf/deps item)
+         (mf/deps project-id)
          (fn []
-           (st/emit! (dd/go-to-files (:id item)))))
+           (st/emit! (dcm/go-to-dashboard-files :project-id project-id))))
 
         on-key-down
         (mf/use-fn
-         (mf/deps item)
+         (mf/deps project-id)
          (fn [event]
            (when (kbd/enter? event)
-             (st/emit! (dd/go-to-files (:id item))
-                       (ts/schedule-on-idle
-                        (fn []
-                          (let [project-title (dom/get-element (str (:id item)))]
-                            (when project-title
-                              (dom/set-attribute! project-title "tabindex" "0")
-                              (dom/focus! project-title)
-                              (dom/set-attribute! project-title "tabindex" "-1")))))))))
+             (st/emit!
+              (dcm/go-to-dashboard-files :project-id project-id)
+              (ts/schedule-on-idle
+               (fn []
+                 (when-let [title (dom/get-element (str project-id))]
+                   (dom/set-attribute! title "tabindex" "0")
+                   (dom/focus! title)
+                   (dom/set-attribute! title "tabindex" "-1"))))))))
 
         on-menu-click
         (mf/use-fn
@@ -148,9 +151,10 @@
 
         on-drop-success
         (mf/use-fn
-         (mf/deps (:id item))
-         #(st/emit! (ntf/success (tr "dashboard.success-move-file"))
-                    (dd/go-to-files (:id item))))
+         (mf/deps project-id)
+         (fn [_]
+           (st/emit! (dcm/go-to-dashboard-files :project-id project-id)
+                     (ntf/success (tr "dashboard.success-move-file")))))
 
         on-drop
         (mf/use-fn
@@ -201,19 +205,18 @@
 
         on-search-change
         (mf/use-fn
-         (mf/deps team-id)
          (fn [event]
            (let [value (dom/get-target-val event)]
-             (emit! (dd/go-to-search value)))))
+             (emit! (dcm/go-to-dashboard-search :term value)))))
 
         on-clear-click
         (mf/use-fn
          (mf/deps team-id)
          (fn [e]
+           (emit! (dcm/go-to-dashboard-search))
            (let [search-input (dom/get-element "search-input")]
              (dom/clean-value! search-input)
              (dom/focus! search-input)
-             (emit! (dd/go-to-search))
              (dom/prevent-default e)
              (dom/stop-propagation e))))
 
@@ -278,7 +281,8 @@
          (fn [event]
            (let [team-id (-> (dom/get-current-target event)
                              (dom/get-data "value"))]
-             (st/emit! (dd/go-to-projects team-id)))))
+
+             (st/emit! (dcm/go-to-dashboard-recent :team-id team-id)))))
 
         handle-select-default
         (mf/use-fn
@@ -343,20 +347,22 @@
 
 (mf/defc team-options-dropdown
   [{:keys [team profile] :as props}]
-  (let [go-members     #(st/emit! (dd/go-to-team-members))
-        go-invitations #(st/emit! (dd/go-to-team-invitations))
-        go-webhooks    #(st/emit! (dd/go-to-team-webhooks))
-        go-settings    #(st/emit! (dd/go-to-team-settings))
+  (let [go-members     #(st/emit! (dcm/go-to-dashboard-members))
+        go-invitations #(st/emit! (dcm/go-to-dashboard-invitations))
+        go-webhooks    #(st/emit! (dcm/go-to-dashboard-webhooks))
+        go-settings    #(st/emit! (dcm/go-to-dashboard-settings))
 
-        members-map    (mf/deref refs/dashboard-team-members)
-        members        (vals members-map)
-        can-rename?    (or (get-in team [:permissions :is-owner]) (get-in team [:permissions :is-admin]))
+        members        (get team :members)
+        permissions    (get team :permissions)
+        can-rename?    (or (:is-owner permissions)
+                           (:is-admin permissions))
 
         on-success
         (fn []
-          (st/emit! (dd/go-to-projects (:default-team-id profile))
-                    (modal/hide)
-                    (du/fetch-teams)))
+          ;; FIXME: this should be handled in the event, not here
+          (let [team-id (:default-team-id profile)]
+            (rx/of (dcm/go-to-dashboard-recent :team-id team-id)
+                   (modal/hide))))
 
         on-error
         (fn [{:keys [code] :as error}]
@@ -377,15 +383,15 @@
          (mf/deps on-success on-error)
          (fn [member-id]
            (let [params (cond-> {} (uuid? member-id) (assoc :reassign-to member-id))]
-             (st/emit! (dd/leave-team (with-meta params
-                                        {:on-success on-success
-                                         :on-error on-error}))))))
+             (st/emit! (dtm/leave-current-team (with-meta params
+                                                 {:on-success on-success
+                                                  :on-error on-error}))))))
         delete-fn
         (mf/use-fn
          (mf/deps team on-success on-error)
          (fn []
-           (st/emit! (dd/delete-team (with-meta team {:on-success on-success
-                                                      :on-error on-error})))))
+           (st/emit! (dtm/delete-team (with-meta team {:on-success on-success
+                                                       :on-error on-error})))))
         on-rename-clicked
         (mf/use-fn
          (mf/deps team)
@@ -406,7 +412,7 @@
         (mf/use-fn
          (mf/deps team profile leave-fn)
          (fn []
-           (st/emit! (dd/fetch-team-members (:id team))
+           (st/emit! (dtm/fetch-members)
                      (modal/show
                       {:type :leave-and-reassign
                        :profile profile
@@ -590,6 +596,10 @@
                                (when (get-in team [:permissions :is-owner])
                                  "teams-options-delete-team")]
 
+
+        ;; _ (prn "--------------- sidebar-team-switch")
+        ;; _ (app.common.pprint/pprint teams)
+
         handle-show-team-click
         (fn [event]
           (dom/stop-propagation event)
@@ -679,45 +689,45 @@
       [:& team-options-dropdown {:team team
                                  :profile profile}]]]))
 
-(mf/defc sidebar-content
-  [{:keys [projects profile section team project search-term] :as props}]
+(mf/defc sidebar-content*
+  {::mf/private true
+   ::mf/props :obj}
+  [{:keys [projects profile section team project search-term default-project] :as props}]
   (let [default-project-id
-        (->> (vals projects)
-             (d/seek :is-default)
-             (:id))
+        (get default-project :id)
 
-        projects?   (= section :dashboard-projects)
+        team-id     (get team :id)
+
+        projects?   (= section :dashboard-recent)
         fonts?      (= section :dashboard-fonts)
         libs?       (= section :dashboard-libraries)
         drafts?     (and (= section :dashboard-files)
                          (= (:id project) default-project-id))
 
         go-projects
-        (mf/use-fn
-         (mf/deps team)
-         #(st/emit! (rt/nav :dashboard-projects {:team-id (:id team)})))
+        (mf/use-fn #(st/emit! (dcm/go-to-dashboard-recent)))
 
         go-projects-with-key
         (mf/use-fn
-         (mf/deps team)
-         #(st/emit! (rt/nav :dashboard-projects {:team-id (:id team)})
-                    (ts/schedule-on-idle
-                     (fn []
-                       (let [projects-title (dom/get-element "dashboard-projects-title")]
-                         (when projects-title
-                           (dom/set-attribute! projects-title "tabindex" "0")
-                           (dom/focus! projects-title)
-                           (dom/set-attribute! projects-title "tabindex" "-1")))))))
+         (mf/deps team-id)
+         (fn []
+           (st/emit! (dcm/go-to-dashboard-recent :team-id team-id)
+                     (ts/schedule-on-idle
+                      (fn []
+                        (when-let [projects-title (dom/get-element "dashboard-projects-title")]
+                          (dom/set-attribute! projects-title "tabindex" "0")
+                          (dom/focus! projects-title)
+                          (dom/set-attribute! projects-title "tabindex" "-1")))))))
 
         go-fonts
         (mf/use-fn
-         (mf/deps team)
-         #(st/emit! (rt/nav :dashboard-fonts {:team-id (:id team)})))
+         (mf/deps team-id)
+         #(st/emit! (dcm/go-to-dashboard-fonts :team-id team-id)))
 
         go-fonts-with-key
         (mf/use-fn
          (mf/deps team)
-         #(st/emit! (rt/nav :dashboard-fonts {:team-id (:id team)})
+         #(st/emit! (dcm/go-to-dashboard-fonts :team-id team-id)
                     (ts/schedule-on-idle
                      (fn []
                        (let [font-title (dom/get-element "dashboard-fonts-title")]
@@ -727,34 +737,31 @@
                            (dom/set-attribute! font-title "tabindex" "-1")))))))
         go-drafts
         (mf/use-fn
-         (mf/deps team default-project-id)
+         (mf/deps team-id default-project-id)
          (fn []
-           (st/emit! (rt/nav :dashboard-files
-                             {:team-id (:id team)
-                              :project-id default-project-id}))))
+           (st/emit! (dcm/go-to-dashboard-files :team-id team-id :project-id default-project-id))))
 
         go-drafts-with-key
         (mf/use-fn
-         (mf/deps team default-project-id)
-         #(st/emit! (rt/nav :dashboard-files {:team-id (:id team)
-                                              :project-id default-project-id})
-                    (ts/schedule-on-idle
-                     (fn []
-                       (let [drafts-title (dom/get-element "dashboard-drafts-title")]
-                         (when drafts-title
-                           (dom/set-attribute! drafts-title "tabindex" "0")
-                           (dom/focus! drafts-title)
-                           (dom/set-attribute! drafts-title "tabindex" "-1")))))))
+         (mf/deps team-id default-project-id)
+         (fn []
+           (st/emit! (dcm/go-to-dashboard-files :team-id team-id :project-id default-project-id))
+           (ts/schedule-on-idle
+            (fn []
+              (when-let [title (dom/get-element "dashboard-drafts-title")]
+                (dom/set-attribute! title "tabindex" "0")
+                (dom/focus! title)
+                (dom/set-attribute! title "tabindex" "-1"))))))
 
         go-libs
         (mf/use-fn
-         (mf/deps team)
-         #(st/emit! (rt/nav :dashboard-libraries {:team-id (:id team)})))
+         (mf/deps team-id)
+         #(st/emit! (dcm/go-to-dashboard-libraries :team-id team-id)))
 
         go-libs-with-key
         (mf/use-fn
-         (mf/deps team)
-         #(st/emit! (rt/nav :dashboard-libraries {:team-id (:id team)})
+         (mf/deps team-id)
+         #(st/emit! (dcm/go-to-dashboard-libraries :team-id team-id)
                     (ts/schedule-on-idle
                      (fn []
                        (let [libs-title (dom/get-element "dashboard-libraries-title")]
@@ -763,7 +770,7 @@
                            (dom/focus! libs-title)
                            (dom/set-attribute! libs-title "tabindex" "-1")))))))
         pinned-projects
-        (->> (vals projects)
+        (->> projects
              (remove :is-default)
              (filter :is-pinned))]
 
@@ -826,11 +833,12 @@
          pin-icon
          [:span {:class (stl/css :empty-text)} (tr "dashboard.no-projects-placeholder")]])]]))
 
-(mf/defc profile-section
-  [{:keys [profile team] :as props}]
+(mf/defc profile-section*
+  {::mf/props :obj}
+  [{:keys [profile team]}]
   (let [show*  (mf/use-state false)
         show   (deref show*)
-        photo (cf/resolve-profile-photo-url profile)
+        photo  (cf/resolve-profile-photo-url profile)
 
         on-click
         (mf/use-fn
@@ -875,14 +883,13 @@
            (when (kbd/enter? event)
              (reset! show* true))))
 
-        handle-close
+        on-close
         (fn [event]
           (dom/stop-propagation event)
           (reset! show* false))
 
         handle-key-down-profile
         (mf/use-fn
-         (mf/deps on-click)
          (fn [event]
            (when (kbd/enter? event)
              (on-click :settings-profile event))))
@@ -910,34 +917,27 @@
              (show-release-notes))))
 
         handle-feedback-click
-        (mf/use-fn
-         (mf/deps on-click)
-         #(on-click :settings-feedback %))
+        (mf/use-fn #(on-click :settings-feedback %))
 
         handle-feedback-keydown
         (mf/use-fn
-         (mf/deps on-click)
          (fn [event]
            (when (kbd/enter? event)
              (on-click :settings-feedback event))))
 
         handle-logout-click
         (mf/use-fn
-         (mf/deps on-click)
-         #(on-click (du/logout) %))
+         #(on-click (da/logout) %))
 
         handle-logout-keydown
         (mf/use-fn
-         (mf/deps on-click)
          (fn [event]
            (when (kbd/enter? event)
-             (on-click (du/logout) event))))
+             (on-click (da/logout) event))))
 
         handle-set-profile
         (mf/use-fn
-         (mf/deps on-click)
-         (fn [event]
-           (on-click :settings-profile event)))]
+         #(on-click :settings-profile %))]
 
     [:*
      (when (and team profile)
@@ -959,7 +959,9 @@
               :alt (:fullname profile)}]
        [:span {:class (stl/css :profile-fullname)} (:fullname profile)]]
 
-      [:& dropdown-menu {:on-close handle-close :show show :list-class (stl/css :profile-dropdown)}
+      [:& dropdown-menu {:on-close on-close
+                         :show show
+                         :list-class (stl/css :profile-dropdown)}
        [:li {:tab-index (if show "0" "-1")
              :class (stl/css :profile-dropdown-item)
              :on-click handle-set-profile
@@ -1045,15 +1047,13 @@
           :show? show-comments?
           :on-show-comments handle-show-comments}])]]))
 
-(mf/defc sidebar
-  {::mf/wrap-props false
+(mf/defc sidebar*
+  {::mf/props :obj
    ::mf/wrap [mf/memo]}
-  [props]
-  (let [team    (obj/get props "team")
-        profile (obj/get props "profile")]
-    [:nav {:class (stl/css :dashboard-sidebar) :data-testid "dashboard-sidebar"}
-     [:> sidebar-content props]
-     [:& profile-section
-      {:profile profile
-       :team team}]]))
+  [{:keys [team profile] :as props}]
+  [:nav {:class (stl/css :dashboard-sidebar) :data-testid "dashboard-sidebar"}
+   [:> sidebar-content* props]
+   [:> profile-section*
+    {:profile profile
+     :team team}]])
 

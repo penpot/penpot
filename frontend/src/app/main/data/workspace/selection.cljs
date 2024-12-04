@@ -18,7 +18,7 @@
    [app.common.types.component :as ctk]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as md]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.specialized-panel :as-alias dwsp]

@@ -9,15 +9,15 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
-   [app.main.data.dashboard :as dd]
-   [app.main.data.events :as ev]
-   [app.main.data.users :as du]
+   [app.main.data.common :as dcm]
+   [app.main.data.event :as ev]
+   [app.main.data.profile :as du]
+   [app.main.data.team :as dtm]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.router :as rt]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
@@ -84,7 +84,7 @@
              (st/emit! (du/update-profile-props {:onboarding-team-id team-id
                                                  :onboarding-viewed true})
                        (when go-to-team?
-                         (rt/nav :dashboard-projects {:team-id team-id}))))))
+                         (dcm/go-to-dashboard-recent :team-id team-id))))))
 
         on-error
         (mf/use-fn
@@ -117,7 +117,7 @@
            (let [mdata  {:on-success on-success
                          :on-error   on-error}
                  params {:name name}]
-             (st/emit! (-> (dd/create-team (with-meta params mdata))
+             (st/emit! (-> (dtm/create-team (with-meta params mdata))
                            (with-meta {::ev/origin :onboarding-without-invitations}))
                        (ptk/data-event ::ev/event
                                        {::ev/name "onboarding-step"
@@ -133,7 +133,7 @@
            (let [mdata  {:on-success on-success
                          :on-error   on-error}]
 
-             (st/emit! (-> (dd/create-team-with-invitations (with-meta params mdata))
+             (st/emit! (-> (dtm/create-team-with-invitations (with-meta params mdata))
                            (with-meta {::ev/origin :onboarding-with-invitations}))
                        (ptk/data-event ::ev/event
                                        {::ev/name "onboarding-step"

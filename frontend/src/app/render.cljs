@@ -14,7 +14,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.uri :as u]
    [app.main.data.fonts :as df]
-   [app.main.data.users :as du]
+   [app.main.data.team :as dtm]
    [app.main.features :as features]
    [app.main.render :as render]
    [app.main.repo :as repo]
@@ -37,7 +37,7 @@
     (watch [_ _ _]
       (->> (repo/cmd! :get-team {:file-id file-id})
            (rx/mapcat (fn [team]
-                        (rx/of (du/set-current-team team)
+                        (rx/of (dtm/set-current-team team)
                                (ptk/data-event ::team-fetched team))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

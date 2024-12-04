@@ -8,15 +8,16 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.config :as cf]
-   [app.main.data.events :as ev]
+   [app.main.data.common :as dcm]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
-   [app.main.data.users :as du]
+   [app.main.data.team :as dtm]
+   [app.main.router :as rt]
    [app.main.store :as st]
-   [app.main.ui.dashboard.sidebar :refer [profile-section]]
+   [app.main.ui.dashboard.sidebar :refer [profile-section*]]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.router :as rt]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
@@ -26,6 +27,7 @@
 (def ^:private feedback-icon
   (i/icon-xref :feedback (stl/css :feedback-icon)))
 
+;; FIXME: move to common
 (def ^:private go-settings-profile
   #(st/emit! (rt/nav :settings-profile)))
 
@@ -58,12 +60,13 @@
         options?       (= section :settings-options)
         feedback?      (= section :settings-feedback)
         access-tokens? (= section :settings-access-tokens)
-        team-id        (du/get-current-team-id profile)
+        team-id        (or (dtm/get-last-team-id)
+                           (:default-team-id profile))
 
         go-dashboard
         (mf/use-fn
          (mf/deps team-id)
-         #(st/emit! (rt/nav :dashboard-projects {:team-id team-id})))]
+         #(st/emit! (dcm/go-to-dashboard-recent :team-id team-id)))]
 
     [:div {:class (stl/css :sidebar-content)}
      [:div {:class (stl/css :sidebar-content-section)}
@@ -119,5 +122,5 @@
   [:div {:class (stl/css :dashboard-sidebar :settings)}
    [:& sidebar-content {:profile profile
                         :section section}]
-   [:& profile-section {:profile profile}]])
+   [:> profile-section* {:profile profile}]])
 

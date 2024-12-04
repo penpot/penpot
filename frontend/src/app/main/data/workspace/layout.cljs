@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.util.storage :as storage]
    [clojure.set :as set]
    [potok.v2.core :as ptk]))

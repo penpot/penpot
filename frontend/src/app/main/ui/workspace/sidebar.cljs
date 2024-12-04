@@ -8,14 +8,16 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.main.data.common :as dcm]
    [app.main.data.workspace :as dw]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as muc]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
-   [app.main.ui.workspace.comments :refer [comments-sidebar]]
+   [app.main.ui.workspace.comments :refer [comments-sidebar*]]
    [app.main.ui.workspace.left-header :refer [left-header]]
    [app.main.ui.workspace.right-header :refer [right-header]]
    [app.main.ui.workspace.sidebar.assets :refer [assets-toolbox]]
@@ -47,36 +49,44 @@
 
 (mf/defc left-sidebar
   {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+   ::mf/props :obj}
   [{:keys [layout file page-id] :as props}]
   (let [options-mode   (mf/deref refs/options-mode-global)
+        project        (mf/deref refs/project)
+
+        design-tokens? (features/use-feature "design-tokens/v1")
         mode-inspect?  (= options-mode :inspect)
-        project        (mf/deref refs/workspace-project)
-
-        design-tokens? (mf/use-ctx muc/design-tokens)
-
-        section        (cond (or mode-inspect? (contains? layout :layers)) :layers
-                             (contains? layout :assets) :assets
-                             (contains? layout :tokens) :tokens)
-
         shortcuts?     (contains? layout :shortcuts)
         show-debug?    (contains? layout :debug-panel)
 
-        {on-pointer-down :on-pointer-down on-lost-pointer-capture :on-lost-pointer-capture  on-pointer-move :on-pointer-move parent-ref :parent-ref size :size}
+        section        (cond
+                         (or mode-inspect? (contains? layout :layers)) :layers
+                         (contains? layout :assets) :assets
+                         (contains? layout :tokens) :tokens)
+
+        {on-pointer-down :on-pointer-down
+         on-lost-pointer-capture :on-lost-pointer-capture
+         on-pointer-move :on-pointer-move
+         parent-ref :parent-ref
+         size :size}
         (use-resize-hook :left-sidebar 275 275 500 :x false :left)
 
-        {on-pointer-down-pages :on-pointer-down on-lost-pointer-capture-pages  :on-lost-pointer-capture on-pointer-move-pages :on-pointer-move size-pages-opened :size}
+        {on-pointer-down-pages :on-pointer-down
+         on-lost-pointer-capture-pages  :on-lost-pointer-capture
+         on-pointer-move-pages :on-pointer-move
+         size-pages-opened :size}
         (use-resize-hook :sitemap 200 38 400 :y false nil)
 
         show-pages?    (mf/use-state true)
-        toggle-pages   (mf/use-callback #(reset! show-pages? not))
-        size-pages (mf/use-memo (mf/deps show-pages? size-pages-opened) (fn [] (if @show-pages? size-pages-opened 32)))
+        toggle-pages   (mf/use-fn #(reset! show-pages? not))
+        size-pages     (mf/with-memo [show-pages? size-pages-opened]
+                         (if @show-pages? size-pages-opened 32))
 
         handle-collapse
         (mf/use-fn #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
 
         on-tab-change
-        (mf/use-fn #(st/emit! (dw/go-to-layout (keyword %))))
+        (mf/use-fn #(st/emit! (dcm/go-to-workspace :layout (keyword %))))
 
         layers-tab
         (mf/html
@@ -138,8 +148,12 @@
                                    :global/four-row  (> size 400))
               :style #js {"--width" (dm/str size "px")}}
 
-      [:& left-header {:file file :layout layout :project project :page-id page-id
-                       :class (stl/css :left-header)}]
+      [:& left-header
+       {:file file
+        :layout layout
+        :project project
+        :page-id page-id
+        :class (stl/css :left-header)}]
 
       [:div {:on-pointer-down on-pointer-down
              :on-lost-pointer-capture on-lost-pointer-capture
@@ -234,7 +248,7 @@
          [:& debug-shape-info]
 
          (true? is-comments?)
-         [:& comments-sidebar]
+         [:> comments-sidebar* {}]
 
          (true? is-history?)
          [:> tab-switcher*
