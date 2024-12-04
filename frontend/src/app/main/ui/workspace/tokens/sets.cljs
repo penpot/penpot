@@ -59,9 +59,22 @@
       :auto-focus true
       :default-value default-value}]))
 
+(mf/defc checkbox
+  [{:keys [on-click active? aria-label icon]}]
+  [:button {:type "button"
+            :on-click on-click
+            :class (stl/css-case :checkbox-style true
+                                 :checkbox-checked-style active?)}
+   (when active?
+     [:> icon* {:aria-label aria-label
+                :class (stl/css :check-icon)
+                :size "s"
+                :id (or icon ic/tick)}])])
+
 (mf/defc sets-tree-set-group
-  [{:keys [label tree-depth tree-path selected? collapsed? editing? on-edit on-edit-reset on-edit-submit]}]
+  [{:keys [active? label tree-depth tree-path selected? collapsed? editing? on-edit on-edit-reset on-edit-submit]}]
   (let [editing?' (editing? tree-path)
+        active?' (active? tree-path)
         on-context-menu
         (mf/use-fn
          (mf/deps editing? tree-path)
@@ -97,9 +110,14 @@
          :on-create on-edit-reset
          ;; TODO Implement set group renaming
          :on-submit (constantly nil)}]
-       [:div {:class (stl/css :set-name)
-              :on-double-click #(on-edit tree-path)}
-        label])]))
+       [:*
+        [:div {:class (stl/css :set-name)
+               :on-double-click #(on-edit tree-path)}
+         label]
+        [:& checkbox
+         {:active? (not= :none active?')
+          :icon (when (= active?' :partial) ic/remove)
+          :arial-label (tr "workspace.token.select-set")}]])]))
 
 (mf/defc sets-tree-set
   [{:keys [set label tree-depth tree-path selected? on-select active? on-toggle editing? on-edit on-edit-reset on-edit-submit]}]
@@ -150,18 +168,25 @@
         [:div {:class (stl/css :set-name)
                :on-double-click #(on-edit tree-path)}
          label]
-        [:button {:type "button"
-                  :on-click on-checkbox-click
-                  :class (stl/css-case :checkbox-style true
-                                       :checkbox-checked-style active?')}
-         (when active?'
-           [:> icon* {:aria-label (tr "workspace.token.select-set")
-                      :class (stl/css :check-icon)
-                      :size "s"
-                      :id ic/tick}])]])]))
+        [:& checkbox
+         {:on-click on-checkbox-click
+          :arial-label (tr "workspace.token.select-set")
+          :active? active?'}]])]))
 
 (mf/defc sets-tree
-  [{:keys [set-path set-node tree-depth tree-path on-select selected? on-toggle active? editing? on-edit on-edit-reset on-edit-submit]
+  [{:keys [active?
+           group-active?
+           editing?
+           on-edit
+           on-edit-reset
+           on-edit-submit
+           on-select
+           on-toggle
+           selected?
+           set-node
+           set-path
+           tree-depth
+           tree-path]
     :or {tree-depth 0}
     :as props}]
   (let [[set-path-prefix set-fname] (some-> set-path (ctob/split-set-str-path-prefix))
@@ -192,6 +217,7 @@
        set-group?
        [:& sets-tree-set-group
         {:selected? (selected? tree-path)
+         :active? group-active?
          :on-select on-select
          :label set-fname
          :collapsed? collapsed?
@@ -214,6 +240,7 @@
            :selected? selected?
            :on-toggle on-toggle
            :active? active?
+           :group-active? group-active?
            :editing? editing?
            :on-edit on-edit
            :on-edit-reset on-edit-reset
@@ -224,6 +251,7 @@
            on-update-token-set
            token-set-selected?
            token-set-active?
+           token-set-group-active?
            on-create-token-set
            on-toggle-token-set
            origin
@@ -247,6 +275,7 @@
             :selected? token-set-selected?
             :on-select on-select
             :active? token-set-active?
+            :group-active? token-set-group-active?
             :on-toggle on-toggle-token-set
             :editing? editing?
             :on-edit on-edit
@@ -276,11 +305,15 @@
         token-set-active? (mf/use-fn
                            (mf/deps active-token-set-names)
                            (fn [set-name]
-                             (get active-token-set-names set-name)))]
+                             (get active-token-set-names set-name)))
+        token-set-group-active? (mf/use-fn
+                                 (fn [prefixed-path]
+                                   @(refs/token-sets-at-path-all-active? prefixed-path)))]
     [:& controlled-sets-list
      {:token-sets token-sets
       :token-set-selected? token-set-selected?
       :token-set-active? token-set-active?
+      :token-set-group-active? token-set-group-active?
       :on-select on-select-token-set-click
       :origin "set-panel"
       :on-toggle-token-set on-toggle-token-set-click

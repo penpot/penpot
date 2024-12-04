@@ -875,16 +875,16 @@ Will return a value that matches this schema:
           (mapcat :sets)
           (get-active-themes this)))
 
-  (sets-at-path-all-active? [this prefix-path]
+  (sets-at-path-all-active? [this prefixed-path]
     (let [active-set-names (get-active-themes-set-names this)]
       (if (seq active-set-names)
-        (let [path-active-set-names (->> (get-sets-at-prefix-path this prefix-path)
+        (let [path-active-set-names (->> (get-sets-at-prefix-path this prefixed-path)
                                          (map :name)
                                          (into #{}))
               difference (set/difference path-active-set-names active-set-names)]
           (if (empty? difference)
             :all
-            difference))
+            :partial))
         :none)))
 
   (get-active-themes-set-tokens [this]

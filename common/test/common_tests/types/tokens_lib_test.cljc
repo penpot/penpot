@@ -425,9 +425,7 @@
                                (ctob/sets-at-path-all-active? "G-foo"))]
       (t/is (= :none expected-none))
       (t/is (= :all expected-all))
-      (t/is (= #{"foo/bar/baz"} expected-partial))
-      expected-partial))
-  nil)
+      (t/is (= :partial expected-partial)))))
 
 (t/deftest token-theme-in-a-lib
   (t/testing "add-token-theme"
