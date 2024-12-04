@@ -23,7 +23,7 @@
 
 ### :sparkles: New features
 
-- Viewer role for team members  [Taiga #1056 & #6590](https://tree.taiga.io/project/penpot/us/1056 & https://tree.taiga.io/project/penpot/us/6590)
+- Viewer role for team members [Taiga #1056](https://tree.taiga.io/project/penpot/us/1056) & [Taiga #6590](https://tree.taiga.io/project/penpot/us/6590)
 - File history versions management [Taiga #187](https://tree.taiga.io/project/penpot/us/187?milestone=411120)
 - Rename selected layer via keyboard shortcut and context menu option [Taiga #8882](https://tree.taiga.io/project/penpot/us/8882)
 - New .penpot file format [Taiga #8657](https://tree.taiga.io/project/penpot/us/8657)
