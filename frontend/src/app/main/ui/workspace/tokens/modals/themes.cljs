@@ -270,24 +270,31 @@
         disabled? (-> (:name @theme-state)
                       (str/trim)
                       (str/empty?))
-        on-change-field (fn [field value]
-                          (swap! theme-state #(assoc % field value)))
-        on-save-form (mf/use-callback
-                      (mf/deps theme-state on-submit)
-                      (fn [e]
-                        (dom/prevent-default e)
-                        (let [theme (-> @theme-state
-                                        (update :name str/trim)
-                                        (update :group str/trim)
-                                        (update :description str/trim))]
-                          (when-not (str/empty? (:name theme))
-                            (on-submit theme)))
-                        (on-back)))
+
+        on-change-field
+        (mf/use-fn
+         (fn [field value]
+           (swap! theme-state #(assoc % field value))))
+
+        on-save-form
+        (mf/use-callback
+         (mf/deps theme-state on-submit)
+         (fn [e]
+           (dom/prevent-default e)
+           (let [theme (-> @theme-state
+                           (update :name str/trim)
+                           (update :group str/trim)
+                           (update :description str/trim))]
+             (when-not (str/empty? (:name theme))
+               (on-submit theme)))
+           (on-back)))
+
         close-modal
         (mf/use-fn
          (fn [e]
            (dom/prevent-default e)
            (st/emit! (modal/hide))))
+
         on-delete-token
         (mf/use-fn
          (mf/deps theme on-back)
@@ -296,23 +303,30 @@
            (on-back)))
 
         ;; Sets tree handlers
-        token-set-group-active? (mf/use-callback
-                                 (mf/deps theme-state)
-                                 (fn [prefixed-path]
-                                   (ctob/sets-at-path-all-active? lib prefixed-path)))
-        token-set-active? (mf/use-callback
-                           (mf/deps theme-state)
-                           (fn [set-name]
-                             (get-in @theme-state [:sets set-name])))
-        on-toggle-token-set (mf/use-callback
-                             (mf/deps theme-state)
-                             (fn [set-name]
-                               (swap! theme-state #(ctob/toggle-set % set-name))))
-        on-click-token-set (mf/use-callback
-                            (mf/deps on-toggle-token-set)
-                            (fn [prefixed-set-path-str]
-                              (let [set-name (ctob/prefixed-set-path-string->set-name-string prefixed-set-path-str)]
-                                (on-toggle-token-set set-name))))]
+        token-set-group-active?
+        (mf/use-callback
+         (mf/deps theme-state)
+         (fn [prefixed-path]
+           (ctob/sets-at-path-all-active? lib prefixed-path)))
+
+        token-set-active?
+        (mf/use-callback
+         (mf/deps theme-state)
+         (fn [set-name]
+           (get-in @theme-state [:sets set-name])))
+
+        on-toggle-token-set
+        (mf/use-callback
+         (mf/deps theme-state)
+         (fn [set-name]
+           (swap! theme-state #(ctob/toggle-set % set-name))))
+
+        on-click-token-set
+        (mf/use-callback
+         (mf/deps on-toggle-token-set)
+         (fn [prefixed-set-path-str]
+           (let [set-name (ctob/prefixed-set-path-string->set-name-string prefixed-set-path-str)]
+             (on-toggle-token-set set-name))))]
 
     [:div {:class (stl/css :themes-modal-wrapper)}
      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
