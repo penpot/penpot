@@ -217,6 +217,7 @@
        [:input {
           :type "text"
           :class (stl/css :input)
+          :data-testid "combobox-input"
           :disabled disabled
           :value selected
           :on-change on-input-change
@@ -230,7 +231,8 @@
         [:> icon* {:id i/arrow
           :class (stl/css :arrow)
           :size "s"
-          :aria-hidden true}]]]
+          :aria-hidden true
+          :data-testid "combobox-open-button"}]]]
 
     (when (and open (seq dropdown-options))
        [:> options-dropdown* {:on-click on-option-click
@@ -238,4 +240,5 @@
                   :selected selected
                   :focused focused
                   :set-ref set-ref
-                  :id listbox-id}])]))
+                  :id listbox-id
+                  :data-testid "combobox-options"}])]))
