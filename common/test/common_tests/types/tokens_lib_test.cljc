@@ -399,8 +399,35 @@
           expected-tokens (ctob/get-active-themes-set-tokens tokens-lib)
           expected-token-names (mapv key expected-tokens)]
       (t/is (= '("set-a" "set-b" "inactive-set") expected-order))
-      (t/is (= ["set-a-token" "set-b-token"] expected-token-names)))))
+      (t/is (= ["set-a-token" "set-b-token"] expected-token-names))))
 
+  (t/testing "sets-at-path-active-state"
+    (let [tokens-lib  (-> (ctob/make-tokens-lib)
+
+                          (ctob/add-set (ctob/make-token-set :name "foo/bar/baz"))
+                          (ctob/add-set (ctob/make-token-set :name "foo/bar/bam"))
+
+                          (ctob/add-theme (ctob/make-token-theme :name "none"))
+                          (ctob/add-theme (ctob/make-token-theme :name "partial"
+                                                                 :sets #{"foo/bar/baz"}))
+                          (ctob/add-theme (ctob/make-token-theme :name "all"
+                                                                 :sets #{"foo/bar/baz"
+                                                                         "foo/bar/bam"})))
+
+          expected-none (-> tokens-lib
+                            (ctob/set-active-themes #{"/none"})
+                            (ctob/sets-at-path-all-active? "G-foo"))
+          expected-all (-> tokens-lib
+                           (ctob/set-active-themes #{"/all"})
+                           (ctob/sets-at-path-all-active? "G-foo"))
+          expected-partial (-> tokens-lib
+                               (ctob/set-active-themes #{"/partial"})
+                               (ctob/sets-at-path-all-active? "G-foo"))]
+      (t/is (= :none expected-none))
+      (t/is (= :all expected-all))
+      (t/is (= #{"foo/bar/baz"} expected-partial))
+      expected-partial))
+  nil)
 
 (t/deftest token-theme-in-a-lib
   (t/testing "add-token-theme"
