@@ -6,12 +6,12 @@ pub type Image = skia::Image;
 pub fn draw_image_in_container(
     canvas: &skia::Canvas,
     image: &Image,
-    size: (f32, f32),
+    size: (i32, i32),
     container: skia::Rect,
     paint: &skia::Paint,
 ) {
-    let width = size.0;
-    let height = size.1;
+    let width = size.0 as f32;
+    let height = size.1 as f32;
     let image_aspect_ratio = width / height;
 
     // Container size

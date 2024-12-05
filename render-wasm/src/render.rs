@@ -5,9 +5,8 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::debug;
-use crate::shapes::Fill;
-use crate::shapes::Shape;
-use crate::shapes::{draw_image_in_container, Image};
+use crate::math::Rect;
+use crate::shapes::{draw_image_in_container, Fill, Image, Shape};
 use crate::view::Viewbox;
 
 struct GpuState {
@@ -98,7 +97,7 @@ pub(crate) struct RenderState {
     pub cached_surface_image: Option<CachedSurfaceImage>,
     options: RenderOptions,
     pub viewbox: Viewbox,
-    pub images: HashMap<String, Image>,
+    images: HashMap<Uuid, Image>,
 }
 
 impl RenderState {
@@ -123,6 +122,18 @@ impl RenderState {
             viewbox: Viewbox::new(width as f32, height as f32),
             images: HashMap::with_capacity(2048),
         }
+    }
+
+    pub fn add_image(&mut self, id: Uuid, image_data: &[u8]) -> Result<(), String> {
+        let image_data = skia::Data::new_copy(image_data);
+        let image = Image::from_encoded(image_data).ok_or("Error decoding image data")?;
+
+        self.images.insert(id, image);
+        Ok(())
+    }
+
+    pub fn has_image(&mut self, id: &Uuid) -> bool {
+        self.images.contains_key(id)
     }
 
     pub fn set_debug_flags(&mut self, debug: u32) {
@@ -213,22 +224,7 @@ impl RenderState {
         self.drawing_surface.canvas().concat(&matrix);
 
         for fill in shape.fills().rev() {
-            if let Fill::Image(image_fill) = fill {
-                let image = self.images.get(&image_fill.id.to_string());
-                if let Some(image) = image {
-                    draw_image_in_container(
-                        &self.drawing_surface.canvas(),
-                        &image,
-                        (image_fill.width, image_fill.height),
-                        shape.selrect,
-                        &fill.to_paint(&shape.selrect),
-                    );
-                }
-            } else {
-                self.drawing_surface
-                    .canvas()
-                    .draw_rect(shape.selrect, &fill.to_paint(&shape.selrect));
-            }
+            self.render_fill(fill, shape.selrect);
         }
 
         let mut paint = skia::Paint::default();
@@ -283,6 +279,25 @@ impl RenderState {
         }
 
         self.flush();
+    }
+
+    fn render_fill(&mut self, fill: &Fill, selrect: Rect) {
+        if let Fill::Image(image_fill) = fill {
+            let image = self.images.get(&image_fill.id());
+            if let Some(image) = image {
+                draw_image_in_container(
+                    &self.drawing_surface.canvas(),
+                    &image,
+                    image_fill.size(),
+                    selrect,
+                    &fill.to_paint(&selrect),
+                );
+            }
+        } else {
+            self.drawing_surface
+                .canvas()
+                .draw_rect(selrect, &fill.to_paint(&selrect));
+        }
     }
 
     fn render_all_from_cache(&mut self) -> Result<(), String> {
