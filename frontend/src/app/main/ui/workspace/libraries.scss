@@ -126,6 +126,7 @@
   @include flexCenter;
   width: $s-20;
   padding: 0 0 0 $s-8;
+
   svg {
     @extend .button-icon-small;
     stroke: var(--icon-foreground);
@@ -231,6 +232,7 @@
   padding: $s-8 $s-24;
   margin-inline-end: $s-2;
   border-radius: $br-8;
+
   &:disabled {
     @extend .button-disabled;
   }
@@ -332,4 +334,63 @@
   color: var(--color-accent-primary);
   text-decoration: underline;
   font-weight: $fw400;
+}
+
+.sample-libraries-info {
+  display: flex;
+  flex-direction: column;
+  font-size: $fs-12;
+  margin: $s-32;
+  color: var(--color-foreground-secondary);
+}
+
+.sample-libraries-link {
+  color: var(--color-accent-primary);
+  text-decoration: underline;
+  font-weight: $fw400;
+}
+
+.sample-libraries-container {
+  display: flex;
+  flex-direction: column;
+  font-size: $fs-12;
+  width: 100%;
+  align-items: start;
+  color: var(--color-foreground-secondary);
+}
+
+.sample-library-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-top: $s-8;
+}
+
+.sample-library-item-name {
+  font-size: $fs-14;
+  color: var(--color-foreground-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: $s-232;
+}
+
+.sample-library-add {
+  @extend .button-secondary;
+}
+
+.sample-library-adding {
+  @extend .button-disabled;
+}
+
+.sample-library-button {
+  @include uppercaseTitleTipography;
+  height: $s-32;
+  width: $s-80;
+  margin: 0;
+  border-radius: $br-8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
