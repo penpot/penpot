@@ -5797,7 +5797,7 @@ msgstr "Rozbalit postranní panel"
 
 #: src/app/main/ui/workspace/right_header.cljs:246, src/app/main/ui/workspace/right_header.cljs:247
 msgid "workspace.sidebar.history"
-msgstr "Historie (%s)"
+msgstr "Historie"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:524, src/app/main/ui/workspace/sidebar.cljs:110, src/app/main/ui/workspace/sidebar.cljs:114, src/app/main/ui/workspace/sidebar.cljs:123
 msgid "workspace.sidebar.layers"
