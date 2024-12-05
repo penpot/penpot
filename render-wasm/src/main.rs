@@ -165,6 +165,7 @@ pub extern "C" fn add_shape_linear_fill(
     end_x: f32,
     end_y: f32,
     opacity: f32,
+    width: f32,
 ) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
@@ -172,6 +173,27 @@ pub extern "C" fn add_shape_linear_fill(
             (start_x, start_y),
             (end_x, end_y),
             opacity,
+            width,
+        ))
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn add_shape_radial_fill(
+    start_x: f32,
+    start_y: f32,
+    end_x: f32,
+    end_y: f32,
+    opacity: f32,
+    width: f32,
+) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape.add_fill(shapes::Fill::new_radial_gradient(
+            (start_x, start_y),
+            (end_x, end_y),
+            opacity,
+            width,
         ))
     }
 }
