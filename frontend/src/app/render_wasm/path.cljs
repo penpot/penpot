@@ -2,7 +2,7 @@
 
 (def command-size 28)
 
-(defn content->buffer
+#_(defn content->buffer
   "Converts the path content into binary format."
   [content]
   (let [total  (count content)
@@ -15,17 +15,17 @@
           (case (:command segment)
             :move-to
             (let [{:keys [x y]} (:params segment)]
-              (.setUint16 dview   (+ offset 0) 1)
+              (.setUint16 dview  (+ offset 0) 1)
               (.setFloat32 dview (+ offset 20) x)
               (.setFloat32 dview (+ offset 24) y))
             :line-to
             (let [{:keys [x y]} (:params segment)]
-              (.setUint16 dview   (+ offset 0) 2)
+              (.setUint16 dview  (+ offset 0) 2)
               (.setFloat32 dview (+ offset 20) x)
               (.setFloat32 dview (+ offset 24) y))
             :curve-to
             (let [{:keys [c1x c1y c2x c2y x y]} (:params segment)]
-              (.setUint16 dview   (+ offset 0) 3)
+              (.setUint16 dview  (+ offset 0) 3)
               (.setFloat32 dview (+ offset 4) c1x)
               (.setFloat32 dview (+ offset 8) c1y)
               (.setFloat32 dview (+ offset 12) c2x)
@@ -38,7 +38,7 @@
           (recur (inc index)))))
     buffer))
 
-(defn buffer->content
+#_(defn buffer->content
   "Converts the a buffer to a path content vector"
   [buffer]
   (assert (instance? js/ArrayBuffer buffer) "expected ArrayBuffer instance")

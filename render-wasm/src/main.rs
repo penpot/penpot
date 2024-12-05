@@ -132,16 +132,6 @@ pub extern "C" fn set_shape_transform(a: f32, b: f32, c: f32, d: f32, e: f32, f:
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_path_content() {
-    // TODO:
-    // 1. Reservar un espacio de intercambio en la memoria de Rust.
-    // 2. Pasar el puntero a JS.
-    // 3. Copiar el ArrayBuffer de `content->buffer` a ese puntero.
-    // 4. Leer ese espacio de intercambio desde Rust.
-    // 5.
-}
-
-#[no_mangle]
 pub extern "C" fn add_shape_child(a: u32, b: u32, c: u32, d: u32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     let id = uuid_from_u32_quartet(a, b, c, d);
@@ -277,6 +267,24 @@ pub extern "C" fn set_shape_hidden(hidden: bool) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.hidden = hidden;
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn set_shape_path_content(n_segments: u32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+
+    if let Some(shape) = state.current_shape() {
+        let len = n_segments as usize;
+
+        unsafe {
+            let buffer = Vec::<shapes::RawPathData>::from_raw_parts(
+                mem::buffer_ptr() as *mut shapes::RawPathData,
+                len,
+                len,
+            );
+            mem::free_bytes();
+        }
     }
 }
 

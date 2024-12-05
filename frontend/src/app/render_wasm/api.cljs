@@ -9,10 +9,10 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
+   [app.common.svg.path :as path]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.render-wasm.helpers :as h]
-   [app.render-wasm.path :as path]
    [app.util.debug :as dbg]
    [app.util.functions :as fns]
    [app.util.http :as http]
@@ -189,7 +189,15 @@
 
 (defn set-shape-path-content
   [content]
-  (js/console.log "set-shape-path-content" content (path/content->buffer content)))
+  (let [buffer (path/content->buffer content)
+        size (.-byteLength buffer)
+        ptr (h/call internal-module "_alloc_bytes" size)
+        heap      (gobj/get ^js internal-module "HEAPU8")
+        mem       (js/Uint8Array. (.-buffer heap) ptr size)]
+    (.set mem (js/Uint8Array. buffer)
+    (h/call internal-module "_set_shape_path_content" (count content))
+    (js/console.log mem)
+    (js/console.log buffer))))
 
 (defn- translate-blend-mode
   [blend-mode]
@@ -250,7 +258,8 @@
                   children   (dm/get-prop shape :shapes)
                   blend-mode (dm/get-prop shape :blend-mode)
                   opacity    (dm/get-prop shape :opacity)
-                  hidden     (dm/get-prop shape :hidden)]
+                  hidden     (dm/get-prop shape :hidden)
+                  content    (dm/get-prop shape :content)]
 
               (use-shape id)
               (set-shape-selrect selrect)
@@ -260,6 +269,7 @@
               (set-shape-children children)
               (set-shape-opacity opacity)
               (set-shape-hidden hidden)
+              (when (some? content) (set-shape-path-content content))
               (let [pending-fills (doall (set-shape-fills fills))]
                 (recur (inc index) (into pending pending-fills))))
             pending))]
