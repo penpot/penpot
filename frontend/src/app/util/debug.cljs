@@ -92,7 +92,10 @@
     :bool-shapes
 
     ;; Show some information about the WebGL context.
-    :gl-context})
+    :gl-context
+
+    ;; Show viewbox
+    :wasm-viewbox})
 
 (defn enable!
   [option]
