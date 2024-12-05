@@ -216,6 +216,10 @@
   [opacity]
   (h/call internal-module "_set_shape_opacity" (or opacity 1)))
 
+(defn set-shape-hidden
+  [hidden]
+  (h/call internal-module "_set_shape_hidden" hidden))
+
 (def debounce-render-without-cache (fns/debounce render-without-cache 100))
 
 (defn set-view
@@ -239,7 +243,9 @@
                   fills      (dm/get-prop shape :fills)
                   children   (dm/get-prop shape :shapes)
                   blend-mode (dm/get-prop shape :blend-mode)
-                  opacity    (dm/get-prop shape :opacity)]
+                  opacity    (dm/get-prop shape :opacity)
+                  hidden     (dm/get-prop shape :hidden)]
+
               (use-shape id)
               (set-shape-selrect selrect)
               (set-shape-rotation rotation)
@@ -247,6 +253,7 @@
               (set-shape-blend-mode blend-mode)
               (set-shape-children children)
               (set-shape-opacity opacity)
+              (set-shape-hidden hidden)
               (let [pending-fills (doall (set-shape-fills fills))]
                 (recur (inc index) (into pending pending-fills))))
             pending))]
@@ -262,7 +269,6 @@
        :depth true
        :stencil true
        :alpha true})
-
 
 (defn clear-canvas
   []

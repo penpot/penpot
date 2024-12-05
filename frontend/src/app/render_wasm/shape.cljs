@@ -118,6 +118,7 @@
       :fills      (api/set-shape-fills v)
       :blend-mode (api/set-shape-blend-mode v)
       :opacity    (api/set-shape-opacity v)
+      :hidden     (api/set-shape-hidden v)
       :shapes     (api/set-shape-children v)
       nil)
     ;; when something synced with wasm
