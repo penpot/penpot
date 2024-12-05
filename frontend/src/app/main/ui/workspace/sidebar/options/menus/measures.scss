@@ -172,48 +172,6 @@
     padding-top: $s-1;
   }
 }
-.radius {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  gap: $s-4;
-}
-
-.radius-inputs {
-  display: flex;
-}
-
-.radius-1 {
-  @extend .input-element;
-  @include bodySmallTypography;
-  width: $s-108;
-  position: relative;
-}
-
-.radius-4 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: $s-4;
-  .small-input {
-    @extend .input-element;
-    @include bodySmallTypography;
-    width: $s-52;
-  }
-}
-
-.radius-mode {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  border-radius: $br-8;
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
-  &.selected {
-    @extend .button-icon-selected;
-  }
-}
 
 .clip-show {
   display: flex;

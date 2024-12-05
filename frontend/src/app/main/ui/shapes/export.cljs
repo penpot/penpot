@@ -110,10 +110,6 @@
               (add! :r3)
               (add! :r4)))
 
-        (cond-> (and image? (some? (:rx shape)))
-          (-> (add! :rx)
-              (add! :ry)))
-
         (cond-> path?
           (-> (add! :stroke-cap-start)
               (add! :stroke-cap-end)))

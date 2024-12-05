@@ -191,7 +191,8 @@
   (ptk/reify ::create-and-add-shape
     ptk/WatchEvent
     (watch [_ state _]
-      (let [vbc       (wsh/viewport-center state)
+      (let [_ (prn "eyyy")
+            vbc       (wsh/viewport-center state)
             x         (:x attrs (- (:x vbc) (/ width 2)))
             y         (:y attrs (- (:y vbc) (/ height 2)))
             page-id   (:current-page-id state)
