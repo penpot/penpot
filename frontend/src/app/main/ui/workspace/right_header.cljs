@@ -243,8 +243,8 @@
      (when-not ^boolean read-only?
        [:div {:class (stl/css :history-section)}
         [:button
-         {:title (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
-          :aria-label (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
+         {:title (tr "workspace.sidebar.history")
+          :aria-label (tr "workspace.sidebar.history")
           :class (stl/css-case :selected (contains? layout :document-history)
                                :history-button true)
           :on-click toggle-history}

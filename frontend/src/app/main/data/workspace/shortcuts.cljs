@@ -447,11 +447,6 @@
                           :subsections [:panels]
                           :fn #(st/emit! (dw/go-to-layout :assets))}
 
-   :toggle-history       {:tooltip (ds/alt "H")
-                          :command (ds/a-mod "h")
-                          :subsections [:panels]
-                          :fn #(emit-when-no-readonly (dw/go-to-layout :document-history))}
-
    :toggle-colorpalette  {:tooltip (ds/alt "P")
                           :command (ds/a-mod "p")
                           :subsections [:panels]
