@@ -392,16 +392,16 @@
 
 ;; --- MUTATION: Delete Profile
 
-(declare ^:private get-owned-teams)
+(declare ^:private get-not-deleted-owned-teams)
 
 (sv/defmethod ::delete-profile
   {::doc/added "1.0"}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [teams      (get-owned-teams conn profile-id)
+    (let [teams      (get-not-deleted-owned-teams conn profile-id)
           deleted-at (dt/now)]
 
-      ;; If we found owned teams with participants, we don't allow
+      ;; If we found non-deleted owned teams with participants, we don't allow
       ;; delete profile until the user properly transfer ownership or
       ;; explicitly removes all participants from the team
       (when (some pos? (map :participants teams))
@@ -443,6 +443,28 @@
 (defn get-owned-teams
   [conn profile-id]
   (db/exec! conn [sql:owned-teams profile-id]))
+
+(def sql:not-deleted-owned-teams
+  "WITH owner_teams AS (
+      SELECT tpr.team_id AS id
+        FROM team_profile_rel AS tpr
+       WHERE tpr.is_owner IS TRUE
+         AND tpr.profile_id = ?
+   ), non_deleted_teams AS (
+      SELECT t.id AS id
+        FROM team AS t
+       WHERE t.id IN (SELECT id from owner_teams)
+         AND t.deleted_at is null
+   )
+   SELECT tpr.team_id AS id,
+          count(tpr.profile_id) - 1 AS participants
+     FROM team_profile_rel AS tpr
+    WHERE tpr.team_id IN (SELECT id from non_deleted_teams)
+    GROUP BY 1")
+
+(defn get-not-deleted-owned-teams
+  [conn profile-id]
+  (db/exec! conn [sql:not-deleted-owned-teams profile-id]))
 
 (def ^:private sql:profile-existence
   "select exists (select * from profile
