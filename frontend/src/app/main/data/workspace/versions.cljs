@@ -126,7 +126,8 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/concat
-       (rx/of ::dwp/force-persist)
+       (rx/of ::dwp/force-persist
+              (dw/remove-layout-flag :document-history))
        (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
             (rx/filter #(or (nil? %) (= :saved %)))
             (rx/take 1)
