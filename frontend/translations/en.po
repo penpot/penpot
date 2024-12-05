@@ -6560,6 +6560,13 @@ msgstr "Loading..."
 msgid "workspace.versions.restore-warning"
 msgstr "Do you want to restore this version?"
 
+msgid "workspace.versions.warning.text"
+msgstr "Autosaved versions will be kept for %s days."
+
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr "If you'd like to increase this limit, write to us at [support@penpot.app](%s)"
+
 #: src/app/main/ui/workspace/sidebar/versions.cljs:207
 msgid "workspace.versions.snapshot-menu"
 msgstr "Open snapshot menu"

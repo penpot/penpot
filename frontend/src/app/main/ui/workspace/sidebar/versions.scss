@@ -230,3 +230,24 @@
 .version-snapshot-menu-btn {
   visibility: hidden;
 }
+
+.autosave-warning {
+  display: flex;
+  flex-direction: column;
+  gap: $s-8;
+  padding: $s-16;
+}
+
+.autosave-warning-text {
+  color: var(--color-foreground-primary);
+  font-size: $fs-12;
+  text-transform: uppercase;
+}
+
+.autosave-warning-subtext {
+  color: var(--color-foreground-secondary);
+  font-size: $fs-12;
+  a {
+    color: var(--color-accent-primary);
+  }
+}
