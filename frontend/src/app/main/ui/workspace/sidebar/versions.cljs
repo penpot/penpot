@@ -31,6 +31,8 @@
 (def versions
   (l/derived :workspace-versions st/state))
 
+(def versions-stored-days 7)
+
 (defn group-snapshots
   [data]
   (->> (concat
@@ -388,4 +390,14 @@
                                    :on-restore-snapshot handle-restore-version-snapshot
                                    :on-pin-snapshot handle-pin-version}]
 
-               nil))])])]))
+               nil))])
+
+        [:div {:class (stl/css :autosave-warning)}
+         [:div {:class (stl/css :autosave-warning-text)}
+          (tr "workspace.versions.warning.text" versions-stored-days)]
+
+         [:div {:class (stl/css :autosave-warning-subtext)}
+          [:> i18n/tr-html*
+           {:tag-name "div"
+            :content (tr "workspace.versions.warning.subtext"
+                         "mailto:support@penpot.app")}]]]])]))
