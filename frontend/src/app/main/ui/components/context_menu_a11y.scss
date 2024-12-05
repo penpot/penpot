@@ -36,7 +36,7 @@
     background-color: var(--menu-background-color);
     overflow: auto;
     & .separator {
-      height: $s-12;
+      border-top: solid $s-1 var(--color-background-quaternary);
     }
 
     &.min-width {
