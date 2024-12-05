@@ -370,6 +370,7 @@
 
 .profile-separator {
   height: $s-6;
+  border-top: solid $s-1 var(--color-background-quaternary);
 }
 
 .item-with-icon {
