@@ -20,6 +20,7 @@
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as ic]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
@@ -194,8 +195,19 @@
     [:div {:class (stl/css-case
                    :color-data true
                    :dnd-over-top (= (:over dprops) :top)
-                   :dnd-over-bot (= (:over dprops) :bot))
-           :ref dref}
+                   :dnd-over-bot (= (:over dprops) :bot))}
+
+     ;; Drag handler
+     (when (some? on-reorder)
+       [:*
+        [:div {:ref dref :class (stl/css :reorder)}
+         [:> icon*
+          {:id ic/reorder
+           :class (stl/css :reorder-icon)
+           :aria-hidden true}]]
+        [:hr {:class (stl/css :reorder-separator-top)}]
+        [:hr {:class (stl/css :reorder-separator-bottom)}]])
+
      [:div {:class (stl/css :color-info)}
       [:div {:class (stl/css-case :color-name-wrapper true
                                   :no-opacity (or disable-opacity
