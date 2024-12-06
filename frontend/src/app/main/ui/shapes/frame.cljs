@@ -15,6 +15,7 @@
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-fills shape-strokes]]
+   [app.main.ui.shapes.filters :as filters]
    [app.util.debug :as dbg]
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
@@ -59,11 +60,15 @@
 (mf/defc frame-container
   {::mf/wrap-props false}
   [props]
-
   (let [shape         (unchecked-get props "shape")
         children      (unchecked-get props "children")
 
         render-id     (mf/use-ctx muc/render-id)
+
+        filter-id-blur     (dm/fmt "filter-blur-%" render-id)
+        filter-id-shadows  (dm/fmt "filter-shadow-%" render-id)
+        filter-str-blur    (filters/filter-str filter-id-blur (dissoc shape :shadow))
+        filter-str-shadows (filters/filter-str filter-id-shadows (dissoc shape :blur))
 
         x             (dm/get-prop shape :x)
         y             (dm/get-prop shape :y)
@@ -86,28 +91,36 @@
                                   :className "frame-background"})))
         path?         (some? (.-d props))]
 
-    [:*
-     [:g {:clip-path (when-not ^boolean show-content?
-                       (frame-clip-url shape render-id))
-          ;; A frame sets back normal fill behavior (default
-          ;; transparent). It may have been changed to default black
-          ;; if a shape coming from an imported SVG file is
-          ;; rendered. See main.ui.shapes.attrs/add-style-attrs.
-          :fill "none"
-          :opacity opacity}
+    ;; We need to separate blur from shadows because the blur is applied to the strokes
+    ;; while the shadows have to be placed *under* the stroke (for example, the inner shadows)
+    ;; and the shadows needs to be applied only to the content (without the stroke)
+    [:g {:filter filter-str-blur}
+     [:defs
+      [:& filters/filters {:shape (dissoc shape :blur) :filter-id filter-id-shadows}]
+      [:& filters/filters {:shape (assoc shape :shadow []) :filter-id filter-id-blur}]]
 
-      [:& shape-fills {:shape shape}
-       (if ^boolean path?
-         [:> :path props]
-         [:> :rect props])]
+     ;; This need to be separated in two layers so the clip doesn't affect the shadow filters
+     ;; otherwise the shadow will be clipped and not visible
+     [:g {:filter filter-str-shadows}
+      [:g {:clip-path (when-not ^boolean show-content? (frame-clip-url shape render-id))
+           ;; A frame sets back normal fill behavior (default
+           ;; transparent). It may have been changed to default black
+           ;; if a shape coming from an imported SVG file is
+           ;; rendered. See main.ui.shapes.attrs/add-style-attrs.
+           :fill "none"
+           :opacity opacity}
 
-      children]
+       [:& shape-fills {:shape shape}
+        (if ^boolean path?
+          [:> :path props]
+          [:> :rect props])]
+
+       children]]
 
      [:& shape-strokes {:shape shape}
       (if ^boolean path?
         [:> :path props]
         [:> :rect props])]]))
-
 
 (mf/defc frame-thumbnail-image
   {::mf/wrap-props false}
@@ -121,7 +134,7 @@
         bounds   (mf/with-memo [bounds points]
                    (or bounds (gsb/get-frame-bounds shape)))
 
-        thumb    (:thumbnail shape)
+        thumb    (cf/resolve-media (:thumbnail-id shape))
 
         debug?   (dbg/enabled? :thumbnails)
         safari?  (cf/check-browser? :safari)
@@ -157,7 +170,7 @@
   {::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")]
-    (when ^boolean (:thumbnail shape)
+    (when ^boolean (:thumbnail-id shape)
       [:> frame-container props
        [:> frame-thumbnail-image props]])))
 

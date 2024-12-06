@@ -9,8 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.main.data.events :as ev]
-   [app.main.data.workspace :as dw]
+   [app.config :as cf]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -156,7 +155,7 @@
     :circle i/elipse
     :text i/text
     :path i/path
-    :frame i/board
+    :frame (if (cf/external-feature-flag "boards-01" "test") i/board-2 i/board)
     :group i/group
     :color i/drop-icon
     :typography i/text-palette
@@ -325,17 +324,8 @@
   []
   (let [objects (mf/deref refs/workspace-page-objects)
         {:keys [items index]} (mf/deref workspace-undo)
-        entries (parse-entries items objects)
-        toggle-history
-        (mf/use-fn
-         #(st/emit! (-> (dw/toggle-layout-flag :document-history)
-                        (vary-meta assoc ::ev/origin "history-toolbox"))))]
+        entries (parse-entries items objects)]
     [:div {:class (stl/css :history-toolbox)}
-     [:div {:class (stl/css :history-toolbox-title)}
-      [:span (tr "workspace.undo.title")]
-      [:div {:class (stl/css :close-button)
-             :on-click toggle-history}
-       i/close]]
      (if (empty? entries)
        [:div {:class (stl/css :history-entry-empty)}
         [:div {:class (stl/css :history-entry-empty-icon)} i/history]

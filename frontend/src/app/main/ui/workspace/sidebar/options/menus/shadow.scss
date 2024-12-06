@@ -14,14 +14,6 @@
   margin: 0;
   padding-left: $s-2;
 }
-.add-shadow {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  svg {
-    @extend .button-icon;
-  }
-}
 
 .element-set-content {
   margin-top: $s-4;
@@ -38,15 +30,6 @@
 
 .actions {
   @include flexRow;
-}
-
-.action-btn {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  svg {
-    @extend .button-icon;
-  }
 }
 
 .shadow-element {

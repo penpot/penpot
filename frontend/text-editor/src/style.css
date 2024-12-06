@@ -1,0 +1,14 @@
+:root {
+  background-color: #333;
+  color: #eee;
+}
+
+.text-editor-container {
+  background-color: white;
+}
+
+#output {
+  font-family: monospace;
+  padding: 1rem;
+  border: 1px solid #333;
+}

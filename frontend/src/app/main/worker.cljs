@@ -8,7 +8,8 @@
   (:require
    [app.config :as cf]
    [app.main.errors :as err]
-   [app.util.worker :as uw]))
+   [app.util.worker :as uw]
+   [beicon.v2.core :as rx]))
 
 (defonce instance nil)
 
@@ -22,18 +23,30 @@
 
 (defn ask!
   ([message]
-   (when instance (uw/ask! instance message)))
+   (if instance
+     (uw/ask! instance message)
+     (rx/empty)))
   ([message transfer]
-   (when instance (uw/ask! instance message transfer))))
+   (if instance
+     (uw/ask! instance message transfer)
+     (rx/empty))))
 
 (defn ask-buffered!
   ([message]
-   (when instance (uw/ask-buffered! instance message)))
+   (if instance
+     (uw/ask-buffered! instance message)
+     (rx/empty)))
   ([message transfer]
-   (when instance (uw/ask-buffered! instance message transfer))))
+   (if instance
+     (uw/ask-buffered! instance message transfer)
+     (rx/empty))))
 
 (defn ask-many!
   ([message]
-   (when instance (uw/ask-many! instance message)))
+   (if instance
+     (uw/ask-many! instance message)
+     (rx/empty)))
   ([message transfer]
-   (when instance (uw/ask-many! instance message transfer))))
+   (if instance
+     (uw/ask-many! instance message transfer)
+     (rx/empty))))

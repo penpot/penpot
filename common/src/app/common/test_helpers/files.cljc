@@ -22,7 +22,7 @@
 ;; ----- Files
 
 (defn sample-file
-  [label & {:keys [page-label name] :as params}]
+  [label & {:keys [page-label name view-only?] :as params}]
   (binding [ffeat/*current* #{"components/v2"}]
     (let [params (cond-> params
                    label
@@ -35,7 +35,8 @@
                    (assoc :name "Test file"))
 
           file (-> (ctf/make-file (dissoc params :page-label))
-                   (assoc :features #{"components/v2"}))
+                   (assoc :features #{"components/v2"})
+                   (assoc :permissions {:can-edit (not (true? view-only?))}))
 
           page (-> file
                    :data

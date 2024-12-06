@@ -115,6 +115,7 @@
     {:id "n"
      :rfn (fn [value]
             (js/parseInt value 10))})
+
  #?(:cljs
     {:id "u"
      :rfn parse-uuid})

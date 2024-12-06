@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.4.0
+## 2.5.0
 
 ### :rocket: Epics and highlights
 
@@ -10,15 +10,85 @@
 
 ### :sparkles: New features
 
+- New gradients UI with multi-stop support.
+
 ### :bug: Bugs fixed
 
-## 2.3.0
+
+## 2.4.0
 
 ### :rocket: Epics and highlights
 
 ### :boom: Breaking changes & Deprecations
 
+- Use [nginx-unprivileged](https://hub.docker.com/r/nginxinc/nginx-unprivileged) as base image for
+  Penpot's frontend docker image. Now all the docker images runs with the same unprivileged user
+  (penpot). Because of that, the default NGINX listen port is now 8080 instead of 80, so
+  you will have to modify your infrastructure to apply this change.
+
+- Redis 7.2 is explicitly pinned in our example docker-compose.yml file. This is done because, 
+  starting with the next versions, Redis is no longer distributed under an open-source license. 
+  On-premise users are obviously free to upgrade to the version they are using or a more modern one. 
+  Keep in mind that if you were using a version other than 7.2, you may have to recreate the volume 
+  associated with the Redis container because the 7.2 storage format may not be compatible with what 
+  you already have stored on the volume, and Redis may not start. In the near future, we will evaluate 
+  whether to move to an open-source version of Redis (such as https://valkey.io/).
+
 ### :heart: Community contributions (Thank you!)
+
+### :sparkles: New features
+
+- Viewer role for team members [Taiga #1056](https://tree.taiga.io/project/penpot/us/1056) & [Taiga #6590](https://tree.taiga.io/project/penpot/us/6590)
+- File history versions management [Taiga #187](https://tree.taiga.io/project/penpot/us/187?milestone=411120)
+- Rename selected layer via keyboard shortcut and context menu option [Taiga #8882](https://tree.taiga.io/project/penpot/us/8882)
+- New .penpot file format [Taiga #8657](https://tree.taiga.io/project/penpot/us/8657)
+
+### :bug: Bugs fixed
+
+- Fix problem with some texts desynchronization [Taiga #9379](https://tree.taiga.io/project/penpot/issue/9379)
+
+## 2.3.3
+
+### :bug: Bugs fixed
+
+- Fix problem creating manual overlay interactions [Taiga #9146](https://tree.taiga.io/project/penpot/issue/9146)
+- Fix plugins list default URL
+- Activate plugins feature by default
+
+## 2.3.2
+
+### :bug: Bugs fixed
+
+- Fix null pointer exception on number checking functions
+- Fix problem with grid layout ordering after moving [Taiga #9179](https://tree.taiga.io/project/penpot/issue/9179)
+
+### :books: Documentation
+
+- Add initial documentation for Kubernetes
+
+
+## 2.3.1
+
+### :bug: Bugs fixed
+
+- Fix unexpected issue on interaction between plugins sandbox and
+  internal impl of promise
+
+
+## 2.3.0
+
+### :rocket: Epics and highlights
+
+- **New plugin system.**
+
+  Penpot now supports custom plugins. Read everything about developing your plugins [HERE](https://help.penpot.app/plugins/)
+
+### :boom: Breaking changes & Deprecations
+
+### :heart: Community contributions (Thank you!)
+
+- All our plugins beta testers :heart:.
+- Fix problem when translating multiple path points by @eeropic [#4459](https://github.com/penpot/penpot/issues/4459)
 
 ### :sparkles: New features
 
@@ -30,7 +100,30 @@
 
   You can enable it with the `enable-feature-text-editor-v2` configuration flag.
 
+
 ### :bug: Bugs fixed
+
+- Fix problem with constraints buttons [Taiga #8465](https://tree.taiga.io/project/penpot/issue/8465)
+- Fix problem with go back button on error page [Taiga #8887](https://tree.taiga.io/project/penpot/issue/8887)
+- Fix problem with shadows in text for Safari [Taiga #8770](https://tree.taiga.io/project/penpot/issue/8770)
+- Fix a regression with feedback form subject and content limits [Taiga #8908](https://tree.taiga.io/project/penpot/issue/8908)
+- Fix problem with stroke and filter ordering in frames [Github #5058](https://github.com/penpot/penpot/issues/5058)
+- Fix problem with hover layers when hidden/blocked [Github #5074](https://github.com/penpot/penpot/issues/5074)
+- Fix problem with precision on boolean calculation [Taiga #8482](https://tree.taiga.io/project/penpot/issue/8482)
+- Fix problem when translating multiple path points [Github #4459](https://github.com/penpot/penpot/issues/4459)
+- Fix problem on importing (and exporting) files with flows [Taiga #8914](https://tree.taiga.io/project/penpot/issue/8914)
+- Fix Internal Error page: "go to your penpot" wrong design [Taiga #8922](https://tree.taiga.io/project/penpot/issue/8922)
+- Fix problem updating layout when toggle visibility in component copy [Github #5143](https://github.com/penpot/penpot/issues/5143)
+- Fix "Done" button on toolbar on inspect mode should go to design mode [Taiga #8933](https://tree.taiga.io/project/penpot/issue/8933)
+- Fix problem with shortcuts in text editor [Github #5078](https://github.com/penpot/penpot/issues/5078)
+- Fix problems with show in viewer and interactions [Github #4868](https://github.com/penpot/penpot/issues/4868)
+- Add visual feedback when moving an element into a board [Github #3210](https://github.com/penpot/penpot/issues/3210)
+- Fix percent calculation on grid layout tracks [Github #4688](https://github.com/penpot/penpot/issues/4688)
+- Fix problem with caps and inner shadows [Github #4517](https://github.com/penpot/penpot/issues/4517)
+- Fix problem with horizontal/vertical lines and shadows [Github #4516](https://github.com/penpot/penpot/issues/4516)
+- Fix problem with layers overflowing panel [Taiga #9021](https://tree.taiga.io/project/penpot/issue/9021)
+- Fix in workspace you can manage rulers on view mode [Taiga #8966](https://tree.taiga.io/project/penpot/issue/8966)
+- Fix problem with swap components in grid layout [Taiga #9066](https://tree.taiga.io/project/penpot/issue/9066)
 
 ## 2.2.1
 
@@ -130,6 +223,7 @@ time being.
 - Fix problem with comments max length [Taiga #8778](https://tree.taiga.io/project/penpot/issue/8778)
 - Fix copy/paste images in Safari [Taiga #8771](https://tree.taiga.io/project/penpot/issue/8771)
 - Fix swap when the copy is the only child of a group [#5075](https://github.com/penpot/penpot/issues/5075)
+- Fix file builder hangs when exporting [#5099](https://github.com/penpot/penpot/issues/5099)
 
 ## 2.1.5
 
@@ -176,7 +270,7 @@ time being.
 
 ### :boom: Breaking changes & Deprecations
 
-### :heart: Community contributions (Thank you!)
+### :heart: Communityq contributions (Thank you!)
 
 ### :sparkles: New features
 

@@ -86,7 +86,8 @@
      (when (and (:shapes item) expanded?)
        [:div {:class (stl/css-case
                       :element-children true
-                      :parent-selected selected?)}
+                      :parent-selected selected?)
+              :data-testid (dm/str "children-" id)}
         (for [[index id] (reverse (d/enumerate (:shapes item)))]
           (when-let [item (get objects id)]
             [:& layer-item

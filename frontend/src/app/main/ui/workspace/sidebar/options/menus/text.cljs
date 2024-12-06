@@ -20,6 +20,7 @@
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry text-options]]
    [app.util.dom :as dom]
@@ -290,9 +291,10 @@
                      :title        label
                      :class        (stl/css :title-spacing-text)}
        (when (and (not typography) (not multiple?))
-         [:button {:class   (stl/css :add-typography)
-                   :on-click on-convert-to-typography}
-          i/add])]]
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "labels.options")
+                           :on-click on-convert-to-typography
+                           :icon "add"}])]]
 
      (when main-menu-open?
        [:div {:class (stl/css :element-content)}
@@ -318,9 +320,10 @@
         [:div {:class (stl/css :text-align-options)}
          [:> text-align-options opts]
          [:> grow-options opts]
-         [:button {:class (stl/css :more-options)
-                   :on-click toggle-more-options}
-          i/menu]]
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "labels.options")
+                           :on-click toggle-more-options
+                           :icon "menu"}]]
 
         (when more-options-open?
           [:div  {:class (stl/css :text-decoration-options)}

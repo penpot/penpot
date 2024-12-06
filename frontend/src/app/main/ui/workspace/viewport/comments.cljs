@@ -36,7 +36,7 @@
         pos-y    (* (- vbox-y) zoom)
 
         profile  (mf/deref refs/profile)
-        users    (mf/deref refs/current-file-comments-users)
+        profiles (mf/deref refs/profiles)
         local    (mf/deref refs/comments-local)
 
         positions-ref
@@ -84,7 +84,7 @@
          (when-let [thread (get threads-map id)]
            (when (seq (dcm/apply-filters local profile [thread]))
              [:& cmt/thread-comments {:thread (update-position positions thread)
-                                      :users users
+                                      :profiles profiles
                                       :viewport {:offset-x pos-x :offset-y pos-y :width (:width vport) :height (:height vport)}
                                       :zoom zoom}])))
 

@@ -76,3 +76,15 @@
   max-width: fit-content;
   pointer-events: all;
 }
+
+.element-name-input {
+  @include removeInputStyle;
+  @include bodySmallTypography;
+  @include removeInputStyle;
+  flex-grow: 1;
+  height: 20px;
+  margin: 0;
+  padding-left: $s-6;
+  border: $s-1 solid var(--input-border-color-focus);
+  color: var(--layer-row-foreground-color);
+}

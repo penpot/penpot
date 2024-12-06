@@ -11,13 +11,16 @@
   permanently delete these files (look at systemd-tempfiles)."
   (:require
    [app.common.logging :as l]
+   [app.common.schema :as sm]
+   [app.common.uuid :as uuid]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [clojure.spec.alpha :as s]
    [datoteka.fs :as fs]
    [integrant.core :as ig]
    [promesa.exec :as px]
-   [promesa.exec.csp :as sp]))
+   [promesa.exec.csp :as sp])
+  (:import
+   java.nio.file.Files))
 
 (def default-tmp-dir "/tmp/penpot")
 
@@ -26,12 +29,13 @@
 
 (defonce queue (sp/chan :buf 128))
 
-(defmethod ig/pre-init-spec ::cleaner [_]
-  (s/keys :req [::wrk/executor]))
+(defmethod ig/assert-key ::cleaner
+  [_ {:keys [::wrk/executor]}]
+  (assert (sm/valid? ::wrk/executor executor)))
 
-(defmethod ig/prep-key ::cleaner
-  [_ cfg]
-  (assoc cfg ::min-age (dt/duration "60m")))
+(defmethod ig/expand-key ::cleaner
+  [k v]
+  {k (assoc v ::min-age (dt/duration "60m"))})
 
 (defmethod ig/init-key ::cleaner
   [_ cfg]
@@ -76,11 +80,9 @@
   [& {:keys [suffix prefix min-age]
       :or {prefix "penpot."
            suffix ".tmp"}}]
-  (let [path (fs/create-tempfile
-              :perms "rw-r--r--"
-              :dir default-tmp-dir
-              :suffix suffix
-              :prefix prefix)]
+  (let [attrs (fs/make-permissions "rw-r--r--")
+        path  (fs/join default-tmp-dir (str prefix (uuid/next) suffix))
+        path  (Files/createFile path attrs)]
     (fs/delete-on-exit! path)
     (sp/offer! queue [path (some-> min-age dt/duration)])
     path))

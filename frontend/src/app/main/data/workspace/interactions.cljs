@@ -17,6 +17,7 @@
    [app.common.types.shape.interactions :as ctsi]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
+   [app.main.data.event :as ev]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
@@ -147,11 +148,15 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id  (or page-id (:current-page-id state))]
-        (rx/of (dwsh/update-shapes
-                [shape-id]
-                (fn [shape]
-                  (cls/add-new-interaction shape interaction))
-                {:page-id page-id}))))))
+        (rx/of (dwsh/update-shapes [shape-id]
+                                   (fn [shape]
+                                     (cls/add-new-interaction shape interaction))
+                                   {:page-id page-id})
+
+               (when (:destination interaction)
+                 (dwsh/update-shapes [(:destination interaction)]
+                                     cls/show-in-viewer
+                                     {:page-id page-id})))))))
 
 (defn add-new-interaction
   ([shape] (add-new-interaction shape nil))
@@ -164,18 +169,27 @@
              objects  (get page :objects)
              frame    (cfh/get-root-frame objects (:id shape))
 
-             flows    (get page :objects)
+             first?   (not-any? #(seq (:interactions %)) (vals objects))
+             flows    (get page :flows)
              flow     (ctp/get-frame-flow flows (:id frame))]
          (rx/concat
-          (rx/of (dwsh/update-shapes [(:id shape)]
-                                     (fn [shape]
-                                       (let [new-interaction (-> ctsi/default-interaction
-                                                                 (ctsi/set-destination destination)
-                                                                 (assoc :position-relative-to (:id shape)))]
-                                         (cls/add-new-interaction shape new-interaction)))))
+          (rx/of (dwsh/update-shapes
+                  [(:id shape)]
+                  (fn [shape]
+                    (let [new-interaction (-> ctsi/default-interaction
+                                              (ctsi/set-destination destination)
+                                              (assoc :position-relative-to (:id shape)))]
+                      (cls/add-new-interaction shape new-interaction)))))
+
+          (when destination
+            (rx/of (dwsh/update-shapes [destination] cls/show-in-viewer)))
+
           (when (and (not (connected-frame? objects (:id frame)))
                      (nil? flow))
-            (rx/of (add-flow (:id frame))))))))))
+            (rx/of (add-flow (:id frame))))
+          (when first?
+            ;; When the first interaction of the page is created we emit the event "create-prototype"
+            (rx/of (ptk/event ::ev/event {::ev/name "create-prototype"})))))))))
 
 (defn remove-interaction
   ([shape index]
@@ -186,8 +200,7 @@
      (watch [_ _ _]
        (rx/of (dwsh/update-shapes [(:id shape)]
                                   (fn [shape]
-                                    (update shape :interactions
-                                            ctsi/remove-interaction index))
+                                    (update shape :interactions ctsi/remove-interaction index))
                                   {:page-id page-id}))))))
 (defn update-interaction
   ([shape index update-fn]
@@ -196,11 +209,18 @@
    (ptk/reify ::update-interaction
      ptk/WatchEvent
      (watch [_ _ _]
-       (rx/of (dwsh/update-shapes [(:id shape)]
-                                  (fn [shape]
-                                    (update shape :interactions
-                                            ctsi/update-interaction index update-fn))
-                                  options))))))
+       (let [interactions (ctsi/update-interaction (:interactions shape) index update-fn)
+             interaction (nth interactions index)]
+         (rx/of
+          (dwsh/update-shapes
+           [(:id shape)]
+           (fn [shape]
+             (-> shape
+                 (update :interactions ctsi/update-interaction index update-fn)))
+           options)
+
+          (when (some? (:destination interaction))
+            (dwsh/update-shapes [(:destination interaction)] cls/show-in-viewer options))))))))
 
 (defn remove-all-interactions-nav-to
   "Remove all interactions that navigate to the given frame."

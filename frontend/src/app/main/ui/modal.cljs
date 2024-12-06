@@ -37,7 +37,8 @@
     (when (and wrapper
                (not allow-click-outside)
                (not (.contains wrapper current))
-               (not (= type (keyword (dom/get-data current "allow-click-modal")))))
+               (not (= type (keyword (dom/get-data current "allow-click-modal"))))
+               (= (.-button event) 0))
       (dom/stop-propagation event)
       (dom/prevent-default event)
       (st/emit! (dm/hide)))))

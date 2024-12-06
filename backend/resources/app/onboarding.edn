@@ -1,15 +1,15 @@
 [{:id "wireframing-kit"
   :name "Wireframe library"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/wireframing-kit.penpot"}
+  :file-uri "https://github.com/penpot/penpot-files/raw/refs/heads/main/Wireframing%20kit%20v1.1.penpot"}
  {:id "prototype-examples"
   :name "Prototype template"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/prototype-examples.penpot"}
+  :file-uri "https://github.com/penpot/penpot-files/raw/refs/heads/main/Prototype%20examples%20v1.1.penpot"}
  {:id "plants-app"
   :name "UI mockup example"
   :file-uri "https://github.com/penpot/penpot-files/raw/main/Plants-app.penpot"}
  {:id "penpot-design-system"
   :name "Design system example"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/Penpot-Design-system.penpot"}
+  :file-uri "https://github.com/penpot/penpot-files/raw/refs/heads/main/Penpot%20-%20Design%20System%20v2.1.penpot"}
  {:id "tutorial-for-beginners"
   :name "Tutorial for beginners"
   :file-uri "https://github.com/penpot/penpot-files/raw/main/tutorial-for-beginners.penpot"}
@@ -36,7 +36,7 @@
   :file-uri "https://github.com/penpot/penpot-files/raw/main/Open%20Color%20Scheme%20(v1.9.1).penpot"}
  {:id "flex-layout-playground"
   :name "Flex Layout Playground"
-  :file-uri "https://github.com/penpot/penpot-files/raw/main/Flex%20Layout%20Playground.penpot"}
+  :file-uri "https://github.com/penpot/penpot-files/raw/refs/heads/main/Flex%20Layout%20Playground%20v2.0.penpot"}
  {:id "welcome"
   :name "Welcome"
   :file-uri "https://github.com/penpot/penpot-files/raw/main/welcome.penpot"}]

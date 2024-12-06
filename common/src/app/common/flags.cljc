@@ -12,6 +12,7 @@
 (def default
   "A common flags that affects both: backend and frontend."
   [:enable-registration
+   :enable-export-file-v3
    :enable-login-with-password])
 
 (defn parse

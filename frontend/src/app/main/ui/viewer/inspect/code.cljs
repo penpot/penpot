@@ -13,7 +13,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.types.shape-tree :as ctst]
    [app.config :as cfg]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -30,6 +30,7 @@
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
+   [okulary.core :as l]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
@@ -49,13 +50,26 @@
   </body>
 </html>")
 
+;; FIXME: this code need to be refactored
+(defn get-viewer-objects
+  ([]
+   (let [route      (deref refs/route)
+         page-id    (:page-id (:query-params route))]
+     (get-viewer-objects page-id)))
+  ([page-id]
+   (l/derived
+    (fn [state]
+      (let [objects (refs/get-viewer-objects state page-id)]
+        objects))
+    st/state =)))
+
 (defn- use-objects [from]
   (let [page-objects-ref
         (mf/with-memo [from]
           (if (= from :workspace)
             ;; FIXME: fix naming consistency issues
             refs/workspace-page-objects
-            (refs/get-viewer-objects)))]
+            (get-viewer-objects)))]
     (mf/deref page-objects-ref)))
 
 (defn- shapes->images

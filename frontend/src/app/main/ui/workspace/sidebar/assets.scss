@@ -134,13 +134,3 @@
   display: flex;
   gap: $s-4;
 }
-
-.sort-button {
-  @extend .button-tertiary;
-  width: $s-32;
-  border-radius: $br-8;
-  svg {
-    @extend .button-icon-small;
-    stroke: var(--icon-foreground);
-  }
-}

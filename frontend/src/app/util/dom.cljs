@@ -17,6 +17,7 @@
    [app.util.webapi :as wapi]
    [cuerdas.core :as str]
    [goog.dom :as dom]
+   [potok.v2.core :as ptk]
    [promesa.core :as p])
   (:import goog.events.BrowserEvent))
 
@@ -720,6 +721,19 @@
   [filename blob]
   (trigger-download-uri filename (.-type ^js blob) (wapi/create-uri blob)))
 
+(defn event
+  "Create an instance of DOM Event"
+  ([^string type]
+   (js/Event. type))
+  ([^string type options]
+   (js/Event. type options)))
+
+(defn dispatch-event
+  [target event]
+  (when (some? target)
+    (.dispatchEvent ^js target event)))
+
+
 (defn save-as
   [uri filename mtype description]
 
@@ -743,9 +757,16 @@
 
     (trigger-download-uri filename mtype uri)))
 
-(defn left-mouse? [bevent]
-  (let [event  (.-nativeEvent ^js bevent)]
+(defn left-mouse?
+  [bevent]
+  (let [event (.-nativeEvent ^js bevent)]
     (= 1 (.-which event))))
+
+(defn middle-mouse?
+  [bevent]
+  (let [event (.-nativeEvent ^js bevent)]
+    (= 2 (.-which event))))
+
 
 ;; Warning: need to protect against reverse tabnabbing attack
 ;; https://www.comparitech.com/blog/information-security/reverse-tabnabbing/
@@ -833,3 +854,10 @@
         measures (.measureText context-2d text)]
     {:descent (.-actualBoundingBoxDescent measures)
      :ascent (.-actualBoundingBoxAscent measures)}))
+
+(defmethod ptk/resolve ::focus-element
+  [_ {:keys [name]}]
+  (ptk/reify ::focus-element
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (focus! (get-element name)))))

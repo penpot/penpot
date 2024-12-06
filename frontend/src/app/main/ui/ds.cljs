@@ -18,8 +18,10 @@
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.ds.notifications.toast :refer [toast*]]
+   [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.ds.storybook :as sb]
+   [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.util.i18n :as i18n]))
 
 
@@ -32,12 +34,14 @@
        :Icon icon*
        :IconButton icon-button*
        :Input input*
+       :EmptyPlaceholder empty-placeholder*
        :Loader loader*
        :RawSvg raw-svg*
        :Select select*
        :Text text*
        :TabSwitcher tab-switcher*
        :Toast toast*
+       :Swatch swatch*
        ;; meta / misc
        :meta #js {:icons (clj->js (sort icon-list))
                   :svgs (clj->js (sort raw-svg-list))

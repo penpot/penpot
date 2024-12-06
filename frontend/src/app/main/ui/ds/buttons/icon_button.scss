@@ -31,3 +31,7 @@
 .icon-button-destructive {
   @extend %base-button-destructive;
 }
+
+.icon-button-action {
+  @extend %base-button-action;
+}

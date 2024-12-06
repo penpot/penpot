@@ -13,6 +13,7 @@
    [app.common.files.defaults :as cfd]
    [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.path :as gsp]
@@ -499,7 +500,7 @@
               object
               (-> object
                   (update :selrect grc/make-rect)
-                  (cts/map->Shape))))
+                  (cts/create-shape))))
           (update-container [container]
             (d/update-when container :objects update-vals update-object))]
     (-> data
@@ -1075,6 +1076,60 @@
 
     (update data :pages-index d/update-vals update-page)))
 
+(defn migrate-up-56
+  [data]
+  (letfn [(fix-fills [object]
+            (d/update-when object :fills (partial filterv valid-fill?)))
+
+          (update-object [object]
+            (-> object
+                (fix-fills)
+
+                ;; If shape contains shape-ref but has a nil value, we
+                ;; should remove it from shape object
+                (cond-> (and (contains? object :shape-ref)
+                             (nil? (get object :shape-ref)))
+                  (dissoc :shape-ref))
+
+                ;; The text shape also can has fills on the text
+                ;; fragments so we need to fix fills there
+                (cond-> (cfh/text-shape? object)
+                  (update :content (partial txt/transform-nodes identity fix-fills)))))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+
+(defn migrate-up-57
+  [data]
+  (letfn [(fix-thread-positions [positions]
+            (reduce-kv (fn [result id {:keys [position] :as data}]
+                         (let [data (cond
+                                      (gpt/point? position)
+                                      data
+
+                                      (and (map? position)
+                                           (gpt/valid-point-attrs? position))
+                                      (assoc data :position (gpt/point position))
+
+                                      :else
+                                      (assoc data :position (gpt/point 0 0)))]
+                           (assoc result id data)))
+                       positions
+                       positions))
+
+          (update-page [page]
+            (d/update-when page :comment-thread-positions fix-thread-positions))]
+
+    (-> data
+        (update :pages (fn [pages] (into [] (remove nil?) pages)))
+        (update :pages-index dissoc nil)
+        (update :pages-index update-vals update-page))))
+
 (def migrations
   "A vector of all applicable migrations"
   [{:id 2 :migrate-up migrate-up-2}
@@ -1121,4 +1176,7 @@
    {:id 52 :migrate-up migrate-up-52}
    {:id 53 :migrate-up migrate-up-26}
    {:id 54 :migrate-up migrate-up-54}
-   {:id 55 :migrate-up migrate-up-55}])
+   {:id 55 :migrate-up migrate-up-55}
+   {:id 56 :migrate-up migrate-up-56}
+   {:id 57 :migrate-up migrate-up-57}])
+

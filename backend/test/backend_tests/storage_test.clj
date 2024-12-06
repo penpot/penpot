@@ -27,12 +27,8 @@
 (defn configure-storage-backend
   "Given storage map, returns a storage configured with the appropriate
   backend for assets."
-  ([storage]
-   (assoc storage ::sto/backend :assets-fs))
-  ([storage conn]
-   (-> storage
-       (assoc ::db/pool-or-conn conn)
-       (assoc ::sto/backend :assets-fs))))
+  [storage]
+  (assoc storage ::sto/backend :fs))
 
 (t/deftest put-and-retrieve-object
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -46,7 +42,7 @@
     (t/is (fs/path? (sto/get-object-path storage object)))
 
     (t/is (nil? (:expired-at object)))
-    (t/is (= :assets-fs (:backend object)))
+    (t/is (= :fs (:backend object)))
     (t/is (= "data" (:other (meta object))))
     (t/is (= "text/plain" (:content-type (meta object))))
     (t/is (= "content" (slurp (sto/get-object-data storage object))))
@@ -91,12 +87,13 @@
     ;; marked as deleted/expired.
     (t/is (nil? (sto/get-object storage (:id object))))))
 
-(t/deftest test-deleted-gc-task
+(t/deftest deleted-gc-task
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
         content1 (sto/content "content1")
         content2 (sto/content "content2")
         content3 (sto/content "content3")
+
         object1  (sto/put-object! storage {::sto/content content1
                                            ::sto/expired-at (dt/now)
                                            :content-type "text/plain"})
@@ -116,7 +113,7 @@
     (let [res (th/db-exec-one! ["select count(*) from storage_object;"])]
       (t/is (= 2 (:count res))))))
 
-(t/deftest test-touched-gc-task-1
+(t/deftest touched-gc-task-1
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
         prof    (th/create-profile* 1)
@@ -186,7 +183,7 @@
         (t/is (= 0 (:count res)))))))
 
 
-(t/deftest test-touched-gc-task-2
+(t/deftest touched-gc-task-2
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
         prof    (th/create-profile* 1 {:is-active true})
@@ -202,8 +199,7 @@
                                     :is-shared false})
 
         ttfdata (-> (io/resource "backend_tests/test_files/font-1.ttf")
-                    io/input-stream
-                    io/read-as-bytes)
+                    (io/read*))
 
         mfile   {:filename "sample.jpg"
                  :path (th/tempfile "backend_tests/test_files/sample.jpg")
@@ -266,7 +262,7 @@
         (let [res (th/db-exec-one! ["select count(*) from storage_object where deleted_at is not null"])]
           (t/is (= 3 (:count res))))))))
 
-(t/deftest test-touched-gc-task-3
+(t/deftest touched-gc-task-3
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
         prof    (th/create-profile* 1)

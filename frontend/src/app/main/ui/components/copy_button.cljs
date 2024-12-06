@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.main.data.events :as-alias ev]
+   [app.main.data.event :as-alias ev]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.timers :as tm]

@@ -1,0 +1,103 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.token-context-menu {
+  position: absolute;
+  z-index: $z-index-4;
+}
+
+.context-list,
+.token-context-submenu {
+  @include menuShadow;
+  display: grid;
+  width: $s-240;
+  padding: $s-4;
+  border-radius: $br-8;
+  border: $s-2 solid var(--panel-border-color);
+  background-color: var(--menu-background-color);
+  max-height: 100vh;
+  overflow-y: auto;
+
+  li {
+    @include bodySmallTypography;
+    color: var(--menu-foreground-color);
+  }
+}
+
+.token-context-submenu {
+  position: absolute;
+  padding: $s-4;
+  margin-left: $s-6;
+}
+
+.separator {
+  @include bodySmallTypography;
+  margin: $s-6;
+  border-block-start: $s-1 solid var(--panel-border-color);
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  height: $s-28;
+  width: 100%;
+  padding: $s-6;
+  border-radius: $br-8;
+  cursor: pointer;
+
+  .title {
+    flex-grow: 1;
+    @include bodySmallTypography;
+    color: var(--menu-foreground-color);
+    margin-left: calc(($s-32 + $s-28) / 2);
+  }
+
+  .icon-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .icon-wrapper + .title {
+    margin-left: $s-6;
+  }
+
+  .selected-icon {
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--menu-foreground-color);
+    }
+  }
+
+  .submenu-icon {
+    margin-left: $s-2;
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--menu-foreground-color);
+    }
+  }
+
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+    .title {
+      color: var(--menu-foreground-color-hover);
+    }
+    .shortcut {
+      color: var(--menu-shortcut-foreground-color-hover);
+    }
+  }
+
+  &:focus {
+    border: 1px solid var(--menu-border-color-focus);
+    background-color: var(--menu-background-color-focus);
+  }
+
+  &[disabled] {
+    pointer-events: none;
+    opacity: 0.6;
+  }
+}

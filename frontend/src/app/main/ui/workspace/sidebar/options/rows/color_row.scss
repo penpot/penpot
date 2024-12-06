@@ -153,14 +153,6 @@
   }
 }
 
-.gradient-name-wrapper {
-  border-radius: 0 $br-8 $br-8 0;
-  .color-name {
-    @include flexRow;
-    border-radius: 0 $br-8 $br-8 0;
-  }
-}
-
 .library-name-wrapper {
   border-radius: $br-8;
 }
@@ -180,15 +172,5 @@
     height: $s-32;
     margin-inline-end: $s-4;
     margin-block-start: $s-2;
-  }
-}
-
-.remove-btn,
-.select-btn {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  svg {
-    @extend .button-icon;
   }
 }

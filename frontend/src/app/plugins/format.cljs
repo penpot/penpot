@@ -103,7 +103,7 @@
 ;;   height: number;
 ;;   mtype?: string;
 ;;   id: string;
-;;   keepApectRatio?: boolean;
+;;   keepAspectRatio?: boolean;
 ;; };
 (defn format-image
   [{:keys [name width height mtype id keep-aspect-ratio] :as image}]

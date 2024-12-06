@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @import "refactor/common-refactor.scss";
+
 .workspace-header-right {
   display: flex;
   justify-content: space-between;
@@ -35,6 +36,7 @@
   max-width: $s-48;
   width: $s-48;
   border-radius: $br-8;
+
   .label {
     @include bodySmallTypography;
     height: 100%;
@@ -47,6 +49,7 @@
       color: var(--button-tertiary-foreground-color-focus);
     }
   }
+
   &.selected {
     .label {
       color: var(--button-tertiary-foreground-color-focus);
@@ -72,25 +75,6 @@
   display: flex;
 }
 
-.zoom-btn {
-  @extend .button-tertiary;
-  height: $s-28;
-  width: $s-28;
-  border-radius: $br-8;
-  .zoom-icon {
-    @include flexCenter;
-    svg {
-      @extend .button-icon;
-      stroke: var(--icon-foreground);
-    }
-  }
-  &:hover {
-    .zoom-icon svg {
-      stroke: var(--button-tertiary-foreground-color-hover);
-    }
-  }
-}
-
 .zoom-text {
   @include flexCenter;
   height: 100%;
@@ -106,16 +90,21 @@
   height: $s-28;
   border-radius: $br-8;
 }
+
 .zoom-option {
   @extend .menu-item-base;
+
   .shortcuts {
     @extend .shortcut-base;
+
     .shortcut-key {
       @extend .shortcut-key-base;
     }
   }
+
   &:hover {
     color: var(--menu-foreground-color-hover);
+
     .shortcuts {
       .shortcut-key {
         color: var(--menu-foreground-color-hover);
@@ -131,18 +120,22 @@
   height: $s-28;
   width: $s-28;
   border: none;
+
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);
     height: $s-16;
     width: $s-16;
   }
+
   &:hover {
     background-color: transparent;
     border: none;
   }
+
   &.selected {
     background-color: var(--button-tertiary-background-color-selected);
+
     svg {
       stroke: var(--button-tertiary-foreground-color-active);
     }
@@ -156,18 +149,22 @@
   height: $s-28;
   width: $s-28;
   border: none;
+
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);
     height: $s-16;
     width: $s-16;
   }
+
   &:hover {
     background-color: transparent;
     border: none;
   }
+
   &.selected {
     background-color: var(--button-tertiary-background-color-selected);
+
     svg {
       stroke: var(--button-tertiary-foreground-color-active);
     }
@@ -186,6 +183,7 @@
   height: $s-24;
   margin: 0;
   border-radius: $br-circle;
+
   svg {
     @extend .button-icon;
     stroke: var(--status-widget-icon-foreground-color);
@@ -198,6 +196,7 @@
 
 .saving-status {
   background-color: var(--status-widget-background-color-pending);
+
   svg {
     animation: spin-animation 1s infinite;
     animation-timing-function: linear;
@@ -212,6 +211,7 @@
   background-color: var(--status-widget-background-color-error);
 }
 
+.share-btn,
 .viewer-btn {
   @extend .button-tertiary;
   border-radius: $br-8;
@@ -219,12 +219,14 @@
   width: $s-28;
   height: $s-28;
   border: none;
+
   svg {
     @extend .button-icon;
     height: $s-16;
     width: $s-16;
     stroke: var(--icon-foreground);
   }
+
   &:hover {
     background-color: transparent;
     border: none;

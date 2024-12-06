@@ -1,0 +1,67 @@
+import { Canvas, Meta } from "@storybook/blocks";
+import * as SwatchStories from "./swatch.stories";
+
+<Meta title="Foundations/Utilities/Swatch/Docs" />
+
+# Swatch
+
+Swatches are elements that display a color, gradient or image. They can sometimes trigger an action.
+
+## Variants
+
+**Color** (`"color"`), displays a solid color. It can take a hexadecimal, an rgb or an rgba.
+
+<Canvas of={SwatchStories.Default} />
+
+**WithOpacity** (`"color"`), displays a solid color on one side and the same color with its opacity applied on the other side. It can take a hexadecimal, an rgb or an rgba.
+
+<Canvas of={SwatchStories.WithOpacity} />
+
+**Gradient** (`"gradient"`), displays a gradient. A gradient should be a `linear-gradient` or a `conic-gradient`.
+
+<Canvas of={SwatchStories.LinearGradient} />
+
+**Image** (`"image"`) the swatch could display any image.
+
+<Canvas of={SwatchStories.Image} />
+
+**Active** (`"active"`) displays the swatch as active while an interface related action is happening.
+
+<Canvas of={SwatchStories.Active} />
+
+**Size** (`"size"`) shows a bigger or smaller swatch. Accepts `small` and `medium` (_default_) sizes.
+
+<Canvas of={SwatchStories.Small} />
+
+**Format** (`"format"`) displays a square or rounded swatch. Accepts `square` (_default_) and `rounded` sizes.
+
+<Canvas of={SwatchStories.Rounded} />
+
+## Technical Notes
+
+### Background
+
+The `swatch*` component accepts a `background` prop, which must be:
+
+- An hexadecimal (e.g. `#996633`)
+- An RGB (e.g. `rgb(125, 125, 0)`)
+- An RGBA (e.g. `rgba(125, 125, 0, 0.3)`)
+- A linear gradient (e.g. `linear-gradient(to right, blue, pink)`)
+- A conic gradient (e.g. `conic-gradient(red, orange, yellow, green, blue)`)
+- An image (e.g. `url(https://placecats.com/100/100)`)
+
+### onClick
+
+> Note: If the swatch is interactive, an `aria-label` is required. More on the `Accessibility` section.
+
+The swatch button accepts an onClick prop that expect a function on the parent context.
+It should be useful for launching other tools as a color picker.
+It runs when the user clics on the swatch, or presses enter or space while focusing it.
+
+### Accessibility
+
+If the swatch is interactive, an `aria-label` is required.
+
+```clj
+[:> swatch* {:on-click launch-colorpicker :aria-label "Lorem ipsum"}]
+```

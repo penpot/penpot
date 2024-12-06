@@ -14,7 +14,6 @@
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
    [clojure.java.io :as jio]
-   [clojure.spec.alpha :as s]
    [datoteka.io :as io])
   (:import
    java.nio.ByteBuffer
@@ -233,8 +232,4 @@
 (defn content?
   [v]
   (satisfies? IContentObject v))
-
-(s/def ::object object?)
-(s/def ::content content?)
-
 

@@ -16,10 +16,9 @@
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.db :as db]
-   [app.storage :as-alias sto]
+   [app.storage :as sto]
    [app.storage.impl :as impl]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
 (def ^:private sql:lock-sobjects
@@ -100,13 +99,14 @@
           0
           (get-buckets conn min-age)))
 
+(defmethod ig/assert-key ::handler
+  [_ params]
+  (assert (sto/valid-storage? (::sto/storage params)) "expect valid storage")
+  (assert (db/pool? (::db/pool params)) "expect valid storage"))
 
-(defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req [::sto/storage ::db/pool]))
-
-(defmethod ig/prep-key ::handler
-  [_ cfg]
-  (assoc cfg ::min-age (dt/duration {:hours 2})))
+(defmethod ig/expand-key ::handler
+  [k v]
+  {k (assoc v ::min-age (dt/duration {:hours 2}))})
 
 (defmethod ig/init-key ::handler
   [_ {:keys [::min-age] :as cfg}]

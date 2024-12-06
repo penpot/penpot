@@ -11,14 +11,14 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uri :as u]
    [app.storage :as-alias sto]
    [app.storage.impl :as impl]
    [app.storage.tmp :as tmp]
    [app.util.time :as dt]
+   [app.worker :as-alias wrk]
    [clojure.java.io :as io]
-   [clojure.spec.alpha :as s]
    [datoteka.fs :as fs]
    [integrant.core :as ig]
    [promesa.core :as p]
@@ -27,17 +27,15 @@
    java.io.FilterInputStream
    java.io.InputStream
    java.net.URI
-   java.nio.ByteBuffer
    java.nio.file.Path
    java.time.Duration
    java.util.Collection
    java.util.Optional
-   java.util.concurrent.Semaphore
    org.reactivestreams.Subscriber
-   org.reactivestreams.Subscription
    software.amazon.awssdk.core.ResponseBytes
    software.amazon.awssdk.core.async.AsyncRequestBody
    software.amazon.awssdk.core.async.AsyncResponseTransformer
+   software.amazon.awssdk.core.async.BlockingInputStreamAsyncRequestBody
    software.amazon.awssdk.core.client.config.ClientAsyncConfiguration
    software.amazon.awssdk.core.client.config.SdkAdvancedAsyncClientOption
    software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient
@@ -59,6 +57,20 @@
    software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
    software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest))
 
+(def ^:private max-retries
+  "A maximum number of retries on internal operations"
+  3)
+
+(def ^:private max-concurrency
+  "Maximum concurrent request to S3 service"
+  128)
+
+(def ^:private max-pending-connection-acquires
+  20000)
+
+(def default-timeout
+  (dt/duration {:seconds 30}))
+
 (declare put-object)
 (declare get-object-bytes)
 (declare get-object-data)
@@ -73,98 +85,112 @@
 
 ;; --- BACKEND INIT
 
-(s/def ::region ::us/keyword)
-(s/def ::bucket ::us/string)
-(s/def ::prefix ::us/string)
-(s/def ::endpoint ::us/string)
-(s/def ::io-threads ::us/integer)
+(def ^:private schema:config
+  [:map {:title "s3-backend-config"}
+   ::wrk/executor
+   [::region {:optional true} :keyword]
+   [::bucket {:optional true} ::sm/text]
+   [::prefix {:optional true} ::sm/text]
+   [::endpoint {:optional true} ::sm/uri]
+   [::io-threads {:optional true} ::sm/int]])
 
-(defmethod ig/pre-init-spec ::backend [_]
-  (s/keys :opt [::region ::bucket ::prefix ::endpoint ::io-threads]))
+(defmethod ig/expand-key ::backend
+  [k v]
+  {k (merge {::region :eu-central-1} (d/without-nils v))})
 
-(defmethod ig/prep-key ::backend
-  [_ {:keys [::prefix ::region] :as cfg}]
-  (cond-> (d/without-nils cfg)
-    (some? prefix) (assoc ::prefix prefix)
-    (nil? region)  (assoc ::region :eu-central-1)))
+(defmethod ig/assert-key ::backend
+  [_ params]
+  (assert (sm/check schema:config params)))
 
 (defmethod ig/init-key ::backend
-  [_ cfg]
-  ;; Return a valid backend data structure only if all optional
-  ;; parameters are provided.
-  (when (and (contains? cfg ::region)
-             (string? (::bucket cfg)))
-    (let [client    (build-s3-client cfg)
-          presigner (build-s3-presigner cfg)]
-      (assoc cfg
+  [_ params]
+  (when (and (contains? params ::region)
+             (contains? params ::bucket))
+    (let [client    (build-s3-client params)
+          presigner (build-s3-presigner params)]
+      (assoc params
              ::sto/type :s3
              ::client @client
              ::presigner presigner
              ::close-fn #(.close ^java.lang.AutoCloseable client)))))
+
+(defmethod ig/resolve-key ::backend
+  [_ params]
+  (dissoc params ::close-fn))
 
 (defmethod ig/halt-key! ::backend
   [_ {:keys [::close-fn]}]
   (when (fn? close-fn)
     (px/run! close-fn)))
 
-(s/def ::client #(instance? S3AsyncClient %))
-(s/def ::presigner #(instance? S3Presigner %))
-(s/def ::backend
-  (s/keys :req [::region
-                ::bucket
-                ::client
-                ::presigner]
-          :opt [::prefix
-                ::sto/id]))
+(def ^:private schema:backend
+  [:map {:title "s3-backend"}
+   ;; [::region :keyword]
+   ;; [::bucket ::sm/text]
+   [::client [:fn #(instance? S3AsyncClient %)]]
+   [::presigner [:fn #(instance? S3Presigner %)]]
+   [::prefix {:optional true} ::sm/text]
+   #_[::sto/type [:= :s3]]])
+
+(sm/register! ::backend schema:backend)
+
+(def ^:private valid-backend?
+  (sm/validator schema:backend))
 
 ;; --- API IMPL
 
 (defmethod impl/put-object :s3
   [backend object content]
-  (us/assert! ::backend backend)
+  (assert (valid-backend? backend) "expected a valid backend instance")
   (p/await! (put-object backend object content)))
 
 (defmethod impl/get-object-data :s3
   [backend object]
-  (us/assert! ::backend backend)
+  (assert (valid-backend? backend) "expected a valid backend instance")
+  (loop [result (get-object-data backend object)
+         retryn 0]
 
-  (let [result (p/await (get-object-data backend object))]
-    (if (ex/exception? result)
-      (cond
-        (ex/instance? NoSuchKeyException result)
-        (ex/raise :type :not-found
-                  :code :object-not-found
-                  :hint "s3 object not found"
-                  :cause result)
-        :else
-        (throw result))
+    (let [result (p/await result)]
+      (if (ex/exception? result)
+        (cond
+          (ex/instance? NoSuchKeyException result)
+          (ex/raise :type :not-found
+                    :code :object-not-found
+                    :hint "s3 object not found"
+                    :object-id (:id object)
+                    :object-path (impl/id->path (:id object))
+                    :cause result)
 
-      result)))
+          (and (ex/instance? java.nio.file.FileAlreadyExistsException result)
+               (< retryn max-retries))
+          (recur (get-object-data backend object)
+                 (inc retryn))
+
+          :else
+          (throw result))
+
+        result))))
 
 (defmethod impl/get-object-bytes :s3
   [backend object]
-  (us/assert! ::backend backend)
+  (assert (valid-backend? backend) "expected a valid backend instance")
   (p/await! (get-object-bytes backend object)))
 
 (defmethod impl/get-object-url :s3
   [backend object options]
-  (us/assert! ::backend backend)
+  (assert (valid-backend? backend) "expected a valid backend instance")
   (get-object-url backend object options))
 
 (defmethod impl/del-object :s3
   [backend object]
-  (us/assert! ::backend backend)
   (p/await! (del-object backend object)))
 
 (defmethod impl/del-objects-in-bulk :s3
   [backend ids]
-  (us/assert! ::backend backend)
+  (assert (valid-backend? backend) "expected a valid backend instance")
   (p/await! (del-object-in-bulk backend ids)))
 
 ;; --- HELPERS
-
-(def default-timeout
-  (dt/duration {:seconds 30}))
 
 (defn- lookup-region
   ^Region
@@ -172,9 +198,8 @@
   (Region/of (name region)))
 
 (defn- build-s3-client
-  [{:keys [::region ::endpoint ::io-threads]}]
-  (let [executor (px/resolve-executor :virtual)
-        aconfig  (-> (ClientAsyncConfiguration/builder)
+  [{:keys [::region ::endpoint ::io-threads ::wrk/executor]}]
+  (let [aconfig  (-> (ClientAsyncConfiguration/builder)
                      (.advancedOption SdkAdvancedAsyncClientOption/FUTURE_COMPLETION_EXECUTOR executor)
                      (.build))
 
@@ -190,6 +215,8 @@
                      (.connectionTimeout default-timeout)
                      (.readTimeout default-timeout)
                      (.writeTimeout default-timeout)
+                     (.maxConcurrency (int max-concurrency))
+                     (.maxPendingConnectionAcquires (int max-pending-connection-acquires))
                      (.build))
 
         client   (let [builder (S3AsyncClient/builder)
@@ -199,7 +226,7 @@
                        builder (.region ^S3AsyncClientBuilder builder (lookup-region region))
                        builder (cond-> ^S3AsyncClientBuilder builder
                                  (some? endpoint)
-                                 (.endpointOverride (URI. endpoint)))]
+                                 (.endpointOverride (URI. (str endpoint))))]
                    (.build ^S3AsyncClientBuilder builder))]
 
     (reify
@@ -218,74 +245,43 @@
                    (.build))]
 
     (-> (S3Presigner/builder)
-        (cond-> (some? endpoint) (.endpointOverride (URI. endpoint)))
+        (cond-> (some? endpoint) (.endpointOverride (URI. (str endpoint))))
         (.region (lookup-region region))
         (.serviceConfiguration ^S3Configuration config)
         (.build))))
 
-(defn- upload-thread
-  [id subscriber sem content]
-  (px/thread
-    {:name "penpot/s3/uploader"
-     :virtual true
-     :daemon true}
-    (l/trace :hint "start upload thread"
-             :object-id (str id)
-             :size (impl/get-size content)
-             ::l/sync? true)
-    (let [stream (io/input-stream content)
-          bsize  (* 1024 64)
-          tpoint (dt/tpoint)]
-      (try
-        (loop []
-          (.acquire ^Semaphore sem 1)
-          (let [buffer (byte-array bsize)
-                readed (.read ^InputStream stream buffer)]
-            (when (pos? readed)
-              (let [data (ByteBuffer/wrap ^bytes buffer 0 readed)]
-                (.onNext ^Subscriber subscriber ^ByteBuffer data)
-                (when (= readed bsize)
-                  (recur))))))
-        (.onComplete ^Subscriber subscriber)
-        (catch InterruptedException _
-          (l/trace :hint "interrupted upload thread"
-                   :object-:id (str id)
-                   ::l/sync? true)
-          nil)
-        (catch Throwable cause
-          (.onError ^Subscriber subscriber cause))
-        (finally
-          (l/trace :hint "end upload thread"
-                   :object-id (str id)
-                   :elapsed (dt/format-duration (tpoint))
-                   ::l/sync? true)
-          (.close ^InputStream stream))))))
+(defn- write-input-stream
+  [delegate input]
+  (try
+    (.writeInputStream ^BlockingInputStreamAsyncRequestBody delegate
+                       ^InputStream input)
+    (catch Throwable cause
+      (l/error :hint "encountered error while writing input stream to service"
+               :cause cause))
+    (finally
+      (.close ^InputStream input))))
 
 (defn- make-request-body
-  [id content]
-  (reify
-    AsyncRequestBody
-    (contentLength [_]
-      (Optional/of (long (impl/get-size content))))
+  [executor content]
+  (let [size (impl/get-size content)]
+    (reify
+      AsyncRequestBody
+      (contentLength [_]
+        (Optional/of (long size)))
 
-    (^void subscribe [_ ^Subscriber subscriber]
-      (let [sem (Semaphore. 0)
-            thr (upload-thread id subscriber sem content)]
-        (.onSubscribe subscriber
-                      (reify Subscription
-                        (cancel [_]
-                          (px/interrupt! thr)
-                          (.release sem 1))
-                        (request [_ n]
-                          (.release sem (int n)))))))))
-
+      (^void subscribe [_ ^Subscriber subscriber]
+        (let [delegate (AsyncRequestBody/forBlockingInputStream (long size))
+              input    (io/input-stream content)]
+          (px/run! executor (partial write-input-stream delegate input))
+          (.subscribe ^BlockingInputStreamAsyncRequestBody delegate
+                      ^Subscriber subscriber))))))
 
 (defn- put-object
-  [{:keys [::client ::bucket ::prefix]} {:keys [id] :as object} content]
+  [{:keys [::client ::bucket ::prefix ::wrk/executor]} {:keys [id] :as object} content]
   (let [path    (dm/str prefix (impl/id->path id))
         mdata   (meta object)
         mtype   (:content-type mdata "application/octet-stream")
-        rbody   (make-request-body id content)
+        rbody   (make-request-body executor content)
         request (.. (PutObjectRequest/builder)
                     (bucket bucket)
                     (contentType mtype)
@@ -346,7 +342,8 @@
 
 (defn- get-object-url
   [{:keys [::presigner ::bucket ::prefix]} {:keys [id]} {:keys [max-age] :or {max-age default-max-age}}]
-  (us/assert dt/duration? max-age)
+  (assert (dt/duration? max-age) "expected valid duration instance")
+
   (let [gor  (.. (GetObjectRequest/builder)
                  (bucket bucket)
                  (key (dm/str prefix (impl/id->path id)))

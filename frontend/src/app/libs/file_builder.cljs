@@ -265,12 +265,12 @@
     (p/create
      (fn [resolve reject]
        (->> (export-file file)
+            (rx/filter #(not= (:type %) :progress))
             (rx/take 1)
             (rx/subs!
              (fn [value]
-               (when (not (contains? value :type))
-                 (let [[_ export-blob] value]
-                   (resolve export-blob))))
+               (let [[_ export-blob] value]
+                 (resolve export-blob)))
              reject))))))
 
 (defn create-file-export [^string name]

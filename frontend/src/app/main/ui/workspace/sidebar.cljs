@@ -8,14 +8,16 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.main.data.common :as dcm]
    [app.main.data.workspace :as dw]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as muc]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
-   [app.main.ui.workspace.comments :refer [comments-sidebar]]
+   [app.main.ui.workspace.comments :refer [comments-sidebar*]]
    [app.main.ui.workspace.left-header :refer [left-header]]
    [app.main.ui.workspace.right-header :refer [right-header]]
    [app.main.ui.workspace.sidebar.assets :refer [assets-toolbox]]
@@ -26,6 +28,8 @@
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox]]
    [app.main.ui.workspace.sidebar.shortcuts :refer [shortcuts-container]]
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap]]
+   [app.main.ui.workspace.sidebar.versions :refer [versions-toolbox]]
+   [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab]]
    [app.util.debug :as dbg]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -45,33 +49,44 @@
 
 (mf/defc left-sidebar
   {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+   ::mf/props :obj}
   [{:keys [layout file page-id] :as props}]
   (let [options-mode   (mf/deref refs/options-mode-global)
+        project        (mf/deref refs/project)
+
+        design-tokens? (features/use-feature "design-tokens/v1")
         mode-inspect?  (= options-mode :inspect)
-        project        (mf/deref refs/workspace-project)
-
-        section        (cond (or mode-inspect? (contains? layout :layers)) :layers
-                             (contains? layout :assets) :assets)
-
         shortcuts?     (contains? layout :shortcuts)
         show-debug?    (contains? layout :debug-panel)
 
-        {on-pointer-down :on-pointer-down on-lost-pointer-capture :on-lost-pointer-capture  on-pointer-move :on-pointer-move parent-ref :parent-ref size :size}
+        section        (cond
+                         (or mode-inspect? (contains? layout :layers)) :layers
+                         (contains? layout :assets) :assets
+                         (contains? layout :tokens) :tokens)
+
+        {on-pointer-down :on-pointer-down
+         on-lost-pointer-capture :on-lost-pointer-capture
+         on-pointer-move :on-pointer-move
+         parent-ref :parent-ref
+         size :size}
         (use-resize-hook :left-sidebar 275 275 500 :x false :left)
 
-        {on-pointer-down-pages :on-pointer-down on-lost-pointer-capture-pages  :on-lost-pointer-capture on-pointer-move-pages :on-pointer-move size-pages-opened :size}
+        {on-pointer-down-pages :on-pointer-down
+         on-lost-pointer-capture-pages  :on-lost-pointer-capture
+         on-pointer-move-pages :on-pointer-move
+         size-pages-opened :size}
         (use-resize-hook :sitemap 200 38 400 :y false nil)
 
         show-pages?    (mf/use-state true)
-        toggle-pages   (mf/use-callback #(reset! show-pages? not))
-        size-pages (mf/use-memo (mf/deps show-pages? size-pages-opened) (fn [] (if @show-pages? size-pages-opened 32)))
+        toggle-pages   (mf/use-fn #(reset! show-pages? not))
+        size-pages     (mf/with-memo [show-pages? size-pages-opened]
+                         (if @show-pages? size-pages-opened 32))
 
         handle-collapse
         (mf/use-fn #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
 
         on-tab-change
-        (mf/use-fn #(st/emit! (dw/go-to-layout (keyword %))))
+        (mf/use-fn #(st/emit! (dcm/go-to-workspace :layout (keyword %))))
 
         layers-tab
         (mf/html
@@ -96,17 +111,31 @@
         assets-tab
         (mf/html [:& assets-toolbox {:size (- size 58)}])
 
+        tokens-tab
+        (when design-tokens?
+          (mf/html [:& tokens-sidebar-tab]))
+
         tabs
         (if ^boolean mode-inspect?
           #js [#js {:label (tr "workspace.sidebar.layers")
                     :id "layers"
                     :content layers-tab}]
-          #js [#js {:label (tr "workspace.sidebar.layers")
-                    :id "layers"
-                    :content layers-tab}
-               #js {:label (tr "workspace.toolbar.assets")
-                    :id "assets"
-                    :content assets-tab}])]
+          (if ^boolean design-tokens?
+            #js [#js {:label (tr "workspace.sidebar.layers")
+                      :id "layers"
+                      :content layers-tab}
+                 #js {:label (tr "workspace.toolbar.assets")
+                      :id "assets"
+                      :content assets-tab}
+                 #js {:label "Tokens"
+                      :id "tokens"
+                      :content tokens-tab}]
+            #js [#js {:label (tr "workspace.sidebar.layers")
+                      :id "layers"
+                      :content layers-tab}
+                 #js {:label (tr "workspace.toolbar.assets")
+                      :id "assets"
+                      :content assets-tab}]))]
 
     [:& (mf/provider muc/sidebar) {:value :left}
      [:aside {:ref parent-ref
@@ -119,8 +148,12 @@
                                    :global/four-row  (> size 400))
               :style #js {"--width" (dm/str size "px")}}
 
-      [:& left-header {:file file :layout layout :project project :page-id page-id
-                       :class (stl/css :left-header)}]
+      [:& left-header
+       {:file file
+        :layout layout
+        :project project
+        :page-id page-id
+        :class (stl/css :left-header)}]
 
       [:div {:on-pointer-down on-pointer-down
              :on-lost-pointer-capture on-lost-pointer-capture
@@ -181,7 +214,17 @@
         props
         (mf/spread props
                    :on-change-section handle-change-section
-                   :on-expand handle-expand)]
+                   :on-expand handle-expand)
+
+        history-tab
+        (mf/html
+         [:article {:class (stl/css :history-tab)}
+          [:& history-toolbox {}]])
+
+        versions-tab
+        (mf/html
+         [:article {:class (stl/css :versions-tab)}
+          [:& versions-toolbox {}]])]
 
     [:& (mf/provider muc/sidebar) {:value :right}
      [:aside {:class (stl/css-case :right-settings-bar true
@@ -205,10 +248,14 @@
          [:& debug-shape-info]
 
          (true? is-comments?)
-         [:& comments-sidebar]
+         [:> comments-sidebar* {}]
 
          (true? is-history?)
-         [:> history-toolbox {}]
+         [:> tab-switcher*
+          {:tabs #js [#js {:label (tr "workspace.versions.tab.history") :id "history" :content versions-tab}
+                      #js {:label (tr "workspace.versions.tab.actions") :id "actions" :content history-tab}]
+           :default-selected "history"
+           :class (stl/css :left-sidebar-tabs)}]
 
          :else
          [:> options-toolbox props])]]]))

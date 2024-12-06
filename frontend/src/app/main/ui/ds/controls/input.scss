@@ -18,6 +18,7 @@
   column-gap: var(--sp-xs);
   align-items: center;
   position: relative;
+  inline-size: 100%;
 
   background: var(--input-bg-color);
   border-radius: $br-8;
@@ -48,6 +49,7 @@
   height: $sz-32;
   border: none;
   background: none;
+  inline-size: 100%;
 
   @include use-typography("body-small");
   color: var(--input-fg-color);

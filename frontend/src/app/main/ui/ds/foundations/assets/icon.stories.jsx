@@ -26,16 +26,26 @@ export const All = {
     <>
       <StoryHeader>
         <h1>All Icons</h1>
-        <p>Hover on an icon to see its ID.</p>
       </StoryHeader>
-      <StoryGrid>
+      <StoryGrid size="256">
         {icons.map((iconId) => (
           <StoryGridCell
-            title={iconId}
             key={iconId}
-            style={{ color: "var(--color-accent-primary)" }}
+            style={{
+              color: "var(--color-accent-primary)",
+              display: "grid",
+              gap: "0.5rem",
+            }}
           >
             <Icon id={iconId} size={size} />
+            <code
+              style={{
+                "font-family": "monospace",
+                color: "var(--color-foreground-secondary)",
+              }}
+            >
+              {iconId}
+            </code>
           </StoryGridCell>
         ))}
       </StoryGrid>

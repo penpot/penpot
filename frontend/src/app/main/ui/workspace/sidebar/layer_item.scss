@@ -7,6 +7,7 @@
 @import "refactor/common-refactor.scss";
 
 .layer-row {
+  --layer-indentation-size: calc(#{$s-4} * 6);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -228,6 +229,10 @@
     &.selected {
       opacity: $op-10;
     }
+  }
+
+  .layer-row:hover .element-actions.selected & {
+    opacity: $op-10;
   }
 
   .layer-row.highlight &,

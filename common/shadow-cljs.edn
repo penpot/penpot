@@ -1,19 +1,15 @@
 {:deps {:aliases [:dev]}
  :builds
  {:test
-  {:target :node-test
-   :output-to "target/test.js"
-   :output-dir "target/test/"
-   :ns-regexp "^common-tests.*-test$"
-   :autorun true
+  {:target :esm
+   :output-dir "target/tests"
+   :runtime :node
+   :js-options {:js-provider :import}
 
-   :compiler-options
-   {:output-feature-set :es-next
-    :output-wrapper false
-    :source-map true
-    :source-map-include-sources-content true
-    :source-map-detail-level :all
-    :warnings {:fn-deprecated false}}}
+
+   :modules
+   {:test {:init-fn common-tests.runner/-main
+           :prepend-js "globalThis.navigator = {userAgent: \"\"}"}}}
 
   :bench
   {:target :node-script

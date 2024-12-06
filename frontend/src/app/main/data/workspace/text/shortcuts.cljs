@@ -7,10 +7,12 @@
 (ns app.main.data.workspace.text.shortcuts
   (:require
    [app.common.data :as d]
+   [app.common.files.helpers :as cfh]
    [app.common.text :as txt]
    [app.main.data.shortcuts :as ds]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -112,18 +114,24 @@
 
 (defn calculate-text-values
   [shape]
-  (let [state-map     (deref refs/workspace-editor-state)
-        editor-state  (get state-map (:id shape))]
+  (let [state-map    (if (features/active-feature? @st/state "text-editor/v2")
+                       (deref refs/workspace-v2-editor-state)
+                       (deref refs/workspace-editor-state))
+        editor-state  (get state-map (:id shape))
+        editor-instance (when (features/active-feature? @st/state "text-editor/v2")
+                          (deref refs/workspace-editor))]
     (d/merge
      (dwt/current-root-values
       {:shape shape
        :attrs txt/root-attrs})
      (dwt/current-paragraph-values
       {:editor-state editor-state
+       :editor-instance editor-instance
        :shape shape
        :attrs txt/paragraph-attrs})
      (dwt/current-text-values
       {:editor-state editor-state
+       :editor-instance editor-instance
        :shape shape
        :attrs txt/text-node-attrs}))))
 
@@ -188,14 +196,20 @@
       props)))
 
 (defn- update-attrs-when-no-readonly [props]
-  (let [undo-id (js/Symbol)
-        read-only?           (deref refs/workspace-read-only?)
-        shapes-with-children (deref refs/selected-shapes-with-children)
-        text-shapes          (filter #(= (:type %) :text) shapes-with-children)
-        props                (if (> (count text-shapes) 1)
-                               (blend-props text-shapes props)
-                               props)]
-    (when (and (not read-only?) text-shapes)
+  (let [undo-id     (js/Symbol)
+
+        can-edit?   (:can-edit (deref refs/permissions))
+        read-only?  (deref refs/workspace-read-only?)
+
+        text-shapes (->> (deref refs/selected-shapes-with-children)
+                         (filter cfh/text-shape?)
+                         (not-empty))
+
+        props       (if (> (count text-shapes) 1)
+                      (blend-props text-shapes props)
+                      props)]
+
+    (when (and can-edit? (not read-only?) text-shapes)
       (st/emit! (dwu/start-undo-transaction undo-id))
       (run! #(update-attrs % props) text-shapes)
       (st/emit! (dwu/commit-undo-transaction undo-id)))))

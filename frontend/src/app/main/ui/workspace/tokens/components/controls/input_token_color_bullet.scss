@@ -1,0 +1,28 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../../../../ds/_sizes.scss" as *;
+@use "../../../../ds/_borders.scss" as *;
+
+.input-token-color-bullet {
+  --bullet-size: var(--sp-l);
+  --bullet-default-color: var(--color-foreground-secondary);
+  --bullet-radius: var(--br-4);
+
+  margin-inline-end: var(--sp-s);
+  cursor: pointer;
+}
+
+.input-token-color-bullet-placeholder {
+  width: var(--bullet-size, --sp-l);
+  height: var(--bullet-size, --sp-l);
+  min-width: var(--bullet-size, --sp-l);
+  min-height: var(--bullet-size, --sp-l);
+  margin-top: 0;
+  background-color: color-mix(in hsl, var(--bullet-default-color) 30%, transparent);
+  border-radius: $br-4;
+  cursor: pointer;
+}

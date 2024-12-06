@@ -33,8 +33,7 @@
    [:id ::sm/uuid]
    [:axis [::sm/one-of #{:x :y}]]
    [:position ::sm/safe-number]
-   ;; FIXME: remove maybe?
-   [:frame-id {:optional true} [:maybe ::sm/uuid]]])
+   [:frame-id {:optional true} ::sm/uuid]])
 
 (def schema:guides
   [:map-of {:gen/max 2} ::sm/uuid schema:guide])
@@ -51,6 +50,7 @@
   [:map {:title "FilePage"}
    [:id ::sm/uuid]
    [:name :string]
+   [:index {:optional true} ::sm/int]
    [:objects schema:objects]
    [:default-grids {:optional true} ::ctg/default-grids]
    [:flows {:optional true} schema:flows]
@@ -59,12 +59,9 @@
    [:background {:optional true} ::ctc/rgb-color]
 
    [:comment-thread-positions {:optional true}
-    [:map-of ::sm/uuid schema:comment-thread-position]]
+    [:map-of ::sm/uuid schema:comment-thread-position]]])
 
-   [:options
-    ;; DEPERECATED: remove after 2.3 release
-    [:map {:title "PageOptions"}]]])
-
+(sm/register! ::objects schema:objects)
 (sm/register! ::page schema:page)
 (sm/register! ::guide schema:guide)
 (sm/register! ::flow schema:flow)
@@ -72,7 +69,6 @@
 (def valid-guide?
   (sm/lazy-validator schema:guide))
 
-;; FIXME: convert to validator
 (def check-page!
   (sm/check-fn schema:page))
 

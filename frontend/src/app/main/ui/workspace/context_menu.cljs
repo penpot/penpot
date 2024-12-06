@@ -16,7 +16,7 @@
    [app.common.types.page :as ctp]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as scd]
    [app.main.data.workspace :as dw]
@@ -31,12 +31,14 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.shape-icon :as sic]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr] :as i18n]
    [app.util.timers :as timers]
    [okulary.core :as l]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def menu-ref
@@ -224,6 +226,16 @@
                          :shortcut (sc/get-tooltip :thumbnail-set)
                          :on-click do-toggle-thumbnail}])
        [:& menu-separator]])))
+
+(mf/defc context-menu-rename
+  [{:keys [shapes]}]
+  (let [do-rename #(st/emit! (dw/start-rename-selected))]
+    (when (= (count shapes) 1)
+      [:*
+       [:& menu-separator]
+       [:& menu-entry {:title (tr "workspace.shape.menu.rename")
+                       :shortcut (sc/get-tooltip :rename)
+                       :on-click do-rename}]])))
 
 (mf/defc context-menu-group
   [{:keys [shapes]}]
@@ -500,6 +512,7 @@
        [:> context-menu-layer-position props]
        [:> context-menu-flip props]
        [:> context-menu-thumbnail props]
+       [:> context-menu-rename props]
        [:> context-menu-group props]
        [:> context-focus-mode-menu props]
        [:> context-menu-path props]
@@ -520,7 +533,9 @@
                                :title (tr "modals.delete-page.title")
                                :message (tr "modals.delete-page.body")
                                :on-accept delete-fn}))
-        do-duplicate #(st/emit! (dw/duplicate-page id))
+        do-duplicate #(st/emit!
+                       (dw/duplicate-page id)
+                       (ptk/event ::ev/event {::ev/name "duplicate-page"}))
         do-rename #(st/emit! (dw/start-rename-page-item id))]
 
     [:*
@@ -533,17 +548,20 @@
      [:& menu-entry {:title (tr "workspace.assets.duplicate")
                      :on-click do-duplicate}]]))
 
-(mf/defc viewport-context-menu
+(mf/defc viewport-context-menu*
+  {::mf/props :obj}
   []
   (let [focus      (mf/deref refs/workspace-focus-selected)
+        read-only? (mf/use-ctx ctx/workspace-read-only?)
         do-paste   #(st/emit! (dw/paste-from-clipboard))
         do-hide-ui #(st/emit! (-> (dw/toggle-layout-flag :hide-ui)
                                   (vary-meta assoc ::ev/origin "workspace-context-menu")))
         do-toggle-focus-mode #(st/emit! (dw/toggle-focus-mode))]
     [:*
-     [:& menu-entry {:title (tr "workspace.shape.menu.paste")
-                     :shortcut (sc/get-tooltip :paste)
-                     :on-click do-paste}]
+     (when-not ^boolean read-only?
+       [:& menu-entry {:title (tr "workspace.shape.menu.paste")
+                       :shortcut (sc/get-tooltip :paste)
+                       :on-click do-paste}])
      [:& menu-entry {:title (tr "workspace.shape.menu.hide-ui")
                      :shortcut (sc/get-tooltip :hide-ui)
                      :on-click do-hide-ui}]
@@ -638,25 +656,26 @@
                      :disabled (and (not single?) (not can-merge?))}]]))
 
 
+;; FIXME: optimize because it is rendered always
+
 (mf/defc context-menu
   []
-  (let [mdata          (mf/deref menu-ref)
-        top            (- (get-in mdata [:position :y]) 20)
-        left           (get-in mdata [:position :x])
-        dropdown-ref   (mf/use-ref)]
+  (let [mdata        (mf/deref menu-ref)
+        top          (- (get-in mdata [:position :y]) 20)
+        left         (get-in mdata [:position :x])
+        dropdown-ref (mf/use-ref)
+        read-only?   (mf/use-ctx ctx/workspace-read-only?)]
 
-    (mf/use-effect
-     (mf/deps mdata)
-     #(let [dropdown (mf/ref-val dropdown-ref)]
-        (when dropdown
-          (let [bounding-rect (dom/get-bounding-rect dropdown)
-                window-size (dom/get-window-size)
-                delta-x (max (- (+ (:right bounding-rect) 250) (:width window-size)) 0)
-                delta-y (max (- (:bottom bounding-rect) (:height window-size)) 0)
-                new-style (str "top: " (- top delta-y) "px; "
-                               "left: " (- left delta-x) "px;")]
-            (when (or (> delta-x 0) (> delta-y 0))
-              (.setAttribute ^js dropdown "style" new-style))))))
+    (mf/with-effect [mdata]
+      (when-let [dropdown (mf/ref-val dropdown-ref)]
+        (let [bounding-rect (dom/get-bounding-rect dropdown)
+              window-size (dom/get-window-size)
+              delta-x (max (- (+ (:right bounding-rect) 250) (:width window-size)) 0)
+              delta-y (max (- (:bottom bounding-rect) (:height window-size)) 0)
+              new-style (str "top: " (- top delta-y) "px; "
+                             "left: " (- left delta-x) "px;")]
+          (when (or (> delta-x 0) (> delta-y 0))
+            (.setAttribute ^js dropdown "style" new-style)))))
 
     [:& dropdown {:show (boolean mdata)
                   :on-close #(st/emit! dw/hide-context-menu)}
@@ -666,9 +685,11 @@
             :on-context-menu prevent-default}
 
       [:ul {:class (stl/css :context-list)}
-       (case (:kind mdata)
-         :shape [:& shape-context-menu {:mdata mdata}]
-         :page [:& page-item-context-menu {:mdata mdata}]
-         :grid-track [:& grid-track-context-menu {:mdata mdata}]
-         :grid-cells [:& grid-cells-context-menu {:mdata mdata}]
-         [:& viewport-context-menu {:mdata mdata}])]]]))
+       (if ^boolean read-only?
+         [:> viewport-context-menu* {:mdata mdata}]
+         (case (:kind mdata)
+           :shape [:& shape-context-menu {:mdata mdata}]
+           :page [:& page-item-context-menu {:mdata mdata}]
+           :grid-track [:& grid-track-context-menu {:mdata mdata}]
+           :grid-cells [:& grid-cells-context-menu {:mdata mdata}]
+           [:& viewport-context-menu* {:mdata mdata}]))]]]))

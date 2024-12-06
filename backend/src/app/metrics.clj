@@ -8,9 +8,8 @@
   (:refer-clojure :exclude [run!])
   (:require
    [app.common.logging :as l]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.metrics.definition :as-alias mdef]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig])
   (:import
    io.prometheus.client.CollectorRegistry
@@ -34,41 +33,52 @@
 (declare create-collector)
 (declare handler)
 
+(defprotocol IMetrics
+  (get-registry [_])
+  (get-collector [_ id])
+  (get-handler [_]))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; METRICS SERVICE PROVIDER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::mdef/name string?)
-(s/def ::mdef/help string?)
-(s/def ::mdef/labels (s/every string? :kind vector?))
-(s/def ::mdef/type #{:gauge :counter :summary :histogram})
+(sm/register!
+ {:type ::collector
+  :pred #(instance? SimpleCollector %)
+  :type-properties
+  {:title "collector"
+   :description "An instance of SimpleCollector"}})
 
-(s/def ::mdef/instance
-  #(instance? SimpleCollector %))
+(sm/register!
+ {:type ::registry
+  :pred  #(instance? CollectorRegistry %)
+  :type-properties
+  {:title "Metrics Registry"
+   :description "Instance of CollectorRegistry"}})
 
-(s/def ::mdef/definition
-  (s/keys :req [::mdef/name
-                ::mdef/help
-                ::mdef/type]
-          :opt [::mdef/labels
-                ::mdef/instance]))
+(def ^:private schema:definitions
+  [:map-of :keyword
+   [:map {:title "definition"}
+    [::mdef/name :string]
+    [::mdef/help :string]
+    [::mdef/type [:enum :gauge :counter :summary :histogram]]
+    [::mdef/labels {:optional true} [::sm/vec :string]]
+    [::mdef/instance {:optional true} ::collector]]])
 
-(s/def ::definitions
-  (s/map-of keyword? ::mdef/definition))
+(defn metrics?
+  [o]
+  (satisfies? IMetrics o))
 
-(s/def ::registry
-  #(instance? CollectorRegistry %))
+(sm/register!
+ {:type ::metrics
+  :pred metrics?})
 
-(s/def ::handler fn?)
-(s/def ::metrics
-  (s/keys :req [::registry
-                ::handler
-                ::definitions]))
+(def ^:private valid-definitions?
+  (sm/validator schema:definitions))
 
-(s/def ::default ::definitions)
-
-(defmethod ig/pre-init-spec ::metrics [_]
-  (s/keys :req-un [::default]))
+(defmethod ig/assert-key ::metrics
+  [_ {:keys [default]}]
+  (assert (valid-definitions? default) "expected valid definitions"))
 
 (defmethod ig/init-key ::metrics
   [_ cfg]
@@ -81,12 +91,14 @@
                                {}
                                (:default cfg))]
 
-    (us/verify! ::definitions definitions)
-
-    {::handler (partial handler registry)
-     ::definitions definitions
-     ::registry registry}))
-
+    (reify
+      IMetrics
+      (get-handler [_]
+        (partial handler registry))
+      (get-collector [_ id]
+        (get definitions id))
+      (get-registry [_]
+        registry))))
 
 (defn- handler
   [registry _]
@@ -96,17 +108,14 @@
     {:headers {"content-type" TextFormat/CONTENT_TYPE_004}
      :body (.toString writer)}))
 
-
-
-(s/def ::routes vector?)
-(defmethod ig/pre-init-spec ::routes [_]
-  (s/keys :req [::metrics]))
+(defmethod ig/assert-key ::routes
+  [_ {:keys [::metrics]}]
+  (assert (metrics? metrics) "expected a valid instance for metrics"))
 
 (defmethod ig/init-key ::routes
   [_ {:keys [::metrics]}]
-  (let [registry (::registry metrics)]
-    ["/metrics" {:handler (partial handler registry)
-                 :allowed-methods #{:get}}]))
+  ["/metrics" {:handler (get-handler metrics)
+               :allowed-methods #{:get}}])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Implementation
@@ -126,8 +135,9 @@
 (defmulti create-collector ::mdef/type)
 
 (defn run!
-  [{:keys [::definitions]} & {:keys [id] :as params}]
-  (when-let [mobj (get definitions id)]
+  [instance & {:keys [id] :as params}]
+  (assert (metrics? instance) "expected valid metrics instance")
+  (when-let [mobj (get-collector instance id)]
     (run-collector! mobj params)
     true))
 

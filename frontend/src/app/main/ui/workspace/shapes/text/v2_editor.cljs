@@ -27,6 +27,13 @@
    [app.util.text.content.styles :as styles]
    [rumext.v2 :as mf]))
 
+(defn- gen-name
+  [editor]
+  (when (some? editor)
+    (let [editor-root (.-root editor)
+          result (.-textContent editor-root)]
+      (when (not= result "") result))))
+
 (defn- initialize-event-handlers
   "Internal editor events handler initializer/destructor"
   [shape-id content selection-ref editor-ref container-ref]
@@ -51,6 +58,8 @@
         instance
         (dwt/create-editor editor-node options)
 
+        update-name? (nil? content)
+
         on-key-up
         (fn [event]
           (dom/stop-propagation event)
@@ -60,7 +69,7 @@
         on-blur
         (fn []
           (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (st/emit! (dwt/v2-update-text-shape-content shape-id content true)))
+            (st/emit! (dwt/v2-update-text-shape-content shape-id content update-name? (gen-name instance))))
 
           (let [container-node (mf/ref-val container-ref)]
             (dom/set-style! container-node "opacity" 0)))

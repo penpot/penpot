@@ -16,7 +16,7 @@
 
 (defn v2-closest-text-editor-content
   [target]
-  (.closest ^js target ".text-editor-content"))
+  (.closest ^js target "[data-itype=\"editor\"]"))
 
 (defn closest-text-editor-content
   [target]
@@ -34,7 +34,7 @@
 
 (defn v2-get-text-editor-content
   []
-  (dom/get-element-by-class "text-editor-content"))
+  (dom/query "[data-itype=\"editor\"]"))
 
 (defn get-text-editor-content
   []

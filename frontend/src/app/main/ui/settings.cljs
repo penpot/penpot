@@ -9,6 +9,7 @@
   (:require
    [app.main.data.dashboard.shortcuts :as sc]
    [app.main.refs :as refs]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.settings.access-tokens :refer [access-tokens-page]]
@@ -20,7 +21,6 @@
    [app.main.ui.settings.profile :refer [profile-page]]
    [app.main.ui.settings.sidebar :refer [sidebar]]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.router :as rt]
    [rumext.v2 :as mf]))
 
 (mf/defc header

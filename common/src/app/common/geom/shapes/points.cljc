@@ -74,7 +74,7 @@
        (-> p2 (gpt/add right-v) (gpt/add bottom-v))
        (-> p3 (gpt/add left-v)  (gpt/add bottom-v))])))
 
-(defn- project-t
+(defn project-t
   "Given a point and a line returns the parametric t the cross point with the line going through the other axis projected"
   [point [start end] other-axis-vec]
 

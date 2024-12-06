@@ -180,30 +180,46 @@ export async function watch(baseDir, predicate, callback) {
   });
 }
 
+async function readManifestFile(path) {
+  const manifestPath = "resources/public/js/manifest.json";
+  let content = await fs.readFile(manifestPath, { encoding: "utf8" });
+  return JSON.parse(content);
+}
+
 async function readShadowManifest() {
+  const ts = Date.now();
   try {
-    const manifestPath = "resources/public/js/manifest.json";
-    let content = await fs.readFile(manifestPath, { encoding: "utf8" });
-    content = JSON.parse(content);
+    const content1 = await readManifestFile(
+      "resources/public/js/manifest.json",
+    );
+    const content2 = await readManifestFile(
+      "resources/public/js/worker/manifest.json",
+    );
 
     const index = {
-      config: "js/config.js?ts=" + Date.now(),
-      polyfills: "js/polyfills.js?ts=" + Date.now(),
+      ts: ts,
+      config: "js/config.js?ts=" + ts,
+      polyfills: "js/polyfills.js?ts=" + ts,
     };
 
-    for (let item of content) {
+    for (let item of content1) {
       index[item.name] = "js/" + item["output-name"];
+    }
+
+    for (let item of content2) {
+      index["worker_" + item.name] = "js/worker/" + item["output-name"];
     }
 
     return index;
   } catch (cause) {
     return {
-      config: "js/config.js",
-      polyfills: "js/polyfills.js",
-      main: "js/main.js",
-      shared: "js/shared.js",
-      worker: "js/worker.js",
-      rasterizer: "js/rasterizer.js",
+      ts: ts,
+      config: "js/config.js?ts=" + ts,
+      polyfills: "js/polyfills.js?ts=" + ts,
+      main: "js/main.js?ts=" + ts,
+      shared: "js/shared.js?ts=" + ts,
+      worker_main: "js/worker/main.js?ts=" + ts,
+      rasterizer: "js/rasterizer.js?ts=" + ts,
     };
   }
 }
@@ -221,13 +237,18 @@ async function renderTemplate(path, context = {}, partials = {}) {
   return mustache.render(content, context, partials);
 }
 
-const renderer = {
-  link(href, title, text) {
-    return `<a href="${href}" target="_blank">${text}</a>`;
+const extension = {
+  useNewRenderer: true,
+  renderer: {
+    link(token) {
+      const href = token.href;
+      const text = token.text;
+      return `<a href="${href}" target="_blank">${text}</a>`;
+    },
   },
 };
 
-marked.use({ renderer });
+marked.use(extension);
 
 async function readTranslations() {
   const langs = [
@@ -409,8 +430,8 @@ async function generateTemplates() {
 
   const pluginRuntimeUri =
     process.env.PENPOT_PLUGIN_DEV === "true"
-      ? "http://localhost:4200"
-      : "./plugins-runtime";
+      ? "http://localhost:4200/index.js?ts=" + manifest.ts
+      : "plugins-runtime/index.js?ts=" + manifest.ts;
 
   content = await renderTemplate(
     "resources/templates/index.mustache",
@@ -487,6 +508,7 @@ export async function compileStyles() {
   const start = process.hrtime();
 
   log.info("init: compile styles");
+
   let result = await compileSassAll(worker);
   result = concatSass(result);
 

@@ -56,6 +56,9 @@
    [:x ::sm/safe-number]
    [:y ::sm/safe-number]])
 
+(def valid-point-attrs?
+  (sm/validator schema:point-attrs))
+
 (def valid-point?
   (sm/validator
    [:and [:fn point?] schema:point-attrs]))
@@ -84,7 +87,7 @@
 
 ;; FIXME: make like matrix
 (def schema:point
-  {:type :map
+  {:type ::point
    :pred valid-point?
    :type-properties
    {:title "point"
@@ -99,7 +102,7 @@
     :encode/json point->json
     :encode/string point->str}})
 
-(sm/register! ::point schema:point)
+(sm/register! schema:point)
 
 (defn point-like?
   [{:keys [x y] :as v}]

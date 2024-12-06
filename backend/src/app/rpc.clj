@@ -36,8 +36,8 @@
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.core :as p]
-   [ring.request :as rreq]
-   [ring.response :as rres]))
+   [yetti.request :as yreq]
+   [yetti.response :as yres]))
 
 (s/def ::profile-id ::us/uuid)
 
@@ -64,16 +64,16 @@
         response (if (fn? result)
                    (result request)
                    (let [result (rph/unwrap result)]
-                     {::rres/status  (::http/status mdata 200)
-                      ::rres/headers (::http/headers mdata {})
-                      ::rres/body    result}))]
+                     {::yres/status  (::http/status mdata 200)
+                      ::yres/headers (::http/headers mdata {})
+                      ::yres/body    result}))]
     (-> response
         (handle-response-transformation request mdata)
         (handle-before-comple-hook mdata))))
 
 (defn get-external-session-id
   [request]
-  (when-let [session-id (rreq/get-header request "x-external-session-id")]
+  (when-let [session-id (yreq/get-header request "x-external-session-id")]
     (when-not (or (> (count session-id) 256)
                   (= session-id "null")
                   (str/blank? session-id))
@@ -81,7 +81,7 @@
 
 (defn- get-external-event-origin
   [request]
-  (when-let [origin (rreq/get-header request "x-event-origin")]
+  (when-let [origin (yreq/get-header request "x-event-origin")]
     (when-not (or (> (count origin) 256)
                   (= origin "null")
                   (str/blank? origin))
@@ -92,7 +92,7 @@
   internal async flow into ring async flow."
   [methods {:keys [params path-params method] :as request}]
   (let [handler-name (:type path-params)
-        etag         (rreq/get-header request "if-none-match")
+        etag         (yreq/get-header request "if-none-match")
         profile-id   (or (::session/profile-id request)
                          (::actoken/profile-id request))
 
@@ -250,39 +250,49 @@
           'app.rpc.commands.projects
           'app.rpc.commands.search
           'app.rpc.commands.teams
+          'app.rpc.commands.teams-invitations
           'app.rpc.commands.verify-token
           'app.rpc.commands.viewer
           'app.rpc.commands.webhooks)
          (map (partial process-method cfg))
          (into {}))))
 
-(defmethod ig/pre-init-spec ::methods [_]
-  (s/keys :req [::session/manager
-                ::http.client/client
-                ::db/pool
-                ::mbus/msgbus
-                ::ldap/provider
-                ::sto/storage
-                ::mtx/metrics
-                ::setup/props]
-          :opt [::climit
-                ::rlimit]))
+(def ^:private schema:methods-params
+  [:map {:title "methods-params"}
+   ::session/manager
+   ::http.client/client
+   ::db/pool
+   ::mbus/msgbus
+   ::sto/storage
+   ::mtx/metrics
+   [::ldap/provider [:maybe ::ldap/provider]]
+   [::climit [:maybe ::climit]]
+   [::rlimit [:maybe ::rlimit]]
+   ::setup/props])
+
+(defmethod ig/assert-key ::methods
+  [_ params]
+  (assert (sm/check schema:methods-params params)))
 
 (defmethod ig/init-key ::methods
   [_ cfg]
   (let [cfg (d/without-nils cfg)]
     (resolve-command-methods cfg)))
 
-(s/def ::methods
-  (s/map-of keyword? (s/tuple map? fn?)))
+(def ^:private schema:methods
+  [:map-of :keyword [:tuple :map ::sm/fn]])
 
-(s/def ::routes vector?)
+(sm/register! ::methods schema:methods)
 
-(defmethod ig/pre-init-spec ::routes [_]
-  (s/keys :req [::methods
-                ::db/pool
-                ::setup/props
-                ::session/manager]))
+(def ^:private valid-methods?
+  (sm/validator schema:methods))
+
+(defmethod ig/assert-key ::routes
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expect valid database pool")
+  (assert (some? (::setup/props params)))
+  (assert (session/manager? (::session/manager params)) "expect valid session manager")
+  (assert (valid-methods? (::methods params)) "expect valid methods map"))
 
 (defmethod ig/init-key ::routes
   [_ {:keys [::methods] :as cfg}]

@@ -27,17 +27,18 @@
 (def valid-container-types
   #{:page :component})
 
-(sm/register! ::container
-  [:map
-   [:id ::sm/uuid]
-   [:type {:optional true}
-    [::sm/one-of valid-container-types]]
-   [:name :string]
-   [:path {:optional true} [:maybe :string]]
-   [:modified-at {:optional true} ::sm/inst]
-   [:objects {:optional true}
-    [:map-of {:gen/max 10} ::sm/uuid :map]]
-   [:plugin-data {:optional true} ::ctpg/plugin-data]])
+(sm/register!
+ ^{::sm/type ::container}
+ [:map
+  [:id ::sm/uuid]
+  [:type {:optional true}
+   [::sm/one-of valid-container-types]]
+  [:name :string]
+  [:path {:optional true} [:maybe :string]]
+  [:modified-at {:optional true} ::sm/inst]
+  [:objects {:optional true}
+   [:map-of {:gen/max 10} ::sm/uuid :map]]
+  [:plugin-data {:optional true} ::ctpg/plugin-data]])
 
 (def check-container!
   (sm/check-fn ::container))

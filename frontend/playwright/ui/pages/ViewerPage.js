@@ -85,7 +85,7 @@ export class ViewerPage extends BaseWebSocketPage {
     pageId = ViewerPage.anyPageId,
   } = {}) {
     await this.page.goto(
-      `/#/view/${fileId}?page-id=${pageId}&section=interactions&index=0`,
+      `/#/view?file-id=${fileId}&page-id=${pageId}&section=interactions&index=0`,
     );
 
     this.#ws = await this.waitForNotificationsWebSocket();

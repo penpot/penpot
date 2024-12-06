@@ -39,3 +39,63 @@
     (let [schema    [::sm/set ::sm/email]
           value     (sg/generate schema)]
       (t/is (true? (sm/validate schema (sg/generate schema)))))))
+
+
+(t/deftest test-set-1
+  (let [candidate-1 "cff4b058-ca31-8197-8005-32aeb2377d83, cff4b058-ca31-8197-8005-32aeb2377d82"
+        candidate-2 ["cff4b058-ca31-8197-8005-32aeb2377d82",
+                     "cff4b058-ca31-8197-8005-32aeb2377d83"]
+        candidate-3 #{"cff4b058-ca31-8197-8005-32aeb2377d82", "cff4b058-ca31-8197-8005-32aeb2377d83"}
+        candidate-4 [#uuid "cff4b058-ca31-8197-8005-32aeb2377d82"
+                     #uuid "cff4b058-ca31-8197-8005-32aeb2377d83"]
+        candidate-5 #{#uuid "cff4b058-ca31-8197-8005-32aeb2377d82"
+                      #uuid "cff4b058-ca31-8197-8005-32aeb2377d83"}
+
+        expected    candidate-5
+
+        schema      [::sm/set ::sm/uuid]
+        decode-s    (sm/decoder schema sm/string-transformer)
+        decode-j    (sm/decoder schema sm/json-transformer)
+        encode-s    (sm/encoder schema sm/string-transformer)
+        encode-j    (sm/encoder schema sm/json-transformer)]
+
+
+    (t/is (= expected (decode-s candidate-1)))
+    (t/is (= expected (decode-s candidate-2)))
+    (t/is (= expected (decode-s candidate-3)))
+    (t/is (= expected (decode-s candidate-4)))
+    (t/is (= expected (decode-s candidate-5)))
+
+    (t/is (= candidate-1 (encode-s expected)))
+    (t/is (= candidate-3 (encode-j expected)))))
+
+
+(t/deftest test-vec-1
+  (let [candidate-1 "cff4b058-ca31-8197-8005-32aeb2377d83, cff4b058-ca31-8197-8005-32aeb2377d82"
+        candidate-2 ["cff4b058-ca31-8197-8005-32aeb2377d83",
+                     "cff4b058-ca31-8197-8005-32aeb2377d82"]
+        candidate-3 #{"cff4b058-ca31-8197-8005-32aeb2377d82", "cff4b058-ca31-8197-8005-32aeb2377d83"}
+        candidate-4 [#uuid "cff4b058-ca31-8197-8005-32aeb2377d83"
+                     #uuid "cff4b058-ca31-8197-8005-32aeb2377d82"]
+        candidate-5 #{#uuid "cff4b058-ca31-8197-8005-32aeb2377d82"
+                      #uuid "cff4b058-ca31-8197-8005-32aeb2377d83"}
+
+        expected    candidate-4
+
+        schema      [::sm/vec ::sm/uuid]
+        decode-s    (sm/decoder schema sm/string-transformer)
+        decode-j    (sm/decoder schema sm/json-transformer)
+        encode-s    (sm/encoder schema sm/string-transformer)
+        encode-j    (sm/encoder schema sm/json-transformer)]
+
+
+    (t/is (= expected (decode-s candidate-1)))
+    (t/is (= expected (decode-s candidate-2)))
+    (t/is (= expected (decode-s candidate-3)))
+    (t/is (= expected (decode-s candidate-4)))
+    (t/is (= expected (decode-s candidate-5)))
+
+    (t/is (= candidate-1 (encode-s expected)))
+    (t/is (= candidate-2 (encode-j expected)))))
+
+

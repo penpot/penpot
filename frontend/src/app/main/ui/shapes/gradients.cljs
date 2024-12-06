@@ -47,8 +47,8 @@
       (add-metadata! props gradient))
 
     [:> :linearGradient props
-     (for [{:keys [offset color opacity]} (:stops gradient)]
-       [:stop {:key (dm/str id "-stop-" offset)
+     (for [[index {:keys [offset color opacity]}] (d/enumerate (sort-by :offset (:stops gradient)))]
+       [:stop {:key (dm/str id "-stop-" index)
                :offset (d/nilv offset 0)
                :stop-color color
                :stop-opacity opacity}])]))
@@ -109,8 +109,8 @@
       (add-metadata! props gradient))
 
     [:> :radialGradient props
-     (for [{:keys [offset color opacity]} (:stops gradient)]
-       [:stop {:key (dm/str id "-stop-" offset)
+     (for [[index {:keys [offset color opacity]}] (d/enumerate (:stops gradient))]
+       [:stop {:key (dm/str id "-stop-" index)
                :offset (d/nilv offset 0)
                :stop-color color
                :stop-opacity opacity}])]))

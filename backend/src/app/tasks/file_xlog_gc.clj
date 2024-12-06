@@ -5,64 +5,60 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.tasks.file-xlog-gc
-  "A maintenance task that performs a garbage collection of the file
-  change (transaction) log."
   (:require
    [app.common.logging :as l]
+   [app.config :as cf]
    [app.db :as db]
-   [app.features.fdata :as feat.fdata]
-   [app.storage :as sto]
-   [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
-(def ^:private
-  sql:delete-files-xlog
-  "DELETE FROM file_change
-    WHERE id IN (SELECT id FROM file_change
-                  WHERE label IS NULL
-                    AND created_at < ?
-                  ORDER BY created_at LIMIT ?)
-   RETURNING id, data_backend, data_ref_id")
+;; Get the latest available snapshots without exceeding the total
+;; snapshot limit
+(def ^:private sql:get-latest-snapshots
+  "SELECT fch.id, fch.created_at
+     FROM file_change AS fch
+    WHERE fch.file_id = ?
+      AND fch.created_by = 'system'
+      AND fch.data IS NOT NULL
+      AND fch.deleted_at > now()
+    ORDER BY fch.created_at DESC
+    LIMIT ?")
 
-(def xf:filter-offloded
-  (comp
-   (filter feat.fdata/offloaded?)
-   (keep :data-ref-id)))
+;; Mark all snapshots that are outside the allowed total threshold
+;; available for the GC
+(def ^:private sql:delete-snapshots
+  "UPDATE file_change
+      SET deleted_at = now()
+    WHERE file_id = ?
+      AND deleted_at > now()
+      AND data IS NOT NULL
+      AND created_by = 'system'
+      AND created_at < ?")
 
-(defn- delete-in-chunks
-  [{:keys [::chunk-size ::threshold] :as cfg}]
-  (let [storage (sto/resolve cfg ::db/reuse-conn true)]
-    (loop [total 0]
-      (let [chunk  (db/exec! cfg [sql:delete-files-xlog threshold chunk-size])
-            length (count chunk)]
+(defn- get-alive-snapshots
+  [conn file-id]
+  (let [total     (cf/get :auto-file-snapshot-total 10)
+        snapshots (db/exec! conn [sql:get-latest-snapshots file-id total])]
+    (not-empty snapshots)))
 
-        ;; touch all references on offloaded changes entries
-        (doseq [data-ref-id (sequence xf:filter-offloded chunk)]
-          (l/trc :hint "touching referenced storage object"
-                 :storage-object-id (str data-ref-id))
-          (sto/touch-object! storage data-ref-id))
+(defn- delete-old-snapshots!
+  [{:keys [::db/conn] :as cfg} file-id]
+  (when-let [snapshots (get-alive-snapshots conn file-id)]
+    (let [last-date (-> snapshots peek :created-at)
+          result    (db/exec-one! conn [sql:delete-snapshots file-id last-date])]
+      (l/inf :hint "delete old file snapshots"
+             :file-id (str file-id)
+             :current (count snapshots)
+             :deleted (db/get-update-count result)))))
 
-        (if (pos? length)
-          (recur (+ total length))
-          total)))))
-
-(defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req [::db/pool]))
+(defmethod ig/assert-key ::handler
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expected a valid database pool"))
 
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [{:keys [props] :as task}]
-    (let [min-age    (or (:min-age props)
-                         (dt/duration "72h"))
-          chunk-size (:chunk-size props 5000)
-          threshold  (dt/minus (dt/now) min-age)]
-
+    (let [file-id (:file-id props)]
+      (assert (uuid? file-id) "expected file-id on props")
       (-> cfg
           (assoc ::db/rollback (:rollback props false))
-          (assoc ::threshold threshold)
-          (assoc ::chunk-size chunk-size)
-          (db/tx-run! (fn [cfg]
-                        (let [total (delete-in-chunks cfg)]
-                          (l/trc :hint "file xlog cleaned" :total total)
-                          total)))))))
+          (db/tx-run! delete-old-snapshots! file-id)))))

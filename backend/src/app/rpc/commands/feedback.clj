@@ -17,12 +17,12 @@
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]))
 
-(declare ^:private send-feedback!)
+(declare ^:private send-user-feedback!)
 
 (def ^:private schema:send-user-feedback
   [:map {:title "send-user-feedback"}
-   [:subject [:string {:max 250}]]
-   [:content [:string {:max 250}]]])
+   [:subject [:string {:max 400}]]
+   [:content [:string {:max 2500}]]])
 
 (sv/defmethod ::send-user-feedback
   {::doc/added "1.18"
@@ -34,14 +34,16 @@
               :hint "feedback not enabled"))
 
   (let [profile (profile/get-profile pool profile-id)]
-    (send-feedback! pool profile params)
+    (send-user-feedback! pool profile params)
     nil))
 
-(defn- send-feedback!
+(defn- send-user-feedback!
   [pool profile params]
-  (let [dest (cf/get :feedback-destination)]
+  (let [dest (or (cf/get :user-feedback-destination)
+                 ;; LEGACY
+                 (cf/get :feedback-destination))]
     (eml/send! {::eml/conn pool
-                ::eml/factory eml/feedback
+                ::eml/factory eml/user-feedback
                 :from     dest
                 :to       dest
                 :profile  profile

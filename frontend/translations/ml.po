@@ -11,11 +11,11 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 5.6-dev\n"
 
-#: src/app/main/ui/auth/register.cljs:132, src/app/main/ui/static.cljs:139, src/app/main/ui/viewer/login.cljs:98
+#: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:154, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
 msgstr "നിലവിൽ അക്കൗണ്ടുണ്ടോ?"
 
-#: src/app/main/ui/auth/register.cljs:270
+#: src/app/main/ui/auth/register.cljs:277
 msgid "auth.check-your-email"
 msgstr ""
 "പെൻപോട്ട് ഉപയോഗിക്കാനും സാധൂകരിക്കാനും നിങ്ങളുടെ ഇമെയിൽ പരിശോധിച്ച് അതിലെ "
@@ -25,7 +25,7 @@ msgstr ""
 msgid "auth.confirm-password"
 msgstr "പാസ്‌വേഡ് സ്ഥിരീകരിക്കുക"
 
-#: src/app/main/ui/auth/register.cljs:144
+#: src/app/main/ui/auth/register.cljs:145
 msgid "auth.create-demo-account"
 msgstr "ഡെമോ അക്കൗണ്ട് സൃഷ്ടിക്കുക"
 
@@ -34,45 +34,45 @@ msgstr "ഡെമോ അക്കൗണ്ട് സൃഷ്ടിക്കു�
 msgid "auth.create-demo-profile"
 msgstr "ഒന്നുപയോഗിച്ച് നോക്കുന്നോ?"
 
-#: src/app/main/ui/auth/login.cljs:41
+#: src/app/main/ui/auth/login.cljs:42
 msgid "auth.demo-warning"
 msgstr ""
 "ഇതൊരു ഡെമോ സേവനമാണ്, ഒരു യഥാർത്ഥ ജോലിക്ക് ഉപയോഗിക്കരുത്, പ്രൊജക്റ്റുകൾ "
 "നിശ്ചിതസമയങ്ങളിൽ മായ്ക്കപ്പെടും."
 
-#: src/app/main/ui/auth/login.cljs:180, src/app/main/ui/viewer/login.cljs:84
+#: src/app/main/ui/auth/login.cljs:197, src/app/main/ui/viewer/login.cljs:84
 msgid "auth.forgot-password"
 msgstr "പാസ്‌വേഡ് മറന്നോ?"
 
-#: src/app/main/ui/auth/register.cljs:224
+#: src/app/main/ui/auth/register.cljs:231
 msgid "auth.fullname"
 msgstr "മുഴുവൻ പേര്"
 
-#: src/app/main/ui/auth/register.cljs:136, src/app/main/ui/static.cljs:142, src/app/main/ui/viewer/login.cljs:101
+#: src/app/main/ui/auth/register.cljs:137, src/app/main/ui/static.cljs:157, src/app/main/ui/viewer/login.cljs:101
 msgid "auth.login-here"
 msgstr "ഇവിടെ ലോഗിൻ ചെയ്യുക"
 
-#: src/app/main/ui/auth/login.cljs:186
+#: src/app/main/ui/auth/login.cljs:203
 msgid "auth.login-submit"
 msgstr "ലോഗിൻ"
 
-#: src/app/main/ui/auth/login.cljs:213
+#: src/app/main/ui/auth/login.cljs:230
 msgid "auth.login-with-github-submit"
 msgstr "ഗിറ്റ്ഹബ്ബ്"
 
-#: src/app/main/ui/auth/login.cljs:219
+#: src/app/main/ui/auth/login.cljs:236
 msgid "auth.login-with-gitlab-submit"
 msgstr "ഗിറ്റ്ലാബ്"
 
-#: src/app/main/ui/auth/login.cljs:207
+#: src/app/main/ui/auth/login.cljs:224
 msgid "auth.login-with-google-submit"
 msgstr "ഗൂഗിൾ"
 
-#: src/app/main/ui/auth/login.cljs:192
+#: src/app/main/ui/auth/login.cljs:209
 msgid "auth.login-with-ldap-submit"
 msgstr "LDAP"
 
-#: src/app/main/ui/auth/login.cljs:225, src/app/main/ui/auth/login.cljs:246
+#: src/app/main/ui/auth/login.cljs:242, src/app/main/ui/auth/login.cljs:263
 msgid "auth.login-with-oidc-submit"
 msgstr "ഓപ്പൺഐഡി"
 
@@ -96,15 +96,15 @@ msgstr "പാസ്‌വേഡ് വീണ്ടെടുപ്പ് കണ�
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "വിജയകരമായി സംഘത്തിൽ ചേർന്നു"
 
-#: src/app/main/ui/auth/login.cljs:170, src/app/main/ui/auth/register.cljs:94
+#: src/app/main/ui/auth/login.cljs:187, src/app/main/ui/auth/register.cljs:95
 msgid "auth.password"
 msgstr "പാസ്‌വേഡ്"
 
-#: src/app/main/ui/auth/register.cljs:93
+#: src/app/main/ui/auth/register.cljs:94
 msgid "auth.password-length-hint"
 msgstr "കുറഞ്ഞത് 8 ക്യാരക്റ്ററുകൾ"
 
-#: src/app/main/ui/auth/register.cljs:291
+#: src/app/main/ui/auth/register.cljs:298
 msgid "auth.privacy-policy"
 msgstr "സ്വകാര്യതാനയം"
 
@@ -124,15 +124,15 @@ msgstr "പാസ്‌വേഡ് മറന്നോ?"
 msgid "auth.recovery-submit"
 msgstr "പാസ്‌വേഡ് മാറ്റുക"
 
-#: src/app/main/ui/auth/login.cljs:289, src/app/main/ui/static.cljs:126, src/app/main/ui/viewer/login.cljs:87
+#: src/app/main/ui/auth/login.cljs:306, src/app/main/ui/static.cljs:140, src/app/main/ui/viewer/login.cljs:87
 msgid "auth.register"
 msgstr "ഇതുവരെ അക്കൗണ്ട് ഇല്ലേ?"
 
-#: src/app/main/ui/auth/login.cljs:293, src/app/main/ui/auth/register.cljs:100, src/app/main/ui/auth/register.cljs:233, src/app/main/ui/static.cljs:129, src/app/main/ui/viewer/login.cljs:91
+#: src/app/main/ui/auth/login.cljs:310, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/auth/register.cljs:240, src/app/main/ui/static.cljs:144, src/app/main/ui/viewer/login.cljs:91
 msgid "auth.register-submit"
 msgstr "അക്കൗണ്ട് സൃഷ്ടിക്കുക"
 
-#: src/app/main/ui/auth/register.cljs:121
+#: src/app/main/ui/auth/register.cljs:122
 msgid "auth.register-title"
 msgstr "അക്കൗണ്ട് സൃഷ്ടിക്കുക"
 
@@ -141,21 +141,21 @@ msgstr "അക്കൗണ്ട് സൃഷ്ടിക്കുക"
 msgid "auth.sidebar-tagline"
 msgstr "ഡിസൈനിങിനും പ്രോട്ടോടൈപ്പിങിനുമുള്ള ഓപ്പൺ സോഴ്സ് പ്രതിവിധി."
 
-#: src/app/main/ui/auth/register.cljs:283, src/app/main/ui/dashboard/sidebar.cljs:1022, src/app/main/ui/workspace/main_menu.cljs:150
+#: src/app/main/ui/auth/register.cljs:290, src/app/main/ui/dashboard/sidebar.cljs:1022, src/app/main/ui/workspace/main_menu.cljs:154
 msgid "auth.terms-of-service"
 msgstr "ഉപയോഗനിബന്ധനകൾ"
 
-#: src/app/main/ui/auth/register.cljs:268
+#: src/app/main/ui/auth/register.cljs:275
 msgid "auth.verification-email-sent"
 msgstr "സാധൂകരിക്കാനുള്ള ഇമെയിൽ ഞങ്ങൾ അയച്ചിരിക്കുന്നു"
 
-#: src/app/main/ui/viewer/share_link.cljs:198
+#: src/app/main/ui/viewer/share_link.cljs:200
 msgid "common.share-link.confirm-deletion-link-description"
 msgstr ""
 "ഈ കണ്ണി നീക്കം ചെയ്യണമെന്നത് നിങ്ങൾക്ക് തീർച്ചയാണോ? നിങ്ങളത് ചെയ്താൽ, അത് "
 "ആർക്കും ലഭ്യമല്ലാതാകും"
 
-#: src/app/main/ui/viewer/share_link.cljs:221
+#: src/app/main/ui/viewer/share_link.cljs:223
 msgid "common.share-link.get-link"
 msgstr "കണ്ണി നേടുക"
 
@@ -163,19 +163,19 @@ msgstr "കണ്ണി നേടുക"
 msgid "common.share-link.link-copied-success"
 msgstr "കണ്ണി വിജയകരമായി പകർത്തി"
 
-#: src/app/main/ui/viewer/share_link.cljs:193
+#: src/app/main/ui/viewer/share_link.cljs:195
 msgid "common.share-link.permissions-hint"
 msgstr "കണ്ണിയുള്ള ആർക്കും പ്രാപ്യമാകും"
 
-#: src/app/main/ui/viewer/share_link.cljs:183
+#: src/app/main/ui/viewer/share_link.cljs:185
 msgid "common.share-link.placeholder"
 msgstr "പങ്കുവെക്കാവുന്ന കണ്ണി ഇവിടെ ലഭ്യമാകും"
 
-#: src/app/main/ui/viewer/share_link.cljs:171
+#: src/app/main/ui/viewer/share_link.cljs:173
 msgid "common.share-link.title"
 msgstr "പ്രോട്ടോടൈപ്പുകൾ പങ്കുവെയ്ക്കുക"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:291, src/app/main/ui/workspace/main_menu.cljs:572
+#: src/app/main/ui/dashboard/file_menu.cljs:311, src/app/main/ui/workspace/main_menu.cljs:585
 msgid "dashboard.add-shared"
 msgstr "പങ്കിട്ട ലൈബ്രറിയായി ചേർക്കുക"
 
@@ -183,7 +183,7 @@ msgstr "പങ്കിട്ട ലൈബ്രറിയായി ചേർക�
 msgid "dashboard.change-email"
 msgstr "ഇമെയിൽ മാറ്റുക"
 
-#: src/app/main/data/dashboard.cljs:763, src/app/main/data/dashboard.cljs:983
+#: src/app/main/data/dashboard.cljs:771, src/app/main/data/dashboard.cljs:991
 msgid "dashboard.copy-suffix"
 msgstr "(പകർത്തുക)"
 
@@ -191,7 +191,7 @@ msgstr "(പകർത്തുക)"
 msgid "dashboard.create-new-team"
 msgstr "പുതിയ സംഘം രൂപീകരിക്കുക"
 
-#: src/app/main/ui/components/context_menu_a11y.cljs:256, src/app/main/ui/dashboard/sidebar.cljs:646
+#: src/app/main/ui/components/context_menu_a11y.cljs:284, src/app/main/ui/dashboard/sidebar.cljs:646
 msgid "dashboard.default-team-name"
 msgstr "നിങ്ങളുടെ പെൻപോട്ട്"
 
@@ -199,27 +199,19 @@ msgstr "നിങ്ങളുടെ പെൻപോട്ട്"
 msgid "dashboard.delete-team"
 msgstr "സംഘത്തെ നീക്കുക"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:276, src/app/main/ui/dashboard/project_menu.cljs:90
+#: src/app/main/ui/dashboard/file_menu.cljs:293, src/app/main/ui/dashboard/project_menu.cljs:91
 msgid "dashboard.duplicate"
 msgstr "പകർപ്പ്"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:240
+#: src/app/main/ui/dashboard/file_menu.cljs:249
 msgid "dashboard.duplicate-multi"
 msgstr "%s ഫയലുകളുടെ പകർപ്പ്"
 
-#: src/app/main/ui/dashboard/placeholder.cljs:33
-#, markdown
-msgid "dashboard.empty-placeholder-drafts"
-msgstr ""
-"ഇതുവരെയും ഇവിടെ ഫയലുകളില്ല. നിങ്ങൾക്ക് ചില ടെമ്പ്ലേറ്റുകൾ "
-"പരീക്ഷിക്കണമെന്നുണ്ടെങ്കിൽ [ലൈബ്രറികളുടെയും ടെമ്പ്ലേറ്റുകളുടെയും "
-"വിഭാഗത്തിലേക്ക്] (https://penpot.app/libraries-templates) പോകാവുന്നതാണ്"
-
-#: src/app/main/ui/workspace/main_menu.cljs:605
+#: src/app/main/ui/workspace/main_menu.cljs:629
 msgid "dashboard.export-frames"
 msgstr "ആർട്ട്ബോർഡുകൾ പിഡിഎഫായി എക്സ്പോർട്ട് ചെയ്യുക"
 
-#: src/app/main/ui/export.cljs:202
+#: src/app/main/ui/exports/assets.cljs:206
 msgid "dashboard.export-frames.title"
 msgstr "പിഡിഎഫായി എക്സ്പോർട്ട് ചെയ്യുക"
 
@@ -227,11 +219,11 @@ msgstr "പിഡിഎഫായി എക്സ്പോർട്ട് ചെ�
 msgid "dashboard.export-multi"
 msgstr "പെൻപോട്ട് %s ഫയലുകൾ എക്സ്പോർട്ട് ചെയ്യുക"
 
-#: src/app/main/ui/workspace/main_menu.cljs:578
+#: src/app/main/ui/workspace/main_menu.cljs:591
 msgid "dashboard.export-shapes"
 msgstr "എക്സ്പോർട്ട്"
 
-#: src/app/main/ui/export.cljs:430
+#: src/app/main/ui/exports/files.cljs:157
 msgid "dashboard.export.detail"
 msgstr "* ഘടകങ്ങൾ, ഗ്രാഫിക്സ്, നിറങ്ങൾ അല്ലെങ്കിൽ മുദ്രണകലകൾ എന്നിവ ഉൾപ്പെടാം."
 

@@ -22,7 +22,7 @@
    [app.main.refs :as refs]
    [app.main.render :refer [component-svg component-svg-thumbnail]]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu-a11y :refer [context-menu-a11y]]
+   [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
@@ -111,14 +111,13 @@
 (mf/defc assets-context-menu
   {::mf/wrap-props false}
   [{:keys [options state on-close]}]
-  [:& context-menu-a11y
+  [:> context-menu*
    {:show (:open? state)
-    :fixed? (or (not= (:top state) 0) (not= (:left state) 0))
+    :fixed (or (not= (:top state) 0) (not= (:left state) 0))
     :on-close on-close
     :top (:top state)
     :left (:left state)
-    :options options
-    :workspace? true}])
+    :options options}])
 
 (mf/defc section-icon
   {::mf/wrap-props false}
@@ -131,12 +130,12 @@
 
 (mf/defc asset-section
   {::mf/wrap-props false}
-  [{:keys [children file-id title section assets-count open?]}]
+  [{:keys [children file-id title section assets-count icon open?]}]
   (let [children    (-> (array/normalize-to-array children)
                         (array/without-nils))
 
-        is-button?  #(= :title-button (.. % -props -role))
-        is-content? #(= :content (.. % -props -role))
+        is-button?  #(as-> % $ (= :title-button (.. ^js $ -props -role)))
+        is-content? #(as-> % $ (= :content (.. ^js $ -props -role)))
 
         buttons     (array/filter is-button? children)
         content     (array/filter is-content? children)
@@ -152,7 +151,7 @@
         (mf/html
          [:span {:class (stl/css :title-name)}
           [:span {:class (stl/css :section-icon)}
-           [:& section-icon {:section section}]]
+           [:& (or icon section-icon) {:section section}]]
           [:span {:class (stl/css :section-name)}
            title]
 
@@ -223,7 +222,8 @@
 
 (defn set-drag-image
   [event item-ref num-selected]
-  (let [offset          (dom/get-offset-position (.-nativeEvent event))
+  (let [offset          (dom/get-offset-position
+                         (dom/event->native-event event))
         item-el         (mf/ref-val item-ref)
         counter-el      (create-counter-element num-selected)]
 
@@ -269,17 +269,19 @@
 
 (mf/defc component-item-thumbnail
   "Component that renders the thumbnail image or the original SVG."
-  {::mf/wrap-props false}
-  [{:keys [file-id root-shape component container class]}]
-  (let [page-id   (:main-instance-page component)
-        root-id   (:main-instance-id component)
+  {::mf/props :obj}
+  [{:keys [file-id root-shape component container class is-hidden]}]
+  (let [page-id (:main-instance-page component)
+        root-id (:main-instance-id component)
+        retry   (mf/use-state 0)
 
-        retry (mf/use-state 0)
+        thumbnail-uri*
+        (mf/with-memo [file-id page-id root-id]
+          (let [object-id (thc/fmt-object-id file-id page-id root-id "component")]
+            (refs/workspace-thumbnail-by-id object-id)))
 
-        thumbnail-uri* (mf/with-memo [file-id page-id root-id]
-                         (let [object-id (thc/fmt-object-id file-id page-id root-id "component")]
-                           (refs/workspace-thumbnail-by-id object-id)))
-        thumbnail-uri  (mf/deref thumbnail-uri*)
+        thumbnail-uri
+        (mf/deref thumbnail-uri*)
 
         on-error
         (mf/use-fn
@@ -288,7 +290,8 @@
            (when (< @retry 3)
              (inc retry))))]
 
-    (if (and (some? thumbnail-uri) (contains? cf/flags :component-thumbnails))
+    (if (and (some? thumbnail-uri)
+             (contains? cf/flags :component-thumbnails))
       [:& component-svg-thumbnail
        {:thumbnail-uri thumbnail-uri
         :class class
@@ -301,7 +304,8 @@
        {:root-shape root-shape
         :class class
         :objects (:objects container)
-        :show-grids? true}])))
+        :show-grids? true
+        :is-hidden is-hidden}])))
 
 (defn generate-components-menu-entries
   [shapes components-v2]
@@ -387,20 +391,18 @@
            (do-update-remote-component))
 
         do-show-in-assets
-        #(st/emit! (if components-v2
-                     (dw/show-component-in-assets component-id)
-                     (dw/go-to-component component-id)))
+        #(st/emit! (dw/show-component-in-assets component-id))
 
         do-create-annotation
         #(st/emit! (dw/set-annotations-id-for-create id))
 
         do-show-local-component
-        #(st/emit! (dw/go-to-component component-id))
+        #(st/emit! (dwl/go-to-local-component component-id))
 
+        ;; When the show-remote is after a restore, the component may still be deleted
         do-show-remote-component
-        #(let [comp (find-component shape true)] ;; When the show-remote is after a restore, the component may still be deleted
-           (when comp
-             (st/emit! (dwl/nav-to-component-file library-id comp))))
+        #(when-let [comp (find-component shape true)]
+           (st/emit! (dwl/go-to-component-file library-id comp)))
 
         do-show-component
         (fn []

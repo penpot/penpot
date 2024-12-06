@@ -12,13 +12,13 @@
    [app.main :as-alias main]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
-   [ring.request :as rreq]))
+   [yetti.request :as yreq]))
 
 (def header-re #"^Token\s+(.*)")
 
 (defn- get-token
   [request]
-  (some->> (rreq/get-header request "authorization")
+  (some->> (yreq/get-header request "authorization")
            (re-matches header-re)
            (second)))
 

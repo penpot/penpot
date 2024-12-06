@@ -8,32 +8,41 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.main.data.event :as ev]
    [app.main.data.workspace.texts :as dwt]
    [app.main.fonts :as f]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.object :as obj]
    [cuerdas.core :as str]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc typography-item
-  [{:keys [file-id selected-ids typography name-only? size]}]
+  [{:keys [file-id selected-ids typography name-only? size current-file-id]}]
   (let [font-data (f/get-font-data (:font-id typography))
         font-variant-id (:font-variant-id typography)
         variant-data (->> font-data :variants (d/seek #(= (:id %) font-variant-id)))
 
+
         handle-click
         (mf/use-callback
-         (mf/deps typography selected-ids)
+         (mf/deps typography selected-ids file-id current-file-id)
          (fn []
            (let [attrs (merge
                         {:typography-ref-file file-id
                          :typography-ref-id (:id typography)}
                         (dissoc typography :id :name))]
 
+             (st/emit! (ptk/event
+                        ::ev/event
+                        {::ev/name "use-library-typography"
+                         ::ev/origin "text-palette"
+                         :external-library (not= file-id current-file-id)}))
              (run! #(st/emit!
                      (dwt/update-text-attrs
                       {:id %
@@ -111,7 +120,9 @@
         (mf/use-callback
          (mf/deps max-offset)
          (fn [event]
-           (let [delta (+ (.. event -nativeEvent -deltaY) (.. event -nativeEvent -deltaX))]
+           (let [event (dom/event->native-event event)
+                 delta (+ (.. ^js event -deltaY)
+                          (.. ^js event -deltaX))]
              (if (pos? delta)
                (on-right-arrow-click event)
                (on-left-arrow-click event)))))]
@@ -157,6 +168,7 @@
            [:& typography-item
             {:key idx
              :file-id file-id
+             :current-file-id current-file-id
              :selected-ids selected-ids
              :typography item
              :size size}])])]

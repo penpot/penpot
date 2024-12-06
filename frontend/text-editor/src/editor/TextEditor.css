@@ -1,0 +1,65 @@
+::selection {
+  background-color: red;
+}
+
+.selection-imposter-rect {
+  background-color: red;
+  position: absolute;
+}
+
+.text-editor-selection-imposter {
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+
+.text-editor-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.text-editor-content {
+  height: 100%;
+  font-family: sourcesanspro;
+
+  outline: none;
+  user-select: text;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+
+  caret-color: black;
+
+  /* color: transparent; */
+  color: black;
+
+  div {
+    line-height: inherit;
+    user-select: text;
+
+    white-space: pre;
+    margin: 0px;
+    /* font-size: 0px; */
+  }
+
+  span {
+    line-break: auto;
+    line-height: inherit;
+  }
+}
+
+.align-top[data-itype="root"] {
+  justify-content: flex-start;
+}
+
+.align-center[data-itype="root"] {
+  justify-content: center;
+}
+
+.align-bottom[data-itype="root"] {
+  justify-content: flex-end;
+}

@@ -8,12 +8,10 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.config :as cf]
-   [app.main.data.modal :as modal]
-   [app.main.data.notifications :as ntf]
+   [app.main.data.common :as dcm]
    [app.main.data.persistence :as dps]
+   [app.main.data.plugins :as dpl]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.colors :as dc]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -31,8 +29,9 @@
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [app.main.ui.workspace.sidebar.collapsable-button :refer [collapsed-button]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
+   [app.main.ui.workspace.tokens.modals]
+   [app.main.ui.workspace.tokens.modals.themes]
    [app.main.ui.workspace.viewport :refer [viewport]]
-   [app.renderer-v2 :as renderer]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
@@ -45,7 +44,7 @@
   [file-id]
   (l/derived (fn [state]
                (let [data (:workspace-data state)]
-                 (and (:workspace-ready? state)
+                 (and (:workspace-ready state)
                       (= file-id (:current-file-id state))
                       (= file-id (:id data)))))
              st/state))
@@ -124,14 +123,17 @@
                            :file file
                            :page-id page-id}]])]))
 
-(mf/defc workspace-loader
+(mf/defc workspace-loader*
+  {::mf/props :obj
+   ::mf/private true}
   []
   [:> loader*  {:title (tr "labels.loading")
                 :class (stl/css :workspace-loader)
                 :overlay true}])
 
-(mf/defc workspace-page
-  {::mf/wrap-props false}
+(mf/defc workspace-page*
+  {::mf/props :obj
+   ::mf/private true}
   [{:keys [page-id file layout wglobal]}]
   (let [page-id     (hooks/use-equal-memo page-id)
         page-ready* (mf/with-memo [page-id]
@@ -146,77 +148,77 @@
     (mf/with-effect [page-id]
       (if (some? page-id)
         (st/emit! (dw/initialize-page page-id))
-        (st/emit! (dw/go-to-page)))
+        (st/emit! (dcm/go-to-workspace)))
       (fn []
         (when (some? page-id)
           (st/emit! (dw/finalize-page page-id)))))
+
     (if ^boolean page-ready?
       [:& workspace-content {:page-id page-id
                              :file file
                              :wglobal wglobal
                              :layout layout}]
-      [:& workspace-loader])))
+      [:& workspace-loader*])))
 
-(mf/defc workspace
+
+(mf/defc workspace*
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [{:keys [project-id file-id page-id layout-name]}]
 
   (let [layout           (mf/deref refs/workspace-layout)
         wglobal          (mf/deref refs/workspace-global)
-        read-only?       (mf/deref refs/workspace-read-only?)
 
+        team             (mf/deref refs/team)
         file             (mf/deref refs/workspace-file)
-        project          (mf/deref refs/workspace-project)
 
-        team-id          (:team-id project)
         file-name        (:name file)
+        permissions      (:permissions team)
+
+        read-only?       (mf/deref refs/workspace-read-only?)
+        read-only?       (or read-only? (not (:can-edit permissions)))
 
         file-ready*      (mf/with-memo [file-id]
                            (make-file-ready-ref file-id))
         file-ready?      (mf/deref file-ready*)
 
         components-v2?   (features/use-feature "components/v2")
+        design-tokens?   (features/use-feature "design-tokens/v1")
 
         background-color (:background-color wglobal)]
 
     (mf/with-effect []
-      (st/emit! (dps/initialize-persistence)))
+      (st/emit! (dps/initialize-persistence)
+                (dpl/update-plugins-permissions-peek)))
 
     ;; Setting the layout preset by its name
     (mf/with-effect [layout-name]
-      (st/emit! (dw/initialize-layout layout-name)))
+      (st/emit! (dw/initialize-workspace-layout layout-name)))
 
     (mf/with-effect [file-name]
       (when file-name
         (dom/set-html-title (tr "title.workspace" file-name))))
 
-    (mf/with-effect [project-id file-id]
-      (st/emit! (dw/initialize-file project-id file-id))
+    (mf/with-effect [file-id]
+      (st/emit! (dw/initialize-workspace file-id))
       (fn []
         (st/emit! ::dps/force-persist
-                  (dc/stop-picker)
-                  (modal/hide)
-                  (ntf/hide)
-                  (dw/finalize-file project-id file-id))))
+                  (dw/finalize-workspace file-id))))
 
-    (mf/with-effect [file-ready?]
-      (when (and file-ready? (contains? cf/flags :renderer-v2))
-        (renderer/print-msg "hello from wasm fn!")))
-
-    [:& (mf/provider ctx/current-file-id) {:value file-id}
-     [:& (mf/provider ctx/current-project-id) {:value project-id}
-      [:& (mf/provider ctx/current-team-id) {:value team-id}
-       [:& (mf/provider ctx/current-page-id) {:value page-id}
-        [:& (mf/provider ctx/components-v2) {:value components-v2?}
+    [:& (mf/provider ctx/current-project-id) {:value project-id}
+     [:& (mf/provider ctx/current-file-id) {:value file-id}
+      [:& (mf/provider ctx/current-page-id) {:value page-id}
+       [:& (mf/provider ctx/components-v2) {:value components-v2?}
+        [:& (mf/provider ctx/design-tokens) {:value design-tokens?}
          [:& (mf/provider ctx/workspace-read-only?) {:value read-only?}
           [:section {:class (stl/css :workspace)
                      :style {:background-color background-color
                              :touch-action "none"}}
            [:& context-menu]
+
            (if ^boolean file-ready?
-             [:& workspace-page {:page-id page-id
-                                 :file file
-                                 :wglobal wglobal
-                                 :layout layout}]
-             [:& workspace-loader])]]]]]]]))
+             [:> workspace-page* {:page-id page-id
+                                  :file file
+                                  :wglobal wglobal
+                                  :layout layout}]
+             [:> workspace-loader* {}])]]]]]]]))

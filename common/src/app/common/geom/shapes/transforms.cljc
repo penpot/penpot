@@ -16,7 +16,6 @@
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.path :as gpa]
    [app.common.math :as mth]
-   [app.common.record :as cr]
    [app.common.types.modifiers :as ctm]))
 
 #?(:clj (set! *warn-on-reflection* true))
@@ -280,7 +279,7 @@
         transform  (calculate-transform points center selrect)]
     [selrect transform (when (some? transform) (gmt/inverse transform))]))
 
-(defn- adjust-shape-flips!
+(defn- adjust-shape-flips
   "After some tranformations the flip-x/flip-y flags can change we need
   to check this before adjusting the selrect"
   [shape points]
@@ -299,16 +298,16 @@
 
     (cond-> shape
       (neg? dot-x)
-      (cr/update! :flip-x not)
+      (update :flip-x not)
 
       (neg? dot-x)
-      (cr/update! :rotation -)
+      (update :rotation -)
 
       (neg? dot-y)
-      (cr/update! :flip-y not)
+      (update :flip-y not)
 
       (neg? dot-y)
-      (cr/update! :rotation -))))
+      (update :rotation -))))
 
 (defn- apply-transform-move
   "Given a new set of points transformed, set up the rectangle so it keeps
@@ -318,9 +317,6 @@
         points  (gco/transform-points  (dm/get-prop shape :points) transform-mtx)
         selrect (gco/transform-selrect (dm/get-prop shape :selrect) transform-mtx)
 
-        ;; NOTE: ensure we start with a fresh copy of shape for mutabilty
-        shape   (cr/clone shape)
-
         shape   (if (= type :bool)
                   (update shape :bool-content gpa/transform-content transform-mtx)
                   shape)
@@ -329,14 +325,14 @@
                   shape)
         shape   (if (= type :path)
                   (update shape :content gpa/transform-content transform-mtx)
-                  (cr/assoc! shape
-                             :x (dm/get-prop selrect :x)
-                             :y (dm/get-prop selrect :y)
-                             :width (dm/get-prop selrect :width)
-                             :height (dm/get-prop selrect :height)))]
+                  (assoc shape
+                         :x (dm/get-prop selrect :x)
+                         :y (dm/get-prop selrect :y)
+                         :width (dm/get-prop selrect :width)
+                         :height (dm/get-prop selrect :height)))]
     (-> shape
-        (cr/assoc! :selrect selrect)
-        (cr/assoc! :points points))))
+        (assoc :selrect selrect)
+        (assoc :points points))))
 
 
 (defn- apply-transform-generic
@@ -346,9 +342,7 @@
   (let [points    (-> (dm/get-prop shape :points)
                       (gco/transform-points transform-mtx))
 
-        ;; NOTE: ensure we have a fresh shallow copy of shape
-        shape     (cr/clone shape)
-        shape     (adjust-shape-flips! shape points)
+        shape     (adjust-shape-flips shape points)
 
         center    (gco/points->center points)
         selrect   (calculate-selrect points center)
@@ -367,17 +361,17 @@
 
             shape    (if (= type :path)
                        (update shape :content gpa/transform-content transform-mtx)
-                       (cr/assoc! shape
-                                  :x (dm/get-prop selrect :x)
-                                  :y (dm/get-prop selrect :y)
-                                  :width (dm/get-prop selrect :width)
-                                  :height (dm/get-prop selrect :height)))]
+                       (assoc shape
+                              :x (dm/get-prop selrect :x)
+                              :y (dm/get-prop selrect :y)
+                              :width (dm/get-prop selrect :width)
+                              :height (dm/get-prop selrect :height)))]
         (-> shape
-            (cr/assoc! :transform transform)
-            (cr/assoc! :transform-inverse inverse)
-            (cr/assoc! :selrect selrect)
-            (cr/assoc! :points points)
-            (cr/assoc! :rotation rotation))))))
+            (assoc :transform transform)
+            (assoc :transform-inverse inverse)
+            (assoc :selrect selrect)
+            (assoc :points points)
+            (assoc :rotation rotation))))))
 
 (defn- apply-transform
   "Given a new set of points transformed, set up the rectangle so it keeps

@@ -26,7 +26,7 @@ export default {
     },
     disabled: { control: "boolean" },
     variant: {
-      options: ["primary", "secondary", "ghost", "destructive"],
+      options: ["primary", "secondary", "ghost", "destructive", "action"],
       control: { type: "select" },
     },
   },
@@ -56,6 +56,12 @@ export const Secondary = {
 export const Ghost = {
   args: {
     variant: "ghost",
+  },
+};
+
+export const Action = {
+  args: {
+    variant: "action",
   },
 };
 

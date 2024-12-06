@@ -12,23 +12,43 @@
    [app.common.files.helpers :as cph]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
+   [app.main.ui.workspace.tokens.token-set :as wtts]
    [okulary.core :as l]))
 
 ;; ---- Global refs
 
 (def route
-  (l/derived :route st/state))
+  (l/derived (l/key :route) st/state))
 
 (def router
-  (l/derived :router st/state))
+  (l/derived (l/key :router) st/state))
 
 (def profile
-  (l/derived :profile st/state))
+  (l/derived (l/key :profile) st/state))
+
+(def team
+  (l/derived (fn [state]
+               (let [team-id (:current-team-id state)
+                     teams   (:teams state)]
+                 (get teams team-id)))
+             st/state))
+
+(def project
+  (l/derived (fn [state]
+               (let [project-id (:current-project-id state)
+                     projects   (:projects state)]
+                 (get projects project-id)))
+             st/state))
+
+(def permissions
+  (l/derived (l/key :permissions) team))
 
 (def teams
-  (l/derived :teams st/state))
+  (l/derived (l/key :teams) st/state))
 
 (def exception
   (l/derived :exception st/state))
@@ -45,68 +65,47 @@
 (def persistence
   (l/derived :persistence st/state))
 
-;; ---- Dashboard refs
+(def projects
+  (l/derived :projects st/state))
 
-(def dashboard-local
-  (l/derived :dashboard-local st/state))
+(def files
+  (l/derived :files st/state))
 
-(def dashboard-fonts
-  (l/derived :dashboard-fonts st/state))
+(def shared-files
+  "A derived state that points to the current list of shared
+  files (without the content, only summary)"
+  (l/derived :shared-files st/state))
 
-(def dashboard-projects
-  (l/derived :dashboard-projects st/state))
+(def libraries
+  (l/derived :libraries st/state))
 
-(def dashboard-files
-  (l/derived :dashboard-files st/state))
-
-(def dashboard-shared-files
-  (l/derived :dashboard-shared-files st/state))
-
-(def dashboard-search-result
-  (l/derived :dashboard-search-result st/state))
-
-(def dashboard-team-stats
-  (l/derived :dashboard-team-stats st/state))
-
-(def dashboard-team-members
-  (l/derived :dashboard-team-members st/state))
-
-(def dashboard-team-invitations
-  (l/derived :dashboard-team-invitations st/state))
-
-(def dashboard-team-webhooks
-  (l/derived :dashboard-team-webhooks st/state))
-
-(def dashboard-selected-project
-  (l/derived (fn [state]
-               (dm/get-in state [:dashboard-local :selected-project]))
-             st/state))
-
-(defn- dashboard-extract-selected
+(defn extract-selected-files
   [files selected]
   (let [get-file #(get files %)
         sim-file #(select-keys % [:id :name :project-id :is-shared])
         xform    (comp (keep get-file)
                        (map sim-file))]
-    (->> (into #{} xform selected)
+    (->> (sequence xform selected)
          (d/index-by :id))))
 
-(def dashboard-selected-search
+(def selected-files
   (l/derived (fn [state]
-               ;; we need to this because :dashboard-search-result is a list
-               ;; of maps and we need a map of maps (using :id as key).
-               (let [files (d/index-by :id (:dashboard-search-result state))]
-                 (->> (dm/get-in state [:dashboard-local :selected-files])
-                      (dashboard-extract-selected files))))
+               (let [selected (get state :selected-files)
+                     files    (get state :files)]
+                 (extract-selected-files files selected)))
              st/state))
 
-(def dashboard-selected-files
-  (l/derived (fn [state]
-               (->> (dm/get-in state [:dashboard-local :selected-files])
-                    (dashboard-extract-selected (:dashboard-files state))))
-             st/state))
+(def selected-project
+  (l/derived :selected-project st/state))
 
-;; ---- Workspace refs
+(def dashboard-local
+  (l/derived :dashboard-local st/state))
+
+(def render-state
+  (l/derived :render-state st/state))
+
+(def render-context-lost?
+  (l/derived :lost render-state))
 
 (def workspace-local
   (l/derived :workspace-local st/state))
@@ -199,6 +198,9 @@
 (def context-menu
   (l/derived :context-menu workspace-local))
 
+(def token-context-menu
+  (l/derived :token-context-menu workspace-local))
+
 ;; page item that it is being edited
 (def editing-page-item
   (l/derived :page-item workspace-local))
@@ -251,12 +253,6 @@
 
 (def workspace-file-typography
   (l/derived :typographies workspace-data))
-
-(def workspace-project
-  (l/derived :workspace-project st/state))
-
-(def workspace-shared-files
-  (l/derived :workspace-shared-files st/state))
 
 (def workspace-local-library
   (l/derived (fn [state]
@@ -442,14 +438,88 @@
              ids)))
    st/state =))
 
+;; ---- Token refs
+
+(def tokens-lib
+  (l/derived :tokens-lib workspace-data))
+
+(def workspace-token-theme-groups
+  (l/derived (d/nilf ctob/get-theme-groups) tokens-lib))
+
+(defn workspace-token-theme
+  [group name]
+  (l/derived
+   (fn [lib]
+     (when lib
+       (ctob/get-theme lib group name)))
+   tokens-lib))
+
+(def workspace-token-theme-tree-no-hidden
+  (l/derived (fn [lib]
+               (or
+                (some-> lib
+                        (ctob/delete-theme ctob/hidden-token-theme-group ctob/hidden-token-theme-name)
+                        (ctob/get-theme-tree))
+                []))
+             tokens-lib))
+
+(def workspace-token-themes
+  (l/derived #(or (some-> % ctob/get-themes) []) tokens-lib))
+
+(def workspace-token-themes-no-hidden
+  (l/derived #(remove ctob/hidden-temporary-theme? %) workspace-token-themes))
+
+(def workspace-selected-token-set-id
+  (l/derived wtts/get-selected-token-set-id st/state))
+
+(def workspace-token-set-group-selected?
+  (l/derived wtts/token-group-selected? st/state))
+
+(def workspace-ordered-token-sets
+  (l/derived #(or (some-> % ctob/get-sets) []) tokens-lib))
+
+(def workspace-token-sets-tree
+  (l/derived (d/nilf ctob/get-set-tree) tokens-lib))
+
+(def workspace-active-theme-paths
+  (l/derived (d/nilf ctob/get-active-theme-paths) tokens-lib))
+
+(def workspace-active-theme-paths-no-hidden
+  (l/derived #(disj % ctob/hidden-token-theme-path) workspace-active-theme-paths))
+
+(def workspace-active-set-names
+  (l/derived (d/nilf ctob/get-active-themes-set-names) tokens-lib))
+
+(def workspace-active-theme-sets-tokens
+  (l/derived #(or (some-> % ctob/get-active-themes-set-tokens) {}) tokens-lib))
+
+(def workspace-selected-token-set-token
+  (fn [token-name]
+    (l/derived
+     #(some-> (wtts/get-selected-token-set %)
+              (ctob/get-token token-name))
+     st/state)))
+
+(def workspace-selected-token-set-tokens
+  (l/derived #(or (wtts/get-selected-token-set-tokens %) {}) st/state))
+
+(def plugins-permissions-peek
+  (l/derived (fn [state]
+               (dm/get-in state [:plugins-permissions-peek :data]))
+             st/state))
+
 ;; ---- Viewer refs
+
+(defn get-viewer-objects
+  [state page-id]
+  (dm/get-in state [:viewer :pages page-id :objects]))
 
 (defn lookup-viewer-objects-by-id
   [page-id]
-  (l/derived #(wsh/lookup-viewer-objects % page-id) st/state =))
+  (l/derived #(get-viewer-objects % page-id) st/state =))
 
 (def viewer-data
-  (l/derived :viewer st/state))
+  (l/derived (l/key :viewer) st/state))
 
 (def viewer-file
   (l/derived :file viewer-data))
@@ -475,14 +545,8 @@
 (def comments-local
   (l/derived :comments-local st/state))
 
-(def users
-  (l/derived :users st/state))
-
-(def current-file-comments-users
-  (l/derived :current-file-comments-users st/state))
-
-(def current-team-comments-users
-  (l/derived :current-team-comments-users st/state))
+(def profiles
+  (l/derived :profiles st/state))
 
 (def viewer-fullscreen?
   (l/derived (fn [state]
@@ -494,14 +558,12 @@
                (dm/get-in state [:viewer-local :zoom-type]))
              st/state))
 
-(def workspace-thumbnails
-  (l/derived :workspace-thumbnails st/state))
-
 (defn workspace-thumbnail-by-id
   [object-id]
   (l/derived
    (fn [state]
-     (dm/get-in state [:workspace-thumbnails object-id]))
+     (some-> (dm/get-in state [:thumbnails object-id])
+             (cf/resolve-media)))
    st/state))
 
 (def workspace-text-modifier
@@ -546,34 +608,8 @@
           (every? (partial ctl/grid-layout-immediate-child? objects))))
    workspace-page-objects =))
 
-;; FIXME: move to viewer.inspect.code
-(defn get-flex-child-viewer
-  [ids page-id]
-  (l/derived
-   (fn [state]
-     (let [objects (wsh/lookup-viewer-objects state page-id)]
-       (into []
-             (comp (map (d/getf objects))
-                   (filter (partial ctl/flex-layout-immediate-child? objects)))
-             ids)))
-   st/state =))
-
-;; FIXME: move to viewer.inspect.code
-(defn get-viewer-objects
-  ([]
-   (let [route      (deref route)
-         page-id    (:page-id (:query-params route))]
-     (get-viewer-objects page-id)))
-  ([page-id]
-   (l/derived
-    (fn [state]
-      (let [objects (wsh/lookup-viewer-objects state page-id)]
-        objects))
-    st/state =)))
-
 (def colorpicker
   (l/derived :colorpicker st/state))
-
 
 (def workspace-grid-edition
   (l/derived :workspace-grid-edition st/state))
@@ -582,8 +618,12 @@
   [id]
   (l/derived #(get % id) workspace-grid-edition))
 
+;; FIXME: remove
 (def current-file-id
   (l/derived :current-file-id st/state))
+
+(def current-project-id
+  (l/derived :current-project-id st/state))
 
 (def workspace-preview-blend
   (l/derived :workspace-preview-blend st/state))
@@ -598,4 +638,4 @@
   (l/derived :updating-library st/state))
 
 (def persistence-state
-  (l/derived (comp :status :workspace-persistence) st/state))
+  (l/derived (comp :status :persistence) st/state))

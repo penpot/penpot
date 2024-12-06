@@ -46,7 +46,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uri :as uri]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -61,7 +61,6 @@
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.edn :as edn]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [integrant.core :as ig]
@@ -95,9 +94,46 @@
 (defmulti parse-limit   (fn [[_ strategy _]] strategy))
 (defmulti process-limit (fn [_ _ _ o] (::strategy o)))
 
+(sm/register!
+ {:type ::rpc/rlimit
+  :pred #(instance? clojure.lang.Agent %)})
+
+(def ^:private schema:strategy
+  [:enum :window :bucket])
+
+(def ^:private schema:limit-tuple
+  [:tuple :keyword schema:strategy :string])
+
+(def ^:private schema:limit
+  [:and
+   [:map
+    [::name :any]
+    [::strategy schema:strategy]
+    [::key :string]
+    [::opts :string]]
+   [:or
+    [:map
+     [::capacity ::sm/int]
+     [::rate ::sm/int]
+     [::internal ::dt/duration]
+     [::params [::sm/vec :any]]]
+    [:map
+     [::nreq ::sm/int]
+     [::unit [:enum :days :hours :minutes :seconds :weeks]]]]])
+
+(def ^:private schema:limits
+  [:map-of :keyword [::sm/vec schema:limit]])
+
+(def ^:private valid-limit-tuple?
+  (sm/lazy-validator schema:limit-tuple))
+
+(def ^:private valid-rlimit-instance?
+  (sm/lazy-validator ::rpc/rlimit))
+
 (defmethod parse-limit :window
   [[name strategy opts :as vlimit]]
-  (us/assert! ::limit-tuple vlimit)
+  (assert (valid-limit-tuple? vlimit) "expected valid limit tuple")
+
   (merge
    {::name name
     ::strategy strategy}
@@ -118,7 +154,8 @@
 
 (defmethod parse-limit :bucket
   [[name strategy opts :as vlimit]]
-  (us/assert! ::limit-tuple vlimit)
+  (assert (valid-limit-tuple? vlimit) "expected valid limit tuple")
+
   (if-let [[_ capacity rate interval] (re-find bucket-opts-re opts)]
     (let [interval (dt/duration interval)
           rate     (parse-long rate)
@@ -140,7 +177,7 @@
   (let [script    (-> bucket-rate-limit-script
                       (assoc ::rscript/keys [(str key "." service "." user-id)])
                       (assoc ::rscript/vals (conj params (dt/->seconds now))))
-        result    (rds/eval! redis script)
+        result    (rds/eval redis script)
         allowed?  (boolean (nth result 0))
         remaining (nth result 1)
         reset     (* (/ (inst-ms interval) rate)
@@ -164,7 +201,7 @@
         script    (-> window-rate-limit-script
                       (assoc ::rscript/keys [(str key "." service "." user-id "." (dt/format-instant ts))])
                       (assoc ::rscript/vals [nreq (dt/->seconds ttl)]))
-        result    (rds/eval! redis script)
+        result    (rds/eval redis script)
         allowed?  (boolean (nth result 0))
         remaining (nth result 1)]
     (l/trace :hint "limit processed"
@@ -245,8 +282,8 @@
 
 (defn wrap
   [{:keys [::rpc/rlimit ::rds/redis] :as cfg} f mdata]
-  (us/assert! ::rpc/rlimit rlimit)
-  (us/assert! ::rds/redis redis)
+  (assert (rds/redis? redis) "expected a valid redis instance")
+  (assert (or (nil? rlimit) (valid-rlimit-instance? rlimit)) "expected a valid rlimit instance")
 
   (if rlimit
     (let [skey  (keyword (::rpc/type cfg) (->> mdata ::sv/spec name))
@@ -275,42 +312,19 @@
 ;; CONFIG WATCHER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::strategy (s/and ::us/keyword #{:window :bucket}))
-(s/def ::capacity ::us/integer)
-(s/def ::rate ::us/integer)
-(s/def ::interval ::dt/duration)
-(s/def ::key ::us/string)
-(s/def ::opts ::us/string)
-(s/def ::params vector?)
-(s/def ::unit #{:days :hours :minutes :seconds :weeks})
-(s/def ::nreq ::us/integer)
-(s/def ::refresh ::dt/duration)
+(def ^:private schema:config
+  [:map-of
+   [:or :keyword [:set :keyword]]
+   [:vector schema:limit-tuple]])
 
-(s/def ::limit-tuple
-  (s/tuple ::us/keyword ::strategy string?))
+(def ^:private check-config
+  (sm/check-fn schema:config))
 
-(s/def ::limits
-  (s/map-of keyword? (s/every ::limit :kind vector?)))
+(def ^:private check-refresh
+  (sm/check-fn ::dt/duration))
 
-(s/def ::limit
-  (s/and
-   (s/keys :req [::name ::strategy ::key ::opts])
-   (s/or :bucket
-         (s/keys :req [::capacity
-                       ::rate
-                       ::interval
-                       ::params])
-         :window
-         (s/keys :req [::nreq
-                       ::unit]))))
-
-(s/def ::rpc/rlimit
-  (s/nilable
-   #(instance? clojure.lang.Agent %)))
-
-(s/def ::config
-  (s/map-of (s/or :kw keyword? :set set?)
-            (s/every ::limit-tuple :kind vector?)))
+(def ^:private check-limits
+  (sm/check-fn schema:limits))
 
 (defn read-config
   [path]
@@ -336,13 +350,9 @@
                          {}
                          config)))]
 
-    (when-let [config (some->> path slurp edn/read-string)]
-      (us/verify! ::config config)
-      (let [refresh (->> config meta :refresh dt/duration)
-            limits  (->> config compile-pass-1 compile-pass-2)]
-
-        (us/verify! ::limits limits)
-        (us/verify! ::refresh refresh)
+    (when-let [config (some->> path slurp edn/read-string check-config)]
+      (let [refresh (->> config meta :refresh dt/duration check-refresh)
+            limits  (->> config compile-pass-1 compile-pass-2 check-limits)]
 
         {::refresh refresh
          ::limits limits}))))
@@ -385,8 +395,9 @@
   (when-let [path (cf/get :rpc-rlimit-config)]
     (and (fs/exists? path) (fs/regular-file? path) path)))
 
-(defmethod ig/pre-init-spec :app.rpc/rlimit [_]
-  (s/keys :req [::wrk/executor]))
+(defmethod ig/assert-key :app.rpc/rlimit
+  [_ {:keys [::wrk/executor]}]
+  (assert (sm/valid? ::wrk/executor executor) "expect valid executor"))
 
 (defmethod ig/init-key ::rpc/rlimit
   [_ {:keys [::wrk/executor] :as cfg}]

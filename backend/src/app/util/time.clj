@@ -158,6 +158,7 @@
      :iso8601 (Instant/from (.parse DateTimeFormatter/ISO_INSTANT ^String s)))))
 
 (defn is-after?
+  "Analgous to: da > db"
   [da db]
   (.isAfter ^Instant da ^Instant db))
 
@@ -369,30 +370,30 @@
   (let [p1 (System/nanoTime)]
     #(duration {:nanos (- (System/nanoTime) p1)})))
 
-(sm/register! ::instant
-  {:type ::instant
-   :pred instant?
-   :type-properties
-   {:error/message "should be an instant"
-    :title "instant"
-    :decode/string instant
-    :encode/string format-instant
-    :decode/json instant
-    :encode/json format-instant
-    :gen/gen (tgen/fmap (fn [i] (in-past i))  tgen/pos-int)
-    ::oapi/type "string"
-    ::oapi/format "iso"}})
+(sm/register!
+ {:type ::instant
+  :pred instant?
+  :type-properties
+  {:error/message "should be an instant"
+   :title "instant"
+   :decode/string instant
+   :encode/string format-instant
+   :decode/json instant
+   :encode/json format-instant
+   :gen/gen (tgen/fmap (fn [i] (in-past i))  tgen/pos-int)
+   ::oapi/type "string"
+   ::oapi/format "iso"}})
 
-(sm/register! ::duration
-  {:type :durations
-   :pred duration?
-   :type-properties
-   {:error/message "should be a duration"
-    :gen/gen (tgen/fmap duration tgen/pos-int)
-    :title "duration"
-    :decode/string duration
-    :encode/string format-duration
-    :decode/json duration
-    :encode/json format-duration
-    ::oapi/type "string"
-    ::oapi/format "duration"}})
+(sm/register!
+ {:type ::duration
+  :pred duration?
+  :type-properties
+  {:error/message "should be a duration"
+   :gen/gen (tgen/fmap duration tgen/pos-int)
+   :title "duration"
+   :decode/string duration
+   :encode/string format-duration
+   :decode/json duration
+   :encode/json format-duration
+   ::oapi/type "string"
+   ::oapi/format "duration"}})

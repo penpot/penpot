@@ -9,14 +9,12 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.spec :as us]
    [app.common.uri :as u]
    [app.db :as db]
    [app.storage :as sto]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]
-   [ring.response :as-alias rres]))
+   [yetti.response :as-alias yres]))
 
 (def ^:private cache-max-age
   (dt/duration {:hours 24}))
@@ -37,8 +35,8 @@
 (defn- serve-object-from-s3
   [{:keys [::sto/storage] :as cfg} obj]
   (let [{:keys [host port] :as url} (sto/get-object-url storage obj {:max-age signature-max-age})]
-    {::rres/status  307
-     ::rres/headers {"location" (str url)
+    {::yres/status  307
+     ::yres/headers {"location" (str url)
                      "x-host"   (cond-> host port (str ":" port))
                      "x-mtype"  (-> obj meta :content-type)
                      "cache-control" (str "max-age=" (inst-ms cache-max-age))}}))
@@ -51,8 +49,8 @@
         headers {"x-accel-redirect" (:path purl)
                  "content-type" (:content-type mdata)
                  "cache-control" (str "max-age=" (inst-ms cache-max-age))}]
-    {::rres/status 204
-     ::rres/headers headers}))
+    {::yres/status 204
+     ::yres/headers headers}))
 
 (defn- serve-object
   "Helper function that returns the appropriate response depending on
@@ -69,7 +67,7 @@
         obj (sto/get-object storage id)]
     (if obj
       (serve-object cfg obj)
-      {::rres/status 404})))
+      {::yres/status 404})))
 
 (defn- generic-handler
   "A generic handler helper/common code for file-media based handlers."
@@ -80,7 +78,7 @@
         sobj (sto/get-object storage (kf mobj))]
     (if sobj
       (serve-object cfg sobj)
-      {::rres/status 404})))
+      {::yres/status 404})))
 
 (defn file-objects-handler
   "Handler that serves storage objects by file media id."
@@ -95,11 +93,10 @@
 
 ;; --- Initialization
 
-(s/def ::path ::us/string)
-(s/def ::routes vector?)
-
-(defmethod ig/pre-init-spec ::routes [_]
-  (s/keys :req [::sto/storage  ::path]))
+(defmethod ig/assert-key ::routes
+  [_ params]
+  (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage instance")
+  (assert (string? (::path params))))
 
 (defmethod ig/init-key ::routes
   [_ cfg]

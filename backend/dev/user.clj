@@ -137,7 +137,6 @@
 ;;        :v6 v6
 ;;        }])))
 
-
 (defn calculate-frames
   [{:keys [data]}]
   (->> (vals (:pages-index data))

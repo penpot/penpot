@@ -7,8 +7,7 @@
 (ns app.util.text-editor
   "Draft related abstraction functions."
   (:require
-   ["./text_editor_impl.js" :as impl]
-   ["draft-js" :as draft]
+   ["@penpot/draft-js" :as impl]
    [app.common.text :as txt]))
 
 ;; --- CONVERSION
@@ -34,12 +33,12 @@
 
 (defn import-content
   [content]
-  (-> content txt/convert-to-draft clj->js draft/convertFromRaw))
+  (-> content txt/convert-to-draft clj->js impl/convertFromRaw))
 
 (defn export-content
   [content]
   (-> content
-      (draft/convertToRaw)
+      (impl/convertToRaw)
       (js->clj :keywordize-keys true)
       (txt/convert-from-draft)))
 

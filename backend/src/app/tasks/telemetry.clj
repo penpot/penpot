@@ -17,7 +17,6 @@
    [app.main :as-alias main]
    [app.setup :as-alias setup]
    [app.util.json :as json]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.exec :as px]))
 
@@ -205,10 +204,11 @@
 ;; TASK ENTRY POINT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req [::http/client
-                ::db/pool
-                ::setup/props]))
+(defmethod ig/assert-key ::handler
+  [_ params]
+  (assert (http/client? (::http/client params)) "expected a valid http client")
+  (assert (db/pool? (::db/pool params)) "expected a valid database pool")
+  (assert (some? (::setup/props params)) "expected setup props to be available"))
 
 (defmethod ig/init-key ::handler
   [_ {:keys [::db/pool ::setup/props] :as cfg}]

@@ -29,14 +29,35 @@
    [app.common.types.shape.path :as ctsp]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctsx]
+   [app.common.types.token :as cto]
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
-(cr/defrecord Shape [id name type x y width height rotation selrect points transform transform-inverse parent-id frame-id flip-x flip-y])
+(defonce ^:dynamic *wasm-sync* false)
+
+(defonce wasm-enabled? false)
+(defonce wasm-create-shape (constantly nil))
+
+;; Marker protocol
+(defprotocol IShape)
+
+(cr/defrecord Shape [id name type x y width height rotation selrect points
+                     transform transform-inverse parent-id frame-id flip-x flip-y]
+  IShape)
 
 (defn shape?
   [o]
-  (instance? Shape o))
+  #?(:cljs (implements? IShape o)
+     :clj  (instance? Shape o)))
+
+(defn create-shape
+  "A low level function that creates a Shape data structure
+  from a attrs map without performing other transformations"
+  [attrs]
+  #?(:cljs (if ^boolean wasm-enabled?
+             (^function wasm-create-shape attrs)
+             (map->Shape attrs))
+     :clj  (map->Shape attrs)))
 
 (def stroke-caps-line #{:round :square})
 (def stroke-caps-marker #{:line-arrow :triangle-arrow :square-marker :circle-marker :diamond-marker})
@@ -150,6 +171,7 @@
 ;; FIXME: rename to shape-generic-attrs
 (def schema:shape-attrs
   [:map {:title "ShapeAttrs"}
+   [:page-id {:optional true} ::sm/uuid]
    [:component-id {:optional true}  ::sm/uuid]
    [:component-file {:optional true} ::sm/uuid]
    [:component-root {:optional true} :boolean]
@@ -192,6 +214,7 @@
    [:blur {:optional true} ::ctsb/blur]
    [:grow-type {:optional true}
     [::sm/one-of grow-types]]
+   [:applied-tokens {:optional true} ::cto/applied-tokens]
    [:plugin-data {:optional true} ::ctpg/plugin-data]])
 
 (def schema:group-attrs
@@ -224,8 +247,8 @@
   [:map {:title "ImageAttrs"}
    [:metadata
     [:map
-     [:width {:gen/gen (sg/small-int :min 1)} :int]
-     [:height {:gen/gen (sg/small-int :min 1)} :int]
+     [:width {:gen/gen (sg/small-int :min 1)} ::sm/int]
+     [:height {:gen/gen (sg/small-int :min 1)} ::sm/int]
      [:mtype {:optional true
               :gen/gen (sg/elements ["image/jpeg"
                                      "image/png"])}
@@ -243,7 +266,7 @@
 (defn- decode-shape
   [o]
   (if (map? o)
-    (map->Shape o)
+    (create-shape o)
     o))
 
 (defn- shape-generator
@@ -267,7 +290,7 @@
                             (= type :bool))
                       (merge attrs1 shape attrs3)
                       (merge attrs1 shape attrs2 attrs3)))))
-       (sg/fmap map->Shape)))
+       (sg/fmap create-shape)))
 
 (def schema:shape
   [:and {:title "Shape"
@@ -360,6 +383,9 @@
 
 (def valid-shape?
   (sm/lazy-validator schema:shape))
+
+(def explain-shape
+  (sm/lazy-explainer schema:shape))
 
 (defn has-images?
   [{:keys [fills strokes]}]
@@ -454,24 +480,21 @@
 (defn- make-minimal-shape
   [type]
   (let [type  (if (= type :curve) :path type)
-        attrs (get-minimal-shape type)]
+        attrs (get-minimal-shape type)
+        attrs (cond-> attrs
+                (and (not= :path type)
+                     (not= :bool type))
+                (-> (assoc :x 0)
+                    (assoc :y 0)
+                    (assoc :width 0.01)
+                    (assoc :height 0.01)))
+        attrs  (-> attrs
+                   (assoc :id (uuid/next))
+                   (assoc :frame-id uuid/zero)
+                   (assoc :parent-id uuid/zero)
+                   (assoc :rotation 0))]
 
-    (cond-> attrs
-      (and (not= :path type)
-           (not= :bool type))
-      (-> (assoc :x 0)
-          (assoc :y 0)
-          (assoc :width 0.01)
-          (assoc :height 0.01))
-
-      :always
-      (assoc :id (uuid/next)
-             :frame-id uuid/zero
-             :parent-id uuid/zero
-             :rotation 0)
-
-      :always
-      (map->Shape))))
+    (create-shape attrs)))
 
 (defn setup-rect
   "Initializes the selrect and points for a shape."
@@ -532,7 +555,7 @@
  {:id "shape"
   :class Shape
   :wfn #(into {} %)
-  :rfn map->Shape})
+  :rfn create-shape})
 
 #?(:clj
    (fres/add-handlers!

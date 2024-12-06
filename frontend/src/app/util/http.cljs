@@ -103,26 +103,31 @@
          (when @abortable?
            (.abort ^js controller)))))))
 
+(defn response->map
+  [response]
+  {:status  (.-status ^js response)
+   :uri     (.-url ^js response)
+   :headers (parse-headers (.-headers ^js response))
+   :body    (.-body ^js response)
+   ::response response})
+
+(defn process-response-type
+  [response-type response]
+  (let [native-response (::response response)
+        body            (case response-type
+                          :buffer (.arrayBuffer ^js native-response)
+                          :json   (.json ^js native-response)
+                          :text   (.text ^js native-response)
+                          :blob   (.blob ^js native-response))]
+    (->> (rx/from body)
+         (rx/map (fn [body]
+                   (assoc response :body body))))))
+
 (defn send!
   [{:keys [response-type] :or {response-type :text} :as params}]
-  (letfn [(on-response [^js response]
-            (if (= :stream response-type)
-              (rx/of {:status (.-status response)
-                      :headers (parse-headers (.-headers response))
-                      :body (.-body response)
-                      ::response response})
-              (let [body (case response-type
-                           :json   (.json ^js response)
-                           :text   (.text ^js response)
-                           :blob   (.blob ^js response))]
-                (->> (rx/from body)
-                     (rx/map (fn [body]
-                               {::response response
-                                :status    (.-status ^js response)
-                                :headers   (parse-headers (.-headers ^js response))
-                                :body      body}))))))]
-    (->> (fetch params)
-         (rx/mapcat on-response))))
+  (->> (fetch params)
+       (rx/map response->map)
+       (rx/mapcat (partial process-response-type response-type))))
 
 (defn form-data
   [data]

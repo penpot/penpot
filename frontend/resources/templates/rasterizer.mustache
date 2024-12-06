@@ -11,7 +11,7 @@
     </script>
 
     {{# manifest}}
-    <script>window.penpotWorkerURI="{{& worker}}"</script>
+    <script>window.penpotWorkerURI="{{& worker_main}}"</script>
     <script src="{{& config}}"></script>
     <script src="{{& polyfills}}"></script>
     {{/manifest}}
@@ -19,6 +19,7 @@
   </head>
   <body>
     {{# manifest}}
+    <script src="js/libs.js?ts={{& ts}}"></script>
     <script src="{{& shared}}"></script>
     <script src="{{& rasterizer}}"></script>
     {{/manifest}}

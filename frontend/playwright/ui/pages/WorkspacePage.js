@@ -36,6 +36,14 @@ export class WorkspacePage extends BaseWebSocketPage {
       "get-team?id=*",
       "workspace/get-team-default.json",
     );
+    await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams.json");
+
+    await BaseWebSocketPage.mockRPC(
+      page,
+      "get-team-members?team-id=*",
+      "logged-in-user/get-team-members-your-penpot.json",
+    );
+
     await BaseWebSocketPage.mockRPC(
       page,
       "get-profiles-for-file-comments?file-id=*",
@@ -43,6 +51,7 @@ export class WorkspacePage extends BaseWebSocketPage {
     );
   }
 
+  static anyTeamId = "c7ce0794-0992-8105-8004-38e630f7920a";
   static anyProjectId = "c7ce0794-0992-8105-8004-38e630f7920b";
   static anyFileId = "c7ce0794-0992-8105-8004-38f280443849";
   static anyPageId = "c7ce0794-0992-8105-8004-38f28044384a";
@@ -61,6 +70,7 @@ export class WorkspacePage extends BaseWebSocketPage {
     );
     this.toolbarOptions = page.getByTestId("toolbar-options");
     this.rectShapeButton = page.getByRole("button", { name: "Rectangle (R)" });
+    this.boardButton = page.getByRole("button", { name: "Board (B)" });
     this.toggleToolbarButton = page.getByRole("button", {
       name: "Toggle toolbar",
     });
@@ -82,7 +92,7 @@ export class WorkspacePage extends BaseWebSocketPage {
     pageId = WorkspacePage.anyPageId,
   } = {}) {
     await this.page.goto(
-      `/#/workspace/${WorkspacePage.anyProjectId}/${fileId}?page-id=${pageId}`,
+      `/#/workspace?team-id=${WorkspacePage.anyTeamId}&file-id=${fileId}&page-id=${pageId}`,
     );
 
     this.#ws = await this.waitForNotificationsWebSocket();
@@ -168,18 +178,18 @@ export class WorkspacePage extends BaseWebSocketPage {
   async moveSelectionToShape(name) {
     await this.page.locator("rect.viewport-selrect").hover();
     await this.page.mouse.down();
-    await this.viewport.getByTestId(name).first().hover({ force: true });
+    await this.viewport.getByText(name).first().hover({ force: true });
     await this.page.mouse.up();
   }
 
   async clickLeafLayer(name, clickOptions = {}) {
-    const layer = this.layers.getByText(name);
+    const layer = this.layers.getByText(name).first();
     await layer.click(clickOptions);
   }
 
   async clickToggableLayer(name, clickOptions = {}) {
     const layer = this.layers
-      .getByTestId("layer-item")
+      .getByTestId("layer-row")
       .filter({ has: this.page.getByText(name) });
     await layer.getByRole("button").click(clickOptions);
   }

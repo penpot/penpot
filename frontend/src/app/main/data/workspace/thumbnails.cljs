@@ -168,7 +168,7 @@
                            (.error js/console cause)
                            (rx/empty)))
 
-               (rx/tap #(l/trc :hint "thumbnail updated" :elapsed (dm/str (tp) "ms")))
+               (rx/tap #(l/dbg :hint "thumbnail updated" :elapsed (dm/str (tp) "ms")))
 
                ;; We cancel all the stream if user starts editing while
                ;; thumbnail is generating

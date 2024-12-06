@@ -6,7 +6,36 @@
 
 (ns app.util.time
   (:require
-   ["./time_impl.js" :as impl]
+   ["date-fns/format$default" :as dfn-format]
+   ["date-fns/formatDistanceToNowStrict$default" :as dfn-distance-to-now]
+   ["date-fns/locale/ar-SA$default" :as dfn-ar]
+   ["date-fns/locale/ca$default" :as dfn-ca]
+   ["date-fns/locale/cs$default" :as dfn-cs]
+   ["date-fns/locale/de$default" :as dfn-de]
+   ["date-fns/locale/el$default" :as dfn-el]
+   ["date-fns/locale/en-US$default" :as df-en-us]
+   ["date-fns/locale/es$default" :as dfn-es]
+   ["date-fns/locale/eu$default" :as dfn-eu]
+   ["date-fns/locale/fa-IR$default" :as dfn-fa-ir]
+   ["date-fns/locale/fr$default" :as dfn-fr]
+   ["date-fns/locale/gl$default" :as dfn-gl]
+   ["date-fns/locale/he$default" :as dfn-he]
+   ["date-fns/locale/hr$default" :as dfn-hr]
+   ["date-fns/locale/id$default" :as dfn-id]
+   ["date-fns/locale/it$default" :as dfn-it]
+   ["date-fns/locale/ja$default" :as dfn-ja]
+   ["date-fns/locale/ko$default" :as dfn-ko]
+   ["date-fns/locale/lv$default" :as dfn-lv]
+   ["date-fns/locale/nb$default" :as dfn-nb]
+   ["date-fns/locale/nl$default" :as dfn-nl]
+   ["date-fns/locale/pl$default" :as dfn-pl]
+   ["date-fns/locale/pt$default" :as dfn-pt]
+   ["date-fns/locale/pt-BR$default" :as dfn-pt-br]
+   ["date-fns/locale/ro$default" :as dfn-ro]
+   ["date-fns/locale/ru$default" :as dfn-ru]
+   ["date-fns/locale/tr$default" :as dfn-tr]
+   ["date-fns/locale/uk$default" :as dfn-uk]
+   ["date-fns/locale/zh-CN$default" :as dfn-zh-cn]
    [app.common.data.macros :as dm]
    [app.common.time :as common-time]
    [app.util.object :as obj]
@@ -14,6 +43,42 @@
 
 (dm/export common-time/DateTime)
 (dm/export common-time/Duration)
+
+(def locales
+  #js {:ar dfn-ar
+       :ca dfn-ca
+       :de dfn-de
+       :el dfn-el
+       :en df-en-us
+       :en_us df-en-us
+       :es dfn-es
+       :es_es dfn-es
+       :fa dfn-fa-ir
+       :fa_ir dfn-fa-ir
+       :fr dfn-fr
+       :he dfn-he
+       :pt dfn-pt
+       :pt_pt dfn-pt
+       :pt_br dfn-pt-br
+       :ro dfn-ro
+       :ru dfn-ru
+       :tr dfn-tr
+       :zh-cn dfn-zh-cn
+       :nl dfn-nl
+       :eu dfn-eu
+       :gl dfn-gl
+       :hr dfn-hr
+       :it dfn-it
+       :nb dfn-nb
+       :nb_no dfn-nb
+       :pl dfn-pl
+       :id dfn-id
+       :uk dfn-uk
+       :cs dfn-cs
+       :lv dfn-lv
+       :ko dfn-ko
+       :ja dfn-ja
+       :ja_jp dfn-ja})
 
 (defprotocol ITimeMath
   (plus [_ o])
@@ -199,18 +264,18 @@
      (let [v (if (datetime? v) (format v :date) v)]
        (->> #js {:includeSeconds true
                  :addSuffix true
-                 :locale (obj/get impl/locales locale)}
-            (impl/format-distance-to-now v))))))
+                 :locale (obj/get locales locale)}
+            (dfn-distance-to-now v))))))
 
 (defn format-date-locale
   ([v] (format-date-locale v nil))
   ([v {:keys [locale] :or {locale "en"}}]
    (when v
      (let [v (if (datetime? v) (format v :date) v)
-           locale (obj/get impl/locales locale)
+           locale (obj/get locales locale)
            f (.date (.-formatLong ^js locale) v)]
        (->> #js {:locale locale}
-            (impl/format v f))))))
+            (dfn-format v f))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Measurement Helpers

@@ -50,25 +50,11 @@
 (set! *warn-on-reflection* true)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; DEFAULTS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; Threshold in MiB when we pass from using
-;; in-memory byte-array's to use temporal files.
-(def temp-file-threshold
-  (* 1024 1024 2))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; LOW LEVEL STREAM IO API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:const buffer-size (:xnio/buffer-size yt/defaults))
 (def ^:const penpot-magic-number 800099563638710213)
-
-
-;; A maximum (storage) object size allowed: 100MiB
-(def ^:const max-object-size
-  (* 1024 1024 100))
 
 (def ^:dynamic *position* nil)
 
@@ -236,7 +222,7 @@
 
 (defn copy-stream!
   [^OutputStream output ^InputStream input ^long size]
-  (let [written (io/copy! input output :size size)]
+  (let [written (io/copy input output :size size)]
     (l/trace :fn "copy-stream!" :position @*position* :size size :written written ::l/sync? true)
     (swap! *position* + written)
     written))
@@ -258,18 +244,18 @@
         p (tmp/tempfile :prefix "penpot.binfile.")]
     (assert-mark m :stream)
 
-    (when (> s max-object-size)
+    (when (> s bfc/max-object-size)
       (ex/raise :type :validation
                 :code :max-file-size-reached
                 :hint (str/ffmt "unable to import storage object with size % bytes" s)))
 
-    (if (> s temp-file-threshold)
+    (if (> s bfc/temp-file-threshold)
       (with-open [^OutputStream output (io/output-stream p)]
-        (let [readed (io/copy! input output :offset 0 :size s)]
+        (let [readed (io/copy input output :offset 0 :size s)]
           (l/trace :fn "read-stream*!" :expected s :readed readed :position @*position* ::l/sync? true)
           (swap! *position* + readed)
           [s p]))
-      [s (io/read-as-bytes input :size s)])))
+      [s (io/read input :size s)])))
 
 (defmacro assert-read-label!
   [input expected-label]
@@ -381,10 +367,12 @@
              ::l/sync? true)
 
       (doseq [item media]
-        (l/dbg :hint "write penpot file media object" :id (:id item) ::l/sync? true))
+        (l/dbg :hint "write penpot file media object"
+               :id (:id item) ::l/sync? true))
 
       (doseq [item thumbnails]
-        (l/dbg :hint "write penpot file object thumbnail" :media-id (str (:media-id item)) ::l/sync? true))
+        (l/dbg :hint "write penpot file object thumbnail"
+               :media-id (str (:media-id item)) ::l/sync? true))
 
       (doto output
         (write-obj! file)
@@ -466,8 +454,8 @@
 
 (defn- read-import-v1
   [{:keys [::db/conn ::project-id ::profile-id ::input] :as cfg}]
-  (db/exec-one! conn ["SET LOCAL idle_in_transaction_session_timeout = 0"])
-  (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
+
+  (bfc/disable-database-timeouts! cfg)
 
   (pu/with-open [input (zstd-input-stream input)
                  input (io/data-input-stream input)]
@@ -520,15 +508,6 @@
               (update :object-id #(str/replace-first % #"^(.*?)/" (str file-id "/")))))
         thumbnails))
 
-(defn- clean-features
-  [file]
-  (update file :features (fn [features]
-                           (if (set? features)
-                             (-> features
-                                 (cfeat/migrate-legacy-features)
-                                 (set/difference cfeat/backend-only-features))
-                             #{}))))
-
 (defmethod read-section :v1/files
   [{:keys [::db/conn ::input ::project-id ::bfc/overwrite ::name] :as system}]
 
@@ -539,7 +518,7 @@
           file-id    (:id file)
           file-id'   (bfc/lookup-index file-id)
 
-          file       (clean-features file)
+          file       (bfc/clean-file-features file)
           thumbnails (:thumbnails file)]
 
       (when (not= file-id expected-file-id)
@@ -559,7 +538,9 @@
 
       (when (seq thumbnails)
         (let [thumbnails (remap-thumbnails thumbnails file-id')]
-          (l/dbg :hint "updated index with thumbnails" :total (count thumbnails) ::l/sync? true)
+          (l/dbg :hint "updated index with thumbnails"
+                 :total (count thumbnails)
+                 ::l/sync? true)
           (vswap! bfc/*state* update :thumbnails bfc/into-vec thumbnails)))
 
       (when (seq media)
@@ -709,7 +690,7 @@
 
   (dm/assert!
    "expected instance of jio/IOFactory for `input`"
-   (satisfies? jio/IOFactory output))
+   (io/coercible? output))
 
   (let [id (uuid/next)
         tp (dt/tpoint)
@@ -738,7 +719,7 @@
                 :cause @cs)))))
 
 (defn import-files!
-  [cfg input]
+  [{:keys [::input] :as cfg}]
 
   (dm/assert!
    "expected valid profile-id and project-id on `cfg`"

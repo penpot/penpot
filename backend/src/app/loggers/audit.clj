@@ -10,7 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.logging :as l]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -25,9 +25,7 @@
    [app.util.services :as-alias sv]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [integrant.core :as ig]))
+   [cuerdas.core :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
@@ -95,46 +93,28 @@
 ;; --- SPECS
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; COLLECTOR
+;; COLLECTOR API
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Defines a service that collects the audit/activity log using
 ;; internal database. Later this audit log can be transferred to
 ;; an external storage and data cleared.
 
-(s/def ::profile-id ::us/uuid)
-(s/def ::name ::us/string)
-(s/def ::type ::us/string)
-(s/def ::props (s/map-of ::us/keyword any?))
-(s/def ::ip-addr ::us/string)
+(def ^:private schema:event
+  [:map {:title "event"}
+   [::type ::sm/text]
+   [::name ::sm/text]
+   [::profile-id ::sm/uuid]
+   [::ip-addr {:optional true} ::sm/text]
+   [::props {:optional true} [:map-of :keyword :any]]
+   [::context {:optional true} [:map-of :keyword :any]]
+   [::webhooks/event? {:optional true} ::sm/boolean]
+   [::webhooks/batch-timeout {:optional true} ::dt/duration]
+   [::webhooks/batch-key {:optional true}
+    [:or ::sm/fn ::sm/text :keyword]]])
 
-(s/def ::webhooks/event? ::us/boolean)
-(s/def ::webhooks/batch-timeout ::dt/duration)
-(s/def ::webhooks/batch-key
-  (s/or :fn fn? :str string? :kw keyword?))
-
-(s/def ::event
-  (s/keys :req [::type ::name ::profile-id]
-          :opt [::ip-addr
-                ::props
-                ::webhooks/event?
-                ::webhooks/batch-timeout
-                ::webhooks/batch-key]))
-
-(s/def ::collector
-  (s/keys :req [::wrk/executor ::db/pool]))
-
-(defmethod ig/pre-init-spec ::collector [_]
-  (s/keys :req [::db/pool ::wrk/executor]))
-
-(defmethod ig/init-key ::collector
-  [_ {:keys [::db/pool] :as cfg}]
-  (cond
-    (db/read-only? pool)
-    (l/warn :hint "audit disabled (db is read-only)")
-
-    :else
-    cfg))
+(def ^:private check-event
+  (sm/check-fn schema:event))
 
 (defn prepare-event
   [cfg mdata params result]
@@ -273,12 +253,12 @@
   "Submit audit event to the collector."
   [cfg event]
   (try
-    (let [event (d/without-nils event)
+    (let [event (-> (d/without-nils event)
+                    (check-event))
           cfg   (-> cfg
                     (assoc ::rtry/when rtry/conflict-exception?)
                     (assoc ::rtry/max-retries 6)
                     (assoc ::rtry/label "persist-audit-log"))]
-      (us/verify! ::event event)
       (rtry/invoke! cfg db/tx-run! handle-event! event))
     (catch Throwable cause
       (l/error :hint "unexpected error processing event" :cause cause))))
@@ -289,8 +269,8 @@
   logic."
   [cfg event]
   (when (contains? cf/flags :audit-log)
-    (let [event (d/without-nils event)]
-      (us/verify! ::event event)
+    (let [event (-> (d/without-nils event)
+                    (check-event))]
       (db/run! cfg (fn [cfg]
                      (let [tnow   (dt/now)
                            params (-> (event->params event)

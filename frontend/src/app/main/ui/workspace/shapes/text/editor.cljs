@@ -61,8 +61,8 @@
       nil)))
 
 (defn- styles-fn [shape styles content]
-  (let [data (if (= (.getText content) "")
-               (-> (.getData content)
+  (let [data (if (= (.getText ^js content) "")
+               (-> ^js (.getData content)
                    (.toJS)
                    (js->clj :keywordize-keys true))
                (txt/styles-to-attrs styles))]

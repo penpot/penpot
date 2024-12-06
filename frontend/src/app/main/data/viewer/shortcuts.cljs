@@ -6,6 +6,7 @@
 
 (ns app.main.data.viewer.shortcuts
   (:require
+   [app.main.data.common :as dcm]
    [app.main.data.shortcuts :as ds]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]))
@@ -69,7 +70,7 @@
    :open-workspace     {:tooltip "G W"
                         :command "g w"
                         :subsections [:navigation-viewer]
-                        :fn #(st/emit! (dv/go-to-workspace))}})
+                        :fn #(st/emit! (dcm/go-to-workspace))}})
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))

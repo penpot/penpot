@@ -33,16 +33,24 @@
 
 (defn- process-file
   [entry path type]
+  ;; (js/console.log "zip:process-file" entry path type)
   (cond
     (nil? entry)
     (p/rejected (str "File not found: " path))
 
-    (.-dir entry)
+    (.-dir ^js entry)
     (p/resolved {:dir path})
 
     :else
-    (-> (.async entry type)
-        (p/then #(hash-map :path path :content %)))))
+    (->> (.async ^js entry type)
+         (p/fmap (fn [content]
+                   ;; (js/console.log "zip:process-file" 2 content)
+                   {:path path
+                    :content content})))))
+
+(defn load
+  [data]
+  (rx/from (zip/loadAsync data)))
 
 (defn get-file
   "Gets a single file from the zip archive"

@@ -9,7 +9,7 @@
   (:require
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
-   [app.main.data.users :as du]
+   [app.main.data.profile :as du]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.notifications.context-notification :refer [context-notification]]

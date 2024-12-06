@@ -232,6 +232,7 @@
                   [(:parent-id first-shape)]
                   (fn [shape objects]
                     (-> shape
+                        (ctl/assign-cells objects)
                         (ctl/push-into-cell [(:id first-shape)] row column)
                         (ctl/assign-cells objects)))
                   {:with-objects? true})
@@ -1831,7 +1832,7 @@
   "Generate changes for remove all references to components in the shape,
   with the given id and all its children, at the current page."
   [changes id file page-id libraries]
-  (let [container (cfh/get-container file :page page-id)]
+  (let [container (ctn/get-container file :page page-id)]
     (-> changes
         (pcb/with-container container)
         (pcb/with-objects (:objects container))
@@ -1988,7 +1989,8 @@
                                                 (+ (:position guide) (- (:y new-frame) (:y frame))))
                                      guide    {:id guide-id
                                                :frame-id new-id
-                                               :position position}]
+                                               :position position
+                                               :axis (:axis guide)}]
                                  (pcb/set-guide changes guide-id guide))
                                changes))
                            changes

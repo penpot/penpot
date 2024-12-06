@@ -122,22 +122,19 @@
       WHERE file_id = ANY(?)
         AND id IS NOT NULL")
 
-(defn get-file-snapshots
+(defn search-file-snapshots
   "Get a seq parirs of file-id and snapshot-id for a set of files
    and specified label"
-  [conn label ids]
+  [conn file-ids label]
   (db/exec! conn [sql:snapshots-with-file label
-                  (db/create-array conn "uuid" ids)]))
+                  (db/create-array conn "uuid" file-ids)]))
 
 (defn take-team-snapshot!
   [system team-id label]
   (let [conn (db/get-connection system)]
     (->> (feat.comp-v2/get-and-lock-team-files conn team-id)
-         (map (fn [file-id]
-                {:file-id file-id
-                 :label label}))
-         (reduce (fn [result params]
-                   (fsnap/take-file-snapshot! conn params)
+         (reduce (fn [result file-id]
+                   (fsnap/create-file-snapshot! system nil file-id label)
                    (inc result))
                  0))))
 
@@ -147,7 +144,7 @@
         ids  (->> (feat.comp-v2/get-and-lock-team-files conn team-id)
                   (into #{}))
 
-        snap (get-file-snapshots conn label ids)
+        snap (search-file-snapshots conn ids label)
 
         ids' (into #{} (map :file-id) snap)
         team (-> (feat.comp-v2/get-team conn team-id)
@@ -157,8 +154,8 @@
       (throw (RuntimeException. "no uniform snapshot available")))
 
     (feat.comp-v2/update-team! conn team)
-    (reduce (fn [result params]
-              (fsnap/restore-file-snapshot! conn params)
+    (reduce (fn [result {:keys [file-id id]}]
+              (fsnap/restore-file-snapshot! system file-id id)
               (inc result))
             0
             snap)))
@@ -167,7 +164,7 @@
   [system file-id update-fn & {:keys [label validate? with-libraries?] :or {validate? true} :as opts}]
 
   (when (string? label)
-    (fsnap/take-file-snapshot! system {:file-id file-id :label label}))
+    (fsnap/create-file-snapshot! system nil file-id label))
 
   (let [conn  (db/get-connection system)
         file  (get-file system file-id opts)

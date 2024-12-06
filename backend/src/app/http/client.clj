@@ -7,20 +7,20 @@
 (ns app.http.client
   "Http client abstraction layer."
   (:require
-   [app.common.spec :as us]
-   [clojure.spec.alpha :as s]
+   [app.common.schema :as sm]
    [integrant.core :as ig]
    [java-http-clj.core :as http]
    [promesa.core :as p])
   (:import
    java.net.http.HttpClient))
 
-(s/def ::client #(instance? HttpClient %))
-(s/def ::client-holder
-  (s/keys :req [::client]))
+(defn client?
+  [o]
+  (instance? HttpClient o))
 
-(defmethod ig/pre-init-spec ::client [_]
-  (s/keys :req []))
+(sm/register!
+ {:type ::client
+  :pred client?})
 
 (defmethod ig/init-key ::client
   [_ _]
@@ -30,7 +30,7 @@
 (defn send!
   ([client req] (send! client req {}))
   ([client req {:keys [response-type sync?] :or {response-type :string sync? false}}]
-   (us/assert! ::client client)
+   (assert (client? client) "expected valid http client")
    (if sync?
      (http/send req {:client client :as response-type})
      (try

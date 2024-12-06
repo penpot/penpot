@@ -1,0 +1,23 @@
+[{
+  "~:features": {
+    "~#set": [
+      "layout/grid",
+      "styles/v2",
+      "fdata/pointer-map",
+      "fdata/objects-map",
+      "components/v2",
+      "fdata/shape-data-type"
+    ]
+  },
+  "~:permissions": {
+    "~:type": "~:membership",
+    "~:is-owner": false,
+    "~:is-admin": false,
+    "~:can-edit": false
+  },
+  "~:name": "Default",
+  "~:modified-at": "~m1713533116375",
+  "~:id": "~uc7ce0794-0992-8105-8004-38e630f7920a",
+  "~:created-at": "~m1713533116375",
+  "~:is-default": true
+}]

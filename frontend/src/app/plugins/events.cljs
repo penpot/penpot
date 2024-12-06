@@ -62,15 +62,16 @@
 
 (defmethod handle-state-change "shapechange"
   [_ plugin-id old-val new-val props]
-  (let [shape-id (-> (obj/get props "shapeId") parser/parse-id)
-        old-shape (wsh/lookup-shape old-val shape-id)
-        new-shape (wsh/lookup-shape new-val shape-id)
+  (if-let [shape-id (-> (obj/get props "shapeId") parser/parse-id)]
+    (let [old-shape (wsh/lookup-shape old-val shape-id)
+          new-shape (wsh/lookup-shape new-val shape-id)
 
-        file-id (:current-file-id new-val)
-        page-id (:current-page-id new-val)]
-    (if (and (identical? old-shape new-shape) (some? plugin-id) (some? file-id) (some? page-id) (some? shape-id))
-      ::not-changed
-      (shape/shape-proxy plugin-id file-id page-id shape-id))))
+          file-id (:current-file-id new-val)
+          page-id (:current-page-id new-val)]
+      (if (and (identical? old-shape new-shape) (some? plugin-id) (some? file-id) (some? page-id) (some? shape-id))
+        ::not-changed
+        (shape/shape-proxy plugin-id file-id page-id shape-id)))
+    ::not-changed))
 
 (defmethod handle-state-change "contentsave"
   [_ _ old-val new-val _]

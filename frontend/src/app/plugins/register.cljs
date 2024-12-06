@@ -45,7 +45,7 @@
           (conj "content:read")
 
           (contains? permissions "library:write")
-          (conj "content:write")
+          (conj "library:read")
 
           (contains? permissions "comment:write")
           (conj "comment:read"))
@@ -64,6 +64,7 @@
         manifest
         (d/without-nils
          {:plugin-id plugin-id
+          :url plugin-url
           :name name
           :description desc
           :host origin

@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.math :as mth]
    [app.common.thumbnails :as thc]
@@ -45,7 +44,7 @@
                          (refs/children-objects shape-id))
             childs     (mf/deref childs-ref)]
 
-        [:& shape-container {:shape shape :ref ref :disable-shadows? (cfh/is-direct-child-of-root? shape)}
+        [:& shape-container {:shape shape :ref ref}
          [:& frame-shape {:shape shape :childs childs}]
          (when *assert*
            [:& wsd/shape-debug {:shape shape}])]))))
@@ -187,7 +186,7 @@
 
         (fdm/use-dynamic-modifiers objects (mf/ref-val content-ref) modifiers)
 
-        [:& shape-container {:shape shape :disable-shadows? thumbnail?}
+        [:& shape-container {:shape shape}
          [:g.frame-container
           {:id (dm/str "frame-container-" frame-id)
            :key "frame-container"

@@ -1,0 +1,198 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-dialog {
+  @extend .modal-container-base;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  width: 100%;
+  max-width: $s-468;
+  user-select: none;
+}
+
+.empty-themes-message {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: $s-12;
+  padding: $s-72 0;
+}
+
+.themes-modal-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $s-24;
+}
+
+.themes-modal-title {
+  color: var(--color-foreground-primary);
+}
+
+.back-btn {
+  background-color: transparent;
+  border: none;
+  appearance: none;
+  color: var(--color-foreground-secondary);
+  width: fit-content;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: $s-4;
+  align-items: center;
+  padding: 0;
+  &:hover {
+    color: var(--color-accent-primary);
+  }
+}
+
+.labeled-input-label {
+  color: var(--color-foreground-primary);
+}
+
+.button-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $s-6;
+}
+
+.edit-theme-footer {
+  display: flex;
+  justify-content: space-between;
+}
+
+.empty-themes-wrapper {
+  display: flex;
+  flex-direction: column;
+  color: var(--color-foreground-secondary);
+}
+
+.empty-theme-subtitle {
+  color: var(--color-foreground-secondary);
+}
+
+.empty-theme-title {
+  color: var(--color-foreground-primary);
+}
+
+.select-sets-message {
+  color: var(--color-foreground-secondary);
+}
+
+.create-theme-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $s-24;
+}
+
+.close-btn {
+  position: absolute;
+  top: $s-8;
+  right: $s-6;
+}
+
+.theme-group-label {
+  color: var(--color-foreground-secondary);
+}
+
+.group-title {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: $s-4;
+}
+
+.theme-group-rows-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $s-6;
+}
+
+.theme-group-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $s-8;
+}
+
+.theme-row {
+  display: flex;
+  align-items: center;
+  gap: $s-12;
+  justify-content: space-between;
+}
+
+.theme-row-left {
+  display: flex;
+  align-items: center;
+  gap: $s-16;
+}
+
+.theme-name {
+  color: var(--color-foreground-primary);
+}
+
+.theme-row-right {
+  display: flex;
+  align-items: center;
+  gap: $s-6;
+}
+
+.sets-count-button {
+  text-transform: lowercase;
+  padding: $s-6;
+  padding-left: $s-12;
+}
+
+.label-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-theme-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $s-24;
+}
+
+.sets-list-wrapper {
+  border: 1px solid color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);
+  border-radius: $s-8;
+  overflow: hidden;
+}
+
+.sets-count-empty-button {
+  text-transform: lowercase;
+  padding: $s-6;
+  padding-left: $s-12;
+}
+
+.group-input-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: $s-4;
+}
+
+.edit-theme-inputs-wrapper {
+  display: grid;
+  grid-template-columns: 0.6fr 1fr;
+  gap: $s-12;
+}
+
+.group-drop-down-button {
+  @include buttonStyle;
+  color: var(--color-foreground-secondary);
+  width: $s-24;
+  height: 100%;
+  padding: 0;
+  margin: 0 $s-6;
+}

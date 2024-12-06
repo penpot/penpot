@@ -7,6 +7,8 @@ set -ex
 rm -rf target;
 mkdir -p target/classes;
 mkdir -p target/dist;
+mkdir -p target/dist/scripts;
+
 echo "$CURRENT_VERSION" > target/classes/version.txt;
 cp ../CHANGES.md target/classes/changelog.md;
 
@@ -15,6 +17,7 @@ mv target/penpot.jar target/dist/penpot.jar
 cp resources/log4j2.xml target/dist/log4j2.xml
 cp scripts/run.template.sh target/dist/run.sh;
 cp scripts/manage.py target/dist/manage.py
+cp scripts/svgo-cli.js target/dist/scripts/;
 chmod +x target/dist/run.sh;
 chmod +x target/dist/manage.py
 

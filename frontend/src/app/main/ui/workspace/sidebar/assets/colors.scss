@@ -11,18 +11,6 @@
 // the elements are not part of the same cascade).
 $assets-button-width: $s-28;
 
-.assets-btn {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $assets-button-width;
-  padding: 0;
-  border-radius: $br-8;
-  svg {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-  }
-}
-
 .colors-group {
   margin-top: $s-4;
 }
@@ -55,7 +43,6 @@ $assets-button-width: $s-28;
       @include bodySmallTypography;
       @include removeInputStyle;
       flex-grow: 1;
-      max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
       margin: 0;
       color: var(--layer-row-foreground-color);
     }

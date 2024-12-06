@@ -12,12 +12,14 @@
    [app.common.files.helpers :as cfh]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.shape-icon :as sic]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.notifications.badge :refer [badge-notification]]
@@ -294,9 +296,10 @@
                               :active active?)}
              i/filter-icon]]
 
-           [:button {:class (stl/css :close-search)
-                     :on-click toggle-search}
-            i/close]]
+           [:> icon-button* {:variant "ghost"
+                             :aria-label (tr "labels.close")
+                             :on-click toggle-search
+                             :icon "close"}]]
 
           [:div {:class (stl/css :active-filters)}
            (for [fkey current-filters]
@@ -333,7 +336,7 @@
                    :on-click add-filter}
               [:div {:class (stl/css :filter-menu-item-name-wrapper)}
                [:span {:class (stl/css :filter-menu-item-icon)}
-                i/board]
+                (if (cf/external-feature-flag "boards-01" "test") i/board-2 i/board)]
                [:span {:class (stl/css :filter-menu-item-name)}
                 (tr "workspace.sidebar.layers.frames")]]
 

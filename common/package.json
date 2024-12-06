@@ -1,11 +1,11 @@
 {
   "name": "common",
   "version": "1.0.0",
-  "main": "index.js",
   "license": "MPL-2.0",
   "author": "Kaleidos INC",
   "private": true,
   "packageManager": "yarn@4.3.1",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "https://github.com/penpot/penpot"
@@ -15,17 +15,19 @@
     "sax": "^1.4.1"
   },
   "devDependencies": {
-    "shadow-cljs": "2.28.11",
+    "concurrently": "^9.0.1",
+    "nodemon": "^3.1.7",
+    "shadow-cljs": "2.28.18",
     "source-map-support": "^0.5.21",
     "ws": "^8.17.0"
   },
   "scripts": {
     "fmt:clj:check": "cljfmt check --parallel=false src/ test/",
     "fmt:clj": "cljfmt fix --parallel=true src/ test/",
-    "lint:clj": "clj-kondo --parallel --lint src/",
-    "test:watch": "clojure -M:dev:shadow-cljs watch test",
-    "test:compile": "clojure -M:dev:shadow-cljs compile test --config-merge '{:autorun false}'",
-    "test:run": "node target/test.js",
-    "test": "yarn run test:compile && yarn run test:run"
+    "lint:clj": "clj-kondo --parallel=true --lint src/",
+    "lint": "yarn run lint:clj",
+    "watch:test": "concurrently \"clojure -M:dev:shadow-cljs watch test\" \"nodemon -C -d 2 -w target/tests/ --exec 'node target/tests/test.js'\"",
+    "build:test": "clojure -M:dev:shadow-cljs compile test",
+    "test": "yarn run build:test && node target/tests/test.js"
   }
 }

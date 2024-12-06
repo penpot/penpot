@@ -17,7 +17,7 @@
   position: relative;
   align-self: center;
   height: $s-24;
-  width: $s-200;
+  inline-size: 100%;
   border: $s-2 solid var(--colorpicker-details-color);
   border-radius: $br-6;
   background: linear-gradient(

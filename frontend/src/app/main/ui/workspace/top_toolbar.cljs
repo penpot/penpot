@@ -10,7 +10,8 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.media :as cm]
-   [app.main.data.events :as ev]
+   [app.config :as cf]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
@@ -146,7 +147,7 @@
             :on-click select-drawtool
             :data-tool "frame"
             :data-testid "artboard-btn"}
-           i/board]]
+           (if (cf/external-feature-flag "boards-01" "test") i/board-2 i/board)]]
          [:li
           [:button
            {:title (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))

@@ -12,8 +12,11 @@
    [app.common.geom.point :as gpt]
    [app.common.logging :as log]
    [app.config :as cf]
+   [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.notifications :as ntf]
+   [app.main.data.project :as dpj]
+   [app.main.data.team :as dtm]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.rasterizer :as thr]
@@ -22,7 +25,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as bc]
-   [app.main.ui.dashboard.file-menu :refer [file-menu]]
+   [app.main.ui.dashboard.file-menu :refer [file-menu*]]
    [app.main.ui.dashboard.import :refer [use-import-file]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.placeholder :refer [empty-placeholder loading-placeholder]]
@@ -71,11 +74,18 @@
        (rx/mapcat thr/render)
        (rx/mapcat (partial persist-thumbnail file-id revn))))
 
-(mf/defc grid-item-thumbnail
-  {::mf/wrap-props false}
-  [{:keys [file-id revn thumbnail-id background-color]}]
-  (let [container (mf/use-ref)
-        visible?  (h/use-visible container :once? true)]
+(mf/defc grid-item-thumbnail*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [can-edit file]}]
+  (let [file-id      (get file :id)
+        revn         (get file :revn)
+        thumbnail-id (get file :thumbnail-id)
+
+        bg-color     (dm/get-in file [:data :background])
+
+        container    (mf/use-ref)
+        visible?     (h/use-visible container :once? true)]
 
     (mf/with-effect [file-id revn visible? thumbnail-id]
       (when (and visible? (not thumbnail-id))
@@ -89,15 +99,17 @@
                                     :message (ex-message cause)))))))
 
     [:div {:class (stl/css :grid-item-th)
-           :style {:background-color background-color}
+           :style {:background-color bg-color}
            :ref container}
      (when visible?
        (if thumbnail-id
          [:img {:class (stl/css :grid-item-thumbnail-image)
+                :draggable (dm/str can-edit)
                 :src (cf/resolve-media thumbnail-id)
                 :loading "lazy"
                 :decoding "async"}]
          [:> loader* {:class (stl/css :grid-loader)
+                      :draggable (dm/str can-edit)
                       :overlay true
                       :title (tr "labels.loading")}]))]))
 
@@ -106,10 +118,9 @@
 (def ^:private menu-icon
   (i/icon-xref :menu (stl/css :menu-icon)))
 
-(mf/defc grid-item-library
-  {::mf/wrap [mf/memo]}
-  [{:keys [file] :as props}]
-
+(mf/defc grid-item-library*
+  {::mf/props :obj}
+  [{:keys [file]}]
   (mf/with-effect [file]
     (when file
       (let [font-ids (map :font-id (get-in file [:library-summary :typographies :sample] []))]
@@ -229,16 +240,12 @@
     (dom/set-text! counter-el (str file-count))
     counter-el))
 
-(mf/defc grid-item
-  {:wrap [mf/memo]}
-  [{:keys [file origin library-view?] :as props}]
+(mf/defc grid-item*
+  {::mf/props :obj}
+  [{:keys [file origin can-edit selected-files]}]
   (let [file-id         (:id file)
 
-        ;; FIXME: this breaks react hooks rule, hooks should never to
-        ;; be in a conditional code
-        selected-files  (if (= origin :search)
-                          (mf/deref refs/dashboard-selected-search)
-                          (mf/deref refs/dashboard-selected-files))
+        is-library-view (= origin :libraries)
 
         dashboard-local (mf/deref refs/dashboard-local)
         file-menu-open? (:menu-open dashboard-local)
@@ -265,42 +272,43 @@
 
         on-navigate
         (mf/use-fn
-         (mf/deps file)
+         (mf/deps file-id)
          (fn [event]
            (let [menu-icon (mf/ref-val menu-ref)
                  target    (dom/get-target event)]
              (when-not (dom/child? target menu-icon)
-               (st/emit! (dd/go-to-workspace file))))))
+               (st/emit! (dcm/go-to-workspace :file-id file-id))))))
 
         on-drag-start
         (mf/use-fn
-         (mf/deps selected-files)
+         (mf/deps selected-files can-edit)
          (fn [event]
            (st/emit! (dd/hide-file-menu))
-           (let [offset          (dom/get-offset-position (.-nativeEvent event))
+           (when can-edit
+             (let [offset          (dom/get-offset-position (dom/event->native-event event))
 
-                 select-current? (not (contains? selected-files (:id file)))
+                   select-current? (not (contains? selected-files (:id file)))
 
-                 item-el         (mf/ref-val node-ref)
-                 counter-el      (create-counter-element
-                                  item-el
-                                  (if select-current?
-                                    1
-                                    (count selected-files)))]
-             (when select-current?
-               (st/emit! (dd/clear-selected-files))
-               (st/emit! (dd/toggle-file-select file)))
+                   item-el         (mf/ref-val node-ref)
+                   counter-el      (create-counter-element
+                                    item-el
+                                    (if select-current?
+                                      1
+                                      (count selected-files)))]
+               (when select-current?
+                 (st/emit! (dd/clear-selected-files))
+                 (st/emit! (dd/toggle-file-select file)))
 
-             (dnd/set-data! event "penpot/files" "dummy")
-             (dnd/set-allowed-effect! event "move")
+               (dnd/set-data! event "penpot/files" "dummy")
+               (dnd/set-allowed-effect! event "move")
 
               ;; set-drag-image requires that the element is rendered and
               ;; visible to the user at the moment of creating the ghost
               ;; image (to make a snapshot), but you may remove it right
               ;; afterwards, in the next render cycle.
-             (dom/append-child! item-el counter-el)
-             (dnd/set-drag-image! event item-el (:x offset) (:y offset))
-             (ts/raf #(.removeChild ^js item-el counter-el)))))
+               (dom/append-child! item-el counter-el)
+               (dnd/set-drag-image! event item-el (:x offset) (:y offset))
+               (ts/raf #(.removeChild ^js item-el counter-el))))))
 
         on-menu-click
         (mf/use-fn
@@ -351,13 +359,16 @@
                (on-select event)) ;; TODO Fix this
              )))]
 
-    [:li
-     {:class (stl/css-case :grid-item true :project-th true :library library-view?)}
-     [:button
-      {:class (stl/css-case :selected selected? :library library-view?)
+    [:li {:class (stl/css-case :grid-item true
+                               :project-th true
+                               :library is-library-view)}
+     [:div
+      {:class (stl/css-case :selected selected?
+                            :library is-library-view)
        :ref node-ref
+       :role "button"
        :title (:name file)
-       :draggable true
+       :draggable (dm/str can-edit)
        :on-click on-select
        :on-key-down handle-key-down
        :on-double-click on-navigate
@@ -366,15 +377,11 @@
 
       [:div {:class (stl/css :overlay)}]
 
-      (if library-view?
-        [:& grid-item-library {:file file}]
-        [:& grid-item-thumbnail
-         {:file-id (:id file)
-          :revn (:revn file)
-          :thumbnail-id (:thumbnail-id file)
-          :background-color (dm/get-in file [:data :options :background])}])
+      (if ^boolean is-library-view
+        [:> grid-item-library* {:file file}]
+        [:> grid-item-thumbnail* {:file file :can-edit can-edit}])
 
-      (when (and (:is-shared file) (not library-view?))
+      (when (and (:is-shared file) (not is-library-view))
         [:div {:class (stl/css :item-badge)} i/library])
 
       [:div {:class (stl/css :info-wrapper)}
@@ -401,18 +408,20 @@
            ;; When the menu is open we disable events in the dashboard. We need to force pointer events
            ;; so the menu can be handled
            [:div {:style {:pointer-events "all"}}
-            [:& file-menu {:files (vals selected-files)
-                           :show? (:menu-open dashboard-local)
-                           :left (+ 24 (:x (:menu-pos dashboard-local)))
-                           :top (:y (:menu-pos dashboard-local))
-                           :navigate? true
-                           :on-edit on-edit
-                           :on-menu-close on-menu-close
-                           :origin origin
-                           :parent-id (str file-id "-action-menu")}]])]]]]]))
+            [:> file-menu* {:files (vals selected-files)
+                            :show (:menu-open dashboard-local)
+                            :left (+ 24 (:x (:menu-pos dashboard-local)))
+                            :top (:y (:menu-pos dashboard-local))
+                            :can-edit can-edit
+                            :navigate true
+                            :on-edit on-edit
+                            :on-menu-close on-menu-close
+                            :origin origin
+                            :parent-id (dm/str file-id "-action-menu")}]])]]]]]))
 
 (mf/defc grid
-  [{:keys [files project origin limit library-view? create-fn] :as props}]
+  {::mf/props :obj}
+  [{:keys [files project origin limit create-fn can-edit selected-files]}]
   (let [dragging?  (mf/use-state false)
         project-id (:id project)
         node-ref   (mf/use-var nil)
@@ -420,20 +429,23 @@
         on-finish-import
         (mf/use-fn
          (fn []
-           (st/emit! (dd/fetch-files {:project-id project-id})
-                     (dd/fetch-shared-files)
+           (st/emit! (dpj/fetch-files project-id)
+                     (dtm/fetch-shared-files)
                      (dd/clear-selected-files))))
+
+
 
         import-files (use-import-file project-id on-finish-import)
 
         on-drag-enter
         (mf/use-fn
          (fn [e]
-           (when (and (not (dnd/has-type? e "penpot/files"))
-                      (or (dnd/has-type? e "Files")
-                          (dnd/has-type? e "application/x-moz-file")))
-             (dom/prevent-default e)
-             (reset! dragging? true))))
+           (when can-edit
+             (when (and (not (dnd/has-type? e "penpot/files"))
+                        (or (dnd/has-type? e "Files")
+                            (dnd/has-type? e "application/x-moz-file")))
+               (dom/prevent-default e)
+               (reset! dragging? true)))))
 
         on-drag-over
         (mf/use-fn
@@ -451,14 +463,17 @@
         on-drop
         (mf/use-fn
          (fn [e]
-           (when (and (not (dnd/has-type? e "penpot/files"))
-                      (or (dnd/has-type? e "Files")
-                          (dnd/has-type? e "application/x-moz-file")))
-             (dom/prevent-default e)
-             (reset! dragging? false)
-             (import-files (.-files (.-dataTransfer e))))))]
+           (if can-edit
+             (when (and (not (dnd/has-type? e "penpot/files"))
+                        (or (dnd/has-type? e "Files")
+                            (dnd/has-type? e "application/x-moz-file")))
+               (dom/prevent-default e)
+               (reset! dragging? false)
+               (import-files (.-files (.-dataTransfer e))))
+             (dom/prevent-default e))))]
 
     [:div {:class (stl/css :dashboard-grid)
+           :dragabble (dm/str can-edit)
            :on-drag-enter on-drag-enter
            :on-drag-over on-drag-over
            :on-drag-leave on-drag-leave
@@ -475,74 +490,74 @@
           (when @dragging?
             [:li {:class (stl/css :grid-item)}])
           (for [item slice]
-            [:& grid-item
+            [:> grid-item*
              {:file item
-              :key (:id item)
-              :navigate? true
+              :key (dm/str (:id item))
               :origin origin
-              :library-view? library-view?}])])
+              :selected-files selected-files
+              :can-edit can-edit}])])
 
        :else
        [:& empty-placeholder
         {:limit limit
+         :can-edit can-edit
          :create-fn create-fn
          :origin origin}])]))
 
 (mf/defc line-grid-row
-  [{:keys [files selected-files dragging? limit] :as props}]
+  [{:keys [files selected-files dragging? limit can-edit] :as props}]
   (let [elements limit
         limit (if dragging? (dec limit) limit)]
-    [:ul
-     {:class (stl/css :grid-row :no-wrap)
-      :style {:grid-template-columns (dm/str "repeat(" elements ", 1fr)")}}
+    [:ul {:class (stl/css :grid-row :no-wrap)
+          :style {:grid-template-columns (dm/str "repeat(" elements ", 1fr)")}}
 
      (when dragging?
        [:li {:class (stl/css :grid-item :dragged)}])
 
      (for [item (take limit files)]
-       [:& grid-item
+       [:> grid-item*
         {:id (:id item)
          :file item
          :selected-files selected-files
-         :key (:id item)
-         :navigate? false}])]))
+         :can-edit can-edit
+         :key (dm/str (:id item))}])]))
 
 (mf/defc line-grid
-  [{:keys [project team files limit create-fn] :as props}]
+  [{:keys [project team files limit create-fn can-edit] :as props}]
   (let [dragging?        (mf/use-state false)
         project-id       (:id project)
         team-id          (:id team)
 
-        selected-files   (mf/deref refs/dashboard-selected-files)
-        selected-project (mf/deref refs/dashboard-selected-project)
+        selected-files   (mf/deref refs/selected-files)
+        selected-project (mf/deref refs/selected-project)
 
         on-finish-import
         (mf/use-fn
-         (mf/deps team-id)
          (fn []
-           (st/emit! (dd/fetch-recent-files (:id team))
+           (st/emit! (dd/fetch-recent-files)
                      (dd/clear-selected-files))))
 
         import-files (use-import-file project-id on-finish-import)
 
         on-drag-enter
         (mf/use-fn
-         (mf/deps selected-project)
+         (mf/deps selected-project can-edit)
          (fn [e]
-           (cond
-             (dnd/has-type? e "penpot/files")
-             (do
-               (dom/prevent-default e)
-               (when-not (or (dnd/from-child? e)
-                             (dnd/broken-event? e))
-                 (when (not= selected-project project-id)
-                   (reset! dragging? true))))
+           (when can-edit
+             (cond
+               (dnd/has-type? e "penpot/files")
+               (do
+                 (dom/prevent-default e)
+                 (when-not (or (dnd/from-child? e)
+                               (dnd/broken-event? e))
+                   (when (not= selected-project project-id)
+                     (reset! dragging? true))))
 
-             (or (dnd/has-type? e "Files")
-                 (dnd/has-type? e "application/x-moz-file"))
-             (do
-               (dom/prevent-default e)
-               (reset! dragging? true)))))
+               (or (dnd/has-type? e "Files")
+                   (dnd/has-type? e "application/x-moz-file"))
+               (do
+                 (dom/prevent-default e)
+                 (reset! dragging? true))))))
 
         on-drag-over
         (mf/use-fn
@@ -559,33 +574,37 @@
              (reset! dragging? false))))
 
         on-drop-success
-        (fn []
-          (st/emit! (ntf/success (tr "dashboard.success-move-file"))
-                    (dd/fetch-recent-files (:id team))
-                    (dd/clear-selected-files)))
+        (mf/use-fn
+         (fn []
+           (st/emit! (ntf/success (tr "dashboard.success-move-file"))
+                     (dd/fetch-recent-files)
+                     (dd/clear-selected-files))))
 
         on-drop
         (mf/use-fn
-         (mf/deps files selected-files)
+         (mf/deps files selected-files can-edit)
          (fn [e]
-           (cond
-             (dnd/has-type? e "penpot/files")
-             (do
-               (reset! dragging? false)
-               (when (not= selected-project project-id)
-                 (let [data  {:ids (into #{} (keys selected-files))
-                              :project-id project-id}
-                       mdata {:on-success on-drop-success}]
-                   (st/emit! (dd/move-files (with-meta data mdata))))))
+           (if can-edit
+             (cond
+               (dnd/has-type? e "penpot/files")
+               (do
+                 (reset! dragging? false)
+                 (when (not= selected-project project-id)
+                   (let [data  {:ids (into #{} (keys selected-files))
+                                :project-id project-id}
+                         mdata {:on-success on-drop-success}]
+                     (st/emit! (dd/move-files (with-meta data mdata))))))
 
-             (or (dnd/has-type? e "Files")
-                 (dnd/has-type? e "application/x-moz-file"))
-             (do
-               (dom/prevent-default e)
-               (reset! dragging? false)
-               (import-files (.-files (.-dataTransfer e)))))))]
+               (or (dnd/has-type? e "Files")
+                   (dnd/has-type? e "application/x-moz-file"))
+               (do
+                 (dom/prevent-default e)
+                 (reset! dragging? false)
+                 (import-files (.-files (.-dataTransfer e)))))
+             (dom/prevent-default e))))]
 
     [:div {:class (stl/css :dashboard-grid)
+           :dragabble (dm/str can-edit)
            :on-drag-enter on-drag-enter
            :on-drag-over on-drag-over
            :on-drag-leave on-drag-leave
@@ -599,10 +618,12 @@
                           :team-id team-id
                           :selected-files selected-files
                           :dragging? @dragging?
+                          :can-edit can-edit
                           :limit limit}]
 
        :else
        [:& empty-placeholder
         {:dragging? @dragging?
          :limit limit
+         :can-edit can-edit
          :create-fn create-fn}])]))

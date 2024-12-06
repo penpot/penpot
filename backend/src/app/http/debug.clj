@@ -26,15 +26,14 @@
    [app.util.blob :as blob]
    [app.util.template :as tmpl]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.io :as io]
    [emoji.core :as emj]
    [integrant.core :as ig]
    [markdown.core :as md]
    [markdown.transformers :as mdt]
-   [ring.request :as rreq]
-   [ring.response :as rres]))
+   [yetti.request :as yreq]
+   [yetti.response :as yres]))
 
 ;; (selmer.parser/cache-off!)
 
@@ -44,10 +43,10 @@
 
 (defn index-handler
   [_cfg _request]
-  {::rres/status  200
-   ::rres/headers {"content-type" "text/html"}
-   ::rres/body    (-> (io/resource "app/templates/debug.tmpl")
-                      (tmpl/render {}))})
+  {::yres/status  200
+   ::yres/headers {"content-type" "text/html"}
+   ::yres/body    (-> (io/resource "app/templates/debug.tmpl")
+                      (tmpl/render {:version (:full cf/version)}))})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FILE CHANGES
@@ -56,17 +55,17 @@
 (defn prepare-response
   [body]
   (let [headers {"content-type" "application/transit+json"}]
-    {::rres/status 200
-     ::rres/body body
-     ::rres/headers headers}))
+    {::yres/status 200
+     ::yres/body body
+     ::yres/headers headers}))
 
 (defn prepare-download-response
   [body filename]
   (let [headers {"content-disposition" (str "attachment; filename=" filename)
                  "content-type" "application/octet-stream"}]
-    {::rres/status 200
-     ::rres/body body
-     ::rres/headers headers}))
+    {::yres/status 200
+     ::yres/body body
+     ::yres/headers headers}))
 
 (def sql:retrieve-range-of-changes
   "select revn, changes from file_change where file_id=? and revn >= ? and revn <= ? order by revn")
@@ -108,8 +107,8 @@
                           (db/update! conn :file
                                       {:data data}
                                       {:id file-id})
-                          {::rres/status 201
-                           ::rres/body "OK CREATED"})))
+                          {::yres/status 201
+                           ::yres/body "OK CREATED"})))
 
         :else
         (prepare-response (blob/decode data))))))
@@ -123,7 +122,7 @@
   [{:keys [::db/pool]} {:keys [::session/profile-id params] :as request}]
   (let [profile    (profile/get-profile pool profile-id)
         project-id (:default-project-id profile)
-        data       (some-> params :file :path io/read-as-bytes)]
+        data       (some-> params :file :path io/read*)]
 
     (if (and data project-id)
       (let [fname     (str "Imported file *: " (dt/now))
@@ -138,8 +137,8 @@
                         {:data data
                          :deleted-at nil}
                         {:id file-id})
-            {::rres/status 200
-             ::rres/body "OK UPDATED"})
+            {::yres/status 200
+             ::yres/body "OK UPDATED"})
 
           (db/run! pool (fn [{:keys [::db/conn] :as cfg}]
                           (create-file cfg {:id file-id
@@ -149,15 +148,15 @@
                           (db/update! conn :file
                                       {:data data}
                                       {:id file-id})
-                          {::rres/status 201
-                           ::rres/body "OK CREATED"}))))
+                          {::yres/status 201
+                           ::yres/body "OK CREATED"}))))
 
-      {::rres/status 500
-       ::rres/body "ERROR"})))
+      {::yres/status 500
+       ::yres/body "ERROR"})))
 
 (defn file-data-handler
   [cfg request]
-  (case (rreq/method request)
+  (case (yreq/method request)
     :get (retrieve-file-data cfg request)
     :post (upload-file-data cfg request)
     (ex/raise :type :http
@@ -238,12 +237,12 @@
                      1 (render-template-v1 report)
                      2 (render-template-v2 report)
                      3 (render-template-v3 report))]
-        {::rres/status 200
-         ::rres/body result
-         ::rres/headers {"content-type" "text/html; charset=utf-8"
+        {::yres/status 200
+         ::yres/body result
+         ::yres/headers {"content-type" "text/html; charset=utf-8"
                          "x-robots-tag" "noindex"}})
-      {::rres/status 404
-       ::rres/body "not found"})))
+      {::yres/status 404
+       ::yres/body "not found"})))
 
 (def sql:error-reports
   "SELECT id, created_at,
@@ -256,10 +255,10 @@
   [{:keys [::db/pool]} _request]
   (let [items (->> (db/exec! pool [sql:error-reports])
                    (map #(update % :created-at dt/format-instant :rfc1123)))]
-    {::rres/status 200
-     ::rres/body (-> (io/resource "app/templates/error-list.tmpl")
+    {::yres/status 200
+     ::yres/body (-> (io/resource "app/templates/error-list.tmpl")
                      (tmpl/render {:items items}))
-     ::rres/headers {"content-type" "text/html; charset=utf-8"
+     ::yres/headers {"content-type" "text/html; charset=utf-8"
                      "x-robots-tag" "noindex"}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -295,15 +294,16 @@
               cfg        (assoc cfg
                                 ::bf.v1/overwrite false
                                 ::bf.v1/profile-id profile-id
-                                ::bf.v1/project-id project-id)]
-          (bf.v1/import-files! cfg path)
-          {::rres/status  200
-           ::rres/headers {"content-type" "text/plain"}
-           ::rres/body    "OK CLONED"})
+                                ::bf.v1/project-id project-id
+                                ::bf.v1/input path)]
+          (bf.v1/import-files! cfg)
+          {::yres/status  200
+           ::yres/headers {"content-type" "text/plain"}
+           ::yres/body    "OK CLONED"})
 
-        {::rres/status  200
-         ::rres/body    (io/input-stream path)
-         ::rres/headers {"content-type" "application/octet-stream"
+        {::yres/status  200
+         ::yres/body    (io/input-stream path)
+         ::yres/headers {"content-type" "application/octet-stream"
                          "content-disposition" (str "attachmen; filename=" (first file-ids) ".penpot")}}))))
 
 
@@ -329,11 +329,12 @@
                       ::bf.v1/overwrite overwrite?
                       ::bf.v1/migrate migrate?
                       ::bf.v1/profile-id profile-id
-                      ::bf.v1/project-id project-id)]
-      (bf.v1/import-files! cfg path)
-      {::rres/status  200
-       ::rres/headers {"content-type" "text/plain"}
-       ::rres/body    "OK"})))
+                      ::bf.v1/project-id project-id
+                      ::bf.v1/input path)]
+      (bf.v1/import-files! cfg)
+      {::yres/status  200
+       ::yres/headers {"content-type" "text/plain"}
+       ::yres/body    "OK"})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ACTIONS
@@ -363,34 +364,34 @@
                           (db/update! conn :profile {:is-blocked true} {:id (:id profile)})
                           (db/delete! conn :http-session {:profile-id (:id profile)})
 
-                          {::rres/status  200
-                           ::rres/headers {"content-type" "text/plain"}
-                           ::rres/body    (str/ffmt "PROFILE '%' BLOCKED" (:email profile))})
+                          {::yres/status  200
+                           ::yres/headers {"content-type" "text/plain"}
+                           ::yres/body    (str/ffmt "PROFILE '%' BLOCKED" (:email profile))})
 
                         (contains? params :unblock)
                         (do
                           (db/update! conn :profile {:is-blocked false} {:id (:id profile)})
-                          {::rres/status  200
-                           ::rres/headers {"content-type" "text/plain"}
-                           ::rres/body    (str/ffmt "PROFILE '%' UNBLOCKED" (:email profile))})
+                          {::yres/status  200
+                           ::yres/headers {"content-type" "text/plain"}
+                           ::yres/body    (str/ffmt "PROFILE '%' UNBLOCKED" (:email profile))})
 
                         (contains? params :resend)
                         (if (:is-blocked profile)
-                          {::rres/status  200
-                           ::rres/headers {"content-type" "text/plain"}
-                           ::rres/body    "PROFILE ALREADY BLOCKED"}
+                          {::yres/status  200
+                           ::yres/headers {"content-type" "text/plain"}
+                           ::yres/body    "PROFILE ALREADY BLOCKED"}
                           (do
                             (#'auth/send-email-verification! cfg profile)
-                            {::rres/status  200
-                             ::rres/headers {"content-type" "text/plain"}
-                             ::rres/body    (str/ffmt "RESENDED FOR '%'" (:email profile))}))
+                            {::yres/status  200
+                             ::yres/headers {"content-type" "text/plain"}
+                             ::yres/body    (str/ffmt "RESENDED FOR '%'" (:email profile))}))
 
                         :else
                         (do
                           (db/update! conn :profile {:is-active true} {:id (:id profile)})
-                          {::rres/status  200
-                           ::rres/headers {"content-type" "text/plain"}
-                           ::rres/body    (str/ffmt "PROFILE '%' ACTIVATED" (:email profile))}))))))
+                          {::yres/status  200
+                           ::yres/headers {"content-type" "text/plain"}
+                           ::yres/body    (str/ffmt "PROFILE '%' ACTIVATED" (:email profile))}))))))
 
 
 (defn- reset-file-version
@@ -415,9 +416,9 @@
 
     (db/tx-run! cfg srepl/process-file! file-id #(assoc % :version version))
 
-    {::rres/status  200
-     ::rres/headers {"content-type" "text/plain"}
-     ::rres/body    "OK"}))
+    {::yres/status  200
+     ::yres/headers {"content-type" "text/plain"}
+     ::yres/body    "OK"}))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -429,13 +430,13 @@
   [{:keys [::db/pool]} _]
   (try
     (db/exec-one! pool ["select count(*) as count from server_prop;"])
-    {::rres/status 200
-     ::rres/body "OK"}
+    {::yres/status 200
+     ::yres/body "OK"}
     (catch Throwable cause
       (l/warn :hint "unable to execute query on health handler"
               :cause cause)
-      {::rres/status 503
-       ::rres/body "KO"})))
+      {::yres/status 503
+       ::yres/body "KO"})))
 
 (defn changelog-handler
   [_ _]
@@ -444,11 +445,11 @@
           (md->html [text]
             (md/md-to-html-string text :replacement-transformers (into [transform-emoji] mdt/transformer-vector)))]
     (if-let [clog (io/resource "changelog.md")]
-      {::rres/status 200
-       ::rres/headers {"content-type" "text/html; charset=utf-8"}
-       ::rres/body (-> clog slurp md->html)}
-      {::rres/status 404
-       ::rres/body "NOT FOUND"})))
+      {::yres/status 200
+       ::yres/headers {"content-type" "text/html; charset=utf-8"}
+       ::yres/body (-> clog slurp md->html)}
+      {::yres/status 404
+       ::yres/body "NOT FOUND"})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INIT
@@ -471,8 +472,10 @@
            (ex/raise :type :authentication
                      :code :only-admins-allowed)))))})
 
-(defmethod ig/pre-init-spec ::routes [_]
-  (s/keys :req [::db/pool ::session/manager]))
+(defmethod ig/assert-key ::routes
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expected a valid database pool")
+  (assert (session/manager? (::session/manager params)) "expected a valid session manager"))
 
 (defmethod ig/init-key ::routes
   [_ {:keys [::db/pool] :as cfg}]

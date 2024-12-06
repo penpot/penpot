@@ -27,21 +27,16 @@
 ;; This regex seems duplicated but probably in the future when we support diferent units
 ;; this will need to reflect changes for each property
 
-(def font-size-re #"^\d*\.?\d*$")
-(def line-height-re #"^\d*\.?\d*$")
-(def letter-spacing-re #"^\d*\.?\d*$")
-(def text-transform-re #"uppercase|capitalize|lowercase|none")
-(def text-decoration-re #"underline|line-through|none")
-(def text-direction-re #"ltr|rtl")
-(def text-align-re #"left|center|right|justify")
-(def vertical-align-re #"top|center|bottom")
+(def ^:private font-size-re #"^\d*\.?\d*$")
+(def ^:private line-height-re #"^\d*\.?\d*$")
+(def ^:private letter-spacing-re #"^\d*\.?\d*$")
+(def ^:private text-transform-re #"uppercase|capitalize|lowercase|none")
+(def ^:private text-decoration-re #"underline|line-through|none")
+(def ^:private text-direction-re #"ltr|rtl")
+(def ^:private text-align-re #"left|center|right|justify")
+(def ^:private vertical-align-re #"top|center|bottom")
 
-(defn mixed-value
-  [values]
-  (let [s (set values)]
-    (if (= (count s) 1) (first s) "mixed")))
-
-(defn font-data
+(defn- font-data
   [font variant]
   (d/without-nils
    {:font-id (:id font)
@@ -50,284 +45,326 @@
     :font-style (:style variant)
     :font-weight (:weight variant)}))
 
-(defn variant-data
+(defn- variant-data
   [variant]
   (d/without-nils
    {:font-variant-id (:id variant)
     :font-style (:style variant)
     :font-weight (:weight variant)}))
 
-(deftype TextRange [$plugin $file $page $id start end]
-  Object
-  (applyTypography [_ typography]
-    (let [typography (u/proxy->library-typography typography)
-          attrs (-> typography
-                    (assoc :typography-ref-file $file)
-                    (assoc :typography-ref-id (:id typography))
-                    (dissoc :id :name))]
-      (st/emit! (dwt/update-text-range $id start end attrs)))))
-
-(defn text-range?
-  [range]
-  (instance? TextRange range))
-
-(defn text-props
+(defn- text-props
   [shape]
   (d/merge
    (dwt/current-root-values {:shape shape :attrs txt/root-attrs})
    (dwt/current-paragraph-values {:shape shape :attrs txt/paragraph-attrs})
    (dwt/current-text-values {:shape shape :attrs txt/text-node-attrs})))
 
-(defn text-range
+(defn text-range-proxy?
+  [range]
+  (obj/type-of? range "TextRange"))
+
+(defn text-range-proxy
   [plugin-id file-id page-id id start end]
-  (-> (TextRange. plugin-id file-id page-id id start end)
-      (crc/add-properties!
-       {:name "$plugin" :enumerable false :get (constantly plugin-id)}
-       {:name "$id" :enumerable false :get (constantly id)}
-       {:name "$file" :enumerable false :get (constantly file-id)}
-       {:name "$page" :enumerable false :get (constantly page-id)}
+  (obj/reify {:name "TextRange"}
+    :$plugin {:enumerable false :get (constantly plugin-id)}
+    :$id {:enumerable false :get (constantly id)}
+    :$file {:enumerable false :get (constantly file-id)}
+    :$page {:enumerable false :get (constantly page-id)}
 
-       {:name "shape"
-        :get #(-> % u/proxy->shape)}
+    :shape
+    {:this true
+     :get #(-> % u/proxy->shape)}
 
-       {:name "characters"
-        :get #(let [range-data
-                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
-                (->> range-data (map :text) (str/join "")))}
+    :characters
+    {:this true
+     :get
+     (fn [self]
+       (let [range-data
+             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+         (->> range-data (map :text) (str/join ""))))}
 
-       {:name "fontId"
-        :get #(let [range-data
-                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
-                (->> range-data (map :font-id) mixed-value))
+    :fontId
+    {:this true
+     :get
+     (fn [self]
+       (let [range-data
+             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+         (->> range-data (map :font-id) u/mixed-value)))
 
-        :set
-        (fn [_ value]
-          (let [font (when (string? value) (fonts/get-font-data value))
-                variant (fonts/get-default-variant font)]
-            (cond
-              (not font)
-              (u/display-not-valid :fontId value)
+     :set
+     (fn [_ value]
+       (let [font (when (string? value) (fonts/get-font-data value))
+             variant (fonts/get-default-variant font)]
+         (cond
+           (not font)
+           (u/display-not-valid :fontId value)
 
-              (not (r/check-permission plugin-id "content:write"))
-              (u/display-not-valid :fontId "Plugin doesn't have 'content:write' permission")
+           (not (r/check-permission plugin-id "content:write"))
+           (u/display-not-valid :fontId "Plugin doesn't have 'content:write' permission")
 
-              :else
-              (st/emit! (dwt/update-text-range id start end (font-data font variant))))))}
+           :else
+           (st/emit! (dwt/update-text-range id start end (font-data font variant))))))}
 
-       {:name "fontFamily"
-        :get #(let [range-data
-                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
-                (->> range-data (map :font-family) mixed-value))
+    :fontFamily
+    {:this true
+     :get
+     (fn [self]
+       (let [range-data
+             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+         (->> range-data (map :font-family) u/mixed-value)))
 
-        :set
-        (fn [_ value]
-          (let [font (fonts/find-font-data {:family value})
-                variant (fonts/get-default-variant font)]
-            (cond
-              (not (string? value))
-              (u/display-not-valid :fontFamily value)
+     :set
+     (fn [_ value]
+       (let [font (fonts/find-font-data {:family value})
+             variant (fonts/get-default-variant font)]
+         (cond
+           (not (string? value))
+           (u/display-not-valid :fontFamily value)
 
-              (not (r/check-permission plugin-id "content:write"))
-              (u/display-not-valid :fontFamily "Plugin doesn't have 'content:write' permission")
+           (not (r/check-permission plugin-id "content:write"))
+           (u/display-not-valid :fontFamily "Plugin doesn't have 'content:write' permission")
 
-              :else
-              (st/emit! (dwt/update-text-range id start end (font-data font variant))))))}
+           :else
+           (st/emit! (dwt/update-text-range id start end (font-data font variant))))))}
 
-       {:name "fontVariantId"
-        :get #(let [range-data
-                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
-                (->> range-data (map :font-variant-id) mixed-value))
-        :set
-        (fn [self value]
-          (let [font    (fonts/get-font-data (obj/get self "fontId"))
-                variant (fonts/get-variant font value)]
-            (cond
-              (not (string? value))
-              (u/display-not-valid :fontVariantId value)
+    :fontVariantId
+    {:this true
+     :get
+     (fn [self]
+       (let [range-data
+             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+         (->> range-data (map :font-variant-id) u/mixed-value)))
+     :set
+     (fn [self value]
+       (let [font    (fonts/get-font-data (obj/get self "fontId"))
+             variant (fonts/get-variant font value)]
+         (cond
+           (not (string? value))
+           (u/display-not-valid :fontVariantId value)
 
-              (not (r/check-permission plugin-id "content:write"))
-              (u/display-not-valid :fontVariantId "Plugin doesn't have 'content:write' permission")
+           (not (r/check-permission plugin-id "content:write"))
+           (u/display-not-valid :fontVariantId "Plugin doesn't have 'content:write' permission")
 
-              :else
-              (st/emit! (dwt/update-text-range id start end (variant-data variant))))))}
+           :else
+           (st/emit! (dwt/update-text-range id start end (variant-data variant))))))}
 
-       {:name "fontSize"
-        :get #(let [range-data
-                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
-                (->> range-data (map :font-size) mixed-value))
-        :set
-        (fn [_ value]
-          (let [value (str/trim (dm/str value))]
-            (cond
-              (or (empty? value) (not (re-matches font-size-re value)))
-              (u/display-not-valid :fontSize value)
+    :fontSize
+    {:this true
+     :get
+     (fn [self]
+       (let [range-data
+             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+         (->> range-data (map :font-size) u/mixed-value)))
+     :set
+     (fn [_ value]
+       (let [value (str/trim (dm/str value))]
+         (cond
+           (or (empty? value) (not (re-matches font-size-re value)))
+           (u/display-not-valid :fontSize value)
 
-              (not (r/check-permission plugin-id "content:write"))
-              (u/display-not-valid :fontSize "Plugin doesn't have 'content:write' permission")
+           (not (r/check-permission plugin-id "content:write"))
+           (u/display-not-valid :fontSize "Plugin doesn't have 'content:write' permission")
 
-              :else
-              (st/emit! (dwt/update-text-range id start end {:font-size value})))))}
+           :else
+           (st/emit! (dwt/update-text-range id start end {:font-size value})))))}
 
-       {:name "fontWeight"
-        :get #(let [range-data
-                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
-                (->> range-data (map :font-weight) mixed-value))
-        :set
-        (fn [self value]
-          (let [font    (fonts/get-font-data (obj/get self "fontId"))
-                weight  (dm/str value)
-                style   (obj/get self "fontStyle")
-                variant
-                (or
-                 (fonts/find-variant font {:style style :weight weight})
-                 (fonts/find-variant font {:weight weight}))]
-            (cond
-              (nil? variant)
-              (u/display-not-valid :fontWeight (dm/str "Font weight '" value "' not supported for the current font"))
+    :fontWeight
+    {:this true
+     :get
+     (fn [self]
+       (let [range-data
+             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+         (->> range-data (map :font-weight) u/mixed-value)))
 
-              (not (r/check-permission plugin-id "content:write"))
-              (u/display-not-valid :fontWeight "Plugin doesn't have 'content:write' permission")
+     :set
+     (fn [self value]
+       (let [font    (fonts/get-font-data (obj/get self "fontId"))
+             weight  (dm/str value)
+             style   (obj/get self "fontStyle")
+             variant
+             (or
+              (fonts/find-variant font {:style style :weight weight})
+              (fonts/find-variant font {:weight weight}))]
+         (cond
+           (nil? variant)
+           (u/display-not-valid :fontWeight (dm/str "Font weight '" value "' not supported for the current font"))
 
-              :else
-              (st/emit! (dwt/update-text-range id start end (variant-data variant))))))}
+           (not (r/check-permission plugin-id "content:write"))
+           (u/display-not-valid :fontWeight "Plugin doesn't have 'content:write' permission")
 
-       {:name "fontStyle"
-        :get #(let [range-data
-                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
-                (->> range-data (map :font-style) mixed-value))
-        :set
-        (fn [self value]
-          (let [font    (fonts/get-font-data (obj/get self "fontId"))
-                style   (dm/str value)
-                weight  (obj/get self "fontWeight")
-                variant
-                (or
-                 (fonts/find-variant font {:weight weight :style style})
-                 (fonts/find-variant font {:style style}))]
-            (cond
-              (nil? variant)
-              (u/display-not-valid :fontStyle (dm/str "Font style '" value "' not supported for the current font"))
+           :else
+           (st/emit! (dwt/update-text-range id start end (variant-data variant))))))}
 
-              (not (r/check-permission plugin-id "content:write"))
-              (u/display-not-valid :fontStyle "Plugin doesn't have 'content:write' permission")
+    :fontStyle
+    {:this true
+     :get
+     (fn [self]
+       (let [range-data
+             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+         (->> range-data (map :font-style) u/mixed-value)))
+     :set
+     (fn [self value]
+       (let [font    (fonts/get-font-data (obj/get self "fontId"))
+             style   (dm/str value)
+             weight  (obj/get self "fontWeight")
+             variant
+             (or
+              (fonts/find-variant font {:weight weight :style style})
+              (fonts/find-variant font {:style style}))]
+         (cond
+           (nil? variant)
+           (u/display-not-valid :fontStyle (dm/str "Font style '" value "' not supported for the current font"))
 
-              :else
-              (st/emit! (dwt/update-text-range id start end (variant-data variant))))))}
+           (not (r/check-permission plugin-id "content:write"))
+           (u/display-not-valid :fontStyle "Plugin doesn't have 'content:write' permission")
 
-       {:name "lineHeight"
-        :get #(let [range-data
-                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
-                (->> range-data (map :line-height) mixed-value))
-        :set
-        (fn [_ value]
-          (let [value (str/trim (dm/str value))]
-            (cond
-              (or (empty? value) (not (re-matches line-height-re value)))
-              (u/display-not-valid :lineHeight value)
+           :else
+           (st/emit! (dwt/update-text-range id start end (variant-data variant))))))}
 
-              (not (r/check-permission plugin-id "content:write"))
-              (u/display-not-valid :lineHeight "Plugin doesn't have 'content:write' permission")
+    :lineHeight
+    {:this true
+     :get
+     (fn [self]
+       (let [range-data
+             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+         (->> range-data (map :line-height) u/mixed-value)))
+     :set
+     (fn [_ value]
+       (let [value (str/trim (dm/str value))]
+         (cond
+           (or (empty? value) (not (re-matches line-height-re value)))
+           (u/display-not-valid :lineHeight value)
 
-              :else
-              (st/emit! (dwt/update-text-range id start end {:line-height value})))))}
+           (not (r/check-permission plugin-id "content:write"))
+           (u/display-not-valid :lineHeight "Plugin doesn't have 'content:write' permission")
 
-       {:name "letterSpacing"
-        :get #(let [range-data
-                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
-                (->> range-data (map :letter-spacing) mixed-value))
-        :set
-        (fn [_ value]
-          (let [value (str/trim (dm/str value))]
-            (cond
-              (or (empty? value) (re-matches letter-spacing-re value))
-              (u/display-not-valid :letterSpacing value)
+           :else
+           (st/emit! (dwt/update-text-range id start end {:line-height value})))))}
 
-              (not (r/check-permission plugin-id "content:write"))
-              (u/display-not-valid :letterSpacing "Plugin doesn't have 'content:write' permission")
+    :letterSpacing
+    {:this true
+     :get
+     (fn [self]
+       (let [range-data
+             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+         (->> range-data (map :letter-spacing) u/mixed-value)))
+     :set
+     (fn [_ value]
+       (let [value (str/trim (dm/str value))]
+         (cond
+           (or (empty? value) (re-matches letter-spacing-re value))
+           (u/display-not-valid :letterSpacing value)
 
-              :else
-              (st/emit! (dwt/update-text-range id start end {:letter-spacing value})))))}
+           (not (r/check-permission plugin-id "content:write"))
+           (u/display-not-valid :letterSpacing "Plugin doesn't have 'content:write' permission")
 
-       {:name "textTransform"
-        :get #(let [range-data
-                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
-                (->> range-data (map :text-transform) mixed-value))
-        :set
-        (fn [_ value]
-          (cond
-            (and (string? value) (re-matches text-transform-re value))
-            (u/display-not-valid :textTransform value)
+           :else
+           (st/emit! (dwt/update-text-range id start end {:letter-spacing value})))))}
 
-            (not (r/check-permission plugin-id "content:write"))
-            (u/display-not-valid :textTransform "Plugin doesn't have 'content:write' permission")
+    :textTransform
+    {:this true
+     :get
+     (fn [self]
+       (let [range-data
+             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+         (->> range-data (map :text-transform) u/mixed-value)))
+     :set
+     (fn [_ value]
+       (cond
+         (and (string? value) (not (re-matches text-transform-re value)))
+         (u/display-not-valid :textTransform value)
 
-            :else
-            (st/emit! (dwt/update-text-range id start end {:text-transform value}))))}
+         (not (r/check-permission plugin-id "content:write"))
+         (u/display-not-valid :textTransform "Plugin doesn't have 'content:write' permission")
 
-       {:name "textDecoration"
-        :get #(let [range-data
-                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
-                (->> range-data (map :text-decoration) mixed-value))
-        :set
-        (fn [_ value]
-          (cond
-            (and (string? value) (re-matches text-decoration-re value))
-            (u/display-not-valid :textDecoration value)
+         :else
+         (st/emit! (dwt/update-text-range id start end {:text-transform value}))))}
 
-            (not (r/check-permission plugin-id "content:write"))
-            (u/display-not-valid :textDecoration "Plugin doesn't have 'content:write' permission")
+    :textDecoration
+    {:this true
+     :get
+     (fn [self]
+       (let [range-data
+             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+         (->> range-data (map :text-decoration) u/mixed-value)))
+     :set
+     (fn [_ value]
+       (cond
+         (and (string? value) (re-matches text-decoration-re value))
+         (u/display-not-valid :textDecoration value)
 
-            :else
-            (st/emit! (dwt/update-text-range id start end {:text-decoration value}))))}
+         (not (r/check-permission plugin-id "content:write"))
+         (u/display-not-valid :textDecoration "Plugin doesn't have 'content:write' permission")
 
-       {:name "direction"
-        :get #(let [range-data
-                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
-                (->> range-data (map :direction) mixed-value))
-        :set
-        (fn [_ value]
-          (cond
-            (and (string? value) (re-matches text-direction-re value))
-            (u/display-not-valid :direction value)
+         :else
+         (st/emit! (dwt/update-text-range id start end {:text-decoration value}))))}
 
-            (not (r/check-permission plugin-id "content:write"))
-            (u/display-not-valid :direction "Plugin doesn't have 'content:write' permission")
+    :direction
+    {:this true
+     :get
+     (fn [self]
+       (let [range-data
+             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+         (->> range-data (map :direction) u/mixed-value)))
+     :set
+     (fn [_ value]
+       (cond
+         (and (string? value) (re-matches text-direction-re value))
+         (u/display-not-valid :direction value)
 
-            :else
-            (st/emit! (dwt/update-text-range id start end {:direction value}))))}
+         (not (r/check-permission plugin-id "content:write"))
+         (u/display-not-valid :direction "Plugin doesn't have 'content:write' permission")
 
-       {:name "align"
-        :get #(let [range-data
-                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
-                (->> range-data (map :text-align) mixed-value))
-        :set
-        (fn [_ value]
-          (cond
-            (and (string? value) (re-matches text-align-re value))
-            (u/display-not-valid :align value)
+         :else
+         (st/emit! (dwt/update-text-range id start end {:direction value}))))}
 
-            (not (r/check-permission plugin-id "content:write"))
-            (u/display-not-valid :align "Plugin doesn't have 'content:write' permission")
+    :align
+    {:this true
+     :get
+     (fn [self]
+       (let [range-data
+             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+         (->> range-data (map :text-align) u/mixed-value)))
+     :set
+     (fn [_ value]
+       (cond
+         (and (string? value) (re-matches text-align-re value))
+         (u/display-not-valid :align value)
 
-            :else
-            (st/emit! (dwt/update-text-range id start end {:text-align value}))))}
+         (not (r/check-permission plugin-id "content:write"))
+         (u/display-not-valid :align "Plugin doesn't have 'content:write' permission")
 
-       {:name "fills"
-        :get #(let [range-data
-                    (-> % u/proxy->shape :content (txt/content-range->text+styles start end))]
-                (->> range-data (map :fills) mixed-value format/format-fills))
-        :set
-        (fn [_ value]
-          (let [value (parser/parse-fills value)]
-            (cond
-              (not (sm/validate [:vector ::cts/fill] value))
-              (u/display-not-valid :fills value)
+         :else
+         (st/emit! (dwt/update-text-range id start end {:text-align value}))))}
 
-              (not (r/check-permission plugin-id "content:write"))
-              (u/display-not-valid :fills "Plugin doesn't have 'content:write' permission")
+    :fills
+    {:this true
+     :get
+     (fn [self]
+       (let [range-data
+             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+         (->> range-data (map :fills) u/mixed-value format/format-fills)))
+     :set
+     (fn [_ value]
+       (let [value (parser/parse-fills value)]
+         (cond
+           (not (sm/validate [:vector ::cts/fill] value))
+           (u/display-not-valid :fills value)
 
-              :else
-              (st/emit! (dwt/update-text-range id start end {:fills value})))))})))
+           (not (r/check-permission plugin-id "content:write"))
+           (u/display-not-valid :fills "Plugin doesn't have 'content:write' permission")
+
+           :else
+           (st/emit! (dwt/update-text-range id start end {:fills value})))))}
+
+    :applyTypography
+    (fn [typography]
+      (let [typography (u/proxy->library-typography typography)
+            attrs (-> typography
+                      (assoc :typography-ref-file file-id)
+                      (assoc :typography-ref-id (:id typography))
+                      (dissoc :id :name))]
+        (st/emit! (dwt/update-text-range id start end attrs))))))
 
 (defn add-text-props
   [shape-proxy plugin-id]

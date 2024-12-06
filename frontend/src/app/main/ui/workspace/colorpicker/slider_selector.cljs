@@ -51,27 +51,27 @@
                   value (+ min-value (* unit-value (- max-value min-value)))]
               (on-change value))))]
 
-    [:div {:class (stl/css-case :opacity-wrapper (= type :opacity))}
-     [:div {:class (dm/str class (stl/css-case :vertical vertical?
-                                               :slider-selector true
-                                               :hue (= type :hue)
-                                               :opacity (= type :opacity)
-                                               :value (= type :value)))
-            :on-pointer-down handle-start-drag
-            :on-pointer-up handle-stop-drag
-            :on-lost-pointer-capture handle-stop-drag
-            :on-click calculate-pos
-            :on-pointer-move #(when @dragging? (calculate-pos %))}
-      (let [value-percent (* (/ (- value min-value)
-                                (- max-value min-value)) 100)
 
-            value-percent (if reverse?
-                            (mth/abs (- value-percent 100))
-                            value-percent)
-            value-percent-str (str value-percent "%")
+    [:div {:class (dm/str class (stl/css-case :vertical vertical?
+                                              :slider-selector true
+                                              :hue (= type :hue)
+                                              :opacity (= type :opacity)
+                                              :value (= type :value)))
+           :on-pointer-down handle-start-drag
+           :on-pointer-up handle-stop-drag
+           :on-lost-pointer-capture handle-stop-drag
+           :on-click calculate-pos
+           :on-pointer-move #(when @dragging? (calculate-pos %))}
+     (let [value-percent (* (/ (- value min-value)
+                               (- max-value min-value)) 100)
 
-            style-common #js {:pointerEvents "none"}
-            style-horizontal (obj/merge! #js {:left value-percent-str} style-common)
-            style-vertical   (obj/merge! #js {:bottom value-percent-str} style-common)]
-        [:div {:class (stl/css :handler)
-               :style (if vertical? style-vertical style-horizontal)}])]]))
+           value-percent (if reverse?
+                           (mth/abs (- value-percent 100))
+                           value-percent)
+           value-percent-str (str value-percent "%")
+
+           style-common #js {:pointerEvents "none"}
+           style-horizontal (obj/merge! #js {:left value-percent-str} style-common)
+           style-vertical   (obj/merge! #js {:bottom value-percent-str} style-common)]
+       [:div {:class (stl/css :handler)
+              :style (if vertical? style-vertical style-horizontal)}])]))

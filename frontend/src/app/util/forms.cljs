@@ -91,6 +91,8 @@
 
 (defn- create-form-mutator
   [internal-state rerender-fn wrap-update-fn initial opts]
+  (mf/set-ref-val! internal-state initial)
+
   (reify
     IDeref
     (-deref [_]
@@ -128,6 +130,12 @@
   [& {:keys [initial] :as opts}]
   (let [rerender-fn (use-rerender-fn)
 
+        initial
+        (mf/with-memo [initial]
+          {:data (if (fn? initial) (initial) initial)
+           :errors {}
+           :touched {}})
+
         internal-state
         (mf/use-ref nil)
 
@@ -136,16 +144,11 @@
           (create-form-mutator internal-state rerender-fn wrap-update-schema-fn initial opts))]
 
     ;; Initialize internal state once
-    (mf/with-effect []
-      (mf/set-ref-val! internal-state
-                       {:data {}
-                        :errors {}
-                        :touched {}}))
+    (mf/with-layout-effect []
+      (mf/set-ref-val! internal-state initial))
 
     (mf/with-effect [initial]
-      (if (fn? initial)
-        (swap! form-mutator update :data merge (initial))
-        (swap! form-mutator update :data merge initial)))
+      (swap! form-mutator d/deep-merge initial))
 
     form-mutator))
 

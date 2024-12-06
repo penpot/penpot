@@ -9,7 +9,6 @@
   (:require
    [app.common.schema :as sm]
    [app.main.data.modal :as modal]
-   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
@@ -25,8 +24,7 @@
    ::mf/register-as :leave-and-reassign}
   [{:keys [profile team accept]}]
   (let [form        (fm/use-form :schema schema:leave-modal-form :initial {})
-        members-map (mf/deref refs/dashboard-team-members)
-        members     (vals members-map)
+        members     (get team :members)
 
         options
         (into [{:value ""

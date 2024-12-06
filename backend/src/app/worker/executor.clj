@@ -9,72 +9,59 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.metrics :as mtx]
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.exec :as px])
   (:import
-   java.util.concurrent.Executor
    java.util.concurrent.ThreadPoolExecutor))
 
 (set! *warn-on-reflection* true)
 
-(s/def ::wrk/executor #(instance? Executor %))
+(sm/register!
+ {:type ::wrk/executor
+  :pred #(instance? ThreadPoolExecutor %)
+  :type-properties
+  {:title "executor"
+   :description "Instance of ThreadPoolExecutor"}})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; EXECUTOR
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defmethod ig/pre-init-spec ::wrk/executor [_]
-  (s/keys :req []))
 
 (defmethod ig/init-key ::wrk/executor
   [_ _]
   (let [factory  (px/thread-factory :prefix "penpot/default/")
         executor (px/cached-executor :factory factory :keepalive 60000)]
     (l/inf :hint "executor started")
-    (reify
-      java.lang.AutoCloseable
-      (close [_]
-        (l/inf :hint "stoping executor")
-        (px/shutdown! executor))
-
-      clojure.lang.IDeref
-      (deref [_]
-        {:active (.getPoolSize ^ThreadPoolExecutor executor)
-         :running (.getActiveCount ^ThreadPoolExecutor executor)
-         :completed (.getCompletedTaskCount ^ThreadPoolExecutor executor)})
-
-      Executor
-      (execute [_ runnable]
-        (.execute ^Executor executor ^Runnable runnable)))))
+    executor))
 
 (defmethod ig/halt-key! ::wrk/executor
   [_ instance]
-  (.close ^java.lang.AutoCloseable instance))
+  (px/shutdown! instance))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MONITOR
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::name ::us/keyword)
+(defn- get-stats
+  [^ThreadPoolExecutor executor]
+  {:active (.getPoolSize ^ThreadPoolExecutor executor)
+   :running (.getActiveCount ^ThreadPoolExecutor executor)
+   :completed (.getCompletedTaskCount ^ThreadPoolExecutor executor)})
 
-(defmethod ig/pre-init-spec ::wrk/monitor [_]
-  (s/keys :req [::wrk/name ::wrk/executor ::mtx/metrics]))
-
-(defmethod ig/prep-key ::wrk/monitor
-  [_ cfg]
-  (merge {::interval (dt/duration "2s")}
-         (d/without-nils cfg)))
+(defmethod ig/expand-key ::wrk/monitor
+  [k v]
+  {k (-> (d/without-nils v)
+         (assoc ::interval (dt/duration "2s")))})
 
 (defmethod ig/init-key ::wrk/monitor
   [_ {:keys [::wrk/executor ::mtx/metrics ::interval ::wrk/name]}]
   (letfn [(monitor! [executor prev-completed]
             (let [labels        (into-array String [(d/name name)])
-                  stats         (deref executor)
+                  stats         (get-stats executor)
 
                   completed     (:completed stats)
                   completed-inc (- completed prev-completed)

@@ -10,7 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as dc]
@@ -20,7 +20,7 @@
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.context :as ctx]
-   [app.main.ui.icons :as i]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
    [app.util.color :as uc]
@@ -70,7 +70,12 @@
          (fn [event]
            (st/emit!
             (dwl/add-recent-color color)
-            (dc/apply-color-from-palette color (kbd/alt? event)))))
+            (dc/apply-color-from-palette color (kbd/alt? event))
+            (ptk/event
+             ::ev/event
+             {::ev/name "use-library-color"
+              ::ev/origin "sidebar"
+              :external-library (not local?)}))))
 
         rename-color
         (mf/use-fn
@@ -184,8 +189,8 @@
 
         on-click
         (mf/use-fn
-         (mf/deps color-id apply-color on-asset-click)
-         (do
+         (mf/deps color-id apply-color on-asset-click read-only?)
+         (when-not read-only?
            (dwl/add-recent-color color)
            (partial on-asset-click color-id apply-color)))]
 
@@ -240,21 +245,21 @@
         {:on-close on-close-menu
          :state @menu-state
          :options [(when-not (or multi-colors? multi-assets?)
-                     {:option-name    (tr "workspace.assets.rename")
-                      :id             "assets-rename-color"
-                      :option-handler rename-color-clicked})
+                     {:name    (tr "workspace.assets.rename")
+                      :id      "assets-rename-color"
+                      :handler rename-color-clicked})
                    (when-not (or multi-colors? multi-assets?)
-                     {:option-name    (tr "workspace.assets.edit")
-                      :id             "assets-edit-color"
-                      :option-handler edit-color-clicked})
+                     {:name    (tr "workspace.assets.edit")
+                      :id      "assets-edit-color"
+                      :handler edit-color-clicked})
 
-                   {:option-name    (tr "workspace.assets.delete")
-                    :id             "assets-delete-color"
-                    :option-handler delete-color}
+                   {:name    (tr "workspace.assets.delete")
+                    :id      "assets-delete-color"
+                    :handler delete-color}
                    (when-not multi-assets?
-                     {:option-name   (tr "workspace.assets.group")
-                      :id             "assets-group-color"
-                      :option-handler (on-group (:id color))})]}])
+                     {:name   (tr "workspace.assets.group")
+                      :id     "assets-group-color"
+                      :handler (on-group (:id color))})]}])
 
      (when ^boolean dragging?
        [:div {:class (stl/css :dragging)}])]))
@@ -491,9 +496,10 @@
      (when local?
        [:& cmm/asset-section-block {:role :title-button}
         (when-not read-only?
-          [:button {:class (stl/css :assets-btn)
-                    :on-click add-color-clicked}
-           i/add])])
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "workspace.assets.colors.add-color")
+                            :on-click add-color-clicked
+                            :icon "add"}])])
 
 
      [:& cmm/asset-section-block {:role :content}

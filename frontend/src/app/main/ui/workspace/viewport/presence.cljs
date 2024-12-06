@@ -56,7 +56,7 @@
   {::mf/props :obj}
   [{:keys [page-id]}]
   (let [counter  (mf/use-state 0)
-        users    (mf/deref refs/users)
+        profiles (mf/deref refs/profiles)
         sessions (mf/deref refs/workspace-presence)
         zoom     (mf/deref refs/selected-zoom)
 
@@ -73,5 +73,5 @@
       [:& session-cursor
        {:session session
         :zoom zoom
-        :profile (get users (:profile-id session))
+        :profile (get profiles (:profile-id session))
         :key (dm/str (:id session))}])))

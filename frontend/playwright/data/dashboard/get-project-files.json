@@ -6,6 +6,7 @@
       "~:modified-at": "~m1714045654874",
       "~:name": "New File 2",
       "~:revn": 1,
+      "~:thumbnail-id": "~u95d6fdd8-48d8-8148-8004-38af910d2dbe",
       "~:is-shared": false
   },
   {
@@ -15,6 +16,7 @@
       "~:modified-at": "~m1713519762931",
       "~:name": "New File 1",
       "~:revn": 1,
+      "~:thumbnail-id": "~u95d6fdd8-48d8-8148-8004-38af910d2dbe",
       "~:is-shared": false
   }
 ]

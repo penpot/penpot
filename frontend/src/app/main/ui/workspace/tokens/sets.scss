@@ -1,0 +1,122 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.sets-list {
+  width: 100%;
+  margin-bottom: 0;
+  overflow-y: auto;
+}
+
+.set-item-container {
+  @include bodySmallTypography;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: $s-32;
+  cursor: pointer;
+  color: var(--layer-row-foreground-color);
+  padding-left: calc($s-32 * var(--tree-depth, 0));
+  border: $s-2 solid transparent;
+
+  &.dnd-over-bot {
+    border-bottom: $s-2 solid var(--layer-row-foreground-color-hover);
+  }
+  &.dnd-over-top {
+    border-top: $s-2 solid var(--layer-row-foreground-color-hover);
+  }
+  &.dnd-over {
+    border: $s-2 solid var(--layer-row-foreground-color-hover);
+  }
+}
+
+.set-name {
+  @include textEllipsis;
+  flex-grow: 1;
+  padding-left: $s-2;
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  width: $s-20;
+  height: $s-20;
+  padding-right: $s-4;
+}
+
+.root-icon {
+  margin-left: $s-8;
+}
+
+.checkbox-style {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: $s-16;
+  height: $s-16;
+  margin-inline: $s-6;
+  background-color: var(--input-checkbox-background-color-rest);
+  border: 1px solid var(--input-checkbox-border-color-rest);
+  border-radius: 0.25rem;
+  padding: 0;
+}
+
+.checkbox-checked-style {
+  background-color: var(--input-border-color-active);
+}
+
+.check-icon {
+  color: var(--color-background-secondary);
+}
+
+.set-item-container:hover {
+  background-color: var(--layer-row-background-color-hover);
+  color: var(--layer-row-foreground-color-hover);
+  box-shadow: -100px 0 0 0 var(--layer-row-background-color-hover);
+}
+
+.empty-state-message-sets {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: $s-12;
+  color: var(--color-foreground-secondary);
+}
+.selected-set {
+  background-color: var(--layer-row-background-color-selected);
+  color: var(--layer-row-foreground-color-selected);
+  box-shadow: -100px 0 0 0 var(--layer-row-background-color-selected);
+}
+
+.collapsabled-icon {
+  @include buttonStyle;
+  @include flexCenter;
+  height: $s-24;
+  border-radius: $br-8;
+  &:hover {
+    color: var(--title-foreground-color-hover);
+  }
+}
+
+.editing-node {
+  @include textEllipsis;
+  color: var(--layer-row-foreground-color-focus);
+}
+
+.editing-node {
+  @include textEllipsis;
+  @include bodySmallTypography;
+  @include removeInputStyle;
+  flex-grow: 1;
+  height: $s-28;
+  padding-left: $s-6;
+  margin: 0;
+  border-radius: $br-8;
+  border: $s-1 solid var(--input-border-color-focus);
+  color: var(--layer-row-foreground-color);
+}

@@ -20,7 +20,7 @@
    :current-page-id nil
    :workspace-data nil
    :workspace-libraries {}
-   :features/team #{"components/v2"}})
+   :features-team #{"components/v2"}})
 
 (defn- on-error
   [cause]
@@ -33,6 +33,7 @@
   (let [state (-> initial-state
                   (assoc :current-file-id (:id file)
                          :current-page-id (cthf/current-page-id file)
+                         :permissions {:can-edit true}
                          :workspace-file (dissoc file :data)
                          :workspace-data (:data file)))
         store (ptk/store {:state state :on-error on-error})]

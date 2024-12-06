@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.main.data.event :as ev]
    [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
@@ -16,18 +17,26 @@
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.util.color :as uc]
+   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc palette-item
   {::mf/wrap [mf/memo]}
-  [{:keys [color size]}]
+  [{:keys [color size selected]}]
   (letfn [(select-color [event]
             (st/emit!
              (dwl/add-recent-color color)
-             (mdc/apply-color-from-palette color (kbd/alt? event))))]
+             (mdc/apply-color-from-palette color (kbd/alt? event))
+             (when (not= selected :recent)
+               (ptk/event
+                ::ev/event
+                {::ev/name "use-library-color"
+                 ::ev/origin "color-palette"
+                 :external-library (not= selected :file)}))))]
     [:div {:class (stl/css-case  :color-cell true
                                  :is-not-library-color (nil? (:id color))
                                  :no-text (<= size 64))
@@ -38,7 +47,7 @@
 
 
 (mf/defc palette
-  [{:keys [current-colors size width]}]
+  [{:keys [current-colors size width selected]}]
   (let [;; We had to do this due to a bug that leave some bugged colors
         current-colors (h/use-equal-memo (filter #(or (:gradient %) (:color %) (:image %)) current-colors))
         state          (mf/use-state {:show-menu false})
@@ -92,7 +101,9 @@
         (mf/use-callback
          (mf/deps max-offset)
          (fn [event]
-           (let [delta (+ (.. event -nativeEvent -deltaY) (.. event -nativeEvent -deltaX))]
+           (let [event (dom/event->native-event event)
+                 delta (+ (.. ^js event -deltaY)
+                          (.. ^js event -deltaX))]
              (if (pos? delta)
                (on-right-arrow-click event)
                (on-left-arrow-click event)))))]
@@ -129,7 +140,7 @@
                        :max-width (str width "px")
                        :right (str (* offset-step offset) "px")}}
          (for [[idx item] (map-indexed vector current-colors)]
-           [:& palette-item {:color item :key idx :size size}])])]
+           [:& palette-item {:color item :key idx :size size :selected selected}])])]
      (when show-arrows?
        [:button {:class (stl/css :right-arrow)
                  :disabled (= offset max-offset)
@@ -167,4 +178,5 @@
 
     [:& palette {:current-colors @colors
                  :size size
-                 :width width}]))
+                 :width width
+                 :selected selected}]))

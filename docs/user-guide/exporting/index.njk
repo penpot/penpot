@@ -1,0 +1,73 @@
+---
+title: 07· Exporting objects
+---
+
+<h1 id="export">Exporting objects</h1>
+<p class="main-paragraph">In Penpot you can setup export presets for different file formats and scales.</p>
+
+<h2 id="export-howto">How to export</h2>
+<p>You can set up different export configurations to suit your needs. Each export configuration is called "export preset".</p>
+
+<h3>Create export preset</h3>
+<p>To export an object you need to select it and at the Design panel add an export preset pressing the “+” button of the Export section.</p>
+<p>Export presets can be also found at the <strong><a href="/user-guide/the-interface/#interface-viewmode" target="_blank">View mode</a></strong> with the code tab activated.</p>
+<figure>
+  <video title="Export presets" muted="" playsinline="" controls="" width="100%" poster="/img/export/export-presets.webp" height="auto">
+    <source src="/img/export/export-presets.mp4" type="video/mp4">
+  </video>
+</figure>
+<p>You can set as many export presets as you need for the same object. Set multiple exports to get the same object in different scales and/or formats with just one click.</p>
+
+
+<h3>Remove export preset</h3>
+<p>To <strong>remove an export preset</strong> you have to select the object and then press the “-” button at the export preset you want to remove.</p>
+
+<h2 id="export-options">Export options</h2>
+<p>The options of an export:</p>
+<ul>
+  <li><strong>Size</strong> - Options for the most common sizing scales.</li>
+  <li><strong>Suffix</strong> - Especially useful if you are exporting at different scales.</li>
+  <li><strong>File format</strong> - PNG, SVG, JPEG, PDF.</li>
+</ul>
+
+<h2 id="export-multiple-elements">Exporting multiple elements</h2>
+<h3>Make your export selection.</h3>
+<p>To export multiple elements you first have to select the elements you'd like to export. If the selected elements already have export settings those will be included in the export. You can also add new export settings for multiselections.</p>
+<figure>
+  <img src="/img/export/export-multiple.webp" alt="Export main menu">
+</figure>
+<p>You can also launch the export for a page from the main menu or using the shortcut <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>E</kbd>. This option will include in the export all the export pressets set among a selection or in the page if nothing is selected.</p>
+<figure>
+  <img src="/img/export/export-main-menu.webp" alt="Export main menu">
+</figure>
+
+<h3>Configure your export selection.</h3>
+<p>Before confirming your export for multiple elements you will have the option to check their names, sizes and formats and a last chance to deselect the export settings you don't want to go on this batch.</p>
+<figure>
+  <img src="/img/export/export-selection.webp" alt="Export selection">
+</figure>
+
+<h3>Check the export progress.</h3>
+<p>A popup will show the exporting progress and will show errors if any.</p>
+<figure>
+  <img src="/img/export/export-progress.webp" alt="Export progress">
+</figure>
+
+<h2 id="export-artboards-pdf">Export boards to PDF</h2>
+<p>If you have a presentation made at Penpot you might want to create a document that can be shared with anyone, regardless of having a Penpot account, or just to be able to use your presentation offline (essential for talks and classes). You can easily export all the artboards of a page to a single PDF file from the file menu.</p>
+
+<p><a href="#pdf-note">Technical note</a> about the PDF format.</p>
+
+<figure>
+  <img src="/img/export/export-pdf.webp" alt="Export PDF">
+</figure>
+
+<h2 id="export-technical">Technical notes about exports</h2>
+<p class="advice">
+  Exported PDF files try to leverage the capabilities of PDF vectorial format (unpixelated zoom, select & copy texts, etc.), but cannot guarantee that 100% of SVG features will be converted perfectly to PDF. You may see differences between an object displayed inside Penpot and in the exported file. If you need an exact match, a workaround is to export the object into PNG and convert it to PDF with some of the many tools that exist for it.<br /><br />
+</p>
+<p class="advice">
+  <a name="pdf-note"></a>
+  <strong>Currently known issue:</strong>
+  When exporting objects with masks, the mask does not work when opening the PDF file with some open source tools (e.g. evince or inkscape). This is not Penpot's fault, but <a href="https://gitlab.freedesktop.org/poppler/poppler/-/issues/1210" target="_blank">a bug in poppler</a>, a library used by many of the open source tools. If you open the file with an official Adobe viewer, or a tool like okular, or in a browser like Chrome or Firefox, you can see it properly.
+</p>

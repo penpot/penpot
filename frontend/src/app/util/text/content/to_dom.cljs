@@ -73,11 +73,14 @@
         ;; it affects to the height calculation the browser does
         font-size (if (some #(not= "" (:text %)) (:children paragraph))
                     "0"
-                    (:font-size styles (:font-size txt/default-text-attrs)))]
-    (cond-> styles
-      ;; Every paragraph must have line-height to be correctly rendered
-      (nil? (:line-height styles)) (assoc :line-height (:line-height txt/default-text-attrs))
-      true (assoc :font-size font-size))))
+                    (:font-size styles (:font-size txt/default-text-attrs)))
+
+        line-height (:line-height styles)
+        line-height (if (and (some? line-height) (not= "" line-height))
+                      line-height
+                      (:line-height txt/default-text-attrs))]
+    (-> styles
+        (assoc :font-size font-size :line-height line-height))))
 
 (defn get-root-styles
   [root]

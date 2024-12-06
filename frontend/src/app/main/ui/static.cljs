@@ -11,20 +11,22 @@
    [app.common.data :as d]
    [app.common.pprint :as pp]
    [app.common.uri :as u]
-   [app.main.data.common :as dc]
-   [app.main.data.events :as ev]
+   [app.main.data.common :as dcm]
+   [app.main.data.event :as ev]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.auth.login :refer [login-methods]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page recovery-sent-page]]
    [app.main.ui.auth.register :as register]
-   [app.main.ui.dashboard.sidebar :refer [sidebar]]
+   [app.main.ui.dashboard.sidebar :refer [sidebar*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
    [app.main.ui.icons :as i]
    [app.main.ui.viewer.header :as viewer.header]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
-   [app.util.router :as rt]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -42,11 +44,10 @@
     [:section {:class (stl/css :exception-layout)}
      [:button
       {:class (stl/css :exception-header)
-       :on-click rt/nav-root}
-      i/logo-icon
+       :on-click on-nav-root}
+      [:> raw-svg* {:id "penpot-logo-icon" :class (stl/css :penpot-logo)}]
       (when profile-id
-        (str "< "
-             (tr "not-found.no-permission.go-dashboard")))]
+        [:div {:class (stl/css :go-back-wrapper)} [:> icon* {:id "arrow" :class (stl/css :back-arrow)}] [:span (tr "not-found.no-permission.go-dashboard")]])]
      [:div {:class (stl/css :deco-before)} i/logo-error-screen]
      (when-not profile-id
        [:button {:class (stl/css :login-header)
@@ -212,7 +213,8 @@
         (mf/use-fn
          (mf/deps profile)
          (fn []
-           (st/emit! (rt/nav :dashboard-projects {:team-id (:default-team-id profile)}))))
+           (let [team-id (:default-team-id profile)]
+             (st/emit! (dcm/go-to-dashboard-recent :team-id team-id)))))
 
         on-success
         (mf/use-fn
@@ -232,7 +234,7 @@
                           {:team-id team-id})
                  mdata  {:on-success on-success
                          :on-error on-error}]
-             (st/emit! (dc/create-team-access-request
+             (st/emit! (dcm/create-team-access-request
                         (with-meta params mdata))))))]
 
     [:*
@@ -266,7 +268,7 @@
 
        [:div {:class (stl/css :dashboard)}
         [:div {:class (stl/css :dashboard-sidebar)}
-         [:& sidebar
+         [:> sidebar*
           {:team nil
            :projects []
            :project (:default-project-id profile)

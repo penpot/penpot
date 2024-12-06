@@ -9,21 +9,26 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.config :as cfg]
    [app.redis :as rds]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [promesa.core :as p]
    [promesa.exec :as px]
    [promesa.exec.csp :as sp]))
 
 (set! *warn-on-reflection* true)
-
 (def ^:private prefix (cfg/get :tenant))
+
+(defprotocol IMsgBus
+  (-sub [_ topics chan])
+  (-pub [_ topic message])
+  (-purge [_ chans]))
+
+
 
 (defn- prefix-topic
   [topic]
@@ -32,30 +37,33 @@
 (def ^:private xform-prefix-topic
   (map (fn [obj] (update obj :topic prefix-topic))))
 
-(declare ^:private redis-pub!)
-(declare ^:private redis-sub!)
-(declare ^:private redis-unsub!)
-(declare ^:private start-io-loop!)
+(declare ^:private redis-pub)
+(declare ^:private redis-sub)
+(declare ^:private redis-unsub)
+(declare ^:private start-io-loop)
 (declare ^:private subscribe-to-topics)
 (declare ^:private unsubscribe-channels)
 
-(s/def ::cmd-ch sp/chan?)
-(s/def ::rcv-ch sp/chan?)
-(s/def ::pub-ch sp/chan?)
-(s/def ::state ::us/agent)
-(s/def ::pconn ::rds/connection-holder)
-(s/def ::sconn ::rds/connection-holder)
-(s/def ::msgbus
-  (s/keys :req [::cmd-ch ::rcv-ch ::pub-ch ::state ::pconn ::sconn ::wrk/executor]))
+(defn msgbus?
+  [o]
+  (satisfies? IMsgBus o))
 
-(defmethod ig/pre-init-spec ::msgbus [_]
-  (s/keys :req [::rds/redis ::wrk/executor]))
+(sm/register!
+ {:type ::msgbus
+  :pred msgbus?})
 
-(defmethod ig/prep-key ::msgbus
-  [_ cfg]
-  (-> cfg
-      (assoc ::buffer-size 128)
-      (assoc ::timeout (dt/duration {:seconds 30}))))
+(defmethod ig/expand-key ::msgbus
+  [k v]
+  {k (-> (d/without-nils v)
+         (assoc ::buffer-size 128)
+         (assoc ::timeout (dt/duration {:seconds 30})))})
+
+(def ^:private schema:params
+  [:map ::rds/redis ::wrk/executor])
+
+(defmethod ig/assert-key ::msgbus
+  [_ params]
+  (assert (sm/check schema:params params)))
 
 (defmethod ig/init-key ::msgbus
   [_ {:keys [::buffer-size ::wrk/executor ::timeout ::rds/redis] :as cfg}]
@@ -66,46 +74,66 @@
                         :xf  xform-prefix-topic)
         state  (agent {})
 
-        pconn  (rds/connect redis :timeout timeout)
+        pconn  (rds/connect redis :type :default :timeout timeout)
         sconn  (rds/connect redis :type :pubsub :timeout timeout)
-        msgbus (-> cfg
+
+        _      (set-error-handler! state #(l/error :cause % :hint "unexpected error on agent" ::l/sync? true))
+        _      (set-error-mode! state :continue)
+
+        cfg    (-> cfg
                    (assoc ::pconn pconn)
                    (assoc ::sconn sconn)
                    (assoc ::cmd-ch cmd-ch)
                    (assoc ::rcv-ch rcv-ch)
                    (assoc ::pub-ch pub-ch)
-                   (assoc ::state state)
-                   (assoc ::wrk/executor executor))]
+                   (assoc ::state state))
 
-    (set-error-handler! state #(l/error :cause % :hint "unexpected error on agent" ::l/sync? true))
-    (set-error-mode! state :continue)
+        io-thr (start-io-loop cfg)]
 
-    (assoc msgbus ::io-thr (start-io-loop! msgbus))))
+    (reify
+      java.lang.AutoCloseable
+      (close [_]
+        (px/interrupt! io-thr)
+        (sp/close! cmd-ch)
+        (sp/close! rcv-ch)
+        (sp/close! pub-ch)
+        (d/close! pconn)
+        (d/close! sconn))
+
+      IMsgBus
+      (-sub [_ topics chan]
+        (l/debug :hint "subscribe" :topics topics :chan (hash chan))
+        (send-via executor state subscribe-to-topics cfg topics chan))
+
+      (-pub [_ topic message]
+        (let [message (assoc message :topic topic)]
+          (sp/put! pub-ch {:topic topic :message message})))
+
+      (-purge [_ chans]
+        (l/debug :hint "purge" :chans (count chans))
+        (send-via executor state unsubscribe-channels cfg chans)))))
 
 (defmethod ig/halt-key! ::msgbus
-  [_ msgbus]
-  (px/interrupt! (::io-thr msgbus))
-  (sp/close! (::cmd-ch msgbus))
-  (sp/close! (::rcv-ch msgbus))
-  (sp/close! (::pub-ch msgbus))
-  (d/close! (::pconn msgbus))
-  (d/close! (::sconn msgbus)))
+  [_ instance]
+  (d/close! instance))
 
 (defn sub!
-  [{:keys [::state ::wrk/executor] :as cfg} & {:keys [topic topics chan]}]
+  [instance & {:keys [topic topics chan]}]
+  (assert (satisfies? IMsgBus instance) "expected valid msgbus instance")
   (let [topics (into [] (map prefix-topic) (if topic [topic] topics))]
-    (l/debug :hint "subscribe" :topics topics :chan (hash chan))
-    (send-via executor state subscribe-to-topics cfg topics chan)
+    (-sub instance topics chan)
     nil))
 
 (defn pub!
-  [{::keys [pub-ch]} & {:as params}]
-  (sp/put! pub-ch params))
+  [instance & {:keys [topic message]}]
+  (assert (satisfies? IMsgBus instance) "expected valid msgbus instance")
+  (-pub instance topic message))
 
 (defn purge!
-  [{:keys [::state ::wrk/executor] :as msgbus} chans]
-  (l/debug :hint "purge" :chans (count chans))
-  (send-via executor state unsubscribe-channels msgbus chans)
+  [instance chans]
+  (assert (satisfies? IMsgBus instance) "expected valid msgbus instance")
+  (assert (every? sp/chan? chans) "expected a seq of chans")
+  (-purge instance chans)
   nil)
 
 ;; --- IMPL
@@ -118,7 +146,7 @@
   (let [nsubs (if (nil? nsubs) #{chan} (conj nsubs chan))]
     (when (= 1 (count nsubs))
       (l/trace :hint "open subscription" :topic topic ::l/sync? true)
-      (redis-sub! cfg topic))
+      (redis-sub cfg topic))
     nsubs))
 
 (defn- disj-subscription
@@ -129,7 +157,7 @@
   (let [nsubs (disj nsubs chan)]
     (when (empty? nsubs)
       (l/trace :hint "close subscription" :topic topic ::l/sync? true)
-      (redis-unsub! cfg topic))
+      (redis-unsub cfg topic))
     nsubs))
 
 (defn- subscribe-to-topics
@@ -170,7 +198,7 @@
                    (when-not (sp/offer! rcv-ch val)
                      (l/warn :msg "dropping message on subscription loop"))))))
 
-(defn- process-input!
+(defn- process-input
   [{:keys [::state ::wrk/executor] :as cfg} topic message]
   (let [chans (get-in @state [:topics topic])]
     (when-let [closed (loop [chans  (seq chans)
@@ -183,9 +211,9 @@
       (send-via executor state unsubscribe-channels cfg closed))))
 
 
-(defn start-io-loop!
+(defn start-io-loop
   [{:keys [::sconn ::rcv-ch ::pub-ch ::state ::wrk/executor] :as cfg}]
-  (rds/add-listener! sconn (create-listener rcv-ch))
+  (rds/add-listener sconn (create-listener rcv-ch))
 
   (px/thread
     {:name "penpot/msgbus/io-loop"
@@ -209,12 +237,12 @@
 
             (identical? port rcv-ch)
             (let [{:keys [topic message]} val]
-              (process-input! cfg topic message)
+              (process-input cfg topic message)
               (recur))
 
             (identical? port pub-ch)
             (do
-              (redis-pub! cfg val)
+              (redis-pub cfg val)
               (recur)))))
 
       (catch InterruptedException _
@@ -230,13 +258,12 @@
 
         (l/debug :hint "io-loop thread terminated")))))
 
-
-(defn- redis-pub!
+(defn- redis-pub
   "Publish a message to the redis server. Asynchronous operation,
   intended to be used in core.async go blocks."
   [{:keys [::pconn] :as cfg} {:keys [topic message]}]
   (try
-    (p/await! (rds/publish! pconn topic (t/encode message)))
+    (p/await! (rds/publish pconn topic (t/encode message)))
     (catch InterruptedException cause
       (throw cause))
     (catch Throwable cause
@@ -244,23 +271,23 @@
                :message message
                :cause cause))))
 
-(defn- redis-sub!
+(defn- redis-sub
   "Create redis subscription. Blocking operation, intended to be used
   inside an agent."
   [{:keys [::sconn] :as cfg} topic]
   (try
-    (rds/subscribe! sconn topic)
+    (rds/subscribe sconn [topic])
     (catch InterruptedException cause
       (throw cause))
     (catch Throwable cause
       (l/trace :hint "exception on subscribing" :topic topic :cause cause))))
 
-(defn- redis-unsub!
+(defn- redis-unsub
   "Removes redis subscription. Blocking operation, intended to be used
   inside an agent."
   [{:keys [::sconn] :as cfg} topic]
   (try
-    (rds/unsubscribe! sconn topic)
+    (rds/unsubscribe sconn [topic])
     (catch InterruptedException cause
       (throw cause))
     (catch Throwable cause

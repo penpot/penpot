@@ -12,7 +12,8 @@
    [app.rpc :as-alias rpc]
    [app.util.time :as dt]
    [backend-tests.helpers :as th]
-   [clojure.test :as t]))
+   [clojure.test :as t]
+   [yetti.request]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
@@ -25,7 +26,7 @@
 
 (def http-request
   (reify
-    ring.request/Request
+    yetti.request/IRequest
     (get-header [_ name]
       (case name
         "x-forwarded-for" "127.0.0.44"

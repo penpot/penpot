@@ -211,9 +211,12 @@
 
         handle-focus
         (mf/use-callback
+         (mf/deps on-focus select-on-focus?)
          (fn [event]
+           (reset! last-value* (parse-value))
            (let [target (dom/get-target event)]
              (when on-focus
+               (mf/set-ref-val! dirty-ref true)
                (on-focus event))
 
              (when select-on-focus?

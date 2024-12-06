@@ -15,14 +15,15 @@
     "generic-pool": "^3.9.0",
     "inflation": "^2.1.0",
     "ioredis": "^5.4.1",
-    "luxon": "^3.4.4",
-    "playwright": "^1.44.1",
-    "raw-body": "^2.5.2",
+    "luxon": "^3.5.0",
+    "playwright": "^1.48.1",
+    "raw-body": "^3.0.0",
+    "svgo": "penpot/svgo#v3",
     "xml-js": "^1.6.11",
     "xregexp": "^5.1.1"
   },
   "devDependencies": {
-    "shadow-cljs": "2.28.11",
+    "shadow-cljs": "2.28.18",
     "source-map-support": "^0.5.21"
   },
   "scripts": {

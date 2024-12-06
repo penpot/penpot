@@ -12,7 +12,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.media :as cm]
    [app.common.types.file :as ctf]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
@@ -24,6 +24,7 @@
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
@@ -56,20 +57,12 @@
                       component)]
       [root-shape container])))
 
-
-    ;; NOTE: We don't schedule the thumbnail generation on idle right now
-    ;; until we can queue and handle thumbnail batching properly.
-#_(mf/with-effect []
-    (when-not (some? thumbnail-uri)
-      (tm/schedule-on-idle
-       #(st/emit! (dwl/update-component-thumbnail (:id component) file-id)))))
-
-
 (mf/defc components-item
   {::mf/wrap-props false}
   [{:keys [component renaming listing-thumbs? selected
            file-id on-asset-click on-context-menu on-drag-start do-rename
            cancel-rename selected-full selected-paths local]}]
+
   (let [item-ref       (mf/use-ref)
 
         dragging*      (mf/use-state false)
@@ -105,8 +98,8 @@
          (fn [event]
            (dom/stop-propagation event)
            (if local
-             (st/emit! (dw/go-to-component component-id))
-             (st/emit! (dwl/nav-to-component-file file-id component)))))
+             (st/emit! (dwl/go-to-local-component component-id))
+             (st/emit! (dwl/go-to-component-file file-id component)))))
 
         on-drop
         (mf/use-fn
@@ -178,13 +171,13 @@
          (when ^boolean dragging?
            [:div {:class (stl/css :dragging)}])]
 
-        (when visible?
-          [:& cmm/component-item-thumbnail {:file-id file-id
-                                            :class (stl/css-case :thumbnail true
-                                                                 :asset-list-thumbnail (not listing-thumbs?))
-                                            :root-shape root-shape
-                                            :component component
-                                            :container container}])])]))
+        [:& cmm/component-item-thumbnail {:file-id file-id
+                                          :class (stl/css-case :thumbnail true
+                                                               :asset-list-thumbnail (not listing-thumbs?))
+                                          :root-shape root-shape
+                                          :component component
+                                          :container container
+                                          :is-hidden (not visible?)}]])]))
 
 (mf/defc components-group
   {::mf/wrap-props false}
@@ -498,9 +491,9 @@
          (fn [event]
            (dom/stop-propagation event)
            (if local?
-             (st/emit! (dw/go-to-component current-component-id))
+             (st/emit! (dwl/go-to-local-component :id current-component-id))
              (let [component (d/seek #(= (:id %) current-component-id) components)]
-               (st/emit! (dwl/nav-to-component-file file-id component))))))
+               (st/emit! (dwl/go-to-component-file file-id component))))))
 
         on-asset-click
         (mf/use-fn (mf/deps groups on-asset-click) (partial on-asset-click groups))]
@@ -526,9 +519,10 @@
                             :id "opt-grid"}]]])
 
       (when (and components-v2 (not read-only?) local?)
-        [:div {:on-click add-component
-               :class (stl/css :add-component)}
-         i/add
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.assets.components.add-component")
+                          :on-click add-component
+                          :icon "add"}
          [:& file-uploader {:accept cm/str-image-types
                             :multi true
                             :ref input-ref
@@ -559,26 +553,26 @@
        {:on-close on-close-menu
         :state @menu-state
         :options [(when (and local? (not (or multi-components? multi-assets? read-only?)))
-                    {:option-name    (tr "workspace.assets.rename")
-                     :id             "assets-rename-component"
-                     :option-handler on-rename})
+                    {:name    (tr "workspace.assets.rename")
+                     :id      "assets-rename-component"
+                     :handler on-rename})
                   (when (and local? (not (or multi-assets? read-only?)))
-                    {:option-name    (if components-v2
-                                       (tr "workspace.assets.duplicate-main")
-                                       (tr "workspace.assets.duplicate"))
-                     :id             "assets-duplicate-component"
-                     :option-handler on-duplicate})
+                    {:name    (if components-v2
+                                (tr "workspace.assets.duplicate-main")
+                                (tr "workspace.assets.duplicate"))
+                     :id     "assets-duplicate-component"
+                     :handler on-duplicate})
 
                   (when (and local? (not read-only?))
-                    {:option-name    (tr "workspace.assets.delete")
-                     :id             "assets-delete-component"
-                     :option-handler on-delete})
+                    {:name    (tr "workspace.assets.delete")
+                     :id      "assets-delete-component"
+                     :handler on-delete})
                   (when (and local? (not (or multi-assets? read-only?)))
-                    {:option-name   (tr "workspace.assets.group")
-                     :id             "assets-group-component"
-                     :option-handler on-group})
+                    {:name   (tr "workspace.assets.group")
+                     :id     "assets-group-component"
+                     :handler on-group})
 
                   (when (and components-v2 (not multi-assets?))
-                    {:option-name   (tr "workspace.shape.menu.show-main")
-                     :id             "assets-show-main-component"
-                     :option-handler on-show-main})]}]]]))
+                    {:name   (tr "workspace.shape.menu.show-main")
+                     :id     "assets-show-main-component"
+                     :handler on-show-main})]}]]]))

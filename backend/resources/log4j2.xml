@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="info" monitorInterval="60">
+<Configuration status="fatal" monitorInterval="60">
   <Appenders>
     <Console name="console" target="SYSTEM_OUT">
       <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] %level{length=1} %logger{36} - %msg%n"

@@ -218,7 +218,7 @@
                     (rx/filter some?))))))
 
         over-shapes-stream
-        (mf/with-memo [move-stream mod-str]
+        (mf/with-memo [query-point move-stream mod-str]
           (->> (rx/merge
                 ;; This stream works to "refresh" the outlines when the control is pressed
                 ;; but the mouse has not been moved from its position.

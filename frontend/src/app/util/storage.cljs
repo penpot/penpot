@@ -10,6 +10,7 @@
    [app.common.transit :as t]
    [app.util.functions :as fns]
    [app.util.globals :as g]
+   [app.util.time :as dt]
    [cuerdas.core :as str]
    [okulary.util :as ou]))
 
@@ -157,3 +158,11 @@
 (defonce user    (create-storage local-storage-backend "penpot-user"))
 (defonce storage (create-storage local-storage-backend "penpot"))
 (defonce session (create-storage session-storage-backend "penpot"))
+
+(defonce before-unload
+  (letfn [(on-before-unload [_]
+            (binding [*sync* true]
+              (swap! global assoc ::last-refresh (dt/now))
+              (swap! user assoc ::last-refresh (dt/now))))]
+    (.addEventListener g/window "beforeunload" on-before-unload)
+    on-before-unload))

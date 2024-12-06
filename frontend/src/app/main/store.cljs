@@ -60,7 +60,7 @@
                   :app.main.data.workspace.persistence/update-persistence-status
                   :app.main.data.websocket/send-message
                   :app.main.data.workspace.notifications/handle-pointer-send
-                  :app.util.router/assign-exception}]
+                  :app.main.router/assign-exception}]
     (->> (rx/merge
           (->> stream
                (rx/filter (ptk/type? :app.main.data.changes/commit))

@@ -17,6 +17,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -98,7 +99,7 @@
         content       (mf/use-state "")
 
         disabled? (or (str/blank? @content)
-                      (str/empty-or-nil? @content))
+                      (str/empty? @content))
 
         on-focus
         (mf/use-fn
@@ -158,7 +159,7 @@
         pos-y    (* (:y position) zoom)
 
         disabled? (or (str/blank? content)
-                      (str/empty-or-nil? content))
+                      (str/empty? content))
 
         on-esc
         (mf/use-fn
@@ -229,7 +230,7 @@
          (fn [] (on-submit @content)))
 
         disabled? (or (str/blank? @content)
-                      (str/empty-or-nil? @content))]
+                      (str/empty? @content))]
 
     [:div {:class (stl/css :edit-form)}
      [:& resizing-textarea {:value @content
@@ -252,8 +253,8 @@
                :disabled disabled?}]]]))
 
 (mf/defc comment-item
-  [{:keys [comment thread users origin] :as props}]
-  (let [owner    (get users (:owner-id comment))
+  [{:keys [comment thread profiles origin] :as props}]
+  (let [owner    (get profiles (:owner-id comment))
         profile  (mf/deref refs/profile)
         options  (mf/deref comments-local-options)
         edition? (mf/use-state false)
@@ -335,9 +336,10 @@
                                        :global/checked (:is-resolved thread))} i/tick]])
 
        (when (= (:id profile) (:id owner))
-         [:div {:class (stl/css :options)
-                :on-click on-toggle-options}
-          i/menu])]
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "labels.options")
+                           :on-click on-toggle-options
+                           :icon "menu"}])]
 
       [:div {:class (stl/css :content)}
        (if @edition?
@@ -382,7 +384,7 @@
 
 (mf/defc thread-comments
   {::mf/wrap [mf/memo]}
-  [{:keys [thread zoom users origin position-modifier viewport]}]
+  [{:keys [thread zoom profiles origin position-modifier viewport]}]
   (let [ref          (mf/use-ref)
         thread-id    (:id thread)
         thread-pos   (:position thread)
@@ -433,13 +435,13 @@
 
        [:div {:class (stl/css :comments)}
         [:& comment-item {:comment comment
-                          :users users
+                          :profiles profiles
                           :thread thread
                           :origin origin}]
         (for [item (rest comments)]
           [:* {:key (dm/str (:id item))}
            [:& comment-item {:comment item
-                             :users users
+                             :profiles profiles
                              :origin origin}]])]
        [:& reply-form {:thread thread}]
        [:div {:ref ref}]])))
@@ -571,8 +573,8 @@
      [:span (:seqn thread)]]))
 
 (mf/defc comment-thread
-  [{:keys [item users on-click]}]
-  (let [owner (get users (:owner-id item))
+  [{:keys [item profiles on-click]}]
+  (let [owner (get profiles (:owner-id item))
         on-click*
         (mf/use-fn
          (mf/deps item)
@@ -611,7 +613,7 @@
              [:span {:class (stl/css :new-replies)} (str unread " new replies")]))])]]))
 
 (mf/defc comment-thread-group
-  [{:keys [group users on-thread-click]}]
+  [{:keys [group profiles on-thread-click]}]
   [:div {:class (stl/css :thread-group)}
    (if (:file-name group)
      [:div {:class (stl/css :section-title)
@@ -629,5 +631,5 @@
       [:& comment-thread
        {:item item
         :on-click on-thread-click
-        :users users
+        :profiles profiles
         :key (:id item)}])]])

@@ -1,0 +1,29 @@
+{
+  "name": "@penpot/text-editor",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "src/editor/TextEditor.js",
+  "scripts": {
+    "dev": "vite",
+    "coverage": "vitest run --coverage",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "test:watch:ui": "vitest --ui",
+    "test:watch:e2e": "vitest --browser"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.1",
+    "@types/node": "^20.14.10",
+    "@vitest/browser": "^1.6.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "@vitest/ui": "^1.6.0",
+    "esbuild": "^0.24.0",
+    "jsdom": "^25.0.0",
+    "playwright": "^1.45.1",
+    "prettier": "^3.3.3",
+    "vite": "^5.3.1",
+    "vitest": "^1.6.0"
+  },
+  "packageManager": "yarn@4.3.1"
+}

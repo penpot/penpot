@@ -61,14 +61,16 @@
          (cancel-idle-callback sem))))))
 
 (def ^:private request-animation-frame
-  (or (and (exists? js/window) (.-requestAnimationFrame js/window))
-      #(js/setTimeout % 16)))
+  (if (and (exists? js/globalThis)
+           (exists? (.-requestAnimationFrame js/globalThis)))
+    #(.requestAnimationFrame js/globalThis %)
+    #(js/setTimeout % 16)))
 
 (defn raf
   [f]
-  (request-animation-frame f))
+  (^function request-animation-frame f))
 
 (defn idle-then-raf
   [f]
-  (schedule-on-idle #(raf f)))
+  (schedule-on-idle #(^function raf f)))
 

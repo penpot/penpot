@@ -9,11 +9,11 @@
   (:require
    [app.common.schema :as sm]
    [app.main.data.notifications :as ntf]
-   [app.main.data.users :as du]
+   [app.main.data.profile :as du]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.router :as rt]
    [rumext.v2 :as mf]))
 
 (def ^:private schema:recovery-form

@@ -37,6 +37,21 @@
 (def ^:dynamic *state* nil)
 (def ^:dynamic *options* nil)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; DEFAULTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Threshold in MiB when we pass from using
+;; in-memory byte-array's to use temporal files.
+(def temp-file-threshold
+  (* 1024 1024 2))
+
+;; A maximum (storage) object size allowed: 100MiB
+(def ^:const max-object-size
+  (* 1024 1024 100))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (def xf-map-id
   (map :id))
 
@@ -55,6 +70,13 @@
 
 (def conj-vec
   (fnil conj []))
+
+(defn initial-state
+  []
+  {:storage-objects #{}
+   :files #{}
+   :teams #{}
+   :projects #{}})
 
 (defn collect-storage-objects
   [state items]
@@ -87,6 +109,8 @@
           attrs))
 
 (defn update-index
+  ([coll]
+   (update-index {} coll identity))
   ([index coll]
    (update-index index coll identity))
   ([index coll attr]
@@ -110,9 +134,29 @@
                          (update :data feat.fdata/process-pointers deref)
                          (update :data feat.fdata/process-objects (partial into {}))))))))
 
+(defn clean-file-features
+  [file]
+  (update file :features (fn [features]
+                           (if (set? features)
+                             (-> features
+                                 (cfeat/migrate-legacy-features)
+                                 (set/difference cfeat/frontend-only-features)
+                                 (set/difference cfeat/backend-only-features))
+                             #{}))))
+
 (defn get-project
   [cfg project-id]
   (db/get cfg :project {:id project-id}))
+
+(def ^:private sql:get-teams
+  "SELECT t.* FROM team WHERE id = ANY(?)")
+
+(defn get-teams
+  [cfg ids]
+  (let [conn (db/get-connection cfg)
+        ids  (db/create-array conn "uuid" ids)]
+    (->> (db/exec! conn [sql:get-teams ids])
+         (map decode-row))))
 
 (defn get-team
   [cfg team-id]
@@ -167,9 +211,10 @@
 (defn get-file-object-thumbnails
   "Return all file object thumbnails for a given file."
   [cfg file-id]
-  (db/query cfg :file-tagged-object-thumbnail
-            {:file-id file-id
-             :deleted-at nil}))
+  (->> (db/query cfg :file-tagged-object-thumbnail
+                 {:file-id file-id
+                  :deleted-at nil})
+       (not-empty)))
 
 (defn get-file-thumbnail
   "Return the thumbnail for the specified file-id"
@@ -224,26 +269,26 @@
                    (->> (db/exec! conn [sql ids])
                         (mapv #(assoc % :file-id id)))))))
 
-(def ^:private sql:get-team-files
+(def ^:private sql:get-team-files-ids
   "SELECT f.id FROM file AS f
      JOIN project AS p ON (p.id = f.project_id)
     WHERE p.team_id = ?")
 
-(defn get-team-files
+(defn get-team-files-ids
   "Get a set of file ids for the specified team-id"
   [{:keys [::db/conn]} team-id]
-  (->> (db/exec! conn [sql:get-team-files team-id])
+  (->> (db/exec! conn [sql:get-team-files-ids team-id])
        (into #{} xf-map-id)))
 
 (def ^:private sql:get-team-projects
-  "SELECT p.id FROM project AS p
+  "SELECT p.* FROM project AS p
     WHERE p.team_id = ?
       AND p.deleted_at IS NULL")
 
 (defn get-team-projects
   "Get a set of project ids for the team"
-  [{:keys [::db/conn]} team-id]
-  (->> (db/exec! conn [sql:get-team-projects team-id])
+  [cfg team-id]
+  (->> (db/exec! cfg [sql:get-team-projects team-id])
        (into #{} xf-map-id)))
 
 (def ^:private sql:get-project-files
@@ -256,6 +301,10 @@
   [{:keys [::db/conn]} project-id]
   (->> (db/exec! conn [sql:get-project-files project-id])
        (into #{} xf-map-id)))
+
+(defn remap-thumbnail-object-id
+  [object-id file-id]
+  (str/replace-first object-id #"^(.*?)/" (str file-id "/")))
 
 (defn- relink-shapes
   "A function responsible to analyze all file data and
@@ -339,6 +388,12 @@
             data
             library-ids)))
 
+(defn disable-database-timeouts!
+  [cfg]
+  (let [conn (db/get-connection cfg)]
+    (db/exec-one! conn ["SET LOCAL idle_in_transaction_session_timeout = 0"])
+    (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])))
+
 (defn- fix-version
   [file]
   (let [file (fmg/fix-version file)]
@@ -400,8 +455,11 @@
                            (fn [features]
                              (let [features (cfeat/check-supported-features! features)]
                                (-> (::features cfg #{})
-                                   (set/difference cfeat/frontend-only-features)
-                                   (set/union features))))))
+                                   (set/union features)
+                                   ;; We never want to store
+                                   ;; frontend-only features on file
+                                   (set/difference cfeat/frontend-only-features))))))
+
 
         _      (when (contains? cf/flags :file-schema-validation)
                  (fval/validate-file-schema! file))
@@ -431,6 +489,20 @@
       (db/insert! conn :file params ::db/return-keys false))
 
     file))
+
+
+(defn register-pending-migrations
+  "All features that are enabled and requires explicit migration are
+  added to the state for a posterior migration step."
+  [cfg {:keys [id features] :as file}]
+  (doseq [feature (-> (::features cfg)
+                      (set/difference cfeat/no-migration-features)
+                      (set/difference cfeat/backend-only-features)
+                      (set/difference features))]
+    (vswap! *state* update :pending-to-migrate (fnil conj []) [feature id]))
+
+  file)
+
 
 (defn apply-pending-migrations!
   "Apply alredy registered pending migrations to files"

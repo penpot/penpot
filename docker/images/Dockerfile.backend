@@ -1,11 +1,12 @@
 FROM ubuntu:22.04
+LABEL maintainer="Penpot <docker@penpot.app>"
 
-LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 ENV LANG='en_US.UTF-8' \
     LC_ALL='en_US.UTF-8' \
     JAVA_HOME="/opt/jdk" \
-    PATH=/opt/jdk/bin:$PATH \
+    PATH=/opt/jdk/bin:/opt/node/bin:$PATH \
     DEBIAN_FRONTEND=noninteractive \
+    NODE_VERSION=v20.18.0 \
     TZ=Etc/UTC
 
 RUN set -ex; \
@@ -35,6 +36,27 @@ RUN set -ex; \
     chown -R penpot:penpot /opt/penpot; \
     chown -R penpot:penpot /opt/data; \
     rm -rf /var/lib/apt/lists/*;
+
+RUN set -eux; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.gz"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.gz"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    curl -LfsSo /tmp/nodejs.tar.gz ${BINARY_URL}; \
+    mkdir -p /opt/node; \
+    cd /opt/node; \
+    tar -xf /tmp/nodejs.tar.gz --strip-components=1; \
+    chown -R root /opt/node; \
+    rm -rf /tmp/nodejs.tar.gz;
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
