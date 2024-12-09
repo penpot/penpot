@@ -810,28 +810,6 @@
   }
 }
 
-.comment-bubbles {
-  @include bodySmallTypography;
-  @include flexCenter;
-  height: $s-32;
-  width: $s-32;
-  border-radius: $br-circle;
-  background-color: var(--comment-bullet-background-color-rest);
-  border: $s-1 solid var(--comment-bullet-border-color-rest);
-  color: var(--comment-bullet-foreground-color-rest);
-}
-
-.resolved-comment-bubble {
-  background-color: var(--comment-bullet-background-color-resolved);
-  border: $s-1 solid var(--comment-bullet-border-color-resolved);
-  color: var(--comment-bullet-foreground-color-resolved);
-}
-.unread-comment-bubble {
-  background-color: var(--comment-bullet-background-color-unread);
-  border: $s-1 solid var(--comment-bullet-border-color-unread);
-  color: var(--comment-bullet-foreground-color-unread);
-}
-
 // SELECTS AND DROPDOWNS
 .menu-dropdown {
   @include menuShadow;
