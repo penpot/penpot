@@ -6583,7 +6583,7 @@ msgstr "Name"
 
 #: src/app/main/ui/workspace/tokens/form.cljs
 msgid "workspace.token.enter-token-name"
-msgstr "Enter %s token name" 
+msgstr "Enter %s token name"
 
 #: src/app/main/ui/workspace/tokens/form.cljs
 msgid "workspace.token.token-value"
