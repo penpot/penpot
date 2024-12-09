@@ -5,13 +5,16 @@ use uuid::Uuid;
 mod blend;
 mod fills;
 mod images;
+mod paths;
 pub use blend::*;
 pub use fills::*;
 pub use images::*;
+pub use paths::*;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Kind {
-    Rect,
+    Rect(math::Rect),
+    Path(Path),
 }
 
 pub type Color = skia::Color;
@@ -59,7 +62,7 @@ impl Shape {
         Self {
             id,
             children: Vec::<Uuid>::new(),
-            kind: Kind::Rect,
+            kind: Kind::Rect(math::Rect::new_empty()),
             selrect: math::Rect::new_empty(),
             transform: Matrix::identity(),
             rotation: 0.,
@@ -67,6 +70,13 @@ impl Shape {
             blend_mode: BlendMode::default(),
             opacity: 1.,
             hidden: false,
+        }
+    }
+
+    pub fn set_selrect(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
+        self.selrect.set_ltrb(left, top, right, bottom);
+        if let Kind::Rect(_) = self.kind {
+            self.kind = Kind::Rect(self.selrect.to_owned());
         }
     }
 
@@ -105,6 +115,12 @@ impl Shape {
             gradient.add_stop(stop.color(), stop.offset());
         }
 
+        Ok(())
+    }
+
+    pub fn set_path_segments(&mut self, buffer: Vec<RawPathData>) -> Result<(), String> {
+        let p = Path::try_from(buffer)?;
+        self.kind = Kind::Path(p);
         Ok(())
     }
 

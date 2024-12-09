@@ -3,16 +3,23 @@ use skia_safe as skia;
 
 pub type Image = skia::Image;
 
+use crate::shapes::Kind;
+
 pub fn draw_image_in_container(
     canvas: &skia::Canvas,
     image: &Image,
     size: (i32, i32),
-    container: skia::Rect,
+    kind: &Kind,
     paint: &skia::Paint,
 ) {
     let width = size.0 as f32;
     let height = size.1 as f32;
     let image_aspect_ratio = width / height;
+
+    let container = match kind {
+        Kind::Rect(r) => r.to_owned(),
+        Kind::Path(p) => p.to_skia_path().bounds().to_owned(),
+    };
 
     // Container size
     let container_width = container.width();
@@ -42,7 +49,14 @@ pub fn draw_image_in_container(
     canvas.save();
 
     // Set the clipping rectangle to the container bounds
-    canvas.clip_rect(container, skia::ClipOp::Intersect, true);
+    match kind {
+        Kind::Rect(_) => {
+            canvas.clip_rect(container, skia::ClipOp::Intersect, true);
+        }
+        Kind::Path(p) => {
+            canvas.clip_path(&p.to_skia_path(), skia::ClipOp::Intersect, true);
+        }
+    }
 
     // Draw the image with the calculated destination rectangle
     canvas.draw_image_rect(image, None, dest_rect, &paint);

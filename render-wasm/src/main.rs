@@ -103,16 +103,15 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_shape_selrect(left: f32, top: f32, right: f32, bottom: f32) {
+pub extern "C" fn set_shape_selrect(left: f32, top: f32, right: f32, bottom: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-
     if let Some(shape) = state.current_shape() {
-        shape.selrect.set_ltrb(left, top, right, bottom);
+        shape.set_selrect(left, top, right, bottom);
     }
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_shape_rotation(rotation: f32) {
+pub extern "C" fn set_shape_rotation(rotation: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.rotation = rotation;
@@ -120,7 +119,7 @@ pub unsafe extern "C" fn set_shape_rotation(rotation: f32) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_shape_transform(a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
+pub extern "C" fn set_shape_transform(a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.transform.a = a;
@@ -268,6 +267,22 @@ pub extern "C" fn set_shape_hidden(hidden: bool) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.hidden = hidden;
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn set_shape_path_content() {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+
+    if let Some(shape) = state.current_shape() {
+        let bytes = mem::bytes();
+        let raw_segments = bytes
+            .chunks(size_of::<shapes::RawPathData>())
+            .map(|data| shapes::RawPathData {
+                data: data.try_into().unwrap(),
+            })
+            .collect();
+        shape.set_path_segments(raw_segments).unwrap();
     }
 }
 

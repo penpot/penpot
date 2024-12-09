@@ -9,9 +9,11 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
+   [app.common.svg.path :as path]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.render-wasm.helpers :as h]
+   [app.util.debug :as dbg]
    [app.util.functions :as fns]
    [app.util.http :as http]
    [app.util.webapi :as wapi]
@@ -185,6 +187,16 @@
                   (store-image id))))))
         fills))
 
+(defn set-shape-path-content
+  [content]
+  (let [buffer (path/content->buffer content)
+        size (.-byteLength buffer)
+        ptr (h/call internal-module "_alloc_bytes" size)
+        heap      (gobj/get ^js internal-module "HEAPU8")
+        mem       (js/Uint8Array. (.-buffer heap) ptr size)]
+    (.set mem (js/Uint8Array. buffer))
+    (h/call internal-module "_set_shape_path_content")))
+
 (defn- translate-blend-mode
   [blend-mode]
   (case blend-mode
@@ -236,15 +248,18 @@
         (loop [index 0 pending []]
           (if (< index total-shapes)
             (let [shape      (nth shapes index)
+                  type       (dm/get-prop shape :type)
                   id         (dm/get-prop shape :id)
                   selrect    (dm/get-prop shape :selrect)
                   rotation   (dm/get-prop shape :rotation)
                   transform  (dm/get-prop shape :transform)
-                  fills      (dm/get-prop shape :fills)
+                  fills      (if (= type :group)
+                               [] (dm/get-prop shape :fills))
                   children   (dm/get-prop shape :shapes)
                   blend-mode (dm/get-prop shape :blend-mode)
                   opacity    (dm/get-prop shape :opacity)
-                  hidden     (dm/get-prop shape :hidden)]
+                  hidden     (dm/get-prop shape :hidden)
+                  content    (dm/get-prop shape :content)]
 
               (use-shape id)
               (set-shape-selrect selrect)
@@ -254,6 +269,7 @@
               (set-shape-children children)
               (set-shape-opacity opacity)
               (set-shape-hidden hidden)
+              (when (and (some? content) (= type :path)) (set-shape-path-content content))
               (let [pending-fills (doall (set-shape-fills fills))]
                 (recur (inc index) (into pending pending-fills))))
             pending))]
@@ -279,9 +295,16 @@
   [width height]
   (h/call internal-module "_resize_viewbox" width height))
 
+(defn- debug-flags
+  []
+  (cond-> 0
+    (dbg/enabled? :wasm-viewbox)
+    (bit-or 2r00000000000000000000000000000001)))
+
 (defn assign-canvas
   [canvas]
   (let [gl      (unchecked-get internal-module "GL")
+        flags   (debug-flags)
         context (.getContext ^js canvas "webgl2" canvas-options)
 
         ;; Register the context with emscripten
@@ -290,7 +313,7 @@
 
     ;; Initialize Wasm Render Engine
     (h/call internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
-    (h/call internal-module "_set_render_options" 0x01 dpr))
+    (h/call internal-module "_set_render_options" flags dpr))
 
   (set! (.-width canvas) (* dpr (.-clientWidth ^js canvas)))
   (set! (.-height canvas) (* dpr (.-clientHeight ^js canvas))))

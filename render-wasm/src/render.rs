@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use crate::debug;
 use crate::math::Rect;
-use crate::shapes::{draw_image_in_container, Fill, Image, Shape};
+use crate::shapes::{draw_image_in_container, Fill, Image, Kind, Shape};
 use crate::view::Viewbox;
 
 struct GpuState {
@@ -224,7 +224,7 @@ impl RenderState {
         self.drawing_surface.canvas().concat(&matrix);
 
         for fill in shape.fills().rev() {
-            self.render_fill(fill, shape.selrect);
+            self.render_fill(fill, shape.selrect, &shape.kind);
         }
 
         let mut paint = skia::Paint::default();
@@ -281,22 +281,30 @@ impl RenderState {
         self.flush();
     }
 
-    fn render_fill(&mut self, fill: &Fill, selrect: Rect) {
-        if let Fill::Image(image_fill) = fill {
-            let image = self.images.get(&image_fill.id());
-            if let Some(image) = image {
-                draw_image_in_container(
-                    &self.drawing_surface.canvas(),
-                    &image,
-                    image_fill.size(),
-                    selrect,
-                    &fill.to_paint(&selrect),
-                );
+    fn render_fill(&mut self, fill: &Fill, selrect: Rect, kind: &Kind) {
+        match (fill, kind) {
+            (Fill::Image(image_fill), kind) => {
+                let image = self.images.get(&image_fill.id());
+                if let Some(image) = image {
+                    draw_image_in_container(
+                        &self.drawing_surface.canvas(),
+                        &image,
+                        image_fill.size(),
+                        kind,
+                        &fill.to_paint(&selrect),
+                    );
+                }
             }
-        } else {
-            self.drawing_surface
-                .canvas()
-                .draw_rect(selrect, &fill.to_paint(&selrect));
+            (_, Kind::Rect(rect)) => {
+                self.drawing_surface
+                    .canvas()
+                    .draw_rect(rect, &fill.to_paint(&selrect));
+            }
+            (_, Kind::Path(path)) => {
+                self.drawing_surface
+                    .canvas()
+                    .draw_path(&path.to_skia_path(), &fill.to_paint(&selrect));
+            }
         }
     }
 
