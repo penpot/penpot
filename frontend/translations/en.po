@@ -751,6 +751,14 @@ msgstr "No matches found for “%s“"
 msgid "dashboard.no-projects-placeholder"
 msgstr "Pinned projects will appear here"
 
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications"
+msgstr "Notifications"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications.view"
+msgstr "View notifications"
+
 #: src/app/main/ui/auth/verify_token.cljs:32
 msgid "dashboard.notifications.email-changed-successfully"
 msgstr "Your email address has been updated successfully"
@@ -1616,6 +1624,13 @@ msgstr "Close"
 msgid "labels.collapse"
 msgstr "Collapse"
 
+msgid "labels.comment"
+msgstr "Comment"
+
+#: src/app/main/ui/comments.cljs:446
+msgid "labels.comment.mark-as-solved"
+msgstr "Mark as solved"
+
 #: src/app/main/ui/dashboard/comments.cljs:104, src/app/main/ui/viewer/comments.cljs:70, src/app/main/ui/workspace/comments.cljs:127
 msgid "labels.comments"
 msgstr "Comments"
@@ -1938,6 +1953,10 @@ msgstr "Password"
 #: src/app/main/ui/dashboard/team.cljs:699
 msgid "labels.pending-invitation"
 msgstr "Pending"
+
+#: src/app/main/ui/comments.cljs:147
+msgid "labels.post"
+msgstr "Post"
 
 #: src/app/main/ui/onboarding/questions.cljs:51
 msgid "labels.previous"

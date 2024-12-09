@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.config :as cfg]
    [app.main.data.comments :as dcm]
@@ -17,7 +18,9 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -93,8 +96,10 @@
                 :on-change on-change*
                 :max-length max-length}]))
 
-(mf/defc reply-form
-  [{:keys [thread] :as props}]
+(mf/defc comment-reply-form*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [thread]}]
   (let [show-buttons? (mf/use-state false)
         content       (mf/use-state "")
 
@@ -124,9 +129,10 @@
          (fn []
            (st/emit! (dcm/add-comment thread @content))
            (on-cancel)))]
-    [:div {:class (stl/css :reply-form)}
+    [:div {:class (stl/css :comment-reply-form)}
      [:& resizing-textarea {:value @content
                             :placeholder "Reply"
+                            :autofocus true
                             :on-blur on-blur
                             :on-focus on-focus
                             :select-on-focus? false
@@ -135,28 +141,47 @@
                             :max-length 750}]
      (when (or @show-buttons? (seq @content))
        [:div {:class (stl/css :buttons-wrapper)}
-        [:input.btn-secondary
-         {:type "button"
-          :class (stl/css :cancel-btn)
-          :value "Cancel"
-          :on-click on-cancel}]
-        [:input
-         {:type "button"
-          :class (stl/css-case :post-btn true
-                               :global/disabled disabled?)
-          :value "Post"
-          :on-click on-submit
-          :disabled disabled?}]])]))
+        [:> button* {:variant "ghost"
+                     :on-click on-cancel}
+         (tr "ds.confirm-cancel")]
+        [:> button* {:variant "primary"
+                     :on-click on-submit
+                     :disabled disabled?}
+         (tr "labels.post")]])]))
+
+(def ^:private schema:comment-avatar
+  [:map
+   [:class {:optional true} :string]
+   [:image :string]
+   [:variant {:optional true}
+    [:maybe [:enum "read" "unread" "solved"]]]])
+
+(mf/defc comment-avatar*
+  {::mf/props :obj
+   ::mf/schema schema:comment-avatar}
+  [{:keys [image variant class] :rest props}]
+  (let [variant (or variant "read")
+        class (dm/str class " " (stl/css-case :avatar true
+                                              :avatar-read (= variant "read")
+                                              :avatar-unread (= variant "unread")
+                                              :avatar-solved (= variant "solved")))
+        props (mf/spread-props props {:class class})]
+    [:> :div props
+     [:img {:src image
+            :class (stl/css :avatar-image)}]
+     [:div {:class (stl/css :avatar-mask)}]]))
 
 (mf/defc draft-thread
   [{:keys [draft zoom on-cancel on-submit position-modifier]}]
-  (let [position (cond-> (:position draft)
-                   (some? position-modifier)
-                   (gpt/transform position-modifier))
-        content  (:content draft)
+  (let [profile   (mf/deref refs/profile)
 
-        pos-x    (* (:x position) zoom)
-        pos-y    (* (:y position) zoom)
+        position  (cond-> (:position draft)
+                    (some? position-modifier)
+                    (gpt/transform position-modifier))
+        content   (:content draft)
+
+        pos-x     (* (:x position) zoom)
+        pos-y     (* (:y position) zoom)
 
         disabled? (or (str/blank? content)
                       (str/empty? content))
@@ -183,17 +208,18 @@
 
     [:*
      [:div
-      {:class (stl/css :floating-thread-bubble)
+      {:class (stl/css :comment-floating-bubble)
        :data-testid "floating-thread-bubble"
        :style {:top (str pos-y "px")
                :left (str pos-x "px")}
        :on-click dom/stop-propagation}
-      "?"]
-     [:div {:class (stl/css :thread-content)
+      [:> comment-avatar* {:class (stl/css :avatar-lg)
+                           :image (cfg/resolve-profile-photo-url profile)}]]
+     [:div {:class (stl/css :comment-floating-thread)
             :style {:top (str (- pos-y 24) "px")
                     :left (str (+ pos-x 28) "px")}
             :on-click dom/stop-propagation}
-      [:div {:class (stl/css :reply-form)}
+      [:div {:class (stl/css :comment-reply-form)}
        [:& resizing-textarea {:placeholder (tr "labels.write-new-comment")
                               :value (or content "")
                               :autofocus true
@@ -203,21 +229,18 @@
                               :on-ctrl-enter on-submit
                               :max-length 750}]
        [:div {:class (stl/css :buttons-wrapper)}
+        [:> button* {:variant "ghost"
+                     :on-click on-esc}
+         (tr "ds.confirm-cancel")]
+        [:> button* {:variant "primary"
+                     :on-click on-submit
+                     :disabled disabled?}
+         (tr "labels.post")]]]]]))
 
-        [:input {:on-click on-esc
-                 :class (stl/css :cancel-btn)
-                 :type "button"
-                 :value "Cancel"}]
-
-        [:input {:on-click on-submit
-                 :type "button"
-                 :value "Post"
-                 :class (stl/css-case :post-btn true
-                                      :global/disabled disabled?)
-                 :disabled disabled?}]]]]]))
-
-(mf/defc edit-form
-  [{:keys [content on-submit on-cancel] :as props}]
+(mf/defc comment-edit-form*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [content on-submit on-cancel]}]
   (let [content (mf/use-state content)
 
         on-change
@@ -232,7 +255,7 @@
         disabled? (or (str/blank? @content)
                       (str/empty? @content))]
 
-    [:div {:class (stl/css :edit-form)}
+    [:div {:class (stl/css :comment-edit-form)}
      [:& resizing-textarea {:value @content
                             :autofocus true
                             :select-on-focus true
@@ -241,19 +264,88 @@
                             :on-change on-change
                             :max-length 750}]
      [:div {:class (stl/css :buttons-wrapper)}
-      [:input  {:type "button"
-                :value "Cancel"
-                :class (stl/css :cancel-btn)
-                :on-click on-cancel}]
-      [:input {:type "button"
-               :class (stl/css-case :post-btn true
-                                    :global/disabled disabled?)
-               :value "Post"
-               :on-click on-submit*
-               :disabled disabled?}]]]))
+      [:> button* {:variant "ghost"
+                   :on-click on-cancel}
+       (tr "ds.confirm-cancel")]
+      [:> button* {:variant "primary"
+                   :on-click on-submit*
+                   :disabled disabled?}
+       (tr "labels.post")]]]))
 
-(mf/defc comment-item
-  [{:keys [comment thread profiles origin] :as props}]
+
+(mf/defc comment-floating-thread-header*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [profiles thread origin]}]
+  (let [owner    (get profiles (:owner-id thread))
+        profile  (mf/deref refs/profile)
+
+        is-menu-open? (mf/use-state false)
+
+        toggle-resolved
+        (mf/use-fn
+         (mf/deps thread)
+         (fn [event]
+           (dom/stop-propagation event)
+           (st/emit! (dcm/update-comment-thread (update thread :is-resolved not)))))
+
+        on-toggle-options
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (swap! is-menu-open? not)
+           (st/emit! (dcm/hide-comment-options))))
+
+        delete-thread
+        (mf/use-fn
+         (fn []
+           (st/emit! (dcm/close-thread)
+                     (if (= origin :viewer)
+                       (dcm/delete-comment-thread-on-viewer thread)
+                       (dcm/delete-comment-thread-on-workspace thread)))))
+
+        on-delete-thread
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (swap! is-menu-open? not)
+           (st/emit! (modal/show
+                      {:type :confirm
+                       :title (tr "modals.delete-comment-thread.title")
+                       :message (tr "modals.delete-comment-thread.message")
+                       :accept-label (tr "modals.delete-comment-thread.accept")
+                       :on-accept delete-thread}))))
+
+        on-hide-options
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)))]
+
+    [:*
+     [:div (tr "labels.comment") " " [:span {:class (stl/css :grayed-text)} "#" (:seqn thread)]]
+     [:div {:class (stl/css :header-right)}
+      (when (some? thread)
+        [:div {:class (stl/css :checkbox-wrapper)
+               :title (tr "labels.comment.mark-as-solved")
+               :on-click toggle-resolved}
+         [:span {:class (stl/css-case :checkbox true
+                                      :global/checked (:is-resolved thread))} i/tick]])
+      (when (= (:id profile) (:id owner))
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "labels.options")
+                          :on-click on-toggle-options
+                          :icon "menu"}])]
+     [:& dropdown {:show @is-menu-open?
+                   :on-close on-hide-options}
+      [:ul {:class (stl/css :dropdown-menu)}
+       [:li {:class (stl/css :dropdown-menu-option)
+             :on-click on-delete-thread}
+        (tr "labels.delete-comment-thread")]]]]))
+
+(mf/defc comment-floating-thread-item*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [comment thread profiles]}]
   (let [owner    (get profiles (:owner-id comment))
         profile  (mf/deref refs/profile)
         options  (mf/deref comments-local-options)
@@ -285,24 +377,6 @@
          (mf/deps comment)
          #(st/emit! (dcm/delete-comment comment)))
 
-        delete-thread
-        (mf/use-fn
-         (mf/deps thread)
-         #(st/emit! (dcm/close-thread)
-                    (if (= origin :viewer)
-                      (dcm/delete-comment-thread-on-viewer thread)
-                      (dcm/delete-comment-thread-on-workspace thread))))
-
-        on-delete-thread
-        (mf/use-fn
-         (mf/deps thread)
-         #(st/emit! (modal/show
-                     {:type :confirm
-                      :title (tr "modals.delete-comment-thread.title")
-                      :message (tr "modals.delete-comment-thread.message")
-                      :accept-label (tr "modals.delete-comment-thread.accept")
-                      :on-accept delete-thread})))
-
         on-submit
         (mf/use-fn
          (mf/deps comment thread)
@@ -311,29 +385,15 @@
            (st/emit! (dcm/update-comment (assoc comment :content content)))))
 
         on-cancel
-        (mf/use-fn #(reset! edition? false))
+        (mf/use-fn #(reset! edition? false))]
 
-        toggle-resolved
-        (mf/use-fn
-         (mf/deps thread)
-         (fn [event]
-           (dom/stop-propagation event)
-           (st/emit! (dcm/update-comment-thread (update thread :is-resolved not)))))]
-
-    [:div {:class (stl/css :comment-container)}
-     [:div {:class (stl/css :comment)}
+    [:div {:class (stl/css :comment-floating-thread-item)}
+     [:div {:class (stl/css :container)}
       [:div {:class (stl/css :author)}
-       [:div {:class (stl/css :avatar)}
-        [:img {:src (cfg/resolve-profile-photo-url owner)}]]
-       [:div {:class (stl/css :name)}
+       [:> comment-avatar* {:image (cfg/resolve-profile-photo-url owner)}]
+       [:div {:class (stl/css :identity)}
         [:div {:class (stl/css :fullname)} (:fullname owner)]
         [:div {:class (stl/css :timeago)} (dt/timeago (:modified-at comment))]]
-
-       (when (some? thread)
-         [:div {:class (stl/css :options-resolve-wrapper)
-                :on-click toggle-resolved}
-          [:span {:class (stl/css-case :options-resolve true
-                                       :global/checked (:is-resolved thread))} i/tick]])
 
        (when (= (:id profile) (:id owner))
          [:> icon-button* {:variant "ghost"
@@ -343,22 +403,19 @@
 
       [:div {:class (stl/css :content)}
        (if @edition?
-         [:& edit-form {:content (:content comment)
-                        :on-submit on-submit
-                        :on-cancel on-cancel}]
+         [:> comment-edit-form* {:content (:content comment)
+                                 :on-submit on-submit
+                                 :on-cancel on-cancel}]
          [:span {:class (stl/css :text)} (:content comment)])]]
 
      [:& dropdown {:show (= options (:id comment))
                    :on-close on-hide-options}
-      [:ul {:class (stl/css :comment-options-dropdown)}
-       [:li {:class (stl/css :context-menu-option)
+      [:ul {:class (stl/css :dropdown-menu)}
+       [:li {:class (stl/css :dropdown-menu-option)
              :on-click on-edit-clicked}
         (tr "labels.edit")]
-       (if thread
-         [:li {:class (stl/css :context-menu-option)
-               :on-click on-delete-thread}
-          (tr "labels.delete-comment-thread")]
-         [:li {:class (stl/css :context-menu-option)
+       (when-not thread
+         [:li {:class (stl/css :dropdown-menu-option)
                :on-click on-delete-comment}
           (tr "labels.delete-comment")])]]]))
 
@@ -370,16 +427,21 @@
   (let [viewport (or viewport {:offset-x 0 :offset-y 0 :width 0 :height 0})
         base-x (+ (* (:x position) zoom) (:offset-x viewport))
         base-y (+ (* (:y position) zoom) (:offset-y viewport))
+
+        x (:x position)
+        y (:y position)
+
         w (:width viewport)
         h (:height viewport)
+
         comment-width 284 ;; TODO: this is the width set via CSS in an outer container…
                           ;; We should probably do this in a different way.
+
         orientation-left? (>= (+ base-x comment-width (:x bubble-margin)) w)
-        orientation-top? (>= base-y (/ h 2))
+        orientation-top?  (>= base-y (/ h 2))
+
         h-dir (if orientation-left? :left :right)
-        v-dir (if orientation-top? :top :bottom)
-        x (:x position)
-        y (:y position)]
+        v-dir (if orientation-top? :top :bottom)]
     {:x x :y y :h-dir h-dir :v-dir v-dir}))
 
 (mf/defc thread-comments
@@ -395,7 +457,7 @@
 
         max-height   (when (some? viewport) (int (* (:height viewport) 0.75)))
                           ;; We should probably look for a better way of doing this.
-        bubble-margin {:x 24 :y 0}
+        bubble-margin {:x 24 :y 24}
         pos          (offset-position base-pos viewport zoom bubble-margin)
 
         margin-x     (* (:x bubble-margin) (if (= (:h-dir pos) :left) -1 1))
@@ -424,37 +486,57 @@
         (dom/scroll-into-view-if-needed! node)))
 
     (when (some? comment)
-      [:div {:class (stl/css-case :thread-content true
-                                  :thread-content-left (= (:h-dir pos) :left)
-                                  :thread-content-top (= (:v-dir pos) :top))
+      [:div {:class (stl/css-case :comment-floating-thread true
+                                  :left (= (:h-dir pos) :left)
+                                  :top (= (:v-dir pos) :top))
              :id (str "thread-" thread-id)
              :style {:left (str pos-x "px")
                      :top (str pos-y "px")
                      :max-height max-height}
              :on-click dom/stop-propagation}
 
-       [:div {:class (stl/css :comments)}
-        [:& comment-item {:comment comment
-                          :profiles profiles
-                          :thread thread
-                          :origin origin}]
+       [:div {:class (stl/css :header)}
+        [:> comment-floating-thread-header* {:profiles profiles
+                                             :thread thread
+                                             :origin origin}]]
+
+       [:div {:class (stl/css :container)}
+        [:> comment-floating-thread-item* {:comment comment
+                                           :profiles profiles
+                                           :thread thread}]
         (for [item (rest comments)]
           [:* {:key (dm/str (:id item))}
-           [:& comment-item {:comment item
-                             :profiles profiles
-                             :origin origin}]])]
-       [:& reply-form {:thread thread}]
-       [:div {:ref ref}]])))
+           [:> comment-floating-thread-item* {:comment item
+                                              :profiles profiles}]])]
 
-(defn use-buble
-  [zoom {:keys [position frame-id]}]
-  (let [dragging-ref (mf/use-ref false)
+       [:> comment-reply-form* {:thread thread}]])))
+
+(mf/defc thread-bubble
+  {::mf/wrap [mf/memo]}
+  [{:keys [thread zoom open? on-click origin position-modifier]}]
+  (let [profiles     (mf/deref refs/profiles)
+        owner        (get profiles (:owner-id thread))
+
+        pos          (cond-> (:position thread)
+                       (some? position-modifier)
+                       (gpt/transform position-modifier))
+
+        drag?        (mf/use-ref nil)
+        was-open?    (mf/use-ref nil)
+
+        dragging-ref (mf/use-ref false)
         start-ref    (mf/use-ref nil)
 
-        state        (mf/use-state {:hover false
+        position     (:position thread)
+        frame-id     (:frame-id thread)
+
+        state        (mf/use-state {:hover? false
                                     :new-position-x nil
                                     :new-position-y nil
                                     :new-frame-id frame-id})
+
+        pos-x        (* (or (:new-position-x @state) (:x pos)) zoom)
+        pos-y        (* (or (:new-position-y @state) (:y pos)) zoom)
 
         on-pointer-down
         (mf/use-fn
@@ -462,62 +544,6 @@
            (dom/capture-pointer event)
            (mf/set-ref-val! dragging-ref true)
            (mf/set-ref-val! start-ref (dom/get-client-position event))))
-
-        on-pointer-up
-        (mf/use-fn
-         (mf/deps (select-keys @state [:new-position-x :new-position-y :new-frame-id]))
-         (fn [_ thread]
-           (when (and
-                  (some? (:new-position-x @state))
-                  (some? (:new-position-y @state)))
-             (st/emit! (dwcm/update-comment-thread-position thread [(:new-position-x @state) (:new-position-y @state)])))))
-
-        on-lost-pointer-capture
-        (mf/use-fn
-         (fn [event]
-           (dom/release-pointer event)
-           (mf/set-ref-val! dragging-ref false)
-           (mf/set-ref-val! start-ref nil)
-           (swap! state assoc :new-position-x nil)
-           (swap! state assoc :new-position-y nil)))
-
-        on-pointer-move
-        (mf/use-fn
-         (mf/deps position zoom)
-         (fn [event]
-           (when-let [_ (mf/ref-val dragging-ref)]
-             (let [start-pt (mf/ref-val start-ref)
-                   current-pt (dom/get-client-position event)
-                   delta-x (/ (- (:x current-pt) (:x start-pt)) zoom)
-                   delta-y (/ (- (:y current-pt) (:y start-pt)) zoom)]
-               (swap! state assoc
-                      :new-position-x (+ (:x position) delta-x)
-                      :new-position-y (+ (:y position) delta-y))))))]
-
-    {:on-pointer-down on-pointer-down
-     :on-pointer-up on-pointer-up
-     :on-pointer-move on-pointer-move
-     :on-lost-pointer-capture on-lost-pointer-capture
-     :state state}))
-
-(mf/defc thread-bubble
-  {::mf/wrap [mf/memo]}
-  [{:keys [thread zoom open? on-click origin position-modifier]}]
-  (let [pos       (cond-> (:position thread)
-                    (some? position-modifier)
-                    (gpt/transform position-modifier))
-
-        drag?     (mf/use-ref nil)
-        was-open? (mf/use-ref nil)
-
-        {:keys [on-pointer-down
-                on-pointer-up
-                on-pointer-move
-                state
-                on-lost-pointer-capture]} (use-buble zoom thread)
-
-        pos-x (* (or (:new-position-x @state) (:x pos)) zoom)
-        pos-y (* (or (:new-position-y @state) (:y pos)) zoom)
 
         on-pointer-down*
         (mf/use-fn
@@ -529,6 +555,16 @@
              (mf/set-ref-val! drag? false)
              (dom/stop-propagation event)
              (on-pointer-down event))))
+
+        on-pointer-up
+        (mf/use-fn
+         (mf/deps (select-keys @state [:new-position-x :new-position-y :new-frame-id]))
+         (fn [_ thread]
+           (when (and
+                  (some? (:new-position-x @state))
+                  (some? (:new-position-y @state)))
+             (st/emit! (dwcm/update-comment-thread-position thread [(:new-position-x @state)
+                                                                    (:new-position-y @state)])))))
 
         on-pointer-up*
         (mf/use-fn
@@ -542,6 +578,19 @@
                        (and (not (mf/ref-val was-open?)) (not (mf/ref-val drag?))))
                (st/emit! (dcm/open-thread thread))))))
 
+        on-pointer-move
+        (mf/use-fn
+         (mf/deps position zoom)
+         (fn [event]
+           (when-let [_ (mf/ref-val dragging-ref)]
+             (let [start-pt (mf/ref-val start-ref)
+                   current-pt (dom/get-client-position event)
+                   delta-x (/ (- (:x current-pt) (:x start-pt)) zoom)
+                   delta-y (/ (- (:y current-pt) (:y start-pt)) zoom)]
+               (swap! state assoc
+                      :new-position-x (+ (:x position) delta-x)
+                      :new-position-y (+ (:y position) delta-y))))))
+
         on-pointer-move*
         (mf/use-fn
          (mf/deps origin drag? on-pointer-move)
@@ -551,6 +600,25 @@
              (dom/stop-propagation event)
              (on-pointer-move event))))
 
+        on-lost-pointer-capture
+        (mf/use-fn
+         (fn [event]
+           (dom/release-pointer event)
+           (mf/set-ref-val! dragging-ref false)
+           (mf/set-ref-val! start-ref nil)
+           (swap! state assoc :new-position-x nil)
+           (swap! state assoc :new-position-y nil)))
+
+        on-mouse-enter
+        (mf/use-fn
+         (fn []
+           (swap! state assoc :hover? true)))
+
+        on-mouse-leave
+        (mf/use-fn
+         (fn []
+           (swap! state assoc :hover? false)))
+
         on-click*
         (mf/use-fn
          (mf/deps origin thread on-click)
@@ -558,23 +626,68 @@
            (dom/stop-propagation event)
            (when (= origin :viewer)
              (on-click thread))))]
-    [:div {:style {:top (str pos-y "px")
-                   :left (str pos-x "px")}
-           :on-pointer-down on-pointer-down*
+
+    [:div {:on-pointer-down on-pointer-down*
            :on-pointer-up on-pointer-up*
            :on-pointer-move on-pointer-move*
+           :on-mouse-enter on-mouse-enter
+           :on-mouse-leave on-mouse-leave
            :on-click on-click*
            :on-lost-pointer-capture on-lost-pointer-capture
            :data-testid "floating-thread-bubble"
-           :class (stl/css-case
-                   :floating-thread-bubble true
-                   :resolved (:is-resolved thread)
-                   :unread (pos? (:count-unread-comments thread)))}
-     [:span (:seqn thread)]]))
+           :class (stl/css :comment-floating-bubble)}
 
-(mf/defc comment-thread
+     (if (true? (:hover? @state))
+
+       [:div {:class (stl/css :comment-floating-thread)
+              :style {:top (str (- pos-y 12) "px")
+                      :left (str (- pos-x 14) "px")}}
+        [:div {:class (stl/css :comment-floating-thread-item)}
+         [:div {:class (stl/css :container)}
+
+          [:div {:class (stl/css :author)}
+           [:> comment-avatar* {:image (cfg/resolve-profile-photo-url owner)
+                                :class (stl/css :avatar-lg)
+                                :variant (cond (:is-resolved thread) "solved"
+                                               (pos? (:count-unread-comments thread)) "unread"
+                                               :else "read")}]
+           [:div {:class (stl/css :identity)}
+            [:div {:class (stl/css :fullname)} (:fullname owner)]
+            [:div {:class (stl/css :timeago)} (dt/timeago (:modified-at thread))]]]
+
+          [:div {:class (stl/css :content)}
+           (:content thread)]
+
+          [:div {:class (stl/css :replies)}
+           (let [unread (:count-unread-comments thread ::none)
+                 total  (:count-comments thread 1)]
+             [:*
+              (when (> total 1)
+                (if (= total 2)
+                  [:span {:class (stl/css :total-replies)} "1 reply"]
+                  [:span {:class (stl/css :total-replies)} (str (dec total) " replies")]))
+
+              (when (and (> total 1) (> unread 0))
+                (if (= unread 1)
+                  [:span {:class (stl/css :new-replies)} "1 new reply"]
+                  [:span {:class (stl/css :new-replies)} (str unread " new replies")]))])]]]]
+
+       [:> comment-avatar* {:style {:top (str pos-y "px")
+                                    :left (str pos-x "px")}
+                            :image (cfg/resolve-profile-photo-url owner)
+                            :class (stl/css :avatar-lg)
+                            :variant (cond (:is-resolved thread) "solved"
+                                           (pos? (:count-unread-comments thread)) "unread"
+                                           :else "read")}])]))
+
+(mf/defc comment-thread-cover*
+  {::mf/props :obj
+   ::mf/private true}
   [{:keys [item profiles on-click]}]
   (let [owner (get profiles (:owner-id item))
+
+        frame (mf/deref (refs/workspace-page-object-by-id (:page-id item) (:frame-id item)))
+
         on-click*
         (mf/use-fn
          (mf/deps item)
@@ -584,20 +697,32 @@
            (when (fn? on-click)
              (on-click item))))]
 
-    [:div {:class (stl/css :comment)
+    [:div {:class (stl/css :comment-thread-cover)
            :on-click on-click*}
+     [:div {:class (stl/css :location)}
+      [:div
+       [:div {:class (stl/css :location-icon)}
+        [:> icon* {:id "comments"}]]
+       [:div {:class (stl/css :location-text)}
+        (str "#" (:seqn item) " - ")
+        (str (:file-name item))
+        (str ", " (:page-name item))
+        (when (and (some? frame) (not (cfh/root? frame)))
+          (str ", " (:name frame)))]]]
+
      [:div {:class (stl/css :author)}
-      [:div {:class (stl/css-case :thread-bubble true
-                                  :resolved (:is-resolved item)
-                                  :unread (pos? (:count-unread-comments item)))}
-       (:seqn item)]
-      [:div {:class (stl/css :avatar)}
-       [:img {:src (cfg/resolve-profile-photo-url owner)}]]
-      [:div {:class (stl/css :name)}
+      [:> comment-avatar* {:image (cfg/resolve-profile-photo-url owner)
+                           :class (stl/css :avatar-lg)
+                           :variant (cond (:is-resolved item) "solved"
+                                          (pos? (:count-unread-comments item)) "unread"
+                                          :else "read")}]
+      [:div {:class (stl/css :identity)}
        [:div {:class (stl/css :fullname)} (:fullname owner)]
        [:div {:class (stl/css :timeago)} (dt/timeago (:modified-at item))]]]
+
      [:div {:class (stl/css :content)}
       (:content item)]
+
      [:div {:class (stl/css :replies)}
       (let [unread (:count-unread-comments item ::none)
             total  (:count-comments item 1)]
@@ -614,22 +739,10 @@
 
 (mf/defc comment-thread-group
   [{:keys [group profiles on-thread-click]}]
-  [:div {:class (stl/css :thread-group)}
-   (if (:file-name group)
-     [:div {:class (stl/css :section-title)
-            :title (str (:file-name group) ", " (:page-name group))}
-      [:span {:class (stl/css :file-name)} (:file-name group) ", "]
-      [:span {:class (stl/css :page-name)} (:page-name group)]]
-
-     [:div {:class (stl/css :section-title)
-            :title (:page-name group)}
-      [:span {:class (stl/css :icon)} i/document]
-      [:span {:class (stl/css :page-name)} (:page-name group)]])
-
-   [:div {:class (stl/css :threads)}
-    (for [item (:items group)]
-      [:& comment-thread
-       {:item item
-        :on-click on-thread-click
-        :profiles profiles
-        :key (:id item)}])]])
+ [:div
+  (for [item (:items group)]
+    [:> comment-thread-cover*
+     {:item item
+      :on-click on-thread-click
+      :profiles profiles
+      :key (:id item)}])])
