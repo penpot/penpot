@@ -4061,6 +4061,9 @@ msgstr "Nombre del grupo"
 msgid "workspace.assets.libraries"
 msgstr "Bibliotecas"
 
+msgid "workspace.assets.add-library"
+msgstr "Añadir biblioteca"
+
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:523
 msgid "workspace.assets.list-view"
 msgstr "Ver como lista"
@@ -6112,7 +6115,7 @@ msgstr "Abrir barra lateral"
 
 #: src/app/main/ui/workspace/right_header.cljs:246, src/app/main/ui/workspace/right_header.cljs:247
 msgid "workspace.sidebar.history"
-msgstr "Historial (%s)"
+msgstr "Historial"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:524, src/app/main/ui/workspace/sidebar.cljs:110, src/app/main/ui/workspace/sidebar.cljs:114, src/app/main/ui/workspace/sidebar.cljs:123
 msgid "workspace.sidebar.layers"
@@ -6554,6 +6557,13 @@ msgstr "Cargando..."
 #: src/app/main/ui/workspace/sidebar/versions.cljs:283
 msgid "workspace.versions.restore-warning"
 msgstr "¿Quieres restaurar esta versión?"
+
+msgid "workspace.versions.warning.text"
+msgstr "Los autoguardados duran %s días."
+
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr "Si quieres aumentar este límite, contáctanos en [support@penpot.app](%s)"
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:207
 msgid "workspace.versions.snapshot-menu"

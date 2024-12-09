@@ -25,32 +25,48 @@
   width: 100%;
   margin-bottom: $s-4;
   border-radius: $s-8;
+
   .libraries-icon {
     @include flexCenter;
     width: $s-24;
     height: 100%;
+
     svg {
       @include flexCenter;
       @extend .button-icon;
       stroke: var(--icon-foreground);
     }
   }
+
   &:hover {
     background-color: var(--button-secondary-background-color-hover);
     color: var(--button-secondary-foreground-color-hover);
     border: $s-1 solid var(--button-secondary-border-color-hover);
+
     svg {
       stroke: var(--button-secondary-foreground-color-hover);
     }
   }
+
   &:focus {
     background-color: var(--button-secondary-background-color-focus);
     color: var(--button-secondary-foreground-color-focus);
     border: $s-1 solid var(--button-secondary-border-color-focus);
+
     svg {
       stroke: var(--button-secondary-foreground-color-focus);
     }
   }
+}
+
+.add-library-button {
+  @extend .button-primary;
+  text-transform: uppercase;
+  gap: $s-2;
+  height: $s-32;
+  width: 100%;
+  margin-bottom: $s-4;
+  border-radius: $s-8;
 }
 
 .section-button {
@@ -62,32 +78,39 @@
   border: $s-1 solid var(--input-border-color-rest);
   border-radius: $br-8 $br-2 $br-2 $br-8;
   background-color: var(--input-background-color-rest);
+
   svg {
     height: $s-16;
     width: $s-16;
     stroke: var(--icon-foreground);
   }
+
   &:focus {
     border: $s-1 solid var(--input-border-color-focus);
     outline: 0;
     background-color: var(--input-background-color-focus);
     color: var(--input-foreground-color-focus);
+
     svg {
       background-color: var(--input-background-color-focus);
     }
   }
+
   &:hover {
     border: $s-1 solid var(--input-border-color-hover);
     background-color: var(--input-background-color-hover);
+
     svg {
       background-color: var(--input-background-color-hover);
       stroke: var(--button-foreground-hover);
     }
+
     &:focus {
       border: $s-1 solid var(--input-border-color-focus);
       outline: 0;
       background-color: var(--input-background-color-focus);
       color: var(--input-foreground-color-focus);
+
       svg {
         background-color: var(--input-background-color-focus);
       }

@@ -279,27 +279,30 @@
         is-you           (= (:id profile) (:id member))
 
         can-change-rol   (or is-owner is-admin)
-        not-superior     (or is-admin (and can-change-rol (or member-is-admin member-is-editor member-is-viewer)))
+        not-superior     (or (and (not member-is-owner) is-admin) (and can-change-rol (or member-is-admin member-is-editor member-is-viewer)))
 
         role             (cond
                            member-is-owner  "labels.owner"
                            member-is-admin  "labels.admin"
                            member-is-editor "labels.editor"
-                           :else             "labels.viewer")
-
+                           :else            "labels.viewer")
         on-show          (mf/use-fn #(reset! show? true))
         on-hide          (mf/use-fn #(reset! show? false))]
     [:*
      (if (and can-change-rol not-superior (not (and is-you is-owner)))
        [:div {:class (stl/css :rol-selector :has-priv)
+              :role "combobox"
+              :aria-labelledby "role-label-id"
               :on-click on-show}
-        [:span {:class (stl/css :rol-label)} (tr role)]
+        [:span {:class (stl/css :rol-label)
+                :id "role-label-id"} (tr role)]
         arrow-icon]
        [:div {:class (stl/css :rol-selector)}
         [:span {:class (stl/css :rol-label)} (tr role)]])
 
      [:& dropdown {:show @show? :on-close on-hide}
-      [:ul {:class (stl/css :roles-dropdown)}
+      [:ul {:class (stl/css :roles-dropdown)
+            :role "listbox"}
        [:li {:on-click on-set-viewer
              :class (stl/css :rol-dropdown-item)}
         (tr "labels.viewer")]
@@ -487,7 +490,6 @@
 
         total-members
         (count members)
-
 
         owner
         (mf/with-memo [members]

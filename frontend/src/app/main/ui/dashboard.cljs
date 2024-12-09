@@ -85,19 +85,20 @@
            :ref container}
      (case section
        :dashboard-recent
-       [:*
-        [:> projects-section*
-         {:team team
-          :projects projects
-          :profile profile}]
+       (when (seq projects)
+         [:*
+          [:> projects-section*
+           {:team team
+            :projects projects
+            :profile profile}]
 
-        (when ^boolean show-templates?
-          [:> templates-section*
-           {:profile profile
-            :project-id project-id
-            :team-id team-id
-            :default-project-id default-project-id
-            :content-width @content-width}])]
+          (when ^boolean show-templates?
+            [:> templates-section*
+             {:profile profile
+              :project-id project-id
+              :team-id team-id
+              :default-project-id default-project-id
+              :content-width @content-width}])])
 
        :dashboard-fonts
        [:> fonts-page* {:team team}]
@@ -256,12 +257,11 @@
         :profile profile
         :section section
         :search-term search-term}]
-      (when (seq projects)
-        [:> dashboard-content*
-         {:projects projects
-          :profile profile
-          :project project
-          :default-project default-project
-          :section section
-          :search-term search-term
-          :team team}])]]))
+      [:> dashboard-content*
+       {:projects projects
+        :profile profile
+        :project project
+        :default-project default-project
+        :section section
+        :search-term search-term
+        :team team}]]]))
