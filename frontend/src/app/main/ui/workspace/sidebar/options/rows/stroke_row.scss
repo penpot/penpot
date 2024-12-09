@@ -5,15 +5,25 @@
 // Copyright (c) KALEIDOS INC
 
 @import "refactor/common-refactor.scss";
+@import "refactor/reorder.scss";
 
 .stroke-data {
   @include flexColumn;
 
-  &.dnd-over-top {
-    border-top: $s-1 solid var(--layer-row-foreground-color-drag);
+  position: relative;
+
+  --reorder-left-position: calc(-1 * #{$s-16} + 1px);
+
+  &:hover {
+    --reorder-icon-visibility: visible;
   }
+
+  &.dnd-over-top {
+    --reorder-top-display: block;
+  }
+
   &.dnd-over-bot {
-    border-bottom: $s-1 solid var(--layer-row-foreground-color-drag);
+    --reorder-bottom-display: block;
   }
 }
 

@@ -1,0 +1,36 @@
+.reorder {
+  cursor: grab;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  left: var(--reorder-left-position, calc(-1 * $s-16));
+  z-index: $z-index-2;
+  position: absolute;
+  top: calc(-1 * $s-6);
+  height: calc(100% + $s-12);
+}
+
+.reorder-icon {
+  height: $s-16;
+  pointer-events: none;
+  stroke: var(--color-foreground-secondary);
+  visibility: var(--reorder-icon-visibility, hidden);
+}
+
+.reorder-separator-top,
+.reorder-separator-bottom {
+  border-color: var(--color-accent-primary);
+  margin: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.reorder-separator-top {
+  display: var(--reorder-top-display, none);
+  top: calc(-1 * $s-2);
+}
+
+.reorder-separator-bottom {
+  display: var(--reorder-bottom-display, none);
+  bottom: calc(-1 * $s-2);
+}

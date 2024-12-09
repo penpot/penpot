@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.select :refer [select]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as ic]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
@@ -140,8 +141,18 @@
     [:div {:class (stl/css-case
                    :stroke-data true
                    :dnd-over-top (= (:over dprops) :top)
-                   :dnd-over-bot (= (:over dprops) :bot))
-           :ref dref}
+                   :dnd-over-bot (= (:over dprops) :bot))}
+
+     (when (some? on-reorder)
+       [:*
+        [:div {:ref dref :class (stl/css :reorder)}
+         [:> icon*
+          {:id ic/reorder
+           :class (stl/css :reorder-icon)
+           :aria-hidden true}]]
+        [:hr {:class (stl/css :reorder-separator-top)}]
+        [:hr {:class (stl/css :reorder-separator-bottom)}]])
+
            ;; Stroke Color
      [:& color-row {:color {:color (:stroke-color stroke)
                             :opacity (:stroke-opacity stroke)

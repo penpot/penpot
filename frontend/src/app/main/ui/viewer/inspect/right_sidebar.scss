@@ -29,6 +29,7 @@
   display: flex;
   flex-direction: column;
   gap: $s-8;
+  padding-left: $s-12;
 }
 
 .shape-row {
@@ -98,5 +99,6 @@
 }
 
 .viewer-tab-switcher {
+  --tabs-nav-padding-inline-start: 0;
   --tabs-nav-padding-inline-end: var(--sp-m);
 }

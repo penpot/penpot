@@ -20,6 +20,7 @@
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as ic]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
@@ -152,8 +153,17 @@
     [:div {:class (stl/css-case :global/shadow-option true
                                 :shadow-element true
                                 :dnd-over-top (= (:over dprops) :top)
-                                :dnd-over-bot (= (:over dprops) :bot))
-           :ref dref}
+                                :dnd-over-bot (= (:over dprops) :bot))}
+     (when (some? on-reorder)
+       [:*
+        [:div {:ref dref :class (stl/css :reorder)}
+         [:> icon*
+          {:id ic/reorder
+           :class (stl/css :reorder-icon)
+           :aria-hidden true}]]
+        [:hr {:class (stl/css :reorder-separator-top)}]
+        [:hr {:class (stl/css :reorder-separator-bottom)}]])
+
      [:*
       [:div {:class (stl/css :basic-options)}
        [:div {:class (stl/css-case :shadow-info true

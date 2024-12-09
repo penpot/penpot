@@ -10,14 +10,16 @@
   @extend .modal-background;
   left: calc(10 * $s-140);
   width: auto;
+  padding: $s-12 0;
+  width: $s-284;
 }
 
 .colorpicker {
   border-radius: $br-8;
-  width: $s-260;
-  & > * {
-    width: $s-260;
-  }
+}
+
+.colorpicker-tabs {
+  padding: 0 $s-12;
 }
 
 .top-actions {
@@ -26,6 +28,7 @@
   flex-direction: row-reverse;
   justify-content: space-between;
   height: $s-40;
+  padding: 0 $s-12;
 }
 
 .top-actions-right {
