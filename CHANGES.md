@@ -11,6 +11,7 @@
 ### :sparkles: New features
 
 - New gradients UI with multi-stop support.
+- Shareable link pointing to an specific board.
 
 ### :bug: Bugs fixed
 
