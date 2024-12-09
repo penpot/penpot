@@ -84,6 +84,18 @@
   [clip-content]
   (h/call internal-module "_set_shape_clip_content" clip-content))
 
+(defn set-shape-type
+  [type]
+  (cond
+    (= type :circle)
+    (h/call internal-module "_set_shape_kind_circle")
+
+    (= type :path)
+    (h/call internal-module "_set_shape_kind_path")
+
+    :else
+    (h/call internal-module "_set_shape_kind_rect")))
+
 (defn set-shape-selrect
   [selrect]
   (h/call internal-module "_set_shape_selrect"
@@ -260,10 +272,10 @@
         (loop [index 0 pending []]
           (if (< index total-shapes)
             (let [shape        (nth shapes index)
-                  type         (dm/get-prop shape :type)
                   id           (dm/get-prop shape :id)
-                  clip-content (not (dm/get-prop shape :show-content))
+                  type         (dm/get-prop shape :type)
                   selrect      (dm/get-prop shape :selrect)
+                  clip-content (not (dm/get-prop shape :show-content))
                   rotation     (dm/get-prop shape :rotation)
                   transform    (dm/get-prop shape :transform)
                   fills        (if (= type :group)
@@ -275,6 +287,7 @@
                   content      (dm/get-prop shape :content)]
 
               (use-shape id)
+              (set-shape-type type)
               (set-shape-clip-content clip-content)
               (set-shape-selrect selrect)
               (set-shape-rotation rotation)

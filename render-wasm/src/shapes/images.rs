@@ -1,9 +1,8 @@
 use crate::math;
+use crate::shapes::Kind;
 use skia_safe as skia;
 
 pub type Image = skia::Image;
-
-use crate::shapes::Kind;
 
 pub fn draw_image_in_container(
     canvas: &skia::Canvas,
@@ -18,6 +17,7 @@ pub fn draw_image_in_container(
 
     let container = match kind {
         Kind::Rect(r) => r.to_owned(),
+        Kind::Circle(r) => r.to_owned(),
         Kind::Path(p) => p.to_skia_path().bounds().to_owned(),
     };
 
@@ -52,6 +52,11 @@ pub fn draw_image_in_container(
     match kind {
         Kind::Rect(_) => {
             canvas.clip_rect(container, skia::ClipOp::Intersect, true);
+        }
+        Kind::Circle(_) => {
+            let mut oval_path = skia::Path::new();
+            oval_path.add_oval(container, None);
+            canvas.clip_path(&oval_path, skia::ClipOp::Intersect, true);
         }
         Kind::Path(p) => {
             canvas.clip_path(&p.to_skia_path(), skia::ClipOp::Intersect, true);

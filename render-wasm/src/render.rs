@@ -300,6 +300,11 @@ impl RenderState {
                     .canvas()
                     .draw_rect(rect, &fill.to_paint(&selrect));
             }
+            (_, Kind::Circle(rect)) => {
+                self.drawing_surface
+                    .canvas()
+                    .draw_oval(rect, &fill.to_paint(&selrect));
+            }
             (_, Kind::Path(path)) => {
                 self.drawing_surface
                     .canvas()

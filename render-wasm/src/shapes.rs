@@ -14,6 +14,7 @@ pub use paths::*;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Kind {
     Rect(math::Rect),
+    Circle(math::Rect),
     Path(Path),
 }
 
@@ -77,9 +78,15 @@ impl Shape {
 
     pub fn set_selrect(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
         self.selrect.set_ltrb(left, top, right, bottom);
-        if let Kind::Rect(_) = self.kind {
-            self.kind = Kind::Rect(self.selrect.to_owned());
-        }
+        match self.kind {
+            Kind::Rect(_) => {
+                self.kind = Kind::Rect(self.selrect.to_owned());
+            }
+            Kind::Circle(_) => {
+                self.kind = Kind::Circle(self.selrect.to_owned());
+            }
+            _ => {}
+        };
     }
 
     pub fn translation(&self) -> (f32, f32) {
