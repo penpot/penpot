@@ -206,25 +206,26 @@
      [:div {:class (stl/css :viewer-comments-container)}
       [:div {:class (stl/css :threads)}
        (for [item threads]
-         [:& cmt/thread-bubble
+         [:> cmt/comment-floating-bubble*
           {:thread item
+           :profiles users
            :position-modifier modifier1
            :zoom zoom
            :on-click on-bubble-click
-           :open? (= (:id item) (:open local))
+           :is-open (= (:id item) (:open local))
            :key (:seqn item)
            :origin :viewer}])
 
        (when-let [thread (get threads-map open-thread-id)]
-         [:& cmt/thread-comments
+         [:> cmt/comment-floating-thread*
           {:thread thread
+           :profiles users
            :position-modifier modifier1
            :viewport {:offset-x 0 :offset-y 0 :width (:width vsize) :height (:height vsize)}
-           :profiles users
            :zoom zoom}])
 
        (when-let [draft (:draft local)]
-         [:& cmt/draft-thread
+         [:> cmt/comment-floating-thread-draft*
           {:draft draft
            :position-modifier modifier1
            :on-cancel on-draft-cancel

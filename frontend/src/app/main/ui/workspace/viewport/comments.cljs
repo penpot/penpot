@@ -75,22 +75,23 @@
       [:div {:class (stl/css :threads)
              :style {:transform (dm/fmt "translate(%px, %px)" pos-x pos-y)}}
        (for [item threads]
-         [:& cmt/thread-bubble {:thread item
-                                :zoom zoom
-                                :open? (= (:id item) (:open local))
-                                :key (:seqn item)}])
+         [:> cmt/comment-floating-bubble* {:thread item
+                                           :profiles profiles
+                                           :zoom zoom
+                                           :is-open (= (:id item) (:open local))
+                                           :key (:seqn item)}])
 
        (when-let [id (:open local)]
          (when-let [thread (get threads-map id)]
            (when (seq (dcm/apply-filters local profile [thread]))
-             [:& cmt/thread-comments {:thread (update-position positions thread)
-                                      :profiles profiles
-                                      :viewport {:offset-x pos-x :offset-y pos-y :width (:width vport) :height (:height vport)}
-                                      :zoom zoom}])))
+             [:> cmt/comment-floating-thread* {:thread (update-position positions thread)
+                                               :profiles profiles
+                                               :viewport {:offset-x pos-x :offset-y pos-y :width (:width vport) :height (:height vport)}
+                                               :zoom zoom}])))
 
        (when-let [draft (:comment drawing)]
-         [:& cmt/draft-thread {:draft draft
-                               :on-cancel on-draft-cancel
-                               :on-submit on-draft-submit
-                               :zoom zoom}])]]]))
+         [:> cmt/comment-floating-thread-draft* {:draft draft
+                                                 :on-cancel on-draft-cancel
+                                                 :on-submit on-draft-submit
+                                                 :zoom zoom}])]]]))
 
