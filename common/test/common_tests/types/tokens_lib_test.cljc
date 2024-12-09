@@ -230,6 +230,24 @@
       (t/is (= (:name token-set') "updated-name"))
       (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set)))))
 
+  (t/deftest rename-token-set-group
+    (let [tokens-lib  (-> (ctob/make-tokens-lib)
+                          (ctob/add-set (ctob/make-token-set :name "foo/bar/baz"))
+                          (ctob/add-set (ctob/make-token-set :name "foo/bar/baz/baz-child-1"))
+                          (ctob/add-set (ctob/make-token-set :name "foo/bar/baz/baz-child-2"))
+                          (ctob/add-theme (ctob/make-token-theme :name "theme" :sets #{"foo/bar/baz/baz-child-1"})))
+          tokens-lib' (-> tokens-lib
+                          (ctob/rename-set-group "foo/bar" "foo/bar-renamed")
+                          (ctob/rename-set-group "foo/bar-renamed/baz" "foo/bar-renamed/baz-renamed"))
+          expected-set-names (ctob/get-ordered-set-names tokens-lib')
+          expected-theme-sets (-> (ctob/get-theme tokens-lib' "" "theme")
+                                  :sets)]
+      (t/is (= expected-set-names
+               '("foo/bar-renamed/baz"
+                 "foo/bar-renamed/baz-renamed/baz-child-1"
+                 "foo/bar-renamed/baz-renamed/baz-child-2")))
+      (t/is (= expected-theme-sets #{"foo/bar-renamed/baz-renamed/baz-child-1"}))))
+
   (t/deftest delete-token-set
     (let [tokens-lib  (-> (ctob/make-tokens-lib)
                           (ctob/add-set (ctob/make-token-set :name "test-token-set"))

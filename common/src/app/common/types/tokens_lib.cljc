@@ -183,6 +183,10 @@
 
 (def set-separator "/")
 
+(defn join-set-path-str [& args]
+  (->> (filter some? args)
+       (str/join set-separator)))
+
 (defn join-set-path [path]
   (join-path path set-separator))
 
@@ -236,12 +240,15 @@
   (-> (set-name->prefixed-full-path name-str)
       (join-set-path)))
 
-(defn prefixed-set-path-string->set-name-string [path-str]
+(defn prefixed-set-path-string->set-path [path-str]
   (->> (split-token-set-path path-str)
        (map (fn [path-part]
               (or (-> (split-set-str-path-prefix path-part)
                       (second))
-                  path-part)))
+                  path-part)))))
+
+(defn prefixed-set-path-string->set-name-string [path-str]
+  (->> (prefixed-set-path-string->set-path path-str)
        (join-set-path)))
 
 (defn prefixed-set-path-final-group?
@@ -407,6 +414,8 @@ When `before-set-name` is nil, move set to bottom")
   (get-in-set-tree [_ path] "get `path` in nested tree of all sets in the library")
   (get-sets [_] "get an ordered sequence of all sets in the library")
   (get-sets-at-prefix-path [_ path] "get an ordered sequence of sets at `path` in the library")
+  (get-sets-at-path [_ path] "TODO")
+  (rename-set-group [_ from to] "TODO")
   (get-ordered-set-names [_] "get an ordered sequence of all sets names in the library")
   (get-set [_ set-name] "get one set looking for name")
   (get-neighbor-set-name [_ set-name index-offset] "get neighboring set name offset by `index-offset`"))
@@ -734,6 +743,21 @@ When `before-set-name` is nil, move set to bottom")
     (some->> (get-in sets (split-token-set-path path))
              (tree-seq d/ordered-map? vals)
              (filter (partial instance? TokenSet))))
+
+  (get-sets-at-path [_ path-str]
+    (some->> (split-token-set-path path-str)
+             (map add-set-path-group-prefix)
+             (get-in sets)
+             (tree-seq d/ordered-map? vals)
+             (filter (partial instance? TokenSet))))
+
+  (rename-set-group [this from-path-str to-path-str]
+    (->> (get-sets-at-path this from-path-str)
+         (reduce
+          (fn [lib set]
+            (update-set lib (:name set) (fn [set']
+                                          (update set' :name #(str to-path-str (str/strip-prefix % from-path-str))))))
+          this)))
 
   (get-ordered-set-names [this]
     (map :name (get-sets this)))
