@@ -60,7 +60,7 @@
       :default-value default-value}]))
 
 (mf/defc sets-tree-set-group
-  [{:keys [label tree-depth tree-path selected? collapsed? editing? on-edit on-edit-reset on-edit-submit]}]
+  [{:keys [label tree-depth tree-path selected? collapsed? editing? on-edit on-edit-reset _on-edit-submit]}]
   (let [editing?' (editing? tree-path)
         on-context-menu
         (mf/use-fn
