@@ -5907,6 +5907,9 @@ msgstr "Send backward"
 msgid "workspace.shape.menu.copy"
 msgstr "Copy"
 
+msgid "workspace.shape.menu.copy_link"
+msgstr "Copy link to clipboard"
+
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:427
 msgid "workspace.shape.menu.create-annotation"
 msgstr "Create annotation"

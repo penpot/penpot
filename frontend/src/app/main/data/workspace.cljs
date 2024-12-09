@@ -73,6 +73,7 @@
    [app.main.errors]
    [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
@@ -88,6 +89,7 @@
    [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]
+   [clojure.string]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]
    [promesa.core :as p]))
@@ -313,6 +315,21 @@
 
 (declare go-to-component)
 
+(defn zoom-to-frame
+  []
+  (ptk/reify ::zoom-to-frame
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [frames-id          (as-> (get-in state [:route :query-params :board-id]) $
+                                 (str/split $ #",")
+                                 (map uuid/uuid $)
+                                 (into (d/ordered-set) $))
+            page-id           (get-in state [:route :query-params :page-id])
+            current-page-id   (:current-page-id state)]
+        (when (= (uuid/uuid page-id) current-page-id)
+          (rx/of (dws/select-shapes frames-id)
+                 dwz/zoom-to-selected-shape))))))
+
 (defn- fetch-bundle
   "Multi-stage file bundle fetch coordinator"
   [project-id file-id]
@@ -339,8 +356,14 @@
                    (rx/filter (ptk/type? ::workspace-initialized))
                    (rx/observe-on :async)
                    (rx/take 1)
-                   (rx/map #(go-to-component (uuid/uuid component-id))))))
+                   (rx/map #(go-to-component (uuid/uuid component-id)))))
 
+            (when (some? (get-in state [:route :query-params :board-id]))
+              (->> stream
+                   (rx/filter (ptk/type? ::workspace-initialized))
+                   (rx/observe-on :async)
+                   (rx/take 1)
+                   (rx/map zoom-to-frame))))
            (rx/take-until
             (rx/filter (ptk/type? ::fetch-bundle) stream))))))
 
@@ -2126,6 +2149,28 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-global :show-distances?] value))))
+
+(defn copy-closest-frame-link
+  []
+  (ptk/reify ::copy-closest-frame-link
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (let [router            (deref refs/router)
+            project-id        (deref refs/current-project-id)
+            file-id           (deref refs/current-file-id)
+            page-id           (deref refs/current-page-id)
+            selected-id       (deref refs/selected-shapes)
+            selected-obj      (deref (refs/objects-by-id selected-id))
+            objects           (deref refs/workspace-page-objects)
+            current-url       (rt/resolve router :workspace
+                                          {:project-id project-id
+                                           :file-id file-id}
+                                          {:page-id page-id})
+            frame-ids         (map (fn [item] (let [parent (cfh/get-frame objects (:id item))]
+                                                (str (:id parent)))) selected-obj)
+            new-url           (str "#" current-url "&board-id=" (clojure.string/join "," frame-ids))]
+        (.replaceState js/history nil "" new-url)
+        (wapi/write-to-clipboard (rt/get-current-href))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interactions

@@ -677,6 +677,9 @@
 (def current-project-id
   (l/derived :current-project-id st/state))
 
+(def current-page-id
+  (l/derived :current-page-id st/state))
+
 (def workspace-preview-blend
   (l/derived :workspace-preview-blend st/state))
 
