@@ -491,7 +491,6 @@
         total-members
         (count members)
 
-
         owner
         (mf/with-memo [members]
           (d/seek :is-owner members))
