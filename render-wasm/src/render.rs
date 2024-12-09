@@ -413,6 +413,13 @@ impl RenderState {
 
         if !id.is_nil() {
             self.render_single_shape(shape);
+            if shape.clip_content {
+                self.drawing_surface.canvas().clip_rect(
+                    shape.selrect,
+                    skia::ClipOp::Intersect,
+                    true,
+                );
+            }
         }
 
         // draw all the children shapes

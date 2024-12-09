@@ -111,15 +111,16 @@
   (when ^boolean shape/*wasm-sync*
     (api/use-shape (:id self))
     (case k
-      :selrect    (api/set-shape-selrect v)
-      :rotation   (api/set-shape-rotation v)
-      :transform  (api/set-shape-transform v)
-      :fills      (api/set-shape-fills v)
-      :blend-mode (api/set-shape-blend-mode v)
-      :opacity    (api/set-shape-opacity v)
-      :hidden     (api/set-shape-hidden v)
-      :shapes     (api/set-shape-children v)
-      :content    (api/set-shape-path-content v)
+      :selrect      (api/set-shape-selrect v)
+      :show-content (api/set-shape-clip-content (not v))
+      :rotation     (api/set-shape-rotation v)
+      :transform    (api/set-shape-transform v)
+      :fills        (api/set-shape-fills v)
+      :blend-mode   (api/set-shape-blend-mode v)
+      :opacity      (api/set-shape-opacity v)
+      :hidden       (api/set-shape-hidden v)
+      :shapes       (api/set-shape-children v)
+      :content      (api/set-shape-path-content v)
       nil)
     ;; when something synced with wasm
     ;; is modified, we need to request

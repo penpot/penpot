@@ -80,6 +80,10 @@
             (aget buffer 2)
             (aget buffer 3))))
 
+(defn set-shape-clip-content
+  [clip-content]
+  (h/call internal-module "_set_shape_clip_content" clip-content))
+
 (defn set-shape-selrect
   [selrect]
   (h/call internal-module "_set_shape_selrect"
@@ -247,21 +251,23 @@
         pending
         (loop [index 0 pending []]
           (if (< index total-shapes)
-            (let [shape      (nth shapes index)
-                  type       (dm/get-prop shape :type)
-                  id         (dm/get-prop shape :id)
-                  selrect    (dm/get-prop shape :selrect)
-                  rotation   (dm/get-prop shape :rotation)
-                  transform  (dm/get-prop shape :transform)
-                  fills      (if (= type :group)
-                               [] (dm/get-prop shape :fills))
-                  children   (dm/get-prop shape :shapes)
-                  blend-mode (dm/get-prop shape :blend-mode)
-                  opacity    (dm/get-prop shape :opacity)
-                  hidden     (dm/get-prop shape :hidden)
-                  content    (dm/get-prop shape :content)]
+            (let [shape        (nth shapes index)
+                  type         (dm/get-prop shape :type)
+                  id           (dm/get-prop shape :id)
+                  clip-content (not (dm/get-prop shape :show-content))
+                  selrect      (dm/get-prop shape :selrect)
+                  rotation     (dm/get-prop shape :rotation)
+                  transform    (dm/get-prop shape :transform)
+                  fills        (if (= type :group)
+                                 [] (dm/get-prop shape :fills))
+                  children     (dm/get-prop shape :shapes)
+                  blend-mode   (dm/get-prop shape :blend-mode)
+                  opacity      (dm/get-prop shape :opacity)
+                  hidden       (dm/get-prop shape :hidden)
+                  content      (dm/get-prop shape :content)]
 
               (use-shape id)
+              (set-shape-clip-content clip-content)
               (set-shape-selrect selrect)
               (set-shape-rotation rotation)
               (set-shape-transform transform)
