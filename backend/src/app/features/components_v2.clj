@@ -884,8 +884,10 @@
                                :shapes (or (:shapes shape) [])
                                :hide-in-viewer (if frame? (boolean (:hide-in-viewer shape)) true)
                                :show-content   (if frame? (boolean (:show-content shape)) true)
-                               :rx (or (:rx shape) 0)
-                               :ry (or (:ry shape) 0)))
+                               :r1 (or (:r1 shape) 0)
+                               :r2 (or (:r2 shape) 0)
+                               :r3 (or (:r3 shape) 0)
+                               :r4 (or (:r4 shape) 0)))
                       shape))]
             (-> file-data
                 (update :pages-index update-vals fix-container)

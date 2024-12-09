@@ -102,6 +102,10 @@
            {:type :frame
             :x (:x srect)
             :y (:y srect)
+            :r1 0
+            :r2 0
+            :r3 0
+            :r4 0
             :width (:width srect)
             :height (:height srect)}
 
@@ -168,6 +172,10 @@
         attrs       {:type :frame
                      :x 0
                      :y 0
+                     :r1 0
+                     :r2 0
+                     :r3 0
+                     :r4 0
                      :width 0.01
                      :height 0.01}
 

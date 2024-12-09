@@ -1130,6 +1130,45 @@
         (update :pages-index dissoc nil)
         (update :pages-index update-vals update-page))))
 
+(defn migrate-up-58
+  [data]
+  (letfn [(update-object [object]
+            (if (and (:rx object) (not (:r1 object)))
+              (-> object
+                  (assoc :r1 (:rx object))
+                  (assoc :r2 (:rx object))
+                  (assoc :r3 (:rx object))
+                  (assoc :r4 (:rx object)))
+              object))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+
+(defn migrate-down-58
+  [data]
+  (letfn [(update-object [object]
+            (if (= (:r1 object) (:r2 object) (:r3 object) (:r4 object))
+              (-> object
+                  (dissoc :r1 :r2 :r3 :r4)
+                  (assoc :rx (:r1 object))
+                  (assoc :ry (:r1 object)))
+              object))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
+
+
+
 (def migrations
   "A vector of all applicable migrations"
   [{:id 2 :migrate-up migrate-up-2}
@@ -1178,5 +1217,6 @@
    {:id 54 :migrate-up migrate-up-54}
    {:id 55 :migrate-up migrate-up-55}
    {:id 56 :migrate-up migrate-up-56}
-   {:id 57 :migrate-up migrate-up-57}])
+   {:id 57 :migrate-up migrate-up-57}
+   {:id 58 :migrate-up migrate-up-58 :migrate-down migrate-down-58}])
 

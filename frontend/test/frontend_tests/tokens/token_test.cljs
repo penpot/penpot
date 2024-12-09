@@ -25,11 +25,6 @@
   (t/testing "doesnt accept invalid double"
     (t/is (nil? (wtt/parse-token-value ".3")))))
 
-(t/deftest remove-attributes-for-token-id
-  (t/testing "removes attributes matching the `token`, keeps other attributes"
-    (t/is (= {:ry "b"}
-             (wtt/remove-attributes-for-token #{:rx :ry} {:name "a"} {:rx "a" :ry "b"})))))
-
 (t/deftest token-applied-test
   (t/testing "matches passed token with `:token-attributes`"
     (t/is (true? (wtt/token-applied? {:name "a"} {:applied-tokens {:x "a"}} #{:x}))))
