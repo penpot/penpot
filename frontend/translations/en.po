@@ -4060,6 +4060,9 @@ msgstr "Group name"
 msgid "workspace.assets.libraries"
 msgstr "Libraries"
 
+msgid "workspace.assets.add-library"
+msgstr "Add library"
+
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:523
 msgid "workspace.assets.list-view"
 msgstr "List view"
@@ -6107,7 +6110,7 @@ msgstr "Expand sidebar"
 
 #: src/app/main/ui/workspace/right_header.cljs:246, src/app/main/ui/workspace/right_header.cljs:247
 msgid "workspace.sidebar.history"
-msgstr "History (%s)"
+msgstr "History"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:524, src/app/main/ui/workspace/sidebar.cljs:110, src/app/main/ui/workspace/sidebar.cljs:114, src/app/main/ui/workspace/sidebar.cljs:123
 msgid "workspace.sidebar.layers"
@@ -6558,6 +6561,13 @@ msgstr "Loading..."
 #: src/app/main/ui/workspace/sidebar/versions.cljs:283
 msgid "workspace.versions.restore-warning"
 msgstr "Do you want to restore this version?"
+
+msgid "workspace.versions.warning.text"
+msgstr "Autosaved versions will be kept for %s days."
+
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr "If you'd like to increase this limit, write to us at [support@penpot.app](%s)"
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:207
 msgid "workspace.versions.snapshot-menu"

@@ -30,7 +30,7 @@ test("Save and restore version", async ({ page }) => {
     "workspace/versions-snapshot-1.json",
   );
 
-  await page.getByLabel("History (Alt+H)").click();
+  await page.getByLabel("History").click();
 
   await workspacePage.mockRPC(
     "create-file-snapshot",

@@ -35,7 +35,7 @@
       },
       "~:permissions": {
           "~:type": "~:membership",
-          "~:is-owner": true,
+          "~:is-owner": false,
           "~:is-admin": true,
           "~:can-edit": true
       },
