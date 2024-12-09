@@ -78,6 +78,7 @@
 // This icon still use the old svg
 .penpot-icon {
   @include flexCenter;
+
   svg {
     fill: var(--icon-foreground);
     width: $s-24;
@@ -138,6 +139,7 @@
 .action {
   --sidebar-action-icon-color: var(--icon-foreground);
   --sidebar-icon-backgroun-color: var(--color-background-secondary);
+
   &:hover {
     --sidebar-action-icon-color: var(--color-background-secondary);
     --sidebar-icon-backgroun-color: var(--color-accent-primary);
@@ -175,6 +177,7 @@
   right: $s-2;
   top: $s-52;
   max-height: $s-480;
+
   &:not(.teams-dropdown) {
     min-width: $s-160;
   }
@@ -204,8 +207,10 @@
 
 .sidebar-nav-item {
   cursor: pointer;
+
   &:hover {
     background-color: var(--sidebar-element-background-color-hover);
+
     span {
       color: var(--sidebar-element-foreground-color-hover);
     }
@@ -213,6 +218,7 @@
 
   &.current {
     background-color: var(--sidebar-element-background-color-selected);
+
     .element-title {
       color: var(--sidebar-element-foreground-color-selected);
     }
@@ -228,6 +234,7 @@
   padding: $s-8 $s-8 $s-8 $s-24;
   font-weight: $fw400;
   width: 100%;
+
   &:hover {
     text-decoration: none;
   }
@@ -293,6 +300,7 @@
     outline: none;
     border: $s-1 solid var(--search-bar-input-border-color-focus);
   }
+
   ::placeholder {
     color: var(--search-bar-placeholder-foreground-color);
   }
