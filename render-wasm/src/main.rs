@@ -7,7 +7,6 @@ mod state;
 mod utils;
 mod view;
 
-use shapes::RawPathData;
 use skia_safe as skia;
 
 use crate::state::State;
@@ -107,7 +106,7 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
 pub extern "C" fn set_shape_selrect(left: f32, top: f32, right: f32, bottom: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
-        shape.selrect.set_ltrb(left, top, right, bottom);
+        shape.set_selrect(left, top, right, bottom);
     }
 }
 

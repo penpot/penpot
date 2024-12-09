@@ -296,9 +296,9 @@
 
 (defn- debug-flags
   []
-    (cond-> 0
-      (dbg/enabled? :wasm-viewbox)
-      (bit-or 2r00000000000000000000000000000001)))
+  (cond-> 0
+    (dbg/enabled? :wasm-viewbox)
+    (bit-or 2r00000000000000000000000000000001)))
 
 (defn assign-canvas
   [canvas]
