@@ -422,7 +422,9 @@
                                   :deleted-at deleted-at
                                   :id profile-id}})
 
-      (rph/with-transform {} (session/delete-fn cfg)))))
+
+      (-> (rph/wrap nil)
+          (rph/with-transform (session/delete-fn cfg))))))
 
 
 ;; --- HELPERS
@@ -431,8 +433,11 @@
   "WITH owner_teams AS (
       SELECT tpr.team_id AS id
         FROM team_profile_rel AS tpr
+        JOIN team AS t ON (t.id = tpr.team_id)
        WHERE tpr.is_owner IS TRUE
          AND tpr.profile_id = ?
+         AND (t.deleted_at IS NULL OR
+              t.deleted_at > now())
    )
    SELECT tpr.team_id AS id,
           count(tpr.profile_id) - 1 AS participants

@@ -203,7 +203,24 @@
             edata (ex-data error)]
         (t/is (th/ex-info? error))
         (t/is (= (:type edata) :validation))
-        (t/is (= (:code edata) :owner-teams-with-people))))))
+        (t/is (= (:code edata) :owner-teams-with-people)))
+
+      (let [params {::th/type :delete-team
+                    ::rpc/profile-id (:id prof1)
+                    :id (:id team1)}
+            out    (th/command! params)]
+      ;; (th/print-result! out)
+
+        (let [team (th/db-get :team {:id (:id team1)} {::db/remove-deleted false})]
+          (t/is (dt/instant? (:deleted-at team)))))
+
+    ;; Request profile to be deleted
+      (let [params {::th/type :delete-profile
+                    ::rpc/profile-id (:id prof1)}
+            out    (th/command! params)]
+      ;; (th/print-result! out)
+        (t/is (nil? (:result out)))
+        (t/is (nil? (:error out)))))))
 
 (t/deftest profile-deletion-3
   (let [prof1 (th/create-profile* 1)
@@ -291,7 +308,7 @@
           out    (th/command! params)]
       ;; (th/print-result! out)
 
-      (t/is (= {} (:result out)))
+      (t/is (nil? (:result out)))
       (t/is (nil? (:error out))))
 
     ;; query files after profile soft deletion
@@ -336,7 +353,7 @@
                   ::rpc/profile-id (:id prof1)}
           out    (th/command! params)]
       ;; (th/print-result! out)
-      (t/is (= {} (:result out)))
+      (t/is (nil? (:result out)))
       (t/is (nil? (:error out))))
 
     (th/run-pending-tasks!)

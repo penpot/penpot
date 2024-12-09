@@ -406,7 +406,6 @@
            ;; so the menu can be handled
            [:div {:style {:pointer-events "all"}}
             [:> file-menu* {:files (vals selected-files)
-                            :show (:menu-open dashboard-local)
                             :left (+ 24 (:x (:menu-pos dashboard-local)))
                             :top (:y (:menu-pos dashboard-local))
                             :can-edit can-edit
