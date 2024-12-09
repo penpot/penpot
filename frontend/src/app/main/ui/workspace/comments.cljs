@@ -150,12 +150,12 @@
 
       (if (seq tgroups)
         [:div {:class (stl/css :thread-groups)}
-         [:& cmt/comment-thread-group
+         [:> cmt/comment-sidebar-thread-group*
           {:group (first tgroups)
            :on-thread-click on-thread-click
            :profiles profiles}]
          (for [tgroup (rest tgroups)]
-           [:& cmt/comment-thread-group
+           [:> cmt/comment-sidebar-thread-group*
             {:group tgroup
              :on-thread-click on-thread-click
              :profiles profiles
