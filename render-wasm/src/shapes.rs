@@ -11,9 +11,10 @@ pub use fills::*;
 pub use images::*;
 pub use paths::*;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Kind {
     Rect,
+    Path(Path),
 }
 
 pub type Color = skia::Color;
@@ -107,6 +108,12 @@ impl Shape {
             gradient.add_stop(stop.color(), stop.offset());
         }
 
+        Ok(())
+    }
+
+    pub fn set_path_segments(&mut self, buffer: Vec<RawPathData>) -> Result<(), String> {
+        let p = Path::try_from(buffer)?;
+        self.kind = Kind::Path(p);
         Ok(())
     }
 

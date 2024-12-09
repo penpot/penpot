@@ -194,10 +194,8 @@
         ptr (h/call internal-module "_alloc_bytes" size)
         heap      (gobj/get ^js internal-module "HEAPU8")
         mem       (js/Uint8Array. (.-buffer heap) ptr size)]
-    (.set mem (js/Uint8Array. buffer)
-    (h/call internal-module "_set_shape_path_content" (count content))
-    (js/console.log mem)
-    (js/console.log buffer))))
+    (.set mem (js/Uint8Array. buffer))
+    (h/call internal-module "_set_shape_path_content")))
 
 (defn- translate-blend-mode
   [blend-mode]

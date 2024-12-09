@@ -7,7 +7,7 @@ pub extern "C" fn alloc_bytes(len: usize) -> *mut u8 {
         panic!("Bytes already allocated");
     }
 
-    let mut buffer = Box::new(Vec::<u8>::with_capacity(len));
+    let mut buffer = Box::new(vec![0u8; len]);
     let ptr = buffer.as_mut_ptr();
 
     unsafe { BUFFERU8 = Some(buffer) };
@@ -22,4 +22,9 @@ pub fn free_bytes() {
 pub fn buffer_ptr() -> *mut u8 {
     let buffer = unsafe { BUFFERU8.as_mut() }.expect("uninitializied buffer");
     buffer.as_mut_ptr()
+}
+
+pub fn bytes() -> Vec<u8> {
+    let buffer = unsafe { BUFFERU8.take() }.expect("uninitialized buffer");
+    *buffer
 }

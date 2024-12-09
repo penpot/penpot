@@ -7,6 +7,7 @@ mod state;
 mod utils;
 mod view;
 
+use shapes::RawPathData;
 use skia_safe as skia;
 
 use crate::state::State;
@@ -271,20 +272,18 @@ pub extern "C" fn set_shape_hidden(hidden: bool) {
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_path_content(n_segments: u32) {
+pub extern "C" fn set_shape_path_content() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
 
     if let Some(shape) = state.current_shape() {
-        let len = n_segments as usize;
-
-        unsafe {
-            let buffer = Vec::<shapes::RawPathData>::from_raw_parts(
-                mem::buffer_ptr() as *mut shapes::RawPathData,
-                len,
-                len,
-            );
-            mem::free_bytes();
-        }
+        let bytes = mem::bytes();
+        let raw_segments = bytes
+            .chunks(size_of::<shapes::RawPathData>())
+            .map(|data| shapes::RawPathData {
+                data: data.try_into().unwrap(),
+            })
+            .collect();
+        shape.set_path_segments(raw_segments).unwrap();
     }
 }
 
