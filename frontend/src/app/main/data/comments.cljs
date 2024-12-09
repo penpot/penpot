@@ -502,11 +502,11 @@
           (d/update-in-when [:comments-local :draft] merge data)))))
 
 (defn toggle-comment-options
-  [comment]
+  [comment-id]
   (ptk/reify ::toggle-comment-options
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:comments-local :options] #(if (=  (:id comment) %) nil (:id comment))))))
+      (update-in state [:comments-local :options] #(if (=  comment-id %) nil comment-id)))))
 
 (defn hide-comment-options
   []
