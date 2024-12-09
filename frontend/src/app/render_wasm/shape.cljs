@@ -8,9 +8,7 @@
   (:require
    [app.common.transit :as t]
    [app.common.types.shape :as shape]
-   ;; [app.common.svg.path :as path]
    [app.render-wasm.api :as api]
-   [app.render-wasm.path :as path]
    [clojure.core :as c]
    [cuerdas.core :as str]))
 
