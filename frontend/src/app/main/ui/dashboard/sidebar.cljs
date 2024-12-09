@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.spec :as us]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.auth :as da]
    [app.main.data.common :as dcm]
@@ -280,7 +281,8 @@
         (mf/use-fn
          (fn [event]
            (let [team-id (-> (dom/get-current-target event)
-                             (dom/get-data "value"))]
+                             (dom/get-data "value")
+                             (uuid/parse))]
 
              (st/emit! (dcm/go-to-dashboard-recent :team-id team-id)))))
 
