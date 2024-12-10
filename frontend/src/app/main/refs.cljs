@@ -254,21 +254,8 @@
 (def workspace-file-typography
   (l/derived :typographies workspace-data))
 
-(def workspace-local-library
-  (l/derived (fn [state]
-               (select-keys (:workspace-data state)
-                            [:id
-                             :colors
-                             :media
-                             :typographies
-                             :components]))
-             st/state =))
-
 (def workspace-presence
   (l/derived :workspace-presence st/state))
-
-(def workspace-snap-data
-  (l/derived :workspace-snap-data st/state))
 
 (def workspace-page
   (l/derived (fn [state]
