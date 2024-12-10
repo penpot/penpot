@@ -91,7 +91,7 @@
         (mf/use-fn
          (mf/deps tree-path)
          #(on-edit tree-path))
-        on-edit-submit
+        on-edit-submit'
         (mf/use-fn
          (mf/deps tree-path on-edit-submit)
          #(on-edit-submit tree-path %))]
@@ -113,7 +113,7 @@
         {:default-value label
          :on-cancel on-edit-reset
          :on-create on-edit-reset
-         :on-submit on-edit-submit}]
+         :on-submit on-edit-submit'}]
        [:div {:class (stl/css :set-name)
               :on-double-click on-double-click}
         label])]))
@@ -148,9 +148,9 @@
                            (fn [event]
                              (dom/stop-propagation event)
                              (on-toggle set-name)))
-        on-edit-submit (mf/use-fn
-                        (mf/deps set on-edit-submit)
-                        #(on-edit-submit set-name (ctob/update-name set %)))]
+        on-edit-submit' (mf/use-fn
+                         (mf/deps set on-edit-submit)
+                         #(on-edit-submit set-name (ctob/update-name set %)))]
     [:div {:role "button"
            :data-testid "tokens-set-item"
            :style {"--tree-depth" tree-depth}
@@ -168,7 +168,7 @@
         {:default-value label
          :on-cancel on-edit-reset
          :on-create on-edit-reset
-         :on-submit on-edit-submit}]
+         :on-submit on-edit-submit'}]
        [:*
         [:div {:class (stl/css :set-name)
                :on-double-click on-double-click}
