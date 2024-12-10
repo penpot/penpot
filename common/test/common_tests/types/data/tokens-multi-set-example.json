@@ -796,7 +796,14 @@
       }
     }
   },
-  "$themes": [],
+  "$themes": [ {
+    "name": "theme-1",
+    "group": "group-1",
+    "description": null,
+    "is-source": false,
+    "modified-at": "2024-01-01T00:00:00.000+00:00",
+    "sets": [ "light" ]
+  } ],
   "$metadata": {
     "tokenSetOrder": ["core", "light", "dark", "theme"]
   }
