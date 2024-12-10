@@ -884,11 +884,20 @@ When `before-set-name` is nil, move set to bottom")
        (d/ordered-map) active-themes)))
 
   (encode-dtcg [_]
-    (into {} (comp
-              (filter (partial instance? TokenSet))
-              (map (fn [token-set]
-                     [(:name token-set) (get-dtcg-tokens-tree token-set)])))
-          (tree-seq d/ordered-map? vals sets)))
+    (let [themes (into []
+                       (comp
+                        (filter (partial instance? TokenTheme))
+                        (map (fn [token-theme]
+                               (into {}  token-theme))))
+                       (tree-seq d/ordered-map? vals themes))
+          themes-set-names (apply clojure.set/union (map :sets themes))
+          sets (into {} (comp
+                         (filter #(and (instance? TokenSet %)
+                                       (contains? themes-set-names (:name %))))
+                         (map (fn [token-set]
+                                [(:name token-set) (get-dtcg-tokens-tree token-set)])))
+                     (tree-seq d/ordered-map? vals sets))]
+      (assoc sets :$themes themes)))
 
   (decode-dtcg-json [_ parsed-json]
     (let [;; tokens-studio/plugin will add these meta properties, remove them for now
