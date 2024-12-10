@@ -233,10 +233,8 @@
   (l/derived :workspace-data st/state))
 
 (def workspace-file-colors
-  (l/derived (fn [data]
-               (when data
-                 (->> (:colors data)
-                      (d/mapm #(assoc %2 :file-id (:id data))))))
+  (l/derived (fn [{:keys [id] :as data}]
+               (some-> (:colors data) (update-vals #(assoc % :file-id id))))
              workspace-data
              =))
 
