@@ -6,10 +6,13 @@ use crate::render::BlendMode;
 
 mod fills;
 mod images;
+mod matrix;
 mod paths;
 mod renderable;
+
 pub use fills::*;
 pub use images::*;
+use matrix::*;
 pub use paths::*;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -20,29 +23,6 @@ pub enum Kind {
 }
 
 pub type Color = skia::Color;
-
-#[derive(Debug, Clone, Copy)]
-pub struct Matrix {
-    pub a: f32,
-    pub b: f32,
-    pub c: f32,
-    pub d: f32,
-    pub e: f32,
-    pub f: f32,
-}
-
-impl Matrix {
-    pub fn identity() -> Self {
-        Self {
-            a: 1.,
-            b: 0.,
-            c: 0.,
-            d: 1.,
-            e: 0.,
-            f: 0.,
-        }
-    }
-}
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
@@ -103,12 +83,7 @@ impl Shape {
     }
 
     pub fn set_transform(&mut self, a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
-        self.transform.a = a;
-        self.transform.b = b;
-        self.transform.c = c;
-        self.transform.d = d;
-        self.transform.e = e;
-        self.transform.f = f;
+        self.transform = Matrix::new(a, b, c, d, e, f);
     }
 
     pub fn set_opacity(&mut self, opacity: f32) {
@@ -125,18 +100,6 @@ impl Shape {
 
     pub fn clear_children(&mut self) {
         self.children.clear();
-    }
-
-    pub fn translation(&self) -> (f32, f32) {
-        (self.transform.e, self.transform.f)
-    }
-
-    pub fn scale(&self) -> (f32, f32) {
-        (self.transform.a, self.transform.d)
-    }
-
-    pub fn skew(&self) -> (f32, f32) {
-        (self.transform.c, self.transform.b)
     }
 
     pub fn fills(&self) -> std::slice::Iter<Fill> {
