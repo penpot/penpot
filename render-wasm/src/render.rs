@@ -1,56 +1,17 @@
-use skia::gpu::{self, gl::FramebufferInfo, DirectContext};
+mod gpu_state;
+mod options;
+
 use skia::Contains;
 use skia_safe as skia;
 use std::collections::HashMap;
 use uuid::Uuid;
 
-use crate::debug;
 use crate::math::Rect;
 use crate::shapes::{draw_image_in_container, Fill, Image, Kind, Shape};
 use crate::view::Viewbox;
 
-struct GpuState {
-    pub context: DirectContext,
-    framebuffer_info: FramebufferInfo,
-}
-
-impl GpuState {
-    fn new() -> Self {
-        let interface = skia::gpu::gl::Interface::new_native().unwrap();
-        let context = skia::gpu::direct_contexts::make_gl(interface, None).unwrap();
-        let framebuffer_info = {
-            let mut fboid: gl::types::GLint = 0;
-            unsafe { gl::GetIntegerv(gl::FRAMEBUFFER_BINDING, &mut fboid) };
-
-            FramebufferInfo {
-                fboid: fboid.try_into().unwrap(),
-                format: skia::gpu::gl::Format::RGBA8.into(),
-                protected: skia::gpu::Protected::No,
-            }
-        };
-
-        GpuState {
-            context,
-            framebuffer_info,
-        }
-    }
-
-    /// Create a Skia surface that will be used for rendering.
-    fn create_target_surface(&mut self, width: i32, height: i32) -> skia::Surface {
-        let backend_render_target =
-            gpu::backend_render_targets::make_gl((width, height), 1, 8, self.framebuffer_info);
-
-        gpu::surfaces::wrap_backend_render_target(
-            &mut self.context,
-            &backend_render_target,
-            skia::gpu::SurfaceOrigin::BottomLeft,
-            skia::ColorType::RGBA8888,
-            None,
-            None,
-        )
-        .unwrap()
-    }
-}
+use gpu_state::GpuState;
+use options::RenderOptions;
 
 pub(crate) struct CachedSurfaceImage {
     pub image: Image,
@@ -61,31 +22,6 @@ pub(crate) struct CachedSurfaceImage {
 impl CachedSurfaceImage {
     fn is_dirty(&self, viewbox: &Viewbox) -> bool {
         !self.has_all_shapes && !self.viewbox.area.contains(viewbox.area)
-    }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-struct RenderOptions {
-    debug_flags: u32,
-    dpr: Option<f32>,
-}
-
-impl Default for RenderOptions {
-    fn default() -> Self {
-        Self {
-            debug_flags: 0x00,
-            dpr: None,
-        }
-    }
-}
-
-impl RenderOptions {
-    pub fn is_debug_visible(&self) -> bool {
-        self.debug_flags & debug::DEBUG_VISIBLE == debug::DEBUG_VISIBLE
-    }
-
-    pub fn dpr(&self) -> f32 {
-        self.dpr.unwrap_or(1.0)
     }
 }
 
