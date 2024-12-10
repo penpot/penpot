@@ -625,6 +625,11 @@ When `before-set-name` is nil, move set to bottom")
   (delete-token-from-set [_ set-name token-name] "delete a token from a set")
   (toggle-set-in-theme [_ group-name theme-name set-name] "toggle a set used / not used in a theme")
   (get-active-themes-set-names [_] "set of set names that are active in the the active themes")
+  (sets-at-path-all-active? [_ prefixed-path] "compute active state for child sets at `prefixed-path`.
+Will return a value that matches this schema:
+`:none`    None of the nested sets are active
+`:all`     All of the nested sets are active
+`:partial` Mixed active state of nested sets")
   (get-active-themes-set-tokens [_] "set of set names that are active in the the active themes")
   (encode-dtcg [_] "Encodes library to a dtcg compatible json string")
   (decode-dtcg-json [_ parsed-json] "Decodes parsed json containing tokens and converts to library")
@@ -869,6 +874,19 @@ When `before-set-name` is nil, move set to bottom")
     (into #{}
           (mapcat :sets)
           (get-active-themes this)))
+
+  (sets-at-path-all-active? [this prefixed-path]
+    (let [active-set-names (get-active-themes-set-names this)]
+      (if (seq active-set-names)
+        (let [path-active-set-names (->> (get-sets-at-prefix-path this prefixed-path)
+                                         (map :name)
+                                         (into #{}))
+              difference (set/difference path-active-set-names active-set-names)]
+          (cond
+            (empty? difference) :all
+            (seq (set/intersection path-active-set-names active-set-names)) :partial
+            :else :none))
+        :none)))
 
   (get-active-themes-set-tokens [this]
     (let [sets-order (get-ordered-set-names this)
