@@ -781,6 +781,11 @@
                           (keyword))]
              (reset! sub-menu* menu))))
 
+        on-power-up-click
+        (mf/use-fn
+         (fn []
+           (dom/open-new-window "https://penpot.app/pricing")))
+
         toggle-flag
         (mf/use-fn
          (fn [event]
@@ -892,7 +897,15 @@
                                :data-testid   "help-info"
                                :id          "file-menu-help-info"}
        [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.help-info")]
-       [:span {:class (stl/css :open-arrow)} i/arrow]]]
+       [:span {:class (stl/css :open-arrow)} i/arrow]]
+      [:> dropdown-menu-item* {:class (stl/css-case :menu-item true)
+                               :on-click    on-power-up-click
+                               :on-key-down (fn [event]
+                                              (when (kbd/enter? event)
+                                                (on-power-up-click)))
+                               :on-pointer-enter close-sub-menu
+                               :id          "file-menu-power-up"}
+       [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.power-up")]]]
 
      (case sub-menu
        :file

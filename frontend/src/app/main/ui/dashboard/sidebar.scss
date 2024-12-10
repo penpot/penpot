@@ -6,6 +6,9 @@
 
 @use "common/refactor/common-refactor.scss" as *;
 @use "common/refactor/common-dashboard";
+@use "../ds/typography.scss" as t;
+
+@import "../ds/_borders.scss";
 
 // SIDEBAR COMPONENT
 .dashboard-sidebar {
@@ -30,6 +33,16 @@
   height: 100%;
   padding: 0;
   overflow-y: auto;
+}
+
+.separator {
+  height: var(--sp-xxs);
+  width: 94%;
+  margin-left: 3%;
+}
+
+.overflow-separator {
+  border-bottom: $b-1 solid var(--color-background-quaternary);
 }
 
 // SIDEBAR TEAM SWITCH
@@ -390,4 +403,32 @@
 .exit-icon {
   @extend .button-icon;
   stroke: var(--icon-foreground);
+}
+
+.upgrade-plan-section {
+  @include buttonStyle;
+  display: flex;
+  justify-content: space-between;
+  border: $b-1 solid var(--color-background-quaternary);
+  border-radius: var(--sp-s);
+  padding: var(--sp-m);
+  margin: var(--sp-m) var(--sp-s) var(--sp-m) var(--sp-m);
+  color: var(--color-foreground-secondary);
+  cursor: pointer;
+}
+
+.penpot-free {
+  @include t.use-typography("body-medium");
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.no-limits {
+  @include t.use-typography("body-small");
+}
+
+.power-up {
+  @include t.use-typography("body-small");
+  color: var(--color-accent-tertiary);
 }

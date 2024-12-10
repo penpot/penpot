@@ -971,6 +971,15 @@ msgstr "Tu nombre"
 msgid "dashboard.your-penpot"
 msgstr "Tu Penpot"
 
+msgid "dashboard.upgrade-plan.penpot-free"
+msgstr "Penpot Gratis"
+
+msgid "dashboard.upgrade-plan.no-limits"
+msgstr "Sin límites a la creatividad"
+
+msgid "dashboard.upgrade-plan.power-up"
+msgstr "Mejora"
+
 #: src/app/main/ui/alert.cljs:32
 msgid "ds.alert-ok"
 msgstr "Ok"
@@ -4335,6 +4344,10 @@ msgstr "Preferencias"
 #: src/app/main/ui/workspace/main_menu.cljs:814
 msgid "workspace.header.menu.option.view"
 msgstr "Ver"
+
+#: src/app/main/ui/workspace/main_menu.cljs:908
+msgid "workspace.header.menu.option.power-up"
+msgstr "Mejora tu plan"
 
 #: src/app/main/ui/workspace/main_menu.cljs:471
 msgid "workspace.header.menu.redo"
