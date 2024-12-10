@@ -882,9 +882,10 @@ Will return a value that matches this schema:
                                          (map :name)
                                          (into #{}))
               difference (set/difference path-active-set-names active-set-names)]
-          (if (empty? difference)
-            :all
-            :partial))
+          (cond
+            (empty? difference) :all
+            (seq (set/intersection path-active-set-names active-set-names)) :partial
+            :else :none))
         :none)))
 
   (get-active-themes-set-tokens [this]

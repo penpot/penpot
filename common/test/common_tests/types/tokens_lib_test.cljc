@@ -412,7 +412,9 @@
                                                                  :sets #{"foo/bar/baz"}))
                           (ctob/add-theme (ctob/make-token-theme :name "all"
                                                                  :sets #{"foo/bar/baz"
-                                                                         "foo/bar/bam"})))
+                                                                         "foo/bar/bam"}))
+                          (ctob/add-theme (ctob/make-token-theme :name "invalid"
+                                                                 :sets #{"foo/missing"})))
 
           expected-none (-> tokens-lib
                             (ctob/set-active-themes #{"/none"})
@@ -422,10 +424,14 @@
                            (ctob/sets-at-path-all-active? "G-foo"))
           expected-partial (-> tokens-lib
                                (ctob/set-active-themes #{"/partial"})
-                               (ctob/sets-at-path-all-active? "G-foo"))]
+                               (ctob/sets-at-path-all-active? "G-foo"))
+          expected-invalid-none (-> tokens-lib
+                                    (ctob/set-active-themes #{"/invalid"})
+                                    (ctob/sets-at-path-all-active? "G-foo"))]
       (t/is (= :none expected-none))
       (t/is (= :all expected-all))
-      (t/is (= :partial expected-partial)))))
+      (t/is (= :partial expected-partial))
+      (t/is (= :none expected-invalid-none)))))
 
 (t/deftest token-theme-in-a-lib
   (t/testing "add-token-theme"
