@@ -93,13 +93,13 @@
 (defn restore-version
   [id origin]
   (assert (uuid? id) "expected valid uuid for `id`")
-
   (ptk/reify ::restore-version
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-id (:current-file-id state)]
         (rx/concat
-         (rx/of ::dwp/force-persist)
+         (rx/of ::dwp/force-persist
+                (dw/remove-layout-flag :document-history))
 
          ;; FIXME: we should abstract this
          (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
@@ -111,7 +111,6 @@
          (when-let [name (case origin
                            :version "restore-pin-version"
                            :snapshot "restore-autosave"
-                           :plugin "restore-version-plugin"
                            nil)]
            (rx/of (ptk/event ::ev/event {::ev/name name}))))))))
 
