@@ -78,7 +78,7 @@
          :id (if mixed? ic/remove ic/tick)}])]))
 
 (mf/defc sets-tree-set-group
-  [{:keys [active? label tree-depth tree-path selected? collapsed? editing? on-edit on-edit-reset on-edit-submit]}]
+  [{:keys [label tree-depth tree-path active? selected? collapsed? editing? on-edit on-edit-reset _on-edit-submit]}]
   (let [editing?' (editing? tree-path)
         active?' (active? tree-path)
         on-context-menu
