@@ -37,6 +37,8 @@
 
 ;; -- V2 Editor Helpers
 
+(def ^function create-root-from-string editor.v2/createRootFromString)
+(def ^function create-root-from-html editor.v2/createRootFromHTML)
 (def ^function create-editor editor.v2/create)
 (def ^function set-editor-root! editor.v2/setRoot)
 (def ^function get-editor-root editor.v2/getRoot)

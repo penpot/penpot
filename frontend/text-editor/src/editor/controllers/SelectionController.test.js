@@ -1,5 +1,4 @@
 import { expect, describe, test } from "vitest";
-import TextEditor from "../TextEditor.js";
 import {
   createEmptyParagraph,
   createParagraph,

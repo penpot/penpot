@@ -15,9 +15,11 @@
    [app.common.types.typographies-list :as ctyl]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.data.dashboard :as dd]
    [app.main.data.modal :as modal]
    [app.main.data.profile :as du]
    [app.main.data.team :as dtm]
+   [app.main.data.notifications :as ntf]
    [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
@@ -34,6 +36,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.strings :refer [matches-search]]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
@@ -85,8 +88,10 @@
                  (conj (tr "workspace.libraries.typography" typography-count))))
      "\u00A0")))
 
-(mf/defc describe-library-blocks
-  [{:keys [components-count graphics-count colors-count typography-count] :as props}]
+(mf/defc describe-library-blocks*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [components-count graphics-count colors-count typography-count]}]
   [:*
    (when (pos? components-count)
      [:li {:class (stl/css :element-count)}
@@ -104,10 +109,47 @@
      [:li {:class (stl/css :element-count)}
       (tr "workspace.libraries.typography" typography-count)])])
 
+(mf/defc sample-library-entry*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [library importing]}]
+  (let [id         (:id library)
+        importing? (deref importing)
+
+        on-error
+        (mf/use-fn
+         (fn [_]
+           (reset! importing nil)
+           (rx/of (ntf/error (tr "dashboard.libraries-and-templates.import-error")))))
+
+        on-success
+        (mf/use-fn
+         (fn [_]
+           (st/emit! (dtm/fetch-shared-files))))
+
+        import-library
+        (mf/use-fn
+         (fn [_]
+           (reset! importing id)
+           (st/emit! (dd/clone-template
+                      (with-meta {:template-id id}
+                        {:on-success on-success
+                         :on-error on-error})))))]
+
+    [:div {:class (stl/css :sample-library-item)
+           :key (dm/str id)}
+     [:div {:class (stl/css :sample-library-item-name)} (:name library)]
+     [:input {:class (stl/css-case :sample-library-button true
+                                   :sample-library-add (nil? importing?)
+                                   :sample-library-adding (some? importing?))
+              :type "button"
+              :value (if (= importing? id) (tr "labels.adding") (tr "labels.add"))
+              :on-click import-library}]]))
+
 (mf/defc libraries-tab*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [file-id is-shared linked-libraries shared-libraries]}]
+  [{:keys [file-id team-id is-shared linked-libraries shared-libraries]}]
   (let [search-term*   (mf/use-state "")
         search-term    (deref search-term*)
         library-ref    (mf/with-memo [file-id]
@@ -138,6 +180,11 @@
         (mf/with-memo [linked-libraries]
           (->> (vals linked-libraries)
                (sort-by (comp str/lower :name))))
+
+        importing*       (mf/use-state nil)
+        sample-libraries [{:id "penpot-design-system", :name "Design system example"}
+                          {:id "wireframing-kit", :name "Wireframe library"}
+                          {:id "whiteboarding-kit", :name "Whiteboarding Kit"}]
 
         change-search-term
         (mf/use-fn
@@ -216,10 +263,10 @@
         [:div {:class (stl/css :item-content)}
          [:div {:class (stl/css :item-name)} (tr "workspace.libraries.file-library")]
          [:ul {:class (stl/css :item-contents)}
-          [:& describe-library-blocks {:components-count (count components)
-                                       :graphics-count (count media)
-                                       :colors-count (count colors)
-                                       :typography-count (count typographies)}]]]
+          [:> describe-library-blocks* {:components-count (count components)
+                                        :graphics-count (count media)
+                                        :colors-count (count colors)
+                                        :typography-count (count typographies)}]]]
         (if ^boolean is-shared
           [:input {:class (stl/css :item-unpublish)
                    :type "button"
@@ -241,10 +288,10 @@
                   graphics-count   (count (dm/get-in library [:data :media] []))
                   colors-count     (count (dm/get-in library [:data :colors] []))
                   typography-count (count (dm/get-in library [:data :typographies] []))]
-              [:& describe-library-blocks {:components-count components-count
-                                           :graphics-count graphics-count
-                                           :colors-count colors-count
-                                           :typography-count typography-count}])]]
+              [:> describe-library-blocks* {:components-count components-count
+                                            :graphics-count graphics-count
+                                            :colors-count colors-count
+                                            :typography-count typography-count}])]]
 
           [:button {:class (stl/css :item-button)
                     :type "button"
@@ -275,10 +322,10 @@
                     graphics-count   (dm/get-in library [:library-summary :media :count] 0)
                     colors-count     (dm/get-in library [:library-summary :colors :count] 0)
                     typography-count (dm/get-in library [:library-summary :typographies :count] 0)]
-                [:& describe-library-blocks {:components-count components-count
-                                             :graphics-count graphics-count
-                                             :colors-count colors-count
-                                             :typography-count typography-count}])]]
+                [:> describe-library-blocks* {:components-count components-count
+                                              :graphics-count graphics-count
+                                              :colors-count colors-count
+                                              :typography-count typography-count}])]]
             [:button {:class (stl/css :item-button-shared)
                       :data-library-id (dm/str id)
                       :title (tr "workspace.libraries.shared-library-btn")
@@ -290,6 +337,21 @@
            (cond
              (nil? shared-libraries)
              (tr "workspace.libraries.loading")
+
+             (and (str/empty? search-term) (cf/external-feature-flag "templates-03" "test"))
+             [:*
+              [:div {:class (stl/css :sample-libraries-info)}
+               (tr "workspace.libraries.empty.no-libraries")
+               [:a {:target "_blank"
+                    :class (stl/css :sample-libraries-link)
+                    :href "https://penpot.app/libraries-templates"}
+                (tr "workspace.libraries.empty.some-templates")]]
+              [:div {:class (stl/css :sample-libraries-container)}
+               (tr "workspace.libraries.empty.add-some")
+               (for [library sample-libraries]
+                 [:> sample-library-entry*
+                  {:library library
+                   :importing importing*}])]]
 
              (str/empty? search-term)
              [:*

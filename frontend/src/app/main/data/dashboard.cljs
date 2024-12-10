@@ -552,18 +552,17 @@
 
 (defn clone-template
   [{:keys [template-id project-id] :as params}]
-  (dm/assert! (uuid? project-id))
   (ptk/reify ::clone-template
     ev/Event
     (-data [_]
-      {:template-id template-id
-       :project-id project-id})
+      {:template-id template-id})
 
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
-                  on-error rx/throw}} (meta params)]
+                  on-error rx/throw}} (meta params)
+            project-id (or project-id (:current-project-id state))]
         (->> (rp/cmd! ::sse/clone-template {:project-id project-id
                                             :template-id template-id})
              (rx/tap (fn [event]
