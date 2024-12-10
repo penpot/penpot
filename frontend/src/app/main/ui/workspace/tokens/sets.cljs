@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.sets
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
@@ -65,7 +66,7 @@
         mixed? (= checked "mixed")
         checked? (or all? mixed?)]
     [:div {:role "checkbox"
-           :aria-checked (str checked)
+           :aria-checked (dm/str checked)
            :tabindex 0
            :class (stl/css-case :checkbox-style true
                                 :checkbox-checked-style checked?)
