@@ -155,19 +155,27 @@
               (let [rgba (rgba-from-hex color opacity)]
                 (h/call internal-module "_add_shape_solid_fill" rgba))
 
-              (and (some? gradient)  (= (:type gradient) :linear))
+              (some? gradient)
               (let [stops     (:stops gradient)
                     n-stops   (count stops)
                     mem-size  (* 5 n-stops)
                     stops-ptr (h/call internal-module "_alloc_bytes" mem-size)
                     heap      (gobj/get ^js internal-module "HEAPU8")
                     mem       (js/Uint8Array. (.-buffer heap) stops-ptr mem-size)]
-                (h/call internal-module "_add_shape_linear_fill"
-                        (:start-x gradient)
-                        (:start-y gradient)
-                        (:end-x gradient)
-                        (:end-y gradient)
-                        opacity)
+                (if (= (:type gradient) :linear)
+                  (h/call internal-module "_add_shape_linear_fill"
+                          (:start-x gradient)
+                          (:start-y gradient)
+                          (:end-x gradient)
+                          (:end-y gradient)
+                          opacity)
+                  (h/call internal-module "_add_shape_radial_fill"
+                          (:start-x gradient)
+                          (:start-y gradient)
+                          (:end-x gradient)
+                          (:end-y gradient)
+                          opacity
+                          (:width gradient)))
                 (.set mem (js/Uint8Array. (clj->js (flatten (map (fn [stop]
                                                                    (let [[r g b a] (rgba-bytes-from-hex (:color stop) (:opacity stop))
                                                                          offset (:offset stop)]
