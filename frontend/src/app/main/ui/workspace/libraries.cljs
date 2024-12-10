@@ -17,9 +17,9 @@
    [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.profile :as du]
    [app.main.data.team :as dtm]
-   [app.main.data.notifications :as ntf]
    [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
@@ -149,7 +149,7 @@
 (mf/defc libraries-tab*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [file-id team-id is-shared linked-libraries shared-libraries]}]
+  [{:keys [file-id is-shared linked-libraries shared-libraries]}]
   (let [search-term*   (mf/use-state "")
         search-term    (deref search-term*)
         library-ref    (mf/with-memo [file-id]
