@@ -18,6 +18,7 @@
     opacity: $op-10;
     visibility: visible;
   }
+
   &.fixed {
     position: fixed;
   }
@@ -35,8 +36,9 @@
     border: $s-2 solid var(--panel-border-color);
     background-color: var(--menu-background-color);
     overflow: auto;
+
     & .separator {
-      height: $s-12;
+      border-top: solid $s-1 var(--color-background-quaternary);
     }
 
     &.min-width {
@@ -45,6 +47,7 @@
 
     .context-menu-item {
       display: flex;
+
       .context-menu-action {
         @include bodySmallTypography;
         display: flex;
@@ -56,12 +59,15 @@
         border-radius: $br-8;
         white-space: nowrap;
         color: var(--menu-foreground-color);
+
         &.submenu {
           display: flex;
           align-items: center;
           justify-content: space-between;
+
           .submenu-icon {
             margin-left: 0.5rem;
+
             svg {
               @extend .button-icon-small;
               stroke: var(--menu-foreground-color);
@@ -76,6 +82,7 @@
           background: none;
           border: none;
           cursor: pointer;
+
           .submenu-icon-back svg {
             @extend .button-icon-small;
             stroke: var(--menu-foreground-color);
@@ -83,27 +90,34 @@
           }
         }
       }
+
       &:hover .context-menu-action {
         background-color: var(--menu-background-color-hover);
         text-decoration: none;
         color: var(--menu-foreground-color);
+
         &.submenu .submenu-icon svg {
           stroke: var(--menu-foreground-color);
         }
+
         &.submenu-back .submenu-icon-back svg {
           stroke: var(--menu-foreground-color);
         }
       }
+
       &:focus {
         outline: none;
       }
+
       &:focus-visible {
         outline: none;
+
         .context-menu-action {
           border: 1px solid var(--menu-border-color-focus);
           background-color: var(--menu-background-color-focus);
           text-decoration: none;
           color: var(--menu-foreground-color-focus);
+
           &.submenu .submenu-icon svg {
             stroke: var(--menu-foreground-color-focus);
           }
@@ -113,15 +127,18 @@
           }
         }
       }
+
       &.selected {
         .context-menu-action {
           justify-content: space-between;
           color: var(--menu-foreground-color-focus);
         }
+
         .selected-icon {
           @extend .button-tag;
           border-radius: $br-8;
           height: 100%;
+
           svg {
             @extend .button-icon-small;
             stroke: var(--menu-foreground-color-focus);
@@ -129,6 +146,7 @@
         }
       }
     }
+
     .is-selected .context-menu-action {
       padding-left: $s-28;
       background-image: url(/images/icons/tick.svg);
@@ -138,6 +156,7 @@
       font-weight: $fw700;
     }
   }
+
   &.is-selectable {
     .context-menu-action {
       padding-left: 1.5rem;
