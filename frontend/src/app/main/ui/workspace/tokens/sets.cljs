@@ -31,6 +31,15 @@
 (defn on-update-token-set [set-name token-set]
   (st/emit! (wdt/update-token-set set-name token-set)))
 
+(defn on-update-token-set-group [from-prefixed-path-str to-path-str]
+  (st/emit!
+   (wdt/rename-token-set-group
+    (ctob/prefixed-set-path-string->set-name-string from-prefixed-path-str)
+    (-> (ctob/prefixed-set-path-string->set-path from-prefixed-path-str)
+        (butlast)
+        (ctob/join-set-path)
+        (ctob/join-set-path-str to-path-str)))))
+
 (defn on-create-token-set [_ token-set]
   (st/emit! (wdt/create-token-set token-set)))
 
@@ -79,7 +88,7 @@
          :id (if mixed? ic/remove ic/tick)}])]))
 
 (mf/defc sets-tree-set-group
-  [{:keys [label tree-depth tree-path active? selected? collapsed? editing? on-edit on-edit-reset _on-edit-submit]}]
+  [{:keys [label tree-depth tree-path active? selected? collapsed? editing? on-edit on-edit-reset on-edit-submit]}]
   (let [editing?' (editing? tree-path)
         active?' (active? tree-path)
         on-context-menu
@@ -93,10 +102,19 @@
               (wdt/show-token-set-context-menu
                {:position (dom/get-client-position event)
                 :prefixed-set-path tree-path})))))
-        on-click (mf/use-fn
-                  (fn [event]
-                    (dom/stop-propagation event)
-                    (swap! collapsed? not)))]
+        on-click
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (swap! collapsed? not)))
+        on-double-click
+        (mf/use-fn
+         (mf/deps tree-path)
+         #(on-edit tree-path))
+        on-edit-submit'
+        (mf/use-fn
+         (mf/deps tree-path on-edit-submit)
+         #(on-edit-submit tree-path %))]
     [:div {:role "button"
            :data-testid "tokens-set-group-item"
            :style {"--tree-depth" tree-depth}
@@ -115,11 +133,10 @@
         {:default-value label
          :on-cancel on-edit-reset
          :on-create on-edit-reset
-         ;; TODO Implement set group renaming
-         :on-submit (constantly nil)}]
+         :on-submit on-edit-submit'}]
        [:*
         [:div {:class (stl/css :set-name)
-               :on-double-click #(on-edit tree-path)}
+               :on-double-click on-double-click}
          label]
         [:& checkbox
          {:checked (case active?'
@@ -151,10 +168,16 @@
               (wdt/show-token-set-context-menu
                {:position (dom/get-client-position event)
                 :prefixed-set-path tree-path})))))
+        on-double-click (mf/use-fn
+                         (mf/deps tree-path)
+                         #(on-edit tree-path))
         on-checkbox-click (mf/use-fn
                            (fn [event]
                              (dom/stop-propagation event)
-                             (on-toggle set-name)))]
+                             (on-toggle set-name)))
+        on-edit-submit' (mf/use-fn
+                         (mf/deps set on-edit-submit)
+                         #(on-edit-submit set-name (ctob/update-name set %)))]
     [:div {:role "button"
            :data-testid "tokens-set-item"
            :style {"--tree-depth" tree-depth}
@@ -172,10 +195,10 @@
         {:default-value label
          :on-cancel on-edit-reset
          :on-create on-edit-reset
-         :on-submit #(on-edit-submit set-name (ctob/update-name set %))}]
+         :on-submit on-edit-submit'}]
        [:*
         [:div {:class (stl/css :set-name)
-               :on-double-click #(on-edit tree-path)}
+               :on-double-click on-double-click}
          label]
         [:& checkbox
          {:on-click on-checkbox-click
@@ -188,7 +211,8 @@
            editing?
            on-edit
            on-edit-reset
-           on-edit-submit
+           on-edit-submit-set
+           on-edit-submit-group
            on-select
            on-toggle
            selected?
@@ -222,7 +246,7 @@
          :on-toggle on-toggle
          :on-edit on-edit
          :on-edit-reset on-edit-reset
-         :on-edit-submit on-edit-submit}]
+         :on-edit-submit on-edit-submit-set}]
        set-group?
        [:& sets-tree-set-group
         {:selected? (selected? tree-path)
@@ -235,10 +259,10 @@
          :editing? editing?
          :on-edit on-edit
          :on-edit-reset on-edit-reset
-         :on-edit-submit on-edit-submit}])
+         :on-edit-submit on-edit-submit-group}])
      (when children?
        (for [[set-path set-node] set-node
-             :let [tree-path' (str (when tree-path (str tree-path "/")) set-path)]]
+             :let [tree-path' (ctob/join-set-path-str tree-path set-path)]]
          [:& sets-tree
           {:key tree-path'
            :set-path set-path
@@ -253,11 +277,13 @@
            :editing? editing?
            :on-edit on-edit
            :on-edit-reset on-edit-reset
-           :on-edit-submit on-edit-submit}]))]))
+           :on-edit-submit-set on-edit-submit-set
+           :on-edit-submit-group on-update-token-set-group}]))]))
 
 (mf/defc controlled-sets-list
   [{:keys [token-sets
            on-update-token-set
+           on-update-token-set-group
            token-set-selected?
            token-set-active?
            token-set-group-active?
@@ -288,7 +314,8 @@
             :editing? editing?
             :on-edit on-edit
             :on-edit-reset on-reset
-            :on-edit-submit on-update-token-set}]
+            :on-edit-submit-set on-update-token-set
+            :on-edit-submit-group on-update-token-set-group}]
           (when new?
             [:& sets-tree-set
              {:set (ctob/make-token-set :name "")
@@ -326,4 +353,5 @@
       :origin "set-panel"
       :on-toggle-token-set on-toggle-token-set-click
       :on-update-token-set on-update-token-set
+      :on-update-token-set-group on-update-token-set-group
       :on-create-token-set on-create-token-set}]))

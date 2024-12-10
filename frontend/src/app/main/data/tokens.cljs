@@ -133,6 +133,16 @@
            (set-selected-token-set-path-from-name (:name new-token-set))
            (dch/commit-changes changes)))))))
 
+(defn rename-token-set-group [from-path-str to-path-str]
+  (ptk/reify ::rename-token-set-group
+    ptk/WatchEvent
+    (watch [it _state _]
+      (let [changes (-> (pcb/empty-changes it)
+                        (pcb/rename-token-set-group from-path-str to-path-str))]
+        (rx/of
+         (set-selected-token-set-path-from-name to-path-str)
+         (dch/commit-changes changes))))))
+
 (defn update-token-set [set-name token-set]
   (ptk/reify ::update-token-set
     ptk/WatchEvent
