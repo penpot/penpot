@@ -87,8 +87,10 @@
                  (conj (tr "workspace.libraries.typography" typography-count))))
      "\u00A0")))
 
-(mf/defc describe-library-blocks
-  [{:keys [components-count graphics-count colors-count typography-count] :as props}]
+(mf/defc describe-library-blocks*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [components-count graphics-count colors-count typography-count]}]
   [:*
    (when (pos? components-count)
      [:li {:class (stl/css :element-count)}
@@ -264,10 +266,10 @@
         [:div {:class (stl/css :item-content)}
          [:div {:class (stl/css :item-name)} (tr "workspace.libraries.file-library")]
          [:ul {:class (stl/css :item-contents)}
-          [:& describe-library-blocks {:components-count (count components)
-                                       :graphics-count (count media)
-                                       :colors-count (count colors)
-                                       :typography-count (count typographies)}]]]
+          [:> describe-library-blocks* {:components-count (count components)
+                                        :graphics-count (count media)
+                                        :colors-count (count colors)
+                                        :typography-count (count typographies)}]]]
         (if ^boolean shared?
           [:input {:class (stl/css :item-unpublish)
                    :type "button"
@@ -289,10 +291,10 @@
                   graphics-count   (count (dm/get-in library [:data :media] []))
                   colors-count     (count (dm/get-in library [:data :colors] []))
                   typography-count (count (dm/get-in library [:data :typographies] []))]
-              [:& describe-library-blocks {:components-count components-count
-                                           :graphics-count graphics-count
-                                           :colors-count colors-count
-                                           :typography-count typography-count}])]]
+              [:> describe-library-blocks* {:components-count components-count
+                                            :graphics-count graphics-count
+                                            :colors-count colors-count
+                                            :typography-count typography-count}])]]
 
           [:button {:class (stl/css :item-button)
                     :type "button"
@@ -323,10 +325,10 @@
                     graphics-count   (dm/get-in library [:library-summary :media :count] 0)
                     colors-count     (dm/get-in library [:library-summary :colors :count] 0)
                     typography-count (dm/get-in library [:library-summary :typographies :count] 0)]
-                [:& describe-library-blocks {:components-count components-count
-                                             :graphics-count graphics-count
-                                             :colors-count colors-count
-                                             :typography-count typography-count}])]]
+                [:> describe-library-blocks* {:components-count components-count
+                                              :graphics-count graphics-count
+                                              :colors-count colors-count
+                                              :typography-count typography-count}])]]
             [:button {:class (stl/css :item-button-shared)
                       :data-library-id (dm/str id)
                       :title (tr "workspace.libraries.shared-library-btn")
