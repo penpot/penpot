@@ -6,7 +6,6 @@
 
 (ns app.main.data.tokens
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.geom.point :as gpt]
@@ -15,11 +14,9 @@
    [app.main.data.changes :as dch]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.refs :as refs]
-   [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.token-set :as wtts]
    [app.main.ui.workspace.tokens.update :as wtu]
    [beicon.v2.core :as rx]
-   [clojure.data :as data]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
@@ -50,38 +47,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn toggle-or-apply-token
-  "Remove any shape attributes from token if they exists.
-  Othewise apply token attributes."
-  [shape token]
-  (let [[shape-leftover token-leftover _matching] (data/diff (:applied-tokens shape) token)]
-    (merge {} shape-leftover token-leftover)))
-
-(defn token-from-attributes [token attributes]
-  (->> (map (fn [attr] [attr (wtt/token-identifier token)]) attributes)
-       (into {})))
-
-(defn unapply-token-id [shape attributes]
-  (update shape :applied-tokens d/without-keys attributes))
-
-(defn apply-token-to-attributes [{:keys [shape token attributes]}]
-  (let [token (token-from-attributes token attributes)]
-    (toggle-or-apply-token shape token)))
-
-(defn apply-token-to-shape
-  [{:keys [shape token attributes] :as _props}]
-  (let [applied-tokens (apply-token-to-attributes {:shape shape
-                                                   :token token
-                                                   :attributes attributes})]
-    (update shape :applied-tokens #(merge % applied-tokens))))
-
-(defn maybe-apply-token-to-shape
-  "When the passed `:token` is non-nil apply it to the `:applied-tokens` on a shape."
-  [{:keys [shape token _attributes] :as props}]
-  (if token
-    (apply-token-to-shape props)
-    shape))
 
 (defn get-token-data-from-token-id
   [id]

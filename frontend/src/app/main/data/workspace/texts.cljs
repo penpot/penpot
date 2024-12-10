@@ -432,7 +432,7 @@
   (txt/transform-nodes (some-fn txt/is-text-node? txt/is-paragraph-node?) migrate-node content))
 
 (defn update-text-with-function
-  [id update-node-fn]
+  [id update-node-fn & options]
   (ptk/reify ::update-text-with-function
     ptk/UpdateEvent
     (update [_ state]
@@ -464,7 +464,7 @@
                 (-> shape
                     (dissoc :fills)
                     (d/update-when :content update-content)))]
-          (rx/of (dwsh/update-shapes shape-ids update-shape)))))
+          (rx/of (dwsh/update-shapes shape-ids update-shape options)))))
 
     ptk/EffectEvent
     (effect [_ state _]

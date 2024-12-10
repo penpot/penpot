@@ -1166,7 +1166,7 @@
                      ; We need to trigger a sync if the shape has changed any
                      ; attribute that participates in components synchronization.
                      (and (= (:type operation) :set)
-                          (get ctk/sync-attrs (:attr operation))))
+                          (ctk/component-attr? (:attr operation))))
         any-sync? (some need-sync? operations)]
     (when any-sync?
       (if page-id

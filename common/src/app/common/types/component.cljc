@@ -140,6 +140,14 @@
     :layout-item-z-index
     :layout-item-align-self})
 
+(defn component-attr?
+  "Check if some attribute is one that is involved in component syncrhonization.
+   Note that design tokens also are involved, although they go by an alternate
+   route and thus they are not part of :sync-attrs."
+  [attr]
+  (or (get sync-attrs attr)
+      (= :applied-tokens attr)))
+
 (defn instance-root?
   "Check if this shape is the head of a top instance."
   [shape]

@@ -193,7 +193,6 @@
                   (ths/add-sample-shape :free-shape))
 
         page      (thf/current-page file)
-        main-root (ths/get-shape file :main-root)
 
         ;; ==== Action
         changes1 (cls/generate-relocate (pcb/empty-changes)
@@ -202,9 +201,6 @@
                                         (:id page)                ; page-id
                                         0                         ; to-index
                                         #{(thi/id :free-shape)})   ; ids
-
-
-
 
         updated-file (thf/apply-changes file changes1)
 

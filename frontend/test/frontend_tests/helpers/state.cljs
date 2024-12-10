@@ -57,7 +57,7 @@
                     (fn [cause]
                       (js/console.log "[error]:" cause))
                     (fn [_]
-                      (js/console.log "[complete]"))))
+                      #_(js/console.debug "[complete]"))))
 
      (doseq [event events]
        (ptk/emit! store event))

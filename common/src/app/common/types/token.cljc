@@ -6,8 +6,10 @@
 
 (ns app.common.types.token
   (:require
+   [app.common.data :as d]
    [app.common.schema :as sm]
    [app.common.schema.registry :as sr]
+   [clojure.data :as data]
    [clojure.set :as set]
    [malli.util :as mu]))
 
@@ -150,6 +152,15 @@
 
 (def rotation-keys (schema-keys ::rotation))
 
+(def all-keys (set/union color-keys
+                         border-radius-keys
+                         stroke-width-keys
+                         sizing-keys
+                         opacity-keys
+                         spacing-keys
+                         dimensions-keys
+                         rotation-keys))
+
 (sm/register!
  ^{::sm/type ::tokens}
  [:map {:title "Applied Tokens"}])
@@ -163,3 +174,58 @@
   ::spacing
   ::rotation
   ::dimensions])
+
+(defn shape-attr->token-attrs
+  [shape-attr]
+  (cond
+    (= :fills shape-attr) #{:fill}
+    (= :strokes shape-attr) #{:stroke-color :stroke-width}
+    (border-radius-keys shape-attr) #{shape-attr}
+    (sizing-keys shape-attr) #{shape-attr}
+    (opacity-keys shape-attr) #{shape-attr}
+    (spacing-keys shape-attr) #{shape-attr}
+    (rotation-keys shape-attr) #{shape-attr}))
+
+(defn token-attr->shape-attr
+  [token-attr]
+  (case token-attr
+    :fill :fills
+    :stroke-color :strokes
+    :stroke-width :strokes
+    token-attr))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TOKENS IN SHAPES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- toggle-or-apply-token
+  "Remove any shape attributes from token if they exists.
+  Othewise apply token attributes."
+  [shape token]
+  (let [[shape-leftover token-leftover _matching] (data/diff (:applied-tokens shape) token)]
+    (merge {} shape-leftover token-leftover)))
+
+(defn- token-from-attributes [token attributes]
+  (->> (map (fn [attr] [attr (:name token)]) attributes)
+       (into {})))
+
+(defn- apply-token-to-attributes [{:keys [shape token attributes]}]
+  (let [token (token-from-attributes token attributes)]
+    (toggle-or-apply-token shape token)))
+
+(defn apply-token-to-shape
+  [{:keys [shape token attributes] :as _props}]
+  (let [applied-tokens (apply-token-to-attributes {:shape shape
+                                                   :token token
+                                                   :attributes attributes})]
+    (update shape :applied-tokens #(merge % applied-tokens))))
+
+(defn maybe-apply-token-to-shape
+  "When the passed `:token` is non-nil apply it to the `:applied-tokens` on a shape."
+  [{:keys [shape token _attributes] :as props}]
+  (if token
+    (apply-token-to-shape props)
+    shape))
+
+(defn unapply-token-id [shape attributes]
+  (update shape :applied-tokens d/without-keys attributes))

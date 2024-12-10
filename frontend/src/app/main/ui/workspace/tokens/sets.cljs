@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.sets
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
@@ -68,9 +69,28 @@
       :auto-focus true
       :default-value default-value}]))
 
+(mf/defc checkbox
+  [{:keys [checked aria-label on-click]}]
+  (let [all? (true? checked)
+        mixed? (= checked "mixed")
+        checked? (or all? mixed?)]
+    [:div {:role "checkbox"
+           :aria-checked (dm/str checked)
+           :tabindex 0
+           :class (stl/css-case :checkbox-style true
+                                :checkbox-checked-style checked?)
+           :on-click on-click}
+     (when checked?
+       [:> icon*
+        {:aria-label aria-label
+         :class (stl/css :check-icon)
+         :size "s"
+         :id (if mixed? ic/remove ic/tick)}])]))
+
 (mf/defc sets-tree-set-group
-  [{:keys [label tree-depth tree-path selected? collapsed? editing? on-edit on-edit-reset on-edit-submit]}]
+  [{:keys [label tree-depth tree-path active? selected? collapsed? editing? on-edit on-edit-reset on-edit-submit]}]
   (let [editing?' (editing? tree-path)
+        active?' (active? tree-path)
         on-context-menu
         (mf/use-fn
          (mf/deps editing? tree-path)
@@ -114,9 +134,16 @@
          :on-cancel on-edit-reset
          :on-create on-edit-reset
          :on-submit on-edit-submit'}]
-       [:div {:class (stl/css :set-name)
-              :on-double-click on-double-click}
-        label])]))
+       [:*
+        [:div {:class (stl/css :set-name)
+               :on-double-click on-double-click}
+         label]
+        [:& checkbox
+         {:checked (case active?'
+                     :all true
+                     :partial "mixed"
+                     :none false)
+          :arial-label (tr "workspace.token.select-set")}]])]))
 
 (mf/defc sets-tree-set
   [{:keys [set label tree-depth tree-path selected? on-select active? on-toggle editing? on-edit on-edit-reset on-edit-submit]}]
@@ -173,18 +200,14 @@
         [:div {:class (stl/css :set-name)
                :on-double-click on-double-click}
          label]
-        [:button {:type "button"
-                  :on-click on-checkbox-click
-                  :class (stl/css-case :checkbox-style true
-                                       :checkbox-checked-style active?')}
-         (when active?'
-           [:> icon* {:aria-label (tr "workspace.token.select-set")
-                      :class (stl/css :check-icon)
-                      :size "s"
-                      :id ic/tick}])]])]))
+        [:& checkbox
+         {:on-click on-checkbox-click
+          :arial-label (tr "workspace.token.select-set")
+          :checked active?'}]])]))
 
 (mf/defc sets-tree
   [{:keys [active?
+           group-active?
            editing?
            on-edit
            on-edit-reset
@@ -227,6 +250,7 @@
        set-group?
        [:& sets-tree-set-group
         {:selected? (selected? tree-path)
+         :active? group-active?
          :on-select on-select
          :label set-fname
          :collapsed? collapsed?
@@ -249,6 +273,7 @@
            :selected? selected?
            :on-toggle on-toggle
            :active? active?
+           :group-active? group-active?
            :editing? editing?
            :on-edit on-edit
            :on-edit-reset on-edit-reset
@@ -261,6 +286,7 @@
            on-update-token-set-group
            token-set-selected?
            token-set-active?
+           token-set-group-active?
            on-create-token-set
            on-toggle-token-set
            origin
@@ -268,10 +294,9 @@
            context]
     :as _props}]
   (let [{:keys [editing? new? on-edit on-reset] :as ctx} (or context (sets-context/use-context))]
-    [:ul {:class (stl/css :sets-list)}
-     (if (and
-          (= origin "theme-modal")
-          (empty? token-sets))
+    [:fieldset {:class (stl/css :sets-list)}
+     (if (and (= origin "theme-modal")
+              (empty? token-sets))
        [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message-sets)}
         (tr "workspace.token.no-sets-create")]
        (if (and (= origin "theme-modal")
@@ -284,6 +309,7 @@
             :selected? token-set-selected?
             :on-select on-select
             :active? token-set-active?
+            :group-active? token-set-group-active?
             :on-toggle on-toggle-token-set
             :editing? editing?
             :on-edit on-edit
@@ -314,11 +340,15 @@
         token-set-active? (mf/use-fn
                            (mf/deps active-token-set-names)
                            (fn [set-name]
-                             (get active-token-set-names set-name)))]
+                             (get active-token-set-names set-name)))
+        token-set-group-active? (mf/use-fn
+                                 (fn [prefixed-path]
+                                   @(refs/token-sets-at-path-all-active? prefixed-path)))]
     [:& controlled-sets-list
      {:token-sets token-sets
       :token-set-selected? token-set-selected?
       :token-set-active? token-set-active?
+      :token-set-group-active? token-set-group-active?
       :on-select on-select-token-set-click
       :origin "set-panel"
       :on-toggle-token-set on-toggle-token-set-click

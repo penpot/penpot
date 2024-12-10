@@ -2,8 +2,8 @@
   (:require
    [app.common.types.token :as ctt]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.style-dictionary :as wtsd]
    [app.main.ui.workspace.tokens.token-set :as wtts]
@@ -112,8 +112,8 @@
                update-infos)))
           shapes-update-info))
 
-(defn update-tokens [resolved-tokens]
-  (->> @refs/workspace-page-objects
+(defn update-tokens [state resolved-tokens]
+  (->> (wsh/lookup-page-objects state)
        (collect-shapes-update-info resolved-tokens)
        (actionize-shapes-update-info)))
 
@@ -131,5 +131,5 @@
           (let [undo-id (js/Symbol)]
             (rx/concat
              (rx/of (dwu/start-undo-transaction undo-id))
-             (update-tokens sd-tokens)
+             (update-tokens state sd-tokens)
              (rx/of (dwu/commit-undo-transaction undo-id))))))))))

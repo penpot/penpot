@@ -254,41 +254,41 @@
   [{:keys [state set-state]}]
   (let [{:keys [theme-path]} @state
         [_ theme-group theme-name] theme-path
+        ordered-token-sets (mf/deref refs/workspace-ordered-token-sets)
         token-sets (mf/deref refs/workspace-token-sets-tree)
         theme (mf/deref (refs/workspace-token-theme theme-group theme-name))
+        theme-state (mf/use-state theme)
+        lib (-> (ctob/make-tokens-lib)
+                (ctob/add-theme @theme-state)
+                (ctob/add-sets ordered-token-sets)
+                (ctob/activate-theme (:group @theme-state) (:name @theme-state)))
+
+        ;; Form / Modal handlers
         on-back #(set-state (constantly {:type :themes-overview}))
         on-submit #(st/emit! (wdt/update-token-theme [(:group theme) (:name theme)] %))
         {:keys [dropdown-open? _on-open-dropdown on-close-dropdown on-toggle-dropdown]} (wtco/use-dropdown-open-state)
-        theme-state (mf/use-state theme)
         disabled? (-> (:name @theme-state)
                       (str/trim)
                       (str/empty?))
-        token-set-active? (mf/use-callback
-                           (mf/deps theme-state)
-                           (fn [set-name]
-                             (get-in @theme-state [:sets set-name])))
-        on-toggle-token-set (mf/use-callback
-                             (mf/deps theme-state)
-                             (fn [set-name]
-                               (swap! theme-state #(ctob/toggle-set % set-name))))
-        on-click-token-set (mf/use-callback
-                            (mf/deps on-toggle-token-set)
-                            (fn [prefixed-set-path-str]
-                              (let [set-name (ctob/prefixed-set-path-string->set-name-string prefixed-set-path-str)]
-                                (on-toggle-token-set set-name))))
-        on-change-field (fn [field value]
-                          (swap! theme-state #(assoc % field value)))
-        on-save-form (mf/use-callback
-                      (mf/deps theme-state on-submit)
-                      (fn [e]
-                        (dom/prevent-default e)
-                        (let [theme (-> @theme-state
-                                        (update :name str/trim)
-                                        (update :group str/trim)
-                                        (update :description str/trim))]
-                          (when-not (str/empty? (:name theme))
-                            (on-submit theme)))
-                        (on-back)))
+
+        on-change-field
+        (mf/use-fn
+         (fn [field value]
+           (swap! theme-state #(assoc % field value))))
+
+        on-save-form
+        (mf/use-callback
+         (mf/deps theme-state on-submit)
+         (fn [e]
+           (dom/prevent-default e)
+           (let [theme (-> @theme-state
+                           (update :name str/trim)
+                           (update :group str/trim)
+                           (update :description str/trim))]
+             (when-not (str/empty? (:name theme))
+               (on-submit theme)))
+           (on-back)))
+
         close-modal
         (mf/use-fn
          (fn [e]
@@ -300,7 +300,33 @@
          (mf/deps theme on-back)
          (fn []
            (st/emit! (wdt/delete-token-theme (:group theme) (:name theme)))
-           (on-back)))]
+           (on-back)))
+
+        ;; Sets tree handlers
+        token-set-group-active?
+        (mf/use-callback
+         (mf/deps theme-state)
+         (fn [prefixed-path]
+           (ctob/sets-at-path-all-active? lib prefixed-path)))
+
+        token-set-active?
+        (mf/use-callback
+         (mf/deps theme-state)
+         (fn [set-name]
+           (get-in @theme-state [:sets set-name])))
+
+        on-toggle-token-set
+        (mf/use-callback
+         (mf/deps theme-state)
+         (fn [set-name]
+           (swap! theme-state #(ctob/toggle-set % set-name))))
+
+        on-click-token-set
+        (mf/use-callback
+         (mf/deps on-toggle-token-set)
+         (fn [prefixed-set-path-str]
+           (let [set-name (ctob/prefixed-set-path-string->set-name-string prefixed-set-path-str)]
+             (on-toggle-token-set set-name))))]
 
     [:div {:class (stl/css :themes-modal-wrapper)}
      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
@@ -327,6 +353,7 @@
          {:token-sets token-sets
           :token-set-selected? (constantly false)
           :token-set-active? token-set-active?
+          :token-set-group-active? token-set-group-active?
           :on-select on-click-token-set
           :on-toggle-token-set on-toggle-token-set
           :origin "theme-modal"

@@ -82,7 +82,7 @@
           (assoc-in [:workspace-global :picked-shift?] shift?)))))
 
 (defn transform-fill
-  [state ids color transform]
+  [state ids color transform & options]
   (let [objects   (wsh/lookup-page-objects state)
 
         is-text?  #(= :text (:type (get objects %)))
@@ -118,8 +118,8 @@
 
     (rx/concat
      (rx/of (dwu/start-undo-transaction undo-id))
-     (rx/from (map #(dwt/update-text-with-function % transform-attrs) text-ids))
-     (rx/of (dwsh/update-shapes shape-ids transform-attrs))
+     (rx/from (map #(apply dwt/update-text-with-function % transform-attrs options) text-ids))
+     (rx/of (dwsh/update-shapes shape-ids transform-attrs options))
      (rx/of (dwu/commit-undo-transaction undo-id)))))
 
 (defn swap-attrs [shape attr index new-index]
@@ -146,7 +146,7 @@
          (rx/of (dwsh/update-shapes shape-ids transform-attrs)))))))
 
 (defn change-fill
-  [ids color position]
+  [ids color position & options]
   (ptk/reify ::change-fill
     ptk/WatchEvent
     (watch [_ state _]
@@ -155,18 +155,18 @@
                             (cond-> (not (contains? shape :fills))
                               (assoc :fills []))
                             (assoc-in [:fills position] (into {} attrs))))]
-        (transform-fill state ids color change-fn)))))
+        (apply transform-fill state ids color change-fn options)))))
 
 (defn change-fill-and-clear
-  [ids color]
+  [ids color & options]
   (ptk/reify ::change-fill-and-clear
     ptk/WatchEvent
     (watch [_ state _]
       (let [set (fn [shape attrs] (assoc shape :fills [attrs]))]
-        (transform-fill state ids color set)))))
+        (apply transform-fill state ids color set options)))))
 
 (defn add-fill
-  [ids color]
+  [ids color & options]
 
   (dm/assert!
    "expected a valid color struct"
@@ -182,10 +182,10 @@
       (let [add (fn [shape attrs]
                   (-> shape
                       (update :fills #(into [attrs] %))))]
-        (transform-fill state ids color add)))))
+        (apply transform-fill state ids color add options)))))
 
 (defn remove-fill
-  [ids color position]
+  [ids color position & options]
 
   (dm/assert!
    "expected a valid color struct"
@@ -203,10 +203,10 @@
                                                          (mapv second)))
 
             remove (fn [shape _] (update shape :fills remove-fill-by-index position))]
-        (transform-fill state ids color remove)))))
+        (apply transform-fill state ids color remove options)))))
 
 (defn remove-all-fills
-  [ids color]
+  [ids color & options]
 
   (dm/assert!
    "expected a valid color struct"
@@ -220,7 +220,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [remove-all (fn [shape _] (assoc shape :fills []))]
-        (transform-fill state ids color remove-all)))))
+        (apply transform-fill state ids color remove-all options)))))
 
 (defn change-hide-fill-on-export
   [ids hide-fill-on-export]
@@ -237,7 +237,7 @@
                                                  (d/merge shape attrs)
                                                  shape))))))))
 (defn change-stroke
-  [ids attrs index]
+  [ids attrs index & options]
   (ptk/reify ::change-stroke
     ptk/WatchEvent
     (watch [_ _ _]
@@ -286,7 +286,8 @@
                       (assoc :strokes [])
 
                       :always
-                      (assoc-in [:strokes index] new-attrs))))))))))
+                      (assoc-in [:strokes index] new-attrs))))
+                options))))))
 
 (defn change-shadow
   [ids attrs index]
