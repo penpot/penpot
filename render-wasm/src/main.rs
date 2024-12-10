@@ -111,7 +111,15 @@ pub extern "C" fn set_shape_selrect(left: f32, top: f32, right: f32, bottom: f32
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_rotation(rotation: f32) {
+pub unsafe extern "C" fn set_shape_clip_content(clip_content: bool) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape.clip_content = clip_content;
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn set_shape_rotation(rotation: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.rotation = rotation;
