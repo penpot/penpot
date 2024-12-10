@@ -108,6 +108,7 @@ impl Shape {
         let fill = self.fills.last_mut().ok_or("Shape has no fills")?;
         let gradient = match fill {
             Fill::LinearGradient(g) => Ok(g),
+            Fill::RadialGradient(g) => Ok(g),
             _ => Err("Active fill is not a gradient"),
         }?;
 
