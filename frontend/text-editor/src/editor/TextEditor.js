@@ -12,6 +12,7 @@ import ChangeController from "./controllers/ChangeController.js";
 import SelectionController from "./controllers/SelectionController.js";
 import { createSelectionImposterFromClientRects } from "./selection/Imposter.js";
 import { addEventListeners, removeEventListeners } from "./Event.js";
+import { mapContentFragmentFromHTML, mapContentFragmentFromString } from "./content/dom/Content.js";
 import { createRoot, createEmptyRoot } from "./content/dom/Root.js";
 import { createParagraph } from "./content/dom/Paragraph.js";
 import { createEmptyInline, createInline } from "./content/dom/Inline.js";
@@ -499,6 +500,20 @@ export class TextEditor extends EventTarget {
     this.#element = null;
     this.#root = null;
   }
+}
+
+export function createRootFromHTML(html) {
+  const fragment = mapContentFragmentFromHTML(html);
+  const root = createRoot([]);
+  root.replaceChildren(fragment);
+  return root;
+}
+
+export function createRootFromString(string) {
+  const fragment = mapContentFragmentFromString(string);
+  const root = createRoot([]);
+  root.replaceChild(fragment);
+  return root;
 }
 
 export function isEditor(instance) {

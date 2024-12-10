@@ -65,6 +65,7 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -83,6 +84,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.storage :as storage]
+   [app.util.text.content :as tc]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
@@ -1639,6 +1641,7 @@
                      (rx/ignore))))))))))
 
 (declare ^:private paste-transit)
+(declare ^:private paste-html-text)
 (declare ^:private paste-text)
 (declare ^:private paste-image)
 (declare ^:private paste-svg-text)
@@ -1706,6 +1709,7 @@
           (let [pdata        (wapi/read-from-paste-event event)
                 image-data   (some-> pdata wapi/extract-images)
                 text-data    (some-> pdata wapi/extract-text)
+                html-data    (some-> pdata wapi/extract-html-text)
                 transit-data (ex/ignoring (some-> text-data t/decode-str))]
             (cond
               (and (string? text-data) (re-find #"<svg\s" text-data))
@@ -1717,6 +1721,9 @@
 
               (coll? transit-data)
               (rx/of (paste-transit (assoc transit-data :in-viewport in-viewport?)))
+
+              (string? html-data)
+              (rx/of (paste-html-text html-data text-data))
 
               (string? text-data)
               (rx/of (paste-text text-data))
@@ -2069,6 +2076,34 @@
 
     :else
     (deref ms/mouse-position)))
+
+(defn- paste-html-text
+  [html text]
+  (dm/assert! (string? html))
+  (ptk/reify ::paste-html-text
+    ptk/WatchEvent
+    (watch [_ state  _]
+      (let [root (dwtxt/create-root-from-html html)
+            content (tc/dom->cljs root)
+
+            id (uuid/next)
+            width (max 8 (min (* 7 (count text)) 700))
+            height 16
+            {:keys [x y]} (calculate-paste-position state)
+
+            shape {:id id
+                   :type :text
+                   :name (txt/generate-shape-name text)
+                   :x x
+                   :y y
+                   :width width
+                   :height height
+                   :grow-type (if (> (count text) 100) :auto-height :auto-width)
+                   :content content}
+            undo-id (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (dwsh/create-and-add-shape :text x y shape)
+               (dwu/commit-undo-transaction undo-id))))))
 
 (defn- paste-text
   [text]
