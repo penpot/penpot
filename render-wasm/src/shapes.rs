@@ -2,11 +2,12 @@ use crate::math;
 use skia_safe as skia;
 use uuid::Uuid;
 
-mod blend;
+use crate::render::BlendMode;
+
 mod fills;
 mod images;
 mod paths;
-pub use blend::*;
+mod render;
 pub use fills::*;
 pub use images::*;
 pub use paths::*;

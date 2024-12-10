@@ -1,17 +1,29 @@
-mod gpu_state;
-mod options;
-
 use skia::Contains;
 use skia_safe as skia;
 use std::collections::HashMap;
 use uuid::Uuid;
 
-use crate::math::Rect;
-use crate::shapes::{draw_image_in_container, Fill, Image, Kind, Shape};
+use crate::shapes::{Image, Shape};
 use crate::view::Viewbox;
+
+mod blend;
+mod gpu_state;
+mod options;
 
 use gpu_state::GpuState;
 use options::RenderOptions;
+
+pub use blend::BlendMode;
+
+pub trait Renderable {
+    fn render(
+        &self,
+        surface: &mut skia::Surface,
+        images: &HashMap<Uuid, Image>,
+    ) -> Result<(), String>;
+    fn blend_mode(&self) -> BlendMode;
+    fn opacity(&self) -> f32;
+}
 
 pub(crate) struct CachedSurfaceImage {
     pub image: Image,
@@ -133,39 +145,15 @@ impl RenderState {
             .reset_matrix();
     }
 
-    pub fn render_single_shape(&mut self, shape: &Shape) {
-        let mut transform = skia::Matrix::new_identity();
-        let (translate_x, translate_y) = shape.translation();
-        let (scale_x, scale_y) = shape.scale();
-        let (skew_x, skew_y) = shape.skew();
-        transform.set_all(
-            scale_x,
-            skew_x,
-            translate_x,
-            skew_y,
-            scale_y,
-            translate_y,
-            0.,
-            0.,
-            1.,
-        );
-
-        // Check transform-matrix code from common/src/app/common/geom/shapes/transforms.cljc
-        let center = shape.selrect.center();
-        let mut matrix = skia::Matrix::new_identity();
-        matrix.pre_translate(center);
-        matrix.pre_concat(&transform);
-        matrix.pre_translate(-center);
-
-        self.drawing_surface.canvas().concat(&matrix);
-
-        for fill in shape.fills().rev() {
-            self.render_fill(fill, shape.selrect, &shape.kind);
-        }
+    pub fn render_single_element(&mut self, element: &impl Renderable) {
+        element
+            .render(&mut self.drawing_surface, &self.images)
+            .unwrap();
 
         let mut paint = skia::Paint::default();
-        paint.set_blend_mode(shape.blend_mode.into());
-        paint.set_alpha_f(shape.opacity);
+        paint.set_blend_mode(element.blend_mode().into());
+        paint.set_alpha_f(element.opacity());
+
         self.drawing_surface.draw(
             &mut self.final_surface.canvas(),
             (0.0, 0.0),
@@ -215,38 +203,6 @@ impl RenderState {
         }
 
         self.flush();
-    }
-
-    fn render_fill(&mut self, fill: &Fill, selrect: Rect, kind: &Kind) {
-        match (fill, kind) {
-            (Fill::Image(image_fill), kind) => {
-                let image = self.images.get(&image_fill.id());
-                if let Some(image) = image {
-                    draw_image_in_container(
-                        &self.drawing_surface.canvas(),
-                        &image,
-                        image_fill.size(),
-                        kind,
-                        &fill.to_paint(&selrect),
-                    );
-                }
-            }
-            (_, Kind::Rect(rect)) => {
-                self.drawing_surface
-                    .canvas()
-                    .draw_rect(rect, &fill.to_paint(&selrect));
-            }
-            (_, Kind::Circle(rect)) => {
-                self.drawing_surface
-                    .canvas()
-                    .draw_oval(rect, &fill.to_paint(&selrect));
-            }
-            (_, Kind::Path(path)) => {
-                self.drawing_surface
-                    .canvas()
-                    .draw_path(&path.to_skia_path(), &fill.to_paint(&selrect));
-            }
-        }
     }
 
     fn render_all_from_cache(&mut self) -> Result<(), String> {
@@ -353,7 +309,7 @@ impl RenderState {
         self.drawing_surface.canvas().save();
 
         if !id.is_nil() {
-            self.render_single_shape(shape);
+            self.render_single_element(shape);
             if shape.clip_content {
                 self.drawing_surface.canvas().clip_rect(
                     shape.selrect,
