@@ -902,6 +902,7 @@ When `before-set-name` is nil, move set to bottom")
   (decode-dtcg-json [_ parsed-json]
     (let [;; tokens-studio/plugin will add these meta properties, remove them for now
           sets-data (dissoc parsed-json "$themes" "$metadata")
+          themes-data (get parsed-json "$themes")
           lib (make-tokens-lib)
           lib' (reduce
                 (fn [lib [set-name tokens]]
@@ -909,7 +910,20 @@ When `before-set-name` is nil, move set to bottom")
                                 :name set-name
                                 :tokens (flatten-nested-tokens-json tokens ""))))
                 lib sets-data)]
-      lib'))
+      (reduce
+       (fn [lib {:strs [name
+                        group
+                        description
+                        is-source
+                        modified-at
+                        sets]}]
+         (add-theme lib (TokenTheme. name
+                                     group
+                                     description
+                                     is-source
+                                     (dt/parse-instant modified-at)
+                                     (set sets))))
+       lib' themes-data)))
 
   (get-all-tokens [this]
     (reduce
