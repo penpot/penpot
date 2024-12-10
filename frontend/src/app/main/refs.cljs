@@ -244,6 +244,8 @@
                  (dm/get-in state [:recent-colors file-id])))
              st/state))
 
+;; FIXME: fonts are not prefixed, so the recent font list is shared
+;; across all teams. This may not be expected behavior
 (def workspace-recent-fonts
   (l/derived (fn [data]
                (get data :recent-fonts []))
