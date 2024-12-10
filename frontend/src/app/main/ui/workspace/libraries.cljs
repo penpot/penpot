@@ -107,8 +107,10 @@
       (tr "workspace.libraries.typography" typography-count)])])
 
 
-(mf/defc sample-library-entry
-  [{:keys [library project-id team-id importing] :as props}]
+(mf/defc sample-library-entry*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [library project-id team-id importing]}]
   (let [id         (:id library)
         importing? (deref importing)
 
@@ -137,7 +139,9 @@
     [:div {:class (stl/css :sample-library-item)
            :key (dm/str id)}
      [:div {:class (stl/css :sample-library-item-name)} (:name library)]
-     [:input {:class (stl/css-case :sample-library-button true :sample-library-add (nil? importing?) :sample-library-adding (some? importing?))
+     [:input {:class (stl/css-case :sample-library-button true
+                                   :sample-library-add (nil? importing?)
+                                   :sample-library-adding (some? importing?))
               :type "button"
               :value (if (= importing? id) (tr "labels.adding") (tr "labels.add"))
               :on-click import-library}]]))
@@ -346,7 +350,11 @@
               [:div {:class (stl/css :sample-libraries-container)}
                (tr "workspace.libraries.empty.add-some")
                (for [library sample-libraries]
-                 [:& sample-library-entry {:library library :project-id project-id :team-id team-id :importing importing*}])]]
+                 [:> sample-library-entry*
+                  {:library library
+                   :project-id project-id
+                   :team-id team-id
+                   :importing importing*}])]]
 
              (str/empty? search-term)
              [:*
