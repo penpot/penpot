@@ -4,7 +4,7 @@ use skia::Contains;
 use skia_safe as skia;
 use uuid::Uuid;
 
-use crate::shapes::Shape;
+use crate::math;
 use crate::view::Viewbox;
 
 mod blend;
@@ -22,6 +22,10 @@ pub trait Renderable {
     fn render(&self, surface: &mut skia::Surface, images: &ImageStore) -> Result<(), String>;
     fn blend_mode(&self) -> BlendMode;
     fn opacity(&self) -> f32;
+    fn bounds(&self) -> math::Rect;
+    fn hidden(&self) -> bool;
+    fn clip(&self) -> bool;
+    fn children_ids(&self) -> Vec<Uuid>;
 }
 
 pub(crate) struct CachedSurfaceImage {
@@ -160,10 +164,10 @@ impl RenderState {
             .clear(skia::Color::TRANSPARENT);
     }
 
-    pub fn navigate(&mut self, shapes: &HashMap<Uuid, Shape>) -> Result<(), String> {
+    pub fn navigate(&mut self, tree: &HashMap<Uuid, impl Renderable>) -> Result<(), String> {
         if let Some(cached_surface_image) = self.cached_surface_image.as_ref() {
             if cached_surface_image.is_dirty(&self.viewbox) {
-                self.render_all(shapes, true);
+                self.render_all(tree, true);
             } else {
                 self.render_all_from_cache()?;
             }
@@ -174,7 +178,7 @@ impl RenderState {
 
     pub fn render_all(
         &mut self,
-        shapes: &HashMap<Uuid, Shape>,
+        tree: &HashMap<Uuid, impl Renderable>,
         generate_cached_surface_image: bool,
     ) {
         self.reset_canvas();
@@ -184,7 +188,7 @@ impl RenderState {
         );
         self.translate(self.viewbox.pan_x, self.viewbox.pan_y);
 
-        let is_complete = self.render_shape_tree(&Uuid::nil(), shapes);
+        let is_complete = self.render_shape_tree(&Uuid::nil(), tree);
         if generate_cached_surface_image || self.cached_surface_image.is_none() {
             self.cached_surface_image = Some(CachedSurfaceImage {
                 image: self.final_surface.image_snapshot(),
@@ -252,7 +256,7 @@ impl RenderState {
         self.debug_surface.canvas().draw_rect(scaled_rect, &paint);
     }
 
-    fn render_debug_shape(&mut self, shape: &Shape, intersected: bool) {
+    fn render_debug_element(&mut self, element: &impl Renderable, intersected: bool) {
         let mut paint = skia::Paint::default();
         paint.set_style(skia::PaintStyle::Stroke);
         paint.set_color(if intersected {
@@ -262,7 +266,7 @@ impl RenderState {
         });
         paint.set_stroke_width(1.);
 
-        let mut scaled_rect = shape.selrect.clone();
+        let mut scaled_rect = element.bounds();
         let x = 100. + scaled_rect.x() * 0.2;
         let y = 100. + scaled_rect.y() * 0.2;
         let width = scaled_rect.width() * 0.2;
@@ -284,18 +288,18 @@ impl RenderState {
     }
 
     // Returns a boolean indicating if the viewbox contains the rendered shapes
-    fn render_shape_tree(&mut self, id: &Uuid, shapes: &HashMap<Uuid, Shape>) -> bool {
-        let shape = shapes.get(&id).unwrap();
-        let mut is_complete = self.viewbox.area.contains(shape.selrect);
+    fn render_shape_tree(&mut self, root_id: &Uuid, tree: &HashMap<Uuid, impl Renderable>) -> bool {
+        let element = tree.get(&root_id).unwrap();
+        let mut is_complete = self.viewbox.area.contains(element.bounds());
 
-        if !id.is_nil() {
-            if !shape.selrect.intersects(self.viewbox.area) || shape.hidden {
-                self.render_debug_shape(shape, false);
+        if !root_id.is_nil() {
+            if !element.bounds().intersects(self.viewbox.area) || element.hidden() {
+                self.render_debug_element(element, false);
                 // TODO: This means that not all the shapes are renderer so we
                 // need to call a render_all on the zoom out.
                 return is_complete; // TODO return is_complete or return false??
             } else {
-                self.render_debug_shape(shape, true);
+                self.render_debug_element(element, true);
             }
         }
 
@@ -303,11 +307,11 @@ impl RenderState {
         self.final_surface.canvas().save();
         self.drawing_surface.canvas().save();
 
-        if !id.is_nil() {
-            self.render_single_element(shape);
-            if shape.clip_content {
+        if !root_id.is_nil() {
+            self.render_single_element(element);
+            if element.clip() {
                 self.drawing_surface.canvas().clip_rect(
-                    shape.selrect,
+                    element.bounds(),
                     skia::ClipOp::Intersect,
                     true,
                 );
@@ -315,13 +319,13 @@ impl RenderState {
         }
 
         // draw all the children shapes
-        let shape_ids = shape.children.iter();
-        for shape_id in shape_ids {
-            is_complete = self.render_shape_tree(shape_id, shapes) && is_complete;
+        for id in element.children_ids() {
+            is_complete = self.render_shape_tree(&id, tree) && is_complete;
         }
 
         self.final_surface.canvas().restore();
         self.drawing_surface.canvas().restore();
+
         return is_complete;
     }
 }

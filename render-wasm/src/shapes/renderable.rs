@@ -1,18 +1,11 @@
 use skia_safe as skia;
+use uuid::Uuid;
 
 use super::{draw_image_in_container, Fill, Kind, Shape};
 use crate::math::Rect;
 use crate::render::{ImageStore, Renderable};
 
 impl Renderable for Shape {
-    fn blend_mode(&self) -> crate::render::BlendMode {
-        self.blend_mode
-    }
-
-    fn opacity(&self) -> f32 {
-        self.opacity
-    }
-
     fn render(&self, surface: &mut skia_safe::Surface, images: &ImageStore) -> Result<(), String> {
         let mut transform = skia::Matrix::new_identity();
         let (translate_x, translate_y) = self.translation();
@@ -48,6 +41,30 @@ impl Renderable for Shape {
         paint.set_alpha_f(self.opacity);
 
         Ok(())
+    }
+
+    fn blend_mode(&self) -> crate::render::BlendMode {
+        self.blend_mode
+    }
+
+    fn opacity(&self) -> f32 {
+        self.opacity
+    }
+
+    fn hidden(&self) -> bool {
+        self.hidden
+    }
+
+    fn bounds(&self) -> Rect {
+        self.selrect
+    }
+
+    fn clip(&self) -> bool {
+        self.clip_content
+    }
+
+    fn children_ids(&self) -> Vec<Uuid> {
+        self.children.clone()
     }
 }
 
