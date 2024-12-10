@@ -60,16 +60,22 @@
       :default-value default-value}]))
 
 (mf/defc checkbox
-  [{:keys [on-click active? aria-label icon]}]
-  [:button {:type "button"
-            :on-click on-click
-            :class (stl/css-case :checkbox-style true
-                                 :checkbox-checked-style active?)}
-   (when active?
-     [:> icon* {:aria-label aria-label
-                :class (stl/css :check-icon)
-                :size "s"
-                :id (or icon ic/tick)}])])
+  [{:keys [checked aria-label on-click]}]
+  (let [all? (true? checked)
+        mixed? (= checked "mixed")
+        checked? (or all? mixed?)]
+    [:div {:role "checkbox"
+           :aria-checked (str checked)
+           :tabindex 0
+           :class (stl/css-case :checkbox-style true
+                                :checkbox-checked-style checked?)
+           :on-click on-click}
+     (when checked?
+       [:> icon*
+        {:aria-label aria-label
+         :class (stl/css :check-icon)
+         :size "s"
+         :id (if mixed? ic/remove ic/tick)}])]))
 
 (mf/defc sets-tree-set-group
   [{:keys [active? label tree-depth tree-path selected? collapsed? editing? on-edit on-edit-reset on-edit-submit]}]
@@ -115,8 +121,10 @@
                :on-double-click #(on-edit tree-path)}
          label]
         [:& checkbox
-         {:active? (not= :none active?')
-          :icon (when (= active?' :partial) ic/remove)
+         {:checked (case active?'
+                     :all true
+                     :partial "mixed"
+                     :none false)
           :arial-label (tr "workspace.token.select-set")}]])]))
 
 (mf/defc sets-tree-set
@@ -171,7 +179,7 @@
         [:& checkbox
          {:on-click on-checkbox-click
           :arial-label (tr "workspace.token.select-set")
-          :active? active?'}]])]))
+          :checked active?'}]])]))
 
 (mf/defc sets-tree
   [{:keys [active?
@@ -259,10 +267,9 @@
            context]
     :as _props}]
   (let [{:keys [editing? new? on-edit on-reset] :as ctx} (or context (sets-context/use-context))]
-    [:ul {:class (stl/css :sets-list)}
-     (if (and
-          (= origin "theme-modal")
-          (empty? token-sets))
+    [:fieldset {:class (stl/css :sets-list)}
+     (if (and (= origin "theme-modal")
+              (empty? token-sets))
        [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message-sets)}
         (tr "workspace.token.no-sets-create")]
        (if (and (= origin "theme-modal")
