@@ -441,8 +441,9 @@
                    :r (/ 4 zoom)
                    :fill "var(--app-white)"}]))]))
 
-(mf/defc gradient-handlers*
-  [{:keys [zoom stops gradient editing shape] :as kk}]
+(mf/defc gradient-handlers-impl*
+  {::mf/props :obj}
+  [{:keys [zoom stops gradient editing shape]}]
   (let [transform         (gsh/transform-matrix shape)
         transform-inverse (gsh/inverse-transform-matrix shape)
 
@@ -509,8 +510,9 @@
       :on-change-finish on-change-finish
       :on-change-width on-change-width}]))
 
-(mf/defc gradient-handlers
-  {::mf/wrap [mf/memo]}
+(mf/defc gradient-handlers*
+  {::mf/wrap [mf/memo]
+   ::mf/props :obj}
   [{:keys [id zoom]}]
   (let [shape-ref    (mf/use-memo (mf/deps id) #(refs/object-by-id id))
         shape        (mf/deref shape-ref)
@@ -520,7 +522,7 @@
         editing-stop (:editing-stop state)]
 
     (when (and (some? gradient) (= id (:shape-id gradient)))
-      [:& gradient-handlers*
+      [:> gradient-handlers-impl*
        {:zoom zoom
         :gradient gradient
         :stops stops

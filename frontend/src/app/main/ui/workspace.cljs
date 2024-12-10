@@ -162,7 +162,7 @@
 
 
 (mf/defc workspace*
-  {::mf/wrap-props false
+  {::mf/props :obj
    ::mf/wrap [mf/memo]}
   [{:keys [project-id file-id page-id layout-name]}]
 

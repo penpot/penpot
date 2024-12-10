@@ -617,7 +617,7 @@
               :hover-disabled? hover-disabled?}])])
 
        (when show-gradient-handlers?
-         [:& gradients/gradient-handlers
+         [:> gradients/gradient-handlers*
           {:id (first selected)
            :zoom zoom}])
 
