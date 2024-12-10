@@ -7,7 +7,6 @@
 (ns app.main.ui.viewer.inspect.right-sidebar
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data.macros :as dm]
    [app.common.types.component :as ctk]
    [app.main.data.event :as ev]
    [app.main.refs :as refs]
@@ -29,7 +28,7 @@
   (if (= from :workspace)
     (let [workspace-data (deref refs/workspace-data)
           {:keys [id] :as local} workspace-data
-          libraries (deref refs/workspace-libraries)]
+          libraries (deref refs/libraries)]
       (-> libraries
           (assoc id {:id id
                      :data local})))
@@ -54,8 +53,6 @@
         file-id        (or file-id (:id file))
 
         libraries      (get-libraries from)
-
-        file           (mf/deref refs/viewer-file)
         main-instance? (ctk/main-instance? first-shape)
 
         handle-change-tab

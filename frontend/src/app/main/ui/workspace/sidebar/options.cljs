@@ -78,7 +78,7 @@
   [{:keys [selected objects page-id file-id selected-shapes shapes-with-children]}]
   (let [sp-panel             (mf/deref refs/specialized-panel)
         drawing              (mf/deref refs/workspace-drawing)
-        shared-libs          (mf/deref refs/workspace-libraries)
+        shared-libs          (mf/deref refs/libraries)
         edition              (mf/deref refs/selected-edition)
         edit-grid?           (ctl/grid-layout? objects edition)
         grid-edition         (mf/deref refs/workspace-grid-edition)

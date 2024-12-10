@@ -264,9 +264,6 @@
                              :components]))
              st/state =))
 
-(def workspace-libraries
-  (l/derived :workspace-libraries st/state))
-
 (def workspace-presence
   (l/derived :workspace-presence st/state))
 

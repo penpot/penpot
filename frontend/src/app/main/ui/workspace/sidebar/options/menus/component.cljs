@@ -272,7 +272,7 @@
   (letfn [(get-libraries [state]
             (let [file (:workspace-file state)
                   data (:workspace-data state)
-                  libs (:workspace-libraries state)]
+                  libs (:libraries state)]
               (assoc libs (:id file)
                      (assoc file :data data))))]
     (l/derived get-libraries st/state)))
@@ -524,7 +524,7 @@
   (let [current-file-id     (mf/use-ctx ctx/current-file-id)
         components-v2       (mf/use-ctx ctx/components-v2)
         workspace-data      (deref refs/workspace-data)
-        workspace-libraries (deref refs/workspace-libraries)
+        libraries           (deref refs/libraries)
 
         state*              (mf/use-state {:show-content true
                                            :menu-open false})
@@ -544,7 +544,7 @@
         component           (ctf/resolve-component shape
                                                    {:id current-file-id
                                                     :data workspace-data}
-                                                   workspace-libraries
+                                                   libraries
                                                    {:include-deleted? true})
         main-instance?      (if components-v2 (ctk/main-instance? shape) true)
 

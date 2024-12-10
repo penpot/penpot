@@ -51,7 +51,7 @@
            disable-drag on-focus on-blur select-only select-on-focus]}]
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
         file-colors     (mf/deref refs/workspace-file-colors)
-        shared-libs     (mf/deref refs/workspace-libraries)
+        shared-libs     (mf/deref refs/libraries)
         hover-detach    (mf/use-state false)
         on-change       (h/use-ref-callback on-change)
         src-colors      (if (= (:file-id color) current-file-id)

@@ -248,7 +248,7 @@
    (let [page-id    (get state :current-page-id)
          file       (assoc (get state :workspace-file)
                            :data (get state :workspace-data))
-         libraries  (get state :workspace-libraries)]
+         libraries  (get state :libraries)]
      (ctf/dump-tree file page-id libraries {:show-ids show-ids
                                             :show-touched show-touched
                                             :show-modified show-modified}))))
@@ -266,7 +266,7 @@
    (let [page-id    (get state :current-page-id)
          file       (assoc (get state :workspace-file)
                            :data (get state :workspace-data))
-         libraries  (get state :workspace-libraries)
+         libraries  (get state :libraries)
          shape-id   (if (some? shape-id)
                       (uuid/uuid shape-id)
                       (let [objects (get-in state [:workspace-data :pages-index page-id :objects])
@@ -383,7 +383,7 @@
   ([shape-id]
    (let [file      (assoc (get @st/state :workspace-file)
                           :data (get @st/state :workspace-data))
-         libraries (get @st/state :workspace-libraries)]
+         libraries (get @st/state :libraries)]
 
      (try
        (->> (if-let [shape-id (some-> shape-id parse-uuid)]
@@ -417,7 +417,7 @@
              fdata    (get state :workspace-data)
 
              file     (assoc file :data fdata)
-             libs     (get state :workspace-libraries)
+             libs     (get state :libraries)
 
              errors   (cfv/validate-file file libs)
              _        (l/dbg :hint "repair current file" :errors (count errors))

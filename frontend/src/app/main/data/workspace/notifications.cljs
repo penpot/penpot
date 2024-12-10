@@ -314,6 +314,6 @@
   (ptk/reify ::handle-library-change
     ptk/WatchEvent
     (watch [_ state _]
-      (when (contains? (:workspace-libraries state) file-id)
+      (when (contains? (:libraries state) file-id)
         (rx/of (dwl/ext-library-changed file-id modified-at revn changes)
                (dwl/notify-sync-file file-id))))))

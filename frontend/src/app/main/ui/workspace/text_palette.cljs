@@ -183,7 +183,7 @@
   [{:keys [size width selected] :as props}]
   (let [selected-ids      (mf/deref refs/selected-shapes)
         file-typographies (mf/deref refs/workspace-file-typography)
-        shared-libs       (mf/deref refs/workspace-libraries)
+        shared-libs       (mf/deref refs/libraries)
         current-file-id   (mf/use-ctx ctx/current-file-id)]
     [:& palette {:current-file-id current-file-id
                  :selected-ids selected-ids

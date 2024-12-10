@@ -19,7 +19,7 @@
   [{:keys [show-menu? close-menu on-select-palette selected]}]
   (let [recent-colors (mf/deref refs/workspace-recent-colors)
         file-colors   (mf/deref refs/workspace-file-colors)
-        shared-libs   (mf/deref refs/workspace-libraries)]
+        shared-libs   (mf/deref refs/libraries)]
     [:& dropdown {:show show-menu?
                   :on-close close-menu}
      [:ul {:class (stl/css :palette-menu)}

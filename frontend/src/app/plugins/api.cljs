@@ -160,7 +160,7 @@
                           (map #(obj/get % "$id"))
                           (mapcat #(cfh/get-children-with-self objects %)))
               file-id (:current-file-id @st/state)
-              shared-libs (:workspace-libraries @st/state)]
+              shared-libs (:libraries @st/state)]
 
           (->> (ctc/extract-all-colors shapes file-id shared-libs)
                (group-by :attrs)
@@ -182,7 +182,7 @@
 
           :else
           (let [file-id (:current-file-id @st/state)
-                shared-libs (:workspace-libraries @st/state)
+                shared-libs (:libraries @st/state)
                 objects (u/locate-objects)
                 shapes
                 (->> shapes

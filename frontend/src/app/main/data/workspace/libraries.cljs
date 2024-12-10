@@ -59,11 +59,11 @@
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
 
-(defn- pretty-file
+(defn- debug-pretty-file
   [file-id state]
   (if (= file-id (:current-file-id state))
     "<local>"
-    (str "<" (get-in state [:workspace-libraries file-id :name]) ">")))
+    (str "<" (get-in state [:libraries file-id :name]) ">")))
 
 (defn- log-changes
   [changes file]
@@ -760,9 +760,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update-in [:workspace-libraries library-id]
+          (update-in [:libraries library-id]
                      assoc :modified-at modified-at :revn revn)
-          (d/update-in-when [:workspace-libraries library-id :data]
+          (d/update-in-when [:libraries library-id :data]
                             ch/process-changes changes)))
 
     ptk/WatchEvent
@@ -898,7 +898,7 @@
         current-file?   (= current-file-id file-id)
         data            (if current-file?
                           (get state :workspace-data)
-                          (get-in state [:workspace-libraries file-id :data]))
+                          (get-in state [:libraries file-id :data]))
         component       (ctkl/get-component data component-id)
         page-id         (:main-instance-page component)
         root-id         (:main-instance-id component)]
@@ -1022,7 +1022,7 @@
     (watch [_ state _]
       (let [undo-id (js/Symbol)]
         (log/info :msg "COMPONENT-SWAP"
-                  :file (pretty-file file-id state)
+                  :file (debug-pretty-file file-id state)
                   :id-new-component id-new-component
                   :undo-id undo-id)
         (rx/concat
@@ -1068,15 +1068,15 @@
      (update [_ state]
        (if (and (not= library-id (:current-file-id state))
                 (nil? asset-id))
-         (d/assoc-in-when state [:workspace-libraries library-id :synced-at] (dt/now))
+         (d/assoc-in-when state [:libraries library-id :synced-at] (dt/now))
          state))
 
      ptk/WatchEvent
      (watch [it state _]
        (when (and (some? file-id) (some? library-id)) ; Prevent race conditions while navigating out of the file
          (log/info :msg "SYNC-FILE"
-                   :file (pretty-file file-id state)
-                   :library (pretty-file library-id state)
+                   :file (debug-pretty-file file-id state)
+                   :library (debug-pretty-file library-id state)
                    :asset-type asset-type
                    :asset-id asset-id
                    :undo-group undo-group)
@@ -1172,7 +1172,7 @@
       (let [file-data (:workspace-data state)
             ignore-until (dm/get-in state [:workspace-file :ignore-sync-until])
             libraries-need-sync (filter #(seq (assets-need-sync % file-data ignore-until))
-                                        (vals (get state :workspace-libraries)))
+                                        (vals (get state :libraries)))
             do-more-info #(modal/show! :libraries-dialog {:starting-tab "updates"})
             do-update #(do (apply st/emit! (map (fn [library]
                                                   (sync-file (:current-file-id state)
@@ -1359,7 +1359,7 @@
       (let [libraries (:workspace-shared-files state)
             library   (d/seek #(= (:id %) library-id) libraries)]
         (if library
-          (update state :workspace-libraries assoc library-id (dissoc library :library-summary))
+          (update state :libraries assoc library-id (dissoc library :library-summary))
           state)))
 
     ptk/WatchEvent
@@ -1373,7 +1373,7 @@
                (rx/merge-map fpmap/resolve-file)
                (rx/map (fn [file]
                          (fn [state]
-                           (assoc-in state [:workspace-libraries library-id] file)))))
+                           (assoc-in state [:libraries library-id] file)))))
           (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
                (rx/map (fn [thumbnails]
                          (fn [state]
@@ -1391,7 +1391,7 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (d/dissoc-in state [:workspace-libraries library-id]))
+      (d/dissoc-in state [:libraries library-id]))
 
     ptk/WatchEvent
     (watch [_ _ _]

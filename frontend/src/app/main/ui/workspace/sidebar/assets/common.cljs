@@ -315,17 +315,17 @@
         current-file-id     (mf/use-ctx ctx/current-file-id)
         objects             (deref refs/workspace-page-objects)
         workspace-data      (deref refs/workspace-data)
-        workspace-libraries (deref refs/workspace-libraries)
+        libraries           (deref refs/libraries)
         current-file        {:id current-file-id :data workspace-data}
 
         find-component      (fn [shape include-deleted?]
                               (ctf/resolve-component
-                               shape current-file workspace-libraries {:include-deleted? include-deleted?}))
+                               shape current-file libraries {:include-deleted? include-deleted?}))
 
         local-or-exists     (fn [shape]
                               (let [library-id (:component-file shape)]
                                 (or (= library-id current-file-id)
-                                    (some? (get workspace-libraries library-id)))))
+                                    (some? (get libraries library-id)))))
 
         restorable-copies   (->> copies
                                  (filter #(nil? (find-component % false)))

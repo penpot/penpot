@@ -31,7 +31,7 @@
    ::mf/props :obj
    ::mf/private true}
   [{:keys [filters]}]
-  (let [libraries (mf/deref refs/workspace-libraries)
+  (let [libraries (mf/deref refs/libraries)
         libraries (mf/with-memo [libraries]
                     (->> (vals libraries)
                          (remove :is-indirect)
@@ -88,7 +88,7 @@
         section        (:section filters)
         ordering       (:ordering filters)
         reverse-sort?  (= :desc ordering)
-        num-libs       (count (mf/deref refs/workspace-libraries))
+        num-libs       (count (mf/deref refs/libraries))
 
         toggle-ordering
         (mf/use-fn
