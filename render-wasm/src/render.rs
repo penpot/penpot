@@ -1,26 +1,25 @@
+use std::collections::HashMap;
+
 use skia::Contains;
 use skia_safe as skia;
-use std::collections::HashMap;
 use uuid::Uuid;
 
-use crate::shapes::{Image, Shape};
+use crate::shapes::Shape;
 use crate::view::Viewbox;
 
 mod blend;
 mod gpu_state;
+mod images;
 mod options;
 
 use gpu_state::GpuState;
 use options::RenderOptions;
 
 pub use blend::BlendMode;
+pub use images::*;
 
 pub trait Renderable {
-    fn render(
-        &self,
-        surface: &mut skia::Surface,
-        images: &HashMap<Uuid, Image>,
-    ) -> Result<(), String>;
+    fn render(&self, surface: &mut skia::Surface, images: &ImageStore) -> Result<(), String>;
     fn blend_mode(&self) -> BlendMode;
     fn opacity(&self) -> f32;
 }
@@ -45,7 +44,7 @@ pub(crate) struct RenderState {
     pub cached_surface_image: Option<CachedSurfaceImage>,
     options: RenderOptions,
     pub viewbox: Viewbox,
-    images: HashMap<Uuid, Image>,
+    images: ImageStore,
 }
 
 impl RenderState {
@@ -68,20 +67,16 @@ impl RenderState {
             cached_surface_image: None,
             options: RenderOptions::default(),
             viewbox: Viewbox::new(width as f32, height as f32),
-            images: HashMap::with_capacity(2048),
+            images: ImageStore::new(),
         }
     }
 
     pub fn add_image(&mut self, id: Uuid, image_data: &[u8]) -> Result<(), String> {
-        let image_data = skia::Data::new_copy(image_data);
-        let image = Image::from_encoded(image_data).ok_or("Error decoding image data")?;
-
-        self.images.insert(id, image);
-        Ok(())
+        self.images.add(id, image_data)
     }
 
     pub fn has_image(&mut self, id: &Uuid) -> bool {
-        self.images.contains_key(id)
+        self.images.contains(id)
     }
 
     pub fn set_debug_flags(&mut self, debug: u32) {

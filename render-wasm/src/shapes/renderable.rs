@@ -1,10 +1,8 @@
 use skia_safe as skia;
-use std::collections::HashMap;
-use uuid::Uuid;
 
-use super::{draw_image_in_container, Fill, Image, Kind, Shape};
+use super::{draw_image_in_container, Fill, Kind, Shape};
 use crate::math::Rect;
-use crate::render::Renderable;
+use crate::render::{ImageStore, Renderable};
 
 impl Renderable for Shape {
     fn blend_mode(&self) -> crate::render::BlendMode {
@@ -15,11 +13,7 @@ impl Renderable for Shape {
         self.opacity
     }
 
-    fn render(
-        &self,
-        surface: &mut skia_safe::Surface,
-        images: &HashMap<Uuid, Image>,
-    ) -> Result<(), String> {
+    fn render(&self, surface: &mut skia_safe::Surface, images: &ImageStore) -> Result<(), String> {
         let mut transform = skia::Matrix::new_identity();
         let (translate_x, translate_y) = self.translation();
         let (scale_x, scale_y) = self.scale();
@@ -59,7 +53,7 @@ impl Renderable for Shape {
 
 fn render_fill(
     surface: &mut skia::Surface,
-    images: &HashMap<Uuid, Image>,
+    images: &ImageStore,
     fill: &Fill,
     selrect: Rect,
     kind: &Kind,

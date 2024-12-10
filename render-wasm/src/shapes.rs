@@ -7,7 +7,7 @@ use crate::render::BlendMode;
 mod fills;
 mod images;
 mod paths;
-mod render;
+mod renderable;
 pub use fills::*;
 pub use images::*;
 pub use paths::*;
