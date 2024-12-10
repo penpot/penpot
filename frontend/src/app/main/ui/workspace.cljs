@@ -19,6 +19,7 @@
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.hooks.resize :refer [use-resize-observer]]
+   [app.main.ui.modal :refer [modal-container*]]
    [app.main.ui.workspace.colorpicker]
    [app.main.ui.workspace.context-menu :refer [context-menu]]
    [app.main.ui.workspace.coordinates :as coordinates]
@@ -211,6 +212,7 @@
        [:& (mf/provider ctx/components-v2) {:value components-v2?}
         [:& (mf/provider ctx/design-tokens) {:value design-tokens?}
          [:& (mf/provider ctx/workspace-read-only?) {:value read-only?}
+          [:> modal-container*]
           [:section {:class (stl/css :workspace)
                      :style {:background-color background-color
                              :touch-action "none"}}

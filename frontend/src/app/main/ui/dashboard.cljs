@@ -29,6 +29,7 @@
    [app.main.ui.dashboard.team :refer [team-settings-page* team-members-page* team-invitations-page* webhooks-page*]]
    [app.main.ui.dashboard.templates :refer [templates-section*]]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.modal :refer [modal-container*]]
    [app.main.ui.workspace.plugins]
    [app.plugins.register :as preg]
    [app.util.dom :as dom]
@@ -240,6 +241,7 @@
     (use-plugin-register plugin-url team-id (:id default-project))
 
     [:& (mf/provider ctx/current-project-id) {:value project-id}
+     [:> modal-container*]
      ;; NOTE: dashboard events and other related functions assumes
      ;; that the team is a implicit context variable that is
      ;; available using react context or accessing

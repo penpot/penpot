@@ -23,7 +23,6 @@
    [app.main.ui.confirm]
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.delete-shared]
-   [app.main.ui.modal :refer [modal]]
    [app.main.ui.routes :as rt]
    [app.main.worker :as worker]
    [app.plugins :as plugins]
@@ -52,14 +51,9 @@
   (let [el (dom/get-element "app")]
     (mf/create-root el)))
 
-(defonce modal-root
-  (let [el (dom/get-element "modal")]
-    (mf/create-root el)))
-
 (defn init-ui
   []
-  (mf/render! app-root (mf/element ui/app))
-  (mf/render! modal-root (mf/element modal)))
+  (mf/render! app-root (mf/element ui/app)))
 
 (defn- initialize-profile
   "Event used mainly on application bootstrap; it fetches the profile
@@ -132,9 +126,7 @@
    ;; The hard flag will force to unmount the whole UI and will redraw every component
    (when hard?
      (mf/unmount! app-root)
-     (mf/unmount! modal-root)
-     (set! app-root (mf/create-root (dom/get-element "app")))
-     (set! modal-root (mf/create-root (dom/get-element "modal"))))
+     (set! app-root (mf/create-root (dom/get-element "app"))))
    (st/emit! (ev/initialize))
    (init-ui)))
 

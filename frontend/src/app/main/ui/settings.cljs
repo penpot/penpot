@@ -12,6 +12,7 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.modal :refer [modal-container*]]
    [app.main.ui.settings.access-tokens :refer [access-tokens-page]]
    [app.main.ui.settings.change-email]
    [app.main.ui.settings.delete-account]
@@ -41,25 +42,29 @@
       (when (nil? profile)
         (st/emit! (rt/nav :auth-login))))
 
-    [:section {:class (stl/css :dashboard-layout-refactor :dashboard)}
-     [:& sidebar {:profile profile
-                  :section section}]
+    [:*
+     [:> modal-container*]
+     [:section {:class (stl/css :dashboard-layout-refactor :dashboard)}
 
-     [:div {:class (stl/css :dashboard-content)}
-      [:& header]
-      [:section {:class (stl/css :dashboard-container)}
-       (case section
-         :settings-profile
-         [:& profile-page]
 
-         :settings-feedback
-         [:& feedback-page]
+      [:& sidebar {:profile profile
+                   :section section}]
 
-         :settings-password
-         [:& password-page]
+      [:div {:class (stl/css :dashboard-content)}
+       [:& header]
+       [:section {:class (stl/css :dashboard-container)}
+        (case section
+          :settings-profile
+          [:& profile-page]
 
-         :settings-options
-         [:& options-page]
+          :settings-feedback
+          [:& feedback-page]
 
-         :settings-access-tokens
-         [:& access-tokens-page])]]]))
+          :settings-password
+          [:& password-page]
+
+          :settings-options
+          [:& options-page]
+
+          :settings-access-tokens
+          [:& access-tokens-page])]]]]))
