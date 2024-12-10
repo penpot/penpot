@@ -15,7 +15,6 @@
   {:frame #{:proportion-lock
             :width :height
             :x :y
-            :rx :ry
             :r1 :r2 :r3 :r4
             :rotation
             :selrect
@@ -126,7 +125,6 @@
            :width :height
            :x :y
            :rotation
-           :rx :ry
            :r1 :r2 :r3 :r4
            :selrect
            :points
@@ -372,7 +370,6 @@
             :width :height
             :x :y
             :rotation
-            :rx :ry
             :r1 :r2 :r3 :r4
             :selrect
             :points
@@ -410,7 +407,6 @@
               :width :height
               :x :y
               :rotation
-              :rx :ry
               :r1 :r2 :r3 :r4
               :selrect
               :points
@@ -467,7 +463,6 @@
            :width :height
            :x :y
            :rotation
-           :rx :ry
            :r1 :r2 :r3 :r4
            :selrect
            :points

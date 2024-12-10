@@ -192,8 +192,6 @@
    [:constraints-v {:optional true}
     [::sm/one-of vertical-constraint-types]]
    [:fixed-scroll {:optional true} :boolean]
-   [:rx {:optional true} ::sm/safe-number]
-   [:ry {:optional true} ::sm/safe-number]
    [:r1 {:optional true} ::sm/safe-number]
    [:r2 {:optional true} ::sm/safe-number]
    [:r3 {:optional true} ::sm/safe-number]
@@ -400,13 +398,17 @@
    :fills [{:fill-color default-color
             :fill-opacity 1}]
    :strokes []
-   :rx 0
-   :ry 0})
+   :r1 0
+   :r2 0
+   :r3 0
+   :r4 0})
 
 (def ^:private minimal-image-attrs
   {:type :image
-   :rx 0
-   :ry 0
+   :r1 0
+   :r2 0
+   :r3 0
+   :r4 0
    :fills []
    :strokes []})
 
@@ -417,6 +419,10 @@
    :strokes []
    :name "Board"
    :shapes []
+   :r1 0
+   :r2 0
+   :r3 0
+   :r4 0
    :hide-fill-on-export false})
 
 (def ^:private minimal-circle-attrs
