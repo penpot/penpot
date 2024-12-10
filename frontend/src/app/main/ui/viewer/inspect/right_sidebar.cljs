@@ -35,8 +35,8 @@
                      :data local})))
     (let [viewer-data     (deref refs/viewer-data)
           local           (get-in viewer-data [:file :data])
-          id              (deref refs/current-file-id)
-          libraries (:libraries viewer-data)]
+          id              (get local :id)
+          libraries       (:libraries viewer-data)]
       (-> libraries
           (assoc id {:id id
                      :data local})))))
@@ -48,6 +48,7 @@
         objects        (or objects (:objects page))
         shapes         (or shapes
                            (resolve-shapes objects selected))
+
         first-shape    (first shapes)
         page-id        (or page-id (:id page))
         file-id        (or file-id (:id file))

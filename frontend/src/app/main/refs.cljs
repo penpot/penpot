@@ -618,13 +618,6 @@
   [id]
   (l/derived #(get % id) workspace-grid-edition))
 
-;; FIXME: remove
-(def current-file-id
-  (l/derived :current-file-id st/state))
-
-(def current-project-id
-  (l/derived :current-project-id st/state))
-
 (def workspace-preview-blend
   (l/derived :workspace-preview-blend st/state))
 
