@@ -111,6 +111,7 @@
   (when ^boolean shape/*wasm-sync*
     (api/use-shape (:id self))
     (case k
+      :type       (api/set-shape-type v)
       :selrect    (api/set-shape-selrect v)
       :rotation   (api/set-shape-rotation v)
       :transform  (api/set-shape-transform v)
