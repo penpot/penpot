@@ -413,9 +413,9 @@ When `before-set-name` is nil, move set to bottom")
   (get-set-tree [_] "get a nested tree of all sets in the library")
   (get-in-set-tree [_ path] "get `path` in nested tree of all sets in the library")
   (get-sets [_] "get an ordered sequence of all sets in the library")
-  (get-sets-at-prefix-path [_ path] "get an ordered sequence of sets at `path` in the library")
-  (get-sets-at-path [_ path] "TODO")
-  (rename-set-group [_ from to] "TODO")
+  (get-sets-at-prefix-path [_ prefixed-path] "get an ordered sequence of sets at `prefixed-path` in the library")
+  (get-sets-at-path [_ path-str] "get an ordered sequence of sets at `path` in the library")
+  (rename-set-group [_ from-path-str to-path-str] "renames set groups and all child set names from `from-path-str` to `to-path-str`")
   (get-ordered-set-names [_] "get an ordered sequence of all sets names in the library")
   (get-set [_ set-name] "get one set looking for name")
   (get-neighbor-set-name [_ set-name index-offset] "get neighboring set name offset by `index-offset`"))
@@ -739,8 +739,8 @@ When `before-set-name` is nil, move set to bottom")
     (->> (tree-seq d/ordered-map? vals sets)
          (filter (partial instance? TokenSet))))
 
-  (get-sets-at-prefix-path [_ path]
-    (some->> (get-in sets (split-token-set-path path))
+  (get-sets-at-prefix-path [_ prefixed-path]
+    (some->> (get-in sets (split-token-set-path prefixed-path))
              (tree-seq d/ordered-map? vals)
              (filter (partial instance? TokenSet))))
 
