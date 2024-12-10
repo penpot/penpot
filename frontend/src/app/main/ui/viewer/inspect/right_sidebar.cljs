@@ -56,10 +56,7 @@
         libraries      (get-libraries from)
 
         file           (mf/deref refs/viewer-file)
-        components-v2  (dm/get-in file [:data :options :components-v2])
-        main-instance? (if components-v2
-                         (ctk/main-instance? first-shape)
-                         true)
+        main-instance? (ctk/main-instance? first-shape)
 
         handle-change-tab
         (mf/use-fn
