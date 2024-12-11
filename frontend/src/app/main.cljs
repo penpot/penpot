@@ -55,23 +55,6 @@
   []
   (mf/render! app-root (mf/element ui/app)))
 
-(defn- initialize-profile
-  "Event used mainly on application bootstrap; it fetches the profile
-  and if and only if the fetched profile corresponds to an
-  authenticated user; proceed to fetch teams."
-  [stream]
-  (rx/merge
-   (rx/of (dp/fetch-profile))
-   (->> stream
-        (rx/filter dp/profile-fetched?)
-        (rx/take 1)
-        (rx/map deref)
-        (rx/mapcat (fn [profile]
-                     (if (dp/is-authenticated? profile)
-                       (rx/of (dp/initialize-profile profile))
-                       (rx/empty))))
-        (rx/observe-on :async))))
-
 (defn initialize
   []
   (ptk/reify ::initialize
@@ -83,9 +66,8 @@
     (watch [_ _ stream]
       (rx/merge
        (rx/of (ev/initialize)
-              (feat/initialize))
-
-       (initialize-profile stream)
+              (feat/initialize)
+              (dp/refresh-profile))
 
        ;; Watch for profile deletion events
        (->> stream

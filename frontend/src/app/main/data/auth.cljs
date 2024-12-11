@@ -73,7 +73,7 @@
       ptk/WatchEvent
       (watch [_ _ stream]
         (->> (rx/merge
-              (rx/of (dp/initialize-profile profile)
+              (rx/of (dp/set-profile profile)
                      (ws/initialize)
                      (dtm/fetch-teams))
 

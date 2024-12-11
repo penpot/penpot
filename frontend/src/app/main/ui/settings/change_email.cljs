@@ -41,7 +41,7 @@
 (defn- on-success
   [profile data]
   (if (:changed data)
-    (st/emit! (du/fetch-profile)
+    (st/emit! (du/refresh-profile)
               (modal/hide))
     (let [message (tr "notifications.validation-email-sent" (:email profile))]
       (st/emit! (ntf/info message)
