@@ -926,15 +926,26 @@ Will return a value that matches this schema:
        (d/ordered-map) active-themes)))
 
   (encode-dtcg [_]
-    (into {} (comp
-              (filter (partial instance? TokenSet))
-              (map (fn [token-set]
-                     [(:name token-set) (get-dtcg-tokens-tree token-set)])))
-          (tree-seq d/ordered-map? vals sets)))
+    (let [themes (into []
+                       (comp
+                        (filter #(and (instance? TokenTheme %)
+                                      (not (hidden-temporary-theme? %))))
+                        (map (fn [token-theme]
+                               (->> token-theme
+                                    (into {})
+                                    walk/stringify-keys))))
+                       (tree-seq d/ordered-map? vals themes))
+          sets (into {} (comp
+                         (filter (partial instance? TokenSet))
+                         (map (fn [token-set]
+                                [(:name token-set) (get-dtcg-tokens-tree token-set)])))
+                     (tree-seq d/ordered-map? vals sets))]
+      (assoc sets "$themes" themes)))
 
   (decode-dtcg-json [_ parsed-json]
     (let [;; tokens-studio/plugin will add these meta properties, remove them for now
           sets-data (dissoc parsed-json "$themes" "$metadata")
+          themes-data (get parsed-json "$themes")
           lib (make-tokens-lib)
           lib' (reduce
                 (fn [lib [set-name tokens]]
@@ -942,7 +953,15 @@ Will return a value that matches this schema:
                                 :name set-name
                                 :tokens (flatten-nested-tokens-json tokens ""))))
                 lib sets-data)]
-      lib'))
+      (reduce
+       (fn [lib {:strs [name group description is-source modified-at sets]}]
+         (add-theme lib (TokenTheme. name
+                                     group
+                                     description
+                                     is-source
+                                     (dt/parse-instant modified-at)
+                                     (set sets))))
+       lib' themes-data)))
 
   (get-all-tokens [this]
     (reduce

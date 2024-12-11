@@ -1107,8 +1107,13 @@
              get-set-token (fn [set-name token-name]
                              (some-> (ctob/get-set lib set-name)
                                      (ctob/get-token token-name)
-                                     (dissoc :modified-at)))]
+                                     (dissoc :modified-at)))
+             token-theme (ctob/get-theme lib "group-1" "theme-1")]
          (t/is (= '("core" "light" "dark" "theme") (ctob/get-ordered-set-names lib)))
+         (t/testing "set exists in theme"
+           (t/is (= (:group token-theme) "group-1"))
+           (t/is (= (:name token-theme) "theme-1"))
+           (t/is (= (:sets token-theme) #{"light"})))
          (t/testing "tokens exist in core set"
            (t/is (= (get-set-token "core" "colors.red.600")
                     {:name "colors.red.600"
@@ -1129,7 +1134,8 @@
            (t/is (nil? (get-set-token "typography" "H1.Bold"))))))
 
      (t/testing "encode-dtcg-json"
-       (let [tokens-lib (-> (ctob/make-tokens-lib)
+       (let [now (dt/now)
+             tokens-lib (-> (ctob/make-tokens-lib)
                             (ctob/add-set (ctob/make-token-set :name "core"
                                                                :tokens {"colors.red.600"
                                                                         (ctob/make-token
@@ -1146,9 +1152,19 @@
                                                                         (ctob/make-token
                                                                          {:name "button.primary.background"
                                                                           :type :color
-                                                                          :value "{accent.default}"})})))
+                                                                          :value "{accent.default}"})}))
+                            (ctob/add-theme (ctob/make-token-theme :name "theme-1"
+                                                                   :group "group-1"
+                                                                   :modified-at now
+                                                                   :sets #{"core"})))
              expected (ctob/encode-dtcg tokens-lib)]
-         (t/is (= {"core"
+         (t/is (= {"$themes" [{"description" nil
+                               "group" "group-1"
+                               "is-source" false
+                               "modified-at" now
+                               "name" "theme-1"
+                               "sets" #{"core"}}]
+                   "core"
                    {"colors" {"red" {"600" {"$value" "#e53e3e"
                                             "$type" "color"}}}
                     "spacing"
@@ -1189,4 +1205,3 @@
              (t/is (= @with-prev-tokens-lib @tokens-lib)))
            (t/testing "fresh tokens library is also equal"
              (= @with-empty-tokens-lib @tokens-lib)))))))
-
