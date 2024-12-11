@@ -82,6 +82,25 @@
               :on-click on-click}
           i/open-link]])]]))
 
+;; (defn create-file-library-ref
+;;   [library-id local?]
+;;   (l/derived (fn [state]
+;;                (let [fdata (
+;;                              (get state :workspace-data)
+
+
+
+ ;; (let [{:keys [id] :as wfile} (:workspace-data state)]
+ ;;                          (if (= id library-id)
+ ;;                            wfile
+ ;;                            (dm/get-in state [:libraries library-id :data])))]
+ ;;              {:colors     (-> fdata :colors vals)
+ ;;               :media      (-> fdata :media vals)
+ ;;               :components (ctkl/components-seq fdata)
+ ;;               :typographies (-> fdata :typographies vals)}))]
+ ;;    (l/derived getter-fn st/state =)))
+
+
 (mf/defc file-library-content
   {::mf/wrap-props false}
   [{:keys [file local? open-status-ref on-clear-selection filters]}]
@@ -351,9 +370,11 @@
          (mf/deps file-id)
          (fn []
            (st/emit! (dw/unselect-all-assets file-id))))]
+
     [:div {:class (stl/css :tool-window)
            :on-context-menu dom/prevent-default
            :on-click unselect-all}
+
      [:> file-library-title*
       {:file-id file-id
        :page-id page-id

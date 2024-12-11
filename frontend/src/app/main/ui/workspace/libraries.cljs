@@ -23,6 +23,7 @@
    [app.main.data.workspace.colors :as mdc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
+   [app.main.ui.context :as ctx]
    [app.main.render :refer [component-svg]]
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
@@ -53,9 +54,7 @@
 (def ^:private library-icon
   (i/icon-xref :library (stl/css :library-icon)))
 
-(def ref:workspace-file
-  (l/derived :workspace-file st/state))
-
+;; FIXME: should be simplified (and performance fixed)
 (defn create-file-library-ref
   [library-id]
   (letfn [(getter-fn [state]
@@ -414,10 +413,15 @@
 (mf/defc updates-tab*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [file-id file-data libraries]}]
+  [{:keys [file-id libraries]}]
+  ;; FIXME: naming
   (let [summary?*  (mf/use-state true)
         summary?   (deref summary?*)
         updating?  (mf/deref refs/updating-library)
+
+        ;; NOTE: we don't want to react on file changes, we just want
+        ;; a snapshot of file on the momento of open the dialog
+        file-data  (deref refs/workspace-data)
 
         see-all-assets
         (mf/use-fn
@@ -551,15 +555,26 @@
   {::mf/register modal/components
    ::mf/register-as :libraries-dialog}
   [{:keys [starting-tab] :as props :or {starting-tab :libraries}}]
-  (let [file-data      (mf/deref refs/workspace-data)
-        file           (mf/deref ref:workspace-file)
+  (let [;; NOTE: we don't want to react on file changes, we just want
+        ;; a snapshot of file on the momento of open the dialog
+        file           (deref refs/workspace-file)
+
+        file-id        (mf/use-ctx ctx/current-file-id)
+
+        _ (prn "1111" file-id)
 
         file-id        (:id file)
         shared?        (:is-shared file)
 
-        libraries      (mf/deref refs/libraries)
-        libraries      (mf/with-memo [libraries]
-                         (d/removem (fn [[_ val]] (:is-indirect val)) libraries))
+        linked-libraries
+        (mf/deref refs/libraries)
+
+        linked-libraries
+        (mf/with-memo [linked-libraries file-id]
+          (d/removem (fn [[_ lib]]
+                       (or (:is-indirect lib)
+                           (= (:id lib) file-id)))
+                     linked-libraries))
 
         shared-libraries
         (mf/deref refs/shared-files)
@@ -580,14 +595,13 @@
         (mf/html [:> libraries-tab*
                   {:file-id file-id
                    :is-shared shared?
-                   :linked-libraries libraries
+                   :linked-libraries linked-libraries
                    :shared-libraries shared-libraries}])
 
         updates-tab
         (mf/html [:> updates-tab*
                   {:file-id file-id
-                   :file-data file-data
-                   :libraries libraries}])
+                   :libraries linked-libraries}])
 
         tabs
         #js [#js {:label (tr "workspace.libraries.libraries")
@@ -600,7 +614,9 @@
     (mf/with-effect []
       (st/emit! (dtm/fetch-shared-files)))
 
-    [:div {:class (stl/css :modal-overlay) :on-click close-dialog-outside :data-testid "libraries-modal"}
+    [:div {:class (stl/css :modal-overlay)
+           :on-click close-dialog-outside
+           :data-testid "libraries-modal"}
      [:div {:class (stl/css :modal-dialog)}
       [:button {:class (stl/css :close-btn)
                 :on-click close-dialog

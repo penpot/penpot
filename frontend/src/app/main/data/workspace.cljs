@@ -172,16 +172,20 @@
   (ptk/reify ::libraries-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :libraries (d/index-by :id libraries)))
+      (assoc state :libraries merge (d/index-by :id libraries)))
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id       (dm/get-in state [:workspace-file :id])
-            ignore-until  (dm/get-in state [:workspace-file :ignore-sync-until])
-            needs-check?  (some #(and (> (:modified-at %) (:synced-at %))
-                                      (or (not ignore-until)
-                                          (> (:modified-at %) ignore-until)))
-                                libraries)]
+      (let [file         (get state :workspace-file)
+            file-id      (get file :id)
+            ignore-until (get file :ignore-sync-until)
+
+            needs-check?
+            (some #(and (> (:modified-at %) (:synced-at %))
+                        (or (not ignore-until)
+                            (> (:modified-at %) ignore-until)))
+                  libraries)]
+
         (when needs-check?
           (rx/concat (rx/timer 1000)
                      (rx/of (dwl/notify-sync-file file-id))))))))
@@ -240,10 +244,12 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (assoc :thumbnails thumbnails)
-          (assoc :workspace-file (dissoc file :data))
-          (assoc :workspace-data (:data file))))
+      (let [file-id (:id file)]
+        (-> state
+            (assoc :thumbnails thumbnails)
+            (assoc :workspace-file file)
+            (assoc :workspace-data (:data file))
+            (update :libraries assoc file-id file))))
 
     ptk/WatchEvent
     (watch [_ state _]

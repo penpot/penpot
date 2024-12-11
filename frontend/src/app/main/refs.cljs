@@ -77,6 +77,8 @@
   (l/derived :shared-files st/state))
 
 (def libraries
+  "A derived state that contanins the currently loaded shared libraries
+  with all its content; including the current file"
   (l/derived :libraries st/state))
 
 (defn extract-selected-files
@@ -218,19 +220,22 @@
   (l/derived #(contains? % :rulers) workspace-layout))
 
 (def workspace-file
-  "A ref to a striped vision of file (without data)."
-  (l/derived (fn [state]
-               (let [file (:workspace-file state)
-                     data (:workspace-data state)]
-                 (-> file
-                     (dissoc :data)
-                     ;; FIXME: still used in sitemaps but sitemaps
-                     ;; should declare its own lense for it
-                     (assoc :pages (:pages data)))))
-             st/state =))
+  (l/derived (l/key :workspace-file) st/state))
 
 (def workspace-data
   (l/derived :workspace-data st/state))
+
+;; (def workspace-file
+;;   "A ref to a striped vision of file (without data)."
+;;   (l/derived (fn [state]
+;;                (let [file (:workspace-file state)
+;;                      data (:workspace-data state)]
+;;                  (-> file
+;;                      (dissoc :data)
+;;                      ;; FIXME: still used in sitemaps but sitemaps
+;;                      ;; should declare its own lense for it
+;;                      (assoc :pages (:pages data)))))
+;;              st/state =))
 
 (def workspace-file-colors
   (l/derived (fn [{:keys [id] :as data}]
