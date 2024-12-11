@@ -48,11 +48,11 @@
 
 ;; --- EVENT: fetch-profile
 
-(defn initialize-profile
+(defn set-profile
   "Initialize profile state, only logged-in profile data should be
   passed to this event"
   [{:keys [id] :as profile}]
-  (ptk/reify ::initialize-profile
+  (ptk/reify ::set-profile
     IDeref
     (-deref [_] profile)
 
@@ -93,6 +93,20 @@
            (rx/map (partial ptk/data-event ::profile-fetched))
            (rx/catch on-fetch-profile-exception)))))
 
+(defn refresh-profile
+  []
+  (ptk/reify ::refresh-profile
+    ptk/WatchEvent
+    (watch [_ _ stream]
+      (rx/merge
+       (rx/of (fetch-profile))
+       (->> stream
+            (rx/filter profile-fetched?)
+            (rx/map deref)
+            (rx/filter is-authenticated?)
+            (rx/take 1)
+            (rx/map set-profile))))))
+
 ;; --- Update Profile
 
 (defn persist-profile
@@ -106,29 +120,34 @@
             params     (select-keys profile [:fullname :lang :theme])]
         (->> (rp/cmd! :update-profile params)
              (rx/tap on-success)
+             (rx/map set-profile)
              (rx/catch on-error))))))
 
 (defn update-profile
-  [data]
+  "Optimistic update of the current profile.
+
+  Props are ignored because there is a specific event for updating
+  props"
+  [profile]
   (dm/assert!
    "expected valid profile data"
-   (check-profile data))
+   (check-profile profile))
 
   (ptk/reify ::update-profile
     ptk/WatchEvent
     (watch [_ state _]
-      (let [data     (dissoc data :props)
-            profile  (:profile state)
-            profile' (d/deep-merge profile data)]
+      (let [profile' (get state :profile)
+            profile  (d/deep-merge profile' (dissoc profile :props))]
 
-        (rx/concat
-         (rx/of #(assoc % :profile profile'))
+        (rx/merge
+         (rx/of (set-profile profile))
 
-         (when (not= (:theme profile) (:theme profile'))
+         (when (not= (:theme profile)
+                     (:theme profile'))
            (rx/of (ptk/data-event ::ev/event
                                   {::ev/name "activate-theme"
                                    ::ev/origin "settings"
-                                   :theme (:theme profile')}))))))))
+                                   :theme (:theme profile)}))))))))
 
 ;; --- Toggle Theme
 
@@ -178,7 +197,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :cancel-email-change {})
-           (rx/map (constantly (fetch-profile)))))))
+           (rx/map (constantly (refresh-profile)))))))
 
 ;; --- Update Password (Form)
 
@@ -227,7 +246,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :update-profile-props {:props props})
-           (rx/map (constantly (fetch-profile)))))))
+           (rx/map (constantly (refresh-profile)))))))
 
 (defn mark-onboarding-as-viewed
   ([] (mark-onboarding-as-viewed nil))
@@ -239,7 +258,7 @@
              props   {:onboarding-viewed true
                       :release-notes-viewed version}]
          (->> (rp/cmd! :update-profile-props {:props props})
-              (rx/map (constantly (fetch-profile)))))))))
+              (rx/map (constantly (refresh-profile)))))))))
 
 (defn mark-questions-as-answered
   [onboarding-questions]
@@ -253,7 +272,7 @@
       (let [props {:onboarding-questions-answered true
                    :onboarding-questions onboarding-questions}]
         (->> (rp/cmd! :update-profile-props {:props props})
-             (rx/map (constantly (fetch-profile))))))))
+             (rx/map (constantly (refresh-profile))))))))
 
 ;; --- Update Photo
 
@@ -283,7 +302,7 @@
              (rx/map prepare)
              (rx/mapcat #(rp/cmd! :update-profile-photo %))
              (rx/tap on-success)
-             (rx/map (constantly (fetch-profile)))
+             (rx/map (constantly (refresh-profile)))
              (rx/catch on-error))))))
 
 (defn fetch-users
