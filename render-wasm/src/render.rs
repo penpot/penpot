@@ -49,6 +49,7 @@ pub(crate) struct RenderState {
     options: RenderOptions,
     pub viewbox: Viewbox,
     images: ImageStore,
+    background_color: skia::Color,
 }
 
 impl RenderState {
@@ -72,6 +73,7 @@ impl RenderState {
             options: RenderOptions::default(),
             viewbox: Viewbox::new(width as f32, height as f32),
             images: ImageStore::new(),
+            background_color: skia::Color::TRANSPARENT,
         }
     }
 
@@ -95,6 +97,11 @@ impl RenderState {
                 self.viewbox.height.floor() as i32,
             );
         }
+    }
+
+    pub fn set_background_color(&mut self, color: skia::Color) {
+        self.background_color = color;
+        let _ = self.render_all_from_cache();
     }
 
     pub fn resize(&mut self, width: i32, height: i32) {
@@ -136,7 +143,7 @@ impl RenderState {
             .reset_matrix();
         self.final_surface
             .canvas()
-            .clear(skia::Color::TRANSPARENT)
+            .clear(self.background_color)
             .reset_matrix();
         self.debug_surface
             .canvas()

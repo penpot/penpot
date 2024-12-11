@@ -345,6 +345,11 @@
   (set! (.-width canvas) (* dpr (.-clientWidth ^js canvas)))
   (set! (.-height canvas) (* dpr (.-clientHeight ^js canvas))))
 
+(defn set-canvas-background
+  [background]
+  (let [rgba (rgba-from-hex background 1)]
+    (h/call internal-module "_set_canvas_background" rgba)))
+
 (defonce module
   (delay
     (if (exists? js/dynamicImport)

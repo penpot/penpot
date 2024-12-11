@@ -284,7 +284,8 @@
              (p/fmap (fn [ready?]
                        (when ready?
                          (reset! canvas-init? true)
-                         (wasm.api/assign-canvas canvas)))))
+                         (wasm.api/assign-canvas canvas)
+                         (wasm.api/set-canvas-background background)))))
         (fn []
           (wasm.api/clear-canvas))))
 
@@ -303,6 +304,10 @@
     (mf/with-effect [vbox canvas-init?]
       (when @canvas-init?
         (wasm.api/set-view zoom vbox)))
+
+    (mf/with-effect [background]
+      (when @canvas-init?
+        (wasm.api/set-canvas-background background)))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)

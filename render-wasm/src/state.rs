@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+
+use skia_safe as skia;
 use uuid::Uuid;
 
 use crate::render::RenderState;
@@ -56,5 +58,10 @@ impl<'a> State<'a> {
 
     pub fn current_shape(&'a mut self) -> Option<&'a mut Shape> {
         self.current_shape.as_deref_mut()
+    }
+
+    pub fn set_background_color(&mut self, color: skia::Color) {
+        self.render_state.set_background_color(color);
+        self.render_all(true);
     }
 }
