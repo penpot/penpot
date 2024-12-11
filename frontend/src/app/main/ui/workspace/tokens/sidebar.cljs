@@ -323,12 +323,12 @@
                                                   :timeout 9000})))))
             (set! (.-value (mf/ref-val input-ref)) "")))
         on-export (fn []
-                    (let [tokens-blob (some-> (deref refs/tokens-lib)
+                    (let [tokens-json (some-> (deref refs/tokens-lib)
                                               (ctob/encode-dtcg)
                                               (clj->js)
-                                              (js/JSON.stringify nil 2)
-                                              (wapi/create-blob "application/json"))]
-                      (dom/trigger-download "tokens.json" tokens-blob)))]
+                                              (js/JSON.stringify nil 2))]
+                      (->> (wapi/create-blob (or tokens-json "{}") "application/json")
+                           (dom/trigger-download "tokens.json"))))]
 
     [:div {:class (stl/css :import-export-button-wrapper)}
      [:input {:type "file"
