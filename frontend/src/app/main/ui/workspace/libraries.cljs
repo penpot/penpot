@@ -62,7 +62,7 @@
             (let [fdata (let [{:keys [id] :as wfile} (:workspace-data state)]
                           (if (= id library-id)
                             wfile
-                            (dm/get-in state [:workspace-libraries library-id :data])))]
+                            (dm/get-in state [:libraries library-id :data])))]
               {:colors     (-> fdata :colors vals)
                :media      (-> fdata :media vals)
                :components (ctkl/components-seq fdata)
@@ -557,7 +557,7 @@
         file-id        (:id file)
         shared?        (:is-shared file)
 
-        libraries      (mf/deref refs/workspace-libraries)
+        libraries      (mf/deref refs/libraries)
         libraries      (mf/with-memo [libraries]
                          (d/removem (fn [[_ val]] (:is-indirect val)) libraries))
 

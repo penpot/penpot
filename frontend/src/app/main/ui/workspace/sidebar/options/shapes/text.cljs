@@ -53,7 +53,7 @@
                        (mf/deref refs/workspace-v2-editor-state)
                        (mf/deref refs/workspace-editor-state))
 
-        shared-libs  (mf/deref refs/workspace-libraries)
+        shared-libs  (mf/deref refs/libraries)
 
         editor-state (when (not (features/active-feature? @st/state "text-editor/v2"))
                        (get state-map (:id shape)))

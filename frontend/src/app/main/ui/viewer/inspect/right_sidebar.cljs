@@ -7,7 +7,6 @@
 (ns app.main.ui.viewer.inspect.right-sidebar
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data.macros :as dm]
    [app.common.types.component :as ctk]
    [app.main.data.event :as ev]
    [app.main.refs :as refs]
@@ -29,14 +28,14 @@
   (if (= from :workspace)
     (let [workspace-data (deref refs/workspace-data)
           {:keys [id] :as local} workspace-data
-          libraries (deref refs/workspace-libraries)]
+          libraries (deref refs/libraries)]
       (-> libraries
           (assoc id {:id id
                      :data local})))
     (let [viewer-data     (deref refs/viewer-data)
           local           (get-in viewer-data [:file :data])
-          id              (deref refs/current-file-id)
-          libraries (:libraries viewer-data)]
+          id              (get local :id)
+          libraries       (:libraries viewer-data)]
       (-> libraries
           (assoc id {:id id
                      :data local})))))
@@ -48,17 +47,13 @@
         objects        (or objects (:objects page))
         shapes         (or shapes
                            (resolve-shapes objects selected))
+
         first-shape    (first shapes)
         page-id        (or page-id (:id page))
         file-id        (or file-id (:id file))
 
         libraries      (get-libraries from)
-
-        file           (mf/deref refs/viewer-file)
-        components-v2  (dm/get-in file [:data :options :components-v2])
-        main-instance? (if components-v2
-                         (ctk/main-instance? first-shape)
-                         true)
+        main-instance? (ctk/main-instance? first-shape)
 
         handle-change-tab
         (mf/use-fn

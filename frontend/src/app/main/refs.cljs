@@ -233,10 +233,8 @@
   (l/derived :workspace-data st/state))
 
 (def workspace-file-colors
-  (l/derived (fn [data]
-               (when data
-                 (->> (:colors data)
-                      (d/mapm #(assoc %2 :file-id (:id data))))))
+  (l/derived (fn [{:keys [id] :as data}]
+               (some-> (:colors data) (update-vals #(assoc % :file-id id))))
              workspace-data
              =))
 
@@ -246,6 +244,8 @@
                  (dm/get-in state [:recent-colors file-id])))
              st/state))
 
+;; FIXME: fonts are not prefixed, so the recent font list is shared
+;; across all teams. This may not be expected behavior
 (def workspace-recent-fonts
   (l/derived (fn [data]
                (get data :recent-fonts []))
@@ -254,24 +254,8 @@
 (def workspace-file-typography
   (l/derived :typographies workspace-data))
 
-(def workspace-local-library
-  (l/derived (fn [state]
-               (select-keys (:workspace-data state)
-                            [:id
-                             :colors
-                             :media
-                             :typographies
-                             :components]))
-             st/state =))
-
-(def workspace-libraries
-  (l/derived :workspace-libraries st/state))
-
 (def workspace-presence
   (l/derived :workspace-presence st/state))
-
-(def workspace-snap-data
-  (l/derived :workspace-snap-data st/state))
 
 (def workspace-page
   (l/derived (fn [state]
@@ -617,13 +601,6 @@
 (defn workspace-grid-edition-id
   [id]
   (l/derived #(get % id) workspace-grid-edition))
-
-;; FIXME: remove
-(def current-file-id
-  (l/derived :current-file-id st/state))
-
-(def current-project-id
-  (l/derived :current-project-id st/state))
 
 (def workspace-preview-blend
   (l/derived :workspace-preview-blend st/state))

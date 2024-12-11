@@ -49,14 +49,15 @@
   (dom/prevent-default event)
   (dom/stop-propagation event))
 
-(mf/defc menu-entry
-  {::mf/props :obj}
+(mf/defc menu-entry*
+  {::mf/props :obj
+   ::mf/private true}
   [{:keys [title shortcut on-click on-pointer-enter on-pointer-leave
-           on-unmount children selected? icon disabled value]}]
+           on-unmount children is-selected icon disabled value]}]
   (let [submenu-ref (mf/use-ref nil)
         hovering?   (mf/use-ref false)
         on-pointer-enter
-        (mf/use-callback
+        (mf/use-fn
          (fn []
            (mf/set-ref-val! hovering? true)
            (let [submenu-node (mf/ref-val submenu-ref)]
@@ -65,7 +66,7 @@
            (when on-pointer-enter (on-pointer-enter))))
 
         on-pointer-leave
-        (mf/use-callback
+        (mf/use-fn
          (fn []
            (mf/set-ref-val! hovering? false)
            (let [submenu-node (mf/ref-val submenu-ref)]
@@ -77,7 +78,7 @@
            (when on-pointer-leave (on-pointer-leave))))
 
         set-dom-node
-        (mf/use-callback
+        (mf/use-fn
          (fn [dom]
            (let [submenu-node (mf/ref-val submenu-ref)]
              (when (and (some? dom) (some? submenu-node))
@@ -97,8 +98,8 @@
             :on-pointer-leave on-pointer-leave}
        [:span
         {:class (stl/css :icon-wrapper)}
-        (if selected? [:span {:class (stl/css :selected-icon)}
-                       i/tick]
+        (if is-selected [:span {:class (stl/css :selected-icon)}
+                         i/tick]
             [:span {:class (stl/css :selected-icon)}])
         [:span {:class (stl/css :shape-icon)} icon]]
        [:span {:class (stl/css :title)} title]]
@@ -126,34 +127,40 @@
                :on-context-menu prevent-default}
           children])])))
 
-(mf/defc menu-separator
+(mf/defc menu-separator*
+  {::mf/props :obj
+   ::mf/private true}
   []
   [:li {:class (stl/css :separator)}])
 
-(mf/defc context-menu-edit
-  [_]
+(mf/defc context-menu-edit*
+  {::mf/props :obj
+   ::mf/private true}
+  []
   (let [do-copy           #(st/emit! (dw/copy-selected))
         do-cut            #(st/emit! (dw/copy-selected)
                                      (dw/delete-selected))
         do-paste          #(st/emit! (dw/paste-from-clipboard))
         do-duplicate      #(st/emit! (dw/duplicate-selected true))]
     [:*
-     [:& menu-entry {:title (tr "workspace.shape.menu.copy")
-                     :shortcut (sc/get-tooltip :copy)
-                     :on-click do-copy}]
-     [:& menu-entry {:title (tr "workspace.shape.menu.cut")
-                     :shortcut (sc/get-tooltip :cut)
-                     :on-click do-cut}]
-     [:& menu-entry {:title (tr "workspace.shape.menu.paste")
-                     :shortcut (sc/get-tooltip :paste)
-                     :on-click do-paste}]
-     [:& menu-entry {:title (tr "workspace.shape.menu.duplicate")
-                     :shortcut (sc/get-tooltip :duplicate)
-                     :on-click do-duplicate}]
+     [:> menu-entry* {:title (tr "workspace.shape.menu.copy")
+                      :shortcut (sc/get-tooltip :copy)
+                      :on-click do-copy}]
+     [:> menu-entry* {:title (tr "workspace.shape.menu.cut")
+                      :shortcut (sc/get-tooltip :cut)
+                      :on-click do-cut}]
+     [:> menu-entry* {:title (tr "workspace.shape.menu.paste")
+                      :shortcut (sc/get-tooltip :paste)
+                      :on-click do-paste}]
+     [:> menu-entry* {:title (tr "workspace.shape.menu.duplicate")
+                      :shortcut (sc/get-tooltip :duplicate)
+                      :on-click do-duplicate}]
 
-     [:& menu-separator]]))
+     [:> menu-separator* {}]]))
 
-(mf/defc context-menu-layer-position
+(mf/defc context-menu-layer-position*
+  {::mf/props :obj
+   ::mf/private true}
   [{:keys [shapes]}]
   (let [do-bring-forward  (mf/use-fn #(st/emit! (dw/vertical-order-selected :up)))
         do-bring-to-front (mf/use-fn #(st/emit! (dw/vertical-order-selected :top)))
@@ -173,46 +180,50 @@
 
     [:*
      (when (> (count hover-objs) 1)
-       [:& menu-entry {:title (tr "workspace.shape.menu.select-layer")}
+       [:> menu-entry* {:title (tr "workspace.shape.menu.select-layer")}
         (for [object hover-objs]
-          [:& menu-entry {:title (:name object)
-                          :key (dm/str (:id object))
-                          :selected? (some #(= object %) shapes)
-                          :on-click (select-shapes (:id object))
-                          :on-pointer-enter (on-pointer-enter (:id object))
-                          :on-pointer-leave (on-pointer-leave (:id object))
-                          :on-unmount (on-unmount (:id object))
-                          :icon (sic/element-icon {:shape object})}])])
-     [:& menu-entry {:title (tr "workspace.shape.menu.forward")
-                     :shortcut (sc/get-tooltip :bring-forward)
-                     :on-click do-bring-forward}]
-     [:& menu-entry {:title (tr "workspace.shape.menu.front")
-                     :shortcut (sc/get-tooltip :bring-front)
-                     :on-click do-bring-to-front}]
-     [:& menu-entry {:title (tr "workspace.shape.menu.backward")
-                     :shortcut (sc/get-tooltip :bring-backward)
-                     :on-click do-send-backward}]
-     [:& menu-entry {:title (tr "workspace.shape.menu.back")
-                     :shortcut (sc/get-tooltip :bring-back)
-                     :on-click do-send-to-back}]
+          [:> menu-entry* {:title (:name object)
+                           :key (dm/str (:id object))
+                           :is-selected (some #(= object %) shapes)
+                           :on-click (select-shapes (:id object))
+                           :on-pointer-enter (on-pointer-enter (:id object))
+                           :on-pointer-leave (on-pointer-leave (:id object))
+                           :on-unmount (on-unmount (:id object))
+                           :icon (sic/element-icon {:shape object})}])])
+     [:> menu-entry* {:title (tr "workspace.shape.menu.forward")
+                      :shortcut (sc/get-tooltip :bring-forward)
+                      :on-click do-bring-forward}]
+     [:> menu-entry* {:title (tr "workspace.shape.menu.front")
+                      :shortcut (sc/get-tooltip :bring-front)
+                      :on-click do-bring-to-front}]
+     [:> menu-entry* {:title (tr "workspace.shape.menu.backward")
+                      :shortcut (sc/get-tooltip :bring-backward)
+                      :on-click do-send-backward}]
+     [:> menu-entry* {:title (tr "workspace.shape.menu.back")
+                      :shortcut (sc/get-tooltip :bring-back)
+                      :on-click do-send-to-back}]
 
-     [:& menu-separator]]))
+     [:> menu-separator* {}]]))
 
-(mf/defc context-menu-flip
+(mf/defc context-menu-flip*
+  {::mf/props :obj
+   ::mf/private true}
   []
   (let [do-flip-vertical #(st/emit! (dw/flip-vertical-selected))
         do-flip-horizontal #(st/emit! (dw/flip-horizontal-selected))]
     [:*
-     [:& menu-entry {:title (tr "workspace.shape.menu.flip-vertical")
-                     :shortcut (sc/get-tooltip :flip-vertical)
-                     :on-click do-flip-vertical}]
+     [:> menu-entry* {:title (tr "workspace.shape.menu.flip-vertical")
+                      :shortcut (sc/get-tooltip :flip-vertical)
+                      :on-click do-flip-vertical}]
 
-     [:& menu-entry {:title (tr "workspace.shape.menu.flip-horizontal")
-                     :shortcut (sc/get-tooltip :flip-horizontal)
-                     :on-click do-flip-horizontal}]
-     [:& menu-separator]]))
+     [:> menu-entry* {:title (tr "workspace.shape.menu.flip-horizontal")
+                      :shortcut (sc/get-tooltip :flip-horizontal)
+                      :on-click do-flip-horizontal}]
+     [:> menu-separator* {}]]))
 
-(mf/defc context-menu-thumbnail
+(mf/defc context-menu-thumbnail*
+  {::mf/props :obj
+   ::mf/private true}
   [{:keys [shapes]}]
   (let [single?    (= (count shapes) 1)
         has-frame? (some cfh/frame-shape? shapes)
@@ -220,26 +231,29 @@
     (when (and single? has-frame?)
       [:*
        (if (every? :use-for-thumbnail shapes)
-         [:& menu-entry {:title (tr "workspace.shape.menu.thumbnail-remove")
-                         :on-click do-toggle-thumbnail}]
-         [:& menu-entry {:title (tr "workspace.shape.menu.thumbnail-set")
-                         :shortcut (sc/get-tooltip :thumbnail-set)
-                         :on-click do-toggle-thumbnail}])
-       [:& menu-separator]])))
+         [:> menu-entry* {:title (tr "workspace.shape.menu.thumbnail-remove")
+                          :on-click do-toggle-thumbnail}]
+         [:> menu-entry* {:title (tr "workspace.shape.menu.thumbnail-set")
+                          :shortcut (sc/get-tooltip :thumbnail-set)
+                          :on-click do-toggle-thumbnail}])
+       [:> menu-separator* {}]])))
 
-(mf/defc context-menu-rename
+(mf/defc context-menu-rename*
+  {::mf/props :obj
+   ::mf/private true}
   [{:keys [shapes]}]
   (let [do-rename #(st/emit! (dw/start-rename-selected))]
     (when (= (count shapes) 1)
       [:*
-       [:& menu-separator]
-       [:& menu-entry {:title (tr "workspace.shape.menu.rename")
-                       :shortcut (sc/get-tooltip :rename)
-                       :on-click do-rename}]])))
+       [:> menu-separator* {}]
+       [:> menu-entry* {:title (tr "workspace.shape.menu.rename")
+                        :shortcut (sc/get-tooltip :rename)
+                        :on-click do-rename}]])))
 
-(mf/defc context-menu-group
+(mf/defc context-menu-group*
+  {::mf/props :obj
+   ::mf/private true}
   [{:keys [shapes]}]
-
   (let [multiple?    (> (count shapes) 1)
         single?      (= (count shapes) 1)
 
@@ -266,42 +280,46 @@
      (when (not any-in-copy?)
        [:*
         (when (or has-bool? has-group? has-mask? has-frame?)
-          [:& menu-entry {:title (tr "workspace.shape.menu.ungroup")
-                          :shortcut (sc/get-tooltip :ungroup)
-                          :on-click do-remove-group}])
+          [:> menu-entry* {:title (tr "workspace.shape.menu.ungroup")
+                           :shortcut (sc/get-tooltip :ungroup)
+                           :on-click do-remove-group}])
 
-        [:& menu-entry {:title (tr "workspace.shape.menu.group")
-                        :shortcut (sc/get-tooltip :group)
-                        :on-click do-create-group}]
+        [:> menu-entry* {:title (tr "workspace.shape.menu.group")
+                         :shortcut (sc/get-tooltip :group)
+                         :on-click do-create-group}]
 
         (when (or multiple? (and is-group? (not has-mask?)) is-bool?)
-          [:& menu-entry {:title (tr "workspace.shape.menu.mask")
-                          :shortcut (sc/get-tooltip :mask)
-                          :on-click do-mask-group}])
+          [:> menu-entry* {:title (tr "workspace.shape.menu.mask")
+                           :shortcut (sc/get-tooltip :mask)
+                           :on-click do-mask-group}])
 
         (when has-mask?
-          [:& menu-entry {:title (tr "workspace.shape.menu.unmask")
-                          :shortcut (sc/get-tooltip :unmask)
-                          :on-click do-unmask-group}])
+          [:> menu-entry* {:title (tr "workspace.shape.menu.unmask")
+                           :shortcut (sc/get-tooltip :unmask)
+                           :on-click do-unmask-group}])
 
-        [:& menu-entry {:title (tr "workspace.shape.menu.create-artboard-from-selection")
-                        :shortcut (sc/get-tooltip :artboard-selection)
-                        :on-click do-create-artboard-from-selection}]
-        [:& menu-separator]])]))
+        [:> menu-entry* {:title (tr "workspace.shape.menu.create-artboard-from-selection")
+                         :shortcut (sc/get-tooltip :artboard-selection)
+                         :on-click do-create-artboard-from-selection}]
+        [:> menu-separator* {}]])]))
 
-(mf/defc context-focus-mode-menu
-  [{:keys []}]
+(mf/defc context-focus-mode-menu*
+  {::mf/props :obj
+   ::mf/private true}
+  []
   (let [focus (mf/deref refs/workspace-focus-selected)
         do-toggle-focus-mode #(st/emit! (dw/toggle-focus-mode))]
 
-    [:& menu-entry {:title (if (empty? focus)
-                             (tr "workspace.focus.focus-on")
-                             (tr "workspace.focus.focus-off"))
-                    :shortcut (sc/get-tooltip :toggle-focus-mode)
-                    :on-click do-toggle-focus-mode}]))
+    [:> menu-entry* {:title (if (empty? focus)
+                              (tr "workspace.focus.focus-on")
+                              (tr "workspace.focus.focus-off"))
+                     :shortcut (sc/get-tooltip :toggle-focus-mode)
+                     :on-click do-toggle-focus-mode}]))
 
-(mf/defc context-menu-path
-  [{:keys [shapes disable-flatten? disable-booleans?]}]
+(mf/defc context-menu-path*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [shapes disable-flatten disable-booleans]}]
   (let [multiple?            (> (count shapes) 1)
         single?              (= (count shapes) 1)
 
@@ -330,37 +348,39 @@
              (st/emit! (dw/change-bool-type (-> shapes first :id) bool-type))))]
     [:*
      (when (and single? (not is-frame?))
-       [:& menu-entry {:title (tr "workspace.shape.menu.edit")
-                       :shortcut (sc/get-tooltip :start-editing)
-                       :on-click do-start-editing}])
+       [:> menu-entry* {:title (tr "workspace.shape.menu.edit")
+                        :shortcut (sc/get-tooltip :start-editing)
+                        :on-click do-start-editing}])
 
-     (when-not (or disable-flatten? has-frame? has-path?)
-       [:& menu-entry {:title (tr "workspace.shape.menu.transform-to-path")
-                       :on-click do-transform-to-path}])
+     (when-not (or disable-flatten has-frame? has-path?)
+       [:> menu-entry* {:title (tr "workspace.shape.menu.transform-to-path")
+                        :on-click do-transform-to-path}])
 
-     (when (and (not disable-booleans?)
+     (when (and (not disable-booleans)
                 (or multiple? (and single? (or is-group? is-bool?))))
-       [:& menu-entry {:title (tr "workspace.shape.menu.path")}
-        [:& menu-entry {:title (tr "workspace.shape.menu.union")
-                        :shortcut (sc/get-tooltip :bool-union)
-                        :on-click (make-do-bool :union)}]
-        [:& menu-entry {:title (tr "workspace.shape.menu.difference")
-                        :shortcut (sc/get-tooltip :bool-difference)
-                        :on-click (make-do-bool :difference)}]
-        [:& menu-entry {:title (tr "workspace.shape.menu.intersection")
-                        :shortcut (sc/get-tooltip :bool-intersection)
-                        :on-click (make-do-bool :intersection)}]
-        [:& menu-entry {:title (tr "workspace.shape.menu.exclude")
-                        :shortcut (sc/get-tooltip :bool-exclude)
-                        :on-click (make-do-bool :exclude)}]
+       [:> menu-entry* {:title (tr "workspace.shape.menu.path")}
+        [:> menu-entry* {:title (tr "workspace.shape.menu.union")
+                         :shortcut (sc/get-tooltip :bool-union)
+                         :on-click (make-do-bool :union)}]
+        [:> menu-entry* {:title (tr "workspace.shape.menu.difference")
+                         :shortcut (sc/get-tooltip :bool-difference)
+                         :on-click (make-do-bool :difference)}]
+        [:> menu-entry* {:title (tr "workspace.shape.menu.intersection")
+                         :shortcut (sc/get-tooltip :bool-intersection)
+                         :on-click (make-do-bool :intersection)}]
+        [:> menu-entry* {:title (tr "workspace.shape.menu.exclude")
+                         :shortcut (sc/get-tooltip :bool-exclude)
+                         :on-click (make-do-bool :exclude)}]
 
-        (when (and single? is-bool? (not disable-flatten?))
+        (when (and single? is-bool? (not disable-flatten))
           [:*
-           [:& menu-separator]
-           [:& menu-entry {:title (tr "workspace.shape.menu.flatten")
-                           :on-click do-transform-to-path}]])])]))
+           [:> menu-separator* {}]
+           [:> menu-entry* {:title (tr "workspace.shape.menu.flatten")
+                            :on-click do-transform-to-path}]])])]))
 
-(mf/defc context-menu-layer-options
+(mf/defc context-menu-layer-options*
+  {::mf/props :obj
+   ::mf/private true}
   [{:keys [shapes]}]
   (let [ids (mapv :id shapes)
         do-show-shape #(st/emit! (dw/update-shape-flags ids {:hidden false}))
@@ -369,23 +389,24 @@
         do-unlock-shape #(st/emit! (dw/update-shape-flags ids {:blocked false}))]
     [:*
      (if (every? :hidden shapes)
-       [:& menu-entry {:title (tr "workspace.shape.menu.show")
-                       :shortcut (sc/get-tooltip :toggle-visibility)
-                       :on-click do-show-shape}]
-       [:& menu-entry {:title (tr "workspace.shape.menu.hide")
-                       :shortcut (sc/get-tooltip :toggle-visibility)
-                       :on-click do-hide-shape}])
+       [:> menu-entry* {:title (tr "workspace.shape.menu.show")
+                        :shortcut (sc/get-tooltip :toggle-visibility)
+                        :on-click do-show-shape}]
+       [:> menu-entry* {:title (tr "workspace.shape.menu.hide")
+                        :shortcut (sc/get-tooltip :toggle-visibility)
+                        :on-click do-hide-shape}])
 
      (if (every? :blocked shapes)
-       [:& menu-entry {:title (tr "workspace.shape.menu.unlock")
-                       :shortcut (sc/get-tooltip :toggle-lock)
-                       :on-click do-unlock-shape}]
-       [:& menu-entry {:title (tr "workspace.shape.menu.lock")
-                       :shortcut (sc/get-tooltip :toggle-lock)
-                       :on-click do-lock-shape}])]))
+       [:> menu-entry* {:title (tr "workspace.shape.menu.unlock")
+                        :shortcut (sc/get-tooltip :toggle-lock)
+                        :on-click do-unlock-shape}]
+       [:> menu-entry* {:title (tr "workspace.shape.menu.lock")
+                        :shortcut (sc/get-tooltip :toggle-lock)
+                        :on-click do-lock-shape}])]))
 
-(mf/defc context-menu-prototype
-  {::mf/props :obj}
+(mf/defc context-menu-prototype*
+  {::mf/props :obj
+   ::mf/private true}
   [{:keys [shapes]}]
   (let [flows           (mf/deref refs/workspace-page-flows)
         options-mode    (mf/deref refs/options-mode-global)
@@ -400,13 +421,14 @@
 
     (when (and prototype? is-frame?)
       (if-let [flow (ctp/get-frame-flow flows (-> shapes first :id))]
-        [:& menu-entry {:title (tr "workspace.shape.menu.delete-flow-start")
-                        :on-click (do-remove-flow flow)}]
-        [:& menu-entry {:title (tr "workspace.shape.menu.flow-start")
-                        :on-click do-add-flow}]))))
+        [:> menu-entry* {:title (tr "workspace.shape.menu.delete-flow-start")
+                         :on-click (do-remove-flow flow)}]
+        [:> menu-entry* {:title (tr "workspace.shape.menu.flow-start")
+                         :on-click do-add-flow}]))))
 
-(mf/defc context-menu-layout
-  {::mf/props :obj}
+(mf/defc context-menu-layout*
+  {::mf/props :obj
+   ::mf/private true}
   [{:keys [shapes]}]
   (let [single?      (= (count shapes) 1)
         objects      (deref refs/workspace-page-objects)
@@ -438,27 +460,29 @@
        (if (or ^boolean has-flex?
                ^boolean has-grid?)
          [:div
-          [:& menu-separator]
+          [:> menu-separator* {}]
           (if has-flex?
-            [:& menu-entry {:title (tr "workspace.shape.menu.remove-flex")
-                            :shortcut (sc/get-tooltip :toggle-layout-flex)
-                            :on-click on-remove-layout}]
-            [:& menu-entry {:title (tr "workspace.shape.menu.remove-grid")
-                            :shortcut (sc/get-tooltip :toggle-layout-grid)
-                            :on-click on-remove-layout}])]
+            [:> menu-entry* {:title (tr "workspace.shape.menu.remove-flex")
+                             :shortcut (sc/get-tooltip :toggle-layout-flex)
+                             :on-click on-remove-layout}]
+            [:> menu-entry* {:title (tr "workspace.shape.menu.remove-grid")
+                             :shortcut (sc/get-tooltip :toggle-layout-grid)
+                             :on-click on-remove-layout}])]
 
          [:div
-          [:& menu-separator]
-          [:& menu-entry {:title (tr "workspace.shape.menu.add-flex")
-                          :shortcut (sc/get-tooltip :toggle-layout-flex)
-                          :value "flex"
-                          :on-click on-add-layout}]
-          [:& menu-entry {:title (tr "workspace.shape.menu.add-grid")
-                          :shortcut (sc/get-tooltip :toggle-layout-grid)
-                          :value "grid"
-                          :on-click on-add-layout}]]))]))
+          [:> menu-separator* {}]
+          [:> menu-entry* {:title (tr "workspace.shape.menu.add-flex")
+                           :shortcut (sc/get-tooltip :toggle-layout-flex)
+                           :value "flex"
+                           :on-click on-add-layout}]
+          [:> menu-entry* {:title (tr "workspace.shape.menu.add-grid")
+                           :shortcut (sc/get-tooltip :toggle-layout-grid)
+                           :value "grid"
+                           :on-click on-add-layout}]]))]))
 
-(mf/defc context-menu-component
+(mf/defc context-menu-component*
+  {::mf/props :obj
+   ::mf/private true}
   [{:keys [shapes]}]
   (let [components-v2              (features/use-feature "components/v2")
         single?                    (= (count shapes) 1)
@@ -471,59 +495,66 @@
     [:*
      (when can-make-component ;; We don't want to change the structure of component copies
        [:*
-        [:& menu-separator]
+        [:> menu-separator* {}]
 
-        [:& menu-entry {:title (tr "workspace.shape.menu.create-component")
-                        :shortcut (sc/get-tooltip :create-component)
-                        :on-click do-add-component}]
+        [:> menu-entry* {:title (tr "workspace.shape.menu.create-component")
+                         :shortcut (sc/get-tooltip :create-component)
+                         :on-click do-add-component}]
         (when (not single?)
-          [:& menu-entry {:title (tr "workspace.shape.menu.create-multiple-components")
-                          :on-click do-add-multiple-components}])])
+          [:> menu-entry* {:title (tr "workspace.shape.menu.create-multiple-components")
+                           :on-click do-add-multiple-components}])])
 
      (when (seq components-menu-entries)
        [:*
-        [:& menu-separator]
+        [:> menu-separator* {}]
         (for [entry components-menu-entries :when (not (nil? entry))]
-          [:& menu-entry {:key (uuid/next)
-                          :title (:title entry)
-                          :shortcut (when (contains? entry :shortcut) (sc/get-tooltip (:shortcut entry)))
-                          :on-click (:action entry)}])])]))
+          [:> menu-entry* {:key (uuid/next)
+                           :title (:title entry)
+                           :shortcut (when (contains? entry :shortcut) (sc/get-tooltip (:shortcut entry)))
+                           :on-click (:action entry)}])])]))
 
-(mf/defc context-menu-delete
+(mf/defc context-menu-delete*
+  {::mf/props :obj
+   ::mf/private true}
   []
   (let [do-delete #(st/emit! (dw/delete-selected))]
     [:*
-     [:& menu-separator]
-     [:& menu-entry {:title (tr "workspace.shape.menu.delete")
-                     :shortcut (sc/get-tooltip :delete)
-                     :on-click do-delete}]]))
+     [:> menu-separator* {}]
+     [:> menu-entry* {:title (tr "workspace.shape.menu.delete")
+                      :shortcut (sc/get-tooltip :delete)
+                      :on-click do-delete}]]))
 
-(mf/defc shape-context-menu
-  {::mf/wrap [mf/memo]}
-  [{:keys [mdata] :as props}]
-  (let [{:keys [disable-booleans? disable-flatten?]} mdata
+(mf/defc shape-context-menu*
+  {::mf/wrap [mf/memo]
+   ::mf/private true
+   ::mf/props :obj}
+  [{:keys [mdata]}]
+  (let [{:keys [disable-booleans disable-flatten]} mdata
         shapes (mf/deref refs/selected-objects)
-        props #js {:shapes shapes
-                   :disable-booleans? disable-booleans?
-                   :disable-flatten? disable-flatten?}]
+        props  (mf/spread-props
+                {:shapes shapes
+                 :disable-booleans disable-booleans
+                 :disable-flatten disable-flatten})]
     (when-not (empty? shapes)
       [:*
-       [:> context-menu-edit props]
-       [:> context-menu-layer-position props]
-       [:> context-menu-flip props]
-       [:> context-menu-thumbnail props]
-       [:> context-menu-rename props]
-       [:> context-menu-group props]
-       [:> context-focus-mode-menu props]
-       [:> context-menu-path props]
-       [:> context-menu-layer-options props]
-       [:> context-menu-prototype props]
-       [:> context-menu-layout props]
-       [:> context-menu-component props]
-       [:> context-menu-delete props]])))
+       [:> context-menu-edit* props]
+       [:> context-menu-layer-position* props]
+       [:> context-menu-flip* props]
+       [:> context-menu-thumbnail* props]
+       [:> context-menu-rename* props]
+       [:> context-menu-group* props]
+       [:> context-focus-mode-menu* props]
+       [:> context-menu-path* props]
+       [:> context-menu-layer-options* props]
+       [:> context-menu-prototype* props]
+       [:> context-menu-layout* props]
+       [:> context-menu-component* props]
+       [:> context-menu-delete* props]])))
 
-(mf/defc page-item-context-menu
-  [{:keys [mdata] :as props}]
+(mf/defc page-item-context-menu*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [mdata]}]
   (let [page (:page mdata)
         deletable? (:deletable? mdata)
         id (:id page)
@@ -540,13 +571,13 @@
 
     [:*
      (when deletable?
-       [:& menu-entry {:title (tr "workspace.assets.delete")
-                       :on-click do-delete}])
+       [:> menu-entry* {:title (tr "workspace.assets.delete")
+                        :on-click do-delete}])
 
-     [:& menu-entry {:title (tr "workspace.assets.rename")
-                     :on-click do-rename}]
-     [:& menu-entry {:title (tr "workspace.assets.duplicate")
-                     :on-click do-duplicate}]]))
+     [:> menu-entry* {:title (tr "workspace.assets.rename")
+                      :on-click do-rename}]
+     [:> menu-entry* {:title (tr "workspace.assets.duplicate")
+                      :on-click do-duplicate}]]))
 
 (mf/defc viewport-context-menu*
   {::mf/props :obj}
@@ -559,68 +590,72 @@
         do-toggle-focus-mode #(st/emit! (dw/toggle-focus-mode))]
     [:*
      (when-not ^boolean read-only?
-       [:& menu-entry {:title (tr "workspace.shape.menu.paste")
-                       :shortcut (sc/get-tooltip :paste)
-                       :on-click do-paste}])
-     [:& menu-entry {:title (tr "workspace.shape.menu.hide-ui")
-                     :shortcut (sc/get-tooltip :hide-ui)
-                     :on-click do-hide-ui}]
+       [:> menu-entry* {:title (tr "workspace.shape.menu.paste")
+                        :shortcut (sc/get-tooltip :paste)
+                        :on-click do-paste}])
+     [:> menu-entry* {:title (tr "workspace.shape.menu.hide-ui")
+                      :shortcut (sc/get-tooltip :hide-ui)
+                      :on-click do-hide-ui}]
 
      (when (d/not-empty? focus)
-       [:& menu-entry {:title (tr "workspace.focus.focus-off")
-                       :shortcut (sc/get-tooltip :toggle-focus-mode)
-                       :on-click do-toggle-focus-mode}])]))
+       [:> menu-entry* {:title (tr "workspace.focus.focus-off")
+                        :shortcut (sc/get-tooltip :toggle-focus-mode)
+                        :on-click do-toggle-focus-mode}])]))
 
-(mf/defc grid-track-context-menu
-  [{:keys [mdata] :as props}]
+(mf/defc grid-track-context-menu*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [mdata]}]
   (let [{:keys [type index grid-id]} mdata
         do-delete-track
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps grid-id type index)
          (fn []
            (st/emit! (dwsl/remove-layout-track [grid-id] type index))))
 
         do-add-track-before
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps grid-id type index)
          (fn []
            (st/emit! (dwsl/add-layout-track [grid-id] type ctl/default-track-value index))))
 
         do-add-track-after
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps grid-id type index)
          (fn []
            (st/emit! (dwsl/add-layout-track [grid-id] type ctl/default-track-value (inc index)))))
 
         do-duplicate-track
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps grid-id type index)
          (fn []
            (st/emit! (dwsl/duplicate-layout-track [grid-id] type index))))
 
         do-delete-track-shapes
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps grid-id type index)
          (fn []
            (st/emit! (dwsl/remove-layout-track [grid-id] type index {:with-shapes? true}))))]
 
     (if (= type :column)
       [:*
-       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.column.duplicate") :on-click do-duplicate-track}]
-       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.column.add-before") :on-click do-add-track-before}]
-       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.column.add-after") :on-click do-add-track-after}]
-       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.column.delete") :on-click do-delete-track}]
-       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.column.delete-shapes") :on-click do-delete-track-shapes}]]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.duplicate") :on-click do-duplicate-track}]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.add-before") :on-click do-add-track-before}]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.add-after") :on-click do-add-track-after}]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.delete") :on-click do-delete-track}]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.delete-shapes") :on-click do-delete-track-shapes}]]
 
       [:*
-       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.row.duplicate") :on-click do-duplicate-track}]
-       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.row.add-before") :on-click do-add-track-before}]
-       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.row.add-after") :on-click do-add-track-after}]
-       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.row.delete") :on-click do-delete-track}]
-       [:& menu-entry {:title (tr "workspace.context-menu.grid-track.row.delete-shapes") :on-click do-delete-track-shapes}]])))
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.duplicate") :on-click do-duplicate-track}]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.add-before") :on-click do-add-track-before}]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.add-after") :on-click do-add-track-after}]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.delete") :on-click do-delete-track}]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.delete-shapes") :on-click do-delete-track-shapes}]])))
 
-(mf/defc grid-cells-context-menu
-  [{:keys [mdata] :as props}]
+(mf/defc grid-cells-context-menu*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [mdata]}]
   (let [{:keys [grid cells]} mdata
 
         single? (= (count cells) 1)
@@ -631,29 +666,29 @@
          #(ctl/valid-area-cells? cells))
 
         do-merge-cells
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps grid cells)
          (fn []
            (st/emit! (dwsl/merge-cells (:id grid) (map :id cells)))))
 
         do-create-board
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps grid cells)
          (fn []
            (st/emit! (dwsl/create-cell-board (:id grid) (map :id cells)))))]
     [:*
      (when (not single?)
-       [:& menu-entry {:title (tr "workspace.context-menu.grid-cells.merge")
-                       :on-click do-merge-cells
-                       :disabled (not can-merge?)}])
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.merge")
+                        :on-click do-merge-cells
+                        :disabled (not can-merge?)}])
 
      (when single?
-       [:& menu-entry {:title (tr "workspace.context-menu.grid-cells.area")
-                       :on-click do-merge-cells}])
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.area")
+                        :on-click do-merge-cells}])
 
-     [:& menu-entry {:title (tr "workspace.context-menu.grid-cells.create-board")
-                     :on-click do-create-board
-                     :disabled (and (not single?) (not can-merge?))}]]))
+     [:> menu-entry* {:title (tr "workspace.context-menu.grid-cells.create-board")
+                      :on-click do-create-board
+                      :disabled (and (not single?) (not can-merge?))}]]))
 
 
 ;; FIXME: optimize because it is rendered always
@@ -688,8 +723,8 @@
        (if ^boolean read-only?
          [:> viewport-context-menu* {:mdata mdata}]
          (case (:kind mdata)
-           :shape [:& shape-context-menu {:mdata mdata}]
-           :page [:& page-item-context-menu {:mdata mdata}]
-           :grid-track [:& grid-track-context-menu {:mdata mdata}]
-           :grid-cells [:& grid-cells-context-menu {:mdata mdata}]
-           [:& viewport-context-menu* {:mdata mdata}]))]]]))
+           :shape [:> shape-context-menu* {:mdata mdata}]
+           :page [:> page-item-context-menu* {:mdata mdata}]
+           :grid-track [:> grid-track-context-menu* {:mdata mdata}]
+           :grid-cells [:> grid-cells-context-menu* {:mdata mdata}]
+           [:> viewport-context-menu* {:mdata mdata}]))]]]))

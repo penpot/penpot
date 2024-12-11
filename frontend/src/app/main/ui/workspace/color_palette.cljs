@@ -157,7 +157,7 @@
   [{:keys [size width selected] :as props}]
   (let [recent-colors (mf/deref refs/workspace-recent-colors)
         file-colors   (mf/deref refs/workspace-file-colors)
-        shared-libs   (mf/deref refs/workspace-libraries)
+        shared-libs   (mf/deref refs/libraries)
         colors        (mf/use-state [])]
 
     (mf/with-effect [selected shared-libs]

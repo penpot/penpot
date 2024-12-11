@@ -50,7 +50,7 @@
        (if components-v2
          (ctf/get-component-page data component)
          component)])
-    (let [data (dm/get-in @refs/workspace-libraries [file-id :data])
+    (let [data (dm/get-in @refs/libraries [file-id :data])
           root-shape (ctf/get-component-root data component)
           container (if components-v2
                       (ctf/get-component-page data component)
@@ -466,7 +466,7 @@
          (fn [component event]
 
            (let [file-data
-                 (d/nilv (dm/get-in @refs/workspace-libraries [file-id :data]) @refs/workspace-data)
+                 (d/nilv (dm/get-in @refs/libraries [file-id :data]) @refs/workspace-data)
 
                  shape-main
                  (ctf/get-component-root file-data component)]

@@ -25,6 +25,7 @@
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
+   [app.main.ui.modal :refer [modal-container*]]
    [app.main.ui.viewer.comments :refer [comments-layer comments-sidebar*]]
    [app.main.ui.viewer.header :as header]
    [app.main.ui.viewer.inspect :as inspect]
@@ -633,7 +634,9 @@
 
   (if-let [data (mf/deref refs/viewer-data)]
     (let [props (obj/merge props #js {:data data :key (dm/str file-id)})]
-      [:> viewer-content* props])
+      [:*
+       [:> modal-container*]
+       [:> viewer-content* props]])
 
     [:> loader*  {:title (tr "labels.loading")
                   :overlay true}]))

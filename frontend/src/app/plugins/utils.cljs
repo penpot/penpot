@@ -20,7 +20,7 @@
   (if (= id (:current-file-id @st/state))
     (-> (:workspace-file @st/state)
         (assoc :data (:workspace-data @st/state)))
-    (dm/get-in @st/state [:workspace-libraries id])))
+    (dm/get-in @st/state [:libraries id])))
 
 (defn locate-page
   [file-id id]
@@ -65,10 +65,10 @@
 (defn locate-component
   [objects shape]
   (let [current-file-id (:current-file-id @st/state)
-        workspace-data (:workspace-data @st/state)
-        workspace-libraries (:workspace-libraries @st/state)
-        root (ctn/get-instance-root objects shape)]
-    [root (ctf/resolve-component root {:id current-file-id :data workspace-data} workspace-libraries {:include-deleted? true})]))
+        workspace-data  (:workspace-data @st/state)
+        libraries       (:libraries @st/state)
+        root            (ctn/get-instance-root objects shape)]
+    [root (ctf/resolve-component root {:id current-file-id :data workspace-data} libraries {:include-deleted? true})]))
 
 (defn proxy->file
   [proxy]

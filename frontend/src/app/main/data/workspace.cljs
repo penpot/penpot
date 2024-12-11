@@ -172,7 +172,7 @@
   (ptk/reify ::libraries-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :workspace-libraries (d/index-by :id libraries)))
+      (assoc state :libraries (d/index-by :id libraries)))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -363,7 +363,7 @@
            :workspace-data
            :workspace-editor-state
            :workspace-file
-           :workspace-libraries
+           :libraries
            :workspace-media-objects
            :workspace-persistence
            :workspace-presence
@@ -572,7 +572,7 @@
        (let [file-data
              (if (= file-id (:current-file-id state))
                (:workspace-data state)
-               (get-in state [:workspace-libraries file-id :data]))
+               (get-in state [:libraries file-id :data]))
 
              changes
              (-> (pcb/empty-changes it)

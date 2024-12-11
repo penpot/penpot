@@ -184,7 +184,7 @@
 
   (let [file-id        (mf/use-ctx ctx/current-file-id)
         typographies   (mf/deref refs/workspace-file-typography)
-        shared-libs    (mf/deref refs/workspace-libraries)
+        shared-libs    (mf/deref refs/libraries)
         label          (case type
                          :multiple (tr "workspace.options.text-options.title-selection")
                          :group (tr "workspace.options.text-options.title-group")
