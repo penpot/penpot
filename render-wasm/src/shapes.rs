@@ -2,13 +2,17 @@ use crate::math;
 use skia_safe as skia;
 use uuid::Uuid;
 
-mod blend;
+use crate::render::BlendMode;
+
 mod fills;
 mod images;
+mod matrix;
 mod paths;
-pub use blend::*;
+mod renderable;
+
 pub use fills::*;
 pub use images::*;
+use matrix::*;
 pub use paths::*;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -20,43 +24,20 @@ pub enum Kind {
 
 pub type Color = skia::Color;
 
-#[derive(Debug, Clone, Copy)]
-pub struct Matrix {
-    pub a: f32,
-    pub b: f32,
-    pub c: f32,
-    pub d: f32,
-    pub e: f32,
-    pub f: f32,
-}
-
-impl Matrix {
-    pub fn identity() -> Self {
-        Self {
-            a: 1.,
-            b: 0.,
-            c: 0.,
-            d: 1.,
-            e: 0.,
-            f: 0.,
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub struct Shape {
-    pub id: Uuid,
-    pub children: Vec<Uuid>,
-    pub kind: Kind,
-    pub selrect: math::Rect,
-    pub transform: Matrix,
-    pub rotation: f32,
-    pub clip_content: bool,
+    id: Uuid,
+    children: Vec<Uuid>,
+    kind: Kind,
+    selrect: math::Rect,
+    transform: Matrix,
+    rotation: f32,
+    clip_content: bool,
     fills: Vec<Fill>,
-    pub blend_mode: BlendMode,
-    pub opacity: f32,
-    pub hidden: bool,
+    blend_mode: BlendMode,
+    opacity: f32,
+    hidden: bool,
 }
 
 impl Shape {
@@ -89,16 +70,36 @@ impl Shape {
         };
     }
 
-    pub fn translation(&self) -> (f32, f32) {
-        (self.transform.e, self.transform.f)
+    pub fn set_kind(&mut self, kind: Kind) {
+        self.kind = kind;
     }
 
-    pub fn scale(&self) -> (f32, f32) {
-        (self.transform.a, self.transform.d)
+    pub fn set_clip(&mut self, value: bool) {
+        self.clip_content = value;
     }
 
-    pub fn skew(&self) -> (f32, f32) {
-        (self.transform.c, self.transform.b)
+    pub fn set_rotation(&mut self, angle: f32) {
+        self.rotation = angle;
+    }
+
+    pub fn set_transform(&mut self, a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
+        self.transform = Matrix::new(a, b, c, d, e, f);
+    }
+
+    pub fn set_opacity(&mut self, opacity: f32) {
+        self.opacity = opacity;
+    }
+
+    pub fn set_hidden(&mut self, value: bool) {
+        self.hidden = value;
+    }
+
+    pub fn add_child(&mut self, id: Uuid) {
+        self.children.push(id);
+    }
+
+    pub fn clear_children(&mut self) {
+        self.children.clear();
     }
 
     pub fn fills(&self) -> std::slice::Iter<Fill> {

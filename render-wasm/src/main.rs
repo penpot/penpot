@@ -109,7 +109,7 @@ pub unsafe extern "C" fn set_shape_kind_circle() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
 
     if let Some(shape) = state.current_shape() {
-        shape.kind = Kind::Circle(math::Rect::new_empty());
+        shape.set_kind(Kind::Circle(math::Rect::new_empty()));
     }
 }
 
@@ -118,7 +118,7 @@ pub unsafe extern "C" fn set_shape_kind_rect() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
 
     if let Some(shape) = state.current_shape() {
-        shape.kind = Kind::Rect(math::Rect::new_empty());
+        shape.set_kind(Kind::Rect(math::Rect::new_empty()));
     }
 }
 
@@ -127,7 +127,7 @@ pub unsafe extern "C" fn set_shape_kind_path() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         let p = Path::try_from(Vec::new()).unwrap();
-        shape.kind = Kind::Path(p);
+        shape.set_kind(Kind::Path(p));
     }
 }
 
@@ -143,7 +143,7 @@ pub extern "C" fn set_shape_selrect(left: f32, top: f32, right: f32, bottom: f32
 pub unsafe extern "C" fn set_shape_clip_content(clip_content: bool) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
-        shape.clip_content = clip_content;
+        shape.set_clip(clip_content);
     }
 }
 
@@ -151,7 +151,7 @@ pub unsafe extern "C" fn set_shape_clip_content(clip_content: bool) {
 pub unsafe extern "C" fn set_shape_rotation(rotation: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
-        shape.rotation = rotation;
+        shape.set_rotation(rotation);
     }
 }
 
@@ -159,12 +159,7 @@ pub unsafe extern "C" fn set_shape_rotation(rotation: f32) {
 pub extern "C" fn set_shape_transform(a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
-        shape.transform.a = a;
-        shape.transform.b = b;
-        shape.transform.c = c;
-        shape.transform.d = d;
-        shape.transform.e = e;
-        shape.transform.f = f;
+        shape.set_transform(a, b, c, d, e, f);
     }
 }
 
@@ -173,7 +168,7 @@ pub extern "C" fn add_shape_child(a: u32, b: u32, c: u32, d: u32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     let id = uuid_from_u32_quartet(a, b, c, d);
     if let Some(shape) = state.current_shape() {
-        shape.children.push(id);
+        shape.add_child(id);
     }
 }
 
@@ -181,7 +176,7 @@ pub extern "C" fn add_shape_child(a: u32, b: u32, c: u32, d: u32) {
 pub extern "C" fn clear_shape_children() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
-        shape.children.clear();
+        shape.clear_children();
     }
 }
 
@@ -307,7 +302,7 @@ pub extern "C" fn clear_shape_fills() {
 pub extern "C" fn set_shape_blend_mode(mode: i32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
-        shape.set_blend_mode(shapes::BlendMode::from(mode));
+        shape.set_blend_mode(render::BlendMode::from(mode));
     }
 }
 
@@ -315,7 +310,7 @@ pub extern "C" fn set_shape_blend_mode(mode: i32) {
 pub extern "C" fn set_shape_opacity(opacity: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
-        shape.opacity = opacity;
+        shape.set_opacity(opacity);
     }
 }
 
@@ -323,7 +318,7 @@ pub extern "C" fn set_shape_opacity(opacity: f32) {
 pub extern "C" fn set_shape_hidden(hidden: bool) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
-        shape.hidden = hidden;
+        shape.set_hidden(hidden);
     }
 }
 
