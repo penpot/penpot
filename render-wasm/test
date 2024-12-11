@@ -1,2 +1,4 @@
 #!/usr/bin/env bash
+export SKIA_BINARIES_URL="https://github.com/penpot/skia-binaries/releases/download/0.80.1-1/skia-binaries-9e7d2684a17084095aef-wasm32-unknown-emscripten-gl-svg-textlayout.tar.gz"
+
 cargo test --bin render_wasm -- --show-output
