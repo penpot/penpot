@@ -297,27 +297,27 @@
                                                  (ctob/add-theme (ctob/make-token-theme :name "test-theme"
                                                                                         :sets #{"test-token-set"}))
                                                  (ctob/set-active-themes #{"/test-theme"})
-                                                 (ctob/add-token-in-set "token-radius"
+                                                 (ctob/add-token-in-set "test-token-set"
                                                                         (ctob/make-token :name "token-radius"
                                                                                          :type :border-radius
                                                                                          :value 10))
-                                                 (ctob/add-token-in-set "token-rotation"
+                                                 (ctob/add-token-in-set "test-token-set"
                                                                         (ctob/make-token :name "token-rotation"
                                                                                          :type :rotation
                                                                                          :value 30))
-                                                 (ctob/add-token-in-set "token-opacity"
+                                                 (ctob/add-token-in-set "test-token-set"
                                                                         (ctob/make-token :name "token-opacity"
                                                                                          :type :opacity
                                                                                          :value 0.7))
-                                                 (ctob/add-token-in-set "token-stroke-width"
+                                                 (ctob/add-token-in-set "test-token-set"
                                                                         (ctob/make-token :name "token-stroke-width"
                                                                                          :type :stroke-width
                                                                                          :value 2))
-                                                 (ctob/add-token-in-set "token-color"
+                                                 (ctob/add-token-in-set "test-token-set"
                                                                         (ctob/make-token :name "token-color"
                                                                                          :type :color
                                                                                          :value "#00ff00"))
-                                                 (ctob/add-token-in-set "token-dimensions"
+                                                 (ctob/add-token-in-set "test-token-set"
                                                                         (ctob/make-token :name "token-dimensions"
                                                                                          :type :dimensions
                                                                                          :value 100))))

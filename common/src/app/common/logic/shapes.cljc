@@ -14,7 +14,32 @@
    [app.common.types.container :as ctn]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.token :as cto]
    [app.common.uuid :as uuid]))
+
+(defn- check-unapply-tokens
+  [changes objects]
+  (let [mod-obj-changes (->> (:redo-changes changes)
+                             (filter #(= (:type %) :mod-obj)))
+
+        check-attr (fn [shape changes attr]
+                     (let [tokens      (get shape :applied-tokens {})
+                           token-attrs (cto/shape-attr->token-attrs attr)]
+                       (if (some #(contains? tokens %) token-attrs)
+                         (pcb/update-shapes changes [(:id shape)] #(cto/unapply-token-id % token-attrs))
+                         changes)))
+
+        check-shape (fn [changes mod-obj-change]
+                      (let [shape (get objects (:id mod-obj-change))
+                            xf (comp (filter #(= (:type %) :set))
+                                     (map :attr))
+                            attrs (into [] xf (:operations mod-obj-change))]
+                        (reduce (partial check-attr shape)
+                                changes
+                                attrs)))]
+    (reduce check-shape
+            changes
+            mod-obj-changes)))
 
 (defn generate-update-shapes
   [changes ids update-fn objects {:keys [attrs ignore-tree ignore-touched with-objects?]}]
@@ -29,8 +54,12 @@
                        (pcb/with-objects objects))
                    ids)
         grid-ids (->> ids (filter (partial ctl/grid-layout? objects)))
-        changes (pcb/update-shapes changes grid-ids ctl/assign-cell-positions {:with-objects? true})
-        changes (pcb/reorder-grid-children changes ids)]
+        changes (-> changes
+                    (pcb/update-shapes grid-ids ctl/assign-cell-positions {:with-objects? true})
+                    (pcb/reorder-grid-children ids)
+                    (cond->
+                     (not ignore-touched)
+                      (check-unapply-tokens objects)))]
     changes))
 
 (defn- generate-update-shape-flags

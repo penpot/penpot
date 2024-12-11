@@ -23,6 +23,14 @@
   [file f]
   (ctf/update-file-data file #(update % :tokens-lib f)))
 
+(defn get-token
+  [file set-name token-name]
+  (let [tokens-lib (:tokens-lib (:data file))]
+    (when tokens-lib
+      (-> tokens-lib
+          (ctob/get-set set-name)
+          (ctob/get-token token-name)))))
+
 (defn- set-stroke-width
   [shape stroke-width]
   (let [strokes (if (seq (:strokes shape))
