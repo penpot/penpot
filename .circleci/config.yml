@@ -228,7 +228,7 @@ jobs:
           name: "cargo tests"
           working_directory: "./render-wasm"
           command: |
-            cargo test
+            ./test
 
 workflows:
   penpot:
