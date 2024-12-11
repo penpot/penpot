@@ -32,6 +32,7 @@
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [app.util.object :as obj]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
@@ -705,6 +706,9 @@
         libs?       (= section :dashboard-libraries)
         drafts?     (and (= section :dashboard-files)
                          (= (:id project) default-project-id))
+        container   (mf/use-ref nil)
+        overflow*   (mf/use-state false)
+        overflow?   (deref overflow*)
 
         go-projects
         (mf/use-fn #(st/emit! (dcm/go-to-dashboard-recent)))
@@ -776,64 +780,75 @@
              (remove :is-default)
              (filter :is-pinned))]
 
-    [:div {:class (stl/css :sidebar-content)}
-     [:& sidebar-team-switch {:team team :profile profile}]
+    (mf/use-layout-effect
+     (mf/deps pinned-projects)
+     (fn []
+       (let [dom   (mf/ref-val container)
+             client-height (obj/get dom "clientHeight")
+             scroll-height (obj/get dom "scrollHeight")]
+         (reset! overflow* (> scroll-height client-height)))))
 
-     [:& sidebar-search {:search-term search-term
-                         :team-id (:id team)}]
+    [:*
+     [:div {:class (stl/css-case :sidebar-content true)
+            :ref container}
+      [:& sidebar-team-switch {:team team :profile profile}]
 
-     [:div {:class (stl/css :sidebar-content-section)}
-      [:ul {:class (stl/css :sidebar-nav)}
-       [:li {:class (stl/css-case :recent-projects true
-                                  :sidebar-nav-item true
-                                  :current projects?)}
-        [:& link {:action go-projects
-                  :class (stl/css :sidebar-link)
-                  :keyboard-action go-projects-with-key}
-         [:span {:class (stl/css :element-title)} (tr "labels.projects")]]]
+      [:& sidebar-search {:search-term search-term
+                          :team-id (:id team)}]
 
-       [:li {:class (stl/css-case :current drafts?
-                                  :sidebar-nav-item true)}
-        [:& link {:action go-drafts
-                  :class (stl/css :sidebar-link)
-                  :keyboard-action go-drafts-with-key}
-         [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]
+      [:div {:class (stl/css :sidebar-content-section)}
+       [:ul {:class (stl/css :sidebar-nav)}
+        [:li {:class (stl/css-case :recent-projects true
+                                   :sidebar-nav-item true
+                                   :current projects?)}
+         [:& link {:action go-projects
+                   :class (stl/css :sidebar-link)
+                   :keyboard-action go-projects-with-key}
+          [:span {:class (stl/css :element-title)} (tr "labels.projects")]]]
 
-
-       [:li {:class (stl/css-case :current libs?
-                                  :sidebar-nav-item true)}
-        [:& link {:action go-libs
-                  :data-testid "libs-link-sidebar"
-                  :class (stl/css :sidebar-link)
-                  :keyboard-action go-libs-with-key}
-         [:span {:class (stl/css :element-title)} (tr "labels.shared-libraries")]]]]]
-
-
-     [:div {:class (stl/css :sidebar-content-section)}
-      [:ul {:class (stl/css :sidebar-nav)}
-       [:li {:class (stl/css-case :sidebar-nav-item true
-                                  :current fonts?)}
-        [:& link {:action go-fonts
-                  :class (stl/css :sidebar-link)
-                  :keyboard-action go-fonts-with-key
-                  :data-testid "fonts"}
-         [:span {:class (stl/css :element-title)} (tr "labels.fonts")]]]]]
+        [:li {:class (stl/css-case :current drafts?
+                                   :sidebar-nav-item true)}
+         [:& link {:action go-drafts
+                   :class (stl/css :sidebar-link)
+                   :keyboard-action go-drafts-with-key}
+          [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]
 
 
-     [:div {:class (stl/css :sidebar-content-section)
-            :data-testid "pinned-projects"}
-      (if (seq pinned-projects)
-        [:ul {:class (stl/css :sidebar-nav :pinned-projects)}
-         (for [item pinned-projects]
-           [:& sidebar-project
-            {:item item
-             :key (dm/str (:id item))
-             :id (:id item)
-             :team-id (:id team)
-             :selected? (= (:id item) (:id project))}])]
-        [:div {:class (stl/css :sidebar-empty-placeholder)}
-         pin-icon
-         [:span {:class (stl/css :empty-text)} (tr "dashboard.no-projects-placeholder")]])]]))
+        [:li {:class (stl/css-case :current libs?
+                                   :sidebar-nav-item true)}
+         [:& link {:action go-libs
+                   :data-testid "libs-link-sidebar"
+                   :class (stl/css :sidebar-link)
+                   :keyboard-action go-libs-with-key}
+          [:span {:class (stl/css :element-title)} (tr "labels.shared-libraries")]]]]]
+
+
+      [:div {:class (stl/css :sidebar-content-section)}
+       [:ul {:class (stl/css :sidebar-nav)}
+        [:li {:class (stl/css-case :sidebar-nav-item true
+                                   :current fonts?)}
+         [:& link {:action go-fonts
+                   :class (stl/css :sidebar-link)
+                   :keyboard-action go-fonts-with-key
+                   :data-testid "fonts"}
+          [:span {:class (stl/css :element-title)} (tr "labels.fonts")]]]]]
+
+
+      [:div {:class (stl/css :sidebar-content-section)
+             :data-testid "pinned-projects"}
+       (if (seq pinned-projects)
+         [:ul {:class (stl/css :sidebar-nav :pinned-projects)}
+          (for [item pinned-projects]
+            [:& sidebar-project
+             {:item item
+              :key (dm/str (:id item))
+              :id (:id item)
+              :team-id (:id team)
+              :selected? (= (:id item) (:id project))}])]
+         [:div {:class (stl/css :sidebar-empty-placeholder)}
+          pin-icon
+          [:span {:class (stl/css :empty-text)} (tr "dashboard.no-projects-placeholder")]])]]
+     [:div {:class (stl/css-case :separator true :overflow-separator overflow?)}]]))
 
 (mf/defc profile-section*
   {::mf/props :obj}
@@ -939,9 +954,21 @@
 
         handle-set-profile
         (mf/use-fn
-         #(on-click :settings-profile %))]
+         #(on-click :settings-profile %))
+
+        on-power-up-click
+        (mf/use-fn
+         (fn []
+           (dom/open-new-window "https://penpot.app/pricing")))]
 
     [:*
+     [:button {:class (stl/css :upgrade-plan-section)
+               :on-click on-power-up-click}
+      [:div {:class (stl/css :penpot-free)}
+       [:span (tr "dashboard.upgrade-plan.penpot-free")]
+       [:span {:class (stl/css :no-limits)} (tr "dashboard.upgrade-plan.no-limits")]]
+      [:div {:class (stl/css :power-up)}
+       (tr "dashboard.upgrade-plan.power-up")]]
      (when (and team profile)
        [:& comments-section
         {:profile profile
