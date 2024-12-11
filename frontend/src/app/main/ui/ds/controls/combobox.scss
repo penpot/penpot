@@ -1,0 +1,87 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../_borders.scss" as *;
+@use "../_sizes.scss" as *;
+@use "../typography.scss" as *;
+
+.combobox-wrapper {
+  --combobox-icon-fg-color: var(--color-foreground-secondary);
+  --combobox-fg-color: var(--color-foreground-primary);
+  --combobox-bg-color: var(--color-background-tertiary);
+  --combobox-outline-color: none;
+  --combobox-border-color: none;
+
+  @include use-typography("body-small");
+  position: relative;
+  display: grid;
+  grid-template-rows: auto;
+  gap: var(--sp-xxs);
+  width: 100%;
+
+  &:hover {
+    --combobox-bg-color: var(--color-background-quaternary);
+  }
+}
+
+.combobox {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-xs);
+  height: $sz-32;
+  width: 100%;
+  padding: var(--sp-s);
+  border: none;
+  border-radius: $br-8;
+  outline: $b-1 solid var(--combobox-outline-color);
+  border: $b-1 solid var(--combobox-border-color);
+  background: var(--combobox-bg-color);
+  color: var(--combobox-fg-color);
+  appearance: none;
+
+  &:disabled {
+    --combobox-bg-color: var(--color-background-primary);
+    --combobox-border-color: var(--color-background-quaternary);
+    --combobox-fg-color: var(--color-foreground-secondary);
+  }
+}
+
+.focused {
+  --combobox-outline-color: var(--color-accent-primary);
+}
+
+.arrow {
+  color: var(--combobox-icon-fg-color);
+  transform: rotate(90deg);
+}
+
+.combobox-header {
+  display: grid;
+  justify-items: start;
+  gap: var(--sp-xs);
+}
+
+.input {
+  all: unset;
+
+  @include use-typography("body-small");
+  background-color: transparent;
+  overflow: hidden;
+  text-align: left;
+  inline-size: 100%;
+  padding-inline-start: var(--sp-xxs);
+  color: var(--combobox-fg-color);
+}
+
+.header-icon {
+  grid-template-columns: auto 1fr;
+  color: var(--combobox-icon-fg-color);
+}
+
+.button-toggle-list {
+  all: unset;
+  display: flex;
+}
