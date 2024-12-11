@@ -3332,6 +3332,9 @@ msgstr "Limpiar historial"
 msgid "shortcuts.copy"
 msgstr "Copiar"
 
+msgid "shortcuts.copy-link"
+msgstr "Copiar enlace al portapapeles"
+
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
 msgid "shortcuts.create-component"
 msgstr "Crear componente"
@@ -5926,6 +5929,9 @@ msgstr "Enviar atrás"
 #: src/app/main/ui/workspace/context_menu.cljs:140
 msgid "workspace.shape.menu.copy"
 msgstr "Copiar"
+
+msgid "workspace.shape.menu.copy_link"
+msgstr "Copiar enlace al portapapeles"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:427
 msgid "workspace.shape.menu.create-annotation"

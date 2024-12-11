@@ -76,6 +76,7 @@
    [app.main.errors]
    [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.streams :as ms]
@@ -254,6 +255,22 @@
                (dwsl/initialize-shape-layout)
                (fetch-libraries file-id))))))
 
+(defn zoom-to-frame
+  []
+  (ptk/reify ::zoom-to-frame
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [params (rt/get-params state)
+            board-id (get params :board-id)
+            board-id (cond
+                       (vector? board-id) board-id
+                       (string? board-id) [board-id])
+            frames-id (->> board-id
+                           (map uuid/uuid)
+                           (into (d/ordered-set)))]
+        (rx/of (dws/select-shapes frames-id)
+               dwz/zoom-to-selected-shape)))))
+
 (defn- fetch-bundle
   "Multi-stage file bundle fetch coordinator"
   [file-id]
@@ -290,7 +307,6 @@
                                       :features features
                                       :thumbnails thumbnails})))))
                    (rx/map bundle-fetched)))
-
              (rx/take-until stopper-s))))))
 
 (defn initialize-workspace
@@ -333,6 +349,13 @@
                      (rx/observe-on :async)
                      (rx/take 1)
                      (rx/map #(dwl/go-to-local-component :id component-id))))
+
+              (when (:board-id rparams)
+                (->> stream
+                     (rx/filter (ptk/type? ::workspace-initialized))
+                     (rx/observe-on :async)
+                     (rx/take 1)
+                     (rx/map zoom-to-frame)))
 
               (->> stream
                    (rx/filter dch/commit?)
@@ -1912,6 +1935,21 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-global :show-distances?] value))))
+
+(defn copy-closest-frame-link
+  []
+  (ptk/reify ::copy-closest-frame-link
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [selected-id       (deref refs/selected-shapes)
+            selected-obj      (deref (refs/objects-by-id selected-id))
+            objects           (deref refs/workspace-page-objects)
+            frame-ids         (map (fn [item] (let [parent (cfh/get-frame objects (:id item))]
+                                                (:id parent))) selected-obj)
+            params    (-> (rt/get-params state)
+                          (assoc :board-id frame-ids))]
+        (wapi/write-to-clipboard (rt/get-current-href))
+        (rx/of (rt/nav :workspace params {::rt/replace true}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interactions
