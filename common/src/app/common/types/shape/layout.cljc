@@ -1479,7 +1479,7 @@
 (defn get-cell-by-index
   [parent to-index]
   (let [cells (get-cells parent {:sort? true :remove-empty? true})
-        to-index (- (count cells) to-index)]
+        to-index (- (count cells) to-index 1)]
     (nth cells to-index nil)))
 
 (defn add-children-to-index
