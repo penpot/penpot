@@ -198,14 +198,20 @@
     (h/call internal-module "_set_shape_path_content")))
 
 (defn set-shape-svg-raw-content
-  [_] ;; <- content
+  [content] ;; <- content
   #_(prn "content" content)
-  (let [content "Hello, World! kk"
+  (prn "set-shape-svg-raw-content cljs")
+  (let [content   "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\" height=\"100\" width=\"100\">
+                       <path d=\"M30,1h40l29,29v40l-29,29h-40l-29-29v-40z\" stroke=\"#000\" fill=\"none\"/>
+                       <path d=\"M31,3h38l28,28v38l-28,28h-38l-28-28v-38z\" fill=\"#a23\"/>
+                       <text font-family=\"\" x=\"50\" y=\"68\" font-size=\"48\" fill=\"#FFF\" text-anchor=\"middle\">
+                           <![CDATA[410]]>
+                       </text>
+                   </svg>"
         size (+ (count content) 1)
         ptr (h/call internal-module "_alloc_bytes" size)]
     (h/call internal-module "stringToUTF8" content ptr size)
-    (h/call internal-module "_set_shape_svg_raw_content" size)
-    #_(h/call internal-module "_free_bytes")))
+    (h/call internal-module "_set_shape_svg_raw_content" size)))
 
 (defn- translate-blend-mode
   [blend-mode]

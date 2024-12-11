@@ -128,7 +128,9 @@ impl Shape {
     }
 
     pub fn set_svg_raw_content(&mut self, content: String) -> Result<(), String> {
+        println!("set_svg_raw_content 1");
         self.kind = Kind::SVGRaw(SVGRaw::from_content(content));
+        println!("set_svg_raw_content 2");
         Ok(())
     }
 

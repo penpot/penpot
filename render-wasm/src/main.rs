@@ -248,20 +248,17 @@ pub extern "C" fn clear_shape_fills() {
 
 #[no_mangle]
 pub extern "C" fn set_shape_svg_raw_content(size: u32) {
-    unsafe {
-        let str = String::from_raw_parts(mem::buffer_ptr(), size as usize, size as usize);
-        println!("String: {}", str);
-    }
-    /*
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         unsafe {
-            let svg_raw_content = String::from_raw_parts(mem::buffer_ptr(), size as usize, size as usize);
-            shape.set_svg_raw_content(svg_raw_content, &state.render_state.font_mgr);
+            println!("set_shape_svg_raw_content rust 1");
+            let bytes = mem::bytes();
+            println!("set_shape_svg_raw_content rust 2");
+            let svg_raw_content = String::from_utf8(bytes).unwrap().trim_end_matches('\0').to_string();
+            println!("set_shape_svg_raw_content rust 3: {:?}", svg_raw_content );
+            shape.set_svg_raw_content(svg_raw_content);
         }
     }
-    */
-
 }
 
 #[no_mangle]
