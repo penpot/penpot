@@ -30,6 +30,15 @@ and do not want to depend on any external provider, or need to do any special cu
 Or you can try <a href="#unofficial-self-host-options">other options</a>,
 offered by Penpot community.
 
+## Recommended settings
+To self-host Penpot, you’ll need a server with the following specifications:
+
+* **CPU:** 1-2 CPUs
+* **RAM:** 4 GiB of RAM
+* **Disk Space:** Disk requirements depend on your usage. Disk usage primarily involves the database and any files uploaded by users.
+
+This setup should be sufficient for a smooth experience with typical usage (your mileage may vary).
+
 ## Install with Elestio
 
 This section explains how to get Penpot up and running using <a href="https://elest.io/open-source/penpot"
