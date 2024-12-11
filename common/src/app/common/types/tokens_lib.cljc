@@ -886,7 +886,8 @@ When `before-set-name` is nil, move set to bottom")
   (encode-dtcg [_]
     (let [themes (into []
                        (comp
-                        (filter (partial instance? TokenTheme))
+                        (filter #(and (instance? TokenTheme %)
+                                      (not (hidden-temporary-theme? %))))
                         (map (fn [token-theme]
                                (->> token-theme
                                     (into {})
