@@ -223,15 +223,6 @@
       (let [storage (sto/resolve cfg ::db/reuse-conn true)]
         (some->> (:data-ref-id file) (sto/touch-object! storage))))
 
-    (-> cfg
-        (assoc ::wrk/task :file-xlog-gc)
-        (assoc ::wrk/label (str "xlog:" (:id file)))
-        (assoc ::wrk/params {:file-id (:id file)})
-        (assoc ::wrk/delay (dt/duration "5m"))
-        (assoc ::wrk/dedupe true)
-        (assoc ::wrk/priority 1)
-        (wrk/submit!))
-
     (persist-file! cfg file)
 
     (let [params   (assoc params :file file)
