@@ -16,6 +16,7 @@
 # smtp-debug
 # telemetry
 # webhooks
+# auto-file-snapshot
 ##
 ## You can read more about all available flags and other
 ## environment variables here:
