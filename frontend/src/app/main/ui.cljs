@@ -213,7 +213,7 @@
              search-term (some-> params :search-term)
              plugin-url  (some-> params :plugin)]
          [:?
-          #_[:& app.main.ui.releases/release-notes-modal {:version "2.3"}]
+          #_[:& app.main.ui.releases/release-notes-modal {:version "2.4"}]
           #_[:& app.main.ui.onboarding/onboarding-templates-modal]
           #_[:& app.main.ui.onboarding/onboarding-modal]
           #_[:& app.main.ui.onboarding.team-choice/onboarding-team-modal]
