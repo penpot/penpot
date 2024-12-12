@@ -50,6 +50,14 @@ pub extern "C" fn set_render_options(debug: u32, dpr: f32) {
 }
 
 #[no_mangle]
+pub extern "C" fn set_canvas_background(raw_color: u32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+
+    let color = skia::Color::new(raw_color);
+    state.set_background_color(color);
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn render() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     state.render_all(true);
