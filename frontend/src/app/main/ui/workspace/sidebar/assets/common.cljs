@@ -25,7 +25,7 @@
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.icons :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
@@ -119,14 +119,13 @@
     :left (:left state)
     :options options}])
 
-(mf/defc section-icon
-  {::mf/wrap-props false}
-  [{:keys [section]}]
+(defn section-icon
+  [section]
   (case section
-    :colors i/drop-icon
-    :components i/component
-    :typographies i/text-palette
-    i/add))
+    :colors "drop"
+    :components "component"
+    :typographies "text-palette"
+    "add"))
 
 (mf/defc asset-section
   {::mf/wrap-props false}
@@ -151,7 +150,7 @@
         (mf/html
          [:span {:class (stl/css :title-name)}
           [:span {:class (stl/css :section-icon)}
-           [:& (or icon section-icon) {:section section}]]
+           [:> icon* {:id (or icon (section-icon section)) :size "s"}]]
           [:span {:class (stl/css :section-name)}
            title]
 
@@ -167,10 +166,12 @@
        :all-clickable true
        :on-collapsed  on-collapsed
        :add-icon-gap  (= 0 assets-count)
-       :class         (stl/css-case :title-spacing open?)
        :title         title}
       buttons]
-     (when ^boolean open? content)]))
+     (when ^boolean (and (< 0 assets-count)
+                         open?)
+       [:div {:class (stl/css-case :title-spacing open?)}
+        content])]))
 
 (mf/defc asset-section-block
   {::mf/wrap-props false}

@@ -16,6 +16,7 @@
    [app.main.ui.ds.foundations.typography :refer [typography-list]]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
+   [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon* token-status-list]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.ds.notifications.toast :refer [toast*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
@@ -40,8 +41,10 @@
        :Text text*
        :TabSwitcher tab-switcher*
        :Toast toast*
+       :TokenStatusIcon token-status-icon*
        ;; meta / misc
        :meta #js {:icons (clj->js (sort icon-list))
+                  :tokenStatus (clj->js (sort token-status-list))
                   :svgs (clj->js (sort raw-svg-list))
                   :typography (clj->js typography-list)}
        :storybook #js {:StoryGrid sb/story-grid*

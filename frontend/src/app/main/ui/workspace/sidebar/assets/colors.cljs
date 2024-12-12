@@ -211,7 +211,7 @@
 
      [:div {:class (stl/css :bullet-block)}
       [:& cb/color-bullet {:color color
-                           :mini? true}]]
+                           :mini true}]]
 
      (if ^boolean editing?
        [:input

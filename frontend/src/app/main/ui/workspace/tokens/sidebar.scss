@@ -80,25 +80,6 @@
   flex-wrap: wrap;
 }
 
-.token-pill {
-  @extend .button-secondary;
-  gap: $s-8;
-  padding: $s-4 $s-8;
-  border-radius: $br-6;
-  font-size: $fs-14;
-
-  &.token-pill-highlighted {
-    color: var(--button-primary-foreground-color-rest);
-    background: var(--button-primary-background-color-rest);
-  }
-
-  &.token-pill-invalid {
-    background-color: var(--button-secondary-background-color-rest);
-    color: var(--status-color-error-500);
-    opacity: 0.8;
-  }
-}
-
 .section-text-icon {
   font-size: $fs-12;
   width: 16px;

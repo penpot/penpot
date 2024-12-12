@@ -9,7 +9,6 @@
   (:require
    [app.common.colors :as c]
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
@@ -191,10 +190,10 @@ Token names should only contain letters and digits separated by . characters.")}
         empty-message? (or (nil? result-or-errors)
                            (wte/has-error-code? :error/empty-input errors))
         message (cond
-                  empty-message? (dm/str (tr "workspace.token.resolved-value") "-")
+                  empty-message? (tr "workspace.token.resolved-value" "-")
                   errors (->> (wte/humanize-errors errors)
                               (str/join "\n"))
-                  :else (dm/str (tr "workspace.token.resolved-value") result-or-errors))]
+                  :else (tr "workspace.token.resolved-value" result-or-errors))]
     [:> text* {:as "p"
                :typography "body-small"
                :class (stl/css-case :resolved-value true
