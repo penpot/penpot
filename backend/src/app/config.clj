@@ -42,7 +42,6 @@
    :rpc-rlimit-config "resources/rlimit.edn"
    :rpc-climit-config "resources/climit.edn"
 
-   :auto-file-snapshot-total 10
    :auto-file-snapshot-every 5
    :auto-file-snapshot-timeout "3h"
 
@@ -101,7 +100,6 @@
     [:telemetry-uri {:optional true} :string]
     [:telemetry-with-taiga {:optional true} ::sm/boolean] ;; DELETE
 
-    [:auto-file-snapshot-total {:optional true} ::sm/int]
     [:auto-file-snapshot-every {:optional true} ::sm/int]
     [:auto-file-snapshot-timeout {:optional true} ::dt/duration]
 

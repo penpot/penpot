@@ -15,6 +15,7 @@
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
+   [app.main.data.common :as dcm]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.refs :as refs]
@@ -26,7 +27,9 @@
    [app.main.ui.workspace.viewport.utils :as vwu]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
+   [app.util.keyboard :as kbd]
    [app.util.timers :as ts]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (mf/defc pixel-grid
@@ -78,8 +81,10 @@
 
 (mf/defc frame-title
   {::mf/wrap [mf/memo
-              #(mf/deferred % ts/raf)]}
-  [{:keys [frame selected? zoom show-artboard-names? show-id? on-frame-enter on-frame-leave on-frame-select grid-edition?]}]
+              #(mf/deferred % ts/raf)]
+   ::mf/forward-ref true}
+  [{:keys [frame selected? zoom show-artboard-names? show-id? on-frame-enter
+           on-frame-leave on-frame-select grid-edition?]} external-ref]
   (let [workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
 
         ;; Note that we don't use mf/deref to avoid a repaint dependency here
@@ -99,12 +104,6 @@
              (dom/prevent-default event)
              (dom/stop-propagation event)
              (on-frame-select event (:id frame)))))
-
-        on-double-click
-        (mf/use-fn
-         (mf/deps (:id frame))
-         #(st/emit! (dw/go-to-layout :layers)
-                    (dw/start-rename-shape (:id frame))))
 
         on-context-menu
         (mf/use-fn
@@ -134,15 +133,54 @@
         text-width (* (:width frame) zoom)
         show-icon? (and (or (:use-for-thumbnail frame) grid-edition? main-instance?)
                         (not (<= text-width 15)))
-        text-pos-x (if show-icon? 15 0)]
+        text-pos-x (if show-icon? 15 0)
+
+        edition*         (mf/use-state false)
+        edition?         (deref edition*)
+
+        local-ref        (mf/use-ref)
+        ref              (d/nilv external-ref local-ref)
+
+        frame-id  (:id frame)
+
+        start-edit
+        (mf/use-fn
+         (mf/deps frame-id edition?)
+         (fn []
+           (if (not edition?)
+             (reset! edition* true)
+             (st/emit! (dw/start-rename-shape frame-id)))))
+
+        accept-edit
+        (mf/use-fn
+         (mf/deps frame-id)
+         (fn []
+           (let [name-input     (mf/ref-val ref)
+                 name           (str/trim (dom/get-value name-input))]
+             (reset! edition* false)
+             (st/emit! (dw/end-rename-shape frame-id name)))))
+
+        cancel-edit
+        (mf/use-fn
+         (mf/deps frame-id)
+         (fn []
+           (reset! edition* false)
+           (st/emit! (dw/end-rename-shape frame-id nil))))
+
+        on-key-down
+        (mf/use-fn
+         (mf/deps accept-edit cancel-edit)
+         (fn [event]
+           (when (kbd/enter? event) (accept-edit))
+           (when (kbd/esc? event) (cancel-edit))))]
+
 
     (when (not (:hidden frame))
       [:g.frame-title {:id (dm/str "frame-title-" (:id frame))
                        :data-edit-grid grid-edition?
                        :transform (vwu/title-transform frame zoom grid-edition?)
                        :pointer-events (when (:blocked frame) "none")}
-       (cond
-         show-icon?
+       (when show-icon?
          [:svg {:x 0
                 :y -9
                 :width 12
@@ -152,33 +190,47 @@
                         :fill "none"}
                 :visibility (if show-artboard-names? "visible" "hidden")}
           (cond
-            (:use-for-thumbnail frame)
-            [:use {:href "#icon-boards-thumbnail"}]
+            (:use-for-thumbnail frame) [:use {:href "#icon-boards-thumbnail"}]
+            grid-edition? [:use {:href "#icon-grid"}]
+            main-instance? [:use {:href "#icon-component"}])])
 
-            grid-edition?
-            [:use {:href "#icon-grid"}]
-
-            main-instance?
-            [:use {:href "#icon-component"}])])
-
-
-       [:foreignObject {:x text-pos-x
-                        :y -11
-                        :width (max 0 (- text-width text-pos-x))
-                        :height 20
-                        :class (stl/css :workspace-frame-label-wrapper)
-                        :style {:fill color}
-                        :visibility (if show-artboard-names? "visible" "hidden")}
-        [:div {:class (stl/css :workspace-frame-label)
-               :style {:color color}
-               :on-pointer-down on-pointer-down
-               :on-double-click on-double-click
-               :on-context-menu on-context-menu
-               :on-pointer-enter on-pointer-enter
-               :on-pointer-leave on-pointer-leave}
-         (if show-id?
-           (dm/str (dm/str (:id frame)) " - " (:name frame))
-           (:name frame))]]])))
+       (if ^boolean edition?
+           ;; Case when edition? is true
+         [:foreignObject {:x text-pos-x
+                          :y -15
+                          :width (max 0 (- text-width text-pos-x))
+                          :height 22
+                          :class (stl/css :workspace-frame-label-wrapper)
+                          :style {:fill color}
+                          :visibility (if show-artboard-names? "visible" "hidden")}
+          [:input {:type "text"
+                   :class (stl/css :workspace-frame-label
+                                   :element-name-input)
+                   :style {:color color}
+                   :auto-focus true
+                   :on-key-down on-key-down
+                   :ref ref
+                   :default-value (:name frame)
+                   :on-blur accept-edit}]]
+           ;; Case when edition? is false
+         [:foreignObject {:x text-pos-x
+                          :y -11
+                          :width (max 0 (- text-width text-pos-x))
+                          :height 20
+                          :class (stl/css :workspace-frame-label-wrapper)
+                          :style {:fill color}
+                          :visibility (if show-artboard-names? "visible" "hidden")}
+          [:div {:class (stl/css :workspace-frame-label)
+                 :style {:color color}
+                 :ref ref
+                 :on-pointer-down on-pointer-down
+                 :on-double-click start-edit
+                 :on-context-menu on-context-menu
+                 :on-pointer-enter on-pointer-enter
+                 :on-pointer-leave on-pointer-leave}
+           (if show-id?
+             (dm/str (:id frame) " - " (:name frame))
+             (:name frame))]])])))
 
 (mf/defc frame-titles
   {::mf/wrap-props false
@@ -240,7 +292,7 @@
              (when (dom/left-mouse? event)
                (dom/prevent-default event)
                (dom/stop-propagation event)
-               (st/emit! (dw/go-to-viewer params))))))
+               (st/emit! (dcm/go-to-viewer params))))))
 
         on-double-click
         (mf/use-fn

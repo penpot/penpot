@@ -99,6 +99,7 @@ RUN set -ex; \
         libnss3 \
         libgbm1 \
         xvfb \
+        libfontconfig-dev \
     ; \
     rm -rf /var/lib/apt/lists/*;
 

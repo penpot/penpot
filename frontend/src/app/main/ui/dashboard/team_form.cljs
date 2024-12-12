@@ -8,17 +8,17 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.schema :as sm]
-   [app.main.data.dashboard :as dd]
-   [app.main.data.events :as ev]
+   [app.main.data.common :as dcm]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
+   [app.main.data.team :as dtm]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.router :as rt]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
@@ -28,15 +28,15 @@
 
 (defn- on-create-success
   [_form response]
-  (let [msg "Team created successfully"]
-    (st/emit! (ntf/success msg)
-              (modal/hide)
-              (rt/nav :dashboard-projects {:team-id (:id response)}))))
+  (let [message "Team created successfully"
+        team-id (:id response)]
+    (st/emit! (ntf/success message)
+              (dcm/go-to-dashboard-recent :team-id team-id))))
 
 (defn- on-update-success
   [_form _response]
-  (let [msg "Team created successfully"]
-    (st/emit! (ntf/success msg)
+  (let [message "Team created successfully"]
+    (st/emit! (ntf/success message)
               (modal/hide))))
 
 (defn- on-error
@@ -51,7 +51,7 @@
   (let [mdata  {:on-success (partial on-create-success form)
                 :on-error   (partial on-error form)}
         params {:name (get-in @form [:clean-data :name])}]
-    (st/emit! (-> (dd/create-team (with-meta params mdata))
+    (st/emit! (-> (dtm/create-team (with-meta params mdata))
                   (with-meta {::ev/origin :dashboard})))))
 
 (defn- on-update-submit
@@ -59,7 +59,7 @@
   (let [mdata  {:on-success (partial on-update-success form)
                 :on-error   (partial on-error form)}
         team   (get @form :clean-data)]
-    (st/emit! (dd/update-team (with-meta team mdata))
+    (st/emit! (dtm/update-team (with-meta team mdata))
               (modal/hide))))
 
 (defn- on-submit
@@ -73,7 +73,9 @@
   {::mf/register modal/components
    ::mf/register-as :team-form}
   [{:keys [team] :as props}]
-  (let [initial (mf/use-memo (fn [] (or team {})))
+  (let [initial (mf/use-memo (fn []
+                               (or (some-> team (select-keys [:name :id]))
+                                   {})))
         form    (fm/use-form :schema schema:team-form
                              :initial initial)
         handle-keydown

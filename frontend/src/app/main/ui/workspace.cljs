@@ -8,12 +8,10 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.main.data.modal :as modal]
-   [app.main.data.notifications :as ntf]
+   [app.main.data.common :as dcm]
    [app.main.data.persistence :as dps]
    [app.main.data.plugins :as dpl]
    [app.main.data.workspace :as dw]
-   [app.main.data.workspace.colors :as dc]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -21,6 +19,7 @@
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.hooks.resize :refer [use-resize-observer]]
+   [app.main.ui.modal :refer [modal-container*]]
    [app.main.ui.workspace.colorpicker]
    [app.main.ui.workspace.context-menu :refer [context-menu]]
    [app.main.ui.workspace.coordinates :as coordinates]
@@ -46,7 +45,7 @@
   [file-id]
   (l/derived (fn [state]
                (let [data (:workspace-data state)]
-                 (and (:workspace-ready? state)
+                 (and (:workspace-ready state)
                       (= file-id (:current-file-id state))
                       (= file-id (:id data)))))
              st/state))
@@ -125,14 +124,17 @@
                            :file file
                            :page-id page-id}]])]))
 
-(mf/defc workspace-loader
+(mf/defc workspace-loader*
+  {::mf/props :obj
+   ::mf/private true}
   []
   [:> loader*  {:title (tr "labels.loading")
                 :class (stl/css :workspace-loader)
                 :overlay true}])
 
-(mf/defc workspace-page
-  {::mf/wrap-props false}
+(mf/defc workspace-page*
+  {::mf/props :obj
+   ::mf/private true}
   [{:keys [page-id file layout wglobal]}]
   (let [page-id     (hooks/use-equal-memo page-id)
         page-ready* (mf/with-memo [page-id]
@@ -147,19 +149,21 @@
     (mf/with-effect [page-id]
       (if (some? page-id)
         (st/emit! (dw/initialize-page page-id))
-        (st/emit! (dw/go-to-page)))
+        (st/emit! (dcm/go-to-workspace)))
       (fn []
         (when (some? page-id)
           (st/emit! (dw/finalize-page page-id)))))
+
     (if ^boolean page-ready?
       [:& workspace-content {:page-id page-id
                              :file file
                              :wglobal wglobal
                              :layout layout}]
-      [:& workspace-loader])))
+      [:& workspace-loader*])))
 
-(mf/defc workspace
-  {::mf/wrap-props false
+
+(mf/defc workspace*
+  {::mf/props :obj
    ::mf/wrap [mf/memo]}
   [{:keys [project-id file-id page-id layout-name]}]
 
@@ -168,9 +172,7 @@
 
         team             (mf/deref refs/team)
         file             (mf/deref refs/workspace-file)
-        project          (mf/deref refs/workspace-project)
 
-        team-id          (:team-id project)
         file-name        (:name file)
         permissions      (:permissions team)
 
@@ -192,36 +194,33 @@
 
     ;; Setting the layout preset by its name
     (mf/with-effect [layout-name]
-      (st/emit! (dw/initialize-layout layout-name)))
+      (st/emit! (dw/initialize-workspace-layout layout-name)))
 
     (mf/with-effect [file-name]
       (when file-name
         (dom/set-html-title (tr "title.workspace" file-name))))
 
-    (mf/with-effect [project-id file-id]
-      (st/emit! (dw/initialize-file project-id file-id))
+    (mf/with-effect [file-id]
+      (st/emit! (dw/initialize-workspace file-id))
       (fn []
         (st/emit! ::dps/force-persist
-                  (dc/stop-picker)
-                  (modal/hide)
-                  (ntf/hide)
-                  (dw/finalize-file project-id file-id))))
+                  (dw/finalize-workspace file-id))))
 
-    [:& (mf/provider ctx/current-file-id) {:value file-id}
-     [:& (mf/provider ctx/current-project-id) {:value project-id}
-      [:& (mf/provider ctx/current-team-id) {:value team-id}
-       [:& (mf/provider ctx/current-page-id) {:value page-id}
-        [:& (mf/provider ctx/components-v2) {:value components-v2?}
-         [:& (mf/provider ctx/design-tokens) {:value design-tokens?}
-          [:& (mf/provider ctx/workspace-read-only?) {:value read-only?}
-           [:& (mf/provider ctx/team-permissions) {:value permissions}
-            [:section {:class (stl/css :workspace)
-                       :style {:background-color background-color
-                               :touch-action "none"}}
-             [:& context-menu]
-             (if ^boolean file-ready?
-               [:& workspace-page {:page-id page-id
-                                   :file file
-                                   :wglobal wglobal
-                                   :layout layout}]
-               [:& workspace-loader])]]]]]]]]]))
+    [:& (mf/provider ctx/current-project-id) {:value project-id}
+     [:& (mf/provider ctx/current-file-id) {:value file-id}
+      [:& (mf/provider ctx/current-page-id) {:value page-id}
+       [:& (mf/provider ctx/components-v2) {:value components-v2?}
+        [:& (mf/provider ctx/design-tokens) {:value design-tokens?}
+         [:& (mf/provider ctx/workspace-read-only?) {:value read-only?}
+          [:> modal-container*]
+          [:section {:class (stl/css :workspace)
+                     :style {:background-color background-color
+                             :touch-action "none"}}
+           [:& context-menu]
+
+           (if ^boolean file-ready?
+             [:> workspace-page* {:page-id page-id
+                                  :file file
+                                  :wglobal wglobal
+                                  :layout layout}]
+             [:> workspace-loader* {}])]]]]]]]))

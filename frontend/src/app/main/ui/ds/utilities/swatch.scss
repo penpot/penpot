@@ -1,0 +1,104 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../_borders.scss" as *;
+@use "../_sizes.scss" as *;
+@use "../colors.scss" as *;
+
+.swatch {
+  --border-color: var(--color-accent-primary-muted);
+  --border-radius: #{$br-4};
+  --border-color-active: var(--color-foreground-primary);
+  --border-color-active-inset: var(--color-background-primary);
+
+  --checkerboard-background: repeating-conic-gradient(lightgray 0% 25%, white 0% 50%);
+  --checkerboard-size: 0.5rem 0.5rem;
+
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+
+  &:focus {
+    --border-color: var(--color-accent-primary);
+  }
+}
+
+.small {
+  inline-size: $sz-16;
+  block-size: $sz-16;
+}
+
+.medium {
+  --checkerboard-size: 1rem 1rem;
+
+  inline-size: $sz-24;
+  block-size: $sz-24;
+}
+
+.rounded {
+  --border-radius: #{$br-circle};
+}
+
+.active {
+  --border-color: var(--border-color-active);
+
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    border-radius: 3px;
+    box-shadow: 0 0 0 1px var(--border-color-active-inset) inset;
+  }
+}
+
+.interactive {
+  cursor: pointer;
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  background: none;
+
+  &:hover {
+    border: 2px solid var(--border-color);
+  }
+}
+
+.swatch-image,
+.swatch-gradient,
+.swatch-opacity,
+.swatch-solid {
+  block-size: 100%;
+  display: block;
+}
+
+.swatch-gradient {
+  background-size: cover, var(--checkerboard-size);
+  background-position: center, center;
+  background-repeat: no-repeat, repeat;
+}
+
+.swatch-image {
+  background-size: cover, var(--checkerboard-size);
+  background-position: center, center;
+  background-repeat: no-repeat, repeat;
+}
+
+.swatch-opacity {
+  background: var(--checkerboard-background);
+  background-size: var(--checkerboard-size);
+  display: flex;
+}
+
+.swatch-solid-side,
+.swatch-opacity-side {
+  flex: 1;
+  display: block;
+}

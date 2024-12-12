@@ -38,12 +38,14 @@
 
 ### :sparkles: New features
 
-- Viewer role for team members  [Taiga #1056 & #6590](https://tree.taiga.io/project/penpot/us/1056 & https://tree.taiga.io/project/penpot/us/6590)
-- File history versions management [Taiga](https://tree.taiga.io/project/penpot/us/187?milestone=411120)
+- Viewer role for team members [Taiga #1056](https://tree.taiga.io/project/penpot/us/1056) & [Taiga #6590](https://tree.taiga.io/project/penpot/us/6590)
+- File history versions management [Taiga #187](https://tree.taiga.io/project/penpot/us/187?milestone=411120)
 - Rename selected layer via keyboard shortcut and context menu option [Taiga #8882](https://tree.taiga.io/project/penpot/us/8882)
+- New .penpot file format [Taiga #8657](https://tree.taiga.io/project/penpot/us/8657)
 
 ### :bug: Bugs fixed
 
+- Fix problem with some texts desynchronization [Taiga #9379](https://tree.taiga.io/project/penpot/issue/9379)
 
 ## 2.3.3
 

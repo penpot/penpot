@@ -39,7 +39,7 @@
                               mf/deref)
         colors-library-ws (-> (mf/use-memo
                                (mf/deps (:file-id color))
-                               #(make-colors-library-ref :workspace-libraries (:file-id color)))
+                               #(make-colors-library-ref :libraries (:file-id color)))
                               mf/deref)]
     (or colors-library-v colors-library-ws)))
 

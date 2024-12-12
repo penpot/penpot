@@ -10,6 +10,7 @@
    [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
+   [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [datoteka.fs :as fs]))
@@ -245,3 +246,35 @@
       (t/is (= "image/jpeg" (:mtype result)))
       (t/is (uuid? (:media-id result)))
       (t/is (uuid? (:thumbnail-id result))))))
+
+
+(t/deftest media-object-upload-command-when-file-is-deleted
+  (let [prof   (th/create-profile* 1)
+        proj   (th/create-project* 1 {:profile-id (:id prof)
+                                      :team-id (:default-team-id prof)})
+        file   (th/create-file* 1 {:profile-id (:id prof)
+                                   :project-id (:default-project-id prof)
+                                   :is-shared false})
+
+        _      (th/db-update! :file
+                              {:deleted-at (dt/now)}
+                              {:id (:id file)})
+
+        mfile  {:filename "sample.jpg"
+                :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                :mtype "image/jpeg"
+                :size 312043}
+
+        params {::th/type :upload-file-media-object
+                ::rpc/profile-id (:id prof)
+                :file-id (:id file)
+                :is-local true
+                :name "testfile"
+                :content mfile}
+
+        out    (th/command! params)]
+
+    (let [error      (:error out)
+          error-data (ex-data error)]
+      (t/is (th/ex-info? error))
+      (t/is (= (:type error-data) :not-found)))))

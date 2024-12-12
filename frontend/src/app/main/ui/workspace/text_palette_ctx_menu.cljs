@@ -14,11 +14,10 @@
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-
 (mf/defc text-palette-ctx-menu
   [{:keys [show-menu? close-menu on-select-palette selected]}]
-  (let [file-typographies (mf/deref refs/workspace-file-typography)
-        shared-libs   (mf/deref refs/workspace-libraries)]
+  (let [typographies (mf/deref refs/workspace-file-typography)
+        shared-libs  (mf/deref refs/libraries)]
     [:& dropdown {:show show-menu?
                   :on-close close-menu}
      [:ul {:class (stl/css :text-context-menu)}
@@ -49,7 +48,7 @@
         [:span {:class (stl/css :lib-name)}
          (tr "workspace.libraries.colors.file-library")]
         [:span {:class (stl/css :lib-num)}
-         (dm/str "(" (count file-typographies) ")")]]
+         (dm/str "(" (count typographies) ")")]]
        (when (= selected :file)
          [:span {:class (stl/css :icon-wrapper)}
           i/tick])]]]))

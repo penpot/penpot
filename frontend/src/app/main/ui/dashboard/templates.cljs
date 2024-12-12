@@ -9,8 +9,9 @@
   (:require
    [app.common.data.macros :as dm]
    [app.config :as cf]
+   [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -18,7 +19,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.router :as rt]
    [app.util.storage :as storage]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
@@ -43,9 +43,9 @@
                                     :section section})
 
              (when-not (some? project-id)
-               (rt/nav :dashboard-files
-                       {:team-id team-id
-                        :project-id default-project-id}))))]
+               (dcm/go-to-dashboard-recent
+                :team-id team-id
+                :project-id default-project-id))))]
 
     (st/emit!
      (ptk/event ::ev/event {::ev/name "import-template-launch"
@@ -157,8 +157,8 @@
          [:div {:class (stl/css :template-link-title)} (tr "dashboard.libraries-and-templates")]
          [:div {:class (stl/css :template-link-text)} (tr "dashboard.libraries-and-templates.explore")]]]]]]))
 
-(mf/defc templates-section
-  {::mf/wrap-props false}
+(mf/defc templates-section*
+  {::mf/props :obj}
   [{:keys [default-project-id profile project-id team-id]}]
   (let [templates      (mf/deref builtin-templates)
         templates      (mf/with-memo [templates]

@@ -206,7 +206,11 @@
 
 (defn default-actions [{:keys [token selected-token-set-path]}]
   (let [{:keys [modal]} (wtty/get-token-properties token)]
-    [{:title "Edit Token"
+    [{:title "Delete Token"
+      :action #(st/emit! (dt/delete-token (ctob/set-path->set-name selected-token-set-path) (:name token)))}
+     {:title "Duplicate Token"
+      :action #(st/emit! (dt/duplicate-token (:name token)))}
+     {:title "Edit Token"
       :action (fn [event]
                 (let [{:keys [key fields]} modal]
                   (st/emit! dt/hide-token-context-menu)

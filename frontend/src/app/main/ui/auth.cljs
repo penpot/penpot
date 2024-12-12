@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.main.data.users :as du]
+   [app.main.data.auth :as da]
    [app.main.store :as st]
    [app.main.ui.auth.login :refer [login-page]]
    [app.main.ui.auth.recovery :refer [recovery-page]]
@@ -18,7 +18,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
-
 
 (mf/defc auth
   {::mf/props :obj}
@@ -35,7 +34,7 @@
 
     (mf/with-effect [error]
       (when error
-        (st/emit! (du/show-redirect-error error))))
+        (st/emit! (da/show-redirect-error error))))
 
     [:main {:class (stl/css :auth-section)}
      (when show-login-icon

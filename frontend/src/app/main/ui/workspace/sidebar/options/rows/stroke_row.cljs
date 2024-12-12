@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.reorder-handler :refer [reorder-handler]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
@@ -140,9 +141,12 @@
     [:div {:class (stl/css-case
                    :stroke-data true
                    :dnd-over-top (= (:over dprops) :top)
-                   :dnd-over-bot (= (:over dprops) :bot))
-           :ref dref}
-           ;; Stroke Color
+                   :dnd-over-bot (= (:over dprops) :bot))}
+
+     (when (some? on-reorder)
+       [:& reorder-handler {:ref dref}])
+
+     ;; Stroke Color
      [:& color-row {:color {:color (:stroke-color stroke)
                             :opacity (:stroke-opacity stroke)
                             :id (:stroke-color-ref-id stroke)

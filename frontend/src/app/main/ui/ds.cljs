@@ -9,6 +9,7 @@
    [app.config :as cf]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list]]
@@ -22,6 +23,7 @@
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.ds.storybook :as sb]
+   [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.util.i18n :as i18n]))
 
 
@@ -38,10 +40,12 @@
        :Loader loader*
        :RawSvg raw-svg*
        :Select select*
+       :Combobox combobox*
        :Text text*
        :TabSwitcher tab-switcher*
        :Toast toast*
        :TokenStatusIcon token-status-icon*
+       :Swatch swatch*
        ;; meta / misc
        :meta #js {:icons (clj->js (sort icon-list))
                   :tokenStatus (clj->js (sort token-status-list))

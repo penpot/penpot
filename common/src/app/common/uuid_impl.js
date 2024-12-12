@@ -192,6 +192,76 @@ goog.scope(function() {
       }
     };
 
+    const fillBytes = (uuid) => {
+      let rest;
+      int8[0] = (rest = parseInt(uuid.slice(0, 8), 16)) >>> 24;
+      int8[1] = (rest >>> 16) & 0xff;
+      int8[2] = (rest >>> 8) & 0xff;
+      int8[3] = rest & 0xff;
+
+      // Parse ........-####-....-....-............
+      int8[4] = (rest = parseInt(uuid.slice(9, 13), 16)) >>> 8;
+      int8[5] = rest & 0xff;
+
+      // Parse ........-....-####-....-............
+      int8[6] = (rest = parseInt(uuid.slice(14, 18), 16)) >>> 8;
+      int8[7] = rest & 0xff;
+
+      // Parse ........-....-....-####-............
+      int8[8] = (rest = parseInt(uuid.slice(19, 23), 16)) >>> 8;
+      int8[9] = rest & 0xff,
+
+      // Parse ........-....-....-....-############
+      // (Use "/" to avoid 32-bit truncation when bit-shifting high-order bytes)
+      int8[10] = ((rest = parseInt(uuid.slice(24, 36), 16)) / 0x10000000000) & 0xff;
+      int8[11] = (rest / 0x100000000) & 0xff;
+      int8[12] = (rest >>> 24) & 0xff;
+      int8[13] = (rest >>> 16) & 0xff;
+      int8[14] = (rest >>> 8) & 0xff;
+      int8[15] = rest & 0xff;
+    }
+
+    const fromPair = (hi, lo) => {
+      view.setBigInt64(0, hi);
+      view.setBigInt64(8, lo);
+      return encoding.bufferToHex(int8, true);
+    }
+
+    const getHi = (uuid) => {
+      fillBytes(uuid);
+      return view.getBigInt64(0);
+    }
+
+    const getLo = (uuid) => {
+      fillBytes(uuid);
+      return view.getBigInt64(8);
+    }
+
+    const getBytes = (uuid) => {
+      fillBytes(uuid);
+      return Int8Array.from(int8);
+    }
+
+    const getUnsignedParts = (uuid) => {
+      fillBytes(uuid);
+      const result = new Uint32Array(4);
+
+      result[0] = view.getUint32(0)
+      result[1] = view.getUint32(4);
+      result[2] = view.getUint32(8);
+      result[3] = view.getUint32(12);
+
+      return result;
+    }
+
+    const fromUnsignedParts = (a, b, c, d) => {
+      view.setUint32(0, a)
+      view.setUint32(4, b)
+      view.setUint32(8, c)
+      view.setUint32(12, d)
+      return encoding.bufferToHex(int8, true);
+    }
+
     const fromArray = (u8data) => {
       int8.set(u8data);
       return encoding.bufferToHex(int8, true);
@@ -209,8 +279,14 @@ goog.scope(function() {
     };
 
     factory.create = create;
-    factory.setTag = setTag;
     factory.fromArray = fromArray;
+    factory.fromPair = fromPair;
+    factory.fromUnsignedParts = fromUnsignedParts;
+    factory.getBytes = getBytes;
+    factory.getHi = getHi;
+    factory.getLo = getLo;
+    factory.getUnsignedParts = getUnsignedParts;
+    factory.setTag = setTag;
     return factory;
   })();
 
@@ -220,67 +296,44 @@ goog.scope(function() {
     return encoding.bufferToBase62(short);
   };
 
-  self.custom = function formatAsUUID(mostSigBits, leastSigBits) {
-    const most = mostSigBits.toString("16").padStart(16, "0");
-    const least = leastSigBits.toString("16").padStart(16, "0");
-    return `${most.substring(0, 8)}-${most.substring(8, 12)}-${most.substring(12)}-${least.substring(0, 4)}-${least.substring(4)}`;
+  self.custom = function formatAsUUID(hi, lo) {
+    if (!(hi instanceof BigInt)) {
+      hi = BigInt(hi);
+    }
+    if (!(hi instanceof BigInt)) {
+      lo = BigInt(lo);
+    }
+
+    return self.v8.fromPair(hi, lo);
   };
 
   self.fromBytes = function(data) {
     if (data instanceof Uint8Array) {
       return self.v8.fromArray(data);
     } else if (data instanceof Int8Array) {
-      data = Uint8Array.from(data);
       return self.v8.fromArray(data);
     } else {
-      let buffer = data?.buffer;
-      if (buffer instanceof ArrayBuffer) {
-        data = new Uint8Array(buffer);
-        return self.v8.fromArray(data);
-      } else {
-        throw new Error("invalid array type received");
-      }
+      throw new Error("invalid array type received");
     }
   };
 
-  // Code based from uuidjs/parse.ts
   self.getBytes = function parse(uuid) {
-    const buffer = new ArrayBuffer(16);
-    const view = new Int8Array(buffer);
-    let rest;
+    return self.v8.getBytes(uuid);
+  };
 
-    // Parse ########-....-....-....-............
-    view[0] = (rest = parseInt(uuid.slice(0, 8), 16)) >>> 24;
-    view[1] = (rest >>> 16) & 0xff;
-    view[2] = (rest >>> 8) & 0xff;
-    view[3] = rest & 0xff;
+  self.getUnsignedParts = function (uuid) {
+    return self.v8.getUnsignedParts(uuid);
+  };
 
-      // Parse ........-####-....-....-............
-    view[4] = (rest = parseInt(uuid.slice(9, 13), 16)) >>> 8;
-    view[5] = rest & 0xff;
+  self.fromUnsignedParts = function(a,b,c,d) {
+    return self.v8.fromUnsignedParts(a,b,c,d);
+  };
 
-    // Parse ........-....-####-....-............
-    view[6] = (rest = parseInt(uuid.slice(14, 18), 16)) >>> 8;
-    view[7] = rest & 0xff;
-
-    // Parse ........-....-....-####-............
-    view[8] = (rest = parseInt(uuid.slice(19, 23), 16)) >>> 8;
-    view[9] = rest & 0xff,
-
-    // Parse ........-....-....-....-############
-    // (Use "/" to avoid 32-bit truncation when bit-shifting high-order bytes)
-    view[10] = ((rest = parseInt(uuid.slice(24, 36), 16)) / 0x10000000000) & 0xff;
-    view[11] = (rest / 0x100000000) & 0xff;
-    view[12] = (rest >>> 24) & 0xff;
-    view[13] = (rest >>> 16) & 0xff;
-    view[14] = (rest >>> 8) & 0xff;
-    view[15] = rest & 0xff;
-
-    return view;
+  self.getHi = function (uuid) {
+    return self.v8.getHi(uuid);
   }
 
-  self.getUnsignedInt32Array = function (uuid) {
-    const bytes = self.getBytes(uuid);
-    return new Uint32Array(bytes.buffer);
+  self.getLo = function (uuid) {
+    return self.v8.getLo(uuid);
   }
 });

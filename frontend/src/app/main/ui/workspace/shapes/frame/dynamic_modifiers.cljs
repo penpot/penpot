@@ -235,7 +235,11 @@
           (when (some? modifiers)
             (d/mapm (fn [id {current-modifiers :modifiers}]
                       (let [shape (get objects id)
-                            adapt-text? (and (= :text (:type shape)) (not (ctm/only-move? current-modifiers)))
+
+                            adapt-text?
+                            (and (= :text (:type shape))
+                                 (ctm/has-geometry? current-modifiers)
+                                 (not (ctm/only-move? current-modifiers)))
 
                             current-modifiers
                             (cond-> current-modifiers

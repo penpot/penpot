@@ -64,7 +64,7 @@
 ;;   (def shapes [{:stroke-color "#ff0000"
 ;;                 :stroke-width 3
 ;;                 :fill-color "#0000ff"
-;;                 :x 1000 :y 2000 :rx nil}
+;;                 :x 1000 :y 2000}
 ;;                {:stroke-width "#ff0000"
 ;;                 :stroke-width 5
 ;;                 :x 1500 :y 2000}])
@@ -72,13 +72,17 @@
 ;;   (get-attrs-multi shapes [:stroke-color
 ;;                            :stroke-width
 ;;                            :fill-color
-;;                            :rx
-;;                            :ry])
+;;                            :r1
+;;                            :r2
+;;                            :r3
+;;                            :r4])
 ;;   >>> {:stroke-color "#ff0000"
 ;;        :stroke-width :multiple
 ;;        :fill-color "#0000ff"
-;;        :rx nil
-;;        :ry nil}
+;;        :r1 nil
+;;        :r2 nil
+;;        :r3 nil
+;;        :r4 nil}
 ;;
 (defn get-attrs-multi
   ([objs attrs]

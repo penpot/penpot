@@ -60,7 +60,6 @@
 (mf/defc frame-container
   {::mf/wrap-props false}
   [props]
-
   (let [shape         (unchecked-get props "shape")
         children      (unchecked-get props "children")
 
@@ -135,7 +134,7 @@
         bounds   (mf/with-memo [bounds points]
                    (or bounds (gsb/get-frame-bounds shape)))
 
-        thumb    (:thumbnail shape)
+        thumb    (cf/resolve-media (:thumbnail-id shape))
 
         debug?   (dbg/enabled? :thumbnails)
         safari?  (cf/check-browser? :safari)
@@ -171,7 +170,7 @@
   {::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")]
-    (when ^boolean (:thumbnail shape)
+    (when ^boolean (:thumbnail-id shape)
       [:> frame-container props
        [:> frame-thumbnail-image props]])))
 

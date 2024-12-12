@@ -12,7 +12,7 @@
    [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]
    [app.config :as cf]
-   [app.main.data.events :as-alias ev]
+   [app.main.data.event :as-alias ev]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.shape-layout :as dwsl]

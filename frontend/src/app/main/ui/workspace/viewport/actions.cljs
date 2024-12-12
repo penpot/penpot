@@ -422,7 +422,7 @@
                       file-id
                       (:id component)
                       (gpt/point final-x final-y)
-                      {:start-move? true :initial-point viewport-coord})))))
+                      {:start-move? true :initial-point viewport-coord :origin "sidebar"})))))
      (when (or (dnd/has-type? e "penpot/shape")
                (dnd/has-type? e "penpot/component")
                (dnd/has-type? e "Files")

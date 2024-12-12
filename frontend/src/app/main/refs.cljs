@@ -13,6 +13,7 @@
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.store :as st]
    [app.main.ui.workspace.tokens.token-set :as wtts]
@@ -21,22 +22,33 @@
 ;; ---- Global refs
 
 (def route
-  (l/derived :route st/state))
+  (l/derived (l/key :route) st/state))
 
 (def router
-  (l/derived :router st/state))
+  (l/derived (l/key :router) st/state))
 
 (def profile
-  (l/derived :profile st/state))
+  (l/derived (l/key :profile) st/state))
 
 (def team
-  (l/derived :team st/state))
+  (l/derived (fn [state]
+               (let [team-id (:current-team-id state)
+                     teams   (:teams state)]
+                 (get teams team-id)))
+             st/state))
+
+(def project
+  (l/derived (fn [state]
+               (let [project-id (:current-project-id state)
+                     projects   (:projects state)]
+                 (get projects project-id)))
+             st/state))
 
 (def permissions
-  (l/derived :permissions st/state))
+  (l/derived (l/key :permissions) team))
 
 (def teams
-  (l/derived :teams st/state))
+  (l/derived (l/key :teams) st/state))
 
 (def exception
   (l/derived :exception st/state))
@@ -53,68 +65,41 @@
 (def persistence
   (l/derived :persistence st/state))
 
-;; ---- Dashboard refs
+(def projects
+  (l/derived :projects st/state))
 
-(def dashboard-local
-  (l/derived :dashboard-local st/state))
+(def files
+  (l/derived :files st/state))
 
-(def dashboard-fonts
-  (l/derived :dashboard-fonts st/state))
+(def shared-files
+  "A derived state that points to the current list of shared
+  files (without the content, only summary)"
+  (l/derived :shared-files st/state))
 
-(def dashboard-projects
-  (l/derived :dashboard-projects st/state))
+(def libraries
+  (l/derived :libraries st/state))
 
-(def dashboard-files
-  (l/derived :dashboard-files st/state))
-
-(def dashboard-shared-files
-  (l/derived :dashboard-shared-files st/state))
-
-(def dashboard-search-result
-  (l/derived :dashboard-search-result st/state))
-
-(def dashboard-team-stats
-  (l/derived :dashboard-team-stats st/state))
-
-(def dashboard-team-members
-  (l/derived :dashboard-team-members st/state))
-
-(def dashboard-team-invitations
-  (l/derived :dashboard-team-invitations st/state))
-
-(def dashboard-team-webhooks
-  (l/derived :dashboard-team-webhooks st/state))
-
-(def dashboard-selected-project
-  (l/derived (fn [state]
-               (dm/get-in state [:dashboard-local :selected-project]))
-             st/state))
-
-(defn- dashboard-extract-selected
+(defn extract-selected-files
   [files selected]
   (let [get-file #(get files %)
         sim-file #(select-keys % [:id :name :project-id :is-shared])
         xform    (comp (keep get-file)
                        (map sim-file))]
-    (->> (into #{} xform selected)
+    (->> (sequence xform selected)
          (d/index-by :id))))
 
-(def dashboard-selected-search
+(def selected-files
   (l/derived (fn [state]
-               ;; we need to this because :dashboard-search-result is a list
-               ;; of maps and we need a map of maps (using :id as key).
-               (let [files (d/index-by :id (:dashboard-search-result state))]
-                 (->> (dm/get-in state [:dashboard-local :selected-files])
-                      (dashboard-extract-selected files))))
+               (let [selected (get state :selected-files)
+                     files    (get state :files)]
+                 (extract-selected-files files selected)))
              st/state))
 
-(def dashboard-selected-files
-  (l/derived (fn [state]
-               (->> (dm/get-in state [:dashboard-local :selected-files])
-                    (dashboard-extract-selected (:dashboard-files state))))
-             st/state))
+(def selected-project
+  (l/derived :selected-project st/state))
 
-;; ---- Workspace refs
+(def dashboard-local
+  (l/derived :dashboard-local st/state))
 
 (def render-state
   (l/derived :render-state st/state))
@@ -248,10 +233,8 @@
   (l/derived :workspace-data st/state))
 
 (def workspace-file-colors
-  (l/derived (fn [data]
-               (when data
-                 (->> (:colors data)
-                      (d/mapm #(assoc %2 :file-id (:id data))))))
+  (l/derived (fn [{:keys [id] :as data}]
+               (some-> (:colors data) (update-vals #(assoc % :file-id id))))
              workspace-data
              =))
 
@@ -261,6 +244,8 @@
                  (dm/get-in state [:recent-colors file-id])))
              st/state))
 
+;; FIXME: fonts are not prefixed, so the recent font list is shared
+;; across all teams. This may not be expected behavior
 (def workspace-recent-fonts
   (l/derived (fn [data]
                (get data :recent-fonts []))
@@ -269,30 +254,8 @@
 (def workspace-file-typography
   (l/derived :typographies workspace-data))
 
-(def workspace-project
-  (l/derived :workspace-project st/state))
-
-(def workspace-shared-files
-  (l/derived :workspace-shared-files st/state))
-
-(def workspace-local-library
-  (l/derived (fn [state]
-               (select-keys (:workspace-data state)
-                            [:id
-                             :colors
-                             :media
-                             :typographies
-                             :components]))
-             st/state =))
-
-(def workspace-libraries
-  (l/derived :workspace-libraries st/state))
-
 (def workspace-presence
   (l/derived :workspace-presence st/state))
-
-(def workspace-snap-data
-  (l/derived :workspace-snap-data st/state))
 
 (def workspace-page
   (l/derived (fn [state]
@@ -493,6 +456,9 @@
 (def workspace-selected-token-set-path
   (l/derived wtts/get-selected-token-set-path st/state))
 
+(def workspace-token-set-group-selected?
+  (l/derived wtts/token-group-selected? st/state))
+
 (def workspace-ordered-token-sets
   (l/derived #(or (some-> % ctob/get-sets) []) tokens-lib))
 
@@ -536,12 +502,16 @@
 
 ;; ---- Viewer refs
 
+(defn get-viewer-objects
+  [state page-id]
+  (dm/get-in state [:viewer :pages page-id :objects]))
+
 (defn lookup-viewer-objects-by-id
   [page-id]
-  (l/derived #(wsh/lookup-viewer-objects % page-id) st/state =))
+  (l/derived #(get-viewer-objects % page-id) st/state =))
 
 (def viewer-data
-  (l/derived :viewer st/state))
+  (l/derived (l/key :viewer) st/state))
 
 (def viewer-file
   (l/derived :file viewer-data))
@@ -567,14 +537,8 @@
 (def comments-local
   (l/derived :comments-local st/state))
 
-(def users
-  (l/derived :users st/state))
-
-(def current-file-comments-users
-  (l/derived :current-file-comments-users st/state))
-
-(def current-team-comments-users
-  (l/derived :current-team-comments-users st/state))
+(def profiles
+  (l/derived :profiles st/state))
 
 (def viewer-fullscreen?
   (l/derived (fn [state]
@@ -586,14 +550,12 @@
                (dm/get-in state [:viewer-local :zoom-type]))
              st/state))
 
-(def workspace-thumbnails
-  (l/derived :workspace-thumbnails st/state))
-
 (defn workspace-thumbnail-by-id
   [object-id]
   (l/derived
    (fn [state]
-     (dm/get-in state [:workspace-thumbnails object-id]))
+     (some-> (dm/get-in state [:thumbnails object-id])
+             (cf/resolve-media)))
    st/state))
 
 (def workspace-text-modifier
@@ -638,34 +600,8 @@
           (every? (partial ctl/grid-layout-immediate-child? objects))))
    workspace-page-objects =))
 
-;; FIXME: move to viewer.inspect.code
-(defn get-flex-child-viewer
-  [ids page-id]
-  (l/derived
-   (fn [state]
-     (let [objects (wsh/lookup-viewer-objects state page-id)]
-       (into []
-             (comp (map (d/getf objects))
-                   (filter (partial ctl/flex-layout-immediate-child? objects)))
-             ids)))
-   st/state =))
-
-;; FIXME: move to viewer.inspect.code
-(defn get-viewer-objects
-  ([]
-   (let [route      (deref route)
-         page-id    (:page-id (:query-params route))]
-     (get-viewer-objects page-id)))
-  ([page-id]
-   (l/derived
-    (fn [state]
-      (let [objects (wsh/lookup-viewer-objects state page-id)]
-        objects))
-    st/state =)))
-
 (def colorpicker
   (l/derived :colorpicker st/state))
-
 
 (def workspace-grid-edition
   (l/derived :workspace-grid-edition st/state))
@@ -673,12 +609,6 @@
 (defn workspace-grid-edition-id
   [id]
   (l/derived #(get % id) workspace-grid-edition))
-
-(def current-file-id
-  (l/derived :current-file-id st/state))
-
-(def current-project-id
-  (l/derived :current-project-id st/state))
 
 (def workspace-preview-blend
   (l/derived :workspace-preview-blend st/state))

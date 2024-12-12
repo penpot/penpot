@@ -7,7 +7,7 @@
 (ns app.main.ui.releases
   (:require
    [app.main.data.modal :as modal]
-   [app.main.data.users :as du]
+   [app.main.data.profile :as du]
    [app.main.store :as st]
    [app.main.ui.releases.common :as rc]
    [app.main.ui.releases.v1-10]
@@ -30,6 +30,7 @@
    [app.main.ui.releases.v2-1]
    [app.main.ui.releases.v2-2]
    [app.main.ui.releases.v2-3]
+   [app.main.ui.releases.v2-4]
    [app.util.object :as obj]
    [app.util.timers :as tm]
    [rumext.v2 :as mf]))
@@ -94,4 +95,4 @@
 
 (defmethod rc/render-release-notes "0.0"
   [params]
-  (rc/render-release-notes (assoc params :version "2.2")))
+  (rc/render-release-notes (assoc params :version "2.4")))

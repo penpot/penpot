@@ -1,9 +1,10 @@
 use std::collections::HashMap;
+
+use skia_safe as skia;
 use uuid::Uuid;
 
 use crate::render::RenderState;
 use crate::shapes::Shape;
-use crate::view::View;
 
 /// This struct holds the state of the Rust application between JS calls.
 ///
@@ -15,31 +16,34 @@ pub(crate) struct State<'a> {
     pub current_id: Option<Uuid>,
     pub current_shape: Option<&'a mut Shape>,
     pub shapes: HashMap<Uuid, Shape>,
-    pub view: View,
 }
 
 impl<'a> State<'a> {
-    pub fn with_capacity(width: i32, height: i32, capacity: usize) -> Self {
+    pub fn new(width: i32, height: i32, capacity: usize) -> Self {
         State {
             render_state: RenderState::new(width, height),
             current_id: None,
             current_shape: None,
             shapes: HashMap::with_capacity(capacity),
-            view: View {
-                x: 0.,
-                y: 0.,
-                zoom: 1.,
-            }
         }
+    }
+
+    pub fn resize(&mut self, width: i32, height: i32) {
+        self.render_state.resize(width, height);
     }
 
     pub fn render_state(&'a mut self) -> &'a mut RenderState {
         &mut self.render_state
     }
 
-    pub fn draw_all_shapes(&mut self, zoom: f32, pan_x: f32, pan_y: f32) {
+    pub fn navigate(&mut self) {
+        // TODO: propagate error to main fn
+        let _ = self.render_state.navigate(&self.shapes).unwrap();
+    }
+
+    pub fn render_all(&mut self, generate_cached_surface_image: bool) {
         self.render_state
-            .draw_all_shapes(zoom, pan_x, pan_y, &self.shapes);
+            .render_all(&self.shapes, generate_cached_surface_image);
     }
 
     pub fn use_shape(&'a mut self, id: Uuid) {
@@ -54,5 +58,10 @@ impl<'a> State<'a> {
 
     pub fn current_shape(&'a mut self) -> Option<&'a mut Shape> {
         self.current_shape.as_deref_mut()
+    }
+
+    pub fn set_background_color(&mut self, color: skia::Color) {
+        self.render_state.set_background_color(color);
+        self.render_all(true);
     }
 }

@@ -8,7 +8,8 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.config :as cf]
-   [app.main.data.events :as ev]
+   [app.main.data.common :as dcm]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as scd]
    [app.main.data.workspace :as dw]
@@ -169,7 +170,7 @@
            (let [params {:page-id page-id
                          :file-id file-id
                          :section "interactions"}]
-             (st/emit! (dw/go-to-viewer params)))))
+             (st/emit! (dcm/go-to-viewer params)))))
 
         active-comments
         (mf/use-fn
@@ -243,14 +244,16 @@
      (when-not ^boolean read-only?
        [:div {:class (stl/css :history-section)}
         [:button
-         {:title (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
-          :aria-label (tr "workspace.sidebar.history" (sc/get-tooltip :toggle-history))
+         {:title (tr "workspace.sidebar.history")
+          :aria-label (tr "workspace.sidebar.history")
           :class (stl/css-case :selected (contains? layout :document-history)
                                :history-button true)
           :on-click toggle-history}
          i/history]])
 
-     (when (cf/external-feature-flag "share-01" "test")
+     (when (and
+            (not (:is-default team))
+            (cf/external-feature-flag "share-01" "test"))
        [:a {:class (stl/css :viewer-btn)
             :title (tr "workspace.header.share")
             :on-click open-share-dialog}

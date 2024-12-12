@@ -396,6 +396,13 @@ msgstr "The token has no expiration date"
 msgid "dashboard.add-shared"
 msgstr "Add as Shared Library"
 
+#: src/app/main/ui/workspace/main_menu.cljs:607
+msgid "dashboard.show-version-history"
+msgstr "Version history"
+
+msgid "dashboard.create-version-menu"
+msgstr "Pin this version"
+
 #: src/app/main/ui/settings/profile.cljs:72
 msgid "dashboard.change-email"
 msgstr "Change email"
@@ -955,6 +962,15 @@ msgstr "Your name"
 #: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:34, src/app/main/ui/dashboard/libraries.cljs:44, src/app/main/ui/dashboard/projects.cljs:341, src/app/main/ui/dashboard/search.cljs:31, src/app/main/ui/dashboard/sidebar.cljs:312, src/app/main/ui/dashboard/team.cljs:526, src/app/main/ui/dashboard/team.cljs:766, src/app/main/ui/dashboard/team.cljs:1029, src/app/main/ui/dashboard/team.cljs:1076
 msgid "dashboard.your-penpot"
 msgstr "Your Penpot"
+
+msgid "dashboard.upgrade-plan.penpot-free"
+msgstr "Penpot Free"
+
+msgid "dashboard.upgrade-plan.no-limits"
+msgstr "No limits on creativity"
+
+msgid "dashboard.upgrade-plan.power-up"
+msgstr "Power up"
 
 #: src/app/main/ui/alert.cljs:32
 msgid "ds.alert-ok"
@@ -1557,6 +1573,9 @@ msgstr "Active"
 #, unused
 msgid "labels.add"
 msgstr "Add"
+
+msgid "labels.adding"
+msgstr "Adding..."
 
 #: src/app/main/ui/dashboard/fonts.cljs:176
 msgid "labels.add-custom-font"
@@ -3618,6 +3637,9 @@ msgstr "Previous board"
 msgid "shortcuts.redo"
 msgstr "Redo"
 
+msgid "shortcuts.rename"
+msgstr "Rename"
+
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:166
 msgid "shortcuts.reset-zoom"
 msgstr "Reset zoom"
@@ -4054,6 +4076,9 @@ msgstr "Group name"
 msgid "workspace.assets.libraries"
 msgstr "Libraries"
 
+msgid "workspace.assets.add-library"
+msgstr "Add library"
+
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:523
 msgid "workspace.assets.list-view"
 msgstr "List view"
@@ -4066,7 +4091,7 @@ msgstr "local library"
 msgid "workspace.assets.not-found"
 msgstr "No assets found"
 
-#, unused
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:68
 msgid "workspace.assets.open-library"
 msgstr "Open library file"
 
@@ -4322,6 +4347,10 @@ msgstr "Preferences"
 #: src/app/main/ui/workspace/main_menu.cljs:814
 msgid "workspace.header.menu.option.view"
 msgstr "View"
+
+#: src/app/main/ui/workspace/main_menu.cljs:908
+msgid "workspace.header.menu.option.power-up"
+msgstr "Power up your plan"
 
 #: src/app/main/ui/workspace/main_menu.cljs:471
 msgid "workspace.header.menu.redo"
@@ -4584,6 +4613,15 @@ msgstr "see all changes"
 #: src/app/main/ui/workspace/libraries.cljs:524
 msgid "workspace.libraries.updates"
 msgstr "UPDATES"
+
+msgid "workspace.libraries.empty.no-libraries"
+msgstr "There are no Shared Libraries at you team, you can look for"
+
+msgid "workspace.libraries.empty.some-templates"
+msgstr "some templates in here"
+
+msgid "workspace.libraries.empty.add-some"
+msgstr "Or add some of these to try:"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:745
 msgid "workspace.options.add-interaction"
@@ -6101,7 +6139,7 @@ msgstr "Expand sidebar"
 
 #: src/app/main/ui/workspace/right_header.cljs:246, src/app/main/ui/workspace/right_header.cljs:247
 msgid "workspace.sidebar.history"
-msgstr "History (%s)"
+msgstr "History"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:524, src/app/main/ui/workspace/sidebar.cljs:110, src/app/main/ui/workspace/sidebar.cljs:114, src/app/main/ui/workspace/sidebar.cljs:123
 msgid "workspace.sidebar.layers"
@@ -6549,6 +6587,13 @@ msgstr "Loading..."
 msgid "workspace.versions.restore-warning"
 msgstr "Do you want to restore this version?"
 
+msgid "workspace.versions.warning.text"
+msgstr "Autosaved versions will be kept for %s days."
+
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr "If you'd like to increase this limit, write to us at [support@penpot.app](%s)"
+
 #: src/app/main/ui/workspace/sidebar/versions.cljs:207
 msgid "workspace.versions.snapshot-menu"
 msgstr "Open snapshot menu"
@@ -6741,3 +6786,9 @@ msgstr "Open version menu"
 
 msgid "workspace.versions.expand-snapshot"
 msgstr "Expand snapshots"
+
+msgid "workspace.versions.tab.history"
+msgstr "History"
+
+msgid "workspace.versions.tab.actions"
+msgstr "Actions"

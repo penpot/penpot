@@ -253,8 +253,8 @@
                :disabled disabled?}]]]))
 
 (mf/defc comment-item
-  [{:keys [comment thread users origin] :as props}]
-  (let [owner    (get users (:owner-id comment))
+  [{:keys [comment thread profiles origin] :as props}]
+  (let [owner    (get profiles (:owner-id comment))
         profile  (mf/deref refs/profile)
         options  (mf/deref comments-local-options)
         edition? (mf/use-state false)
@@ -384,7 +384,7 @@
 
 (mf/defc thread-comments
   {::mf/wrap [mf/memo]}
-  [{:keys [thread zoom users origin position-modifier viewport]}]
+  [{:keys [thread zoom profiles origin position-modifier viewport]}]
   (let [ref          (mf/use-ref)
         thread-id    (:id thread)
         thread-pos   (:position thread)
@@ -435,13 +435,13 @@
 
        [:div {:class (stl/css :comments)}
         [:& comment-item {:comment comment
-                          :users users
+                          :profiles profiles
                           :thread thread
                           :origin origin}]
         (for [item (rest comments)]
           [:* {:key (dm/str (:id item))}
            [:& comment-item {:comment item
-                             :users users
+                             :profiles profiles
                              :origin origin}]])]
        [:& reply-form {:thread thread}]
        [:div {:ref ref}]])))
@@ -573,8 +573,8 @@
      [:span (:seqn thread)]]))
 
 (mf/defc comment-thread
-  [{:keys [item users on-click]}]
-  (let [owner (get users (:owner-id item))
+  [{:keys [item profiles on-click]}]
+  (let [owner (get profiles (:owner-id item))
         on-click*
         (mf/use-fn
          (mf/deps item)
@@ -613,7 +613,7 @@
              [:span {:class (stl/css :new-replies)} (str unread " new replies")]))])]]))
 
 (mf/defc comment-thread-group
-  [{:keys [group users on-thread-click]}]
+  [{:keys [group profiles on-thread-click]}]
   [:div {:class (stl/css :thread-group)}
    (if (:file-name group)
      [:div {:class (stl/css :section-title)
@@ -631,5 +631,5 @@
       [:& comment-thread
        {:item item
         :on-click on-thread-click
-        :users users
+        :profiles profiles
         :key (:id item)}])]])

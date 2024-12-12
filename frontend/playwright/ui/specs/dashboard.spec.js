@@ -96,3 +96,20 @@ test("User has add font button", async ({ page }) => {
   await dashboardPage.goToFonts();
   await expect(dashboardPage.page.getByText("add custom font")).toBeVisible();
 });
+
+test("Bug 9443, Admin can not demote owner", async ({ page }) => {
+  const dashboardPage = new DashboardPage(page);
+  await dashboardPage.setupDashboardFull();
+  await DashboardPage.mockRPC(
+    page,
+    "get-team-members?team-id=*",
+    "dashboard/get-team-members-admin.json",
+  );
+
+  await dashboardPage.goToSecondTeamMembersSection();
+
+  await expect(page.getByRole("heading", { name: "Members" })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Admin" })).toBeVisible();
+  await expect(page.getByText("Owner")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Owner" })).toHaveCount(0);
+});

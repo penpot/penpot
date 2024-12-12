@@ -27,7 +27,8 @@
    [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dc]
-   [app.main.data.events :as ev]
+   [app.main.data.common :as dcm]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as-alias dw]
@@ -40,14 +41,15 @@
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.transforms :as dwtr]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.zoom :as dwz]
    [app.main.features :as features]
    [app.main.features.pointer-map :as fpmap]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
-   [app.util.router :as rt]
    [app.util.storage :as storage]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
@@ -57,11 +59,11 @@
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
 
-(defn- pretty-file
+(defn- debug-pretty-file
   [file-id state]
   (if (= file-id (:current-file-id state))
     "<local>"
-    (str "<" (get-in state [:workspace-libraries file-id :name]) ">")))
+    (str "<" (get-in state [:libraries file-id :name]) ">")))
 
 (defn- log-changes
   [changes file]
@@ -586,7 +588,7 @@
   in the given file library. Then selects the newly created instance."
   ([file-id component-id position]
    (instantiate-component file-id component-id position nil))
-  ([file-id component-id position {:keys [start-move? initial-point id-ref]}]
+  ([file-id component-id position {:keys [start-move? initial-point id-ref origin]}]
    (dm/assert! (uuid? file-id))
    (dm/assert! (uuid? component-id))
    (dm/assert! (gpt/point? position))
@@ -600,6 +602,8 @@
              changes   (-> (pcb/empty-changes it (:id page))
                            (pcb/with-objects objects))
 
+             current-file-id (:current-file-id state)
+
              [new-shape changes]
              (cll/generate-instantiate-component changes
                                                  objects
@@ -608,12 +612,18 @@
                                                  position
                                                  page
                                                  libraries)
+
              undo-id (js/Symbol)]
 
          (when id-ref
            (reset! id-ref (:id new-shape)))
 
-         (rx/of (dwu/start-undo-transaction undo-id)
+         (rx/of (ptk/event
+                 ::ev/event
+                 {::ev/name "use-library-component"
+                  ::ev/origin origin
+                  :external-library (not= file-id current-file-id)})
+                (dwu/start-undo-transaction undo-id)
                 (dch/commit-changes changes)
                 (ptk/data-event :layout/update {:ids [(:id new-shape)]})
                 (dws/select-shapes (d/ordered-set (:id new-shape)))
@@ -676,21 +686,49 @@
         (rx/of (when can-detach?
                  (dch/commit-changes changes)))))))
 
-(defn nav-to-component-file
+(defn go-to-component-file
   [file-id component]
   (dm/assert! (uuid? file-id))
   (dm/assert! (some? component))
   (ptk/reify ::nav-to-component-file
     ptk/WatchEvent
     (watch [_ state _]
-      (let [project-id   (get-in state [:workspace-libraries file-id :project-id])
-            path-params  {:project-id project-id
-                          :file-id file-id}
-            query-params {:page-id (:main-instance-page component)
-                          :component-id (:id component)}]
-        (rx/of (rt/nav-new-window* {:rname :workspace
-                                    :path-params path-params
-                                    :query-params query-params}))))))
+      (let [params (-> (rt/get-params state)
+                       (assoc :file-id file-id)
+                       (assoc :page-id (:main-instance-page component))
+                       (assoc :component-id (:id component)))]
+        (rx/of (rt/nav :workspace params :new-window? true))))))
+
+
+(defn go-to-local-component
+  [& {:keys [id] :as options}]
+  (ptk/reify ::go-to-local-component
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [current-page-id (:current-page-id state)
+
+            select-and-zoom
+            (fn [shape-id]
+              (rx/of (dws/select-shapes (d/ordered-set shape-id))
+                     dwz/zoom-to-selected-shape))
+
+            redirect-to-page
+            (fn [page-id shape-id]
+              (rx/merge
+               (rx/of (dcm/go-to-workspace :page-id page-id))
+               (->> stream
+                    (rx/filter (ptk/type? ::initialize-page))
+                    (rx/take 1)
+                    (rx/observe-on :async)
+                    (rx/mapcat (fn [_] (select-and-zoom shape-id))))))]
+
+        (when-let [component (dm/get-in state [:workspace-data :components id])]
+          (let [page-id  (:main-instance-page component)
+                shape-id (:main-instance-id component)]
+            (when (some? page-id)
+              (if (= page-id current-page-id)
+                (select-and-zoom shape-id)
+                (redirect-to-page page-id shape-id)))))))))
 
 (defn library-thumbnails-fetched
   [thumbnails]
@@ -722,9 +760,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update-in [:workspace-libraries library-id]
+          (update-in [:libraries library-id]
                      assoc :modified-at modified-at :revn revn)
-          (d/update-in-when [:workspace-libraries library-id :data]
+          (d/update-in-when [:libraries library-id :data]
                             ch/process-changes changes)))
 
     ptk/WatchEvent
@@ -859,7 +897,7 @@
         current-file?   (= current-file-id file-id)
         data            (if current-file?
                           (get state :workspace-data)
-                          (get-in state [:workspace-libraries file-id :data]))
+                          (get-in state [:libraries file-id :data]))
         component       (ctkl/get-component data component-id)
         page-id         (:main-instance-page component)
         root-id         (:main-instance-id component)]
@@ -880,11 +918,15 @@
          (rx/of
           (dwu/start-undo-transaction undo-id)
           (update-component shape-id undo-group)
-          (sync-file current-file-id file-id :components (:component-id shape) undo-group)
+
+          ;; These two calls are necessary for properly sync thumbnails
+          ;; when a main component does not live in the same page
           (update-component-thumbnail-sync state component-id file-id "frame")
           (update-component-thumbnail-sync state component-id file-id "component")
+
+          (sync-file current-file-id file-id :components component-id undo-group)
           (when (not current-file?)
-            (sync-file file-id file-id :components (:component-id shape) undo-group))
+            (sync-file file-id file-id :components component-id undo-group))
           (dwu/commit-undo-transaction undo-id)))))))
 
 (defn launch-component-sync
@@ -936,9 +978,9 @@
       ;; in the grid creating new rows/columns to make space
       (let [file      (wsh/get-file state file-id)
             libraries (wsh/get-libraries state)
-            page    (wsh/lookup-page state)
-            objects (wsh/lookup-page-objects state)
-            parent (get objects (:parent-id shape))
+            page      (wsh/lookup-page state)
+            objects   (wsh/lookup-page-objects state)
+            parent    (get objects (:parent-id shape))
 
             ;; If the target parent is a grid layout we need to pass the target cell
             target-cell (when (ctl/grid-layout? parent)
@@ -979,7 +1021,7 @@
     (watch [_ state _]
       (let [undo-id (js/Symbol)]
         (log/info :msg "COMPONENT-SWAP"
-                  :file (pretty-file file-id state)
+                  :file (debug-pretty-file file-id state)
                   :id-new-component id-new-component
                   :undo-id undo-id)
         (rx/concat
@@ -1025,15 +1067,15 @@
      (update [_ state]
        (if (and (not= library-id (:current-file-id state))
                 (nil? asset-id))
-         (d/assoc-in-when state [:workspace-libraries library-id :synced-at] (dt/now))
+         (d/assoc-in-when state [:libraries library-id :synced-at] (dt/now))
          state))
 
      ptk/WatchEvent
      (watch [it state _]
        (when (and (some? file-id) (some? library-id)) ; Prevent race conditions while navigating out of the file
          (log/info :msg "SYNC-FILE"
-                   :file (pretty-file file-id state)
-                   :library (pretty-file library-id state)
+                   :file (debug-pretty-file file-id state)
+                   :library (debug-pretty-file library-id state)
                    :asset-type asset-type
                    :asset-id asset-id
                    :undo-group undo-group)
@@ -1104,9 +1146,11 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (rp/cmd! :ignore-file-library-sync-status
-               {:file-id (get-in state [:workspace-file :id])
-                :date (dt/now)}))))
+      (let [file-id (:current-file-id state)]
+        (->> (rp/cmd! :ignore-file-library-sync-status
+                      {:file-id file-id
+                       :date (dt/now)})
+             (rx/ignore))))))
 
 (defn assets-need-sync
   "Get a lazy sequence of all the assets of each type in the library that have
@@ -1127,7 +1171,7 @@
       (let [file-data (:workspace-data state)
             ignore-until (dm/get-in state [:workspace-file :ignore-sync-until])
             libraries-need-sync (filter #(seq (assets-need-sync % file-data ignore-until))
-                                        (vals (get state :workspace-libraries)))
+                                        (vals (get state :libraries)))
             do-more-info #(modal/show! :libraries-dialog {:starting-tab "updates"})
             do-update #(do (apply st/emit! (map (fn [library]
                                                   (sync-file (:current-file-id state)
@@ -1296,23 +1340,6 @@
         (->> (rp/cmd! :set-file-shared params)
              (rx/ignore))))))
 
-(defn- shared-files-fetched
-  [files]
-  (ptk/reify ::shared-files-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [state (dissoc state :files)]
-        (assoc state :workspace-shared-files files)))))
-
-(defn fetch-shared-files
-  [{:keys [team-id] :as params}]
-  (dm/assert! (uuid? team-id))
-  (ptk/reify ::fetch-shared-files
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
-           (rx/map shared-files-fetched)))))
-
 ;; --- Link and unlink Files
 
 (defn link-file-to-library
@@ -1331,7 +1358,7 @@
       (let [libraries (:workspace-shared-files state)
             library   (d/seek #(= (:id %) library-id) libraries)]
         (if library
-          (update state :workspace-libraries assoc library-id (dissoc library :library-summary))
+          (update state :libraries assoc library-id (dissoc library :library-summary))
           state)))
 
     ptk/WatchEvent
@@ -1345,7 +1372,7 @@
                (rx/merge-map fpmap/resolve-file)
                (rx/map (fn [file]
                          (fn [state]
-                           (assoc-in state [:workspace-libraries library-id] file)))))
+                           (assoc-in state [:libraries library-id] file)))))
           (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
                (rx/map (fn [thumbnails]
                          (fn [state]
@@ -1363,7 +1390,7 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (d/dissoc-in state [:workspace-libraries library-id]))
+      (d/dissoc-in state [:libraries library-id]))
 
     ptk/WatchEvent
     (watch [_ _ _]

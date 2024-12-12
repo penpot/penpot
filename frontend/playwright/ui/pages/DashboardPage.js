@@ -110,6 +110,10 @@ export class DashboardPage extends BaseWebSocketPage {
       "get-project-files?project-id=*",
       "dashboard/get-project-files.json",
     );
+
+    await this.mockRPC(/assets\/by-id/gi, "dashboard/thumbnail.png", {
+      contentType: "image/png",
+    });
   }
 
   async setupNewProject() {
@@ -207,60 +211,64 @@ export class DashboardPage extends BaseWebSocketPage {
 
   async goToDashboard() {
     await this.page.goto(
-      `#/dashboard/team/${DashboardPage.anyTeamId}/projects`,
+      `#/dashboard/recent?team-id=${DashboardPage.anyTeamId}`,
     );
     await expect(this.mainHeading).toBeVisible();
   }
 
   async goToSecondTeamDashboard() {
     await this.page.goto(
-      `#/dashboard/team/${DashboardPage.secondTeamId}/projects`,
+      `#/dashboard/recent?team-id=${DashboardPage.secondTeamId}`,
     );
   }
 
   async goToSecondTeamMembersSection() {
     await this.page.goto(
-      `#/dashboard/team/${DashboardPage.secondTeamId}/members`,
+      `#/dashboard/members?team-id=${DashboardPage.secondTeamId}`,
     );
   }
 
   async goToSecondTeamInvitationsSection() {
     await this.page.goto(
-      `#/dashboard/team/${DashboardPage.secondTeamId}/invitations`,
+      `#/dashboard/invitations?team-id=${DashboardPage.secondTeamId}`,
     );
   }
 
   async goToSecondTeamWebhooksSection() {
     await this.page.goto(
-      `#/dashboard/team/${DashboardPage.secondTeamId}/webhooks`,
+      `#/dashboard/webhooks?team-id=${DashboardPage.secondTeamId}`,
     );
   }
 
   async goToSecondTeamWebhooksSection() {
     await this.page.goto(
-      `#/dashboard/team/${DashboardPage.secondTeamId}/webhooks`,
+      `#/dashboard/webhooks?team-id=${DashboardPage.secondTeamId}`,
     );
   }
 
   async goToSecondTeamSettingsSection() {
     await this.page.goto(
-      `#/dashboard/team/${DashboardPage.secondTeamId}/settings`,
+      `#/dashboard/settings?team-id=${DashboardPage.secondTeamId}`,
     );
   }
 
   async goToSearch() {
-    await this.page.goto(`#/dashboard/team/${DashboardPage.anyTeamId}/search`);
+    await this.page.goto(
+      `#/dashboard/search?team-id=${DashboardPage.anyTeamId}`,
+    );
   }
 
   async goToDrafts() {
     await this.page.goto(
-      `#/dashboard/team/${DashboardPage.anyTeamId}/projects/${DashboardPage.draftProjectId}`,
+      `#/dashboard/files?team-id=${DashboardPage.anyTeamId}&project-id=${DashboardPage.draftProjectId}`,
     );
     await expect(this.mainHeading).toHaveText("Drafts");
   }
 
   async goToFonts() {
-    await this.page.goto(`#/dashboard/team/${DashboardPage.anyTeamId}/fonts`);
+    await this.page.goto(
+      `#/dashboard/fonts?team-id=${DashboardPage.anyTeamId}`,
+    );
     await expect(this.mainHeading).toHaveText("Fonts");
   }
 

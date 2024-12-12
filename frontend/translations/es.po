@@ -398,6 +398,13 @@ msgstr "El token no tiene fecha de expiración"
 msgid "dashboard.add-shared"
 msgstr "Añadir como Biblioteca Compartida"
 
+#: src/app/main/ui/workspace/main_menu.cljs:607
+msgid "dashboard.show-version-history"
+msgstr "Histórico de versiones"
+
+msgid "dashboard.create-version-menu"
+msgstr "Guardar esta versión"
+
 #: src/app/main/ui/settings/profile.cljs:72
 msgid "dashboard.change-email"
 msgstr "Cambiar correo"
@@ -963,6 +970,15 @@ msgstr "Tu nombre"
 #: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:34, src/app/main/ui/dashboard/libraries.cljs:44, src/app/main/ui/dashboard/projects.cljs:341, src/app/main/ui/dashboard/search.cljs:31, src/app/main/ui/dashboard/sidebar.cljs:312, src/app/main/ui/dashboard/team.cljs:526, src/app/main/ui/dashboard/team.cljs:766, src/app/main/ui/dashboard/team.cljs:1029, src/app/main/ui/dashboard/team.cljs:1076
 msgid "dashboard.your-penpot"
 msgstr "Tu Penpot"
+
+msgid "dashboard.upgrade-plan.penpot-free"
+msgstr "Penpot Gratis"
+
+msgid "dashboard.upgrade-plan.no-limits"
+msgstr "Sin límites a la creatividad"
+
+msgid "dashboard.upgrade-plan.power-up"
+msgstr "Mejora"
 
 #: src/app/main/ui/alert.cljs:32
 msgid "ds.alert-ok"
@@ -1563,6 +1579,9 @@ msgstr "Activo"
 #, unused
 msgid "labels.add"
 msgstr "Añadir"
+
+msgid "labels.adding"
+msgstr "Añadiendo..."
 
 #: src/app/main/ui/dashboard/fonts.cljs:176
 msgid "labels.add-custom-font"
@@ -3623,6 +3642,9 @@ msgstr "Tablero anterior"
 msgid "shortcuts.redo"
 msgstr "Rehacer"
 
+msgid "shortcuts.rename"
+msgstr "Renombrar"
+
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:166
 msgid "shortcuts.reset-zoom"
 msgstr "Reiniciar zoom"
@@ -4056,6 +4078,9 @@ msgstr "Nombre del grupo"
 msgid "workspace.assets.libraries"
 msgstr "Bibliotecas"
 
+msgid "workspace.assets.add-library"
+msgstr "Añadir biblioteca"
+
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:523
 msgid "workspace.assets.list-view"
 msgstr "Ver como lista"
@@ -4325,6 +4350,10 @@ msgstr "Preferencias"
 msgid "workspace.header.menu.option.view"
 msgstr "Ver"
 
+#: src/app/main/ui/workspace/main_menu.cljs:908
+msgid "workspace.header.menu.option.power-up"
+msgstr "Mejora tu plan"
+
 #: src/app/main/ui/workspace/main_menu.cljs:471
 msgid "workspace.header.menu.redo"
 msgstr "Rehacer"
@@ -4586,6 +4615,15 @@ msgstr "ver todos los cambios"
 #: src/app/main/ui/workspace/libraries.cljs:524
 msgid "workspace.libraries.updates"
 msgstr "ACTUALIZACIONES"
+
+msgid "workspace.libraries.empty.no-libraries"
+msgstr "No hay Biblioteacas Compartidas en tu equipo, puedes buscar"
+
+msgid "workspace.libraries.empty.some-templates"
+msgstr "algunas plantillas aquí"
+
+msgid "workspace.libraries.empty.add-some"
+msgstr "O añadir algunas de éstas para probar:"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:745
 msgid "workspace.options.add-interaction"
@@ -6107,7 +6145,7 @@ msgstr "Abrir barra lateral"
 
 #: src/app/main/ui/workspace/right_header.cljs:246, src/app/main/ui/workspace/right_header.cljs:247
 msgid "workspace.sidebar.history"
-msgstr "Historial (%s)"
+msgstr "Historial"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:524, src/app/main/ui/workspace/sidebar.cljs:110, src/app/main/ui/workspace/sidebar.cljs:114, src/app/main/ui/workspace/sidebar.cljs:123
 msgid "workspace.sidebar.layers"
@@ -6546,6 +6584,13 @@ msgstr "Cargando..."
 msgid "workspace.versions.restore-warning"
 msgstr "¿Quieres restaurar esta versión?"
 
+msgid "workspace.versions.warning.text"
+msgstr "Los autoguardados duran %s días."
+
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr "Si quieres aumentar este límite, contáctanos en [support@penpot.app](%s)"
+
 #: src/app/main/ui/workspace/sidebar/versions.cljs:207
 msgid "workspace.versions.snapshot-menu"
 msgstr "Abrir menu de versiones"
@@ -6745,3 +6790,10 @@ msgstr "Abrir menu de versiones"
 
 msgid "workspace.versions.expand-snapshot"
 msgstr "Expandir versiones"
+
+msgid "workspace.versions.tab.history"
+msgstr "Histórico"
+
+msgid "workspace.versions.tab.actions"
+msgstr "Acciones"
+

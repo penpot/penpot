@@ -12,7 +12,7 @@
    [app.common.schema :as sm]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]
@@ -195,13 +195,16 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [share-id (-> state :viewer-local :share-id)]
-        (->> (rp/cmd! :update-comment-thread {:id id :is-resolved is-resolved :share-id share-id})
-             (rx/catch (fn [{:keys [type code] :as cause}]
-                         (if (and (= type :restriction)
-                                  (= code :max-quote-reached))
-                           (rx/throw cause)
-                           (rx/throw {:type :comment-error}))))
-             (rx/ignore))))))
+        (rx/concat
+         (when is-resolved (rx/of
+                            (ptk/event ::ev/event {::ev/name "resolve-comment-thread" :thread-id id})))
+         (->> (rp/cmd! :update-comment-thread {:id id :is-resolved is-resolved :share-id share-id})
+              (rx/catch (fn [{:keys [type code] :as cause}]
+                          (if (and (= type :restriction)
+                                   (= code :max-quote-reached))
+                            (rx/throw cause)
+                            (rx/throw {:type :comment-error}))))
+              (rx/ignore)))))))
 
 (defn add-comment
   [thread content]
@@ -600,3 +603,18 @@
              (filter (fn [comment] (some #(= % (:frame-id comment)) frame-ids?)))
              (map update-comment-thread-frame)
              (rx/from))))))
+
+(defn fetch-profiles
+  "Fetch or refresh all profile data for comments of the current file"
+  []
+  (ptk/reify ::fetch-comments-profiles
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id (:current-file-id state)
+            share-id (or (-> state :viewer-local :share-id)
+                         (:current-share-id state))]
+        (->> (rp/cmd! :get-profiles-for-file-comments {:file-id file-id :share-id share-id})
+             (rx/map (fn [profiles]
+                       #(update % :profiles merge (d/index-by :id profiles)))))))))
+
+

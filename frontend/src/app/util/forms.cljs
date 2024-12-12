@@ -148,9 +148,7 @@
       (mf/set-ref-val! internal-state initial))
 
     (mf/with-effect [initial]
-      (if (fn? initial)
-        (swap! form-mutator update :data merge (initial))
-        (swap! form-mutator update :data merge initial)))
+      (swap! form-mutator d/deep-merge initial))
 
     form-mutator))
 

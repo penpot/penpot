@@ -125,5 +125,5 @@ services:
       - "10636:10636"
     ulimits:
       nofile:
-        soft: "1024"
-        hard: "1024"
+        soft: 1024
+        hard: 1024

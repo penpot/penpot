@@ -49,7 +49,7 @@
             store (ths/setup-store file)
             rect-1 (cths/get-shape file :rect-1)
             events [(wtch/apply-token {:shape-ids [(:id rect-1)]
-                                       :attributes #{:rx :ry}
+                                       :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.md")
                                        :on-update-shape wtch/update-shape-radius-all})]]
         (tohs/run-store-async
@@ -60,11 +60,9 @@
                  rect-1' (cths/get-shape file' :rect-1)]
              (t/testing "shape `:applied-tokens` got updated"
                (t/is (some? (:applied-tokens rect-1')))
-               (t/is (= (:rx (:applied-tokens rect-1')) (:name token)))
-               (t/is (= (:ry (:applied-tokens rect-1')) (:name token))))
+               (t/is (= (:r1 (:applied-tokens rect-1')) (:name token))))
              (t/testing "shape radius got update to the resolved token value."
-               (t/is (= (:rx rect-1') 24))
-               (t/is (= (:ry rect-1') 24))))))))))
+               (t/is (= (:r1 rect-1') 24))))))))))
 
 (t/deftest test-apply-multiple-tokens
   (t/testing "applying a token twice with the same attributes will override the previously applied tokens values"
@@ -74,11 +72,11 @@
             store (ths/setup-store file)
             rect-1 (cths/get-shape file :rect-1)
             events [(wtch/apply-token {:shape-ids [(:id rect-1)]
-                                       :attributes #{:rx :ry}
+                                       :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.sm")
                                        :on-update-shape wtch/update-shape-radius-all})
                     (wtch/apply-token {:shape-ids [(:id rect-1)]
-                                       :attributes #{:rx :ry}
+                                       :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.md")
                                        :on-update-shape wtch/update-shape-radius-all})]]
         (tohs/run-store-async
@@ -89,11 +87,9 @@
                  rect-1' (cths/get-shape file' :rect-1)]
              (t/testing "shape `:applied-tokens` got updated"
                (t/is (some? (:applied-tokens rect-1')))
-               (t/is (= (:rx (:applied-tokens rect-1')) (:name token)))
-               (t/is (= (:ry (:applied-tokens rect-1')) (:name token))))
+               (t/is (= (:r1 (:applied-tokens rect-1')) (:name token))))
              (t/testing "shape radius got update to the resolved token value."
-               (t/is (= (:rx rect-1') 24))
-               (t/is (= (:ry rect-1') 24))))))))))
+               (t/is (= (:r1 rect-1') 24))))))))))
 
 (t/deftest test-apply-token-overwrite
   (t/testing "removes old token attributes and applies only single attribute"
@@ -103,15 +99,14 @@
             store (ths/setup-store file)
             rect-1 (cths/get-shape file :rect-1)
             events [;; Apply "borderRadius.sm" to all border radius attributes
-                    (wtch/apply-token {:attributes #{:rx :ry :r1 :r2 :r3 :r4}
+                    (wtch/apply-token {:attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.sm")
                                        :shape-ids [(:id rect-1)]
                                        :on-update-shape wtch/update-shape-radius-all})
                    ;; Apply single `:r1` attribute to same shape
                    ;; while removing other attributes from the border-radius set
                    ;; but keep `:r4` for testing purposes
-                    (wtch/apply-token {:attributes #{:r1}
-                                       :attributes-to-remove #{:rx :ry :r1 :r2 :r3}
+                    (wtch/apply-token {:attributes #{:r1 :r2 :r3}
                                        :token (toht/get-token file "borderRadius.md")
                                        :shape-ids [(:id rect-1)]
                                        :on-update-shape wtch/update-shape-radius-all})]]
@@ -122,8 +117,6 @@
                  token-sm (toht/get-token file' "borderRadius.sm")
                  token-md (toht/get-token file' "borderRadius.md")
                  rect-1' (cths/get-shape file' :rect-1)]
-             (t/testing "other border-radius attributes got removed"
-               (t/is (nil? (:rx (:applied-tokens rect-1')))))
              (t/testing "r1 got applied with borderRadius.md"
                (t/is (= (:r1 (:applied-tokens rect-1')) (:name token-md))))
              (t/testing "while :r4 was kept with borderRadius.sm"
@@ -346,7 +339,7 @@
             rect-1 (cths/get-shape file :rect-1)
             rect-2 (cths/get-shape file :rect-2)
             events [(wtch/toggle-token {:shapes [rect-1 rect-2]
-                                        :token-type-props {:attributes #{:rx :ry}
+                                        :token-type-props {:attributes #{:r1 :r2 :r3 :r4}
                                                            :on-update-shape wtch/update-shape-radius-all}
                                         :token (toht/get-token file "borderRadius.md")})]]
         (tohs/run-store-async
@@ -358,20 +351,18 @@
                  rect-2' (cths/get-shape file' :rect-2)]
              (t/is (some? (:applied-tokens rect-1')))
              (t/is (some? (:applied-tokens rect-2')))
-             (t/is (= (:rx (:applied-tokens rect-1')) (:name token-2')))
-             (t/is (= (:rx (:applied-tokens rect-2')) (:name token-2')))
-             (t/is (= (:ry (:applied-tokens rect-1')) (:name token-2')))
-             (t/is (= (:ry (:applied-tokens rect-2')) (:name token-2')))
-             (t/is (= (:rx rect-1') 24))
-             (t/is (= (:rx rect-2') 24)))))))))
+             (t/is (= (:r1 (:applied-tokens rect-1')) (:name token-2')))
+             (t/is (= (:r1 (:applied-tokens rect-2')) (:name token-2')))
+             (t/is (= (:r1 rect-1') 24))
+             (t/is (= (:r1 rect-2') 24)))))))))
 
 (t/deftest test-toggle-token-mixed
   (t/testing "should unapply given token if one of the selected items has the token applied while keeping other tokens with some attributes"
     (t/async
       done
       (let [file (-> (setup-file-with-tokens)
-                     (toht/apply-token-to-shape :rect-1 "borderRadius.sm" #{:rx :ry})
-                     (toht/apply-token-to-shape :rect-3 "borderRadius.md" #{:rx :ry}))
+                     (toht/apply-token-to-shape :rect-1 "borderRadius.sm" #{:r1 :r2 :r3 :r4})
+                     (toht/apply-token-to-shape :rect-3 "borderRadius.md" #{:r1 :r2 :r3 :r4}))
             store (ths/setup-store file)
 
             rect-with-token (cths/get-shape file :rect-1)
@@ -380,7 +371,7 @@
 
             events [(wtch/toggle-token {:shapes [rect-with-token rect-without-token rect-with-other-token]
                                         :token (toht/get-token file "borderRadius.sm")
-                                        :token-type-props {:attributes #{:rx :ry}}})]]
+                                        :token-type-props {:attributes #{:r1 :r2 :r3 :r4}}})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -390,8 +381,7 @@
                  rect-with-other-token' (cths/get-shape file' :rect-3)]
 
              (t/testing "rect-with-token got the token removed"
-               (t/is (nil? (:rx (:applied-tokens rect-with-token'))))
-               (t/is (nil? (:ry (:applied-tokens rect-with-token')))))
+               (t/is (nil? (:r1 (:applied-tokens rect-with-token')))))
 
              (t/testing "rect-without-token didn't get updated"
                (t/is (= (:applied-tokens rect-without-token') (:applied-tokens rect-without-token))))
@@ -404,8 +394,8 @@
     (t/async
       done
       (let [file (-> (setup-file-with-tokens)
-                     (toht/apply-token-to-shape :rect-1 "borderRadius.md" #{:rx :ry})
-                     (toht/apply-token-to-shape :rect-3 "borderRadius.md" #{:rx :ry}))
+                     (toht/apply-token-to-shape :rect-1 "borderRadius.md" #{:r1 :r2 :r3 :r4})
+                     (toht/apply-token-to-shape :rect-3 "borderRadius.md" #{:r1 :r2 :r3 :r4}))
             store (ths/setup-store file)
 
             rect-with-other-token-1 (cths/get-shape file :rect-1)
@@ -414,7 +404,7 @@
 
             events [(wtch/toggle-token {:shapes [rect-with-other-token-1 rect-without-token rect-with-other-token-2]
                                         :token (toht/get-token file "borderRadius.sm")
-                                        :token-type-props {:attributes #{:rx :ry}}})]]
+                                        :token-type-props {:attributes #{:r1 :r2 :r3 :r4}}})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -425,10 +415,6 @@
                  rect-with-other-token-2' (cths/get-shape file' :rect-3)]
 
              (t/testing "token got applied to all shapes"
-               (t/is (= (:rx (:applied-tokens rect-with-other-token-1')) (:name target-token)))
-               (t/is (= (:rx (:applied-tokens rect-without-token')) (:name target-token)))
-               (t/is (= (:rx (:applied-tokens rect-with-other-token-2')) (:name target-token)))
-
-               (t/is (= (:ry (:applied-tokens rect-with-other-token-1')) (:name target-token)))
-               (t/is (= (:ry (:applied-tokens rect-without-token')) (:name target-token)))
-               (t/is (= (:ry (:applied-tokens rect-with-other-token-2')) (:name target-token)))))))))))
+               (t/is (= (:r1 (:applied-tokens rect-with-other-token-1')) (:name target-token)))
+               (t/is (= (:r1 (:applied-tokens rect-without-token')) (:name target-token)))
+               (t/is (= (:r1 (:applied-tokens rect-with-other-token-2')) (:name target-token)))))))))))

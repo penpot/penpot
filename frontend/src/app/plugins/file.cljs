@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.record :as crc]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.exports.files :as exports.files]
@@ -18,6 +17,7 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.worker :as uw]
+   [app.plugins.format :as format]
    [app.plugins.page :as page]
    [app.plugins.parser :as parser]
    [app.plugins.register :as r]
@@ -28,300 +28,296 @@
    [app.util.time :as dt]
    [beicon.v2.core :as rx]))
 
-(declare file-version-proxy)
-
-(deftype FileVersionProxy [$plugin $file $version $data]
-  Object
-  (restore
-    [_]
-    (cond
-      (not (r/check-permission $plugin "content:write"))
-      (u/display-not-valid :restore "Plugin doesn't have 'content:write' permission")
-
-      :else
-      (let [project-id (:current-project-id @st/state)]
-        (st/emit! (dwv/restore-version project-id $file $version :plugin)))))
-
-  (remove
-    [_]
-    (js/Promise.
-     (fn [resolve reject]
-       (cond
-         (not (r/check-permission $plugin "content:write"))
-         (u/reject-not-valid reject :remove "Plugin doesn't have 'content:write' permission")
-
-         :else
-         (->> (rp/cmd! :delete-file-snapshot {:id $version})
-              (rx/subs! #(resolve) reject))))))
-
-  (pin
-    [_]
-    (js/Promise.
-     (fn [resolve reject]
-       (cond
-         (not (r/check-permission $plugin "content:write"))
-         (u/reject-not-valid reject :pin "Plugin doesn't have 'content:write' permission")
-
-         (not= "system" (:created-by $data))
-         (u/reject-not-valid reject :pin "Only auto-saved versions can be pinned")
-
-         :else
-         (let [params  {:id $version
-                        :label (dt/format (:created-at $data) :date-full)}]
-           (->> (rx/zip (rp/cmd! :get-team-users {:file-id $file})
-                        (rp/cmd! :update-file-snapshot params))
-                (rx/subs! (fn [[users data]]
-                            (let [users (d/index-by :id users)]
-                              (resolve (file-version-proxy $plugin $file users data))))
-                          reject))))))))
+(defn file-version-proxy?
+  [proxy]
+  (obj/type-of? proxy "FileVersionProxy"))
 
 (defn file-version-proxy
   [plugin-id file-id users data]
   (let [data (atom data)]
-    (crc/add-properties!
-     (FileVersionProxy. plugin-id file-id (:id @data) data)
-     {:name "$plugin" :enumerable false :get (constantly plugin-id)}
-     {:name "$file" :enumerable false :get (constantly file-id)}
-     {:name "$version" :enumerable false :get (constantly (:id @data))}
-     {:name "$data" :enumerable false :get (constantly @data)}
+    (obj/reify {:name "FileVersionProxy"}
+      :$plugin {:enumerable false :get (fn [] plugin-id)}
+      :$file   {:enumerable false :get (fn [] file-id)}
 
-     {:name "label"
-      :get (fn [_] (:label @data))
-      :set
-      (fn [_ value]
-        (cond
-          (not (r/check-permission plugin-id "content:write"))
-          (u/display-not-valid :label "Plugin doesn't have 'content:write' permission")
-
-          (or (not (string? value)) (empty? value))
-          (u/display-not-valid :label value)
-
-          :else
-          (do (swap! data assoc :label value :created-by "user")
-              (->> (rp/cmd! :update-file-snapshot {:id (:id @data) :label value})
-                   (rx/take 1)
-                   (rx/subs! identity)))))}
-
-     {:name "createdBy"
-      :get (fn [_]
-             (when-let [user-data (get users (:profile-id @data))]
-               (user/user-proxy plugin-id user-data)))}
-
-     {:name "createdAt"
-      :get (fn [_]
-             (.toJSDate ^js (:created-at @data)))}
-
-     {:name "isAutosave"
-      :get (fn [_]
-             (= "system" (:created-by @data)))})))
-
-(deftype FileProxy [$plugin $id]
-  Object
-  (getPages [_]
-    (let [file (u/locate-file $id)]
-      (apply array (sequence (map #(page/page-proxy $plugin $id %)) (dm/get-in file [:data :pages])))))
-
-  ;; Plugin data
-  (getPluginData
-    [self key]
-    (cond
-      (not (string? key))
-      (u/display-not-valid :getPluginData-key key)
-
-      :else
-      (let [file (u/proxy->file self)]
-        (dm/get-in file [:data :plugin-data (keyword "plugin" (str $plugin)) key]))))
-
-  (setPluginData
-    [_ key value]
-    (cond
-      (or (not (string? key)) (empty? key))
-      (u/display-not-valid :setPluginData-key key)
-
-      (and (some? value) (not (string? value)))
-      (u/display-not-valid :setPluginData-value value)
-
-      (not (r/check-permission $plugin "content:write"))
-      (u/display-not-valid :setPluginData "Plugin doesn't have 'content:write' permission")
-
-      :else
-      (st/emit! (dw/set-plugin-data $id :file (keyword "plugin" (str $plugin)) key value))))
-
-  (getPluginDataKeys
-    [self]
-    (let [file (u/proxy->file self)]
-      (apply array (keys (dm/get-in file [:data :plugin-data (keyword "plugin" (str $plugin))])))))
-
-  (getSharedPluginData
-    [self namespace key]
-    (cond
-      (not (string? namespace))
-      (u/display-not-valid :getSharedPluginData-namespace namespace)
-
-      (not (string? key))
-      (u/display-not-valid :getSharedPluginData-key key)
-
-      :else
-      (let [file (u/proxy->file self)]
-        (dm/get-in file [:data :plugin-data (keyword "shared" namespace) key]))))
-
-  (setSharedPluginData
-    [_ namespace key value]
-
-    (cond
-      (or (not (string? namespace)) (empty? namespace))
-      (u/display-not-valid :setSharedPluginData-namespace namespace)
-
-      (or (not (string? key)) (empty? key))
-      (u/display-not-valid :setSharedPluginData-key key)
-
-      (and (some? value) (not (string? value)))
-      (u/display-not-valid :setSharedPluginData-value value)
-
-      (not (r/check-permission $plugin "content:write"))
-      (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'content:write' permission")
-
-      :else
-      (st/emit! (dw/set-plugin-data $id :file (keyword "shared" namespace) key value))))
-
-  (getSharedPluginDataKeys
-    [self namespace]
-    (cond
-      (not (string? namespace))
-      (u/display-not-valid :getSharedPluginDataKeys namespace)
-
-      :else
-      (let [file (u/proxy->file self)]
-        (apply array (keys (dm/get-in file [:data :plugin-data (keyword "shared" namespace)]))))))
-
-  (createPage
-    [_]
-    (cond
-      (not (r/check-permission $plugin "content:write"))
-      (u/display-not-valid :createPage "Plugin doesn't have 'content:write' permission")
-
-      :else
-      (let [page-id (uuid/next)]
-        (st/emit! (dw/create-page {:page-id page-id :file-id $id}))
-        (page/page-proxy $plugin $id page-id))))
-
-  (export
-    [self format type]
-    (let [type (or (parser/parse-keyword type) :all)]
-      (cond
-        (not (contains? #{"penpot" "zip"} format))
-        (u/display-not-valid :format type)
-
-        (not (contains? (set exports.files/valid-types) type))
-        (u/display-not-valid :type type)
-
-        :else
-        (let [file       (u/proxy->file self)
-              features   (features/get-team-enabled-features @st/state)
-              team-id    (:current-team-id @st/state)
-              format     (case format
-                           "penpot" (if (contains? cf/flags :export-file-v3)
-                                      :binfile-v3
-                                      :binfile-v1)
-                           "zip"    :legacy-zip)]
-          (js/Promise.
-           (fn [resolve reject]
-             (->> (uw/ask-many!
-                   {:cmd :export-files
-                    :format format
-                    :type type
-                    :team-id team-id
-                    :features features
-                    :files [file]})
-                  (rx/mapcat
-                   (fn [msg]
-                     (case (:type msg)
-                       :error
-                       (rx/throw (ex-info "cannot export file" {:type :export-file}))
-
-                       :progress
-                       (rx/empty)
-
-                       :finish
-                       (http/send! {:method :get
-                                    :uri (:uri msg)
-                                    :mode :no-cors
-                                    :response-type :buffer}))))
-                  (rx/take 1)
-                  (rx/map (fn [data] (js/Uint8Array. data)))
-                  (rx/subs! resolve reject))))))))
-
-
-  (findVersions
-    [_ criteria]
-    (let [user (obj/get criteria "createdBy" nil)]
-      (js/Promise.
-       (fn [resolve reject]
+      :label
+      {:get #(:label @data)
+       :set
+       (fn [value]
          (cond
-           (not (r/check-permission $plugin "content:read"))
-           (u/reject-not-valid reject :findVersions "Plugin doesn't have 'content:read' permission")
+           (not (r/check-permission plugin-id "content:write"))
+           (u/display-not-valid :label "Plugin doesn't have 'content:write' permission")
 
-           (and (not user) (not (user/user-proxy? user)))
-           (u/reject-not-valid reject :findVersions-user "Created by user is not a valid user object")
+           (or (not (string? value)) (empty? value))
+           (u/display-not-valid :label value)
 
            :else
-           (->> (rx/zip (rp/cmd! :get-team-users {:file-id $id})
-                        (rp/cmd! :get-file-snapshots {:file-id $id}))
-                (rx/take 1)
-                (rx/subs!
-                 (fn [[users snapshots]]
-                   (let [users (d/index-by :id users)]
-                     (->> snapshots
-                          (filter #(= (dm/str (:profile-id %)) (obj/get user "id")))
-                          (map #(file-version-proxy $plugin $id users %))
-                          (sequence)
-                          (apply array)
-                          (resolve))))
-                 reject)))))))
+           (do (swap! data assoc :label value :created-by "user")
+               (->> (rp/cmd! :update-file-snapshot {:id (:id @data) :label value})
+                    (rx/take 1)
+                    (rx/subs! identity)))))}
 
-  (saveVersion
-    [_ label]
-    (let [users-promise
-          (js/Promise.
-           (fn [resolve reject]
-             (->> (rp/cmd! :get-team-users {:file-id $id})
-                  (rx/subs! resolve reject))))
+      :createdBy
+      {:get
+       (fn []
+         (when-let [user-data (get users (:profile-id @data))]
+           (user/user-proxy plugin-id user-data)))}
 
-          create-version-promise
-          (js/Promise.
-           (fn [resolve reject]
-             (cond
-               (not (r/check-permission $plugin "content:write"))
-               (u/reject-not-valid reject :findVersions "Plugin doesn't have 'content:write' permission")
+      :createdAt
+      {:get #(.toJSDate ^js (:created-at @data))}
 
-               :else
-               (st/emit! (dwv/create-version-from-plugins $id label resolve reject)))))]
-      (-> (js/Promise.all #js [users-promise create-version-promise])
-          (.then
-           (fn [[users data]]
-             (let [users (d/index-by :id users)]
-               (file-version-proxy $plugin $id users data))))))))
+      :isAutosave
+      {:get #(= "system" (:created-by @data))}
 
-(crc/define-properties!
-  FileProxy
-  {:name js/Symbol.toStringTag
-   :get (fn [] (str "FileProxy"))})
+      :restore
+      (fn []
+        (js/Promise.
+         (fn [resolve reject]
+           (cond
+             (not (r/check-permission plugin-id "content:write"))
+             (u/reject-not-valid reject :restore "Plugin doesn't have 'content:write' permission")
+
+             :else
+             (let [version-id (get @data :id)]
+               (st/emit! (dwv/restore-version-from-plugin file-id version-id resolve reject)))))))
+
+      :remove
+      (fn []
+        (js/Promise.
+         (fn [resolve reject]
+           (cond
+             (not (r/check-permission plugin-id "content:write"))
+             (u/reject-not-valid reject :remove "Plugin doesn't have 'content:write' permission")
+
+             :else
+             (let [version-id (:id @data)]
+               (->> (rp/cmd! :delete-file-snapshot {:id version-id})
+                    (rx/map (constantly nil))
+                    (rx/subs! resolve reject)))))))
+
+      :pin
+      (fn []
+        (js/Promise.
+         (fn [resolve reject]
+           (cond
+             (not (r/check-permission plugin-id "content:write"))
+             (u/reject-not-valid reject :pin "Plugin doesn't have 'content:write' permission")
+
+             (not= "system" (:created-by @data))
+             (u/reject-not-valid reject :pin "Only auto-saved versions can be pinned")
+
+             :else
+             (let [params  {:id (:id @data)
+                            :label (dt/format (:created-at @data) :date-full)}]
+               (->> (rx/zip (rp/cmd! :get-team-users {:file-id file-id})
+                            (rp/cmd! :update-file-snapshot params))
+                    (rx/subs! (fn [[users data]]
+                                (let [users (d/index-by :id users)]
+                                  (resolve (file-version-proxy plugin-id file-id users @data))))
+                              reject))))))))))
 
 (defn file-proxy? [p]
-  (instance? FileProxy p))
+  (obj/type-of? p "FileProxy"))
 
 (defn file-proxy
   [plugin-id id]
-  (crc/add-properties!
-   (FileProxy. plugin-id id)
-   {:name "$plugin" :enumerable false :get (constantly plugin-id)}
-   {:name "$id" :enumerable false :get (constantly id)}
 
-   {:name "id"
-    :get #(dm/str (obj/get % "$id"))}
+  (obj/reify {:name "FileProxy"}
+    :$plugin {:enumerable false :get (fn [] plugin-id)}
+    :$id {:enumerable false :get (fn [] id)}
 
-   {:name "name"
-    :get #(-> % u/proxy->file :name)}
+    :id
+    {:get #(format/format-id id)}
 
-   {:name "pages"
-    :get #(.getPages ^js %)}))
+    :name
+    {:get #(-> (u/locate-file id) :name)}
+
+    :pages
+    {:this true
+     :get #(.getPages ^js %)}
+
+    :getPages
+    (fn []
+      (let [file (u/locate-file id)]
+        (apply array (sequence (map #(page/page-proxy plugin-id id %)) (dm/get-in file [:data :pages])))))
+
+    ;; Plugin data
+    :getPluginData
+    (fn [key]
+      (cond
+        (not (string? key))
+        (u/display-not-valid :getPluginData-key key)
+
+        :else
+        (let [file (u/locate-file id)]
+          (dm/get-in file [:data :plugin-data (keyword "plugin" (str plugin-id)) key]))))
+
+    :setPluginData
+    (fn [key value]
+      (cond
+        (or (not (string? key)) (empty? key))
+        (u/display-not-valid :setPluginData-key key)
+
+        (not (string? value))
+        (u/display-not-valid :setPluginData-value value)
+
+        (not (r/check-permission plugin-id "content:write"))
+        (u/display-not-valid :setPluginData "Plugin doesn't have 'content:write' permission")
+
+        :else
+        (st/emit! (dw/set-plugin-data id :file (keyword "plugin" (str plugin-id)) key value))))
+
+    :getPluginDataKeys
+    (fn []
+      (let [file (u/locate-file id)]
+        (apply array (keys (dm/get-in file [:data :plugin-data (keyword "plugin" (dm/str plugin-id))])))))
+
+    :getSharedPluginData
+    (fn [namespace key]
+      (cond
+        (not (string? namespace))
+        (u/display-not-valid :getSharedPluginData-namespace namespace)
+
+        (not (string? key))
+        (u/display-not-valid :getSharedPluginData-key key)
+
+        :else
+        (let [file (u/locate-file id)]
+          (dm/get-in file [:data :plugin-data (keyword "shared" namespace) key]))))
+
+    :setSharedPluginData
+    (fn [namespace key value]
+      (cond
+        (or (not (string? namespace)) (empty? namespace))
+        (u/display-not-valid :setSharedPluginData-namespace namespace)
+
+        (or (not (string? key)) (empty? key))
+        (u/display-not-valid :setSharedPluginData-key key)
+
+        (not (string? value))
+        (u/display-not-valid :setSharedPluginData-value value)
+
+        (not (r/check-permission plugin-id "content:write"))
+        (u/display-not-valid :setSharedPluginData "Plugin doesn't have 'content:write' permission")
+
+        :else
+        (st/emit! (dw/set-plugin-data id :file (keyword "shared" namespace) key value))))
+
+    :getSharedPluginDataKeys
+    (fn [namespace]
+      (cond
+        (not (string? namespace))
+        (u/display-not-valid :getSharedPluginDataKeys namespace)
+
+        :else
+        (let [file (u/locate-file id)]
+          (apply array (keys (dm/get-in file [:data :plugin-data (keyword "shared" namespace)]))))))
+
+    :createPage
+    (fn []
+      (cond
+        (not (r/check-permission plugin-id "content:write"))
+        (u/display-not-valid :createPage "Plugin doesn't have 'content:write' permission")
+
+        :else
+        (let [page-id (uuid/next)]
+          (st/emit! (dw/create-page {:page-id page-id :file-id id}))
+          (page/page-proxy plugin-id id page-id))))
+
+    :export
+    (fn [format type]
+      (js/Promise.
+       (fn [resolve reject]
+         (let [type (or (parser/parse-keyword type) :all)]
+           (cond
+             (and (some? format) (not (contains? #{"penpot" "zip"} format)))
+             (u/reject-not-valid reject :format (dm/str "Invalid format: " format))
+
+             (not (contains? (set exports.files/valid-types) type))
+             (u/reject-not-valid reject :format (dm/str "Invalid type: " type))
+
+             :else
+             (let [file       (u/locate-file id)
+                   features   (features/get-team-enabled-features @st/state)
+                   team-id    (:current-team-id @st/state)
+                   format     (case format
+                                "zip"    :legacy-zip
+
+                                (if (contains? cf/flags :export-file-v3)
+                                  :binfile-v3
+                                  :binfile-v1))]
+               (->> (uw/ask-many!
+                     {:cmd :export-files
+                      :format format
+                      :type type
+                      :team-id team-id
+                      :features features
+                      :files [file]})
+                    (rx/mapcat
+                     (fn [msg]
+                       (.log js/console msg)
+                       (case (:type msg)
+                         :error
+                         (rx/throw (ex-info "cannot export file" {:type :export-file}))
+
+                         :progress
+                         (rx/empty)
+
+                         :finish
+                         (http/send! {:method :get
+                                      :uri (:uri msg)
+                                      :mode :no-cors
+                                      :response-type :buffer}))))
+                    (rx/take 1)
+                    (rx/map #(js/Uint8Array. (:body %)))
+                    (rx/subs! resolve reject))))))))
+    :findVersions
+    (fn [criteria]
+      (let [user (obj/get criteria "createdBy" nil)]
+        (js/Promise.
+         (fn [resolve reject]
+           (cond
+             (not (r/check-permission plugin-id "content:read"))
+             (u/reject-not-valid reject :findVersions "Plugin doesn't have 'content:read' permission")
+
+             (and (some? user) (not (user/user-proxy? user)))
+             (u/reject-not-valid reject :findVersions-user "Created by user is not a valid user object")
+
+             :else
+             (->> (rx/zip (rp/cmd! :get-team-users {:file-id id})
+                          (rp/cmd! :get-file-snapshots {:file-id id}))
+                  (rx/take 1)
+                  (rx/subs!
+                   (fn [[users snapshots]]
+                     (let [users (d/index-by :id users)]
+                       (->> snapshots
+                            (filter #(or (not (obj/get user "id"))
+                                         (= (dm/str (:profile-id %))
+                                            (obj/get user "id"))))
+                            (map #(file-version-proxy plugin-id id users %))
+                            (sequence)
+                            (apply array)
+                            (resolve))))
+                   reject)))))))
+
+    :saveVersion
+    (fn [label]
+      (let [users-promise
+            (js/Promise.
+             (fn [resolve reject]
+               (->> (rp/cmd! :get-team-users {:file-id id})
+                    (rx/subs! resolve reject))))
+
+            create-version-promise
+            (js/Promise.
+             (fn [resolve reject]
+               (cond
+                 (not (r/check-permission plugin-id "content:write"))
+                 (u/reject-not-valid reject :findVersions "Plugin doesn't have 'content:write' permission")
+
+                 :else
+                 (st/emit! (dwv/create-version-from-plugins id label resolve reject)))))]
+        (-> (js/Promise.all #js [users-promise create-version-promise])
+            (.then
+             (fn [[users data]]
+               (let [users (d/index-by :id users)]
+                 (file-version-proxy plugin-id id users data)))))))))

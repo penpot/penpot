@@ -18,10 +18,17 @@
            java.nio.ByteBuffer)))
 
 (defn uuid
-  "Parse string uuid representation into proper UUID instance."
+  "Creates an UUID instance from string, expectes valid uuid strings,
+  the existense of validation is implementation detail"
   [s]
   #?(:clj (UUID/fromString s)
      :cljs (c/uuid s)))
+
+(defn parse
+  "Parse string uuid representation into proper UUID instance, validates input"
+  [s]
+  #?(:clj (UUID/fromString s)
+     :cljs (c/parse-uuid s)))
 
 (defn next
   []
@@ -44,15 +51,15 @@
   [v]
   (= zero v))
 
-#?(:clj
-   (defn get-word-high
-     [id]
-     (.getMostSignificantBits ^UUID id)))
+(defn get-word-high
+  [id]
+  #?(:clj (.getMostSignificantBits ^UUID id)
+     :cljs (impl/getHi (.-uuid ^UUID id))))
 
-#?(:clj
-   (defn get-word-low
-     [id]
-     (.getLeastSignificantBits ^UUID id)))
+(defn get-word-low
+  [id]
+  #?(:clj (.getLeastSignificantBits ^UUID id)
+     :cljs (impl/getLo (.-uuid ^UUID id))))
 
 (defn get-bytes
   [^UUID o]
@@ -81,11 +88,20 @@
      (impl/shortV8 (dm/str id))))
 
 #?(:cljs
+   (defn get-unsigned-parts
+     "Get a Uint32 array of length 4 that represents the UUID, needed
+     for interact with wasm"
+     [this]
+     (impl/getUnsignedParts (.-uuid ^UUID this))))
+
+
+#?(:cljs
    (defn get-u32
+     "A cached variant of get-unsigned-parts"
      [this]
      (let [buffer (unchecked-get this "__u32_buffer")]
        (if (nil? buffer)
-         (let [buffer (impl/getUnsignedInt32Array (.-uuid ^UUID this))]
+         (let [buffer (get-unsigned-parts this)]
            (unchecked-set this "__u32_buffer" buffer)
            buffer)
          buffer))))
@@ -97,3 +113,33 @@
            b (.getLeastSignificantBits ^UUID id)]
        (+ (clojure.lang.Murmur3/hashLong a)
           (clojure.lang.Murmur3/hashLong b)))))
+
+;; Commented code used for debug
+;; #?(:cljs
+;;    (defn ^:export test-uuid
+;;      []
+;;      (let [expected #uuid "a1a2a3a4-b1b2-c1c2-d1d2-d3d4d5d6d7d8"]
+;;
+;;        (js/console.log "===> to-from-bytes-roundtrip")
+;;        (js/console.log (uuid.impl/getBytes (str expected)))
+;;        (js/console.log (uuid.impl/fromBytes (uuid.impl/getBytes (str expected))))
+;;
+;;        (js/console.log "===> HI LO roundtrip")
+;;        (let [hi  (uuid.impl/getHi (str expected))
+;;              lo  (uuid.impl/getLo (str expected))
+;;              res (uuid.impl/custom hi lo)]
+;;
+;;          (js/console.log "HI:" hi)
+;;          (js/console.log "LO:" lo)
+;;          (js/console.log "RS:" res))
+;;
+;;        (js/console.log "===> OTHER")
+;;        (let [parts (uuid.impl/getUnsignedParts (str expected))
+;;              res   (uuid.impl/fromUnsignedParts (aget parts 0)
+;;                                                 (aget parts 1)
+;;                                                 (aget parts 2)
+;;                                                 (aget parts 3))]
+;;          (js/console.log "PARTS:" parts)
+;;          (js/console.log "RES:  " res))
+;;
+;;        )))

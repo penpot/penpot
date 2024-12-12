@@ -1010,6 +1010,9 @@
 (def valid-safe-number?
   (lazy-validator ::safe-number))
 
+(def valid-text?
+  (validator ::text))
+
 (def check-safe-int!
   (check-fn ::safe-int))
 

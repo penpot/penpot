@@ -94,7 +94,7 @@
                 show-distances?
                 picking-color?]} wglobal
 
-        permissions       (mf/use-ctx ctx/team-permissions)
+        permissions       (mf/use-ctx ctx/permissions)
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
 
         ;; DEREFS
@@ -270,26 +270,44 @@
         offset-y (if selecting-first-level-frame?
                    (:y first-shape)
                    (:y selected-frame))
+        rule-area-size (/ rulers/ruler-area-size zoom)
+        preview-blend (-> refs/workspace-preview-blend
+                          (mf/deref))]
 
-        rule-area-size (/ rulers/ruler-area-size zoom)]
-
-    (mf/with-effect []
+    ;; NOTE: We need this page-id dependency to react to it and reset the
+    ;;       canvas, even though we are not using `page-id` inside the hook.
+    ;;       We think moving this out to a handler will make the render code
+    ;;       harder to follow through.
+    (mf/with-effect [page-id]
       (when-let [canvas (mf/ref-val canvas-ref)]
         (->> wasm.api/module
              (p/fmap (fn [ready?]
                        (when ready?
                          (reset! canvas-init? true)
-                         (wasm.api/assign-canvas canvas)))))
+                         (wasm.api/assign-canvas canvas)
+                         (wasm.api/set-canvas-background background)))))
         (fn []
           (wasm.api/clear-canvas))))
+
+    (mf/with-effect [vport]
+      (when @canvas-init?
+        (wasm.api/resize-viewbox (:width vport) (:height vport))))
 
     (mf/with-effect [base-objects canvas-init?]
       (when @canvas-init?
         (wasm.api/set-objects base-objects)))
 
+    (mf/with-effect [preview-blend canvas-init?]
+      (when (and @canvas-init? preview-blend)
+        (wasm.api/request-render)))
+
     (mf/with-effect [vbox canvas-init?]
       (when @canvas-init?
         (wasm.api/set-view zoom vbox)))
+
+    (mf/with-effect [background]
+      (when @canvas-init?
+        (wasm.api/set-canvas-background background)))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -337,8 +355,8 @@
                :ref canvas-ref
                :class (stl/css :render-shapes)
                :key (dm/str "render" page-id)
-               :width (:width vport 0)
-               :height (:height vport 0)
+               :width (* wasm.api/dpr (:width vport 0))
+               :height (* wasm.api/dpr (:height vport 0))
                :style {:background-color background
                        :pointer-events "none"}}]
 
@@ -604,7 +622,7 @@
               :hover-disabled? hover-disabled?}])])
 
        (when show-gradient-handlers?
-         [:& gradients/gradient-handlers
+         [:> gradients/gradient-handlers*
           {:id (first selected)
            :zoom zoom}])
 

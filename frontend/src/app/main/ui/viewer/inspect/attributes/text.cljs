@@ -59,7 +59,7 @@
         file-typographies-viewer    (mf/deref file-typographies-ref)
         file-typographies-workspace (mf/deref refs/workspace-file-typography)
 
-        file-library-workspace      (get (mf/deref refs/workspace-libraries) (:typography-ref-file style))
+        file-library-workspace      (get (mf/deref refs/libraries) (:typography-ref-file style))
         typography-external-lib (get-in file-library-workspace [:data :typographies (:typography-ref-id style)])
 
         color-format       (mf/use-state :hex)

@@ -5,19 +5,22 @@
 // Copyright (c) KALEIDOS INC
 
 @import "refactor/common-refactor.scss";
+@import "../ds/_sizes.scss";
 
 .colorpicker-tooltip {
   @extend .modal-background;
   left: calc(10 * $s-140);
   width: auto;
+  padding: var(--sp-m) 0;
+  width: $sz-284;
 }
 
 .colorpicker {
   border-radius: $br-8;
-  width: $s-260;
-  & > * {
-    width: $s-260;
-  }
+}
+
+.colorpicker-tabs {
+  padding: 0 var(--sp-m);
 }
 
 .top-actions {
@@ -26,6 +29,7 @@
   flex-direction: row-reverse;
   justify-content: space-between;
   height: $s-40;
+  padding: 0 var(--sp-m);
 }
 
 .top-actions-right {

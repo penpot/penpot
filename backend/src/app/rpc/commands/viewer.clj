@@ -77,7 +77,7 @@
      :share-links links
      :libraries libs
      :file file
-     :team team
+     :team (assoc team :permissions perms)
      :permissions perms}))
 
 (def schema:get-view-only-bundle

@@ -18,7 +18,7 @@
    [app.common.types.component :as ctk]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as md]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.specialized-panel :as-alias dwsp]
@@ -456,22 +456,30 @@
 
                 id-duplicated   (first new-ids)
 
-                frames (into #{}
-                             (map #(get-in objects [% :frame-id]))
-                             ids)
-                undo-id (js/Symbol)]
-
+                frames          (into #{}
+                                      (map #(get-in objects [% :frame-id]))
+                                      ids)
+                undo-id         (js/Symbol)]
+            (rx/concat
+             (->> (map (d/getf objects) ids)
+                  (filter ctk/instance-head?)
+                  (map (fn [{:keys [component-file]}]
+                         (ptk/event ::ev/event
+                                    {::ev/name "use-library-component"
+                                     ::ev/origin "duplicate"
+                                     :external-library (not= file-id component-file)})))
+                  (rx/from))
             ;; Warning: This order is important for the focus mode.
-            (->> (rx/of
-                  (dwu/start-undo-transaction undo-id)
-                  (dch/commit-changes changes)
-                  (when change-selection?
-                    (select-shapes new-ids))
-                  (ptk/data-event :layout/update {:ids frames})
-                  (memorize-duplicated id-original id-duplicated)
-                  (dwu/commit-undo-transaction undo-id))
-                 (rx/tap #(when (some? return-ref)
-                            (reset! return-ref id-duplicated))))))))))
+             (->> (rx/of
+                   (dwu/start-undo-transaction undo-id)
+                   (dch/commit-changes changes)
+                   (when change-selection?
+                     (select-shapes new-ids))
+                   (ptk/data-event :layout/update {:ids frames})
+                   (memorize-duplicated id-original id-duplicated)
+                   (dwu/commit-undo-transaction undo-id))
+                  (rx/tap #(when (some? return-ref)
+                             (reset! return-ref id-duplicated)))))))))))
 
 (defn duplicate-selected
   ([move-delta?]

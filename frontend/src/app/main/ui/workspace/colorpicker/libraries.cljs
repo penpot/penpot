@@ -10,7 +10,7 @@
    [app.common.colors :as c]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as mdc]
    [app.main.refs :as refs]
@@ -22,6 +22,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc libraries
@@ -29,7 +30,7 @@
   (let [selected         (h/use-shared-state mdc/colorpicker-selected-broadcast-key :recent)
         current-colors   (mf/use-state [])
 
-        shared-libs      (mf/deref refs/workspace-libraries)
+        shared-libs      (mf/deref refs/libraries)
         file-colors      (mf/deref refs/workspace-file-colors)
         recent-colors    (mf/deref refs/workspace-recent-colors)
         recent-colors    (h/use-equal-memo  (filter #(or (:gradient %) (:color %) (:image %)) recent-colors))
@@ -76,8 +77,14 @@
 
         on-color-click
         (mf/use-fn
-         (mf/deps state)
+         (mf/deps state @selected)
          (fn [event]
+           (when-not (= :recent @selected)
+             (st/emit! (ptk/event
+                        ::ev/event
+                        {::ev/name "use-library-color"
+                         ::ev/origin "colorpicker"
+                         :external-library (not= :file @selected)})))
            (on-select-color state event)))]
 
     ;; Load library colors when the select is changed

@@ -237,13 +237,18 @@ async function renderTemplate(path, context = {}, partials = {}) {
   return mustache.render(content, context, partials);
 }
 
-const renderer = {
-  link(href, title, text) {
-    return `<a href="${href}" target="_blank">${text}</a>`;
+const extension = {
+  useNewRenderer: true,
+  renderer: {
+    link(token) {
+      const href = token.href;
+      const text = token.text;
+      return `<a href="${href}" target="_blank">${text}</a>`;
+    },
   },
 };
 
-marked.use({ renderer });
+marked.use(extension);
 
 async function readTranslations() {
   const langs = [
@@ -503,6 +508,7 @@ export async function compileStyles() {
   const start = process.hrtime();
 
   log.info("init: compile styles");
+
   let result = await compileSassAll(worker);
   result = concatSass(result);
 

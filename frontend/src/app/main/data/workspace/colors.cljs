@@ -16,7 +16,7 @@
    [app.common.types.shape :refer [check-stroke!]]
    [app.common.types.shape.shadow :refer [check-shadow!]]
    [app.main.broadcast :as mbc]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as md]
    [app.main.data.workspace.layout :as layout]
    [app.main.data.workspace.libraries :as dwl]

@@ -58,7 +58,7 @@
 (defn- apply-all-tokens
   [file]
   (-> file
-      (tht/apply-token-to-shape :frame1 "token-radius" [:rx :ry] [:rx :ry] 10)
+      (tht/apply-token-to-shape :frame1 "token-radius" [:r1 :r2 :r3 :r4] [:r1 :r2 :r3 :r4] 10)
       (tht/apply-token-to-shape :frame1 "token-rotation" [:rotation] [:rotation] 30)
       (tht/apply-token-to-shape :frame1 "token-opacity" [:opacity] [:opacity] 0.7)
       (tht/apply-token-to-shape :frame1 "token-stroke-width" [:stroke-width] [:stroke-width] 2)
@@ -90,7 +90,7 @@
                                                                                      :attributes []})
                                                     (cto/maybe-apply-token-to-shape {:token token-radius
                                                                                      :shape $
-                                                                                     :attributes [:rx :ry]})
+                                                                                     :attributes [:r1 :r2 :r3 :r4]})
                                                     (cto/maybe-apply-token-to-shape {:token token-rotation
                                                                                      :shape $
                                                                                      :attributes [:rotation]})
@@ -119,9 +119,11 @@
         applied-tokens' (:applied-tokens frame1')]
 
     ;; ==== Check
-    (t/is (= (count applied-tokens') 9))
-    (t/is (= (:rx applied-tokens') "token-radius"))
-    (t/is (= (:ry applied-tokens') "token-radius"))
+    (t/is (= (count applied-tokens') 11))
+    (t/is (= (:r1 applied-tokens') "token-radius"))
+    (t/is (= (:r2 applied-tokens') "token-radius"))
+    (t/is (= (:r3 applied-tokens') "token-radius"))
+    (t/is (= (:r4 applied-tokens') "token-radius"))
     (t/is (= (:rotation applied-tokens') "token-rotation"))
     (t/is (= (:opacity applied-tokens') "token-opacity"))
     (t/is (= (:stroke-width applied-tokens') "token-stroke-width"))
@@ -144,7 +146,7 @@
                     (cls/generate-update-shapes [(:id frame1)]
                                                 (fn [shape]
                                                   (-> shape
-                                                      (cto/unapply-token-id [:rx :ry])
+                                                      (cto/unapply-token-id [:r1 :r2 :r3 :r4])
                                                       (cto/unapply-token-id [:rotation])
                                                       (cto/unapply-token-id [:opacity])
                                                       (cto/unapply-token-id [:stroke-width])
@@ -177,8 +179,10 @@
                     (cls/generate-update-shapes [(:id frame1)]
                                                 (fn [shape]
                                                   (-> shape
-                                                      (ctn/set-shape-attr :rx 0)
-                                                      (ctn/set-shape-attr :ry 0)
+                                                      (ctn/set-shape-attr :r1 0)
+                                                      (ctn/set-shape-attr :r2 0)
+                                                      (ctn/set-shape-attr :r3 0)
+                                                      (ctn/set-shape-attr :r4 0)
                                                       (ctn/set-shape-attr :rotation 0)
                                                       (ctn/set-shape-attr :opacity 0)
                                                       (ctn/set-shape-attr :strokes [])

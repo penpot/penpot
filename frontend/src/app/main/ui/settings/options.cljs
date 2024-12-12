@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.notifications :as ntf]
-   [app.main.data.users :as du]
+   [app.main.data.profile :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
@@ -22,9 +22,8 @@
    [:theme {:optional true} [:string {:max 250}]]])
 
 (defn- on-success
-  [profile]
-  (st/emit! (ntf/success (tr "notifications.profile-saved"))
-            (du/profile-fetched profile)))
+  [_]
+  (st/emit! (ntf/success (tr "notifications.profile-saved"))))
 
 (defn- on-submit
   [form _event]

@@ -13,17 +13,18 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.common :as dcm]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.exports.assets :as de]
    [app.main.data.exports.files :as fexp]
    [app.main.data.modal :as modal]
    [app.main.data.plugins :as dp]
+   [app.main.data.profile :as du]
    [app.main.data.shortcuts :as scd]
-   [app.main.data.users :as du]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.versions :as dwv]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -36,7 +37,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.router :as rt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -67,7 +67,7 @@
         (mf/use-fn #(dom/open-new-window "https://penpot.app/terms"))
 
         nav-to-feedback
-        (mf/use-fn #(st/emit! (rt/nav-new-window* {:rname :settings-feedback})))
+        (mf/use-fn #(st/emit! (dcm/go-to-feedback)))
 
         plugins?
         (features/active-feature? @st/state "plugins/runtime")
@@ -424,7 +424,7 @@
   (let [select-all (mf/use-fn #(st/emit! (dw/select-all)))
         undo       (mf/use-fn #(st/emit! dwu/undo))
         redo       (mf/use-fn #(st/emit! dwu/redo))
-        perms      (mf/use-ctx ctx/team-permissions)
+        perms      (mf/use-ctx ctx/permissions)
         can-edit   (:can-edit perms)]
 
     [:& dropdown-menu {:show true
@@ -487,7 +487,7 @@
         frames       (->> (cfh/get-immediate-children objects uuid/zero)
                           (filterv cfh/frame-shape?))
 
-        perms        (mf/use-ctx ctx/team-permissions)
+        perms        (mf/use-ctx ctx/permissions)
         can-edit     (:can-edit perms)
 
         on-remove-shared
@@ -523,6 +523,31 @@
          (fn [event]
            (when (kbd/enter? event)
              (on-add-shared event))))
+
+        on-show-version-history
+        (mf/use-fn
+         (mf/deps file-id)
+         (fn [_]
+           (st/emit! (dw/toggle-layout-flag :document-history))))
+
+        on-show-version-history-key-down
+        (mf/use-fn
+         (mf/deps on-show-version-history)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-show-version-history event))))
+
+        on-pin-version
+        (mf/use-fn
+         (fn [_]
+           (st/emit! (dwv/create-version))))
+
+        on-pin-version-key-down
+        (mf/use-fn
+         (mf/deps on-pin-version)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-pin-version event))))
 
         on-export-shapes
         (mf/use-fn #(st/emit! (de/show-workspace-export-dialog {:origin "workspace:menu"})))
@@ -575,14 +600,36 @@
                                   :on-click    on-remove-shared
                                   :on-key-down on-remove-shared-key-down
                                   :id          "file-menu-remove-shared"}
-          [:span {:class (stl/css :item-name)} (tr "dashboard.unpublish-shared")]])
+          [:span {:class (stl/css :item-name)}
+           (tr "dashboard.unpublish-shared")]])
 
        (when can-edit
          [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                                   :on-click    on-add-shared
                                   :on-key-down on-add-shared-key-down
                                   :id          "file-menu-add-shared"}
-          [:span {:class (stl/css :item-name)} (tr "dashboard.add-shared")]]))
+          [:span {:class (stl/css :item-name)}
+           (tr "dashboard.add-shared")]]))
+
+     (when can-edit
+       [:*
+        [:div {:class (stl/css :separator)}]
+
+        [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                                 :on-click    on-pin-version
+                                 :on-key-down on-pin-version-key-down
+                                 :id          "file-menu-show-version-history"}
+         [:span {:class (stl/css :item-name)}
+          (tr "dashboard.create-version-menu")]]
+
+        [:> dropdown-menu-item* {:class (stl/css :submenu-item)
+                                 :on-click    on-show-version-history
+                                 :on-key-down on-show-version-history-key-down
+                                 :id          "file-menu-show-version-history"}
+         [:span {:class (stl/css :item-name)}
+          (tr "dashboard.show-version-history")]]
+
+        [:div {:class (stl/css :separator)}]])
 
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                               :on-click    on-export-shapes
@@ -736,6 +783,11 @@
                           (keyword))]
              (reset! sub-menu* menu))))
 
+        on-power-up-click
+        (mf/use-fn
+         (fn []
+           (dom/open-new-window "https://penpot.app/pricing")))
+
         toggle-flag
         (mf/use-fn
          (fn [event]
@@ -847,7 +899,15 @@
                                :data-testid   "help-info"
                                :id          "file-menu-help-info"}
        [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.help-info")]
-       [:span {:class (stl/css :open-arrow)} i/arrow]]]
+       [:span {:class (stl/css :open-arrow)} i/arrow]]
+      [:> dropdown-menu-item* {:class (stl/css-case :menu-item true)
+                               :on-click    on-power-up-click
+                               :on-key-down (fn [event]
+                                              (when (kbd/enter? event)
+                                                (on-power-up-click)))
+                               :on-pointer-enter close-sub-menu
+                               :id          "file-menu-power-up"}
+       [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.power-up")]]]
 
      (case sub-menu
        :file

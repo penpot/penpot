@@ -27,13 +27,9 @@
    (-> (lookup-page state page-id)
        (get :objects))))
 
-(defn lookup-viewer-objects
-  ([state page-id]
-   (dm/get-in state [:viewer :pages page-id :objects])))
-
 (defn lookup-library-objects
   [state file-id page-id]
-  (dm/get-in state [:workspace-libraries file-id :data :pages-index page-id :objects]))
+  (dm/get-in state [:libraries file-id :data :pages-index page-id :objects]))
 
 (defn lookup-objects
   [state file-id page-id]
@@ -112,7 +108,7 @@
   [state file-id]
   (if (= file-id (:current-file-id state))
     (get state :workspace-data)
-    (dm/get-in state [:workspace-libraries file-id :data])))
+    (dm/get-in state [:libraries file-id :data])))
 
 (defn get-file-full
   "Get the data content of the given file (it may be the current file
@@ -121,13 +117,13 @@
   (if (= file-id (:current-file-id state))
     (-> (get state :workspace-file)
         (assoc :data (get state :workspace-data)))
-    (dm/get-in state [:workspace-libraries file-id :data])))
+    (dm/get-in state [:libraries file-id :data])))
 
 (defn get-libraries
   "Retrieve all libraries, including the local file."
   [state]
   (let [{:keys [id] :as local} (:workspace-data state)]
-    (-> (:workspace-libraries state)
+    (-> (:libraries state)
         (assoc id {:id id
                    :data local}))))
 

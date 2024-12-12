@@ -12,7 +12,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.media :as cm]
    [app.common.types.file :as ctf]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
@@ -50,21 +50,12 @@
        (if components-v2
          (ctf/get-component-page data component)
          component)])
-    (let [data (dm/get-in @refs/workspace-libraries [file-id :data])
+    (let [data (dm/get-in @refs/libraries [file-id :data])
           root-shape (ctf/get-component-root data component)
           container (if components-v2
                       (ctf/get-component-page data component)
                       component)]
       [root-shape container])))
-
-
-    ;; NOTE: We don't schedule the thumbnail generation on idle right now
-    ;; until we can queue and handle thumbnail batching properly.
-#_(mf/with-effect []
-    (when-not (some? thumbnail-uri)
-      (tm/schedule-on-idle
-       #(st/emit! (dwl/update-component-thumbnail (:id component) file-id)))))
-
 
 (mf/defc components-item
   {::mf/wrap-props false}
@@ -107,8 +98,8 @@
          (fn [event]
            (dom/stop-propagation event)
            (if local
-             (st/emit! (dw/go-to-component component-id))
-             (st/emit! (dwl/nav-to-component-file file-id component)))))
+             (st/emit! (dwl/go-to-local-component component-id))
+             (st/emit! (dwl/go-to-component-file file-id component)))))
 
         on-drop
         (mf/use-fn
@@ -180,13 +171,13 @@
          (when ^boolean dragging?
            [:div {:class (stl/css :dragging)}])]
 
-        (when visible?
-          [:& cmm/component-item-thumbnail {:file-id file-id
-                                            :class (stl/css-case :thumbnail true
-                                                                 :asset-list-thumbnail (not listing-thumbs?))
-                                            :root-shape root-shape
-                                            :component component
-                                            :container container}])])]))
+        [:& cmm/component-item-thumbnail {:file-id file-id
+                                          :class (stl/css-case :thumbnail true
+                                                               :asset-list-thumbnail (not listing-thumbs?))
+                                          :root-shape root-shape
+                                          :component component
+                                          :container container
+                                          :is-hidden (not visible?)}]])]))
 
 (mf/defc components-group
   {::mf/wrap-props false}
@@ -475,7 +466,7 @@
          (fn [component event]
 
            (let [file-data
-                 (d/nilv (dm/get-in @refs/workspace-libraries [file-id :data]) @refs/workspace-data)
+                 (d/nilv (dm/get-in @refs/libraries [file-id :data]) @refs/workspace-data)
 
                  shape-main
                  (ctf/get-component-root file-data component)]
@@ -500,9 +491,9 @@
          (fn [event]
            (dom/stop-propagation event)
            (if local?
-             (st/emit! (dw/go-to-component current-component-id))
+             (st/emit! (dwl/go-to-local-component :id current-component-id))
              (let [component (d/seek #(= (:id %) current-component-id) components)]
-               (st/emit! (dwl/nav-to-component-file file-id component))))))
+               (st/emit! (dwl/go-to-component-file file-id component))))))
 
         on-asset-click
         (mf/use-fn (mf/deps groups on-asset-click) (partial on-asset-click groups))]

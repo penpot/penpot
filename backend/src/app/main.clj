@@ -349,7 +349,6 @@
      :file-gc            (ig/ref :app.tasks.file-gc/handler)
      :file-gc-scheduler  (ig/ref :app.tasks.file-gc-scheduler/handler)
      :offload-file-data  (ig/ref :app.tasks.offload-file-data/handler)
-     :file-xlog-gc       (ig/ref :app.tasks.file-xlog-gc/handler)
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
      :telemetry          (ig/ref :app.tasks.telemetry/handler)
      :storage-gc-deleted (ig/ref ::sto.gc-deleted/handler)
@@ -402,10 +401,6 @@
    {::db/pool (ig/ref ::db/pool)}
 
    :app.tasks.offload-file-data/handler
-   {::db/pool     (ig/ref ::db/pool)
-    ::sto/storage (ig/ref ::sto/storage)}
-
-   :app.tasks.file-xlog-gc/handler
    {::db/pool     (ig/ref ::db/pool)
     ::sto/storage (ig/ref ::sto/storage)}
 

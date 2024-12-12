@@ -216,8 +216,49 @@
         set-name (add-set-path-prefix (last full-path))]
     (conj set-path set-name)))
 
-(defn split-token-set-path [path]
-  (split-path path set-separator))
+(defn split-set-prefix [set-path]
+  (some->> set-path
+           (re-matches #"^([SG]-)(.*)")
+           (rest)))
+
+(defn add-set-prefix [set-name]
+  (str set-prefix set-name))
+
+(defn add-set-group-prefix [group-path]
+  (str set-group-prefix group-path))
+
+(defn add-token-set-paths-prefix
+  "Returns token-set paths with prefixes to differentiate between sets and set-groups.
+
+  Sets will be prefixed with `set-prefix` (S-).
+  Set groups will be prefixed with `set-group-prefix` (G-)."
+  [paths]
+  (let [set-path (mapv add-set-group-prefix (butlast paths))
+        set-name (add-set-prefix (last paths))]
+    (conj set-path set-name)))
+
+(defn split-token-set-path [token-set-path]
+  (split-path token-set-path set-separator))
+
+(defn split-token-set-name [token-set-name]
+  (-> (split-token-set-path token-set-name)
+      (add-token-set-paths-prefix)))
+
+(defn get-token-set-path [token-set]
+  (let [path (get-path token-set set-separator)]
+    (add-token-set-paths-prefix path)))
+
+(defn set-name->set-path-string [set-name]
+  (-> (split-token-set-name set-name)
+      (join-set-path)))
+
+(defn set-path->set-name [set-path]
+  (->> (split-token-set-path set-path)
+       (map (fn [path-part]
+              (or (-> (split-set-prefix path-part)
+                      (second))
+                  path-part)))
+       (join-set-path)))
 
 (defn get-token-set-final-name [path]
   (-> (split-token-set-path path)
@@ -413,6 +454,7 @@ When `before-set-name` is nil, move set to bottom")
   (get-set-tree [_] "get a nested tree of all sets in the library")
   (get-in-set-tree [_ path] "get `path` in nested tree of all sets in the library")
   (get-sets [_] "get an ordered sequence of all sets in the library")
+  (get-path-sets [_ path] "get an ordered sequence of sets at `path` in the library")
   (get-sets-at-prefix-path [_ prefixed-path] "get an ordered sequence of sets at `prefixed-path` in the library")
   (get-sets-at-path [_ path-str] "get an ordered sequence of sets at `path` in the library")
   (rename-set-group [_ from-path-str to-path-str] "renames set groups and all child set names from `from-path-str` to `to-path-str`")
@@ -743,6 +785,11 @@ Will return a value that matches this schema:
   (get-sets [_]
     (->> (tree-seq d/ordered-map? vals sets)
          (filter (partial instance? TokenSet))))
+
+  (get-path-sets [_ path]
+    (some->> (get-in sets (split-token-set-path path))
+             (tree-seq d/ordered-map? vals)
+             (filter (partial instance? TokenSet))))
 
   (get-sets-at-prefix-path [_ prefixed-path]
     (some->> (get-in sets (split-token-set-path prefixed-path))

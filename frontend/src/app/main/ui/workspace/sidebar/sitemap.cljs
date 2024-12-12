@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.data.common :as dcm]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
@@ -34,7 +35,7 @@
   (let [input-ref    (mf/use-ref)
         id           (:id page)
         delete-fn    (mf/use-fn (mf/deps id) #(st/emit! (dw/delete-page id)))
-        navigate-fn  (mf/use-fn (mf/deps id) #(st/emit! :interrupt (dw/go-to-page id)))
+        navigate-fn  (mf/use-fn (mf/deps id) #(st/emit! :interrupt (dcm/go-to-workspace :page-id id)))
         read-only?   (mf/use-ctx ctx/workspace-read-only?)
 
         on-delete
@@ -207,7 +208,7 @@
                           (st/emit! (dw/create-page {:file-id file-id :project-id project-id}))
                           (-> event dom/get-current-target dom/blur!)))
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
-        permissions    (mf/use-ctx ctx/team-permissions)]
+        permissions    (mf/use-ctx ctx/permissions)]
 
     [:div {:class (stl/css :sitemap)
            :style #js {"--height" (str size "px")}}

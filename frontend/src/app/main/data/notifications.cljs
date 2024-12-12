@@ -64,7 +64,7 @@
       (rx/merge
        (let [stopper (rx/filter (ptk/type? ::hide) stream)]
          (->> stream
-              (rx/filter (ptk/type? :app.util.router/navigate))
+              (rx/filter (ptk/type? :app.main.router/navigate))
               (rx/map (fn [_] (hide)))
               (rx/take-until stopper)))
        (when (:timeout data)

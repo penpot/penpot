@@ -20,7 +20,7 @@
   (if (= id (:current-file-id @st/state))
     (-> (:workspace-file @st/state)
         (assoc :data (:workspace-data @st/state)))
-    (dm/get-in @st/state [:workspace-libraries id])))
+    (dm/get-in @st/state [:libraries id])))
 
 (defn locate-page
   [file-id id]
@@ -65,10 +65,10 @@
 (defn locate-component
   [objects shape]
   (let [current-file-id (:current-file-id @st/state)
-        workspace-data (:workspace-data @st/state)
-        workspace-libraries (:workspace-libraries @st/state)
-        root (ctn/get-instance-root objects shape)]
-    [root (ctf/resolve-component root {:id current-file-id :data workspace-data} workspace-libraries {:include-deleted? true})]))
+        workspace-data  (:workspace-data @st/state)
+        libraries       (:libraries @st/state)
+        root            (ctn/get-instance-root objects shape)]
+    [root (ctf/resolve-component root {:id current-file-id :data workspace-data} libraries {:include-deleted? true})]))
 
 (defn proxy->file
   [proxy]
@@ -119,26 +119,33 @@
         flow-id (obj/get proxy "$id")
         page (locate-page file-id page-id)]
     (when (some? page)
-      (d/seek #(= (:id %) flow-id) (:flows page)))))
+      (get (:flows page) flow-id))))
+
+(defn locate-ruler-guide
+  [file-id page-id ruler-id]
+  (let [page (locate-page file-id page-id)]
+    (when (some? page)
+      (d/seek #(= (:id %) ruler-id) (-> page :guides vals)))))
 
 (defn proxy->ruler-guide
   [proxy]
   (let [file-id (obj/get proxy "$file")
         page-id (obj/get proxy "$page")
-        ruler-id (obj/get proxy "$id")
-        page (locate-page file-id page-id)]
-    (when (some? page)
-      (d/seek #(= (:id %) ruler-id) (-> page :guides vals)))))
+        ruler-id (obj/get proxy "$id")]
+    (locate-ruler-guide file-id page-id ruler-id)))
+
+(defn locate-interaction
+  [file-id page-id shape-id index]
+  (when-let [shape (locate-shape file-id page-id shape-id)]
+    (get-in shape [:interactions index])))
 
 (defn proxy->interaction
   [proxy]
   (let [file-id (obj/get proxy "$file")
         page-id (obj/get proxy "$page")
         shape-id (obj/get proxy "$shape")
-        index (obj/get proxy "$index")
-        shape (locate-shape file-id page-id shape-id)]
-    (when (some? shape)
-      (get-in shape [:interactions index]))))
+        index (obj/get proxy "$index")]
+    (locate-interaction file-id page-id shape-id index)))
 
 (defn get-data
   ([self attr]
@@ -193,3 +200,8 @@
   (let [msg (dm/str "[PENPOT PLUGIN] Value not valid: " value ". Code: " code)]
     (.error js/console msg)
     (reject msg)))
+
+(defn mixed-value
+  [values]
+  (let [s (set values)]
+    (if (= (count s) 1) (first s) "mixed")))

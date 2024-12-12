@@ -575,7 +575,7 @@
                          (if-let [media-id (:media-id row)]
                            (-> row
                                (dissoc :media-id)
-                               (assoc :thumbnail-uri (resolve-public-uri media-id)))
+                               (assoc :thumbnail-id media-id))
                            (dissoc row :media-id))))
                   (map #(assoc % :library-summary (get-library-summary cfg %)))
                   (map #(dissoc % :data))))))
@@ -698,11 +698,7 @@
 
 (defn get-team-recent-files
   [conn team-id]
-  (->> (db/exec! conn [sql:team-recent-files team-id])
-       (mapv (fn [row]
-               (if-let [media-id (:thumbnail-id row)]
-                 (assoc row :thumbnail-uri (resolve-public-uri media-id))
-                 (dissoc row :media-id))))))
+  (db/exec! conn [sql:team-recent-files team-id]))
 
 (def ^:private schema:get-team-recent-files
   [:map {:title "get-team-recent-files"}

@@ -273,12 +273,10 @@
            :selected? selected?
            :on-toggle on-toggle
            :active? active?
-           :group-active? group-active?
            :editing? editing?
            :on-edit on-edit
            :on-edit-reset on-edit-reset
-           :on-edit-submit-set on-edit-submit-set
-           :on-edit-submit-group on-update-token-set-group}]))]))
+           :on-edit-submit on-edit-submit-group}]))]))
 
 (mf/defc controlled-sets-list
   [{:keys [token-sets

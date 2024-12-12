@@ -12,26 +12,17 @@
    [app.common.files.helpers :as cfh]
    [app.common.logging :as log]
    [app.common.schema :as sm]
-   [app.common.types.team :as ctt]
-   [app.common.uri :as u]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
-   [app.main.data.common :as dc]
-   [app.main.data.events :as ev]
+   [app.main.data.common :as dcm]
+   [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
-   [app.main.data.media :as di]
    [app.main.data.modal :as modal]
-   [app.main.data.users :as du]
    [app.main.data.websocket :as dws]
    [app.main.features :as features]
    [app.main.repo :as rp]
-   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.router :as rt]
    [app.util.sse :as sse]
    [app.util.time :as dt]
-   [app.util.timers :as tm]
-   [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [potok.v2.core :as ptk]))
@@ -43,142 +34,37 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare fetch-projects)
-(declare fetch-team-members)
 (declare process-message)
 
 (defn initialize
-  [{:keys [id]}]
-  (dm/assert! (uuid? id))
+  []
   (ptk/reify ::initialize
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [prev-team-id (:current-team-id state)]
-        (cond-> state
-          (not= prev-team-id id)
-          (-> (dissoc :current-team-initialized)
-              (dissoc :dashboard-files)
-              (dissoc :dashboard-projects)
-              (dissoc :dashboard-shared-files)
-              (dissoc :dashboard-recent-files)
-              (dissoc :dashboard-team-members)
-              (dissoc :dashboard-team-stats)
-              (assoc :current-team-id id)
-              (update :workspace-global dissoc :default-font)))))
-
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stopper   (rx/filter (ptk/type? ::finalize) stream)
+      (let [stopper    (rx/filter (ptk/type? ::finalize) stream)
             profile-id (:profile-id state)]
 
         (->> (rx/merge
-              ;; fetch teams must be first in case the team doesn't exist
-              (ptk/watch (du/fetch-teams) state stream)
-              (ptk/watch (df/load-team-fonts id) state stream)
-              (ptk/watch (fetch-projects) state stream)
-              (ptk/watch (fetch-team-members) state stream)
-              (ptk/watch (du/fetch-users) state stream)
-
+              (rx/of (fetch-projects)
+                     (df/fetch-fonts))
               (->> stream
                    (rx/filter (ptk/type? ::dws/message))
                    (rx/map deref)
                    (rx/filter (fn [{:keys [topic] :as msg}]
                                 (or (= topic uuid/zero)
                                     (= topic profile-id))))
-                   (rx/map process-message))
-
-              ;; Once the teams are fecthed, initialize features related
-              ;; to currently active team
-              (->> stream
-                   (rx/filter (ptk/type? ::du/teams-fetched))
-                   (rx/observe-on :async)
-                   (rx/mapcat deref)
-                   (rx/filter #(= id (:id %)))
-                   (rx/mapcat (fn [team]
-                                (rx/of (du/set-current-team team)
-                                       #(assoc % :current-team-initialized true))))))
+                   (rx/map process-message)
+                   (rx/ignore)))
 
              (rx/take-until stopper))))))
 
 (defn finalize
-  [params]
-  (ptk/data-event ::finalize params))
+  []
+  (ptk/data-event ::finalize {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Fetching (context aware: current team)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; --- EVENT: fetch-team-members
-
-(defn team-members-fetched
-  [members]
-  (ptk/reify ::team-members-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :dashboard-team-members (d/index-by :id members)))))
-
-(defn fetch-team-members
-  ([] (fetch-team-members nil))
-  ([team-id]
-   (ptk/reify ::fetch-team-members
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [team-id (or team-id (:current-team-id state))]
-         (assert (uuid? team-id) "expected team-id to be resolved")
-         (->> (rp/cmd! :get-team-members {:team-id team-id})
-              (rx/map team-members-fetched)))))))
-
-;; --- EVENT: fetch-team-stats
-
-(defn team-stats-fetched
-  [stats]
-  (ptk/reify ::team-stats-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :dashboard-team-stats stats))))
-
-(defn fetch-team-stats
-  [team-id]
-  (ptk/reify ::fetch-team-stats
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :get-team-stats {:team-id team-id})
-           (rx/map team-stats-fetched)))))
-
-;; --- EVENT: fetch-team-invitations
-
-(defn team-invitations-fetched
-  [invitations]
-  (ptk/reify ::team-invitations-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :dashboard-team-invitations invitations))))
-
-(defn fetch-team-invitations
-  []
-  (ptk/reify ::fetch-team-invitations
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (->> (rp/cmd! :get-team-invitations {:team-id team-id})
-             (rx/map team-invitations-fetched))))))
-
-;; --- EVENT: fetch-team-webhooks
-
-(defn team-webhooks-fetched
-  [webhooks]
-  (ptk/reify ::team-webhooks-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :dashboard-team-webhooks webhooks))))
-
-(defn fetch-team-webhooks
-  []
-  (ptk/reify ::fetch-team-webhooks
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (->> (rp/cmd! :get-webhooks {:team-id team-id})
-             (rx/map team-webhooks-fetched))))))
 
 ;; --- EVENT: fetch-projects
 
@@ -187,8 +73,10 @@
   (ptk/reify ::projects-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (let [projects (d/index-by :id projects)]
-        (assoc state :dashboard-projects projects)))))
+      (reduce (fn [state {:keys [id] :as project}]
+                (update-in state [:projects id] merge project))
+              state
+              projects))))
 
 (defn fetch-projects
   []
@@ -201,82 +89,28 @@
 
 ;; --- EVENT: search
 
-(defn search-result-fetched
-  [result]
-  (ptk/reify ::search-result-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :dashboard-search-result result))))
-
-(def schema:search-params
+(def ^:private schema:search-params
   [:map {:closed true}
    [:search-term [:maybe :string]]])
 
+(def ^:private check-search-params
+  (sm/check-fn schema:search-params))
+
 (defn search
   [params]
-  (dm/assert! schema:search-params params)
-  (ptk/reify ::search
-    ptk/UpdateEvent
-    (update [_ state]
-      (dissoc state :dashboard-search-result))
-
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)
-            params  (assoc params :team-id team-id)]
-        (->> (rp/cmd! :search-files params)
-             (rx/map search-result-fetched))))))
-
-;; --- EVENT: files
-
-(defn files-fetched
-  [project-id files]
-  (letfn [(remove-project-files [files]
-            (reduce-kv (fn [result id file]
-                         (cond-> result
-                           (= (:project-id file) project-id) (dissoc id)))
-                       files
-                       files))]
-    (ptk/reify ::files-fetched
+  (let [params (check-search-params params)]
+    (ptk/reify ::search
       ptk/UpdateEvent
       (update [_ state]
-        (-> state
-            (update :dashboard-files
-                    (fn [state]
-                      (let [state (remove-project-files state)]
-                        (reduce #(assoc %1 (:id %2) %2) state files))))
-            (assoc-in [:dashboard-projects project-id :count] (count files)))))))
+        (dissoc state :search-result))
 
-(defn fetch-files
-  [{:keys [project-id] :as params}]
-  (dm/assert! (uuid? project-id))
-  (ptk/reify ::fetch-files
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :get-project-files {:project-id project-id})
-           (rx/map #(files-fetched project-id %))))))
-
-;; --- EVENT: shared-files
-
-(defn shared-files-fetched
-  [files]
-  (ptk/reify ::shared-files-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [files (d/index-by :id files)]
-        (-> state
-            (assoc :dashboard-shared-files files)
-            (update :dashboard-files d/merge files))))))
-
-(defn fetch-shared-files
-  ([] (fetch-shared-files nil))
-  ([team-id]
-   (ptk/reify ::fetch-shared-files
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [team-id (or team-id (:current-team-id state))]
-         (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
-              (rx/map shared-files-fetched)))))))
+      ptk/WatchEvent
+      (watch [_ state _]
+        (let [team-id (:current-team-id state)
+              params  (assoc params :team-id team-id)]
+          (->> (rp/cmd! :search-files params)
+               (rx/map (fn [result]
+                         #(assoc % :search-result result)))))))))
 
 ;; --- EVENT: recent-files
 
@@ -287,8 +121,8 @@
     (update [_ state]
       (let [files (d/index-by :id files)]
         (-> state
-            (assoc :dashboard-recent-files files)
-            (update :dashboard-files d/merge files))))))
+            (assoc :recent-files files)
+            (update :files d/merge files))))))
 
 (defn fetch-recent-files
   []
@@ -325,27 +159,22 @@
   (ptk/reify ::clear-file-select
     ptk/UpdateEvent
     (update [_ state]
-      (update state :dashboard-local
-              assoc :selected-files #{}
-              :selected-project nil
-              :menu-open false
-              :menu-pos nil))))
+      (-> state
+          (dissoc :selected-files)
+          (dissoc :selected-project)
+          (update :dashboard-local dissoc :menu-open :menu-pos)))))
 
 (defn toggle-file-select
   [{:keys [id project-id] :as file}]
   (ptk/reify ::toggle-file-select
     ptk/UpdateEvent
     (update [_ state]
-      (let [selected-project-id (get-in state [:dashboard-local :selected-project])]
+      (let [selected-project-id (get state :selected-project)]
         (if (or (nil? selected-project-id)
                 (= selected-project-id project-id))
-          (update state :dashboard-local
-                  (fn [local]
-                    (-> local
-                        (update :selected-files #(if (contains? % id)
-                                                   (disj % id)
-                                                   (conj % id)))
-                        (assoc :selected-project project-id))))
+          (-> state
+              (update :selected-files #(if (contains? % id) (disj % id) (conj % id)))
+              (assoc :selected-project project-id))
           state)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -399,318 +228,6 @@
 ;; Data Modification
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; --- EVENT: create-team
-
-(defn team-created
-  [team]
-  (ptk/reify ::team-created
-    IDeref
-    (-deref [_] team)))
-
-(defn create-team
-  [{:keys [name] :as params}]
-  (dm/assert! (string? name))
-  (ptk/reify ::create-team
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [{:keys [on-success on-error]
-             :or {on-success identity
-                  on-error rx/throw}} (meta params)
-            features (features/get-enabled-features state)
-            params {:name name :features features}]
-        (->> (rp/cmd! :create-team (with-meta params (meta it)))
-             (rx/tap on-success)
-             (rx/map team-created)
-             (rx/catch on-error))))))
-
-;; --- EVENT: create-team-with-invitations
-
-(defn create-team-with-invitations
-  [{:keys [name emails role] :as params}]
-  (ptk/reify ::create-team-with-invitations
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [{:keys [on-success on-error]
-             :or {on-success identity
-                  on-error rx/throw}} (meta params)
-            features (features/get-enabled-features state)
-            params   {:name name
-                      :emails emails
-                      :role role
-                      :features features}]
-        (->> (rp/cmd! :create-team-with-invitations (with-meta params (meta it)))
-             (rx/tap on-success)
-             (rx/map team-created)
-             (rx/catch on-error))))))
-
-;; --- EVENT: update-team
-
-(defn update-team
-  [{:keys [id name] :as params}]
-  (ptk/reify ::update-team
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:teams id :name] name))
-
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :update-team params)
-           (rx/ignore)))))
-
-(defn update-team-photo
-  [file]
-  (dm/assert!
-   "expected a valid blob for `file` param"
-   (di/blob? file))
-  (ptk/reify ::update-team-photo
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [on-success di/notify-finished-loading
-            on-error   #(do (di/notify-finished-loading)
-                            (di/process-error %))
-            team-id    (:current-team-id state)
-            prepare    #(hash-map :file % :team-id team-id)]
-
-        (di/notify-start-loading)
-        (->> (rx/of file)
-             (rx/map di/validate-file)
-             (rx/map prepare)
-             (rx/mapcat #(rp/cmd! :update-team-photo %))
-             (rx/tap on-success)
-             (rx/mapcat (fn [_]
-                          (rx/of (du/fetch-teams)
-                                 (ptk/data-event ::ev/event
-                                                 {::ev/name "update-team-photo"
-                                                  :team-id team-id}))))
-             (rx/catch on-error))))))
-
-(defn update-team-member-role
-  [{:keys [role member-id] :as params}]
-  (dm/assert! (uuid? member-id))
-  (dm/assert! (contains? ctt/valid-roles role))
-
-  (ptk/reify ::update-team-member-role
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)
-            params  (assoc params :team-id team-id)]
-        (->> (rp/cmd! :update-team-member-role params)
-             (rx/mapcat (fn [_]
-                          (rx/of (fetch-team-members)
-                                 (du/fetch-teams)
-                                 (ptk/data-event ::ev/event
-                                                 {::ev/name "update-team-member-role"
-                                                  :team-id team-id
-                                                  :role role
-                                                  :member-id member-id})))))))))
-
-(defn delete-team-member
-  [{:keys [member-id] :as params}]
-  (dm/assert! (uuid? member-id))
-  (ptk/reify ::delete-team-member
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)
-            params  (assoc params :team-id team-id)]
-        (->> (rp/cmd! :delete-team-member params)
-             (rx/mapcat (fn [_]
-                          (rx/of (fetch-team-members)
-                                 (du/fetch-teams)
-                                 (ptk/data-event ::ev/event
-                                                 {::ev/name "delete-team-member"
-                                                  :team-id team-id
-                                                  :member-id member-id})))))))))
-
-(defn leave-team
-  [{:keys [reassign-to] :as params}]
-  (dm/assert! (or (nil? reassign-to)
-                  (uuid? reassign-to)))
-
-  (ptk/reify ::leave-team
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [{:keys [on-success on-error]
-             :or {on-success identity
-                  on-error rx/throw}} (meta params)
-            team-id (:current-team-id state)
-            params  (cond-> {:id team-id}
-                      (uuid? reassign-to)
-                      (assoc :reassign-to reassign-to))]
-        (->> (rp/cmd! :leave-team params)
-             (rx/tap #(tm/schedule on-success))
-             (rx/map (fn [_]
-                       (ptk/data-event ::ev/event
-                                       {::ev/name "leave-team"
-                                        :reassign-to reassign-to
-                                        :team-id team-id})))
-             (rx/catch on-error))))))
-
-(defn invite-team-members
-  [{:keys [emails role team-id resend?] :as params}]
-  (dm/assert! (keyword? role))
-  (dm/assert! (uuid? team-id))
-
-  (dm/assert!
-   "expected a valid set of emails"
-   (sm/check-set-of-emails! emails))
-
-  (ptk/reify ::invite-team-members
-    ev/Event
-    (-data [_]
-      {:role role
-       :team-id team-id
-       :resend resend?})
-
-    ptk/WatchEvent
-    (watch [it _ _]
-      (let [{:keys [on-success on-error]
-             :or {on-success identity
-                  on-error rx/throw}} (meta params)
-            params (dissoc params :resend?)]
-        (->> (rp/cmd! :create-team-invitations (with-meta params (meta it)))
-             (rx/tap on-success)
-             (rx/catch on-error))))))
-
-
-(defn copy-invitation-link
-  [{:keys [email team-id] :as params}]
-  (dm/assert!
-   "expected a valid email"
-   (sm/check-email! email))
-
-  (dm/assert! (uuid? team-id))
-
-  (ptk/reify ::copy-invitation-link
-    IDeref
-    (-deref [_] {:email email :team-id team-id})
-
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [{:keys [on-success on-error]
-             :or {on-success identity
-                  on-error rx/throw}} (meta params)
-            router (:router state)]
-
-        (->> (rp/cmd! :get-team-invitation-token params)
-             (rx/map (fn [params]
-                       (rt/resolve router :auth-verify-token {} params)))
-             (rx/map (fn [fragment]
-                       (assoc cf/public-uri :fragment fragment)))
-             (rx/tap (fn [uri]
-                       (wapi/write-to-clipboard (str uri))))
-             (rx/tap on-success)
-             (rx/ignore)
-             (rx/catch on-error))))))
-
-
-(defn update-team-invitation-role
-  [{:keys [email team-id role] :as params}]
-  (dm/assert!
-   "expected a valid email"
-   (sm/check-email! email))
-
-  (dm/assert! (uuid? team-id))
-  (dm/assert! (contains? ctt/valid-roles role))
-
-  (ptk/reify ::update-team-invitation-role
-    IDeref
-    (-deref [_] {:role role})
-
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [{:keys [on-success on-error]
-             :or {on-success identity
-                  on-error rx/throw}} (meta params)]
-        (->> (rp/cmd! :update-team-invitation-role params)
-             (rx/tap on-success)
-             (rx/catch on-error))))))
-
-(defn delete-team-invitation
-  [{:keys [email team-id] :as params}]
-  (dm/assert! (sm/check-email! email))
-  (dm/assert! (uuid? team-id))
-  (ptk/reify ::delete-team-invitation
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [{:keys [on-success on-error]
-             :or {on-success identity
-                  on-error rx/throw}} (meta params)]
-        (->> (rp/cmd! :delete-team-invitation params)
-             (rx/tap on-success)
-             (rx/catch on-error))))))
-
-(defn delete-team-webhook
-  [{:keys [id] :as params}]
-  (dm/assert! (uuid? id))
-  (ptk/reify ::delete-team-webhook
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)
-            params  (assoc params :team-id team-id)
-            {:keys [on-success on-error]
-             :or {on-success identity
-                  on-error rx/throw}} (meta params)]
-        (->> (rp/cmd! :delete-webhook params)
-             (rx/tap on-success)
-             (rx/catch on-error))))))
-
-(def valid-mtypes
-  #{"application/json"
-    "application/x-www-form-urlencoded"
-    "application/transit+json"})
-
-(defn update-team-webhook
-  [{:keys [id uri mtype is-active] :as params}]
-  (dm/assert! (uuid? id))
-  (dm/assert! (contains? valid-mtypes mtype))
-  (dm/assert! (boolean? is-active))
-  (dm/assert! (u/uri? uri))
-  (ptk/reify ::update-team-webhook
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)
-            params  (assoc params :team-id team-id)
-            {:keys [on-success on-error]
-             :or {on-success identity
-                  on-error rx/throw}} (meta params)]
-        (->> (rp/cmd! :update-webhook params)
-             (rx/tap on-success)
-             (rx/catch on-error))))))
-
-(defn create-team-webhook
-  [{:keys [uri mtype is-active] :as params}]
-  (dm/assert! (contains? valid-mtypes mtype))
-  (dm/assert! (boolean? is-active))
-  (dm/assert! (u/uri? uri))
-
-  (ptk/reify ::create-team-webhook
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)
-            params  (-> params
-                        (assoc :team-id team-id)
-                        (update :uri str))
-            {:keys [on-success on-error]
-             :or {on-success identity
-                  on-error rx/throw}} (meta params)]
-        (->> (rp/cmd! :create-webhook params)
-             (rx/tap on-success)
-             (rx/catch on-error))))))
-
-;; --- EVENT: delete-team
-
-(defn delete-team
-  [{:keys [id] :as params}]
-  (ptk/reify ::delete-team
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [{:keys [on-success on-error]
-             :or {on-success identity
-                  on-error rx/throw}} (meta params)]
-        (->> (rp/cmd! :delete-team {:id id})
-             (rx/tap on-success)
-             (rx/catch on-error))))))
-
 ;; --- EVENT: create-project
 
 (defn- project-created
@@ -722,7 +239,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:dashboard-projects id] project)
+          (assoc-in [:projects id] project)
           (assoc-in [:dashboard-local :project-for-edit] id)))))
 
 (defn create-project
@@ -730,7 +247,7 @@
   (ptk/reify ::create-project
     ptk/WatchEvent
     (watch [_ state _]
-      (let [projects (get state :dashboard-projects)
+      (let [projects (get state :projects)
             unames   (cfh/get-used-names projects)
             name     (cfh/generate-unique-name unames (str (tr "dashboard.new-project-prefix") " 1"))
             team-id  (:current-team-id state)
@@ -751,7 +268,7 @@
   (ptk/reify ::project-duplicated
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:dashboard-projects id] project))))
+      (assoc-in state [:projects id] project))))
 
 (defn duplicate-project
   [{:keys [id name] :as params}]
@@ -801,11 +318,11 @@
   (ptk/reify ::toggle-project-pin
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:dashboard-projects id :is-pinned] (not is-pinned)))
+      (assoc-in state [:projects id :is-pinned] (not is-pinned)))
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [project (get-in state [:dashboard-projects id])
+      (let [project (get-in state [:projects id])
             params  (select-keys project [:id :is-pinned :team-id])]
         (->> (rp/cmd! :update-project-pin params)
              (rx/ignore))))))
@@ -818,7 +335,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update-in [:dashboard-projects id :name] (constantly name))
+          (update-in [:projects id :name] (constantly name))
           (update :dashboard-local dissoc :project-for-edit)))
 
     ptk/WatchEvent
@@ -834,7 +351,7 @@
   (ptk/reify ::delete-project
     ptk/UpdateEvent
     (update [_ state]
-      (update state :dashboard-projects dissoc id))
+      (update state :projects dissoc id))
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -848,7 +365,7 @@
   (ptk/reify ::file-deleted
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:dashboard-projects project-id :count] dec))))
+      (update-in state [:projects project-id :count] dec))))
 
 (defn delete-file
   [{:keys [id project-id] :as params}]
@@ -856,9 +373,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (d/update-when :dashboard-files dissoc id)
-          (d/update-when :dashboard-shared-files dissoc id)
-          (d/update-when :dashboard-recent-files dissoc id)))
+          (d/update-when :files dissoc id)
+          (d/update-when :shared-files dissoc id)
+          (d/update-when :recent-files dissoc id)))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -880,9 +397,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (d/update-in-when [:dashboard-files id :name] (constantly name))
-          (d/update-in-when [:dashboard-shared-files id :name] (constantly name))
-          (d/update-in-when [:dashboard-recent-files id :name] (constantly name))))
+          (d/update-in-when [:files id :name] (constantly name))
+          (d/update-in-when [:shared-files id :name] (constantly name))
+          (d/update-in-when [:recent-files id :name] (constantly name))))
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -904,10 +421,10 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (d/update-in-when [:dashboard-files id :is-shared] (constantly is-shared))
-          (d/update-in-when [:dashboard-recent-files id :is-shared] (constantly is-shared))
+          (d/update-in-when [:files id :is-shared] (constantly is-shared))
+          (d/update-in-when [:recent-files id :is-shared] (constantly is-shared))
           (cond-> (not is-shared)
-            (d/update-when :dashboard-shared-files dissoc id))))
+            (d/update-when :shared-files dissoc id))))
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -926,8 +443,8 @@
                               (= file-id (:id %))
                               (assoc :thumbnail-id thumbnail-id)))))]
         (-> state
-            (d/update-in-when [:dashboard-files file-id] assoc :thumbnail-id thumbnail-id)
-            (d/update-in-when [:dashboard-recent-files file-id] assoc :thumbnail-id thumbnail-id)
+            (d/update-in-when [:files file-id] assoc :thumbnail-id thumbnail-id)
+            (d/update-in-when [:recent-files file-id] assoc :thumbnail-id thumbnail-id)
             (d/update-when :dashboard-search-result update-search-files))))))
 
 ;; --- EVENT: create-file
@@ -944,9 +461,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:dashboard-files id] file)
-          (assoc-in [:dashboard-recent-files id] file)
-          (update-in [:dashboard-projects project-id :count] inc)))))
+          (assoc-in [:files id] file)
+          (assoc-in [:recent-files id] file)
+          (update-in [:projects project-id :count] inc)))))
 
 (defn create-file
   [{:keys [project-id name] :as params}]
@@ -961,7 +478,7 @@
              :or {on-success identity
                   on-error rx/throw}} (meta params)
 
-            files    (get state :dashboard-files)
+            files    (get state :files)
             unames   (cfh/get-used-names files)
             name     (or name (cfh/generate-unique-name unames (str (tr "dashboard.new-file-prefix") " 1")))
             features (-> (features/get-team-enabled-features state)
@@ -1013,14 +530,14 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (let [origin-project (get-in state [:dashboard-files (first ids) :project-id])
+      (let [origin-project (get-in state [:files (first ids) :project-id])
             update-project (fn [project delta op]
                              (-> project
                                  (update :count #(op % (count ids)))
                                  (assoc :modified-at (dt/plus (dt/now) {:milliseconds delta}))))]
         (-> state
-            (d/update-in-when [:dashboard-projects origin-project] update-project 0 -)
-            (d/update-in-when [:dashboard-projects project-id] update-project 10 +))))
+            (d/update-in-when [:projects origin-project] update-project 0 -)
+            (d/update-in-when [:projects project-id] update-project 10 +))))
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -1035,18 +552,17 @@
 
 (defn clone-template
   [{:keys [template-id project-id] :as params}]
-  (dm/assert! (uuid? project-id))
   (ptk/reify ::clone-template
     ev/Event
     (-data [_]
-      {:template-id template-id
-       :project-id project-id})
+      {:template-id template-id})
 
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
-                  on-error rx/throw}} (meta params)]
+                  on-error rx/throw}} (meta params)
+            project-id (or project-id (:current-project-id state))]
         (->> (rp/cmd! ::sse/clone-template {:project-id project-id
                                             :template-id template-id})
              (rx/tap (fn [event]
@@ -1061,119 +577,6 @@
              (rx/tap on-success)
              (rx/catch on-error))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Navigation
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn go-to-workspace
-  [{:keys [id project-id] :as file}]
-  (ptk/reify ::go-to-workspace
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [pparams {:project-id project-id :file-id id}]
-        (rx/of (rt/nav :workspace pparams))))))
-
-
-(defn go-to-files
-  ([project-id]
-   (ptk/reify ::go-to-files-1
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [team-id (:current-team-id state)]
-         (rx/of (rt/nav :dashboard-files {:team-id team-id
-                                          :project-id project-id}))))))
-  ([team-id project-id]
-   (ptk/reify ::go-to-files-2
-     ptk/WatchEvent
-     (watch [_ _ _]
-       (rx/of (rt/nav :dashboard-files {:team-id team-id
-                                        :project-id project-id}))))))
-
-(defn go-to-search
-  ([] (go-to-search nil))
-  ([term]
-   (ptk/reify ::go-to-search
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [team-id (:current-team-id state)]
-         (if (empty? term)
-           (do
-             (dom/focus! (dom/get-element "search-input"))
-             (rx/of (rt/nav :dashboard-search
-                            {:team-id team-id})))
-           (rx/of (rt/nav :dashboard-search
-                          {:team-id team-id}
-                          {:search-term term})))))
-
-     ptk/EffectEvent
-     (effect [_ _ _]
-       (dom/focus! (dom/get-element "search-input"))))))
-
-(defn go-to-projects
-  ([]
-   (ptk/reify ::go-to-projects-0
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [team-id (:current-team-id state)]
-         (rx/of (rt/nav :dashboard-projects {:team-id team-id}))))))
-  ([team-id]
-   (ptk/reify ::go-to-projects-1
-     ptk/WatchEvent
-     (watch [_ _ _]
-       (rx/of (rt/nav :dashboard-projects {:team-id team-id}))))))
-
-(defn go-to-team-members
-  []
-  (ptk/reify ::go-to-team-members
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (rx/of (rt/nav :dashboard-team-members {:team-id team-id}))))))
-
-(defn go-to-team-invitations
-  []
-  (ptk/reify ::go-to-team-invitations
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (rx/of (rt/nav :dashboard-team-invitations {:team-id team-id}))))))
-
-(defn go-to-team-webhooks
-  []
-  (ptk/reify ::go-to-team-webhooks
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (rx/of (rt/nav :dashboard-team-webhooks {:team-id team-id}))))))
-
-(defn go-to-team-settings
-  []
-  (ptk/reify ::go-to-team-settings
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (rx/of (rt/nav :dashboard-team-settings {:team-id team-id}))))))
-
-(defn go-to-drafts
-  []
-  (ptk/reify ::go-to-drafts
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)
-            projects (:dashboard-projects state)
-            default-project (d/seek :is-default (vals projects))]
-        (when default-project
-          (rx/of (rt/nav :dashboard-files {:team-id team-id
-                                           :project-id (:id default-project)})))))))
-
-(defn go-to-libs
-  []
-  (ptk/reify ::go-to-libs
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (rx/of (rt/nav :dashboard-libraries {:team-id team-id}))))))
-
 (defn create-element
   []
   (ptk/reify ::create-element
@@ -1184,10 +587,10 @@
             pparams       (:path-params route)
             in-project?   (contains? pparams :project-id)
             name          (if in-project?
-                            (let [files  (get state :dashboard-files)
+                            (let [files  (get state :files)
                                   unames (cfh/get-used-names files)]
                               (cfh/generate-unique-name unames (str (tr "dashboard.new-file-prefix") " 1")))
-                            (let [projects (get state :dashboard-projects)
+                            (let [projects (get state :projects)
                                   unames   (cfh/get-used-names projects)]
                               (cfh/generate-unique-name unames (str (tr "dashboard.new-project-prefix") " 1"))))
             params        (if in-project?
@@ -1197,7 +600,7 @@
                              :team-id team-id})
             action-name   (if in-project? :create-file :create-project)
             action        (if in-project? file-created project-created)
-            can-edit?     (dm/get-in state [:permissions :can-edit])]
+            can-edit?     (dm/get-in state [:teams team-id :permissions :can-edit])]
 
         (when can-edit?
           (->> (rp/cmd! action-name params)
@@ -1208,10 +611,9 @@
   (ptk/reify ::open-selected-file
     ptk/WatchEvent
     (watch [_ state _]
-      (let [files (get-in state [:dashboard-local :selected-files])]
+      (let [[file-id :as files] (get state :selected-files)]
         (if (= 1 (count files))
-          (let [file (get-in state [:dashboard-files (first files)])]
-            (rx/of (go-to-workspace file)))
+          (rx/of (dcm/go-to-workspace :file-id file-id))
           (rx/empty))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1223,13 +625,13 @@
   (ptk/reify ::handle-change-team-role
     ptk/WatchEvent
     (watch [_ _ _]
-      (rx/of (dc/change-team-role params)
+      (rx/of (dcm/change-team-role params)
              (modal/hide)))))
 
 (defn- process-message
   [{:keys [type] :as msg}]
   (case type
-    :notification           (dc/handle-notification msg)
+    :notification           (dcm/handle-notification msg)
     :team-role-change       (handle-change-team-role msg)
-    :team-membership-change (dc/team-membership-change msg)
+    :team-membership-change (dcm/team-membership-change msg)
     nil))

@@ -44,7 +44,6 @@ jobs:
             - ~/.m2
           key: v1-dependencies-{{ checksum "common/deps.edn"}}
 
-
   test-frontend:
     docker:
       - image: penpotapp/devenv:latest
@@ -92,7 +91,6 @@ jobs:
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "frontend/deps.edn"}}
-
 
   test-integration:
     docker:
@@ -180,7 +178,6 @@ jobs:
             - ~/.m2
           key: v1-dependencies-{{ checksum "backend/deps.edn" }}
 
-
   test-exporter:
     docker:
       - image: penpotapp/devenv:latest
@@ -210,6 +207,29 @@ jobs:
             yarn run fmt:clj:check
             yarn run lint:clj
 
+  test-render-wasm:
+    docker:
+      - image: penpotapp/devenv:latest
+
+    working_directory: ~/repo
+    resource_class: medium+
+    environment:
+
+    steps:
+      - checkout
+
+      - run:
+          name: "fmt check"
+          working_directory: "./render-wasm"
+          command: |
+            cargo fmt --check
+
+      - run:
+          name: "cargo tests"
+          working_directory: "./render-wasm"
+          command: |
+            ./test
+
 workflows:
   penpot:
     jobs:
@@ -218,3 +238,4 @@ workflows:
       - test-backend
       - test-common
       - test-exporter
+      - test-render-wasm

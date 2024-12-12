@@ -4,7 +4,8 @@ title: 1. Self-hosting Guide
 
 # Self-hosting Guide
 
-This guide explains how to get your own Penpot instance, running on a machine you control, to test it, use it by you or your team, or even customize and extend it any way you like.
+This guide explains how to get your own Penpot instance, running on a machine you control,
+to test it, use it by you or your team, or even customize and extend it any way you like.
 
 If you need more context you can look at the <a
 href="https://community.penpot.app/t/self-hosting-penpot-i/2336" target="_blank">post
@@ -14,17 +15,29 @@ about self-hosting</a> in Penpot community.
 href="https://design.penpot.app">our SaaS offer</a> for Penpot and your
 self-hosted Penpot platform!**
 
-There are two main options for creating a Penpot instance:
+There are three main options for creating a Penpot instance:
 
 1. Using the platform of our partner <a href="https://elest.io/open-source/penpot" target="_blank">Elestio</a>.
 2. Using <a href="https://docker.com" target="_blank">Docker</a> tool.
+3. Using <a href="https://kubernetes.io/" target="_blank">Kubernetes</a>.
 
 <p class="advice">
-The recommended way is to use Elestio, since it's simpler, fully automatic and still greatly flexible. Use Docker if you already know the tool, if need full control of the process or have extra requirements and do not want to depend on any external provider, or need to do any special customization.
+The recommended way is to use Elestio, since it's simpler, fully automatic and still greatly flexible.
+Use Docker if you already know the tool, if need full control of the process or have extra requirements
+and do not want to depend on any external provider, or need to do any special customization.
 </p>
 
 Or you can try <a href="#unofficial-self-host-options">other options</a>,
 offered by Penpot community.
+
+## Recommended settings
+To self-host Penpot, you’ll need a server with the following specifications:
+
+* **CPU:** 1-2 CPUs
+* **RAM:** 4 GiB of RAM
+* **Disk Space:** Disk requirements depend on your usage. Disk usage primarily involves the database and any files uploaded by users.
+
+This setup should be sufficient for a smooth experience with typical usage (your mileage may vary).
 
 ## Install with Elestio
 
@@ -261,7 +274,7 @@ itself.
 
 This section details everything you need to know to get Penpot up and running in
 production environments using a Kubernetes cluster of your choice. To do this, we have
-created a <a href="https://helm.sh/" target="_blank">Helm<a> repository with everything
+created a <a href="https://helm.sh/" target="_blank">Helm</a> repository with everything
 you need.
 
 Therefore, your prerequisite will be to have a Kubernetes cluster on which we can install
@@ -287,7 +300,7 @@ in turn have its own release name.
 With these concepts in mind, we can now explain Helm like this:
 
 > Helm installs charts into Kubernetes clusters, creating a new release for each
-> installation. And to find new charts, you can search Helm chart repositories.
+> installation. To find new charts, you can search Helm chart repositories.
 
 
 ### Install Helm

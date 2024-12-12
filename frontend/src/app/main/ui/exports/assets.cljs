@@ -12,7 +12,6 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.main.data.events :as ev]
    [app.main.data.exports.assets :as de]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
@@ -23,7 +22,6 @@
    [app.util.i18n :as i18n :refer  [tr c]]
    [app.util.strings :as ust]
    [cuerdas.core :as str]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private neutral-icon
@@ -59,13 +57,8 @@
         (fn [event]
           (dom/prevent-default event)
           (st/emit! (modal/hide)
-                    (de/request-multiple-export
-                     {:exports enabled-exports
-                      :cmd cmd})
-                    (ptk/event
-                     ::ev/event {::ev/name "export-shapes"
-                                 ::ev/origin origin
-                                 :num-shapes (count enabled-exports)})))
+                    (de/request-multiple-export {:exports enabled-exports :cmd cmd})
+                    (de/export-shapes-event enabled-exports origin)))
 
         on-toggle-enabled
         (mf/use-fn

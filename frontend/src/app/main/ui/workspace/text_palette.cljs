@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.main.data.event :as ev]
    [app.main.data.workspace.texts :as dwt]
    [app.main.fonts :as f]
    [app.main.refs :as refs]
@@ -18,23 +19,30 @@
    [app.util.i18n :refer [tr]]
    [app.util.object :as obj]
    [cuerdas.core :as str]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc typography-item
-  [{:keys [file-id selected-ids typography name-only? size]}]
+  [{:keys [file-id selected-ids typography name-only? size current-file-id]}]
   (let [font-data (f/get-font-data (:font-id typography))
         font-variant-id (:font-variant-id typography)
         variant-data (->> font-data :variants (d/seek #(= (:id %) font-variant-id)))
 
+
         handle-click
         (mf/use-callback
-         (mf/deps typography selected-ids)
+         (mf/deps typography selected-ids file-id current-file-id)
          (fn []
            (let [attrs (merge
                         {:typography-ref-file file-id
                          :typography-ref-id (:id typography)}
                         (dissoc typography :id :name))]
 
+             (st/emit! (ptk/event
+                        ::ev/event
+                        {::ev/name "use-library-typography"
+                         ::ev/origin "text-palette"
+                         :external-library (not= file-id current-file-id)}))
              (run! #(st/emit!
                      (dwt/update-text-attrs
                       {:id %
@@ -160,6 +168,7 @@
            [:& typography-item
             {:key idx
              :file-id file-id
+             :current-file-id current-file-id
              :selected-ids selected-ids
              :typography item
              :size size}])])]
@@ -174,7 +183,7 @@
   [{:keys [size width selected] :as props}]
   (let [selected-ids      (mf/deref refs/selected-shapes)
         file-typographies (mf/deref refs/workspace-file-typography)
-        shared-libs       (mf/deref refs/workspace-libraries)
+        shared-libs       (mf/deref refs/libraries)
         current-file-id   (mf/use-ctx ctx/current-file-id)]
     [:& palette {:current-file-id current-file-id
                  :selected-ids selected-ids

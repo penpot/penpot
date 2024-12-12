@@ -68,6 +68,14 @@
       (->> (ctob/set-name-string->prefixed-set-path-string token-set-name)
            (wtts/assoc-selected-token-set-path state)))))
 
+(defn set-selected-token-set-id-from-name
+  [token-set-name]
+  (ptk/reify ::set-selected-token-set-id-from-name
+    ptk/UpdateEvent
+    (update [_ state]
+      (->> (ctob/set-name->set-path-string token-set-name)
+           (wtts/assoc-selected-token-set-path state)))))
+
 (defn create-token-theme [token-theme]
   (let [new-token-theme token-theme]
     (ptk/reify ::create-token-theme
