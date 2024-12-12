@@ -9,17 +9,20 @@ mod images;
 mod matrix;
 mod paths;
 mod renderable;
+mod svgraw;
 
 pub use fills::*;
 pub use images::*;
 use matrix::*;
 pub use paths::*;
+pub use svgraw::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Kind {
     Rect(math::Rect),
     Circle(math::Rect),
     Path(Path),
+    SVGRaw(SVGRaw),
 }
 
 pub type Color = skia::Color;
@@ -132,6 +135,20 @@ impl Shape {
     pub fn set_path_segments(&mut self, buffer: Vec<RawPathData>) -> Result<(), String> {
         let p = Path::try_from(buffer)?;
         self.kind = Kind::Path(p);
+        Ok(())
+    }
+
+    pub fn set_path_attr(&mut self, name: String, value: String) {
+        match &mut self.kind {
+            Kind::Path(p) => {
+                p.set_attr(name, value);
+            },
+            Kind::Rect(_) | Kind::Circle(_) | Kind::SVGRaw(_) => todo!()
+        };
+    }
+
+    pub fn set_svg_raw_content(&mut self, content: String) -> Result<(), String> {
+        self.kind = Kind::SVGRaw(SVGRaw::from_content(content));
         Ok(())
     }
 

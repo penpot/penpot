@@ -1,5 +1,6 @@
 use skia_safe as skia;
 use std::array::TryFromSliceError;
+use std::collections::HashMap;
 
 use crate::math::Point;
 
@@ -73,6 +74,7 @@ impl TryFrom<RawPathData> for Segment {
 pub struct Path {
     segments: Vec<Segment>,
     skia_path: skia::Path,
+    attrs: HashMap<String, String>,
 }
 
 impl TryFrom<Vec<RawPathData>> for Path {
@@ -105,11 +107,16 @@ impl TryFrom<Vec<RawPathData>> for Path {
         Ok(Path {
             segments,
             skia_path,
+            attrs: HashMap::new()
         })
     }
 }
 
 impl Path {
+    pub fn set_attr(&mut self, name: String, value: String) {
+        self.attrs.insert(name, value);
+    }
+
     pub fn to_skia_path(&self) -> skia::Path {
         self.skia_path.snapshot()
     }
