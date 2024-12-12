@@ -30,7 +30,7 @@ test("Save and restore version", async ({ page }) => {
     "workspace/versions-snapshot-1.json",
   );
 
-  await page.getByLabel("History (Alt+H)").click();
+  await page.getByLabel("History").click();
 
   await workspacePage.mockRPC(
     "create-file-snapshot",
@@ -58,10 +58,11 @@ test("Save and restore version", async ({ page }) => {
   await page.getByRole("textbox").press("Enter");
 
   await page
-    .locator("li")
-    .filter({ hasText: "INIT" })
-    .getByRole("button")
-    .click();
+    .getByLabel("History", { exact: true })
+    .locator("div")
+    .nth(3)
+    .hover();
+  await page.getByRole("button", { name: "Open version menu" }).click();
   await page.getByRole("button", { name: "Restore" }).click();
 
   await workspacePage.mockRPC(
@@ -70,4 +71,7 @@ test("Save and restore version", async ({ page }) => {
   );
 
   await page.getByRole("button", { name: "Restore" }).click();
+
+  // check that the history panel is closed after restore
+  await expect(page.getByRole("tab", { name: "design" })).toBeVisible();
 });

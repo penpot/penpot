@@ -92,8 +92,8 @@
 (defn update-shape-radius-all [value shape-ids]
   (dwsh/update-shapes shape-ids
                       (fn [shape]
-                        (when (ctsr/has-radius? shape)
-                          (ctsr/set-radius-1 shape value)))
+                        (when (ctsr/can-get-border-radius? shape)
+                          (ctsr/set-radius-to-all-corners shape value)))
                       {:reg-objects? true
                        :attrs ctt/border-radius-keys}))
 
@@ -112,12 +112,10 @@
 (defn update-shape-radius-single-corner [value shape-ids attributes]
   (dwsh/update-shapes shape-ids
                       (fn [shape]
-                        (when (ctsr/has-radius? shape)
-                          (cond-> shape
-                            (:rx shape) (ctsr/switch-to-radius-4)
-                            :always (ctsr/set-radius-4 (first attributes) value))))
+                        (when (ctsr/can-get-border-radius? shape)
+                          (ctsr/set-radius-to-single-corner shape (first attributes) value)))
                       {:reg-objects? true
-                       :attrs [:rx :ry :r1 :r2 :r3 :r4]}))
+                       :attrs ctt/border-radius-keys}))
 
 (defn update-stroke-width
   [value shape-ids]
@@ -128,13 +126,20 @@
                       {:reg-objects? true
                        :attrs [:strokes]}))
 
-(defn update-color
-  [value shape-ids]
+(defn update-color [f value shape-ids]
   (let [color (some->> value
                        (tinycolor/valid-color)
                        (tinycolor/->hex)
                        (str "#"))]
-    (wdc/change-fill shape-ids {:color color} 0)))
+    (f shape-ids {:color color} 0)))
+
+(defn update-fill
+  [value shape-ids]
+  (update-color wdc/change-fill value shape-ids))
+
+(defn update-stroke-color
+  [value shape-ids]
+  (update-color wdc/change-stroke value shape-ids))
 
 (defn update-shape-dimensions [value shape-ids attributes]
   (ptk/reify ::update-shape-dimensions

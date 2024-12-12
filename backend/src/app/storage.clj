@@ -11,7 +11,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.logging :as l]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -19,7 +19,6 @@
    [app.storage.impl :as impl]
    [app.storage.s3 :as ss3]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [integrant.core :as ig])
@@ -48,19 +47,29 @@
 ;; Storage Module State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(s/def ::id #{:assets-fs :assets-s3 :fs :s3})
-(s/def ::s3 ::ss3/backend)
-(s/def ::fs ::sfs/backend)
-(s/def ::type #{:fs :s3})
+(def ^:private schema:backends
+  [:map-of :keyword
+   [:maybe
+    [:or ::ss3/backend ::sfs/backend]]])
 
-(s/def ::backends
-  (s/map-of ::us/keyword
-            (s/nilable
-             (s/or :s3 ::ss3/backend
-                   :fs ::sfs/backend))))
+(def ^:private valid-backends?
+  (sm/validator schema:backends))
 
-(defmethod ig/pre-init-spec ::storage [_]
-  (s/keys :req [::db/pool ::backends]))
+(def ^:private schema:storage
+  [:map {:title "storage"}
+   [::backends schema:backends]
+   [::backend [:enum :s3 :fs]]
+   ::db/connectable])
+
+(def valid-storage?
+  (sm/validator schema:storage))
+
+(sm/register! ::storage schema:storage)
+
+(defmethod ig/assert-key ::storage
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expected valid database pool")
+  (assert (valid-backends? (::backends params)) "expected valid backends map"))
 
 (defmethod ig/init-key ::storage
   [_ {:keys [::backends ::db/pool] :as cfg}]
@@ -77,14 +86,6 @@
         (assoc ::backends backends)
         (assoc ::backend backend)
         (assoc ::db/connectable pool))))
-
-(s/def ::backend keyword?)
-(s/def ::storage
-  (s/keys :req [::backends ::db/pool ::db/connectable]
-          :opt [::backend]))
-
-(s/def ::storage-with-backend
-  (s/and ::storage #(contains? % ::backend)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Database Objects
@@ -200,15 +201,16 @@
 (dm/export impl/object?)
 
 (defn get-object
-  [{:keys [::db/connectable] :as storage} id]
-  (us/assert! ::storage storage)
+  [{:keys [::db/connectable] :as storage}  id]
+  (assert (valid-storage? storage))
   (retrieve-database-object connectable id))
 
 (defn put-object!
   "Creates a new object with the provided content."
   [{:keys [::backend] :as storage} {:keys [::content] :as params}]
-  (us/assert! ::storage-with-backend storage)
-  (us/assert! ::impl/content content)
+  (assert (valid-storage? storage))
+  (assert (impl/content? content) "expected an instance of content")
+
   (let [object (create-database-object storage params)]
     (if (::created? (meta object))
       ;; Store the data finally on the underlying storage subsystem.
@@ -219,7 +221,7 @@
 (defn touch-object!
   "Mark object as touched."
   [{:keys [::db/connectable] :as storage} object-or-id]
-  (us/assert! ::storage storage)
+  (assert (valid-storage? storage))
   (let [id (if (impl/object? object-or-id) (:id object-or-id) object-or-id)]
     (-> (db/update! connectable :storage-object
                     {:touched-at (dt/now)}
@@ -231,7 +233,7 @@
   "Return an input stream instance of the object content."
   ^InputStream
   [storage object]
-  (us/assert! ::storage storage)
+  (assert (valid-storage? storage))
   (when (or (nil? (:expired-at object))
             (dt/is-after? (:expired-at object) (dt/now)))
     (-> (impl/resolve-backend storage (:backend object))
@@ -240,7 +242,7 @@
 (defn get-object-bytes
   "Returns a byte array of object content."
   [storage object]
-  (us/assert! ::storage storage)
+  (assert (valid-storage? storage))
   (when (or (nil? (:expired-at object))
             (dt/is-after? (:expired-at object) (dt/now)))
     (-> (impl/resolve-backend storage (:backend object))
@@ -250,7 +252,7 @@
   ([storage object]
    (get-object-url storage object nil))
   ([storage object options]
-   (us/assert! ::storage storage)
+   (assert (valid-storage? storage))
    (when (or (nil? (:expired-at object))
              (dt/is-after? (:expired-at object) (dt/now)))
      (-> (impl/resolve-backend storage (:backend object))
@@ -260,7 +262,7 @@
   "Get the Path to the object. Only works with `:fs` type of
   storages."
   [storage object]
-  (us/assert! ::storage storage)
+  (assert (valid-storage? storage))
   (let [backend (impl/resolve-backend storage (:backend object))]
     (when (and (= :fs (::type backend))
                (or (nil? (:expired-at object))
@@ -269,7 +271,7 @@
 
 (defn del-object!
   [{:keys [::db/connectable] :as storage} object-or-id]
-  (us/assert! ::storage storage)
+  (assert (valid-storage? storage))
   (let [id  (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
         res (db/update! connectable :storage-object
                         {:deleted-at (dt/now)}
@@ -282,6 +284,7 @@
 
 (defn configure
   [storage connectable]
+  (assert (valid-storage? storage))
   (assoc storage ::db/connectable connectable))
 
 (defn resolve

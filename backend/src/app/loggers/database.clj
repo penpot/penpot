@@ -12,7 +12,6 @@
    [app.common.logging :as l]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
-   [app.common.spec :as us]
    [app.config :as cf]
    [app.db :as db]
    [clojure.spec.alpha :as s]
@@ -38,7 +37,7 @@
 
 (defn record->report
   [{:keys [::l/context ::l/message ::l/props ::l/logger ::l/level ::l/cause] :as record}]
-  (us/assert! ::l/record record)
+  (assert (l/valid-record? record) "expectd valid log record")
   (if (or (instance? java.util.concurrent.CompletionException cause)
           (instance? java.util.concurrent.ExecutionException cause))
     (-> record
@@ -91,8 +90,9 @@
     (catch Throwable cause
       (l/warn :hint "unexpected exception on database error logger" :cause cause))))
 
-(defmethod ig/pre-init-spec ::reporter [_]
-  (s/keys :req [::db/pool]))
+(defmethod ig/assert-key ::reporter
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expect valid database pool"))
 
 (defmethod ig/init-key ::reporter
   [_ cfg]

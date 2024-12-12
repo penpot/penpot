@@ -9,11 +9,20 @@
 .color-data {
   @include flexRow;
 
-  &.dnd-over-top {
-    border-block-start: $s-1 solid var(--layer-row-foreground-color-drag);
+  position: relative;
+
+  --reorder-left-position: calc(-1 * var(--sp-m) - var(--sp-xxs));
+
+  &:hover {
+    --reorder-icon-visibility: visible;
   }
+
+  &.dnd-over-top {
+    --reorder-top-display: block;
+  }
+
   &.dnd-over-bot {
-    border-block-end: $s-1 solid var(--layer-row-foreground-color-drag);
+    --reorder-bottom-display: block;
   }
 }
 
@@ -150,14 +159,6 @@
     &:hover {
       border: $s-1 solid var(--input-border-color-active);
     }
-  }
-}
-
-.gradient-name-wrapper {
-  border-radius: 0 $br-8 $br-8 0;
-  .color-name {
-    @include flexRow;
-    border-radius: 0 $br-8 $br-8 0;
   }
 }
 

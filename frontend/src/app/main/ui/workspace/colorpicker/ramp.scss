@@ -10,7 +10,7 @@
   background-color: rgba(var(--hue-rgb));
   position: relative;
   height: $s-140;
-  width: $s-256;
+  width: 100%;
   margin-top: $s-12;
   margin-bottom: $s-12;
   cursor: pointer;
@@ -47,5 +47,7 @@
 }
 
 .sliders-wrapper {
-  @include flexColumn;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }

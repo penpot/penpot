@@ -11,7 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.main.data.dashboard :as dd]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.errors :as errors]

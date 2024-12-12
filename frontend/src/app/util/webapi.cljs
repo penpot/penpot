@@ -145,6 +145,10 @@
                (not= (.-tagName ^js target) "INPUT")) ;; an editable control
       (.. ^js event getBrowserEvent -clipboardData))))
 
+(defn extract-html-text
+  [clipboard-data]
+  (.getData clipboard-data "text/html"))
+
 (defn extract-text
   [clipboard-data]
   (.getData clipboard-data "text"))

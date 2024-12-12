@@ -15,13 +15,15 @@
    [app.common.transit :as t]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.interactions :as ctsi]
-   [app.main.data.comments :as dcm]
-   [app.main.data.events :as ev]
+   [app.common.uuid :as uuid]
+   [app.main.data.comments :as dcmt]
+   [app.main.data.common :as dcm]
+   [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
    [app.main.features :as features]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.util.globals :as ug]
-   [app.util.router :as rt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -32,7 +34,7 @@
   {:zoom 1
    :fullscreen? false
    :interactions-mode :show-on-click
-   :interactions-show? false
+   :show-interactions false
    :comments-mode :all
    :comments-show :unresolved
    :selected #{}
@@ -55,23 +57,23 @@
    [:page-id {:optional true} ::sm/uuid]])
 
 (defn initialize
-  [{:keys [file-id share-id interactions-show?] :as params}]
+  [{:keys [file-id share-id] :as params}]
   (dm/assert!
    "expected valid params"
-   (sm/check! schema:initialize params))
+   (sm/check schema:initialize params))
 
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
       (-> state
           (assoc :current-file-id file-id)
+          (assoc :current-share-id share-id)
           (update :viewer-local
                   (fn [lstate]
                     (if (nil? lstate)
                       default-local-state
                       lstate)))
-          (assoc-in [:viewer-local :share-id] share-id)
-          (assoc-in [:viewer-local :interactions-show?] interactions-show?)))
+          (assoc-in [:viewer-local :share-id] share-id)))
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -111,7 +113,7 @@
 
   (dm/assert!
    "expected valid params"
-   (sm/check! schema:fetch-bundle params))
+   (sm/check schema:fetch-bundle params))
 
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
@@ -256,12 +258,9 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [zoom-type (get-in state [:viewer-local :zoom-type])
-            route (:route state)
-            screen (-> route :data :name keyword)
-            qparams (:query-params route)
-            pparams (:path-params route)]
+            params    (rt/get-params state)]
 
-        (rx/of (rt/nav screen pparams (assoc qparams :zoom zoom-type)))))))
+        (rx/of (rt/nav :viewer (assoc params :zoom zoom-type)))))))
 
 (def increase-zoom
   (ptk/reify ::increase-zoom
@@ -293,14 +292,17 @@
   (ptk/reify ::zoom-to-fit
     ptk/UpdateEvent
     (update [_ state]
-      (let [srect     (as-> (get-in state [:route :query-params :page-id]) %
-                        (get-in state [:viewer :pages % :frames])
-                        (nth % (get-in state [:route :query-params :index]))
-                        (get % :selrect))
-            orig-size (get-in state [:viewer-local :viewport-size])
-            wdiff     (/ (:width orig-size) (:width srect))
-            hdiff     (/ (:height orig-size) (:height srect))
-            minzoom   (min wdiff hdiff)]
+      (let [params (rt/get-params state)
+            page-id (some-> (:page-id params) uuid/parse)
+            index   (some-> (:index params) parse-long)
+
+            frames  (dm/get-in state [:viewer :pages page-id :frames])
+            srect   (-> (nth frames index)
+                        (get :selrect))
+            osize   (dm/get-in state [:viewer-local :viewport-size])
+            wdiff   (/ (:width osize) (:width srect))
+            hdiff   (/ (:height osize) (:height srect))
+            minzoom (min wdiff hdiff)]
         (-> state
             (assoc-in  [:viewer-local :zoom] minzoom)
             (assoc-in  [:viewer-local :zoom-type] :fit))))
@@ -312,17 +314,25 @@
   (ptk/reify ::zoom-to-fill
     ptk/UpdateEvent
     (update [_ state]
-      (let [srect     (as-> (get-in state [:route :query-params :page-id]) %
-                        (get-in state [:viewer :pages % :frames])
-                        (nth % (get-in state [:route :query-params :index]))
-                        (get % :selrect))
-            orig-size (get-in state [:viewer-local :viewport-size])
-            wdiff     (/ (:width orig-size) (:width srect))
-            hdiff     (/ (:height orig-size) (:height srect))
-            maxzoom   (max wdiff hdiff)]
+
+      (let [params (rt/get-params state)
+            page-id (some-> (:page-id params) uuid/parse)
+            index   (some-> (:index params) parse-long)
+
+            frames  (dm/get-in state [:viewer :pages page-id :frames])
+            srect   (-> (nth frames index)
+                        (get :selrect))
+
+            osize   (dm/get-in state [:viewer-local :viewport-size])
+
+            wdiff   (/ (:width osize) (:width srect))
+            hdiff   (/ (:height osize) (:height srect))
+
+            maxzoom (max wdiff hdiff)]
         (-> state
             (assoc-in  [:viewer-local :zoom] maxzoom)
             (assoc-in  [:viewer-local :zoom-type] :fill))))
+
     ptk/WatchEvent
     (watch [_ _ _] (rx/of update-zoom-querystring))))
 
@@ -376,16 +386,15 @@
       (-> state
           (dissoc :viewer-animations)
           (assoc  :viewer-overlays [])))
+
     ptk/WatchEvent
     (watch [_ state _]
-      (let [route   (:route state)
-            qparams (:query-params route)
-            pparams (:path-params route)
-            index   (:index qparams)]
+      (let [params  (rt/get-params state)
+            index   (some-> params :index parse-long)]
         (when (pos? index)
           (rx/of
-           (dcm/close-thread)
-           (rt/nav :viewer pparams (assoc qparams :index (dec index)))))))))
+           (dcmt/close-thread)
+           (rt/nav :viewer (assoc params :index (dec index)))))))))
 
 (def select-next-frame
   (ptk/reify ::select-next-frame
@@ -396,30 +405,25 @@
           (assoc  :viewer-overlays [])))
     ptk/WatchEvent
     (watch [_ state _]
-      (let [route   (:route state)
-            pparams (:path-params route)
-            qparams (:query-params route)
-
-            page-id (:page-id qparams)
-            index   (:index qparams)
+      (let [params  (rt/get-params state)
+            index   (some-> params :index parse-long)
+            page-id (some-> params :page-id parse-uuid)
 
             total   (count (get-in state [:viewer :pages page-id :frames]))]
 
         (when (< index (dec total))
           (rx/of
-           (dcm/close-thread)
-           (rt/nav :viewer pparams (assoc qparams :index (inc index)))))))))
+           (dcmt/close-thread)
+           (rt/nav :viewer params (assoc params :index (inc index)))))))))
 
 (def select-first-frame
   (ptk/reify ::select-first-frame
     ptk/WatchEvent
     (watch [_ state _]
-      (let [route   (:route state)
-            qparams (:query-params route)
-            pparams (:path-params route)]
+      (let [params (rt/get-params state)]
         (rx/of
-         (dcm/close-thread)
-         (rt/nav :viewer pparams (assoc qparams :index 0)))))))
+         (dcmt/close-thread)
+         (rt/nav :viewer (assoc params :index 0)))))))
 
 (def valid-interaction-modes
   #{:hide :show :show-on-click})
@@ -434,17 +438,14 @@
     (update [_ state]
       (-> state
           (assoc-in [:viewer-local :interactions-mode] mode)
-          (assoc-in [:viewer-local :interactions-show?] (case mode
-                                                          :hide false
-                                                          :show true
-                                                          :show-on-click false))))
+          (assoc-in [:viewer-local :show-interactions] (case mode
+                                                         :hide false
+                                                         :show true
+                                                         :show-on-click false))))
     ptk/WatchEvent
     (watch [_ state _]
-      (let [route   (:route state)
-            screen  (-> route :data :name keyword)
-            qparams (:query-params route)
-            pparams (:path-params route)]
-        (rx/of (rt/nav screen pparams (assoc qparams :interactions-mode mode)))))))
+      (let [params  (rt/get-params state)]
+        (rx/of (rt/nav :viewer (assoc params :interactions-mode mode)))))))
 
 (declare flash-done)
 
@@ -453,7 +454,7 @@
   (ptk/reify ::flash-interactions
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:viewer-local :interactions-show?] true))
+      (assoc-in state [:viewer-local :show-interactions] true))
 
     ptk/WatchEvent
     (watch [_ _ stream]
@@ -466,7 +467,7 @@
   (ptk/reify ::flash-done
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:viewer-local :interactions-show?] false))))
+      (assoc-in state [:viewer-local :show-interactions] false))))
 
 (defn set-nav-scroll
   [scroll]
@@ -500,11 +501,8 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [route   (:route state)
-            screen  (-> route :data :name keyword)
-            qparams (:query-params route)
-            pparams (:path-params route)]
-        (rx/of (rt/nav screen pparams (assoc qparams :index index)))))))
+      (let [params  (rt/get-params state)]
+        (rx/of (rt/nav :viewer (assoc params :index index)))))))
 
 (defn go-to-frame
   ([frame-id]
@@ -573,10 +571,8 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [route   (:route state)
-            pparams (:path-params route)
-            qparams (:query-params route)]
-        (rx/of (rt/nav :viewer pparams (assoc qparams :section section)))))))
+      (let [params (rt/get-params state)]
+        (rx/of (rt/nav :viewer (assoc params :section section)))))))
 
 ;; --- Overlays
 
@@ -771,9 +767,8 @@
   (ptk/reify ::go-to-dashboard
     ptk/WatchEvent
     (watch [_ state _]
-      (let [team-id (get-in state [:viewer :project :team-id])
-            params  {:team-id team-id}]
-        (rx/of (rt/nav :dashboard-projects params))))))
+      (let [team-id (get-in state [:viewer :project :team-id])]
+        (rx/of (dcm/go-to-dashboard-recent :team-id team-id))))))
 
 (defn go-to-page
   [page-id]
@@ -784,13 +779,10 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [route   (:route state)
-            pparams (:path-params route)
-            qparams (-> (:query-params route)
-                        (assoc :index 0)
-                        (assoc :page-id page-id))
-            rname   (get-in route [:data :name])]
-        (rx/of (rt/nav rname pparams qparams))))))
+      (let [params (-> (rt/get-params state)
+                       (assoc :index 0)
+                       (assoc :page-id page-id))]
+        (rx/of (rt/nav :viewer params))))))
 
 (defn go-to-workspace
   ([] (go-to-workspace nil))
@@ -798,14 +790,16 @@
    (ptk/reify ::go-to-workspace
      ptk/WatchEvent
      (watch [_ state _]
-       (let [route   (:route state)
-             project-id (get-in state [:viewer :project :id])
-             file-id    (get-in state [:viewer :file :id])
-             saved-page-id   (get-in route [:query-params :page-id])
-             pparams    {:project-id project-id :file-id file-id}
-             qparams    {:page-id (or page-id saved-page-id)}]
-         (rx/of (rt/nav-new-window*
-                 {:rname :workspace
-                  :path-params pparams
-                  :query-params qparams
-                  :name (str "workspace-" file-id)})))))))
+       (let [params  (rt/get-params state)
+             file-id (get-in state [:viewer :file :id])
+             team-id (get-in state [:viewer :project :team-id])
+             page-id (or page-id
+                         (some-> (:page-id params) uuid/parse))
+             params {:page-id page-id
+                     :file-id file-id
+                     :team-id team-id}
+             name   (dm/str "workspace-" file-id)]
+
+         (rx/of (rt/nav :workspace params
+                        ::rt/new-window true
+                        ::rt/window-name name)))))))

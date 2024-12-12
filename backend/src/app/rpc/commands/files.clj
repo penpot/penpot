@@ -36,7 +36,8 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [promesa.exec :as px]))
 
 ;; --- FEATURES
 
@@ -245,16 +246,16 @@
       file)))
 
 (defn get-file
-  [{:keys [::db/conn] :as cfg} id & {:keys [project-id
-                                            migrate?
-                                            include-deleted?
-                                            lock-for-update?]
-                                     :or {include-deleted? false
-                                          lock-for-update? false
-                                          migrate? true}}]
-  (dm/assert!
-   "expected cfg with valid connection"
-   (db/connection-map? cfg))
+  [{:keys [::db/conn ::wrk/executor] :as cfg} id
+   & {:keys [project-id
+             migrate?
+             include-deleted?
+             lock-for-update?]
+      :or {include-deleted? false
+           lock-for-update? false
+           migrate? true}}]
+
+  (assert (db/connection? conn) "expected cfg with valid connection")
 
   (let [params (merge {:id id}
                       (when (some? project-id)
@@ -263,8 +264,14 @@
                             {::db/check-deleted (not include-deleted?)
                              ::db/remove-deleted (not include-deleted?)
                              ::sql/for-update lock-for-update?})
-                    (feat.fdata/resolve-file-data cfg)
-                    (decode-row))]
+                    (feat.fdata/resolve-file-data cfg))
+
+        ;; NOTE: we perform the file decoding in a separate thread
+        ;; because it has heavy and synchronous operations for
+        ;; decoding file body that are not very friendly with virtual
+        ;; threads.
+        file   (px/invoke! executor #(decode-row file))]
+
     (if (and migrate? (fmg/need-migration? file))
       (migrate-file cfg file)
       file)))
@@ -568,7 +575,7 @@
                          (if-let [media-id (:media-id row)]
                            (-> row
                                (dissoc :media-id)
-                               (assoc :thumbnail-uri (resolve-public-uri media-id)))
+                               (assoc :thumbnail-id media-id))
                            (dissoc row :media-id))))
                   (map #(assoc % :library-summary (get-library-summary cfg %)))
                   (map #(dissoc % :data))))))
@@ -691,11 +698,7 @@
 
 (defn get-team-recent-files
   [conn team-id]
-  (->> (db/exec! conn [sql:team-recent-files team-id])
-       (mapv (fn [row]
-               (if-let [media-id (:thumbnail-id row)]
-                 (assoc row :thumbnail-uri (resolve-public-uri media-id))
-                 (dissoc row :media-id))))))
+  (db/exec! conn [sql:team-recent-files team-id]))
 
 (def ^:private schema:get-team-recent-files
   [:map {:title "get-team-recent-files"}

@@ -25,14 +25,15 @@
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
 
-(sm/register! ::changes
-  [:map {:title "changes"}
-   [:redo-changes vector?]
-   [:undo-changes seq?]
-   [:origin {:optional true} any?]
-   [:save-undo? {:optional true} boolean?]
-   [:stack-undo? {:optional true} boolean?]
-   [:undo-group {:optional true} any?]])
+(sm/register!
+ ^{::sm/type ::changes}
+ [:map {:title "changes"}
+  [:redo-changes vector?]
+  [:undo-changes seq?]
+  [:origin {:optional true} any?]
+  [:save-undo? {:optional true} boolean?]
+  [:stack-undo? {:optional true} boolean?]
+  [:undo-group {:optional true} any?]])
 
 (def check-changes!
   (sm/check-fn ::changes))
@@ -818,15 +819,15 @@
       (update :undo-changes conj {:type :mod-token-set :name (:name token-set) :token-set (or prev-token-set token-set)})
       (apply-changes-local)))
 
-(defn delete-token-set
-  [changes token-set-name]
+(defn delete-token-set-path
+  [changes token-set-path]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
-        prev-token-theme (some-> (get library-data :tokens-lib)
-                                 (ctob/get-set token-set-name))]
+        prev-token-sets (some-> (get library-data :tokens-lib)
+                                (ctob/get-path-sets token-set-path))]
     (-> changes
-        (update :redo-changes conj {:type :del-token-set :name token-set-name})
-        (update :undo-changes conj {:type :add-token-set :token-set prev-token-theme})
+        (update :redo-changes conj {:type :del-token-set-path :path token-set-path})
+        (update :undo-changes conj {:type :add-token-sets :token-sets prev-token-sets})
         (apply-changes-local))))
 
 (defn move-token-set-before

@@ -22,3 +22,143 @@ test("Bug 7549 - User clicks on color swatch to display the color picker next to
   const distance = swatchBox.x - (pickerBox.x + pickerBox.width);
   expect(distance).toBeLessThan(60);
 });
+
+test("Create a LINEAR gradient", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    /get\-file\?/,
+    "workspace/get-file-not-empty.json",
+  );
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+  });
+  await workspacePage.clickLeafLayer("Rectangle");
+
+  const swatch = workspacePage.page.getByRole("button", { name: "#B1B2B5" });
+  const swatchBox = await swatch.boundingBox();
+  await swatch.click();
+
+  const select = await workspacePage.page.getByText("Solid");
+  await select.click();
+
+  const gradOption = await workspacePage.page.getByText("Gradient");
+  await gradOption.click();
+
+  const addStopBtn = await workspacePage.page.getByRole("button", {
+    name: "Add stop",
+  });
+  await addStopBtn.click();
+  await addStopBtn.click();
+  await addStopBtn.click();
+
+  const removeBtn = await workspacePage.page
+    .getByTestId("colorpicker")
+    .getByRole("button", { name: "Remove color" })
+    .nth(2);
+  await removeBtn.click();
+  await removeBtn.click();
+
+  const inputColor1 = await workspacePage.page.getByPlaceholder("Mixed").nth(1);
+  await inputColor1.fill("fabada");
+
+  const inputOpacity1 = await workspacePage.page
+    .getByTestId("colorpicker")
+    .getByPlaceholder("--")
+    .nth(1);
+  await inputOpacity1.fill("100");
+
+  const inputColor2 = await workspacePage.page.getByPlaceholder("Mixed").nth(2);
+  await inputColor2.fill("red");
+
+  const inputOpacity2 = await workspacePage.page
+    .getByTestId("colorpicker")
+    .getByPlaceholder("--")
+    .nth(2);
+  await inputOpacity2.fill("100");
+
+  const inputOpacityGlobal = await workspacePage.page
+    .locator("div")
+    .filter({ hasText: /^FillLinear gradient%$/ })
+    .getByPlaceholder("--");
+  await inputOpacityGlobal.fill("100");
+});
+
+test("Create a RADIAL gradient", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    /get\-file\?/,
+    "workspace/get-file-not-empty.json",
+  );
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "6191cd35-bb1f-81f7-8004-7cc63d087374",
+    pageId: "6191cd35-bb1f-81f7-8004-7cc63d087375",
+  });
+  await workspacePage.clickLeafLayer("Rectangle");
+
+  const swatch = workspacePage.page.getByRole("button", { name: "#B1B2B5" });
+  const swatchBox = await swatch.boundingBox();
+  await swatch.click();
+
+  const select = await workspacePage.page.getByText("Solid");
+  await select.click();
+
+  const gradOption = await workspacePage.page.getByText("Gradient");
+  await gradOption.click();
+
+  const gradTypeOptions = await workspacePage.page
+    .getByTestId("colorpicker")
+    .locator("div")
+    .filter({ hasText: "Linear" })
+    .nth(3);
+  await gradTypeOptions.click();
+
+  const gradRadialOption = await workspacePage.page
+    .locator("li")
+    .filter({ hasText: "Radial" });
+  await gradRadialOption.click();
+
+  const addStopBtn = await workspacePage.page.getByRole("button", {
+    name: "Add stop",
+  });
+  await addStopBtn.click();
+  await addStopBtn.click();
+  await addStopBtn.click();
+
+  const removeBtn = await workspacePage.page
+    .getByTestId("colorpicker")
+    .getByRole("button", { name: "Remove color" })
+    .nth(2);
+  await removeBtn.click();
+  await removeBtn.click();
+
+  const inputColor1 = await workspacePage.page.getByPlaceholder("Mixed").nth(1);
+  await inputColor1.fill("fabada");
+
+  const inputOpacity1 = await workspacePage.page
+    .getByTestId("colorpicker")
+    .getByPlaceholder("--")
+    .nth(1);
+  await inputOpacity1.fill("100");
+
+  const inputColor2 = await workspacePage.page.getByPlaceholder("Mixed").nth(2);
+  await inputColor2.fill("red");
+
+  const inputOpacity2 = await workspacePage.page
+    .getByTestId("colorpicker")
+    .getByPlaceholder("--")
+    .nth(2);
+  await inputOpacity2.fill("100");
+});

@@ -10,13 +10,14 @@
    [app.common.exceptions :as ex]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
+   [app.main.data.auth :as da]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
-   [app.main.data.users :as du]
+   [app.main.data.workspace :as-alias dw]
+   [app.main.router :as rt]
    [app.main.store :as st]
    [app.util.globals :as glob]
    [app.util.i18n :refer [tr]]
-   [app.util.router :as rt]
    [app.util.timers :as ts]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
@@ -116,7 +117,7 @@
     (if show-oops?
       (st/async-emit! (rt/assign-exception e))
       (do
-        (st/emit! (du/logout {:capture-redirect true}))
+        (st/emit! (da/logout))
         (ts/schedule 500 #(st/emit! (ntf/warn msg)))))))
 
 ;; Error that happens on an active business model validation does not
@@ -141,7 +142,7 @@
                   :timeout 3000})))
 
     (= code :vern-conflict)
-    (st/emit! (reload-file))
+    (st/emit! (ptk/event ::dw/reload-current-file))
 
     :else
     (st/async-emit! (rt/assign-exception error))))
@@ -211,7 +212,6 @@
 
   (ts/schedule
    #(st/emit! (rt/assign-exception error))))
-
 
 (defn- redirect-to-dashboard
   []

@@ -7,7 +7,8 @@
 (ns app.main.ui.modal
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.main.data.modal :as dm]
+   [app.common.data.macros :as dm]
+   [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.keyboard :as k]
@@ -20,13 +21,13 @@
   [event allow-click-outside]
   (when (and (k/esc? event) (not allow-click-outside))
     (dom/stop-propagation event)
-    (st/emit! (dm/hide))))
+    (st/emit! (modal/hide))))
 
 (defn- on-pop-state
   [event]
   (dom/prevent-default event)
   (dom/stop-propagation event)
-  (st/emit! (dm/hide))
+  (st/emit! (modal/hide))
   (.forward js/history))
 
 (defn- on-click-outside
@@ -37,18 +38,18 @@
     (when (and wrapper
                (not allow-click-outside)
                (not (.contains wrapper current))
-               (not (= type (keyword (dom/get-data current "allow-click-modal")))))
+               (not (= type (keyword (dom/get-data current "allow-click-modal"))))
+               (= (.-button event) 0))
       (dom/stop-propagation event)
       (dom/prevent-default event)
-      (st/emit! (dm/hide)))))
+      (st/emit! (modal/hide)))))
 
-(mf/defc modal-wrapper
-  {::mf/wrap-props false
+(mf/defc modal-wrapper*
+  {::mf/props :obj
    ::mf/wrap [mf/memo]}
-  [props]
-  (let [data           (unchecked-get props "data")
-        wrapper-ref    (mf/use-ref nil)
-        components     (mf/deref dm/components)
+  [{:keys [data]}]
+  (let [wrapper-ref    (mf/use-ref nil)
+        components     (mf/deref modal/components)
 
         allow-click-outside (:allow-click-outside data)
 
@@ -60,31 +61,29 @@
         (fn [event]
           (on-esc-clicked event allow-click-outside))]
 
-    (mf/use-layout-effect
-     (mf/deps allow-click-outside)
-     (fn []
-       (let [keys [(events/listen js/window   EventType.POPSTATE    on-pop-state)
-                   (events/listen js/document EventType.KEYDOWN     handle-keydown)
+    (mf/with-effect [allow-click-outside]
+      (let [keys [(events/listen js/window   EventType.POPSTATE    on-pop-state)
+                  (events/listen js/document EventType.KEYDOWN     handle-keydown)
 
-                   ;; Changing to js/document breaks the color picker
-                   (events/listen (dom/get-root) EventType.POINTERDOWN handle-click-outside)
+                  ;; Changing to js/document breaks the color picker
+                  (events/listen (dom/get-root) EventType.POINTERDOWN handle-click-outside)
 
-                   (events/listen js/document EventType.CONTEXTMENU handle-click-outside)]]
-         #(doseq [key keys]
-            (events/unlistenByKey key)))))
+                  (events/listen js/document EventType.CONTEXTMENU handle-click-outside)]]
+        (fn []
+          (run! events/unlistenByKey keys))))
 
     (when-let [component (get components (:type data))]
       [:div {:ref wrapper-ref
              :class (stl/css :modal-wrapper)}
        (mf/element component (:props data))])))
 
-(def modal-ref
-  (l/derived ::dm/modal st/state))
+(def ^:private ref:modal
+  (l/derived ::modal/modal st/state))
 
-(mf/defc modal
-  {::mf/wrap-props false}
+(mf/defc modal-container*
+  {::mf/props :obj}
   []
-  (let [modal (mf/deref modal-ref)]
-    (when modal
-      [:& modal-wrapper {:data modal
-                         :key (:id modal)}])))
+  (when-let [modal (mf/deref ref:modal)]
+    (mf/portal
+     (mf/html [:> modal-wrapper* {:data modal :key (dm/str (:id modal))}])
+     (.-body js/document))))

@@ -17,7 +17,7 @@
    [app.common.text :as txt]
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.modifiers :as dwm]
@@ -27,7 +27,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
-   [app.util.router :as rt]
+   [app.main.router :as rt]
    [app.util.text-editor :as ted]
    [app.util.text.content.styles :as styles]
    [app.util.timers :as ts]
@@ -37,6 +37,8 @@
 
 ;; -- V2 Editor Helpers
 
+(def ^function create-root-from-string editor.v2/createRootFromString)
+(def ^function create-root-from-html editor.v2/createRootFromHTML)
 (def ^function create-editor editor.v2/create)
 (def ^function set-editor-root! editor.v2/setRoot)
 (def ^function get-editor-root editor.v2/getRoot)

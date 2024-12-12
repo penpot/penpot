@@ -51,7 +51,6 @@
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
-   [app.render-wasm :as render.wasm]
    [app.util.debug :as dbg]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
@@ -97,7 +96,7 @@
 
         vbox'             (mf/use-debounce 100 vbox)
 
-        permissions       (mf/use-ctx ctx/team-permissions)
+        permissions       (mf/use-ctx ctx/permissions)
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
 
         ;; DEREFS
@@ -172,6 +171,7 @@
                               (and (some? drawing-obj) (= :path (:type drawing-obj))))
         node-editing?     (and edition (= :path (get-in base-objects [edition :type])))
         text-editing?     (and edition (= :text (get-in base-objects [edition :type])))
+
         grid-editing?     (and edition (ctl/grid-layout? base-objects edition))
 
         mode-inspect?       (= options-mode :inspect)
@@ -622,7 +622,7 @@
               :hover-disabled? hover-disabled?}])])
 
        (when show-gradient-handlers?
-         [:& gradients/gradient-handlers
+         [:> gradients/gradient-handlers*
           {:id (first selected)
            :zoom zoom}])
 
@@ -657,6 +657,7 @@
 
 (mf/defc viewport
   [props]
-  (if ^boolean render.wasm/enabled?
-    [:& viewport.wasm/viewport props]
-    [:& viewport-classic props]))
+  (let [wasm-renderer-enabled? (features/use-feature "render-wasm/v1")]
+    (if ^boolean wasm-renderer-enabled?
+      [:& viewport.wasm/viewport props]
+      [:& viewport-classic props])))

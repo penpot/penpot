@@ -1,5 +1,20 @@
 # CHANGELOG
 
+## 2.5.0
+
+### :rocket: Epics and highlights
+
+### :boom: Breaking changes & Deprecations
+
+### :heart: Community contributions (Thank you!)
+
+### :sparkles: New features
+
+- New gradients UI with multi-stop support.
+
+### :bug: Bugs fixed
+
+
 ## 2.4.0
 
 ### :rocket: Epics and highlights
@@ -8,18 +23,48 @@
 
 - Use [nginx-unprivileged](https://hub.docker.com/r/nginxinc/nginx-unprivileged) as base image for
   Penpot's frontend docker image. Now all the docker images runs with the same unprivileged user
-  (penpot). Because of that, the default NGINX listen port now is 8080, instead of 80, so you will
-  have to modify your infrastructure to apply this change.
+  (penpot). Because of that, the default NGINX listen port is now 8080 instead of 80, so
+  you will have to modify your infrastructure to apply this change.
+
+- Redis 7.2 is explicitly pinned in our example docker-compose.yml file. This is done because, 
+  starting with the next versions, Redis is no longer distributed under an open-source license. 
+  On-premise users are obviously free to upgrade to the version they are using or a more modern one. 
+  Keep in mind that if you were using a version other than 7.2, you may have to recreate the volume 
+  associated with the Redis container because the 7.2 storage format may not be compatible with what 
+  you already have stored on the volume, and Redis may not start. In the near future, we will evaluate 
+  whether to move to an open-source version of Redis (such as https://valkey.io/).
 
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features
 
-- Viewer role for team members  [Taiga #1056 & #6590](https://tree.taiga.io/project/penpot/us/1056 & https://tree.taiga.io/project/penpot/us/6590)
-- File history versions management [Taiga](https://tree.taiga.io/project/penpot/us/187?milestone=411120)
+- Viewer role for team members [Taiga #1056](https://tree.taiga.io/project/penpot/us/1056) & [Taiga #6590](https://tree.taiga.io/project/penpot/us/6590)
+- File history versions management [Taiga #187](https://tree.taiga.io/project/penpot/us/187?milestone=411120)
 - Rename selected layer via keyboard shortcut and context menu option [Taiga #8882](https://tree.taiga.io/project/penpot/us/8882)
+- New .penpot file format [Taiga #8657](https://tree.taiga.io/project/penpot/us/8657)
 
 ### :bug: Bugs fixed
+
+- Fix problem with some texts desynchronization [Taiga #9379](https://tree.taiga.io/project/penpot/issue/9379)
+
+## 2.3.3
+
+### :bug: Bugs fixed
+
+- Fix problem creating manual overlay interactions [Taiga #9146](https://tree.taiga.io/project/penpot/issue/9146)
+- Fix plugins list default URL
+- Activate plugins feature by default
+
+## 2.3.2
+
+### :bug: Bugs fixed
+
+- Fix null pointer exception on number checking functions
+- Fix problem with grid layout ordering after moving [Taiga #9179](https://tree.taiga.io/project/penpot/issue/9179)
+
+### :books: Documentation
+
+- Add initial documentation for Kubernetes
 
 
 ## 2.3.1

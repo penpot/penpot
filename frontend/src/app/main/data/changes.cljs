@@ -19,7 +19,7 @@
    [potok.v2.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module
-(log/set-level! :debug)
+(log/set-level! :info)
 
 (def page-change?
   #{:add-page :mod-page :del-page :mov-page})
@@ -79,7 +79,7 @@
       (let [current-file-id (get state :current-file-id)
             path            (if (= file-id current-file-id)
                               [:workspace-data]
-                              [:workspace-libraries file-id :data])
+                              [:libraries file-id :data])
 
             undo-changes    (if pending
                               (->> pending
@@ -159,14 +159,14 @@
   (let [file (:workspace-file state)]
     (if (= (:id file) file-id)
       (:revn file)
-      (dm/get-in state [:workspace-libraries file-id :revn]))))
+      (dm/get-in state [:libraries file-id :revn]))))
 
 (defn- resolve-file-vern
   [state file-id]
   (let [file (:workspace-file state)]
     (if (= (:id file) file-id)
       (:vern file)
-      (dm/get-in state [:workspace-libraries file-id :vern]))))
+      (dm/get-in state [:libraries file-id :vern]))))
 
 (defn commit-changes
   "Schedules a list of changes to execute now, and add the corresponding undo changes to

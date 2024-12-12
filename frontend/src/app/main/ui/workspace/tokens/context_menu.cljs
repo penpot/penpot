@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
@@ -184,6 +185,9 @@
                                                                           :r3 "Bottom Right"}
                                                        :on-update-shape-all wtch/update-shape-radius-all
                                                        :on-update-shape wtch/update-shape-radius-single-corner})
+     :color (fn [context-data]
+              [(generic-attribute-actions #{:fill} "Fill" (assoc context-data :on-update-shape wtch/update-fill))
+               (generic-attribute-actions #{:stroke-color} "Stroke" (assoc context-data :on-update-shape wtch/update-stroke-color))])
      :spacing spacing-attribute-actions
      :sizing sizing-attribute-actions
      :rotation (partial generic-attribute-actions #{:rotation} "Rotation")
@@ -203,7 +207,7 @@
 (defn default-actions [{:keys [token selected-token-set-id]}]
   (let [{:keys [modal]} (wtty/get-token-properties token)]
     [{:title "Delete Token"
-      :action #(st/emit! (dt/delete-token selected-token-set-id (:name token)))}
+      :action #(st/emit! (dt/delete-token (ctob/set-path->set-name selected-token-set-id) (:name token)))}
      {:title "Duplicate Token"
       :action #(st/emit! (dt/duplicate-token (:name token)))}
      {:title "Edit Token"

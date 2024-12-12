@@ -31,6 +31,8 @@
 (def versions
   (l/derived :workspace-versions st/state))
 
+(def versions-stored-days 7)
+
 (defn group-snapshots
   [data]
   (->> (concat
@@ -134,7 +136,8 @@
               time   (dt/timeago (:created-at entry) {:locale locale})]
           [:span {:class (stl/css :date)} time])]]
 
-      [:> icon-button* {:variant "ghost"
+      [:> icon-button* {:class (stl/css :version-entry-options)
+                        :variant "ghost"
                         :aria-label (tr "workspace.versions.version-menu")
                         :on-click handle-open-menu
                         :icon "menu"}]]
@@ -225,11 +228,11 @@
 
 (mf/defc versions-toolbox
   []
-  (let [users                 (mf/deref refs/users)
-        profile               (mf/deref refs/profile)
-        project-id            (mf/deref refs/current-project-id)
-        file-id               (mf/deref refs/current-file-id)
-        expanded              (mf/use-state #{})
+  (let [profiles   (mf/deref refs/profiles)
+        profile    (mf/deref refs/profile)
+
+        expanded   (mf/use-state #{})
+
 
         {:keys [status data editing]}
         (mf/deref versions)
@@ -241,7 +244,6 @@
          (fn []
            (into #{} (keep (fn [{:keys [created-by profile-id]}]
                              (when (= "user" created-by) profile-id))) data)))
-
         data
         (mf/use-memo
          (mf/deps @versions)
@@ -256,7 +258,7 @@
         handle-create-version
         (mf/use-fn
          (fn []
-           (st/emit! (dwv/create-version file-id))))
+           (st/emit! (dwv/create-version))))
 
         handle-toggle-expand
         (mf/use-fn
@@ -270,14 +272,13 @@
 
         handle-rename-version
         (mf/use-fn
-         (mf/deps file-id)
          (fn [id label]
-           (st/emit! (dwv/rename-version file-id id label))))
+           (st/emit! (dwv/rename-version id label))))
+
 
         handle-restore-version
         (mf/use-fn
-         (mf/deps project-id file-id)
-         (fn [id]
+         (fn [origin id]
            (st/emit!
             (ntf/dialog
              :content (tr "workspace.versions.restore-warning")
@@ -287,20 +288,30 @@
                         :callback #(st/emit! (ntf/hide))}
                        {:label (tr "labels.restore")
                         :type :primary
-                        :callback #(st/emit! (dwv/restore-version project-id file-id id))}]
+                        :callback #(st/emit! (dwv/restore-version id origin))}]
              :tag :restore-dialog))))
+
+        handle-restore-version-pinned
+        (mf/use-fn
+         (mf/deps handle-restore-version)
+         (fn [id]
+           (handle-restore-version :version id)))
+
+        handle-restore-version-snapshot
+        (mf/use-fn
+         (mf/deps handle-restore-version)
+         (fn [id]
+           (handle-restore-version :snapshot id)))
 
         handle-delete-version
         (mf/use-fn
-         (mf/deps file-id)
          (fn [id]
-           (st/emit! (dwv/delete-version file-id id))))
+           (st/emit! (dwv/delete-version id))))
 
         handle-pin-version
         (mf/use-fn
-         (mf/deps file-id)
          (fn [id]
-           (st/emit! (dwv/pin-version file-id id))))
+           (st/emit! (dwv/pin-version id))))
 
         handle-change-filter
         (mf/use-fn
@@ -315,10 +326,8 @@
              :else
              (st/emit! (dwv/update-version-state {:filter filter})))))]
 
-    (mf/with-effect
-      [file-id]
-      (when file-id
-        (st/emit! (dwv/init-version-state file-id))))
+    (mf/with-effect []
+      (st/emit! (dwv/init-version-state)))
 
     [:div {:class (stl/css :version-toolbox)}
      [:& select
@@ -329,7 +338,7 @@
                       (->> data-users
                            (keep
                             (fn [id]
-                              (let [{:keys [fullname]} (get users id)]
+                              (let [{:keys [fullname]} (get profiles id)]
                                 (when (not= id (:id profile))
                                   {:value id :label (tr "workspace.versions.filter.user" fullname)}))))))
        :on-change handle-change-filter}]
@@ -360,9 +369,9 @@
                [:& version-entry {:key idx-entry
                                   :entry entry
                                   :editing? (= (:id entry) editing)
-                                  :profile (get users (:profile-id entry))
+                                  :profile (get profiles (:profile-id entry))
                                   :on-rename-version handle-rename-version
-                                  :on-restore-version handle-restore-version
+                                  :on-restore-version handle-restore-version-pinned
                                   :on-delete-version handle-delete-version}]
 
                :snapshot
@@ -371,7 +380,17 @@
                                    :entry entry
                                    :is-expanded (contains? @expanded idx-entry)
                                    :on-toggle-expand handle-toggle-expand
-                                   :on-restore-snapshot handle-restore-version
+                                   :on-restore-snapshot handle-restore-version-snapshot
                                    :on-pin-snapshot handle-pin-version}]
 
-               nil))])])]))
+               nil))])
+
+        [:div {:class (stl/css :autosave-warning)}
+         [:div {:class (stl/css :autosave-warning-text)}
+          (tr "workspace.versions.warning.text" versions-stored-days)]
+
+         [:div {:class (stl/css :autosave-warning-subtext)}
+          [:> i18n/tr-html*
+           {:tag-name "div"
+            :content (tr "workspace.versions.warning.subtext"
+                         "mailto:support@penpot.app")}]]]])]))

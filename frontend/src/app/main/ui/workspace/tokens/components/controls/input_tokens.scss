@@ -1,0 +1,53 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../../../../ds/typography.scss" as *;
+@use "../../../../ds/_borders.scss" as *;
+@use "../../../../ds/_sizes.scss" as *;
+
+@import "refactor/common-refactor.scss";
+
+.wrapper {
+  --label-color: var(--color-foreground-primary);
+  --input-bg-color: var(--color-background-tertiary);
+  --input-fg-color: var(--color-foreground-primary);
+  --input-icon-color: var(--color-foreground-secondary);
+  --input-outline-color: none;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+
+  &.input-error {
+    --input-outline-color: var(--color-accent-error);
+  }
+}
+
+.label {
+  @include use-typography("body-small");
+  @include textEllipsis;
+  color: var(--label-color);
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+
+  &:has(.input-swatch) {
+    position: relative;
+
+    & .input {
+      padding-inline-start: var(--sp-xxxl);
+    }
+  }
+}
+
+.input-swatch {
+  position: absolute;
+  display: flex;
+  inset-inline-start: var(--sp-s);
+  z-index: 2;
+}

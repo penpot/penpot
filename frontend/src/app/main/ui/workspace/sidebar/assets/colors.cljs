@@ -10,7 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as dc]
@@ -70,7 +70,12 @@
          (fn [event]
            (st/emit!
             (dwl/add-recent-color color)
-            (dc/apply-color-from-palette color (kbd/alt? event)))))
+            (dc/apply-color-from-palette color (kbd/alt? event))
+            (ptk/event
+             ::ev/event
+             {::ev/name "use-library-color"
+              ::ev/origin "sidebar"
+              :external-library (not local?)}))))
 
         rename-color
         (mf/use-fn

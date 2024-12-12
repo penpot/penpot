@@ -391,13 +391,14 @@
           (-> (pcb/update-shapes
                [parent-id]
                (fn [frame objects]
-                 (-> frame
-                     ;; Assign the cell when pushing into a specific grid cell
-                     (cond-> (some? cell)
-                       (-> (ctl/free-cell-shapes ids)
-                           (ctl/push-into-cell ids (:row cell) (:column cell))
-                           (ctl/assign-cells objects)))
-                     (ctl/assign-cell-positions objects)))
+                 (let [[row column] cell]
+                   (-> frame
+                       ;; Assign the cell when pushing into a specific grid cell
+                       (cond-> (some? cell)
+                         (-> (ctl/free-cell-shapes ids)
+                             (ctl/push-into-cell ids row column)
+                             (ctl/assign-cells objects)))
+                       (ctl/assign-cell-positions objects))))
                {:with-objects? true})
               (pcb/reorder-grid-children [parent-id])))
 
@@ -408,12 +409,14 @@
         ;; Resize parent containers that need to
         (pcb/resize-parents parents))))
 
-(defn change-show-in-viewer [shape hide?]
+(defn change-show-in-viewer
+  [shape hide?]
   (assoc shape :hide-in-viewer hide?))
 
-(defn add-new-interaction [shape interaction]
-  (-> shape
-      (update :interactions ctsi/add-interaction interaction)))
+(defn add-new-interaction
+  [shape interaction]
+  (update shape :interactions ctsi/add-interaction interaction))
 
-(defn show-in-viewer [shape]
+(defn show-in-viewer
+  [shape]
   (dissoc shape :hide-in-viewer))

@@ -7,8 +7,10 @@
 (ns app.main.ui.dashboard.files
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
+   [app.main.data.project :as dpj]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid]]
@@ -21,7 +23,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.router :as rt]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -32,9 +33,12 @@
   {::mf/props :obj
    ::mf/private true}
   [{:keys [project create-fn can-edit]}]
-  (let [local (mf/use-state
-               {:menu-open false
-                :edition false})
+  (let [project-id (:id project)
+
+        local
+        (mf/use-state
+         {:menu-open false
+          :edition false})
 
         on-create-click
         (mf/use-fn
@@ -63,9 +67,9 @@
 
         on-import
         (mf/use-fn
-         (mf/deps (:id project))
+         (mf/deps project-id)
          (fn []
-           (st/emit! (dd/fetch-files {:project-id (:id project)})
+           (st/emit! (dpj/fetch-files project-id)
                      (dd/clear-selected-files))))]
 
 
@@ -126,32 +130,37 @@
                            :on-menu-close on-menu-close
                            :on-import on-import}])]]))
 
-(mf/defc files-section
+(mf/defc files-section*
   {::mf/props :obj}
   [{:keys [project team]}]
-  (let [files-map        (mf/deref refs/dashboard-files)
-        can-edit?        (-> team :permissions :can-edit)
-        project-id       (:id project)
-        is-draft-proyect (:is-default project)
+  (let [files            (mf/deref refs/files)
+        project-id       (get project :id)
 
-        [rowref limit] (hooks/use-dynamic-grid-item-width)
+        files            (mf/with-memo [project-id files]
+                           (->> (vals files)
+                                (filter #(= project-id (:project-id %)))
+                                (sort-by :modified-at)
+                                (reverse)))
 
-        files     (mf/with-memo [project-id files-map]
-                    (->> (vals files-map)
-                         (filter #(= project-id (:project-id %)))
-                         (sort-by :modified-at)
-                         (reverse)))
-        file-count (or (count files) 0)
+
+        can-edit?          (-> team :permissions :can-edit)
+        project-id         (:id project)
+        is-draft-proyect   (:is-default project)
+
+        [rowref limit]     (hooks/use-dynamic-grid-item-width)
+
+        file-count         (or (count files) 0)
         empty-state-viewer (and (not can-edit?)
                                 (= 0 file-count))
 
+        selected-files     (mf/deref refs/selected-files)
+
         on-file-created
         (mf/use-fn
-         (fn [data]
-           (let [pparams {:project-id (:project-id data)
-                          :file-id (:id data)}
-                 qparams {:page-id (get-in data [:data :pages 0])}]
-             (st/emit! (rt/nav :workspace pparams qparams)))))
+         (fn [file-data]
+           (let [file-id (:id file-data)
+                 page-id (get-in file-data [:pages 0])]
+             (st/emit! (dcm/go-to-workspace :file-id file-id :page-id page-id)))))
 
         create-file
         (mf/use-fn
@@ -170,7 +179,7 @@
           (dom/set-html-title (tr "title.dashboard.files" pname)))))
 
     (mf/with-effect [project-id]
-      (st/emit! (dd/fetch-files {:project-id project-id})
+      (st/emit! (dpj/fetch-files project-id)
                 (dd/clear-selected-files)))
 
     [:*
@@ -191,6 +200,7 @@
                                             (tr "dashboard.empty-placeholder-files-subtitle"))}]
         [:& grid {:project project
                   :files files
+                  :selected-files selected-files
                   :can-edit can-edit?
                   :origin :files
                   :create-fn create-file

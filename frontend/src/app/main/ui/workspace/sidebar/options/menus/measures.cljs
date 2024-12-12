@@ -10,11 +10,10 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.shapes :as cls]
+   [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
-   [app.common.types.shape.radius :as ctsr]
    [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [size-presets]]
-   [app.main.data.tokens :as dt]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.shapes :as dwsh]
@@ -27,6 +26,7 @@
    [app.main.ui.context :as muc]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.sidebar.options.menus.border-radius :refer  [border-radius-menu]]
    [app.main.ui.workspace.tokens.core :as wtc]
    [app.main.ui.workspace.tokens.editable-select :refer [editable-select]]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
@@ -42,7 +42,6 @@
    :x :y
    :ox :oy
    :rotation
-   :rx :ry
    :r1 :r2 :r3 :r4
    :selrect
    :points
@@ -110,13 +109,6 @@
                         (mf/deps tokens)
                         #(ctob/group-by-type tokens))
 
-        border-radius-tokens (:border-radius tokens-by-type)
-        border-radius-options (mf/use-memo
-                               (mf/deps shape border-radius-tokens)
-                               #(wtc/tokens->select-options
-                                 {:shape shape
-                                  :tokens border-radius-tokens
-                                  :attributes (wtty/token-attributes :border-radius)}))
         sizing-tokens (:sizing tokens-by-type)
         width-options (mf/use-memo
                        (mf/deps shape sizing-tokens)
@@ -187,13 +179,6 @@
 
         proportion-lock  (:proportion-lock values)
 
-
-
-        radius-mode      (ctsr/radius-mode values)
-        all-equal?       (ctsr/all-equal? values)
-        radius-multi?    (mf/use-state nil)
-        radius-input-ref (mf/use-ref nil)
-
         clip-content-ref (mf/use-ref nil)
         show-in-viewer-ref (mf/use-ref nil)
 
@@ -248,19 +233,20 @@
          (fn [value attr]
            (let [token-value (wtc/maybe-resolve-token-value value)
                  undo-id (js/Symbol)]
-             (if-not design-tokens?
-               (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                         (udw/update-dimensions ids attr (or token-value value)))
-               (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                         (dwu/start-undo-transaction undo-id)
-                         (dwsh/update-shapes ids
-                                             (if token-value
-                                               #(assoc-in % [:applied-tokens attr] (:id value))
-                                               #(d/dissoc-in % [:applied-tokens attr]))
-                                             {:reg-objects? true
-                                              :attrs [:applied-tokens]})
-                         (udw/update-dimensions ids attr (or token-value value))
-                         (dwu/commit-undo-transaction undo-id))))))
+             (binding [cts/*wasm-sync* true]
+               (if-not design-tokens?
+                 (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                           (udw/update-dimensions ids attr (or token-value value)))
+                 (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                           (dwu/start-undo-transaction undo-id)
+                           (dwsh/update-shapes ids
+                                               (if token-value
+                                                 #(assoc-in % [:applied-tokens attr] (:id value))
+                                                 #(d/dissoc-in % [:applied-tokens attr]))
+                                               {:reg-objects? true
+                                                :attrs [:applied-tokens]})
+                           (udw/update-dimensions ids attr (or token-value value))
+                           (dwu/commit-undo-transaction undo-id)))))))
 
         on-proportion-lock-change
         (mf/use-fn
@@ -283,7 +269,8 @@
          (mf/deps ids)
          (fn [value attr]
            (st/emit! (udw/trigger-bounding-box-cloaking ids))
-           (doall (map #(do-position-change %1 %2 value attr) shapes frames))))
+           (binding [cts/*wasm-sync* true]
+             (doall (map #(do-position-change %1 %2 value attr) shapes frames)))))
 
         ;; ROTATION
 
@@ -291,92 +278,15 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value]
-           (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                     (udw/increase-rotation ids value))))
+           (binding [cts/*wasm-sync* true]
+             (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                       (udw/increase-rotation ids value)))))
 
-        ;; RADIUS
-
-        change-radius
-        (mf/use-fn
-         (mf/deps ids-with-children)
-         (fn [update-fn]
-           (dwsh/update-shapes ids-with-children
-                               (fn [shape]
-                                 (if (ctsr/has-radius? shape)
-                                   (update-fn shape)
-                                   shape))
-                               {:reg-objects? true
-                                :attrs [:rx :ry :r1 :r2 :r3 :r4 :applied-tokens]})))
-
-        on-switch-to-radius-1
-        (mf/use-fn
-         (mf/deps ids change-radius)
-         (fn [_value]
-           (if all-equal?
-             (st/emit! (change-radius ctsr/switch-to-radius-1))
-             (reset! radius-multi? true))))
-
-        on-switch-to-radius-4
-        (mf/use-fn
-         (mf/deps ids change-radius)
-         (fn [_value]
-           (st/emit! (change-radius ctsr/switch-to-radius-4))
-           (reset! radius-multi? false)))
-
-        toggle-radius-mode
-        (mf/use-fn
-         (mf/deps radius-mode)
-         (fn []
-           (if (= :radius-1 radius-mode)
-             (on-switch-to-radius-4)
-             (on-switch-to-radius-1))))
-
-        on-border-radius-token-unapply
-        (mf/use-fn
-         (mf/deps ids change-radius)
-         (fn [token]
-           (let [token-value (wtc/maybe-resolve-token-value token)]
-             (st/emit!
-              (change-radius (fn [shape]
-                               (-> (dt/unapply-token-id shape (wtty/token-attributes :border-radius))
-                                   (ctsr/set-radius-1 token-value))))))))
-
-        on-radius-1-change
-        (mf/use-fn
-         (mf/deps ids change-radius)
-         (fn [value]
-           (let [token-value (wtc/maybe-resolve-token-value value)]
-             (st/emit!
-              (change-radius (fn [shape]
-                               (-> (dt/maybe-apply-token-to-shape {:token (when token-value value)
-                                                                   :shape shape
-                                                                   :attributes (wtty/token-attributes :border-radius)})
-                                   (ctsr/set-radius-1 (or token-value value)))))))))
-
-        on-radius-multi-change
-        (mf/use-fn
-         (mf/deps ids change-radius)
-         (fn [event]
-           (let [value (-> event dom/get-target dom/get-value d/parse-integer)]
-             (when (some? value)
-               (st/emit! (change-radius ctsr/switch-to-radius-1)
-                         (change-radius #(ctsr/set-radius-1 % value)))
-               (reset! radius-multi? false)))))
-
-        on-radius-4-change
-        (mf/use-fn
-         (mf/deps ids change-radius)
-         (fn [value attr]
-           (st/emit! (change-radius #(ctsr/set-radius-4 % attr value)))))
 
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)
         on-pos-x-change #(on-position-change % :x)
         on-pos-y-change #(on-position-change % :y)
-        on-radius-r1-change #(on-radius-4-change % :r1)
-        on-radius-r2-change #(on-radius-4-change % :r2)
-        on-radius-r3-change #(on-radius-4-change % :r3)
-        on-radius-r4-change #(on-radius-4-change % :r4)
 
         ;; CLIP CONTENT AND SHOW IN VIEWER
         on-change-clip-content
@@ -402,15 +312,6 @@
 
              (st/emit! (dwu/commit-undo-transaction undo-id)))))]
 
-    (mf/use-layout-effect
-     (mf/deps radius-mode @radius-multi?)
-     (fn []
-       (when (and (= radius-mode :radius-1)
-                  (= @radius-multi? false))
-         ;; when going back from radius-multi to normal radius-1,
-         ;; restore focus to the newly created numeric-input
-         (let [radius-input (mf/ref-val radius-input-ref)]
-           (dom/focus! radius-input)))))
     [:div {:class (stl/css :element-set)}
      (when (and (options :presets)
                 (or (nil? all-types) (= (count all-types) 1)))
@@ -469,7 +370,7 @@
                                :class (stl/css :numeric-input)
                                :value (:width values)}]
            [:& editable-select
-            {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
+            {:placeholder (if (= :multiple (:r1 values)) (tr "settings.multiple") "--")
              :class (stl/css :token-select)
              :disabled disabled-width-sizing?
              :on-change on-width-change
@@ -493,7 +394,7 @@
                                :class (stl/css :numeric-input)
                                :value (:height values)}]
            [:& editable-select
-            {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
+            {:placeholder (if (= :multiple (:r1 values)) (tr "settings.multiple") "--")
              :class (stl/css :token-select)
              :disabled disabled-height-sizing?
              :on-change on-height-change
@@ -537,7 +438,6 @@
                              :value (:y values)}]]])
      (when (or (options :rotation) (options :radius))
        [:div {:class (stl/css :rotation-radius)}
-
         (when (options :rotation)
           [:div {:class (stl/css :rotation)
                  :title (tr "workspace.options.rotation")}
@@ -551,91 +451,8 @@
              :on-change on-rotation-change
              :class (stl/css :numeric-input)
              :value (:rotation values)}]])
-
         (when (options :radius)
-          [:div {:class (stl/css :radius)}
-           [:div {:class (stl/css :radius-inputs)}
-            (cond
-              (= radius-mode :radius-1)
-              [:div {:class (stl/css :radius-1)
-                     :title (tr "workspace.options.radius")}
-               [:span {:class (stl/css :icon)}  i/corner-radius]
-               (if-not design-tokens?
-                 [:> numeric-input*
-                  {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
-                   :ref radius-input-ref
-                   :min 0
-                   :on-change on-radius-1-change
-                   :class (stl/css :numeric-input)
-                   :value (:rx values)}]
-                 [:& editable-select
-                  {:placeholder (if (= :multiple (:rx values)) (tr "settings.multiple") "--")
-                   :class (stl/css :token-select)
-                   :on-change on-radius-1-change
-                   :on-token-remove on-border-radius-token-unapply
-                   :options border-radius-options
-                   :position :right
-                   :value (:rx values)
-                   :input-props {:type "number"
-                                 :min 0}}])]
-
-              @radius-multi?
-              [:div {:class (stl/css :radius-1)
-                     :title (tr "workspace.options.radius")}
-               [:span {:class (stl/css :icon)}  i/corner-radius]
-               [:input
-                {:type "number"
-                 :placeholder "Mixed"
-                 :min 0
-                 :on-change on-radius-multi-change
-                 :class (stl/css :numeric-input)
-                 :value (if all-equal? (:rx values) nil)}]]
-
-
-              (= radius-mode :radius-4)
-              [:div {:class (stl/css :radius-4)}
-               [:div {:class (stl/css :small-input)
-                      :title (tr "workspace.options.radius-top-left")}
-                [:> numeric-input*
-                 {:placeholder "--"
-                  :min 0
-                  :on-change on-radius-r1-change
-                  :class (stl/css :numeric-input)
-                  :value (:r1 values)}]]
-
-               [:div {:class (stl/css :small-input)
-                      :title (tr "workspace.options.radius-top-right")}
-                [:> numeric-input*
-                 {:placeholder "--"
-                  :min 0
-                  :on-change on-radius-r2-change
-                  :class (stl/css :numeric-input)
-                  :value (:r2 values)}]]
-
-               [:div {:class (stl/css :small-input)
-                      :title (tr "workspace.options.radius-bottom-left")}
-                [:> numeric-input*
-                 {:placeholder "--"
-                  :min 0
-                  :on-change on-radius-r4-change
-                  :class (stl/css :numeric-input)
-                  :value (:r4 values)}]]
-
-               [:div {:class (stl/css :small-input)
-                      :title (tr "workspace.options.radius-bottom-right")}
-                [:> numeric-input*
-                 {:placeholder "--"
-                  :min 0
-                  :on-change on-radius-r3-change
-                  :class (stl/css :numeric-input)
-                  :value (:r3 values)}]]])]
-           [:button {:class (stl/css-case :radius-mode true
-                                          :selected (= radius-mode :radius-4))
-                     :title (if (= radius-mode :radius-4)
-                              (tr "workspace.options.radius.all-corners")
-                              (tr "workspace.options.radius.single-corners"))
-                     :on-click toggle-radius-mode}
-            i/corner-radius]])])
+          [:& border-radius-menu {:ids ids :ids-with-children ids-with-children :values values :shape shape}])])
      (when (or (options :clip-content) (options :show-in-viewer))
        [:div {:class (stl/css :clip-show)}
         (when (options :clip-content)

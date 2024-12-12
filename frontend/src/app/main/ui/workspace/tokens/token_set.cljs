@@ -41,16 +41,30 @@
       (some-> (get-workspace-tokens-lib state)
               (ctob/get-sets)
               (first)
-              (:name))))
+              (ctob/get-set-path))))
+
+(defn get-selected-token-set-node [state]
+  (when-let [path (some-> (get-selected-token-set-id state)
+                          (ctob/split-token-set-path))]
+    (some-> (get-workspace-tokens-lib state)
+            (ctob/get-in-set-tree path))))
 
 (defn get-selected-token-set [state]
-  (when-let [id (get-selected-token-set-id state)]
-    (some-> (get-workspace-tokens-lib state)
-            (ctob/get-set id))))
+  (let [set-node (get-selected-token-set-node state)]
+    (when (instance? ctob/TokenSet set-node)
+      set-node)))
+
+(defn get-selected-token-set-group [state]
+  (let [set-node (get-selected-token-set-node state)]
+    (when (and set-node (not (instance? ctob/TokenSet set-node)))
+      set-node)))
 
 (defn get-selected-token-set-tokens [state]
   (some-> (get-selected-token-set state)
           :tokens))
+
+(defn token-group-selected? [state]
+  (some? (get-selected-token-set-group state)))
 
 (defn assoc-selected-token-set-id [state id]
   (assoc-in state [:workspace-local :selected-token-set-id] id))

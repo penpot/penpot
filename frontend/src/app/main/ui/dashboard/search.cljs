@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.search
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.main.data.dashboard :as dd]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -15,28 +16,43 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(mf/defc search-page
-  [{:keys [team search-term] :as props}]
-  (let [search-term (or search-term "")
-        result (mf/deref refs/dashboard-search-result)
-        [rowref limit] (hooks/use-dynamic-grid-item-width)]
+(def ^:private ref:search-result
+  (l/derived :search-result st/state))
 
-    (mf/use-effect
-     (mf/deps team)
-     (fn []
-       (when team
-         (let [tname (if (:is-default team)
-                       (tr "dashboard.your-penpot")
-                       (:name team))]
-           (dom/set-html-title (tr "title.dashboard.search" tname))))))
+(def ^:private ref:selected
+  (l/derived (fn [state]
+               ;; we need to this because :dashboard-search-result is a list
+               ;; of maps and we need a map of maps (using :id as key).
+               (let [files (d/index-by :id (:search-result state))]
+                 (->> (get state :selected-files)
+                      (refs/extract-selected-files files))))
+             st/state))
 
-    (mf/use-effect
-     (mf/deps search-term)
-     (fn []
-       (st/emit! (dd/search {:search-term search-term})
-                 (dd/clear-selected-files))))
+(mf/defc search-page*
+  {::mf/props :obj}
+  [{:keys [team search-term]}]
+  (let [search-term (d/nilv search-term "")
+
+        result      (mf/deref ref:search-result)
+        selected    (mf/deref ref:selected)
+
+        [rowref limit]
+        (hooks/use-dynamic-grid-item-width)]
+
+    (mf/with-effect [team]
+      (when team
+        (let [tname (if (:is-default team)
+                      (tr "dashboard.your-penpot")
+                      (:name team))]
+          (dom/set-html-title (tr "title.dashboard.search" tname)))))
+
+    (mf/with-effect [search-term]
+      (st/emit! (dd/search {:search-term search-term})
+                (dd/clear-selected-files)))
+
     [:*
      [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
       [:div#dashboard-search-title {:class (stl/css :dashboard-title)}
@@ -62,6 +78,6 @@
 
         :else
         [:& grid {:files result
-                  :hide-new? true
+                  :selected-files selected
                   :origin :search
                   :limit limit}])]]))

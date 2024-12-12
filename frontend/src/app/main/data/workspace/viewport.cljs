@@ -157,6 +157,8 @@
                 (rx/filter mse/pointer-event?)
                 (rx/filter #(= :delta (:source %)))
                 (rx/take-until stopper)
+                ;; Some events are executed in synchronous way like panning with backspace pressed
+                (rx/observe-on :af)
                 (rx/map (fn [event]
                           (let [delta (dm/get-prop event :pt)]
                             (update-viewport-position {:x #(- % (/ (:x delta) zoom))

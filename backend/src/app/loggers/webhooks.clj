@@ -18,7 +18,6 @@
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.data.json :as json]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]))
 
@@ -60,8 +59,10 @@
       (some->> (:project-id props) (lookup-webhooks-by-project pool))
       (some->> (:file-id props) (lookup-webhooks-by-file pool))))
 
-(defmethod ig/pre-init-spec ::process-event-handler [_]
-  (s/keys :req [::db/pool]))
+(defmethod ig/assert-key ::process-event-handler
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expect valid database pool")
+  (assert (http/client? (::http/client params)) "expect valid http client"))
 
 (defmethod ig/init-key ::process-event-handler
   [_ cfg]
@@ -87,12 +88,14 @@
   {:key-fn str/camel
    :indent true})
 
-(defmethod ig/pre-init-spec ::run-webhook-handler [_]
-  (s/keys :req [::http/client ::db/pool]))
+(defmethod ig/assert-key ::run-webhook-handler
+  [_ params]
+  (assert (db/pool? (::db/pool params)) "expect valid database pool")
+  (assert (http/client? (::http/client params)) "expect valid http client"))
 
-(defmethod ig/prep-key ::run-webhook-handler
-  [_ cfg]
-  (merge {::max-errors 3} (d/without-nils cfg)))
+(defmethod ig/expand-key ::run-webhook-handler
+  [k v]
+  {k (merge {::max-errors 3} (d/without-nils v))})
 
 (defmethod ig/init-key ::run-webhook-handler
   [_ {:keys [::db/pool ::max-errors] :as cfg}]

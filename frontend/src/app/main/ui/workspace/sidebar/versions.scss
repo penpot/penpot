@@ -8,6 +8,10 @@
 
 .version-toolbox {
   padding: $s-8;
+  height: 100%;
+  display: grid;
+  overflow: hidden;
+  grid-template-rows: auto auto 1fr;
 }
 
 .versions-entry-empty {
@@ -49,6 +53,8 @@
   display: flex;
   flex-direction: column;
   gap: $s-6;
+  overflow: auto;
+  margin: 0;
 }
 
 .version-entry {
@@ -223,4 +229,25 @@
 
 .version-snapshot-menu-btn {
   visibility: hidden;
+}
+
+.autosave-warning {
+  display: flex;
+  flex-direction: column;
+  gap: $s-8;
+  padding: $s-16;
+}
+
+.autosave-warning-text {
+  color: var(--color-foreground-primary);
+  font-size: $fs-12;
+  text-transform: uppercase;
+}
+
+.autosave-warning-subtext {
+  color: var(--color-foreground-secondary);
+  font-size: $fs-12;
+  a {
+    color: var(--color-accent-primary);
+  }
 }

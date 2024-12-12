@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.assets :as dwa]
@@ -25,11 +26,12 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(mf/defc assets-libraries
+(mf/defc assets-libraries*
   {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+   ::mf/props :obj
+   ::mf/private true}
   [{:keys [filters]}]
-  (let [libraries (mf/deref refs/workspace-libraries)
+  (let [libraries (mf/deref refs/libraries)
         libraries (mf/with-memo [libraries]
                     (->> (vals libraries)
                          (remove :is-indirect)
@@ -86,6 +88,7 @@
         section        (:section filters)
         ordering       (:ordering filters)
         reverse-sort?  (= :desc ordering)
+        num-libs       (count (mf/deref refs/libraries))
 
         toggle-ordering
         (mf/use-fn
@@ -133,34 +136,40 @@
 
         options
         [{:name    (tr "workspace.assets.box-filter-all")
-          :id      "section-all"
+          :id      "all"
           :handler on-section-filter-change}
          {:name    (tr "workspace.assets.components")
-          :id      "section-components"
+          :id      "components"
           :handler on-section-filter-change}
 
          (when (not components-v2)
            {:name    (tr "workspace.assets.graphics")
-            :id      "section-graphics"
+            :id      "graphics"
             :handler on-section-filter-change})
 
          {:name    (tr "workspace.assets.colors")
-          :id      "section-colors"
+          :id      "colors"
           :handler on-section-filter-change}
 
          {:name    (tr "workspace.assets.typography")
-          :id      "section-typographies"
+          :id      "typographies"
           :handler on-section-filter-change}]]
 
     [:article  {:class (stl/css :assets-bar)}
      [:div {:class (stl/css :assets-header)}
       (when-not ^boolean read-only?
-        [:button {:class (stl/css :libraries-button)
-                  :on-click show-libraries-dialog
-                  :data-testid "libraries"}
-         [:span {:class (stl/css :libraries-icon)}
-          i/library]
-         (tr "workspace.assets.libraries")])
+        (if (and (cf/external-feature-flag "templates-02" "test")
+                 (zero? num-libs))
+          [:button {:class (stl/css :add-library-button)
+                    :on-click show-libraries-dialog
+                    :data-testid "libraries"}
+           (tr "workspace.assets.add-library")]
+          [:button {:class (stl/css :libraries-button)
+                    :on-click show-libraries-dialog
+                    :data-testid "libraries"}
+           [:span {:class (stl/css :libraries-icon)}
+            i/library]
+           (tr "workspace.assets.libraries")]))
 
       [:div {:class (stl/css :search-wrapper)}
        [:& search-bar {:on-change on-search-term-change
@@ -193,4 +202,4 @@
        [:& (mf/provider cmm/assets-toggle-list-style) {:value toggle-list-style}
         [:*
          [:& assets-local-library {:filters filters}]
-         [:& assets-libraries {:filters filters}]]]]]]))
+         [:> assets-libraries* {:filters filters}]]]]]]))

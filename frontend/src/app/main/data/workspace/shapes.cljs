@@ -18,7 +18,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dc]
-   [app.main.data.events :as ev]
+   [app.main.data.event :as ev]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]

@@ -10,8 +10,9 @@
    [app.common.logging :as log]
    [app.common.uuid :as uuid]
    [app.config :as cf]
-   [app.main.data.events :as ev]
-   [app.main.data.users :as du]
+   [app.main.data.auth :as da]
+   [app.main.data.event :as ev]
+   [app.main.data.profile :as dp]
    [app.main.data.websocket :as ws]
    [app.main.errors]
    [app.main.features :as feat]
@@ -22,7 +23,6 @@
    [app.main.ui.confirm]
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.delete-shared]
-   [app.main.ui.modal :refer [modal]]
    [app.main.ui.routes :as rt]
    [app.main.worker :as worker]
    [app.plugins :as plugins]
@@ -30,6 +30,7 @@
    [app.util.i18n :as i18n]
    [app.util.theme :as theme]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [debug]
    [features]
    [potok.v2.core :as ptk]
@@ -38,11 +39,11 @@
 (log/setup! {:app :info})
 
 (when (= :browser cf/target)
-  (log/info :message "Welcome to penpot"
-            :version (:full cf/version)
+  (log/info :version (:full cf/version)
             :asserts *assert*
             :build-date cf/build-date
-            :public-uri (dm/str cf/public-uri)))
+            :public-uri (dm/str cf/public-uri))
+  (log/info :flags (str/join "," (map name cf/flags))))
 
 (declare reinit)
 
@@ -50,31 +51,9 @@
   (let [el (dom/get-element "app")]
     (mf/create-root el)))
 
-(defonce modal-root
-  (let [el (dom/get-element "modal")]
-    (mf/create-root el)))
-
 (defn init-ui
   []
-  (mf/render! app-root (mf/element ui/app))
-  (mf/render! modal-root (mf/element modal)))
-
-(defn- initialize-profile
-  "Event used mainly on application bootstrap; it fetches the profile
-  and if and only if the fetched profile corresponds to an
-  authenticated user; proceed to fetch teams."
-  [stream]
-  (rx/merge
-   (rx/of (du/fetch-profile))
-   (->> stream
-        (rx/filter (ptk/type? ::profile-fetched))
-        (rx/take 1)
-        (rx/map deref)
-        (rx/mapcat (fn [profile]
-                     (if (du/is-authenticated? profile)
-                       (rx/of (du/fetch-teams))
-                       (rx/empty))))
-        (rx/observe-on :async))))
+  (mf/render! app-root (mf/element ui/app)))
 
 (defn initialize
   []
@@ -87,23 +66,27 @@
     (watch [_ _ stream]
       (rx/merge
        (rx/of (ev/initialize)
-              (feat/initialize))
+              (feat/initialize)
+              (dp/refresh-profile))
 
-       (initialize-profile stream)
+       ;; Watch for profile deletion events
+       (->> stream
+            (rx/filter dp/profile-deleted?)
+            (rx/map da/logged-out))
 
        ;; Once profile is fetched, initialize all penpot application
        ;; routes
        (->> stream
-            (rx/filter du/profile-fetched?)
+            (rx/filter dp/profile-fetched?)
             (rx/take 1)
             (rx/map #(rt/init-routes)))
 
        ;; Once profile fetched and the current user is authenticated,
        ;; proceed to initialize the websockets connection.
        (->> stream
-            (rx/filter du/profile-fetched?)
+            (rx/filter dp/profile-fetched?)
             (rx/map deref)
-            (rx/filter du/is-authenticated?)
+            (rx/filter dp/is-authenticated?)
             (rx/take 1)
             (rx/map #(ws/initialize)))))))
 
@@ -125,9 +108,7 @@
    ;; The hard flag will force to unmount the whole UI and will redraw every component
    (when hard?
      (mf/unmount! app-root)
-     (mf/unmount! modal-root)
-     (set! app-root (mf/create-root (dom/get-element "app")))
-     (set! modal-root (mf/create-root (dom/get-element "modal"))))
+     (set! app-root (mf/create-root (dom/get-element "app"))))
    (st/emit! (ev/initialize))
    (init-ui)))
 

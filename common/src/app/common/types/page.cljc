@@ -33,7 +33,7 @@
    [:id ::sm/uuid]
    [:axis [::sm/one-of #{:x :y}]]
    [:position ::sm/safe-number]
-   [:frame-id {:optional true} ::sm/uuid]])
+   [:frame-id {:optional true} [:maybe ::sm/uuid]]])
 
 (def schema:guides
   [:map-of {:gen/max 2} ::sm/uuid schema:guide])

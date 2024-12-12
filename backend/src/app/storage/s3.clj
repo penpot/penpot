@@ -11,7 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uri :as u]
    [app.storage :as-alias sto]
    [app.storage.impl :as impl]
@@ -19,7 +19,6 @@
    [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [clojure.java.io :as io]
-   [clojure.spec.alpha :as s]
    [datoteka.fs :as fs]
    [integrant.core :as ig]
    [promesa.core :as p]
@@ -86,61 +85,68 @@
 
 ;; --- BACKEND INIT
 
-(s/def ::region ::us/keyword)
-(s/def ::bucket ::us/string)
-(s/def ::prefix ::us/string)
-(s/def ::endpoint ::us/string)
-(s/def ::io-threads ::us/integer)
+(def ^:private schema:config
+  [:map {:title "s3-backend-config"}
+   ::wrk/executor
+   [::region {:optional true} :keyword]
+   [::bucket {:optional true} ::sm/text]
+   [::prefix {:optional true} ::sm/text]
+   [::endpoint {:optional true} ::sm/uri]
+   [::io-threads {:optional true} ::sm/int]])
 
-(defmethod ig/pre-init-spec ::backend [_]
-  (s/keys :opt [::region ::bucket ::prefix ::endpoint ::io-threads ::wrk/executor]))
+(defmethod ig/expand-key ::backend
+  [k v]
+  {k (merge {::region :eu-central-1} (d/without-nils v))})
 
-(defmethod ig/prep-key ::backend
-  [_ {:keys [::prefix ::region] :as cfg}]
-  (cond-> (d/without-nils cfg)
-    (some? prefix) (assoc ::prefix prefix)
-    (nil? region)  (assoc ::region :eu-central-1)))
+(defmethod ig/assert-key ::backend
+  [_ params]
+  (assert (sm/check schema:config params)))
 
 (defmethod ig/init-key ::backend
-  [_ cfg]
-  ;; Return a valid backend data structure only if all optional
-  ;; parameters are provided.
-  (when (and (contains? cfg ::region)
-             (string? (::bucket cfg)))
-    (let [client    (build-s3-client cfg)
-          presigner (build-s3-presigner cfg)]
-      (assoc cfg
+  [_ params]
+  (when (and (contains? params ::region)
+             (contains? params ::bucket))
+    (let [client    (build-s3-client params)
+          presigner (build-s3-presigner params)]
+      (assoc params
              ::sto/type :s3
              ::client @client
              ::presigner presigner
              ::close-fn #(.close ^java.lang.AutoCloseable client)))))
+
+(defmethod ig/resolve-key ::backend
+  [_ params]
+  (dissoc params ::close-fn))
 
 (defmethod ig/halt-key! ::backend
   [_ {:keys [::close-fn]}]
   (when (fn? close-fn)
     (px/run! close-fn)))
 
-(s/def ::client #(instance? S3AsyncClient %))
-(s/def ::presigner #(instance? S3Presigner %))
-(s/def ::backend
-  (s/keys :req [::region
-                ::bucket
-                ::client
-                ::presigner]
-          :opt [::prefix
-                ::sto/id]))
+(def ^:private schema:backend
+  [:map {:title "s3-backend"}
+   ;; [::region :keyword]
+   ;; [::bucket ::sm/text]
+   [::client [:fn #(instance? S3AsyncClient %)]]
+   [::presigner [:fn #(instance? S3Presigner %)]]
+   [::prefix {:optional true} ::sm/text]
+   #_[::sto/type [:= :s3]]])
+
+(sm/register! ::backend schema:backend)
+
+(def ^:private valid-backend?
+  (sm/validator schema:backend))
 
 ;; --- API IMPL
 
 (defmethod impl/put-object :s3
   [backend object content]
-  (us/assert! ::backend backend)
+  (assert (valid-backend? backend) "expected a valid backend instance")
   (p/await! (put-object backend object content)))
 
 (defmethod impl/get-object-data :s3
   [backend object]
-  (us/assert! ::backend backend)
-
+  (assert (valid-backend? backend) "expected a valid backend instance")
   (loop [result (get-object-data backend object)
          retryn 0]
 
@@ -167,22 +173,21 @@
 
 (defmethod impl/get-object-bytes :s3
   [backend object]
-  (us/assert! ::backend backend)
+  (assert (valid-backend? backend) "expected a valid backend instance")
   (p/await! (get-object-bytes backend object)))
 
 (defmethod impl/get-object-url :s3
   [backend object options]
-  (us/assert! ::backend backend)
+  (assert (valid-backend? backend) "expected a valid backend instance")
   (get-object-url backend object options))
 
 (defmethod impl/del-object :s3
   [backend object]
-  (us/assert! ::backend backend)
   (p/await! (del-object backend object)))
 
 (defmethod impl/del-objects-in-bulk :s3
   [backend ids]
-  (us/assert! ::backend backend)
+  (assert (valid-backend? backend) "expected a valid backend instance")
   (p/await! (del-object-in-bulk backend ids)))
 
 ;; --- HELPERS
@@ -221,7 +226,7 @@
                        builder (.region ^S3AsyncClientBuilder builder (lookup-region region))
                        builder (cond-> ^S3AsyncClientBuilder builder
                                  (some? endpoint)
-                                 (.endpointOverride (URI. endpoint)))]
+                                 (.endpointOverride (URI. (str endpoint))))]
                    (.build ^S3AsyncClientBuilder builder))]
 
     (reify
@@ -240,7 +245,7 @@
                    (.build))]
 
     (-> (S3Presigner/builder)
-        (cond-> (some? endpoint) (.endpointOverride (URI. endpoint)))
+        (cond-> (some? endpoint) (.endpointOverride (URI. (str endpoint))))
         (.region (lookup-region region))
         (.serviceConfiguration ^S3Configuration config)
         (.build))))
@@ -337,7 +342,8 @@
 
 (defn- get-object-url
   [{:keys [::presigner ::bucket ::prefix]} {:keys [id]} {:keys [max-age] :or {max-age default-max-age}}]
-  (us/assert dt/duration? max-age)
+  (assert (dt/duration? max-age) "expected valid duration instance")
+
   (let [gor  (.. (GetObjectRequest/builder)
                  (bucket bucket)
                  (key (dm/str prefix (impl/id->path id)))

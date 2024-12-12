@@ -12,6 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
+   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.modifiers :as dwm]
@@ -48,7 +49,7 @@
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
-   [app.render-wasm :as render.wasm]
+   [app.render-wasm.api :as wasm.api]
    [app.util.debug :as dbg]
    [beicon.v2.core :as rx]
    [promesa.core :as p]
@@ -93,7 +94,7 @@
                 show-distances?
                 picking-color?]} wglobal
 
-        permissions       (mf/use-ctx ctx/team-permissions)
+        permissions       (mf/use-ctx ctx/permissions)
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
 
         ;; DEREFS
@@ -111,10 +112,9 @@
         modifiers         (mf/deref refs/workspace-modifiers)
         text-modifiers    (mf/deref refs/workspace-text-modifier)
 
-        render-context-lost? (mf/deref refs/render-context-lost?)
-
         objects-modified  (mf/with-memo [base-objects text-modifiers modifiers]
-                            (apply-modifiers-to-selected selected base-objects text-modifiers modifiers))
+                            (binding [cts/*wasm-sync* true]
+                              (apply-modifiers-to-selected selected base-objects text-modifiers modifiers)))
 
         selected-shapes   (keep (d/getf objects-modified) selected)
 
@@ -176,8 +176,6 @@
         grid-editing?     (and edition (ctl/grid-layout? base-objects edition))
 
         mode-inspect?       (= options-mode :inspect)
-
-        on-render-restore-context #(.reload js/location)
 
         on-click          (actions/on-click hover selected edition drawing-path? drawing-tool space? selrect z?)
         on-context-menu   (actions/on-context-menu hover hover-ids read-only?)
@@ -272,28 +270,44 @@
         offset-y (if selecting-first-level-frame?
                    (:y first-shape)
                    (:y selected-frame))
+        rule-area-size (/ rulers/ruler-area-size zoom)
+        preview-blend (-> refs/workspace-preview-blend
+                          (mf/deref))]
 
-        rule-area-size (/ rulers/ruler-area-size zoom)]
-
-    (mf/with-effect []
+    ;; NOTE: We need this page-id dependency to react to it and reset the
+    ;;       canvas, even though we are not using `page-id` inside the hook.
+    ;;       We think moving this out to a handler will make the render code
+    ;;       harder to follow through.
+    (mf/with-effect [page-id]
       (when-let [canvas (mf/ref-val canvas-ref)]
-        (->> render.wasm/module
+        (->> wasm.api/module
              (p/fmap (fn [ready?]
                        (when ready?
                          (reset! canvas-init? true)
-                         (render.wasm/setup-canvas canvas)))))
+                         (wasm.api/assign-canvas canvas)
+                         (wasm.api/set-canvas-background background)))))
         (fn []
-          (render.wasm/dispose-canvas canvas))))
+          (wasm.api/clear-canvas))))
 
-    (mf/with-effect [objects-modified canvas-init?]
+    (mf/with-effect [vport]
       (when @canvas-init?
-        (render.wasm/set-objects objects-modified)
-        (render.wasm/draw-objects zoom vbox)))
+        (wasm.api/resize-viewbox (:width vport) (:height vport))))
+
+    (mf/with-effect [base-objects canvas-init?]
+      (when @canvas-init?
+        (wasm.api/set-objects base-objects)))
+
+    (mf/with-effect [preview-blend canvas-init?]
+      (when (and @canvas-init? preview-blend)
+        (wasm.api/request-render)))
 
     (mf/with-effect [vbox canvas-init?]
-      (let [frame-id (when @canvas-init? (do
-                                           (render.wasm/draw-objects zoom vbox)))]
-        (partial render.wasm/cancel-draw frame-id)))
+      (when @canvas-init?
+        (wasm.api/set-view zoom vbox)))
+
+    (mf/with-effect [background]
+      (when @canvas-init?
+        (wasm.api/set-canvas-background background)))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool drawing-path?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -341,8 +355,8 @@
                :ref canvas-ref
                :class (stl/css :render-shapes)
                :key (dm/str "render" page-id)
-               :width (:width vport 0)
-               :height (:height vport 0)
+               :width (* wasm.api/dpr (:width vport 0))
+               :height (* wasm.api/dpr (:height vport 0))
                :style {:background-color background
                        :pointer-events "none"}}]
 
@@ -608,7 +622,7 @@
               :hover-disabled? hover-disabled?}])])
 
        (when show-gradient-handlers?
-         [:& gradients/gradient-handlers
+         [:> gradients/gradient-handlers*
           {:id (first selected)
            :zoom zoom}])
 
@@ -639,11 +653,4 @@
          {:objects base-objects
           :zoom zoom
           :vbox vbox
-          :bottom-padding (when palete-size (+ palete-size 8))}]]]]
-
-     (when render-context-lost?
-       [:div {:id "context-lost" :class (stl/css :context-lost)}
-        [:h1 "GL Error Screen"]
-        [:button
-         {:on-click on-render-restore-context}
-         "Restore context"]])]))
+          :bottom-padding (when palete-size (+ palete-size 8))}]]]]]))

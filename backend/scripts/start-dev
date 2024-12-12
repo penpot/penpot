@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 export PENPOT_HOST=devenv
-export PENPOT_TENANT=dev
 export PENPOT_FLAGS="\
        $PENPOT_FLAGS \
        enable-prepl-server \
@@ -10,6 +9,7 @@ export PENPOT_FLAGS="\
        enable-webhooks \
        enable-backend-asserts \
        enable-audit-log \
+       enable-login-with-ldap \
        enable-transit-readable-response \
        enable-demo-users \
        enable-feature-fdata-pointer-map \

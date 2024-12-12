@@ -9,11 +9,20 @@
 .stroke-data {
   @include flexColumn;
 
-  &.dnd-over-top {
-    border-top: $s-1 solid var(--layer-row-foreground-color-drag);
+  position: relative;
+
+  --reorder-left-position: calc(-1 * var(--sp-l));
+
+  &:hover {
+    --reorder-icon-visibility: visible;
   }
+
+  &.dnd-over-top {
+    --reorder-top-display: block;
+  }
+
   &.dnd-over-bot {
-    border-bottom: $s-1 solid var(--layer-row-foreground-color-drag);
+    --reorder-bottom-display: block;
   }
 }
 

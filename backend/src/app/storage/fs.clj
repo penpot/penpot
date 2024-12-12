@@ -7,11 +7,10 @@
 (ns app.storage.fs
   (:require
    [app.common.exceptions :as ex]
-   [app.common.spec :as us]
+   [app.common.schema :as sm]
    [app.common.uri :as u]
    [app.storage :as-alias sto]
    [app.storage.impl :as impl]
-   [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [datoteka.io :as io]
@@ -26,10 +25,10 @@
 
 ;; --- BACKEND INIT
 
-(s/def ::directory ::us/string)
-
-(defmethod ig/pre-init-spec ::backend [_]
-  (s/keys :opt [::directory]))
+(defmethod ig/assert-key ::backend
+  [_ params]
+  ;; FIXME:  path (?)
+  (assert (string? (::directory params))))
 
 (defmethod ig/init-key ::backend
   [_ cfg]
@@ -42,18 +41,22 @@
              ::directory (str dir)
              ::uri (u/uri (str "file://" dir))))))
 
-(s/def ::uri u/uri?)
-(s/def ::backend
-  (s/keys :req [::directory
-                ::uri]
-          :opt [::sto/type
-                ::sto/id]))
+(def ^:private schema:backend
+  [:map {:title "fs-backend"}
+   [::directory :string]
+   [::uri ::sm/uri]
+   [::sto/type [:= :fs]]])
+
+(sm/register! ::backend schema:backend)
+
+(def ^:private valid-backend?
+  (sm/validator schema:backend))
 
 ;; --- API IMPL
 
 (defmethod impl/put-object :fs
   [backend {:keys [id] :as object} content]
-  (us/assert! ::backend backend)
+  (assert (valid-backend? backend) "expected a valid backend instance")
   (let [base (fs/path (::directory backend))
         path (fs/path (impl/id->path id))
         full (fs/normalize (fs/join base path))]
@@ -69,7 +72,7 @@
 
 (defmethod impl/get-object-data :fs
   [backend {:keys [id] :as object}]
-  (us/assert! ::backend backend)
+  (assert (valid-backend? backend) "expected a valid backend instance")
   (let [^Path base (fs/path (::directory backend))
         ^Path path (fs/path (impl/id->path id))
         ^Path full (fs/normalize (fs/join base path))]
@@ -86,7 +89,7 @@
 
 (defmethod impl/get-object-url :fs
   [{:keys [::uri] :as backend} {:keys [id] :as object} _]
-  (us/assert! ::backend backend)
+  (assert (valid-backend? backend) "expected a valid backend instance")
   (update uri :path
           (fn [existing]
             (if (str/ends-with? existing "/")
@@ -95,7 +98,7 @@
 
 (defmethod impl/del-object :fs
   [backend {:keys [id] :as object}]
-  (us/assert! ::backend backend)
+  (assert (valid-backend? backend) "expected a valid backend instance")
   (let [base (fs/path (::directory backend))
         path (fs/path (impl/id->path id))
         path (fs/join base path)]
@@ -103,7 +106,7 @@
 
 (defmethod impl/del-objects-in-bulk :fs
   [backend ids]
-  (us/assert! ::backend backend)
+  (assert (valid-backend? backend) "expected a valid backend instance")
   (let [base (fs/path (::directory backend))]
     (doseq [id ids]
       (let [path (fs/path (impl/id->path id))

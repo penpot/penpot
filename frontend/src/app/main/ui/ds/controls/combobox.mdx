@@ -1,0 +1,62 @@
+import { Canvas, Meta } from "@storybook/blocks";
+import * as ComboboxStories from "./combobox.stories";
+
+<Meta title="Controls/Combobox" />
+
+# Combobox
+
+Combobox lets users choose one option from an options menu or enter a custom value that is not listed in the menu. It combines the functionality of a dropdown menu and an input field, allowing for both selection and free-form input.
+
+## Variants
+
+**Text**: We will use this variant when there are enough space and icons don't add any useful context.
+
+<Canvas of={ComboboxStories.Default} />
+
+**Icon and text**: We will use this variant when there are enough space and icons add any useful context.
+
+<Canvas of={ComboboxStories.WithIcons} />
+
+## Technical notes
+
+### Icons
+
+Each option of `combobox*` may accept an `icon`, which must contain an [icon ID](../foundations/assets/icon.mdx).
+These are available in the `app.main.ds.foundations.assets.icon` namespace.
+
+```clj
+(ns app.main.ui.foo
+  (:require
+   [app.main.ui.ds.foundations.assets.icon :as i]))
+```
+
+```clj
+[:> combobox*
+    {:options [{ :label "Code"
+                 :id "option-code"
+                 :icon i/fill-content }
+               { :label "Design"
+                 :id "option-design"
+                 :icon i/pentool }
+               { :label "Menu"
+                 :id "option-menu" }
+               ]}]
+```
+
+<Canvas of={ComboboxStories.WithIcons} />
+
+## Usage guidelines (design)
+
+### Where to Use
+
+Combobox is used in applications where users need to select from a range of text-based options or enter custom input.
+
+### When to Use
+
+Consider using a combobox when you have five or more options to present, and users may benefit from the ability to search or input a custom value that is not in the predefined list.
+
+### Interaction / Behavior
+
+- **Opening Options**: When the user clicks on the input area, a dropdown menu of options appears. Users can either scroll through the options, type to filter them, or input a new value directly.
+- **Selecting an Option**: Once an option is selected or a custom value is entered, the dropdown closes, and the input field displays the chosen value.
+- **Keyboard Support**: Combobox supports navigation using keyboard input, including arrow keys to navigate the list and Enter to make a selection.

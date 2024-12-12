@@ -8,6 +8,7 @@
   "In-memory cache backed by Caffeine"
   (:refer-clojure :exclude [get])
   (:require
+   [app.common.schema :as sm]
    [app.util.time :as dt]
    [promesa.exec :as px])
   (:import
@@ -77,3 +78,9 @@
 (defn cache?
   [o]
   (satisfies? ICache o))
+
+(sm/register!
+ {:type ::cache
+  :pred cache?
+  :type-properties
+  {:title "cache instance"}})

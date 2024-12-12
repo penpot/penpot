@@ -46,14 +46,15 @@
   (s/keys :req-un [::path]
           :opt-un [::mtype]))
 
-(sm/register! ::upload
-  [:map {:title "Upload"}
-   [:filename :string]
-   [:size ::sm/int]
-   [:path ::fs/path]
-   [:mtype {:optional true} :string]
-   [:headers {:optional true}
-    [:map-of :string :string]]])
+(sm/register!
+ ^{::sm/type ::upload}
+ [:map {:title "Upload"}
+  [:filename :string]
+  [:size ::sm/int]
+  [:path ::fs/path]
+  [:mtype {:optional true} :string]
+  [:headers {:optional true}
+   [:map-of :string :string]]])
 
 (defn validate-media-type!
   ([upload] (validate-media-type! upload cm/valid-image-types))

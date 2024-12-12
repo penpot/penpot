@@ -410,6 +410,11 @@
       [:type [:= :add-token-set]]
       [:token-set ::ctot/token-set]]]
 
+    [:add-token-sets
+     [:map {:title "AddTokenSetsChange"}
+      [:type [:= :add-token-sets]]
+      [:token-sets [:sequential ::ctot/token-set]]]]
+
     [:mod-token-set
      [:map {:title "ModTokenSetChange"}
       [:type [:= :mod-token-set]]
@@ -426,6 +431,11 @@
      [:map {:title "DelTokenSetChange"}
       [:type [:= :del-token-set]]
       [:name :string]]]
+
+    [:del-token-set-path
+     [:map {:title "DelTokenSetPathChange"}
+      [:type [:= :del-token-set-path]]
+      [:path :string]]]
 
     [:set-tokens-lib
      [:map {:title "SetTokensLib"}
@@ -540,7 +550,8 @@
    (when verify?
      (check-changes! items))
 
-   (binding [*touched-changes* (volatile! #{})]
+   (binding [*touched-changes* (volatile! #{})
+             cts/*wasm-sync* true]
      (let [result (reduce #(or (process-change %1 %2) %1) data items)
            result (reduce process-touched-change result @*touched-changes*)]
        ;; Validate result shapes (only on the backend)
@@ -1046,16 +1057,19 @@
                                 (ctob/ensure-tokens-lib)
                                 (ctob/add-set (ctob/make-token-set token-set)))))
 
+(defmethod process-change :add-token-sets
+  [data {:keys [token-sets]}]
+  (update data :tokens-lib #(-> %
+                                (ctob/ensure-tokens-lib)
+                                (ctob/add-sets (map ctob/make-token-set token-sets)))))
+
 (defmethod process-change :mod-token-set
   [data {:keys [name token-set]}]
   (update data :tokens-lib (fn [lib]
-                             (let [path-changed? (not= name (:name token-set))
-                                   lib' (-> lib
-                                            (ctob/ensure-tokens-lib)
-                                            (ctob/update-set name (fn [prev-set]
-                                                                    (merge prev-set (dissoc token-set :tokens)))))]
-                               (cond-> lib'
-                                 path-changed? (ctob/update-set-name name (:name token-set)))))))
+                             (-> lib
+                                 (ctob/ensure-tokens-lib)
+                                 (ctob/update-set name (fn [prev-set]
+                                                         (merge prev-set (dissoc token-set :tokens))))))))
 
 (defmethod process-change :move-token-set-before
   [data {:keys [set-name before-set-name]}]
@@ -1067,7 +1081,13 @@
   [data {:keys [name]}]
   (update data :tokens-lib #(-> %
                                 (ctob/ensure-tokens-lib)
-                                (ctob/delete-set name))))
+                                (ctob/delete-set-path name))))
+
+(defmethod process-change :del-token-set-path
+  [data {:keys [path]}]
+  (update data :tokens-lib #(-> %
+                                (ctob/ensure-tokens-lib)
+                                (ctob/delete-set-path path))))
 
 ;; === Operations
 

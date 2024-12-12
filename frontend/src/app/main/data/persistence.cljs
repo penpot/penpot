@@ -52,7 +52,7 @@
       (if-let [current-file-id (:current-file-id state)]
         (if (= file-id current-file-id)
           (update-in state [:workspace-file :revn] max revn)
-          (d/update-in-when state [:workspace-libraries file-id :revn] max revn))
+          (d/update-in-when state [:libraries file-id :revn] max revn))
         state))
 
     ptk/EffectEvent

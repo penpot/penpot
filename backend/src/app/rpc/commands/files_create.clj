@@ -118,11 +118,12 @@
         ;; feature on frontend and make it permanent on file
         features (-> (:features params #{})
                      (set/intersection cfeat/no-migration-features)
+                     (set/difference cfeat/frontend-only-features)
                      (set/union features))
 
         params   (-> params
                      (assoc :profile-id profile-id)
-                     (assoc :features features))]
+                     (assoc :features (set/difference features cfeat/frontend-only-features)))]
 
     (quotes/check! cfg {::quotes/id ::quotes/files-per-project
                         ::quotes/team-id team-id

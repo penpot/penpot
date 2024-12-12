@@ -10,7 +10,6 @@
    [app.common.schema :as sm]
    [app.common.types.page :as ctp]
    [app.common.types.plugins :as ctpg]
-   [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -66,8 +65,6 @@
    :fill-color              :fill-group
    :fill-opacity            :fill-group
 
-   :rx                      :radius-group
-   :ry                      :radius-group
    :r1                      :radius-group
    :r2                      :radius-group
    :r3                      :radius-group
@@ -236,7 +233,7 @@
 
 (defn group->swap-slot
   [group]
-  (uuid/uuid (subs (name group) 10)))
+  (parse-uuid (subs (name group) 10)))
 
 (defn get-swap-slot
   "If the shape has a :touched group in the form :swap-slot-<uuid>, get the id."
@@ -326,7 +323,7 @@
 (defn valid-touched-group?
   [group]
   (try
-    (or ((all-touched-groups) group)
+    (or (contains? (all-touched-groups) group)
         (and (swap-slot? group)
              (some? (group->swap-slot group))))
     (catch #?(:clj Throwable :cljs :default) _

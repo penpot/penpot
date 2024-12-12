@@ -18,6 +18,7 @@
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.color-input :refer [color-input*]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.reorder-handler :refer [reorder-handler]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.formats :as fmt]
@@ -27,7 +28,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
-
 
 (def ^:private detach-icon
   (i/icon-xref :detach (stl/css :detach-icon)))
@@ -46,12 +46,12 @@
   (if (= v :multiple) nil v))
 
 (mf/defc color-row
-  [{:keys [index color disable-gradient disable-opacity disable-image on-change
+  [{:keys [index color disable-gradient disable-opacity disable-image disable-picker on-change
            on-reorder on-detach on-open on-close on-remove
            disable-drag on-focus on-blur select-only select-on-focus]}]
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
         file-colors     (mf/deref refs/workspace-file-colors)
-        shared-libs     (mf/deref refs/workspace-libraries)
+        shared-libs     (mf/deref refs/libraries)
         hover-detach    (mf/use-state false)
         on-change       (h/use-ref-callback on-change)
         src-colors      (if (= (:file-id color) current-file-id)
@@ -72,8 +72,7 @@
         editing-text?  (deref editing-text*)
 
         opacity?
-        (and (not gradient-color?)
-             (not multiple-colors?)
+        (and (not multiple-colors?)
              (not library-color?)
              (not disable-opacity))
 
@@ -134,7 +133,7 @@
 
         handle-click-color
         (mf/use-fn
-         (mf/deps disable-gradient disable-opacity disable-image on-change on-close on-open)
+         (mf/deps disable-gradient disable-opacity disable-image disable-picker on-change on-close on-open)
          (fn [color event]
            (let [color (cond
                          multiple-colors?
@@ -166,7 +165,8 @@
              (when (fn? on-open)
                (on-open color))
 
-             (modal/show! :colorpicker props))))
+             (when-not disable-picker
+               (modal/show! :colorpicker props)))))
 
         prev-color (h/use-previous color)
 
@@ -187,15 +187,19 @@
                                 :name (str "Color row" index)})
                         [nil nil])]
 
-    (mf/with-effect [color prev-color]
-      (when (not= prev-color color)
+    (mf/with-effect [color prev-color disable-picker]
+      (when (and (not disable-picker) (not= prev-color color))
         (modal/update-props! :colorpicker {:data (parse-color color)})))
 
     [:div {:class (stl/css-case
                    :color-data true
                    :dnd-over-top (= (:over dprops) :top)
-                   :dnd-over-bot (= (:over dprops) :bot))
-           :ref dref}
+                   :dnd-over-bot (= (:over dprops) :bot))}
+
+     ;; Drag handler
+     (when (some? on-reorder)
+       [:& reorder-handler {:ref dref}])
+
      [:div {:class (stl/css :color-info)}
       [:div {:class (stl/css-case :color-name-wrapper true
                                   :no-opacity (or disable-opacity

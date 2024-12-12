@@ -11,7 +11,7 @@
    [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
-   [app.main.data.users :as du]
+   [app.main.data.profile :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
@@ -25,12 +25,15 @@
    [:fullname [::sm/text {:max 250}]]
    [:email ::sm/email]])
 
+(defn- on-success
+  [_]
+  (st/emit! (ntf/success (tr "notifications.profile-saved"))))
+
 (defn- on-submit
   [form _event]
   (let [data  (:clean-data @form)]
     (st/emit! (du/update-profile data)
-              (du/persist-profile)
-              (ntf/success (tr "notifications.profile-saved")))))
+              (du/persist-profile {:on-success on-success}))))
 
 ;; --- Profile Form
 

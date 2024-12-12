@@ -9,12 +9,10 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.spec :as us]
    [app.common.uri :as u]
    [app.db :as db]
    [app.storage :as sto]
    [app.util.time :as dt]
-   [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [yetti.response :as-alias yres]))
 
@@ -95,11 +93,10 @@
 
 ;; --- Initialization
 
-(s/def ::path ::us/string)
-(s/def ::routes vector?)
-
-(defmethod ig/pre-init-spec ::routes [_]
-  (s/keys :req [::sto/storage  ::path]))
+(defmethod ig/assert-key ::routes
+  [_ params]
+  (assert (sto/valid-storage? (::sto/storage params)) "expected valid storage instance")
+  (assert (string? (::path params))))
 
 (defmethod ig/init-key ::routes
   [_ cfg]

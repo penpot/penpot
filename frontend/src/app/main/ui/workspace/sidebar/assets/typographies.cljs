@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
@@ -26,6 +27,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def lens:typography-section-state
@@ -97,7 +99,18 @@
         on-asset-click
         (mf/use-fn
          (mf/deps typography apply-typography on-asset-click)
-         (partial on-asset-click typography-id apply-typography))]
+         (partial on-asset-click typography-id apply-typography))
+
+        on-click
+        (mf/use-fn
+         (mf/deps typography apply-typography on-asset-click)
+         (fn [ev]
+           (st/emit! (ptk/event
+                      ::ev/event
+                      {::ev/name "use-library-typography"
+                       ::ev/origin "sidebar"
+                       :external-library (not local?)}))
+           (on-asset-click ev)))]
 
     [:div {:class (stl/css :typography-item)
            :ref item-ref
@@ -113,7 +126,7 @@
        :typography typography
        :local? local?
        :selected? (contains? selected typography-id)
-       :on-click on-asset-click
+       :on-click on-click
        :on-change handle-change
        :on-context-menu on-context-menu
        :editing? editing?

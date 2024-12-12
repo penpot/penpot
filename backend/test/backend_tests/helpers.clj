@@ -123,7 +123,7 @@
                              [:app.main/default :app.worker/runner]
                              [:app.main/webhook :app.worker/runner]))
           _      (ig/load-namespaces system)
-          system (-> (ig/prep system)
+          system (-> (ig/expand system)
                      (ig/init))]
       (try
         (binding [*system* system
@@ -400,7 +400,11 @@
   (db/tx-run! *system* (fn [{:keys [::db/conn] :as cfg}]
                          (let [tasks (->> (db/exec! conn [sql:pending-tasks])
                                           (map #'app.worker.runner/decode-task-row))]
-                           (run! (partial #'app.worker.runner/run-task cfg) tasks)))))
+                           (doseq [task tasks]
+                             (let [cfg (-> cfg
+                                           (assoc :app.worker.runner/queue (:queue task))
+                                           (assoc :app.worker.runner/id 0))]
+                               (#'app.worker.runner/run-task cfg task)))))))
 
 ;; --- UTILS
 

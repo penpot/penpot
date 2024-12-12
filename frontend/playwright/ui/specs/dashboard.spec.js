@@ -52,3 +52,64 @@ test("Lists files in the drafts page", async ({ page }) => {
     dashboardPage.page.getByRole("button", { name: /New File 2/ }),
   ).toBeVisible();
 });
+
+test("User hasn't an empty placeholder", async ({ page }) => {
+  const dashboardPage = new DashboardPage(page);
+  await dashboardPage.goToDashboard();
+  await expect(
+    dashboardPage.page.getByTestId("empty-placeholder"),
+  ).toBeHidden();
+});
+
+test("User has context menu options for edit file", async ({ page }) => {
+  await DashboardPage.mockRPC(
+    page,
+    "get-all-projects",
+    "dashboard/get-all-projects.json",
+  );
+
+  const dashboardPage = new DashboardPage(page);
+  await dashboardPage.setupDrafts();
+  await dashboardPage.goToDrafts();
+
+  const button = dashboardPage.page.getByRole("button", { name: /New File 2/ });
+  await button.click();
+  await button.click({ button: "right" });
+
+  await expect(dashboardPage.page.getByText("rename")).toBeVisible();
+  await expect(dashboardPage.page.getByText("duplicate")).toBeVisible();
+  await expect(
+    dashboardPage.page.getByText("add as shared library"),
+  ).toBeVisible();
+  await expect(dashboardPage.page.getByText("delete")).toBeVisible();
+});
+
+test("User has create file button", async ({ page }) => {
+  const dashboardPage = new DashboardPage(page);
+  await dashboardPage.setupDrafts();
+  await dashboardPage.goToDrafts();
+  await expect(dashboardPage.page.getByText("+ New File")).toBeVisible();
+});
+
+test("User has add font button", async ({ page }) => {
+  const dashboardPage = new DashboardPage(page);
+  await dashboardPage.goToFonts();
+  await expect(dashboardPage.page.getByText("add custom font")).toBeVisible();
+});
+
+test("Bug 9443, Admin can not demote owner", async ({ page }) => {
+  const dashboardPage = new DashboardPage(page);
+  await dashboardPage.setupDashboardFull();
+  await DashboardPage.mockRPC(
+    page,
+    "get-team-members?team-id=*",
+    "dashboard/get-team-members-admin.json",
+  );
+
+  await dashboardPage.goToSecondTeamMembersSection();
+
+  await expect(page.getByRole("heading", { name: "Members" })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Admin" })).toBeVisible();
+  await expect(page.getByText("Owner")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Owner" })).toHaveCount(0);
+});

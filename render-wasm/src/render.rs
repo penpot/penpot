@@ -1,86 +1,338 @@
+use std::collections::HashMap;
+
+use skia::Contains;
 use skia_safe as skia;
-use skia_safe::gpu::{self, gl::FramebufferInfo, DirectContext};
+use uuid::Uuid;
 
-extern "C" {
-    pub fn emscripten_GetProcAddress(
-        name: *const ::std::os::raw::c_char,
-    ) -> *const ::std::os::raw::c_void;
+use crate::math;
+use crate::view::Viewbox;
+
+mod blend;
+mod gpu_state;
+mod images;
+mod options;
+
+use gpu_state::GpuState;
+use options::RenderOptions;
+
+pub use blend::BlendMode;
+pub use images::*;
+
+pub trait Renderable {
+    fn render(&self, surface: &mut skia::Surface, images: &ImageStore) -> Result<(), String>;
+    fn blend_mode(&self) -> BlendMode;
+    fn opacity(&self) -> f32;
+    fn bounds(&self) -> math::Rect;
+    fn hidden(&self) -> bool;
+    fn clip(&self) -> bool;
+    fn children_ids(&self) -> Vec<Uuid>;
 }
 
-pub struct GpuState {
-    pub context: DirectContext,
-    framebuffer_info: FramebufferInfo,
+pub(crate) struct CachedSurfaceImage {
+    pub image: Image,
+    pub viewbox: Viewbox,
+    has_all_shapes: bool,
 }
 
-/// This struct holds the state of the Rust application between JS calls.
-///
-/// It is created by [init] and passed to the other exported functions. Note that rust-skia data
-/// structures are not thread safe, so a state must not be shared between different Web Workers.
-pub struct State {
-    pub gpu_state: GpuState,
-    pub surface: skia::Surface,
-}
-
-impl State {
-    pub fn new(gpu_state: GpuState, surface: skia::Surface) -> Self {
-        State { gpu_state, surface }
-    }
-
-    pub fn set_surface(&mut self, surface: skia::Surface) {
-        self.surface = surface;
-    }
-}
-
-pub(crate) fn init_gl() {
-    unsafe {
-        gl::load_with(|addr| {
-            let addr = std::ffi::CString::new(addr).unwrap();
-            emscripten_GetProcAddress(addr.into_raw() as *const _) as *const _
-        });
+impl CachedSurfaceImage {
+    fn is_dirty(&self, viewbox: &Viewbox) -> bool {
+        !self.has_all_shapes && !self.viewbox.area.contains(viewbox.area)
     }
 }
 
-/// This needs to be done once per WebGL context.
-pub(crate) fn create_gpu_state() -> GpuState {
-    let interface = skia_safe::gpu::gl::Interface::new_native().unwrap();
-    let context = skia_safe::gpu::direct_contexts::make_gl(interface, None).unwrap();
-    let framebuffer_info = {
-        let mut fboid: gl::types::GLint = 0;
-        unsafe { gl::GetIntegerv(gl::FRAMEBUFFER_BINDING, &mut fboid) };
+pub(crate) struct RenderState {
+    gpu_state: GpuState,
+    pub final_surface: skia::Surface,
+    pub drawing_surface: skia::Surface,
+    pub debug_surface: skia::Surface,
+    pub cached_surface_image: Option<CachedSurfaceImage>,
+    options: RenderOptions,
+    pub viewbox: Viewbox,
+    images: ImageStore,
+    background_color: skia::Color,
+}
 
-        FramebufferInfo {
-            fboid: fboid.try_into().unwrap(),
-            format: skia_safe::gpu::gl::Format::RGBA8.into(),
-            protected: skia_safe::gpu::Protected::No,
+impl RenderState {
+    pub fn new(width: i32, height: i32) -> RenderState {
+        // This needs to be done once per WebGL context.
+        let mut gpu_state = GpuState::new();
+        let mut final_surface = gpu_state.create_target_surface(width, height);
+        let drawing_surface = final_surface
+            .new_surface_with_dimensions((width, height))
+            .unwrap();
+        let debug_surface = final_surface
+            .new_surface_with_dimensions((width, height))
+            .unwrap();
+
+        RenderState {
+            gpu_state,
+            final_surface,
+            drawing_surface,
+            debug_surface,
+            cached_surface_image: None,
+            options: RenderOptions::default(),
+            viewbox: Viewbox::new(width as f32, height as f32),
+            images: ImageStore::new(),
+            background_color: skia::Color::TRANSPARENT,
         }
-    };
-
-    GpuState {
-        context,
-        framebuffer_info,
     }
-}
 
-/// Create the Skia surface that will be used for rendering.
-pub(crate) fn create_surface(gpu_state: &mut GpuState, width: i32, height: i32) -> skia::Surface {
-    let backend_render_target =
-        gpu::backend_render_targets::make_gl((width, height), 1, 8, gpu_state.framebuffer_info);
+    pub fn add_image(&mut self, id: Uuid, image_data: &[u8]) -> Result<(), String> {
+        self.images.add(id, image_data)
+    }
 
-    gpu::surfaces::wrap_backend_render_target(
-        &mut gpu_state.context,
-        &backend_render_target,
-        skia_safe::gpu::SurfaceOrigin::BottomLeft,
-        skia_safe::ColorType::RGBA8888,
-        None,
-        None,
-    )
-    .unwrap()
-}
+    pub fn has_image(&mut self, id: &Uuid) -> bool {
+        self.images.contains(id)
+    }
 
-pub(crate) fn render_rect(surface: &mut skia::Surface, rect: skia::Rect, color: skia::Color) {
-    let mut paint = skia::Paint::default();
-    paint.set_style(skia::PaintStyle::Fill);
-    paint.set_color(color);
-    paint.set_anti_alias(true);
-    surface.canvas().draw_rect(rect, &paint);
+    pub fn set_debug_flags(&mut self, debug: u32) {
+        self.options.debug_flags = debug;
+    }
+
+    pub fn set_dpr(&mut self, dpr: f32) {
+        if Some(dpr) != self.options.dpr {
+            self.options.dpr = Some(dpr);
+            self.resize(
+                self.viewbox.width.floor() as i32,
+                self.viewbox.height.floor() as i32,
+            );
+        }
+    }
+
+    pub fn set_background_color(&mut self, color: skia::Color) {
+        self.background_color = color;
+        let _ = self.render_all_from_cache();
+    }
+
+    pub fn resize(&mut self, width: i32, height: i32) {
+        let dpr_width = (width as f32 * self.options.dpr()).floor() as i32;
+        let dpr_height = (height as f32 * self.options.dpr()).floor() as i32;
+
+        let surface = self.gpu_state.create_target_surface(dpr_width, dpr_height);
+        self.final_surface = surface;
+        self.drawing_surface = self
+            .final_surface
+            .new_surface_with_dimensions((dpr_width, dpr_height))
+            .unwrap();
+        self.debug_surface = self
+            .final_surface
+            .new_surface_with_dimensions((dpr_width, dpr_height))
+            .unwrap();
+
+        self.viewbox.set_wh(width as f32, height as f32);
+    }
+
+    pub fn flush(&mut self) {
+        self.gpu_state
+            .context
+            .flush_and_submit_surface(&mut self.final_surface, None)
+    }
+
+    pub fn translate(&mut self, dx: f32, dy: f32) {
+        self.drawing_surface.canvas().translate((dx, dy));
+    }
+
+    pub fn scale(&mut self, sx: f32, sy: f32) {
+        self.drawing_surface.canvas().scale((sx, sy));
+    }
+
+    pub fn reset_canvas(&mut self) {
+        self.drawing_surface
+            .canvas()
+            .clear(skia::Color::TRANSPARENT)
+            .reset_matrix();
+        self.final_surface
+            .canvas()
+            .clear(self.background_color)
+            .reset_matrix();
+        self.debug_surface
+            .canvas()
+            .clear(skia::Color::TRANSPARENT)
+            .reset_matrix();
+    }
+
+    pub fn render_single_element(&mut self, element: &impl Renderable) {
+        element
+            .render(&mut self.drawing_surface, &self.images)
+            .unwrap();
+
+        let mut paint = skia::Paint::default();
+        paint.set_blend_mode(element.blend_mode().into());
+        paint.set_alpha_f(element.opacity());
+
+        self.drawing_surface.draw(
+            &mut self.final_surface.canvas(),
+            (0.0, 0.0),
+            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
+            Some(&paint),
+        );
+        self.drawing_surface
+            .canvas()
+            .clear(skia::Color::TRANSPARENT);
+    }
+
+    pub fn navigate(&mut self, tree: &HashMap<Uuid, impl Renderable>) -> Result<(), String> {
+        if let Some(cached_surface_image) = self.cached_surface_image.as_ref() {
+            if cached_surface_image.is_dirty(&self.viewbox) {
+                self.render_all(tree, true);
+            } else {
+                self.render_all_from_cache()?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn render_all(
+        &mut self,
+        tree: &HashMap<Uuid, impl Renderable>,
+        generate_cached_surface_image: bool,
+    ) {
+        self.reset_canvas();
+        self.scale(
+            self.viewbox.zoom * self.options.dpr(),
+            self.viewbox.zoom * self.options.dpr(),
+        );
+        self.translate(self.viewbox.pan_x, self.viewbox.pan_y);
+
+        let is_complete = self.render_shape_tree(&Uuid::nil(), tree);
+        if generate_cached_surface_image || self.cached_surface_image.is_none() {
+            self.cached_surface_image = Some(CachedSurfaceImage {
+                image: self.final_surface.image_snapshot(),
+                viewbox: self.viewbox,
+                has_all_shapes: is_complete,
+            });
+        }
+
+        if self.options.is_debug_visible() {
+            self.render_debug();
+        }
+
+        self.flush();
+    }
+
+    fn render_all_from_cache(&mut self) -> Result<(), String> {
+        self.reset_canvas();
+
+        let cached = self
+            .cached_surface_image
+            .as_ref()
+            .ok_or("Uninitialized cached surface image")?;
+
+        let image = &cached.image;
+        let paint = skia::Paint::default();
+        self.final_surface.canvas().save();
+        self.drawing_surface.canvas().save();
+
+        let navigate_zoom = self.viewbox.zoom / cached.viewbox.zoom;
+        let navigate_x = cached.viewbox.zoom * (self.viewbox.pan_x - cached.viewbox.pan_x);
+        let navigate_y = cached.viewbox.zoom * (self.viewbox.pan_y - cached.viewbox.pan_y);
+
+        self.final_surface
+            .canvas()
+            .scale((navigate_zoom, navigate_zoom));
+        self.final_surface.canvas().translate((
+            navigate_x * self.options.dpr(),
+            navigate_y * self.options.dpr(),
+        ));
+        self.final_surface
+            .canvas()
+            .draw_image(image.clone(), (0, 0), Some(&paint));
+
+        self.final_surface.canvas().restore();
+        self.drawing_surface.canvas().restore();
+
+        self.flush();
+
+        Ok(())
+    }
+
+    fn render_debug_view(&mut self) {
+        let mut paint = skia::Paint::default();
+        paint.set_style(skia::PaintStyle::Stroke);
+        paint.set_color(skia::Color::from_argb(255, 255, 0, 255));
+        paint.set_stroke_width(1.);
+
+        let mut scaled_rect = self.viewbox.area.clone();
+        let x = 100. + scaled_rect.x() * 0.2;
+        let y = 100. + scaled_rect.y() * 0.2;
+        let width = scaled_rect.width() * 0.2;
+        let height = scaled_rect.height() * 0.2;
+        scaled_rect.set_xywh(x, y, width, height);
+
+        self.debug_surface.canvas().draw_rect(scaled_rect, &paint);
+    }
+
+    fn render_debug_element(&mut self, element: &impl Renderable, intersected: bool) {
+        let mut paint = skia::Paint::default();
+        paint.set_style(skia::PaintStyle::Stroke);
+        paint.set_color(if intersected {
+            skia::Color::from_argb(255, 255, 255, 0)
+        } else {
+            skia::Color::from_argb(255, 0, 255, 255)
+        });
+        paint.set_stroke_width(1.);
+
+        let mut scaled_rect = element.bounds();
+        let x = 100. + scaled_rect.x() * 0.2;
+        let y = 100. + scaled_rect.y() * 0.2;
+        let width = scaled_rect.width() * 0.2;
+        let height = scaled_rect.height() * 0.2;
+        scaled_rect.set_xywh(x, y, width, height);
+
+        self.debug_surface.canvas().draw_rect(scaled_rect, &paint);
+    }
+
+    fn render_debug(&mut self) {
+        let paint = skia::Paint::default();
+        self.render_debug_view();
+        self.debug_surface.draw(
+            &mut self.final_surface.canvas(),
+            (0.0, 0.0),
+            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
+            Some(&paint),
+        );
+    }
+
+    // Returns a boolean indicating if the viewbox contains the rendered shapes
+    fn render_shape_tree(&mut self, root_id: &Uuid, tree: &HashMap<Uuid, impl Renderable>) -> bool {
+        let element = tree.get(&root_id).unwrap();
+        let mut is_complete = self.viewbox.area.contains(element.bounds());
+
+        if !root_id.is_nil() {
+            if !element.bounds().intersects(self.viewbox.area) || element.hidden() {
+                self.render_debug_element(element, false);
+                // TODO: This means that not all the shapes are renderer so we
+                // need to call a render_all on the zoom out.
+                return is_complete; // TODO return is_complete or return false??
+            } else {
+                self.render_debug_element(element, true);
+            }
+        }
+
+        // This is needed so the next non-children shape does not carry this shape's transform
+        self.final_surface.canvas().save();
+        self.drawing_surface.canvas().save();
+
+        if !root_id.is_nil() {
+            self.render_single_element(element);
+            if element.clip() {
+                self.drawing_surface.canvas().clip_rect(
+                    element.bounds(),
+                    skia::ClipOp::Intersect,
+                    true,
+                );
+            }
+        }
+
+        // draw all the children shapes
+        for id in element.children_ids() {
+            is_complete = self.render_shape_tree(&id, tree) && is_complete;
+        }
+
+        self.final_surface.canvas().restore();
+        self.drawing_surface.canvas().restore();
+
+        return is_complete;
+    }
 }

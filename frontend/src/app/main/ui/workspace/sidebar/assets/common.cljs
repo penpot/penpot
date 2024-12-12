@@ -269,17 +269,19 @@
 
 (mf/defc component-item-thumbnail
   "Component that renders the thumbnail image or the original SVG."
-  {::mf/wrap-props false}
-  [{:keys [file-id root-shape component container class]}]
-  (let [page-id   (:main-instance-page component)
-        root-id   (:main-instance-id component)
+  {::mf/props :obj}
+  [{:keys [file-id root-shape component container class is-hidden]}]
+  (let [page-id (:main-instance-page component)
+        root-id (:main-instance-id component)
+        retry   (mf/use-state 0)
 
-        retry (mf/use-state 0)
+        thumbnail-uri*
+        (mf/with-memo [file-id page-id root-id]
+          (let [object-id (thc/fmt-object-id file-id page-id root-id "component")]
+            (refs/workspace-thumbnail-by-id object-id)))
 
-        thumbnail-uri* (mf/with-memo [file-id page-id root-id]
-                         (let [object-id (thc/fmt-object-id file-id page-id root-id "component")]
-                           (refs/workspace-thumbnail-by-id object-id)))
-        thumbnail-uri  (mf/deref thumbnail-uri*)
+        thumbnail-uri
+        (mf/deref thumbnail-uri*)
 
         on-error
         (mf/use-fn
@@ -288,7 +290,8 @@
            (when (< @retry 3)
              (inc retry))))]
 
-    (if (and (some? thumbnail-uri) (contains? cf/flags :component-thumbnails))
+    (if (and (some? thumbnail-uri)
+             (contains? cf/flags :component-thumbnails))
       [:& component-svg-thumbnail
        {:thumbnail-uri thumbnail-uri
         :class class
@@ -301,7 +304,8 @@
        {:root-shape root-shape
         :class class
         :objects (:objects container)
-        :show-grids? true}])))
+        :show-grids? true
+        :is-hidden is-hidden}])))
 
 (defn generate-components-menu-entries
   [shapes components-v2]
@@ -311,17 +315,17 @@
         current-file-id     (mf/use-ctx ctx/current-file-id)
         objects             (deref refs/workspace-page-objects)
         workspace-data      (deref refs/workspace-data)
-        workspace-libraries (deref refs/workspace-libraries)
+        libraries           (deref refs/libraries)
         current-file        {:id current-file-id :data workspace-data}
 
         find-component      (fn [shape include-deleted?]
                               (ctf/resolve-component
-                               shape current-file workspace-libraries {:include-deleted? include-deleted?}))
+                               shape current-file libraries {:include-deleted? include-deleted?}))
 
         local-or-exists     (fn [shape]
                               (let [library-id (:component-file shape)]
                                 (or (= library-id current-file-id)
-                                    (some? (get workspace-libraries library-id)))))
+                                    (some? (get libraries library-id)))))
 
         restorable-copies   (->> copies
                                  (filter #(nil? (find-component % false)))
@@ -387,20 +391,18 @@
            (do-update-remote-component))
 
         do-show-in-assets
-        #(st/emit! (if components-v2
-                     (dw/show-component-in-assets component-id)
-                     (dw/go-to-component component-id)))
+        #(st/emit! (dw/show-component-in-assets component-id))
 
         do-create-annotation
         #(st/emit! (dw/set-annotations-id-for-create id))
 
         do-show-local-component
-        #(st/emit! (dw/go-to-component component-id))
+        #(st/emit! (dwl/go-to-local-component component-id))
 
+        ;; When the show-remote is after a restore, the component may still be deleted
         do-show-remote-component
-        #(let [comp (find-component shape true)] ;; When the show-remote is after a restore, the component may still be deleted
-           (when comp
-             (st/emit! (dwl/nav-to-component-file library-id comp))))
+        #(when-let [comp (find-component shape true)]
+           (st/emit! (dwl/go-to-component-file library-id comp)))
 
         do-show-component
         (fn []

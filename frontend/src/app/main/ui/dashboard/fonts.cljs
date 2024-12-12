@@ -11,7 +11,6 @@
    [app.common.media :as cm]
    [app.main.data.fonts :as df]
    [app.main.data.modal :as modal]
-   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
@@ -24,6 +23,7 @@
    [app.util.keyboard :as kbd]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (defn- use-page-title
@@ -42,7 +42,7 @@
   (and (contains? font :font-family-tmp)
        (str/blank? (:font-family-tmp font))))
 
-(mf/defc header
+(mf/defc header*
   {::mf/props :obj
    ::mf/memo true
    ::mf/private true}
@@ -52,7 +52,7 @@
    [:div#dashboard-fonts-title {:class (stl/css :dashboard-title)}
     [:h1 (tr "labels.fonts")]]])
 
-(mf/defc font-variant-display-name
+(mf/defc font-variant-display-name*
   {::mf/props :obj
    ::mf/private true}
   [{:keys [variant]}]
@@ -61,10 +61,10 @@
    (when (not= "normal" (:font-style variant))
      [:span " " (str/capital (:font-style variant))])])
 
-(mf/defc uploaded-fonts
+(mf/defc uploaded-fonts*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [team installed-fonts] :as props}]
+  [{:keys [team installed-fonts]}]
   (let [fonts*     (mf/use-state {})
         fonts      (deref fonts*)
         font-vals  (mf/with-memo [fonts]
@@ -219,7 +219,7 @@
                      :default-value (:font-family item)}]]
            [:div {:class (stl/css :table-field :variants)}
             [:span {:class (stl/css :label)}
-             [:& font-variant-display-name {:variant item}]]]
+             [:> font-variant-display-name* {:variant item}]]]
 
            [:div {:class (stl/css :table-field :filenames)}
             (for [item (:names item)]
@@ -364,7 +364,7 @@
                                     :inhert-variant (not can-edit))
                :key (dm/str id)}
          [:span {:class (stl/css :label)}
-          [:& font-variant-display-name {:variant item}]]
+          [:> font-variant-display-name* {:variant item}]]
          (when can-edit
            [:span
             {:class (stl/css :icon :close)
@@ -396,8 +396,9 @@
             :on-delete on-delete-font
             :on-edit on-edit}]]))]))
 
-(mf/defc installed-fonts
-  [{:keys [fonts can-edit] :as props}]
+(mf/defc installed-fonts*
+  {::mf/props :obj}
+  [{:keys [fonts can-edit]}]
   (let [sterm (mf/use-state "")
 
         matches?
@@ -445,26 +446,27 @@
            :subtitle (tr "dashboard.fonts.empty-placeholder-viewer-sub")
            :type 2}]))]))
 
+(def ^:private ref:fonts
+  (l/derived :fonts st/state))
 
-(mf/defc fonts-page
+(mf/defc fonts-page*
   {::mf/props :obj}
   [{:keys [team]}]
-  (let [fonts       (mf/deref refs/dashboard-fonts)
+  (let [fonts       (mf/deref ref:fonts)
         permissions (:permissions team)
         can-edit    (:can-edit permissions)]
     [:*
-     [:& header {:team team :section :fonts}]
+     [:> header* {:team team :section :fonts}]
      [:section {:class (stl/css :dashboard-container :dashboard-fonts)}
       (when ^boolean can-edit
-        [:& uploaded-fonts {:team team :installed-fonts fonts}])
-      [:& installed-fonts {:team team :fonts fonts :can-edit can-edit}]]]))
+        [:> uploaded-fonts* {:team team :installed-fonts fonts}])
+      [:> installed-fonts*
+       {:team team :fonts fonts :can-edit can-edit}]]]))
 
-(mf/defc font-providers-page
+(mf/defc font-providers-page*
   {::mf/props :obj}
   [{:keys [team]}]
   [:*
-   [:& header {:team team :section :providers}]
+   [:> header* {:team team :section :providers}]
    [:section {:class (stl/css :dashboard-container)}
     [:span "font providers"]]])
-
-
