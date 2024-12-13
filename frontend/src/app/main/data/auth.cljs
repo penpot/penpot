@@ -39,24 +39,26 @@
   accepting invitation, or third party auth signup or singin."
   [{:keys [props] :as profile}]
   (letfn [(get-redirect-events [teams]
-            (if-let [redirect-href (:login-redirect storage/session)]
-              (binding [storage/*sync* true]
-                (swap! storage/session dissoc :login-redirect)
-                (if (= redirect-href (rt/get-current-href))
-                  (rx/of (rt/reload true))
-                  (rx/of (rt/nav-raw :href redirect-href))))
-              (if-let [file-id (get props :welcome-file-id)]
-                (rx/of (dcm/go-to-workspace
-                        :file-id file-id
-                        :team-id (:default-team-id profile))
-                       (dp/update-profile-props {:welcome-file-id nil}))
+            (if-let [token (:invitation-token profile)]
+              (rx/of (rt/nav :auth-verify-token {:token token}))
+              (if-let [redirect-href (:login-redirect storage/session)]
+                (binding [storage/*sync* true]
+                  (swap! storage/session dissoc :login-redirect)
+                  (if (= redirect-href (rt/get-current-href))
+                    (rx/of (rt/reload true))
+                    (rx/of (rt/nav-raw :href redirect-href))))
+                (if-let [file-id (get props :welcome-file-id)]
+                  (rx/of (dcm/go-to-workspace
+                          :file-id file-id
+                          :team-id (:default-team-id profile))
+                         (dp/update-profile-props {:welcome-file-id nil}))
 
-                (let [teams   (into #{} (map :id) teams)
-                      team-id (dtm/get-last-team-id)
-                      team-id (if (and team-id (contains? teams team-id))
-                                team-id
-                                (:default-team-id profile))]
-                  (rx/of (dcm/go-to-dashboard-recent {:team-id team-id}))))))]
+                  (let [teams   (into #{} (map :id) teams)
+                        team-id (dtm/get-last-team-id)
+                        team-id (if (and team-id (contains? teams team-id))
+                                  team-id
+                                  (:default-team-id profile))]
+                    (rx/of (dcm/go-to-dashboard-recent {:team-id team-id})))))))]
 
     (ptk/reify ::logged-in
       ev/Event

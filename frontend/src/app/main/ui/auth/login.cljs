@@ -120,17 +120,10 @@
               :else
               (reset! error (tr "errors.generic")))))
 
-        on-success-default
-        (mf/use-fn
-         (fn [data]
-           (when-let [token (:invitation-token data)]
-             (st/emit! (rt/nav :auth-verify-token {:token token})))))
-
         on-success
         (fn [data]
-          (if (nil? on-success-callback)
-            (on-success-default data)
-            (on-success-callback)))
+          (when (fn? on-success-callback)
+            (on-success-callback data)))
 
         on-submit
         (mf/use-callback
