@@ -304,8 +304,11 @@
   ([check-modal]
    (ptk/reify ::deselect-all
      ptk/WatchEvent
-     (watch [_ _ _]
-       (rx/of ::dwsp/interrupt))
+     (watch [_ state _]
+       (let [params-without-board (-> (rt/get-params state)
+                                      (dissoc :board-id))]
+         (rx/of ::dwsp/interrupt)
+         (rx/of (rt/nav :workspace params-without-board {::rt/replace true}))))
      ptk/UpdateEvent
      (update [_ state]
 
