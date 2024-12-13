@@ -51,7 +51,7 @@
                                                                            :type :border-radius
                                                                            :value 75))))
       (ctho/add-frame :frame1)
-      (ctht/apply-token-to-shape :frame1 "test-token-1" [:rx :ry] [:rx :ry] 25)))
+      (ctht/apply-token-to-shape :frame1 "test-token-1" [:r1 :r2 :r3 :r4] [:r1 :r2 :r3 :r4] 25)))
 
 (defn- setup-file-with-main
   []
@@ -84,11 +84,15 @@
                tokens-frame1' (:applied-tokens frame1')]
 
           ;; ==== Check
-           (t/is (= (count tokens-frame1') 2))
-           (t/is (= (get tokens-frame1' :rx) "test-token-1"))
-           (t/is (= (get tokens-frame1' :ry) "test-token-1"))
-           (t/is (= (get frame1' :rx) 25))
-           (t/is (= (get frame1' :ry) 25))))))))
+           (t/is (= (count tokens-frame1') 4))
+           (t/is (= (get tokens-frame1' :r1) "test-token-1"))
+           (t/is (= (get tokens-frame1' :r2) "test-token-1"))
+           (t/is (= (get tokens-frame1' :r3) "test-token-1"))
+           (t/is (= (get tokens-frame1' :r4) "test-token-1"))
+           (t/is (= (get frame1' :r1) 25))
+           (t/is (= (get frame1' :r2) 25))
+           (t/is (= (get frame1' :r3) 25))
+           (t/is (= (get frame1' :r4) 25))))))))
 
 (t/deftest create-copy-with-token
   (t/async
@@ -112,11 +116,15 @@
                tokens-frame1' (:applied-tokens c-frame1')]
 
           ;; ==== Check
-           (t/is (= (count tokens-frame1') 2))
-           (t/is (= (get tokens-frame1' :rx) "test-token-1"))
-           (t/is (= (get tokens-frame1' :ry) "test-token-1"))
-           (t/is (= (get c-frame1' :rx) 25))
-           (t/is (= (get c-frame1' :ry) 25))))))))
+           (t/is (= (count tokens-frame1') 4))
+           (t/is (= (get tokens-frame1' :r1) "test-token-1"))
+           (t/is (= (get tokens-frame1' :r2) "test-token-1"))
+           (t/is (= (get tokens-frame1' :r3) "test-token-1"))
+           (t/is (= (get tokens-frame1' :r4) "test-token-1"))
+           (t/is (= (get c-frame1' :r1) 25))
+           (t/is (= (get c-frame1' :r2) 25))
+           (t/is (= (get c-frame1' :r3) 25))
+           (t/is (= (get c-frame1' :r4) 25))))))))
 
 (t/deftest change-token-in-main
   (t/async
@@ -127,7 +135,7 @@
 
          ;; ==== Action
           events [(wtch/apply-token {:shape-ids [(cthi/id :frame1)]
-                                     :attributes #{:rx :ry}
+                                     :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-2")
                                      :on-update-shape wtch/update-shape-radius-all})]
 
@@ -142,11 +150,15 @@
                              tokens-frame1' (:applied-tokens c-frame1')]
 
                         ;; ==== Check
-                         (t/is (= (count tokens-frame1') 2))
-                         (t/is (= (get tokens-frame1' :rx) "test-token-2"))
-                         (t/is (= (get tokens-frame1' :ry) "test-token-2"))
-                         (t/is (= (get c-frame1' :rx) 50))
-                         (t/is (= (get c-frame1' :ry) 50)))))))]
+                         (t/is (= (count tokens-frame1') 4))
+                         (t/is (= (get tokens-frame1' :r1) "test-token-2"))
+                         (t/is (= (get tokens-frame1' :r2) "test-token-2"))
+                         (t/is (= (get tokens-frame1' :r3) "test-token-2"))
+                         (t/is (= (get tokens-frame1' :r4) "test-token-2"))
+                         (t/is (= (get c-frame1' :r1) 50))
+                         (t/is (= (get c-frame1' :r2) 50))
+                         (t/is (= (get c-frame1' :r3) 50))
+                         (t/is (= (get c-frame1' :r4) 50)))))))]
 
       (tohs/run-store-async
        store step2 events identity))))
@@ -160,7 +172,7 @@
 
          ;; ==== Action
           events [(wtch/unapply-token {:shape-ids [(cthi/id :frame1)]
-                                       :attributes #{:rx :ry}
+                                       :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "test-token-1")})]
 
           step2 (fn [_]
@@ -175,8 +187,10 @@
 
                         ;; ==== Check
                          (t/is (= (count tokens-frame1') 0))
-                         (t/is (= (get c-frame1' :rx) 25))
-                         (t/is (= (get c-frame1' :ry) 25)))))))]
+                         (t/is (= (get c-frame1' :r1) 25))
+                         (t/is (= (get c-frame1' :r2) 25))
+                         (t/is (= (get c-frame1' :r3) 25))
+                         (t/is (= (get c-frame1' :r4) 25)))))))]
 
       (tohs/run-store-async
        store step2 events identity))))
@@ -205,12 +219,16 @@
                              c-frame1'      (cths/get-shape file' :c-frame1)
                              tokens-frame1' (:applied-tokens c-frame1')]
 
-                        ;; ==== Check
-                         (t/is (= (count tokens-frame1') 2))
-                         (t/is (= (get tokens-frame1' :rx) "test-token-1"))
-                         (t/is (= (get tokens-frame1' :ry) "test-token-1"))
-                         (t/is (= (get c-frame1' :rx) 66))
-                         (t/is (= (get c-frame1' :ry) 66)))))))]
+                         ;; ==== Check
+                         (t/is (= (count tokens-frame1') 4))
+                         (t/is (= (get tokens-frame1' :r1) "test-token-1"))
+                         (t/is (= (get tokens-frame1' :r2) "test-token-1"))
+                         (t/is (= (get tokens-frame1' :r3) "test-token-1"))
+                         (t/is (= (get tokens-frame1' :r4) "test-token-1"))
+                         (t/is (= (get c-frame1' :r1) 66))
+                         (t/is (= (get c-frame1' :r2) 66))
+                         (t/is (= (get c-frame1' :r3) 66))
+                         (t/is (= (get c-frame1' :r4) 66)))))))]
 
       (tohs/run-store-async
        store step2 events identity))))
@@ -224,11 +242,11 @@
 
          ;; ==== Action
           events [(wtch/apply-token {:shape-ids [(cthi/id :c-frame1)]
-                                     :attributes #{:rx :ry}
+                                     :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-2")
                                      :on-update-shape wtch/update-shape-radius-all})
                   (wtch/apply-token {:shape-ids [(cthi/id :frame1)]
-                                     :attributes #{:rx :ry}
+                                     :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-3")
                                      :on-update-shape wtch/update-shape-radius-all})]
 
@@ -243,11 +261,15 @@
                              tokens-frame1' (:applied-tokens c-frame1')]
 
                         ;; ==== Check
-                         (t/is (= (count tokens-frame1') 2))
-                         (t/is (= (get tokens-frame1' :rx) "test-token-2"))
-                         (t/is (= (get tokens-frame1' :ry) "test-token-2"))
-                         (t/is (= (get c-frame1' :rx) 50))
-                         (t/is (= (get c-frame1' :ry) 50)))))))]
+                         (t/is (= (count tokens-frame1') 4))
+                         (t/is (= (get tokens-frame1' :r1) "test-token-2"))
+                         (t/is (= (get tokens-frame1' :r2) "test-token-2"))
+                         (t/is (= (get tokens-frame1' :r3) "test-token-2"))
+                         (t/is (= (get tokens-frame1' :r4) "test-token-2"))
+                         (t/is (= (get c-frame1' :r1) 50))
+                         (t/is (= (get c-frame1' :r2) 50))
+                         (t/is (= (get c-frame1' :r3) 50))
+                         (t/is (= (get c-frame1' :r4) 50)))))))]
 
       (tohs/run-store-async
        store step2 events identity))))
@@ -261,10 +283,10 @@
 
          ;; ==== Action
           events [(wtch/unapply-token {:shape-ids [(cthi/id :c-frame1)]
-                                       :attributes #{:rx :ry}
+                                       :attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "test-token-1")})
                   (wtch/apply-token {:shape-ids [(cthi/id :frame1)]
-                                     :attributes #{:rx :ry}
+                                     :attributes #{:r1 :r2 :r3 :r4}
                                      :token (toht/get-token file "test-token-3")
                                      :on-update-shape wtch/update-shape-radius-all})]
 
@@ -280,8 +302,10 @@
 
                         ;; ==== Check
                          (t/is (= (count tokens-frame1') 0))
-                         (t/is (= (get c-frame1' :rx) 25))
-                         (t/is (= (get c-frame1' :ry) 25)))))))]
+                         (t/is (= (get c-frame1' :r1) 25))
+                         (t/is (= (get c-frame1' :r2) 25))
+                         (t/is (= (get c-frame1' :r3) 25))
+                         (t/is (= (get c-frame1' :r4) 25)))))))]
 
       (tohs/run-store-async
        store step2 events identity))))
@@ -322,7 +346,7 @@
                                                                                          :type :dimensions
                                                                                          :value 100))))
                     (ctho/add-frame :frame1)
-                    (ctht/apply-token-to-shape :frame1 "token-radius" [:rx :ry] [:rx :ry] 10)
+                    (ctht/apply-token-to-shape :frame1 "token-radius" [:r1 :r2 :r3 :r4] [:r1 :r2 :r3 :r4] 10)
                     (ctht/apply-token-to-shape :frame1 "token-rotation" [:rotation] [:rotation] 30)
                     (ctht/apply-token-to-shape :frame1 "token-opacity" [:opacity] [:opacity] 0.7)
                     (ctht/apply-token-to-shape :frame1 "token-stroke-width" [:stroke-width] [:stroke-width] 2)
@@ -367,13 +391,16 @@
                      (fn [new-state]
                        (let [;; ==== Get
                              file'          (ths/get-file-from-store new-state)
+                             frame1'      (cths/get-shape file' :frame1)
                              c-frame1'      (cths/get-shape file' :c-frame1)
                              tokens-frame1' (:applied-tokens c-frame1')]
 
                          ;; ==== Check
-                         (t/is (= (count tokens-frame1') 9))
-                         (t/is (= (get tokens-frame1' :rx) "token-radius"))
-                         (t/is (= (get tokens-frame1' :ry) "token-radius"))
+                         (t/is (= (count tokens-frame1') 11))
+                         (t/is (= (get tokens-frame1' :r1) "token-radius"))
+                         (t/is (= (get tokens-frame1' :r2) "token-radius"))
+                         (t/is (= (get tokens-frame1' :r3) "token-radius"))
+                         (t/is (= (get tokens-frame1' :r4) "token-radius"))
                          (t/is (= (get tokens-frame1' :rotation) "token-rotation"))
                          (t/is (= (get tokens-frame1' :opacity) "token-opacity"))
                          (t/is (= (get tokens-frame1' :stroke-width) "token-stroke-width"))
@@ -381,8 +408,10 @@
                          (t/is (= (get tokens-frame1' :fill) "token-color"))
                          (t/is (= (get tokens-frame1' :width) "token-dimensions"))
                          (t/is (= (get tokens-frame1' :height) "token-dimensions"))
-                         (t/is (= (get c-frame1' :rx) 30))
-                         (t/is (= (get c-frame1' :ry) 30))
+                         (t/is (= (get c-frame1' :r1) 30))
+                         (t/is (= (get c-frame1' :r2) 30))
+                         (t/is (= (get c-frame1' :r3) 30))
+                         (t/is (= (get c-frame1' :r4) 30))
                          (t/is (= (get c-frame1' :rotation) 45))
                          (t/is (= (get c-frame1' :opacity) 0.9))
                          (t/is (= (get-in c-frame1' [:strokes 0 :stroke-width]) 8))
