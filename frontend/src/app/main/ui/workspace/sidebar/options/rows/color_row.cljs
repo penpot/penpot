@@ -212,7 +212,7 @@
                                       (nil? color-name) (assoc
                                                          :id nil
                                                          :file-id nil))
-                             :mini? true
+                             :mini true
                              :on-click handle-click-color}]]
        (cond
               ;; Rendering a color with ID

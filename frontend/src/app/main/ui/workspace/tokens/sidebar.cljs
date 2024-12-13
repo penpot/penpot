@@ -73,7 +73,7 @@
                         (wtt/resolved-value-hex theme-token)
                         (wtt/resolved-value-hex token))]
        [:& color-bullet {:color color
-                         :mini? true}])
+                         :mini true}])
      name]))
 
 (mf/defc token-section-icon
