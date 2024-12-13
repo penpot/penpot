@@ -1,8 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { WorkspacePage } from "../pages/WorkspacePage";
+import { BaseWebSocketPage } from "../pages/BaseWebSocketPage";
 
 test.beforeEach(async ({ page }) => {
   await WorkspacePage.init(page);
+  await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
 const setupFileWithTokens = async (page) => {
