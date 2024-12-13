@@ -2,7 +2,7 @@ use crate::math;
 use skia_safe as skia;
 use uuid::Uuid;
 
-use crate::render::BlendMode;
+use crate::render::{BlendMode, Renderable};
 
 mod fills;
 mod images;
@@ -137,6 +137,21 @@ impl Shape {
 
     pub fn set_blend_mode(&mut self, mode: BlendMode) {
         self.blend_mode = mode;
+    }
+
+    fn to_path_transform(&self) -> Option<skia::Matrix> {
+        match self.kind {
+            Kind::Path(_) => {
+                let center = self.bounds().center();
+                let mut matrix = skia::Matrix::new_identity();
+                matrix.pre_translate(center);
+                matrix.pre_concat(&self.transform.no_translation().to_skia_matrix().invert()?);
+                matrix.pre_translate(-center);
+
+                Some(matrix)
+            }
+            _ => None,
+        }
     }
 }
 

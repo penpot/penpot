@@ -1,6 +1,6 @@
 use skia_safe as skia;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Matrix {
     pub a: f32,
     pub b: f32,
@@ -44,6 +44,15 @@ impl Matrix {
             1.,
         );
 
+        res
+    }
+
+    pub fn no_translation(&self) -> Self {
+        let mut res = Self::identity();
+        res.c = self.c;
+        res.b = self.b;
+        res.a = self.a;
+        res.d = self.d;
         res
     }
 
