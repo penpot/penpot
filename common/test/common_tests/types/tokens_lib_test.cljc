@@ -258,11 +258,10 @@
                           (ctob/delete-set-path "S-not-existing-set"))
 
           token-set'  (ctob/get-set tokens-lib' "updated-name")
-          ;;token-theme'  (ctob/get-theme tokens-lib' "" "test-token-theme")
-          ]
+          token-theme'  (ctob/get-theme tokens-lib' "" "test-token-theme")]
 
       (t/is (= (ctob/set-count tokens-lib') 0))
-      ;; (t/is (= (:sets token-theme') #{}))  TODO: fix this
+      (t/is (= (:sets token-theme') #{}))
       (t/is (nil? token-set'))))
 
   (t/deftest active-themes-set-names
