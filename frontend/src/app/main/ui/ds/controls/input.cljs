@@ -19,8 +19,7 @@
    [:class {:optional true} :string]
    [:icon {:optional true}
     [:and :string [:fn #(contains? icon-list %)]]]
-   [:type {:optional true} :string]
-   [:ref {:optional true} some?]])
+   [:type {:optional true} :string]])
 
 (mf/defc input*
   {::mf/props :obj

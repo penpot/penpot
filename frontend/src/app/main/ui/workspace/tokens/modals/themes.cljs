@@ -173,8 +173,6 @@
                                                (set! (.-value (mf/ref-val group-input-ref)) value)
                                                (on-update-group value))
                                   :on-close on-close-dropdown}])
-      ;; TODO: This span should be remove when labeled-input is updated
-      [:span {:class (stl/css :labeled-input-label)}  "Theme group"]
       [:& labeled-input {:label "Group"
                          :input-props {:ref group-input-ref
                                        :default-value (:group theme)
@@ -188,8 +186,6 @@
                                                                  (on-toggle-dropdown))}
                                             [:> icon* {:id "arrow-down"}]]))}]]
      [:div {:class (stl/css :group-input-wrapper)}
-      ;; TODO: This span should be remove when labeled-input is updated
-      [:span {:class (stl/css :labeled-input-label)}  "Theme"]
       [:& labeled-input {:label "Theme"
                          :input-props {:default-value (:name theme)
                                        :on-change (comp on-update-name dom/get-target-val)}}]]]))
