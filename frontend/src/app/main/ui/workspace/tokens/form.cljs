@@ -220,6 +220,12 @@ Token names should only contain letters and digits separated by . characters.")}
                                     (-> (ctob/tokens-tree selected-set-tokens)
                                         ;; Allow setting editing token to it's own path
                                         (d/dissoc-in token-path))))
+        cancel-ref  (mf/use-ref nil)
+
+        on-cancel-ref
+        (mf/use-fn
+         (fn [node]
+           (mf/set-ref-val! cancel-ref node)))
 
         ;; Name
         touched-name? (mf/use-state false)
@@ -232,6 +238,17 @@ Token names should only contain letters and digits separated by . characters.")}
            (let [schema (token-name-schema {:token token
                                             :tokens-tree selected-set-tokens-tree})]
              (m/explain schema (finalize-name value)))))
+
+        on-blur-name
+        (mf/use-fn
+         (mf/deps cancel-ref)
+         (fn [e]
+           (let [node (dom/get-related-target e)
+                 on-cancel-btn (= node (mf/ref-val cancel-ref))]
+             (when-not on-cancel-btn
+               (let [value (dom/get-target-val e)
+                     errors (validate-name value)]
+                 (reset! name-errors errors))))))
 
         on-update-name-debounced
         (mf/use-fn
@@ -319,6 +336,7 @@ Token names should only contain letters and digits separated by . characters.")}
          (mf/deps validate-name validate-descripion token resolved-tokens)
          (fn [e]
            (dom/prevent-default e)
+           (mf/set-ref-val! cancel-ref nil)
            ;; We have to re-validate the current form values before submitting
            ;; because the validation is asynchronous/debounced
            ;; and the user might have edited a valid form to make it invalid,
@@ -356,6 +374,7 @@ Token names should only contain letters and digits separated by . characters.")}
         on-cancel
         (mf/use-fn
          (fn [e]
+           (mf/set-ref-val! cancel-ref nil)
            (dom/prevent-default e)
            (modal/hide!)))]
 
@@ -376,7 +395,7 @@ Token names should only contain letters and digits separated by . characters.")}
            :auto-focus true
            :label (tr "workspace.token.token-name")
            :default-value @name-ref
-           :on-blur on-update-name
+           :on-blur on-blur-name
            :on-change on-update-name}])
 
        (for [error (->> (:errors @name-errors)
@@ -432,6 +451,8 @@ Token names should only contain letters and digits separated by . characters.")}
           (tr "labels.delete")])
        [:> button* {:on-click on-cancel
                     :type "button"
+                    :on-ref  on-cancel-ref
+                    :id "token-modal-cancel"
                     :variant "secondary"}
         (tr "labels.cancel")]
        [:> button* {:type "submit"
