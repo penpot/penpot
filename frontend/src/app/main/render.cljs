@@ -128,7 +128,7 @@
 (defn svg-raw-wrapper-factory
   [objects]
   (let [shape-wrapper (shape-wrapper-factory objects)
-        svg-raw-shape   (svg-raw/svg-raw-shape shape-wrapper)]
+        svg-raw-shape (svg-raw/svg-raw-shape shape-wrapper)]
     (mf/fnc svg-raw-wrapper
       [{:keys [shape] :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))]
@@ -462,9 +462,9 @@
     [:& (mf/provider export/include-metadata-ctx) {:value false}
      [:& (mf/provider embed/context) {:value embed}
       [:svg {:id (dm/str "screenshot-" object-id)
-             :view-box vbox
-             :width (ust/format-precision width viewbox-decimal-precision)
-             :height (ust/format-precision height viewbox-decimal-precision)
+             ;;:view-box vbox
+             ;;:width (ust/format-precision width viewbox-decimal-precision)
+             ;;:height (ust/format-precision height viewbox-decimal-precision)
              :version "1.1"
              :xmlns "http://www.w3.org/2000/svg"
              :xmlnsXlink "http://www.w3.org/1999/xlink"

@@ -1,7 +1,6 @@
-use std::collections::HashMap;
-
 use skia::Contains;
 use skia_safe as skia;
+use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::math;
@@ -19,7 +18,12 @@ pub use blend::BlendMode;
 pub use images::*;
 
 pub trait Renderable {
-    fn render(&self, surface: &mut skia::Surface, images: &ImageStore) -> Result<(), String>;
+    fn render(
+        &self,
+        surface: &mut skia::Surface,
+        images: &ImageStore,
+        font_provider: &skia::textlayout::TypefaceFontProvider,
+    ) -> Result<(), String>;
     fn blend_mode(&self) -> BlendMode;
     fn opacity(&self) -> f32;
     fn bounds(&self) -> math::Rect;
@@ -45,6 +49,7 @@ pub(crate) struct RenderState {
     pub final_surface: skia::Surface,
     pub drawing_surface: skia::Surface,
     pub debug_surface: skia::Surface,
+    pub font_provider: skia::textlayout::TypefaceFontProvider,
     pub cached_surface_image: Option<CachedSurfaceImage>,
     options: RenderOptions,
     pub viewbox: Viewbox,
@@ -64,17 +69,33 @@ impl RenderState {
             .new_surface_with_dimensions((width, height))
             .unwrap();
 
+        let mut font_provider = skia::textlayout::TypefaceFontProvider::new();
+        let default_font = skia::FontMgr::default()
+            .new_from_data(include_bytes!("fonts/RobotoMono-Regular.ttf"), None)
+            .expect("Failed to load font");
+        font_provider.register_typeface(default_font, "robotomono-regular");
+
         RenderState {
             gpu_state,
             final_surface,
             drawing_surface,
             debug_surface,
             cached_surface_image: None,
+            font_provider,
             options: RenderOptions::default(),
             viewbox: Viewbox::new(width as f32, height as f32),
             images: ImageStore::new(),
             background_color: skia::Color::TRANSPARENT,
         }
+    }
+
+    pub fn add_font(&mut self, family_name: String, font_data: &[u8]) -> Result<(), String> {
+        let typeface = skia::FontMgr::default()
+            .new_from_data(font_data, None)
+            .expect("Failed to add font");
+        self.font_provider
+            .register_typeface(typeface, family_name.as_ref());
+        Ok(())
     }
 
     pub fn add_image(&mut self, id: Uuid, image_data: &[u8]) -> Result<(), String> {
@@ -153,7 +174,7 @@ impl RenderState {
 
     pub fn render_single_element(&mut self, element: &impl Renderable) {
         element
-            .render(&mut self.drawing_surface, &self.images)
+            .render(&mut self.drawing_surface, &self.images, &self.font_provider)
             .unwrap();
 
         let mut paint = skia::Paint::default();
@@ -166,6 +187,13 @@ impl RenderState {
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
             Some(&paint),
         );
+        // self.drawing_surface.draw(
+        //     &svg_canvas,
+        //     (0.0, 0.0),
+        //     skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
+        //     Some(&paint),
+        // );
+
         self.drawing_surface
             .canvas()
             .clear(skia::Color::TRANSPARENT);
@@ -326,6 +354,13 @@ impl RenderState {
         }
 
         // draw all the children shapes
+        /*
+        if !matches!(&(element as Shape).kind, Kind::SVGRaw(_)) {
+            for id in element.children_ids() {
+                is_complete = self.render_shape_tree(&id, tree) && is_complete;
+            }
+        }
+        */
         for id in element.children_ids() {
             is_complete = self.render_shape_tree(&id, tree) && is_complete;
         }

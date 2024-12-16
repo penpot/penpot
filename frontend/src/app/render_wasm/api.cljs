@@ -7,6 +7,7 @@
 (ns app.render-wasm.api
   "A WASM based render API"
   (:require
+   ["react-dom/server" :as rds]
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.common.svg.path :as path]
@@ -19,7 +20,9 @@
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [goog.object :as gobj]
-   [promesa.core :as p]))
+   [promesa.core :as p]
+   [cuerdas.core :as str]
+   [rumext.v2 :as mf]))
 
 (defonce internal-frame-id nil)
 (defonce internal-module #js {})
@@ -27,6 +30,32 @@
 
 (def dpr
   (if use-dpr? js/window.devicePixelRatio 1.0))
+
+(mf/defc svg-raw-element
+  {::mf/props :obj}
+  [{:keys [tag attrs content] :as props}]
+  [:& (name tag) attrs
+   (for [child content]
+     (if (string? child)
+       child
+       [:& svg-raw-element child]))])
+
+(mf/defc svg-raw
+  {::mf/props :obj}
+  [{:keys [shape] :as props}]
+  (let [content (:content shape)]
+    [:svg {:version "1.1"
+           :xmlns "http://www.w3.org/2000/svg"
+           :xmlnsXlink "http://www.w3.org/1999/xlink"
+           :fill "none"}
+     (if (string? content)
+       content
+       [:& svg-raw-element content])]))
+
+(defn get-static-markup
+  [shape]
+  (rds/renderToStaticMarkup
+   (mf/element svg-raw #js {:shape shape})))
 
 ;; This should never be called from the outside.
 ;; This function receives a "time" parameter that we're not using but maybe in the future could be useful (it is the time since
@@ -130,6 +159,32 @@
                     (aget buffer 3))))
         shape-ids))
 
+(defn- get-string-length [string] (+ (count string) 1))
+
+;; IMPORTANT: We need to take into account that we can only store TTF fonts.
+(defn- store-font
+  [family-name font-array-buffer]
+  (let [family-name-size (get-string-length family-name)
+        font-array-buffer-size (.-byteLength font-array-buffer)
+        size (+ font-array-buffer-size family-name-size)
+        ptr  (h/call internal-module "_alloc_bytes" size)
+        family-name-ptr (+ ptr font-array-buffer-size)
+        heap (gobj/get ^js internal-module "HEAPU8")
+        mem  (js/Uint8Array. (.-buffer heap) ptr size)]
+    (.set mem (js/Uint8Array. font-array-buffer))
+    (h/call internal-module "stringToUTF8" family-name family-name-ptr family-name-size)
+    (h/call internal-module "_store_font" family-name-size font-array-buffer-size)))
+
+;; This doesn't work
+#_(store-font-url "roboto-thin-italic" "https://fonts.gstatic.com/s/roboto/v32/KFOiCnqEu92Fr1Mu51QrEzAdLw.woff2")
+;; This does
+#_(store-font-url "sourcesanspro-regular" "http://localhost:3449/fonts/sourcesanspro-regular.ttf")
+(defn- store-font-url
+  [family-name font-url]
+  (-> (p/then (js/fetch font-url)
+              (fn [response] (.arrayBuffer response)))
+      (p/then (fn [array-buffer] (store-font family-name array-buffer)))))
+
 (defn- store-image
   [id]
   (let [buffer (uuid/get-u32 id)
@@ -211,15 +266,61 @@
                   (store-image id))))))
         fills))
 
+(defn serialize-path-style
+  [style]
+  (reduce
+   (fn [acc [key value]]
+     (str/concat acc (str/kebab key) ": " value ";"))
+   ""
+   style))
+
+(defn serialize-path-attrs
+  [svg-attrs]
+  (reduce
+   (fn [acc [key value]]
+        (str/concat
+         acc
+         (str/kebab key) "\0"
+         (if (= :style key)
+           (serialize-path-style value)
+           value) "\0")) "" svg-attrs))
+
+(defn set-shape-path-attrs
+  [attrs]
+  (let [str (serialize-path-attrs attrs)
+        size (count str)
+        ptr (h/call internal-module "_alloc_bytes" size)]
+    (h/call internal-module "stringToUTF8" str ptr size)
+    (h/call internal-module "_set_shape_path_attrs" (count attrs))))
+
 (defn set-shape-path-content
   [content]
-  (let [buffer (path/content->buffer content)
-        size (.-byteLength buffer)
-        ptr (h/call internal-module "_alloc_bytes" size)
+  (let [buffer    (path/content->buffer content)
+        size      (.-byteLength buffer)
+        ptr       (h/call internal-module "_alloc_bytes" size)
         heap      (gobj/get ^js internal-module "HEAPU8")
         mem       (js/Uint8Array. (.-buffer heap) ptr size)]
     (.set mem (js/Uint8Array. buffer))
     (h/call internal-module "_set_shape_path_content")))
+
+(defn set-shape-svg-raw-content
+  [content]
+  (let [size (get-string-length content)
+        ptr (h/call internal-module "_alloc_bytes" size)]
+    (h/call internal-module "stringToUTF8" content ptr size)
+    (h/call internal-module "_set_shape_svg_raw_content")))
+
+(defn set-shape-content
+  [shape content]
+  (let [type (:type shape)]
+    (cond
+      (= type :svg-raw)
+      (set-shape-svg-raw-content (get-static-markup shape))
+
+      (= type :path)
+      (do (when (some? (:svg-attrs shape))
+            (set-shape-path-attrs (:svg-attrs shape)))
+          (set-shape-path-content content)))))
 
 (defn- translate-blend-mode
   [blend-mode]
@@ -296,7 +397,8 @@
               (set-shape-children children)
               (set-shape-opacity opacity)
               (set-shape-hidden hidden)
-              (when (and (some? content) (= type :path)) (set-shape-path-content content))
+              (set-shape-content shape content)
+
               (let [pending-fills (doall (set-shape-fills fills))]
                 (recur (inc index) (into pending pending-fills))))
             pending))]
@@ -314,9 +416,9 @@
        :alpha true})
 
 (defn clear-canvas
-  []
+  [])
   ;; TODO: perform corresponding cleaning
-  )
+
 
 (defn resize-viewbox
   [width height]
