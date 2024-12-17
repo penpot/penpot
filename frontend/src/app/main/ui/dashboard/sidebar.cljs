@@ -23,7 +23,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
    [app.main.ui.components.link :refer [link]]
-   [app.main.ui.dashboard.comments :refer [comments-icon comments-section]]
+   [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
    [app.main.ui.dashboard.team-form]
@@ -1071,9 +1071,8 @@
         (tr "labels.logout")]]
 
       (when (and team profile)
-        [:& comments-icon
+        [:> comments-icon*
          {:profile profile
-          :show? show-comments?
           :on-show-comments handle-show-comments}])]]))
 
 (mf/defc sidebar*

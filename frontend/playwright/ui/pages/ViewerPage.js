@@ -104,8 +104,7 @@ export class ViewerPage extends BaseWebSocketPage {
 
   async showCommentsThread(number, clickOptions = {}) {
     await this.page
-      .getByTestId("floating-thread-bubble")
-      .filter({ hasText: number.toString() })
+      .getByTestId(`floating-thread-bubble-${number.toString()}`)
       .click(clickOptions);
   }
 
