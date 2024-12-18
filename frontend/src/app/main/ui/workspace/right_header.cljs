@@ -141,8 +141,7 @@
 
 ;; --- Header Component
 
-(mf/defc right-header
-  {::mf/wrap-props false}
+(mf/defc right-header*
   [{:keys [file layout page-id]}]
   (let [file-id           (:id file)
 
