@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-12-15 15:00+0000\n"
+"PO-Revision-Date: 2024-12-19 18:02+0000\n"
 "Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 5.9-rc\n"
+"X-Generator: Weblate 5.9.2-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:154, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -18,17 +18,17 @@ msgstr "Уже маєте обліковий запис?"
 
 #: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:274
 msgid "auth.check-mail"
-msgstr "Перевірте скриньку за адресою, що ви вказали"
+msgstr "Перевірте свою електрону скриньку"
 
 #: src/app/main/ui/auth/register.cljs:277
 msgid "auth.check-your-email"
 msgstr ""
-"Підтвердіть обліковий запис за посиланням в листі та почніть користуватись "
+"Підтвердьте обліковий запис за посиланням в листі та почніть користуватись "
 "Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs:67
 msgid "auth.confirm-password"
-msgstr "Підтвердіть пароль"
+msgstr "Підтвердьте пароль"
 
 #: src/app/main/ui/auth/register.cljs:145
 msgid "auth.create-demo-account"
@@ -43,7 +43,7 @@ msgstr "Хочете лише спробувати?"
 msgid "auth.demo-warning"
 msgstr ""
 "Це демонстраційний варіант сервісу, не використовуйте для реальної роботи, "
-"проєкти періодично стиратимуться."
+"створені проєкти періодично очищуватимуться."
 
 #: src/app/main/ui/auth/login.cljs:197, src/app/main/ui/viewer/login.cljs:84
 msgid "auth.forgot-password"
@@ -102,7 +102,7 @@ msgstr "Пароль успішно змінено"
 #: src/app/main/ui/auth/recovery_request.cljs:50
 msgid "auth.notifications.profile-not-verified"
 msgstr ""
-"Профіль не підтверджено, будь ласка, спершу підтвердіть його перш ніж "
+"Профіль не підтверджено, будь ласка, спершу підтвердьте його перш ніж "
 "продовжити."
 
 #: src/app/main/ui/auth/recovery_request.cljs:33
@@ -384,9 +384,9 @@ msgstr "Персональні токени доступу"
 #: src/app/main/ui/settings/access_tokens.cljs:187
 msgid "dashboard.access-tokens.personal.description"
 msgstr ""
-"Персональні токени доступу виступають альтернативою нашій системі "
-"автентифікації \"логін/пароль\" та можуть бути використаними для надання "
-"застосунку доступу до внутрішнього API Penpot"
+"Персональні токени доступу є альтернативою нашій системі автентифікації "
+"\"логін/пароль\" та можуть бути використаними для надання застосунку доступу "
+"до внутрішнього API Penpot"
 
 #: src/app/main/ui/settings/access_tokens.cljs:143
 msgid "dashboard.access-tokens.token-will-expire"
@@ -495,7 +495,7 @@ msgstr ""
 #: src/app/main/ui/exports/files.cljs:165
 msgid "dashboard.export.options.all.message"
 msgstr ""
-"файли з спільними бібліотеками буде включено до експорту зі збереженням "
+"файли з спільними бібліотеками буде додано до експорту зі збереженням "
 "зв'язків між ними."
 
 #: src/app/main/ui/exports/files.cljs:166
@@ -505,7 +505,7 @@ msgstr "Експортувати спільні бібліотеки"
 #: src/app/main/ui/exports/files.cljs:167
 msgid "dashboard.export.options.detach.message"
 msgstr ""
-"Спільні бібліотеки не буде включено до експорту, і до бібліотеки не буде "
+"Спільні бібліотеки не буде додано до експорту, і до бібліотеки не буде "
 "додано ресурсів. "
 
 #: src/app/main/ui/exports/files.cljs:168
@@ -885,7 +885,7 @@ msgstr "Ваш обліковий запис"
 
 #: src/app/main/ui/settings/profile.cljs:67
 msgid "dashboard.your-email"
-msgstr "Електрона адреса"
+msgstr "Електрона пошта"
 
 #: src/app/main/ui/settings/profile.cljs:59
 msgid "dashboard.your-name"
@@ -953,11 +953,11 @@ msgstr "Ваш браузер не може зробити це"
 
 #: src/app/main/ui/auth/verify_token.cljs:81, src/app/main/ui/settings/change_email.cljs:29
 msgid "errors.email-already-exists"
-msgstr "Електронна адреса вже використовується"
+msgstr "Електронна пошта вже використовується"
 
 #: src/app/main/ui/auth/verify_token.cljs:86
 msgid "errors.email-already-validated"
-msgstr "Електронна адреса вже підтверджена."
+msgstr "Електронна пошта вже підтверджена."
 
 #, unused
 msgid "errors.email-as-password"
@@ -970,8 +970,7 @@ msgstr "Цей домен не дозволений"
 #: src/app/main/ui/auth/recovery_request.cljs:57, src/app/main/ui/auth/register.cljs:57, src/app/main/ui/auth/register.cljs:60, src/app/main/ui/dashboard/team.cljs:615, src/app/main/ui/settings/change_email.cljs:37
 msgid "errors.email-has-permanent-bounces"
 msgstr ""
-"Електрона адреса \"%s\" має багато скарг про постійне повернення "
-"повідомлень."
+"Електрона пошта \"%s\" має багато скарг про постійне повернення повідомлень."
 
 #: src/app/main/ui/dashboard/team.cljs:190, src/app/main/ui/onboarding/team_choice.cljs:109
 msgid "errors.email-spam-or-permanent-bounces"
@@ -1134,7 +1133,7 @@ msgstr "Помилка під'єднання, адреса недосяжна"
 
 #: src/app/main/ui/dashboard/team.cljs:828
 msgid "errors.webhooks.invalid-uri"
-msgstr "Адреса не пройшла перевірку."
+msgstr "Посилання не пройшло перевірку."
 
 #: src/app/main/ui/dashboard/team.cljs:986
 msgid "errors.webhooks.last-delivery"
@@ -1158,7 +1157,7 @@ msgstr "Неочікуваний статус %s"
 
 #: src/app/main/ui/auth/login.cljs:114, src/app/main/ui/auth/login.cljs:118
 msgid "errors.wrong-credentials"
-msgstr "Електрона адреса або пароль неправильні."
+msgstr "Електрона пошта або пароль неправильні."
 
 #: src/app/main/ui/settings/password.cljs
 #, unused
@@ -1190,12 +1189,12 @@ msgstr "Тема"
 #: src/app/main/ui/settings/feedback.cljs:66
 msgid "feedback.subtitle"
 msgstr ""
-"Будь ласка, опишіть причину вашого листа, вказавши чи є це проблемою, ідеєю "
-"або сумнів. Член нашої команди відповість якомогашвидше."
+"Будь ласка, опишіть причину листа, вказавши чи є причина скаргою, ідеєю чи "
+"сумнівами. Учасник нашої команди відповість вам якомогашвидше."
 
 #: src/app/main/ui/settings/feedback.cljs:65
 msgid "feedback.title"
-msgstr "Електрона адреса"
+msgstr "Електрона пошта"
 
 #: src/app/main/ui/settings/feedback.cljs:102
 msgid "feedback.twitter-go-to"
@@ -2125,7 +2124,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/change_email.cljs:104
 msgid "modals.change-email.new-email"
-msgstr "Нова електрона адреса"
+msgstr "Нова електрона пошта"
 
 #: src/app/main/ui/settings/change_email.cljs:119
 msgid "modals.change-email.submit"
@@ -2141,7 +2140,7 @@ msgstr "Скопіювати токен"
 
 #: src/app/main/ui/settings/access_tokens.cljs:131
 msgid "modals.create-access-token.expiration-date.label"
-msgstr "Термін придатності"
+msgstr "Термін дії"
 
 #: src/app/main/ui/settings/access_tokens.cljs:125
 msgid "modals.create-access-token.name.label"
@@ -2169,7 +2168,7 @@ msgstr "Створити вебхук"
 
 #: src/app/main/ui/dashboard/team.cljs:887
 msgid "modals.create-webhook.url.label"
-msgstr "Адреса майданчику"
+msgstr "Посилання на Payload"
 
 #: src/app/main/ui/dashboard/team.cljs:888
 msgid "modals.create-webhook.url.placeholder"
