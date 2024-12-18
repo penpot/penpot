@@ -15,7 +15,7 @@
    [app.common.record :as crc]
    [app.common.schema :as sm]
    [app.common.spec :as us]
-   [app.common.svg.path.legacy-parser2 :as spp]
+   [app.common.svg.path :as path]
    [app.common.text :as txt]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
@@ -1296,12 +1296,10 @@
          (cond-> (or (cfh/path-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
             {:name "content"
-             :get #(-> % u/proxy->shape :content format/format-path-content)
+             :get #(-> % u/proxy->shape :content upf/format-path)
              :set
              (fn [_ value]
-               (let [content
-                     (->> (parser/parse-path-content value)
-                          (spp/simplify-commands))]
+               (let [content (->> (path/parse value))]
                  (cond
                    (not (cfh/path-shape? data))
                    (u/display-not-valid :content-type type)
