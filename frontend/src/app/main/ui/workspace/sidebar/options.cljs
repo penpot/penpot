@@ -129,9 +129,9 @@
          :file-id file-id
          :shared-libs shared-libs}])]))
 
-(mf/defc options-content
+(mf/defc options-content*
   {::mf/memo true
-   ::mf/props :obj}
+   ::mf/private true}
   [{:keys [selected shapes shapes-with-children page-id file-id on-change-section on-expand]}]
   (let [objects              (mf/deref refs/workspace-page-objects)
         permissions          (mf/use-ctx ctx/permissions)
@@ -202,20 +202,19 @@
 ;; selected-objects-with-children are derefed always but they only
 ;; need on multiple selection in majority of cases
 
-(mf/defc options-toolbox
-  {::mf/memo true
-   ::mf/props :obj}
+(mf/defc options-toolbox*
+  {::mf/memo true}
   [{:keys [section selected on-change-section on-expand]}]
   (let [page-id              (mf/use-ctx ctx/current-page-id)
         file-id              (mf/use-ctx ctx/current-file-id)
         shapes               (mf/deref refs/selected-objects)
         shapes-with-children (mf/deref refs/selected-shapes-with-children)]
 
-    [:& options-content {:shapes shapes
-                         :selected selected
-                         :shapes-with-children shapes-with-children
-                         :file-id file-id
-                         :page-id page-id
-                         :section section
-                         :on-change-section on-change-section
-                         :on-expand on-expand}]))
+    [:> options-content* {:shapes shapes
+                          :selected selected
+                          :shapes-with-children shapes-with-children
+                          :file-id file-id
+                          :page-id page-id
+                          :section section
+                          :on-change-section on-change-section
+                          :on-expand on-expand}]))

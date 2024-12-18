@@ -25,7 +25,7 @@
    [app.main.ui.workspace.sidebar.debug-shape-info :refer [debug-shape-info]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
    [app.main.ui.workspace.sidebar.layers :refer [layers-toolbox]]
-   [app.main.ui.workspace.sidebar.options :refer [options-toolbox]]
+   [app.main.ui.workspace.sidebar.options :refer [options-toolbox*]]
    [app.main.ui.workspace.sidebar.shortcuts :refer [shortcuts-container]]
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap]]
    [app.main.ui.workspace.sidebar.versions :refer [versions-toolbox]]
@@ -212,9 +212,9 @@
            (set-size (if (> size 276) 276 768))))
 
         props
-        (mf/spread props
-                   :on-change-section handle-change-section
-                   :on-expand handle-expand)
+        (mf/spread-props props
+                         {:on-change-section handle-change-section
+                          :on-expand handle-expand})
 
         history-tab
         (mf/html
@@ -234,7 +234,7 @@
               :id "right-sidebar-aside"
               :data-testid "right-sidebar"
               :data-size (str size)
-              :style #js {"--width" (if can-be-expanded? (dm/str size "px") "276px")}}
+              :style {"--width" (if can-be-expanded? (dm/str size "px") "276px")}}
       (when can-be-expanded?
         [:div {:class (stl/css :resize-area)
                :on-pointer-down on-pointer-down
@@ -251,11 +251,17 @@
          [:> comments-sidebar* {}]
 
          (true? is-history?)
-         [:> tab-switcher*
-          {:tabs #js [#js {:label (tr "workspace.versions.tab.history") :id "history" :content versions-tab}
-                      #js {:label (tr "workspace.versions.tab.actions") :id "actions" :content history-tab}]
-           :default-selected "history"
-           :class (stl/css :left-sidebar-tabs)}]
+         (let [tabs (mf/object
+                     [{:label (tr "workspace.versions.tab.history")
+                       :id "history"
+                       :content versions-tab}
+                      {:label (tr "workspace.versions.tab.actions")
+                       :id "actions"
+                       :content history-tab}])]
+           [:> tab-switcher*
+            {:tabs tabs
+             :default-selected "history"
+             :class (stl/css :left-sidebar-tabs)}])
 
          :else
-         [:> options-toolbox props])]]]))
+         [:> options-toolbox* props])]]]))
