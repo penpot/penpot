@@ -536,7 +536,7 @@
   [{:keys [mdata]}]
   (let [{:keys [disable-booleans disable-flatten]} mdata
         shapes (mf/deref refs/selected-objects)
-        props  (mf/spread-props
+        props  (mf/props
                 {:shapes shapes
                  :disable-booleans disable-booleans
                  :disable-flatten disable-flatten})]

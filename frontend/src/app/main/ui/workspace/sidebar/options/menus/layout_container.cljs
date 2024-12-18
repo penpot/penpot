@@ -456,7 +456,7 @@
                  type (if (= type "multiple") :simple :multiple)]
              (on-type-change type))))
 
-        props (mf/spread props {:on-change on-change})]
+        props (mf/spread-object props {:on-change on-change})]
 
     (mf/with-effect []
       ;; on destroy component

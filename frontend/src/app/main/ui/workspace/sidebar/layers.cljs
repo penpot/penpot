@@ -43,7 +43,7 @@
   [{:keys [selected] :as props}]
   (let [pending-selected (mf/use-var selected)
         current-selected (mf/use-state selected)
-        props            (mf/spread props :selected @current-selected)
+        props            (mf/spread-object props {:selected @current-selected})
 
         set-selected
         (mf/use-memo

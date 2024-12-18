@@ -52,8 +52,6 @@
   (sm/lazy-validator schema:option))
 
 (mf/defc context-menu*
-  {::mf/props :obj}
-
   [{:keys [show on-close options selectable selected
            top left fixed min-width origin width]
     :as props}]
@@ -90,7 +88,7 @@
            (on-close)))
 
         props
-        (mf/spread props :on-close on-local-close)
+        (mf/spread-props props {:on-close on-local-close})
 
         ids
         (mf/with-memo [levels]

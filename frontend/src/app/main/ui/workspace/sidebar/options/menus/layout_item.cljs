@@ -43,8 +43,7 @@
   [prop]
   (select-margins (= prop :m1) (= prop :m2) (= prop :m3) (= prop :m4)))
 
-(mf/defc margin-simple
-  {::mf/props :obj}
+(mf/defc margin-simple*
   [{:keys [value on-change on-blur]}]
   (let [m1 (:m1 value)
         m2 (:m2 value)
@@ -103,8 +102,7 @@
                           :nillable true
                           :value m2}]]]))
 
-(mf/defc margin-multiple
-  {::mf/props :obj}
+(mf/defc margin-multiple*
   [{:keys [value on-change on-blur]}]
   (let [m1     (:m1 value)
         m2     (:m2 value)
@@ -182,14 +180,13 @@
                           :value m4}]]]))
 
 
-(mf/defc margin-section
-  {::mf/props :obj
-   ::mf/private true
+(mf/defc margin-section*
+  {::mf/private true
    ::mf/expect-props #{:value :type :on-type-change :on-change}}
   [{:keys [type on-type-change] :as props}]
   (let [type       (d/nilv type :simple)
         on-blur    (mf/use-fn #(select-margins false false false false))
-        props      (mf/spread props :on-blur on-blur)
+        props      (mf/spread-props props {:on-blur on-blur})
 
         on-type-change'
         (mf/use-fn
@@ -206,10 +203,10 @@
      [:div {:class (stl/css :inputs-wrapper)}
       (cond
         (= type :simple)
-        [:> margin-simple props]
+        [:> margin-simple* props]
 
         (= type :multiple)
-        [:> margin-multiple props])]
+        [:> margin-multiple* props])]
 
      [:button {:class (stl/css-case
                        :margin-mode true
@@ -500,10 +497,10 @@
 
         (when is-layout-child?
           [:div {:class (stl/css :row)}
-           [:& margin-section {:value (:layout-item-margin values)
-                               :type (:layout-item-margin-type values)
-                               :on-type-change on-margin-type-change
-                               :on-change on-margin-change}]])
+           [:> margin-section* {:value (:layout-item-margin values)
+                                :type (:layout-item-margin-type values)
+                                :on-type-change on-margin-type-change
+                                :on-change on-margin-change}]])
 
         (when (or (= h-sizing :fill)
                   (= v-sizing :fill))
