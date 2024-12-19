@@ -6,103 +6,87 @@
 
 @import "refactor/common-refactor.scss";
 
-// Comment-thread-group
-.thread-group {
-  padding: 0 $s-12;
-  cursor: pointer;
-  border-radius: $br-8;
-  padding: $s-8 $s-16;
-
-  &:hover {
-    background: var(--comment-thread-background-color-hover);
-  }
-}
-
-.section-title {
-  display: grid;
-  grid-template-columns: auto auto;
-  @include bodySmallTypography;
-  height: $s-32;
-  display: flex;
-  align-items: center;
-  margin-bottom: $s-8;
-}
-
-.file-name {
-  @include textEllipsis;
+.grayed-text {
   color: var(--comment-subtitle-color);
 }
 
-.page-name {
-  @include textEllipsis;
+.location {
   color: var(--comment-subtitle-color);
-}
-
-.icon {
-  display: flex;
-  align-items: center;
-  padding: 0 $s-6 0 $s-4;
-  width: $s-24;
-  height: $s-32;
-  margin-left: $s-6;
-  svg {
-    @extend .button-icon-small;
-    stroke: var(--icon-foreground);
+  div {
+    display: flex;
+    align-items: center;
+    .location-icon {
+      margin-right: $s-8;
+    }
+    .location-text {
+      @include textEllipsis;
+    }
   }
-}
-
-.threads {
-  display: flex;
-  flex-direction: column;
-  gap: $s-24;
-}
-
-// Comment-thread
-.comment {
-  @include bodySmallTypography;
-  display: flex;
-  flex-direction: column;
-  gap: $s-12;
 }
 
 .author {
+  @include bodySmallTypography;
   display: flex;
+  align-items: center;
   gap: $s-8;
-}
-
-.thread-bubble {
-  @extend .comment-bubbles;
-  &.resolved {
-    @extend .resolved-comment-bubble;
-  }
-  &.unread {
-    @extend .unread-comment-bubble;
+  .identity {
+    flex-grow: 1;
+    .fullname {
+      @include textEllipsis;
+      color: var(--comment-title-color);
+    }
+    .timeago {
+      @include textEllipsis;
+      color: var(--comment-subtitle-color);
+    }
   }
 }
 
 .avatar {
-  height: $s-32;
-  width: $s-32;
+  position: relative;
+  height: $s-24;
+  width: $s-24;
   border-radius: $br-circle;
-  img {
+  &.avatar-lg {
+    height: $s-32;
+    width: $s-32;
+  }
+  &.avatar-read {
+    border: $s-2 solid var(--color-background-tertiary);
+  }
+  &.avatar-unread {
+    border: $s-2 solid var(--color-accent-primary);
+  }
+  &.avatar-solved {
+    border: $s-2 solid var(--color-background-tertiary);
+    .avatar-mask {
+      background: rgba(0, 0, 0, 0.5);
+    }
+  }
+
+  .avatar-image {
     border-radius: $br-circle;
+  }
+  .avatar-mask {
+    border-radius: $br-circle;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    left: 0;
+    top: 0;
   }
 }
 
-.name {
-  flex-grow: 1;
-  .fullname {
-    @include textEllipsis;
-    color: var(--comment-title-color);
-  }
-  .timeago {
-    @include textEllipsis;
-    color: var(--comment-subtitle-color);
-  }
+.comment-thread-cover {
+  @include bodySmallTypography;
+  display: flex;
+  flex-direction: column;
+  gap: $s-8;
+  padding: $s-20;
+  border-bottom: $s-1 solid var(--color-background-quaternary);
 }
 
 .content {
-  position: relative;
   @include bodySmallTypography;
   color: var(--color-foreground-primary);
   word-wrap: break-word;
@@ -112,119 +96,110 @@
 }
 
 .replies {
+  @include bodySmallTypography;
   display: flex;
   gap: $s-8;
+  .total-replies {
+    color: var(--color-foreground-secondary);
+  }
+  .new-replies {
+    color: var(--color-accent-primary);
+  }
 }
 
-.total-replies {
-  color: var(--color-foreground-secondary);
-}
-.new-replies {
-  color: var(--color-accent-primary);
-}
-// Thread-bubble
-
-.floating-thread-bubble {
-  @extend .comment-bubbles;
+.comment-floating-bubble {
   position: absolute;
+  user-select: none;
   cursor: pointer;
   pointer-events: auto;
   transform: translate(calc(-1 * $s-16), calc(-1 * $s-16));
-
-  &.resolved {
-    @extend .resolved-comment-bubble;
-  }
-  &.unread {
-    @extend .unread-comment-bubble;
+  &.grabbing {
+    cursor: grabbing;
   }
 }
 
-// thread-content
-.thread-content {
+.comment-floating-thread {
   position: absolute;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: $s-12;
   width: $s-284;
-  padding: $s-12;
-  padding-inline-end: $s-8;
-
+  padding: $s-8 $s-12 $s-8 $s-12;
   pointer-events: auto;
-  user-select: text;
   border-radius: $br-8;
   border: $s-2 solid var(--modal-border-color);
   background-color: var(--comment-modal-background-color);
   --translate-x: 0%;
   --translate-y: 0%;
   transform: translate(var(--translate-x), var(--translate-y));
-  .comments {
+  &.left {
+    --translate-x: -100%;
+  }
+  &.top {
+    --translate-y: -100%;
+  }
+  &.abbreviated {
+    margin-left: -14px;
+    margin-top: -10px;
+  }
+  .main {
     display: flex;
     flex-direction: column;
-    gap: $s-24;
+    gap: $s-16;
+    overflow-y: auto;
+    padding-bottom: $s-16;
   }
-}
-
-.thread-content-left {
-  --translate-x: -100%;
-}
-.thread-content-top {
-  --translate-y: -100%;
-}
-
-// comment-item
-
-.comment-container {
-  position: relative;
-  .comment {
+  .header {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: $s-32;
     @include bodySmallTypography;
-    .author {
+    .header-right {
       display: flex;
-      gap: $s-8;
-      .avatar {
-        height: $s-32;
-        width: $s-32;
-        border-radius: $br-circle;
-        img {
-          border-radius: $br-circle;
-        }
-      }
-      .name {
-        flex-grow: 1;
-        .fullname {
-          @include textEllipsis;
-          color: var(--comment-title-color);
-        }
-        .timeago {
-          @include textEllipsis;
-          color: var(--comment-subtitle-color);
-        }
-      }
-      .options-resolve-wrapper {
-        @include flexCenter;
-        width: $s-16;
-        height: $s-32;
-        .options-resolve {
-          @extend .checkbox-icon;
-          cursor: pointer;
-        }
-      }
+      align-items: center;
     }
-  }
-  .comment-options-dropdown {
-    @extend .dropdown-wrapper;
-    position: absolute;
-    width: fit-content;
-    max-width: $s-200;
-    right: 0;
-    left: unset;
-    .context-menu-option {
-      @extend .dropdown-element-base;
+    .checkbox-wrapper {
+      @include flexCenter;
+      width: $s-16;
+      height: $s-24;
+      margin-right: $s-8;
+      .checkbox {
+        @extend .checkbox-icon;
+      }
     }
   }
 }
 
-// edit-form & reply-form
+.comment-floating-thread-item {
+  position: relative;
+  .container {
+    display: flex;
+    flex-direction: column;
+    gap: $s-8;
+    @include bodySmallTypography;
+  }
+}
 
-.edit-form,
-.reply-form {
+.dropdown-menu {
+  @extend .dropdown-wrapper;
+  position: absolute;
+  width: fit-content;
+  max-width: $s-200;
+  right: $s-32;
+  top: 0;
+  left: unset;
+  .dropdown-menu-option {
+    @extend .dropdown-element-base;
+  }
+}
+
+.comment-edit-form,
+.comment-reply-form {
+  display: flex;
+  flex-direction: column;
+  gap: $s-8;
   textarea {
     @extend .input-element;
     @include bodySmallTypography;
@@ -232,8 +207,8 @@
     height: 100%;
     width: 100%;
     max-width: $s-260;
-    margin-bottom: $s-8;
     padding: $s-8;
+    margin-top: $s-4;
     color: var(--input-foreground-color-active);
     resize: vertical;
     &:focus {
@@ -244,18 +219,6 @@
   .buttons-wrapper {
     display: flex;
     justify-content: flex-end;
-    gap: $s-4;
-    .post-btn {
-      @extend .button-primary;
-      height: $s-32;
-      width: $s-92;
-      margin-bottom: 0;
-    }
-    .cancel-btn {
-      @extend .button-secondary;
-      height: $s-32;
-      width: $s-92;
-      margin-bottom: 0;
-    }
+    gap: $s-8;
   }
 }

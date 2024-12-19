@@ -151,11 +151,13 @@
                             (pcb/with-page page)
                             (pcb/set-comment-thread-position thread))]
 
-         (rx/merge
-          (rx/of (dch/commit-changes changes))
-          (->> (rp/cmd! :update-comment-thread-position thread)
-               (rx/catch #(rx/throw {:type :update-comment-thread-position}))
-               (rx/ignore))))))))
+         (rx/concat
+          (rx/merge
+           (rx/of (dch/commit-changes changes))
+           (->> (rp/cmd! :update-comment-thread-position thread)
+                (rx/catch #(rx/throw {:type :update-comment-thread-position}))
+                (rx/ignore)))
+          (rx/of (dcmt/refresh-comment-thread thread))))))))
 
 ;; Move comment threads that are inside a frame when that frame is moved"
 (defmethod ptk/resolve ::move-frame-comment-threads

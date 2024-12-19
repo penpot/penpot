@@ -211,7 +211,7 @@
         show-outlines?           (and (nil? transform)
                                       (not edition)
                                       (not drawing-obj)
-                                      (not (#{:comments :path :curve} drawing-tool)))
+                                      (not (#{:path :curve} drawing-tool)))
 
         show-pixel-grid?         (and (contains? layout :show-pixel-grid)
                                       (>= zoom 8))
