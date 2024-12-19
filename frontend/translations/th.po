@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-25 20:01+0000\n"
+"PO-Revision-Date: 2024-12-19 18:02+0000\n"
 "Last-Translator: Late Night Defender <pongpeera054@protonmail.com>\n"
 "Language-Team: Thai <https://hosted.weblate.org/projects/penpot/frontend/th/>"
 "\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.9-dev\n"
+"X-Generator: Weblate 5.9.2-dev\n"
 
 #: src/app/main/ui/auth/login.cljs:310, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/auth/register.cljs:240, src/app/main/ui/static.cljs:144, src/app/main/ui/viewer/login.cljs:91
 msgid "auth.register-submit"
@@ -635,3 +635,45 @@ msgstr "โปรไฟล์"
 #: src/app/main/ui/dashboard/sidebar.cljs:784
 msgid "labels.projects"
 msgstr "โปรเจกต์"
+
+#: src/app/main/ui/viewer/share_link.cljs:173
+msgid "common.share-link.title"
+msgstr "แชร์โปรโตไทป์"
+
+#: src/app/main/ui/auth/register.cljs:124
+msgid "auth.register-tagline"
+msgstr ""
+"ด้วยบัญชี Penpot ฟรี คุณสามารถสร้างทีมได้อย่างไม่จำกัดและทำงานร่วมกับดีไซเนอร์และนักพัฒนาคนอื่น "
+"ๆ กี่โปรเจกต์ก็ได้ "
+
+#: src/app/main/ui/auth/login.cljs:293
+msgid "auth.login-tagline"
+msgstr ""
+"Penpot เป็นเครื่องมือออกแบบที่ฟรีและโอเพนซอร์สสำหรับการดีไซน์และโค้ดร่วมกัน"
+
+#: src/app/main/ui/auth/register.cljs:254
+msgid "auth.register-account-tagline"
+msgstr "เราควรเรียกคุณในแดชบอร์ดและอีเมลว่าอะไรดี"
+
+#: src/app/main/ui/auth.cljs
+#, unused
+msgid "auth.sidebar-tagline"
+msgstr "โซลูชันโอเพนซอร์สสำหรับการออกแบบและโปรโตไทป์"
+
+#, unused
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"เมื่อคุณสร้างบัญชี คุณยอมรับข้อกำหนดการให้บริการและนโยบายความเป็นส่วนตัว"
+
+#: src/app/main/ui/viewer/share_link.cljs:233
+msgid "common.share-link.manage-ops"
+msgstr "จัดการสิทธิ์"
+
+#: src/app/main/ui/viewer/share_link.cljs:279
+msgid "common.share-link.page-shared"
+msgid_plural "common.share-link.page-shared"
+msgstr[0] "แชร์แล้ว %s หน้า"
+
+#: src/app/main/ui/viewer/share_link.cljs:195
+msgid "common.share-link.permissions-hint"
+msgstr "ทุกคนที่มีลิงก์สามารถเข้าถึงได้"
