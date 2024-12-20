@@ -77,6 +77,7 @@
      :output-wrapper true
      :rename-prefix-namespace "PENPOT"
      :source-map true
+     :pretty-print true
      :elide-asserts true
      :anon-fn-naming-policy :off
      :source-map-detail-level :all}}}
