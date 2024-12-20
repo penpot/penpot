@@ -12,6 +12,8 @@ export CURRENT_HASH=${CURRENT_HASH:-$(git rev-parse --short HEAD)};
 export EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS;
 export TS=$(date +%s);
 
+echo $(env) > test.env
+
 # Some cljs reacts on this environment variable for define more
 # performant code on macros (example: rumext)
 export NODE_ENV=production;
