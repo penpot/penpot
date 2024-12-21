@@ -121,7 +121,7 @@
       :opacity      (api/set-shape-opacity v)
       :hidden       (api/set-shape-hidden v)
       :shapes       (api/set-shape-children v)
-      :content      (api/set-shape-path-content v)
+      :content      (api/set-shape-content self v)
       nil)
     ;; when something synced with wasm
     ;; is modified, we need to request
