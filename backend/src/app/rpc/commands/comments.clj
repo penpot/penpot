@@ -315,6 +315,8 @@
   (str "with threads as (" sql:comment-threads-by-team ")"
        "select * from threads where count_unread_comments > 0"))
 
+
+;; TODO: Retrieve mentions
 (defn- get-unread-comment-threads
   [conn profile-id team-id]
   (->> (db/exec! conn [sql:unread-comment-threads-by-team profile-id team-id])
