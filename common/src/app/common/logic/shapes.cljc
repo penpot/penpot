@@ -304,7 +304,9 @@
                 (->> ids
                      (mapcat #(ctn/get-child-heads objects %))
                      (map :id)))
-        cell (or cell (ctl/get-cell-by-index parent to-index))]
+
+        index-cell-data  (when to-index (ctl/get-cell-by-index parent to-index))
+        cell (or cell (and index-cell-data [(:row index-cell-data) (:column index-cell-data)]))]
 
     (-> changes
         (pcb/with-page-id page-id)
