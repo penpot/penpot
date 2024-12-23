@@ -9,8 +9,8 @@
   funcool/okulary {:mvn/version "2022.04.11-16"}
 
   funcool/potok2
-  {:git/tag "v2.1"
-   :git/sha "84c97b9"
+  {:git/tag "v2.2"
+   :git/sha "0f7e15a"
    :git/url "https://github.com/funcool/potok.git"
    :exclusions [funcool/beicon2]}
 

@@ -307,7 +307,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (or team-id (:current-team-id state))]
-        (rx/of (rt/nav :dashboard-libraries {:team-id team-id}))))))
+        (rx/of (rt/nav :dashboard-fonts {:team-id team-id}))))))
 
 (defn go-to-dashboard-recent
   [& {:keys [team-id] :as options}]
