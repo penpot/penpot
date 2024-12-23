@@ -27,6 +27,29 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
+;; FIXME: can we unify this two refs in one?
+
+(def ^:private ref:file-with-pages
+  "A derived state of the current file, without data with the
+  exception of list of pages"
+  (l/derived (fn [{:keys [data] :as file}]
+               (-> file
+                   (dissoc :data)
+                   (assoc :pages (:pages data))))
+             refs/file
+             =))
+
+(defn- make-page-ref
+  "Create a derived state that poins to a page identified by `page-id`
+  without including the page objects (mainly for avoid rerender on
+  each object change)"
+  [page-id]
+  (l/derived (fn [data]
+               (let [page (dm/get-in data [:pages-index page-id])]
+                 (dissoc page :objects)))
+             refs/workspace-data
+             =))
+
 ;; --- Page Item
 
 (mf/defc page-item
@@ -155,17 +178,11 @@
 
 ;; --- Page Item Wrapper
 
-(defn- make-page-ref
-  [page-id]
-  (l/derived (fn [state]
-               (let [page (get-in state [:workspace-data :pages-index page-id])]
-                 (select-keys page [:id :name])))
-             st/state =))
-
 (mf/defc page-item-wrapper
   {::mf/wrap-props false}
   [{:keys [page-id index deletable? selected? editing?]}]
-  (let [page-ref (mf/use-memo (mf/deps page-id) #(make-page-ref page-id))
+  (let [page-ref (mf/with-memo [page-id]
+                   (make-page-ref page-id))
         page     (mf/deref page-ref)]
     [:& page-item {:page page
                    :index index
@@ -198,7 +215,7 @@
 (mf/defc sitemap
   {::mf/wrap-props false}
   [{:keys [size show-pages? toggle-pages]}]
-  (let [file           (mf/deref refs/workspace-file)
+  (let [file           (mf/deref ref:file-with-pages)
         file-id        (get file :id)
         project-id     (get file :project-id)
 
@@ -207,6 +224,7 @@
                         (fn [event]
                           (st/emit! (dw/create-page {:file-id file-id :project-id project-id}))
                           (-> event dom/get-current-target dom/blur!)))
+
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
         permissions    (mf/use-ctx ctx/permissions)]
 

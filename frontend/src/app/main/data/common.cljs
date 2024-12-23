@@ -15,6 +15,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as-alias dps]
+   [app.main.data.state-helpers :as dsh]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.router :as rt]
@@ -111,8 +112,9 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [features (features/get-team-enabled-features state)
-            data     (:workspace-data state)
-            file     (:workspace-file state)]
+            file     (dsh/lookup-file state)
+            data     (get file :data)]
+
         (->> (if (and data file)
                (rx/of {:name             (:name file)
                        :components-count (count (ctkl/components-seq data))
@@ -307,7 +309,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (or team-id (:current-team-id state))]
-        (rx/of (rt/nav :dashboard-libraries {:team-id team-id}))))))
+        (rx/of (rt/nav :dashboard-fonts {:team-id team-id}))))))
 
 (defn go-to-dashboard-recent
   [& {:keys [team-id] :as options}]
@@ -367,9 +369,10 @@
     (watch [_ state _]
       (let [team-id (or team-id (:current-team-id state))
             file-id (or file-id (:current-file-id state))
-            ;: FIXME: why not :current-page-id
             page-id (or page-id
-                        (dm/get-in state [:workspace-data :pages 0]))
+                        (-> (dsh/lookup-file-data state file-id)
+                            (get :pages)
+                            (first)))
             params  (-> (rt/get-params state)
                         (assoc :team-id team-id)
                         (assoc :file-id file-id)

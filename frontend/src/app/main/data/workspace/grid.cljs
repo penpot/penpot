@@ -11,8 +11,8 @@
    [app.common.files.changes-builder :as pcb]
    [app.common.types.grid :as ctg]
    [app.main.data.changes :as dch]
+   [app.main.data.state-helpers :as dsh]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.state-helpers :as wsh]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -56,7 +56,7 @@
   (ptk/reify ::set-default-grid
     ptk/WatchEvent
     (watch [it state _]
-      (let [page (wsh/lookup-page state)]
+      (let [page (dsh/lookup-page state)]
         (rx/of (dch/commit-changes
                 (-> (pcb/empty-changes it)
                     (pcb/with-page page)

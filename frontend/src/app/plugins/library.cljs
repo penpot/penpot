@@ -929,7 +929,7 @@
     :connected
     {:get
      (fn []
-       (let [libraries (get @st/state :libraries)]
+       (let [libraries (get @st/state :files)]
          (apply array (->> libraries keys (map (partial library-proxy plugin-id))))))}
 
     :availableLibraries
@@ -937,7 +937,7 @@
       (let [team-id (:current-team-id @st/state)]
         (js/Promise.
          (fn [resolve reject]
-           (let [current-libs (into #{} (map first) (get @st/state :libraries))]
+           (let [current-libs (into #{} (map first) (get @st/state :files))]
              (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
                   (rx/map (fn [result]
                             (->> result

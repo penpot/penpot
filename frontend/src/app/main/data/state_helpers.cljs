@@ -4,43 +4,59 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.data.workspace.state-helpers
+(ns app.main.data.state-helpers
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.svg.path.command :as upc]
-   [app.common.uuid :as uuid]))
+   [app.common.svg.path.command :as upc]))
+
+(defn lookup-libraries
+  "Retrieve all libraries, including the local file."
+  [state]
+  (:files state))
+
+(defn lookup-file
+  ([state]
+   (lookup-file state (:current-file-id state)))
+  ([state file-id]
+   (dm/get-in state [:files file-id])))
+
+(defn lookup-file-data
+  ([state]
+   (lookup-file-data state (:current-file-id state)))
+  ([state file-id]
+   (dm/get-in state [:files file-id :data])))
+
+(defn get-page
+  [fdata page-id]
+  (dm/get-in fdata [:pages-index page-id]))
 
 (defn lookup-page
   ([state]
-   (lookup-page state (:current-page-id state)))
+   (let [file-id (:current-file-id state)
+         page-id (:current-page-id state)]
+     (lookup-page state file-id page-id)))
   ([state page-id]
-   (get-in state [:workspace-data :pages-index page-id])))
+   (let [file-id (:current-file-id state)]
+     (lookup-page state file-id page-id)))
+  ([state file-id page-id]
+   (dm/get-in state [:files file-id :pages-index page-id])))
 
 (defn lookup-page-objects
   ([state]
-   (lookup-page-objects state (:current-page-id state)))
+   (lookup-page-objects state
+                        (:current-file-id state)
+                        (:current-page-id state)))
   ([state page-id]
-   (-> (lookup-page state page-id)
+   (lookup-page-objects state
+                        (:current-file-id state)
+                        page-id))
+  ([state file-id page-id]
+   (-> (lookup-page state file-id page-id)
        (get :objects))))
-
-(defn lookup-library-objects
-  [state file-id page-id]
-  (dm/get-in state [:libraries file-id :data :pages-index page-id :objects]))
-
-(defn lookup-objects
-  [state file-id page-id]
-  (let [current-file? (= file-id (:current-file-id state))]
-    (if ^boolean current-file?
-      (lookup-page-objects state page-id)
-      (lookup-library-objects state file-id page-id))))
-
-(defn lookup-local-components
-  ([state]
-   (dm/get-in state [:workspace-data :components])))
 
 (defn process-selected-shapes
   ([objects selected]
@@ -56,13 +72,18 @@
              (filter selectable?)
              selected)))))
 
+;; DEPRECATED
 (defn lookup-selected-raw
+  [state]
+  (dm/get-in state [:workspace-local :selected]))
+
+(defn get-selected-ids
   [state]
   (dm/get-in state [:workspace-local :selected]))
 
 (defn lookup-selected
   ([state]
-   (lookup-selected state nil))
+   (lookup-selected state (:current-page-id state) nil))
   ([state options]
    (lookup-selected state (:current-page-id state) options))
   ([state page-id options]
@@ -92,41 +113,6 @@
    (let [objects (lookup-page-objects state page-id)]
      (into [] (filter filter-fn) (vals objects)))))
 
-(defn get-local-file
-  "Get the data content of the file you are currently working with."
-  [state]
-  (get state :workspace-data))
-
-(defn get-local-file-full
-  [state]
-  (-> (get state :workspace-file)
-      (assoc :data (get state :workspace-data))))
-
-(defn get-file
-  "Get the data content of the given file (it may be the current file
-  or one library)."
-  [state file-id]
-  (if (= file-id (:current-file-id state))
-    (get state :workspace-data)
-    (dm/get-in state [:libraries file-id :data])))
-
-(defn get-file-full
-  "Get the data content of the given file (it may be the current file
-  or one library)."
-  [state file-id]
-  (if (= file-id (:current-file-id state))
-    (-> (get state :workspace-file)
-        (assoc :data (get state :workspace-data)))
-    (dm/get-in state [:libraries file-id :data])))
-
-(defn get-libraries
-  "Retrieve all libraries, including the local file."
-  [state]
-  (let [{:keys [id] :as local} (:workspace-data state)]
-    (-> (:libraries state)
-        (assoc id {:id id
-                   :data local}))))
-
 (defn- set-content-modifiers [state]
   (fn [id shape]
     (let [content-modifiers (dm/get-in state [:workspace-local :edit-path id :content-modifiers])]
@@ -134,6 +120,7 @@
         (update shape :content upc/apply-content-modifiers content-modifiers)
         shape))))
 
+;; FIXME: inconsistent parameters order
 (defn select-bool-children
   [parent-id state]
   (let [objects   (lookup-page-objects state)
@@ -150,19 +137,7 @@
     (as-> children $
       (d/mapm (set-content-modifiers state) $))))
 
-(defn viewport-center
+(defn get-viewport-center
   [state]
-  (let [{:keys [x y width height]} (get-in state [:workspace-local :vbox])]
+  (when-let [{:keys [x y width height]} (get-in state [:workspace-local :vbox])]
     (gpt/point (+ x (/ width 2)) (+ y (/ height 2)))))
-
-(defn find-orphan-shapes
-  ([state]
-   (find-orphan-shapes state (:current-page-id state)))
-  ([state page-id]
-   (let [objects  (lookup-page-objects state page-id)
-         objects (filter (fn [item]
-                           (and
-                            (not= (key item) uuid/zero)
-                            (not (contains? objects (:parent-id (val item))))))
-                         objects)]
-     objects)))

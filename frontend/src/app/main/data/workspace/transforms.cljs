@@ -26,10 +26,10 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.changes :as dch]
+   [app.main.data.state-helpers :as dsh]
    [app.main.data.workspace.collapse :as dwc]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.snap :as snap]
    [app.main.streams :as ms]
@@ -262,7 +262,7 @@
               page-id (:current-page-id state)
               focus   (:workspace-focus-selected state)
               zoom    (dm/get-in state [:workspace-local :zoom] 1)
-              objects (wsh/lookup-page-objects state page-id)
+              objects (dsh/lookup-page-objects state page-id)
               shapes  (map (d/getf objects) ids)]
 
           (rx/concat
@@ -312,7 +312,7 @@
   (ptk/reify ::update-dimensions
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             get-modifier
             (fn [shape] (ctm/change-dimensions-modifiers shape attr value))
 
@@ -340,7 +340,7 @@
   (ptk/reify ::change-orientation
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects     (wsh/lookup-page-objects state)
+      (let [objects     (dsh/lookup-page-objects state)
 
             get-modifier
             (fn [shape] (ctm/change-orientation-modifiers shape orientation))
@@ -407,7 +407,7 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [page-id (:current-page-id state)
-             objects (wsh/lookup-page-objects state page-id)
+             objects (dsh/lookup-page-objects state page-id)
              shapes  (->> ids (map #(get objects %)))]
          (rx/concat
           (rx/of (dwm/set-delta-rotation-modifiers rotation shapes params))
@@ -437,7 +437,7 @@
 
              ;; We toggle the selection so we don't have to wait for the event
              selected
-             (cond-> (wsh/lookup-selected state {:omit-blocked? true})
+             (cond-> (dsh/lookup-selected state {:omit-blocked? true})
                (some? id)
                (d/toggle-selection id shift?))]
 
@@ -501,8 +501,8 @@
      ptk/WatchEvent
      (watch [_ state stream]
        (let [page-id (:current-page-id state)
-             objects (wsh/lookup-page-objects state page-id)
-             selected (wsh/lookup-selected state {:omit-blocked? true})
+             objects (dsh/lookup-page-objects state page-id)
+             selected (dsh/lookup-selected state {:omit-blocked? true})
              ids     (if (nil? ids) selected ids)
              shapes  (into []
                            (comp (map (d/getf objects))
@@ -624,8 +624,8 @@
   (ptk/reify ::reorder-layout-child
     ptk/WatchEvent
     (watch [it state _]
-      (let [selected (wsh/lookup-selected state {:omit-blocked? true})
-            objects (wsh/lookup-page-objects state)
+      (let [selected (dsh/lookup-selected state {:omit-blocked? true})
+            objects (dsh/lookup-page-objects state)
             page-id (:current-page-id state)
 
             get-move-to-index
@@ -733,7 +733,7 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (if (= same-event (get state ::current-move-selected))
-          (let [selected (wsh/lookup-selected state {:omit-blocked? true})
+          (let [selected (dsh/lookup-selected state {:omit-blocked? true})
                 nudge (get-in state [:profile :props :nudge] {:big 10 :small 1})
                 move-events (->> stream
                                  (rx/filter (ptk/type? ::nudge-selected-shapes))
@@ -775,8 +775,8 @@
   (ptk/reify ::move-selected
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (wsh/lookup-page-objects state)
-            selected (wsh/lookup-selected state {:omit-blocked? true})
+      (let [objects (dsh/lookup-page-objects state)
+            selected (dsh/lookup-selected state {:omit-blocked? true})
             selected-shapes (->> selected (map (d/getf objects)))]
         (if (every? #(and (ctl/any-layout-immediate-child? objects %)
                           (not (ctl/position-absolute? %)))
@@ -793,7 +793,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id    (:current-page-id state)
-            objects    (wsh/lookup-page-objects state page-id)
+            objects    (dsh/lookup-page-objects state page-id)
             shape      (get objects id)
 
             ;; FIXME: performance rect
@@ -816,7 +816,7 @@
   (ptk/reify ::position-shapes
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             shapes  (d/index-by :id shapes)
 
             modif-tree
@@ -863,7 +863,7 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [page-id (:current-page-id state)
-            objects (wsh/lookup-page-objects state page-id)
+            objects (dsh/lookup-page-objects state page-id)
             ids     (cleanup-invalid-moving-shapes ids objects frame-id)
             changes (cls/generate-relocate (pcb/empty-changes it)
                                            objects
@@ -897,8 +897,8 @@
    (ptk/reify ::flip-horizontal-selected
      ptk/WatchEvent
      (watch [_ state _]
-       (let [objects   (wsh/lookup-page-objects state)
-             selected  (or ids (wsh/lookup-selected state {:omit-blocked? true}))
+       (let [objects   (dsh/lookup-page-objects state)
+             selected  (or ids (dsh/lookup-selected state {:omit-blocked? true}))
              shapes    (map #(get objects %) selected)
              selrect   (gsh/shapes->rect shapes)
              center    (grc/rect->center selrect)
@@ -912,8 +912,8 @@
    (ptk/reify ::flip-vertical-selected
      ptk/WatchEvent
      (watch [_ state _]
-       (let [objects   (wsh/lookup-page-objects state)
-             selected  (or ids (wsh/lookup-selected state {:omit-blocked? true}))
+       (let [objects   (dsh/lookup-page-objects state)
+             selected  (or ids (dsh/lookup-selected state {:omit-blocked? true}))
              shapes    (map #(get objects %) selected)
              selrect   (gsh/shapes->rect shapes)
              center    (grc/rect->center selrect)

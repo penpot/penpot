@@ -268,15 +268,6 @@
      [:span {:class (stl/css :arrow-icon)}
       i/arrow]]))
 
-(def ^:private ref:swap-libraries
-  (letfn [(get-libraries [state]
-            (let [file (:workspace-file state)
-                  data (:workspace-data state)
-                  libs (:libraries state)]
-              (assoc libs (:id file)
-                     (assoc file :data data))))]
-    (l/derived get-libraries st/state)))
-
 (defn- find-common-path
   ([components]
    (let [paths (map (comp cfh/split-path :path) components)]
@@ -298,14 +289,13 @@
   (= (:component-id shape-a)
      (:component-id shape-b)))
 
-
 (mf/defc component-swap
   {::mf/props :obj}
   [{:keys [shapes]}]
   (let [single?             (= 1 (count shapes))
         shape               (first shapes)
         current-file-id     (mf/use-ctx ctx/current-file-id)
-        libraries           (mf/deref ref:swap-libraries)
+        libraries           (mf/deref refs/files)
         objects             (mf/deref refs/workspace-page-objects)
 
         ^boolean
