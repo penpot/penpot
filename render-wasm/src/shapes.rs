@@ -1,5 +1,6 @@
 use crate::math;
 use skia_safe as skia;
+use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::render::BlendMode;
@@ -41,6 +42,7 @@ pub struct Shape {
     blend_mode: BlendMode,
     opacity: f32,
     hidden: bool,
+    svg_attrs: HashMap<String, String>,
 }
 
 impl Shape {
@@ -57,6 +59,7 @@ impl Shape {
             blend_mode: BlendMode::default(),
             opacity: 1.,
             hidden: false,
+            svg_attrs: HashMap::new(),
         }
     }
 
@@ -140,10 +143,10 @@ impl Shape {
 
     pub fn set_path_attr(&mut self, name: String, value: String) {
         match &mut self.kind {
-            Kind::Path(p) => {
-                p.set_attr(name, value);
-            },
-            Kind::Rect(_) | Kind::Circle(_) | Kind::SVGRaw(_) => todo!()
+            Kind::Path(_) => {
+                self.set_svg_attr(name, value);
+            }
+            Kind::Rect(_) | Kind::Circle(_) | Kind::SVGRaw(_) => todo!(),
         };
     }
 
@@ -154,6 +157,10 @@ impl Shape {
 
     pub fn set_blend_mode(&mut self, mode: BlendMode) {
         self.blend_mode = mode;
+    }
+
+    pub fn set_svg_attr(&mut self, name: String, value: String) {
+        self.svg_attrs.insert(name, value);
     }
 }
 

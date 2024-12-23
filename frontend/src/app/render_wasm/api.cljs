@@ -9,10 +9,15 @@
   (:require
    ["react-dom/server" :as rds]
    [app.common.data.macros :as dm]
+   [app.common.geom.shapes.bounds :as gsb]
    [app.common.math :as mth]
    [app.common.svg.path :as path]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.refs :as refs]
+   [app.main.render :as render]
+   [app.main.store :as st]
+   [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.render-wasm.helpers :as h]
    [app.util.debug :as dbg]
    [app.util.functions :as fns]
@@ -20,6 +25,7 @@
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [goog.object :as gobj]
+   [okulary.core :as l]
    [promesa.core :as p]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -31,31 +37,52 @@
 (def dpr
   (if use-dpr? js/window.devicePixelRatio 1.0))
 
-(mf/defc svg-raw-element
-  {::mf/props :obj}
-  [{:keys [tag attrs content] :as props}]
-  [:& (name tag) attrs
-   (for [child content]
-     (if (string? child)
-       child
-       [:& svg-raw-element child]))])
+;; (mf/defc svg-raw-element
+;;   {::mf/props :obj}
+;;   [{:keys [tag attrs content] :as props}]
+;;   [:& (name tag) attrs
+;;    (for [child content]
+;;      (if (string? child)
+;;        child
+;;        [:& svg-raw-element child]))])
 
-(mf/defc svg-raw
+;; (mf/defc svg-raw
+;;   {::mf/props :obj}
+;;   [{:keys [shape] :as props}]
+;;   (let [content (:content shape)]
+;;     [:svg {:version "1.1"
+;;            :xmlns "http://www.w3.org/2000/svg"
+;;            :xmlnsXlink "http://www.w3.org/1999/xlink"
+;;            :fill "none"}
+;;      (if (string? content)
+;;        content
+;;        (let [svg-attrs (:svg-attrs shape)
+;;              content   (->
+;;                         (:content shape)
+;;                         (update :attrs merge svg-attrs))]
+;;          (println "content" content)
+;;          (println "svg-attrs" svg-attrs)
+;;          [:& svg-raw-element content]))]))
+
+(mf/defc object-svg
   {::mf/props :obj}
   [{:keys [shape] :as props}]
-  (let [content (:content shape)]
+  (let [objects (mf/deref refs/workspace-page-objects)
+        shape-wrapper
+        (mf/with-memo [shape]
+          (render/shape-wrapper-factory objects))]
+
     [:svg {:version "1.1"
            :xmlns "http://www.w3.org/2000/svg"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :fill "none"}
-     (if (string? content)
-       content
-       [:& svg-raw-element content])]))
+     [:& shape-wrapper {:shape shape}]]))
 
 (defn get-static-markup
   [shape]
-  (rds/renderToStaticMarkup
-   (mf/element svg-raw #js {:shape shape})))
+  (->
+   (mf/element object-svg #js {:shape shape})
+   (rds/renderToStaticMarkup)))
 
 ;; This should never be called from the outside.
 ;; This function receives a "time" parameter that we're not using but maybe in the future could be useful (it is the time since
@@ -314,11 +341,13 @@
   [shape content]
   (let [type (:type shape)]
     (cond
-      (= type :svg-raw)
+      (or (= type :svg-raw) (some? (:svg-defs shape)))
+      ;; TODO: in the future svg-raw texts should be rendered as texts inside wasm
       (set-shape-svg-raw-content (get-static-markup shape))
 
       (= type :path)
       (do (when (some? (:svg-attrs shape))
+            ;; TODO: in the future we should filter svg-attrs we can render directly using wasm like fill-rule
             (set-shape-path-attrs (:svg-attrs shape)))
           (set-shape-path-content content)))))
 

@@ -30,6 +30,7 @@ pub trait Renderable {
     fn hidden(&self) -> bool;
     fn clip(&self) -> bool;
     fn children_ids(&self) -> Vec<Uuid>;
+    fn is_recursive(&self) -> bool;
 }
 
 pub(crate) struct CachedSurfaceImage {
@@ -180,12 +181,6 @@ impl RenderState {
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
             Some(&paint),
         );
-        // self.drawing_surface.draw(
-        //     &svg_canvas,
-        //     (0.0, 0.0),
-        //     skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
-        //     Some(&paint),
-        // );
 
         self.drawing_surface
             .canvas()
@@ -347,15 +342,10 @@ impl RenderState {
         }
 
         // draw all the children shapes
-        /*
-        if !matches!(&(element as Shape).kind, Kind::SVGRaw(_)) {
+        if element.is_recursive() {
             for id in element.children_ids() {
                 is_complete = self.render_shape_tree(&id, tree) && is_complete;
             }
-        }
-        */
-        for id in element.children_ids() {
-            is_complete = self.render_shape_tree(&id, tree) && is_complete;
         }
 
         self.final_surface.canvas().restore();

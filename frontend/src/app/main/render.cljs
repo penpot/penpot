@@ -133,6 +133,8 @@
       [{:keys [shape] :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))]
         (if (and (map? (:content shape))
+                ;;  tspan can't be contained in a group 
+                 (not= :tspan (get-in shape [:content :tag]))
                  (or (= :svg (get-in shape [:content :tag]))
                      (contains? shape :svg-attrs)))
           [:> shape-container {:shape shape}
@@ -462,9 +464,9 @@
     [:& (mf/provider export/include-metadata-ctx) {:value false}
      [:& (mf/provider embed/context) {:value embed}
       [:svg {:id (dm/str "screenshot-" object-id)
-             ;;:view-box vbox
-             ;;:width (ust/format-precision width viewbox-decimal-precision)
-             ;;:height (ust/format-precision height viewbox-decimal-precision)
+             :view-box vbox
+             :width (ust/format-precision width viewbox-decimal-precision)
+             :height (ust/format-precision height viewbox-decimal-precision)
              :version "1.1"
              :xmlns "http://www.w3.org/2000/svg"
              :xmlnsXlink "http://www.w3.org/1999/xlink"

@@ -13,8 +13,6 @@ impl Renderable for Shape {
         images: &ImageStore,
         font_provider: &skia::textlayout::TypefaceFontProvider,
     ) -> Result<(), String> {
-        // println!("self.selrect {:?}", self.selrect);
-
         let transform = self.transform.to_skia_matrix();
 
         // Check transform-matrix code from common/src/app/common/geom/shapes/transforms.cljc
@@ -26,22 +24,44 @@ impl Renderable for Shape {
 
         surface.canvas().concat(&matrix);
 
-        if let Kind::SVGRaw(sr) = &self.kind {
-            let dom = skia::svg::Dom::from_str(
-                sr.content.to_string(),
-                skia::FontMgr::from(font_provider.clone()),
-            )
-            .unwrap();
-            dom.render(surface.canvas());
-        }
-
         match &self.kind {
+            Kind::SVGRaw(sr) => {
+                println!("sr.content.to_string() {:?}", sr.content.to_string());
+                let dom = skia::svg::Dom::from_str(
+                    sr.content.to_string(),
+                    skia::FontMgr::from(font_provider.clone()),
+                )
+                .unwrap();
+                dom.render(surface.canvas());
+            }
             Kind::Path(_) => {
-                let canvas = skia::svg::Canvas::new(skia::Rect::from_size((self.selrect.right - self.selrect.left + 1., self.selrect.bottom - self.selrect.top + 1.)), None);
+                //TODO: only doing this if we have svg_attrs
+                let canvas = skia::svg::Canvas::new(
+                    skia::Rect::from_size((
+                        self.selrect.right - self.selrect.left + 1.,
+                        self.selrect.bottom - self.selrect.top + 1.,
+                    )),
+                    None,
+                );
                 // SVG canvas needs positive sizes
-                canvas.concat(&skia::Matrix::translate(skia::Point::new(-self.selrect.left, -self.selrect.top)));
-                for fill in self.fills().rev() {
-                    render_fill(&canvas, images, fill, self.selrect, &self.kind);
+                canvas.concat(&skia::Matrix::translate(skia::Point::new(
+                    -self.selrect.left,
+                    -self.selrect.top,
+                )));
+                // We can have svg paths without fills with an svg stroke
+                if self.fills().len() == 0 {
+                    let color = skia::Color::from_argb(0, 0, 0, 0);
+                    render_fill(
+                        &canvas,
+                        images,
+                        &Fill::Solid(color),
+                        self.selrect,
+                        &self.kind,
+                    );
+                } else {
+                    for fill in self.fills().rev() {
+                        render_fill(&canvas, images, fill, self.selrect, &self.kind);
+                    }
                 }
                 let svg_data = canvas.end();
                 let svg = String::from_utf8_lossy(svg_data.as_bytes());
@@ -50,13 +70,23 @@ impl Renderable for Shape {
                 let root = doc.root_element().unwrap();
 
                 if let Some(element) = root.find(&doc, "path") {
-                    element.set_attribute(&mut doc, "fill-rule", "evenodd");
-                    let svg_mod = doc.write_str().unwrap();
-                    let dom =
-                        skia::svg::Dom::from_str(svg_mod, skia::FontMgr::from(font_provider.clone()))
-                            .unwrap();
+                    for (name, value) in &self.svg_attrs {
+                        element.set_attribute(&mut doc, name, value);
+                    }
 
-                    surface.canvas().concat(&skia::Matrix::translate(skia::Point::new(self.selrect.left, self.selrect.top)));
+                    let svg_mod = doc.write_str().unwrap();
+                    let dom = skia::svg::Dom::from_str(
+                        svg_mod,
+                        skia::FontMgr::from(font_provider.clone()),
+                    )
+                    .unwrap();
+
+                    surface
+                        .canvas()
+                        .concat(&skia::Matrix::translate(skia::Point::new(
+                            self.selrect.left,
+                            self.selrect.top,
+                        )));
                     dom.render(surface.canvas());
                 }
             }
@@ -92,6 +122,10 @@ impl Renderable for Shape {
 
     fn children_ids(&self) -> Vec<Uuid> {
         self.children.clone()
+    }
+
+    fn is_recursive(&self) -> bool {
+        !matches!(self.kind, Kind::SVGRaw(_))
     }
 }
 

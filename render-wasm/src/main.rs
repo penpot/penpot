@@ -377,23 +377,19 @@ pub extern "C" fn set_shape_path_content() {
 #[no_mangle]
 pub extern "C" fn set_shape_path_attrs(num_attrs: u32) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
-    println!("set_shape_path_attrs");
     if let Some(shape) = state.current_shape() {
-        println!("shape");
         let bytes = mem::bytes();
-        println!("bytes");
         unsafe {
             let mut start = 0;
-            for i in 0..num_attrs {
-                println!("attr {} {}", i, num_attrs);
-                let name= match bytes[start..].iter().position(|&b| b == 0) {
+            for _ in 0..num_attrs {
+                let name = match bytes[start..].iter().position(|&b| b == 0) {
                     Some(pos) => {
                         let end = start + pos;
                         let slice = &bytes[start..end];
                         start = end + 1;
                         String::from_utf8_unchecked(slice.to_vec())
-                    },
-                    None => String::new()
+                    }
+                    None => String::new(),
                 };
                 let value = match bytes[start..].iter().position(|&b| b == 0) {
                     Some(pos) => {
@@ -401,10 +397,9 @@ pub extern "C" fn set_shape_path_attrs(num_attrs: u32) {
                         let slice = &bytes[start..end];
                         start = end + 1;
                         String::from_utf8_unchecked(slice.to_vec())
-                    },
-                    None => String::new()
+                    }
+                    None => String::new(),
                 };
-                println!("Ojete calor {}: {}", name, value);
                 shape.set_path_attr(name, value);
             }
         }
