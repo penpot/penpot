@@ -17,11 +17,11 @@
    [app.common.types.shape.shadow :refer [check-shadow!]]
    [app.main.broadcast :as mbc]
    [app.main.data.event :as ev]
+   [app.main.data.helpers :as dsh]
    [app.main.data.modal :as md]
    [app.main.data.workspace.layout :as layout]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.util.storage :as storage]
@@ -84,8 +84,7 @@
 (defn transform-fill
   ([state ids color transform] (transform-fill state ids color transform nil))
   ([state ids color transform options]
-   (let [objects   (wsh/lookup-page-objects state)
-
+   (let [objects   (dsh/lookup-page-objects state)
          is-text?  #(= :text (:type (get objects %)))
          text-ids  (filter is-text? ids)
          shape-ids (remove is-text? ids)
@@ -135,7 +134,7 @@
   (ptk/reify ::reorder-fills
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects   (wsh/lookup-page-objects state)
+      (let [objects   (dsh/lookup-page-objects state)
 
             is-text?  #(= :text (:type (get objects %)))
             text-ids  (filter is-text? ids)
@@ -234,7 +233,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id   (:current-page-id state)
-            objects   (wsh/lookup-page-objects state page-id)
+            objects   (dsh/lookup-page-objects state page-id)
             is-text?  #(= :text (:type (get objects %)))
             shape-ids (filter (complement is-text?) ids)
             attrs {:hide-fill-on-export hide-fill-on-export}]
@@ -407,7 +406,7 @@
     (ptk/reify ::picker-for-selected-shape
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [ids   (wsh/lookup-selected state)
+        (let [ids   (dsh/lookup-selected state)
               stop? (rx/filter (ptk/type? ::stop-picker) stream)
 
               update-events
@@ -512,8 +511,8 @@
   (ptk/reify ::apply-color-from-palette
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects  (wsh/lookup-page-objects state)
-            selected (->> (wsh/lookup-selected state)
+      (let [objects  (dsh/lookup-page-objects state)
+            selected (->> (dsh/lookup-selected state)
                           (cfh/clean-loops objects))
 
             ids
@@ -687,7 +686,7 @@
   (ptk/reify ::update-colorpicker
     ptk/UpdateEvent
     (update [_ state]
-      (let [shape-id (-> state wsh/lookup-selected first)]
+      (let [shape-id (-> state dsh/lookup-selected first)]
         (update state :colorpicker
                 (fn [state]
                   (let [current-color (:current-color state)]
@@ -949,8 +948,8 @@
   (ptk/reify ::select-color
     ptk/WatchEvent
     (watch [_ state _]
-      (let [selected   (wsh/lookup-selected state)
-            shapes     (wsh/lookup-shapes state selected)
+      (let [selected   (dsh/lookup-selected state)
+            shapes     (dsh/lookup-shapes state selected)
             shape      (first shapes)
             fills      (if (cfh/text-shape? shape)
                          (:fills (dwt/current-text-values

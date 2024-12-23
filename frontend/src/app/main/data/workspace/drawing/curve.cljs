@@ -18,8 +18,8 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.drawing.common :as common]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
    [app.util.path.simplify-curve :as ups]
@@ -51,7 +51,7 @@
   (ptk/reify ::setup-frame
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects      (wsh/lookup-page-objects state)
+      (let [objects      (dsh/lookup-page-objects state)
             content      (dm/get-in state [:workspace-drawing :object :content] [])
             start        (dm/get-in content [0 :params] nil)
             position     (when start (gpt/point start))

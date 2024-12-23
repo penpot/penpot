@@ -9,7 +9,8 @@
           (ctob/get-active-themes-set-tokens)
           (get name)))
 
-(defn apply-token-to-shape [file shape-label token-label attributes]
+(defn apply-token-to-shape
+  [file shape-label token-label attributes]
   (let [first-page-id (get-in file [:data :pages 0])
         shape-id (thi/id shape-label)
         token (get-token file token-label)

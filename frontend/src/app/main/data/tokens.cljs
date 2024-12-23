@@ -13,8 +13,9 @@
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.changes :as dch]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.refs :as refs]
+   [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.token-set :as wtts]
    [app.main.ui.workspace.tokens.update :as wtu]
    [beicon.v2.core :as rx]
@@ -42,21 +43,50 @@
 ;; TOKENS Getters
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-tokens-lib [state]
-  (get-in state [:workspace-data :tokens-lib]))
+(defn get-tokens-lib
+  [state]
+  (-> (dsh/lookup-file-data state)
+      (get :tokens-lib)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-token-data-from-token-id
-  [id]
-  (let [workspace-data (deref refs/workspace-data)]
-    (get (:tokens workspace-data) id)))
+(defn toggle-or-apply-token
+  "Remove any shape attributes from token if they exists.
+  Othewise apply token attributes."
+  [shape token]
+  (let [[shape-leftover token-leftover _matching] (data/diff (:applied-tokens shape) token)]
+    (merge {} shape-leftover token-leftover)))
 
-(defn set-selected-token-set-path
-  [full-path]
-  (ptk/reify ::set-selected-token-set-path
+(defn token-from-attributes [token attributes]
+  (->> (map (fn [attr] [attr (wtt/token-identifier token)]) attributes)
+       (into {})))
+
+(defn unapply-token-id [shape attributes]
+  (update shape :applied-tokens d/without-keys attributes))
+
+(defn apply-token-to-attributes [{:keys [shape token attributes]}]
+  (let [token (token-from-attributes token attributes)]
+    (toggle-or-apply-token shape token)))
+
+(defn apply-token-to-shape
+  [{:keys [shape token attributes] :as _props}]
+  (let [applied-tokens (apply-token-to-attributes {:shape shape
+                                                   :token token
+                                                   :attributes attributes})]
+    (update shape :applied-tokens #(merge % applied-tokens))))
+
+(defn maybe-apply-token-to-shape
+  "When the passed `:token` is non-nil apply it to the `:applied-tokens` on a shape."
+  [{:keys [shape token _attributes] :as props}]
+  (if token
+    (apply-token-to-shape props)
+    shape))
+
+(defn set-selected-token-set-id
+  [id]
+  (ptk/reify ::set-selected-token-set-id
     ptk/UpdateEvent
     (update [_ state]
       (wtts/assoc-selected-token-set-path state full-path))))
@@ -112,7 +142,7 @@
   (ptk/reify ::delete-token-theme
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (get state :workspace-data)
+      (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/delete-token-theme group name))]
@@ -178,7 +208,7 @@
   (ptk/reify ::import-tokens-lib
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (get state :workspace-data)
+      (let [data    (dsh/lookup-file-data state)
             update-token-set-change (some-> lib
                                             (ctob/get-sets)
                                             (first)
@@ -196,7 +226,7 @@
   (ptk/reify ::delete-token-set-path
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (get state :workspace-data)
+      (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/delete-token-set-path prefixed-full-set-path))]
@@ -259,7 +289,7 @@
   (ptk/reify ::delete-token
     ptk/WatchEvent
     (watch [it state _]
-      (let [data    (get state :workspace-data)
+      (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/delete-token set-name token-name))]

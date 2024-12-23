@@ -169,11 +169,12 @@
 (defn use-search
   [page objects]
   (let [state*          (mf/use-state
-                         {:show-search false
-                          :show-menu false
-                          :search-text ""
-                          :filters #{}
-                          :num-items 100})
+                         #(do {:show-search false
+                               :show-menu false
+                               :search-text ""
+                               :filters #{}
+                               :num-items 100}))
+
         state           (deref state*)
         current-filters (:filters state)
         current-items   (:num-items state)

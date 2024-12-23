@@ -79,7 +79,7 @@
 (mf/defc comments-sidebar*
   {::mf/props :obj}
   [{:keys [profiles threads page-id from-viewer]}]
-  (let [threads-map (mf/deref refs/threads-ref)
+  (let [threads-map (mf/deref refs/threads)
         profile     (mf/deref refs/profile)
         profiles'   (mf/deref refs/profiles)
         profiles    (or profiles profiles')

@@ -14,7 +14,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
-   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.helpers :as dsh]
    [app.main.store :as st]
    [app.main.ui.workspace.tokens.token-set :as wtts]
    [okulary.core :as l]))
@@ -53,7 +53,7 @@
 (def exception
   (l/derived :exception st/state))
 
-(def threads-ref
+(def threads
   (l/derived :comment-threads st/state))
 
 (def share-links
@@ -71,13 +71,22 @@
 (def files
   (l/derived :files st/state))
 
+(def file
+  (l/derived (fn [state]
+               (let [file-id (:current-file-id state)
+                     files   (:files state)]
+                 (get files file-id)))
+             st/state))
+
 (def shared-files
   "A derived state that points to the current list of shared
   files (without the content, only summary)"
   (l/derived :shared-files st/state))
 
 (def libraries
-  (l/derived :libraries st/state))
+  "A derived state that contanins the currently loaded shared libraries
+  with all its content; including the current file"
+  (l/derived :files st/state))
 
 (defn extract-selected-files
   [files selected]
@@ -121,7 +130,7 @@
 (def ^:private selected-shapes-data
   (l/derived
    (fn [state]
-     (let [objects  (wsh/lookup-page-objects state)
+     (let [objects  (dsh/lookup-page-objects state)
            selected (dm/get-in state [:workspace-local :selected])]
        {:objects objects :selected selected}))
    st/state (fn [v1 v2]
@@ -131,7 +140,7 @@
 (def selected-shapes
   (l/derived
    (fn [{:keys [objects selected]}]
-     (wsh/process-selected-shapes objects selected))
+     (dsh/process-selected-shapes objects selected))
    selected-shapes-data))
 
 (defn make-selected-ref
@@ -217,20 +226,9 @@
 (def rulers?
   (l/derived #(contains? % :rulers) workspace-layout))
 
-(def workspace-file
-  "A ref to a striped vision of file (without data)."
-  (l/derived (fn [state]
-               (let [file (:workspace-file state)
-                     data (:workspace-data state)]
-                 (-> file
-                     (dissoc :data)
-                     ;; FIXME: still used in sitemaps but sitemaps
-                     ;; should declare its own lense for it
-                     (assoc :pages (:pages data)))))
-             st/state =))
-
 (def workspace-data
-  (l/derived :workspace-data st/state))
+  "Currently working file data on workspace"
+  (l/derived dsh/lookup-file-data st/state))
 
 (def workspace-file-colors
   (l/derived (fn [{:keys [id] :as data}]
@@ -258,23 +256,20 @@
   (l/derived :workspace-presence st/state))
 
 (def workspace-page
-  (l/derived (fn [state]
-               (let [page-id (:current-page-id state)
-                     data    (:workspace-data state)]
-                 (dm/get-in data [:pages-index page-id])))
-             st/state))
+  "Ref to currently active page on workspace"
+  (l/derived dsh/lookup-page st/state))
 
 (def workspace-page-flows
   (l/derived #(-> % :flows not-empty) workspace-page))
 
 (defn workspace-page-object-by-id
   [page-id shape-id]
-  (l/derived #(wsh/lookup-shape % page-id shape-id) st/state =))
+  (l/derived #(dsh/lookup-shape % page-id shape-id) st/state =))
 
 ;; TODO: Looks like using the `=` comparator can be pretty expensive
 ;; on large pages, we are using this for some reason?
 (def workspace-page-objects
-  (l/derived wsh/lookup-page-objects st/state =))
+  (l/derived dsh/lookup-page-objects st/state =))
 
 (def workspace-read-only?
   (l/derived :read-only? workspace-global))
@@ -348,7 +343,7 @@
   (l/derived
    (fn [state]
      {:modifiers (:workspace-modifiers state)
-      :objects   (wsh/lookup-page-objects state)})
+      :objects   (dsh/lookup-page-objects state)})
    st/state
    (fn [a b]
      (and (= (:modifiers a) (:modifiers b))
@@ -379,11 +374,11 @@
   (l/derived #(get % frame-id) workspace-frame-modifiers =))
 
 (defn select-bool-children [id]
-  (l/derived (partial wsh/select-bool-children id) st/state =))
+  (l/derived #(dsh/select-bool-children % id) st/state =))
 
 (def selected-data
-  (l/derived #(let [selected (wsh/lookup-selected %)
-                    objects (wsh/lookup-page-objects %)]
+  (l/derived #(let [selected (dsh/lookup-selected %)
+                    objects (dsh/lookup-page-objects %)]
                 (hash-map :selected selected
                           :objects objects))
              st/state =))
@@ -415,7 +410,7 @@
   [ids]
   (l/derived
    (fn [state]
-     (let [objects  (wsh/lookup-page-objects state)]
+     (let [objects  (dsh/lookup-page-objects state)]
        (into []
              (comp (map (d/getf objects))
                    (filter (partial ctl/flex-layout-immediate-child? objects)))

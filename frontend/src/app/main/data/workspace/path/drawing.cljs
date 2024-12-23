@@ -15,6 +15,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.drawing.common :as dwdc]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.path.changes :as changes]
@@ -24,7 +25,6 @@
    [app.main.data.workspace.path.streams :as streams]
    [app.main.data.workspace.path.undo :as undo]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -252,7 +252,7 @@
   (ptk/reify ::setup-frame
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects      (wsh/lookup-page-objects state)
+      (let [objects      (dsh/lookup-page-objects state)
             content      (get-in state [:workspace-drawing :object :content] [])
             position     (gpt/point (get-in content [0 :params] nil))
             frame-id     (->> (ctst/top-nested-frame objects position)
@@ -321,11 +321,10 @@
   (ptk/reify ::start-draw-mode
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (get-in state [:workspace-local :edition])
-            page-id (:current-page-id state)
-            old-content (get-in state [:workspace-data :pages-index page-id :objects id :content])]
-        (-> state
-            (assoc-in [:workspace-local :edit-path id :old-content] old-content))))
+      (let [id      (dm/get-in state [:workspace-local :edition])
+            objects (dsh/lookup-page-objects state)
+            content (dm/get-in objects [id :content])]
+        (update-in state [:workspace-local :edit-path id] assoc :old-content content)))
 
     ptk/WatchEvent
     (watch [_ state stream]

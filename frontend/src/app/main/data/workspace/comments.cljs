@@ -16,10 +16,10 @@
    [app.main.data.comments :as dcmt]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwco]
    [app.main.data.workspace.drawing :as dwd]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.viewport :as dwv]
    [app.main.repo :as rp]
    [app.main.streams :as ms]
@@ -136,9 +136,9 @@
    (ptk/reify ::update-comment-thread-position
      ptk/WatchEvent
      (watch [it state _]
-       (let [page      (wsh/lookup-page state)
+       (let [page      (dsh/lookup-page state)
              page-id   (:id page)
-             objects   (wsh/lookup-page-objects state page-id)
+             objects   (dsh/lookup-page-objects state page-id)
              frame-id  (if (nil? frame-id)
                          (ctst/get-frame-id-by-position objects (gpt/point new-x new-y))
                          (:frame-id thread))
@@ -169,7 +169,7 @@
   (ptk/reify ::move-frame-comment-threads
     ptk/WatchEvent
     (watch [_ state _]
-      (let [page       (wsh/lookup-page state)
+      (let [page       (dsh/lookup-page state)
             objects    (get page :objects)
 
             is-frame?  (fn [id] (= :frame (get-in objects [id :type])))

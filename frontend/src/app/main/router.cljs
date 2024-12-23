@@ -28,10 +28,12 @@
   (r/map->Match data))
 
 (defn resolve
-  ([router id] (resolve router id {}))
+  ([router id]
+   (resolve router id {}))
   ([router id params]
-   (when-let [match (r/match-by-name router id)]
-     (r/match->path match params))))
+   (when (some? router)
+     (when-let [match (r/match-by-name router id)]
+       (r/match->path match params)))))
 
 (defn create
   [routes]

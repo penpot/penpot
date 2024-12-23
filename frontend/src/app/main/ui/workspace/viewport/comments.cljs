@@ -24,6 +24,12 @@
         (assoc :frame-id (dm/get-in positions [id :frame-id])))
     thread))
 
+(defn make-positions-ref
+  [page-id]
+  (l/derived (fn [file]
+               (dm/get-in file [:data :pages-index page-id :comment-thread-positions]))
+             refs/file))
+
 (mf/defc comments-layer
   {::mf/props :obj}
   [{:keys [vbox vport zoom file-id page-id drawing] :as props}]
@@ -41,12 +47,10 @@
 
         positions-ref
         (mf/with-memo [page-id]
-          ;; FIXME: use lookup helpers here
-          (-> (l/in [:workspace-data :pages-index page-id :comment-thread-positions])
-              (l/derived st/state)))
+          (make-positions-ref page-id))
 
         positions   (mf/deref positions-ref)
-        threads-map (mf/deref refs/threads-ref)
+        threads-map (mf/deref refs/threads)
 
         threads
         (mf/with-memo [threads-map positions local profile]

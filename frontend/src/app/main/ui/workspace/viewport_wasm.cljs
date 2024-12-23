@@ -74,8 +74,8 @@
    objects
    selected))
 
-(mf/defc viewport
-  [{:keys [selected wglobal wlocal layout file palete-size] :as props}]
+(mf/defc viewport*
+  [{:keys [selected wglobal wlocal layout file page palete-size]}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
         {:keys [edit-path
@@ -102,7 +102,6 @@
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
 
-        page              (mf/deref refs/workspace-page)
         objects           (get page :objects)
         page-id           (get page :id)
         background        (get page :background clr/canvas)
@@ -567,6 +566,7 @@
          [:> guides/viewport-guides*
           {:zoom zoom
            :vbox vbox
+           :guides (:guides page)
            :hover-frame guide-frame
            :disabled-guides disabled-guides?
            :modifiers modifiers}])

@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.types.components-list :as ctkl]
    [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
@@ -19,7 +20,6 @@
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.libraries :refer [create-file-library-ref]]
    [app.main.ui.workspace.sidebar.assets.colors :refer [colors-section]]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.components :refer [components-section]]
@@ -82,11 +82,16 @@
               :on-click on-click}
           i/open-link]])]]))
 
+(defn- create-file-ref
+  [library-id]
+  (l/derived (fn [state]
+               (dm/get-in state [:files library-id :data]))
+             st/state))
+
 (mf/defc file-library-content
   {::mf/wrap-props false}
   [{:keys [file local? open-status-ref on-clear-selection filters]}]
-  (let [components-v2      (mf/use-ctx ctx/components-v2)
-        open-status        (mf/deref open-status-ref)
+  (let [open-status        (mf/deref open-status-ref)
 
         file-id            (:id file)
         project-id         (:project-id file)
@@ -101,13 +106,15 @@
         listing-thumbs?    (= :thumbs filters-list-style)
 
         library-ref        (mf/with-memo [file-id]
-                             (create-file-library-ref file-id))
+                             (create-file-ref file-id))
 
         library            (mf/deref library-ref)
         colors             (:colors library)
-        components         (:components library)
         media              (:media library)
         typographies       (:typographies library)
+
+        components         (mf/with-memo [library]
+                             (into [] (ctkl/components-seq library)))
 
         colors             (mf/with-memo [filters colors]
                              (cmm/apply-filters colors filters))
@@ -124,9 +131,7 @@
                                     (str/empty? filters-term)))
         show-graphics?     (and (or (= filters-section "all")
                                     (= filters-section "graphics"))
-                                (or (pos? (count media))
-                                    (and (str/empty? filters-term)
-                                         (not components-v2))))
+                                (pos? (count media)))
         show-colors?       (and (or (= filters-section "all")
                                     (= filters-section "colors"))
                                 (or (> (count colors) 0)
@@ -305,7 +310,7 @@
 
 (defn- force-lib-open? [file-id filters]
   (let [library-ref           (mf/with-memo [file-id]
-                                (create-file-library-ref file-id))
+                                (create-file-ref file-id))
         library               (mf/deref library-ref)
 
         colors                (:colors library)
@@ -351,9 +356,11 @@
          (mf/deps file-id)
          (fn []
            (st/emit! (dw/unselect-all-assets file-id))))]
+
     [:div {:class (stl/css :tool-window)
            :on-context-menu dom/prevent-default
            :on-click unselect-all}
+
      [:> file-library-title*
       {:file-id file-id
        :page-id page-id

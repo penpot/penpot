@@ -18,19 +18,18 @@
 
 (t/deftest test-common-shape-properties
   (let [;; ==== Setup
-        store
-        (ths/setup-store (cthf/sample-file :file1 :page-label :page1))
+        store   (ths/setup-store
+                 (cthf/sample-file :file1 :page-label :page1))
 
-        _ (set! st/state store)
-
+        _       (set! st/state store)
         context (api/create-context "TEST")
 
-        page  (. context -currentPage)
-
-        shape (.createRectangle context)
+        ^js file    (. context -currentFile)
+        ^js page    (. context -currentPage)
+        ^js shape   (.createRectangle context)
 
         get-shape-path
-        #(vector :workspace-data :pages-index (aget page "$id") :objects (aget shape "$id") %)]
+        #(vector :files (aget file "$id") :data :pages-index (aget page "$id") :objects (aget shape "$id") %)]
 
     (t/testing "Basic shape properites"
       (t/testing " - name"
@@ -216,9 +215,9 @@
       (t/testing " - strokes"
         (set! (.-strokes shape) #js [#js {:strokeColor "#fabada" :strokeOpacity 1 :strokeWidth 5}])
         (t/is (= (get-in @store (get-shape-path :strokes)) [{:stroke-color "#fabada" :stroke-opacity 1 :stroke-width 5}]))
-        (t/is (= (-> (. shape -strokes) (aget 0) (aget "strokeColor")) "#fabada"))
-        (t/is (= (-> (. shape -strokes) (aget 0) (aget "strokeOpacity")) 1))
-        (t/is (= (-> (. shape -strokes) (aget 0) (aget "strokeWidth")) 5))))
+        (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeColor")) "#fabada"))
+        (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeOpacity")) 1))
+        (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeWidth")) 5))))
 
     (t/testing "Relative properties"
       (let [board (.createBoard context)]
@@ -229,29 +228,28 @@
         (.appendChild board shape)
 
         (t/testing " - boardX"
-          (set! (.-boardX shape) 10)
-          (t/is (m/close? (.-boardX shape) 10))
+          (set! (.-boardX ^js shape) 10)
+          (t/is (m/close? (.-boardX ^js shape) 10))
           (t/is (m/close? (.-x shape) 110))
           (t/is (m/close? (get-in @store (get-shape-path :x)) 110)))
 
         (t/testing " - boardY"
-          (set! (.-boardY shape) 20)
-          (t/is (m/close? (.-boardY shape) 20))
+          (set! (.-boardY ^js shape) 20)
+          (t/is (m/close? (.-boardY  ^js shape) 20))
           (t/is (m/close? (.-y shape) 220))
           (t/is (m/close? (get-in @store (get-shape-path :y)) 220)))
 
         (t/testing " - parentX"
-          (set! (.-parentX shape) 30)
-          (t/is (m/close? (.-parentX shape) 30))
+          (set! (.-parentX ^js shape) 30)
+          (t/is (m/close? (.-parentX ^js shape) 30))
           (t/is (m/close? (.-x shape) 130))
           (t/is (m/close? (get-in @store (get-shape-path :x)) 130)))
 
         (t/testing " - parentY"
-          (set! (.-parentY shape) 40)
-          (t/is (m/close? (.-parentY shape) 40))
+          (set! (.-parentY ^js shape) 40)
+          (t/is (m/close? (.-parentY ^js shape) 40))
           (t/is (m/close? (.-y shape) 240))
           (t/is (m/close? (get-in @store (get-shape-path :y)) 240)))))
 
     (t/testing "Clone")
     (t/testing "Remove")))
-

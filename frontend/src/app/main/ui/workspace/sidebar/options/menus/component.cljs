@@ -268,15 +268,6 @@
      [:span {:class (stl/css :arrow-icon)}
       i/arrow]]))
 
-(def ^:private ref:swap-libraries
-  (letfn [(get-libraries [state]
-            (let [file (:workspace-file state)
-                  data (:workspace-data state)
-                  libs (:libraries state)]
-              (assoc libs (:id file)
-                     (assoc file :data data))))]
-    (l/derived get-libraries st/state)))
-
 (defn- find-common-path
   ([components]
    (let [paths (map (comp cfh/split-path :path) components)]
@@ -298,14 +289,13 @@
   (= (:component-id shape-a)
      (:component-id shape-b)))
 
-
 (mf/defc component-swap
   {::mf/props :obj}
   [{:keys [shapes]}]
   (let [single?             (= 1 (count shapes))
         shape               (first shapes)
         current-file-id     (mf/use-ctx ctx/current-file-id)
-        libraries           (mf/deref ref:swap-libraries)
+        libraries           (mf/deref refs/files)
         objects             (mf/deref refs/workspace-page-objects)
 
         ^boolean
@@ -522,12 +512,13 @@
   {::mf/props :obj}
   [{:keys [shapes swap-opened?]}]
   (let [current-file-id     (mf/use-ctx ctx/current-file-id)
-        components-v2       (mf/use-ctx ctx/components-v2)
-        workspace-data      (deref refs/workspace-data)
-        libraries           (deref refs/libraries)
 
-        state*              (mf/use-state {:show-content true
-                                           :menu-open false})
+        libraries           (deref refs/libraries)
+        current-file        (get libraries current-file-id)
+
+        state*              (mf/use-state
+                             #(do {:show-content true
+                                   :menu-open false}))
         state               (deref state*)
         open?               (:show-content state)
         menu-open?          (:menu-open state)
@@ -535,18 +526,18 @@
         shapes              (filter ctk/instance-head? shapes)
         multi               (> (count shapes) 1)
         copies              (filter ctk/in-component-copy? shapes)
-        can-swap?           (and components-v2 (seq copies))
+        can-swap?           (boolean (seq copies))
 
         ;; For when it's only one shape
         shape               (first shapes)
         id                  (:id shape)
         shape-name          (:name shape)
+
         component           (ctf/resolve-component shape
-                                                   {:id current-file-id
-                                                    :data workspace-data}
+                                                   current-file
                                                    libraries
                                                    {:include-deleted? true})
-        main-instance?      (if components-v2 (ctk/main-instance? shape) true)
+        main-instance?      (ctk/main-instance? shape)
 
         toggle-content
         (mf/use-fn #(swap! state* update :show-content not))
@@ -585,7 +576,7 @@
          (fn []
            (swap! state* update :render inc)))
 
-        menu-entries         (cmm/generate-components-menu-entries shapes components-v2)
+        menu-entries         (cmm/generate-components-menu-entries shapes true)
         show-menu?           (seq menu-entries)
         path (->> component (:path) (cfh/split-path) (cfh/join-path-with-dot))]
 
@@ -650,7 +641,7 @@
           (when swap-opened?
             [:& component-swap {:shapes copies}])
 
-          (when (and (not swap-opened?) (not multi) components-v2)
+          (when (and (not swap-opened?) (not multi))
             [:& component-annotation {:id id :shape shape :component component :rerender-fn rerender-fn}])
           (when (dbg/enabled? :display-touched)
             [:div ":touched " (str (:touched shape))])])])))

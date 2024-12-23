@@ -7,8 +7,8 @@
 (ns app.main.data.workspace.edition
   (:require
    [app.common.data.macros :as dm]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.path.common :as dwpc]
-   [app.main.data.workspace.state-helpers :as wsh]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -22,7 +22,7 @@
   (ptk/reify ::start-edition-mode
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (wsh/lookup-page-objects state)]
+      (let [objects (dsh/lookup-page-objects state)]
         ;; Can only edit objects that exist
         (if (contains? objects id)
           (-> state

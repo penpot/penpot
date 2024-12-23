@@ -13,7 +13,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
-   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.helpers :as dsh]
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -75,10 +75,11 @@
    (ptk/reify ::created-thread-on-workspace
      ptk/UpdateEvent
      (update [_ state]
-       (let [position (select-keys thread [:position :frame-id])]
+       (let [position (select-keys thread [:position :frame-id])
+             page-id  (or page-id (:current-page-id state))]
          (-> state
              (update :comment-threads assoc id (dissoc thread :comment))
-             (update-in [:workspace-data :pages-index page-id :comment-thread-positions] assoc id position)
+             (dsh/update-page page-id #(update % :comment-thread-positions assoc id position))
              (cond-> open?
                (update :comments-local assoc :open id))
              (update :comments-local assoc :options nil)
@@ -93,8 +94,6 @@
                                ::ev/origin "workspace"
                                :id id
                                :content-size (count (:content comment))}))))))
-
-
 
 (def ^:private
   schema:create-thread-on-workspace
@@ -114,7 +113,7 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [page-id (:current-page-id state)
-             objects (wsh/lookup-page-objects state page-id)
+             objects (dsh/lookup-page-objects state page-id)
              frame-id (ctst/get-frame-id-by-position objects (:position params))
              params (-> params
                         (update-mentions)
@@ -299,9 +298,10 @@
    (ptk/reify ::delete-comment-thread-on-workspace
      ptk/UpdateEvent
      (update [_ state]
-       (let [page-id (:current-page-id state)]
+       (let [page-id (:current-page-id state)
+             file-id (:current-file-id state)]
          (-> state
-             (update-in [:workspace-data :pages-index page-id :comment-thread-positions] dissoc id)
+             (update-in [:files file-id :data :pages-index page-id :comment-thread-positions] dissoc id)
              (update :comments dissoc id)
              (update :comment-threads dissoc id))))
 
@@ -384,20 +384,28 @@
   [file-id]
   (dm/assert! (uuid? file-id))
   (letfn [(set-comment-threds [state comment-thread]
-            (let [path [:workspace-data :pages-index (:page-id comment-thread) :comment-thread-positions (:id comment-thread)]
-                  thread-position (get-in state path)]
+            (let [file-id  (:current-file-id state)
+                  page-id  (:page-id comment-thread)
+                  path     [:files file-id :data
+                            :pages-index page-id
+                            :comment-thread-positions (:id comment-thread)]
+                  position (get-in state path)]
+
+              ;; FIXME: make it more efficient
               (cond-> state
-                (nil? thread-position)
-                (->
-                 (assoc-in (conj path :position) (:position comment-thread))
-                 (assoc-in (conj path :frame-id) (:frame-id comment-thread))))))
+                (nil? position)
+                (update-in path (fn [state]
+                                  (-> state
+                                      (assoc :position (:position comment-thread))
+                                      (assoc :frame-id (:frame-id comment-thread))))))))
+
           (fetched [[users comments] state]
-            (let [pages (-> (get-in state [:workspace-data :pages])
-                            set)
+            (let [pages    (-> (dsh/lookup-file-data state)
+                               (get :pages-index))
                   comments (filter #(contains? pages (:page-id %)) comments)
-                  state (-> state
-                            (assoc :comment-threads (d/index-by :id comments))
-                            (update :current-file-comments-users merge (d/index-by :id users)))]
+                  state    (-> state
+                               (assoc :comment-threads (d/index-by :id comments))
+                               (update :current-file-comments-users merge (d/index-by :id users)))]
               (reduce set-comment-threds state comments)))]
 
     (ptk/reify ::retrieve-comment-threads
@@ -621,7 +629,7 @@
   (ptk/reify ::detach-comment-thread
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             is-frame? (fn [id] (= :frame (get-in objects [id :type])))
             frame-ids? (into #{} (filter is-frame?) ids)]
 

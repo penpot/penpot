@@ -1,17 +1,24 @@
 (ns app.main.ui.workspace.tokens.token-set
   (:require
-   [app.common.types.tokens-lib :as ctob]))
+   [app.common.types.tokens-lib :as ctob]
+   [app.main.data.helpers :as dsh]))
 
-(defn get-workspace-tokens-lib [state]
-  (get-in state [:workspace-data :tokens-lib]))
+(defn get-workspace-tokens-lib
+  [state]
+  (-> (dsh/lookup-file-data state)
+      (get :tokens-lib)))
 
 ;; Themes ----------------------------------------------------------------------
 
-(defn get-active-theme-ids [state]
-  (get-in state [:workspace-data :token-active-themes] #{}))
+(defn get-active-theme-ids
+  [state]
+  (-> (dsh/lookup-file-data state)
+      (get :token-active-themes #{})))
 
-(defn get-temp-theme-id [state]
-  (get-in state [:workspace-data :token-theme-temporary-id]))
+(defn get-temp-theme-id
+  [state]
+  (-> (dsh/lookup-file-data state)
+      (get :token-theme-temporary-id)))
 
 (defn update-theme-id
   [state]
@@ -22,8 +29,11 @@
       (= 1 (count active-themes)) (first active-themes)
       :else temporary-theme-id)))
 
-(defn get-workspace-token-theme [id state]
-  (get-in state [:workspace-data :token-themes-index id]))
+(defn get-workspace-token-theme
+  [id state]
+  (-> (dsh/lookup-file-data state)
+      (get :token-themes-index)
+      (get id)))
 
 (defn add-token-set-to-token-theme [token-set-id token-theme]
   (update token-theme :sets conj token-set-id))

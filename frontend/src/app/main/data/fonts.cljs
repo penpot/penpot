@@ -332,22 +332,23 @@
   (ptk/reify ::add-recent-font
     ptk/UpdateEvent
     (update [_ state]
-      (let [recent-fonts      (get-in state [:workspace-data :recent-fonts])
-            most-recent-fonts (into [font] (comp (remove #(= font %)) (take 3)) recent-fonts)]
-        (assoc-in state [:workspace-data :recent-fonts] most-recent-fonts)))
+      (let [recent-fonts  (:recent-fonts state)
+            recent-fonts  (into [font] (comp (remove #(= font %)) (take 3)) recent-fonts)]
+        (assoc state :recent-fonts recent-fonts)))
+
     ptk/EffectEvent
     (effect [_ state _]
-      (let [most-recent-fonts (get-in state [:workspace-data :recent-fonts])]
+      (let [recent-fonts (:recent-fonts state)]
         ;; FIXME: this should be prefixed by team
-        (swap! storage/user assoc ::recent-fonts most-recent-fonts)))))
+        (swap! storage/user assoc ::recent-fonts recent-fonts)))))
 
 (defn load-recent-fonts
   [fonts]
   (ptk/reify ::load-recent-fonts
     ptk/UpdateEvent
     (update [_ state]
-      (let [fonts-map (d/index-by :id fonts)
-            saved-recent-fonts (->> (::recent-fonts storage/user)
-                                    (keep #(get fonts-map (:id %)))
-                                    (into #{}))]
-        (assoc-in state [:workspace-data :recent-fonts] saved-recent-fonts)))))
+      (let [fonts-map    (d/index-by :id fonts)
+            recent-fonts (->> (::recent-fonts storage/user)
+                              (keep #(get fonts-map (:id %)))
+                              (into #{}))]
+        (assoc state :recent-fonts recent-fonts)))))

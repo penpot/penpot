@@ -22,12 +22,12 @@
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.colors :as cl]
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.selection :as dwse]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -101,7 +101,7 @@
   (ptk/reify ::update-layout-positions
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             ids (->> ids (filter #(contains? objects %)))]
         (if (d/not-empty? ids)
           (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
@@ -144,7 +144,7 @@
   (ptk/reify ::create-layout-from-id
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects            (wsh/lookup-page-objects state)
+      (let [objects            (dsh/lookup-page-objects state)
             parent             (get objects id)
             undo-id            (js/Symbol)
             layout-initializer (get-layout-initializer type from-frame? calculate-params?)]
@@ -162,8 +162,8 @@
     (watch [_ state _]
 
       (let [page-id         (:current-page-id state)
-            objects         (wsh/lookup-page-objects state page-id)
-            selected        (wsh/lookup-selected state)
+            objects         (dsh/lookup-page-objects state page-id)
+            selected        (dsh/lookup-selected state)
             selected-shapes (map (d/getf objects) selected)
             single?         (= (count selected-shapes) 1)
             has-group?      (->> selected-shapes (d/seek cfh/group-shape?))
@@ -229,8 +229,8 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id          (:current-page-id state)
-            objects          (wsh/lookup-page-objects state page-id)
-            selected         (wsh/lookup-selected state)
+            objects          (dsh/lookup-page-objects state page-id)
+            selected         (dsh/lookup-selected state)
             selected-shapes  (map (d/getf objects) selected)
             single?          (= (count selected-shapes) 1)
             is-frame?        (= :frame (:type (first selected-shapes)))
@@ -248,8 +248,8 @@
   (ptk/reify ::toggle-shape-layout
     ptk/WatchEvent
     (watch [it state _]
-      (let [objects          (wsh/lookup-page-objects state)
-            selected         (wsh/lookup-selected state)
+      (let [objects          (dsh/lookup-page-objects state)
+            selected         (dsh/lookup-selected state)
             selected-shapes  (map (d/getf objects) selected)
             single?          (= (count selected-shapes) 1)
             has-layout?      (and single?
@@ -300,7 +300,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [undo-id (js/Symbol)]
-        (let [objects (wsh/lookup-page-objects state)
+        (let [objects (dsh/lookup-page-objects state)
 
               shapes-to-delete
               (when with-shapes?
@@ -334,10 +334,10 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [file-id      (:current-file-id state)
-            page         (wsh/lookup-page state)
+            page         (dsh/lookup-page state)
             objects      (:objects page)
-            libraries    (wsh/get-libraries state)
-            library-data (wsh/get-file state file-id)
+            libraries    (dsh/lookup-libraries state)
+            library-data (dsh/lookup-file state file-id)
             shape-id     (first ids)
             base-shape   (get objects shape-id)
 
@@ -406,7 +406,7 @@
   (ptk/reify ::hover-layout-track
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             shape (get objects (first ids))
 
             highlighted
@@ -524,7 +524,7 @@
    (ptk/reify ::update-layout-child
      ptk/WatchEvent
      (watch [_ state _]
-       (let [objects (wsh/lookup-page-objects state)
+       (let [objects (dsh/lookup-page-objects state)
              children-ids (->> ids (mapcat #(cfh/get-children-ids objects %)))
              parent-ids (->> ids (map #(cfh/get-parent-id objects %)))
              undo-id (js/Symbol)]
@@ -694,7 +694,7 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [page-id (:current-page-id state)
-            objects (wsh/lookup-page-objects state)
+            objects (dsh/lookup-page-objects state)
             frame-id (uuid/next)
 
             undo-id (js/Symbol)
