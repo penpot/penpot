@@ -26,13 +26,19 @@ impl Renderable for Shape {
 
         match &self.kind {
             Kind::SVGRaw(sr) => {
-                println!("sr.content.to_string() {:?}", sr.content.to_string());
-                let dom = skia::svg::Dom::from_str(
-                    sr.content.to_string(),
-                    skia::FontMgr::from(font_provider.clone()),
-                )
-                .unwrap();
-                dom.render(surface.canvas());
+                // println!("sr.content.to_string() {:?}", sr.content.to_string());
+                let font_manager = skia::FontMgr::from(font_provider.clone());
+                let dom_result = skia::svg::Dom::from_str(sr.content.to_string(), font_manager);
+
+                match dom_result {
+                    Ok(dom) => {
+                        dom.render(surface.canvas());
+                    }
+                    Err(e) => {
+                        eprintln!("Error parsing SVG. Error: {}", e);
+                        // eprintln!("SVG: {:?}", sr.content.to_string());
+                    }
+                }
             }
             Kind::Path(_) => {
                 //TODO: only doing this if we have svg_attrs

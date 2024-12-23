@@ -341,7 +341,9 @@
   [shape content]
   (let [type (:type shape)]
     (cond
-      (or (= type :svg-raw) (some? (:svg-defs shape)))
+      (or (= type :svg-raw)
+          (and (some? (:svg-defs shape)) (some? (:svg-attrs shape)))
+          (= type :text))
       ;; TODO: in the future svg-raw texts should be rendered as texts inside wasm
       (set-shape-svg-raw-content (get-static-markup shape))
 
