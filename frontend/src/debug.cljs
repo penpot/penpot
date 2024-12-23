@@ -255,9 +255,7 @@
          libraries  (get state :files)
          shape-id   (if (some? shape-id)
                       (uuid/uuid shape-id)
-                      (let [objects (get-in state [:workspace-data :pages-index page-id :objects])
-                            selected (get-in state [:workspace-local :selected])]
-                        (->> selected (map (d/getf objects)) first :id)))]
+                      (first (dsh/lookup-selected state)))]
      (if (some? shape-id)
        (ctf/dump-subtree file page-id shape-id libraries {:show-ids show-ids
                                                           :show-touched show-touched
@@ -349,10 +347,10 @@
 
 (defn ^:export dump-modifiers
   []
-  (let [page-id (get @st/state :current-page-id)
-        objects (get-in @st/state [:workspace-data :pages-index page-id :objects])]
-    (.log js/console (modif->js (:workspace-modifiers @st/state) objects)))
-  nil)
+  (let [objects   (dsh/lookup-page-objects @st/state)
+        modifiers (:workspace-modifiers @st/state)]
+    (js/console.log (modif->js modifiers objects))
+    nil))
 
 (defn ^:export set-workspace-read-only
   [read-only?]
@@ -382,9 +380,8 @@
 (defn ^:export validate-schema
   []
   (try
-    (-> (get @st/state :workspace-file)
-        (assoc :data (get @st/state :workspace-data))
-        (cfv/validate-file-schema!))
+    (let [file (dsh/lookup-file @st/state)]
+      (cfv/validate-file-schema! file))
     (catch :default cause
       (errors/print-error! cause))))
 

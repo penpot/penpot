@@ -12,6 +12,7 @@
    [app.common.geom.point :as gpt]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.data.state-helpers :as dsh]
    [app.main.data.changes :as dch]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.refs :as refs]
@@ -44,8 +45,10 @@
 ;; TOKENS Getters
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-tokens-lib [state]
-  (get-in state [:workspace-data :tokens-lib]))
+(defn get-tokens-lib
+  [state]
+  (-> (dsh/lookup-file-data state)
+      (get :tokens-lib)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions
@@ -83,6 +86,7 @@
     (apply-token-to-shape props)
     shape))
 
+;; FIXME: this should never be here
 (defn get-token-data-from-token-id
   [id]
   (let [workspace-data (deref refs/workspace-data)]
@@ -146,7 +150,7 @@
   (ptk/reify ::delete-token-theme
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (get state :workspace-data)
+      (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/delete-token-theme group name))]
@@ -205,7 +209,7 @@
   (ptk/reify ::import-tokens-lib
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (get state :workspace-data)
+      (let [data    (dsh/lookup-file-data state)
             update-token-set-change (some-> lib
                                             (ctob/get-sets)
                                             (first)
@@ -223,7 +227,7 @@
   (ptk/reify ::delete-token-set-path
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (get state :workspace-data)
+      (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/delete-token-set-path token-set-path))]
@@ -286,7 +290,7 @@
   (ptk/reify ::delete-token
     ptk/WatchEvent
     (watch [it state _]
-      (let [data    (get state :workspace-data)
+      (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/delete-token set-name token-name))]

@@ -291,7 +291,8 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id (:current-page-id state)
-            pages   (dm/get-in state [:workspace-data :pages])]
+            pages   (-> (dsh/lookup-file-data state)
+                        (get :pages))]
         (if (contains? pages page-id)
           (rx/empty)
           (rx/of (dcm/go-to-workspace :page-id (first pages))))))))

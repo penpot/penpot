@@ -25,8 +25,10 @@
    (dm/get-in state [:files file-id])))
 
 (defn lookup-file-data
-  [state file-id]
-  (dm/get-in state [:files file-id :data]))
+  ([state]
+   (lookup-file-data state (:current-file-id state)))
+  ([state file-id]
+   (dm/get-in state [:files file-id :data])))
 
 (defn get-page
   [fdata page-id]

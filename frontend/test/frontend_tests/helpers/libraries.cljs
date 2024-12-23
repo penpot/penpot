@@ -111,7 +111,7 @@
          root-inst      (ctn/get-shape page root-inst-id)
          main-instance? (:main-instance root-inst)
 
-         libs           (dsh/get-libraries state)
+         libs           (dsh/lookup-libraries state)
          component      (ctf/get-component libs (:component-file root-inst) (:component-id root-inst))
          library        (ctf/get-component-library libs root-inst)
 
@@ -151,7 +151,7 @@
   (let [page          (thp/current-page state)
         root-inst     (ctn/get-shape page root-inst-id)
 
-        libs          (dsh/get-libraries state)
+        libs          (dsh/lookup-libraries state)
         component     (ctf/get-component libs (:component-file root-inst) (:component-id root-inst))
         library       (ctf/get-component-library libs root-inst)
 
@@ -166,7 +166,7 @@
 (defn resolve-component
   "Get the component with the given id and all its shapes."
   [state component-file component-id]
-  (let [libs        (dsh/get-libraries state)
+  (let [libs        (dsh/lookup-libraries state)
         component   (ctf/get-component libs component-file component-id)
         library     (ctf/get-component-library libs component)
         shapes-main (ctf/get-component-shapes (:data library) component)]

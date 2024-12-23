@@ -164,16 +164,16 @@
 
 (defn- update-color*
   [it state color file-id]
-  (let [data        (get state :workspace-data)
+  (let [data        (dsh/lookup-file-data state)
         [path name] (cfh/parse-path-name (:name color))
         color       (assoc color :path path :name name)
         changes     (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/update-color color))
-        undo-id (js/Symbol)]
+        undo-id     (js/Symbol)]
     (rx/of (dwu/start-undo-transaction undo-id)
            (dch/commit-changes changes)
-           (sync-file (:current-file-id state) file-id :colors (:id color))
+           (sync-file (:id data) file-id :colors (:id color))
            (dwu/commit-undo-transaction undo-id))))
 
 (defn update-color
@@ -193,6 +193,8 @@
       (watch [it state _]
         (update-color* it state color file-id)))))
 
+
+;; FIXME: revisit why file-id is passed on the event
 (defn rename-color
   [file-id id new-name]
   (dm/assert!
@@ -213,7 +215,7 @@
       (let [new-name (str/trim new-name)]
         (if (str/empty? new-name)
           (rx/empty)
-          (let [data   (get state :workspace-data)
+          (let [data   (dsh/lookup-file-data state)
                 color  (get-in data [:colors id])
                 color  (assoc color :name new-name)
                 color  (d/without-nils color)]
@@ -228,7 +230,7 @@
 
     ptk/WatchEvent
     (watch [it state _]
-      (let [data    (get state :workspace-data)
+      (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/delete-color id))]
@@ -269,7 +271,7 @@
         (if (str/empty? new-name)
           (rx/empty)
           (let [[path name] (cfh/parse-path-name new-name)
-                data        (get state :workspace-data)
+                data        (dsh/lookup-file-data state)
                 object      (get-in data [:media id])
                 new-object  (assoc object :path path :name name)
                 changes     (-> (pcb/empty-changes it)
@@ -289,7 +291,7 @@
 
     ptk/WatchEvent
     (watch [it state _]
-      (let [data        (get state :workspace-data)
+      (let [data        (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/delete-media id))]
@@ -318,7 +320,7 @@
 
 (defn- do-update-tipography
   [it state typography file-id]
-  (let [data        (get state :workspace-data)
+  (let [data        (dsh/lookup-file-data state)
         typography  (extract-path-if-missing typography)
         changes     (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
@@ -354,7 +356,7 @@
     ptk/WatchEvent
     (watch [it state _]
       (when (and (some? new-name) (not= "" new-name))
-        (let [data        (get state :workspace-data)
+        (let [data        (dsh/lookup-file-data state)
               [path name] (cfh/parse-path-name new-name)
               object      (get-in data [:typographies id])
               new-object  (assoc object :path path :name name)]
@@ -369,7 +371,7 @@
 
     ptk/WatchEvent
     (watch [it state _]
-      (let [data    (get state :workspace-data)
+      (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/delete-typography id))]
@@ -469,11 +471,9 @@
       (let [new-name (str/trim new-name)]
         (if (str/empty? new-name)
           (rx/empty)
-          (let [library-data  (get state :workspace-data)
-                components-v2 (features/active-feature? state "components/v2")
-                changes       (-> (pcb/empty-changes it)
-                                  (cll/generate-rename-component id new-name library-data components-v2))]
-
+          (let [data    (dsh/lookup-file-data state)
+                changes (-> (pcb/empty-changes it)
+                            (cll/generate-rename-component id new-name data true))]
             (rx/of (dch/commit-changes changes))))))))
 
 (defn rename-component-and-main-instance
@@ -486,14 +486,17 @@
             valid?      (and (not (str/ends-with? name "/"))
                              (string? clean-name)
                              (not (str/blank? clean-name)))
-            component (dm/get-in state [:workspace-data :components component-id])]
+            data       (dsh/lookup-file-data state)
+            component  (dm/get-in data [:components component-id])]
+
         (when (and valid? component)
           (let [shape-id (:main-instance-id component)
                 page-id  (:main-instance-page component)]
+
             (rx/concat
              (rx/of (rename-component component-id clean-name))
 
-           ;; NOTE: only when components-v2 is enabled
+             ;; NOTE: only when components-v2 is enabled
              (when (and shape-id page-id)
                (rx/of (dwsh/update-shapes [shape-id] #(assoc % :name clean-name) {:page-id page-id :stack-undo? true}))))))))))
 
@@ -521,37 +524,31 @@
   (ptk/reify ::delete-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (get state :workspace-data)]
-        (if (features/active-feature? state "components/v2")
-          (let [component     (ctkl/get-component data id)
-                page-id       (:main-instance-page component)
-                root-id       (:main-instance-id component)
-                file-id       (:current-file-id state)
-                fdata         (dsh/lookup-file-data state file-id)
-                page          (dsh/lookup-page state page-id)
-                objects       (dsh/lookup-page-objects state page-id)
-                components-v2 (features/active-feature? state "components/v2")
-                undo-group    (uuid/next)
-                undo-id       (js/Symbol)
-                [all-parents changes]
-                (-> (pcb/empty-changes it page-id)
-                    ;; Deleting main root triggers component delete
-                    (cls/generate-delete-shapes fdata page objects #{root-id} {:components-v2 components-v2
-                                                                               :undo-group undo-group
-                                                                               :undo-id undo-id}))]
-            (rx/of
-             (dwu/start-undo-transaction undo-id)
-             (dwt/clear-thumbnail (:current-file-id state) page-id root-id "component")
-             (dc/detach-comment-thread #{root-id})
-             (dch/commit-changes changes)
-             (ptk/data-event :layout/update {:ids all-parents :undo-group undo-group})
-             (dwu/commit-undo-transaction undo-id)))
-          (let [page-id (:current-page-id state)
-                changes (-> (pcb/empty-changes it)
-                            (pcb/with-library-data data)
-                            (pcb/delete-component id page-id))]
-            (rx/of (dch/commit-changes changes))))))))
+      (let [file-id       (:current-file-id state)
+            fdata         (dsh/lookup-file-data state file-id)
+            component     (ctkl/get-component fdata id)
+            page-id       (:main-instance-page component)
+            root-id       (:main-instance-id component)
 
+            page          (dsh/get-page fdata page-id)
+            objects       (:objects page)
+
+            undo-group    (uuid/next)
+            undo-id       (js/Symbol)
+
+            [all-parents changes]
+            (-> (pcb/empty-changes it page-id)
+                ;; Deleting main root triggers component delete
+                (cls/generate-delete-shapes fdata page objects #{root-id} {:components-v2 true
+                                                                           :undo-group undo-group
+                                                                           :undo-id undo-id}))]
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dwt/clear-thumbnail (:current-file-id state) page-id root-id "component")
+         (dc/detach-comment-thread #{root-id})
+         (dch/commit-changes changes)
+         (ptk/data-event :layout/update {:ids all-parents :undo-group undo-group})
+         (dwu/commit-undo-transaction undo-id))))))
 
 (defn restore-component
   "Restore a deleted component, with the given id, in the given file library."
@@ -620,11 +617,10 @@
          (when id-ref
            (reset! id-ref (:id new-shape)))
 
-         (rx/of (ptk/event
-                 ::ev/event
-                 {::ev/name "use-library-component"
-                  ::ev/origin origin
-                  :external-library (not= file-id current-file-id)})
+         (rx/of (ptk/event ::ev/event
+                           {::ev/name "use-library-component"
+                            ::ev/origin origin
+                            :external-library (not= file-id current-file-id)})
                 (dwu/start-undo-transaction undo-id)
                 (dch/commit-changes changes)
                 (ptk/data-event :layout/update {:ids [(:id new-shape)]})
@@ -717,6 +713,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [current-page-id (:current-page-id state)
+            data            (dsh/lookup-file-data state)
 
             select-and-zoom
             (fn [shape-id]
@@ -733,7 +730,7 @@
                     (rx/observe-on :async)
                     (rx/mapcat (fn [_] (select-and-zoom shape-id))))))]
 
-        (when-let [component (dm/get-in state [:workspace-data :components id])]
+        (when-let [component (dm/get-in data [:components id])]
           (let [page-id  (:main-instance-page component)
                 shape-id (:main-instance-id component)]
             (when (some? page-id)
@@ -1227,7 +1224,7 @@
 
     ptk/WatchEvent
     (watch [it state _]
-      (let [data          (get state :workspace-data)
+      (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/update-component id #(assoc % :modified-at (dt/now))))]

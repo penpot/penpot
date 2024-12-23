@@ -248,7 +248,6 @@
       (let [file-id (:id file)]
         (-> state
             (assoc :thumbnails thumbnails)
-            (assoc :workspace-data (:data file))
             (update :files assoc file-id file))))
 
     ptk/WatchEvent
@@ -390,7 +389,6 @@
           ;; FIXME: revisit
           (dissoc
            :current-file-id
-           :workspace-data
            :workspace-editor-state
            :files
            :workspace-media-objects
@@ -430,7 +428,7 @@
   (ptk/reify ::initialize-page
     ptk/UpdateEvent
     (update [_ state]
-      (if-let [{:keys [id] :as page} (dm/get-in state [:workspace-data :pages-index page-id])]
+      (if-let [{:keys [id] :as page} (dsh/lookup-page state page-id)]
         ;; we maintain a cache of page state for user convenience with the exception of the
         ;; selection; when user abandon the current page, the selection is lost
         (let [local (dm/get-in state [:workspace-cache id] default-workspace-local)]
@@ -502,7 +500,9 @@
 
       ptk/WatchEvent
       (watch [it state _]
-        (let [pages   (get-in state [:workspace-data :pages-index])
+        (let [pages   (-> (dsh/lookup-file-data state)
+                          (get :pages-index))
+
               unames  (cfh/get-used-names pages)
               name    (cfh/generate-unique-name unames "Page 1")
 
@@ -517,14 +517,14 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [id                 (uuid/next)
-            pages              (get-in state [:workspace-data :pages-index])
+            fdata              (dsh/lookup-file-data state)
+            pages              (get fdata :pages-index)
+            page               (get pages page-id)
+
             unames             (cfh/get-used-names pages)
-            page               (get-in state [:workspace-data :pages-index page-id])
             name               (cfh/generate-unique-name unames (:name page))
-            fdata              (:workspace-data state)
-            components-v2      (dm/get-in fdata [:options :components-v2])
-            objects            (->> (:objects page)
-                                    (d/mapm (fn [_ val] (dissoc val :use-for-thumbnail))))
+            objects            (update-vals (:objects page) #(dissoc % :use-for-thumbnail))
+
             main-instances-ids (set (keep #(when (ctk/main-instance? (val %)) (key %)) objects))
             ids-to-remove      (set (apply concat (map #(cfh/get-children-ids objects %) main-instances-ids)))
 
@@ -536,7 +536,7 @@
                                                  component
                                                  fdata
                                                  (gpt/point (:x shape) (:y shape))
-                                                 components-v2
+                                                 true
                                                  {:keep-ids? true})
                     children (into {} (map (fn [shape] [(:id shape) shape]) new-shapes))
                     objs (assoc objs id new-shape)]
@@ -575,10 +575,9 @@
   (ptk/reify ::rename-page
     ptk/WatchEvent
     (watch [it state _]
-      (let [page    (get-in state [:workspace-data :pages-index id])
+      (let [page    (dsh/lookup-page state id)
             changes (-> (pcb/empty-changes it)
                         (pcb/mod-page page {:name name}))]
-
         (rx/of (dch/commit-changes changes))))))
 
 (defn set-plugin-data
@@ -963,7 +962,8 @@
   (ptk/reify ::relocate-page
     ptk/WatchEvent
     (watch [it state _]
-      (let [prev-index (-> (get-in state [:workspace-data :pages])
+      (let [prev-index (-> (dsh/lookup-file-data state)
+                           (get :pages)
                            (d/index-of id))
             changes    (-> (pcb/empty-changes it)
                            (pcb/move-page id index prev-index))]
@@ -1150,9 +1150,12 @@
   (ptk/reify ::show-component-in-assets
     ptk/WatchEvent
     (watch [_ state _]
-      (let [component-path (cfh/split-path (get-in state [:workspace-data :components component-id :path]))
-            paths          (map (fn [i] (cfh/join-path (take (inc i) component-path))) (range (count component-path)))
-            file-id        (:current-file-id state)]
+      (let [file-id (:current-file-id state)
+            fdata   (dsh/lookup-file-data state file-id)
+            cpath   (dm/get-in fdata [:components component-id :path])
+            cpath   (cfh/split-path cpath)
+            paths   (map (fn [i] (cfh/join-path (take (inc i) cpath)))
+                         (range (count cpath)))]
         (rx/concat
          (rx/from (map #(set-assets-group-open file-id :components % true) paths))
          (rx/of (dcm/go-to-workspace :layout :assets)
@@ -2059,7 +2062,9 @@
   (ptk/reify ::update-component-annotation
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (get state :workspace-data)
+      (let [data
+            (dsh/lookup-file-data state)
+
             update-fn
             (fn [component]
               ;; NOTE: we need to ensure the component exists,
@@ -2070,9 +2075,10 @@
                   (dissoc component :annotation)
                   (assoc component :annotation annotation))))
 
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-library-data data)
-                        (pcb/update-component id update-fn))]
+            changes
+            (-> (pcb/empty-changes it)
+                (pcb/with-library-data data)
+                (pcb/update-component id update-fn))]
 
         (rx/concat
          (rx/of (dch/commit-changes changes))

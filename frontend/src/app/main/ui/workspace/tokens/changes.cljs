@@ -35,7 +35,8 @@
   (ptk/reify ::apply-token
     ptk/WatchEvent
     (watch [_ state _]
-      (when-let [tokens (some-> (get-in state [:workspace-data :tokens-lib])
+      (when-let [tokens (some-> (dsh/lookup-file-data state)
+                                (get :tokens-lib)
                                 (ctob/get-active-themes-set-tokens))]
         (->> (rx/from (sd/resolve-tokens+ tokens))
              (rx/mapcat

@@ -230,23 +230,11 @@
 (def rulers?
   (l/derived #(contains? % :rulers) workspace-layout))
 
-(def workspace-file
-  (l/derived (l/key :workspace-file) st/state))
-
 (def workspace-data
-  (l/derived :workspace-data st/state))
-
-;; (def workspace-file
-;;   "A ref to a striped vision of file (without data)."
-;;   (l/derived (fn [state]
-;;                (let [file (:workspace-file state)
-;;                      data (:workspace-data state)]
-;;                  (-> file
-;;                      (dissoc :data)
-;;                      ;; FIXME: still used in sitemaps but sitemaps
-;;                      ;; should declare its own lense for it
-;;                      (assoc :pages (:pages data)))))
-;;              st/state =))
+  (l/derived (fn [state]
+               (let [file-id (:current-file-id state)]
+                 (dm/get-in state [:files file-id :data])))
+             st/state))
 
 (def workspace-file-colors
   (l/derived (fn [{:keys [id] :as data}]
@@ -273,11 +261,12 @@
 (def workspace-presence
   (l/derived :workspace-presence st/state))
 
+;; FIXME: revisit the usage of this ref
 (def workspace-page
   (l/derived (fn [state]
                (let [page-id (:current-page-id state)
-                     data    (:workspace-data state)]
-                 (dm/get-in data [:pages-index page-id])))
+                     file-id (:current-file-id state)]
+                 (dm/get-in state [:files file-id :pages-index page-id])))
              st/state))
 
 (def workspace-page-flows

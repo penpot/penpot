@@ -77,45 +77,30 @@
   (ptk/reify ::apply-changes-localy
     ptk/UpdateEvent
     (update [_ state]
-      (let [current-file-id (get state :current-file-id)
-            local-file?     (= current-file-id file-id)
+      (let [undo-changes
+            (if pending
+              (->> pending
+                   (map :undo-changes)
+                   (reverse)
+                   (mapcat identity)
+                   (vec))
+              nil)
 
-            path            [:files file-id]
+            redo-changes
+            (if pending
+              (into redo-changes
+                    (mapcat :redo-changes)
+                    pending)
+              redo-changes)
 
-            undo-changes    (if pending
-                              (->> pending
-                                   (map :undo-changes)
-                                   (reverse)
-                                   (mapcat identity)
-                                   (vec))
-                              nil)
-
-            redo-changes    (if pending
-                              (into redo-changes
-                                    (mapcat :redo-changes)
-                                    pending)
-                              redo-changes)
             apply-changes
             (fn [fdata]
               (let [fdata (cpc/process-changes fdata undo-changes false)
                     fdata (cpc/process-changes fdata redo-changes false)
                     pids (into #{} xf:map-page-id redo-changes)]
-                (reduce #(ctst/update-object-indices %1 %2) fdata pids)))
+                (reduce #(ctst/update-object-indices %1 %2) fdata pids)))]
 
-            fdata  (if local-file?
-                     (get state :workspace-data)
-                     (-> (get-in state path)
-                         (get :data)))
-
-            fdata  (apply-changes fdata)]
-
-        (cond-> state
-          local-file?
-          (assoc :workspace-data fdata)
-
-          :always
-          (update-in path assoc :data fdata))))))
-
+        (update-in state [:files file-id :data] apply-changes)))))
 
 (defn commit
   "Create a commit event instance"

@@ -369,9 +369,10 @@
     (watch [_ state _]
       (let [team-id (or team-id (:current-team-id state))
             file-id (or file-id (:current-file-id state))
-            ;: FIXME: why not :current-page-id
             page-id (or page-id
-                        (dm/get-in state [:workspace-data :pages 0]))
+                        (-> (dsh/lookup-file-data state file-id)
+                            (get :pages)
+                            (first)))
             params  (-> (rt/get-params state)
                         (assoc :team-id team-id)
                         (assoc :file-id file-id)
