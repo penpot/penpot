@@ -29,6 +29,7 @@
    [app.main.ui.components.link-button :as lb]
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
@@ -38,7 +39,6 @@
    [app.util.strings :refer [matches-search]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (def ^:private close-icon
@@ -53,25 +53,47 @@
 (def ^:private library-icon
   (i/icon-xref :library (stl/css :library-icon)))
 
-(def ref:workspace-file
-  (l/derived :workspace-file st/state))
+(defn- get-library-summary
+  "Given a library data return a summary representation of this library"
+  [data]
+  (let [colors       (count (:colors data))
+        graphics     0
+        typographies (count (:typographies data))
+        components   (count (ctkl/components-seq data))
+        empty?       (and (zero? components)
+                          (zero? graphics)
+                          (zero? colors)
+                          (zero? typographies))]
 
-(defn create-file-library-ref
-  [library-id]
-  (letfn [(getter-fn [state]
-            (let [fdata (let [{:keys [id] :as wfile} (:workspace-data state)]
-                          (if (= id library-id)
-                            wfile
-                            (dm/get-in state [:libraries library-id :data])))]
-              {:colors     (-> fdata :colors vals)
-               :media      (-> fdata :media vals)
-               :components (ctkl/components-seq fdata)
-               :typographies (-> fdata :typographies vals)}))]
-    (l/derived getter-fn st/state =)))
+    {:is-empty empty?
+     :colors colors
+     :graphics graphics
+     :typographies typographies
+     :components components}))
+
+(defn- adapt-backend-summary
+  [summary]
+  (let [components   (or (-> summary :components :count) 0)
+        graphics     (or (-> summary :media :count) 0)
+        typographies (or (-> summary :typographies :count) 0)
+        colors       (or (-> summary :colors :count) 0)
+
+        empty?       (and (zero? components)
+                          (zero? graphics)
+                          (zero? colors)
+                          (zero? typographies))]
+    {:is-empty     empty?
+     :components   components
+     :graphics     graphics
+     :typographies typographies
+     :colors       colors}))
 
 (defn- describe-library
   [components-count graphics-count colors-count typography-count]
-  (let [all-zero? (and (zero? components-count) (zero? graphics-count) (zero? colors-count) (zero? typography-count))]
+  (let [all-zero? (and (zero? components-count)
+                       (zero? graphics-count)
+                       (zero? colors-count)
+                       (zero? typography-count))]
     (str
      (str/join " · "
                (cond-> []
@@ -88,26 +110,31 @@
                  (conj (tr "workspace.libraries.typography" typography-count))))
      "\u00A0")))
 
-(mf/defc describe-library-blocks*
+(mf/defc library-description*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [components-count graphics-count colors-count typography-count]}]
-  [:*
-   (when (pos? components-count)
-     [:li {:class (stl/css :element-count)}
-      (tr "workspace.libraries.components" components-count)])
+  [{:keys [summary]}]
+  (let [components-count (get summary :components)
+        graphics-count   (get summary :graphics)
+        typography-count (get summary :typographies)
+        colors-count     (get summary :colors)]
 
-   (when (pos? graphics-count)
-     [:li {:class (stl/css :element-count)}
-      (tr "workspace.libraries.graphics" graphics-count)])
+    [:*
+     (when (pos? components-count)
+       [:li {:class (stl/css :element-count)}
+        (tr "workspace.libraries.components" components-count)])
 
-   (when (pos? colors-count)
-     [:li {:class (stl/css :element-count)}
-      (tr "workspace.libraries.colors" colors-count)])
+     (when (pos? graphics-count)
+       [:li {:class (stl/css :element-count)}
+        (tr "workspace.libraries.graphics" graphics-count)])
 
-   (when (pos? typography-count)
-     [:li {:class (stl/css :element-count)}
-      (tr "workspace.libraries.typography" typography-count)])])
+     (when (pos? colors-count)
+       [:li {:class (stl/css :element-count)}
+        (tr "workspace.libraries.colors" colors-count)])
+
+     (when (pos? typography-count)
+       [:li {:class (stl/css :element-count)}
+        (tr "workspace.libraries.typography" typography-count)])]))
 
 (mf/defc sample-library-entry*
   {::mf/props :obj
@@ -146,26 +173,35 @@
               :value (if (= importing? id) (tr "labels.adding") (tr "labels.add"))
               :on-click import-library}]]))
 
+(defn- empty-library?
+  "Check if currentt library summary has elements or not"
+  [summary]
+  (let [colors       (or (-> summary :colors :count) 0)
+        components   (or (-> summary :components :count) 0)
+        media        (or (-> summary :media :count) 0)
+        typographies (or (-> summary :typographies :count) 0)]
+
+    (and (zero? colors)
+         (zero? components)
+         (zero? media)
+         (zero? typographies))))
+
 (mf/defc libraries-tab*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [file-id is-shared linked-libraries shared-libraries]}]
-  (let [search-term*   (mf/use-state "")
+  [{:keys [is-shared linked-libraries shared-libraries]}]
+  (let [file-id        (mf/use-ctx ctx/current-file-id)
+        search-term*   (mf/use-state "")
         search-term    (deref search-term*)
-        library-ref    (mf/with-memo [file-id]
-                         (create-file-library-ref file-id))
-        library        (deref library-ref)
-        colors         (:colors library)
-        components     (:components library)
-        media          (:media library)
-        typographies   (:typographies library)
+
+        ;; The summary of the current/local library
+        ;; NOTE: we only need a snapshot of current library
+        local-library  (deref refs/workspace-data)
+        summary        (get-library-summary local-library)
+        empty-library? (empty-library? summary)
+
         selected       (h/use-shared-state mdc/colorpalette-selected-broadcast-key :recent)
 
-        empty-library? (and
-                        (zero? (count colors))
-                        (zero? (count components))
-                        (zero? (count media))
-                        (zero? (count typographies)))
 
         shared-libraries
         (mf/with-memo [shared-libraries linked-libraries file-id search-term]
@@ -263,10 +299,8 @@
         [:div {:class (stl/css :item-content)}
          [:div {:class (stl/css :item-name)} (tr "workspace.libraries.file-library")]
          [:ul {:class (stl/css :item-contents)}
-          [:> describe-library-blocks* {:components-count (count components)
-                                        :graphics-count (count media)
-                                        :colors-count (count colors)
-                                        :typography-count (count typographies)}]]]
+          [:> library-description* {:summary summary}]]]
+
         (if ^boolean is-shared
           [:input {:class (stl/css :item-unpublish)
                    :type "button"
@@ -277,21 +311,15 @@
                    :value (tr "common.publish")
                    :on-click publish}])]
 
-       (for [{:keys [id name] :as library} linked-libraries]
+       (for [{:keys [id name data] :as library} linked-libraries]
          [:div {:class (stl/css :section-list-item)
                 :key (dm/str id)
                 :data-testid "library-item"}
           [:div {:class (stl/css :item-content)}
            [:div {:class (stl/css :item-name)} name]
            [:ul {:class (stl/css :item-contents)}
-            (let [components-count (count (or (ctkl/components-seq (:data library)) []))
-                  graphics-count   (count (dm/get-in library [:data :media] []))
-                  colors-count     (count (dm/get-in library [:data :colors] []))
-                  typography-count (count (dm/get-in library [:data :typographies] []))]
-              [:> describe-library-blocks* {:components-count components-count
-                                            :graphics-count graphics-count
-                                            :colors-count colors-count
-                                            :typography-count typography-count}])]]
+            (let [summary (get-library-summary data)]
+              [:> library-description* {:summary summary}])]]
 
           [:button {:class (stl/css :item-button)
                     :type "button"
@@ -318,14 +346,10 @@
             [:div {:class (stl/css :item-content)}
              [:div {:class (stl/css :item-name)} name]
              [:ul {:class (stl/css :item-contents)}
-              (let [components-count (dm/get-in library [:library-summary :components :count] 0)
-                    graphics-count   (dm/get-in library [:library-summary :media :count] 0)
-                    colors-count     (dm/get-in library [:library-summary :colors :count] 0)
-                    typography-count (dm/get-in library [:library-summary :typographies :count] 0)]
-                [:> describe-library-blocks* {:components-count components-count
-                                              :graphics-count graphics-count
-                                              :colors-count colors-count
-                                              :typography-count typography-count}])]]
+              (let [summary (-> (:library-summary library)
+                                (adapt-backend-summary))]
+                [:> library-description* {:summary summary}])]]
+
             [:button {:class (stl/css :item-button-shared)
                       :data-library-id (dm/str id)
                       :title (tr "workspace.libraries.shared-library-btn")
@@ -414,10 +438,15 @@
 (mf/defc updates-tab*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [file-id file-data libraries]}]
+  [{:keys [file-id libraries]}]
+  ;; FIXME: naming
   (let [summary?*  (mf/use-state true)
         summary?   (deref summary?*)
         updating?  (mf/deref refs/updating-library)
+
+        ;; NOTE: we don't want to react on file changes, we just want
+        ;; a snapshot of file on the momento of open the dialog
+        file-data  (deref refs/workspace-data)
 
         see-all-assets
         (mf/use-fn
@@ -544,22 +573,31 @@
              (when (or (pos? (:components exceeded))
                        (pos? (:colors exceeded))
                        (pos? (:typographies exceeded)))
-               [:& lb/link-button {:on-click see-all-assets
-                                   :class (stl/css :libraries-updates-see-all)
-                                   :value (str "(" (tr "workspace.libraries.update.see-all-changes") ")")}])])]])]]))
+               [:& lb/link-button
+                {:on-click see-all-assets
+                 :class (stl/css :libraries-updates-see-all)
+                 :value (str "(" (tr "workspace.libraries.update.see-all-changes") ")")}])])]])]]))
+
 (mf/defc libraries-dialog
   {::mf/register modal/components
    ::mf/register-as :libraries-dialog}
   [{:keys [starting-tab] :as props :or {starting-tab :libraries}}]
-  (let [file-data      (mf/deref refs/workspace-data)
-        file           (mf/deref ref:workspace-file)
+  (let [;; NOTE: we don't want to react on file changes, we just want
+        ;; a snapshot of file on the momento of open the dialog
+        file           (deref refs/file)
 
         file-id        (:id file)
         shared?        (:is-shared file)
 
-        libraries      (mf/deref refs/libraries)
-        libraries      (mf/with-memo [libraries]
-                         (d/removem (fn [[_ val]] (:is-indirect val)) libraries))
+        linked-libraries
+        (mf/deref refs/files)
+
+        linked-libraries
+        (mf/with-memo [linked-libraries file-id]
+          (d/removem (fn [[_ lib]]
+                       (or (:is-indirect lib)
+                           (= (:id lib) file-id)))
+                     linked-libraries))
 
         shared-libraries
         (mf/deref refs/shared-files)
@@ -578,16 +616,14 @@
 
         libraries-tab
         (mf/html [:> libraries-tab*
-                  {:file-id file-id
-                   :is-shared shared?
-                   :linked-libraries libraries
+                  {:is-shared shared?
+                   :linked-libraries linked-libraries
                    :shared-libraries shared-libraries}])
 
         updates-tab
         (mf/html [:> updates-tab*
                   {:file-id file-id
-                   :file-data file-data
-                   :libraries libraries}])
+                   :libraries linked-libraries}])
 
         tabs
         #js [#js {:label (tr "workspace.libraries.libraries")
@@ -600,7 +636,9 @@
     (mf/with-effect []
       (st/emit! (dtm/fetch-shared-files)))
 
-    [:div {:class (stl/css :modal-overlay) :on-click close-dialog-outside :data-testid "libraries-modal"}
+    [:div {:class (stl/css :modal-overlay)
+           :on-click close-dialog-outside
+           :data-testid "libraries-modal"}
      [:div {:class (stl/css :modal-dialog)}
       [:button {:class (stl/css :close-btn)
                 :on-click close-dialog

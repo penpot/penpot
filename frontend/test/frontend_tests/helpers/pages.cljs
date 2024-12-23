@@ -20,9 +20,9 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
+   [app.main.data.state-helpers :as dsh]
    [app.main.data.workspace.groups :as dwg]
-   [app.main.data.workspace.layout :as layout]
-   [app.main.data.workspace.state-helpers :as wsh]))
+   [app.main.data.workspace.layout :as layout]))
 
 ;; ---- Helpers to manage pages and objects
 
@@ -134,7 +134,7 @@
 (defn make-component
   [state instance-label component-label shape-ids]
   (let [page    (current-page state)
-        objects (wsh/lookup-page-objects state (:id page))
+        objects (dsh/lookup-page-objects state (:id page))
         shapes  (dwg/shapes-for-grouping objects shape-ids)
 
         [group component-id changes]
@@ -157,7 +157,7 @@
    (instantiate-component state label component-id current-file-id))
   ([state label component-id file-id]
    (let [page      (current-page state)
-         libraries (wsh/get-libraries state)
+         libraries (dsh/get-libraries state)
          objects (:objects page)
 
          changes   (-> (pcb/empty-changes nil (:id page))

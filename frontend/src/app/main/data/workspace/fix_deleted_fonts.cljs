@@ -6,10 +6,10 @@
 
 (ns app.main.data.workspace.fix-deleted-fonts
   (:require
+   [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.text :as txt]
    [app.main.data.changes :as dwc]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.fonts :as fonts]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -99,7 +99,7 @@
                 {:type :mod-component
                  :id (:id component)
                  :objects (-> (fix-deleted-font-component component) :objects)})))
-   (wsh/lookup-local-components state)))
+   (dm/get-in state [:workspace-data :components])))
 
 (defn- generate-deleted-font-typography-changes
   [state]

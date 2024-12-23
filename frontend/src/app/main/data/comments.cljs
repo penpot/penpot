@@ -13,7 +13,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
-   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.state-helpers :as dsh]
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -101,7 +101,7 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [page-id (:current-page-id state)
-             objects (wsh/lookup-page-objects state page-id)
+             objects (dsh/lookup-page-objects state page-id)
              frame-id (ctst/get-frame-id-by-position objects (:position params))
              params (assoc params :frame-id frame-id)]
          (->> (rp/cmd! :create-comment-thread params)
@@ -593,7 +593,7 @@
   (ptk/reify ::detach-comment-thread
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             is-frame? (fn [id] (= :frame (get-in objects [id :type])))
             frame-ids? (into #{} (filter is-frame?) ids)]
 

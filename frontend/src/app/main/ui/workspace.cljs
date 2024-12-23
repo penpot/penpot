@@ -14,6 +14,7 @@
    [app.main.data.workspace :as dw]
    [app.main.features :as features]
    [app.main.refs :as refs]
+   [app.main.router :as-alias rt]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.product.loader :refer [loader*]]
@@ -149,7 +150,7 @@
     (mf/with-effect [page-id]
       (if (some? page-id)
         (st/emit! (dw/initialize-page page-id))
-        (st/emit! (dcm/go-to-workspace)))
+        (st/emit! (dcm/go-to-workspace ::rt/replace true)))
       (fn []
         (when (some? page-id)
           (st/emit! (dw/finalize-page page-id)))))
@@ -162,6 +163,12 @@
       [:& workspace-loader*])))
 
 
+(def ^:private ref:file-without-data
+  (l/derived (fn [file]
+               (dissoc file :data))
+             refs/file
+             =))
+
 (mf/defc workspace*
   {::mf/props :obj
    ::mf/wrap [mf/memo]}
@@ -171,7 +178,7 @@
         wglobal          (mf/deref refs/workspace-global)
 
         team             (mf/deref refs/team)
-        file             (mf/deref refs/workspace-file)
+        file             (mf/deref ref:file-without-data)
 
         file-name        (:name file)
         permissions      (:permissions team)

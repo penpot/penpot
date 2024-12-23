@@ -614,7 +614,8 @@
           l.name,
           l.revn,
           l.vern,
-          l.synced_at
+          l.synced_at,
+          l.is_shared
      FROM libs AS l
     WHERE l.deleted_at IS NULL OR l.deleted_at > now();")
 

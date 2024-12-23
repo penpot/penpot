@@ -49,11 +49,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (log/dbg :hint "update-file-revn" :file-id (dm/str file-id) :revn revn)
-      (if-let [current-file-id (:current-file-id state)]
-        (if (= file-id current-file-id)
-          (update-in state [:workspace-file :revn] max revn)
-          (d/update-in-when state [:libraries file-id :revn] max revn))
-        state))
+      (update-in state [:files file-id :revn] max revn))
 
     ptk/EffectEvent
     (effect [_ _ _]

@@ -361,7 +361,7 @@
 ;; --- EVENT: delete-file
 
 (defn file-deleted
-  [_team-id project-id]
+  [project-id]
   (ptk/reify ::file-deleted
     ptk/UpdateEvent
     (update [_ state]
@@ -378,10 +378,9 @@
           (d/update-when :recent-files dissoc id)))
 
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (uuid/uuid (get-in state [:route :path-params :team-id]))]
-        (->> (rp/cmd! :delete-file {:id id})
-             (rx/map #(file-deleted team-id project-id)))))))
+    (watch [_ _ _]
+      (->> (rp/cmd! :delete-file {:id id})
+           (rx/map (partial file-deleted project-id))))))
 
 ;; --- Rename File
 

@@ -13,8 +13,8 @@
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.persistence :as-alias dps]
+   [app.main.data.state-helpers :as dsh]
    [app.main.data.workspace.notifications :as-alias wnt]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.rasterizer :as thr]
    [app.main.refs :as refs]
    [app.main.render :as render]
@@ -60,7 +60,9 @@
   [state file-id page-id frame-id tag]
   (let [object-id (thc/fmt-object-id file-id page-id frame-id tag)
         tp        (tp/tpoint-ms)
-        objects   (wsh/lookup-objects state file-id page-id)
+        objects   (-> (dsh/lookup-file state file-id)
+                      (dsh/get-page page-id)
+                      :objects)
         shape     (get objects frame-id)]
 
     (->> (render/render-frame objects shape object-id)

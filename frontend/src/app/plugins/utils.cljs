@@ -11,21 +11,20 @@
    [app.common.data.macros :as dm]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.main.data.state-helpers :as dsh]
    [app.main.store :as st]
    [app.util.object :as obj]))
 
 (defn locate-file
   [id]
   (assert (uuid? id) "File not valid uuid")
-  (if (= id (:current-file-id @st/state))
-    (-> (:workspace-file @st/state)
-        (assoc :data (:workspace-data @st/state)))
-    (dm/get-in @st/state [:libraries id])))
+  (dsh/lookup-file @st/state id))
 
 (defn locate-page
   [file-id id]
   (assert (uuid? id) "Page not valid uuid")
-  (dm/get-in (locate-file file-id) [:data :pages-index id]))
+  (-> (dsh/lookup-file @st/state file-id)
+      (dsh/get-page id)))
 
 (defn locate-objects
   ([]
