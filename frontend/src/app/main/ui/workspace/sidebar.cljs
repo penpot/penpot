@@ -14,6 +14,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as muc]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
@@ -205,6 +206,9 @@
          (fn [section]
            (reset! current-section* section)))
 
+        on-close-history
+        (mf/use-fn #(st/emit! (dw/remove-layout-flag :document-history)))
+
         handle-expand
         (mf/use-callback
          (mf/deps size)
@@ -255,7 +259,12 @@
           {:tabs #js [#js {:label (tr "workspace.versions.tab.history") :id "history" :content versions-tab}
                       #js {:label (tr "workspace.versions.tab.actions") :id "actions" :content history-tab}]
            :default-selected "history"
-           :class (stl/css :left-sidebar-tabs)}]
+           :class (stl/css :left-sidebar-tabs)
+           :action-button-position "end"
+           :action-button (mf/html [:> icon-button* {:variant "ghost"
+                                                     :aria-label (tr "labels.close")
+                                                     :on-click on-close-history
+                                                     :icon "close"}])}]
 
          :else
          [:> options-toolbox props])]]]))
