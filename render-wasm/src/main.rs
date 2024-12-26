@@ -362,6 +362,21 @@ pub extern "C" fn clear_shape_fills() {
 }
 
 #[no_mangle]
+pub extern "C" fn set_shape_svg_raw_content() {
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        let bytes = mem::bytes();
+        let svg_raw_content = String::from_utf8(bytes)
+            .unwrap()
+            .trim_end_matches('\0')
+            .to_string();
+        shape
+            .set_svg_raw_content(svg_raw_content)
+            .expect("Failed to set svg raw content");
+    }
+}
+
+#[no_mangle]
 pub extern "C" fn set_shape_blend_mode(mode: i32) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
@@ -509,6 +524,24 @@ pub extern "C" fn add_shape_stroke_stops(ptr: *mut shapes::RawStopData, n_stops:
     }
 }
 
+// Extracts a string from the bytes slice until the next null byte (0) and returns the result as a `String`.
+// Updates the `start` index to the end of the extracted string.
+fn extract_string(start: &mut usize, bytes: &[u8]) -> String {
+    match bytes[*start..].iter().position(|&b| b == 0) {
+        Some(pos) => {
+            let end = *start + pos;
+            let slice = &bytes[*start..end];
+            *start = end + 1; // Move the `start` pointer past the null byte
+                              // Call to unsafe function within an unsafe block
+            unsafe { String::from_utf8_unchecked(slice.to_vec()) }
+        }
+        None => {
+            *start = bytes.len(); // Move `start` to the end if no null byte is found
+            String::new()
+        }
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn add_shape_image_stroke(
     a: u32,
@@ -544,7 +577,22 @@ pub extern "C" fn clear_shape_strokes() {
 pub extern "C" fn set_shape_corners(r1: f32, r2: f32, r3: f32, r4: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
-        shape.set_corners((r1, r2, r3, r4))
+        shape.set_corners((r1, r2, r3, r4));
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn set_shape_path_attrs(num_attrs: u32) {
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
+
+    if let Some(shape) = state.current_shape() {
+        let bytes = mem::bytes();
+        let mut start = 0;
+        for _ in 0..num_attrs {
+            let name = extract_string(&mut start, &bytes);
+            let value = extract_string(&mut start, &bytes);
+            shape.set_path_attr(name, value);
+        }
     }
 }
 

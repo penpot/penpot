@@ -1,7 +1,6 @@
-use std::collections::HashMap;
-
 use skia::Contains;
 use skia_safe as skia;
+use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::math;
@@ -33,6 +32,7 @@ pub trait Renderable {
     fn clip(&self) -> bool;
     fn children_ids(&self) -> Vec<Uuid>;
     fn image_filter(&self, scale: f32) -> Option<skia::ImageFilter>;
+    fn is_recursive(&self) -> bool;
 }
 
 pub(crate) struct CachedSurfaceImage {
@@ -191,6 +191,7 @@ impl RenderState {
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
             Some(&skia::Paint::default()),
         );
+
         self.drawing_surface
             .canvas()
             .clear(skia::Color::TRANSPARENT);
@@ -336,8 +337,8 @@ impl RenderState {
 
     // Returns a boolean indicating if the viewbox contains the rendered shapes
     fn render_shape_tree(&mut self, root_id: &Uuid, tree: &HashMap<Uuid, impl Renderable>) -> bool {
-        let element = tree.get(&root_id).unwrap();
-        let mut is_complete = self.viewbox.area.contains(element.bounds());
+        if let Some(element) = tree.get(&root_id) {
+            let mut is_complete = self.viewbox.area.contains(element.bounds());
 
         if !root_id.is_nil() {
             if !element.bounds().intersects(self.viewbox.area) || element.hidden() {
@@ -348,40 +349,45 @@ impl RenderState {
             } else {
                 self.render_debug_element(element, true);
             }
-        }
 
-        let mut paint = skia::Paint::default();
-        paint.set_blend_mode(element.blend_mode().into());
-        paint.set_alpha_f(element.opacity());
-        let filter = element.image_filter(self.viewbox.zoom * self.options.dpr());
-        if let Some(image_filter) = filter {
-            paint.set_image_filter(image_filter);
-        }
-
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-        // This is needed so the next non-children shape does not carry this shape's transform
-        self.final_surface.canvas().save_layer(&layer_rec);
-        self.drawing_surface.canvas().save();
-
-        if !root_id.is_nil() {
-            self.render_single_element(element);
-            if element.clip() {
-                self.drawing_surface.canvas().clip_rect(
-                    element.bounds(),
-                    skia::ClipOp::Intersect,
-                    true,
-                );
+            let mut paint = skia::Paint::default();
+            paint.set_blend_mode(element.blend_mode().into());
+            paint.set_alpha_f(element.opacity());
+            let filter = element.image_filter(self.viewbox.zoom * self.options.dpr());
+            if let Some(image_filter) = filter {
+                paint.set_image_filter(image_filter);
             }
+
+            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+            // This is needed so the next non-children shape does not carry this shape's transform
+            self.final_surface.canvas().save_layer(&layer_rec);
+            self.drawing_surface.canvas().save();
+
+            if !root_id.is_nil() {
+                self.render_single_element(element);
+                if element.clip() {
+                    self.drawing_surface.canvas().clip_rect(
+                        element.bounds(),
+                        skia::ClipOp::Intersect,
+                        true,
+                    );
+                }
+            }
+
+            // draw all the children shapes
+            if element.is_recursive() {
+                for id in element.children_ids() {
+                    is_complete = self.render_shape_tree(&id, tree) && is_complete;
+                }
+            }
+
+            self.final_surface.canvas().restore();
+            self.drawing_surface.canvas().restore();
+
+            return is_complete;
+        } else {
+            eprintln!("Error: Element with root_id {root_id} not found in the tree.");
+            return false;
         }
-
-        // draw all the children shapes
-        for id in element.children_ids() {
-            is_complete = self.render_shape_tree(&id, tree) && is_complete;
-        }
-
-        self.final_surface.canvas().restore();
-        self.drawing_surface.canvas().restore();
-
-        return is_complete;
     }
 }

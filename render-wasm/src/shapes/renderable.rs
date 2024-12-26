@@ -1,4 +1,5 @@
 use skia_safe::{self as skia, RRect};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 use super::{BlurType, Corners, Fill, Image, Kind, Path, Shape, Stroke, StrokeCap, StrokeKind};
@@ -93,22 +94,68 @@ impl Renderable for Shape {
             None
         }
     }
+
+    fn is_recursive(&self) -> bool {
+        !matches!(self.kind, Kind::SVGRaw(_))
+    }
+}
+
+fn render_fills_for_kind(
+    shape: &Shape,
+    canvas: &skia::Canvas,
+    images: &ImageStore,
+    path_transform: Option<&skia::Matrix>,
+    svg_attrs: &HashMap<String, String>,
+) {
+    for fill in shape.fills().rev() {
+        render_fill(
+            canvas,
+            images,
+            fill,
+            shape.selrect,
+            &shape.kind,
+            path_transform,
+            svg_attrs,
+        );
+    }
+
+    //TODO: remove when strokes are implemented, this is just for testing paths with no fills
+    if shape.fills().len() == 0 {
+        if let Kind::Path(ref path) = shape.kind {
+            let mut p = skia::Paint::default();
+            p.set_style(skia_safe::PaintStyle::Stroke);
+            p.set_stroke_width(2.0);
+            p.set_anti_alias(true);
+            p.set_blend_mode(skia::BlendMode::SrcOver);
+
+            if let Some("round") = svg_attrs.get("stroke-linecap").map(String::as_str) {
+              p.set_stroke_cap(skia::paint::Cap::Round);
+            }
+            if let Some("round") = svg_attrs.get("stroke-linejoin").map(String::as_str) {
+              p.set_stroke_join(skia::paint::Join::Round);
+            }
+            let mut skia_path = &mut path.to_skia_path();
+            skia_path = skia_path.transform(path_transform.unwrap());
+            canvas.draw_path(&skia_path, &p);
+        }
+    }
 }
 
 fn render_fill(
-    surface: &mut skia::Surface,
+    canvas: &skia::Canvas,
     images: &ImageStore,
     fill: &Fill,
     selrect: Rect,
     kind: &Kind,
     path_transform: Option<&skia::Matrix>,
+    svg_attrs: &HashMap<String, String>,
 ) {
     match (fill, kind) {
         (Fill::Image(image_fill), kind) => {
             let image = images.get(&image_fill.id());
             if let Some(image) = image {
                 draw_image_fill_in_container(
-                    surface.canvas(),
+                    canvas,
                     &image,
                     image_fill.size(),
                     kind,
@@ -119,20 +166,26 @@ fn render_fill(
             }
         }
         (_, Kind::Rect(rect, None)) => {
-            surface.canvas().draw_rect(rect, &fill.to_paint(&selrect));
+            canvas.draw_rect(rect, &fill.to_paint(&selrect));
         }
         (_, Kind::Rect(rect, Some(corners))) => {
             let rrect = RRect::new_rect_radii(rect, corners);
-            surface.canvas().draw_rrect(rrect, &fill.to_paint(&selrect));
+            canvas.draw_rrect(rrect, &fill.to_paint(&selrect));
         }
         (_, Kind::Circle(rect)) => {
-            surface.canvas().draw_oval(rect, &fill.to_paint(&selrect));
+            canvas.draw_oval(rect, &fill.to_paint(&selrect));
         }
         (_, Kind::Path(path)) | (_, Kind::Bool(_, path)) => {
-            surface.canvas().draw_path(
-                &path.to_skia_path().transform(path_transform.unwrap()),
-                &fill.to_paint(&selrect),
-            );
+            let mut skia_path = &mut path.to_skia_path();
+            skia_path = skia_path.transform(path_transform.unwrap());
+            if let Some("evenodd") = svg_attrs.get("fill-rule").map(String::as_str) {
+                skia_path.set_fill_type(skia::PathFillType::EvenOdd);
+            }
+
+            canvas.draw_path(&skia_path, &fill.to_paint(&selrect));
+        }
+        (_, Kind::SVGRaw(_sr)) => {
+            // NOOP
         }
     }
 }
@@ -513,6 +566,9 @@ pub fn draw_image_fill_in_container(
                 skia::ClipOp::Intersect,
                 true,
             );
+        }
+        Kind::SVGRaw(_) => {
+            canvas.clip_rect(container, skia::ClipOp::Intersect, true);
         }
     }
 

@@ -11,6 +11,7 @@ name = "render_wasm"
 path = "src/main.rs"
 
 [dependencies]
+edit-xml = "0.1.0"
 gl = "0.14.0"
 skia-safe = { version = "0.80.1", default-features = false, features = ["gl", "svg", "textlayout", "binary-cache"]}
 uuid = { version = "1.11.0", features = ["v4"] }
