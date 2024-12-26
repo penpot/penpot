@@ -11,6 +11,7 @@ impl Renderable for Shape {
         surface: &mut skia_safe::Surface,
         images: &ImageStore,
         scale: f32,
+        font_provider: &skia::textlayout::TypefaceFontProvider,
     ) -> Result<(), String> {
         let transform = self.transform.to_skia_matrix();
 

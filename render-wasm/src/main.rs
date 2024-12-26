@@ -287,6 +287,27 @@ pub extern "C" fn add_shape_fill_stops(ptr: *mut shapes::RawStopData, n_stops: u
 }
 
 #[no_mangle]
+pub extern "C" fn store_font(family_name_size: u32, font_size: u32) {
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
+    unsafe {
+        let font_bytes =
+            Vec::<u8>::from_raw_parts(mem::buffer_ptr(), font_size as usize, font_size as usize);
+        let family_name = String::from_raw_parts(
+            mem::buffer_ptr().add(font_size as usize),
+            family_name_size as usize,
+            family_name_size as usize,
+        );
+        match state.render_state().add_font(family_name, &font_bytes) {
+            Err(msg) => {
+                eprintln!("{}", msg);
+            }
+            _ => {}
+        }
+        mem::free_bytes();
+    }
+}
+
+#[no_mangle]
 pub extern "C" fn store_image(a: u32, b: u32, c: u32, d: u32, size: u32) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     let id = uuid_from_u32_quartet(a, b, c, d);

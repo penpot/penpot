@@ -134,6 +134,32 @@
                     (aget buffer 3))))
         shape-ids))
 
+(defn- get-string-length [string] (+ (count string) 1))
+
+;; IMPORTANT: It should be noted that only TTF fonts can be stored.
+(defn- store-font
+  [family-name font-array-buffer]
+  (let [family-name-size (get-string-length family-name)
+        font-array-buffer-size (.-byteLength font-array-buffer)
+        size (+ font-array-buffer-size family-name-size)
+        ptr  (h/call internal-module "_alloc_bytes" size)
+        family-name-ptr (+ ptr font-array-buffer-size)
+        heap (gobj/get ^js internal-module "HEAPU8")
+        mem  (js/Uint8Array. (.-buffer heap) ptr size)]
+    (.set mem (js/Uint8Array. font-array-buffer))
+    (h/call internal-module "stringToUTF8" family-name family-name-ptr family-name-size)
+    (h/call internal-module "_store_font" family-name-size font-array-buffer-size)))
+
+;; This doesn't work
+#_(store-font-url "roboto-thin-italic" "https://fonts.gstatic.com/s/roboto/v32/KFOiCnqEu92Fr1Mu51QrEzAdLw.woff2")
+;; This does
+#_(store-font-url "sourcesanspro-regular" "http://localhost:3449/fonts/sourcesanspro-regular.ttf")
+(defn- store-font-url
+  [family-name font-url]
+  (-> (p/then (js/fetch font-url)
+              (fn [response] (.arrayBuffer response)))
+      (p/then (fn [array-buffer] (store-font family-name array-buffer)))))
+
 (defn- store-image
   [id]
   (let [buffer (uuid/get-u32 id)
