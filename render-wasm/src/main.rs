@@ -48,7 +48,7 @@ pub extern "C" fn clean_up() {
 
 #[no_mangle]
 pub extern "C" fn set_render_options(debug: u32, dpr: f32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     let render_state = state.render_state();
 
     render_state.set_debug_flags(debug);
@@ -65,13 +65,13 @@ pub extern "C" fn set_canvas_background(raw_color: u32) {
 
 #[no_mangle]
 pub unsafe extern "C" fn render() {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     state.render_all(true);
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn render_without_cache() {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     state.render_all(false);
 }
 
@@ -90,44 +90,44 @@ pub unsafe extern "C" fn pan() {
 
 #[no_mangle]
 pub extern "C" fn reset_canvas() {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     state.render_state().reset_canvas();
 }
 
 #[no_mangle]
 pub extern "C" fn resize_viewbox(width: i32, height: i32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     state.resize(width, height);
 }
 
 #[no_mangle]
 pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     state.render_state().viewbox.set_all(zoom, x, y);
 }
 
 #[no_mangle]
 pub extern "C" fn set_view_zoom(zoom: f32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     state.render_state().viewbox.set_zoom(zoom);
 }
 
 #[no_mangle]
 pub extern "C" fn set_view_xy(x: f32, y: f32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     state.render_state().viewbox.set_pan_xy(x, y);
 }
 
 #[no_mangle]
 pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     let id = uuid_from_u32_quartet(a, b, c, d);
     state.use_shape(id);
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn set_shape_kind_circle() {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
 
     if let Some(shape) = state.current_shape() {
         shape.set_kind(Kind::Circle(math::Rect::new_empty()));
@@ -136,7 +136,7 @@ pub unsafe extern "C" fn set_shape_kind_circle() {
 
 #[no_mangle]
 pub unsafe extern "C" fn set_shape_kind_rect() {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
 
     if let Some(shape) = state.current_shape() {
         match shape.kind() {
@@ -148,7 +148,7 @@ pub unsafe extern "C" fn set_shape_kind_rect() {
 
 #[no_mangle]
 pub unsafe extern "C" fn set_shape_kind_path() {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.set_kind(Kind::Path(Path::default()));
     }
@@ -175,7 +175,7 @@ pub unsafe extern "C" fn set_shape_bool_type(raw_bool_type: u8) {
 
 #[no_mangle]
 pub extern "C" fn set_shape_selrect(left: f32, top: f32, right: f32, bottom: f32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.set_selrect(left, top, right, bottom);
     }
@@ -183,7 +183,7 @@ pub extern "C" fn set_shape_selrect(left: f32, top: f32, right: f32, bottom: f32
 
 #[no_mangle]
 pub unsafe extern "C" fn set_shape_clip_content(clip_content: bool) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.set_clip(clip_content);
     }
@@ -191,7 +191,7 @@ pub unsafe extern "C" fn set_shape_clip_content(clip_content: bool) {
 
 #[no_mangle]
 pub unsafe extern "C" fn set_shape_rotation(rotation: f32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.set_rotation(rotation);
     }
@@ -199,7 +199,7 @@ pub unsafe extern "C" fn set_shape_rotation(rotation: f32) {
 
 #[no_mangle]
 pub extern "C" fn set_shape_transform(a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.set_transform(a, b, c, d, e, f);
     }
@@ -207,7 +207,7 @@ pub extern "C" fn set_shape_transform(a: f32, b: f32, c: f32, d: f32, e: f32, f:
 
 #[no_mangle]
 pub extern "C" fn add_shape_child(a: u32, b: u32, c: u32, d: u32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     let id = uuid_from_u32_quartet(a, b, c, d);
     if let Some(shape) = state.current_shape() {
         shape.add_child(id);
@@ -216,7 +216,7 @@ pub extern "C" fn add_shape_child(a: u32, b: u32, c: u32, d: u32) {
 
 #[no_mangle]
 pub extern "C" fn clear_shape_children() {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.clear_children();
     }
@@ -224,7 +224,7 @@ pub extern "C" fn clear_shape_children() {
 
 #[no_mangle]
 pub extern "C" fn add_shape_solid_fill(raw_color: u32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         let color = skia::Color::new(raw_color);
         shape.add_fill(shapes::Fill::Solid(color));
@@ -239,7 +239,7 @@ pub extern "C" fn add_shape_linear_fill(
     end_y: f32,
     opacity: f32,
 ) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.add_fill(shapes::Fill::new_linear_gradient(
             (start_x, start_y),
@@ -258,7 +258,7 @@ pub extern "C" fn add_shape_radial_fill(
     opacity: f32,
     width: f32,
 ) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.add_fill(shapes::Fill::new_radial_gradient(
             (start_x, start_y),
@@ -271,7 +271,7 @@ pub extern "C" fn add_shape_radial_fill(
 
 #[no_mangle]
 pub extern "C" fn add_shape_fill_stops(ptr: *mut shapes::RawStopData, n_stops: u32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
 
     if let Some(shape) = state.current_shape() {
         let len = n_stops as usize;
@@ -288,7 +288,7 @@ pub extern "C" fn add_shape_fill_stops(ptr: *mut shapes::RawStopData, n_stops: u
 
 #[no_mangle]
 pub extern "C" fn store_image(a: u32, b: u32, c: u32, d: u32, size: u32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     let id = uuid_from_u32_quartet(a, b, c, d);
 
     unsafe {
@@ -306,7 +306,7 @@ pub extern "C" fn store_image(a: u32, b: u32, c: u32, d: u32, size: u32) {
 
 #[no_mangle]
 pub extern "C" fn is_image_cached(a: u32, b: u32, c: u32, d: u32) -> bool {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     let id = uuid_from_u32_quartet(a, b, c, d);
     state.render_state().has_image(&id)
 }
@@ -321,7 +321,7 @@ pub extern "C" fn add_shape_image_fill(
     width: i32,
     height: i32,
 ) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     let id = uuid_from_u32_quartet(a, b, c, d);
     if let Some(shape) = state.current_shape() {
         shape.add_fill(shapes::Fill::new_image_fill(
@@ -334,7 +334,7 @@ pub extern "C" fn add_shape_image_fill(
 
 #[no_mangle]
 pub extern "C" fn clear_shape_fills() {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.clear_fills();
     }
@@ -342,7 +342,7 @@ pub extern "C" fn clear_shape_fills() {
 
 #[no_mangle]
 pub extern "C" fn set_shape_blend_mode(mode: i32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.set_blend_mode(render::BlendMode::from(mode));
     }
@@ -350,7 +350,7 @@ pub extern "C" fn set_shape_blend_mode(mode: i32) {
 
 #[no_mangle]
 pub extern "C" fn set_shape_opacity(opacity: f32) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.set_opacity(opacity);
     }
@@ -358,7 +358,7 @@ pub extern "C" fn set_shape_opacity(opacity: f32) {
 
 #[no_mangle]
 pub extern "C" fn set_shape_hidden(hidden: bool) {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.set_hidden(hidden);
     }
@@ -374,7 +374,7 @@ pub extern "C" fn set_shape_blur(blur_type: u8, hidden: bool, value: f32) {
 
 #[no_mangle]
 pub extern "C" fn set_shape_path_content() {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
 
     if let Some(shape) = state.current_shape() {
         let bytes = mem::bytes();
