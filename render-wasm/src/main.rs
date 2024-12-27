@@ -245,7 +245,7 @@ pub extern "C" fn add_shape_fill_stops(ptr: *mut shapes::RawStopData, n_stops: u
         unsafe {
             let buffer = Vec::<shapes::RawStopData>::from_raw_parts(ptr, len, len);
             shape
-                .add_gradient_stops(buffer)
+                .add_fill_gradient_stops(buffer)
                 .expect("could not add gradient stops");
             mem::free_bytes();
         }
@@ -343,6 +343,131 @@ pub extern "C" fn set_shape_path_content() {
             })
             .collect();
         shape.set_path_segments(raw_segments).unwrap();
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn add_shape_center_stroke(width: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape.add_stroke(shapes::Stroke::new_center_stroke(width))
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn add_shape_inner_stroke(width: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape.add_stroke(shapes::Stroke::new_inner_stroke(width))
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn add_shape_outer_stroke(width: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape.add_stroke(shapes::Stroke::new_outer_stroke(width))
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn add_shape_stroke_solid_fill(raw_color: u32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        let color = skia::Color::new(raw_color);
+        shape
+            .set_stroke_fill(shapes::Fill::Solid(color))
+            .expect("could not add stroke solid fill");
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn add_shape_stroke_linear_fill(
+    start_x: f32,
+    start_y: f32,
+    end_x: f32,
+    end_y: f32,
+    opacity: f32,
+) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape
+            .set_stroke_fill(shapes::Fill::new_linear_gradient(
+                (start_x, start_y),
+                (end_x, end_y),
+                opacity,
+            ))
+            .expect("could not add stroke linear fill");
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn add_shape_stroke_radial_fill(
+    start_x: f32,
+    start_y: f32,
+    end_x: f32,
+    end_y: f32,
+    opacity: f32,
+    width: f32,
+) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape
+            .set_stroke_fill(shapes::Fill::new_radial_gradient(
+                (start_x, start_y),
+                (end_x, end_y),
+                opacity,
+                width,
+            ))
+            .expect("could not add stroke radial fill");
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn add_shape_stroke_stops(ptr: *mut shapes::RawStopData, n_stops: u32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+
+    if let Some(shape) = state.current_shape() {
+        let len = n_stops as usize;
+
+        unsafe {
+            let buffer = Vec::<shapes::RawStopData>::from_raw_parts(ptr, len, len);
+            shape
+                .add_stroke_gradient_stops(buffer)
+                .expect("could not add gradient stops");
+            mem::free_bytes();
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn add_shape_image_stroke(
+    a: u32,
+    b: u32,
+    c: u32,
+    d: u32,
+    alpha: f32,
+    width: i32,
+    height: i32,
+) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let id = uuid_from_u32_quartet(a, b, c, d);
+    if let Some(shape) = state.current_shape() {
+        shape
+            .set_stroke_fill(shapes::Fill::new_image_fill(
+                id,
+                (alpha * 0xff as f32).floor() as u8,
+                (width, height),
+            ))
+            .expect("could not add stroke image fill");
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn clear_shape_strokes() {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape.clear_strokes();
     }
 }
 
