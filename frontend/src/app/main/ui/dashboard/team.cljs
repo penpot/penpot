@@ -31,7 +31,6 @@
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (def ^:private arrow-icon
@@ -743,15 +742,12 @@
      [:> i18n/tr-html* {:content (tr "labels.no-invitations-hint")
                         :tag-name "span"}])])
 
-(def ^:private ref:invitations
-  (l/derived :invitations st/state))
-
 (mf/defc invitation-section*
   {::mf/props :obj
    ::mf/private true}
   [{:keys [team]}]
   (let [permissions (get team :permissions)
-        invitations (mf/deref ref:invitations)
+        invitations (get team :invitations)
 
         team-id     (get team :id)
 
@@ -1037,13 +1033,10 @@
        :key (dm/str (:id webhook))
        :permissions permissions}])])
 
-(def ^:private ref:webhooks
-  (l/derived :webhooks st/state))
-
 (mf/defc webhooks-page*
   {::mf/props :obj}
   [{:keys [team]}]
-  (let [webhooks (mf/deref ref:webhooks)]
+  (let [webhooks (:webhooks team)]
 
     (mf/with-effect [team]
       (dom/set-html-title
