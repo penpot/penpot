@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-12-19 18:02+0000\n"
+"PO-Revision-Date: 2024-12-28 16:02+0000\n"
 "Last-Translator: Late Night Defender <pongpeera054@protonmail.com>\n"
 "Language-Team: Thai <https://hosted.weblate.org/projects/penpot/frontend/th/>"
 "\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.9.2-dev\n"
+"X-Generator: Weblate 5.10-dev\n"
 
 #: src/app/main/ui/auth/login.cljs:310, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/auth/register.cljs:240, src/app/main/ui/static.cljs:144, src/app/main/ui/viewer/login.cljs:91
 msgid "auth.register-submit"
@@ -677,3 +677,184 @@ msgstr[0] "แชร์แล้ว %s หน้า"
 #: src/app/main/ui/viewer/share_link.cljs:195
 msgid "common.share-link.permissions-hint"
 msgstr "ทุกคนที่มีลิงก์สามารถเข้าถึงได้"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:39
+#, markdown
+msgid "dashboard.empty-placeholder-libraries"
+msgstr ""
+"ไลบรารีที่เพิ่มให้กับโปรเจกต์จะปรากฏที่นี่ ลองแชร์ไฟล์ของคุณหรือเพิ่มจาก[ไลบรารีและเทมเพลต]"
+"(https://penpot.app/libraries-templates)ของเรา"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:269
+msgid "dashboard.export-standard-multi"
+msgstr "ดาวน์โหลด %s ไฟล์มาตรฐาน (.svg + .json)"
+
+#: src/app/main/ui/dashboard/fonts.cljs:445
+msgid "dashboard.fonts.empty-placeholder-viewer-sub"
+msgstr "เมื่อสมาชิกโปรเจกต์เพิ่มฟอนต์ที่กำหนดเอง จะปรากฏที่นี่"
+
+#: src/app/main/ui/dashboard/import.cljs:466
+msgid "dashboard.import.import-message"
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "นำเข้าสำเร็จแล้ว %s ไฟล์"
+
+#: src/app/main/ui/dashboard/files.cljs:185, src/app/main/ui/dashboard/projects.cljs:279
+msgid "dashboard.empty-placeholder-drafts-title"
+msgstr "ยังไม่มีแบบร่าง"
+
+#: src/app/main/ui/dashboard/files.cljs:191, src/app/main/ui/dashboard/projects.cljs:285
+msgid "dashboard.empty-placeholder-files-subtitle"
+msgstr "เมื่อสมาชิกของโปรเจกต์สร้างไฟล์ จะแสดงผลที่นี่"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:35
+msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
+msgstr "ไลบรารีที่เพิ่มลงในโปรเจกต์จะปรากฏที่นี่"
+
+#: src/app/main/ui/dashboard/files.cljs:190, src/app/main/ui/dashboard/projects.cljs:284
+msgid "dashboard.empty-placeholder-drafts-subtitle"
+msgstr "เมื่อสมาชิกโปรเจกต์สร้างแบบร่าง จะปรากฏที่นี่"
+
+#: src/app/main/ui/exports/assets.cljs:194
+msgid "dashboard.export-shapes.title"
+msgstr "ส่งออกส่วนที่เลือก"
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+#, markdown, unused
+msgid "dashboard.empty-placeholder-libraries-subtitle"
+msgstr ""
+"ไลบรารีที่เพิ่มให้กับโปรเจกต์จะปรากฏที่นี่ ลองแชร์ไฟล์ของคุณหรือเพิ่มจาก[ไลบรารีและเทมเพลต]"
+"(https://penpot.app/libraries-templates)ของเรา"
+
+#: src/app/main/ui/auth/register.cljs:157
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr "ฉันยอมรับ [ข้อกำหนดการให้บริการ](%s)และ[นโยบายความเป็นส่วนตัว](%s)"
+
+#: src/app/main/ui/viewer/share_link.cljs:200
+msgid "common.share-link.confirm-deletion-link-description"
+msgstr "คุณแน่ใจหรือไม่ว่าต้องการลบลิงก์นี้? หากคุณลบ จะไม่มีใครสามารถเปิดได้"
+
+#: src/app/main/ui/viewer/share_link.cljs:261, src/app/main/ui/viewer/share_link.cljs:291
+msgid "common.share-link.current-tag"
+msgstr "(ปัจจุบัน)"
+
+#: src/app/main/ui/viewer/share_link.cljs:243
+msgid "common.share-link.permissions-pages"
+msgstr "หน้าที่ต้องการแชร์"
+
+#: src/app/main/ui/dashboard/projects.cljs
+#, fuzzy, unused
+msgid "dasboard.tutorial-hero.info"
+msgstr "เรียนรู้การใช้งาน Penpot เบื้องต้นด้วยการลงมือทำจริง"
+
+#: src/app/main/ui/settings/access_tokens.cljs:104
+msgid "dashboard.access-tokens.copied-success"
+msgstr "คัดลอกโทเคนแล้ว"
+
+#: src/app/main/ui/settings/access_tokens.cljs:191
+msgid "dashboard.access-tokens.create"
+msgstr "สร้างโทเคนใหม่"
+
+#: src/app/main/ui/settings/access-tokens.cljs
+#, unused
+msgid "dashboard.access-tokens.create-success"
+msgstr "สร้างโทเคนสำหรับการเข้าถึงสำเร็จแล้ว"
+
+#: src/app/main/ui/settings/access_tokens.cljs:289
+msgid "dashboard.access-tokens.empty.add-one"
+msgstr "กดปุ่ม \"สร้างโทเคนใหม่\" เพื่อสร้างโทเคน"
+
+#: src/app/main/ui/settings/access_tokens.cljs:288
+msgid "dashboard.access-tokens.empty.no-access-tokens"
+msgstr "คุณยังไม่มีโทเคนที่สร้างไว้"
+
+#: src/app/main/ui/settings/access_tokens.cljs:132
+msgid "dashboard.access-tokens.expiration-never"
+msgstr "ไม่มีวันหมดอายุ"
+
+#: src/app/main/ui/settings/access_tokens.cljs:186
+msgid "dashboard.access-tokens.personal"
+msgstr "โทเคนการเข้าถึงส่วนบุคคล"
+
+#: src/app/main/ui/settings/access_tokens.cljs:187
+msgid "dashboard.access-tokens.personal.description"
+msgstr ""
+"โทเคนการเข้าถึงส่วนบุคคลจะทำงานใกล้เคียงกับการยืนยันตัวตนด้วยชื่อผู้ใช้/รหัสผ่าน "
+"และสามารถใช้ในการอนุญาตให้แอปพลิเคชันเข้าถึง API ภายในของ Penpot ได้"
+
+#: src/app/main/ui/settings/access_tokens.cljs:143
+msgid "dashboard.access-tokens.token-will-expire"
+msgstr "โทเคนนี้จะหมดอายุใน %s"
+
+#: src/app/main/ui/settings/access_tokens.cljs:144
+msgid "dashboard.access-tokens.token-will-not-expire"
+msgstr "โทเคนนี้ไม่มีวันหมดอายุ"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:259, src/app/main/ui/dashboard/file_menu.cljs:264
+msgid "dashboard.export-binary-multi"
+msgstr "ดาวน์โหลด %s ไฟล์ Penpot (.penpot)"
+
+#, unused
+msgid "dashboard.export-multi"
+msgstr "ส่งออก %s ไฟล์ Penpot"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:311
+msgid "dashboard.fonts.deleted-placeholder"
+msgstr "ฟอนต์ที่หายไป"
+
+#: src/app/main/ui/dashboard/fonts.cljs:183
+#, markdown
+msgid "dashboard.fonts.hero-text2"
+msgstr ""
+"คุณควรอัปโหลดเฉพาะฟอนต์ที่คุณเป็นเจ้าของหรือมีสิทธิ์ในการใช้งานใน Penpot "
+"ดูรายละอียดเพิ่มเติมในส่วนเนื้อหาของ[ข้อกำหนดการให้บริการของ Penpot](https://penpot.app/"
+"terms.html) นอกจากนี้คุณอาจต้องการอ่านเพิ่มเติมเกี่ยวกับ[ลิขสิทธิ์ฟอนต์](https://"
+"www.typography.com/faq)"
+
+#: src/app/main/ui/dashboard/import.cljs:292
+msgid "dashboard.import.import-error"
+msgstr "พบปัญหาในการนำเข้าไฟล์ ไฟล์นี้จึงไม่ถูกนำเข้า"
+
+#: src/app/main/ui/dashboard/import.cljs:461
+msgid "dashboard.import.import-warning"
+msgstr "บางไฟล์มีวัตถุที่ไม่ถูกต้อง ซึ่งถูกนำออกให้แล้ว"
+
+#: src/app/main/ui/dashboard/import.cljs:138, src/app/main/ui/dashboard/import.cljs:141
+msgid "dashboard.import.progress.process-components"
+msgstr "กำลังประมวลผลคอมโพเนนต์"
+
+#: src/app/main/ui/dashboard/import.cljs:135
+msgid "dashboard.import.progress.process-media"
+msgstr "กำลังประมวลผลสื่อ"
+
+#: src/app/main/ui/dashboard/import.cljs:120
+msgid "dashboard.import.progress.upload-data"
+msgstr "กำลังอัปโหลดข้อมูลไปยังเซิร์ฟเวอร์ (%s/%s)"
+
+#: src/app/main/ui/dashboard/import.cljs:358
+msgid "dashboard.libraries-and-templates.import-error"
+msgstr "พบปัญหาในการนำเข้าเทมเพลต เทมเพลตนี้จึงไม่ถูกนำเข้า"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:54
+msgid "dashboard.loading-files"
+msgstr "กำลังโหลดไฟล์ของคุณ…"
+
+#: src/app/main/ui/dashboard/fonts.cljs:435
+msgid "dashboard.loading-fonts"
+msgstr "กำลังโหลดฟอนต์ของคุณ…"
+
+#: src/app/main/data/dashboard.cljs:735, src/app/main/data/dashboard.cljs:1192
+msgid "dashboard.new-project-prefix"
+msgstr "สร้างโปรเจกต์ใหม่"
+
+#: src/app/main/data/dashboard.cljs:966, src/app/main/data/dashboard.cljs:1189
+msgid "dashboard.new-file-prefix"
+msgstr "สร้างไฟล์ใหม่"
+
+#: src/app/main/ui/dashboard/projects.cljs:57
+msgid "dashboard.new-project"
+msgstr "+ สร้างโปรเจกต์ใหม่"
+
+#: src/app/main/ui/dashboard/files.cljs:101, src/app/main/ui/dashboard/projects.cljs:251, src/app/main/ui/dashboard/projects.cljs:252
+msgid "dashboard.new-file"
+msgstr "+ สร้างไฟล์ใหม่"
