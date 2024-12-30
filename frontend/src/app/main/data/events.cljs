@@ -8,6 +8,7 @@
   (:require
    ["ua-parser-js" :as ua]
    [app.common.data :as d]
+   [app.common.json :as json]
    [app.common.logging :as l]
    [app.config :as cf]
    [app.main.repo :as rp]
@@ -93,6 +94,11 @@
              data
              data))
 
+(defn add-external-context-info
+  [context]
+  (let [external-context-info  (json/->clj (cf/external-context-info))]
+    (merge context external-context-info)))
+
 (defn- process-event-by-proto
   [event]
   (let [data    (d/deep-merge (-data event) (meta event))
@@ -102,6 +108,7 @@
                     (assoc :event-origin (::origin data))
                     (assoc :event-namespace (namespace type))
                     (assoc :event-symbol ev-name)
+                    (add-external-context-info)
                     (d/without-nils))
         props   (-> data d/without-qualified simplify-props)]
 
@@ -119,6 +126,7 @@
       (let [type    (::type data "action")
             context (-> (::context data)
                         (assoc :event-origin (::origin data))
+                        (add-external-context-info)
                         (d/without-nils))
             props   (-> data d/without-qualified simplify-props)]
         {:type    type
