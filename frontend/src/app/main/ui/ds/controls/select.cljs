@@ -17,6 +17,8 @@
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
+(def listbox-id-index (atom 0))
+
 (def ^:private schema:select-option
   [:and
    [:map {:title "option"}
@@ -72,19 +74,30 @@
   [{:keys [options class disabled default-selected on-change] :rest props}]
   (let [open* (mf/use-state false)
         open  (deref open*)
-        on-click
-        (mf/use-fn
-         (mf/deps disabled)
-         (fn [event]
-           (dom/stop-propagation event)
-           (when-not disabled
-             (swap! open* not))))
+
+        listbox-id-ref     (mf/use-ref (dm/str "select-listbox-" (swap! listbox-id-index inc)))
+        options-nodes-refs (mf/use-ref nil)
+        options-ref        (mf/use-ref nil)
+        select-ref         (mf/use-ref nil)
+        listbox-id         (mf/ref-val listbox-id-ref)
 
         selected* (mf/use-state  #(get-selected-option-id options default-selected))
         selected  (deref selected*)
 
         focused* (mf/use-state nil)
         focused  (deref focused*)
+
+        has-focus* (mf/use-state false)
+        has-focus  (deref has-focus*)
+
+        on-click
+        (mf/use-fn
+         (mf/deps disabled)
+         (fn [event]
+           (dom/stop-propagation event)
+           (reset! has-focus* true)
+           (when-not disabled
+             (swap! open* not))))
 
         on-option-click
         (mf/use-fn
@@ -98,9 +111,6 @@
              (when (fn? on-change)
                (on-change id)))))
 
-        options-nodes-refs  (mf/use-ref nil)
-        options-ref         (mf/use-ref nil)
-
         set-ref
         (mf/use-fn
          (fn [node id]
@@ -113,10 +123,12 @@
         on-blur
         (mf/use-fn
          (fn [event]
-           (let [click-outside (nil? (.-relatedTarget event))]
-             (when click-outside
+           (let [target (.-relatedTarget event)
+                 outside? (not (.contains (mf/ref-val select-ref) target))]
+             (when outside?
                (reset! focused* nil)
-               (reset! open* false)))))
+               (reset! open* false)
+               (reset! has-focus* false)))))
 
         on-key-down
         (mf/use-fn
@@ -146,18 +158,22 @@
                  (do (reset! open* false)
                      (reset! focused* nil)))))))
 
-        class (dm/str class " " (stl/css :select))
+        on-focus
+        (mf/use-fn
+         (fn [_] (reset! has-focus* true)))
+
+        class (dm/str class " " (stl/css-case :select true
+                                              :focused has-focus))
 
         props (mf/spread-props props {:class class
                                       :role "combobox"
-                                      :aria-controls "listbox"
+                                      :aria-controls listbox-id
                                       :aria-haspopup "listbox"
                                       :aria-activedescendant focused
                                       :aria-expanded open
                                       :on-key-down on-key-down
                                       :disabled disabled
-                                      :on-click on-click
-                                      :on-blur on-blur})
+                                      :on-click on-click})
 
         selected-option (get-option options selected)
         label (obj/get selected-option "label")
@@ -166,7 +182,11 @@
     (mf/with-effect [options]
       (mf/set-ref-val! options-ref options))
 
-    [:div {:class (stl/css :select-wrapper)}
+    [:div {:class (stl/css :select-wrapper)
+           :on-click on-click
+           :on-focus on-focus
+           :ref select-ref
+           :on-blur on-blur}
      [:> :button props
       [:span {:class (stl/css-case :select-header true
                                    :header-icon (some? icon))}
@@ -182,6 +202,7 @@
                  :aria-hidden true}]]
      (when open
        [:> options-dropdown* {:on-click on-option-click
+                              :id listbox-id
                               :options options
                               :selected selected
                               :focused focused
