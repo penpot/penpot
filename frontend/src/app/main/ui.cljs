@@ -148,6 +148,7 @@
   (let [{:keys [data params]} route
         props   (get profile :props)
         section (get data :name)
+        team    (mf/deref refs/team)
 
 
         show-question-modal?
@@ -165,7 +166,8 @@
         (and (contains? cf/flags :onboarding)
              (not (:onboarding-viewed props))
              (not (contains? props :onboarding-team-id))
-             (contains? props :newsletter-updates))
+             (contains? props :newsletter-updates)
+             (:is-default team))
 
         show-release-modal?
         (and (contains? cf/flags :onboarding)
