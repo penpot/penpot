@@ -15,6 +15,10 @@
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]))
 
+(defn get-tokens-lib
+  [file]
+  (:tokens-lib (ctf/file-data file)))
+
 (defn add-tokens-lib
   [file]
   (ctf/update-file-data file #(update % :tokens-lib ctob/ensure-tokens-lib)))
@@ -87,4 +91,3 @@
        (ctpl/update-page file-data
                          (:id page)
                          #(ctst/set-shape % shape'))))))
-

@@ -455,7 +455,7 @@ When `before-set-name` is nil, move set to bottom")
   (get-in-set-tree [_ path] "get `path` in nested tree of all sets in the library")
   (get-sets [_] "get an ordered sequence of all sets in the library")
   (get-path-sets [_ path] "get an ordered sequence of sets at `path` in the library")
-  (get-sets-at-prefix-path [_ prefixed-path] "get an ordered sequence of sets at `prefixed-path` in the library")
+  (get-sets-at-prefix-path [_ prefixed-path-str] "get an ordered sequence of sets at `prefixed-path-str` in the library")
   (get-sets-at-path [_ path-str] "get an ordered sequence of sets at `path` in the library")
   (rename-set-group [_ from-path-str to-path-str] "renames set groups and all child set names from `from-path-str` to `to-path-str`")
   (get-ordered-set-names [_] "get an ordered sequence of all sets names in the library")
@@ -504,12 +504,13 @@ When `before-set-name` is nil, move set to bottom")
 (def hidden-token-theme-path
   (token-theme-path hidden-token-theme-group hidden-token-theme-name))
 
-
 (defprotocol ITokenTheme
   (set-sets [_ set-names] "set the active token sets")
+  (enable-set [_ set-name] "enable set in theme")
+  (enable-sets [_ set-names] "enable sets in theme")
   (disable-set [_ set-name] "disable set in theme")
+  (disable-sets [_ set-names] "disable sets in theme")
   (toggle-set [_ set-name] "toggle a set enabled / disabled in the theme")
-
   (update-set-name [_ prev-set-name set-name] "update set-name from `prev-set-name` to `set-name` when it exists")
   (theme-path [_] "get `token-theme-path` from theme")
   (theme-matches-group-name [_ group name] "if a theme matches the given group & name")
@@ -525,13 +526,22 @@ When `before-set-name` is nil, move set to bottom")
                  (dt/now)
                  set-names))
 
+  (enable-set [this set-name]
+    (set-sets this (conj sets set-name)))
+
+  (enable-sets [this set-names]
+    (set-sets this (set/union sets set-names)))
+
   (disable-set [this set-name]
     (set-sets this (disj sets set-name)))
 
+  (disable-sets [this set-names]
+    (set-sets this (or (set/difference sets set-names) #{})))
+
   (toggle-set [this set-name]
-    (set-sets this (if (sets set-name)
-                     (disj sets set-name)
-                     (conj sets set-name))))
+    (if (sets set-name)
+      (disable-set this set-name)
+      (enable-set this set-name)))
 
   (update-set-name [this prev-set-name set-name]
     (if (get sets prev-set-name)
@@ -610,6 +620,8 @@ When `before-set-name` is nil, move set to bottom")
   (get-theme-tree [_] "get a nested tree of all themes in the library")
   (get-themes [_] "get an ordered sequence of all themes in the library")
   (get-theme [_ group name] "get one theme looking for name")
+  (get-hidden-theme [_] "get the theme hidden from the user ,
+used for managing active sets without a user created theme.")
   (get-theme-groups [_] "get a sequence of group names by order")
   (get-active-theme-paths [_] "get the active theme paths")
   (get-active-themes [_] "get an ordered sequence of active themes in the library")
@@ -791,8 +803,8 @@ Will return a value that matches this schema:
              (tree-seq d/ordered-map? vals)
              (filter (partial instance? TokenSet))))
 
-  (get-sets-at-prefix-path [_ prefixed-path]
-    (some->> (get-in sets (split-token-set-path prefixed-path))
+  (get-sets-at-prefix-path [_ prefixed-path-str]
+    (some->> (get-in sets (split-token-set-path prefixed-path-str))
              (tree-seq d/ordered-map? vals)
              (filter (partial instance? TokenSet))))
 
@@ -881,6 +893,9 @@ Will return a value that matches this schema:
   (get-theme [_ group name]
     (dm/get-in themes [group name]))
 
+  (get-hidden-theme [this]
+    (get-theme this hidden-token-theme-group hidden-token-theme-name))
+
   (set-active-themes [_ active-themes]
     (TokensLib. sets
                 themes
@@ -946,10 +961,10 @@ Will return a value that matches this schema:
           (mapcat :sets)
           (get-active-themes this)))
 
-  (sets-at-path-all-active? [this prefixed-path]
+  (sets-at-path-all-active? [this prefixed-path-str]
     (let [active-set-names (get-active-themes-set-names this)]
       (if (seq active-set-names)
-        (let [path-active-set-names (->> (get-sets-at-prefix-path this prefixed-path)
+        (let [path-active-set-names (->> (get-sets-at-prefix-path this prefixed-path-str)
                                          (map :name)
                                          (into #{}))
               difference (set/difference path-active-set-names active-set-names)]

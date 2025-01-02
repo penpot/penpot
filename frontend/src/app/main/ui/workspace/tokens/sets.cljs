@@ -25,6 +25,9 @@
 (defn on-toggle-token-set-click [token-set-name]
   (st/emit! (wdt/toggle-token-set {:token-set-name token-set-name})))
 
+(defn on-toggle-token-set-group-click [prefixed-path-str]
+  (st/emit! (wdt/toggle-token-set-group {:prefixed-path-str prefixed-path-str})))
+
 (defn on-select-token-set-click [tree-path]
   (st/emit! (wdt/set-selected-token-set-path tree-path)))
 
@@ -88,7 +91,7 @@
          :id (if mixed? ic/remove ic/tick)}])]))
 
 (mf/defc sets-tree-set-group
-  [{:keys [label tree-depth tree-path active? selected? collapsed? editing? on-edit on-edit-reset on-edit-submit]}]
+  [{:keys [label tree-depth tree-path active? selected? collapsed? editing? on-toggle on-edit on-edit-reset on-edit-submit]}]
   (let [editing?' (editing? tree-path)
         active?' (active? tree-path)
         on-context-menu
@@ -102,7 +105,7 @@
               (wdt/show-token-set-context-menu
                {:position (dom/get-client-position event)
                 :prefixed-set-path tree-path})))))
-        on-click
+        on-collapse-click
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
@@ -111,6 +114,10 @@
         (mf/use-fn
          (mf/deps tree-path)
          #(on-edit tree-path))
+        on-checkbox-click
+        (mf/use-fn
+         (mf/deps on-toggle tree-path)
+         #(on-toggle tree-path))
         on-edit-submit'
         (mf/use-fn
          (mf/deps tree-path on-edit-submit)
@@ -124,7 +131,7 @@
            :on-context-menu on-context-menu}
      [:> icon-button*
       {:class (stl/css :set-item-group-collapse-button)
-       :on-click on-click
+       :on-click on-collapse-click
        :aria-label (tr "labels.collapse")
        :icon (if @collapsed? "arrow-right" "arrow-down")
        :variant "action"}]
@@ -139,7 +146,8 @@
                :on-double-click on-double-click}
          label]
         [:& checkbox
-         {:checked (case active?'
+         {:on-click on-checkbox-click
+          :checked (case active?'
                      :all true
                      :partial "mixed"
                      :none false)
@@ -172,6 +180,7 @@
                          (mf/deps tree-path)
                          #(on-edit tree-path))
         on-checkbox-click (mf/use-fn
+                           (mf/deps set-name)
                            (fn [event]
                              (dom/stop-propagation event)
                              (on-toggle set-name)))
@@ -214,7 +223,8 @@
            on-edit-submit-set
            on-edit-submit-group
            on-select
-           on-toggle
+           on-toggle-set
+           on-toggle-set-group
            selected?
            set-node
            set-path
@@ -243,7 +253,7 @@
          :tree-path (or tree-path set-path)
          :tree-depth tree-depth
          :editing? editing?
-         :on-toggle on-toggle
+         :on-toggle on-toggle-set
          :on-edit on-edit
          :on-edit-reset on-edit-reset
          :on-edit-submit on-edit-submit-set}]
@@ -257,6 +267,7 @@
          :tree-path (or tree-path set-path)
          :tree-depth tree-depth
          :editing? editing?
+         :on-toggle on-toggle-set-group
          :on-edit on-edit
          :on-edit-reset on-edit-reset
          :on-edit-submit on-edit-submit-group}])
@@ -271,7 +282,8 @@
            :tree-path tree-path'
            :on-select on-select
            :selected? selected?
-           :on-toggle on-toggle
+           :on-toggle-set on-toggle-set
+           :on-toggle-set-group on-toggle-set-group
            :active? active?
            :group-active? group-active?
            :editing? editing?
@@ -289,6 +301,7 @@
            token-set-group-active?
            on-create-token-set
            on-toggle-token-set
+           on-toggle-token-set-group
            origin
            on-select
            context]
@@ -310,7 +323,8 @@
             :on-select on-select
             :active? token-set-active?
             :group-active? token-set-group-active?
-            :on-toggle on-toggle-token-set
+            :on-toggle-set on-toggle-token-set
+            :on-toggle-set-group on-toggle-token-set-group
             :editing? editing?
             :on-edit on-edit
             :on-edit-reset on-reset
@@ -352,6 +366,7 @@
       :on-select on-select-token-set-click
       :origin "set-panel"
       :on-toggle-token-set on-toggle-token-set-click
+      :on-toggle-token-set-group on-toggle-token-set-group-click
       :on-update-token-set on-update-token-set
       :on-update-token-set-group on-update-token-set-group
       :on-create-token-set on-create-token-set}]))
