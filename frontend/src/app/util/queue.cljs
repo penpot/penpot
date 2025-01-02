@@ -9,6 +9,7 @@
   (:require
    [app.common.logging :as l]
    [app.common.math :as mth]
+   [app.util.object :as obj]
    [app.util.time :as t]
    [beicon.v2.core :as rx]))
 
@@ -47,13 +48,14 @@
 
 ;; NOTE: Right now there are no cases where we need to cancel a process
 ;;       but if we do, we can use this function
-;; (defn- cancel-process
-;;   [queue]
-;;   (l/dbg :hint "queue::cancel-process")
-;;   (let [timeout (unchecked-get queue "timeout")]
-;;     (when (some? timeout)
-;;       (js/clearTimeout timeout))
-;;     (unchecked-set queue "timeout" nil)))
+(defn- cancel-process!
+  [queue]
+  (l/dbg :hint "queue::cancel-process")
+  (let [timeout (unchecked-get queue "timeout")]
+    (when (some? timeout)
+      (js/clearTimeout timeout))
+    (unchecked-set queue "timeout" nil))
+  queue)
 
 (defn- process
   [queue iterations]
@@ -131,3 +133,10 @@
           (enqueue-last queue request))))
 
     (rx/to-observable result)))
+
+(defn clear!
+  [queue]
+  (-> queue
+      (cancel-process!)
+      (obj/set! "items" #js [])
+      (obj/set! "time" 0)))
