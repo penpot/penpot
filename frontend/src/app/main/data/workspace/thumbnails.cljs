@@ -52,6 +52,11 @@
 (defonce queue
   (q/create find-request (/ 1000 30)))
 
+(defn clear-queue!
+  []
+  (l/dbg :hint "clearing thumbnail queue")
+  (q/clear! queue))
+
 ;; This function first renders the HTML calling `render/render-frame` that
 ;; returns HTML as a string, then we send that data to the iframe rasterizer
 ;; that returns the image as a Blob. Finally we create a URI for that blob.
