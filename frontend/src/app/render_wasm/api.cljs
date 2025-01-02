@@ -8,8 +8,6 @@
   "A WASM based render API"
   (:require
    ["react-dom/server" :as rds]
-   [app.common.colors :as cc]
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.common.svg.path :as path]
@@ -34,33 +32,6 @@
 
 (def dpr
   (if use-dpr? js/window.devicePixelRatio 1.0))
-
-;; (mf/defc svg-raw-element
-;;   {::mf/props :obj}
-;;   [{:keys [tag attrs content] :as props}]
-;;   [:& (name tag) attrs
-;;    (for [child content]
-;;      (if (string? child)
-;;        child
-;;        [:& svg-raw-element child]))])
-
-;; (mf/defc svg-raw
-;;   {::mf/props :obj}
-;;   [{:keys [shape] :as props}]
-;;   (let [content (:content shape)]
-;;     [:svg {:version "1.1"
-;;            :xmlns "http://www.w3.org/2000/svg"
-;;            :xmlnsXlink "http://www.w3.org/1999/xlink"
-;;            :fill "none"}
-;;      (if (string? content)
-;;        content
-;;        (let [svg-attrs (:svg-attrs shape)
-;;              content   (->
-;;                         (:content shape)
-;;                         (update :attrs merge svg-attrs))]
-;;          (println "content" content)
-;;          (println "svg-attrs" svg-attrs)
-;;          [:& svg-raw-element content]))]))
 
 ;; Based on app.main.render/object-svg
 (mf/defc object-svg
@@ -192,28 +163,32 @@
 (defn- get-string-length [string] (+ (count string) 1))
 
 ;; IMPORTANT: It should be noted that only TTF fonts can be stored.
-(defn- store-font
-  [family-name font-array-buffer]
-  (let [family-name-size (get-string-length family-name)
-        font-array-buffer-size (.-byteLength font-array-buffer)
-        size (+ font-array-buffer-size family-name-size)
-        ptr  (h/call internal-module "_alloc_bytes" size)
-        family-name-ptr (+ ptr font-array-buffer-size)
-        heap (gobj/get ^js internal-module "HEAPU8")
-        mem  (js/Uint8Array. (.-buffer heap) ptr size)]
-    (.set mem (js/Uint8Array. font-array-buffer))
-    (h/call internal-module "stringToUTF8" family-name family-name-ptr family-name-size)
-    (h/call internal-module "_store_font" family-name-size font-array-buffer-size)))
+;; Do not remove, this is going to be useful
+;; when we implement text rendering.
+#_(defn- store-font
+    [family-name font-array-buffer]
+    (let [family-name-size (get-string-length family-name)
+          font-array-buffer-size (.-byteLength font-array-buffer)
+          size (+ font-array-buffer-size family-name-size)
+          ptr  (h/call internal-module "_alloc_bytes" size)
+          family-name-ptr (+ ptr font-array-buffer-size)
+          heap (gobj/get ^js internal-module "HEAPU8")
+          mem  (js/Uint8Array. (.-buffer heap) ptr size)]
+      (.set mem (js/Uint8Array. font-array-buffer))
+      (h/call internal-module "stringToUTF8" family-name family-name-ptr family-name-size)
+      (h/call internal-module "_store_font" family-name-size font-array-buffer-size)))
 
 ;; This doesn't work
 #_(store-font-url "roboto-thin-italic" "https://fonts.gstatic.com/s/roboto/v32/KFOiCnqEu92Fr1Mu51QrEzAdLw.woff2")
 ;; This does
 #_(store-font-url "sourcesanspro-regular" "http://localhost:3449/fonts/sourcesanspro-regular.ttf")
-(defn- store-font-url
-  [family-name font-url]
-  (-> (p/then (js/fetch font-url)
-              (fn [response] (.arrayBuffer response)))
-      (p/then (fn [array-buffer] (store-font family-name array-buffer)))))
+;; Do not remove, this is going to be useful
+;; when we implement text rendering.
+#_(defn- store-font-url
+    [family-name font-url]
+    (-> (p/then (js/fetch font-url)
+                (fn [response] (.arrayBuffer response)))
+        (p/then (fn [array-buffer] (store-font family-name array-buffer)))))
 
 (defn- store-image
   [id]
@@ -573,11 +548,6 @@
        :depth true
        :stencil true
        :alpha true})
-
-(defn clear-canvas
-  [])
-  ;; TODO: Perform the corresponding cleanup."
-
 
 (defn resize-viewbox
   [width height]
