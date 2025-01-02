@@ -17,20 +17,24 @@
    [:class {:optional true} :string]
    [:icon {:optional true}
     [:and :string [:fn #(contains? icon-list %)]]]
+   [:on-ref {:optional true} fn?]
    [:variant {:optional true}
     [:maybe [:enum "primary" "secondary" "ghost" "destructive"]]]])
 
 (mf/defc button*
   {::mf/props :obj
    ::mf/schema schema:button}
-  [{:keys [variant icon children class] :rest props}]
+  [{:keys [variant icon children class on-ref] :rest props}]
   (let [variant (or variant "primary")
         class (dm/str class " " (stl/css-case :button true
                                               :button-primary (= variant "primary")
                                               :button-secondary (= variant "secondary")
                                               :button-ghost (= variant "ghost")
                                               :button-destructive (= variant "destructive")))
-        props (mf/spread-props props {:class class})]
+        props (mf/spread-props props {:class class
+                                      :ref (fn [node]
+                                             (when on-ref
+                                               (on-ref node)))})]
     [:> "button" props
      (when icon [:> icon* {:id icon :size "m"}])
      [:span {:class (stl/css :label-wrapper)} children]]))

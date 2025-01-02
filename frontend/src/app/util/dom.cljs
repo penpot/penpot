@@ -135,6 +135,12 @@
   (when (some? event)
     (.-target event)))
 
+(defn get-related-target
+  "Extract the related target from a blur or focus event instance."
+  [^js event]
+  (when (some? event)
+    (.-relatedTarget event)))
+
 (defn select-target
   "Extract the target from event instance and select it"
   [^js event]

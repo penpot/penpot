@@ -76,7 +76,7 @@
         checked? (or all? mixed?)]
     [:div {:role "checkbox"
            :aria-checked (dm/str checked)
-           :tabindex 0
+           :tab-index 0
            :class (stl/css-case :checkbox-style true
                                 :checkbox-checked-style checked?)
            :on-click on-click}
