@@ -211,6 +211,14 @@
                   (store-image id))))))
         fills))
 
+(defn- translate-stroke-style
+  [stroke-style]
+  (case stroke-style
+    :dotted 1
+    :dashed 2
+    :mixed  3
+    0))
+
 (defn set-shape-strokes
   [strokes]
   (h/call internal-module "_clear_shape_strokes")
@@ -220,11 +228,12 @@
                 gradient (:stroke-color-gradient stroke)
                 image    (:stroke-image stroke)
                 width    (:stroke-width stroke)
-                align    (:stroke-alignment stroke)]
+                align    (:stroke-alignment stroke)
+                style    (-> stroke :stroke-style translate-stroke-style)]
             (case align
-              :inner (h/call internal-module "_add_shape_inner_stroke" width)
-              :outer (h/call internal-module "_add_shape_outer_stroke" width)
-              (h/call internal-module "_add_shape_center_stroke" width))
+              :inner (h/call internal-module "_add_shape_inner_stroke" width style)
+              :outer (h/call internal-module "_add_shape_outer_stroke" width style)
+              (h/call internal-module "_add_shape_center_stroke" width style))
 
             (cond
               (some? gradient)
