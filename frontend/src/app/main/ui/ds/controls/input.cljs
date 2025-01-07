@@ -30,11 +30,11 @@
   (let [ref   (or ref (mf/use-ref))
         type  (d/nilv type "text")
         props (mf/spread-props props
-                               :class (stl/css-case
-                                       :input true
-                                       :input-with-icon (some? icon))
-                               :ref ref
-                               :type type)
+                               {:class (stl/css-case
+                                        :input true
+                                        :input-with-icon (some? icon))
+                                :ref ref
+                                :type type})
 
         on-icon-click
         (mf/use-fn

@@ -320,7 +320,7 @@
      (when @show-detail?
        [:& history-entry-details {:entry entry}])]))
 
-(mf/defc history-toolbox
+(mf/defc history-toolbox*
   []
   (let [objects (mf/deref refs/workspace-page-objects)
         {:keys [items index]} (mf/deref workspace-undo)
