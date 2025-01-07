@@ -48,6 +48,7 @@
 
 - Fix problem with some texts desynchronization [Taiga #9379](https://tree.taiga.io/project/penpot/issue/9379)
 - Fix problem with reoder grid layers [#5446](https://github.com/penpot/penpot/issues/5446)
+- Fix problem with swap component style [#9542](https://tree.taiga.io/project/penpot/issue/9542)
 
 ## 2.3.3
 
