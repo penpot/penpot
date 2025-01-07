@@ -347,26 +347,26 @@ pub extern "C" fn set_shape_path_content() {
 }
 
 #[no_mangle]
-pub extern "C" fn add_shape_center_stroke(width: f32) {
+pub extern "C" fn add_shape_center_stroke(width: f32, style: i32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
-        shape.add_stroke(shapes::Stroke::new_center_stroke(width))
+        shape.add_stroke(shapes::Stroke::new_center_stroke(width, style));
     }
 }
 
 #[no_mangle]
-pub extern "C" fn add_shape_inner_stroke(width: f32) {
+pub extern "C" fn add_shape_inner_stroke(width: f32, style: i32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
-        shape.add_stroke(shapes::Stroke::new_inner_stroke(width))
+        shape.add_stroke(shapes::Stroke::new_inner_stroke(width, style))
     }
 }
 
 #[no_mangle]
-pub extern "C" fn add_shape_outer_stroke(width: f32) {
+pub extern "C" fn add_shape_outer_stroke(width: f32, style: i32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
-        shape.add_stroke(shapes::Stroke::new_outer_stroke(width))
+        shape.add_stroke(shapes::Stroke::new_outer_stroke(width, style))
     }
 }
 

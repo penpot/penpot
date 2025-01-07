@@ -5,9 +5,20 @@ use skia_safe as skia;
 #[derive(Debug, Clone, PartialEq)]
 pub enum StrokeStyle {
     Solid,
-    // Dotted,
-    // Dashed,
-    // Mixed,
+    Dotted,
+    Dashed,
+    Mixed,
+}
+
+impl From<i32> for StrokeStyle {
+    fn from(value: i32) -> Self {
+        match value {
+            1 => StrokeStyle::Dotted,
+            2 => StrokeStyle::Dashed,
+            3 => StrokeStyle::Mixed,
+            _ => StrokeStyle::Solid,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -39,36 +50,36 @@ pub struct Stroke {
 }
 
 impl Stroke {
-    pub fn new_center_stroke(width: f32) -> Self {
+    pub fn new_center_stroke(width: f32, style: i32) -> Self {
         let transparent = skia::Color::from_argb(0, 0, 0, 0);
         Stroke {
             fill: Fill::Solid(transparent),
             width: width,
-            style: StrokeStyle::Solid,
+            style: StrokeStyle::from(style),
             cap_end: StrokeCap::None,
             cap_start: StrokeCap::None,
             kind: StrokeKind::CenterStroke,
         }
     }
 
-    pub fn new_inner_stroke(width: f32) -> Self {
+    pub fn new_inner_stroke(width: f32, style: i32) -> Self {
         let transparent = skia::Color::from_argb(0, 0, 0, 0);
         Stroke {
             fill: Fill::Solid(transparent),
             width: width,
-            style: StrokeStyle::Solid,
+            style: StrokeStyle::from(style),
             cap_end: StrokeCap::None,
             cap_start: StrokeCap::None,
             kind: StrokeKind::InnerStroke,
         }
     }
 
-    pub fn new_outer_stroke(width: f32) -> Self {
+    pub fn new_outer_stroke(width: f32, style: i32) -> Self {
         let transparent = skia::Color::from_argb(0, 0, 0, 0);
         Stroke {
             fill: Fill::Solid(transparent),
             width: width,
-            style: StrokeStyle::Solid,
+            style: StrokeStyle::from(style),
             cap_end: StrokeCap::None,
             cap_start: StrokeCap::None,
             kind: StrokeKind::OuterStroke,
@@ -108,6 +119,37 @@ impl Stroke {
         paint.set_style(skia::PaintStyle::Stroke);
         paint.set_stroke_width(self.width);
         paint.set_anti_alias(true);
+
+        if self.style != StrokeStyle::Solid {
+            let path_effect = match self.style {
+                StrokeStyle::Dotted => {
+                    let mut circle_path = skia::Path::new();
+                    circle_path.add_circle((0.0, 0.0), self.width / 2.0, None);
+                    let advance = self.width + 5.0;
+                    skia::PathEffect::path_1d(
+                        &circle_path,
+                        advance,
+                        0.0,
+                        skia::path_1d_path_effect::Style::Translate,
+                    )
+                }
+                StrokeStyle::Dashed => {
+                    skia::PathEffect::dash(&[self.width + 10., self.width + 10.], 0.)
+                }
+                StrokeStyle::Mixed => skia::PathEffect::dash(
+                    &[
+                        self.width + 5.,
+                        self.width + 5.,
+                        self.width + 1.,
+                        self.width + 5.,
+                    ],
+                    0.,
+                ),
+                _ => None,
+            };
+            paint.set_path_effect(path_effect);
+        }
+
         paint
     }
 
