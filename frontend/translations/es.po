@@ -5421,12 +5421,12 @@ msgid "workspace.options.radius-top-right"
 msgstr "Arriba derecha"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
-msgid "workspace.options.radius.all-corners"
-msgstr "Todas las esquinas"
+msgid "workspace.options.radius.hide-all-corners"
+msgstr "Colapsar radios individuales"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
-msgid "workspace.options.radius.single-corners"
-msgstr "Esquinas individuales"
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
+msgid "workspace.options.radius.show-single-corners"
+msgstr "Mostrar radios individuales"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:184
 msgid "workspace.options.recent-fonts"

@@ -117,6 +117,6 @@
                        :variant "ghost"
                        :on-click toggle-radius-mode
                        :aria-label (if radius-expanded
-                                     (tr "workspace.options.radius.all-corners")
-                                     (tr "workspace.options.radius.single-corners"))
+                                     (tr "workspace.options.radius.hide-all-corners")
+                                     (tr "workspace.options.radius.show-single-corners"))
                        :icon "corner-radius"}]]))
