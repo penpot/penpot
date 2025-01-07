@@ -1,11 +1,5 @@
 # CHANGELOG
 
-## 2.4.1
-
-### :bug: Bugs fixed
-
-- Fix problem with thumbnail generation when changing between versions [Taiga #9624](https://tree.taiga.io/project/penpot/issue/9624)
-
 ## 2.4.0
 
 ### :rocket: Epics and highlights
