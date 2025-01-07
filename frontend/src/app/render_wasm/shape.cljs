@@ -130,7 +130,7 @@
     ;; when something synced with wasm
     ;; is modified, we need to request
     ;; a new render.
-    (api/request-render)))
+    (api/request-render "set-wasm-attrs")))
 
 (defn- impl-assoc
   [self k v]

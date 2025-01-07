@@ -36,8 +36,12 @@ pub(crate) struct CachedSurfaceImage {
 }
 
 impl CachedSurfaceImage {
-    fn is_dirty(&self, viewbox: &Viewbox) -> bool {
+    fn is_dirty_for_zooming(&mut self, viewbox: &Viewbox) -> bool {
         !self.has_all_shapes && !self.viewbox.area.contains(viewbox.area)
+    }
+
+    fn is_dirty_for_panning(&mut self, _viewbox: &Viewbox) -> bool {
+        !self.has_all_shapes
     }
 }
 
@@ -168,9 +172,23 @@ impl RenderState {
             .clear(skia::Color::TRANSPARENT);
     }
 
-    pub fn navigate(&mut self, tree: &HashMap<Uuid, impl Renderable>) -> Result<(), String> {
-        if let Some(cached_surface_image) = self.cached_surface_image.as_ref() {
-            if cached_surface_image.is_dirty(&self.viewbox) {
+    pub fn zoom(&mut self, tree: &HashMap<Uuid, impl Renderable>) -> Result<(), String> {
+        if let Some(cached_surface_image) = self.cached_surface_image.as_mut() {
+            let is_dirty = cached_surface_image.is_dirty_for_zooming(&self.viewbox);
+            if is_dirty {
+                self.render_all(tree, true);
+            } else {
+                self.render_all_from_cache()?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn pan(&mut self, tree: &HashMap<Uuid, impl Renderable>) -> Result<(), String> {
+        if let Some(cached_surface_image) = self.cached_surface_image.as_mut() {
+            let is_dirty = cached_surface_image.is_dirty_for_panning(&self.viewbox);
+            if is_dirty {
                 self.render_all(tree, true);
             } else {
                 self.render_all_from_cache()?;
@@ -192,6 +210,7 @@ impl RenderState {
         );
         self.translate(self.viewbox.pan_x, self.viewbox.pan_y);
 
+        // Reset shape tree
         let is_complete = self.render_shape_tree(&Uuid::nil(), tree);
         if generate_cached_surface_image || self.cached_surface_image.is_none() {
             self.cached_surface_image = Some(CachedSurfaceImage {
@@ -299,7 +318,7 @@ impl RenderState {
         if !root_id.is_nil() {
             if !element.bounds().intersects(self.viewbox.area) || element.hidden() {
                 self.render_debug_element(element, false);
-                // TODO: This means that not all the shapes are renderer so we
+                // TODO: This means that not all the shapes are rendered so we
                 // need to call a render_all on the zoom out.
                 return is_complete; // TODO return is_complete or return false??
             } else {
