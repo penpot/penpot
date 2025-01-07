@@ -7,56 +7,47 @@ import * as SwatchStories from "./swatch.stories";
 
 Swatches are elements that display a color, gradient or image. They can sometimes trigger an action.
 
+## Background Property
+
+A swatch component can receive several props. The `background` prop is the most important and must be an object. Depending on the value of the background property we will get different variants of the component.
+
 ## Variants
 
-**Color** (`"color"`), displays a solid color. It can take a hexadecimal, an rgb or an rgba.
+If the background prop has a hex `color` value it will display a full swatch with a solid color
 
 <Canvas of={SwatchStories.Default} />
 
-**WithOpacity** (`"color"`), displays a solid color on one side and the same color with its opacity applied on the other side. It can take a hexadecimal, an rgb or an rgba.
+If the background prop has a hex `color` value and an opacity value it will display a full swatch with a solid color on one side and the same color with the opacity applied on the other side. (default opacity: 1)
 
 <Canvas of={SwatchStories.WithOpacity} />
 
-**Gradient** (`"gradient"`), displays a gradient. A gradient should be a `linear-gradient` or a `conic-gradient`.
-
-<Canvas of={SwatchStories.LinearGradient} />
-
-**Image** (`"image"`) the swatch could display any image.
-
-<Canvas of={SwatchStories.Image} />
-
-**Active** (`"active"`) displays the swatch as active while an interface related action is happening.
-
-<Canvas of={SwatchStories.Active} />
-
-**Size** (`"size"`) shows a bigger or smaller swatch. Accepts `small` and `medium` (_default_) sizes.
+This component can take a size property to set the size of the swatch. In this case we can set it to `small` (default size: `medium`)
 
 <Canvas of={SwatchStories.Small} />
 
-**Format** (`"format"`) displays a square or rounded swatch. Accepts `square` (_default_) and `rounded` sizes.
+With the `active` property, we can display the element as being active
 
-<Canvas of={SwatchStories.Rounded} />
+<Canvas of={SwatchStories.Active} />
+
+The element can also be interactive, and execute an external function. Typically, it launches the color picker. To make it an interactive button, it accepts an onClick function.
+
+<Canvas of={SwatchStories.Clickable} />
+
+> Due to technical issues regarding the transformation between Clojurescript and Javascript, we are unable to display:
+
+    - Swatches with gradients
+    - Library Swatches
+    - Swatches with images
 
 ## Technical Notes
 
-### Background
-
-The `swatch*` component accepts a `background` prop, which must be:
-
-- An hexadecimal (e.g. `#996633`)
-- An RGB (e.g. `rgb(125, 125, 0)`)
-- An RGBA (e.g. `rgba(125, 125, 0, 0.3)`)
-- A linear gradient (e.g. `linear-gradient(to right, blue, pink)`)
-- A conic gradient (e.g. `conic-gradient(red, orange, yellow, green, blue)`)
-- An image (e.g. `url(https://placecats.com/100/100)`)
-
 ### onClick
 
-> Note: If the swatch is interactive, an `aria-label` is required. More on the `Accessibility` section.
+> Note: If the swatch is interactive, an `aria-label` is required. See the `Accessibility` section for more information.
 
-The swatch button accepts an onClick prop that expect a function on the parent context.
+The swatch button accepts an onClick prop that expects a function on the parent context.
 It should be useful for launching other tools as a color picker.
-It runs when the user clics on the swatch, or presses enter or space while focusing it.
+It is executed when the user clicks on the swatch, or presses Enter or Spacebar while focused.
 
 ### Accessibility
 
