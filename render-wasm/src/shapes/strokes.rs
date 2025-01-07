@@ -32,7 +32,7 @@ pub enum StrokeCap {
     // Square,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum StrokeKind {
     InnerStroke,
     OuterStroke,
@@ -55,7 +55,7 @@ impl Stroke {
         if is_open {
             StrokeKind::CenterStroke
         } else {
-            self.kind.clone()
+            self.kind
         }
     }
 
@@ -133,7 +133,12 @@ impl Stroke {
             let path_effect = match self.style {
                 StrokeStyle::Dotted => {
                     let mut circle_path = skia::Path::new();
-                    circle_path.add_circle((0.0, 0.0), self.width / 2.0, None);
+                    let width = match self.kind {
+                        StrokeKind::InnerStroke => self.width,
+                        StrokeKind::CenterStroke => self.width / 2.0,
+                        StrokeKind::OuterStroke => self.width,
+                    };
+                    circle_path.add_circle((0.0, 0.0), width, None);
                     let advance = self.width + 5.0;
                     skia::PathEffect::path_1d(
                         &circle_path,
