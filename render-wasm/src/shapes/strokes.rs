@@ -46,10 +46,19 @@ pub struct Stroke {
     pub style: StrokeStyle,
     pub cap_end: StrokeCap,
     pub cap_start: StrokeCap,
-    pub kind: StrokeKind,
+    kind: StrokeKind,
 }
 
 impl Stroke {
+    // Strokes for open shapes should be rendered as if they were centered.
+    pub fn render_kind(&self, is_open: bool) -> StrokeKind {
+        if is_open {
+            StrokeKind::CenterStroke
+        } else {
+            self.kind.clone()
+        }
+    }
+
     pub fn new_center_stroke(width: f32, style: i32) -> Self {
         let transparent = skia::Color::from_argb(0, 0, 0, 0);
         Stroke {
@@ -153,9 +162,9 @@ impl Stroke {
         paint
     }
 
-    pub fn to_stroked_paint(&self, rect: &math::Rect) -> skia::Paint {
+    pub fn to_stroked_paint(&self, kind: StrokeKind, rect: &math::Rect) -> skia::Paint {
         let mut paint = self.to_paint(rect);
-        match self.kind {
+        match kind {
             StrokeKind::InnerStroke => {
                 paint.set_stroke_width(2. * self.width);
                 paint
