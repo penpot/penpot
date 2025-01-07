@@ -197,8 +197,8 @@
      :stroke-width stroke-width
      :dimensions (fn [context-data]
                    (concat
-                    [{:title "Spacing" :submenu :spacing}
-                     {:title "Sizing" :submenu :sizing}
+                    [{:title "Sizing" :submenu :sizing}
+                     {:title "Spacing" :submenu :spacing}
                      :separator
                      {:title "Border Radius" :submenu :border-radius}]
                     [:separator]
