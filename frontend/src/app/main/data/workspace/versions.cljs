@@ -96,7 +96,7 @@
   (assert (uuid? id) "expected valid uuid for `id`")
   (ptk/reify ::restore-version
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ state _]
       (let [file-id (:current-file-id state)]
         (rx/concat
          (rx/of ::dwp/force-persist
@@ -106,7 +106,7 @@
               (rx/take 1)
               (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
               (rx/tap #(th/clear-queue!))
-              (rx/map #(dw/initialize-file project-id file-id)))
+              (rx/map #(dw/initialize-workspace file-id)))
          (case origin
            :version
            (rx/of (ptk/event ::ev/event {::ev/name "restore-pin-version"}))
