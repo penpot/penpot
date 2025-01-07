@@ -427,7 +427,7 @@ are using during you setup).
 There are some other options, **NOT SUPPORTED BY PENPOT**:
 
 * Install with <a href="https://community.penpot.app/t/how-to-develop-penpot-with-podman-penpotman/2113" target="_blank">Podman</a> instead of Docker.
-* Try the under development <a href="https://community.penpot.app/t/introducing-penpot-desktop/1468" target="_blank">Penpot Desktop app</a>.
+* Try the under development <a href="https://github.com/author-more/penpot-desktop/releases/latest" target="_blank">Penpot Desktop app</a>.
 * Try a simple Kubernetes Deployment option <a href="https://github.com/degola/penpot-kubernetes" target="_blank">penpot-kubernetes</a>.
 * Or try a fully manual installation if you have a really specific use case.. For help, you can look at the [Architecture][2] section and the <a href="https://github.com/penpot/penpot/tree/develop/docker/images" target="_blank">Docker configuration files</a>.
 
