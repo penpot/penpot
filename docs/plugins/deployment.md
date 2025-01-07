@@ -216,3 +216,9 @@ Success! - Published to example-plugin-penpot.surge.sh
 ```
 
 5. Done!
+
+## 3.5. Submitting to Penpot
+
+To make your finished plugin available in our catalog, submit in on the [plugin submission page](https://penpot.app/penpothub/plugins/create-plugin). Once it becomes available any Penpot user will be able to install and use it.
+
+
