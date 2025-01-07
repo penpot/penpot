@@ -139,7 +139,7 @@ export function normalizeStyles(node, styleDefaults = getStyleDefaultsDeclaratio
   // a --fills CSS variable property.
   const fills = styleDeclaration.getPropertyValue("--fills");
   const color = styleDeclaration.getPropertyValue("color");
-  if (color) {
+  if (color && !fills) {
     styleDeclaration.removeProperty("color");
     styleDeclaration.setProperty("--fills", getFills(color));
   } else {
