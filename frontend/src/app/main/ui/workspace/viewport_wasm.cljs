@@ -279,33 +279,43 @@
     ;;       We think moving this out to a handler will make the render code
     ;;       harder to follow through.
     (mf/with-effect [page-id]
+      #_(js/console.log "with-effect::init")
       (when-let [canvas (mf/ref-val canvas-ref)]
         (->> wasm.api/module
              (p/fmap (fn [ready?]
                        (when ready?
                          (reset! canvas-init? true)
-                         (wasm.api/assign-canvas canvas)
-                         (wasm.api/set-canvas-background background)))))
+                         (wasm.api/assign-canvas canvas)))))
         (fn []
           (wasm.api/clear-canvas))))
 
-    (mf/with-effect [vport]
+    (mf/with-effect [canvas-init? vport]
+      #_(js/console.log "with-effect::resize")
       (when @canvas-init?
         (wasm.api/resize-viewbox (:width vport) (:height vport))))
 
-    (mf/with-effect [base-objects canvas-init?]
+    (mf/with-effect [canvas-init? base-objects]
+      #_(js/console.log "with-effect::set-objects" (count base-objects))
       (when @canvas-init?
         (wasm.api/set-objects base-objects)))
 
-    (mf/with-effect [preview-blend canvas-init?]
+    (mf/with-effect [canvas-init? preview-blend]
+      #_(js/console.log "with-effect::request-render")
       (when (and @canvas-init? preview-blend)
-        (wasm.api/request-render)))
+        (wasm.api/request-render "with-effect")))
 
-    (mf/with-effect [vbox canvas-init?]
+    (mf/with-effect [canvas-init? zoom]
+      (js/console.log "with-effect::set-view-zoom")
       (when @canvas-init?
-        (wasm.api/set-view zoom vbox)))
+        (wasm.api/set-view-zoom zoom vbox)))
 
-    (mf/with-effect [background]
+    (mf/with-effect [canvas-init? vbox]
+      (js/console.log "with-effect::set-view-vbox")
+      (when @canvas-init?
+        (wasm.api/set-view-box zoom vbox)))
+
+    (mf/with-effect [canvas-init? background]
+      #_(js/console.log "with-effect::set-canvas-background")
       (when @canvas-init?
         (wasm.api/set-canvas-background background)))
 

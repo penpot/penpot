@@ -60,20 +60,36 @@ pub extern "C" fn set_canvas_background(raw_color: u32) {
 #[no_mangle]
 pub unsafe extern "C" fn render() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    println!("render!");
     state.render_all(true);
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn render_without_cache() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    println!("render_without_cache!");
     state.render_all(false);
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn zoom() {
+    let state: &mut Box<State<'_>> = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    state.zoom();
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn pan() {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    state.pan();
+}
+
+/*
 #[no_mangle]
 pub unsafe extern "C" fn navigate() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     state.navigate();
 }
+*/
 
 #[no_mangle]
 pub extern "C" fn reset_canvas() {

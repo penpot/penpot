@@ -32,11 +32,17 @@ pub(crate) struct CachedSurfaceImage {
     pub image: Image,
     pub viewbox: Viewbox,
     has_all_shapes: bool,
+    shape_tree_rect: skia::Rect
 }
 
 impl CachedSurfaceImage {
-    fn is_dirty(&self, viewbox: &Viewbox) -> bool {
+    fn is_dirty_for_zooming(&mut self, viewbox: &Viewbox) -> bool {
         !self.has_all_shapes && !self.viewbox.area.contains(viewbox.area)
+    }
+
+    fn is_dirty_for_panning(&mut self, viewbox: &Viewbox) -> bool {
+        !self.has_all_shapes
+        // && viewbox.area.contains(self.shape_tree_rect)
     }
 }
 
@@ -46,6 +52,7 @@ pub(crate) struct RenderState {
     pub drawing_surface: skia::Surface,
     pub debug_surface: skia::Surface,
     pub cached_surface_image: Option<CachedSurfaceImage>,
+    pub shape_tree_rect: skia::Rect,
     options: RenderOptions,
     pub viewbox: Viewbox,
     images: ImageStore,
@@ -70,6 +77,7 @@ impl RenderState {
             drawing_surface,
             debug_surface,
             cached_surface_image: None,
+            shape_tree_rect: skia::Rect::new_empty(),
             options: RenderOptions::default(),
             viewbox: Viewbox::new(width as f32, height as f32),
             images: ImageStore::new(),
@@ -171,9 +179,11 @@ impl RenderState {
             .clear(skia::Color::TRANSPARENT);
     }
 
-    pub fn navigate(&mut self, tree: &HashMap<Uuid, impl Renderable>) -> Result<(), String> {
-        if let Some(cached_surface_image) = self.cached_surface_image.as_ref() {
-            if cached_surface_image.is_dirty(&self.viewbox) {
+    pub fn zoom(&mut self, tree: &HashMap<Uuid, impl Renderable>) -> Result<(), String> {
+        if let Some(cached_surface_image) = self.cached_surface_image.as_mut() {
+            let is_dirty = cached_surface_image.is_dirty_for_zooming(&self.viewbox);
+            println!("zoom::is_dirty {}", is_dirty);
+            if is_dirty {
                 self.render_all(tree, true);
             } else {
                 self.render_all_from_cache()?;
@@ -183,11 +193,42 @@ impl RenderState {
         Ok(())
     }
 
+    pub fn pan(&mut self, tree: &HashMap<Uuid, impl Renderable>) -> Result<(), String> {
+        if let Some(cached_surface_image) = self.cached_surface_image.as_mut() {
+            let is_dirty = cached_surface_image.is_dirty_for_panning(&self.viewbox);
+            println!("pan::is_dirty {}", is_dirty);
+            if is_dirty {
+                self.render_all(tree, true);
+            } else {
+                self.render_all_from_cache()?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /*
+    pub fn navigate(&mut self, tree: &HashMap<Uuid, impl Renderable>) -> Result<(), String> {
+        if let Some(cached_surface_image) = self.cached_surface_image.as_mut() {
+            let is_dirty = cached_surface_image.is_dirty(&self.viewbox);
+            println!("is_dirty {}", is_dirty);
+            if is_dirty {
+                self.render_all(tree, true);
+            } else {
+                self.render_all_from_cache()?;
+            }
+        }
+
+        Ok(())
+    }
+    */
+
     pub fn render_all(
         &mut self,
         tree: &HashMap<Uuid, impl Renderable>,
         generate_cached_surface_image: bool,
     ) {
+        println!("render_all");
         self.reset_canvas();
         self.scale(
             self.viewbox.zoom * self.options.dpr(),
@@ -195,12 +236,18 @@ impl RenderState {
         );
         self.translate(self.viewbox.pan_x, self.viewbox.pan_y);
 
+        // Reset shape tree
+        self.shape_tree_rect.set_empty();
         let is_complete = self.render_shape_tree(&Uuid::nil(), tree);
+        // After calling render_shape tree
+        // shape_tree_rect should be the complete
+        // area of the rendered part of the image.
         if generate_cached_surface_image || self.cached_surface_image.is_none() {
             self.cached_surface_image = Some(CachedSurfaceImage {
                 image: self.final_surface.image_snapshot(),
                 viewbox: self.viewbox,
                 has_all_shapes: is_complete,
+                shape_tree_rect: self.shape_tree_rect
             });
         }
 
@@ -212,6 +259,7 @@ impl RenderState {
     }
 
     fn render_all_from_cache(&mut self) -> Result<(), String> {
+        println!("render_all_from_cache");
         self.reset_canvas();
 
         let cached = self
@@ -261,6 +309,7 @@ impl RenderState {
         scaled_rect.set_xywh(x, y, width, height);
 
         self.debug_surface.canvas().draw_rect(scaled_rect, &paint);
+
     }
 
     fn render_debug_element(&mut self, element: &impl Renderable, intersected: bool) {
@@ -283,9 +332,23 @@ impl RenderState {
         self.debug_surface.canvas().draw_rect(scaled_rect, &paint);
     }
 
+    /*
+    fn render_debug_shape_tree_rect(&mut self) {
+        let mut paint = skia::Paint::default();
+        paint.set_style(skia::PaintStyle::Stroke);
+        paint.set_color(skia::Color::from_argb(127, 127, 0, 255));
+        paint.set_stroke_width(1.);
+
+        self.debug_surface.canvas().draw_rect(self.shape_tree_rect, &paint);
+    }
+    */
+
     fn render_debug(&mut self) {
         let paint = skia::Paint::default();
         self.render_debug_view();
+        // self.render_debug_shape_tree_rect();
+        self.debug_surface.canvas().draw_rect(self.shape_tree_rect, &paint);
+
         self.debug_surface.draw(
             &mut self.final_surface.canvas(),
             (0.0, 0.0),
@@ -300,9 +363,10 @@ impl RenderState {
         let mut is_complete = self.viewbox.area.contains(element.bounds());
 
         if !root_id.is_nil() {
+            self.shape_tree_rect.join(element.bounds());
             if !element.bounds().intersects(self.viewbox.area) || element.hidden() {
                 self.render_debug_element(element, false);
-                // TODO: This means that not all the shapes are renderer so we
+                // TODO: This means that not all the shapes are rendered so we
                 // need to call a render_all on the zoom out.
                 return is_complete; // TODO return is_complete or return false??
             } else {

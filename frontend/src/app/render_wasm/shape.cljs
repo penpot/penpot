@@ -127,7 +127,7 @@
     ;; when something synced with wasm
     ;; is modified, we need to request
     ;; a new render.
-    (api/request-render))
+    (api/request-render "impl-assoc"))
   (case k
     :id
     (ShapeProxy. v

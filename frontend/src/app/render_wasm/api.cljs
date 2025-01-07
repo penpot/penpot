@@ -61,15 +61,20 @@
     [r g b a]))
 
 (defn cancel-render
-  []
+  [requester]
+  #_(js/console.log "render::cancel-render" requester)
   (when internal-frame-id
+    #_(js/console.log "render::cancelAnimationFrame" internal-frame-id)
     (js/cancelAnimationFrame internal-frame-id)
     (set! internal-frame-id nil)))
 
 (defn request-render
-  []
-  (when internal-frame-id (cancel-render))
-  (set! internal-frame-id (js/requestAnimationFrame render)))
+  [requester]
+  #_(js/console.log "render::request-render" requester)
+  (when internal-frame-id (cancel-render requester))
+  (let [frame-id (js/requestAnimationFrame render)]
+    #_(js/console.log "render::requestAnimationFrame" frame-id)
+    (set! internal-frame-id frame-id)))
 
 (defn use-shape
   [id]
@@ -322,7 +327,19 @@
 
 (def debounce-render-without-cache (fns/debounce render-without-cache 100))
 
-(defn set-view
+(defn set-view-box
+  [zoom vbox]
+  (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+  (h/call internal-module "_pan"))
+
+(defn set-view-zoom
+  [zoom vbox]
+  (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+  (h/call internal-module "_zoom")
+  (debounce-render-without-cache))
+
+;; This should be removed
+#_(defn set-view
   [zoom vbox]
   (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
   (h/call internal-module "_navigate")
@@ -366,7 +383,7 @@
               (let [pending' (concat (set-shape-fills fills) (set-shape-strokes strokes))]
                 (recur (inc index) (into pending pending'))))
             pending))]
-    (request-render)
+    (request-render "set-objects")
     (when-let [pending (seq pending)]
       (->> (rx/from pending)
            (rx/mapcat identity)
