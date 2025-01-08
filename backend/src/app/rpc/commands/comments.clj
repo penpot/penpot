@@ -243,30 +243,33 @@
                  (get-comment-threads conn profile-id file-id))))
 
 (def ^:private sql:comment-threads
-  "select distinct on (ct.id)
+  "SELECT DISTINCT ON (ct.id)
           ct.*,
-          f.name as file_name,
-          f.project_id as project_id,
-          first_value(c.content) over w as content,
-          (select count(1)
-             from comment as c
-            where c.thread_id = ct.id) as count_comments,
-          (select count(1)
-             from comment as c
-            where c.thread_id = ct.id
-              and c.created_at >= coalesce(cts.modified_at, ct.created_at)) as count_unread_comments
-     from comment_thread as ct
-    inner join comment as c on (c.thread_id = ct.id)
-    inner join file as f on (f.id = ct.file_id)
-     left join comment_thread_status as cts
-            on (cts.thread_id = ct.id and
-                cts.profile_id = ?)
-    where ct.file_id = ?
-   window w as (partition by c.thread_id order by c.created_at asc)")
+          p.team_id AS team_id,
+          f.name AS file_name,
+          f.project_id AS project_id,
+          first_value(c.content) OVER w AS content,
+          (SELECT count(1)
+             FROM comment AS c
+            WHERE c.thread_id = ct.id) AS count_comments,
+          (SELECT count(1)
+             FROM comment AS c
+            WHERE c.thread_id = ct.id
+              AND c.created_at >= coalesce(cts.modified_at, ct.created_at)) AS count_unread_comments
+     FROM comment_thread AS ct
+    INNER JOIN comment AS c ON (c.thread_id = ct.id)
+    INNER JOIN file AS f ON (f.id = ct.file_id)
+    INNER JOIN project AS p ON (p.id = f.project_id)
+     LEFT JOIN comment_thread_status AS cts ON (cts.thread_id = ct.id AND cts.profile_id = ?)
+   WINDOW w AS (PARTITION BY c.thread_id ORDER BY c.created_at ASC)")
+
+(def ^:private sql:comment-threads-by-file-id
+  (str "WITH threads AS (" sql:comment-threads ")"
+       "SELECT * FROM threads WHERE file_id = ?"))
 
 (defn- get-comment-threads
   [conn profile-id file-id]
-  (->> (db/exec! conn [sql:comment-threads profile-id file-id])
+  (->> (db/exec! conn [sql:comment-threads-by-file-id profile-id file-id])
        (into [] xf-decode-row)))
 
 ;; --- COMMAND: Get Unread Comment Threads
@@ -288,61 +291,18 @@
      (teams/check-read-permissions! conn profile-id team-id)
      (get-unread-comment-threads conn profile-id team-id))))
 
-(def sql:all-comment-threads-by-team
-  "select distinct on (ct.id)
-          ct.*,
-          f.name as file_name,
-          f.project_id as project_id,
-          first_value(c.content) over w as content,
-          (select count(1)
-             from comment as c
-            where c.thread_id = ct.id) as count_comments,
-          (select count(1)
-             from comment as c
-            where c.thread_id = ct.id
-              and c.created_at >= coalesce(cts.modified_at, ct.created_at)) as count_unread_comments
-     from comment_thread as ct
-    inner join comment as c on (c.thread_id = ct.id)
-    inner join file as f on (f.id = ct.file_id)
-    inner join project as p on (p.id = f.project_id)
-     left join comment_thread_status as cts
-            on (cts.thread_id = ct.id and
-                cts.profile_id = ?)
-    where p.team_id = ?
-   window w as (partition by c.thread_id order by c.created_at asc)")
-
 (def sql:unread-all-comment-threads-by-team
-  (str "with threads as (" sql:all-comment-threads-by-team ")"
-       "select * from threads where count_unread_comments > 0"))
+  (str "WITH threads AS (" sql:comment-threads ")"
+       "SELECT * FROM threads WHERE count_unread_comments > 0 AND team_id = ?"))
 
 ;; The partial configuration will retrieve only comments created by the user and
 ;; threads that have a mention to the user.
-(def sql:partial-comment-threads-by-team
-  "SELECT DISTINCT ON (ct.id)
-          ct.*,
-          ct.owner_id,
-          f.name AS file_name,
-          f.project_id AS project_id,
-          first_value(c.content) OVER w AS content,
-          (SELECT count(1)
-             FROM comment AS c
-            WHERE c.thread_id = ct.id) AS count_comments,
-          (SELECT count(1)
-             FROM comment AS c
-            WHERE c.thread_id = ct.id
-              AND c.created_at >= coalesce(cts.modified_at, ct.created_at)) AS count_unread_comments
-     FROM comment_thread AS ct
-    INNER JOIN comment AS c ON (c.thread_id = ct.id)
-    INNER JOIN file AS f ON (f.id = ct.file_id)
-    INNER JOIN project AS p ON (p.id = f.project_id)
-     LEFT JOIN comment_thread_status AS cts ON (cts.thread_id = ct.id AND cts.profile_id = ?)
-    WHERE p.team_id = ?
-      AND (ct.owner_id = ? OR ? = any(ct.mentions))
-   WINDOW w AS (PARTITION BY c.thread_id ORDER BY c.created_at ASC)")
-
 (def sql:unread-partial-comment-threads-by-team
-  (str "WITH threads AS (" sql:partial-comment-threads-by-team ")"
-       "SELECT * FROM threads WHERE count_unread_comments > 0"))
+  (str "WITH threads AS (" sql:comment-threads ")"
+       "SELECT * FROM threads
+         WHERE count_unread_comments > 0
+           AND team_id = ?
+           AND (owner_id = ? OR ? = ANY(mentions))"))
 
 (defn- get-unread-comment-threads
   [conn profile-id team-id]
@@ -376,9 +336,9 @@
   [cfg {:keys [::rpc/profile-id file-id id share-id] :as params}]
   (db/run! cfg (fn [{:keys [::db/conn]}]
                  (files/check-comment-permissions! conn profile-id file-id share-id)
-                 (let [sql (str "with threads as (" sql:comment-threads ")"
-                                "select * from threads where id = ?")]
-                   (-> (db/exec-one! conn [sql profile-id file-id id])
+                 (let [sql (str "WITH threads AS (" sql:comment-threads ")"
+                                "SELECT * FROM threads WHERE id = ? AND file_id = ?")]
+                   (-> (db/exec-one! conn [sql profile-id id file-id])
                        (decode-row))))))
 
 ;; --- COMMAND: Retrieve Comments
