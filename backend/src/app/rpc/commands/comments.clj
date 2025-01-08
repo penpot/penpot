@@ -11,6 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
+   [app.common.uri :as uri]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -45,8 +46,13 @@
        (str/join "")))
 
 (defn- format-comment-url
-  [{:keys [project-id file-id page-id]}]
-  (str/ffmt "%/#/workspace/%/%?page-id=%" (cf/get :public-uri) project-id file-id page-id))
+  [{:keys [team-id file-id page-id]}]
+  (str/ffmt "%/#/workspace?%"
+            (cf/get :public-uri)
+            (uri/map->query-string
+             {:file-id file-id
+              :page-id page-id
+              :team-id team-id})))
 
 (defn- format-comment-ref
   [{:keys [seqn]} {:keys [file-name page-name]}]
