@@ -136,8 +136,8 @@
                {:key (:name token)
                 :token token
                 :theme-token theme-token
-                :half-applied (and applied (not full-applied))
-                ;; Multiple selected shapes behavior should be reviewed after MVP
+                :half-applied (or (and applied multiple-selection)
+                                  (and applied (not full-applied)))
                 :full-applied (if multiple-selection
                                 false
                                 applied)

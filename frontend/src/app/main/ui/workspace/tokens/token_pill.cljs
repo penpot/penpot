@@ -30,7 +30,7 @@
                           :else
                           "token-status-non-applied")]
     [:button {:class (stl/css-case :token-pill true
-                                   :token-pill-applied full-applied
+                                   :token-pill-applied (or half-applied full-applied)
                                    :token-pill-invalid errors?
                                    :token-pill-invalid-applied (and full-applied errors?))
               :type "button"
