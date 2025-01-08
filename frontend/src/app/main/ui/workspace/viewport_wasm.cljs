@@ -284,8 +284,7 @@
              (p/fmap (fn [ready?]
                        (when ready?
                          (reset! canvas-init? true)
-                         (wasm.api/assign-canvas canvas)
-                         (wasm.api/set-canvas-background background)))))
+                         (wasm.api/assign-canvas canvas)))))
         (fn []
           (wasm.api/clear-canvas))))
 
@@ -293,15 +292,15 @@
       (when @canvas-init?
         (wasm.api/resize-viewbox (:width vport) (:height vport))))
 
-    (mf/with-effect [base-objects canvas-init?]
+    (mf/with-effect [base-objects @canvas-init?]
       (when @canvas-init?
         (wasm.api/set-objects base-objects)))
 
-    (mf/with-effect [preview-blend canvas-init?]
+    (mf/with-effect [preview-blend @canvas-init?]
       (when (and @canvas-init? preview-blend)
         (wasm.api/request-render)))
 
-    (mf/with-effect [vbox canvas-init?]
+    (mf/with-effect [vbox @canvas-init?]
       (when @canvas-init?
         (wasm.api/set-view zoom vbox)))
 
