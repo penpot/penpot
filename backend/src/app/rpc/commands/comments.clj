@@ -313,32 +313,31 @@
 ;; The partial configuration will retrieve only comments created by the user and
 ;; threads that have a mention to the user.
 (def sql:partial-comment-threads-by-team
-  "select distinct on (ct.id)
+  "SELECT DISTINCT ON (ct.id)
           ct.*,
           ct.owner_id,
-          f.name as file_name,
-          f.project_id as project_id,
-          first_value(c.content) over w as content,
-          (select count(1)
-             from comment as c
-            where c.thread_id = ct.id) as count_comments,
-          (select count(1)
-             from comment as c
-            where c.thread_id = ct.id
-              and c.created_at >= coalesce(cts.modified_at, ct.created_at)) as count_unread_comments
-     from comment_thread as ct
-    inner join comment as c on (c.thread_id = ct.id)
-    inner join file as f on (f.id = ct.file_id)
-    inner join project as p on (p.id = f.project_id)
-     left join comment_thread_status as cts on (cts.thread_id = ct.id and cts.profile_id = ?)
-    where p.team_id = ?
-      and (ct.owner_id = ?
-       or ? = any(ct.mentions))
-   window w as (partition by c.thread_id order by c.created_at asc)")
+          f.name AS file_name,
+          f.project_id AS project_id,
+          first_value(c.content) OVER w AS content,
+          (SELECT count(1)
+             FROM comment AS c
+            WHERE c.thread_id = ct.id) AS count_comments,
+          (SELECT count(1)
+             FROM comment AS c
+            WHERE c.thread_id = ct.id
+              AND c.created_at >= coalesce(cts.modified_at, ct.created_at)) AS count_unread_comments
+     FROM comment_thread AS ct
+    INNER JOIN comment AS c ON (c.thread_id = ct.id)
+    INNER JOIN file AS f ON (f.id = ct.file_id)
+    INNER JOIN project AS p ON (p.id = f.project_id)
+     LEFT JOIN comment_thread_status AS cts ON (cts.thread_id = ct.id AND cts.profile_id = ?)
+    WHERE p.team_id = ?
+      AND (ct.owner_id = ? OR ? = any(ct.mentions))
+   WINDOW w AS (PARTITION BY c.thread_id ORDER BY c.created_at ASC)")
 
 (def sql:unread-partial-comment-threads-by-team
-  (str "with threads as (" sql:partial-comment-threads-by-team ")"
-       "select * from threads where count_unread_comments > 0"))
+  (str "WITH threads AS (" sql:partial-comment-threads-by-team ")"
+       "SELECT * FROM threads WHERE count_unread_comments > 0"))
 
 (defn- get-unread-comment-threads
   [conn profile-id team-id]
