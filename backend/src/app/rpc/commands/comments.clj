@@ -90,23 +90,23 @@
 
         ;; Users mentioned in this comment
         comment-mentions
-        (-> (set (:mentions comment))
+        (-> (:mentions comment)
             (set/difference #{profile-id}))
 
         ;; Users mentioned in this thread
         thread-mentions
-        (-> (set (:mentions thread))
+        (-> (:mentions thread)
             ;; Remove the mentions in the thread because we're already sending a
             ;; notification
             (set/difference comment-mentions)
-            (set/difference #{profile-id}))
+            (disj profile-id))
 
         ;; All users
         notificate-users-ids
         (-> (set (keys team-users))
             (set/difference comment-mentions)
             (set/difference thread-mentions)
-            (set/difference #{profile-id}))]
+            (disj profile-id))]
 
     (doseq [mention comment-mentions]
       (let [{:keys [fullname email mention-email?]} (get team-users mention)]
@@ -154,7 +154,7 @@
   (cond-> row
     (db/pgpoint? position) (assoc :position (db/decode-pgpoint position))
     (db/pgobject? participants) (assoc :participants (db/decode-transit-pgobject participants))
-    (db/pgarray? mentions) (assoc :mentions (db/decode-pgarray mentions))))
+    (db/pgarray? mentions) (assoc :mentions (db/decode-pgarray mentions #{}))))
 
 (def xf-decode-row
   (map decode-row))
