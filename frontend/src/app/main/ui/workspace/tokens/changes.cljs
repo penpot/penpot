@@ -16,6 +16,7 @@
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.store :as st]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
@@ -99,6 +100,8 @@
                        :attrs ctt/border-radius-keys}))
 
 (defn update-shape-radius-single-corner [value shape-ids attributes]
+  ;; NOTE: This key should be namespaced on data tokens, but these events are not there.  
+  (st/emit! (ptk/data-event :expand-border-radius))
   (dwsh/update-shapes shape-ids
                       (fn [shape]
                         (when (ctsr/can-get-border-radius? shape)
