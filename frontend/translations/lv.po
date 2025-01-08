@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-20 09:00+0000\n"
+"PO-Revision-Date: 2025-01-09 08:01+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
 "19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 5.9-dev\n"
+"X-Generator: Weblate 5.10-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:154, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -6556,3 +6556,130 @@ msgstr "Labot izskatus"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1004, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1030
 msgid "workspace.shape.menu.add-layout"
 msgstr "Pievienot izkārtojumu"
+
+msgid "workspace.versions.warning.text"
+msgstr "Automātiski saglabātas versijas tiks paturētas %s dienas."
+
+#: src/app/main/ui/workspace/sidebar.cljs:242
+msgid "workspace.versions.tab.actions"
+msgstr "Darbības"
+
+msgid "dashboard.upgrade-plan.no-limits"
+msgstr "Nav ierobežojumu radošumam"
+
+msgid "workspace.libraries.empty.no-libraries"
+msgstr "Tavā komandā nav kopīgotu bibliotēku, kuras var meklēt"
+
+#: src/app/main/ui/workspace/context_menu.cljs:146
+msgid "workspace.shape.menu.copy_link"
+msgstr "Ievietot saiti starpliktuvē"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+msgid "shortcuts.copy-link"
+msgstr "Ievietot saiti starpliktuvē"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:167
+msgid "shortcuts.rename"
+msgstr "Pārdēvēt"
+
+msgid "workspace.libraries.empty.some-templates"
+msgstr "dažas sagataves šeit"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:318
+msgid "workspace.token.set-selection-theme"
+msgstr ""
+"Noteikt, kuras tekstvienību kopas vajadzētu izmantot kā daļu no šīs izskata "
+"iespējas:"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:364
+msgid "workspace.token.create-token"
+msgstr "Izveidot jaunu %s tekstvienību"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:363
+msgid "workspace.token.edit-token"
+msgstr "Labot tekstvienību"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:186
+#, unused
+msgid "workspace.token.grouping-set-alert"
+msgstr "Tekstvienību apkopošana vēl netiek nodrošināta."
+
+msgid "labels.adding"
+msgstr "Pievieno..."
+
+msgid "labels.comment"
+msgstr "Piebilde"
+
+#: src/app/main/ui/comments.cljs:446
+msgid "labels.comment.mark-as-solved"
+msgstr "Atzīmēt kā atrisinātu"
+
+#: src/app/main/ui/comments.cljs:147
+msgid "labels.post"
+msgstr "Ieraksts"
+
+#: src/app/main/ui/comments.cljs:145
+msgid "labels.reply"
+msgstr "atbilde"
+
+#: src/app/main/ui/comments.cljs:150
+msgid "labels.reply.new"
+msgstr "jauna atbilde"
+
+#: src/app/main/ui/comments.cljs:188
+msgid "labels.reply.thread"
+msgstr "Atbildēt"
+
+#: src/app/main/ui/comments.cljs:146
+msgid "labels.replies"
+msgstr "atbildes"
+
+msgid "workspace.assets.add-library"
+msgstr "Pievienot bibliotēku"
+
+#: src/app/main/ui/workspace/main_menu.cljs:908
+msgid "workspace.header.menu.option.power-up"
+msgstr "Padarīt savu plānu jaudīgāku"
+
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr ""
+"Ja ir vēlēšanās palielināt šo ierobežojumu, jāraksta mums uz "
+"[support@penpot.app](%s)"
+
+#: src/app/main/ui/workspace/main_menu.cljs:630
+msgid "dashboard.show-version-history"
+msgstr "Versiju vēsture"
+
+msgid "dashboard.upgrade-plan.power-up"
+msgstr "Palielināt jaudu"
+
+msgid "workspace.libraries.empty.add-some"
+msgstr "Vai pievieno kādas no šīm, lai izmēģinātu:"
+
+msgid "dashboard.upgrade-plan.penpot-free"
+msgstr "Bezmaksas Penpot"
+
+#: src/app/main/ui/comments.cljs:151
+msgid "labels.replies.new"
+msgstr "jaunas atbildes"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications.view"
+msgstr "Apskatīt paziņojumus"
+
+#: src/app/main/ui/workspace/main_menu.cljs:623
+msgid "dashboard.create-version-menu"
+msgstr "Piespraust šo versiju"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications"
+msgstr "Paziņojumi"
+
+#: src/app/main/ui/workspace/sidebar.cljs:241
+msgid "workspace.versions.tab.history"
+msgstr "Vēsture"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:194, src/app/main/ui/workspace/tokens/form.cljs:197, src/app/main/ui/workspace/tokens/sidebar.cljs:67
+msgid "workspace.token.resolved-value"
+msgstr "Atrisinātā vērtība: "
