@@ -72,15 +72,21 @@
        (map decode-user-row)
        (d/index-by :id)))
 
+(defn- resolve-profile-name
+  [conn profile-id]
+  (-> (db/get conn :profile {:id profile-id}
+              {::sql/columns [:fullname]})
+      (get :fullname)))
+
 (defn send-comment-emails!
   [conn {:keys [profile-id team-id] :as params} comment thread]
 
-  (let [team-users (get-team-users conn team-id)
-        source-user (->> (db/query conn :profile {:id profile-id} {:columns [:fullname]}) first :fullname)
+  (let [team-users        (get-team-users conn team-id)
+        source-user       (resolve-profile-name conn profile-id)
 
         comment-reference (format-comment-ref thread params)
-        comment-content (format-comment comment)
-        comment-url (format-comment-url params)
+        comment-content   (format-comment comment)
+        comment-url       (format-comment-url params)
 
         ;; Users mentioned in this comment
         comment-mentions
@@ -341,11 +347,11 @@
 
 (defn- get-unread-comment-threads
   [conn profile-id team-id]
-  (let [profile
-        (->> (db/query conn :profile {:id profile-id})
-             (first)
-             (decode-user-row))]
-    (case (or (-> profile :props :notifications :dashboard-comments) :all)
+  (let [profile (-> (db/get conn :profile {:id profile-id})
+                    (decode-user-row))
+        notify  (or (-> profile :props :notifications :dashboard-comments) :all)]
+
+    (case notify
       :all
       (->> (db/exec! conn [sql:unread-all-comment-threads-by-team profile-id team-id])
            (into [] xf-decode-row))
