@@ -94,9 +94,11 @@
 (defn current-text-node
   "Retrieves the text node and the offset that the cursor is positioned on"
   [node]
+
   (let [selection     (wapi/get-selection)
-        anchor-node   (wapi/get-anchor-node selection)
-        anchor-offset (wapi/get-anchor-offset selection)]
+        range         (wapi/get-range selection 0)
+        anchor-node   (wapi/range-start-container range)
+        anchor-offset (wapi/range-start-offset range)]
     (when (and node (.contains node anchor-node))
       (let [span-node
             (if (instance? js/Text anchor-node)
@@ -203,6 +205,13 @@
         handle-select
         (mf/use-callback
          (fn []
+           (let [node          (mf/ref-val local-ref)
+                 selection     (wapi/get-selection)
+                 range         (wapi/get-range selection 0)
+                 anchor-node   (wapi/range-start-container range)]
+             (when (and (= node anchor-node) (.-collapsed range))
+               (wapi/set-cursor-after! anchor-node)))
+
            (let [node (mf/ref-val local-ref)
                  [span-node offset] (current-text-node node)
                  [prev-span prev-offset] @prev-selection]
@@ -285,13 +294,13 @@
                     (subs node-text (+ current-at-symbol (count mention)))
 
                     mention-span (create-mention-node (-> data :user :id) (-> data :user :fullname))
-                    after-span (create-text-node (dm/str "&#8203;" suffix))
+                    after-span (create-text-node (dm/str " " suffix))
                     sel (wapi/get-selection)]
 
                 (dom/set-html! span-node (if (empty? prefix) "&#8203;" prefix))
                 (dom/insert-after! node span-node mention-span)
                 (dom/insert-after! node mention-span after-span)
-                (wapi/set-cursor-before! after-span)
+                (wapi/set-cursor-after! after-span)
                 (wapi/collapse-end! sel)
 
                 (when on-change
@@ -299,7 +308,7 @@
 
         handle-key-down
         (mf/use-fn
-         (mf/deps on-esc on-ctrl-enter handle-select)
+         (mf/deps on-esc on-ctrl-enter handle-select handle-input)
          (fn [event]
            (handle-select event)
 
@@ -332,6 +341,21 @@
 
                (and (kbd/mod? event) (kbd/enter? event) (fn? on-ctrl-enter))
                (on-ctrl-enter event)
+
+               (kbd/enter? event)
+               (let [sel (wapi/get-selection)
+                     range (.getRangeAt sel 0)]
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (let [[span-node offset] (current-text-node node)]
+                   (.deleteContents range)
+                   (handle-input)
+
+                   (when span-node
+                     (let [txt (.-textContent span-node)]
+                       (dom/set-html! span-node (dm/str (subs txt 0 offset) "\n&#8203;" (subs txt offset)))
+                       (wapi/set-cursor! span-node (inc offset))
+                       (handle-input)))))
 
                (kbd/backspace? event)
                (let [prev-node (get-prev-node node span-node)]
@@ -397,7 +421,7 @@
     [:div
      {:role "textbox"
       :class (stl/css :comment-input)
-      :content-editable "plaintext-only"
+      :content-editable "true"
       :suppress-content-editable-warning true
       :on-input handle-input
       :ref init-input

@@ -2117,6 +2117,9 @@ msgstr "Show comments list"
 msgid "labels.show-your-comments"
 msgstr "Show only your comments"
 
+msgid "labels.show-mentions"
+msgstr "Show only your mentions"
+
 #: src/app/main/ui/onboarding/questions.cljs:167
 msgid "labels.sketch"
 msgstr "Sketch"

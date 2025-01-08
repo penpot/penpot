@@ -584,7 +584,10 @@
       (filter (comp not :is-resolved))
 
       (= :yours mode)
-      (filter #(contains? (:participants %) (:id profile))))))
+      (filter #(contains? (:participants %) (:id profile)))
+
+      (= :mentions mode)
+      (filter #(contains? (set (:mentions %)) (:id profile))))))
 
 (defn update-comment-thread-frame
   ([thread]

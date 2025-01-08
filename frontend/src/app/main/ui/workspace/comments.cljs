@@ -63,6 +63,12 @@
            :on-click update-mode}
       [:span {:class (stl/css :label)}  (tr "labels.show-your-comments")]
       [:span {:class (stl/css :icon)} i/tick]]
+     [:li {:class (stl/css-case :dropdown-item true
+                                :selected (= :mentions cmode))
+           :data-value "mentions"
+           :on-click update-mode}
+      [:span {:class (stl/css :label)} (tr "labels.show-mentions")]
+      [:span {:class (stl/css :icon)} i/tick]]
      [:li {:class (stl/css :separator)}]
      [:li {:class (stl/css-case :dropdown-item true
                                 :selected (= :pending cshow))
@@ -137,9 +143,11 @@
      [:button {:class (stl/css :mode-dropdown-wrapper)
                :on-click toggle-mode-selector}
 
-      [:span {:class (stl/css :mode-label)} (case (:mode local)
-                                              (nil :all) (tr "labels.show-all-comments")
-                                              :yours     (tr "labels.show-your-comments"))]
+      [:span {:class (stl/css :mode-label)}
+       (case (:mode local)
+         (nil :all) (tr "labels.show-all-comments")
+         :yours     (tr "labels.show-your-comments")
+         :mentions     (tr "labels.show-mentions"))]
       [:div {:class (stl/css :arrow-icon)} i/arrow]]
 
      [:& dropdown {:show options?

@@ -266,9 +266,6 @@
 
 (def empty-png-size (memoize empty-png-size*))
 
-
-
-
 (defn create-range
   []
   (let [document globals/document]
@@ -328,7 +325,7 @@
              (remove-all-ranges! sel)
              (add-range! sel r))
 
-         (let [text-node   (aget child-nodes 0)]
+         (let [text-node (aget child-nodes 0)]
            (.setStart r text-node offset)
            (.setEnd r text-node offset)
            (remove-all-ranges! sel)
@@ -344,3 +341,27 @@
         first-child (aget child-nodes 0)
         offset (if first-child (.-length first-child) 0)]
     (set-cursor! node offset)))
+
+(defn get-range
+  [^js selection idx]
+  (.getRangeAt selection idx))
+
+(defn range-start-container
+  [^js range]
+  (when range
+    (.-startContainer range)))
+
+(defn range-start-offset
+  [^js range]
+  (when range
+    (.-startOffset range)))
+
+(defn range-end-container
+  [^js range]
+  (when range
+    (.-endContainer range)))
+
+(defn range-end-offset
+  [^js range]
+  (when range
+    (.-endOffset range)))

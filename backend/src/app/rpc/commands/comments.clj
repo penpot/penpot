@@ -22,6 +22,7 @@
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
    [app.rpc.quotes :as quotes]
@@ -58,24 +59,10 @@
   [{:keys [seqn]} {:keys [file-name page-name]}]
   (str/ffmt "#%, %, %" seqn file-name page-name))
 
-(defn decode-user-row
-  [user]
-  (-> user
-      (d/update-when :props db/decode-transit-pgobject)
-      (update
-       :mention-email?
-       (fn [{:keys [props]}]
-         (not= :none (-> props :notifications :email-comments))))
-
-      (update
-       :notification-email?
-       (fn [{:keys [props]}]
-         (= :all (-> props :notifications :email-comments))))))
-
 (defn get-team-users
   [conn team-id]
   (->> (teams/get-users+props conn team-id)
-       (map decode-user-row)
+       (map profile/decode-row)
        (d/index-by :id)))
 
 (defn- resolve-profile-name
@@ -83,6 +70,16 @@
   (-> (db/get conn :profile {:id profile-id}
               {::sql/columns [:fullname]})
       (get :fullname)))
+
+(defn- notification-email?
+  [profile-id owner-id props]
+  (if (= profile-id owner-id)
+    (not= :none (-> props :notifications :email-comments))
+    (= :all (-> props :notifications :email-comments))))
+
+(defn- mention-email?
+  [props]
+  (not= :none (-> props :notifications :email-comments)))
 
 (defn send-comment-emails!
   [conn {:keys [profile-id team-id] :as params} comment thread]
@@ -115,8 +112,8 @@
             (disj profile-id))]
 
     (doseq [mention comment-mentions]
-      (let [{:keys [fullname email mention-email?]} (get team-users mention)]
-        (when mention-email?
+      (let [{:keys [fullname email props]} (get team-users mention)]
+        (when (mention-email? props)
           (eml/send!
            {::eml/conn conn
             ::eml/factory eml/comment-mention
@@ -129,8 +126,8 @@
 
     ;; Send to the thread users
     (doseq [mention thread-mentions]
-      (let [{:keys [fullname email mention-email?]} (get team-users mention)]
-        (when mention-email?
+      (let [{:keys [fullname email props]} (get team-users mention)]
+        (when (mention-email? props)
           (eml/send!
            {::eml/conn conn
             ::eml/factory eml/comment-thread
@@ -143,8 +140,8 @@
 
     ;; Send to users with the "all" flag activated
     (doseq [user-id notificate-users-ids]
-      (let [{:keys [fullname email notification-email?]} (get team-users user-id)]
-        (when notification-email?
+      (let [{:keys [id fullname email props]} (get team-users user-id)]
+        (when (notification-email? id (:owner-id thread) props)
           (eml/send!
            {::eml/conn conn
             ::eml/factory eml/comment-notification
@@ -313,7 +310,7 @@
 (defn- get-unread-comment-threads
   [conn profile-id team-id]
   (let [profile (-> (db/get conn :profile {:id profile-id})
-                    (decode-user-row))
+                    (profile/decode-row))
         notify  (or (-> profile :props :notifications :dashboard-comments) :all)]
 
     (case notify
