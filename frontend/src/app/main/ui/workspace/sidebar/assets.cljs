@@ -90,8 +90,11 @@
         reverse-sort?  (= :desc ordering)
         num-libs       (count (mf/deref refs/libraries))
 
-        show-templates-02-test?
-        (and (cf/external-feature-flag "templates-02" "test") (zero? num-libs))
+        show-templates-04-test1?
+        (and (cf/external-feature-flag "templates-04" "test1") (zero? num-libs))
+
+        show-templates-04-test2?
+        (and (cf/external-feature-flag "templates-04" "test2") (zero? num-libs))
 
         toggle-ordering
         (mf/use-fn
@@ -161,11 +164,18 @@
     [:article  {:class (stl/css :assets-bar)}
      [:div {:class (stl/css :assets-header)}
       (when-not ^boolean read-only?
-        (if show-templates-02-test?
+        (cond
+          show-templates-04-test1?
+          [:button {:class (stl/css :libraries-button)
+                    :on-click show-libraries-dialog
+                    :data-testid "libraries"}
+           (tr "workspace.assets.add-library")]
+          show-templates-04-test2?
           [:button {:class (stl/css :add-library-button)
                     :on-click show-libraries-dialog
                     :data-testid "libraries"}
            (tr "workspace.assets.add-library")]
+          :else
           [:button {:class (stl/css :libraries-button)
                     :on-click show-libraries-dialog
                     :data-testid "libraries"}
@@ -173,32 +183,32 @@
             i/library]
            (tr "workspace.assets.libraries")]))
 
-      (when-not show-templates-02-test?
-        [:div {:class (stl/css :search-wrapper)}
-         [:& search-bar {:on-change on-search-term-change
-                         :value term
-                         :placeholder (tr "workspace.assets.search")}
-          [:button
-           {:on-click on-open-menu
-            :title (tr "workspace.assets.filter")
-            :class (stl/css-case :section-button true
-                                 :opened menu-open?)}
-           i/filter-icon]]
-         [:> context-menu*
-          {:on-close on-menu-close
-           :selectable true
-           :selected section
-           :show menu-open?
-           :fixed true
-           :min-width true
-           :width size
-           :top 158
-           :left 18
-           :options options}]
-         [:> icon-button* {:variant "ghost"
-                           :aria-label (tr "workspace.assets.sort")
-                           :on-click toggle-ordering
-                           :icon (if reverse-sort? "asc-sort" "desc-sort")}]])]
+
+      [:div {:class (stl/css :search-wrapper)}
+       [:& search-bar {:on-change on-search-term-change
+                       :value term
+                       :placeholder (tr "workspace.assets.search")}
+        [:button
+         {:on-click on-open-menu
+          :title (tr "workspace.assets.filter")
+          :class (stl/css-case :section-button true
+                               :opened menu-open?)}
+         i/filter-icon]]
+       [:> context-menu*
+        {:on-close on-menu-close
+         :selectable true
+         :selected section
+         :show menu-open?
+         :fixed true
+         :min-width true
+         :width size
+         :top 158
+         :left 18
+         :options options}]
+       [:> icon-button* {:variant "ghost"
+                         :aria-label (tr "workspace.assets.sort")
+                         :on-click toggle-ordering
+                         :icon (if reverse-sort? "asc-sort" "desc-sort")}]]]
 
      [:& (mf/provider cmm/assets-filters) {:value filters}
       [:& (mf/provider cmm/assets-toggle-ordering) {:value toggle-ordering}

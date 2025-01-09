@@ -213,7 +213,8 @@
    [:grow-type {:optional true}
     [::sm/one-of grow-types]]
    [:applied-tokens {:optional true} ::cto/applied-tokens]
-   [:plugin-data {:optional true} ::ctpg/plugin-data]])
+   [:plugin-data {:optional true} ::ctpg/plugin-data]
+   [:touched {:optional true} [:maybe [:set :keyword]]]])
 
 (def schema:group-attrs
   [:map {:title "GroupAttrs"}

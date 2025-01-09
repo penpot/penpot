@@ -15,6 +15,11 @@
 
 ### :bug: Bugs fixed
 
+## 2.4.1
+
+### :bug: Bugs fixed
+
+- Fix error when importing files with touched components [Taiga #9625](https://tree.taiga.io/project/penpot/issue/9625)
 
 ## 2.4.0
 
