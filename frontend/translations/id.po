@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-27 13:02+0000\n"
+"PO-Revision-Date: 2025-01-09 08:01+0000\n"
 "Last-Translator: Linerly <linerly@proton.me>\n"
 "Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
 "frontend/id/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.9-dev\n"
+"X-Generator: Weblate 5.10-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:154, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -6560,3 +6560,131 @@ msgstr "Tambahkan halaman"
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:84
 msgid "workspace.token.active-themes"
 msgstr "%s tema aktif"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications"
+msgstr "Notifikasi"
+
+msgid "labels.comment"
+msgstr "Komentar"
+
+#: src/app/main/ui/comments.cljs:151
+msgid "labels.replies.new"
+msgstr "balasan baru"
+
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr ""
+"Jika Anda ingin meningkatkan batas ini, tulis kepada kami di "
+"[support@penpot.app](%s)"
+
+msgid "dashboard.upgrade-plan.no-limits"
+msgstr "Tanpa batasan kreativitas"
+
+#: src/app/main/ui/comments.cljs:146
+msgid "labels.replies"
+msgstr "balasan"
+
+msgid "workspace.assets.add-library"
+msgstr "Tambahkan pustaka"
+
+msgid "labels.adding"
+msgstr "Menambahkan..."
+
+#: src/app/main/ui/workspace/tokens/form.cljs:391
+msgid "workspace.token.token-value"
+msgstr " "
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications.view"
+msgstr "Lihat notifikasi"
+
+#: src/app/main/ui/comments.cljs:446
+msgid "labels.comment.mark-as-solved"
+msgstr "Tandau sebagai selesai"
+
+msgid "dashboard.upgrade-plan.power-up"
+msgstr "Tingkatkan"
+
+msgid "workspace.versions.warning.text"
+msgstr "Versi tersimpan otomatis akan disimpan selama %s hari."
+
+#: src/app/main/ui/comments.cljs:147
+msgid "labels.post"
+msgstr "Kiriman"
+
+#: src/app/main/ui/comments.cljs:145
+msgid "labels.reply"
+msgstr "balas"
+
+#: src/app/main/ui/comments.cljs:150
+msgid "labels.reply.new"
+msgstr "balasan baru"
+
+#: src/app/main/ui/comments.cljs:188
+msgid "labels.reply.thread"
+msgstr "Balas"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+msgid "shortcuts.copy-link"
+msgstr "Salin tautan ke papan klip"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:167
+msgid "shortcuts.rename"
+msgstr "Ubah nama"
+
+#: src/app/main/ui/workspace/main_menu.cljs:908
+msgid "workspace.header.menu.option.power-up"
+msgstr "Tingkatkan paket Anda"
+
+msgid "workspace.libraries.empty.no-libraries"
+msgstr "Tidak ada Pustaka Terbagi dalam tim Anda, Anda dapat melihat"
+
+msgid "workspace.libraries.empty.some-templates"
+msgstr "beberapa templat di sini"
+
+msgid "workspace.libraries.empty.add-some"
+msgstr "Atau tambahkan beberapa dari sini untuk mencoba:"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:373
+msgid "workspace.token.token-name"
+msgstr " "
+
+#: src/app/main/ui/workspace/sidebar.cljs:242
+msgid "workspace.versions.tab.actions"
+msgstr "Tindakan"
+
+#: src/app/main/ui/workspace/sidebar.cljs:241
+msgid "workspace.versions.tab.history"
+msgstr "Riwayat"
+
+#: src/app/main/ui/workspace/main_menu.cljs:623
+msgid "dashboard.create-version-menu"
+msgstr "Sematkan versi ini"
+
+#: src/app/main/ui/workspace/main_menu.cljs:630
+msgid "dashboard.show-version-history"
+msgstr "Riwayat versi"
+
+msgid "dashboard.upgrade-plan.penpot-free"
+msgstr "Penpot Gratis"
+
+#: src/app/main/ui/workspace/context_menu.cljs:146
+msgid "workspace.shape.menu.copy_link"
+msgstr "Salin tautan ke papan klip"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:408
+msgid "workspace.token.enter-token-description"
+msgstr " "
+
+#: src/app/main/ui/workspace/tokens/form.cljs:370
+msgid "workspace.token.enter-token-name"
+msgstr " "
+
+#: src/app/main/ui/workspace/tokens/form.cljs:390
+msgid "workspace.token.enter-token-value"
+msgstr " "
+
+#: src/app/main/ui/workspace/tokens/form.cljs:409
+msgid "workspace.token.token-description"
+msgstr " "
