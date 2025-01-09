@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-16 13:00+0000\n"
+"PO-Revision-Date: 2025-01-09 08:01+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.9-dev\n"
+"X-Generator: Weblate 5.10-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:154, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -6583,3 +6583,106 @@ msgstr "Thema's"
 #: src/app/main/ui/workspace/sidebar/versions.cljs:328
 msgid "workspace.versions.filter.mine"
 msgstr "Mijn versies"
+
+msgid "workspace.libraries.empty.no-libraries"
+msgstr "Er zijn geen Gedeelde Bibliotheken bij jouw team, je kunt zoeken naar"
+
+msgid "workspace.libraries.empty.some-templates"
+msgstr "enkele sjablonen hier"
+
+msgid "workspace.libraries.empty.add-some"
+msgstr "Of voeg er enkele toe om te proberen:"
+
+msgid "workspace.assets.add-library"
+msgstr "Bibliotheek toevoegen"
+
+msgid "dashboard.upgrade-plan.penpot-free"
+msgstr "Penpot Free"
+
+#: src/app/main/ui/workspace/main_menu.cljs:630
+msgid "dashboard.show-version-history"
+msgstr "Versie-geschiedenis"
+
+msgid "labels.adding"
+msgstr "Toevoegen…"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+msgid "shortcuts.copy-link"
+msgstr "Link naar klembord kopiëren"
+
+#: src/app/main/ui/comments.cljs:150
+msgid "labels.reply.new"
+msgstr "nieuwe reactie"
+
+#: src/app/main/ui/comments.cljs:151
+msgid "labels.replies.new"
+msgstr "nieuwe reacties"
+
+#: src/app/main/ui/workspace/main_menu.cljs:623
+msgid "dashboard.create-version-menu"
+msgstr "Deze versie vastmaken"
+
+#: src/app/main/ui/comments.cljs:147
+msgid "labels.post"
+msgstr "Verzenden"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications"
+msgstr "Meldingen"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications.view"
+msgstr "Meldingen weergeven"
+
+msgid "labels.comment"
+msgstr "Commentaar"
+
+msgid "dashboard.upgrade-plan.power-up"
+msgstr "Power up"
+
+#: src/app/main/ui/comments.cljs:145
+msgid "labels.reply"
+msgstr "reactie"
+
+#: src/app/main/ui/comments.cljs:146
+msgid "labels.replies"
+msgstr "reacties"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:167
+msgid "shortcuts.rename"
+msgstr "Hernoemen"
+
+#: src/app/main/ui/workspace/main_menu.cljs:908
+msgid "workspace.header.menu.option.power-up"
+msgstr "Geef je plan een boost"
+
+#: src/app/main/ui/workspace/context_menu.cljs:146
+msgid "workspace.shape.menu.copy_link"
+msgstr "Link naar klembord kopiëren"
+
+msgid "workspace.versions.warning.text"
+msgstr "Automatisch opgeslagen versies worden %s dagen bewaard."
+
+#: src/app/main/ui/workspace/sidebar.cljs:241
+msgid "workspace.versions.tab.history"
+msgstr "Geschiedenis"
+
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr ""
+"Als je deze limiet wilt verhogen, schrijf ons dan op [support@penpot.app](%s)"
+
+msgid "dashboard.upgrade-plan.no-limits"
+msgstr "Onbeperkte creativiteit"
+
+#: src/app/main/ui/comments.cljs:188
+msgid "labels.reply.thread"
+msgstr "Reageren"
+
+#: src/app/main/ui/comments.cljs:446
+msgid "labels.comment.mark-as-solved"
+msgstr "Markeren als opgelost"
+
+#: src/app/main/ui/workspace/sidebar.cljs:242
+msgid "workspace.versions.tab.actions"
+msgstr "Acties"
