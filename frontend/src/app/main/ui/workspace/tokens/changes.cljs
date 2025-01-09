@@ -139,7 +139,7 @@
                             (tinycolor/valid-color)
                             (tinycolor/->hex)
                             (str "#"))]
-    (apply f shape-ids {:color color} 0 [:ignore-touched true])))
+    (f shape-ids {:color color} 0 {:ignore-touched true})))
 
 (defn update-fill
   [value shape-ids]
