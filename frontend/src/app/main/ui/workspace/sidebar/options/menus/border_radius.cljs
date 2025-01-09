@@ -64,7 +64,7 @@
      (if (not radius-expanded)
        [:div {:class (stl/css :radius-1)
               :title (tr "workspace.options.radius")}
-        [:> icon* {:id "corner-radius"
+        [:> icon* {:icon-id "corner-radius"
                    :size "s"
                    :class (stl/css :icon)}]
         [:> numeric-input*

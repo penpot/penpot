@@ -953,7 +953,7 @@
 
       [:span {:title (tr "dashboard.webhooks.cant-edit")
               :class (stl/css :menu-disabled)}
-       [:> icon* {:id "menu"}]])))
+       [:> icon* {:icon-id "menu"}]])))
 
 (mf/defc webhook-item*
   {::mf/wrap [mf/memo]

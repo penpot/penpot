@@ -737,7 +737,7 @@
     [:div {:class (stl/css :cover)
            :on-click on-click*}
      [:div {:class (stl/css :location)}
-      [:> icon* {:id "comments"
+      [:> icon* {:icon-id "comments"
                  :class (stl/css :location-icon)}]
       [:div {:class (stl/css :location-text)}
        (str "#" (:seqn item))

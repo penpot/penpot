@@ -84,7 +84,7 @@ However, we might want to control the aspect of the icons, or limit which icons 
   [{:keys [icon children] :rest props}]
   (assert (or (nil? icon) (contains? valid-icon-list icon) "expected valid icon id"))
   [:> "button" props
-    (when icon [:> icon* {:id icon :size "m"}])
+    (when icon [:> icon* {:icon-id icon :size "m"}])
     children])
 ```
 
@@ -160,7 +160,7 @@ Nested styles for DOM elements that are not instantiated by our component should
   [{:keys [icon children class] :rest props}]
   (let [props (mf/spread-props props {:class (stl/css :button)})]
     [:> "button" props
-     (when icon [:> icon* {:id icon :size "m"}])
+     (when icon [:> icon* {:icon-id icon :size "m"}])
      [:span {:class (stl/css :label-wrapper)} children]]))
 
 ;; later in code

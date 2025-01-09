@@ -44,7 +44,7 @@
   ;; NOTE: This custom button may be replace by an action button when this variant is designed
   [:button {:class (stl/css :collapse-sidebar-button)
             :on-click on-click}
-   [:& icon* {:id "arrow"
+   [:> icon* {:icon-id "arrow"
               :size "s"
               :aria-label (tr "workspace.sidebar.collapse")}]])
 

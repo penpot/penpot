@@ -42,7 +42,7 @@
                      :is-selected selected?)
              :on-click select-theme}
         [:> text* {:as "span" :typography "body-small" :class (stl/css :label)} name]
-        [:> icon* {:id i/tick
+        [:> icon* {:icon-id i/tick
                    :aria-hidden true
                    :class (stl/css-case :check-icon true
                                         :check-icon-visible selected?)}]])]))
@@ -70,7 +70,7 @@
              :role "option"
              :on-click on-edit-click}
         [:> text* {:as "span" :typography "body-small"} (tr "workspace.token.edit-themes")]
-        [:> icon* {:id i/arrow-right :aria-hidden true}]]])))
+        [:> icon* {:icon-id i/arrow-right :aria-hidden true}]]])))
 
 (mf/defc theme-select
   [{:keys []}]
@@ -108,7 +108,7 @@
            :class (stl/css :custom-select)}
      [:> text* {:as "span" :typography "body-small" :class (stl/css :current-label)}
       current-label]
-     [:> icon* {:id i/arrow-down :class (stl/css :dropdown-button) :aria-hidden true}]
+     [:> icon* {:icon-id i/arrow-down :class (stl/css :dropdown-button) :aria-hidden true}]
      [:& dropdown {:show is-open?
                    :on-close on-close-dropdown
                    :ref dropdown-element*}
