@@ -131,7 +131,7 @@ fn render_stroke(
             Kind::Rect(rect) => draw_stroke_on_rect(surface.canvas(), stroke, rect, &selrect),
             Kind::Circle(rect) => draw_stroke_on_circle(surface.canvas(), stroke, rect, &selrect),
             Kind::Path(path) => {
-                draw_stroke_on_path(surface.canvas(), stroke, path, &selrect, path_transform)
+                draw_stroke_on_path(surface.canvas(), stroke, path, &selrect, path_transform);
             }
         }
     }
@@ -165,9 +165,10 @@ fn draw_stroke_on_path(
     let mut skia_path = path.to_skia_path();
     skia_path.transform(path_transform.unwrap());
 
-    let paint_stroke = stroke.to_stroked_paint(selrect);
+    let kind = stroke.render_kind(path.is_open());
+    let paint_stroke = stroke.to_stroked_paint(kind.clone(), selrect);
     // Draw the different kind of strokes for a path requires different strategies:
-    match stroke.kind {
+    match kind {
         // For inner stroke we draw a center stroke (with double width) and clip to the original path (that way the extra outer stroke is removed)
         StrokeKind::InnerStroke => {
             canvas.clip_path(&skia_path, skia::ClipOp::Intersect, true);
@@ -288,10 +289,11 @@ pub fn draw_image_stroke_in_container(
             Kind::Path(p) => {
                 let mut path = p.to_skia_path();
                 path.transform(path_transform.unwrap());
-                if stroke.kind == StrokeKind::InnerStroke {
+                let stroke_kind = stroke.render_kind(p.is_open());
+                if stroke_kind == StrokeKind::InnerStroke {
                     canvas.clip_path(&path, skia::ClipOp::Intersect, true);
                 }
-                let paint = stroke.to_stroked_paint(&outer_rect);
+                let paint = stroke.to_stroked_paint(stroke_kind, &outer_rect);
                 canvas.draw_path(&path, &paint);
             }
         }
@@ -317,13 +319,15 @@ pub fn draw_image_stroke_in_container(
     canvas.draw_image_rect(image, None, dest_rect, &image_paint);
 
     // Clear outer stroke for paths if necessary. When adding an outer stroke we need to empty the stroke added too in the inner area.
-    if let (Kind::Path(p), StrokeKind::OuterStroke) = (kind, &stroke.kind) {
-        let mut path = p.to_skia_path();
-        path.transform(path_transform.unwrap());
-        let mut clear_paint = skia::Paint::default();
-        clear_paint.set_blend_mode(skia::BlendMode::Clear);
-        clear_paint.set_anti_alias(true);
-        canvas.draw_path(&path, &clear_paint);
+    if let Kind::Path(p) = kind {
+        if stroke.render_kind(p.is_open()) == StrokeKind::OuterStroke {
+            let mut path = p.to_skia_path();
+            path.transform(path_transform.unwrap());
+            let mut clear_paint = skia::Paint::default();
+            clear_paint.set_blend_mode(skia::BlendMode::Clear);
+            clear_paint.set_anti_alias(true);
+            canvas.draw_path(&path, &clear_paint);
+        }
     }
 
     // Restore canvas state
