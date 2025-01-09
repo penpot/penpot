@@ -357,7 +357,7 @@
                              (get active-token-set-names set-name)))
         token-set-group-active? (mf/use-fn
                                  (fn [prefixed-path]
-                                   @(refs/token-sets-at-path-all-active? prefixed-path)))]
+                                   @(refs/token-sets-at-path-all-active prefixed-path)))]
     [:& controlled-sets-list
      {:token-sets token-sets
       :token-set-selected? token-set-selected?

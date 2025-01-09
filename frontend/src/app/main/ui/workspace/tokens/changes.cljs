@@ -162,8 +162,8 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of
-       (when (:width attributes) (dwt/update-dimensions shape-ids :width value :ignore-touched true))
-       (when (:height attributes) (dwt/update-dimensions shape-ids :height value :ignore-touched true))))))
+       (when (:width attributes) (dwt/update-dimensions shape-ids :width value {:ignore-touched true}))
+       (when (:height attributes) (dwt/update-dimensions shape-ids :height value {:ignore-touched true}))))))
 
 (defn- attributes->layout-gap [attributes value]
   (let [layout-gap (-> (set/intersection attributes #{:column-gap :row-gap})
@@ -173,7 +173,7 @@
 (defn update-layout-padding [value shape-ids attrs]
   (dwsl/update-layout shape-ids
                       {:layout-padding (zipmap attrs (repeat value))}
-                      :ignore-touched true))
+                      {:ignore-touched true}))
 
 (defn update-layout-spacing [value shape-ids attributes]
   (ptk/reify ::update-layout-spacing
@@ -187,7 +187,7 @@
         (rx/of
          (dwsl/update-layout layout-shape-ids
                              layout-attributes
-                             :ignore-touched true))))))
+                             {:ignore-touched true}))))))
 
 (defn update-shape-position [value shape-ids attributes]
   (ptk/reify ::update-shape-position
@@ -205,4 +205,4 @@
                        :layout-item-max-w value
                        :layout-item-max-h value}
                       (select-keys attributes))]
-        (dwsl/update-layout-child shape-ids props :ignore-touched true)))))
+        (dwsl/update-layout-child shape-ids props {:ignore-touched true})))))

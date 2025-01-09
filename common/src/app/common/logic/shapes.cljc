@@ -17,7 +17,9 @@
    [app.common.types.token :as cto]
    [app.common.uuid :as uuid]))
 
-(defn- check-unapply-tokens
+(defn- generate-unapply-tokens
+  "When updating attributes that have a token applied, we must unapply it, because the value
+   of the attribute now has been given directly, and does not come from the token."
   [changes objects]
   (let [mod-obj-changes (->> (:redo-changes changes)
                              (filter #(= (:type %) :mod-obj)))
@@ -59,7 +61,7 @@
                     (pcb/reorder-grid-children ids)
                     (cond->
                      (not ignore-touched)
-                      (check-unapply-tokens objects)))]
+                      (generate-unapply-tokens objects)))]
     changes))
 
 (defn- generate-update-shape-flags

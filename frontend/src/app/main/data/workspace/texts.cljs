@@ -434,49 +434,50 @@
   (txt/transform-nodes (some-fn txt/is-text-node? txt/is-paragraph-node?) migrate-node content))
 
 (defn update-text-with-function
-  [id update-node-fn & options]
-  (ptk/reify ::update-text-with-function
-    ptk/UpdateEvent
-    (update [_ state]
-      (d/update-in-when state [:workspace-editor-state id] ted/update-editor-current-inline-styles-fn (comp update-node-fn migrate-node)))
+  ([id update-node-fn] (update-text-with-function id update-node-fn nil))
+  ([id update-node-fn options]
+   (ptk/reify ::update-text-with-function
+     ptk/UpdateEvent
+     (update [_ state]
+       (d/update-in-when state [:workspace-editor-state id] ted/update-editor-current-inline-styles-fn (comp update-node-fn migrate-node)))
 
-    ptk/WatchEvent
-    (watch [_ state _]
-      (when (or
-             (and (features/active-feature? state "text-editor/v2") (nil? (:workspace-editor state)))
-             (and (not (features/active-feature? state "text-editor/v2")) (nil? (get-in state [:workspace-editor-state id]))))
-        (let [objects   (wsh/lookup-page-objects state)
-              shape     (get objects id)
+     ptk/WatchEvent
+     (watch [_ state _]
+       (when (or
+              (and (features/active-feature? state "text-editor/v2") (nil? (:workspace-editor state)))
+              (and (not (features/active-feature? state "text-editor/v2")) (nil? (get-in state [:workspace-editor-state id]))))
+         (let [objects   (wsh/lookup-page-objects state)
+               shape     (get objects id)
 
-              update-node? (some-fn txt/is-text-node? txt/is-paragraph-node?)
+               update-node? (some-fn txt/is-text-node? txt/is-paragraph-node?)
 
-              shape-ids
-              (cond
-                (cfh/text-shape? shape)  [id]
-                (cfh/group-shape? shape) (cfh/get-children-ids objects id))
+               shape-ids
+               (cond
+                 (cfh/text-shape? shape)  [id]
+                 (cfh/group-shape? shape) (cfh/get-children-ids objects id))
 
-              update-content
-              (fn [content]
-                (->> content
-                     (migrate-content)
-                     (txt/transform-nodes update-node? update-node-fn)))
+               update-content
+               (fn [content]
+                 (->> content
+                      (migrate-content)
+                      (txt/transform-nodes update-node? update-node-fn)))
 
-              update-shape
-              (fn [shape]
-                (-> shape
-                    (dissoc :fills)
-                    (d/update-when :content update-content)))]
-          (rx/of (dwsh/update-shapes shape-ids update-shape options)))))
+               update-shape
+               (fn [shape]
+                 (-> shape
+                     (dissoc :fills)
+                     (d/update-when :content update-content)))]
+           (rx/of (dwsh/update-shapes shape-ids update-shape options)))))
 
-    ptk/EffectEvent
-    (effect [_ state _]
-      (when (features/active-feature? state "text-editor/v2")
-        (let [instance (:workspace-editor state)
-              styles   (some-> (editor.v2/getCurrentStyle instance)
-                               (styles/get-styles-from-style-declaration)
-                               ((comp update-node-fn migrate-node))
-                               (styles/attrs->styles))]
-          (editor.v2/applyStylesToSelection instance styles))))))
+     ptk/EffectEvent
+     (effect [_ state _]
+       (when (features/active-feature? state "text-editor/v2")
+         (let [instance (:workspace-editor state)
+               styles   (some-> (editor.v2/getCurrentStyle instance)
+                                (styles/get-styles-from-style-declaration)
+                                ((comp update-node-fn migrate-node))
+                                (styles/attrs->styles))]
+           (editor.v2/applyStylesToSelection instance styles)))))))
 
 ;; --- RESIZE UTILS
 
