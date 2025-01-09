@@ -53,6 +53,10 @@
   appearance: none;
 }
 
+.focused {
+  --select-outline-color: var(--color-accent-primary);
+}
+
 .arrow {
   color: var(--select-icon-fg-color);
   transform: rotate(90deg);

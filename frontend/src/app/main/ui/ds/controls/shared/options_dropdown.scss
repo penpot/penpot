@@ -44,6 +44,7 @@
   outline: $b-1 solid var(--options-dropdown-outline-color);
   outline-offset: -1px;
   background-color: var(--options-dropdown-bg-color);
+  color: var(--options-dropdown-fg-color);
 
   &:hover,
   &[aria-selected="true"] {
@@ -71,4 +72,9 @@
 .option-current {
   --options-dropdown-outline-color: var(--color-accent-primary);
   outline: $b-1 solid var(--options-dropdown-outline-color);
+}
+
+.option-selected {
+  --options-dropdown-fg-color: var(--color-accent-primary);
+  --options-dropdown-icon-fg-color: var(--color-accent-primary);
 }
