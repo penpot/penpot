@@ -17,6 +17,7 @@
    [app.main.ui.settings.change-email]
    [app.main.ui.settings.delete-account]
    [app.main.ui.settings.feedback :refer [feedback-page]]
+   [app.main.ui.settings.notifications :refer [notifications-page]]
    [app.main.ui.settings.options :refer [options-page]]
    [app.main.ui.settings.password :refer [password-page]]
    [app.main.ui.settings.profile :refer [profile-page]]
@@ -67,4 +68,7 @@
           [:& options-page]
 
           :settings-access-tokens
-          [:& access-tokens-page])]]]]))
+          [:& access-tokens-page]
+
+          :settings-notifications
+          [:& notifications-page])]]]]))

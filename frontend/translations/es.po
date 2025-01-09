@@ -2122,6 +2122,9 @@ msgstr "Mostrar lista de comentarios"
 msgid "labels.show-your-comments"
 msgstr "Mostrar sólo tus comentarios"
 
+msgid "labels.show-mentions"
+msgstr "Mostrar sólo tus menciones"
+
 #: src/app/main/ui/onboarding/questions.cljs:167
 msgid "labels.sketch"
 msgstr "Sketch"
@@ -6652,3 +6655,60 @@ msgstr "Histórico"
 
 msgid "workspace.versions.tab.actions"
 msgstr "Acciones"
+
+msgid "dashboard.notifications.notifications-saved"
+msgstr "Configuración de notificaciones actualizada"
+
+msgid "title.settings.notifications"
+msgstr "Notificaciones - Penpot"
+
+msgid "dashboard.settings.notifications.title"
+msgstr "Notificaciones"
+
+msgid "dashboard.settings.notifications.dashboard.title"
+msgstr "Notificaciones en el panel"
+
+msgid "dashboard.settings.notifications.dashboard-comments.title"
+msgstr "Comentarios de ficheros"
+
+msgid "dashboard.settings.notifications.dashboard-comments.all"
+msgstr "Todos los comentarios, menciones y respuestas"
+
+msgid "dashboard.settings.notifications.dashboard-comments.partial"
+msgstr "Sólo menciones y respuestas"
+
+msgid "dashboard.settings.notifications.dashboard-comments.none"
+msgstr "Ninguna"
+
+msgid "dashboard.settings.notifications.email.title"
+msgstr "Notificaciones de correo electrónico"
+
+msgid "dashboard.settings.notifications.email-comments.title"
+msgstr "Comentarios de ficheros"
+
+msgid "dashboard.settings.notifications.email-comments.all"
+msgstr "Todos los comentarios, menciones y respuestas"
+
+msgid "dashboard.settings.notifications.email-comments.partial"
+msgstr "Sólo menciones y respuestas"
+
+msgid "dashboard.settings.notifications.email-comments.none"
+msgstr "Ninguna"
+
+msgid "dashboard.settings.notifications.email-invites.title"
+msgstr "Invitaciones y solicitudes"
+
+msgid "dashboard.settings.notifications.email-invites.all"
+msgstr "Todas las invitaciones y solicitudes"
+
+msgid "dashboard.settings.notifications.email-invites.none"
+msgstr "Ninguna"
+
+msgid "dashboard.settings.notifications.submit"
+msgstr "Actualizar configuración"
+
+msgid "labels.notifications"
+msgstr "Notificaciones"
+
+msgid "comments.mentions.not-found"
+msgstr "No se encuentra miembros con @%s"

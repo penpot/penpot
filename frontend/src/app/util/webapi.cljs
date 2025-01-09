@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as log]
+   [app.util.globals :as globals]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -264,3 +265,103 @@
        (catch :default e (reject e))))))
 
 (def empty-png-size (memoize empty-png-size*))
+
+(defn create-range
+  []
+  (let [document globals/document]
+    (.createRange document)))
+
+(defn select-contents!
+  [range node]
+  (when (and range node)
+    (.selectNodeContents range node))
+  range)
+
+(defn select-all-children!
+  [^js selection ^js node]
+  (.selectAllChildren selection node))
+
+(defn get-selection
+  []
+  (when-let [document globals/document]
+    (.getSelection document)))
+
+(defn get-anchor-node
+  [^js selection]
+  (when selection
+    (.-anchorNode selection)))
+
+(defn get-anchor-offset
+  [^js selection]
+  (when selection
+    (.-anchorOffset selection)))
+
+(defn remove-all-ranges!
+  [^js sel]
+  (.removeAllRanges sel)
+  sel)
+
+(defn add-range!
+  [^js sel ^js range]
+  (.addRange sel range)
+  sel)
+
+(defn collapse-end!
+  [^js sel]
+  (.collapseToEnd sel)
+  sel)
+
+(defn set-cursor!
+  ([^js node]
+   (set-cursor! node 0))
+  ([^js node offset]
+   (when node
+     (let [child-nodes (.-childNodes node)
+           sel         (get-selection)
+           r           (create-range)]
+       (if (= (.-length child-nodes) 0)
+         (do (.setStart r node offset)
+             (.setEnd r node offset)
+             (remove-all-ranges! sel)
+             (add-range! sel r))
+
+         (let [text-node (aget child-nodes 0)]
+           (.setStart r text-node offset)
+           (.setEnd r text-node offset)
+           (remove-all-ranges! sel)
+           (add-range! sel r)))))))
+
+(defn set-cursor-before!
+  [^js node]
+  (set-cursor! node 1))
+
+(defn set-cursor-after!
+  [^js node]
+  (let [child-nodes (.-childNodes node)
+        first-child (aget child-nodes 0)
+        offset (if first-child (.-length first-child) 0)]
+    (set-cursor! node offset)))
+
+(defn get-range
+  [^js selection idx]
+  (.getRangeAt selection idx))
+
+(defn range-start-container
+  [^js range]
+  (when range
+    (.-startContainer range)))
+
+(defn range-start-offset
+  [^js range]
+  (when range
+    (.-startOffset range)))
+
+(defn range-end-container
+  [^js range]
+  (when range
+    (.-endContainer range)))
+
+(defn range-end-offset
+  [^js range]
+  (when range
+    (.-endOffset range)))

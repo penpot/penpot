@@ -91,6 +91,7 @@
 
        (when-let [draft (:comment drawing)]
          [:> cmt/comment-floating-thread-draft* {:draft draft
+                                                 :profiles profiles
                                                  :on-cancel on-draft-cancel
                                                  :on-submit on-draft-submit
                                                  :zoom zoom}])]]]))

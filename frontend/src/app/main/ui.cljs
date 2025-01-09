@@ -193,7 +193,8 @@
         :settings-password
         :settings-options
         :settings-feedback
-        :settings-access-tokens)
+        :settings-access-tokens
+        :settings-notifications)
        [:? [:& settings-page {:route route}]]
 
        :debug-icons-preview
