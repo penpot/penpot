@@ -215,7 +215,7 @@
       [:span {:class (stl/css-case :combobox-header true
                                    :header-icon (some? icon))}
        (when icon
-         [:> icon* {:id icon
+         [:> icon* {:icon-id icon
                     :size "s"
                     :aria-hidden true}])
        [:input {:type "text"
@@ -236,7 +236,7 @@
                    :aria-controls listbox-id
                    :class (stl/css :button-toggle-list)
                    :on-click on-click}
-       [:> icon* {:id i/arrow
+       [:> icon* {:icon-id i/arrow
                   :class (stl/css :arrow)
                   :size "s"
                   :aria-hidden true

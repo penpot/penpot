@@ -31,7 +31,7 @@
 
    (when (some? icon)
      [:> icon*
-      {:id icon
+      {:icon-id icon
        :size "s"
        :class (stl/css :option-icon)
        :aria-hidden (when label true)
@@ -40,7 +40,7 @@
    [:span {:class (stl/css :option-text)} label]
    (when selected
      [:> icon*
-      {:id i/tick
+      {:icon-id i/tick
        :size "s"
        :class (stl/css :option-check)
        :aria-hidden (when label true)}])])

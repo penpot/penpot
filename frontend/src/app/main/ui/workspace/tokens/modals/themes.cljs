@@ -90,7 +90,7 @@
                          :class (stl/css :theme-group-label)
                          :typography "body-large"}
             [:span {:class (stl/css :group-title)}
-             [:> icon* {:id "group"}]
+             [:> icon* {:icon-id "group"}]
              group]])
          [:ul {:class (stl/css :theme-group-rows-wrapper)}
           (for [[_ {:keys [group name] :as theme}] themes
@@ -131,7 +131,7 @@
                  [:div {:class (stl/css :label-wrapper)}
                   [:> text* {:as "span" :typography "body-medium"}
                    (tr "workspace.token.num-sets" sets-count)]
-                  [:> icon* {:id "arrow-right"}]]]
+                  [:> icon* {:icon-id "arrow-right"}]]]
 
                 [:> button* {:class (stl/css :sets-count-empty-button)
                              :type "button"
@@ -140,7 +140,7 @@
                  [:div {:class (stl/css :label-wrapper)}
                   [:> text* {:as "span" :typography "body-medium"}
                    (tr "workspace.token.no-sets")]
-                  [:> icon* {:id "arrow-right"}]]])
+                  [:> icon* {:icon-id "arrow-right"}]]])
 
               [:> icon-button* {:on-click delete-theme
                                 :variant "ghost"
@@ -186,7 +186,7 @@
                                                      :on-click (fn [e]
                                                                  (dom/stop-propagation e)
                                                                  (on-toggle-dropdown))}
-                                            [:> icon* {:id "arrow-down"}]]))}]]
+                                            [:> icon* {:icon-id "arrow-down"}]]))}]]
      [:div {:class (stl/css :group-input-wrapper)}
       ;; TODO: This span should be remove when labeled-input is updated
       [:span {:class (stl/css :labeled-input-label)}  "Theme"]
@@ -306,7 +306,7 @@
        [:button {:on-click on-back
                  :class (stl/css :back-btn)
                  :type "button"}
-        [:> icon* {:id ic/arrow-left :aria-hidden true}]
+        [:> icon* {:icon-id ic/arrow-left :aria-hidden true}]
         (tr "workspace.token.back-to-themes")]
 
        [:& theme-inputs {:dropdown-open? dropdown-open?

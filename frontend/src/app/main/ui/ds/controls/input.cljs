@@ -46,5 +46,5 @@
 
     [:> :span {:class (dm/str class " " (stl/css :container))}
      (when (some? icon)
-       [:> icon* {:id icon :class (stl/css :icon) :on-click on-icon-click}])
+       [:> icon* {:icon-id icon :class (stl/css :icon) :on-click on-icon-click}])
      [:> :input props]]))

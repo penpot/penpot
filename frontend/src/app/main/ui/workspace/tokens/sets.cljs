@@ -96,9 +96,8 @@
        :aria-label (tr "labels.collapse")
        :icon (if @collapsed? "arrow-right" "arrow-down")
        :variant "action"}]
-     [:> icon*
-      {:id "group"
-       :class (stl/css :icon)}]
+     [:> icon* {:icon-id "group"
+                :class (stl/css :icon)}]
      (if editing?'
        [:& editing-label
         {:default-value label
@@ -139,10 +138,9 @@
            :on-click on-click
            :on-double-click #(on-edit tree-path)
            :on-context-menu on-context-menu}
-     [:> icon*
-      {:id "document"
-       :class (stl/css-case :icon true
-                            :root-icon (not tree-depth))}]
+     [:> icon* {:icon-id "document"
+                :class (stl/css-case :icon true
+                                     :root-icon (not tree-depth))}]
      (if editing?'
        [:& editing-label
         {:default-value label
@@ -160,7 +158,7 @@
            [:> icon* {:aria-label (tr "workspace.token.select-set")
                       :class (stl/css :check-icon)
                       :size "s"
-                      :id ic/tick}])]])]))
+                      :icon-id ic/tick}])]])]))
 
 (mf/defc sets-tree
   [{:keys [set-path set-node tree-depth tree-path on-select selected? on-toggle active? editing? on-edit on-edit-reset on-edit-submit]

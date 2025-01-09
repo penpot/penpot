@@ -171,12 +171,12 @@
       [:span {:class (stl/css-case :select-header true
                                    :header-icon (some? icon))}
        (when icon
-         [:> icon* {:id icon
+         [:> icon* {:icon-id icon
                     :size "s"
                     :aria-hidden true}])
        [:span {:class (stl/css :header-label)}
         label]]
-      [:> icon* {:id i/arrow
+      [:> icon* {:icon-id i/arrow
                  :class (stl/css :arrow)
                  :size "s"
                  :aria-hidden true}]]
