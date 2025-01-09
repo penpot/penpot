@@ -208,7 +208,6 @@
    ;; Social registered users don't have old-password
    [:password-old {:optional true} [:maybe :string]]])
 
-
 (defn update-password
   [data]
   (dm/assert!
@@ -231,6 +230,32 @@
              (rx/catch (fn [err]
                          (on-error err)
                          (rx/empty)))
+             (rx/ignore))))))
+
+(def ^:private schema:update-notifications
+  [:map {:title "NotificationsForm"}
+   [:dashboard-comments [::sm/one-of #{:all :partial :none}]]
+   [:email-comments [::sm/one-of #{:all :partial :none}]]
+   [:email-invites [::sm/one-of #{:all :none}]]])
+
+(defn update-notifications
+  [data]
+  (dm/assert!
+   "expected valid parameters"
+   (sm/check schema:update-notifications data))
+
+  (ptk/reify ::update-notifications
+    ev/Event
+    (-data [_] {})
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [on-error on-success]
+             :or {on-error identity
+                  on-success identity}} (meta data)]
+        (->> (rp/cmd! :update-profile-notifications data)
+             (rx/tap on-success)
+             (rx/catch #(do (on-error %) (rx/empty)))
              (rx/ignore))))))
 
 (defn update-profile-props

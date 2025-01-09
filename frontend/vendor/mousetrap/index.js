@@ -986,10 +986,10 @@ Mousetrap.prototype.stopCallback = function (e, element, combo) {
 
   // stop for input, select, textarea and button
   const shouldStop = element.tagName == "INPUT" ||
-    element.tagName == "SELECT" ||
-    element.tagName == "TEXTAREA" ||
-    (element.tagName == "BUTTON" && combo.includes("tab")) ||
-    (element.contentEditable && element.contentEditable == "true");
+        element.tagName == "SELECT" ||
+        element.tagName == "TEXTAREA" ||
+        (element.tagName == "BUTTON" && combo.includes("tab")) ||
+        (element.contentEditable && (element.contentEditable == "true" || element.contentEditable === "plaintext-only"));
   return shouldStop;
 }
 

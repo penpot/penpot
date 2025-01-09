@@ -64,7 +64,7 @@
      (if (not radius-expanded)
        [:div {:class (stl/css :radius-1)
               :title (tr "workspace.options.radius")}
-        [:> icon* {:id "corner-radius"
+        [:> icon* {:icon-id "corner-radius"
                    :size "s"
                    :class (stl/css :icon)}]
         [:> numeric-input*
@@ -116,8 +116,7 @@
      [:> icon-button* {:class (stl/css-case :selected radius-expanded)
                        :variant "ghost"
                        :on-click toggle-radius-mode
-                       :aria-label (tr "workspace.options.radius")
-                       :title (if radius-expanded
-                                (tr "workspace.options.radius.all-corners")
-                                (tr "workspace.options.radius.single-corners"))
+                       :aria-label (if radius-expanded
+                                     (tr "workspace.options.radius.all-corners")
+                                     (tr "workspace.options.radius.single-corners"))
                        :icon "corner-radius"}]]))

@@ -177,7 +177,7 @@
             ;; (th/print-result! out)
             (t/is (th/success? out))
             (let [[thread :as result] (:result out)]
-              (t/is (= 1 (count result)))))
+              (t/is (= 0 (count result)))))
 
           (let [data {::th/type :update-comment-thread-status
                       ::rpc/profile-id (:id profile-1)

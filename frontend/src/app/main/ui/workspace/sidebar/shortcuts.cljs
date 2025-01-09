@@ -91,6 +91,7 @@
     (tr "shortcuts.bring-front")
     (tr "shortcuts.clear-undo")
     (tr "shortcuts.copy")
+    (tr "shortcuts.copy-link")
     (tr "shortcuts.create-component")
     (tr "shortcuts.create-new-project")
     (tr "shortcuts.cut")

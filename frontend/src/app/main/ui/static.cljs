@@ -47,7 +47,8 @@
        :on-click on-nav-root}
       [:> raw-svg* {:id "penpot-logo-icon" :class (stl/css :penpot-logo)}]
       (when profile-id
-        [:div {:class (stl/css :go-back-wrapper)} [:> icon* {:id "arrow" :class (stl/css :back-arrow)}] [:span (tr "not-found.no-permission.go-dashboard")]])]
+        [:div {:class (stl/css :go-back-wrapper)}
+         [:> icon* {:icon-id "arrow" :class (stl/css :back-arrow)}] [:span (tr "not-found.no-permission.go-dashboard")]])]
      [:div {:class (stl/css :deco-before)} i/logo-error-screen]
      (when-not profile-id
        [:button {:class (stl/css :login-header)

@@ -16,7 +16,7 @@
   [:*
    [:div {:ref ref :class (stl/css :reorder)}
     [:> icon*
-     {:id ic/reorder
+     {:icon-id ic/reorder
       :class (stl/css :reorder-icon)
       :aria-hidden true}]]
    [:hr {:class (stl/css :reorder-separator-top)}]

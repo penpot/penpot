@@ -55,6 +55,7 @@
 (def ^:icon-id arrow-right "arrow-right")
 (def ^:icon-id arrow-up "arrow-up")
 (def ^:icon-id asc-sort "asc-sort")
+(def ^:icon-id at "at")
 (def ^:icon-id board "board")
 (def ^:icon-id boards-thumbnail "boards-thumbnail")
 (def ^:icon-id boolean-difference "boolean-difference")
@@ -287,17 +288,17 @@
 (def ^:private schema:icon
   [:map
    [:class {:optional true} [:maybe :string]]
-   [:id [:and :string [:fn #(contains? icon-list %)]]]
+   [:icon-id [:and :string [:fn #(contains? icon-list %)]]]
    [:size  {:optional true}
     [:maybe [:enum "s" "m"]]]])
 
 (mf/defc icon*
   {::mf/props :obj
    ::mf/schema schema:icon}
-  [{:keys [id size class] :rest props}]
+  [{:keys [icon-id size class] :rest props}]
   (let [class (dm/str (or class "") " " (stl/css :icon))
         props (mf/spread-props props {:class class :width icon-size-m :height icon-size-m})
         size-px (cond (= size "s") icon-size-s :else icon-size-m)
         offset (/ (- icon-size-m size-px) 2)]
     [:> "svg" props
-     [:use {:href (dm/str "#icon-" id) :width size-px :height size-px :x offset :y offset}]]))
+     [:use {:href (dm/str "#icon-" icon-id) :width size-px :height size-px :x offset :y offset}]]))

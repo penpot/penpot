@@ -117,6 +117,7 @@
       :rotation     (api/set-shape-rotation v)
       :transform    (api/set-shape-transform v)
       :fills        (api/set-shape-fills v)
+      :strokes      (api/set-shape-strokes v)
       :blend-mode   (api/set-shape-blend-mode v)
       :opacity      (api/set-shape-opacity v)
       :hidden       (api/set-shape-hidden v)

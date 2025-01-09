@@ -211,6 +211,93 @@
                   (store-image id))))))
         fills))
 
+(defn- translate-stroke-style
+  [stroke-style]
+  (case stroke-style
+    :dotted 1
+    :dashed 2
+    :mixed  3
+    0))
+
+(defn- translate-stroke-cap
+  [stroke-cap]
+  (case stroke-cap
+    :line-arrow 1
+    :triangle-arrow 2
+    :square-marker 3
+    :circle-marker 4
+    :diamond-marker 5
+    :round 6
+    :square 7
+    0))
+
+(defn set-shape-strokes
+  [strokes]
+  (h/call internal-module "_clear_shape_strokes")
+  (keep (fn [stroke]
+          (let [opacity   (or (:stroke-opacity stroke) 1.0)
+                color     (:stroke-color stroke)
+                gradient  (:stroke-color-gradient stroke)
+                image     (:stroke-image stroke)
+                width     (:stroke-width stroke)
+                align     (:stroke-alignment stroke)
+                style     (-> stroke :stroke-style translate-stroke-style)
+                cap-start (-> stroke :stroke-cap-start translate-stroke-cap)
+                cap-end   (-> stroke :stroke-cap-end translate-stroke-cap)]
+            (case align
+              :inner (h/call internal-module "_add_shape_inner_stroke" width style cap-start cap-end)
+              :outer (h/call internal-module "_add_shape_outer_stroke" width style cap-start cap-end)
+              (h/call internal-module "_add_shape_center_stroke" width style cap-start cap-end))
+
+            (cond
+              (some? gradient)
+              (let [stops     (:stops gradient)
+                    n-stops   (count stops)
+                    mem-size  (* 5 n-stops)
+                    stops-ptr (h/call internal-module "_alloc_bytes" mem-size)
+                    heap      (gobj/get ^js internal-module "HEAPU8")
+                    mem       (js/Uint8Array. (.-buffer heap) stops-ptr mem-size)]
+                (if (= (:type gradient) :linear)
+                  (h/call internal-module "_add_shape_stroke_linear_fill"
+                          (:start-x gradient)
+                          (:start-y gradient)
+                          (:end-x gradient)
+                          (:end-y gradient)
+                          opacity)
+                  (h/call internal-module "_add_shape_stroke_radial_fill"
+                          (:start-x gradient)
+                          (:start-y gradient)
+                          (:end-x gradient)
+                          (:end-y gradient)
+                          opacity
+                          (:width gradient)))
+                (.set mem (js/Uint8Array. (clj->js (flatten (map (fn [stop]
+                                                                   (let [[r g b a] (rgba-bytes-from-hex (:color stop) (:opacity stop))
+                                                                         offset (:offset stop)]
+                                                                     [r g b a (* 100 offset)]))
+                                                                 stops)))))
+                (h/call internal-module "_add_shape_stroke_stops" stops-ptr n-stops))
+
+              (some? image)
+              (let [id            (dm/get-prop image :id)
+                    buffer        (uuid/get-u32 id)
+                    cached-image? (h/call internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
+                (h/call internal-module "_add_shape_image_stroke"
+                        (aget buffer 0)
+                        (aget buffer 1)
+                        (aget buffer 2)
+                        (aget buffer 3)
+                        opacity
+                        (dm/get-prop image :width)
+                        (dm/get-prop image :height))
+                (when (== cached-image? 0)
+                  (store-image id)))
+
+              (some? color)
+              (let [rgba (rgba-from-hex color opacity)]
+                (h/call internal-module "_add_shape_stroke_solid_fill" rgba)))))
+        strokes))
+
 (defn set-shape-path-content
   [content]
   (let [buffer (path/content->buffer content)
@@ -280,6 +367,8 @@
                   transform    (dm/get-prop shape :transform)
                   fills        (if (= type :group)
                                  [] (dm/get-prop shape :fills))
+                  strokes      (if (= type :group)
+                                 [] (dm/get-prop shape :strokes))
                   children     (dm/get-prop shape :shapes)
                   blend-mode   (dm/get-prop shape :blend-mode)
                   opacity      (dm/get-prop shape :opacity)
@@ -297,8 +386,8 @@
               (set-shape-opacity opacity)
               (set-shape-hidden hidden)
               (when (and (some? content) (= type :path)) (set-shape-path-content content))
-              (let [pending-fills (doall (set-shape-fills fills))]
-                (recur (inc index) (into pending pending-fills))))
+              (let [pending' (concat (set-shape-fills fills) (set-shape-strokes strokes))]
+                (recur (inc index) (into pending pending'))))
             pending))]
     (request-render)
     (when-let [pending (seq pending)]

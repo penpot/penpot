@@ -314,12 +314,23 @@
 (defn set-html!
   [^js el html]
   (when (some? el)
-    (set! (.-innerHTML el) html)))
+    (set! (.-innerHTML el) html))
+  el)
 
 (defn append-child!
   [^js el child]
   (when (some? el)
     (.appendChild ^js el child))
+  el)
+
+(defn insert-after!
+  [^js el ^js ref child]
+  (when (and (some? el) (some? ref))
+    (let [nodes (.-childNodes el)
+          idx   (d/index-of-pred nodes #(= ref %))]
+      (if-let [sibnode (unchecked-get nodes (inc idx))]
+        (.insertBefore el child sibnode)
+        (.appendChild ^js el child))))
   el)
 
 (defn remove-child!
@@ -459,6 +470,11 @@
   (when (some? node)
     (.focus node)))
 
+(defn focus?
+  [^js node]
+  (and node
+       (= (.-activeElement js/document) node)))
+
 (defn blur!
   [^js node]
   (when (some? node)
@@ -525,7 +541,8 @@
     (.setAttribute node property value))
   node)
 
-(defn get-text [^js node]
+(defn get-text
+  [^js node]
   (when (some? node)
     (.-textContent node)))
 
@@ -626,7 +643,8 @@
 (defn set-data!
   [^js node ^string attr value]
   (when (some? node)
-    (.setAttribute node (dm/str "data-" attr) (dm/str value))))
+    (.setAttribute node (dm/str "data-" attr) (dm/str value)))
+  node)
 
 (defn set-attribute! [^js node ^string attr value]
   (when (some? node)
@@ -842,6 +860,11 @@
   ([^js node deep?]
    (.cloneNode node deep?)))
 
+(defn get-children
+  [node]
+  (when (some? node)
+    (.-children node)))
+
 (defn has-children?
   [^js node]
   (> (-> node .-children .-length) 0))
@@ -861,3 +884,11 @@
     ptk/EffectEvent
     (effect [_ _ _]
       (focus! (get-element name)))))
+
+(defn first-child
+  [^js node]
+  (.. node -firstChild))
+
+(defn last-child
+  [^js node]
+  (.. node -lastChild))

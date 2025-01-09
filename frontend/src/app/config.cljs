@@ -143,6 +143,11 @@
   (let [f (obj/get global "externalSessionId")]
     (when (fn? f) (f))))
 
+(defn external-context-info
+  []
+  (let [f (obj/get global "externalContextInfo")]
+    (when (fn? f) (f))))
+
 ;; --- Helper Functions
 
 (defn ^boolean check-browser? [candidate]

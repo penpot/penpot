@@ -32,5 +32,5 @@
                                               :button-destructive (= variant "destructive")))
         props (mf/spread-props props {:class class})]
     [:> "button" props
-     (when icon [:> icon* {:id icon :size "m"}])
+     (when icon [:> icon* {:icon-id icon :size "m"}])
      [:span {:class (stl/css :label-wrapper)} children]]))

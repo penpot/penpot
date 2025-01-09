@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-14 11:14+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2024-11-20 09:00+0000\n"
+"Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
 "Language: lv\n"
@@ -584,7 +584,8 @@ msgstr "Ak vai! Šo datni nevarēja ievietot"
 
 #, unused
 msgid "dashboard.import.analyze-error.components-v2"
-msgstr "Datne ar v2 sastāvdaļām ir aktivizēta, bet šī komanda to vēl neatbalsta."
+msgstr ""
+"Datne ar v2 sastāvdaļām ir aktivizēta, bet šī komanda to vēl nenodrošina."
 
 #: src/app/main/ui/dashboard/import.cljs:292
 msgid "dashboard.import.import-error"
@@ -5584,9 +5585,12 @@ msgid "workspace.plugins.permissions.content-write"
 msgstr "Lasīt un mainīt datņu, kurām lietotājiem ir piekļuve, saturu."
 
 #: src/app/main/ui/workspace/plugins.cljs:323
-#, fuzzy
 msgid "workspace.plugins.permissions.disclaimer"
-msgstr "Jāņem vērā, ka šo spraudni ir izveidojusi trešā puse."
+msgstr ""
+"Lūgums ņemt vērā, ka šo spraudni izveidoja trešā puse, tāpēc pirms piekļuves "
+"nodrošināšanas jāpārliecinās par tās uzticamību. Mums ir svarīga Tavu datu "
+"privātums un drošība. Ja ir kādas neskaidrības, lūgums sazināties ar "
+"atbalstu."
 
 #: src/app/main/ui/workspace/plugins.cljs:263
 msgid "workspace.plugins.permissions.library-read"
@@ -5597,9 +5601,8 @@ msgid "workspace.plugins.permissions.library-write"
 msgstr "Lasīt un mainīt bibliotēkas un līdzekļus."
 
 #: src/app/main/ui/workspace/plugins.cljs:316
-#, fuzzy
 msgid "workspace.plugins.permissions.title"
-msgstr "ŠIS SPRAUDNIS PIEPRASA PIEKĻUVI:"
+msgstr "SPRAUDNIS \"%s\" PIEPRASA PIEKĻUVI:"
 
 #: src/app/main/ui/workspace/plugins.cljs:250
 msgid "workspace.plugins.permissions.user-read"
@@ -6117,3 +6120,439 @@ msgstr "Atjaunināt"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Jānoklikšķina, lai aizvērtu ceļu"
+
+#: src/app/main/ui/dashboard/files.cljs:190, src/app/main/ui/dashboard/projects.cljs:284
+msgid "dashboard.empty-placeholder-drafts-subtitle"
+msgstr ""
+"Tiklīdz projekta dalībnieks izveidos melnrakstu, tas šeit tiks parādīts."
+
+#: src/app/main/ui/dashboard/files.cljs:186, src/app/main/ui/dashboard/projects.cljs:280
+msgid "dashboard.empty-placeholder-files-title"
+msgstr "Vēl nav nevienas datnes."
+
+#: src/app/main/ui/dashboard/files.cljs:191, src/app/main/ui/dashboard/projects.cljs:285
+msgid "dashboard.empty-placeholder-files-subtitle"
+msgstr "Tiklīdz projekta dalībnieks izveidos datni, tā šeit tiks parādīta."
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+#, markdown, unused
+msgid "dashboard.empty-placeholder-libraries-subtitle"
+msgstr ""
+"Šeit parādīsies projektam pievienotās bibliotēkas. Mēģini kopīgot savas "
+"datnes vai pievienot no mūsu [bibliotēkām un sagatavēm](https://penpot.app/"
+"libraries-templates)!"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:32
+msgid "dashboard.empty-placeholder-libraries-title"
+msgstr "Vēl nav nevienas bibliotēkas."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:35
+msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
+msgstr "Šeit parādīsies projektam pievienotās bibliotēkas."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:39
+#, markdown
+msgid "dashboard.empty-placeholder-libraries"
+msgstr ""
+"Šeit parādīsies projektam pievienotās bibliotēkas. Mēģini kopīgot savas "
+"datnes vai pievienot no mūsu [bibliotēkām un sagatavēm](https://penpot.app/"
+"libraries-templates)!"
+
+#: src/app/main/ui/dashboard/team.cljs:944
+msgid "dashboard.webhooks.cant-edit"
+msgstr "Var izdzēst vai mainīt tikai paša izveidotās tīmekļa aizķeres."
+
+#: src/app/main/ui/comments.cljs:340, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:295, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:324
+msgid "labels.options"
+msgstr "Iespējas"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:229
+msgid "labels.sets"
+msgstr "Kopas"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:532
+msgid "workspace.assets.components.add-component"
+msgstr "Pievienot sastāvdaļu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:108
+msgid "workspace.options.blur-options.toggle-blur"
+msgstr "Pārslēgt aizmiglojumu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:323
+msgid "workspace.options.guides.add-guide"
+msgstr "Pievienot vadlīniju"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:187
+msgid "workspace.options.guides.remove-guide"
+msgstr "Noņemt vadlīniju"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:183
+msgid "workspace.options.guides.toggle-guide"
+msgstr "Pārslēgt vadlīniju"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:173
+msgid "workspace.options.shadow-options.toggle-shadow"
+msgstr "Pārslēgt ēnu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:171
+msgid "workspace.options.stroke.add-stroke"
+msgstr "Pievienot vilkuma krāsu"
+
+#: src/app/main/ui/workspace/plugins.cljs:372
+msgid "workspace.plugins.permissions-update.title"
+msgstr "ATJAUNINĀT ŠO SPRAUDNI"
+
+#: src/app/main/ui/workspace/plugins.cljs:376
+msgid "workspace.plugins.permissions-update.warning"
+msgstr ""
+"Spraudnis kopš pēdējās atvēršanas reizes ir mainīts. Tam tagad ir vajadzīga "
+"piekļuve:"
+
+#: src/app/main/ui/workspace/plugins.cljs:86
+msgid "workspace.plugins.remove-plugin"
+msgstr "Noņemt spraudni"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:142
+msgid "workspace.token.no-sets"
+msgstr "Nav kopu"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:133
+msgid "workspace.token.num-sets"
+msgstr "%s kopas"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:66
+msgid "workspace.token.original-value"
+msgstr "Sākotnējā vērtība: "
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:172
+msgid "workspace.token.select-set"
+msgstr "Atlasīt kopu."
+
+#: src/app/main/ui/dashboard/fonts.cljs:444
+msgid "dashboard.fonts.empty-placeholder-viewer"
+msgstr "Vēl nav neviena pielāgota fonta."
+
+#: src/app/main/data/common.cljs:206
+msgid "dashboard.permissions-change.owner"
+msgstr "Tu tagad esi šīs komandas īpašnieks."
+
+#: src/app/main/data/common.cljs:203
+msgid "dashboard.permissions-change.viewer"
+msgstr "Tev tagad šajā komandā ir skatīšanās tiesības."
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:149, src/app/main/ui/workspace/sidebar/versions.cljs:288
+msgid "labels.restore"
+msgstr "Atjaunot"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:187
+msgid "labels.themes"
+msgstr "Izskati"
+
+#: src/app/main/ui/dashboard/team.cljs:216
+msgid "modals.invite-team-member.text"
+msgstr ""
+"Komandā var uzaicināt dalībniekus, lai viņi varētu piekļūt šai un citām "
+"komandas datnēm."
+
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:495
+msgid "workspace.assets.colors.add-color"
+msgstr "Pievienot krāsu"
+
+#: src/app/main/ui/workspace/libraries.cljs:300
+msgid "workspace.libraries.more-templates"
+msgstr "Var meklēt "
+
+#: src/app/main/ui/workspace/libraries.cljs:304
+msgid "workspace.libraries.more-templates-link"
+msgstr "vairāk sagatavju šeit"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+msgid "workspace.options.blur-options.add-blur"
+msgstr "Pievienot aizmiglojumu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:150
+msgid "workspace.options.fill.add-fill"
+msgstr "Pievienot aizpildījuma krāsu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:163
+msgid "workspace.options.fill.remove-fill"
+msgstr "Noņemt aizpildījumu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:176, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:182
+msgid "workspace.options.layer-options.toggle-layer"
+msgstr "Pārslēgt slāņa redzamību"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:177, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:315
+msgid "workspace.options.shadow-options.remove-shadow"
+msgstr "Noņemt ēnu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:184
+msgid "workspace.options.stroke.remove-stroke"
+msgstr "Noņemt vilkumu"
+
+#: src/app/main/data/plugins.cljs:86, src/app/main/ui/workspace/main_menu.cljs:696, src/app/main/ui/workspace/plugins.cljs:82
+msgid "workspace.plugins.error.need-editor"
+msgstr "Jābūt redaktoram, lai izmantotu šo spraudni"
+
+#: src/app/main/ui/workspace/plugins.cljs:283
+msgid "workspace.plugins.permissions.allow-download"
+msgstr "Uzsākt datņu lejupielādi."
+
+#: src/app/main/ui/workspace/plugins.cljs:276
+msgid "workspace.plugins.permissions.comment-read"
+msgstr "Lasīt savas piebildes un atbildes."
+
+#: src/app/main/ui/workspace/plugins.cljs:270
+msgid "workspace.plugins.permissions.comment-write"
+msgstr "Lasīt un mainīt savas piebildes un atbildēt savā vārdā."
+
+#: src/app/main/ui/workspace/plugins.cljs:436
+msgid "workspace.plugins.try-out.cancel"
+msgstr "NE TAGAD"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:216
+msgid "workspace.token.no-sets-create"
+msgstr "Vēl nav nevienas kopas. Vispirms ir jāizveido kāda."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:239
+msgid "workspace.token.no-sets-yet"
+msgstr "Šeit vēl nav nevienas kopas."
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:187
+msgid "workspace.versions.autosaved.version"
+msgstr "Automātiski saglabāts %s"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:224
+msgid "workspace.versions.button.pin"
+msgstr "Piespraust versiju"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:345, src/app/main/ui/workspace/sidebar/versions.cljs:347
+msgid "workspace.versions.button.save"
+msgstr "Saglabāt versiju"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:190
+msgid "workspace.versions.expand-snapshot"
+msgstr "Izvērst momentuzņēmumus"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:327
+msgid "workspace.versions.filter.all"
+msgstr "Visas versijas"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:326
+msgid "workspace.versions.filter.label"
+msgstr "Versiju atlasīšana"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:328
+msgid "workspace.versions.filter.mine"
+msgstr "Manas versijas"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:334
+msgid "workspace.versions.filter.user"
+msgstr "%s versijas"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:283
+msgid "workspace.versions.restore-warning"
+msgstr "Vai atjaunot šo versiju?"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:207
+msgid "workspace.versions.snapshot-menu"
+msgstr "Atvērt momentuzņēmumu izvēlni"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:138
+msgid "workspace.versions.version-menu"
+msgstr "Atvērt versiju izvēlni"
+
+#: src/app/main/ui/dashboard/files.cljs:185, src/app/main/ui/dashboard/projects.cljs:279
+msgid "dashboard.empty-placeholder-drafts-title"
+msgstr "Vēl nav neviena melnraksta."
+
+#: src/app/main/ui/dashboard/fonts.cljs:445
+msgid "dashboard.fonts.empty-placeholder-viewer-sub"
+msgstr ""
+"Tiklīdz projekta dalībnieks augšupielādēs pielāgotu fontu, tas šeit tiks "
+"parādīts."
+
+#: src/app/main/data/common.cljs:205
+msgid "dashboard.permissions-change.admin"
+msgstr "Tu tagad esi šīs komandas pārvaldītājs."
+
+#: src/app/main/data/common.cljs:204
+msgid "dashboard.permissions-change.editor"
+msgstr "Tu tagad esi šīs komandas redaktors."
+
+#: src/app/main/data/common.cljs:233
+msgid "dashboard.removed-from-team"
+msgstr "Tu vairs neesi daļa no komandas \"%s\"."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:195
+msgid "workspace.options.export.add-export"
+msgstr "Pievienot izguvi"
+
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:408
+msgid "workspace.assets.typography.add-typography"
+msgstr "Pievienot tipogrāfiju"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
+msgid "workspace.options.blur-options.remove-blur"
+msgstr "Noņemt aizmiglojumu"
+
+#: src/app/main/ui/workspace/right_header.cljs:255
+msgid "workspace.header.share"
+msgstr "Kopīgot"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:207, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:242
+msgid "workspace.options.export.remove-export"
+msgstr "Noņemt izguvi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:302
+msgid "workspace.options.shadow-options.add-shadow"
+msgstr "Pievienot ēnu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:154
+msgid "workspace.options.flows.remove-flow"
+msgstr "Noņemt plūsmu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:735
+msgid "workspace.options.interactions.add-interaction"
+msgstr "Pievienot mijiedarbību"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.interactions.remove-interaction"
+msgstr "Noņemt mijiedarbību"
+
+#: src/app/main/ui/workspace/plugins.cljs:196
+msgid "workspace.plugins.error.manifest"
+msgstr "Spraudņa deklarācija ir nepareiza."
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:193
+msgid "workspace.versions.autosaved.entry"
+msgstr "%s automātiskās saglabāšanas versijas"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:219
+msgid "workspace.versions.button.restore"
+msgstr "Atjaunot versiju"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:354
+msgid "workspace.versions.empty"
+msgstr "Vēl nav nevienas versijas"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:340
+msgid "workspace.versions.loading"
+msgstr "Ielādē..."
+
+#: src/app/main/ui/dashboard/team.cljs:181, src/app/main/ui/onboarding/team_choice.cljs:100
+msgid "errors.maximum-invitations-by-request-reached"
+msgstr ""
+"Sasniegts lielākais pieļaujamais e-pasta adrešu skaits (%s), ko var "
+"uzaicināt vienā pieprasījumā"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1051
+#, unused
+msgid "labels.add"
+msgstr "Pievienot"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:153
+msgid "labels.collapse"
+msgstr "Sakļaut"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:271
+msgid "settings.remove-color"
+msgstr "Noņemt krāsu"
+
+#: src/app/main/ui/workspace/plugins.cljs:425
+msgid "workspace.plugins.try-out.title"
+msgstr "SPRAUDNIS \"%s\" IR UZSTĀDĪTS."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:147
+msgid "workspace.token.delete-theme-title"
+msgstr "Izdzēst izskatu"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:302
+msgid "workspace.token.edit-theme-title"
+msgstr "Labot izskatu"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:88
+msgid "workspace.token.no-active-theme"
+msgstr "Nav izvēlēts izskats"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:208
+msgid "workspace.token.save-theme"
+msgstr "Saglabāt izskatu"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+#, unused
+msgid "workspace.token.theme-name"
+msgstr "Izskats \"%s\""
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:39, src/app/main/ui/workspace/tokens/modals/themes.cljs:84
+msgid "workspace.token.themes"
+msgstr "Izskati"
+
+#: src/app/main/ui/workspace/plugins.cljs:429
+msgid "workspace.plugins.try-out.message"
+msgstr ""
+"Vēlies izmēģināt? Tas tiks atvērts jaunā melnrakstā Tavai pašreizējai "
+"komandai. (Ja nē, vienmēr to var atrast jebkuras datnes uzstādītajos "
+"spraudņos.)"
+
+#: src/app/main/ui/workspace/plugins.cljs:442
+msgid "workspace.plugins.try-out.try"
+msgstr "IZMĒĢINĀT SPRAUDNI"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1022
+msgid "workspace.shape.menu.remove-layout"
+msgstr "Noņemt izkārtojumu"
+
+#: src/app/main/ui/workspace/context_menu.cljs:235
+msgid "workspace.shape.menu.rename"
+msgstr "Pārdēvēt"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:229
+msgid "workspace.sidebar.sitemap.add-page"
+msgstr "Pievienot lapu"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:84
+msgid "workspace.token.active-themes"
+msgstr "%s aktīvi izskati"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+#, unused
+msgid "workspace.token.add set"
+msgstr "Pievienot kopu"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:310
+msgid "workspace.token.back-to-themes"
+msgstr "Atpakaļ uz izskatu sarakstu"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:47
+msgid "workspace.token.create-new-theme"
+msgstr "Tagad izveido savu pirmo izskatu!"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:52
+msgid "workspace.token.new-theme"
+msgstr "Jauns izskats"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:191
+msgid "workspace.token.no-themes"
+msgstr "Šeit nav izskatu."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43
+msgid "workspace.token.no-themes-currently"
+msgstr "Pašlaik nav izskatu."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:194, src/app/main/ui/workspace/tokens/sidebar.cljs:210
+msgid "workspace.token.create-one"
+msgstr "Izveidot kādu."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:155, src/app/main/ui/workspace/tokens/modals/themes.cljs:239
+msgid "workspace.token.create-theme-title"
+msgstr "Izveidot izskatu"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:72
+msgid "workspace.token.edit-themes"
+msgstr "Labot izskatus"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1004, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1030
+msgid "workspace.shape.menu.add-layout"
+msgstr "Pievienot izkārtojumu"

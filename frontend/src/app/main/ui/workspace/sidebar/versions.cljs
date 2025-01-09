@@ -226,13 +226,12 @@
                   :on-click handle-pin-snapshot}
              (tr "workspace.versions.button.pin")]]]])]]]))
 
-(mf/defc versions-toolbox
+(mf/defc versions-toolbox*
   []
   (let [profiles   (mf/deref refs/profiles)
         profile    (mf/deref refs/profile)
 
         expanded   (mf/use-state #{})
-
 
         {:keys [status data editing]}
         (mf/deref versions)

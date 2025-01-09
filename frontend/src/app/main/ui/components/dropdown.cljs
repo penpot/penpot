@@ -12,17 +12,13 @@
    [app.util.keyboard :as kbd]
    [app.util.timers :as tm]
    [goog.events :as events]
-   [goog.object :as gobj]
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
-(mf/defc dropdown'
-  {::mf/wrap-props false}
-  [props]
-  (let [children      (gobj/get props "children")
-        on-close      (gobj/get props "on-close")
-        container-ref (gobj/get props "container")
-        listening-ref (mf/use-ref nil)
+(mf/defc dropdown-content*
+  [{:keys [children on-close container]}]
+  (let [listening-ref (mf/use-ref nil)
+        container-ref container
 
         on-click
         (fn [event]
@@ -57,10 +53,13 @@
     children))
 
 (mf/defc dropdown
-  {::mf/wrap-props false}
-  [props]
-  (assert (fn? (gobj/get props "on-close")) "missing `on-close` prop")
-  (assert (boolean? (gobj/get props "show")) "missing `show` prop")
+  {::mf/props :obj}
+  [{:keys [on-close show children container]}]
+  (assert (fn? on-close) "missing `on-close` prop")
+  (assert (boolean? show) "missing `show` prop")
 
-  (when (gobj/get props "show")
-    (mf/element dropdown' props)))
+  (when ^boolean show
+    [:> dropdown-content*
+     {:on-close on-close
+      :container container
+      :children children}]))

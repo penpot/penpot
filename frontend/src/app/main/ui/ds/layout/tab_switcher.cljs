@@ -38,7 +38,7 @@
      [:> :button props
       (when (some? icon)
         [:> icon*
-         {:id icon
+         {:icon-id icon
           :aria-hidden (when label true)
           :aria-label  (when (not label) aria-label)}])
       (when (string? label)
