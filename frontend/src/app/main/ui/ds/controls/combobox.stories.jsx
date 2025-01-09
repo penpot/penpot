@@ -18,9 +18,11 @@ export default {
   component: Combobox,
   argTypes: {
     disabled: { control: "boolean" },
+    hasError: { control: "boolean" },
   },
   args: {
     disabled: false,
+    hasError: false,
     options: [
       { id: "January", label: "January" },
       { id: "February", label: "February" },
@@ -36,7 +38,6 @@ export default {
       { id: "December", label: "December" },
     ],
     defaultSelected: "February",
-    onChange: (value) => (lastValue = value),
   },
   parameters: {
     controls: {
@@ -88,6 +89,10 @@ export const WithIcons = {
 
 export const TestInteractions = {
   ...WithIcons,
+  args: {
+    ...WithIcons.args,
+    onChange: (value) => (lastValue = value),
+  },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
 
