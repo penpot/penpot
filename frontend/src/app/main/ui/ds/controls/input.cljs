@@ -29,11 +29,11 @@
   (let [ref   (or ref (mf/use-ref))
         type  (d/nilv type "text")
         props (mf/spread-props props
-                               :class (stl/css-case
-                                       :input true
-                                       :input-with-icon (some? icon))
-                               :ref ref
-                               :type type)
+                               {:class (stl/css-case
+                                        :input true
+                                        :input-with-icon (some? icon))
+                                :ref ref
+                                :type type})
 
         on-icon-click
         (mf/use-fn
@@ -45,5 +45,5 @@
 
     [:> :span {:class (dm/str class " " (stl/css :container))}
      (when (some? icon)
-       [:> icon* {:id icon :class (stl/css :icon) :on-click on-icon-click}])
+       [:> icon* {:icon-id icon :class (stl/css :icon) :on-click on-icon-click}])
      [:> :input props]]))

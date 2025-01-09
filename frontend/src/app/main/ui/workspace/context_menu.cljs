@@ -138,6 +138,8 @@
    ::mf/private true}
   []
   (let [do-copy           #(st/emit! (dw/copy-selected))
+        do-copy-link      #(st/emit! (dw/copy-link-to-clipboard))
+
         do-cut            #(st/emit! (dw/copy-selected)
                                      (dw/delete-selected))
         do-paste          #(st/emit! (dw/paste-from-clipboard))
@@ -146,6 +148,9 @@
      [:> menu-entry* {:title (tr "workspace.shape.menu.copy")
                       :shortcut (sc/get-tooltip :copy)
                       :on-click do-copy}]
+     [:> menu-entry* {:title (tr "workspace.shape.menu.copy_link")
+                      :shortcut (sc/get-tooltip :copy-link)
+                      :on-click do-copy-link}]
      [:> menu-entry* {:title (tr "workspace.shape.menu.cut")
                       :shortcut (sc/get-tooltip :cut)
                       :on-click do-cut}]
@@ -531,7 +536,7 @@
   [{:keys [mdata]}]
   (let [{:keys [disable-booleans disable-flatten]} mdata
         shapes (mf/deref refs/selected-objects)
-        props  (mf/spread-props
+        props  (mf/props
                 {:shapes shapes
                  :disable-booleans disable-booleans
                  :disable-flatten disable-flatten})]

@@ -12,7 +12,6 @@
    [app.config :as cf]
    [app.db :as db]
    [app.rpc :as-alias rpc]
-   [app.rpc.commands.comments :as comments]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.teams :as teams]
    [app.rpc.cond :as-alias cond]
@@ -38,10 +37,10 @@
         team    (-> (db/get conn :team {:id (:team-id project)})
                     (teams/decode-row))
 
-        members (into #{} (->> (teams/get-team-members conn (:team-id project))
-                               (map :id)))
+        members    (teams/get-team-members conn (:team-id project))
+        member-ids (into #{} (map :id) members)
 
-        perms   (assoc perms :in-team (contains? members profile-id))
+        perms   (assoc perms :in-team (contains? member-ids profile-id))
 
         _       (-> (cfeat/get-team-enabled-features cf/flags team)
                     (cfeat/check-client-features! (:features params))
@@ -55,7 +54,6 @@
                   (update :data select-keys [:id :options :pages :pages-index :components]))
 
         libs    (files/get-file-libraries conn file-id)
-        users   (comments/get-file-comments-users conn file-id profile-id)
         links   (->> (db/query conn :share-link {:file-id file-id})
                      (mapv (fn [row]
                              (-> row
@@ -71,7 +69,7 @@
                           {:team-id (:id team)
                            :deleted-at nil})]
 
-    {:users users
+    {:users members
      :fonts fonts
      :project project
      :share-links links

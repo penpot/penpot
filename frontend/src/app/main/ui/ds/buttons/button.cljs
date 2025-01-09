@@ -36,5 +36,5 @@
                                              (when on-ref
                                                (on-ref node)))})]
     [:> "button" props
-     (when icon [:> icon* {:id icon :size "m"}])
+     (when icon [:> icon* {:icon-id icon :size "m"}])
      [:span {:class (stl/css :label-wrapper)} children]]))

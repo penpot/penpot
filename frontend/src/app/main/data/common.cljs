@@ -307,7 +307,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (or team-id (:current-team-id state))]
-        (rx/of (rt/nav :dashboard-libraries {:team-id team-id}))))))
+        (rx/of (rt/nav :dashboard-fonts {:team-id team-id}))))))
 
 (defn go-to-dashboard-recent
   [& {:keys [team-id] :as options}]
@@ -367,14 +367,14 @@
     (watch [_ state _]
       (let [team-id (or team-id (:current-team-id state))
             file-id (or file-id (:current-file-id state))
-            ;: FIXME: why not :current-page-id
-            page-id (or page-id
+            page-id (or page-id (:current-page-id state)
                         (dm/get-in state [:workspace-data :pages 0]))
+
             params  (-> (rt/get-params state)
                         (assoc :team-id team-id)
                         (assoc :file-id file-id)
                         (assoc :page-id page-id)
-                        (assoc :layout layout)
+                        (update :layout  #(or layout %))
                         (d/without-nils))]
         (rx/of (rt/nav :workspace params options))))))
 

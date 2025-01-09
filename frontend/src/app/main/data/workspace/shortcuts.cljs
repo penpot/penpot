@@ -85,6 +85,11 @@
                           :subsections [:edit]
                           :fn #(st/emit! (dw/copy-selected))}
 
+   :copy-link            {:tooltip (ds/meta (ds/alt "C"))
+                          :command (ds/c-mod "alt+c")
+                          :subsections [:edit]
+                          :fn #(st/emit! (dw/copy-link-to-clipboard))}
+
    :cut                  {:tooltip (ds/meta "X")
                           :command (ds/c-mod "x")
                           :subsections [:edit]

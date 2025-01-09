@@ -267,9 +267,9 @@
 (def workspace-page-flows
   (l/derived #(-> % :flows not-empty) workspace-page))
 
-(defn workspace-page-objects-by-id
-  [page-id]
-  (l/derived #(wsh/lookup-page-objects % page-id) st/state =))
+(defn workspace-page-object-by-id
+  [page-id shape-id]
+  (l/derived #(wsh/lookup-shape % page-id shape-id) st/state =))
 
 ;; TODO: Looks like using the `=` comparator can be pretty expensive
 ;; on large pages, we are using this for some reason?

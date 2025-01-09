@@ -11,7 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.main.refs :as refs]
-   [app.main.ui.components.dropdown :refer [dropdown']]
+   [app.main.ui.components.dropdown :refer [dropdown-content*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -52,8 +52,6 @@
   (sm/lazy-validator schema:option))
 
 (mf/defc context-menu*
-  {::mf/props :obj}
-
   [{:keys [show on-close options selectable selected
            top left fixed min-width origin width]
     :as props}]
@@ -90,7 +88,7 @@
            (on-close)))
 
         props
-        (mf/spread props :on-close on-local-close)
+        (mf/spread-props props {:on-close on-local-close})
 
         ids
         (mf/with-memo [levels]
@@ -221,7 +219,7 @@
        #(dom/focus! (dom/get-element (first ids)))))
 
     (when (and show (some? levels))
-      [:> dropdown' props
+      [:> dropdown-content* props
        (let [level   (peek levels)
              options (:options level)
              parent  (:parent level)]

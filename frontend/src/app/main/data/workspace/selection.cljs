@@ -26,6 +26,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.refs :as refs]
+   [app.main.router :as rt]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
    [app.util.mouse :as mse]
@@ -138,12 +139,25 @@
 
      ptk/WatchEvent
      (watch [_ state _]
-       (let [page-id (:current-page-id state)
-             objects (wsh/lookup-page-objects state page-id)]
+       (let [page-id              (:current-page-id state)
+             objects              (wsh/lookup-page-objects state page-id)
+             selected-id          (wsh/lookup-selected state)
+             selected             (wsh/lookup-shapes state selected-id)
+             frame-ids            (map (fn [item] (let [parent (cfh/get-frame objects (:id item))]
+                                                    (:id parent))) selected)
+             params-without-board (-> (rt/get-params state)
+                                      (dissoc :board-id))
+             params-board         (-> (rt/get-params state)
+                                      (assoc :board-id frame-ids))]
+
          (rx/of
           (dwc/expand-all-parents [id] objects)
           :interrupt
-          ::dwsp/interrupt))))))
+          ::dwsp/interrupt)
+
+         (if (some #(= % uuid/zero) frame-ids)
+           (rx/of (rt/nav :workspace params-without-board {::rt/replace true}))
+           (rx/of (rt/nav :workspace params-board {::rt/replace true}))))))))
 
 (defn select-prev-shape
   ([]
@@ -290,8 +304,11 @@
   ([check-modal]
    (ptk/reify ::deselect-all
      ptk/WatchEvent
-     (watch [_ _ _]
-       (rx/of ::dwsp/interrupt))
+     (watch [_ state _]
+       (let [params-without-board (-> (rt/get-params state)
+                                      (dissoc :board-id))]
+         (rx/of ::dwsp/interrupt)
+         (rx/of (rt/nav :workspace params-without-board {::rt/replace true}))))
      ptk/UpdateEvent
      (update [_ state]
 

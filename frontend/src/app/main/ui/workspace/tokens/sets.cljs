@@ -196,7 +196,7 @@
            :on-context-menu on-context-menu
            :aria-checked active?'}
      [:> icon*
-      {:id "document"
+      {:icon-id "document"
        :class (stl/css-case :icon true
                             :root-icon (not tree-depth))}]
      (if editing?'

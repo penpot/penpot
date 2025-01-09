@@ -331,6 +331,15 @@
                             client-position)]
              (st/emit! (dd/show-file-menu-with-position file-id position)))))
 
+        on-context-menu
+        (mf/use-fn
+         (mf/deps is-library-view)
+         (fn [event]
+           (dom/stop-propagation event)
+           (dom/prevent-default event)
+           (when-not is-library-view
+             (on-menu-click event))))
+
         edit
         (mf/use-fn
          (mf/deps file)
@@ -373,7 +382,7 @@
        :on-key-down handle-key-down
        :on-double-click on-navigate
        :on-drag-start on-drag-start
-       :on-context-menu on-menu-click}
+       :on-context-menu on-context-menu}
 
       [:div {:class (stl/css :overlay)}]
 
@@ -392,31 +401,32 @@
           [:h3 (:name file)])
         [:& grid-item-metadata {:modified-at (:modified-at file)}]]
 
-       [:div {:class (stl/css-case :project-th-actions true :force-display (:menu-open dashboard-local))}
-        [:div
-         {:class (stl/css :project-th-icon :menu)
-          :tab-index "0"
-          :ref menu-ref
-          :id (str file-id "-action-menu")
-          :on-click on-menu-click
-          :on-key-down (fn [event]
-                         (when (kbd/enter? event)
-                           (dom/stop-propagation event)
-                           (on-menu-click event)))}
-         menu-icon
-         (when (and selected? file-menu-open?)
+       (when-not is-library-view
+         [:div {:class (stl/css-case :project-th-actions true :force-display (:menu-open dashboard-local))}
+          [:div
+           {:class (stl/css :project-th-icon :menu)
+            :tab-index "0"
+            :ref menu-ref
+            :id (str file-id "-action-menu")
+            :on-click on-menu-click
+            :on-key-down (fn [event]
+                           (when (kbd/enter? event)
+                             (dom/stop-propagation event)
+                             (on-menu-click event)))}
+           menu-icon
+           (when (and selected? file-menu-open?)
            ;; When the menu is open we disable events in the dashboard. We need to force pointer events
            ;; so the menu can be handled
-           [:div {:style {:pointer-events "all"}}
-            [:> file-menu* {:files (vals selected-files)
-                            :left (+ 24 (:x (:menu-pos dashboard-local)))
-                            :top (:y (:menu-pos dashboard-local))
-                            :can-edit can-edit
-                            :navigate true
-                            :on-edit on-edit
-                            :on-menu-close on-menu-close
-                            :origin origin
-                            :parent-id (dm/str file-id "-action-menu")}]])]]]]]))
+             [:div {:style {:pointer-events "all"}}
+              [:> file-menu* {:files (vals selected-files)
+                              :left (+ 24 (:x (:menu-pos dashboard-local)))
+                              :top (:y (:menu-pos dashboard-local))
+                              :can-edit can-edit
+                              :navigate true
+                              :on-edit on-edit
+                              :on-menu-close on-menu-close
+                              :origin origin
+                              :parent-id (dm/str file-id "-action-menu")}]])]])]]]))
 
 (mf/defc grid
   {::mf/props :obj}

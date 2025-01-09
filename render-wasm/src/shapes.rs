@@ -2,18 +2,20 @@ use crate::math;
 use skia_safe as skia;
 use uuid::Uuid;
 
-use crate::render::BlendMode;
+use crate::render::{BlendMode, Renderable};
 
 mod fills;
 mod images;
 mod matrix;
 mod paths;
 mod renderable;
+mod strokes;
 
 pub use fills::*;
 pub use images::*;
 use matrix::*;
 pub use paths::*;
+pub use strokes::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Kind {
@@ -35,6 +37,7 @@ pub struct Shape {
     rotation: f32,
     clip_content: bool,
     fills: Vec<Fill>,
+    strokes: Vec<Stroke>,
     blend_mode: BlendMode,
     opacity: f32,
     hidden: bool,
@@ -51,6 +54,7 @@ impl Shape {
             rotation: 0.,
             clip_content: true,
             fills: vec![],
+            strokes: vec![],
             blend_mode: BlendMode::default(),
             opacity: 1.,
             hidden: false,
@@ -114,7 +118,7 @@ impl Shape {
         self.fills.clear();
     }
 
-    pub fn add_gradient_stops(&mut self, buffer: Vec<RawStopData>) -> Result<(), String> {
+    pub fn add_fill_gradient_stops(&mut self, buffer: Vec<RawStopData>) -> Result<(), String> {
         let fill = self.fills.last_mut().ok_or("Shape has no fills")?;
         let gradient = match fill {
             Fill::LinearGradient(g) => Ok(g),
@@ -129,6 +133,40 @@ impl Shape {
         Ok(())
     }
 
+    pub fn strokes(&self) -> std::slice::Iter<Stroke> {
+        self.strokes.iter()
+    }
+
+    pub fn add_stroke(&mut self, s: Stroke) {
+        self.strokes.push(s)
+    }
+
+    pub fn set_stroke_fill(&mut self, f: Fill) -> Result<(), String> {
+        let stroke = self.strokes.last_mut().ok_or("Shape has no strokes")?;
+        stroke.fill = f;
+        Ok(())
+    }
+
+    pub fn add_stroke_gradient_stops(&mut self, buffer: Vec<RawStopData>) -> Result<(), String> {
+        let stroke = self.strokes.last_mut().ok_or("Shape has no strokes")?;
+        let fill = &mut stroke.fill;
+        let gradient = match fill {
+            Fill::LinearGradient(g) => Ok(g),
+            Fill::RadialGradient(g) => Ok(g),
+            _ => Err("Active stroke is not a gradient"),
+        }?;
+
+        for stop in buffer.into_iter() {
+            gradient.add_stop(stop.color(), stop.offset());
+        }
+
+        Ok(())
+    }
+
+    pub fn clear_strokes(&mut self) {
+        self.strokes.clear();
+    }
+
     pub fn set_path_segments(&mut self, buffer: Vec<RawPathData>) -> Result<(), String> {
         let p = Path::try_from(buffer)?;
         self.kind = Kind::Path(p);
@@ -137,6 +175,21 @@ impl Shape {
 
     pub fn set_blend_mode(&mut self, mode: BlendMode) {
         self.blend_mode = mode;
+    }
+
+    fn to_path_transform(&self) -> Option<skia::Matrix> {
+        match self.kind {
+            Kind::Path(_) => {
+                let center = self.bounds().center();
+                let mut matrix = skia::Matrix::new_identity();
+                matrix.pre_translate(center);
+                matrix.pre_concat(&self.transform.no_translation().to_skia_matrix().invert()?);
+                matrix.pre_translate(-center);
+
+                Some(matrix)
+            }
+            _ => None,
+        }
     }
 }
 

@@ -73,12 +73,26 @@ impl TryFrom<RawPathData> for Segment {
 pub struct Path {
     segments: Vec<Segment>,
     skia_path: skia::Path,
+    open: bool,
+}
+
+fn starts_and_ends_at_same_point(path: &skia::Path) -> bool {
+    if path.count_points() < 2 {
+        return false; // A path with fewer than 2 points cannot be closed
+    }
+
+    let start_point = path.get_point(0); // First point of the path
+    let end_point = path.get_point(path.count_points() - 1); // Last point of the path
+
+    // Compare the start and end points
+    start_point == end_point
 }
 
 impl TryFrom<Vec<RawPathData>> for Path {
     type Error = String;
 
     fn try_from(value: Vec<RawPathData>) -> Result<Self, Self::Error> {
+        let mut open = true;
         let segments = value
             .into_iter()
             .map(|raw| Segment::try_from(raw))
@@ -98,13 +112,20 @@ impl TryFrom<Vec<RawPathData>> for Path {
                 }
                 Segment::Close => {
                     skia_path.close();
+                    open = false;
                 }
             }
+        }
+
+        if !skia_path.is_last_contour_closed() && starts_and_ends_at_same_point(&skia_path) {
+            skia_path.close();
+            open = false;
         }
 
         Ok(Path {
             segments,
             skia_path,
+            open,
         })
     }
 }
@@ -112,5 +133,9 @@ impl TryFrom<Vec<RawPathData>> for Path {
 impl Path {
     pub fn to_skia_path(&self) -> skia::Path {
         self.skia_path.snapshot()
+    }
+
+    pub fn is_open(&self) -> bool {
+        self.open
     }
 }

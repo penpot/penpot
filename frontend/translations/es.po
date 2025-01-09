@@ -759,6 +759,14 @@ msgstr "No se encuentra “%s“"
 msgid "dashboard.no-projects-placeholder"
 msgstr "Los proyectos fijados aparecerán aquí"
 
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications"
+msgstr "Notificaciones"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications.view"
+msgstr "Ver notificaciones"
+
 #: src/app/main/ui/auth/verify_token.cljs:32
 msgid "dashboard.notifications.email-changed-successfully"
 msgstr "Tu dirección de correo ha sido actualizada"
@@ -1634,6 +1642,13 @@ msgstr "Cerrar"
 msgid "labels.collapse"
 msgstr "Colapsar"
 
+msgid "labels.comment"
+msgstr "Comentario"
+
+#: src/app/main/ui/comments.cljs:446
+msgid "labels.comment.mark-as-solved"
+msgstr "Marcar como resuelto"
+
 #: src/app/main/ui/dashboard/comments.cljs:104, src/app/main/ui/viewer/comments.cljs:70, src/app/main/ui/workspace/comments.cljs:127
 msgid "labels.comments"
 msgstr "Comentarios"
@@ -1962,6 +1977,10 @@ msgstr "Contraseña"
 msgid "labels.pending-invitation"
 msgstr "Pendiente"
 
+#: src/app/main/ui/comments.cljs:147
+msgid "labels.post"
+msgstr "Publicar"
+
 #: src/app/main/ui/onboarding/questions.cljs:51
 msgid "labels.previous"
 msgstr "Anterior"
@@ -2007,6 +2026,26 @@ msgstr "Renombrar"
 #: src/app/main/ui/dashboard/team_form.cljs:99
 msgid "labels.rename-team"
 msgstr "Renombra el equipo"
+
+#: src/app/main/ui/comments.cljs:145
+msgid "labels.reply"
+msgstr "respuesta"
+
+#: src/app/main/ui/comments.cljs:150
+msgid "labels.reply.new"
+msgstr "nueva respuesta"
+
+#: src/app/main/ui/comments.cljs:188
+msgid "labels.reply.thread"
+msgstr "Responder"
+
+#: src/app/main/ui/comments.cljs:146
+msgid "labels.replies"
+msgstr "respuestas"
+
+#: src/app/main/ui/comments.cljs:151
+msgid "labels.replies.new"
+msgstr "nuevas respuestas"
 
 #: src/app/main/ui/dashboard/team.cljs:681
 msgid "labels.resend-invitation"
@@ -2087,6 +2126,9 @@ msgstr "Mostrar lista de comentarios"
 #: src/app/main/ui/viewer/comments.cljs:91, src/app/main/ui/workspace/comments.cljs:62, src/app/main/ui/workspace/comments.cljs:138
 msgid "labels.show-your-comments"
 msgstr "Mostrar sólo tus comentarios"
+
+msgid "labels.show-mentions"
+msgstr "Mostrar sólo tus menciones"
 
 #: src/app/main/ui/onboarding/questions.cljs:167
 msgid "labels.sketch"
@@ -3345,6 +3387,9 @@ msgstr "Limpiar historial"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:93
 msgid "shortcuts.copy"
 msgstr "Copiar"
+
+msgid "shortcuts.copy-link"
+msgstr "Copiar enlace al portapapeles"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
 msgid "shortcuts.create-component"
@@ -5945,6 +5990,9 @@ msgstr "Enviar atrás"
 msgid "workspace.shape.menu.copy"
 msgstr "Copiar"
 
+msgid "workspace.shape.menu.copy_link"
+msgstr "Copiar enlace al portapapeles"
+
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:427
 msgid "workspace.shape.menu.create-annotation"
 msgstr "Crear una nota"
@@ -6809,3 +6857,59 @@ msgstr "Histórico"
 msgid "workspace.versions.tab.actions"
 msgstr "Acciones"
 
+msgid "dashboard.notifications.notifications-saved"
+msgstr "Configuración de notificaciones actualizada"
+
+msgid "title.settings.notifications"
+msgstr "Notificaciones - Penpot"
+
+msgid "dashboard.settings.notifications.title"
+msgstr "Notificaciones"
+
+msgid "dashboard.settings.notifications.dashboard.title"
+msgstr "Notificaciones en el panel"
+
+msgid "dashboard.settings.notifications.dashboard-comments.title"
+msgstr "Comentarios de ficheros"
+
+msgid "dashboard.settings.notifications.dashboard-comments.all"
+msgstr "Todos los comentarios, menciones y respuestas"
+
+msgid "dashboard.settings.notifications.dashboard-comments.partial"
+msgstr "Sólo menciones y respuestas"
+
+msgid "dashboard.settings.notifications.dashboard-comments.none"
+msgstr "Ninguna"
+
+msgid "dashboard.settings.notifications.email.title"
+msgstr "Notificaciones de correo electrónico"
+
+msgid "dashboard.settings.notifications.email-comments.title"
+msgstr "Comentarios de ficheros"
+
+msgid "dashboard.settings.notifications.email-comments.all"
+msgstr "Todos los comentarios, menciones y respuestas"
+
+msgid "dashboard.settings.notifications.email-comments.partial"
+msgstr "Sólo menciones y respuestas"
+
+msgid "dashboard.settings.notifications.email-comments.none"
+msgstr "Ninguna"
+
+msgid "dashboard.settings.notifications.email-invites.title"
+msgstr "Invitaciones y solicitudes"
+
+msgid "dashboard.settings.notifications.email-invites.all"
+msgstr "Todas las invitaciones y solicitudes"
+
+msgid "dashboard.settings.notifications.email-invites.none"
+msgstr "Ninguna"
+
+msgid "dashboard.settings.notifications.submit"
+msgstr "Actualizar configuración"
+
+msgid "labels.notifications"
+msgstr "Notificaciones"
+
+msgid "comments.mentions.not-found"
+msgstr "No se encuentra miembros con @%s"

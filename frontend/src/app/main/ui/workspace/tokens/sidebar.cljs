@@ -46,8 +46,34 @@
 
 ;; Components ------------------------------------------------------------------
 
-(defn token-section-icon
-  [type]
+(mf/defc token-pill
+  {::mf/wrap-props false}
+  [{:keys [on-click token theme-token highlighted? on-context-menu]}]
+  (let [{:keys [name value resolved-value errors]} token
+        errors? (and (seq errors) (seq (:errors theme-token)))]
+    [:button
+     {:class (stl/css-case :token-pill true
+                           :token-pill-highlighted highlighted?
+                           :token-pill-invalid errors?)
+      :title (cond
+               errors? (sd/humanize-errors token)
+               :else (->> [(str "Token: " name)
+                           (str (tr "workspace.token.original-value") value)
+                           (str (tr "workspace.token.resolved-value") resolved-value)]
+                          (str/join "\n")))
+      :on-click on-click
+      :on-context-menu on-context-menu
+      :disabled errors?}
+     (when-let [color (if (seq (ctob/find-token-value-references (:value token)))
+                        (wtt/resolved-value-hex theme-token)
+                        (wtt/resolved-value-hex token))]
+       [:& color-bullet {:color color
+                         :mini true}])
+     name]))
+
+(mf/defc token-section-icon
+  {::mf/wrap-props false}
+  [{:keys [type]}]
   (case type
     :border-radius "corner-radius"
     :color "drop"
