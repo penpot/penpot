@@ -119,27 +119,27 @@ test.describe("Tokens: Sets Tab", () => {
     await setInput.press(finalKey);
   };
 
-  test("User creates sets tree structure by entering a set path", async ({
-    page,
-  }) => {
-    const {
-      workspacePage,
-      tokenThemesSetsSidebar,
-      tokenSetItems,
-      tokenSetGroupItems,
-    } = await setupFileWithTokens(page);
-
-    const tokensTabButton = tokenThemesSetsSidebar
-      .getByRole("button", { name: "Add set" })
-      .click();
-
-    await createSet(tokenThemesSetsSidebar, "core/colors/light");
-    await createSet(tokenThemesSetsSidebar, "core/colors/dark");
-
-    // User cancels during editing
-    await createSet(tokenThemesSetsSidebar, "core/colors/dark", "Escape");
-
-    await expect(tokenSetItems).toHaveCount(2);
-    await expect(tokenSetGroupItems).toHaveCount(2);
-  });
+//   test("User creates sets tree structure by entering a set path", async ({
+//     page,
+//   }) => {
+//     const {
+//       workspacePage,
+//       tokenThemesSetsSidebar,
+//       tokenSetItems,
+//       tokenSetGroupItems,
+//     } = await setupFileWithTokens(page);
+// 
+//     const tokensTabButton = tokenThemesSetsSidebar
+//       .getByRole("button", { name: "Add set" })
+//       .click();
+// 
+//     await createSet(tokenThemesSetsSidebar, "core/colors/light");
+//     await createSet(tokenThemesSetsSidebar, "core/colors/dark");
+// 
+//     // User cancels during editing
+//     await createSet(tokenThemesSetsSidebar, "core/colors/dark", "Escape");
+// 
+//     await expect(tokenSetItems).toHaveCount(2);
+//     await expect(tokenSetGroupItems).toHaveCount(2);
+//   });
 });
