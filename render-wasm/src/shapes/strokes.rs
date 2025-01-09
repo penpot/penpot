@@ -10,8 +10,8 @@ pub enum StrokeStyle {
     Mixed,
 }
 
-impl From<i32> for StrokeStyle {
-    fn from(value: i32) -> Self {
+impl From<u8> for StrokeStyle {
+    fn from(value: u8) -> Self {
         match value {
             1 => StrokeStyle::Dotted,
             2 => StrokeStyle::Dashed,
@@ -21,15 +21,31 @@ impl From<i32> for StrokeStyle {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum StrokeCap {
     None,
-    // Line,
-    // Triangle,
-    // Circle,
-    // Diamond,
-    // Round,
-    // Square,
+    Line,
+    Triangle,
+    Rectangle,
+    Circle,
+    Diamond,
+    Round,
+    Square,
+}
+
+impl From<u8> for StrokeCap {
+    fn from(value: u8) -> Self {
+        match value {
+            1 => StrokeCap::Line,
+            2 => StrokeCap::Triangle,
+            3 => StrokeCap::Rectangle,
+            4 => StrokeCap::Circle,
+            5 => StrokeCap::Diamond,
+            6 => StrokeCap::Round,
+            7 => StrokeCap::Square,
+            _ => StrokeCap::None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -59,38 +75,38 @@ impl Stroke {
         }
     }
 
-    pub fn new_center_stroke(width: f32, style: i32) -> Self {
+    pub fn new_center_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) -> Self {
         let transparent = skia::Color::from_argb(0, 0, 0, 0);
         Stroke {
             fill: Fill::Solid(transparent),
             width: width,
             style: StrokeStyle::from(style),
-            cap_end: StrokeCap::None,
-            cap_start: StrokeCap::None,
+            cap_end: StrokeCap::from(cap_end),
+            cap_start: StrokeCap::from(cap_start),
             kind: StrokeKind::CenterStroke,
         }
     }
 
-    pub fn new_inner_stroke(width: f32, style: i32) -> Self {
+    pub fn new_inner_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) -> Self {
         let transparent = skia::Color::from_argb(0, 0, 0, 0);
         Stroke {
             fill: Fill::Solid(transparent),
             width: width,
             style: StrokeStyle::from(style),
-            cap_end: StrokeCap::None,
-            cap_start: StrokeCap::None,
+            cap_end: StrokeCap::from(cap_end),
+            cap_start: StrokeCap::from(cap_start),
             kind: StrokeKind::InnerStroke,
         }
     }
 
-    pub fn new_outer_stroke(width: f32, style: i32) -> Self {
+    pub fn new_outer_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) -> Self {
         let transparent = skia::Color::from_argb(0, 0, 0, 0);
         Stroke {
             fill: Fill::Solid(transparent),
             width: width,
             style: StrokeStyle::from(style),
-            cap_end: StrokeCap::None,
-            cap_start: StrokeCap::None,
+            cap_end: StrokeCap::from(cap_end),
+            cap_start: StrokeCap::from(cap_start),
             kind: StrokeKind::OuterStroke,
         }
     }

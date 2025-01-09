@@ -219,21 +219,35 @@
     :mixed  3
     0))
 
+(defn- translate-stroke-cap
+  [stroke-cap]
+  (case stroke-cap
+    :line-arrow 1
+    :triangle-arrow 2
+    :square-marker 3
+    :circle-marker 4
+    :diamond-marker 5
+    :round 6
+    :square 7
+    0))
+
 (defn set-shape-strokes
   [strokes]
   (h/call internal-module "_clear_shape_strokes")
   (keep (fn [stroke]
-          (let [opacity  (or (:stroke-opacity stroke) 1.0)
-                color    (:stroke-color stroke)
-                gradient (:stroke-color-gradient stroke)
-                image    (:stroke-image stroke)
-                width    (:stroke-width stroke)
-                align    (:stroke-alignment stroke)
-                style    (-> stroke :stroke-style translate-stroke-style)]
+          (let [opacity   (or (:stroke-opacity stroke) 1.0)
+                color     (:stroke-color stroke)
+                gradient  (:stroke-color-gradient stroke)
+                image     (:stroke-image stroke)
+                width     (:stroke-width stroke)
+                align     (:stroke-alignment stroke)
+                style     (-> stroke :stroke-style translate-stroke-style)
+                cap-start (-> stroke :stroke-cap-start translate-stroke-cap)
+                cap-end   (-> stroke :stroke-cap-end translate-stroke-cap)]
             (case align
-              :inner (h/call internal-module "_add_shape_inner_stroke" width style)
-              :outer (h/call internal-module "_add_shape_outer_stroke" width style)
-              (h/call internal-module "_add_shape_center_stroke" width style))
+              :inner (h/call internal-module "_add_shape_inner_stroke" width style cap-start cap-end)
+              :outer (h/call internal-module "_add_shape_outer_stroke" width style cap-start cap-end)
+              (h/call internal-module "_add_shape_center_stroke" width style cap-start cap-end))
 
             (cond
               (some? gradient)

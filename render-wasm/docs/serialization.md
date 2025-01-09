@@ -39,3 +39,29 @@ Gradient stops are serialized in a `Uint8Array`, each stop taking **5 bytes**.
 **Red**, **Green**, **Blue** and **Alpha** are the RGBA components of the stop.
 
 **Stop offset** is the offset, being integer values ranging from `0` to `100` (both inclusive).
+
+## StrokeCap
+
+Stroke caps are serialized as `u8`:
+
+| Value | Field     |
+| ----- | --------- |
+| 1     | Line      |
+| 2     | Triangle  |
+| 3     | Rectangle |
+| 4     | Circle    |
+| 5     | Diamond   |
+| 6     | Round     |
+| 7     | Square    |
+| _     | None      |
+
+## StrokeStyle
+
+Stroke styles are serialized as `u8`:
+
+| Value | Field  |
+| ----- | ------ |
+| 1     | Dotted |
+| 2     | Dashed |
+| 3     | Mixed  |
+| _     | Solid  |
