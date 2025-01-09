@@ -93,6 +93,9 @@
     (= type :path)
     (h/call internal-module "_set_shape_kind_path")
 
+    (= type :bool)
+    (h/call internal-module "_set_shape_kind_bool")
+
     :else
     (h/call internal-module "_set_shape_kind_rect")))
 
@@ -343,6 +346,24 @@
   [hidden]
   (h/call internal-module "_set_shape_hidden" hidden))
 
+
+(defn- translate-bool-type
+  [bool-type]
+  (case bool-type
+    :union 0
+    :difference 1
+    :intersection 2
+    :exclusion 3
+    0))
+
+(defn set-shape-bool-type
+  [bool-type]
+  (h/call internal-module "_set_shape_bool_type" (translate-bool-type bool-type)))
+
+(defn set-shape-bool-content
+  [content]
+  (set-shape-path-content content))
+
 (def debounce-render-without-cache (fns/debounce render-without-cache 100))
 
 (defn set-view
@@ -373,7 +394,8 @@
                   blend-mode   (dm/get-prop shape :blend-mode)
                   opacity      (dm/get-prop shape :opacity)
                   hidden       (dm/get-prop shape :hidden)
-                  content      (dm/get-prop shape :content)]
+                  content      (dm/get-prop shape :content)
+                  bool-content (dm/get-prop shape :bool-content)]
 
               (use-shape id)
               (set-shape-type type)
@@ -386,6 +408,7 @@
               (set-shape-opacity opacity)
               (set-shape-hidden hidden)
               (when (and (some? content) (= type :path)) (set-shape-path-content content))
+              (when (some? bool-content) (set-shape-bool-content bool-content))
               (let [pending' (concat (set-shape-fills fills) (set-shape-strokes strokes))]
                 (recur (inc index) (into pending pending'))))
             pending))]

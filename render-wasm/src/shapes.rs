@@ -4,6 +4,7 @@ use uuid::Uuid;
 
 use crate::render::{BlendMode, Renderable};
 
+mod bools;
 mod fills;
 mod images;
 mod matrix;
@@ -11,6 +12,7 @@ mod paths;
 mod renderable;
 mod strokes;
 
+pub use bools::*;
 pub use fills::*;
 pub use images::*;
 use matrix::*;
@@ -22,6 +24,7 @@ pub enum Kind {
     Rect(math::Rect),
     Circle(math::Rect),
     Path(Path),
+    Bool(BoolType, Path),
 }
 
 pub type Color = skia::Color;
@@ -59,6 +62,10 @@ impl Shape {
             opacity: 1.,
             hidden: false,
         }
+    }
+
+    pub fn kind(&self) -> Kind {
+        self.kind.clone()
     }
 
     pub fn set_selrect(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
@@ -169,7 +176,12 @@ impl Shape {
 
     pub fn set_path_segments(&mut self, buffer: Vec<RawPathData>) -> Result<(), String> {
         let p = Path::try_from(buffer)?;
-        self.kind = Kind::Path(p);
+        let kind = match &self.kind {
+            Kind::Bool(bool_type, _) => Kind::Bool(*bool_type, p),
+            _ => Kind::Path(p),
+        };
+        self.kind = kind;
+
         Ok(())
     }
 
@@ -177,9 +189,18 @@ impl Shape {
         self.blend_mode = mode;
     }
 
+    pub fn set_bool_type(&mut self, bool_type: BoolType) {
+        let kind = match &self.kind {
+            Kind::Bool(_, path) => Kind::Bool(bool_type, path.clone()),
+            _ => Kind::Bool(bool_type, Path::default()),
+        };
+
+        self.kind = kind;
+    }
+
     fn to_path_transform(&self) -> Option<skia::Matrix> {
         match self.kind {
-            Kind::Path(_) => {
+            Kind::Path(_) | Kind::Bool(_, _) => {
                 let center = self.bounds().center();
                 let mut matrix = skia::Matrix::new_identity();
                 matrix.pre_translate(center);
