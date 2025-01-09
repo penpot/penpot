@@ -107,6 +107,7 @@
                         (when (ctsr/can-get-border-radius? shape)
                           (ctsr/set-radius-to-single-corner shape (first attributes) value)))
                       {:reg-objects? true
+                       :ignore-touched true
                        :attrs ctt/border-radius-keys}))
 
 (defn update-opacity [value shape-ids]
