@@ -1,7 +1,7 @@
-use skia_safe as skia;
+use skia_safe::{self as skia, RRect};
 use uuid::Uuid;
 
-use super::{BlurType, Fill, Image, Kind, Path, Shape, Stroke, StrokeCap, StrokeKind};
+use super::{BlurType, Corners, Fill, Image, Kind, Path, Shape, Stroke, StrokeCap, StrokeKind};
 use crate::math::Rect;
 use crate::render::{ImageStore, Renderable};
 
@@ -111,8 +111,12 @@ fn render_fill(
                 );
             }
         }
-        (_, Kind::Rect(rect)) => {
+        (_, Kind::Rect(rect, None)) => {
             surface.canvas().draw_rect(rect, &fill.to_paint(&selrect));
+        }
+        (_, Kind::Rect(rect, Some(corners))) => {
+            let rrect = RRect::new_rect_radii(rect, corners);
+            surface.canvas().draw_rrect(rrect, &fill.to_paint(&selrect));
         }
         (_, Kind::Circle(rect)) => {
             surface.canvas().draw_oval(rect, &fill.to_paint(&selrect));
@@ -148,7 +152,9 @@ fn render_stroke(
         }
     } else {
         match kind {
-            Kind::Rect(rect) => draw_stroke_on_rect(surface.canvas(), stroke, rect, &selrect),
+            Kind::Rect(rect, corners) => {
+                draw_stroke_on_rect(surface.canvas(), stroke, rect, &selrect, corners)
+            }
             Kind::Circle(rect) => draw_stroke_on_circle(surface.canvas(), stroke, rect, &selrect),
             Kind::Path(path) | Kind::Bool(_, path) => {
                 draw_stroke_on_path(surface.canvas(), stroke, path, &selrect, path_transform);
@@ -157,17 +163,34 @@ fn render_stroke(
     }
 }
 
-fn draw_stroke_on_rect(canvas: &skia::Canvas, stroke: &Stroke, rect: &Rect, selrect: &Rect) {
-    // Draw the different kind of strokes for a rect is perry straightforward, we just need apply a stroke to:
+fn draw_stroke_on_rect(
+    canvas: &skia::Canvas,
+    stroke: &Stroke,
+    rect: &Rect,
+    selrect: &Rect,
+    corners: &Option<Corners>,
+) {
+    // Draw the different kind of strokes for a rect is straightforward, we just need apply a stroke to:
     // - The same rect if it's a center stroke
     // - A bigger rect if it's an outer stroke
     // - A smaller rect if it's an outer stroke
     let stroke_rect = stroke.outer_rect(rect);
-    canvas.draw_rect(&stroke_rect, &stroke.to_paint(selrect));
+    let paint = stroke.to_paint(selrect);
+
+    match corners {
+        Some(radii) => {
+            let radii = stroke.outer_corners(radii);
+            let rrect = RRect::new_rect_radii(stroke_rect, &radii);
+            canvas.draw_rrect(rrect, &paint);
+        }
+        None => {
+            canvas.draw_rect(&stroke_rect, &paint);
+        }
+    }
 }
 
 fn draw_stroke_on_circle(canvas: &skia::Canvas, stroke: &Stroke, rect: &Rect, selrect: &Rect) {
-    // Draw the different kind of strokes for an oval is perry straightforward, we just need apply a stroke to:
+    // Draw the different kind of strokes for an oval is straightforward, we just need apply a stroke to:
     // - The same oval if it's a center stroke
     // - A bigger oval if it's an outer stroke
     // - A smaller oval if it's an outer stroke
@@ -451,8 +474,12 @@ pub fn draw_image_fill_in_container(
 
     // Set the clipping rectangle to the container bounds
     match kind {
-        Kind::Rect(_) => {
+        Kind::Rect(_, None) => {
             canvas.clip_rect(container, skia::ClipOp::Intersect, true);
+        }
+        Kind::Rect(_, Some(corners)) => {
+            let rrect = RRect::new_rect_radii(container, corners);
+            canvas.clip_rrect(rrect, skia::ClipOp::Intersect, true);
         }
         Kind::Circle(_) => {
             let mut oval_path = skia::Path::new();
@@ -494,7 +521,9 @@ pub fn draw_image_stroke_in_container(
     ) {
         let outer_rect = stroke.outer_rect(container);
         match kind {
-            Kind::Rect(rect) => draw_stroke_on_rect(canvas, stroke, rect, &outer_rect),
+            Kind::Rect(rect, corners) => {
+                draw_stroke_on_rect(canvas, stroke, rect, &outer_rect, corners)
+            }
             Kind::Circle(rect) => draw_stroke_on_circle(canvas, stroke, rect, &outer_rect),
             Kind::Path(p) | Kind::Bool(_, p) => {
                 let mut path = p.to_skia_path();
