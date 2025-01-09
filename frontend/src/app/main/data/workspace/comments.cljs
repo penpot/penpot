@@ -31,27 +31,25 @@
 (declare handle-comment-layer-click)
 
 (defn initialize-comments
-  [file-id]
-  (dm/assert! (uuid? file-id))
+  []
   (ptk/reify ::initialize-comments
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stopper (rx/filter #(= ::finalize %) stream)]
-        (rx/merge
-         (rx/of (dcmt/retrieve-comment-threads file-id))
-         (->> stream
-              (rx/filter mse/mouse-event?)
-              (rx/filter mse/mouse-click-event?)
-              (rx/switch-map #(rx/take 1 ms/mouse-position))
-              (rx/with-latest-from ms/keyboard-space)
-              (rx/filter (fn [[_ space]] (not space)))
-              (rx/map first)
-              (rx/map handle-comment-layer-click)
-              (rx/take-until stopper))
-         (->> stream
-              (rx/filter dwco/interrupt?)
-              (rx/map handle-interrupt)
-              (rx/take-until stopper)))))))
+      (let [stopper-s (rx/filter #(= ::finalize %) stream)]
+        (->> (rx/merge
+              (rx/of (dcmt/retrieve-comment-threads))
+              (->> stream
+                   (rx/filter mse/mouse-event?)
+                   (rx/filter mse/mouse-click-event?)
+                   (rx/switch-map #(rx/take 1 ms/mouse-position))
+                   (rx/with-latest-from ms/keyboard-space)
+                   (rx/filter (fn [[_ space]] (not space)))
+                   (rx/map first)
+                   (rx/map handle-comment-layer-click))
+              (->> stream
+                   (rx/filter dwco/interrupt?)
+                   (rx/map handle-interrupt)))
+             (rx/take-until stopper-s))))))
 
 (defn- handle-interrupt
   []

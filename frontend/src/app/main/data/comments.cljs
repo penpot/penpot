@@ -14,6 +14,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.team :as dtm]
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -281,13 +282,12 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id (:current-file-id state)
-            share-id (-> state :viewer-local :share-id)
-            params (-> {:id id :content content :share-id share-id}
-                       (update-mentions))]
-        (->> (rp/cmd! :update-comment params)
+      (let [share-id (-> state :viewer-local :share-id)
+            params   {:id id :content content :share-id share-id}
+            params   (update-mentions params)]
+        (->> (rp/cmd! :update-comment {:id id :content content :share-id share-id})
              (rx/catch #(rx/throw {:type :comment-error}))
-             (rx/map #(retrieve-comment-threads file-id)))))))
+             (rx/map #(retrieve-comment-threads)))))))
 
 (defn delete-comment-thread-on-workspace
   ([params]
@@ -298,12 +298,10 @@
    (ptk/reify ::delete-comment-thread-on-workspace
      ptk/UpdateEvent
      (update [_ state]
-       (let [page-id (:current-page-id state)
-             file-id (:current-file-id state)]
-         (-> state
-             (update-in [:files file-id :data :pages-index page-id :comment-thread-positions] dissoc id)
-             (update :comments dissoc id)
-             (update :comment-threads dissoc id))))
+       (-> state
+           (dsh/update-page #(update % :comment-thread-positions dissoc id))
+           (update :comments dissoc id)
+           (update :comment-threads dissoc id)))
 
      ptk/WatchEvent
      (watch [_ _ _]
@@ -380,43 +378,40 @@
                (rx/map #(partial fetched %))
                (rx/catch #(rx/throw {:type :comment-error}))))))))
 
+
+(defn- comment-threads-fetched
+  [threads]
+  (ptk/reify ::comment-threads-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (reduce (fn [state {:keys [id file-id page-id] :as thread}]
+                (-> state
+                    (update :comment-threads assoc id thread)
+                    (dsh/update-page file-id page-id
+                                     (fn [page]
+                                       (update-in page [:comment-thread-positions id]
+                                                  (fn [state]
+                                                    (-> state
+                                                        (assoc :position (:position thread))
+                                                        (assoc :frame-id (:frame-id thread)))))))))
+              state
+              threads))))
+
 (defn retrieve-comment-threads
-  [file-id]
-  (dm/assert! (uuid? file-id))
-  (letfn [(set-comment-threds [state comment-thread]
-            (let [file-id  (:current-file-id state)
-                  page-id  (:page-id comment-thread)
-                  path     [:files file-id :data
-                            :pages-index page-id
-                            :comment-thread-positions (:id comment-thread)]
-                  position (get-in state path)]
+  ([] (retrieve-comment-threads nil))
+  ([file-id]
+   (ptk/reify ::retrieve-comment-threads
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [share-id (-> state :viewer-local :share-id)
+             file-id  (or file-id (:current-file-id state))]
 
-              ;; FIXME: make it more efficient
-              (cond-> state
-                (nil? position)
-                (update-in path (fn [state]
-                                  (-> state
-                                      (assoc :position (:position comment-thread))
-                                      (assoc :frame-id (:frame-id comment-thread))))))))
+         (rx/merge
+          (->> (rp/cmd! :get-comment-threads {:file-id file-id :share-id share-id})
+               (rx/map comment-threads-fetched))
 
-          (fetched [[users comments] state]
-            (let [pages    (-> (dsh/lookup-file-data state)
-                               (get :pages-index))
-                  comments (filter #(contains? pages (:page-id %)) comments)
-                  state    (-> state
-                               (assoc :comment-threads (d/index-by :id comments))
-                               (update :current-file-comments-users merge (d/index-by :id users)))]
-              (reduce set-comment-threds state comments)))]
-
-    (ptk/reify ::retrieve-comment-threads
-      ptk/WatchEvent
-      (watch [_ state _]
-        (let [share-id (-> state :viewer-local :share-id)]
-          (->> (rx/zip (rp/cmd! :get-team-users {:file-id file-id})
-                       (rp/cmd! :get-comment-threads {:file-id file-id :share-id share-id}))
-               (rx/take 1)
-               (rx/map #(partial fetched %))
-               (rx/catch #(rx/throw {:type :comment-error}))))))))
+          ;; Refresh team members
+          (rx/of (dtm/fetch-members))))))))
 
 (defn retrieve-comments
   [thread-id]
@@ -431,6 +426,8 @@
                (rx/map #(partial fetched %))
                (rx/catch #(rx/throw {:type :comment-error}))))))))
 
+
+;; FIXME: revisit
 (defn retrieve-unread-comment-threads
   "A event used mainly in dashboard for retrieve all unread threads of a team."
   [team-id]
@@ -643,7 +640,7 @@
 (defn fetch-profiles
   "Fetch or refresh all profile data for comments of the current file"
   []
-  (ptk/reify ::fetch-comments-profiles
+  (ptk/reify ::fetch-profiles
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-id (:current-file-id state)

@@ -13,6 +13,12 @@
    [app.common.geom.shapes :as gsh]
    [app.common.svg.path.command :as upc]))
 
+(defn lookup-profile
+  ([state]
+   (:profile state))
+  ([state profile-id]
+   (dm/get-in state [:profiles profile-id])))
+
 (defn lookup-libraries
   "Retrieve all libraries, including the local file."
   [state]

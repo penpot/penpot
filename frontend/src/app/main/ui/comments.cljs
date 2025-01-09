@@ -146,7 +146,7 @@
         prev-value       (h/use-previous value)
 
         local-ref        (mf/use-ref nil)
-        mentions-str     (mf/use-ctx mentions-context)
+        mentions-s     (mf/use-ctx mentions-context)
         cur-mention      (mf/use-var nil)
 
         prev-selection   (mf/use-var nil)
@@ -245,13 +245,13 @@
                  (if (re-matches #"@\w*" mention-text)
                    (do
                      (reset! cur-mention mention-text)
-                     (rx/push! mentions-str {:type :display-mentions})
+                     (rx/push! mentions-s {:type :display-mentions})
                      (let [mention (subs mention-text 1)]
                        (when (d/not-empty? mention)
-                         (rx/push! mentions-str {:type :filter-mentions :data mention}))))
+                         (rx/push! mentions-s {:type :filter-mentions :data mention}))))
                    (do
                      (reset! cur-mention nil)
-                     (rx/push! mentions-str {:type :hide-mentions}))))))))
+                     (rx/push! mentions-s {:type :hide-mentions}))))))))
 
         handle-focus
         (mf/use-callback
@@ -319,22 +319,22 @@
                (and @cur-mention (kbd/enter? event))
                (do (dom/prevent-default event)
                    (dom/stop-propagation event)
-                   (rx/push! mentions-str {:type :insert-selected-mention}))
+                   (rx/push! mentions-s {:type :insert-selected-mention}))
 
                (and @cur-mention (kbd/down-arrow? event))
                (do (dom/prevent-default event)
                    (dom/stop-propagation event)
-                   (rx/push! mentions-str {:type :insert-next-mention}))
+                   (rx/push! mentions-s {:type :insert-next-mention}))
 
                (and @cur-mention (kbd/up-arrow? event))
                (do (dom/prevent-default event)
                    (dom/stop-propagation event)
-                   (rx/push! mentions-str {:type :insert-prev-mention}))
+                   (rx/push! mentions-s {:type :insert-prev-mention}))
 
                (and @cur-mention (kbd/esc? event))
                (do (dom/prevent-default event)
                    (dom/stop-propagation event)
-                   (rx/push! mentions-str {:type :hide-mentions}))
+                   (rx/push! mentions-s {:type :hide-mentions}))
 
                (and (kbd/esc? event) (fn? on-esc))
                (on-esc event)
@@ -383,8 +383,8 @@
     ;; Effect to communicate with the mentions panel
     (mf/use-effect
      (fn []
-       (when mentions-str
-         (->> mentions-str
+       (when mentions-s
+         (->> mentions-s
               (rx/subs!
                (fn [{:keys [type data]}]
                  (case type
@@ -429,10 +429,9 @@
       :on-focus handle-focus
       :on-blur handle-blur}]))
 
-(mf/defc mentions-panel
+(mf/defc mentions-panel*
   [{:keys [profiles]}]
-
-  (let [mentions-str (mf/use-ctx mentions-context)
+  (let [mentions-s (mf/use-ctx mentions-context)
 
         profile (mf/deref refs/profile)
 
@@ -468,14 +467,14 @@
            (let [id (-> (dom/get-current-target event)
                         (dom/get-data "user-id")
                         (uuid/uuid))]
-             (rx/push! mentions-str {:type :insert-mention
+             (rx/push! mentions-s {:type :insert-mention
                                      :data {:user (get profiles id)}}))))]
 
     (mf/use-effect
      (mf/deps mentions-users selected)
      (fn []
        (let [sub
-             (->> mentions-str
+             (->> mentions-s
                   (rx/subs!
                    (fn [{:keys [type data]}]
                      (case type
@@ -492,7 +491,7 @@
                        (swap! mention-state assoc :mention-filter data)
 
                        :insert-selected-mention
-                       (rx/push! mentions-str {:type :insert-mention
+                       (rx/push! mentions-s {:type :insert-mention
                                                :data {:user (get mentions-users selected)}})
 
                        :insert-next-mention
@@ -524,7 +523,7 @@
 
 (mf/defc mentions-button
   []
-  (let [mentions-str      (mf/use-ctx mentions-context)
+  (let [mentions-s      (mf/use-ctx mentions-context)
         display-mentions* (mf/use-state false)
 
         handle-mouse-down
@@ -532,7 +531,7 @@
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (rx/push! mentions-str {:type :display-mentions})))]
+           (rx/push! mentions-s {:type :display-mentions})))]
 
     (mf/use-effect
      (fn []
@@ -543,7 +542,7 @@
                   :display-mentions (reset! display-mentions* true)
                   :hide-mentions    (reset! display-mentions* false)
                   nil))
-              mentions-str)]
+              mentions-s)]
          #(rx/dispose! sub))))
 
     [:> icon-button*
@@ -707,7 +706,7 @@
   [{:keys [draft zoom on-cancel on-submit position-modifier profiles]}]
   (let [profile   (mf/deref refs/profile)
 
-        mentions-str (mf/use-memo #(rx/subject))
+        mentions-s (mf/use-memo #(rx/subject))
 
         position  (cond-> (:position draft)
                     (some? position-modifier)
@@ -740,7 +739,7 @@
          (mf/deps draft)
          (partial on-submit draft))]
 
-    [:& (mf/provider mentions-context) {:value mentions-str}
+    [:& (mf/provider mentions-context) {:value mentions-s}
      [:div
       {:class (stl/css :floating-preview-wrapper)
        :data-testid "floating-thread-bubble"
@@ -774,7 +773,7 @@
                      :disabled disabled?}
          (tr "labels.post")]]]
 
-      [:& mentions-panel {:profiles profiles}]]]))
+      [:> mentions-panel* {:profiles profiles}]]]))
 
 (mf/defc comment-floating-thread-header*
   {::mf/props :obj
@@ -930,8 +929,8 @@
 
 (defn- offset-position [position viewport zoom bubble-margin]
   (let [viewport (or viewport {:offset-x 0 :offset-y 0 :width 0 :height 0})
-        base-x (+ (* (:x position) zoom) (:offset-x viewport))
-        base-y (+ (* (:y position) zoom) (:offset-y viewport))
+        base-x   (+ (* (:x position) zoom) (:offset-x viewport))
+        base-y   (+ (* (:y position) zoom) (:offset-y viewport))
 
         x (:x position)
         y (:y position)
@@ -954,7 +953,7 @@
    ::mf/wrap [mf/memo]}
   [{:keys [thread zoom profiles origin position-modifier viewport]}]
   (let [ref           (mf/use-ref)
-        mentions-str (mf/use-memo #(rx/subject))
+        mentions-s (mf/use-memo #(rx/subject))
         thread-id     (:id thread)
         thread-pos    (:position thread)
 
@@ -962,10 +961,10 @@
                         (some? position-modifier)
                         (gpt/transform position-modifier))
 
-        max-height    (when (some? viewport) (int (* (obj/get viewport "height") 0.75)))
+        max-height    (when (some? viewport) (int (* (:height viewport) 0.75)))
 
         ;; We should probably look for a better way of doing this.
-        bubble-margin {:x 24 :y 24}
+        bubble-margin (gpt/point 24 24)
         pos           (offset-position base-pos viewport zoom bubble-margin)
 
         margin-x      (* (:x bubble-margin) (if (= (:h-dir pos) :left) -1 1))
@@ -993,7 +992,7 @@
       (when-let [node (mf/ref-val ref)]
         (dom/scroll-into-view-if-needed! node)))
 
-    [:& (mf/provider mentions-context) {:value mentions-str}
+    [:> (mf/provider mentions-context) {:value mentions-s}
      (when (some? first-comment)
        [:div {:class (stl/css-case :floating-thread-wrapper true
                                    :left (= (:h-dir pos) :left)
@@ -1020,7 +1019,7 @@
 
         [:> comment-reply-form* {:thread thread}]
 
-        [:& mentions-panel {:profiles profiles}]])]))
+        [:> mentions-panel* {:profiles profiles}]])]))
 
 (mf/defc comment-floating-bubble*
   {::mf/props :obj

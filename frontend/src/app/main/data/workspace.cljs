@@ -331,7 +331,7 @@
 
         (->> (rx/merge
               (rx/of (ntf/hide)
-                     (dcmt/retrieve-comment-threads file-id)
+                     (dcmt/retrieve-comment-threads)
                      (dcmt/fetch-profiles)
                      (fetch-bundle file-id))
 

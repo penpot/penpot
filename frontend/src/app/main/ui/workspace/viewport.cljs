@@ -300,12 +300,11 @@
              :edition edition}])]]]
 
       (when show-comments?
-        [:& comments/comments-layer {:vbox vbox
-                                     :vport vport
-                                     :zoom zoom
-                                     :drawing drawing
-                                     :page-id page-id
-                                     :file-id (:id file)}])
+        [:> comments/comments-layer* {:vbox vbox
+                                      :page-id page-id
+                                      :vport vport
+                                      :zoom zoom
+                                      :drawing drawing}])
 
       (when picking-color?
         [:& pixel-overlay/pixel-overlay {:vport vport
