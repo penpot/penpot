@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-14 11:14+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-01-10 13:00+0000\n"
+"Last-Translator: \"Amerey.eu\" <info@amerey.eu>\n"
 "Language-Team: Czech <https://hosted.weblate.org/projects/penpot/frontend/cs/"
 ">\n"
 "Language: cs\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=((n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2);\n"
-"X-Generator: Weblate 5.9-dev\n"
+"X-Generator: Weblate 5.10-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:154, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -335,8 +335,7 @@ msgstr "Přístupový token byl úspěšně vytvořen."
 #: src/app/main/ui/settings/access_tokens.cljs:289
 msgid "dashboard.access-tokens.empty.add-one"
 msgstr ""
-"Pro vygenerování nového tokenu stiskněte tlačítko \"Vygenerovat nový "
-"token\"."
+"Pro vygenerování nového tokenu stiskněte tlačítko \"Generovat nový token\"."
 
 #: src/app/main/ui/settings/access_tokens.cljs:288
 msgid "dashboard.access-tokens.empty.no-access-tokens"
@@ -1144,8 +1143,8 @@ msgstr "Přejít na Penpot fórum"
 #: src/app/main/ui/settings/feedback.cljs:86
 msgid "feedback.discourse-subtitle1"
 msgstr ""
-"Jsme rádi, že jste tady. Pokud potřebujete pomoc, zkuste nejdříve "
-"vyhledávání, než napíšete příspěvek."
+"Jsme rádi, že jste tady. Pokud potřebujete pomoc, zkuste nejdříve hledání na "
+"fóru."
 
 #: src/app/main/ui/settings/feedback.cljs:85
 msgid "feedback.discourse-title"
@@ -1159,7 +1158,7 @@ msgstr "Předmět"
 msgid "feedback.subtitle"
 msgstr ""
 "Popište důvod svého e-mailu a uveďte, zda se jedná o problém, nápad nebo "
-"pochybnost. Člen našeho týmu vám co nejdříve odpoví."
+"připomínku. Člen našeho týmu vám co nejdříve odpoví."
 
 #: src/app/main/ui/settings/feedback.cljs:65
 msgid "feedback.title"
@@ -1175,7 +1174,7 @@ msgstr "Zde vám pomůžeme s vašimi technickými dotazy."
 
 #: src/app/main/ui/settings/feedback.cljs:95
 msgid "feedback.twitter-title"
-msgstr "Účet podpory na Xu"
+msgstr "Účet podpory na X"
 
 #: src/app/main/ui/settings/password.cljs:29
 msgid "generic.error"
@@ -1258,11 +1257,11 @@ msgstr "Stín"
 
 #: src/app/main/ui/viewer/inspect/attributes/geometry.cljs:40
 msgid "inspect.attributes.size"
-msgstr "Velikost a poloha"
+msgstr "Velikost a pozice"
 
 #: src/app/main/ui/viewer/inspect/attributes/stroke.cljs:52
 msgid "inspect.attributes.stroke"
-msgstr "Tah"
+msgstr "Obrys"
 
 #, permanent, unused
 msgid "inspect.attributes.stroke.alignment.center"
@@ -1550,7 +1549,7 @@ msgstr "Vlastní písma"
 
 #: src/app/main/ui/settings/sidebar.cljs:73
 msgid "labels.dashboard"
-msgstr "Tabule"
+msgstr "Menu"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:336, src/app/main/ui/dashboard/fonts.cljs:256, src/app/main/ui/dashboard/fonts.cljs:332, src/app/main/ui/dashboard/fonts.cljs:346, src/app/main/ui/dashboard/project_menu.cljs:114, src/app/main/ui/dashboard/team.cljs:942, src/app/main/ui/settings/access_tokens.cljs:198, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:209, src/app/main/ui/workspace/sidebar/versions.cljs:152, src/app/main/ui/workspace/tokens/form.cljs:425, src/app/main/ui/workspace/tokens/modals/themes.cljs:335, src/app/main/ui/workspace/tokens/sets_context_menu.cljs:44
 msgid "labels.delete"
@@ -1654,7 +1653,7 @@ msgstr "Úložiště Github"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:1032, src/app/main/ui/settings/sidebar.cljs:113, src/app/main/ui/workspace/main_menu.cljs:175
 msgid "labels.give-feedback"
-msgstr "Dát zpětnou vazbu"
+msgstr "Poslat zpětnou vazbu"
 
 #: src/app/main/ui/auth/recovery_request.cljs:104, src/app/main/ui/auth/register.cljs:262, src/app/main/ui/static.cljs:171, src/app/main/ui/viewer/login.cljs:111
 msgid "labels.go-back"
@@ -1683,8 +1682,8 @@ msgstr "Nainstalovaná písma"
 #: src/app/main/ui/static.cljs:422
 msgid "labels.internal-error.desc-message"
 msgstr ""
-"Stalo se něco špatného. Opakujte operaci a pokud problém přetrvává, "
-"kontaktujte podporu."
+"Vyskytl se problém. Opakujte operaci a pokud problém přetrvává, kontaktujte "
+"podporu."
 
 #: src/app/main/ui/static.cljs:421
 msgid "labels.internal-error.main-message"
@@ -3588,7 +3587,7 @@ msgstr "Přepnout zobrazení na celou obrazovku"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:191
 msgid "shortcuts.toggle-guides"
-msgstr "Zobrazit / Skrýt vodítka"
+msgstr "Zobrazit / Skrýt vodící linky"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:192
 msgid "shortcuts.toggle-history"
@@ -3620,7 +3619,7 @@ msgstr "Zobrazit / Skrýt pravítka"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:200
 msgid "shortcuts.toggle-snap-guides"
-msgstr "Přichytit na vodítka"
+msgstr "Přichytit na vodící linky"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:201
 msgid "shortcuts.toggle-snap-ruler-guide"
@@ -3672,7 +3671,7 @@ msgstr "Zvětšení zoomu"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:213
 msgid "shortcuts.zoom-selected"
-msgstr "Přiblížit na vybrané"
+msgstr "Přiblížit vybrané"
 
 #: src/app/main/ui/dashboard/files.cljs:170
 msgid "title.dashboard.files"
@@ -4101,7 +4100,7 @@ msgstr "Zakázat přichycení k pixelu"
 
 #: src/app/main/ui/workspace/main_menu.cljs:212
 msgid "workspace.header.menu.disable-snap-ruler-guides"
-msgstr "Zakázat přichycení na vodítka pravítek"
+msgstr "Zakázat přichycení na vodící linky pravítek"
 
 #: src/app/main/ui/workspace/main_menu.cljs:244
 msgid "workspace.header.menu.enable-dynamic-alignment"
@@ -4134,7 +4133,7 @@ msgstr "Skrýt názvy tabulí"
 
 #: src/app/main/ui/workspace/main_menu.cljs:342
 msgid "workspace.header.menu.hide-guides"
-msgstr "Skrýt vodítka"
+msgstr "Skrýt vodící linky"
 
 #: src/app/main/ui/workspace/main_menu.cljs:359
 msgid "workspace.header.menu.hide-palette"
@@ -4170,7 +4169,7 @@ msgstr "Předvolby"
 
 #: src/app/main/ui/workspace/main_menu.cljs:814
 msgid "workspace.header.menu.option.view"
-msgstr "Pohled"
+msgstr "Zobrazit"
 
 #: src/app/main/ui/workspace/main_menu.cljs:471
 msgid "workspace.header.menu.redo"
@@ -4186,7 +4185,7 @@ msgstr "Zobrazit názvy tabulí"
 
 #: src/app/main/ui/workspace/main_menu.cljs:343
 msgid "workspace.header.menu.show-guides"
-msgstr "Zobrazit vodítka"
+msgstr "Zobrazit vodící linky"
 
 #: src/app/main/ui/workspace/main_menu.cljs:360
 msgid "workspace.header.menu.show-palette"
@@ -4248,15 +4247,15 @@ msgstr "Přiblížení"
 
 #: src/app/main/ui/viewer/header.cljs:109
 msgid "workspace.header.zoom-fill"
-msgstr "Výplň – přizpůsobit, aby vyplnil"
+msgstr "Zvětšit na celou obrazovku"
 
 #: src/app/main/ui/viewer/header.cljs:102
 msgid "workspace.header.zoom-fit"
-msgstr "Přizpůsobit - Zmenšit, aby se vešel"
+msgstr "Zmenšit na celou obrazovku"
 
 #: src/app/main/ui/workspace/right_header.cljs:128
 msgid "workspace.header.zoom-fit-all"
-msgstr "Přiblížit, aby se vešlo vše"
+msgstr "Přiblížit, aby se vše vešlo"
 
 #: src/app/main/ui/viewer/header.cljs:116
 msgid "workspace.header.zoom-full-screen"
@@ -4264,7 +4263,7 @@ msgstr "Celá obrazovka"
 
 #: src/app/main/ui/workspace/right_header.cljs:135
 msgid "workspace.header.zoom-selected"
-msgstr "Přiblížit na vybrané"
+msgstr "Přiblížit vybrané"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:273, src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:275, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:607
 msgid "workspace.layout_grid.editor.options.edit-grid"
@@ -4682,7 +4681,7 @@ msgstr "Ohraničení skupiny"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:320
 msgid "workspace.options.guides.title"
-msgstr "Vodítka"
+msgstr "Vodící linky"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:489
 msgid "workspace.options.height"
@@ -5259,7 +5258,7 @@ msgstr "Předvolby velikosti"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:43
 msgid "workspace.options.stroke"
-msgstr "Tah"
+msgstr "Obrys"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs
 #, unused
@@ -5320,11 +5319,11 @@ msgstr "Trojúhelník"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:192
 msgid "workspace.options.stroke-color"
-msgstr "Barva tahu"
+msgstr "Barva obrysu"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:165
 msgid "workspace.options.stroke-width"
-msgstr "Šířka tahu"
+msgstr "Šířka obrysu"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:87
 msgid "workspace.options.stroke.center"
@@ -5548,9 +5547,11 @@ msgid "workspace.plugins.permissions.content-write"
 msgstr "Číst a upravovat obsah souborů, ke kterým mají uživatelé přístup."
 
 #: src/app/main/ui/workspace/plugins.cljs:323
-#, fuzzy
 msgid "workspace.plugins.permissions.disclaimer"
-msgstr "Všimněte si, že tento plugin byl vytvořen externí stranou."
+msgstr ""
+"Tento plugin je vytvořen třetí stranou, takže se před udělením přístupu "
+"ujistěte, že mu důvěřujete. Ochrana a bezpečnost vašich dat jsou pro nás "
+"důležité. Máte-li jakékoli obavy, kontaktujte podporu."
 
 #: src/app/main/ui/workspace/plugins.cljs:263
 msgid "workspace.plugins.permissions.library-read"
@@ -5561,9 +5562,8 @@ msgid "workspace.plugins.permissions.library-write"
 msgstr "Číst a upravovat vaše knihovny a položky."
 
 #: src/app/main/ui/workspace/plugins.cljs:316
-#, fuzzy
 msgid "workspace.plugins.permissions.title"
-msgstr "TENTO PLUGIN POŽADUJE PŘÍSTUP K:"
+msgstr "PLUGIN '%s' POŽADUJE PŘÍSTUP K:"
 
 #: src/app/main/ui/workspace/plugins.cljs:250
 msgid "workspace.plugins.permissions.user-read"
@@ -5744,7 +5744,7 @@ msgstr "Zobrazit"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:424
 msgid "workspace.shape.menu.show-in-assets"
-msgstr "Zobrazit na panelu prostředků"
+msgstr "Zobrazit v panelu položek"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:442, src/app/main/ui/workspace/sidebar/assets/components.cljs:585
 msgid "workspace.shape.menu.show-main"
@@ -5781,11 +5781,11 @@ msgstr "Zrušit masku"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/sidebar/options/menus/component.cljs, src/app/main/ui/workspace/context_menu.cljs, src/app/main/ui/workspace/context_menu.cljs
 #, unused
 msgid "workspace.shape.menu.update-components-in-bulk"
-msgstr "Aktualizujte hlavní komponenty"
+msgstr "Aktualizovat hlavní komponenty"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:445
 msgid "workspace.shape.menu.update-main"
-msgstr "Aktualizujte hlavní komponent"
+msgstr "Aktualizovat hlavní komponent"
 
 #: src/app/main/ui/components/tab_container.cljs:52, src/app/main/ui/workspace/sidebar.cljs:46
 msgid "workspace.sidebar.collapse"
@@ -6081,3 +6081,576 @@ msgstr "Aktualizace"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Kliknutím zavřete cestu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:191, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:197
+msgid "workspace.options.layer-options.toggle-layer"
+msgstr "Přepnout viditelnost vrstvy"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:84
+msgid "workspace.token.active-themes"
+msgstr "%s aktivních motivů"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications.view"
+msgstr "Zobrazit oznámení"
+
+#: src/app/main/ui/workspace/main_menu.cljs:623
+msgid "dashboard.create-version-menu"
+msgstr "Připnout tuto verzi"
+
+#: src/app/main/ui/dashboard/team.cljs:181, src/app/main/ui/onboarding/team_choice.cljs:100
+msgid "errors.maximum-invitations-by-request-reached"
+msgstr ""
+"Bylo dosaženo maximálního (%s) počtu e-mailů, které lze pozvat v jedné "
+"žádosti"
+
+#: src/app/main/ui/comments.cljs:446
+msgid "labels.comment.mark-as-solved"
+msgstr "Označit jako vyřešené"
+
+#: src/app/main/ui/dashboard/files.cljs:186, src/app/main/ui/dashboard/projects.cljs:280
+msgid "dashboard.empty-placeholder-files-title"
+msgstr "Zatím žádné soubory."
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications"
+msgstr "Oznámení"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:39
+#, markdown
+msgid "dashboard.empty-placeholder-libraries"
+msgstr ""
+"Zde se zobrazí knihovny přidané do projektu. Zkuste své soubory sdílet nebo "
+"je přidat z [Knihovny a šablony](https://penpot.app/libraries-templates)."
+
+#: src/app/main/data/common.cljs:203
+msgid "dashboard.permissions-change.owner"
+msgstr "Nyní jste vlastníkem tohoto týmu."
+
+#: src/app/main/ui/comments.cljs:146
+msgid "labels.replies"
+msgstr "odpovědi"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:96
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Váš soubor byl úspěšně duplikován"
+msgstr[1] "Vaše soubory byly úspěšně duplikovány"
+msgstr[2] "Vaše soubory byly úspěšně duplikovány"
+
+msgid "labels.adding"
+msgstr "Přidávání..."
+
+msgid "workspace.libraries.empty.no-libraries"
+msgstr "Ve vašem týmu nejsou žádné sdílené knihovny, které můžete hledat"
+
+#: src/app/main/ui/comments.cljs:340, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:295, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:324
+msgid "labels.options"
+msgstr "Možnosti"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+msgid "shortcuts.copy-link"
+msgstr "Zkopírovat odkaz do schránky"
+
+#: src/app/main/ui/comments.cljs:151
+msgid "labels.replies.new"
+msgstr "nové odpovědi"
+
+#: src/app/main/ui/delete_shared.cljs:52
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Zrušit publikování"
+msgstr[1] "Zrušit publikování"
+msgstr[2] "Zrušit publikování"
+
+#: src/app/main/ui/dashboard/team.cljs:216
+msgid "modals.invite-team-member.text"
+msgstr ""
+"Můžete pozvat členy do týmu, aby měli přístup k tomuto souboru a všem "
+"souborům týmu."
+
+msgid "workspace.libraries.empty.add-some"
+msgstr "Nebo přidejte některé z těchto:"
+
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:500
+msgid "workspace.assets.colors.add-color"
+msgstr "Přidat barvu"
+
+#: src/app/main/ui/workspace/context_menu.cljs:241
+msgid "workspace.shape.menu.rename"
+msgstr "Přejmenovat"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:302
+msgid "workspace.token.edit-theme-title"
+msgstr "Upravit motiv"
+
+#: src/app/main/data/plugins.cljs:86, src/app/main/ui/workspace/main_menu.cljs:743, src/app/main/ui/workspace/plugins.cljs:82
+msgid "workspace.plugins.error.need-editor"
+msgstr "Abyste mohli tento plugin používat, musíte být editor"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:342
+msgid "workspace.versions.filter.mine"
+msgstr "Moje verze"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:318
+msgid "workspace.token.set-selection-theme"
+msgstr ""
+"Definujte, jaké sady tokenů by měly být použity jako součást této možnosti "
+"motivu:"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:359, src/app/main/ui/workspace/sidebar/versions.cljs:361
+msgid "workspace.versions.button.save"
+msgstr "Uložit verzi"
+
+msgid "workspace.versions.warning.text"
+msgstr "Automaticky uložené verze budou uchovány po dobu %s dní."
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:220
+msgid "workspace.versions.button.restore"
+msgstr "Obnovit verzi"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:348
+msgid "workspace.versions.filter.user"
+msgstr "%s verze"
+
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr ""
+"Pokud byste chtěli tento limit zvýšit, napište nám na [support@penpot.app]"
+"(%s)"
+
+#: src/app/main/ui/dashboard/import.cljs:466
+msgid "dashboard.import.import-message"
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "1 soubor byl úspěšně importován."
+msgstr[1] "%s soubory byly úspěšně importovány."
+msgstr[2] "%s souborů bylo úspěšně importováno."
+
+#: src/app/main/ui/dashboard/files.cljs:190, src/app/main/ui/dashboard/projects.cljs:284
+msgid "dashboard.empty-placeholder-drafts-subtitle"
+msgstr "Jakmile člen projektu vytvoří koncept, zobrazí se zde."
+
+#: src/app/main/ui/dashboard/files.cljs:185, src/app/main/ui/dashboard/projects.cljs:279
+msgid "dashboard.empty-placeholder-drafts-title"
+msgstr "Zatím žádné koncepty."
+
+#: src/app/main/ui/dashboard/files.cljs:191, src/app/main/ui/dashboard/projects.cljs:285
+msgid "dashboard.empty-placeholder-files-subtitle"
+msgstr "Jakmile člen projektu vytvoří soubor, zobrazí se zde."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:271
+msgid "settings.remove-color"
+msgstr "Odstranit barvu"
+
+#: src/app/main/ui/workspace/right_header.cljs:255
+msgid "workspace.header.share"
+msgstr "Sdílet"
+
+#: src/app/main/ui/workspace/libraries.cljs:300
+msgid "workspace.libraries.more-templates"
+msgstr "Můžete hledat "
+
+#: src/app/main/ui/workspace/libraries.cljs:304
+msgid "workspace.libraries.more-templates-link"
+msgstr "více šablon zde"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+msgid "workspace.options.blur-options.add-blur"
+msgstr "Přidat rozostření"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:187
+msgid "workspace.options.export.add-export"
+msgstr "Přidat export"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:234
+msgid "workspace.options.export.remove-export"
+msgstr "Odebrat export"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:150
+msgid "workspace.options.fill.add-fill"
+msgstr "Přidat barvu výplně"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:735
+msgid "workspace.options.interactions.add-interaction"
+msgstr "Přidat interakci"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.interactions.remove-interaction"
+msgstr "Odebrat interakci"
+
+#: src/app/main/ui/workspace/plugins.cljs:86
+msgid "workspace.plugins.remove-plugin"
+msgstr "Odebrat plugin"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1022
+msgid "workspace.shape.menu.remove-layout"
+msgstr "Odebrat rozložení"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:142
+msgid "workspace.token.no-sets"
+msgstr "Žádné sady"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:241, src/app/main/ui/workspace/tokens/sets.cljs:245
+msgid "workspace.token.no-sets-create"
+msgstr "Zatím nejsou definovány žádné sady. Nejprve si jednu vytvořte."
+
+#: src/app/main/data/common.cljs:202
+msgid "dashboard.permissions-change.admin"
+msgstr "Nyní jste správcem tohoto týmu."
+
+#: src/app/main/data/common.cljs:201
+msgid "dashboard.permissions-change.editor"
+msgstr "Nyní jste editorem tohoto týmu."
+
+#: src/app/main/ui/dashboard/team.cljs:944
+msgid "dashboard.webhooks.cant-edit"
+msgstr "Smazat nebo upravit můžete pouze vámi vytvořené webhooky."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1051
+#, unused
+msgid "labels.add"
+msgstr "Přidat"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:96
+msgid "labels.collapse"
+msgstr "Sbalit"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:302
+msgid "workspace.options.shadow-options.add-shadow"
+msgstr "Přidat stín"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:173
+msgid "workspace.options.shadow-options.toggle-shadow"
+msgstr "Přepnout stín"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:171
+msgid "workspace.options.stroke.add-stroke"
+msgstr "Přidat barvu obrysu"
+
+#: src/app/main/ui/workspace/plugins.cljs:376
+msgid "workspace.plugins.permissions-update.warning"
+msgstr ""
+"Plugin byl změněn od posledního otevření. Nyní chce také získat přístup k:"
+
+#: src/app/main/ui/workspace/plugins.cljs:283
+msgid "workspace.plugins.permissions.allow-download"
+msgstr "Zahájit stahování souborů."
+
+#: src/app/main/ui/workspace/plugins.cljs:276
+msgid "workspace.plugins.permissions.comment-read"
+msgstr "Přečtěte si své komentáře a odpovědi."
+
+#: src/app/main/ui/workspace/plugins.cljs:270
+msgid "workspace.plugins.permissions.comment-write"
+msgstr "Přečtěte si a upravte své komentáře a odpovídejte svým jménem."
+
+#: src/app/main/ui/workspace/plugins.cljs:436
+msgid "workspace.plugins.try-out.cancel"
+msgstr "TEĎ NE"
+
+#: src/app/main/ui/workspace/plugins.cljs:429
+msgid "workspace.plugins.try-out.message"
+msgstr ""
+"Chcete se podívat? Otevře se v novém konceptu pro váš aktuální tým. (Pokud "
+"ne, můžete jej vždy najít v nainstalovaných zásuvných modulech libovolného "
+"souboru.)"
+
+#: src/app/main/ui/workspace/plugins.cljs:425
+msgid "workspace.plugins.try-out.title"
+msgstr "PLUGIN '%s' JE NAINSTALOVÁN PRO VAŠEHO UŽIVATELE!"
+
+#: src/app/main/ui/workspace/plugins.cljs:442
+msgid "workspace.plugins.try-out.try"
+msgstr "VYZKOUŠET PLUGIN"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:229
+msgid "workspace.sidebar.sitemap.add-page"
+msgstr "Přidat stránku"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+#, unused
+msgid "workspace.token.add set"
+msgstr "Přidat sadu"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:310
+msgid "workspace.token.back-to-themes"
+msgstr "Zpět na seznam motivů"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:47
+msgid "workspace.token.create-new-theme"
+msgstr "Vytvořte si svůj první motiv hned teď."
+
+#: src/app/main/ui/workspace/tokens/form.cljs:363
+msgid "workspace.token.edit-token"
+msgstr "Upravit token"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:212
+msgid "workspace.token.no-sets-yet"
+msgstr "Zatím nejsou žádné sady."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:191
+msgid "workspace.token.no-themes"
+msgstr "Nejsou zde žádné motivy."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43
+msgid "workspace.token.no-themes-currently"
+msgstr "Momentálně nemáte žádné motivy."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:133
+msgid "workspace.token.num-sets"
+msgstr "%s sady"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:160
+msgid "workspace.token.select-set"
+msgstr "Vyberte sadu."
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:194
+msgid "workspace.versions.autosaved.entry"
+msgstr "%s verze automatického ukládání"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:225
+msgid "workspace.versions.button.pin"
+msgstr "Připnout verzi"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:188
+msgid "workspace.versions.autosaved.version"
+msgstr "Automaticky uložené %s"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:354
+msgid "workspace.versions.loading"
+msgstr "Načítání..."
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:285
+msgid "workspace.versions.restore-warning"
+msgstr "Chcete obnovit tuto verzi?"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:101
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Váš soubor byl úspěšně smazán"
+msgstr[1] "Vaše soubory byly úspěšně smazány"
+msgstr[2] "Vaše soubory byly úspěšně smazány"
+
+msgid "labels.comment"
+msgstr "Komentář"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:167
+msgid "shortcuts.rename"
+msgstr "Přejmenovat"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:523
+msgid "workspace.assets.components.add-component"
+msgstr "Přidat komponent"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:368
+msgid "workspace.versions.empty"
+msgstr "Zatím nejsou žádné verze"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:341
+msgid "workspace.versions.filter.all"
+msgstr "Všechny verze"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:340
+msgid "workspace.versions.filter.label"
+msgstr "Filtr verzí"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:191
+msgid "workspace.versions.expand-snapshot"
+msgstr "Rozbalit snímky"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:207
+msgid "workspace.versions.snapshot-menu"
+msgstr "Otevřít nabídku snímku"
+
+#: src/app/main/ui/workspace/sidebar.cljs:242
+msgid "workspace.versions.tab.actions"
+msgstr "Akce"
+
+#: src/app/main/ui/workspace/sidebar.cljs:241
+msgid "workspace.versions.tab.history"
+msgstr "Historie"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:139
+msgid "workspace.versions.version-menu"
+msgstr "Otevřít nabídku verzí"
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+#, markdown, unused
+msgid "dashboard.empty-placeholder-libraries-subtitle"
+msgstr ""
+"Zde se zobrazí knihovny přidané do projektu. Zkuste své soubory sdílet nebo "
+"je přidat z [Knihovny a šablony](https://penpot.app/libraries-templates)."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:35
+msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
+msgstr "Zde se zobrazí knihovny přidané do projektu."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:32
+msgid "dashboard.empty-placeholder-libraries-title"
+msgstr "Zatím žádné knihovny."
+
+#: src/app/main/ui/dashboard/fonts.cljs:444
+msgid "dashboard.fonts.empty-placeholder-viewer"
+msgstr "Zatím žádná vlastní písma."
+
+#: src/app/main/ui/dashboard/fonts.cljs:445
+msgid "dashboard.fonts.empty-placeholder-viewer-sub"
+msgstr "Jakmile člen projektu nahraje vlastní písmo, zobrazí se zde."
+
+#: src/app/main/data/common.cljs:200
+msgid "dashboard.permissions-change.viewer"
+msgstr "Nyní jste v tomto týmu divákem."
+
+#: src/app/main/data/common.cljs:235
+msgid "dashboard.removed-from-team"
+msgstr "Již nejste součástí týmu „%s“."
+
+#: src/app/main/ui/workspace/main_menu.cljs:630
+msgid "dashboard.show-version-history"
+msgstr "Historie verze"
+
+msgid "dashboard.upgrade-plan.penpot-free"
+msgstr "Penpot Free"
+
+msgid "dashboard.upgrade-plan.no-limits"
+msgstr "Kreativitě se meze nekladou"
+
+msgid "dashboard.upgrade-plan.power-up"
+msgstr "Power up"
+
+#: src/app/main/ui/comments.cljs:147
+msgid "labels.post"
+msgstr "Příspěvek"
+
+#: src/app/main/ui/comments.cljs:145
+msgid "labels.reply"
+msgstr "odpověď"
+
+#: src/app/main/ui/comments.cljs:150
+msgid "labels.reply.new"
+msgstr "nová odpověď"
+
+#: src/app/main/ui/comments.cljs:188
+msgid "labels.reply.thread"
+msgstr "Odpověď"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:150, src/app/main/ui/workspace/sidebar/versions.cljs:290
+msgid "labels.restore"
+msgstr "Obnovit"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:246
+msgid "labels.sets"
+msgstr "Sady"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:187
+msgid "labels.themes"
+msgstr "Motivy"
+
+msgid "workspace.assets.add-library"
+msgstr "Přidat knihovnu"
+
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:421
+msgid "workspace.assets.typography.add-typography"
+msgstr "Přidat typografii"
+
+#: src/app/main/ui/workspace/main_menu.cljs:908
+msgid "workspace.header.menu.option.power-up"
+msgstr "Nastartujte svůj plán"
+
+msgid "workspace.libraries.empty.some-templates"
+msgstr "nějaké šablony zde"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
+msgid "workspace.options.blur-options.remove-blur"
+msgstr "Odebrat rozostření"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:108
+msgid "workspace.options.blur-options.toggle-blur"
+msgstr "Přepnout rozostření"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:163
+msgid "workspace.options.fill.remove-fill"
+msgstr "Odebrat barvu výplně"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:154
+msgid "workspace.options.flows.remove-flow"
+msgstr "Odstranit flow"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:177, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:315
+msgid "workspace.options.shadow-options.remove-shadow"
+msgstr "Odebrat stín"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:184
+msgid "workspace.options.stroke.remove-stroke"
+msgstr "Odebrat obrys"
+
+#: src/app/main/ui/workspace/plugins.cljs:196
+msgid "workspace.plugins.error.manifest"
+msgstr "Manifest pluginu je nesprávný."
+
+#: src/app/main/ui/workspace/plugins.cljs:372
+msgid "workspace.plugins.permissions-update.title"
+msgstr "AKTUALIZOVAT TENTO PLUGIN"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1004, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1030
+msgid "workspace.shape.menu.add-layout"
+msgstr "Přidat rozvržení"
+
+#: src/app/main/ui/workspace/context_menu.cljs:146
+msgid "workspace.shape.menu.copy_link"
+msgstr "Zkopírovat odkaz do schránky"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:155, src/app/main/ui/workspace/tokens/modals/themes.cljs:239
+msgid "workspace.token.create-theme-title"
+msgstr "Vytvořit motiv"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:364
+msgid "workspace.token.create-token"
+msgstr "Vytvořte nový %s token"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:147
+msgid "workspace.token.delete-theme-title"
+msgstr "Smazat motiv"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:72
+msgid "workspace.token.edit-themes"
+msgstr "Upravit motivy"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:186
+#, unused
+msgid "workspace.token.grouping-set-alert"
+msgstr "Seskupení sady tokenů zatím není podporováno."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:52
+msgid "workspace.token.new-theme"
+msgstr "Nový motiv"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:88
+msgid "workspace.token.no-active-theme"
+msgstr "Žádný motiv není aktivní"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:66
+msgid "workspace.token.original-value"
+msgstr "Původní hodnota: "
+
+#: src/app/main/ui/workspace/tokens/form.cljs:194, src/app/main/ui/workspace/tokens/form.cljs:197, src/app/main/ui/workspace/tokens/sidebar.cljs:67
+msgid "workspace.token.resolved-value"
+msgstr "Vyřešená hodnota: "
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:208
+msgid "workspace.token.save-theme"
+msgstr "Uložit motiv"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+#, unused
+msgid "workspace.token.theme-name"
+msgstr "Motiv %s"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:39, src/app/main/ui/workspace/tokens/modals/themes.cljs:84
+msgid "workspace.token.themes"
+msgstr "Motivy"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:194, src/app/main/ui/workspace/tokens/sidebar.cljs:215
+msgid "workspace.token.create-one"
+msgstr "Vytvořte si."
