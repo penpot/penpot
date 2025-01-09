@@ -348,6 +348,14 @@ pub extern "C" fn set_shape_hidden(hidden: bool) {
 }
 
 #[no_mangle]
+pub extern "C" fn set_shape_blur(blur_type: u8, hidden: bool, value: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape.set_blur(blur_type, hidden, value);
+    }
+}
+
+#[no_mangle]
 pub extern "C" fn set_shape_path_content() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
 

@@ -26,6 +26,7 @@ pub trait Renderable {
     fn hidden(&self) -> bool;
     fn clip(&self) -> bool;
     fn children_ids(&self) -> Vec<Uuid>;
+    fn image_filter(&self, scale: f32) -> Option<skia::ImageFilter>;
 }
 
 pub(crate) struct CachedSurfaceImage {
@@ -156,15 +157,11 @@ impl RenderState {
             .render(&mut self.drawing_surface, &self.images)
             .unwrap();
 
-        let mut paint = skia::Paint::default();
-        paint.set_blend_mode(element.blend_mode().into());
-        paint.set_alpha_f(element.opacity());
-
         self.drawing_surface.draw(
             &mut self.final_surface.canvas(),
             (0.0, 0.0),
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
-            Some(&paint),
+            Some(&skia::Paint::default()),
         );
         self.drawing_surface
             .canvas()
@@ -310,8 +307,17 @@ impl RenderState {
             }
         }
 
+        let mut paint = skia::Paint::default();
+        paint.set_blend_mode(element.blend_mode().into());
+        paint.set_alpha_f(element.opacity());
+        let filter = element.image_filter(self.viewbox.zoom * self.options.dpr());
+        if let Some(image_filter) = filter {
+            paint.set_image_filter(image_filter);
+        }
+
+        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
         // This is needed so the next non-children shape does not carry this shape's transform
-        self.final_surface.canvas().save();
+        self.final_surface.canvas().save_layer(&layer_rec);
         self.drawing_surface.canvas().save();
 
         if !root_id.is_nil() {

@@ -77,3 +77,12 @@ Bool operations (`bool-type`) are serialized as `u8`:
 | 2     | Intersection |
 | 3     | Exclusion    |
 | \_    | Union        |
+
+## BlurType
+
+Blur types are serialized as `u8`:
+
+| Value | Field        |
+| ----- | ------------ |
+| 1     | Layer        |
+| \_    | None         |

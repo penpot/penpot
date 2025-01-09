@@ -346,7 +346,6 @@
   [hidden]
   (h/call internal-module "_set_shape_hidden" hidden))
 
-
 (defn- translate-bool-type
   [bool-type]
   (case bool-type
@@ -363,6 +362,19 @@
 (defn set-shape-bool-content
   [content]
   (set-shape-path-content content))
+
+(defn- translate-blur-type
+  [blur-type]
+  (case blur-type
+    :layer-blur 1
+    0))
+
+(defn set-shape-blur
+  [blur]
+  (let [type   (-> blur :type translate-blur-type)
+        hidden (:hidden blur)
+        value  (:value blur)]
+    (h/call internal-module "_set_shape_blur" type hidden value)))
 
 (def debounce-render-without-cache (fns/debounce render-without-cache 100))
 
@@ -395,7 +407,8 @@
                   opacity      (dm/get-prop shape :opacity)
                   hidden       (dm/get-prop shape :hidden)
                   content      (dm/get-prop shape :content)
-                  bool-content (dm/get-prop shape :bool-content)]
+                  bool-content (dm/get-prop shape :bool-content)
+                  blur         (dm/get-prop shape :blur)]
 
               (use-shape id)
               (set-shape-type type)
@@ -407,6 +420,8 @@
               (set-shape-children children)
               (set-shape-opacity opacity)
               (set-shape-hidden hidden)
+              (when (some? blur)
+                (set-shape-blur blur))
               (when (and (some? content) (= type :path)) (set-shape-path-content content))
               (when (some? bool-content) (set-shape-bool-content bool-content))
               (let [pending' (concat (set-shape-fills fills) (set-shape-strokes strokes))]
