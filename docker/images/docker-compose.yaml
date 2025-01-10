@@ -178,6 +178,9 @@ services:
 
       PENPOT_TELEMETRY_ENABLED: true
 
+      ## Set this to a random string to secure your installation
+      PENPOT_SECRET_KEY: cOr4NdD4Hs8QMhWEclKcBdnKPeUkK8iwOVIoVmPGacVv97B7ZVEDhvwfcSwO39A1
+
       ## Example SMTP/Email configuration. By default, emails are sent to the mailcatch
       ## service, but for production usage it is recommended to setup a real SMTP
       ## provider. Emails are used to confirm user registrations & invitations. Look below
