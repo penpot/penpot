@@ -30,6 +30,7 @@ import {
   splitParagraph,
   mergeParagraphs,
   fixParagraph,
+  createParagraph,
 } from "../content/dom/Paragraph.js";
 import {
   removeBackward,
@@ -42,7 +43,7 @@ import { getTextNodeLength, getClosestTextNode, isTextNode } from "../content/do
 import TextNodeIterator from "../content/dom/TextNodeIterator.js";
 import TextEditor from "../TextEditor.js";
 import CommandMutations from "../commands/CommandMutations.js";
-import { setRootStyles } from "../content/dom/Root.js";
+import { isRoot, setRootStyles } from "../content/dom/Root.js";
 import { SelectionDirection } from "./SelectionDirection.js";
 import SafeGuard from "./SafeGuard.js";
 
@@ -947,6 +948,15 @@ export class SelectionController extends EventTarget {
   }
 
   /**
+   * Is true if the current focus node is a root.
+   *
+   * @type {boolean}
+   */
+  get isRootFocus() {
+    return isRoot(this.focusNode)
+  }
+
+  /**
    * Indicates that we have multiple nodes selected.
    *
    * @type {boolean}
@@ -1201,6 +1211,16 @@ export class SelectionController extends EventTarget {
       );
     } else if (this.isLineBreakFocus) {
       this.focusNode.replaceWith(new Text(newText));
+    } else if (this.isRootFocus) {
+      const newTextNode = new Text(newText);
+      const newInline = createInline(newTextNode, this.#currentStyle);
+      const newParagraph = createParagraph([
+        newInline
+      ], this.#currentStyle)
+      this.focusNode.replaceChildren(
+        newParagraph
+      );
+      return this.collapse(newTextNode, newText.length + 1);
     } else {
       throw new Error('Unknown node type');
     }
