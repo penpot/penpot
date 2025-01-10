@@ -7,11 +7,8 @@
 
 (ns app.main.ui.ds.utilities.swatch
   (:require-macros
-
    [app.main.style :as stl])
-
   (:require
-
    [app.common.data.macros :as dm]
    [app.common.json :as json]
    [app.common.schema :as sm]
@@ -21,14 +18,6 @@
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
-
-(def ^:private schema:swatch
-  [:map {:title "SchemaSwatch"}
-   [:background {:optional true} ct/schema:color]
-   [:class {:optional true} :string]
-   [:size {:optional true} [:enum "small" "medium" "large"]]
-   [:active {:optional true} :boolean]
-   [:on-click {:optional true} fn?]])
 
 (defn- color-title
   [color-item]
@@ -63,12 +52,28 @@
         (some? image)
         (tr "media.image")))))
 
+(def ^:private schema:swatch
+  [:map {:title "SchemaSwatch"}
+   [:background {:optional true} ct/schema:color]
+   [:class {:optional true} :string]
+   [:size {:optional true} [:enum "small" "medium" "large"]]
+   [:active {:optional true} ::sm/boolean]
+   [:on-click {:optional true} ::sm/fn]])
+
 (mf/defc swatch*
-  {::mf/props :obj
-   ::mf/schema (sm/schema schema:swatch)}
+  {::mf/schema (sm/schema schema:swatch)}
   [{:keys [background on-click size active class]
     :rest props}]
-  (let [background (if (object? background) (json/->clj background) background)
+  (let [;; NOTE: this code is only relevant for storybook, because
+        ;; storybook is unable to pass in a comfortable way a complex
+        ;; object; the "interactive" way of storybook only allows
+        ;; plain object. So for this case we accept them and
+        ;; automatically convert them to clojure map (which is exactly
+        ;; what this component expects). On normal usage of this
+        ;; component this code should be always fallback to else case.
+        background (if (object? background)
+                     (json/->clj background)
+                     background)
         read-only? (nil? on-click)
         id? (some? (:id background))
         element-type (if read-only? "div" "button")

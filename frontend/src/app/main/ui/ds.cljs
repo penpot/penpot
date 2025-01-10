@@ -24,34 +24,38 @@
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.ds.storybook :as sb]
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
-   [app.util.i18n :as i18n]))
+   [app.util.i18n :as i18n]
+   [rumext.v2 :as mf]))
 
 
 (i18n/init! cf/translations)
 
 (def default
   "A export used for storybook"
-  #js {:Button button*
-       :Heading heading*
-       :Icon icon*
-       :IconButton icon-button*
-       :Input input*
-       :EmptyPlaceholder empty-placeholder*
-       :Loader loader*
-       :RawSvg raw-svg*
-       :Select select*
-       :Combobox combobox*
-       :Text text*
-       :TabSwitcher tab-switcher*
-       :Toast toast*
-       :TokenStatusIcon token-status-icon*
-       :Swatch swatch*
-       ;; meta / misc
-       :meta #js {:icons (clj->js (sort icon-list))
-                  :tokenStatus (clj->js (sort token-status-list))
-                  :svgs (clj->js (sort raw-svg-list))
-                  :typography (clj->js typography-list)}
-       :storybook #js {:StoryGrid sb/story-grid*
-                       :StoryGridCell sb/story-grid-cell*
-                       :StoryGridRow sb/story-grid-row*
-                       :StoryHeader sb/story-header*}})
+  (mf/object
+   {:Button button*
+    :Heading heading*
+    :Icon icon*
+    :IconButton icon-button*
+    :Input input*
+    :EmptyPlaceholder empty-placeholder*
+    :Loader loader*
+    :RawSvg raw-svg*
+    :Select select*
+    :Combobox combobox*
+    :Text text*
+    :TabSwitcher tab-switcher*
+    :Toast toast*
+    :TokenStatusIcon token-status-icon*
+    :Swatch swatch*
+    ;; meta / misc
+    :meta
+    {:icons (clj->js (sort icon-list))
+     :tokenStatus (clj->js (sort token-status-list))
+     :svgs (clj->js (sort raw-svg-list))
+     :typography (clj->js typography-list)}
+    :storybook
+    {:StoryGrid sb/story-grid*
+     :StoryGridCell sb/story-grid-cell*
+     :StoryGridRow sb/story-grid-row*
+     :StoryHeader sb/story-header*}}))
