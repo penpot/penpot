@@ -262,15 +262,16 @@
             (rx/of (with-meta event (meta it)))))))))
 
 (defn update-layout
-  [ids changes]
-  (ptk/reify ::update-layout
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [undo-id (js/Symbol)]
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dwsh/update-shapes ids (d/patch-object changes))
-               (ptk/data-event :layout/update {:ids ids})
-               (dwu/commit-undo-transaction undo-id))))))
+  ([ids changes] (update-layout ids changes nil))
+  ([ids changes options]
+   (ptk/reify ::update-layout
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (let [undo-id (js/Symbol)]
+         (rx/of (dwu/start-undo-transaction undo-id)
+                (dwsh/update-shapes ids (d/patch-object changes) options)
+                (ptk/data-event :layout/update {:ids ids})
+                (dwu/commit-undo-transaction undo-id)))))))
 
 (defn add-layout-track
   ([ids type value]
@@ -518,27 +519,28 @@
       (assoc :layout-item-v-sizing :fix))))
 
 (defn update-layout-child
-  [ids changes]
-  (ptk/reify ::update-layout-child
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects (wsh/lookup-page-objects state)
-            children-ids (->> ids (mapcat #(cfh/get-children-ids objects %)))
-            parent-ids (->> ids (map #(cfh/get-parent-id objects %)))
-            undo-id (js/Symbol)]
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dwsh/update-shapes ids (d/patch-object changes))
-               (dwsh/update-shapes children-ids (partial fix-child-sizing objects changes))
-               (dwsh/update-shapes
-                parent-ids
-                (fn [parent objects]
-                  (-> parent
-                      (fix-parent-sizing objects (set ids) changes)
-                      (cond-> (ctl/grid-layout? parent)
-                        (ctl/assign-cells objects))))
-                {:with-objects? true})
-               (ptk/data-event :layout/update {:ids ids})
-               (dwu/commit-undo-transaction undo-id))))))
+  ([ids changes] (update-layout-child ids changes nil))
+  ([ids changes options]
+   (ptk/reify ::update-layout-child
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [objects (wsh/lookup-page-objects state)
+             children-ids (->> ids (mapcat #(cfh/get-children-ids objects %)))
+             parent-ids (->> ids (map #(cfh/get-parent-id objects %)))
+             undo-id (js/Symbol)]
+         (rx/of (dwu/start-undo-transaction undo-id)
+                (dwsh/update-shapes ids (d/patch-object changes) options)
+                (dwsh/update-shapes children-ids (partial fix-child-sizing objects changes) options)
+                (dwsh/update-shapes
+                 parent-ids
+                 (fn [parent objects]
+                   (-> parent
+                       (fix-parent-sizing objects (set ids) changes)
+                       (cond-> (ctl/grid-layout? parent)
+                         (ctl/assign-cells objects))))
+                 (merge options {:with-objects? true}))
+                (ptk/data-event :layout/update {:ids ids})
+                (dwu/commit-undo-transaction undo-id)))))))
 
 (defn update-grid-cells
   [layout-id ids props]

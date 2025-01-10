@@ -2,8 +2,8 @@
   (:require
    [app.common.types.token :as ctt]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.style-dictionary :as wtsd]
    [app.main.ui.workspace.tokens.token-set :as wtts]
@@ -17,10 +17,8 @@
 (def filter-existing-values? false)
 
 (def attributes->shape-update
-  {#{:r1 :r2 :r3 :r4} wtch/update-shape-radius-single-corner
-   #_(fn [v ids _] (wtch/update-shape-radius-all v ids))
-   #{:fill} wtch/update-fill
-   #{:stroke-color} wtch/update-stroke-color
+  {#{:r1 :r2 :r3 :r4} wtch/update-shape-radius-all
+   ctt/color-keys wtch/update-fill-stroke
    ctt/stroke-width-keys wtch/update-stroke-width
    ctt/sizing-keys wtch/update-shape-dimensions
    ctt/opacity-keys wtch/update-opacity
@@ -108,8 +106,8 @@
                update-infos)))
           shapes-update-info))
 
-(defn update-tokens [resolved-tokens]
-  (->> @refs/workspace-page-objects
+(defn update-tokens [state resolved-tokens]
+  (->> (wsh/lookup-page-objects state)
        (collect-shapes-update-info resolved-tokens)
        (actionize-shapes-update-info)))
 
@@ -127,5 +125,5 @@
           (let [undo-id (js/Symbol)]
             (rx/concat
              (rx/of (dwu/start-undo-transaction undo-id))
-             (update-tokens sd-tokens)
+             (update-tokens state sd-tokens)
              (rx/of (dwu/commit-undo-transaction undo-id))))))))))

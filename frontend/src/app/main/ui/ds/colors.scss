@@ -22,6 +22,7 @@ $orange-950: #440806;
 
 $red-200: #ffcada;
 $red-400: #c80857;
+$red-500: #ff3277;
 $red-950: #500124;
 
 $pink-400: #ff6fe0;
@@ -32,6 +33,16 @@ $purple-600: #8c33eb;
 $purple-700: #6911d4;
 $purple-600-10: #8c33eb1a;
 $purple-700-60: #6911d499;
+
+$aqua-200: #ddf7ff;
+$aqua-400: #77e1f3;
+$aqua-600: #59acbb;
+$aqua-800: #1d4464;
+
+$violet-300: #a7a9ff;
+$violet-600: #6c6dad;
+$violet-700: #484c74;
+$violet-800: #272941;
 
 $blue-200: #bae3fd;
 $blue-500: #0e9be9;
@@ -72,6 +83,7 @@ $grayish-red: #bfbfbf;
   --color-background-warning: #{$orange-200};
   --color-accent-error: #{$red-400};
   --color-background-error: #{$red-200};
+  --color-foreground-error: #{$red-500};
   --color-accent-info: #{$blue-500};
   --color-background-info: #{$blue-200};
 
@@ -87,6 +99,11 @@ $grayish-red: #bfbfbf;
   --color-overlay-default: #{$white-60};
   --color-overlay-onboarding: #{$white-90};
   --color-canvas: #{$grayish-red};
+
+  --color-token-background: #{$aqua-200};
+  --color-token-border: #{$aqua-400};
+  --color-token-accent: #{$aqua-600};
+  --color-token-foreground: #{$aqua-800};
 }
 
 :global(.default) {
@@ -104,6 +121,7 @@ $grayish-red: #bfbfbf;
   --color-background-warning: #{$orange-950};
   --color-accent-error: #{$red-400};
   --color-background-error: #{$red-950};
+  --color-foreground-error: #{$red-500};
   --color-accent-info: #{$blue-500};
   --color-background-info: #{$blue-950};
 
@@ -119,4 +137,9 @@ $grayish-red: #bfbfbf;
   --color-overlay-default: #{$gray-950-60};
   --color-overlay-onboarding: #{$gray-950-90};
   --color-canvas: #{$grayish-red};
+
+  --color-token-background: #{$violet-800};
+  --color-token-border: #{$violet-700};
+  --color-token-accent: #{$violet-600};
+  --color-token-foreground: #{$violet-300};
 }

@@ -15,11 +15,7 @@ export default {
   component: Swatch,
   argTypes: {
     background: {
-      control: { type: "text" },
-    },
-    format: {
-      control: "select",
-      options: ["square", "rounded"],
+      control: "object",
     },
     size: {
       control: "select",
@@ -30,8 +26,7 @@ export default {
     },
   },
   args: {
-    background: "#663399",
-    format: "square",
+    background: { color: "#7efff5" },
     size: "medium",
     active: false,
   },
@@ -42,28 +37,52 @@ export const Default = {};
 
 export const WithOpacity = {
   args: {
-    background: "rgba(255, 0, 0, 0.5)",
+    background: {
+      color: "#7efff5",
+      opacity: 0.5,
+    },
   },
 };
 
-export const LinearGradient = {
-  args: {
-    background: "linear-gradient(to right, transparent, mistyrose)",
-  },
-};
+// These stories are disabled because the gradient and the UUID variants cannot be translated from cljs into JS
+// When the repo is updated to use the new version of rumext, these stories should be re-enabled and tested
+//
+// export const LinearGradient = {
+//   args: {
+//     background: {
+//       gradient: {
+//         type: "linear",
+//         startX: 0,
+//         startY: 0,
+//         endX: 1,
+//         endY: 0,
+//         width: 1,
+//         stops: [
+//           {
+//             color: "#fabada",
+//             opacity: 1,
+//             offset: 0,
+//           },
+//           {
+//             color: "#cc0000",
+//             opacity: 0.5,
+//             offset: 1,
+//           },
+//         ],
+//       },
+//     },
+//   },
+// };
 
-export const Image = {
-  args: {
-    background: "images/form/never-used.png",
-    size: "medium",
-  },
-};
-
-export const Rounded = {
-  args: {
-    format: "rounded",
-  },
-};
+// export const Rounded = {
+//   args: {
+//     background: {
+//       id: crypto.randomUUID(),
+//       color: "#7efff5",
+//       opacity: 0.5,
+//     },
+//   },
+// };
 
 export const Small = {
   args: {
@@ -74,7 +93,6 @@ export const Small = {
 export const Active = {
   args: {
     active: true,
-    background: "#CC00CC",
   },
 };
 

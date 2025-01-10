@@ -23,8 +23,9 @@
 
    :color
    {:title "Color"
-    :attributes ctt/color-keys
-    :on-update-shape wtch/update-fill
+    :attributes #{:fill}
+    :all-attributes ctt/color-keys
+    :on-update-shape wtch/update-fill-stroke
     :modal {:key :tokens/color
             :fields [{:label "Color" :key :color}]}}
 

@@ -6,20 +6,18 @@
 
 (ns app.main.data.tokens
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.geom.point :as gpt]
+   [app.common.logic.tokens :as clt]
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.changes :as dch]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.refs :as refs]
-   [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.token-set :as wtts]
    [app.main.ui.workspace.tokens.update :as wtu]
    [beicon.v2.core :as rx]
-   [clojure.data :as data]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
@@ -51,57 +49,25 @@
 ;; TOKENS Actions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn toggle-or-apply-token
-  "Remove any shape attributes from token if they exists.
-  Othewise apply token attributes."
-  [shape token]
-  (let [[shape-leftover token-leftover _matching] (data/diff (:applied-tokens shape) token)]
-    (merge {} shape-leftover token-leftover)))
-
-(defn token-from-attributes [token attributes]
-  (->> (map (fn [attr] [attr (wtt/token-identifier token)]) attributes)
-       (into {})))
-
-(defn unapply-token-id [shape attributes]
-  (update shape :applied-tokens d/without-keys attributes))
-
-(defn apply-token-to-attributes [{:keys [shape token attributes]}]
-  (let [token (token-from-attributes token attributes)]
-    (toggle-or-apply-token shape token)))
-
-(defn apply-token-to-shape
-  [{:keys [shape token attributes] :as _props}]
-  (let [applied-tokens (apply-token-to-attributes {:shape shape
-                                                   :token token
-                                                   :attributes attributes})]
-    (update shape :applied-tokens #(merge % applied-tokens))))
-
-(defn maybe-apply-token-to-shape
-  "When the passed `:token` is non-nil apply it to the `:applied-tokens` on a shape."
-  [{:keys [shape token _attributes] :as props}]
-  (if token
-    (apply-token-to-shape props)
-    shape))
-
 (defn get-token-data-from-token-id
   [id]
   (let [workspace-data (deref refs/workspace-data)]
     (get (:tokens workspace-data) id)))
 
-(defn set-selected-token-set-id
-  [id]
-  (ptk/reify ::set-selected-token-set-id
+(defn set-selected-token-set-path
+  [full-path]
+  (ptk/reify ::set-selected-token-set-path
     ptk/UpdateEvent
     (update [_ state]
-      (wtts/assoc-selected-token-set-id state id))))
+      (wtts/assoc-selected-token-set-path state full-path))))
 
-(defn set-selected-token-set-id-from-name
+(defn set-selected-token-set-path-from-name
   [token-set-name]
-  (ptk/reify ::set-selected-token-set-id-from-name
+  (ptk/reify ::set-selected-token-set-path-from-name
     ptk/UpdateEvent
     (update [_ state]
-      (->> (ctob/set-name->set-path-string token-set-name)
-           (wtts/assoc-selected-token-set-id state)))))
+      (->> (ctob/set-name-string->prefixed-set-path-string token-set-name)
+           (wtts/assoc-selected-token-set-path state)))))
 
 (defn create-token-theme [token-theme]
   (let [new-token-theme token-theme]
@@ -165,8 +131,18 @@
         (let [changes (-> (pcb/empty-changes it)
                           (pcb/add-token-set new-token-set))]
           (rx/of
-           (set-selected-token-set-id-from-name (:name new-token-set))
+           (set-selected-token-set-path-from-name (:name new-token-set))
            (dch/commit-changes changes)))))))
+
+(defn rename-token-set-group [from-path-str to-path-str]
+  (ptk/reify ::rename-token-set-group
+    ptk/WatchEvent
+    (watch [it _state _]
+      (let [changes (-> (pcb/empty-changes it)
+                        (pcb/rename-token-set-group from-path-str to-path-str))]
+        (rx/of
+         (set-selected-token-set-path-from-name to-path-str)
+         (dch/commit-changes changes))))))
 
 (defn update-token-set [set-name token-set]
   (ptk/reify ::update-token-set
@@ -177,28 +153,25 @@
             changes (-> (pcb/empty-changes it)
                         (pcb/update-token-set token-set prev-token-set))]
         (rx/of
-         (set-selected-token-set-id-from-name (:name token-set))
+         (set-selected-token-set-path-from-name (:name token-set))
          (dch/commit-changes changes))))))
 
 (defn toggle-token-set [{:keys [token-set-name]}]
   (ptk/reify ::toggle-token-set
     ptk/WatchEvent
-    (watch [it state _]
-      (let [tokens-lib (get-tokens-lib state)
-            prev-theme (ctob/get-theme tokens-lib ctob/hidden-token-theme-group ctob/hidden-token-theme-name)
-            active-token-set-names (ctob/get-active-themes-set-names tokens-lib)
-            theme (-> (or (some-> prev-theme
-                                  (ctob/set-sets active-token-set-names))
-                          (ctob/make-hidden-token-theme :sets active-token-set-names))
-                      (ctob/toggle-set token-set-name))
-            prev-active-token-themes (ctob/get-active-theme-paths tokens-lib)
-            changes (-> (pcb/empty-changes it)
-                        (pcb/update-active-token-themes #{(ctob/token-theme-path ctob/hidden-token-theme-group ctob/hidden-token-theme-name)} prev-active-token-themes))
-            changes' (if prev-theme
-                       (pcb/update-token-theme changes theme prev-theme)
-                       (pcb/add-token-theme changes theme))]
+    (watch [_ state _]
+      (let [changes (clt/generate-toggle-token-set (pcb/empty-changes) (get-tokens-lib state) token-set-name)]
         (rx/of
-         (dch/commit-changes changes')
+         (dch/commit-changes changes)
+         (wtu/update-workspace-tokens))))))
+
+(defn toggle-token-set-group [{:keys [prefixed-path-str]}]
+  (ptk/reify ::toggle-token-set-group
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [changes (clt/generate-toggle-token-set-group (pcb/empty-changes) (get-tokens-lib state) prefixed-path-str)]
+        (rx/of
+         (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
 
 (defn import-tokens-lib [lib]
@@ -210,7 +183,7 @@
                                             (ctob/get-sets)
                                             (first)
                                             (:name)
-                                            (set-selected-token-set-id-from-name))
+                                            (set-selected-token-set-path-from-name))
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/set-tokens-lib lib))]
@@ -219,14 +192,14 @@
          update-token-set-change
          (wtu/update-workspace-tokens))))))
 
-(defn delete-token-set-path [token-set-path]
+(defn delete-token-set-path [prefixed-full-set-path]
   (ptk/reify ::delete-token-set-path
     ptk/WatchEvent
     (watch [it state _]
       (let [data (get state :workspace-data)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/delete-token-set-path token-set-path))]
+                        (pcb/delete-token-set-path prefixed-full-set-path))]
         (rx/of
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
@@ -276,7 +249,7 @@
                         (pcb/update-token (pcb/empty-changes) (:name token-set) token prev-token)
                         (pcb/add-token (pcb/empty-changes) (:name token-set) token)))]
         (rx/of
-         (set-selected-token-set-id-from-name token-set-name)
+         (set-selected-token-set-path-from-name token-set-name)
          (dch/commit-changes changes))))))
 
 (defn delete-token

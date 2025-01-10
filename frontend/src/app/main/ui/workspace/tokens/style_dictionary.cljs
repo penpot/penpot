@@ -252,8 +252,10 @@
     @tokens-state))
 
 (defn use-resolved-workspace-tokens []
-  (-> (mf/deref refs/workspace-selected-token-set-tokens)
-      (use-resolved-tokens)))
+  (let [active-theme-tokens (mf/deref refs/workspace-active-theme-sets-tokens)
+        selected-token-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
+        prefer-selected-token-set-tokens (merge active-theme-tokens selected-token-set-tokens)]
+    (use-resolved-tokens prefer-selected-token-set-tokens)))
 
 (defn use-active-theme-sets-tokens []
   (-> (mf/deref refs/workspace-active-theme-sets-tokens)
