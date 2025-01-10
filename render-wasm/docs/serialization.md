@@ -40,7 +40,7 @@ Gradient stops are serialized in a `Uint8Array`, each stop taking **5 bytes**.
 
 **Stop offset** is the offset, being integer values ranging from `0` to `100` (both inclusive).
 
-## StrokeCap
+## Stroke Caps
 
 Stroke caps are serialized as `u8`:
 
@@ -53,9 +53,9 @@ Stroke caps are serialized as `u8`:
 | 5     | Diamond   |
 | 6     | Round     |
 | 7     | Square    |
-| _     | None      |
+| \_    | None      |
 
-## StrokeStyle
+## Stroke Sytles
 
 Stroke styles are serialized as `u8`:
 
@@ -64,4 +64,16 @@ Stroke styles are serialized as `u8`:
 | 1     | Dotted |
 | 2     | Dashed |
 | 3     | Mixed  |
-| _     | Solid  |
+| \_    | Solid  |
+
+## Bool Operations
+
+Bool operations (`bool-type`) are serialized as `u8`:
+
+| Value | Field        |
+| ----- | ------------ |
+| 0     | Union        |
+| 1     | Difference   |
+| 2     | Intersection |
+| 3     | Exclusion    |
+| \_    | Union        |

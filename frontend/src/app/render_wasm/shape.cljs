@@ -112,6 +112,8 @@
     (api/use-shape (:id self))
     (case k
       :type         (api/set-shape-type v)
+      :bool-type    (api/set-shape-bool-type v)
+      :bool-content (api/set-shape-bool-content v)
       :selrect      (api/set-shape-selrect v)
       :show-content (api/set-shape-clip-content (not v))
       :rotation     (api/set-shape-rotation v)

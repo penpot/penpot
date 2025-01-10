@@ -7,8 +7,7 @@ mod state;
 mod utils;
 mod view;
 
-use crate::shapes::Kind;
-use crate::shapes::Path;
+use crate::shapes::{BoolType, Kind, Path};
 use skia_safe as skia;
 
 use crate::state::State;
@@ -134,8 +133,26 @@ pub unsafe extern "C" fn set_shape_kind_rect() {
 pub unsafe extern "C" fn set_shape_kind_path() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
-        let p = Path::try_from(Vec::new()).unwrap();
-        shape.set_kind(Kind::Path(p));
+        shape.set_kind(Kind::Path(Path::default()));
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn set_shape_kind_bool() {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        match shape.kind() {
+            Kind::Bool(_, _) => {}
+            _ => shape.set_kind(Kind::Bool(BoolType::default(), Path::default())),
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn set_shape_bool_type(raw_bool_type: u8) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape.set_bool_type(BoolType::from(raw_bool_type))
     }
 }
 

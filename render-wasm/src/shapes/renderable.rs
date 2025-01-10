@@ -64,7 +64,11 @@ impl Renderable for Shape {
     }
 
     fn children_ids(&self) -> Vec<Uuid> {
-        self.children.clone()
+        if let Kind::Bool(_, _) = self.kind {
+            vec![]
+        } else {
+            self.children.clone()
+        }
     }
 }
 
@@ -97,7 +101,7 @@ fn render_fill(
         (_, Kind::Circle(rect)) => {
             surface.canvas().draw_oval(rect, &fill.to_paint(&selrect));
         }
-        (_, Kind::Path(path)) => {
+        (_, Kind::Path(path)) | (_, Kind::Bool(_, path)) => {
             surface.canvas().draw_path(
                 &path.to_skia_path().transform(path_transform.unwrap()),
                 &fill.to_paint(&selrect),
@@ -130,7 +134,7 @@ fn render_stroke(
         match kind {
             Kind::Rect(rect) => draw_stroke_on_rect(surface.canvas(), stroke, rect, &selrect),
             Kind::Circle(rect) => draw_stroke_on_circle(surface.canvas(), stroke, rect, &selrect),
-            Kind::Path(path) => {
+            Kind::Path(path) | Kind::Bool(_, path) => {
                 draw_stroke_on_path(surface.canvas(), stroke, path, &selrect, path_transform);
             }
         }
@@ -439,7 +443,7 @@ pub fn draw_image_fill_in_container(
             oval_path.add_oval(container, None);
             canvas.clip_path(&oval_path, skia::ClipOp::Intersect, true);
         }
-        Kind::Path(p) => {
+        Kind::Path(p) | Kind::Bool(_, p) => {
             canvas.clip_path(
                 &p.to_skia_path().transform(path_transform.unwrap()),
                 skia::ClipOp::Intersect,
@@ -476,7 +480,7 @@ pub fn draw_image_stroke_in_container(
         match kind {
             Kind::Rect(rect) => draw_stroke_on_rect(canvas, stroke, rect, &outer_rect),
             Kind::Circle(rect) => draw_stroke_on_circle(canvas, stroke, rect, &outer_rect),
-            Kind::Path(p) => {
+            Kind::Path(p) | Kind::Bool(_, p) => {
                 let mut path = p.to_skia_path();
                 path.transform(path_transform.unwrap());
                 let stroke_kind = stroke.render_kind(p.is_open());

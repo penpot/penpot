@@ -88,6 +88,12 @@ fn starts_and_ends_at_same_point(path: &skia::Path) -> bool {
     start_point == end_point
 }
 
+impl Default for Path {
+    fn default() -> Self {
+        Path::try_from(Vec::new()).unwrap()
+    }
+}
+
 impl TryFrom<Vec<RawPathData>> for Path {
     type Error = String;
 
