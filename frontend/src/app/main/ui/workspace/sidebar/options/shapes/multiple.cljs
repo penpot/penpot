@@ -183,7 +183,7 @@
   [v]
   (mapv #(select-keys % shadow-keys) v))
 
-(def blur-keys [:type :value])
+(def blur-keys [:type :value :hidden])
 
 (defn blur-eq
   "Checks if two blurs are equivalent for the multiple selection"
