@@ -12,6 +12,8 @@
 
 - New gradients UI with multi-stop support.
 - Shareable link pointing to an specific board.
+- Copy styles in CSS
+- Copy/paste shape styles (fills, strokes, shadows, etc..)
 
 ### :bug: Bugs fixed
 

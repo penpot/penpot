@@ -81,6 +81,7 @@
    [app.main.streams :as ms]
    [app.main.worker :as uw]
    [app.render-wasm :as wasm]
+   [app.util.code-gen.style-css :as css]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -1411,7 +1412,8 @@
                      (rx/catch on-copy-error)
                      (rx/ignore))))))))))
 
-(declare ^:private paste-transit)
+(declare ^:private paste-transit-shapes)
+(declare ^:private paste-transit-props)
 (declare ^:private paste-html-text)
 (declare ^:private paste-text)
 (declare ^:private paste-image)
@@ -1441,7 +1443,7 @@
                 (rx/of (paste-text data)))
 
               :transit
-              (rx/of (paste-transit data))))
+              (rx/of (paste-transit-shapes data))))
 
           (on-error [cause]
             (let [data (ex-data cause)]
@@ -1461,7 +1463,6 @@
                    (rx/map paste-image)))
              (rx/take 1)
              (rx/catch on-error))))))
-
 
 (defn paste-from-event
   "Perform a `paste` operation from user emmited event."
@@ -1491,7 +1492,7 @@
                    (rx/map paste-image))
 
               (coll? transit-data)
-              (rx/of (paste-transit (assoc transit-data :in-viewport in-viewport?)))
+              (rx/of (paste-transit-shapes (assoc transit-data :in-viewport in-viewport?)))
 
               (string? html-data)
               (rx/of (paste-html-text html-data text-data))
@@ -1501,6 +1502,122 @@
 
               :else
               (rx/empty))))))))
+
+(defn copy-selected-css
+  []
+  (ptk/reify ::copy-selected-css
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [objects (wsh/lookup-page-objects state)
+            selected (->> (wsh/lookup-selected state) (mapv (d/getf objects)))
+            css (css/generate-style objects selected selected {:with-prelude? false})]
+        (wapi/write-to-clipboard css)))))
+
+(defn copy-selected-css-nested
+  []
+  (ptk/reify ::copy-selected-css-nested
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [objects (wsh/lookup-page-objects state)
+            selected (->> (wsh/lookup-selected state)
+                          (cfh/selected-with-children objects)
+                          (mapv (d/getf objects)))
+            css (css/generate-style objects selected selected {:with-prelude? false})]
+        (wapi/write-to-clipboard css)))))
+
+(defn copy-selected-props
+  []
+  (ptk/reify ::copy-selected-props
+    ptk/WatchEvent
+    (watch [_ state _]
+      (letfn [(fetch-image [entry]
+                (let [url (cf/resolve-file-media entry)]
+                  (->> (http/send! {:method :get
+                                    :uri url
+                                    :response-type :blob})
+                       (rx/map :body)
+                       (rx/mapcat wapi/read-file-as-data-url)
+                       (rx/map #(assoc entry :data %)))))
+
+              (resolve-images [data]
+                (let [images
+                      (concat
+                       (->> data :props :fills (keep :fill-image))
+                       (->> data :props :strokes (keep :stroke-image)))]
+
+                  (if (seq images)
+                    (->> (rx/from images)
+                         (rx/mapcat fetch-image)
+                         (rx/reduce conj #{})
+                         (rx/map #(assoc data :images %)))
+                    (rx/of data))))
+
+              (on-copy-error [error]
+                (js/console.error "clipboard blocked:" error)
+                (rx/empty))]
+
+        (let [selected (->> (wsh/lookup-selected state) first)
+              objects  (wsh/lookup-page-objects state)]
+
+          (when-let [shape (get objects selected)]
+            (let [props (cts/extract-props shape)
+                  features (-> (features/get-team-enabled-features state)
+                               (set/difference cfeat/frontend-only-features))
+                  version  (dm/get-in state [:workspace-file :version])
+
+                  copy-data {:type :copied-props
+                             :features features
+                             :version version
+                             :props props
+                             :images #{}}]
+
+              ;; The clipboard API doesn't handle well asynchronous calls because it expects to use
+              ;; the clipboard in an user interaction. If you do an async call the callback is outside
+              ;; the thread of the UI and so Safari blocks the copying event.
+              ;; We use the API `ClipboardItem` that allows promises to be passed and so the event
+              ;; will wait for the promise to resolve and everything should work as expected.
+              ;; This only works in the current versions of the browsers.
+              (if (some? (unchecked-get ug/global "ClipboardItem"))
+                (let [resolve-data-promise
+                      (p/create
+                       (fn [resolve reject]
+                         (->> (rx/of copy-data)
+                              (rx/mapcat resolve-images)
+                              (rx/map #(t/encode-str % {:type :json-verbose}))
+                              (rx/map #(wapi/create-blob % "text/plain"))
+                              (rx/subs! resolve reject))))]
+
+                  (->> (rx/from (wapi/write-to-clipboard-promise "text/plain" resolve-data-promise))
+                       (rx/catch on-copy-error)
+                       (rx/ignore)))
+                ;; FIXME: this is to support Firefox versions below 116 that don't support
+                ;; `ClipboardItem` after the version 116 is less common we could remove this.
+                ;; https://caniuse.com/?search=ClipboardItem
+                (->> (rx/of copy-data)
+                     (rx/mapcat resolve-images)
+                     (rx/map #(wapi/write-to-clipboard (t/encode-str % {:type :json-verbose})))
+                     (rx/catch on-copy-error)
+                     (rx/ignore))))))))))
+
+(defn paste-selected-props
+  []
+  (ptk/reify ::paste-selected-props
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (letfn [(decode-entry [entry]
+                (-> entry t/decode-str paste-transit-props))
+
+              (on-error [cause]
+                (let [data (ex-data cause)]
+                  (if (:not-implemented data)
+                    (rx/of (ntf/warn (tr "errors.clipboard-not-implemented")))
+                    (js/console.error "Clipboard error:" cause))
+                  (rx/empty)))]
+
+        (->> (wapi/read-from-clipboard)
+             (rx/map decode-entry)
+             (rx/take 1)
+             (rx/catch on-error))))))
 
 (defn selected-frame? [state]
   (let [selected (wsh/lookup-selected state)
@@ -1530,8 +1647,8 @@
       (:width (:selrect frame-obj)))))
 
 (def ^:private
-  schema:paste-data
-  [:map {:title "paste-data"}
+  schema:paste-data-shapes
+  [:map {:title "paste-data-shapes"}
    [:type [:= :copied-shapes]]
    [:features ::sm/set-of-strings]
    [:version :int]
@@ -1542,12 +1659,26 @@
    [:images [:set :map]]
    [:position {:optional true} ::gpt/point]])
 
+(def ^:private
+  schema:paste-data-props
+  [:map {:title "paste-data-props"}
+   [:type [:= :copied-props]]
+   [:features ::sm/set-of-strings]
+   [:version :int]
+   [:props
+    ;; todo type the properties
+    [:map-of :keyword :any]]])
+
+(def schema:paste-data
+  [:multi {:title "paste-data" :dispatch :type}
+   [:copied-shapes schema:paste-data-shapes]
+   [:copied-props schema:paste-data-props]])
+
 (def paste-data-valid?
   (sm/lazy-validator schema:paste-data))
 
-(defn- paste-transit
+(defn- paste-transit-shapes
   [{:keys [images] :as pdata}]
-
   (letfn [(upload-media [file-id imgpart]
             (->> (http/send! {:uri (:data imgpart)
                               :response-type :blob
@@ -1562,7 +1693,7 @@
                  (rx/mapcat (partial rp/cmd! :upload-file-media-object))
                  (rx/map #(assoc % :prev-id (:id imgpart)))))]
 
-    (ptk/reify ::paste-transit
+    (ptk/reify ::paste-transit-shapes
       ptk/WatchEvent
       (watch [_ state _]
         (let [file-id (:current-file-id state)
@@ -1574,14 +1705,88 @@
                       :hibt "invalid paste data found"))
 
           (cfeat/check-paste-features! features (:features pdata))
-          (if (= file-id (:file-id pdata))
-            (let [pdata (assoc pdata :images [])]
-              (rx/of (paste-shapes pdata)))
-            (->> (rx/from images)
+
+          (case (:type pdata)
+            :copied-shapes
+            (if (= file-id (:file-id pdata))
+              (let [pdata (assoc pdata :images [])]
+                (rx/of (paste-shapes pdata)))
+              (->> (rx/from images)
+                   (rx/merge-map (partial upload-media file-id))
+                   (rx/reduce conj [])
+                   (rx/map #(assoc pdata :images %))
+                   (rx/map paste-shapes)))
+            nil))))))
+
+(defn- paste-transit-props
+  [pdata]
+
+  (letfn [(upload-media [file-id imgpart]
+            (->> (http/send! {:uri (:data imgpart)
+                              :response-type :blob
+                              :method :get})
+                 (rx/map :body)
+                 (rx/map
+                  (fn [blob]
+                    {:name (:name imgpart)
+                     :file-id file-id
+                     :content blob
+                     :is-local true}))
+                 (rx/mapcat (partial rp/cmd! :upload-file-media-object))
+                 (rx/map #(vector (:id imgpart) %))))
+
+          (update-image-data
+            [pdata media-map]
+            (update
+             pdata :props
+             (fn [props]
+               (-> props
+                   (d/update-when
+                    :fills
+                    (fn [fills]
+                      (mapv (fn [fill]
+                              (cond-> fill
+                                (some? (:fill-image fill))
+                                (update-in [:fill-image :id] #(get media-map % %))))
+                            fills)))
+                   (d/update-when
+                    :strokes
+                    (fn [strokes]
+                      (mapv (fn [stroke]
+                              (cond-> stroke
+                                (some? (:stroke-image stroke))
+                                (update-in [:stroke-image :id] #(get media-map % %))))
+                            strokes)))))))
+
+          (upload-images
+            [file-id pdata]
+            (->> (rx/from (:images pdata))
                  (rx/merge-map (partial upload-media file-id))
-                 (rx/reduce conj [])
-                 (rx/map #(assoc pdata :images %))
-                 (rx/map paste-shapes))))))))
+                 (rx/reduce conj {})
+                 (rx/map (partial update-image-data pdata))))]
+
+    (ptk/reify ::paste-transit-props
+      ptk/WatchEvent
+      (watch [_ state _]
+        (let [features (features/get-team-enabled-features state)
+              selected (wsh/lookup-selected state)]
+
+          (when (paste-data-valid? pdata)
+            (cfeat/check-paste-features! features (:features pdata))
+            (case (:type pdata)
+              :copied-props
+
+              (rx/concat
+               (->> (rx/of pdata)
+                    (rx/mapcat (partial upload-images (:current-file-id state)))
+                    (rx/map
+                     #(dwsh/update-shapes
+                       selected
+                       (fn [shape objects] (cts/patch-props shape (:props pdata) objects))
+                       {:with-objects? true})))
+               (rx/of (ptk/data-event :layout/update {:ids selected})))
+              ;;
+              (rx/empty))))))))
 
 (defn paste-shapes
   [{in-viewport? :in-viewport :as pdata}]

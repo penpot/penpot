@@ -9,6 +9,7 @@
    #?(:clj [app.common.fressian :as fres])
    [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.proportions :as gpr]
@@ -17,6 +18,7 @@
    [app.common.record :as cr]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
+   [app.common.text :as txt]
    [app.common.transit :as t]
    [app.common.types.color :as ctc]
    [app.common.types.grid :as ctg]
@@ -570,3 +572,136 @@
      :class Shape
      :wfn fres/write-map-like
      :rfn (comp map->Shape fres/read-map-like)}))
+
+;; --- SHAPE COPY/PASTE PROPS
+
+;; Copy/paste properties:
+;;  - Fill
+;;  - Stroke
+;;  - Opacity
+;;  - Layout (Grid & Flex)
+;;  - Flex element
+;;  - Flex board
+;;  - Text properties
+;;  - Contraints
+;;  - Shadow
+;;  - Blur
+;;  - Border radius
+(def ^:private basic-extract-props
+  [:fills
+   :strokes
+   :opacity
+
+   ;; Layout Item
+   :layout-item-margin
+   :layout-item-margin-type
+   :layout-item-h-sizing
+   :layout-item-v-sizing
+   :layout-item-max-h
+   :layout-item-min-h
+   :layout-item-max-w
+   :layout-item-min-w
+   :layout-item-absolute
+   :layout-item-z-index
+
+   ;; Constraints
+   :constraints-h
+   :constraints-v
+
+   :shadow
+   :blur
+
+   ;; Radius
+   :r1
+   :r2
+   :r3
+   :r4])
+
+(def ^:private layout-extract-props
+  [:layout
+   :layout-flex-dir
+   :layout-gap-type
+   :layout-gap
+   :layout-wrap-type
+   :layout-align-items
+   :layout-align-content
+   :layout-justify-items
+   :layout-justify-content
+   :layout-padding-type
+   :layout-padding
+   :layout-grid-dir
+   :layout-grid-rows
+   :layout-grid-columns
+   :layout-grid-cells])
+
+(defn extract-props
+  "Retrieves an object with the 'pasteable' properties for a shape."
+  [shape]
+  (letfn [(assoc-props
+            [props node attrs]
+            (->> attrs
+                 (reduce
+                  (fn [props attr]
+                    (cond-> props
+                      (and (not (contains? props attr))
+                           (some? (get node attr)))
+                      (assoc attr (get node attr))))
+                  props)))
+
+          (extract-text-props
+            [props shape]
+            (->> (txt/node-seq (:content shape))
+                 (reduce
+                  (fn [result node]
+                    (cond-> result
+                      (txt/is-root-node? node)
+                      (assoc-props node txt/root-attrs)
+
+                      (txt/is-paragraph-node? node)
+                      (assoc-props node txt/paragraph-attrs)
+
+                      (txt/is-text-node? node)
+                      (assoc-props node txt/text-node-attrs)))
+                  props)))
+
+          (extract-layout-props
+            [props shape]
+            (d/patch-object props (select-keys shape layout-extract-props)))]
+
+    (-> shape
+        (select-keys basic-extract-props)
+        (cond-> (cfh/text-shape? shape) (extract-text-props shape))
+        (cond-> (ctsl/any-layout? shape) (extract-layout-props shape)))))
+
+(defn patch-props
+  "Given the object of `extract-props` applies it to a shape. Adapt the shape if necesary"
+  [shape props objects]
+
+  (letfn [(patch-text-props [shape props]
+            (-> shape
+                (update
+                 :content
+                 (fn [content]
+                   (->> content
+                        (txt/transform-nodes
+                         (fn [node]
+                           (cond-> node
+                             (txt/is-root-node? node)
+                             (d/patch-object (select-keys props txt/root-attrs))
+
+                             (txt/is-paragraph-node? node)
+                             (d/patch-object (select-keys props txt/paragraph-attrs))
+
+                             (txt/is-text-node? node)
+                             (d/patch-object (select-keys props txt/text-node-attrs))))))))))
+
+          (patch-layout-props [shape props]
+            (let [shape (d/patch-object shape (select-keys props layout-extract-props))]
+              (cond-> shape
+                (ctsl/grid-layout? shape)
+                (ctsl/assign-cells objects))))]
+
+    (-> shape
+        (d/patch-object (select-keys props basic-extract-props))
+        (cond-> (cfh/text-shape? shape) (patch-text-props props))
+        (cond-> (cfh/frame-shape? shape) (patch-layout-props props)))))
