@@ -351,8 +351,7 @@
 
               (when (:board-id rparams)
                 (->> stream
-                     (rx/filter (ptk/type? ::workspace-initialized))
-                     (rx/observe-on :async)
+                     (rx/filter (ptk/type? ::dwv/initialize-viewport))
                      (rx/take 1)
                      (rx/map zoom-to-frame)))
 
