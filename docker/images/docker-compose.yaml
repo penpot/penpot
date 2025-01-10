@@ -179,7 +179,7 @@ services:
       PENPOT_TELEMETRY_ENABLED: true
 
       ## Set this to a RANDOM string to secure your installation, e.g. using "pwgen -s 64"
-      ## This environment variable is necessary since PenPot 2.3.0
+      ## This environment variable is necessary since PenPot 2.4.0
       PENPOT_SECRET_KEY: cOr4NdD4Hs8QMhWEclKcBdnKPeUkK8iwOVIoVmPGacVv97B7ZVEDhvwfcSwO39A1
 
       ## Example SMTP/Email configuration. By default, emails are sent to the mailcatch
