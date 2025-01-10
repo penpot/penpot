@@ -91,28 +91,75 @@
                               (apply ctob/make-token-set args)))))
 
   (t/testing "move-token-set"
-    (let [tokens-lib (-> (ctob/make-tokens-lib)
-                         (ctob/add-set (ctob/make-token-set :name "A"))
-                         (ctob/add-set (ctob/make-token-set :name "B"))
-                         (ctob/add-set (ctob/make-token-set :name "Move")))
-          original-order (into [] (ctob/get-ordered-set-names tokens-lib))
-          move (fn [set-name before-set-name]
-                 (->> (ctob/move-set-before tokens-lib set-name before-set-name)
-                      (ctob/get-ordered-set-names)
-                      (into [])))]
-      (t/testing "regular moving"
-        (t/is (= ["A" "Move" "B"] (move "Move" "B")))
-        (t/is (= ["B" "A" "Move"] (move "A" "Move"))))
+    (t/testing "flat"
+      (let [tokens-lib (-> (ctob/make-tokens-lib)
+                           (ctob/add-set (ctob/make-token-set :name "A"))
+                           (ctob/add-set (ctob/make-token-set :name "B"))
+                           (ctob/add-set (ctob/make-token-set :name "Move")))
+            move (fn [from-path to-path before-path before-group?]
+                   (->> (ctob/move-set tokens-lib from-path to-path before-path before-group?)
+                        (ctob/get-ordered-set-names)
+                        (into [])))]
+        (t/testing "move to top"
+          (t/is (= ["Move" "A" "B"] (move ["Move"] ["Move"] ["A"] false))))
 
-      (t/testing "move to bottom"
-        (t/is (= ["B" "Move" "A"] (move "A" nil))))
+        (t/testing "move in-between"
+          (t/is (= ["A" "Move" "B"] (move ["Move"] ["Move"] ["B"] false))))
 
-      (t/testing "no move expected"
-        (t/is (= original-order (move "Move" "Move"))))
+        (t/testing "move to bottom"
+          (t/is (= ["A" "B" "Move"] (move ["Move"] ["Move"] nil false))))))
 
-      (t/testing "ignore invalid moves"
-        (t/is (= original-order (move "A" "foo/bar/baz")))
-        (t/is (= original-order (move "Missing" "Move"))))))
+    (t/testing "nested"
+      (let [tokens-lib (-> (ctob/make-tokens-lib)
+                           (ctob/add-set (ctob/make-token-set :name "Foo/Baz"))
+                           (ctob/add-set (ctob/make-token-set :name "Foo/Bar"))
+                           (ctob/add-set (ctob/make-token-set :name "Foo")))
+            move (fn [from-path to-path before-path before-group?]
+                   (->> (ctob/move-set tokens-lib from-path to-path before-path before-group?)
+                        (ctob/get-ordered-set-names)
+                        (into [])))]
+        (t/testing "move outside of group"
+          (t/is (= ["Foo/Baz" "Bar" "Foo"] (move ["Foo" "Bar"] ["Bar"] ["Foo"] false)))
+          (t/is (= ["Bar" "Foo/Baz" "Foo"] (move ["Foo" "Bar"] ["Bar"] ["Foo" "Baz"] true)))
+          (t/is (= ["Foo/Baz" "Foo" "Bar"] (move ["Foo" "Bar"] ["Bar"] nil false))))
+
+        (t/testing "move inside of group"
+          (t/is (= ["Foo/Foo" "Foo/Baz" "Foo/Bar"] (move ["Foo"] ["Foo" "Foo"] ["Foo" "Baz"] false)))
+          (t/is (= ["Foo/Baz" "Foo/Bar" "Foo/Foo"] (move ["Foo"] ["Foo" "Foo"] nil false))))))
+
+    (t/testing "updates theme set names"
+      (let [tokens-lib (-> (ctob/make-tokens-lib)
+                           (ctob/add-set (ctob/make-token-set :name "Foo/Bar/Baz"))
+                           (ctob/add-set (ctob/make-token-set :name "Other"))
+                           (ctob/add-theme (ctob/make-token-theme :name "Theme"
+                                                                  :sets #{"Foo/Bar/Baz"}))
+                           (ctob/move-set ["Foo" "Bar" "Baz"] ["Other/Baz"] nil nil))]
+        (t/is (= #{"Other/Baz"} (:sets (ctob/get-theme tokens-lib "" "Theme")))))))
+
+  (t/testing "move-token-set-group"
+    (t/testing "reordering"
+      (let [tokens-lib (-> (ctob/make-tokens-lib)
+                           (ctob/add-set (ctob/make-token-set :name "Foo/A"))
+                           (ctob/add-set (ctob/make-token-set :name "Foo/B"))
+                           (ctob/add-set (ctob/make-token-set :name "Bar/Foo"))
+                           (ctob/add-theme (ctob/make-token-theme :name "Theme"
+                                                                  :sets #{"Foo/A" "Bar/Foo"})))
+            move (fn [from-path to-path before-path before-group?]
+                   (->> (ctob/move-set-group tokens-lib from-path to-path before-path before-group?)
+                        (ctob/get-ordered-set-names)
+                        (into [])))]
+        (t/is (= ["Bar/Foo" "Bar/Foo/A" "Bar/Foo/B"] (move ["Foo"] ["Bar" "Foo"] nil nil)))
+        (t/is (= ["Bar/Foo" "Foo/A" "Foo/B"] (move ["Bar"] ["Bar"] ["Foo"] true)))))
+
+    (t/testing "updates theme set names"
+      (let [tokens-lib (-> (ctob/make-tokens-lib)
+                           (ctob/add-set (ctob/make-token-set :name "Foo/A"))
+                           (ctob/add-set (ctob/make-token-set :name "Foo/B"))
+                           (ctob/add-set (ctob/make-token-set :name "Bar/Foo"))
+                           (ctob/add-theme (ctob/make-token-theme :name "Theme"
+                                                                  :sets #{"Foo/A" "Bar/Foo"}))
+                           (ctob/move-set-group ["Foo"] ["Bar" "Foo"] nil nil))]
+        (t/is (= #{"Bar/Foo/A" "Bar/Foo"} (:sets (ctob/get-theme tokens-lib "" "Theme")))))))
 
   (t/testing "tokens-tree"
     (let [tokens-lib (-> (ctob/make-tokens-lib)
@@ -237,8 +284,8 @@
                           (ctob/add-set (ctob/make-token-set :name "foo/bar/baz/baz-child-2"))
                           (ctob/add-theme (ctob/make-token-theme :name "theme" :sets #{"foo/bar/baz/baz-child-1"})))
           tokens-lib' (-> tokens-lib
-                          (ctob/rename-set-group "foo/bar" "foo/bar-renamed")
-                          (ctob/rename-set-group "foo/bar-renamed/baz" "foo/bar-renamed/baz-renamed"))
+                          (ctob/rename-set-group ["foo" "bar"] "bar-renamed")
+                          (ctob/rename-set-group ["foo" "bar-renamed" "baz"] "baz-renamed"))
           expected-set-names (ctob/get-ordered-set-names tokens-lib')
           expected-theme-sets (-> (ctob/get-theme tokens-lib' "" "theme")
                                   :sets)]
@@ -436,16 +483,16 @@
 
           expected-none (-> tokens-lib
                             (ctob/set-active-themes #{"/none"})
-                            (ctob/sets-at-path-all-active? "G-foo"))
+                            (ctob/sets-at-path-all-active? ["foo"]))
           expected-all (-> tokens-lib
                            (ctob/set-active-themes #{"/all"})
-                           (ctob/sets-at-path-all-active? "G-foo"))
+                           (ctob/sets-at-path-all-active? ["foo"]))
           expected-partial (-> tokens-lib
                                (ctob/set-active-themes #{"/partial"})
-                               (ctob/sets-at-path-all-active? "G-foo"))
+                               (ctob/sets-at-path-all-active? ["foo"]))
           expected-invalid-none (-> tokens-lib
                                     (ctob/set-active-themes #{"/invalid"})
-                                    (ctob/sets-at-path-all-active? "G-foo"))]
+                                    (ctob/sets-at-path-all-active? ["foo"]))]
       (t/is (= :none expected-none))
       (t/is (= :all expected-all))
       (t/is (= :partial expected-partial))

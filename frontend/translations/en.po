@@ -1200,6 +1200,14 @@ msgstr "An unexpected error occurred."
 msgid "errors.unexpected-token"
 msgstr "Unknown token"
 
+#: src/app/main/data/tokens.cljs
+msgid "errors.drag-drop.set-exists"
+msgstr "Cannot complete drop, a set with same name already exists at path %s."
+
+#: src/app/main/data/tokens.cljs
+msgid "errors.drag-drop.parent-to-child"
+msgstr "Cannot drop a parent set to an own child path."
+
 #, unused
 msgid "errors.validation"
 msgstr "Validation Error"
@@ -6716,6 +6724,10 @@ msgstr "Description"
 #: src/app/main/ui/workspace/tokens/form.cljs
 msgid "workspace.token.enter-token-description"
 msgstr "Add a description (optional)"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.tokens-section-title"
+msgstr "TOKENS -  %s"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs
 msgid "workspace.token.original-value"

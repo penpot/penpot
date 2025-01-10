@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.logic.tokens :as clt]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -308,8 +309,8 @@
         token-set-group-active?
         (mf/use-callback
          (mf/deps theme-state)
-         (fn [prefixed-path]
-           (ctob/sets-at-path-all-active? lib prefixed-path)))
+         (fn [group-path]
+           (ctob/sets-at-path-all-active? lib group-path)))
 
         token-set-active?
         (mf/use-callback
@@ -322,6 +323,12 @@
          (mf/deps theme-state)
          (fn [set-name]
            (swap! theme-state #(ctob/toggle-set % set-name))))
+
+        on-toggle-token-set-group
+        (mf/use-callback
+         (mf/deps theme-state)
+         (fn [group-path]
+           (swap! theme-state #(clt/toggle-token-set-group group-path lib %))))
 
         on-click-token-set
         (mf/use-callback
@@ -358,6 +365,7 @@
           :token-set-group-active? token-set-group-active?
           :on-select on-click-token-set
           :on-toggle-token-set on-toggle-token-set
+          :on-toggle-token-set-group on-toggle-token-set-group
           :origin "theme-modal"
           :context sets-context/static-context}]]
 
@@ -400,4 +408,5 @@
                         :aria-label (tr "labels.close")
                         :variant "action"
                         :icon "close"}]
-      [:& themes-modal-body]]]))
+      [:& sets-context/provider {}
+       [:& themes-modal-body]]]]))

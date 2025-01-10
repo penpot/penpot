@@ -418,8 +418,8 @@
     [:rename-token-set-group
      [:map {:title "RenameTokenSetGroup"}
       [:type [:= :rename-token-set-group]]
-      [:from-path-str :string]
-      [:to-path-str :string]]]
+      [:set-group-path [:vector :string]]
+      [:set-group-fname :string]]]
 
     [:mod-token-set
      [:map {:title "ModTokenSetChange"}
@@ -430,8 +430,18 @@
     [:move-token-set-before
      [:map {:title "MoveTokenSetBefore"}
       [:type [:= :move-token-set-before]]
-      [:set-name :string]
-      [:before-set-name [:maybe :string]]]]
+      [:from-path [:vector :string]]
+      [:to-path [:vector :string]]
+      [:before-path [:maybe [:vector :string]]]
+      [:before-group? [:maybe :boolean]]]]
+
+    [:move-token-set-group-before
+     [:map {:title "MoveTokenSetGroupBefore"}
+      [:type [:= :move-token-set-group-before]]
+      [:from-path [:vector :string]]
+      [:to-path [:vector :string]]
+      [:before-path [:maybe [:vector :string]]]
+      [:before-group? [:maybe :boolean]]]]
 
     [:del-token-set
      [:map {:title "DelTokenSetChange"}
@@ -1070,11 +1080,11 @@
                                 (ctob/add-sets (map ctob/make-token-set token-sets)))))
 
 (defmethod process-change :rename-token-set-group
-  [data {:keys [from-path-str to-path-str]}]
+  [data {:keys [set-group-path set-group-fname]}]
   (update data :tokens-lib (fn [lib]
                              (-> lib
                                  (ctob/ensure-tokens-lib)
-                                 (ctob/rename-set-group from-path-str to-path-str)))))
+                                 (ctob/rename-set-group set-group-path set-group-fname)))))
 
 (defmethod process-change :mod-token-set
   [data {:keys [name token-set]}]
@@ -1085,10 +1095,16 @@
                                                          (merge prev-set (dissoc token-set :tokens))))))))
 
 (defmethod process-change :move-token-set-before
-  [data {:keys [set-name before-set-name]}]
+  [data {:keys [from-path to-path before-path before-group?] :as changes}]
   (update data :tokens-lib #(-> %
                                 (ctob/ensure-tokens-lib)
-                                (ctob/move-set-before set-name before-set-name))))
+                                (ctob/move-set from-path to-path before-path before-group?))))
+
+(defmethod process-change :move-token-set-group-before
+  [data {:keys [from-path to-path before-path before-group?]}]
+  (update data :tokens-lib #(-> %
+                                (ctob/ensure-tokens-lib)
+                                (ctob/move-set-group from-path to-path before-path before-group?))))
 
 (defmethod process-change :del-token-set
   [data {:keys [name]}]

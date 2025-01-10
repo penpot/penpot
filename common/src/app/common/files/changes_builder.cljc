@@ -813,12 +813,13 @@
       (apply-changes-local)))
 
 (defn rename-token-set-group
-  [changes from-path-str to-path-str]
-  (-> changes
-      (update :redo-changes conj {:type :rename-token-set-group :from-path-str from-path-str :to-path-str to-path-str})
-      ;; TODO: Figure out undo
-      #_(update :undo-changes conj {:type :rename-token-set-group :name (:name token-set) :token-set (or prev-token-set token-set)})
-      (apply-changes-local)))
+  [changes set-group-path set-group-fname]
+  (let [undo-path (ctob/replace-last-path-name set-group-path set-group-fname)
+        undo-fname (last set-group-path)]
+    (-> changes
+        (update :redo-changes conj {:type :rename-token-set-group :set-group-path set-group-path :set-group-fname set-group-fname})
+        (update :undo-changes conj {:type :rename-token-set-group :set-group-path undo-path :set-group-fname undo-fname})
+        (apply-changes-local))))
 
 (defn update-token-set
   [changes token-set prev-token-set]
@@ -828,21 +829,50 @@
       (apply-changes-local)))
 
 (defn delete-token-set-path
-  [changes token-set-path]
+  [changes group? path]
   (assert-library! changes)
-  (let [library-data (::library-data (meta changes))
+  (let [;; TODO Move leaking prefix to library
+        prefixed-path (if group?
+                        (ctob/set-group-path->set-group-prefixed-path path)
+                        (ctob/set-full-path->set-prefixed-full-path path))
+        prefixed-path-str (ctob/join-set-path prefixed-path)
+        library-data (::library-data (meta changes))
         prev-token-sets (some-> (get library-data :tokens-lib)
-                                (ctob/get-path-sets token-set-path))]
+                                (ctob/get-path-sets prefixed-path-str))]
     (-> changes
-        (update :redo-changes conj {:type :del-token-set-path :path token-set-path})
+        (update :redo-changes conj {:type :del-token-set-path :path prefixed-path-str})
         (update :undo-changes conj {:type :add-token-sets :token-sets prev-token-sets})
         (apply-changes-local))))
 
 (defn move-token-set-before
-  [changes set-name before-set-name prev-before-set-name]
+  [changes {:keys [from-path to-path before-path before-group? prev-before-path prev-before-group?] :as opts}]
   (-> changes
-      (update :redo-changes conj {:type :move-token-set-before :set-name set-name :before-set-name before-set-name})
-      (update :undo-changes conj {:type :move-token-set-before :set-name set-name :before-set-name prev-before-set-name})
+      (update :redo-changes conj {:type :move-token-set-before
+                                  :from-path from-path
+                                  :to-path to-path
+                                  :before-path before-path
+                                  :before-group? before-group?})
+      (update :undo-changes conj {:type :move-token-set-before
+                                  :from-path to-path
+                                  :to-path from-path
+                                  :before-path prev-before-path
+                                  :before-group? prev-before-group?})
+      (apply-changes-local)))
+
+(defn move-token-set-group-before
+  [changes {:keys [from-path to-path before-path before-group? prev-before-path prev-before-group?]}]
+  (prn prev-before-path prev-before-group?)
+  (-> changes
+      (update :redo-changes conj {:type :move-token-set-group-before
+                                  :from-path from-path
+                                  :to-path to-path
+                                  :before-path before-path
+                                  :before-group? before-group?})
+      (update :undo-changes conj {:type :move-token-set-group-before
+                                  :from-path to-path
+                                  :to-path from-path
+                                  :before-path prev-before-path
+                                  :before-group? prev-before-group?})
       (apply-changes-local)))
 
 (defn set-tokens-lib

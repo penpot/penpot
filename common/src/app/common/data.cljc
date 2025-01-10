@@ -78,6 +78,23 @@
 
 (declare index-of)
 
+(defn oreorder-before
+  "Assoc a k v pair, in the order position just before the other key."
+  [o ks k v before-k]
+  (let [f (fn [o']
+            (cond-> (reduce
+                     (fn [acc [k' v']]
+                       (cond
+                         (and before-k (= k' before-k)) (assoc acc k v k' v')
+                         (= k k') acc
+                         :else (assoc acc k' v')))
+                     (ordered-map)
+                     o')
+              (not before-k) (assoc k v)))]
+    (if (seq ks)
+      (oupdate-in o ks f)
+      (f o))))
+
 (defn oassoc-before
   "Assoc a k v pair, in the order position just before the other key"
   [o before-k k v]
