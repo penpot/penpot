@@ -60,17 +60,21 @@
    [:class {:optional true} :string]
    [:disabled {:optional true} :boolean]
    [:default-selected {:optional true} :string]
-   [:on-change {:optional true} fn?]])
+   [:on-change {:optional true} fn?]
+   [:has-error {:optional true} :boolean]])
 
 (mf/defc combobox*
   {::mf/props :obj
    ::mf/schema schema:combobox}
-  [{:keys [options class disabled default-selected on-change] :rest props}]
+  [{:keys [options class disabled has-error default-selected on-change] :rest props}]
   (let [open* (mf/use-state false)
         open  (deref open*)
 
         selected* (mf/use-state  default-selected)
         selected  (deref selected*)
+
+        filter-value* (mf/use-state "")
+        filter-value  (deref filter-value*)
 
         focused* (mf/use-state nil)
         focused  (deref focused*)
@@ -80,12 +84,12 @@
 
         dropdown-options
         (mf/use-memo
-         (mf/deps options selected)
+         (mf/deps options filter-value)
          (fn []
            (->> options
                 (array/filter (fn [option]
                                 (let [lower-option (.toLowerCase (obj/get option "id"))
-                                      lower-filter (.toLowerCase selected)]
+                                      lower-filter (.toLowerCase filter-value)]
                                   (.includes lower-option lower-filter)))))))
 
         on-click
@@ -95,6 +99,7 @@
            (dom/stop-propagation event)
            (when-not disabled
              (reset! has-focus* true)
+             (when-not (deref open*) (reset! filter-value* ""))
              (if (= "INPUT" (.-tagName (.-target event)))
                (reset! open* true)
                (swap! open* not)))))
@@ -188,6 +193,7 @@
          (fn [event]
            (let [value (.-value (.-currentTarget event))]
              (reset! selected* value)
+             (reset! filter-value* value)
              (reset! focused* nil)
              (when (fn? on-change)
                (on-change value)))))
@@ -206,7 +212,9 @@
     [:div {:ref combobox-ref
            :class (stl/css-case
                    :combobox-wrapper true
-                   :focused has-focus)}
+                   :focused has-focus
+                   :has-error has-error
+                   :disabled disabled)}
 
      [:div {:class class
             :on-click on-click

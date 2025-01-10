@@ -14,6 +14,7 @@
   --combobox-bg-color: var(--color-background-tertiary);
   --combobox-outline-color: none;
   --combobox-border-color: none;
+  --combobox-error-outline-color: var(--color-accent-error);
 
   @include use-typography("body-small");
   position: relative;
@@ -22,7 +23,7 @@
   gap: var(--sp-xxs);
   width: 100%;
 
-  &:hover {
+  &:hover:not(.disabled) {
     --combobox-bg-color: var(--color-background-quaternary);
   }
 }
@@ -41,16 +42,11 @@
   background: var(--combobox-bg-color);
   color: var(--combobox-fg-color);
   appearance: none;
-
-  &:disabled {
-    --combobox-bg-color: var(--color-background-primary);
-    --combobox-border-color: var(--color-background-quaternary);
-    --combobox-fg-color: var(--color-foreground-secondary);
-  }
 }
 
 .focused {
   --combobox-outline-color: var(--color-accent-primary);
+  --combobox-bg-color: var(--color-background-secondary);
 }
 
 .arrow {
@@ -84,4 +80,14 @@
 .button-toggle-list {
   all: unset;
   display: flex;
+}
+
+.disabled {
+  --combobox-bg-color: var(--color-background-primary);
+  --combobox-border-color: var(--color-background-quaternary);
+  --combobox-fg-color: var(--color-foreground-secondary);
+}
+
+.has-error {
+  --combobox-outline-color: var(--combobox-error-outline-color);
 }
