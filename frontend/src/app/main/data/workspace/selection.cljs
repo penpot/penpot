@@ -150,14 +150,12 @@
              params-board         (-> (rt/get-params state)
                                       (assoc :board-id frame-ids))]
 
-         (rx/of
-          (dwc/expand-all-parents [id] objects)
-          :interrupt
-          ::dwsp/interrupt)
-
-         (if (some #(= % uuid/zero) frame-ids)
-           (rx/of (rt/nav :workspace params-without-board {::rt/replace true}))
-           (rx/of (rt/nav :workspace params-board {::rt/replace true}))))))))
+         (rx/of (dwc/expand-all-parents [id] objects)
+                :interrupt
+                ::dwsp/interrupt
+                (if (some #(= % uuid/zero) frame-ids)
+                  (rt/nav :workspace params-without-board {::rt/replace true})
+                  (rt/nav :workspace params-board {::rt/replace true}))))))))
 
 (defn select-prev-shape
   ([]
