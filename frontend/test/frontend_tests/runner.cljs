@@ -4,6 +4,7 @@
    [frontend-tests.basic-shapes-test]
    [frontend-tests.helpers-shapes-test]
    [frontend-tests.logic.comp-remove-swap-slots-test]
+   [frontend-tests.logic.components-and-tokens]
    [frontend-tests.logic.copying-and-duplicating-test]
    [frontend-tests.logic.frame-guides-test]
    [frontend-tests.logic.groups-test]
@@ -28,6 +29,7 @@
   (t/run-tests
    'frontend-tests.helpers-shapes-test
    'frontend-tests.logic.comp-remove-swap-slots-test
+   'frontend-tests.logic.components-and-tokens
    'frontend-tests.logic.copying-and-duplicating-test
    'frontend-tests.logic.frame-guides-test
    'frontend-tests.logic.groups-test

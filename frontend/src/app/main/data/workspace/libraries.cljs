@@ -824,7 +824,6 @@
          (rx/map #(reset-component %) (rx/from ids))
          (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
-
 (defn update-component
   "Modify the component linked to the shape with the given id, in the
   current page, so that all attributes of its shapes are equal to the

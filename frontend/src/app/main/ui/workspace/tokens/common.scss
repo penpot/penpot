@@ -6,6 +6,22 @@
 
 @import "refactor/common-refactor.scss";
 
+.input {
+  @extend .input-element;
+}
+
+.labeled-input {
+  @extend .input-element;
+  .label {
+    width: auto;
+    text-wrap: nowrap;
+  }
+}
+
+.labeled-input-error {
+  border: 1px solid var(--status-color-error-500) !important;
+}
+
 .button {
   @extend .button-primary;
 }

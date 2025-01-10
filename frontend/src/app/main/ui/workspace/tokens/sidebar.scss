@@ -39,8 +39,8 @@
 }
 
 .themes-header {
+  @include use-typography("headline-small");
   display: block;
-  @include headlineSmallTypography;
   margin-bottom: $s-8;
   padding-left: $s-8;
   color: var(--title-foreground-color);
@@ -80,25 +80,6 @@
   flex-wrap: wrap;
 }
 
-.token-pill {
-  @extend .button-secondary;
-  gap: $s-8;
-  padding: $s-4 $s-8;
-  border-radius: $br-6;
-  font-size: $fs-14;
-
-  &.token-pill-highlighted {
-    color: var(--button-primary-foreground-color-rest);
-    background: var(--button-primary-background-color-rest);
-  }
-
-  &.token-pill-invalid {
-    background-color: var(--button-secondary-background-color-rest);
-    color: var(--status-color-error-500);
-    opacity: 0.8;
-  }
-}
-
 .section-text-icon {
   font-size: $fs-12;
   width: 16px;
@@ -119,8 +100,7 @@
   flex-direction: row;
   align-items: end;
   justify-content: end;
-  padding: $s-16;
-  margin-top: $s-8;
+  padding: $s-8;
   background-color: var(--color-background-primary);
   box-shadow: var(--el-shadow-dark);
 }
@@ -129,16 +109,13 @@
   @extend .button-secondary;
   display: flex;
   align-items: center;
+  justify-content: end;
   padding: $s-6 $s-8;
   text-transform: uppercase;
   gap: $s-8;
+  background-color: var(--color-background-primary);
 
-  .download-icon {
-    @extend .button-icon;
-    stroke: var(--icon-foreground);
-    width: 20px;
-    height: 20px;
-  }
+  box-shadow: var(--el-shadow-dark);
 }
 
 .import-export-menu {
@@ -153,23 +130,8 @@
 .import-export-menu-item {
   @extend .menu-item-base;
   cursor: pointer;
-  .open-arrow {
-    @include flexCenter;
-    svg {
-      @extend .button-icon;
-      stroke: var(--icon-foreground);
-    }
-  }
   &:hover {
     color: var(--menu-foreground-color-hover);
-    .open-arrow {
-      svg {
-        stroke: var(--menu-foreground-color-hover);
-      }
-    }
-    .shortcut-key {
-      color: var(--menu-shortcut-foreground-color-hover);
-    }
   }
 }
 

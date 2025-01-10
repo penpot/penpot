@@ -7,70 +7,77 @@
 
 (ns app.main.ui.ds.utilities.swatch
   (:require-macros
+
    [app.main.style :as stl])
+
   (:require
+
    [app.common.data.macros :as dm]
+   [app.common.json :as json]
+   [app.common.schema :as sm]
+   [app.common.types.color :as ct]
+   [app.config :as cfg]
+   [app.util.color :as uc]
+   [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (def ^:private schema:swatch
-  [:map
-   [:background :string]
+  [:map {:title "SchemaSwatch"}
+   [:background {:optional true} ct/schema:color]
    [:class {:optional true} :string]
-   [:format {:optional true} [:enum "square" "rounded"]]
    [:size {:optional true} [:enum "small" "medium"]]
    [:active {:optional true} :boolean]
    [:on-click {:optional true} fn?]])
 
-(def hex-regex #"^#(?:[0-9a-fA-F]{3}){1,2}$")
-(def rgb-regex #"^rgb\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})\)$")
-(def hsl-regex #"^hsl\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%\)$")
-(def hsla-regex #"^hsla\((\d{1,3}),\s*(\d{1,3})%,\s*(\d{1,3})%,\s*(0|1|0?\.\d+)\)$")
-(def rgba-regex #"^rgba\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3}),\s*(0|1|0?\.\d+)\)$")
+(defn- color-title
+  [color-item]
+  (let [name (:name color-item)
+        path (:path color-item)
+        path-and-name (if path (str path " / " name) name)
+        gradient (:gradient color-item)
+        image (:image color-item)
+        color (:color color-item)]
 
-(defn- gradient? [background]
-  (or
-   (str/starts-with? background "linear-gradient")
-   (str/starts-with? background "radial-gradient")))
+    (if (some? name)
+      (cond
+        (some? color)
+        (str/ffmt "% (%)" path-and-name color)
 
-(defn- color-solid? [background]
-  (boolean
-   (or (re-matches hex-regex background)
-       (or (re-matches hsl-regex background)
-           (re-matches rgb-regex background)))))
+        (some? gradient)
+        (str/ffmt "% (%)" path-and-name (uc/gradient-type->string (:type gradient)))
 
-(defn- color-opacity? [background]
-  (boolean
-   (or (re-matches hsla-regex background)
-       (re-matches rgba-regex background))))
+        (some? image)
+        (str/ffmt "% (%)" path-and-name (tr "media.image"))
 
-(defn- extract-color-and-opacity [background]
-  (cond
-    (re-matches rgba-regex background)
-    (let [[_ r g b a] (re-matches rgba-regex background)]
-      {:color (dm/str "rgb(" r ", " g ", " b ")")
-       :opacity (js/parseFloat a)})
+        :else
+        path-and-name)
 
-    (re-matches hsla-regex background)
-    (let [[_ h s l a] (re-matches hsla-regex background)]
-      {:color (dm/str "hsl(" h ", " s "%, " l "%)")
-       :opacity (js/parseFloat a)})
+      (cond
+        (some? color)
+        color
 
-    :else
-    {:color background
-     :opacity 1.0}))
+        (some? gradient)
+        (uc/gradient-type->string (:type gradient))
+
+        (some? image)
+        (tr "media.image")))))
 
 (mf/defc swatch*
   {::mf/props :obj
-   ::mf/schema schema:swatch}
-  [{:keys [background on-click format size active class]
+   ::mf/schema (sm/schema schema:swatch)}
+  [{:keys [background on-click size active class]
     :rest props}]
-  (let [element-type (if on-click "button" "div")
-        button-type (if on-click "button" nil)
-        format (or format "square")
+  (let [background (if (object? background) (json/->clj background) background)
+        read-only? (nil? on-click)
+        id? (some? (:id background))
+        element-type (if read-only? "div" "button")
+        button-type (if (not read-only?) "button" nil)
         size (or size "small")
         active (or active false)
-        {:keys [color opacity]} (extract-color-and-opacity background)
+        gradient (:gradient background)
+        image    (:image background)
+        format (if id? "rounded" "square")
         class (dm/str class " " (stl/css-case
                                  :swatch true
                                  :small (= size "small")
@@ -79,25 +86,26 @@
                                  :active (= active true)
                                  :interactive (= element-type "button")
                                  :rounded (= format "rounded")))
-        props (mf/spread-props props {:class class :on-click on-click :type button-type})]
+        props (mf/spread-props props {:class class
+                                      :on-click on-click
+                                      :type button-type
+                                      :title (color-title background)})]
 
     [:> element-type props
      (cond
-       (color-solid? background)
-       [:span {:class (stl/css :swatch-solid)
-               :style {:background background}}]
 
-       (color-opacity? background)
-       [:span {:class (stl/css :swatch-opacity)}
-        [:span {:class (stl/css :swatch-solid-side)
-                :style {:background color}}]
-        [:span {:class (stl/css :swatch-opacity-side)
-                :style {:background color :opacity opacity}}]]
-
-       (gradient? background)
+       (some? gradient)
        [:span {:class (stl/css :swatch-gradient)
-               :style {:background-image (str background ", repeating-conic-gradient(lightgray 0% 25%, white 0% 50%)")}}]
+               :style {:background-image (str gradient ", repeating-conic-gradient(lightgray 0% 25%, white 0% 50%)")}}]
+
+       (some? image)
+       (let [uri (cfg/resolve-file-media image)]
+         [:span {:class (stl/css :swatch-image)
+                 :style {:background-image (str/ffmt "url(%)" uri)}}])
 
        :else
-       [:span {:class (stl/css :swatch-image)
-               :style {:background-image (str "url('" background "'), repeating-conic-gradient(lightgray 0% 25%, white 0% 50%)")}}])]))
+       [:span {:class (stl/css :swatch-opacity)}
+        [:span {:class (stl/css :swatch-solid-side)
+                :style {:background (uc/color->background (assoc background :opacity 1))}}]
+        [:span {:class (stl/css :swatch-opacity-side)
+                :style {:background (uc/color->background background)}}]])]))

@@ -7,7 +7,10 @@
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.hooks :as hooks]
    [app.util.i18n :as i18n :refer [tr]]
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn all-equal?
@@ -58,7 +61,19 @@
         on-radius-r1-change #(on-radius-4-change % :r1)
         on-radius-r2-change #(on-radius-4-change % :r2)
         on-radius-r3-change #(on-radius-4-change % :r3)
-        on-radius-r4-change #(on-radius-4-change % :r4)]
+        on-radius-r4-change #(on-radius-4-change % :r4)
+
+        expand-stream
+        (mf/with-memo []
+          (->> st/stream
+               (rx/filter (ptk/type? :expand-border-radius))))]
+
+    (hooks/use-stream
+     expand-stream
+     #(reset! radius-expanded* true))
+
+    (mf/with-effect [ids]
+      (reset! radius-expanded* false))
 
     [:div {:class (stl/css :radius)}
      (if (not radius-expanded)
@@ -117,6 +132,6 @@
                        :variant "ghost"
                        :on-click toggle-radius-mode
                        :aria-label (if radius-expanded
-                                     (tr "workspace.options.radius.all-corners")
-                                     (tr "workspace.options.radius.single-corners"))
+                                     (tr "workspace.options.radius.hide-all-corners")
+                                     (tr "workspace.options.radius.show-single-corners"))
                        :icon "corner-radius"}]]))

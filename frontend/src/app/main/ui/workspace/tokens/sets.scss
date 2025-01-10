@@ -34,6 +34,14 @@
   }
 }
 
+.set-item-group {
+  cursor: unset;
+}
+
+.set-item-group-collapse-button {
+  cursor: pointer;
+}
+
 .set-name {
   @include textEllipsis;
   flex-grow: 1;

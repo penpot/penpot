@@ -812,6 +812,14 @@
       (update :undo-changes conj {:type :del-token-set :name (:name token-set)})
       (apply-changes-local)))
 
+(defn rename-token-set-group
+  [changes from-path-str to-path-str]
+  (-> changes
+      (update :redo-changes conj {:type :rename-token-set-group :from-path-str from-path-str :to-path-str to-path-str})
+      ;; TODO: Figure out undo
+      #_(update :undo-changes conj {:type :rename-token-set-group :name (:name token-set) :token-set (or prev-token-set token-set)})
+      (apply-changes-local)))
+
 (defn update-token-set
   [changes token-set prev-token-set]
   (-> changes

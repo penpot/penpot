@@ -12,10 +12,12 @@
 
 .modal-dialog {
   @extend .modal-container-base;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
+
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  max-width: $s-468;
+  max-width: $s-512;
+  max-height: $s-720;
   user-select: none;
 }
 
@@ -32,6 +34,12 @@
   display: flex;
   flex-direction: column;
   gap: $s-24;
+  overflow: auto;
+}
+
+.edit-theme-form {
+  display: flex;
+  overflow-y: auto;
 }
 
 .themes-modal-title {
@@ -101,6 +109,8 @@
 
 .theme-group-label {
   color: var(--color-foreground-secondary);
+  margin: 0 0 $s-12 0;
+  padding: 0;
 }
 
 .group-title {
@@ -114,12 +124,14 @@
   display: flex;
   flex-direction: column;
   gap: $s-6;
+  margin: 0;
 }
 
 .theme-group-wrapper {
   display: flex;
   flex-direction: column;
-  gap: $s-8;
+  overflow-y: auto;
+  gap: $s-32;
 }
 
 .theme-row {
@@ -146,7 +158,6 @@
 }
 
 .sets-count-button {
-  text-transform: lowercase;
   padding: $s-6;
   padding-left: $s-12;
 }
@@ -166,7 +177,7 @@
 .sets-list-wrapper {
   border: 1px solid color-mix(in hsl, var(--color-foreground-secondary) 30%, transparent);
   border-radius: $s-8;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .sets-count-empty-button {

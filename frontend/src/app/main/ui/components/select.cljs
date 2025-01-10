@@ -86,6 +86,11 @@
     (mf/with-effect [default-value]
       (swap! state* assoc :current-value default-value))
 
+    (mf/with-effect [is-open?]
+      (when (and (not= 0 (mf/ref-val dropdown-direction-change*)) (= false is-open?))
+        (reset! dropdown-direction* "down")
+        (mf/set-ref-val! dropdown-direction-change* 0)))
+
     (mf/with-effect [is-open? dropdown-element*]
       (let [dropdown-element (mf/ref-val dropdown-element*)]
         (when (and (= 0 (mf/ref-val dropdown-direction-change*)) dropdown-element)

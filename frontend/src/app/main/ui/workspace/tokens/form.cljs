@@ -9,7 +9,6 @@
   (:require
    [app.common.colors :as c]
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
@@ -191,10 +190,10 @@ Token names should only contain letters and digits separated by . characters.")}
         empty-message? (or (nil? result-or-errors)
                            (wte/has-error-code? :error/empty-input errors))
         message (cond
-                  empty-message? (dm/str (tr "workspace.token.resolved-value") "-")
+                  empty-message? (tr "workspace.token.resolved-value" "-")
                   errors (->> (wte/humanize-errors errors)
                               (str/join "\n"))
-                  :else (dm/str (tr "workspace.token.resolved-value") result-or-errors))]
+                  :else (tr "workspace.token.resolved-value" result-or-errors))]
     [:> text* {:as "p"
                :typography "body-small"
                :class (stl/css-case :resolved-value true
@@ -204,7 +203,7 @@ Token names should only contain letters and digits separated by . characters.")}
 
 (mf/defc form
   {::mf/wrap-props false}
-  [{:keys [token token-type action selected-token-set-id]}]
+  [{:keys [token token-type action selected-token-set-path]}]
   (let [token (or token {:type token-type})
         token-properties (wtty/get-token-properties token)
         color? (wtt/color-token? token)
@@ -221,6 +220,12 @@ Token names should only contain letters and digits separated by . characters.")}
                                     (-> (ctob/tokens-tree selected-set-tokens)
                                         ;; Allow setting editing token to it's own path
                                         (d/dissoc-in token-path))))
+        cancel-ref  (mf/use-ref nil)
+
+        on-cancel-ref
+        (mf/use-fn
+         (fn [node]
+           (mf/set-ref-val! cancel-ref node)))
 
         ;; Name
         touched-name? (mf/use-state false)
@@ -233,6 +238,17 @@ Token names should only contain letters and digits separated by . characters.")}
            (let [schema (token-name-schema {:token token
                                             :tokens-tree selected-set-tokens-tree})]
              (m/explain schema (finalize-name value)))))
+
+        on-blur-name
+        (mf/use-fn
+         (mf/deps cancel-ref)
+         (fn [e]
+           (let [node (dom/get-related-target e)
+                 on-cancel-btn (= node (mf/ref-val cancel-ref))]
+             (when-not on-cancel-btn
+               (let [value (dom/get-target-val e)
+                     errors (validate-name value)]
+                 (reset! name-errors errors))))))
 
         on-update-name-debounced
         (mf/use-fn
@@ -283,6 +299,11 @@ Token names should only contain letters and digits separated by . characters.")}
                            (set! (.-value (mf/ref-val value-input-ref)) hex-value)
                            (on-update-value-debounced hex-value)))
 
+        on-display-colorpicker (mf/use-fn
+                                (mf/deps color-ramp-open?)
+                                (fn []
+                                  (swap! color-ramp-open? not)))
+
         value-error? (seq (:errors @token-resolve-result))
         valid-value-field? (and
                             (not value-error?)
@@ -315,6 +336,7 @@ Token names should only contain letters and digits separated by . characters.")}
          (mf/deps validate-name validate-descripion token resolved-tokens)
          (fn [e]
            (dom/prevent-default e)
+           (mf/set-ref-val! cancel-ref nil)
            ;; We have to re-validate the current form values before submitting
            ;; because the validation is asynchronous/debounced
            ;; and the user might have edited a valid form to make it invalid,
@@ -343,20 +365,21 @@ Token names should only contain letters and digits separated by . characters.")}
                                 (modal/hide!))))))))
         on-delete-token
         (mf/use-fn
-         (mf/deps selected-token-set-id)
+         (mf/deps selected-token-set-path)
          (fn [e]
            (dom/prevent-default e)
            (modal/hide!)
-           (st/emit! (dt/delete-token (ctob/set-path->set-name selected-token-set-id) (:name token)))))
+           (st/emit! (dt/delete-token (ctob/prefixed-set-path-string->set-name-string selected-token-set-path) (:name token)))))
 
         on-cancel
         (mf/use-fn
          (fn [e]
+           (mf/set-ref-val! cancel-ref nil)
            (dom/prevent-default e)
            (modal/hide!)))]
 
-    [:form  {:class (stl/css :form-wrapper)
-             :on-submit on-submit}
+    [:form {:class (stl/css :form-wrapper)
+            :on-submit on-submit}
      [:div {:class (stl/css :token-rows)}
       [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :form-modal-title)}
        (if (= action "edit")
@@ -372,7 +395,7 @@ Token names should only contain letters and digits separated by . characters.")}
            :auto-focus true
            :label (tr "workspace.token.token-name")
            :default-value @name-ref
-           :on-blur on-update-name
+           :on-blur on-blur-name
            :on-change on-update-name}])
 
        (for [error (->> (:errors @name-errors)
@@ -395,7 +418,7 @@ Token names should only contain letters and digits separated by . characters.")}
          :on-blur on-update-value}
         (when color?
           [:> input-token-color-bullet*
-           {:color @color :on-click #(swap! color-ramp-open? not)}])]
+           {:color @color :on-click on-display-colorpicker}])]
        (when @color-ramp-open?
          [:& ramp {:color (some-> (or @token-resolve-result (:value token))
                                   (tinycolor/valid-color))
@@ -427,6 +450,8 @@ Token names should only contain letters and digits separated by . characters.")}
           (tr "labels.delete")])
        [:> button* {:on-click on-cancel
                     :type "button"
+                    :on-ref  on-cancel-ref
+                    :id "token-modal-cancel"
                     :variant "secondary"}
         (tr "labels.cancel")]
        [:> button* {:type "submit"

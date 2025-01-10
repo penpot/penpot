@@ -14,7 +14,6 @@
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.ds.buttons.button :refer [button*]]
@@ -22,7 +21,6 @@
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
-   [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
@@ -33,12 +31,12 @@
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.theme-select :refer [theme-select]]
    [app.main.ui.workspace.tokens.token :as wtt]
+   [app.main.ui.workspace.tokens.token-pill :refer [token-pill]]
    [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]
    [shadow.resource]))
@@ -46,54 +44,31 @@
 (def lens:token-type-open-status
   (l/derived (l/in [:workspace-tokens :open-status]) st/state))
 
-(def ^:private download-icon
-  (i/icon-xref :download (stl/css :download-icon)))
-
 ;; Components ------------------------------------------------------------------
-
-(mf/defc token-pill
-  {::mf/wrap-props false}
-  [{:keys [on-click token theme-token highlighted? on-context-menu]}]
-  (let [{:keys [name value resolved-value errors]} token
-        errors? (and (seq errors) (seq (:errors theme-token)))]
-    [:button
-     {:class (stl/css-case :token-pill true
-                           :token-pill-highlighted highlighted?
-                           :token-pill-invalid errors?)
-      :title (cond
-               errors? (sd/humanize-errors token)
-               :else (->> [(str "Token: " name)
-                           (str (tr "workspace.token.original-value") value)
-                           (str (tr "workspace.token.resolved-value") resolved-value)]
-                          (str/join "\n")))
-      :on-click on-click
-      :on-context-menu on-context-menu
-      :disabled errors?}
-     (when-let [color (if (seq (ctob/find-token-value-references (:value token)))
-                        (wtt/resolved-value-hex theme-token)
-                        (wtt/resolved-value-hex token))]
-       [:& color-bullet {:color color
-                         :mini true}])
-     name]))
 
 (mf/defc token-section-icon
   {::mf/wrap-props false}
   [{:keys [type]}]
   (case type
-    :border-radius i/corner-radius
-    :numeric [:span {:class (stl/css :section-text-icon)} "123"]
-    :color i/drop-icon
-    :boolean i/boolean-difference
-    :opacity [:span {:class (stl/css :section-text-icon)} "%"]
-    :rotation i/rotation
-    :spacing i/padding-extended
-    :string i/text-mixed
-    :stroke-width i/stroke-size
-    :typography i/text
-    ;; TODO: Add diagonal icon here when it's available
-    :dimensions [:div {:style {:rotate "45deg"}} i/constraint-horizontal]
-    :sizing [:div {:style {:rotate "45deg"}} i/constraint-horizontal]
-    i/add))
+    :border-radius "corner-radius"
+    :color "drop"
+    :boolean "boolean-difference"
+    :opacity "percentage"
+    :rotation "rotation"
+    :spacing "padding-extended"
+    :string "text-mixed"
+    :stroke-width "stroke-size"
+    :typography "text"
+    :dimensions "expand"
+    :sizing "expand"
+    "add"))
+
+(defn attribute-actions [token selected-shapes attributes]
+  (let [ids-by-attributes (wtt/shapes-ids-by-applied-attributes token selected-shapes attributes)
+        shape-ids (into #{} (map :id selected-shapes))]
+    {:all-selected? (wtt/shapes-applied-all? ids-by-attributes shape-ids attributes)
+     :shape-ids shape-ids
+     :selected-pred #(seq (% ids-by-attributes))}))
 
 (mf/defc token-component
   [{:keys [type tokens selected-shapes token-type-props active-theme-tokens]}]
@@ -105,9 +80,10 @@
                          (fn [event token]
                            (dom/prevent-default event)
                            (dom/stop-propagation event)
-                           (st/emit! (dt/show-token-context-menu {:type :token
-                                                                  :position (dom/get-client-position event)
-                                                                  :token-name (:name token)}))))
+                           (st/emit! (dt/show-token-context-menu
+                                      {:type :token
+                                       :position (dom/get-client-position event)
+                                       :token-name (:name token)}))))
 
         on-toggle-open-click (mf/use-fn
                               (mf/deps open? tokens)
@@ -137,28 +113,37 @@
                                                       :token-type-props token-type-props})))))
         tokens-count (count tokens)]
     [:div {:on-click on-toggle-open-click}
-     [:& cmm/asset-section {:icon (mf/fnc icon-wrapper []
-                                    [:div {:class (stl/css :section-icon)}
-                                     [:& token-section-icon {:type type}]])
+     [:& cmm/asset-section {:icon (token-section-icon type)
                             :title title
                             :assets-count tokens-count
                             :open? open?}
       [:& cmm/asset-section-block {:role :title-button}
-       [:button {:class (stl/css :action-button)
-                 :on-click on-popover-open-click}
-        i/add]]
+       [:> icon-button* {:on-click on-popover-open-click
+                         :variant "ghost"
+                         :icon "add"
+                         :aria-label (str "Add token: " title)}]]
       (when open?
         [:& cmm/asset-section-block {:role :content}
          [:div {:class (stl/css :token-pills-wrapper)}
           (for [token (sort-by :name tokens)]
-            (let [theme-token (get active-theme-tokens (wtt/token-identifier token))]
+            (let [theme-token (get active-theme-tokens (wtt/token-identifier token))
+                  multiple-selection (< 1 (count selected-shapes))
+                  full-applied (:all-selected? (attribute-actions token selected-shapes (or all-attributes attributes)))
+                  applied (wtt/shapes-token-applied? token selected-shapes (or all-attributes attributes))
+                  on-token-click (fn [e]
+                                   (on-token-pill-click e token))
+                  on-context-menu (fn [e] (on-context-menu e token))]
               [:& token-pill
                {:key (:name token)
                 :token token
                 :theme-token theme-token
-                :highlighted? (wtt/shapes-token-applied? token selected-shapes (or all-attributes attributes))
-                :on-click #(on-token-pill-click % token)
-                :on-context-menu #(on-context-menu % token)}]))]])]]))
+                :half-applied (or (and applied multiple-selection)
+                                  (and applied (not full-applied)))
+                :full-applied (if multiple-selection
+                                false
+                                applied)
+                :on-click on-token-click
+                :on-context-menu on-context-menu}]))]])]]))
 
 (defn sorted-token-groups
   "Separate token-types into groups of `:empty` or `:filled` depending if tokens exist for that type.
@@ -235,16 +220,13 @@
         on-open (mf/use-fn #(reset! open? true))]
     [:& sets-context/provider {}
      [:& sets-context-menu]
-     [:article {:class (stl/css :sets-section-wrapper)
+     [:article {:data-testid "token-themes-sets-sidebar"
+                :class (stl/css :sets-section-wrapper)
                 :style {"--resize-height" (str resize-height "px")}}
       [:div {:class (stl/css :sets-sidebar)}
        [:& themes-header]
        [:div {:class (stl/css :sidebar-header)}
-        [:& title-bar {:collapsable true
-                       :collapsed (not @open?)
-                       :all-clickable true
-                       :title (tr "labels.sets")
-                       :on-collapsed #(swap! open? not)}
+        [:& title-bar {:title (tr "labels.sets")}
          [:& add-set-button {:on-open on-open
                              :style "header"}]]]
        [:& theme-sets-list {:on-open on-open}]]]]))
@@ -259,30 +241,24 @@
         active-theme-tokens (sd/use-active-theme-sets-tokens)
 
         tokens (sd/use-resolved-workspace-tokens)
-        token-groups (mf/with-memo [tokens]
-                       (sorted-token-groups tokens))]
+
+        selected-token-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
+
+        token-groups (mf/with-memo [tokens selected-token-set-tokens]
+                       (-> (select-keys tokens (keys selected-token-set-tokens))
+                           (sorted-token-groups)))]
     [:*
      [:& token-context-menu]
      [:& title-bar {:all-clickable true
                     :title "TOKENS"}]
-     [:div.assets-bar
-      (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
-                                                                (:empty token-groups))]
-        [:& token-component {:key token-key
-                             :type token-key
-                             :selected-shapes selected-shapes
-                             :active-theme-tokens active-theme-tokens
-                             :tokens tokens
-                             :token-type-props token-type-props}])]]))
-
-(mf/defc json-import-button []
-  (let []
-    [:div
-
-     [:button {:class (stl/css :download-json-button)
-               :on-click #(.click (js/document.getElementById "file-input"))}
-      download-icon
-      "Import JSON"]]))
+     (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
+                                                               (:empty token-groups))]
+       [:& token-component {:key token-key
+                            :type token-key
+                            :selected-shapes selected-shapes
+                            :active-theme-tokens active-theme-tokens
+                            :tokens tokens
+                            :token-type-props token-type-props}])]))
 
 (mf/defc import-export-button
   {::mf/wrap-props false}
@@ -303,6 +279,10 @@
            (reset! show-menu* false)))
 
         input-ref (mf/use-ref)
+        on-option-click
+        (mf/use-fn
+         #(.click (mf/ref-val input-ref)))
+
         on-import
         (fn [event]
           (let [file (-> event .-target .-files (aget 0))]
@@ -318,12 +298,13 @@
                                                   :timeout 9000})))))
             (set! (.-value (mf/ref-val input-ref)) "")))
         on-export (fn []
-                    (let [tokens-blob (some-> (deref refs/tokens-lib)
+                    (let [tokens-json (some-> (deref refs/tokens-lib)
                                               (ctob/encode-dtcg)
                                               (clj->js)
-                                              (js/JSON.stringify nil 2)
-                                              (wapi/create-blob "application/json"))]
-                      (dom/trigger-download "tokens.json" tokens-blob)))]
+                                              (js/JSON.stringify nil 2))]
+                      (->> (wapi/create-blob (or tokens-json "{}") "application/json")
+                           (dom/trigger-download "tokens.json"))))]
+
     [:div {:class (stl/css :import-export-button-wrapper)}
      [:input {:type "file"
               :ref input-ref
@@ -331,20 +312,20 @@
               :id "file-input"
               :accept ".json"
               :on-change on-import}]
-     [:button {:class (stl/css :import-export-button)
-               :on-click open-menu}
-      download-icon
-      "Tokens"]
+     [:> button* {:on-click open-menu
+                  :icon "import-export"
+                  :variant "secondary"}
+      (tr "workspace.token.tools")]
      [:& dropdown-menu {:show show-menu?
                         :on-close close-menu
                         :list-class (stl/css :import-export-menu)}
       [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
-                               :on-click #(.click (mf/ref-val input-ref))}
-       "Import"]
+                               :on-click on-option-click}
+       (tr "labels.import")]
 
       [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                :on-click on-export}
-       "Export"]]]))
+       (tr "labels.export")]]]))
 
 (mf/defc tokens-sidebar-tab
   {::mf/wrap [mf/memo]

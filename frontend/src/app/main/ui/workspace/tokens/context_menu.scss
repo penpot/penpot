@@ -4,11 +4,20 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "../../ds/typography.scss" as *;
 @import "refactor/common-refactor.scss";
 
 .token-context-menu {
   position: absolute;
   z-index: $z-index-4;
+}
+
+.token-context-menu[data-direction="up"] {
+  bottom: var(--bottom);
+}
+
+.token-context-menu[data-direction="down"] {
+  top: var(--top);
 }
 
 .context-list,
@@ -18,15 +27,18 @@
   width: $s-240;
   padding: $s-4;
   border-radius: $br-8;
-  border: $s-2 solid var(--panel-border-color);
-  background-color: var(--menu-background-color);
+  border: $s-2 solid var(--color-background-quaternary);
+  background-color: var(--color-background-tertiary);
   max-height: 100vh;
   overflow-y: auto;
+}
 
-  li {
-    @include bodySmallTypography;
-    color: var(--menu-foreground-color);
-  }
+.token-context-submenu[data-direction="up"] {
+  bottom: var(--dist);
+}
+
+.token-context-submenu[data-direction="down"] {
+  top: var(--dist);
 }
 
 .token-context-submenu {
@@ -36,68 +48,46 @@
 }
 
 .separator {
-  @include bodySmallTypography;
   margin: $s-6;
   border-block-start: $s-1 solid var(--panel-border-color);
 }
 
 .context-menu-item {
+  --context-menu-item-bg-color: none;
+  --context-menu-item-fg-color: var(--color-foreground-primary);
+  --context-menu-item-border-color: none;
+  @include use-typography("body-small");
   display: flex;
   align-items: center;
   height: $s-28;
   width: 100%;
-  padding: $s-6;
+  padding: $s-8;
   border-radius: $br-8;
+  color: var(--context-menu-item-fg-color);
+  background-color: var(--context-menu-item-bg-color);
+  border: $s-1 solid var(--context-menu-item-border-color);
   cursor: pointer;
-
-  .title {
-    flex-grow: 1;
-    @include bodySmallTypography;
-    color: var(--menu-foreground-color);
-    margin-left: calc(($s-32 + $s-28) / 2);
-  }
-
-  .icon-wrapper {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .icon-wrapper + .title {
-    margin-left: $s-6;
-  }
-
-  .selected-icon {
-    svg {
-      @extend .button-icon-small;
-      stroke: var(--menu-foreground-color);
-    }
-  }
-
-  .submenu-icon {
-    margin-left: $s-2;
-    svg {
-      @extend .button-icon-small;
-      stroke: var(--menu-foreground-color);
-    }
-  }
-
   &:hover {
-    background-color: var(--menu-background-color-hover);
-    .title {
-      color: var(--menu-foreground-color-hover);
-    }
-    .shortcut {
-      color: var(--menu-shortcut-foreground-color-hover);
-    }
+    --context-menu-item-bg-color: var(--color-background-quaternary);
   }
 
   &:focus {
-    border: 1px solid var(--menu-border-color-focus);
-    background-color: var(--menu-background-color-focus);
+    --context-menu-item-bg-color: var(--menu-background-color-focus);
+    --context-menu-item-border-color: var(--color-background-tertiary);
   }
 
-  &[disabled] {
-    pointer-events: none;
-    opacity: 0.6;
+  &[aria-selected="true"] {
+    --context-menu-item-bg-color: var(--color-background-quaternary);
   }
+}
+
+.item-text {
+  flex-grow: 1;
+}
+
+.item-with-icon-space {
+  padding-left: $s-20;
+}
+.icon-wrapper {
+  margin-right: $s-4;
 }

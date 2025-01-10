@@ -47,12 +47,12 @@
     (= (token-identifier token) id)))
 
 (defn token-applied?
-  "Test if `token` is applied to a `shape` with at least one of the one of the given `token-attributes`."
+  "Test if `token` is applied to a `shape` with at least one of the given `token-attributes`."
   [token shape token-attributes]
   (some #(token-attribute-applied? token shape %) token-attributes))
 
 (defn shapes-token-applied?
-  "Test if `token` is applied to to any of `shapes` with at least one of the one of the given `token-attributes`."
+  "Test if `token` is applied to to any of `shapes` with at least one of the given `token-attributes`."
   [token shapes token-attributes]
   (some #(token-applied? token % token-attributes) shapes))
 

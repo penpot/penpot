@@ -16,6 +16,7 @@
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.store :as st]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
@@ -95,11 +96,25 @@
                         (when (ctsr/can-get-border-radius? shape)
                           (ctsr/set-radius-to-all-corners shape value)))
                       {:reg-objects? true
+                       :ignore-touched true
+                       :attrs ctt/border-radius-keys}))
+
+(defn update-shape-radius-single-corner [value shape-ids attributes]
+  ;; NOTE: This key should be namespaced on data tokens, but these events are not there.  
+  (st/emit! (ptk/data-event :expand-border-radius))
+  (dwsh/update-shapes shape-ids
+                      (fn [shape]
+                        (when (ctsr/can-get-border-radius? shape)
+                          (ctsr/set-radius-to-single-corner shape (first attributes) value)))
+                      {:reg-objects? true
+                       :ignore-touched true
                        :attrs ctt/border-radius-keys}))
 
 (defn update-opacity [value shape-ids]
   (when (<= 0 value 1)
-    (dwsh/update-shapes shape-ids #(assoc % :opacity value))))
+    (dwsh/update-shapes shape-ids
+                        #(assoc % :opacity value)
+                        {:ignore-touched true})))
 
 (defn update-rotation [value shape-ids]
   (ptk/reify ::update-shape-rotation
@@ -107,15 +122,7 @@
     (watch [_ _ _]
       (rx/of
        (udw/trigger-bounding-box-cloaking shape-ids)
-       (udw/increase-rotation shape-ids value)))))
-
-(defn update-shape-radius-single-corner [value shape-ids attributes]
-  (dwsh/update-shapes shape-ids
-                      (fn [shape]
-                        (when (ctsr/can-get-border-radius? shape)
-                          (ctsr/set-radius-to-single-corner shape (first attributes) value)))
-                      {:reg-objects? true
-                       :attrs ctt/border-radius-keys}))
+       (udw/increase-rotation shape-ids value nil :ignore-touched true)))))
 
 (defn update-stroke-width
   [value shape-ids]
@@ -124,14 +131,15 @@
                         (when (seq (:strokes shape))
                           (assoc-in shape [:strokes 0 :stroke-width] value)))
                       {:reg-objects? true
+                       :ignore-touched true
                        :attrs [:strokes]}))
 
 (defn update-color [f value shape-ids]
-  (let [color (some->> value
-                       (tinycolor/valid-color)
-                       (tinycolor/->hex)
-                       (str "#"))]
-    (f shape-ids {:color color} 0)))
+  (when-let [color (some->> value
+                            (tinycolor/valid-color)
+                            (tinycolor/->hex)
+                            (str "#"))]
+    (f shape-ids {:color color} 0 {:ignore-touched true})))
 
 (defn update-fill
   [value shape-ids]
@@ -141,13 +149,21 @@
   [value shape-ids]
   (update-color wdc/change-stroke value shape-ids))
 
+(defn update-fill-stroke [value shape-ids attributes]
+  (ptk/reify ::update-fill-stroke
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of
+       (when (:fill attributes) (update-fill value shape-ids))
+       (when (:stroke-color attributes) (update-stroke-color value shape-ids))))))
+
 (defn update-shape-dimensions [value shape-ids attributes]
   (ptk/reify ::update-shape-dimensions
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of
-       (when (:width attributes) (dwt/update-dimensions shape-ids :width value))
-       (when (:height attributes) (dwt/update-dimensions shape-ids :height value))))))
+       (when (:width attributes) (dwt/update-dimensions shape-ids :width value {:ignore-touched true}))
+       (when (:height attributes) (dwt/update-dimensions shape-ids :height value {:ignore-touched true}))))))
 
 (defn- attributes->layout-gap [attributes value]
   (let [layout-gap (-> (set/intersection attributes #{:column-gap :row-gap})
@@ -155,7 +171,9 @@
     {:layout-gap layout-gap}))
 
 (defn update-layout-padding [value shape-ids attrs]
-  (dwsl/update-layout shape-ids {:layout-padding (zipmap attrs (repeat value))}))
+  (dwsl/update-layout shape-ids
+                      {:layout-padding (zipmap attrs (repeat value))}
+                      {:ignore-touched true}))
 
 (defn update-layout-spacing [value shape-ids attributes]
   (ptk/reify ::update-layout-spacing
@@ -167,7 +185,9 @@
                                    (map :id)))
             layout-attributes (attributes->layout-gap attributes value)]
         (rx/of
-         (dwsl/update-layout layout-shape-ids layout-attributes))))))
+         (dwsl/update-layout layout-shape-ids
+                             layout-attributes
+                             {:ignore-touched true}))))))
 
 (defn update-shape-position [value shape-ids attributes]
   (ptk/reify ::update-shape-position
@@ -185,4 +205,4 @@
                        :layout-item-max-w value
                        :layout-item-max-h value}
                       (select-keys attributes))]
-        (dwsl/update-layout-child shape-ids props)))))
+        (dwsl/update-layout-child shape-ids props {:ignore-touched true})))))

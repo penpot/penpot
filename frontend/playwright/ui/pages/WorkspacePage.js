@@ -85,6 +85,12 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.togglePalettesVisibility = page.getByTestId(
       "toggle-palettes-visibility",
     );
+    this.tokensUpdateCreateModal = page.getByTestId(
+      "token-update-create-modal",
+    );
+    this.tokenThemesSetsSidebar = page.getByTestId("token-themes-sets-sidebar");
+    this.tokenSetItems = page.getByTestId("tokens-set-item");
+    this.tokenSetGroupItems = page.getByTestId("tokens-set-group-item");
   }
 
   async goToWorkspace({

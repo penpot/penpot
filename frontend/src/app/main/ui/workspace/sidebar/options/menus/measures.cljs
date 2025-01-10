@@ -282,7 +282,6 @@
              (st/emit! (udw/trigger-bounding-box-cloaking ids)
                        (udw/increase-rotation ids value)))))
 
-
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)
         on-pos-x-change #(on-position-change % :x)

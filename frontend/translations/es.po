@@ -1761,6 +1761,11 @@ msgstr "Expirada"
 msgid "labels.export"
 msgstr "Exportar"
 
+
+#: src/app/main/ui/exports/assets.cljs:177
+msgid "labels.import"
+msgstr "Importar"
+
 #: src/app/main/ui/settings/feedback.cljs:48
 msgid "labels.feedback-disabled"
 msgstr "El modulo de recepción de opiniones esta deshabilitado"
@@ -5461,12 +5466,12 @@ msgid "workspace.options.radius-top-right"
 msgstr "Arriba derecha"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
-msgid "workspace.options.radius.all-corners"
-msgstr "Todas las esquinas"
+msgid "workspace.options.radius.hide-all-corners"
+msgstr "Colapsar radios individuales"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
-msgid "workspace.options.radius.single-corners"
-msgstr "Esquinas individuales"
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
+msgid "workspace.options.radius.show-single-corners"
+msgstr "Mostrar radios individuales"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:184
 msgid "workspace.options.recent-fonts"
@@ -6323,10 +6328,6 @@ msgstr "%s sets"
 msgid "workspace.token.original-value"
 msgstr "Valor original: "
 
-#: src/app/main/ui/workspace/tokens/form.cljs:193, src/app/main/ui/workspace/tokens/form.cljs:196, src/app/main/ui/workspace/tokens/sidebar.cljs:67
-msgid "workspace.token.resolved-value"
-msgstr "Valor resuelto: "
-
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:208
 msgid "workspace.token.save-theme"
 msgstr "Guardar tema"
@@ -6649,6 +6650,206 @@ msgstr "Abrir menu de versiones"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "errors.maximum-invitations-by-request-reached"
+msgstr "Se ha alcanzado el número máximo (%s) de correos electrónicos que se pueden invitar en una sola solicitud"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.create-token"
+msgstr "Crear un token de %s"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.edit-token"
+msgstr "Editar token"
+
+#: src/app/main/ui/workspace/tokens/form.cljs ,src/app/main/ui/workspace/tokens/token_pill.cljs
+msgid "workspace.token.resolved-value"
+msgstr "Valor resuelto: %s"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-name"
+msgstr "Nombre"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-name"
+msgstr "Introduce un nombre para el token %s" 
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-value"
+msgstr "Valor"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-value"
+msgstr "Introduce un valor o alias"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-description"
+msgstr "Descripción"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-description"
+msgstr "Añade una Descripción (opcional)"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.original-value"
+msgstr "Valor original: %s"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.no-themes"
+msgstr "No hay temas."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.create-one"
+msgstr "Crear uno."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.add set"
+msgstr "Añadir set"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.tools"
+msgstr "Herramientas"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.save-theme"
+msgstr "Guardar tema"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.create-theme-title"
+msgstr "Crear tema"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.edit-theme-title"
+msgstr "Editar tema"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.delete-theme-title"
+msgstr "Borrar theme"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.no-themes-currently"
+msgstr "Actualmente no existen temas."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.create-new-theme"
+msgstr "Crea un nuevo tema ahora."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.new-theme"
+msgstr "Nuevo tema"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.themes"
+msgstr "Temas"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.theme-name"
+msgstr "Tema %s"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.no-sets"
+msgstr "No hay sets"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.num-sets"
+msgstr "%s sets"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.back-to-themes"
+msgstr "Volver al listado de temas"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs
+msgid "workspace.token.edit-themes"
+msgstr "Editar temas"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs
+msgid "workspace.token.no-active-theme"
+msgstr "No hay temas activos"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs
+msgid "workspace.token.active-themes"
+msgstr "%s temas activos"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.grouping-set-alert"
+msgstr "La agrupación de sets aun no está soportada."
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.select-set"
+msgstr "Selecciona set"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.set-selection-theme"
+msgstr "Define que sets de tokens deberian formar parte de este tema:"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.no-sets"
+msgstr "Aun no hay sets."
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.create-one"
+msgstr "Crea uno."
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.no-sets-create"
+msgstr "Aun no hay sets definidos. Crea uno primero"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.delete"
+msgstr "Eliminar token"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.duplicate"
+msgstr "Duplicar token"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.edit"
+msgstr "Editar token"
+
+msgid "workspace.versions.button.save"
+msgstr "Guardar versión"
+
+msgid "workspace.versions.button.pin"
+msgstr "Fijar versión"
+
+msgid "workspace.versions.button.restore"
+msgstr "Restaurar versión"
+
+msgid "workspace.versions.empty"
+msgstr "No hay versiones aún"
+
+msgid "workspace.versions.autosaved.version"
+msgstr "Autoguardado %s"
+
+msgid "workspace.versions.autosaved.entry"
+msgstr "%s versiones de autoguardado"
+
+msgid "workspace.versions.loading"
+msgstr "Cargando..."
+
+msgid "workspace.versions.filter.label"
+msgstr "Filtro de versiones"
+
+msgid "workspace.versions.filter.all"
+msgstr "Todas las versiones"
+
+msgid "workspace.versions.filter.mine"
+msgstr "Mis versiones"
+
+msgid "workspace.versions.filter.user"
+msgstr "Versiones de %s"
+
+msgid "workspace.versions.restore-warning"
+msgstr "¿Quieres restaurar esta versión?"
+
+msgid "workspace.versions.snapshot-menu"
+msgstr "Abrir menu de versiones"
+
+msgid "workspace.versions.version-menu"
+msgstr "Abrir menu de versiones"
+
+msgid "workspace.versions.expand-snapshot"
+msgstr "Expandir versiones"
 
 msgid "workspace.versions.tab.history"
 msgstr "Histórico"

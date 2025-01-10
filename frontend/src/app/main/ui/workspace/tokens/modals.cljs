@@ -42,13 +42,14 @@
 
 (mf/defc token-update-create-modal
   {::mf/wrap-props false}
-  [{:keys [x y position token token-type action selected-token-set-id] :as _args}]
+  [{:keys [x y position token token-type action selected-token-set-path] :as _args}]
   (let [wrapper-style (use-viewport-position-style x y position)
         close-modal (mf/use-fn
                      (fn []
                        (modal/hide!)))]
     [:div {:class (stl/css :token-modal-wrapper)
-           :style wrapper-style}
+           :style wrapper-style
+           :data-testid "token-update-create-modal"}
      [:> icon-button* {:on-click close-modal
                        :class (stl/css :close-btn)
                        :icon i/close
@@ -56,7 +57,7 @@
                        :aria-label (tr "labels.close")}]
      [:& form {:token token
                :action action
-               :selected-token-set-id selected-token-set-id
+               :selected-token-set-path selected-token-set-path
                :token-type token-type}]]))
 
 ;; Modals ----------------------------------------------------------------------

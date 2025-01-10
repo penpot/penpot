@@ -100,7 +100,6 @@
                  (->> (ctob/move-set-before tokens-lib set-name before-set-name)
                       (ctob/get-ordered-set-names)
                       (into [])))]
-      ;; TODO Nested moving doesn't work as expected
       (t/testing "regular moving"
         (t/is (= ["A" "Move" "B"] (move "Move" "B")))
         (t/is (= ["B" "A" "Move"] (move "A" "Move"))))
@@ -231,6 +230,24 @@
       (t/is (= (:name token-set') "updated-name"))
       (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set)))))
 
+  (t/deftest rename-token-set-group
+    (let [tokens-lib  (-> (ctob/make-tokens-lib)
+                          (ctob/add-set (ctob/make-token-set :name "foo/bar/baz"))
+                          (ctob/add-set (ctob/make-token-set :name "foo/bar/baz/baz-child-1"))
+                          (ctob/add-set (ctob/make-token-set :name "foo/bar/baz/baz-child-2"))
+                          (ctob/add-theme (ctob/make-token-theme :name "theme" :sets #{"foo/bar/baz/baz-child-1"})))
+          tokens-lib' (-> tokens-lib
+                          (ctob/rename-set-group "foo/bar" "foo/bar-renamed")
+                          (ctob/rename-set-group "foo/bar-renamed/baz" "foo/bar-renamed/baz-renamed"))
+          expected-set-names (ctob/get-ordered-set-names tokens-lib')
+          expected-theme-sets (-> (ctob/get-theme tokens-lib' "" "theme")
+                                  :sets)]
+      (t/is (= expected-set-names
+               '("foo/bar-renamed/baz"
+                 "foo/bar-renamed/baz-renamed/baz-child-1"
+                 "foo/bar-renamed/baz-renamed/baz-child-2")))
+      (t/is (= expected-theme-sets #{"foo/bar-renamed/baz-renamed/baz-child-1"}))))
+
   (t/deftest delete-token-set
     (let [tokens-lib  (-> (ctob/make-tokens-lib)
                           (ctob/add-set (ctob/make-token-set :name "test-token-set"))
@@ -241,11 +258,10 @@
                           (ctob/delete-set-path "S-not-existing-set"))
 
           token-set'  (ctob/get-set tokens-lib' "updated-name")
-          ;;token-theme'  (ctob/get-theme tokens-lib' "" "test-token-theme")
-          ]
+          token-theme'  (ctob/get-theme tokens-lib' "" "test-token-theme")]
 
       (t/is (= (ctob/set-count tokens-lib') 0))
-      ;; (t/is (= (:sets token-theme') #{}))  TODO: fix this
+      (t/is (= (:sets token-theme') #{}))
       (t/is (nil? token-set'))))
 
   (t/deftest active-themes-set-names
@@ -401,8 +417,39 @@
           expected-tokens (ctob/get-active-themes-set-tokens tokens-lib)
           expected-token-names (mapv key expected-tokens)]
       (t/is (= '("set-a" "set-b" "inactive-set") expected-order))
-      (t/is (= ["set-a-token" "set-b-token"] expected-token-names)))))
+      (t/is (= ["set-a-token" "set-b-token"] expected-token-names))))
 
+  (t/testing "sets-at-path-active-state"
+    (let [tokens-lib  (-> (ctob/make-tokens-lib)
+
+                          (ctob/add-set (ctob/make-token-set :name "foo/bar/baz"))
+                          (ctob/add-set (ctob/make-token-set :name "foo/bar/bam"))
+
+                          (ctob/add-theme (ctob/make-token-theme :name "none"))
+                          (ctob/add-theme (ctob/make-token-theme :name "partial"
+                                                                 :sets #{"foo/bar/baz"}))
+                          (ctob/add-theme (ctob/make-token-theme :name "all"
+                                                                 :sets #{"foo/bar/baz"
+                                                                         "foo/bar/bam"}))
+                          (ctob/add-theme (ctob/make-token-theme :name "invalid"
+                                                                 :sets #{"foo/missing"})))
+
+          expected-none (-> tokens-lib
+                            (ctob/set-active-themes #{"/none"})
+                            (ctob/sets-at-path-all-active? "G-foo"))
+          expected-all (-> tokens-lib
+                           (ctob/set-active-themes #{"/all"})
+                           (ctob/sets-at-path-all-active? "G-foo"))
+          expected-partial (-> tokens-lib
+                               (ctob/set-active-themes #{"/partial"})
+                               (ctob/sets-at-path-all-active? "G-foo"))
+          expected-invalid-none (-> tokens-lib
+                                    (ctob/set-active-themes #{"/invalid"})
+                                    (ctob/sets-at-path-all-active? "G-foo"))]
+      (t/is (= :none expected-none))
+      (t/is (= :all expected-all))
+      (t/is (= :partial expected-partial))
+      (t/is (= :none expected-invalid-none)))))
 
 (t/deftest token-theme-in-a-lib
   (t/testing "add-token-theme"
@@ -1060,8 +1107,13 @@
              get-set-token (fn [set-name token-name]
                              (some-> (ctob/get-set lib set-name)
                                      (ctob/get-token token-name)
-                                     (dissoc :modified-at)))]
+                                     (dissoc :modified-at)))
+             token-theme (ctob/get-theme lib "group-1" "theme-1")]
          (t/is (= '("core" "light" "dark" "theme") (ctob/get-ordered-set-names lib)))
+         (t/testing "set exists in theme"
+           (t/is (= (:group token-theme) "group-1"))
+           (t/is (= (:name token-theme) "theme-1"))
+           (t/is (= (:sets token-theme) #{"light"})))
          (t/testing "tokens exist in core set"
            (t/is (= (get-set-token "core" "colors.red.600")
                     {:name "colors.red.600"
@@ -1082,7 +1134,8 @@
            (t/is (nil? (get-set-token "typography" "H1.Bold"))))))
 
      (t/testing "encode-dtcg-json"
-       (let [tokens-lib (-> (ctob/make-tokens-lib)
+       (let [now (dt/now)
+             tokens-lib (-> (ctob/make-tokens-lib)
                             (ctob/add-set (ctob/make-token-set :name "core"
                                                                :tokens {"colors.red.600"
                                                                         (ctob/make-token
@@ -1099,9 +1152,19 @@
                                                                         (ctob/make-token
                                                                          {:name "button.primary.background"
                                                                           :type :color
-                                                                          :value "{accent.default}"})})))
+                                                                          :value "{accent.default}"})}))
+                            (ctob/add-theme (ctob/make-token-theme :name "theme-1"
+                                                                   :group "group-1"
+                                                                   :modified-at now
+                                                                   :sets #{"core"})))
              expected (ctob/encode-dtcg tokens-lib)]
-         (t/is (= {"core"
+         (t/is (= {"$themes" [{"description" nil
+                               "group" "group-1"
+                               "is-source" false
+                               "modified-at" now
+                               "name" "theme-1"
+                               "sets" #{"core"}}]
+                   "core"
                    {"colors" {"red" {"600" {"$value" "#e53e3e"
                                             "$type" "color"}}}
                     "spacing"
@@ -1142,4 +1205,3 @@
              (t/is (= @with-prev-tokens-lib @tokens-lib)))
            (t/testing "fresh tokens library is also equal"
              (= @with-empty-tokens-lib @tokens-lib)))))))
-

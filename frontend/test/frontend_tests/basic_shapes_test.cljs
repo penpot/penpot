@@ -79,4 +79,4 @@
             ;; ==== Check
            (println stroke')
            (t/is (some? shape1'))
-           (t/is (= (:stroke-alignment stroke') :center))))))))
+           (t/is (= (:stroke-alignment stroke') :inner))))))))
