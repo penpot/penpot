@@ -56,7 +56,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [index color]
-           (st/emit! (dc/change-stroke ids color index))))
+           (st/emit! (dc/change-stroke-color ids color index))))
 
 
         on-remove
@@ -77,7 +77,7 @@
          (fn [index color]
            (let [color (-> color
                            (assoc :id nil :file-id nil))]
-             (st/emit! (dc/change-stroke ids color index)))))
+             (st/emit! (dc/change-stroke-color ids color index)))))
 
         handle-reorder
         (mf/use-fn
@@ -90,17 +90,17 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [index value]
-           (st/emit! (dc/change-stroke ids {:stroke-style value} index))))
+           (st/emit! (dc/change-stroke-attrs ids {:stroke-style value} index))))
 
         on-stroke-alignment-change
         (fn [index value]
           (when-not (str/empty? value)
-            (st/emit! (dc/change-stroke ids {:stroke-alignment value} index))))
+            (st/emit! (dc/change-stroke-attrs ids {:stroke-alignment value} index))))
 
         on-stroke-width-change
         (fn [index value]
           (when-not (str/empty? value)
-            (st/emit! (dc/change-stroke ids {:stroke-width value} index))))
+            (st/emit! (dc/change-stroke-attrs ids {:stroke-width value} index))))
 
         open-caps-select
         (fn [caps-state]
@@ -128,11 +128,11 @@
 
         on-stroke-cap-start-change
         (fn [index value]
-          (st/emit! (dc/change-stroke ids {:stroke-cap-start value} index)))
+          (st/emit! (dc/change-stroke-attrs ids {:stroke-cap-start value} index)))
 
         on-stroke-cap-end-change
         (fn [index value]
-          (st/emit! (dc/change-stroke ids {:stroke-cap-end value} index)))
+          (st/emit! (dc/change-stroke-attrs ids {:stroke-cap-end value} index)))
 
         on-stroke-cap-switch
         (fn [index]
@@ -140,8 +140,8 @@
                 stroke-cap-end   (get-in values [:strokes index :stroke-cap-end])]
             (when (and (not= stroke-cap-start :multiple)
                        (not= stroke-cap-end :multiple))
-              (st/emit! (dc/change-stroke ids {:stroke-cap-start stroke-cap-end
-                                               :stroke-cap-end stroke-cap-start} index)))))
+              (st/emit! (dc/change-stroke-attrs ids {:stroke-cap-start stroke-cap-end
+                                                     :stroke-cap-end stroke-cap-start} index)))))
         on-add-stroke
         (fn [_]
           (st/emit! (dc/add-stroke ids {:stroke-alignment :inner

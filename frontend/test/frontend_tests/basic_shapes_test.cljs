@@ -48,7 +48,7 @@
            (t/is (= (:fill-color fill') "#fabada"))
            (t/is (= (:fill-opacity fill') 1))))))))
 
-(t/deftest test-update-stroke
+(t/deftest test-update-stroke-color
   ;; Old shapes without stroke-alignment are rendered as if it is centered
   (t/async
     done
@@ -62,7 +62,7 @@
 
           ;; ==== Action
           events
-          [(dc/change-stroke #{(cthi/id :shape1)} {:color "#FABADA"} 0)]]
+          [(dc/change-stroke-color #{(cthi/id :shape1)} {:color "#FABADA"} 0)]]
 
       (ths/run-store
        store done events
@@ -77,6 +77,8 @@
                                 first)]
 
             ;; ==== Check
-           (println stroke')
+           ;; (println stroke')
            (t/is (some? shape1'))
-           (t/is (= (:stroke-alignment stroke') :inner))))))))
+           (t/is (= (:stroke-alignment stroke') :inner))
+           (t/is (= (:stroke-color stroke') "#FABADA"))
+           (t/is (= (:stroke-width stroke') 2))))))))
