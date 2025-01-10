@@ -88,7 +88,7 @@
         {:aria-label aria-label
          :class (stl/css :check-icon)
          :size "s"
-         :id (if mixed? ic/remove ic/tick)}])]))
+         :icon-id (if mixed? ic/remove ic/tick)}])]))
 
 (mf/defc sets-tree-set-group
   [{:keys [label tree-depth tree-path active? selected? collapsed? editing? on-toggle on-edit on-edit-reset on-edit-submit]}]

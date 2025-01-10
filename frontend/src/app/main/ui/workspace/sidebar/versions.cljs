@@ -192,9 +192,9 @@
       [:button {:class (stl/css :version-entry-snapshots)
                 :aria-label (tr "workspace.versions.expand-snapshot")
                 :on-click handle-toggle-expand}
-       [:> i/icon* {:id i/clock :class (stl/css :icon-clock)}]
+       [:> i/icon* {:icon-id i/clock :class (stl/css :icon-clock)}]
        (tr "workspace.versions.autosaved.entry" (count (:snapshots entry)))
-       [:> i/icon* {:id i/arrow :class (stl/css :icon-arrow)}]]
+       [:> i/icon* {:icon-id i/arrow :class (stl/css :icon-arrow)}]]
 
       [:ul {:class (stl/css :version-snapshot-list)}
        (for [[idx snapshot] (d/enumerate (:snapshots entry))]
@@ -358,7 +358,7 @@
 
         (if (empty? data)
           [:div {:class (stl/css :versions-entry-empty)}
-           [:div {:class (stl/css :versions-entry-empty-icon)} [:> i/icon* {:id i/history}]]
+           [:div {:class (stl/css :versions-entry-empty-icon)} [:> i/icon* {:icon-id i/history}]]
            [:div {:class (stl/css :versions-entry-empty-msg)} (tr "workspace.versions.empty")]]
 
           [:ul {:class (stl/css :versions-entries)}

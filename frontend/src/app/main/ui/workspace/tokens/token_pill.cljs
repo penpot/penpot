@@ -49,11 +49,11 @@
                          :mini true}]
        errors?
        [:> icon*
-        {:id "broken-link"
+        {:icon-id "broken-link"
          :class (stl/css :token-pill-icon)}]
 
        :else
        [:> token-status-icon*
-        {:id token-status-id
+        {:icon-id token-status-id
          :class (stl/css :token-pill-icon)}])
      name]))
