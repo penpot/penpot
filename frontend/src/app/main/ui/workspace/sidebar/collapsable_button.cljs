@@ -24,6 +24,6 @@
       [:button {:class (stl/css :collapsed-button)
                 :title (tr "workspace.sidebar.expand")
                 :on-click on-click}
-       [:& icon* {:id "arrow"
+       [:> icon* {:icon-id "arrow"
                   :size "s"
                   :aria-label (tr "workspace.sidebar.expand")}]]]]))
