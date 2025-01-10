@@ -28,6 +28,7 @@
    [common-tests.logic.multiple-nesting-levels-test]
    [common-tests.logic.swap-and-reset-test]
    [common-tests.logic.swap-as-override-test]
+   [common-tests.logic.token-test]
    [common-tests.pages-helpers-test]
    [common-tests.record-test]
    [common-tests.schema-test]
@@ -75,6 +76,7 @@
    'common-tests.logic.multiple-nesting-levels-test
    'common-tests.logic.swap-and-reset-test
    'common-tests.logic.swap-as-override-test
+   'common-tests.logic.token-test
    'common-tests.pages-helpers-test
    'common-tests.record-test
    'common-tests.schema-test

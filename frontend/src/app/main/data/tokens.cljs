@@ -15,10 +15,12 @@
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.notifications :as ntf]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.tokens.selected-set :as dwts]
    [app.main.store :as st]
-   [app.main.ui.workspace.tokens.token-set :as wtts]
    [app.main.ui.workspace.tokens.update :as wtu]
+   [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
@@ -52,21 +54,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Actions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn set-selected-token-set-path
-  [full-path]
-  (ptk/reify ::set-selected-token-set-path
-    ptk/UpdateEvent
-    (update [_ state]
-      (wtts/assoc-selected-token-set-path state full-path))))
-
-(defn set-selected-token-set-path-from-name
-  [token-set-name]
-  (ptk/reify ::set-selected-token-set-path-from-name
-    ptk/UpdateEvent
-    (update [_ state]
-      (->> (ctob/set-name-string->prefixed-set-path-string token-set-name)
-           (wtts/assoc-selected-token-set-path state)))))
 
 (defn create-token-theme [token-theme]
   (let [new-token-theme token-theme]
@@ -131,17 +118,16 @@
         (let [changes (-> (pcb/empty-changes it)
                           (pcb/add-token-set new-token-set))]
           (rx/of
-           (set-selected-token-set-path-from-name (:name new-token-set))
+           (dwts/set-selected-token-set-name (:name new-token-set))
            (dch/commit-changes changes)))))))
 
-(defn rename-token-set-group [from-path-str to-path-str]
+(defn rename-token-set-group [set-group-path set-group-fname]
   (ptk/reify ::rename-token-set-group
     ptk/WatchEvent
     (watch [it _state _]
       (let [changes (-> (pcb/empty-changes it)
-                        (pcb/rename-token-set-group from-path-str to-path-str))]
+                        (pcb/rename-token-set-group set-group-path set-group-fname))]
         (rx/of
-         (set-selected-token-set-path-from-name to-path-str)
          (dch/commit-changes changes))))))
 
 (defn update-token-set [set-name token-set]
@@ -153,7 +139,7 @@
             changes (-> (pcb/empty-changes it)
                         (pcb/update-token-set token-set prev-token-set))]
         (rx/of
-         (set-selected-token-set-path-from-name (:name token-set))
+         (dwts/set-selected-token-set-name (:name token-set))
          (dch/commit-changes changes))))))
 
 (defn toggle-token-set [{:keys [token-set-name]}]
@@ -165,11 +151,11 @@
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
 
-(defn toggle-token-set-group [{:keys [prefixed-path-str]}]
+(defn toggle-token-set-group [group-path]
   (ptk/reify ::toggle-token-set-group
     ptk/WatchEvent
     (watch [_ state _]
-      (let [changes (clt/generate-toggle-token-set-group (pcb/empty-changes) (get-tokens-lib state) prefixed-path-str)]
+      (let [changes (clt/generate-toggle-token-set-group (pcb/empty-changes) (get-tokens-lib state) group-path)]
         (rx/of
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
@@ -183,7 +169,7 @@
                                             (ctob/get-sets)
                                             (first)
                                             (:name)
-                                            (set-selected-token-set-path-from-name))
+                                            (dwts/set-selected-token-set-name))
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/set-tokens-lib lib))]
@@ -192,39 +178,66 @@
          update-token-set-change
          (wtu/update-workspace-tokens))))))
 
-(defn delete-token-set-path [prefixed-full-set-path]
+(defn delete-token-set-path [group? path]
   (ptk/reify ::delete-token-set-path
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/delete-token-set-path prefixed-full-set-path))]
+                        (pcb/delete-token-set-path group? path))]
         (rx/of
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
 
-(defn move-token-set [source-set-name dest-set-name position]
-  (ptk/reify ::move-token-set
+(defn drop-error [{:keys [error to-path]}]
+  (ptk/reify ::drop-error
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [content (case error
+                      :path-exists (tr "errors.drag-drop.set-exists" to-path)
+                      :parent-to-child (tr "errors.drag-drop.parent-to-child")
+                      nil)]
+        (when content
+          (rx/of
+           (ntf/show {:content content
+                      :type :toast
+                      :level :error
+                      :timeout 9000})))))))
+
+(defn drop-token-set-group [drop-opts]
+  (ptk/reify ::drop-token-set-group
     ptk/WatchEvent
     (watch [it state _]
-      (let [tokens-lib (get-tokens-lib state)
-            prev-before-set-name (ctob/get-neighbor-set-name tokens-lib source-set-name 1)
-            [source-set-name' dest-set-name'] (if (= :top position)
-                                                [source-set-name dest-set-name]
-                                                [source-set-name (ctob/get-neighbor-set-name tokens-lib dest-set-name 1)])
-            changes (-> (pcb/empty-changes it)
-                        (pcb/move-token-set-before source-set-name' dest-set-name' prev-before-set-name))]
-        (rx/of
-         (dch/commit-changes changes)
-         (wtu/update-workspace-tokens))))))
+      (try
+        (when-let [changes (clt/generate-move-token-set-group (pcb/empty-changes it) (get-tokens-lib state) drop-opts)]
+          (rx/of
+           (dch/commit-changes changes)
+           (wtu/update-workspace-tokens)))
+        (catch js/Error e
+          (rx/of
+           (drop-error (ex-data e))))))))
+
+(defn drop-token-set [drop-opts]
+  (ptk/reify ::drop-token-set
+    ptk/WatchEvent
+    (watch [it state _]
+      (try
+        (when-let [changes (clt/generate-move-token-set (pcb/empty-changes it) (get-tokens-lib state) drop-opts)]
+          (rx/of
+           (dch/commit-changes changes)
+           (some-> (get-in changes [:redo-changes 0 :to-path]) (dwts/set-selected-token-set-name))
+           (wtu/update-workspace-tokens)))
+        (catch js/Error e
+          (rx/of
+           (drop-error (ex-data e))))))))
 
 (defn update-create-token
   [{:keys [token prev-token-name]}]
   (ptk/reify ::update-create-token
     ptk/WatchEvent
     (watch [_ state _]
-      (let [token-set (wtts/get-selected-token-set state)
+      (let [token-set (dwts/get-selected-token-set state)
             token-set-name (or (:name token-set) "Global")
             changes (if (not token-set)
                       ;; No set created add a global set
@@ -251,7 +264,7 @@
                           (st/emit! (ptk/event ::ev/event {::ev/name "create-tokens"}))
                           (pcb/add-token (pcb/empty-changes) (:name token-set) token))))]
         (rx/of
-         (set-selected-token-set-path-from-name token-set-name)
+         (dwts/set-selected-token-set-name token-set-name)
          (dch/commit-changes changes))))))
 
 (defn delete-token
@@ -273,8 +286,7 @@
   (ptk/reify ::duplicate-token
     ptk/WatchEvent
     (watch [_ state _]
-      (when-let [token (some-> (wtts/get-selected-token-set state)
-                               (ctob/get-token token-name)
+      (when-let [token (some-> (dwts/get-selected-token-set-token state token-name)
                                (update :name #(str/concat % "-copy")))]
         (rx/of
          (update-create-token {:token token}))))))
@@ -317,19 +329,3 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-local :token-set-context-menu] nil))))
-
-;; === Import Export Context Menu
-
-(defn show-import-export-context-menu
-  [{:keys [position] :as params}]
-  (dm/assert! (gpt/point? position))
-  (ptk/reify ::show-import-export-context-menu
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-local :import-export-context-menu] params))))
-
-(def hide-import-export-set-context-menu
-  (ptk/reify ::hide-import-export-set-context-menu
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-local :import-export-set-context-menu] nil))))

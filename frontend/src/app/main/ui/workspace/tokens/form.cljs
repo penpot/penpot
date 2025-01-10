@@ -202,7 +202,7 @@
 
 (mf/defc form
   {::mf/wrap-props false}
-  [{:keys [token token-type action selected-token-set-path]}]
+  [{:keys [token token-type action selected-token-set-name]}]
   (let [token (or token {:type token-type})
         token-properties (wtty/get-token-properties token)
         color? (wtt/color-token? token)
@@ -364,11 +364,11 @@
                                 (modal/hide!))))))))
         on-delete-token
         (mf/use-fn
-         (mf/deps selected-token-set-path)
+         (mf/deps selected-token-set-name)
          (fn [e]
            (dom/prevent-default e)
            (modal/hide!)
-           (st/emit! (dt/delete-token (ctob/prefixed-set-path-string->set-name-string selected-token-set-path) (:name token)))))
+           (st/emit! (dt/delete-token (ctob/prefixed-set-path-string->set-name-string selected-token-set-name) (:name token)))))
 
         on-cancel
         (mf/use-fn

@@ -6,7 +6,14 @@
 
 (ns app.main.ui.workspace.tokens.sets-context
   (:require
+   [app.common.data.macros :as dm]
    [rumext.v2 :as mf]))
+
+(defn set-group-path->id [set-group-path]
+  (dm/str "group-" set-group-path))
+
+(defn set-path->id [set-path]
+  (dm/str "set-" set-path))
 
 (def initial {:editing-id nil
               :new? false})
@@ -35,7 +42,8 @@
                   (mf/deps editing-id)
                   #(= editing-id %))
         on-edit (mf/use-fn
-                 #(swap! ctx assoc :editing-id %))
+                 (fn [editing-id]
+                   (reset! ctx (assoc @ctx :editing-id editing-id))))
         on-create (mf/use-fn
                    #(swap! ctx assoc :editing-id (random-uuid) :new? true))
         on-reset (mf/use-fn

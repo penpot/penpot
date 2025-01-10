@@ -207,7 +207,7 @@
                     (generic-attribute-actions #{:x} "X" (assoc context-data :on-update-shape wtch/update-shape-position))
                     (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape wtch/update-shape-position))))}))
 
-(defn default-actions [{:keys [token selected-token-set-path]}]
+(defn default-actions [{:keys [token selected-token-set-name]}]
   (let [{:keys [modal]} (wtty/get-token-properties token)]
     [{:title (tr "workspace.token.edit")
       :no-selectable true
@@ -220,16 +220,16 @@
                                     :position :right
                                     :fields fields
                                     :action "edit"
-                                    :selected-token-set-path selected-token-set-path
+                                    :selected-token-set-name selected-token-set-name
                                     :token token})))}
      {:title (tr "workspace.token.duplicate")
       :no-selectable true
       :action #(st/emit! (dt/duplicate-token (:name token)))}
      {:title (tr "workspace.token.delete")
       :no-selectable true
-      :action #(st/emit! (-> selected-token-set-path
-                             ctob/prefixed-set-path-string->set-name-string
-                             (dt/delete-token (:name token))))}]))
+      :action #(st/emit! (dt/delete-token
+                          (ctob/prefixed-set-path-string->set-name-string selected-token-set-name)
+                          (:name token)))}]))
 
 (defn selection-actions [{:keys [type token] :as context-data}]
   (let [with-actions (get shape-attribute-actions-map (or type (:type token)))
@@ -350,13 +350,13 @@
         selected-shapes (into [] (keep (d/getf objects)) selected)
         token-name (:token-name mdata)
         token (mf/deref (refs/workspace-selected-token-set-token token-name))
-        selected-token-set-path (mf/deref refs/workspace-selected-token-set-path)]
+        selected-token-set-name (mf/deref refs/workspace-selected-token-set-name)]
     [:ul {:class (stl/css :context-list)}
      [:& menu-tree {:submenu-offset width
                     :submenu-direction direction
                     :token token
                     :errors errors
-                    :selected-token-set-path selected-token-set-path
+                    :selected-token-set-name selected-token-set-name
                     :selected-shapes selected-shapes}]]))
 
 (mf/defc token-context-menu

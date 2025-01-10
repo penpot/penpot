@@ -60,7 +60,7 @@
                                 (ctob/add-theme (ctob/make-hidden-token-theme))
                                 (ctob/set-active-themes #{ctob/hidden-token-theme-path})))
 
-          changes (clt/generate-toggle-token-set-group (pcb/empty-changes) (tht/get-tokens-lib file) "G-foo/S-bar")
+          changes (clt/generate-toggle-token-set-group (pcb/empty-changes) (tht/get-tokens-lib file) ["foo"])
 
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
@@ -81,7 +81,7 @@
                                 (ctob/add-set (ctob/make-token-set :name "foo/bar/baz/baz-child"))
                                 (ctob/add-theme (ctob/make-token-theme :name "theme"))
                                 (ctob/set-active-themes #{"/theme"})))
-          changes (clt/generate-toggle-token-set-group (pcb/empty-changes) (tht/get-tokens-lib file) "G-foo/G-bar")
+          changes (clt/generate-toggle-token-set-group (pcb/empty-changes) (tht/get-tokens-lib file) ["foo" "bar"])
 
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
@@ -103,7 +103,7 @@
                                                                        :sets #{"foo/bar/baz"}))
                                 (ctob/set-active-themes #{"/theme"})))
 
-          changes (clt/generate-toggle-token-set-group (pcb/empty-changes) (tht/get-tokens-lib file) "G-foo/G-bar")
+          changes (clt/generate-toggle-token-set-group (pcb/empty-changes) (tht/get-tokens-lib file) ["foo" "bar"])
 
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
@@ -115,3 +115,242 @@
       ;; Undo
       (t/is (nil? (ctob/get-hidden-theme undo-lib)))
       (t/is (= #{"/theme"} (ctob/get-active-theme-paths undo-lib))))))
+
+(t/deftest generate-move-token-set-test
+  (t/testing "Ignore dropping set to the same position:"
+    (let [file (setup-file #(-> %
+                                (ctob/add-set (ctob/make-token-set :name "foo"))
+                                (ctob/add-set (ctob/make-token-set :name "bar/baz"))))
+          drop (partial clt/generate-move-token-set (pcb/empty-changes) (tht/get-tokens-lib file))]
+      (t/testing "on top of identical"
+        (t/is (= (pcb/empty-changes)
+                 (drop {:from-index 0
+                        :to-index 0
+                        :position :top}))))
+      (t/testing "on bottom of identical"
+        (t/is (= (pcb/empty-changes)
+                 (drop {:from-index 0
+                        :to-index 0
+                        :position :bot}))))
+      (t/testing "on top of next to identical"
+        (t/is (= (pcb/empty-changes)
+                 (drop {:from-index 0
+                        :to-index 1
+                        :position :top}))))))
+
+  (t/testing "Reorder sets when dropping next to a set:"
+    (t/testing "at top"
+      (let [file (setup-file #(-> %
+                                  (ctob/add-set (ctob/make-token-set :name "foo"))
+                                  (ctob/add-set (ctob/make-token-set :name "bar"))
+                                  (ctob/add-set (ctob/make-token-set :name "baz"))))
+            lib (tht/get-tokens-lib file)
+            changes (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 1
+                                                                          :to-index 0
+                                                                          :position :top})
+            redo (thf/apply-changes file changes)
+            redo-sets (-> (tht/get-tokens-lib redo)
+                          (ctob/get-ordered-set-names))
+            undo (thf/apply-undo-changes redo changes)
+            undo-sets (-> (tht/get-tokens-lib undo)
+                          (ctob/get-ordered-set-names))]
+        (t/is (= ["bar" "foo" "baz"] (vec redo-sets)))
+        (t/testing "undo"
+          (t/is (= (ctob/get-ordered-set-names lib) undo-sets)))))
+
+    (t/testing "at bottom"
+      (let [file (setup-file #(-> %
+                                  (ctob/add-set (ctob/make-token-set :name "foo"))
+                                  (ctob/add-set (ctob/make-token-set :name "bar"))
+                                  (ctob/add-set (ctob/make-token-set :name "baz"))))
+            lib (tht/get-tokens-lib file)
+            changes (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 0
+                                                                          :to-index 2
+                                                                          :position :bot})
+            redo (thf/apply-changes file changes)
+            redo-sets (-> (tht/get-tokens-lib redo)
+                          (ctob/get-ordered-set-names))
+            undo (thf/apply-undo-changes redo changes)
+            undo-sets (-> (tht/get-tokens-lib undo)
+                          (ctob/get-ordered-set-names))]
+        (t/is (= ["bar" "baz" "foo"] (vec redo-sets)))
+        (t/testing "undo"
+          (t/is (= (ctob/get-ordered-set-names lib) undo-sets)))))
+
+    (t/testing "dropping out of set group"
+      (let [file (setup-file #(-> %
+                                  (ctob/add-set (ctob/make-token-set :name "foo/bar"))
+                                  (ctob/add-set (ctob/make-token-set :name "foo"))))
+            lib (tht/get-tokens-lib file)
+            changes (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 1
+                                                                          :to-index 0
+                                                                          :position :top})
+            redo (thf/apply-changes file changes)
+            redo-sets (-> (tht/get-tokens-lib redo)
+                          (ctob/get-ordered-set-names))
+            undo (thf/apply-undo-changes redo changes)
+            undo-sets (-> (tht/get-tokens-lib undo)
+                          (ctob/get-ordered-set-names))]
+        (t/is (= ["bar" "foo"] (vec redo-sets)))
+        (t/testing "undo"
+          (t/is (= (ctob/get-ordered-set-names lib) undo-sets)))))
+
+    (t/testing "into set group"
+      (let [file (setup-file #(-> %
+                                  (ctob/add-set (ctob/make-token-set :name "foo/bar"))
+                                  (ctob/add-set (ctob/make-token-set :name "foo"))))
+            lib (tht/get-tokens-lib file)
+            changes (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 2
+                                                                          :to-index 1
+                                                                          :position :bot})
+            redo (thf/apply-changes file changes)
+            redo-sets (-> (tht/get-tokens-lib redo)
+                          (ctob/get-ordered-set-names))
+            undo (thf/apply-undo-changes redo changes)
+            undo-sets (-> (tht/get-tokens-lib undo)
+                          (ctob/get-ordered-set-names))]
+        (t/is (= ["foo/bar" "foo/foo"] (vec redo-sets)))
+        (t/testing "undo"
+          (t/is (= (ctob/get-ordered-set-names lib) undo-sets)))))
+
+    (t/testing "edge-cases:"
+      (t/testing "prevent overriding set to identical path"
+        (let [file (setup-file #(-> %
+                                    (ctob/add-set (ctob/make-token-set :name "foo/foo"))
+                                    (ctob/add-set (ctob/make-token-set :name "foo"))))
+              lib (tht/get-tokens-lib file)]
+          (t/is (thrown?
+                 #?(:cljs js/Error :clj Exception)
+                 (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 2
+                                                                       :to-index 0
+                                                                       :position :bot})
+                 #"move token set error: path exists"))
+          (t/is (thrown?
+                 #?(:cljs js/Error :clj Exception)
+                 (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 2
+                                                                       :to-index 1
+                                                                       :position :bot})
+                 #"move token set error: path exists"))))
+
+      (t/testing "dropping below collapsed group doesnt add as child"
+        (let [file (setup-file #(-> %
+                                    (ctob/add-set (ctob/make-token-set :name "foo"))
+                                    (ctob/add-set (ctob/make-token-set :name "foo/bar"))))
+              lib (tht/get-tokens-lib file)
+              changes (clt/generate-move-token-set (pcb/empty-changes) lib {:from-index 0
+                                                                            :to-index 1
+                                                                            :position :bot
+                                                                            :collapsed-paths #{["foo"]}})
+              redo (thf/apply-changes file changes)
+              redo-sets (-> (tht/get-tokens-lib redo)
+                            (ctob/get-ordered-set-names))
+              undo (thf/apply-undo-changes redo changes)
+              undo-sets (-> (tht/get-tokens-lib undo)
+                            (ctob/get-ordered-set-names))]
+          (t/is (= ["foo/bar" "foo"] (vec redo-sets)))
+          (t/testing "undo"
+            (t/is (= (ctob/get-ordered-set-names lib) undo-sets))))))))
+
+(t/deftest generate-move-token-group-test
+  (t/testing "Ignore dropping set group to the same position"
+    (let [file (setup-file #(-> %
+                                (ctob/add-set (ctob/make-token-set :name "foo"))
+                                (ctob/add-set (ctob/make-token-set :name "bar/baz"))))
+          drop (partial clt/generate-move-token-set-group (pcb/empty-changes) (tht/get-tokens-lib file))]
+      (t/testing "on top of identical"
+        (t/is (= (pcb/empty-changes)
+                 (drop {:from-index 1
+                        :to-index 1
+                        :position :top}))))
+      (t/testing "on bottom of identical"
+        (t/is (= (pcb/empty-changes)
+                 (drop {:from-index 1
+                        :to-index 1
+                        :position :bot}))))
+      (t/testing "on top of next to identical"
+        (t/is (= (pcb/empty-changes)
+                 (drop {:from-index 1
+                        :to-index 1
+                        :position :top}))))))
+
+  (t/testing "Move set groups"
+    (t/testing "to top"
+      (let [file (setup-file #(-> %
+                                  (ctob/add-set (ctob/make-token-set :name "foo/foo"))
+                                  (ctob/add-set (ctob/make-token-set :name "bar/bar"))
+                                  (ctob/add-set (ctob/make-token-set :name "baz/baz"))))
+            lib (tht/get-tokens-lib file)
+            changes (clt/generate-move-token-set-group (pcb/empty-changes) lib {:from-index 2
+                                                                                :to-index 0
+                                                                                :position :top})
+            redo (thf/apply-changes file changes)
+            redo-sets (-> (tht/get-tokens-lib redo)
+                          (ctob/get-ordered-set-names))
+            undo (thf/apply-undo-changes redo changes)
+            undo-sets (-> (tht/get-tokens-lib undo)
+                          (ctob/get-ordered-set-names))]
+        (t/is (= ["bar/bar" "foo/foo" "baz/baz"] (vec redo-sets)))
+
+        (t/testing "undo"
+          (t/is (= (ctob/get-ordered-set-names lib) undo-sets)))))
+
+    (t/testing "to bottom"
+      (let [file (setup-file #(-> %
+                                  (ctob/add-set (ctob/make-token-set :name "foo/foo"))
+                                  (ctob/add-set (ctob/make-token-set :name "bar"))))
+            lib (tht/get-tokens-lib file)
+            changes (clt/generate-move-token-set-group (pcb/empty-changes) lib {:from-index 0
+                                                                                :to-index 2
+                                                                                :position :bot})
+            redo (thf/apply-changes file changes)
+            redo-sets (-> (tht/get-tokens-lib redo)
+                          (ctob/get-ordered-set-names))
+            undo (thf/apply-undo-changes redo changes)
+            undo-sets (-> (tht/get-tokens-lib undo)
+                          (ctob/get-ordered-set-names))]
+        (t/is (= ["bar" "foo/foo"] (vec redo-sets)))
+
+        (t/testing "undo"
+          (t/is (= (ctob/get-ordered-set-names lib) undo-sets)))))
+
+    (t/testing "into set group"
+      (let [file (setup-file #(-> %
+                                  (ctob/add-set (ctob/make-token-set :name "foo/foo"))
+                                  (ctob/add-set (ctob/make-token-set :name "bar/bar"))))
+            lib (tht/get-tokens-lib file)
+            changes (clt/generate-move-token-set-group (pcb/empty-changes) lib {:from-index 0
+                                                                                :to-index 2
+                                                                                :position :bot})
+            redo (thf/apply-changes file changes)
+            redo-sets (-> (tht/get-tokens-lib redo)
+                          (ctob/get-ordered-set-names))
+            undo (thf/apply-undo-changes redo changes)
+            undo-sets (-> (tht/get-tokens-lib undo)
+                          (ctob/get-ordered-set-names))]
+        (t/is (= ["bar/foo/foo" "bar/bar"] (vec redo-sets)))
+        (t/testing "undo"
+          (t/is (= (ctob/get-ordered-set-names lib) undo-sets))))
+
+      (t/testing "edge-cases:"
+        (t/testing "prevent overriding set to identical path"
+          (let [file (setup-file #(-> %
+                                      (ctob/add-set (ctob/make-token-set :name "foo/identical/foo"))
+                                      (ctob/add-set (ctob/make-token-set :name "identical/bar"))))
+                lib (tht/get-tokens-lib file)]
+            (t/is (thrown?
+                   #?(:cljs js/Error :clj Exception)
+                   (clt/generate-move-token-set-group (pcb/empty-changes) lib {:from-index 3
+                                                                               :to-index 1
+                                                                               :position :top})
+                   #"move token set error: path exists"))))
+
+        (t/testing "prevent dropping parent to child"
+          (let [file (setup-file #(-> %
+                                      (ctob/add-set (ctob/make-token-set :name "foo/bar/baz"))))
+                lib (tht/get-tokens-lib file)]
+            (t/is (thrown?
+                   #?(:cljs js/Error :clj Exception)
+                   (clt/generate-move-token-set-group (pcb/empty-changes) lib {:from-index 0
+                                                                               :to-index 1
+                                                                               :position :bot})
+                   #"move token set error: parent-to-child"))))))))

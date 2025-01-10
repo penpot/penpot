@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.tokens.sets-context-menu
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.types.tokens-lib :as ctob]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -35,13 +34,20 @@
    [:span {:class (stl/css :title)} title]])
 
 (mf/defc menu
-  [{:keys [prefixed-set-path]}]
+  [{:keys [group? path]}]
   (let [{:keys [on-edit]} (sets-context/use-context)
-        edit-name (mf/use-fn #(on-edit prefixed-set-path))
-        delete-set (mf/use-fn #(st/emit! (wdt/delete-token-set-path prefixed-set-path)))]
+        edit-name (mf/use-fn
+                   (mf/deps group?)
+                   (fn []
+                     (let [path (if group?
+                                  (sets-context/set-group-path->id path)
+                                  (sets-context/set-path->id path))]
+                       (on-edit path))))
+        delete-set (mf/use-fn #(st/emit! (wdt/delete-token-set-path group? path)))]
     [:ul {:class (stl/css :context-list)}
-     (when (ctob/prefixed-set-path-final-group? prefixed-set-path)
-       [:& menu-entry {:title "Add set to this group" :on-click js/console.log}])
+     ;; TODO Implement
+     ;; (when (ctob/prefixed-set-path-final-group? prefixed-set-path)
+     ;;   [:& menu-entry {:title "Add set to this group" :on-click js/console.log}])
      [:& menu-entry {:title (tr "labels.rename") :on-click edit-name}]
      [:& menu-entry {:title (tr "labels.delete")  :on-click delete-set}]]))
 
@@ -63,4 +69,5 @@
             :ref dropdown-ref
             :style {:top top :left left}
             :on-context-menu prevent-default}
-      [:& menu {:prefixed-set-path (:prefixed-set-path mdata)}]]]))
+      [:& menu {:group? (:group? mdata)
+                :path (:path mdata)}]]]))
