@@ -399,7 +399,7 @@
         #(st/emit! (dw/set-annotations-id-for-create id))
 
         do-show-local-component
-        #(st/emit! (dwl/go-to-local-component component-id))
+        #(st/emit! (dwl/go-to-local-component :id component-id))
 
         ;; When the show-remote is after a restore, the component may still be deleted
         do-show-remote-component
