@@ -15,14 +15,14 @@
 (def ^:private schema:token-status-icon
   [:map
    [:class {:optional true} :string]
-   [:id [:and :string [:fn #(contains? token-status-list %)]]]])
+   [:icon-id [:and :string [:fn #(contains? token-status-list %)]]]])
 
 (mf/defc token-status-icon*
   {::mf/props :obj
    ::mf/schema schema:token-status-icon}
-  [{:keys [id class] :rest props}]
+  [{:keys [icon-id class] :rest props}]
   (let [class (dm/str (or class "") " " (stl/css :token-icon))
         props (mf/spread-props props {:class class :width "14px" :height "14px"})
         offset 0]
     [:> "svg" props
-     [:use {:href (dm/str "#icon-" id) :width "14px" :height "14px" :x offset :y offset}]]))
+     [:use {:href (dm/str "#icon-" icon-id) :width "14px" :height "14px" :x offset :y offset}]]))
