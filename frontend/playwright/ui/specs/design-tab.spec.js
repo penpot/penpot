@@ -143,3 +143,32 @@ test("BUG 7760 - Layout losing properties when changing parents", async ({
   await expect(vAuto.locator("input")).toBeChecked();
   await expect(hAuto.locator("input")).toBeChecked();
 });
+
+test("BUG 9061 - Group blur visibility toggle icon not updating", async ({
+  page,
+}) => {
+  const workspace = new WorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockRPC(/get\-file\?/, "design/get-file-9061.json");
+  await workspace.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=*",
+    "design/get-file-fragment-9061.json",
+  );
+  await workspace.mockRPC("update-file?id=*", "design/update-file-9061.json");
+
+  await workspace.goToWorkspace({
+    fileId: "61cfa81d-8cb2-81df-8005-8f3005841116",
+    pageId: "61cfa81d-8cb2-81df-8005-8f3005841117",
+  });
+
+  await workspace.clickLeafLayer("Group");
+
+  const blurButton = workspace.page.getByRole("button", {
+    name: "Toggle blur",
+  });
+  const blurIcon = blurButton.locator("svg use");
+  await expect(blurIcon).toHaveAttribute("href", "#icon-shown");
+
+  await blurButton.click();
+  await expect(blurIcon).toHaveAttribute("href", "#icon-hide");
+});
