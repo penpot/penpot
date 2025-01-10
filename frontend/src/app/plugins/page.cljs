@@ -395,6 +395,7 @@
             user-id       (:profile-id @st/state)]
         (js/Promise.
          (fn [resolve reject]
+           (prn :findCommentThreads file-id)
            (cond
              (not (r/check-permission plugin-id "comment:read"))
              (do

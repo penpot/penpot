@@ -34,8 +34,10 @@
   []
   (ptk/reify ::initialize-comments
     ptk/WatchEvent
-    (watch [_ _ stream]
-      (let [stopper-s (rx/filter #(= ::finalize %) stream)]
+    (watch [_ state stream]
+      (prn "initialize-comments" (:current-file-id state))
+
+      #_(let [stopper-s (rx/filter #(= ::finalize %) stream)]
         (->> (rx/merge
               (rx/of (dcmt/retrieve-comment-threads))
               (->> stream

@@ -215,6 +215,7 @@
                      :style {:background-color background-color
                              :touch-action "none"}}
            [:> context-menu*]
+           (prn "WORKSPACE READY" ready?)
 
            (if ^boolean ready?
              [:> workspace-page* {:page-id page-id

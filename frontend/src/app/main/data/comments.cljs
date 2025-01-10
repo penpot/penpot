@@ -406,6 +406,8 @@
        (let [share-id (-> state :viewer-local :share-id)
              file-id  (or file-id (:current-file-id state))]
 
+         (prn "retrieve-comment-threads" file-id share-id)
+
          (rx/merge
           (->> (rp/cmd! :get-comment-threads {:file-id file-id :share-id share-id})
                (rx/map comment-threads-fetched))

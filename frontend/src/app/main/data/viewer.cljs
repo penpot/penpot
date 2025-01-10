@@ -226,6 +226,7 @@
     (ptk/reify ::fetch-comment-threads
       ptk/WatchEvent
       (watch [_ _ _]
+        (prn "KAKAKAKAKA")
         (->> (rp/cmd! :get-comment-threads {:file-id file-id :share-id share-id})
              (rx/map #(partial fetched %))
              (rx/catch on-error))))))

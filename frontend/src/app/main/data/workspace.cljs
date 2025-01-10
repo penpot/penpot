@@ -316,6 +316,7 @@
   (ptk/reify ::initialize-workspace
     ptk/UpdateEvent
     (update [_ state]
+      (prn "initialize-workspace" file-id)
       (-> state
           (dissoc :files)
           (dissoc :workspace-ready)
@@ -380,6 +381,8 @@
   (ptk/reify ::finalize-file
     ptk/UpdateEvent
     (update [_ state]
+      (prn "finalize-workspace" file-id)
+
       (-> state
           ;; FIXME: revisit
           (dissoc

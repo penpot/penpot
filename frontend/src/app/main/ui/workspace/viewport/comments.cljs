@@ -42,7 +42,6 @@
         pos-y       (* (- vbox-y) zoom)
 
         profile     (mf/deref refs/profile)
-        profiles    (mf/deref refs/profiles)
         local       (mf/deref refs/comments-local)
 
         positions   (mf/deref ref:thread-positions)
@@ -82,7 +81,6 @@
              :style {:transform (dm/fmt "translate(%px, %px)" pos-x pos-y)}}
        (for [item threads]
          [:> cmt/comment-floating-bubble* {:thread item
-                                           :profiles profiles
                                            :zoom zoom
                                            :is-open (= (:id item) (:open local))
                                            :key (:seqn item)}])
@@ -95,14 +93,13 @@
                                    :offset-y pos-y)]
                [:> cmt/comment-floating-thread*
                 {:thread thread
-                 :profiles profiles
                  :viewport viewport
-                 :zoom zoom}]))))
+                 :zoom zoom}]
+               ))))
 
        (when-let [draft (:comment drawing)]
          [:> cmt/comment-floating-thread-draft*
           {:draft draft
-           :profiles profiles
            :on-cancel on-draft-cancel
            :on-submit on-draft-submit
            :zoom zoom}])]]]))

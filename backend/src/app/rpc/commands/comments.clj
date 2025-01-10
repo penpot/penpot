@@ -248,6 +248,8 @@
 (def ^:private sql:comment-threads
   "SELECT DISTINCT ON (ct.id)
           ct.*,
+          pf.fullname AS owner_fullname,
+          pf.email AS owner_email,
           p.team_id AS team_id,
           f.name AS file_name,
           f.project_id AS project_id,
@@ -264,6 +266,7 @@
     INNER JOIN file AS f ON (f.id = ct.file_id)
     INNER JOIN project AS p ON (p.id = f.project_id)
      LEFT JOIN comment_thread_status AS cts ON (cts.thread_id = ct.id AND cts.profile_id = ?)
+     LEFT JOIN profile AS pf ON (ct.owner_id = pf.id)
    WINDOW w AS (PARTITION BY c.thread_id ORDER BY c.created_at ASC)")
 
 (def ^:private sql:comment-threads-by-file-id

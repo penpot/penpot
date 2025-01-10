@@ -44,6 +44,11 @@
 (def r-mentions-split #"@\[[^\]]*\]\([^\)]*\)")
 (def r-mentions #"@\[([^\]]*)\]\(([^\)]*)\)")
 
+(defn get-owner
+  [thread]
+  {:id (:owner-id thread)
+   :fullname (:owner-fullname thread)
+   :email (:owner-email thread)})
 
 (defn- parse-comment
   "Parse a comment into its elements (texts and mentions)"
@@ -430,10 +435,11 @@
       :on-blur handle-blur}]))
 
 (mf/defc mentions-panel*
-  [{:keys [profiles]}]
+  []
   (let [mentions-s (mf/use-ctx mentions-context)
 
-        profile (mf/deref refs/profile)
+        profile  (mf/deref refs/profile)
+        profiles (mf/deref refs/profiles)
 
         mention-state
         (mf/use-state {:display? false
@@ -703,7 +709,7 @@
 
 (mf/defc comment-floating-thread-draft*
   {::mf/props :obj}
-  [{:keys [draft zoom on-cancel on-submit position-modifier profiles]}]
+  [{:keys [draft zoom on-cancel on-submit position-modifier]}]
   (let [profile   (mf/deref refs/profile)
 
         mentions-s (mf/use-memo #(rx/subject))
@@ -773,13 +779,13 @@
                      :disabled disabled?}
          (tr "labels.post")]]]
 
-      [:> mentions-panel* {:profiles profiles}]]]))
+      [:> mentions-panel*]]]))
 
 (mf/defc comment-floating-thread-header*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [profiles thread origin]}]
-  (let [owner    (get profiles (:owner-id thread))
+  [{:keys [thread origin]}]
+  (let [owner    (get-owner thread)
         profile  (mf/deref refs/profile)
         options  (mf/deref comments-local-options)
 
@@ -848,8 +854,8 @@
 (mf/defc comment-floating-thread-item*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [comment thread profiles]}]
-  (let [owner    (get profiles (:owner-id comment))
+  [{:keys [comment thread]}]
+  (let [owner    (get-owner thread)
         profile  (mf/deref refs/profile)
         options  (mf/deref comments-local-options)
         edition? (mf/use-state false)
@@ -1004,29 +1010,26 @@
               :on-click dom/stop-propagation}
 
         [:div {:class (stl/css :floating-thread-header)}
-         [:> comment-floating-thread-header* {:profiles profiles
-                                              :thread thread
+         [:> comment-floating-thread-header* {:thread thread
                                               :origin origin}]]
 
         [:div {:class (stl/css :floating-thread-main)}
          [:> comment-floating-thread-item* {:comment first-comment
-                                            :profiles profiles
                                             :thread thread}]
          (for [item (rest comments)]
            [:* {:key (dm/str (:id item))}
-            [:> comment-floating-thread-item* {:comment item
-                                               :profiles profiles}]])]
+            [:> comment-floating-thread-item* {:comment item}]])]
 
         [:> comment-reply-form* {:thread thread}]
 
-        [:> mentions-panel* {:profiles profiles}]])]))
+        [:> mentions-panel*]])]))
 
 (mf/defc comment-floating-bubble*
   {::mf/props :obj
    ::mf/wrap [mf/memo]}
-  [{:keys [thread profiles zoom is-open on-click origin position-modifier]}]
-  (let [owner        (get profiles (:owner-id thread))
-
+  [{:keys [thread zoom is-open on-click origin position-modifier]}]
+  (let [owner        (mf/with-memo [thread]
+                       (get-owner thread))
         base-pos     (cond-> (:position thread)
                        (some? position-modifier)
                        (gpt/transform position-modifier))
@@ -1153,9 +1156,9 @@
 (mf/defc comment-sidebar-thread-item*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [item profiles on-click]}]
-  (let [owner (get profiles (:owner-id item))
-
+  [{:keys [item on-click]}]
+  (let [owner (get-owner item)
+        ;; FIXME
         frame (mf/deref (refs/workspace-page-object-by-id (:page-id item) (:frame-id item)))
 
         on-click*
@@ -1181,20 +1184,19 @@
 
 (mf/defc comment-sidebar-thread-group*
   {::mf/props :obj}
-  [{:keys [group profiles on-thread-click]}]
+  [{:keys [group on-thread-click]}]
   [:div
    (for [item (:items group)]
      [:> comment-sidebar-thread-item*
       {:item item
        :on-click on-thread-click
-       :profiles profiles
        :key (:id item)}])])
 
 (mf/defc comment-dashboard-thread-item*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [item profiles on-click]}]
-  (let [owner (get profiles (:owner-id item))
+  [{:keys [item on-click]}]
+  (let [owner (get-owner item)
 
         on-click*
         (mf/use-fn
@@ -1220,11 +1222,10 @@
 
 (mf/defc comment-dashboard-thread-group*
   {::mf/props :obj}
-  [{:keys [group profiles on-thread-click]}]
+  [{:keys [group on-thread-click]}]
   [:div
    (for [item (:items group)]
      [:> comment-dashboard-thread-item*
       {:item item
        :on-click on-thread-click
-       :profiles profiles
        :key (:id item)}])])
