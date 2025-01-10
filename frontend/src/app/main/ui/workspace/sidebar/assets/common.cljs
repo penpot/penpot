@@ -150,7 +150,7 @@
         (mf/html
          [:span {:class (stl/css :title-name)}
           [:span {:class (stl/css :section-icon)}
-           [:> icon* {:id (or icon (section-icon section)) :size "s"}]]
+           [:> icon* {:icon-id (or icon (section-icon section)) :size "s"}]]
           [:span {:class (stl/css :section-name)}
            title]
 

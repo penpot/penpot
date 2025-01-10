@@ -38,7 +38,7 @@
         props (mf/spread-props props {:class class})]
     [:> "aside" props
      [:*
-      [:> i/icon* {:id icon-id :class (stl/css :icon)}]
+      [:> i/icon* {:icon-id icon-id :class (stl/css :icon)}]
       children
       ;; TODO: this should be a buttom from the DS, but this variant is not designed yet.
       ;; https://tree.taiga.io/project/penpot/task/8492

@@ -46,9 +46,8 @@
 
 ;; Components ------------------------------------------------------------------
 
-(mf/defc token-section-icon
-  {::mf/wrap-props false}
-  [{:keys [type]}]
+(defn token-section-icon
+  [type]
   (case type
     :border-radius "corner-radius"
     :color "drop"

@@ -298,7 +298,7 @@
           :on-pointer-enter on-pointer-enter
           :on-pointer-leave on-pointer-leave}
      (when selected?
-       [:> icon* {:id "tick" :size "s" :class (stl/css :icon-wrapper)}])
+       [:> icon* {:icon-id "tick" :size "s" :class (stl/css :icon-wrapper)}])
      [:span {:class (stl/css-case :item-text true
                                   :item-with-icon-space (and
                                                          (not selected?)
@@ -306,7 +306,7 @@
       title]
      (when children
        [:*
-        [:> icon* {:id "arrow" :size "s"}]
+        [:> icon* {:icon-d "arrow" :size "s"}]
         [:ul {:class (stl/css :token-context-submenu)
               :data-direction submenu-direction
               :ref submenu-ref
