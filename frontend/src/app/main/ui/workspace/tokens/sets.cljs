@@ -344,29 +344,13 @@
 
 (mf/defc sets-list
   [{:keys []}]
-  (let [token-sets (mf/deref refs/workspace-token-sets-tree)
-        selected-token-set-path (mf/deref refs/workspace-selected-token-set-path)
-        token-set-selected? (mf/use-fn
-                             (mf/deps token-sets selected-token-set-path)
-                             (fn [tree-path]
-                               (= tree-path selected-token-set-path)))
-        active-token-set-names (mf/deref refs/workspace-active-set-names)
-        token-set-active? (mf/use-fn
-                           (mf/deps active-token-set-names)
-                           (fn [set-name]
-                             (get active-token-set-names set-name)))
-        token-set-group-active? (mf/use-fn
-                                 (fn [prefixed-path]
-                                   @(refs/token-sets-at-path-all-active prefixed-path)))]
-    [:& controlled-sets-list
-     {:token-sets token-sets
-      :token-set-selected? token-set-selected?
-      :token-set-active? token-set-active?
-      :token-set-group-active? token-set-group-active?
-      :on-select on-select-token-set-click
-      :origin "set-panel"
-      :on-toggle-token-set on-toggle-token-set-click
-      :on-toggle-token-set-group on-toggle-token-set-group-click
-      :on-update-token-set on-update-token-set
-      :on-update-token-set-group on-update-token-set-group
-      :on-create-token-set on-create-token-set}]))
+  (let [{:keys [editing-id new? on-edit on-reset] :as ctx} (sets-context/use-context)
+        state (mf/use-state 0)]
+    (js/console.log "editing-id" editing-id)
+    [:div
+     [:p
+      "STATE " @state]
+     [:p
+      "EDITING?" (str editing-id)]
+     [:button {:on-click #(on-edit "test")} "EDIT"]
+     [:button {:on-click #(swap! state inc)} "FORCE STATE UPDATE"]]))

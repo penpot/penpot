@@ -35,12 +35,15 @@
                   (mf/deps editing-id)
                   #(= editing-id %))
         on-edit (mf/use-fn
-                 #(swap! ctx assoc :editing-id %))
+                 #(do
+                    (js/console.log "on-edit" %)
+                    (swap! ctx assoc :editing-id %)))
         on-create (mf/use-fn
                    #(swap! ctx assoc :editing-id (random-uuid) :new? true))
         on-reset (mf/use-fn
                   #(reset! ctx initial))]
     {:editing? editing?
+     :editing-id editing-id
      :new? new?
      :on-edit on-edit
      :on-create on-create
