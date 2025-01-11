@@ -29,6 +29,9 @@ x-flags: &penpot-flags
 x-uri: &penpot-public-uri
   PENPOT_PUBLIC_URI: http://localhost:9001
 
+# last version penpot stable
+VERSION_PENPOT=2.3.3
+
 networks:
   penpot:
 
@@ -63,7 +66,7 @@ services:
   #     - "443:443"
 
   penpot-frontend:
-    image: "penpotapp/frontend:latest"
+    image: "penpotapp/frontend:${VERSION_PENPOT}"
     restart: always
     ports:
       - 9001:8080
@@ -106,7 +109,7 @@ services:
       << : *penpot-flags
 
   penpot-backend:
-    image: "penpotapp/backend:latest"
+    image: "penpotapp/backend:${VERSION_PENPOT}"
     restart: always
 
     volumes:
