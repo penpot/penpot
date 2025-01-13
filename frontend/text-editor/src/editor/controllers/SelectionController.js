@@ -1034,7 +1034,23 @@ export class SelectionController extends EventTarget {
    * @param {DocumentFragment} fragment
    */
   insertPaste(fragment) {
-    const numParagraphs = fragment.children.length;
+    if (fragment.children.length === 1
+     && fragment.firstElementChild?.dataset?.inline === "force"
+    ) {
+      if (this.isInlineStart) {
+        this.focusInline.before(...fragment.firstElementChild.children)
+      } else if (this.isInlineEnd) {
+        this.focusInline.after(...fragment.firstElementChild.children);
+      } else {
+        const newInline = splitInline(
+          this.focusInline,
+          this.focusOffset
+        )
+        this.focusInline.after(...fragment.firstElementChild.children, newInline)
+      }
+      return;
+    }
+
     if (this.isParagraphStart) {
       this.focusParagraph.before(fragment);
     } else if (this.isParagraphEnd) {
@@ -1055,7 +1071,6 @@ export class SelectionController extends EventTarget {
    * @param {DocumentFragment} fragment
    */
   replaceWithPaste(fragment) {
-    const numParagraphs = fragment.children.length;
     this.removeSelected();
     this.insertPaste(fragment);
   }
