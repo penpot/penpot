@@ -8,7 +8,7 @@ export default {
   title: "Foundations/Utilities/TokenStatus",
   component: TokenStatusIcon,
   argTypes: {
-    id: {
+    iconId: {
       options: tokenStatus,
       control: { type: "select" },
     },
@@ -18,6 +18,6 @@ export default {
 
 export const Default = {
   args: {
-    id: "token-status-full",
+    iconId: "token-status-full",
   },
 };
