@@ -199,9 +199,7 @@ services:
       - penpot
 
     environment:
-      # Don't touch it; this uses an internal docker network to
-      # communicate with the frontend.
-      PENPOT_PUBLIC_URI: http://penpot-frontend
+      << : [*penpot-public-uri]
 
       ## Redis is used for the websockets notifications.
       PENPOT_REDIS_URI: redis://penpot-redis/0
