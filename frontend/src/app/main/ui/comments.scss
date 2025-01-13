@@ -333,6 +333,8 @@
   padding: $s-8;
   resize: vertical;
   width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
 
   &:focus {
     border: $s-1 solid var(--input-border-color-active);
