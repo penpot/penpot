@@ -781,6 +781,7 @@
                      (d/update-when :thumbnail-id bfc/lookup-index))]
 
       (l/dbg :hint "inserting file media object"
+             :old-id (str (:id item))
              :id (str (:id params))
              :file-id (str (:file-id params))
              ::l/sync? true)
