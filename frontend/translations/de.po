@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-25 20:01+0000\n"
+"PO-Revision-Date: 2025-01-14 12:00+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.9-dev\n"
+"X-Generator: Weblate 5.10-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:154, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -6164,3 +6164,216 @@ msgstr "Sie sind jetzt ein Admin in diesem Team."
 #: src/app/main/ui/workspace/sidebar/versions.cljs:149, src/app/main/ui/workspace/sidebar/versions.cljs:288
 msgid "labels.restore"
 msgstr "Wiederherstellen"
+
+msgid "labels.adding"
+msgstr "Hinzufügen..."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1022
+msgid "workspace.shape.menu.remove-layout"
+msgstr "Layout entfernen"
+
+msgid "labels.comment"
+msgstr "Kommentar"
+
+#: src/app/main/ui/workspace/context_menu.cljs:241
+msgid "workspace.shape.menu.rename"
+msgstr "Umbenennen"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications"
+msgstr "Benachrichtigungen"
+
+#: src/app/main/ui/workspace/main_menu.cljs:630
+msgid "dashboard.show-version-history"
+msgstr "Versionsverlauf"
+
+#: src/app/main/ui/static.cljs:63
+msgid "not-found.made-with-love"
+msgstr "Mit LIEBE gemacht und Open Source"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+msgid "shortcuts.copy-link"
+msgstr "Link in die Zwischenablage kopieren"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:167
+msgid "shortcuts.rename"
+msgstr "Umbenennen"
+
+#: src/app/main/ui/workspace/sidebar.cljs:241
+msgid "workspace.versions.tab.history"
+msgstr "Verlauf"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:184
+msgid "workspace.options.stroke.remove-stroke"
+msgstr "Strich entfernen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:171
+msgid "workspace.options.stroke.add-stroke"
+msgstr "Strichfarbe hinzufügen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+msgid "workspace.options.blur-options.add-blur"
+msgstr "Weichzeichnen hinzufügen"
+
+#: src/app/main/ui/dashboard/files.cljs:190, src/app/main/ui/dashboard/projects.cljs:284
+msgid "dashboard.empty-placeholder-drafts-subtitle"
+msgstr ""
+"Sobald ein Projektmitglied einen Entwurf erstellt, wird es hier angezeigt."
+
+#: src/app/main/ui/dashboard/files.cljs:185, src/app/main/ui/dashboard/projects.cljs:279
+msgid "dashboard.empty-placeholder-drafts-title"
+msgstr "Noch keine Entwürfe vorhanden."
+
+#: src/app/main/ui/dashboard/files.cljs:191, src/app/main/ui/dashboard/projects.cljs:285
+msgid "dashboard.empty-placeholder-files-subtitle"
+msgstr "Sobald ein Projektmitglied eine Datei erstellt, wird es hier angezeigt."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1004, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1030
+msgid "workspace.shape.menu.add-layout"
+msgstr "Layout hinzufügen"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:155, src/app/main/ui/workspace/tokens/modals/themes.cljs:239
+msgid "workspace.token.create-theme-title"
+msgstr "Theme erstellen"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:147
+msgid "workspace.token.delete-theme-title"
+msgstr "Theme löschen"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:194, src/app/main/ui/workspace/tokens/sidebar.cljs:215
+msgid "workspace.token.create-one"
+msgstr "Ein neues erstellen."
+
+#: src/app/main/ui/workspace/tokens/form.cljs:363
+msgid "workspace.token.edit-token"
+msgstr "Token bearbeiten"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:72
+msgid "workspace.token.edit-themes"
+msgstr "Themes bearbeiten"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:302
+msgid "workspace.token.edit-theme-title"
+msgstr "Theme bearbeiten"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:359, src/app/main/ui/workspace/sidebar/versions.cljs:361
+msgid "workspace.versions.button.save"
+msgstr "Version speichern"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:220
+msgid "workspace.versions.button.restore"
+msgstr "Version wiederherstellen"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:354
+msgid "workspace.versions.loading"
+msgstr "Laden..."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:191
+msgid "workspace.token.no-themes"
+msgstr "Es gibt keine Themes."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+#, unused
+msgid "workspace.token.theme-name"
+msgstr "Theme %s"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:208
+msgid "workspace.token.save-theme"
+msgstr "Theme speichern"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:188
+msgid "workspace.versions.autosaved.version"
+msgstr "Automatisch gespeichert %s"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:194
+msgid "workspace.versions.autosaved.entry"
+msgstr "%s automatisch gespeicherte Versionen"
+
+#: src/app/main/ui/workspace/main_menu.cljs:623
+msgid "dashboard.create-version-menu"
+msgstr "Diese Version anheften"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:35
+msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
+msgstr ""
+"Bibliotheken, die dem Projekt hinzugefügt wurden, werden hier erscheinen."
+
+#: src/app/main/ui/dashboard/fonts.cljs:445
+msgid "dashboard.fonts.empty-placeholder-viewer-sub"
+msgstr ""
+"Sobald ein Projektmitglied eine benutzerdefinierte Schriftart hochgeladen "
+"hat, wird sie hier angezeigt."
+
+#: src/app/main/ui/comments.cljs:145
+msgid "labels.reply"
+msgstr "Antwort"
+
+#: src/app/main/ui/comments.cljs:150
+msgid "labels.reply.new"
+msgstr "neue Antwort"
+
+#: src/app/main/ui/comments.cljs:188
+msgid "labels.reply.thread"
+msgstr "Antwort"
+
+#: src/app/main/ui/comments.cljs:146
+msgid "labels.replies"
+msgstr "Antworten"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:187
+msgid "labels.themes"
+msgstr "Themen"
+
+#: src/app/main/ui/workspace/plugins.cljs:442
+msgid "workspace.plugins.try-out.try"
+msgstr "PLUGIN TESTEN"
+
+#: src/app/main/ui/workspace/plugins.cljs:86
+msgid "workspace.plugins.remove-plugin"
+msgstr "Plugin entfernen"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:229
+msgid "workspace.sidebar.sitemap.add-page"
+msgstr "Seite hinzufügen"
+
+#: src/app/main/ui/workspace/context_menu.cljs:146
+msgid "workspace.shape.menu.copy_link"
+msgstr "Link in die Zwischenablage kopieren"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:52
+msgid "workspace.token.new-theme"
+msgstr "Neues Theme"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:88
+msgid "workspace.token.no-active-theme"
+msgstr "Kein Theme aktiviert"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:39, src/app/main/ui/workspace/tokens/modals/themes.cljs:84
+msgid "workspace.token.themes"
+msgstr "Themes"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications.view"
+msgstr "Benachrichtigungen anzeigen"
+
+#: src/app/main/data/common.cljs:203
+msgid "dashboard.permissions-change.owner"
+msgstr "Sie sind jetzt Eigentümer dieses Teams."
+
+msgid "dashboard.upgrade-plan.penpot-free"
+msgstr "Penpot Free"
+
+#: src/app/main/ui/comments.cljs:446
+msgid "labels.comment.mark-as-solved"
+msgstr "Als gelöst markieren"
+
+msgid "workspace.assets.add-library"
+msgstr "Bibliothek hinzufügen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
+msgid "workspace.options.blur-options.remove-blur"
+msgstr "Weichzeichnen entfernen"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:225
+msgid "workspace.versions.button.pin"
+msgstr "Version anheften"
