@@ -55,6 +55,8 @@
                (mapv (partial update-position positions))
                (dcm/apply-filters local profile)))
 
+        viewport (assoc vport :offset-x pos-x :offset-y pos-y)
+
         on-draft-cancel
         (mf/use-fn #(st/emit! :interrupt))
 
@@ -86,7 +88,7 @@
            (when (seq (dcm/apply-filters local profile [thread]))
              [:> cmt/comment-floating-thread* {:thread (update-position positions thread)
                                                :profiles profiles
-                                               :viewport {:offset-x pos-x :offset-y pos-y :width (:width vport) :height (:height vport)}
+                                               :viewport viewport
                                                :zoom zoom}])))
 
        (when-let [draft (:comment drawing)]
