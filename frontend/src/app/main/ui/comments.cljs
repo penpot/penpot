@@ -962,7 +962,7 @@
                         (some? position-modifier)
                         (gpt/transform position-modifier))
 
-        max-height    (when (some? viewport) (int (* (:height viewport) 0.75)))
+        max-height    (when (some? viewport) (int (* (:height viewport) 0.5)))
 
         ;; We should probably look for a better way of doing this.
         bubble-margin {:x 24 :y 24}
