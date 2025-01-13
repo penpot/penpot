@@ -125,7 +125,9 @@
        (second)))
 
 ;; Component that renders the component content
-(mf/defc comment-content
+(mf/defc comment-content*
+  {::mf/props :obj
+   ::mf/private true}
   [{:keys [content]}]
   (let [comment-elements (mf/use-memo (mf/deps content) #(parse-comment content))]
     (for [[idx {:keys [type content]}] (d/enumerate comment-elements)]
@@ -138,11 +140,13 @@
          content]))))
 
 ;; Input text for comments with mentions
-(mf/defc comment-input
-  {::mf/wrap-props false}
-  [props]
+(mf/defc comment-input*
+  {::mf/props :obj
+   ::mf/private true
+   ::mf/wrap-props false}
+  [{:keys [value placeholder max-length autofocus? on-focus on-blur on-change on-esc on-ctrl-enter]}]
 
-  (let [value            (d/nilv (unchecked-get props "value") "")
+  (let [value            (d/nilv value "")
         prev-value       (h/use-previous value)
 
         local-ref        (mf/use-ref nil)
@@ -150,15 +154,6 @@
         cur-mention      (mf/use-var nil)
 
         prev-selection   (mf/use-var nil)
-
-        on-focus         (unchecked-get props "on-focus")
-        on-blur          (unchecked-get props "on-blur")
-        placeholder      (unchecked-get props "placeholder")
-        on-change        (unchecked-get props "on-change")
-        on-esc           (unchecked-get props "on-esc")
-        on-ctrl-enter    (unchecked-get props "on-ctrl-enter")
-        max-length       (unchecked-get props "max-length")
-        autofocus?       (unchecked-get props "autofocus")
 
         init-input
         (mf/use-callback
@@ -429,7 +424,9 @@
       :on-focus handle-focus
       :on-blur handle-blur}]))
 
-(mf/defc mentions-panel
+(mf/defc mentions-panel*
+  {::mf/props :obj
+   ::mf/private true}
   [{:keys [profiles]}]
 
   (let [mentions-str (mf/use-ctx mentions-context)
@@ -522,7 +519,9 @@
             [:div {:class (stl/css :comments-mentions-name)} fullname]
             [:div {:class (stl/css :comments-mentions-email)} email]]))])))
 
-(mf/defc mentions-button
+(mf/defc mentions-button*
+  {::mf/props :obj
+   ::mf/private true}
   []
   (let [mentions-str      (mf/use-ctx mentions-context)
         display-mentions* (mf/use-state false)
@@ -593,7 +592,7 @@
      [:div {:class (stl/css :author-timeago)} (dt/timeago (:modified-at item))]]]
 
    [:div {:class (stl/css :item)}
-    [:> comment-content {:content (:content item)}]]
+    [:> comment-content* {:content (:content item)}]]
 
    [:div {:class (stl/css :replies)}
     (let [total-comments (:count-comments item 1)
@@ -644,19 +643,18 @@
            (st/emit! (dcm/add-comment thread @content))
            (on-cancel)))]
     [:div {:class (stl/css :form)}
-     [:& comment-input
+     [:> comment-input*
       {:value @content
        :placeholder (tr "labels.reply.thread")
-       :autofocus true
+       :autofocus? true
        :on-blur on-blur
        :on-focus on-focus
-       :select-on-focus? false
        :on-ctrl-enter on-submit
        :on-change on-change
        :max-length 750}]
      (when (or @show-buttons? (seq @content))
        [:div {:class (stl/css :form-buttons-wrapper)}
-        [:> mentions-button]
+        [:> mentions-button*]
         [:> button* {:variant "ghost"
                      :on-click on-cancel}
          (tr "ds.confirm-cancel")]
@@ -684,16 +682,14 @@
                       (str/empty? @content))]
 
     [:div {:class (stl/css :form)}
-     [:& comment-input
+     [:> comment-input*
       {:value @content
-       :autofocus true
-       :select-on-focus true
-       :select-on-focus? false
+       :autofocus? true
        :on-ctrl-enter on-submit*
        :on-change on-change
        :max-length 750}]
      [:div {:class (stl/css :form-buttons-wrapper)}
-      [:> mentions-button]
+      [:> mentions-button*]
       [:> button* {:variant "ghost"
                    :on-click on-cancel}
        (tr "ds.confirm-cancel")]
@@ -740,7 +736,7 @@
          (mf/deps draft)
          (partial on-submit draft))]
 
-    [:& (mf/provider mentions-context) {:value mentions-str}
+    [:> (mf/provider mentions-context) {:value mentions-str}
      [:div
       {:class (stl/css :floating-preview-wrapper)
        :data-testid "floating-thread-bubble"
@@ -754,18 +750,17 @@
                     :left (str (+ pos-x 28) "px")}
             :on-click dom/stop-propagation}
       [:div {:class (stl/css :form)}
-       [:& comment-input
+       [:> comment-input*
         {:placeholder (tr "labels.write-new-comment")
          :value (or content "")
-         :autofocus true
-         :select-on-focus? false
+         :autofocus? true
          :on-esc on-esc
          :on-change on-change
          :on-ctrl-enter on-submit
          :max-length 750}]
 
        [:div {:class (stl/css :form-buttons-wrapper)}
-        [:> mentions-button]
+        [:> mentions-button*]
         [:> button* {:variant "ghost"
                      :on-click on-esc}
          (tr "ds.confirm-cancel")]
@@ -774,7 +769,7 @@
                      :disabled disabled?}
          (tr "labels.post")]]]
 
-      [:& mentions-panel {:profiles profiles}]]]))
+      [:> mentions-panel* {:profiles profiles}]]]))
 
 (mf/defc comment-floating-thread-header*
   {::mf/props :obj
@@ -911,7 +906,7 @@
                                  :on-submit on-submit
                                  :on-cancel on-cancel}]
          [:span {:class (stl/css :text)}
-          [:> comment-content {:content (:content comment)}]])]]
+          [:> comment-content* {:content (:content comment)}]])]]
 
      [:& dropdown {:show (= options (:id comment))
                    :on-close on-hide-options}
@@ -1020,7 +1015,7 @@
 
         [:> comment-reply-form* {:thread thread}]
 
-        [:& mentions-panel {:profiles profiles}]])]))
+        [:> mentions-panel* {:profiles profiles}]])]))
 
 (mf/defc comment-floating-bubble*
   {::mf/props :obj
