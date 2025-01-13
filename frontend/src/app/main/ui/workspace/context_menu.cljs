@@ -15,7 +15,6 @@
    [app.common.types.container :as ctn]
    [app.common.types.page :as ctp]
    [app.common.types.shape.layout :as ctl]
-   [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as scd]
@@ -26,7 +25,6 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.shortcuts :as sc]
-   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -486,15 +484,13 @@
                            :on-click on-add-layout}]]))]))
 
 (mf/defc context-menu-component*
-  {::mf/props :obj
-   ::mf/private true}
+  {:mf/private true}
   [{:keys [shapes]}]
-  (let [components-v2              (features/use-feature "components/v2")
-        single?                    (= (count shapes) 1)
+  (let [single?                    (= (count shapes) 1)
         objects                    (deref refs/workspace-page-objects)
         can-make-component         (every? true? (map #(ctn/valid-shape-for-component? objects %) shapes))
         heads                      (filter ctk/instance-head? shapes)
-        components-menu-entries    (cmm/generate-components-menu-entries heads components-v2)
+        components-menu-entries    (cmm/generate-components-menu-entries heads true)
         do-add-component           #(st/emit! (dwl/add-component))
         do-add-multiple-components #(st/emit! (dwl/add-multiple-components))]
     [:*
@@ -511,11 +507,12 @@
 
      (when (seq components-menu-entries)
        [:*
-        [:> menu-separator* {}]
-        (for [entry components-menu-entries :when (not (nil? entry))]
-          [:> menu-entry* {:key (uuid/next)
+        [:> menu-separator*]
+        (for [entry (filter some? components-menu-entries)]
+          [:> menu-entry* {:key (:title entry)
                            :title (:title entry)
-                           :shortcut (when (contains? entry :shortcut) (sc/get-tooltip (:shortcut entry)))
+                           :shortcut (when (contains? entry :shortcut)
+                                       (sc/get-tooltip (:shortcut entry)))
                            :on-click (:action entry)}])])]))
 
 (mf/defc context-menu-delete*
