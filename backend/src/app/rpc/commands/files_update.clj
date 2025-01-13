@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.files-update
   (:require
+   [app.binfile.common :refer [collect-used-media]]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
@@ -347,7 +348,6 @@
           file (apply update-fn cfg file args)
 
           ;; TODO: reuse operations if file is migrated
-          ;; TODO: move encoding to a separated thread
           file (if (take-snapshot? file)
                  (let [tpoint   (dt/tpoint)
                        snapshot (-> (:data file)
@@ -415,6 +415,33 @@
       (l/error :hint "file validation error"
                :cause cause))))
 
+(def ^:private sql:get-file-media
+  "SELECT * FROM file_media_object WHERE id = ANY(?)")
+
+(defn- validate-file-media!
+  [{:keys [::db/conn]} {:keys [id data] :as file}]
+  (let [used  (collect-used-media data)
+        ids   (db/create-array conn "uuid" used)
+        media (->> (db/exec! conn [sql:get-file-media ids])
+                   (d/index-by :id))]
+
+    (doseq [media-id used]
+      (let [media (get media media-id)]
+        (cond
+          (nil? media)
+          (ex/raise :type :internal
+                    :code :missing-media-reference
+                    :hint "this file is using a media reference that is not found on database"
+                    :file-id id
+                    :media-id media-id)
+
+          (not= id (:file-id media))
+          (ex/raise :type :internal
+                    :code :invalid-media-reference
+                    :hint "this file is using a media object that belongs to other file"
+                    :file-id id
+                    :media-id media-id))))))
+
 (defn- process-changes-and-validate
   [cfg file changes skip-validate]
   (let [;; WARNING: this ruins performance; maybe we need to find
@@ -435,6 +462,9 @@
 
       (when (contains? cf/flags :soft-file-schema-validation)
         (soft-validate-file-schema! file))
+
+      (when (contains? cf/flags :file-media-validation)
+        (validate-file-media! cfg file))
 
       (when (and (contains? cf/flags :file-validation)
                  (not skip-validate))
