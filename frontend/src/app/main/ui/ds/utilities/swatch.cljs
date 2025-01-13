@@ -26,7 +26,7 @@
   [:map {:title "SchemaSwatch"}
    [:background {:optional true} ct/schema:color]
    [:class {:optional true} :string]
-   [:size {:optional true} [:enum "small" "medium"]]
+   [:size {:optional true} [:enum "small" "medium" "large"]]
    [:active {:optional true} :boolean]
    [:on-click {:optional true} fn?]])
 
@@ -82,6 +82,7 @@
                                  :swatch true
                                  :small (= size "small")
                                  :medium (= size "medium")
+                                 :large (= size "large")
                                  :square (= format "square")
                                  :active (= active true)
                                  :interactive (= element-type "button")

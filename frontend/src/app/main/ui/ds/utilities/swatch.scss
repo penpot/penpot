@@ -38,6 +38,13 @@
   block-size: $sz-24;
 }
 
+.large {
+  --checkerboard-size: 2rem 2rem;
+
+  inline-size: $sz-48;
+  block-size: $sz-48;
+}
+
 .rounded {
   --border-radius: #{$br-circle};
 }
