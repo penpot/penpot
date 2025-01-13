@@ -92,6 +92,45 @@ jobs:
             - ~/.m2
           key: v1-dependencies-{{ checksum "frontend/deps.edn"}}
 
+  test-components:
+    docker:
+      - image: penpotapp/devenv:latest
+
+    working_directory: ~/repo
+    resource_class: medium+
+
+    environment:
+      JAVA_OPTS: -Xmx6g -Xms2g
+      NODE_OPTIONS: --max-old-space-size=4096
+
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "frontend/deps.edn"}}
+
+      - run:
+          name: Install dependencies
+          working_directory: "./frontend"
+          command: |
+            yarn
+            npx playwright install --with-deps
+
+      - run:
+          name: Build Storybook
+          working_directory: "./frontend"
+          command: yarn run build:storybook
+
+      - run:
+          name: Serve Storybook and run tests
+          working_directory: "./frontend"
+          command: |
+            npx concurrently -k -s first -n "SB,TEST" -c "magenta,blue" \
+              "npx http-server storybook-static --port 6006 --silent" \
+              "npx wait-on tcp:6006 && yarn test:storybook"
+
   test-integration:
     docker:
       - image: penpotapp/devenv:latest
@@ -234,6 +273,7 @@ workflows:
   penpot:
     jobs:
       - test-frontend
+      - test-components
       - test-integration
       - test-backend
       - test-common
