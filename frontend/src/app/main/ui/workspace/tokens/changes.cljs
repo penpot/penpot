@@ -147,7 +147,7 @@
 
 (defn update-stroke-color
   [value shape-ids]
-  (update-color wdc/change-stroke value shape-ids))
+  (update-color wdc/change-stroke-color value shape-ids))
 
 (defn update-fill-stroke [value shape-ids attributes]
   (ptk/reify ::update-fill-stroke

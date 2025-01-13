@@ -23,11 +23,9 @@
 
         _ (set! st/state store)
 
-        context (api/create-context "TEST")
-
-        page  (. context -currentPage)
-
-        shape (.createRectangle context)
+        ^js context (api/create-context "TEST")
+        ^js page    (. context -currentPage)
+        ^js shape   (.createRectangle context)
 
         get-shape-path
         #(vector :workspace-data :pages-index (aget page "$id") :objects (aget shape "$id") %)]

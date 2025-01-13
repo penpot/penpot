@@ -242,59 +242,88 @@
                                                (if (= (:type shape) :frame)
                                                  (d/merge shape attrs)
                                                  shape))))))))
-(defn change-stroke
-  ([ids attrs index] (change-stroke ids attrs index nil))
-  ([ids attrs index options]
-   (ptk/reify ::change-stroke
+
+(def ^:private stroke-style-attrs
+  [:stroke-style
+   :stroke-alignment
+   :stroke-width
+   :stroke-cap-start
+   :stroke-cap-end])
+
+(defn- build-stroke-style-attrs
+  [stroke]
+  (let [attrs (select-keys stroke stroke-style-attrs)]
+    (cond-> attrs
+      (not (contains? attrs :stroke-width))
+      (assoc :stroke-width 1)
+
+      (not (contains? attrs :stroke-style))
+      (assoc :stroke-style :solid)
+
+      (not (contains? attrs :stroke-alignment))
+      (assoc :stroke-alignment :inner)
+
+      :always
+      (d/without-nils))))
+
+(defn change-stroke-color
+  ([ids color index] (change-stroke-color ids color index nil))
+  ([ids color index options]
+   (ptk/reify ::change-stroke-color
      ptk/WatchEvent
      (watch [_ _ _]
-       (let [color-attrs (cond-> {}
-                           (contains? attrs :color)
-                           (assoc :stroke-color (:color attrs))
+       (rx/of (dwsh/update-shapes
+               ids
+               (fn [shape]
+                 (let [stroke (get-in shape [:strokes index])
+                       attrs (cond-> (build-stroke-style-attrs stroke)
+                               (contains? color :color)
+                               (assoc :stroke-color (:color color))
 
-                           (contains? attrs :id)
-                           (assoc :stroke-color-ref-id (:id attrs))
+                               (contains? color :id)
+                               (assoc :stroke-color-ref-id (:id color))
 
-                           (contains? attrs :file-id)
-                           (assoc :stroke-color-ref-file (:file-id attrs))
+                               (contains? color :file-id)
+                               (assoc :stroke-color-ref-file (:file-id color))
 
-                           (contains? attrs :gradient)
-                           (assoc :stroke-color-gradient (:gradient attrs))
+                               (contains? color :gradient)
+                               (assoc :stroke-color-gradient (:gradient color))
 
-                           (contains? attrs :opacity)
-                           (assoc :stroke-opacity (:opacity attrs))
+                               (contains? color :opacity)
+                               (assoc :stroke-opacity (:opacity color))
 
-                           (contains? attrs :image)
-                           (assoc :stroke-image (:image attrs)))
+                               (contains? color :image)
+                               (assoc :stroke-image (:image color))
 
-             attrs (->
-                    (merge attrs color-attrs)
-                    (dissoc :image)
-                    (dissoc :gradient))]
+                               :always
+                               (d/without-nils))]
+                   (cond-> shape
+                     (not (contains? shape :strokes))
+                     (assoc :strokes [])
 
-         (rx/of (dwsh/update-shapes
-                 ids
-                 (fn [shape]
-                   (let [new-attrs (merge (get-in shape [:strokes index]) attrs)
-                         new-attrs (cond-> new-attrs
-                                     (not (contains? new-attrs :stroke-width))
-                                     (assoc :stroke-width 1)
+                     :always
+                     (assoc-in [:strokes index] attrs))))
+               options))))))
 
-                                     (not (contains? new-attrs :stroke-style))
-                                     (assoc :stroke-style :solid)
+(defn change-stroke-attrs
+  ([ids attrs index] (change-stroke-attrs ids attrs index nil))
+  ([ids attrs index options]
+   (ptk/reify ::change-stroke-attrs
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (rx/of (dwsh/update-shapes
+               ids
+               (fn [shape]
+                 (let [stroke      (get-in shape [:strokes index])
+                       style-attrs (build-stroke-style-attrs stroke)
+                       attrs       (merge stroke style-attrs attrs)]
+                   (cond-> shape
+                     (not (contains? shape :strokes))
+                     (assoc :strokes [])
 
-                                     (not (contains? new-attrs :stroke-alignment))
-                                     (assoc :stroke-alignment :inner)
-
-                                     :always
-                                     (d/without-nils))]
-                     (cond-> shape
-                       (not (contains? shape :strokes))
-                       (assoc :strokes [])
-
-                       :always
-                       (assoc-in [:strokes index] new-attrs))))
-                 options)))))))
+                     :always
+                     (assoc-in [:strokes index] attrs)))))
+              options)))))
 
 (defn change-shadow
   [ids attrs index]
@@ -495,7 +524,7 @@
               (rx/map (fn [{:keys [shape-id index] :as operation}]
                         (case (:prop operation)
                           :fill    (change-fill [shape-id] new-color index)
-                          :stroke  (change-stroke [shape-id] new-color index)
+                          :stroke  (change-stroke-color [shape-id] new-color index)
                           :shadow  (change-shadow [shape-id] new-color index)
                           :content (dwt/update-text-with-function
                                     shape-id
@@ -533,7 +562,7 @@
                   (recur (rest pending) result))))]
 
         (if stroke?
-          (rx/of (change-stroke ids color 0))
+          (rx/of (change-stroke-color ids color 0))
           (rx/of (change-fill ids color 0)))))))
 
 (declare activate-colorpicker-color)
