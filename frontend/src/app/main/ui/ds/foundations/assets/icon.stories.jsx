@@ -9,7 +9,7 @@ export default {
   title: "Foundations/Assets/Icon",
   component: Components.Icon,
   argTypes: {
-    id: {
+    iconId: {
       options: icons,
       control: { type: "select" },
     },
@@ -37,10 +37,10 @@ export const All = {
               gap: "0.5rem",
             }}
           >
-            <Icon id={iconId} size={size} />
+            <Icon iconId={iconId} size={size} />
             <code
               style={{
-                "font-family": "monospace",
+                fontFamily: "monospace",
                 color: "var(--color-foreground-secondary)",
               }}
             >
@@ -55,14 +55,14 @@ export const All = {
     size: "m",
   },
   parameters: {
-    controls: { exclude: ["id", "size"] },
+    controls: { exclude: ["iconId", "size"] },
     backgrounds: { disable: true },
   },
 };
 
 export const Default = {
   args: {
-    id: "pin",
+    iconId: "pin",
   },
   parameters: {
     controls: { exclude: ["size"] },
@@ -71,7 +71,7 @@ export const Default = {
 
 export const CustomSize = {
   args: {
-    id: "pin",
+    iconId: "pin",
     size: "m",
   },
 };
