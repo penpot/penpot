@@ -19,7 +19,7 @@ export default {
     },
     size: {
       control: "select",
-      options: ["small", "medium"],
+      options: ["small", "medium", "large"],
     },
     active: {
       control: { type: "boolean" },
