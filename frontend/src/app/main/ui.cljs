@@ -70,7 +70,7 @@
 (mf/defc dashboard-legacy-redirect*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [section team-id project-id search-term plugin-url]}]
+  [{:keys [section team-id project-id search-term plugin-url template-url]}]
   (let [section (case section
                   :dashboard-legacy-search
                   :dashboard-search
@@ -97,7 +97,8 @@
       (let [params {:team-id team-id
                     :project-id project-id
                     :search-term search-term
-                    :plugin plugin-url}]
+                    :plugin plugin-url
+                    :template-url template-url}]
         (st/emit! (rt/nav section (d/without-nils params)))))
 
     [:> loader*
@@ -211,11 +212,12 @@
         :dashboard-invitations
         :dashboard-webhooks
         :dashboard-settings)
-       (let [params      (get params :query)
-             team-id     (some-> params :team-id uuid)
-             project-id  (some-> params :project-id uuid)
-             search-term (some-> params :search-term)
-             plugin-url  (some-> params :plugin)]
+       (let [params        (get params :query)
+             team-id       (some-> params :team-id uuid)
+             project-id    (some-> params :project-id uuid)
+             search-term   (some-> params :search-term)
+             plugin-url    (some-> params :plugin)
+             template-url  (some-> params :template)]
          [:?
           #_[:& app.main.ui.releases/release-notes-modal {:version "2.4"}]
           #_[:& app.main.ui.onboarding/onboarding-templates-modal]
@@ -241,7 +243,8 @@
                                :team-id team-id
                                :search-term search-term
                                :plugin-url plugin-url
-                               :project-id project-id}]]])
+                               :project-id project-id
+                               :template-url template-url}]]])
 
        :workspace
        (let [params     (get params :query)
@@ -322,13 +325,15 @@
        (let [team-id     (some-> params :path :team-id uuid)
              project-id  (some-> params :path :project-id uuid)
              search-term (some-> params :query :search-term)
-             plugin-url  (some-> params :query :plugin)]
+             plugin-url  (some-> params :query :plugin)
+             template-url  (some-> params :template)]
          [:> dashboard-legacy-redirect*
           {:team-id team-id
            :section section
            :project-id project-id
            :search-term search-term
-           :plugin-url plugin-url}])
+           :plugin-url plugin-url
+           :template-url template-url}])
 
        :viewer-legacy
        (let [{:keys [query-params path-params]} route

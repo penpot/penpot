@@ -6687,7 +6687,7 @@ msgstr "Nombre"
 
 #: src/app/main/ui/workspace/tokens/form.cljs
 msgid "workspace.token.enter-token-name"
-msgstr "Introduce un nombre para el token %s" 
+msgstr "Introduce un nombre para el token %s"
 
 #: src/app/main/ui/workspace/tokens/form.cljs
 msgid "workspace.token.token-value"
@@ -6922,6 +6922,15 @@ msgstr "Ninguna"
 
 msgid "dashboard.settings.notifications.submit"
 msgstr "Actualizar configuración"
+
+msgid "dashboard.import.error"
+msgstr "La importación ha fallado. Intentalo de nuevo, por favor"
+
+msgid "dashboard.import.bad-url"
+msgstr "La importación ha fallado. La URL de la plantilla es incorrecta"
+
+msgid "dashboard.import.no-perms"
+msgstr "No tienes permisos para importar en este equipo"
 
 msgid "labels.notifications"
 msgstr "Notificaciones"

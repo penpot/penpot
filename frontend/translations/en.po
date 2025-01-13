@@ -6966,6 +6966,15 @@ msgstr "None"
 msgid "dashboard.settings.notifications.submit"
 msgstr "Update settings"
 
+msgid "dashboard.import.error"
+msgstr "Import failed. Please try again"
+
+msgid "dashboard.import.bad-url"
+msgstr "Import failed. The template URL is incorrect"
+
+msgid "dashboard.import.no-perms"
+msgstr "You don’t have permission to import to this team"
+
 msgid "labels.notifications"
 msgstr "Notifications"
 
