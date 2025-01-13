@@ -1093,9 +1093,16 @@ Will return a value that matches this schema:
   [tokens-lib]
   (or tokens-lib (make-tokens-lib)))
 
+(defn decode-dtcg
+  [encoded-json]
+  (-> (make-tokens-lib)
+      (decode-dtcg-json encoded-json)))
+
 (def type:tokens-lib
   {:type ::tokens-lib
-   :pred valid-tokens-lib?})
+   :pred valid-tokens-lib?
+   :type-properties {:encode/json encode-dtcg
+                     :decode/json decode-dtcg}})
 
 (sm/register! ::tokens-lib type:tokens-lib)
 
