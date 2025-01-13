@@ -4,6 +4,7 @@ use uuid::Uuid;
 
 use crate::render::{BlendMode, Renderable};
 
+mod blurs;
 mod bools;
 mod fills;
 mod images;
@@ -12,6 +13,7 @@ mod paths;
 mod renderable;
 mod strokes;
 
+pub use blurs::*;
 pub use bools::*;
 pub use fills::*;
 pub use images::*;
@@ -42,6 +44,7 @@ pub struct Shape {
     fills: Vec<Fill>,
     strokes: Vec<Stroke>,
     blend_mode: BlendMode,
+    blur: Blur,
     opacity: f32,
     hidden: bool,
 }
@@ -61,6 +64,7 @@ impl Shape {
             blend_mode: BlendMode::default(),
             opacity: 1.,
             hidden: false,
+            blur: Blur::default(),
         }
     }
 
@@ -103,6 +107,10 @@ impl Shape {
 
     pub fn set_hidden(&mut self, value: bool) {
         self.hidden = value;
+    }
+
+    pub fn set_blur(&mut self, blur_type: u8, hidden: bool, value: f32) {
+        self.blur = Blur::new(blur_type, hidden, value);
     }
 
     pub fn add_child(&mut self, id: Uuid) {

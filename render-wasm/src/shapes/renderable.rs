@@ -1,7 +1,7 @@
 use skia_safe as skia;
 use uuid::Uuid;
 
-use super::{Fill, Image, Kind, Path, Shape, Stroke, StrokeCap, StrokeKind};
+use super::{BlurType, Fill, Image, Kind, Path, Shape, Stroke, StrokeCap, StrokeKind};
 use crate::math::Rect;
 use crate::render::{ImageStore, Renderable};
 
@@ -68,6 +68,22 @@ impl Renderable for Shape {
             vec![]
         } else {
             self.children.clone()
+        }
+    }
+
+    fn image_filter(&self, scale: f32) -> Option<skia::ImageFilter> {
+        if !self.blur.hidden {
+            match self.blur.blur_type {
+                BlurType::None => None,
+                BlurType::Layer => skia::image_filters::blur(
+                    (self.blur.value * scale, self.blur.value * scale),
+                    None,
+                    None,
+                    None,
+                ),
+            }
+        } else {
+            None
         }
     }
 }

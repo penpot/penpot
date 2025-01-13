@@ -106,7 +106,7 @@
 
 ;; --- SHAPE IMPL
 
-(defn- impl-assoc
+(defn- set-wasm-attrs
   [self k v]
   (when ^boolean shape/*wasm-sync*
     (api/use-shape (:id self))
@@ -125,11 +125,16 @@
       :hidden       (api/set-shape-hidden v)
       :shapes       (api/set-shape-children v)
       :content      (api/set-shape-path-content v)
+      :blur         (api/set-shape-blur v)
       nil)
     ;; when something synced with wasm
     ;; is modified, we need to request
     ;; a new render.
-    (api/request-render))
+    (api/request-render)))
+
+(defn- impl-assoc
+  [self k v]
+  (set-wasm-attrs self k v)
   (case k
     :id
     (ShapeProxy. v
@@ -150,6 +155,7 @@
 
 (defn- impl-dissoc
   [self k]
+  (set-wasm-attrs self k nil)
   (case k
     :id
     (ShapeProxy. nil
