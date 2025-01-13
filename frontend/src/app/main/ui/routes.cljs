@@ -14,6 +14,7 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
+   [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
@@ -75,14 +76,23 @@
    ["/workspace" :workspace]
    ["/workspace/:project-id/:file-id" :workspace-legacy]])
 
+
+(defn- store-session-params
+  [{:keys [template]}]
+  (binding [storage/*sync* true]
+    (when (some? template)
+      (swap! storage/session assoc
+             :template-url template))))
+
 (defn on-navigate
   [router path]
-  (let [location (.-location js/document)
-        [base-path qs] (str/split path "?")
-        location-path (dm/str (.-origin location) (.-pathname location))
+  (let [location        (.-location js/document)
+        [base-path qs]  (str/split path "?")
+        location-path   (dm/str (.-origin location) (.-pathname location))
         valid-location? (= location-path (dm/str cf/public-uri))
-        match (rt/match router path)
-        empty-path? (or (= base-path "") (= base-path "/"))]
+        match           (rt/match router path)
+        empty-path?     (or (= base-path "") (= base-path "/"))
+        query-params    (u/query-string->map qs)]
 
     (cond
       (not valid-location?)
@@ -99,14 +109,15 @@
            (rx/subs! (fn [{:keys [id] :as profile}]
                        (cond
                          (= id uuid/zero)
-                         (st/emit! (rt/nav :auth-login))
+                         (do
+                           (store-session-params query-params)
+                           (st/emit! (rt/nav :auth-login)))
 
                          empty-path?
                          (let [team-id (or (dtm/get-last-team-id)
                                            (:default-team-id profile))]
                            (st/emit! (rt/nav :dashboard-recent
-                                             (-> (u/query-string->map qs)
-                                                 (assoc :team-id team-id)))))
+                                             (assoc query-params :team-id team-id))))
 
                          :else
                          (st/emit! (rt/assign-exception {:type :not-found})))))))))

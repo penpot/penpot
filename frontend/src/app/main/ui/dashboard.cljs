@@ -15,6 +15,7 @@
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as notif]
    [app.main.data.plugins :as dp]
+   [app.main.data.project :as dpj]
    [app.main.refs :as refs]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -33,9 +34,14 @@
    [app.main.ui.workspace.plugins]
    [app.plugins.register :as preg]
    [app.util.dom :as dom]
+   [app.util.http :as http]
+   [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
+   [app.util.storage :as storage]
+   [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [goog.events :as events]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
@@ -205,9 +211,47 @@
               (fn [_]
                 (st/emit! (notif/error "The plugin URL is incorrect")))))))))
 
+(defn use-templates-import
+  [can-edit? template-url default-project-id]
+  (mf/with-layout-effect
+    [can-edit? template-url default-project-id]
+    (when (and (some? template-url) (some? default-project-id))
+      (if can-edit?
+        (let [valid-url?    (and (str/ends-with? template-url ".penpot")
+                                 (str/starts-with? template-url cf/templates-uri))
+              template-name (when valid-url? (subs template-url (count cf/templates-uri)))
+              on-import     #(st/emit! (dpj/fetch-files default-project-id)
+                                       (dd/fetch-recent-files)
+                                       (dd/fetch-projects)
+                                       (dd/clear-selected-files)
+                                       (ptk/event ::ev/event {::ev/name "install-template-from-link-finished"
+                                                              :name template-name
+                                                              :url template-url}))]
+          (if valid-url?
+            (do
+              (st/emit! (ptk/event ::ev/event {::ev/name "install-template-from-link" :name template-name :url template-url}))
+              (->> (http/send! {:method :get
+                                :uri template-url
+                                :response-type :blob
+                                :omit-default-headers true})
+                   (rx/subs!
+                    (fn [result]
+                      (if (or (< (:status result) 200) (>= (:status result) 300))
+                        (st/emit! (notif/error (tr "dashboard.import.error")))
+                        (st/emit! (modal/show
+                                   {:type :import
+                                    :project-id default-project-id
+                                    :entries [{:name template-name :uri (wapi/create-uri (:body result))}]
+                                    :on-finish-import on-import})))))))
+            (st/emit! (notif/error (tr "dashboard.import.bad-url")))))
+        (st/emit! (notif/error (tr "dashboard.import.no-perms"))))
+
+      (binding [storage/*sync* true]
+        (swap! storage/session dissoc :template-url)))))
+
 (mf/defc dashboard*
   {::mf/props :obj}
-  [{:keys [profile project-id team-id search-term plugin-url section]}]
+  [{:keys [profile project-id team-id search-term plugin-url template-url section]}]
   (let [team            (mf/deref refs/team)
         projects        (mf/deref refs/projects)
 
@@ -215,6 +259,9 @@
         projects        (mf/with-memo [projects team-id]
                           (->> (vals projects)
                                (filterv #(= team-id (:team-id %)))))
+
+        can-edit?       (dm/get-in team [:permissions :can-edit])
+        template-url    (or template-url (:template-url storage/session))
 
         default-project
         (mf/with-memo [projects]
@@ -239,6 +286,7 @@
           (events/unlistenByKey key))))
 
     (use-plugin-register plugin-url team-id (:id default-project))
+    (use-templates-import can-edit? template-url (:id default-project))
 
     [:& (mf/provider ctx/current-project-id) {:value project-id}
      [:> modal-container*]
