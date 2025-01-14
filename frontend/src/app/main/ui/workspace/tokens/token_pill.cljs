@@ -1,6 +1,7 @@
 (ns app.main.ui.workspace.tokens.token-pill
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.files.helpers :as cfh]
    [app.common.types.tokens-lib :as ctob]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
@@ -17,10 +18,10 @@
   [{:keys [on-click token theme-token full-applied on-context-menu half-applied]}]
   (let [{:keys [name value resolved-value errors]} token
         errors? (or (nil? theme-token) (and (seq errors) (seq (:errors theme-token))))
-
         color (when (seq (ctob/find-token-value-references value))
                 (wtt/resolved-value-hex theme-token))
-
+        contains-path? (str/includes? name ".")
+        splitted-name (cfh/split-string-half name)
         color (or color (wtt/resolved-value-hex token))
         on-click
         (mf/use-callback
@@ -64,4 +65,13 @@
        [:> token-status-icon*
         {:icon-id token-status-id
          :class (stl/css :token-pill-icon)}])
-     name]))
+     (if contains-path?
+       [:span {:class (stl/css :divided-name-wrapper)
+               :aria-label name}
+        [:span {:class (stl/css :first-name-wrapper)}
+         (first splitted-name)]
+        [:span {:class (stl/css :last-name-wrapper)}
+         (last splitted-name)]]
+       [:span {:class (stl/css :name-wrapper)
+               :aria-label name}
+        name])]))

@@ -70,7 +70,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(submitButton).toBeEnabled();
     await submitButton.click();
 
-    await expect(tokensTabPanel.getByText("color.primary")).toBeEnabled();
+    await expect(tokensTabPanel.getByLabel("primary")).toBeEnabled();
 
     // Create token referencing the previous one with keyboard
 
@@ -87,7 +87,7 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(submitButton).toBeEnabled();
     await nameField.press("Enter");
 
-    const referenceToken = tokensTabPanel.getByText("color.secondary");
+    const referenceToken = tokensTabPanel.getByLabel("color.secondary");
     await expect(referenceToken).toBeEnabled();
 
     // Tokens tab panel should have two tokens with the color red / #ff0000
@@ -104,6 +104,35 @@ test.describe("Tokens: Tokens Tab", () => {
         name: "Global",
       }),
     ).toHaveAttribute("aria-checked", "true");
+  });
+
+  test("User creates grouped color token", async ({ page }) => {
+    const { workspacePage, tokensUpdateCreateModal, tokenThemesSetsSidebar } =
+      await setupFileWithTokens(page);
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+    await tokensTabPanel.getByTitle("Add token: Color").click();
+
+    // Create grouped color token with mouse
+
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    const valueField = tokensUpdateCreateModal.getByLabel("Value");
+
+    await nameField.click();
+    await nameField.fill("color.dark.primary");
+
+    await valueField.click();
+    await valueField.fill("red");
+
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
+
+    await expect(tokensTabPanel.getByLabel("color.dark.primary")).toBeEnabled();
   });
 });
 

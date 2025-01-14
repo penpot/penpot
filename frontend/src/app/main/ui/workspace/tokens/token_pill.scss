@@ -60,22 +60,23 @@
   white-space: nowrap;
 }
 
-.group-name-wrapper::before, span::after {
-  vertical-align: middle;
+.divided-name-wrapper {
+  height: $s-16;
+}
+
+.first-name-wrapper {
   display: inline-block;
   max-width: 50%;
   overflow: hidden;
   white-space: pre;
-}
-
-.group-name-wrapper::before {
-  content: attr(data-content-start);
   text-overflow: ellipsis;
 }
 
-.group-name-wrapper::after {
-  content: attr(data-content-end);
-  text-overflow: '';
+.last-name-wrapper {
+  display: inline-block;
+  max-width: 50%;
+  overflow: hidden;
+  white-space: pre;
   direction: rtl;
 }
 
