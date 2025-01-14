@@ -52,6 +52,15 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def file-attrs
+  #{:id
+    :name
+    :features
+    :project-id
+    :is-shared
+    :version
+    :data})
+
 (def xf-map-id
   (map :id))
 
@@ -129,10 +138,11 @@
                  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
                    (when-let [file (db/get* conn :file {:id file-id}
                                             {::db/remove-deleted false})]
-                     (-> file
-                         (decode-row)
-                         (update :data feat.fdata/process-pointers deref)
-                         (update :data feat.fdata/process-objects (partial into {}))))))))
+                     (let [file (feat.fdata/resolve-file-data cfg file)]
+                       (-> file
+                           (decode-row)
+                           (update :data feat.fdata/process-pointers deref)
+                           (update :data feat.fdata/process-objects (partial into {})))))))))
 
 (defn clean-file-features
   [file]

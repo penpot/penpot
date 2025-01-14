@@ -63,10 +63,15 @@
 (def schema:pages-index
   [:map-of {:gen/max 5} ::sm/uuid ::ctp/page])
 
+(def schema:options
+  [:map {:title "FileOptions"}
+   [:components-v2 {:optional true} ::sm/boolean]])
+
 (def schema:data
   [:map {:title "FileData"}
    [:pages [:vector ::sm/uuid]]
    [:pages-index schema:pages-index]
+   [:options {:optional true} schema:options]
    [:colors {:optional true} schema:colors]
    [:components {:optional true} schema:components]
    [:typographies {:optional true} schema:typographies]
@@ -78,7 +83,15 @@
   because sometimes we want to validate file without the data."
   [:map {:title "file"}
    [:id ::sm/uuid]
+   [:revn {:optional true} :int]
+   [:vern {:optional true} :int]
+   [:created-at {:optional true} ::sm/inst]
+   [:modified-at {:optional true} ::sm/inst]
+   [:deleted-at {:optional true} ::sm/inst]
+   [:project-id {:optional true} ::sm/uuid]
+   [:is-shared {:optional true} ::sm/boolean]
    [:data {:optional true} schema:data]
+   [:version :int]
    [:features ::cfeat/features]])
 
 (sm/register! ::data schema:data)

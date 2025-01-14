@@ -56,7 +56,6 @@
      [:map
       [:id ::sm/uuid]
       [:name :string]
-      [:project-id ::sm/uuid]
       [:features ::cfeat/features]]]]
 
    [:relations {:optional true}
@@ -79,10 +78,15 @@
    [:tag :string]
    [:media-id ::sm/uuid]])
 
+(def ^:private schema:file
+  [:merge
+   ctf/schema:file
+   [:map [:options {:optional true} ctf/schema:options]]])
+
 ;; --- ENCODERS
 
 (def encode-file
-  (sm/encoder ::ctf/file sm/json-transformer))
+  (sm/encoder schema:file sm/json-transformer))
 
 (def encode-page
   (sm/encoder ::ctp/page sm/json-transformer))
@@ -126,7 +130,7 @@
   (sm/decoder ::ctcl/color sm/json-transformer))
 
 (def decode-file
-  (sm/decoder ::ctf/file sm/json-transformer))
+  (sm/decoder schema:file sm/json-transformer))
 
 (def decode-page
   (sm/decoder ::ctp/page sm/json-transformer))
@@ -198,8 +202,9 @@
     (throw (IllegalArgumentException.
             "the `include-libraries` and `embed-assets` are mutally excluding options")))
 
-  (let [detach?  (and (not embed-assets) (not include-libraries))]
-    (cond-> (bfc/get-file cfg file-id)
+  (let [detach?  (and (not embed-assets) (not include-libraries))
+        file     (bfc/get-file cfg file-id)]
+    (cond-> file
       detach?
       (-> (ctf/detach-external-references file-id)
           (dissoc :libraries))
@@ -263,13 +268,16 @@
 
     (vswap! bfc/*state* update :files assoc file-id
             {:id file-id
-             :project-id (:project-id file)
              :name (:name file)
              :features (:features file)})
 
-    (let [file (cond-> (dissoc file :data)
+    (let [file (cond-> (select-keys file bfc/file-attrs)
                  (:options data)
                  (assoc :options (:options data))
+
+                 :always
+                 (dissoc :data)
+
                  :always
                  (encode-file))
           path (str "files/" file-id ".json")]
@@ -623,7 +631,7 @@
        (not-empty)))
 
 (defn- read-file-data
-  [{:keys [] :as cfg}]
+  [cfg]
   (let [colors       (read-file-colors cfg)
         typographies (read-file-typographies cfg)
         components   (read-file-components cfg)
@@ -678,7 +686,7 @@
                    (cond-> (:options file)
                      (assoc :options (:options file))))
 
-          file (-> file
+          file (-> (select-keys file bfc/file-attrs)
                    (assoc :id file-id')
                    (assoc :data data)
                    (assoc :name file-name)
