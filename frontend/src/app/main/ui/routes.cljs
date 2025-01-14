@@ -78,11 +78,14 @@
 
 
 (defn- store-session-params
-  [{:keys [template]}]
+  [{:keys [template plugin]}]
   (binding [storage/*sync* true]
     (when (some? template)
       (swap! storage/session assoc
-             :template-url template))))
+             :template-url template))
+    (when (some? plugin)
+      (swap! storage/session assoc
+             :plugin-url plugin))))
 
 (defn on-navigate
   [router path]

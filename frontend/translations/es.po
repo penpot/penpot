@@ -6917,6 +6917,15 @@ msgstr "La importación ha fallado. La URL de la plantilla es incorrecta"
 msgid "dashboard.import.no-perms"
 msgstr "No tienes permisos para importar en este equipo"
 
+msgid "dashboard.plugins.try-plugin"
+msgstr "Prueba la extensión: "
+
+msgid "dashboard.plugins.parse-error"
+msgstr "No se puede analizar el manifiest de la extensión"
+
+msgid "dashboard.plugins.bad-url"
+msgstr "La URL de la extensión es incorrecta"
+
 msgid "labels.notifications"
 msgstr "Notificaciones"
 
