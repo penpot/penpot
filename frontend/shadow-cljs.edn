@@ -126,8 +126,10 @@
    :modules
    {:base
     {:entries []}
+
     :components
-    {:exports {default app.main.ui.ds/default}
+    {:exports {default app.main.ui.ds/default
+               helpers app.main.ui.ds.helpers/default}
      :depends-on #{:base}}}
 
    :compiler-options
