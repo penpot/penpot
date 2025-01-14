@@ -478,7 +478,7 @@
 
         request-access?
         (and
-         (= (:type data) :not-found)
+         (or (= (:type data) :not-found) (= (:type data) :authentication))
          (or workspace? dashboard? view?)
          (or (:file-id info)
              (:team-id info)))]
