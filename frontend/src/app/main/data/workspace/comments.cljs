@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.comments
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.geom.point :as gpt]
@@ -16,12 +17,14 @@
    [app.main.data.comments :as dcmt]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
-   [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwco]
    [app.main.data.workspace.drawing :as dwd]
+   [app.main.data.workspace.edition :as dwe]
+   [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.viewport :as dwv]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
@@ -64,8 +67,8 @@
           (:open local)  (rx/of (dcmt/close-thread))
 
           :else
-          (rx/of (dw/clear-edition-mode)
-                 (dw/deselect-all true)))))))
+          (rx/of (dwe/clear-edition-mode)
+                 (dws/deselect-all true)))))))
 
 ;; Event responsible of the what should be executed when user clicked
 ;; on the comments layer. An option can be create a new draft thread,
@@ -200,3 +203,31 @@
              (filter (comp frame-ids? :frame-id))
              (map build-move-event)
              (rx/from))))))
+
+(defn navigate-to-comment
+  [thread]
+  (ptk/reify ::navigate-to-comment
+    ptk/WatchEvent
+    (watch [_ state _]
+      (rx/concat
+       (rx/of
+        (rt/nav :workspace
+                (-> (rt/get-params state)
+                    (assoc :page-id (:page-id thread))
+                    (dissoc :comment-id))
+                {::rt/replace true}))
+       (->> (rx/of
+             (dwd/select-for-drawing :comments)
+             (center-to-comment-thread thread)
+             (with-meta (dcmt/open-thread thread) {::ev/origin "workspace"}))
+            (rx/observe-on :async))))))
+
+(defn navigate-to-comment-id
+  [thread-id]
+  (ptk/reify ::navigate-to-comment-id
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [file-id (:current-file-id state)]
+        (->> (rp/cmd! :get-comment-threads {:file-id file-id})
+             (rx/map #(d/seek (fn [{:keys [id]}] (= thread-id id)) %))
+             (rx/map navigate-to-comment))))))

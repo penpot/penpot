@@ -8,12 +8,9 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.comments :as dcmt]
-   [app.main.data.common :as dcm]
-   [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.refs :as refs]
-   [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -22,7 +19,6 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.timers :as tm]
    [rumext.v2 :as mf]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -119,16 +115,7 @@
         (mf/use-fn
          (mf/deps page-id)
          (fn [thread]
-           (when (not= page-id (:page-id thread))
-             (st/emit! (dcm/go-to-workspace :page-id (:page-id thread)
-                                            ::rt/new-window true)))
-           (tm/schedule
-            (fn []
-              (st/emit! (when (not= page-id (:page-id thread))
-                          (dw/select-for-drawing :comments))
-                        (dwcm/center-to-comment-thread thread)
-                        (-> (dcmt/open-thread thread)
-                            (with-meta {::ev/origin "workspace"})))))))]
+           (st/emit! (dwcm/navigate-to-comment thread))))]
 
     [:div  {:class (stl/css-case :comments-section true
                                  :from-viewer  from-viewer)}

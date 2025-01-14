@@ -48,6 +48,7 @@
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.collapse :as dwco]
    [app.main.data.workspace.colors :as dwcl]
+   [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.fix-broken-shapes :as fbs]
@@ -355,6 +356,13 @@
                      (rx/filter (ptk/type? ::dwv/initialize-viewport))
                      (rx/take 1)
                      (rx/map zoom-to-frame)))
+
+              (when-let [comment-id (some-> rparams :comment-id parse-uuid)]
+                (->> stream
+                     (rx/filter (ptk/type? ::workspace-initialized))
+                     (rx/observe-on :async)
+                     (rx/take 1)
+                     (rx/map #(dwcm/navigate-to-comment-id comment-id))))
 
               (->> stream
                    (rx/filter dch/commit?)

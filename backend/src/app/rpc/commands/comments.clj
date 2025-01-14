@@ -47,13 +47,14 @@
        (str/join "")))
 
 (defn- format-comment-url
-  [{:keys [team-id file-id page-id]}]
+  [thread {:keys [team-id file-id page-id]}]
   (str/ffmt "%/#/workspace?%"
             (cf/get :public-uri)
             (uri/map->query-string
              {:file-id file-id
               :page-id page-id
-              :team-id team-id})))
+              :team-id team-id
+              :comment-id (:id thread)})))
 
 (defn- format-comment-ref
   [{:keys [seqn]} {:keys [file-name page-name]}]
@@ -89,7 +90,7 @@
 
         comment-reference (format-comment-ref thread params)
         comment-content   (format-comment comment)
-        comment-url       (format-comment-url params)
+        comment-url       (format-comment-url thread params)
 
         ;; Users mentioned in this comment
         comment-mentions
