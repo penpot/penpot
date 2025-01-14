@@ -6975,6 +6975,15 @@ msgstr "Import failed. The template URL is incorrect"
 msgid "dashboard.import.no-perms"
 msgstr "You don’t have permission to import to this team"
 
+msgid "dashboard.plugins.try-plugin"
+msgstr "Try plugin: "
+
+msgid "dashboard.plugins.parse-error"
+msgstr "Cannot parser the plugin manifest"
+
+msgid "dashboard.plugins.bad-url"
+msgstr "The plugin URL is incorrect"
+
 msgid "labels.notifications"
 msgstr "Notifications"
 

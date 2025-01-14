@@ -170,7 +170,7 @@
            (let [data
                  (with-meta
                    {:project-id project-id
-                    :name (dm/str "Try plugin: " (:name plugin))}
+                    :name (dm/str (tr "dashboard.plugins.try-plugin") (:name plugin))}
                    {:on-success (partial navegate-file! plugin)})]
              (-> (dd/create-file data)
                  (with-meta {::ev/origin "plugin-try-out"})))))
@@ -207,9 +207,9 @@
                   (do
                     (st/emit! (ptk/event ::ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
                     (open-permissions-dialog plugin))
-                  (st/emit! (notif/error "Cannot parser the plugin manifest"))))
+                  (st/emit! (notif/error (tr "dashboard.plugins.parse-error")))))
               (fn [_]
-                (st/emit! (notif/error "The plugin URL is incorrect")))))))))
+                (st/emit! (notif/error (tr "dashboard.plugins.bad-url"))))))))))
 
 (defn use-templates-import
   [can-edit? template-url default-project-id]
@@ -262,6 +262,7 @@
 
         can-edit?       (dm/get-in team [:permissions :can-edit])
         template-url    (or template-url (:template-url storage/session))
+        plugin-url      (or plugin-url (:plugin-url storage/session))
 
         default-project
         (mf/with-memo [projects]
