@@ -44,14 +44,13 @@
               :on-context-menu on-context-menu
               :disabled errors?}
      (cond
-       color
-       [:& color-bullet {:color color
-                         :mini true}]
        errors?
        [:> icon*
         {:icon-id "broken-link"
          :class (stl/css :token-pill-icon)}]
-
+       color
+       [:& color-bullet {:color color
+                         :mini true}]
        :else
        [:> token-status-icon*
         {:icon-id token-status-id
