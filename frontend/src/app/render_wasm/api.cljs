@@ -61,15 +61,16 @@
     [r g b a]))
 
 (defn cancel-render
-  []
+  [_]
   (when internal-frame-id
     (js/cancelAnimationFrame internal-frame-id)
     (set! internal-frame-id nil)))
 
 (defn request-render
-  []
-  (when internal-frame-id (cancel-render))
-  (set! internal-frame-id (js/requestAnimationFrame render)))
+  [requester]
+  (when internal-frame-id (cancel-render requester))
+  (let [frame-id (js/requestAnimationFrame render)]
+    (set! internal-frame-id frame-id)))
 
 (defn use-shape
   [id]
@@ -386,10 +387,15 @@
 
 (def debounce-render-without-cache (fns/debounce render-without-cache 100))
 
-(defn set-view
+(defn set-view-box
   [zoom vbox]
   (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-  (h/call internal-module "_navigate")
+  (h/call internal-module "_pan"))
+
+(defn set-view-zoom
+  [zoom vbox]
+  (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+  (h/call internal-module "_zoom")
   (debounce-render-without-cache))
 
 (defn set-objects
@@ -441,7 +447,7 @@
               (let [pending' (concat (set-shape-fills fills) (set-shape-strokes strokes))]
                 (recur (inc index) (into pending pending'))))
             pending))]
-    (request-render)
+    (request-render "set-objects")
     (when-let [pending (seq pending)]
       (->> (rx/from pending)
            (rx/mapcat identity)

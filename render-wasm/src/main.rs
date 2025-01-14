@@ -70,9 +70,16 @@ pub unsafe extern "C" fn render_without_cache() {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn navigate() {
+pub unsafe extern "C" fn zoom() {
+    let state: &mut Box<State<'_>> =
+        unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    state.zoom();
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn pan() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    state.navigate();
+    state.pan();
 }
 
 #[no_mangle]
