@@ -255,19 +255,15 @@
       (into xform:collect-media-id (vals (:components data)))
       (into (keys (:media data)))))
 
+(def sql:get-file-media
+  "SELECT * FROM file_media_object WHERE id = ANY(?) AND file_id = ?")
+
 (defn get-file-media
   [cfg {:keys [data id] :as file}]
   (db/run! cfg (fn [{:keys [::db/conn]}]
-                 (let [ids (collect-used-media data)
-                       ids (db/create-array conn "uuid" ids)
-                       sql (str "SELECT * FROM file_media_object WHERE id = ANY(?)")]
-
-                   ;; We assoc the file-id again to the file-media-object row
-                   ;; because there are cases that used objects refer to other
-                   ;; files and we need to ensure in the exportation process that
-                   ;; all ids matches
-                   (->> (db/exec! conn [sql ids])
-                        (mapv #(assoc % :file-id id)))))))
+                 (let [used (collect-used-media data)
+                       used (db/create-array conn "uuid" used)]
+                   (db/exec! conn [sql:get-file-media used id])))))
 
 (def ^:private sql:get-team-files-ids
   "SELECT f.id FROM file AS f

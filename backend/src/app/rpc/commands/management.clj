@@ -37,16 +37,15 @@
   (let [;; We don't touch the original file on duplication
         file       (bfc/get-file cfg file-id)
         project-id (:project-id file)
+        fmeds      (bfc/get-file-media cfg file)
+        flibs      (bfc/get-files-rels cfg #{file-id})
         file       (-> file
                        (update :id bfc/lookup-index)
                        (update :project-id bfc/lookup-index)
                        (cond-> (string? name)
                          (assoc :name name))
                        (cond-> (true? reset-shared-flag)
-                         (assoc :is-shared false)))
-
-        flibs  (bfc/get-files-rels cfg #{file-id})
-        fmeds  (bfc/get-file-media cfg file)]
+                         (assoc :is-shared false)))]
 
     (when (uuid? profile-id)
       (proj/check-edition-permissions! conn profile-id project-id))
