@@ -193,6 +193,25 @@
       (watch [it state _]
         (update-color* it state color file-id)))))
 
+(defn update-color-data
+  "Update color data without affecting the path location"
+  [color file-id]
+  (let [color (d/without-nils color)]
+
+    (dm/assert!
+     "expected valid color data structure"
+     (ctc/check-color! color))
+
+    (dm/assert!
+     "expected file-id"
+     (uuid? file-id))
+
+    (ptk/reify ::update-color-data
+      ptk/WatchEvent
+      (watch [it state _]
+        (let [color (assoc color :name (dm/str (:path color) "/" (:name color)))]
+          (update-color* it state color file-id))))))
+
 (defn rename-color
   [file-id id new-name]
   (dm/assert!

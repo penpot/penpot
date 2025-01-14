@@ -148,6 +148,11 @@
   (let [f (obj/get global "externalContextInfo")]
     (when (fn? f) (f))))
 
+(defn initialize-external-context-info
+  []
+  (let [f (obj/get global "initializeExternalConfigInfo")]
+    (when (fn? f) (f))))
+
 ;; --- Helper Functions
 
 (defn ^boolean check-browser? [candidate]

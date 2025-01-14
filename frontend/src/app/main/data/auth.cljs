@@ -12,6 +12,7 @@
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.notifications :as ntf]
@@ -74,6 +75,8 @@
 
       ptk/WatchEvent
       (watch [_ _ stream]
+        (cf/initialize-external-context-info)
+
         (->> (rx/merge
               (rx/of (dp/set-profile profile)
                      (ws/initialize)
