@@ -15,12 +15,19 @@ The UI in Penpot uses React v18 , with the help of [rumext](https://github.com/f
 We want to hold our UI code to the same quality standards of the rest of the codebase. In practice, this means:
 
 - UI components should be easy to maintain over time, especially because our design system is ever-changing.
-- UI components should be accessible, and use the relevant HTML elements and/or Aria roles when applicable.
 - We need to apply the rules for good software design:
   - The code should adhere to common patterns.
   - UI components should offer an ergonomic "API" (i.e. props).
   - UI components should favor composability.
   - Try to have loose coupling.
+
+### Semantics and accessibility
+
+**Semantic HTML** When developing UI components in Penpot, we believe it is crucial to ensure that our frontend code is semantic and follows HTML conventions. Semantic HTML helps improve the readability and accessibility of Penpot. Use appropriate HTML tags to define the structure and purpose of your content. This not only enhances the user experience but also ensures better accessibility.
+
+**Accessibility** All UI code must be accessible. Ensure that your components are designed to be usable by people with a wide range of abilities and disabilities.
+
+> ✅ When a component follows a pattern set in the WCAG patterns page, we adhere to the rules and guidelines specified there. This ensures consistency and compliance with accessibility standards. See more at [Patterns | APG | WAI | W3C](https://www.w3.org/WAI/ARIA/apg/patterns/)
 
 ### Composability
 
@@ -356,7 +363,7 @@ When we do this inside of a component, a brand new function is created in every 
 
 #### Avoid defining functions with <code class="language-clojure">partial</code> inside of components
 
-<code class="language-clojure">partial</code> returns a brand new anonymous function, so we should avoid using it in each render. For callback handlers that need parameters, a work around is to store these as <code class="language-clojure">data-*</code> attributes and retrieve them inside the function.
+<code class="language-clojure">partial</code> returns a brand new anonymous function, so we should avoid using it in each render. For callback handlers that need parameters, a work around is to store these as <code class="language-clojure">data-\*</code> attributes and retrieve them inside the function.
 
 ❌ **AVOID: Using `partial` inside of a component**
 
@@ -371,7 +378,7 @@ When we do this inside of a component, a brand new function is created in every 
     [:> numeric-input* {:on-change (partial set-margin :right)}] ])
 ```
 
-✅ **DO: Use <code class="language-clojure">data-*</code> attributes to modify a function (many uses)**
+✅ **DO: Use <code class="language-clojure">data-\*</code> attributes to modify a function (many uses)**
 
 ```clojure
 (defn- set-margin [value event]
@@ -573,7 +580,7 @@ Things to take into account when considering which stories to add and how to wri
 
 - Leverage setting base prop values in <code class="language-bash">args</code> and common rendering code in <code class="language-bash">render</code> to reuse those in the stories and avoid code duplication.
 
-For instance, the stories file for the <code class="language-bash">button*</code> component looks like this:
+For instance, the stories file for the <code class="language-bash">button\*</code> component looks like this:
 
 ```jsx
 // ...
@@ -620,7 +627,7 @@ export const Secondary = {
 
 In addition to the above, please **use the [Controls addon](https://storybook.js.org/docs/essentials/controls)** to let users change props and see their effect on the fly.
 
-Controls are customized with <code class="language-bash">argTypes</code>, and you can control which ones to show / hide with <code class="language-bash">parameters.controls.exclude</code>. For instance, for the <code class="language-bash">button*</code> stories file, its relevant control-related code looks like this:
+Controls are customized with <code class="language-bash">argTypes</code>, and you can control which ones to show / hide with <code class="language-bash">parameters.controls.exclude</code>. For instance, for the <code class="language-bash">button\*</code> stories file, its relevant control-related code looks like this:
 
 ```jsx
 // ...
@@ -668,17 +675,20 @@ You can find an example MDX file in the [Buttons docs](https://hourly.penpot.dev
 We need to generate the screenshots for the visual regression tests _before_ making
 any changes, so we can compare the "before substitution" and "after substitution" states.
 
-
 Execute the tests in the playwright's <code class="language-bash">ds</code> project. In order to do so, stop the Shadow CLJS compiler in tmux tab <code class="language-bash">#1</code> and run;
+
 ```bash
 clojure -M:dev:shadow-cljs release main
 ```
+
 This will package the frontend in release mode so the tests run faster.
 
 In your terminal, in the frontend folder, run:
+
 ```bash
 npx playwright test --ui --project=ds
 ```
+
 This will open the test runner UI in the selected project.
 
 ![Playwright UI](/img/tech-guide/playwright-projects.webp)
@@ -696,7 +706,7 @@ In the selected file add the new namespace from the <code class="language-bash">
 [:> tab-switcher* {}]
 ```
 
-> **⚠️ NOTE**: Components with a <code class="language-bash">*</code> suffix are meant to be used with the <code class="language-clojure">[:></code> handler.
+> **⚠️ NOTE**: Components with a <code class="language-bash">\*</code> suffix are meant to be used with the <code class="language-clojure">[:></code> handler.
 
 <small>Please refer to [Rumext User Guide](https://funcool.github.io/rumext/latest/user-guide.html) for more information.</small>
 
@@ -718,6 +728,7 @@ Check the props schema in the component’s source file
   {::mf/props :obj
    ::mf/schema schema:tab-switcher}...)
 ```
+
 This schema shows which props are required and which are optional, so you can
 include the necessary values with the correct types.
 
