@@ -321,7 +321,7 @@
 
 .comment-input {
   @include bodySmallTypography;
-  white-space: pre;
+  white-space: pre-line;
   background: var(--input-background-color);
   border-radius: $br-8;
   border: $s-1 solid var(--input-border-color);

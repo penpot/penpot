@@ -11,10 +11,12 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.transit :as t]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.page :as ctp]
    [app.common.types.shape.layout :as ctl]
+   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as scd]
@@ -35,6 +37,8 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr] :as i18n]
    [app.util.timers :as timers]
+   [app.util.webapi :as wapi]
+   [beicon.v2.core :as rx]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -141,12 +145,44 @@
         do-cut            #(st/emit! (dw/copy-selected)
                                      (dw/delete-selected))
         do-paste          #(st/emit! (dw/paste-from-clipboard))
-        do-duplicate      #(st/emit! (dw/duplicate-selected true))]
+        do-duplicate      #(st/emit! (dw/duplicate-selected true))
+
+        enabled-paste-props* (mf/use-state false)
+
+        handle-copy-css
+        (mf/use-callback #(st/emit! (dw/copy-selected-css)))
+
+        handle-copy-css-nested
+        (mf/use-callback #(st/emit! (dw/copy-selected-css-nested)))
+
+        handle-copy-props
+        (mf/use-callback #(st/emit! (dw/copy-selected-props)))
+
+        handle-paste-props
+        (mf/use-callback #(st/emit! (dw/paste-selected-props)))
+
+        handle-hover-copy-paste
+        (mf/use-callback
+         (fn []
+           (->> (wapi/read-from-clipboard)
+                (rx/take 1)
+                (rx/subs!
+                 (fn [data]
+                   (try
+                     (let [pdata (t/decode-str data)]
+                       (reset! enabled-paste-props*
+                               (and (dw/paste-data-valid? pdata)
+                                    (= :copied-props (:type pdata)))))
+                     (catch :default _
+                       (reset! enabled-paste-props* false))))
+                 (fn []
+                   (reset! enabled-paste-props* false))))))]
+
     [:*
      [:> menu-entry* {:title (tr "workspace.shape.menu.copy")
                       :shortcut (sc/get-tooltip :copy)
                       :on-click do-copy}]
-     [:> menu-entry* {:title (tr "workspace.shape.menu.copy_link")
+     [:> menu-entry* {:title (tr "workspace.shape.menu.copy-link")
                       :shortcut (sc/get-tooltip :copy-link)
                       :on-click do-copy-link}]
      [:> menu-entry* {:title (tr "workspace.shape.menu.cut")
@@ -158,6 +194,23 @@
      [:> menu-entry* {:title (tr "workspace.shape.menu.duplicate")
                       :shortcut (sc/get-tooltip :duplicate)
                       :on-click do-duplicate}]
+
+     [:> menu-entry* {:title (tr "workspace.shape.menu.copy-paste-as")
+                      :on-pointer-enter (when (cf/check-browser? :chrome) handle-hover-copy-paste)}
+      [:> menu-entry* {:title (tr "workspace.shape.menu.copy-css")
+                       :on-click handle-copy-css}]
+      [:> menu-entry* {:title (tr "workspace.shape.menu.copy-css-nested")
+                       :on-click handle-copy-css-nested}]
+
+      [:> menu-separator* {}]
+
+      [:> menu-entry* {:title (tr "workspace.shape.menu.copy-props")
+                       :shortcut (sc/get-tooltip :copy-props)
+                       :on-click handle-copy-props}]
+      [:> menu-entry* {:title (tr "workspace.shape.menu.paste-props")
+                       :shortcut (sc/get-tooltip :paste-props)
+                       :disabled (and (cf/check-browser? :chrome) (not @enabled-paste-props*))
+                       :on-click handle-paste-props}]]
 
      [:> menu-separator* {}]]))
 

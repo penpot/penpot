@@ -250,3 +250,60 @@ test("User have edition menu entries", async ({ page }) => {
   await expect(page.getByText("Undo")).toBeVisible();
   await expect(page.getByText("Redo")).toBeVisible();
 });
+
+test("Copy/paste properties", async ({ page, context }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+  await workspacePage.mockRPC(
+    /get\-file\?/,
+    "workspace/get-file-copy-paste.json",
+  );
+  await workspacePage.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=*",
+    "workspace/get-file-copy-paste-fragment.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "870f9f10-87b5-8137-8005-934804124660",
+    pageId: "870f9f10-87b5-8137-8005-934804124661",
+  });
+
+  // Access to the read/write clipboard necesary for this functionality
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+
+  await page.getByTestId("layer-item").getByRole("button").first().click();
+  await page
+    .getByTestId("children-0eef4dd0-b39b-807a-8005-934805578f93")
+    .getByText("Rectangle")
+    .click({ button: "right" });
+  await page.getByText("Copy/Paste as").hover();
+  await page.getByText("Copy properties").click();
+
+  await page
+    .getByTestId("layer-item")
+    .getByText("Uno dos tres cuatro")
+    .click({ button: "right" });
+  await page.getByText("Copy/Paste as").hover();
+  await page.getByText("Paste properties").click();
+
+  await page.getByText("Rectangle").first().click({ button: "right" });
+  await page.getByText("Copy/Paste as").hover();
+  await page.getByText("Paste properties").click();
+
+  await page.getByText("Board").nth(2).click({ button: "right" });
+  await page.getByText("Copy/Paste as").hover();
+  await page.getByText("Paste properties").click();
+
+  await page
+    .getByTestId("layer-item")
+    .locator("div")
+    .filter({ hasText: "Path" })
+    .nth(1)
+    .click({ button: "right" });
+  await page.getByText("Copy/Paste as").hover();
+  await page.getByText("Paste properties").click();
+
+  await page.getByText("Ellipse").click({ button: "right" });
+  await page.getByText("Copy/Paste as").hover();
+  await page.getByText("Paste properties").click();
+});

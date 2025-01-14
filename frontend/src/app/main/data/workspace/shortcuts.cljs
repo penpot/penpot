@@ -85,8 +85,8 @@
                           :subsections [:edit]
                           :fn #(st/emit! (dw/copy-selected))}
 
-   :copy-link            {:tooltip (ds/meta (ds/alt "C"))
-                          :command (ds/c-mod "alt+c")
+   :copy-link            {:tooltip (ds/shift (ds/alt "C"))
+                          :command "shift+alt+c"
                           :subsections [:edit]
                           :fn #(st/emit! (dw/copy-link-to-clipboard))}
 
@@ -102,6 +102,16 @@
                           :command (ds/c-mod "v")
                           :subsections [:edit]
                           :fn (constantly nil)}
+
+   :copy-props           {:tooltip (ds/meta (ds/alt "c"))
+                          :command (ds/c-mod "alt+c")
+                          :subsections [:edit]
+                          :fn #(st/emit! (dw/copy-selected-props))}
+
+   :paste-props          {:tooltip (ds/meta (ds/alt "v"))
+                          :command (ds/c-mod "alt+v")
+                          :subsections [:edit]
+                          :fn #(st/emit! (dw/paste-selected-props))}
 
    :delete               {:tooltip (ds/supr)
                           :command ["del" "backspace"]

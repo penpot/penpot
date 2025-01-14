@@ -5990,8 +5990,23 @@ msgstr "Enviar atrás"
 msgid "workspace.shape.menu.copy"
 msgstr "Copiar"
 
-msgid "workspace.shape.menu.copy_link"
+msgid "workspace.shape.menu.copy-link"
 msgstr "Copiar enlace al portapapeles"
+
+msgid "workspace.shape.menu.copy-paste-as"
+msgstr "Copiar/Pegar como ..."
+
+msgid "workspace.shape.menu.copy-css"
+msgstr "Copiar como CSS"
+
+msgid "workspace.shape.menu.copy-css-nested"
+msgstr "Copiar como CSS (capas anidadas)"
+
+msgid "workspace.shape.menu.copy-props"
+msgstr "Copiar propiedades"
+
+msgid "workspace.shape.menu.paste-props"
+msgstr "Pegar propiedades"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:427
 msgid "workspace.shape.menu.create-annotation"
