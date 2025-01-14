@@ -7,6 +7,7 @@
    [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon*]]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
+   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -21,6 +22,13 @@
                 (wtt/resolved-value-hex theme-token))
 
         color (or color (wtt/resolved-value-hex token))
+        on-click
+        (mf/use-callback
+         (mf/deps errors? on-click)
+         (fn [event]
+           (dom/stop-propagation event)
+           (when (and (not (seq errors)) on-click)
+             (on-click event))))
 
         token-status-id (cond
                           half-applied
@@ -35,14 +43,15 @@
                                    :token-pill-invalid-applied (and full-applied errors?))
               :type "button"
               :title (cond
-                       errors? (sd/humanize-errors token)
+                       errors? (if (nil? theme-token)
+                                 (tr "workspace.token-set.not-active")
+                                 (sd/humanize-errors token))
                        :else (->> [(str "Token: " name)
                                    (tr "workspace.token.original-value" value)
                                    (tr "workspace.token.resolved-value" resolved-value)]
                                   (str/join "\n")))
               :on-click on-click
-              :on-context-menu on-context-menu
-              :disabled errors?}
+              :on-context-menu on-context-menu}
      (cond
        errors?
        [:> icon*

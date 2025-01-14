@@ -321,8 +321,9 @@
          children]])]))
 
 (mf/defc menu-tree
-  [{:keys [selected-shapes submenu-offset submenu-direction type] :as context-data}]
-  (let [entries (if (seq selected-shapes)
+  [{:keys [selected-shapes submenu-offset submenu-direction type errors] :as context-data}]
+  (let [entries (if (and (not (some? errors))
+                         (seq selected-shapes))
                   (if (some? type)
                     (submenu-actions-selection-actions context-data)
                     (selection-actions context-data))
@@ -343,7 +344,7 @@
                  :selected? selected?}])])))
 
 (mf/defc token-context-menu-tree
-  [{:keys [width direction] :as mdata}]
+  [{:keys [width direction errors] :as mdata}]
   (let [objects (mf/deref refs/workspace-page-objects)
         selected (mf/deref refs/selected-shapes)
         selected-shapes (into [] (keep (d/getf objects)) selected)
@@ -354,6 +355,7 @@
      [:& menu-tree {:submenu-offset width
                     :submenu-direction direction
                     :token token
+                    :errors errors
                     :selected-token-set-path selected-token-set-path
                     :selected-shapes selected-shapes}]]))
 

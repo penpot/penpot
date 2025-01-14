@@ -82,6 +82,7 @@
                            (st/emit! (dt/show-token-context-menu
                                       {:type :token
                                        :position (dom/get-client-position event)
+                                       :errors (:errors token)
                                        :token-name (:name token)}))))
 
         on-toggle-open-click (mf/use-fn
@@ -120,6 +121,7 @@
        [:> icon-button* {:on-click on-popover-open-click
                          :variant "ghost"
                          :icon "add"
+                        ;;  TODO: This needs translation
                          :aria-label (str "Add token: " title)}]]
       (when open?
         [:& cmm/asset-section-block {:role :content}
