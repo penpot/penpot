@@ -2,6 +2,8 @@ use crate::math;
 use crate::shapes::fills::Fill;
 use skia_safe as skia;
 
+use super::Corners;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum StrokeStyle {
     Solid,
@@ -137,6 +139,20 @@ impl Stroke {
                 rect.height() + self.width,
             ),
         }
+    }
+
+    pub fn outer_corners(&self, corners: &Corners) -> Corners {
+        let offset = match self.kind {
+            StrokeKind::CenterStroke => 0.0,
+            StrokeKind::InnerStroke => -self.width / 2.0,
+            StrokeKind::OuterStroke => self.width / 2.0,
+        };
+
+        let mut outer = corners.clone();
+        for corner in outer.iter_mut() {
+            corner.offset((offset, offset))
+        }
+        outer
     }
 
     pub fn to_paint(&self, rect: &math::Rect) -> skia::Paint {

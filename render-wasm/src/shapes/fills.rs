@@ -171,6 +171,7 @@ impl Fill {
                 p.set_shader(gradient.to_linear_shader(&rect));
                 p.set_alpha((gradient.opacity * 255.) as u8);
                 p.set_style(skia::PaintStyle::Fill);
+                p.set_anti_alias(true);
                 p.set_blend_mode(skia::BlendMode::SrcOver);
                 p
             }
@@ -179,6 +180,7 @@ impl Fill {
                 p.set_shader(gradient.to_radial_shader(&rect));
                 p.set_alpha((gradient.opacity * 255.) as u8);
                 p.set_style(skia::PaintStyle::Fill);
+                p.set_anti_alias(true);
                 p.set_blend_mode(skia::BlendMode::SrcOver);
                 p
             }

@@ -1,3 +1,5 @@
+use skia_safe as skia;
+
 mod debug;
 mod math;
 mod mem;
@@ -8,7 +10,6 @@ mod utils;
 mod view;
 
 use crate::shapes::{BoolType, Kind, Path};
-use skia_safe as skia;
 
 use crate::state::State;
 use crate::utils::uuid_from_u32_quartet;
@@ -125,7 +126,10 @@ pub unsafe extern "C" fn set_shape_kind_rect() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
 
     if let Some(shape) = state.current_shape() {
-        shape.set_kind(Kind::Rect(math::Rect::new_empty()));
+        match shape.kind() {
+            Kind::Rect(_, _) => {}
+            _ => shape.set_kind(Kind::Rect(math::Rect::new_empty(), None)),
+        }
     }
 }
 
@@ -499,6 +503,14 @@ pub extern "C" fn clear_shape_strokes() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.clear_strokes();
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn set_shape_corners(r1: f32, r2: f32, r3: f32, r4: f32) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape.set_corners((r1, r2, r3, r4))
     }
 }
 
