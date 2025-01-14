@@ -300,7 +300,7 @@ msgstr "生成新令牌"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 #, unused
-msgid "dashboard.access-tokens.create-success"
+msgid "dashboard.access-tokens.create.success"
 msgstr "成功创建访问令牌。"
 
 #: src/app/main/ui/settings/access_tokens.cljs:289

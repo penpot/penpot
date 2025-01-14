@@ -53,6 +53,31 @@
     --token-pill-accent: var(--color-background-tertiary);
   }
 }
+.name-wrapper {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-name-wrapper::before, span::after {
+  vertical-align: middle;
+  display: inline-block;
+  max-width: 50%;
+  overflow: hidden;
+  white-space: pre;
+}
+
+.group-name-wrapper::before {
+  content: attr(data-content-start);
+  text-overflow: ellipsis;
+}
+
+.group-name-wrapper::after {
+  content: attr(data-content-end);
+  text-overflow: '';
+  direction: rtl;
+}
 
 .token-pill-applied {
   --token-pill-background: var(--color-token-background);
@@ -84,8 +109,7 @@
   }
 }
 
-.token-pill-invalid,
-.token-pill-invalid-applied {
+.token-pill-invalid {
   --token-pill-background: var(--color-background-tertiary);
   --token-pill-foreground: var(--color-foreground-error);
   --token-pill-border: var(--color-background-tertiary);
@@ -98,6 +122,15 @@
     --token-pill-foreground: var(--color-foreground-error);
     --token-pill-border: var(--color-background-tertiary);
     --token-pill-accent: var(--color-foreground-error);
+  }
+}
+
+.token-pill-invalid-applied {
+  --token-pill-border: var(--color-foreground-error);
+  &:hover,
+  &:focus-visible,
+  &:disabled {
+    --token-pill-border: var(--color-foreground-error);
   }
 }
 

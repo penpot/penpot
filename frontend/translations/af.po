@@ -287,7 +287,7 @@ msgstr "Genereer nuwe token"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 #, unused
-msgid "dashboard.access-tokens.create-success"
+msgid "dashboard.access-tokens.create.success"
 msgstr "Toegangstoken is suksesvol geskep."
 
 #: src/app/main/ui/settings/access_tokens.cljs:289

@@ -332,7 +332,7 @@ msgstr "Generar nuevo token"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 #, unused
-msgid "dashboard.access-tokens.create-success"
+msgid "dashboard.access-tokens.create.success"
 msgstr "Access token creado con éxito."
 
 #: src/app/main/ui/settings/access_tokens.cljs:289
@@ -1162,6 +1162,10 @@ msgid "errors.member-is-muted"
 msgstr ""
 "El perfil que esta invitando tiene los emails silenciados (por reportes de "
 "spam o alto indice de rebote)."
+
+#: src/app/main/errors.cljs:228
+msgid "errors.migration-in-progress"
+msgstr "Migración en proceso"
 
 #: src/app/main/ui/settings/password.cljs
 #, unused
@@ -6741,6 +6745,10 @@ msgstr "Nuevo tema"
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs
 msgid "workspace.token.themes"
 msgstr "Temas"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:47
+msgid "workspace.token-set.not-active"
+msgstr "El set de tokens no está aplicado"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs
 msgid "workspace.token.theme-name"

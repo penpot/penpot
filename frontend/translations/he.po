@@ -318,7 +318,7 @@ msgstr "יצירת אסימון חדש"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 #, unused
-msgid "dashboard.access-tokens.create-success"
+msgid "dashboard.access-tokens.create.success"
 msgstr "אסימון הגישה נוצר בהצלחה."
 
 #: src/app/main/ui/settings/access_tokens.cljs:289

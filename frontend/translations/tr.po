@@ -330,7 +330,7 @@ msgstr "Yeni belirteç oluştur"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 #, unused
-msgid "dashboard.access-tokens.create-success"
+msgid "dashboard.access-tokens.create.success"
 msgstr "Erişim belirteci başarıyla oluşturuldu."
 
 #: src/app/main/ui/settings/access_tokens.cljs:289

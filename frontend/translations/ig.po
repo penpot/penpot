@@ -256,7 +256,7 @@ msgstr "Mepụta ọdịmara ọhụrụ"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 #, unused
-msgid "dashboard.access-tokens.create-success"
+msgid "dashboard.access-tokens.create.success"
 msgstr "Mmepụtara ọdịmara nnweta gara nke ọma ."
 
 #: src/app/main/ui/settings/access_tokens.cljs:289

@@ -294,7 +294,7 @@ msgstr "Generar nuevo token"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 #, unused
-msgid "dashboard.access-tokens.create-success"
+msgid "dashboard.access-tokens.create.success"
 msgstr "Token de acceso creado correctamente."
 
 #: src/app/main/ui/settings/access_tokens.cljs:289

@@ -277,7 +277,7 @@ msgstr "Jana token baru"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 #, unused
-msgid "dashboard.access-tokens.create-success"
+msgid "dashboard.access-tokens.create.success"
 msgstr "Token capaian berjaya dihasilkan."
 
 #: src/app/main/ui/settings/access_tokens.cljs:289

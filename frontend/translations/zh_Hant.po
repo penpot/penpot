@@ -283,7 +283,7 @@ msgstr "產生新的 Token"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 #, unused
-msgid "dashboard.access-tokens.create-success"
+msgid "dashboard.access-tokens.create.success"
 msgstr "已成功建立 Access Token。"
 
 #: src/app/main/ui/settings/access_tokens.cljs:289
