@@ -414,9 +414,12 @@
     row))
 
 (defn plan
-  [ds sql]
-  (-> (get-connectable ds)
-      (jdbc/plan sql sql/default-opts)))
+  ([ds sql]
+   (-> (get-connectable ds)
+       (jdbc/plan sql default-opts)))
+  ([ds sql opts]
+   (-> (get-connectable ds)
+       (jdbc/plan sql (merge default-opts opts)))))
 
 (defn cursor
   "Return a lazy seq of rows using server side cursors"
