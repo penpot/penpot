@@ -993,9 +993,15 @@ Will return a value that matches this schema:
                         (filter #(and (instance? TokenTheme %)
                                       (not (hidden-temporary-theme? %))))
                         (map (fn [token-theme]
-                               (->> token-theme
-                                    (into {})
-                                    walk/stringify-keys))))
+                               (let [theme-map (->> token-theme
+                                                    (into {})
+                                                    walk/stringify-keys)]
+                                 (-> theme-map
+                                     (set/rename-keys  {"sets" "selectedTokenSets"})
+                                     (update "selectedTokenSets" (fn [sets]
+                                                                   (->> (for [s sets]
+                                                                          [s "enabled"])
+                                                                        (into {})))))))))
                        (tree-seq d/ordered-map? vals themes))
           sets (into {} (comp
                          (filter (partial instance? TokenSet))
