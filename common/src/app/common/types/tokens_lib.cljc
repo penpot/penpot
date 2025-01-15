@@ -1015,7 +1015,7 @@ Will return a value that matches this schema:
           (assoc-in ["$metadata" "tokenSetOrder"] ordered-set-names))))
 
   (decode-dtcg-json [_ parsed-json]
-    (let [;; tokens-studio/plugin will add these meta properties, remove them for now
+    (let [ ;; tokens-studio/plugin will add these meta properties, remove them for now
           metadata (get parsed-json "$metadata")
           sets-data (dissoc parsed-json "$themes" "$metadata")
           themes-data (->> (get parsed-json "$themes")
@@ -1037,10 +1037,12 @@ Will return a value that matches this schema:
         (reduce
          (fn [lib {:strs [name group description is-source modified-at sets]}]
            (add-theme lib (TokenTheme. name
-                                       group
+                                       (or group "")
                                        description
-                                       is-source
-                                       (dt/parse-instant modified-at)
+                                       (some? is-source)
+                                       (or (some-> modified-at
+                                                   (dt/parse-instant))
+                                           (dt/now))
                                        (set sets))))
          lib' themes-data)
         lib')))
