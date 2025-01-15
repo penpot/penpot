@@ -310,7 +310,7 @@
         [:ul {:class (stl/css :token-context-submenu)
               :data-direction submenu-direction
               :ref submenu-ref
-              ;; Under review: This distances are arbitrary, 
+              ;; Under review: This distances are arbitrary,
               ;; https://tree.taiga.io/project/penpot/task/9627
               :style {:display "none"
                       :--dist (if (= submenu-direction "down")

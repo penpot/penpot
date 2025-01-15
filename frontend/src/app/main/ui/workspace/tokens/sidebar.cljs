@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -243,13 +244,16 @@
 
         selected-token-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
 
+        selected-token-set-path (mf/deref refs/workspace-selected-token-set-path)
+
         token-groups (mf/with-memo [tokens selected-token-set-tokens]
                        (-> (select-keys tokens (keys selected-token-set-tokens))
                            (sorted-token-groups)))]
     [:*
      [:& token-context-menu]
      [:& title-bar {:all-clickable true
-                    :title "TOKENS"}]
+                    :title (dm/str "TOKENS - " (ctob/set-path->set-name selected-token-set-path))}]
+
      (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
                                                                (:empty token-groups))]
        [:& token-component {:key token-key
