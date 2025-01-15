@@ -1003,12 +1003,16 @@ Will return a value that matches this schema:
                                                                           [s "enabled"])
                                                                         (into {})))))))))
                        (tree-seq d/ordered-map? vals themes))
-          sets (into {} (comp
-                         (filter (partial instance? TokenSet))
-                         (map (fn [token-set]
-                                [(:name token-set) (get-dtcg-tokens-tree token-set)])))
-                     (tree-seq d/ordered-map? vals sets))]
-      (assoc sets "$themes" themes)))
+          name-set-tuples (->> sets
+                               (tree-seq d/ordered-map? vals)
+                               (filter (partial instance? TokenSet))
+                               (map (fn [token-set]
+                                      [(:name token-set) (get-dtcg-tokens-tree token-set)])))
+          ordered-set-names (map first name-set-tuples)
+          sets (into {} name-set-tuples)]
+      (-> sets
+          (assoc "$themes" themes)
+          (assoc-in ["$metadata" "tokenSetOrder"] ordered-set-names))))
 
   (decode-dtcg-json [_ parsed-json]
     (let [;; tokens-studio/plugin will add these meta properties, remove them for now
