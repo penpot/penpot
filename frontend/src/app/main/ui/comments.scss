@@ -152,6 +152,7 @@
   border-radius: $br-8;
   border: $s-2 solid var(--modal-border-color);
   background-color: var(--comment-modal-background-color);
+  max-height: var(--comment-height);
   --translate-x: 0%;
   --translate-y: 0%;
   transform: translate(var(--translate-x), var(--translate-y));
@@ -229,6 +230,8 @@
   display: flex;
   flex-direction: column;
   gap: $s-8;
+  max-height: calc(var(--comment-height) - $s-132);
+
   textarea {
     @extend .input-element;
     @include bodySmallTypography;
