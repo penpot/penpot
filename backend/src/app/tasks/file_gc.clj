@@ -53,16 +53,27 @@
    RETURNING id")
 
 (def ^:private xf:collect-used-media
-  (comp (map :data) (mapcat bfc/collect-used-media)))
+  (comp
+   (map :data)
+   (mapcat bfc/collect-used-media)))
+
+(def ^:private plan-opts
+  {:fetch-size 1
+   :concurrency :read-only
+   :cursors :close
+   :result-type :forward-only})
 
 (defn- clean-file-media!
   "Performs the garbage collection of file media objects."
   [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
-  (let [used   (into #{}
-                     xf:collect-used-media
-                     (cons file
-                           (->> (db/cursor conn [sql:get-snapshots id])
-                                (map (partial decode-file cfg)))))
+  (let [xform  (comp
+                (map (partial decode-file cfg))
+                xf:collect-used-media)
+
+        used   (->> (db/plan conn [sql:get-snapshots id] plan-opts)
+                    (transduce xform conj #{}))
+        used   (into used xf:collect-used-media [file])
+
         ids    (db/create-array conn "uuid" used)
         unused (->> (db/exec! conn [sql:mark-file-media-object-deleted id ids])
                     (into #{} (map :id)))]

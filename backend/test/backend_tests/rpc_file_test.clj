@@ -383,8 +383,19 @@
       ;; as deleted.
       (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
 
+      ;; This only clears fragments, the file media objects still referenced because
+      ;; snapshots are preserved
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 3 (:processed res))))
+        (t/is (= 2 (:processed res))))
+
+      ;; Mark all snapshots to be a non-snapshot file change
+      (th/db-exec! ["update file_change set data = null where file_id = ?" (:id file)])
+      (th/db-exec! ["update file set has_media_trimmed = false where id = ?" (:id file)])
+
+      ;; Rerun the file-gc and objects-gc
+      (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
+      (let [res (th/run-task! :objects-gc {:min-age 0})]
+        (t/is (= 2 (:processed res))))
 
       ;; Now that file-gc have deleted the file-media-object usage,
       ;; lets execute the touched-gc task, we should see that two of
@@ -415,20 +426,6 @@
                           :content mfile}
                   out    (th/command! params)]
 
-              ;; (th/print-result! out)
-              (t/is (nil? (:error out)))
-              (:result out)))
-
-          (update-file! [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
-            (let [params {::th/type :update-file
-                          ::rpc/profile-id profile-id
-                          :id file-id
-                          :session-id (uuid/random)
-                          :revn revn
-                          :vern 0
-                          :components-v2 true
-                          :changes changes}
-                  out    (th/command! params)]
               ;; (th/print-result! out)
               (t/is (nil? (:error out)))
               (:result out)))]
@@ -550,8 +547,20 @@
       ;; as deleted.
       (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
 
+      ;; This only removes unused fragments, file media are still
+      ;; referenced on snapshots.
       (let [res (th/run-task! :objects-gc {:min-age 0})]
-        (t/is (= 7 (:processed res))))
+        (t/is (= 2 (:processed res))))
+
+      ;; Mark all snapshots to be a non-snapshot file change
+      (th/db-exec! ["update file set has_media_trimmed = false where id = ?" (:id file)])
+      (th/db-exec! ["update file_change set data = null where file_id = ?" (:id file)])
+
+      ;; Rerun file-gc and objects-gc task for the same file once all snapshots are
+      ;; "expired/deleted"
+      (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
+      (let [res (th/run-task! :objects-gc {:min-age 0})]
+        (t/is (= 6 (:processed res))))
 
       (let [rows (th/db-query :file-data-fragment {:file-id (:id file)
                                                    :deleted-at nil})]
@@ -591,20 +600,7 @@
 
               ;; (th/print-result! out)
               (t/is (nil? (:error out)))
-              (:result out)))
-
-          #_(update-file! [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
-                          (let [params {::th/type :update-file
-                                        ::rpc/profile-id profile-id
-                                        :id file-id
-                                        :session-id (uuid/random)
-                                        :revn revn
-                                        :features cfeat/supported-features
-                                        :changes changes}
-                                out    (th/command! params)]
-              ;; (th/print-result! out)
-                            (t/is (nil? (:error out)))
-                            (:result out)))]
+              (:result out)))]
 
     (let [storage  (:app.storage/storage th/*system*)
           profile  (th/create-profile* 1)
