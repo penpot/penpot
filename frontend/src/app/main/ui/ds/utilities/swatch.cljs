@@ -80,7 +80,10 @@
         button-type (if (not read-only?) "button" nil)
         size (or size "small")
         active (or active false)
-        gradient (:gradient background)
+        gradient-type (-> background :gradient :type)
+        gradient-stops (-> background :gradient :stops)
+        gradient-data {:type gradient-type
+                       :stops gradient-stops}
         image    (:image background)
         format (if id? "rounded" "square")
         class (dm/str class " " (stl/css-case
@@ -100,9 +103,9 @@
     [:> element-type props
      (cond
 
-       (some? gradient)
+       (some? gradient-type)
        [:span {:class (stl/css :swatch-gradient)
-               :style {:background-image (str gradient ", repeating-conic-gradient(lightgray 0% 25%, white 0% 50%)")}}]
+               :style {:background-image (str (uc/gradient->css gradient-data) ", repeating-conic-gradient(lightgray 0% 25%, white 0% 50%)")}}]
 
        (some? image)
        (let [uri (cfg/resolve-file-media image)]
