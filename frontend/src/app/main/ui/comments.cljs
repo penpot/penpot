@@ -996,7 +996,7 @@
               :id (str "thread-" thread-id)
               :style {:left (str pos-x "px")
                       :top (str pos-y "px")
-                      :max-height max-height}
+                      "--comment-height" (str max-height "px")}
               :on-click dom/stop-propagation}
 
         [:div {:class (stl/css :floating-thread-header)}
