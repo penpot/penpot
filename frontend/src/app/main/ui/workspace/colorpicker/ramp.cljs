@@ -51,35 +51,48 @@
                     :top (str (* 100 (- 1 (/ value 255))) "%")}}]]))
 
 
-(mf/defc ramp-selector [{:keys [color disable-opacity on-change on-start-drag on-finish-drag]}]
-  (let [{hex :hex
-         hue :h saturation :s value :v alpha :alpha} color
+(defn enrich-color-map [{:keys [h s v] :as color}]
+  (let [[r g b] (cc/hsv->rgb [h s v])]
+    (assoc color
+           :hex (cc/hsv->hex [h s v])
+           :r r :g g :b b)))
 
+(mf/defc ramp-selector [{:keys [color disable-opacity on-change on-start-drag on-finish-drag]}]
+  (let [internal-color (mf/use-state)
+        {:keys [h s v hex alpha]} @internal-color
         on-change-value-saturation
         (fn [new-saturation new-value]
-          (let [hex (cc/hsv->hex [hue new-saturation new-value])
-                [r g b] (cc/hex->rgb hex)]
-            (on-change {:hex hex
-                        :r r :g g :b b
-                        :s new-saturation
-                        :v new-value})))
+          (let [new-color (-> @internal-color
+                              enrich-color-map
+                              (assoc :s new-saturation
+                                     :v new-value))]
+            (reset! internal-color new-color)
+            (on-change new-color)))
 
         on-change-hue
         (fn [new-hue]
-          (let [hex (cc/hsv->hex [new-hue saturation value])
-                [r g b] (cc/hex->rgb hex)]
-            (on-change {:hex hex
-                        :r r :g g :b b
-                        :h new-hue})))
+          (let [new-color (-> @internal-color
+                              enrich-color-map
+                              (assoc :h new-hue))]
+            (reset! internal-color new-color)
+            (on-change new-color)))
 
         on-change-opacity
         (fn [new-opacity]
-          (on-change {:alpha new-opacity}))]
+          (let [new-color (-> @internal-color
+                              enrich-color-map
+                              (assoc :alpha new-opacity))]
+            (reset! internal-color new-color)
+            (on-change new-color)))]
+
+    (mf/use-effect
+     (fn []
+       (reset! internal-color (enrich-color-map color))))
     [:*
      [:& value-saturation-selector
-      {:hue hue
-       :saturation saturation
-       :value value
+      {:hue h
+       :saturation s
+       :value v
        :on-change on-change-value-saturation
        :on-start-drag on-start-drag
        :on-finish-drag on-finish-drag}]
@@ -92,7 +105,7 @@
       [:div {:class (stl/css :sliders-wrapper)}
        [:& slider-selector {:type :hue
                             :max-value 360
-                            :value hue
+                            :value h
                             :on-change on-change-hue
                             :on-start-drag on-start-drag
                             :on-finish-drag on-finish-drag}]
