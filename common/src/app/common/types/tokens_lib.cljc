@@ -1017,7 +1017,11 @@ Will return a value that matches this schema:
   (decode-dtcg-json [_ parsed-json]
     (let [;; tokens-studio/plugin will add these meta properties, remove them for now
           sets-data (dissoc parsed-json "$themes" "$metadata")
-          themes-data (get parsed-json "$themes")
+          themes-data (->> (get parsed-json "$themes")
+                           (map (fn [theme]
+                                  (-> theme
+                                      (set/rename-keys {"selectedTokenSets" "sets"})
+                                      (update "sets" keys)))))
           lib (make-tokens-lib)
           lib' (reduce
                 (fn [lib [set-name tokens]]
