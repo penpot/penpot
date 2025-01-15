@@ -738,16 +738,20 @@
                         (:component-id shape) "@"
                         :else "-")
 
-                  (when (and (:component-file shape) component-file)
+                  (when (:component-file shape)
                     (str/format "<%s> "
-                                (if (= (:id component-file) (:id file))
-                                  "local"
-                                  (:name component-file))))
+                                (if component-file
+                                  (if (= (:id component-file) (:id file))
+                                    "local"
+                                    (:name component-file))
+                                  (if show-ids
+                                    (str/format "¿%s?" (:component-file shape))
+                                    "?"))))
 
                   (or (:name component-shape)
-                      (str/format "?%s"
-                                  (when show-ids
-                                    (str " " (:shape-ref shape)))))
+                      (if show-ids
+                        (str/format "¿%s?" (:shape-ref shape))
+                        "?"))
 
                   (when (and show-ids component-shape)
                     (str/format " %s" (:id component-shape)))

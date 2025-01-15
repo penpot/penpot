@@ -180,6 +180,7 @@
    [:main-instance {:optional true} :boolean]
    [:remote-synced {:optional true} :boolean]
    [:shape-ref {:optional true} ::sm/uuid]
+   [:touched {:optional true} [:maybe [:set :keyword]]]
    [:blocked {:optional true} :boolean]
    [:collapsed {:optional true} :boolean]
    [:locked {:optional true} :boolean]
@@ -215,8 +216,7 @@
    [:grow-type {:optional true}
     [::sm/one-of grow-types]]
    [:applied-tokens {:optional true} ::cto/applied-tokens]
-   [:plugin-data {:optional true} ::ctpg/plugin-data]
-   [:touched {:optional true} [:maybe [:set :keyword]]]])
+   [:plugin-data {:optional true} ::ctpg/plugin-data]])
 
 (def schema:group-attrs
   [:map {:title "GroupAttrs"}
