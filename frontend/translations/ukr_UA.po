@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-12-19 18:02+0000\n"
+"PO-Revision-Date: 2025-01-16 19:00+0000\n"
 "Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 5.9.2-dev\n"
+"X-Generator: Weblate 5.10-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:154, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -363,7 +363,7 @@ msgstr "90 днів"
 
 #: src/app/main/ui/settings/access_tokens.cljs:132
 msgid "dashboard.access-tokens.expiration-never"
-msgstr "Ніколи"
+msgstr "Несплинний"
 
 #: src/app/main/ui/settings/access_tokens.cljs:271
 msgid "dashboard.access-tokens.expired-on"
@@ -743,7 +743,7 @@ msgstr "Проєкти"
 
 #: src/app/main/ui/settings/profile.cljs:83
 msgid "dashboard.remove-account"
-msgstr "Ви хочете видалити свій акаунт?"
+msgstr "Ви хочете видалити свій обліковий запис?"
 
 #: src/app/main/ui/workspace/header.cljs, src/app/main/ui/dashboard/file_menu.cljs
 #, unused
@@ -1551,7 +1551,7 @@ msgstr "Продовжити з"
 
 #: src/app/main/ui/viewer/login.cljs:69
 msgid "labels.continue-with-penpot"
-msgstr "Ви можете продовжувати з акаунтом Penpot"
+msgstr "Ви можете продовжувати з обліковим записом Penpot"
 
 #: src/app/main/ui/dashboard/team.cljs:678
 msgid "labels.copy-invitation-link"
@@ -2045,7 +2045,7 @@ msgstr "(ви)"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:968
 msgid "labels.your-account"
-msgstr "Ваш акаунт"
+msgstr "Ваш обліковий запис"
 
 #: src/app/main/ui/onboarding/questions.cljs:403
 msgid "labels.youtube"
@@ -2200,7 +2200,7 @@ msgstr "Видаливши обліковий запис, ви втратите 
 
 #: src/app/main/ui/settings/delete_account.cljs:46
 msgid "modals.delete-account.title"
-msgstr "Ви впевнені, що хочете видалити акаунт?"
+msgstr "Ви впевнені, що хочете видалити обліковий запис?"
 
 #: src/app/main/ui/comments.cljs:303
 msgid "modals.delete-comment-thread.accept"
@@ -6592,3 +6592,107 @@ msgstr "Повернутись до списку тем"
 #: src/app/main/ui/workspace/tokens/theme_select.cljs:72
 msgid "workspace.token.edit-themes"
 msgstr "Редагувати теми"
+
+msgid "dashboard.upgrade-plan.no-limits"
+msgstr "Без обмежень на креативність"
+
+#: src/app/main/ui/comments.cljs:146
+msgid "labels.replies"
+msgstr "відповіді"
+
+msgid "workspace.assets.add-library"
+msgstr "Додати бібліотеку"
+
+#: src/app/main/ui/workspace/main_menu.cljs:908
+msgid "workspace.header.menu.option.power-up"
+msgstr "Підсилити свій план"
+
+#: src/app/main/ui/workspace/context_menu.cljs:146
+msgid "workspace.shape.menu.copy_link"
+msgstr "Копіювати посилання до буферу обміну"
+
+msgid "workspace.versions.warning.text"
+msgstr "Автозбережені версії зберігатимуться протягом %s днів."
+
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr ""
+"Якщо ви хочете збільшити це обмеження, зверніться до нас через "
+"[support@penpot.app](%s)"
+
+msgid "labels.comment"
+msgstr "Коментар"
+
+#: src/app/main/ui/comments.cljs:150
+msgid "labels.reply.new"
+msgstr "нова відповідь"
+
+#: src/app/main/ui/workspace/main_menu.cljs:623
+msgid "dashboard.create-version-menu"
+msgstr "Пришпилити цю версію"
+
+#: src/app/main/ui/workspace/main_menu.cljs:630
+msgid "dashboard.show-version-history"
+msgstr "Історія версій"
+
+msgid "workspace.libraries.empty.add-some"
+msgstr "Або додайте кілька з них, щоб спробувати:"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications"
+msgstr "Сповіщення"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications.view"
+msgstr "Показати сповіщення"
+
+#: src/app/main/ui/comments.cljs:446
+msgid "labels.comment.mark-as-solved"
+msgstr "Позначити як виконане"
+
+#: src/app/main/ui/comments.cljs:188
+msgid "labels.reply.thread"
+msgstr "Відповідь"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:167
+msgid "shortcuts.rename"
+msgstr "Перейменувати"
+
+#: src/app/main/ui/workspace/sidebar.cljs:241
+msgid "workspace.versions.tab.history"
+msgstr "Історія"
+
+msgid "dashboard.upgrade-plan.penpot-free"
+msgstr "Penpot Безкоштовний"
+
+#: src/app/main/ui/comments.cljs:147
+msgid "labels.post"
+msgstr "Публікація"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+msgid "shortcuts.copy-link"
+msgstr "Копіювати посилання до буферу обміну"
+
+msgid "dashboard.upgrade-plan.power-up"
+msgstr "Підсилити"
+
+msgid "labels.adding"
+msgstr "Додавання..."
+
+#: src/app/main/ui/comments.cljs:145
+msgid "labels.reply"
+msgstr "відповідь"
+
+#: src/app/main/ui/comments.cljs:151
+msgid "labels.replies.new"
+msgstr "нові відповіді"
+
+msgid "workspace.libraries.empty.some-templates"
+msgstr "деякі шаблони тут"
+
+msgid "workspace.libraries.empty.no-libraries"
+msgstr "У команді немає Спільних Бібліотек"
+
+#: src/app/main/ui/workspace/sidebar.cljs:242
+msgid "workspace.versions.tab.actions"
+msgstr "Дії"
