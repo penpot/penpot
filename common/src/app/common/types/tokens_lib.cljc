@@ -568,7 +568,7 @@ When `before-set-name` is nil, move set to bottom")
          [:name :string]
          [:group :string]
          [:description [:maybe :string]]
-         [:is-source :boolean]
+         [:is-source [:maybe :boolean]]
          [:modified-at ::sm/inst]
          [:sets [:set {:gen/max 5} :string]]]
    [:fn (partial instance? TokenTheme)]])
