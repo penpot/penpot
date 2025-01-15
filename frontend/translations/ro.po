@@ -314,7 +314,7 @@ msgstr "Generați jeton nou"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 #, unused
-msgid "dashboard.access-tokens.create-success"
+msgid "dashboard.access-tokens.create.success"
 msgstr "Jeton de acces creat cu succes."
 
 #: src/app/main/ui/settings/access_tokens.cljs:289

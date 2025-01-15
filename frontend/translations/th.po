@@ -757,7 +757,7 @@ msgstr "สร้างโทเคนใหม่"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 #, unused
-msgid "dashboard.access-tokens.create-success"
+msgid "dashboard.access-tokens.create.success"
 msgstr "สร้างโทเคนสำหรับการเข้าถึงสำเร็จแล้ว"
 
 #: src/app/main/ui/settings/access_tokens.cljs:289

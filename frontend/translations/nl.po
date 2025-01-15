@@ -329,7 +329,7 @@ msgstr "Nieuw toegangsbewijs aanmaken"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 #, unused
-msgid "dashboard.access-tokens.create-success"
+msgid "dashboard.access-tokens.create.success"
 msgstr "Toegangsbewijs is succesvol aangemaakt."
 
 #: src/app/main/ui/settings/access_tokens.cljs:289

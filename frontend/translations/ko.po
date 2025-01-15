@@ -303,7 +303,7 @@ msgstr "새로운 토큰 생성하기"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 #, unused
-msgid "dashboard.access-tokens.create-success"
+msgid "dashboard.access-tokens.create.success"
 msgstr "엑세스 토큰이 성공적으로 생성되었습니다."
 
 #: src/app/main/ui/settings/access_tokens.cljs:289

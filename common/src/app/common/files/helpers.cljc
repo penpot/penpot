@@ -640,6 +640,13 @@
   (let [path-split (split-path path)]
     (merge-path-item (first path-split) name)))
 
+(defn split-string-half
+  "Split string in two halfs"
+  [s]
+  (let [len (count s)
+        mid (quot len 2)]
+    [(subs s 0 mid)
+     (subs s mid)]))
 
 (defn get-frame-objects
   "Retrieves a new objects map only with the objects under frame-id (with frame-id)"

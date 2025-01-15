@@ -324,14 +324,8 @@ msgid "dashboard.access-tokens.create"
 msgstr "Generate new token"
 
 #: src/app/main/ui/settings/access-tokens.cljs
-#, unused
-msgid "dashboard.access-tokens.create-success"
-msgstr "Access token created successfully."
-
-#: src/app/main/ui/settings/access_tokens.cljs:65
-#, fuzzy
 msgid "dashboard.access-tokens.create.success"
-msgstr ""
+msgstr "Access token created successfully."
 
 #: src/app/main/ui/settings/access_tokens.cljs:289
 msgid "dashboard.access-tokens.empty.add-one"
@@ -1153,9 +1147,8 @@ msgid "errors.member-is-muted"
 msgstr "The profile you inviting has emails muted (spam reports or high bounces)."
 
 #: src/app/main/errors.cljs:228
-#, fuzzy
 msgid "errors.migration-in-progress"
-msgstr ""
+msgstr "Migration in progress"
 
 #: src/app/main/ui/settings/password.cljs
 #, unused
@@ -1251,11 +1244,6 @@ msgstr "Email or password is incorrect."
 #, unused
 msgid "errors.wrong-old-password"
 msgstr "Old password is incorrect"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:85
-#, fuzzy
-msgid "exclude"
-msgstr ""
 
 #: src/app/main/ui/settings/feedback.cljs:74
 msgid "feedback.description"
@@ -1556,11 +1544,6 @@ msgstr "Text"
 #: src/app/main/ui/viewer/inspect/right_sidebar.cljs:101
 msgid "inspect.tabs.info"
 msgstr "Info"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:80
-#, fuzzy
-msgid "intersection"
-msgstr ""
 
 #: src/app/main/ui/workspace/main_menu.cljs:163
 msgid "label.shortcuts"
@@ -2314,11 +2297,6 @@ msgstr "Create token"
 #: src/app/main/ui/settings/access_tokens.cljs:112
 msgid "modals.create-access-token.title"
 msgstr "Generate access token"
-
-#: src/app/main/ui/settings/access_tokens.cljs:152
-#, fuzzy
-msgid "modals.create-access-token.token"
-msgstr ""
 
 #: src/app/main/ui/dashboard/team.cljs:911
 msgid "modals.create-webhook.submit-label"
@@ -3826,11 +3804,6 @@ msgstr "Lock proportions"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:200
 msgid "shortcuts.toggle-rulers"
 msgstr "Show / Hide rulers"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:201
-#, fuzzy
-msgid "shortcuts.toggle-rules"
-msgstr ""
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:202
 msgid "shortcuts.toggle-snap-guides"
@@ -6308,21 +6281,6 @@ msgstr "Edit themes"
 msgid "workspace.token.edit-token"
 msgstr "Edit token"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:408
-#, fuzzy
-msgid "workspace.token.enter-token-description"
-msgstr ""
-
-#: src/app/main/ui/workspace/tokens/form.cljs:370
-#, fuzzy
-msgid "workspace.token.enter-token-name"
-msgstr ""
-
-#: src/app/main/ui/workspace/tokens/form.cljs:390
-#, fuzzy
-msgid "workspace.token.enter-token-value"
-msgstr ""
-
 #: src/app/main/ui/workspace/tokens/sets.cljs:186
 #, unused
 msgid "workspace.token.grouping-set-alert"
@@ -6380,11 +6338,6 @@ msgstr "Select set."
 msgid "workspace.token.set-selection-theme"
 msgstr "Define what token sets should be used as part of this theme option:"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:119
-#, fuzzy
-msgid "workspace.token.theme"
-msgstr ""
-
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs
 #, unused
 msgid "workspace.token.theme-name"
@@ -6394,20 +6347,9 @@ msgstr "Theme %s"
 msgid "workspace.token.themes"
 msgstr "Themes"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:409
-#, fuzzy
-msgid "workspace.token.token-description"
-msgstr ""
-
-#: src/app/main/ui/workspace/tokens/form.cljs:373
-#, fuzzy
-msgid "workspace.token.token-name"
-msgstr ""
-
-#: src/app/main/ui/workspace/tokens/form.cljs:391
-#, fuzzy
-msgid "workspace.token.token-value"
-msgstr ""
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:47
+msgid "workspace.token-set.not-active"
+msgstr "Token set is not active"
 
 #: src/app/main/ui/workspace/sidebar.cljs:117, src/app/main/ui/workspace/sidebar.cljs:126
 msgid "workspace.toolbar.assets"

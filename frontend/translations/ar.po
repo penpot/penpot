@@ -295,7 +295,7 @@ msgstr "قم بإنشاء رمز جديد"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 #, unused
-msgid "dashboard.access-tokens.create-success"
+msgid "dashboard.access-tokens.create.success"
 msgstr "تم إنشاء رمز الوصول بنجاح."
 
 #: src/app/main/ui/settings/access_tokens.cljs:289

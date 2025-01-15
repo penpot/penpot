@@ -330,7 +330,7 @@ msgstr "Izveidot jaunu pilnvaru"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 #, unused
-msgid "dashboard.access-tokens.create-success"
+msgid "dashboard.access-tokens.create.success"
 msgstr "Piekļuves pilnvara ir veiksmīgi izveidota."
 
 #: src/app/main/ui/settings/access_tokens.cljs:289

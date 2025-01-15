@@ -331,12 +331,8 @@ msgstr "Buat token baru"
 
 #: src/app/main/ui/settings/access-tokens.cljs
 #, unused
-msgid "dashboard.access-tokens.create-success"
-msgstr "Token akses berhasil dibuat."
-
-#: src/app/main/ui/settings/access_tokens.cljs:65
 msgid "dashboard.access-tokens.create.success"
-msgstr " "
+msgstr "Token akses berhasil dibuat."
 
 #: src/app/main/ui/settings/access_tokens.cljs:289
 msgid "dashboard.access-tokens.empty.add-one"
@@ -1051,10 +1047,6 @@ msgstr ""
 "Profil yang Anda undang membisukan surel (laporan spam atau lompatan "
 "tinggi)."
 
-#: src/app/main/errors.cljs:228
-msgid "errors.migration-in-progress"
-msgstr " "
-
 #: src/app/main/ui/settings/password.cljs
 #, unused
 msgid "errors.password-invalid-confirmation"
@@ -1153,10 +1145,6 @@ msgstr "Surel atau kata sandi tidak benar."
 #, unused
 msgid "errors.wrong-old-password"
 msgstr "Kata sandi lama tidak benar"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:85
-msgid "exclude"
-msgstr " "
 
 #: src/app/main/ui/settings/feedback.cljs:74
 msgid "feedback.description"
@@ -1460,10 +1448,6 @@ msgstr "Teks"
 #: src/app/main/ui/viewer/inspect/right_sidebar.cljs:96
 msgid "inspect.tabs.info"
 msgstr "Info"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:80
-msgid "intersection"
-msgstr " "
 
 #: src/app/main/ui/workspace/main_menu.cljs:162
 msgid "label.shortcuts"
@@ -2150,10 +2134,6 @@ msgstr "Buat token"
 #: src/app/main/ui/settings/access_tokens.cljs:112
 msgid "modals.create-access-token.title"
 msgstr "Buat token baru"
-
-#: src/app/main/ui/settings/access_tokens.cljs:152
-msgid "modals.create-access-token.token"
-msgstr " "
 
 #: src/app/main/ui/dashboard/team.cljs:911
 msgid "modals.create-webhook.submit-label"
@@ -3639,10 +3619,6 @@ msgstr "Kunci proporsi"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:198
 msgid "shortcuts.toggle-rulers"
 msgstr "Tampilkan / Sembunyikan penggaris"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:199
-msgid "shortcuts.toggle-rules"
-msgstr " "
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:200
 msgid "shortcuts.toggle-snap-guides"
@@ -6106,10 +6082,6 @@ msgstr "Klik untuk menutup jalur"
 #: src/app/main/ui/dashboard/files.cljs:185, src/app/main/ui/dashboard/projects.cljs:279
 msgid "dashboard.empty-placeholder-drafts-title"
 msgstr "Belum ada draf."
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:119
-msgid "workspace.token.theme"
-msgstr "  "
 
 #: src/app/main/ui/dashboard/fonts.cljs:445
 msgid "dashboard.fonts.empty-placeholder-viewer-sub"

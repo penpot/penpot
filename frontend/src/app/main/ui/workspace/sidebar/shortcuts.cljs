@@ -198,7 +198,6 @@
     (tr "shortcuts.toggle-lock")
     (tr "shortcuts.toggle-lock-size")
     (tr "shortcuts.toggle-rulers")
-    (tr "shortcuts.toggle-rules")
     (tr "shortcuts.toggle-snap-guides")
     (tr "shortcuts.toggle-snap-ruler-guide")
     (tr "shortcuts.toggle-textpalette")

@@ -174,6 +174,7 @@
   [err]
   (let [[header-1 header-2 & errors] (str/split err "\n")]
     (when (and
+          ;; TODO: This needs translations
            (= header-1 "Error: ")
            (= header-2 "Reference Errors:"))
       errors)))
@@ -206,10 +207,11 @@
 
 ;; === Errors
 
-(defn humanize-errors [{:keys [errors value] :as _token}]
+(defn humanize-errors [{:keys [errors] :as token}]
   (->> (map (fn [err]
-              (case err
-                :error.style-dictionary/missing-reference (str "Could not resolve reference token with the name: " value)
+              (case (:error/code err)
+                ;; TODO: This needs translations
+                :error.style-dictionary/missing-reference (str "Could not resolve reference token with the name: " (:error/value err))
                 nil))
             errors)
        (str/join "\n")))
