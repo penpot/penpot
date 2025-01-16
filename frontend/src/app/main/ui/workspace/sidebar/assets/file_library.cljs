@@ -196,21 +196,19 @@
         on-asset-click
         (mf/use-fn
          (mf/deps file-id selected)
-         (fn [asset-type asset-groups asset-id default-click event]
+         (fn [asset-type asset-groups event asset-id]
            (cond
              (kbd/mod? event)
              (do
                (dom/stop-propagation event)
-               (st/emit! (dw/toggle-selected-assets file-id asset-id asset-type)))
+               (st/emit! (dw/toggle-selected-assets file-id asset-id asset-type))
+               true)
 
              (kbd/shift? event)
              (do
                (dom/stop-propagation event)
-               (extend-selected selected asset-type asset-groups asset-id file-id))
-
-             :else
-             (when default-click
-               (default-click event)))))
+               (extend-selected selected asset-type asset-groups asset-id file-id)
+               true))))
 
         on-component-click
         (mf/use-fn (mf/deps on-asset-click) (partial on-asset-click :components))

@@ -39,7 +39,7 @@
 
 (mf/defc typography-item
   {::mf/wrap-props false}
-  [{:keys [typography file-id local? handle-change selected apply-typography editing-id renaming-id on-asset-click
+  [{:keys [typography file-id local? handle-change selected editing-id renaming-id on-asset-click
            on-context-menu selected-full selected-paths move-typography rename?]}]
   (let [item-ref       (mf/use-ref)
         typography-id  (:id typography)
@@ -91,26 +91,17 @@
          (mf/deps typography)
          (partial handle-change typography))
 
-        apply-typography
-        (mf/use-fn
-         (mf/deps typography)
-         (partial apply-typography typography))
-
         on-asset-click
         (mf/use-fn
-         (mf/deps typography apply-typography on-asset-click)
-         (partial on-asset-click typography-id apply-typography))
-
-        on-click
-        (mf/use-fn
-         (mf/deps typography apply-typography on-asset-click)
-         (fn [ev]
-           (st/emit! (ptk/event
-                      ::ev/event
-                      {::ev/name "use-library-typography"
-                       ::ev/origin "sidebar"
-                       :external-library (not local?)}))
-           (on-asset-click ev)))]
+         (mf/deps typography on-asset-click read-only? local?)
+         (fn [event]
+           (when-not read-only?
+             (st/emit! (ptk/data-event ::ev/event
+                                       {::ev/name "use-library-typography"
+                                        ::ev/origin "sidebar"
+                                        :external-library (not local?)}))
+             (when-not (on-asset-click event (:id typography))
+               (st/emit! (dwt/apply-typography typography file-id))))))]
 
     [:div {:class (stl/css :typography-item)
            :ref item-ref
@@ -126,7 +117,7 @@
        :typography typography
        :local? local?
        :selected? (contains? selected typography-id)
-       :on-click on-click
+       :on-click on-asset-click
        :on-change handle-change
        :on-context-menu on-context-menu
        :editing? editing?
@@ -139,7 +130,7 @@
 (mf/defc typographies-group
   {::mf/wrap-props false}
   [{:keys [file-id prefix groups open-groups force-open? file local? selected local-data
-           editing-id renaming-id on-asset-click handle-change apply-typography on-rename-group
+           editing-id renaming-id on-asset-click handle-change on-rename-group
            on-ungroup on-context-menu selected-full]}]
   (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
                          false
@@ -208,7 +199,6 @@
                                   :local? local?
                                   :handle-change handle-change
                                   :selected selected
-                                  :apply-typography apply-typography
                                   :editing-id editing-id
                                   :renaming-id renaming-id
                                   :rename? (= (:rename-typography local-data) id)
@@ -234,7 +224,6 @@
                                     :local-data local-data
                                     :on-asset-click on-asset-click
                                     :handle-change handle-change
-                                    :apply-typography apply-typography
                                     :on-rename-group on-rename-group
                                     :on-ungroup on-ungroup
                                     :on-context-menu on-context-menu
@@ -283,13 +272,6 @@
          (mf/deps file-id)
          (fn [typography changes]
            (st/emit! (dwl/update-typography (merge typography changes) file-id))))
-
-        apply-typography
-        (mf/use-fn
-         (mf/deps file-id read-only?)
-         (fn [typography _event]
-           (when-not read-only?
-             (st/emit! (dwt/apply-typography typography file-id)))))
 
         create-group
         (mf/use-fn
@@ -438,7 +420,6 @@
                                :local-data local-data
                                :on-asset-click on-asset-click
                                :handle-change handle-change
-                               :apply-typography apply-typography
                                :on-rename-group on-rename-group
                                :on-ungroup on-ungroup
                                :on-context-menu on-context-menu
