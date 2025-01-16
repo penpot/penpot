@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.fix-broken-shapes
   (:require
    [app.main.data.changes :as dch]
+   [app.main.data.helpers :as dsh]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -39,12 +40,12 @@
   (ptk/reify ::fix-broken-shapes
     ptk/WatchEvent
     (watch [it state _]
-      (let [data    (get state :workspace-data)
+      (let [fdata   (dsh/lookup-file-data state)
             changes (concat
                      (mapcat (partial generate-broken-link-changes :page-id)
-                             (vals (:pages-index data)))
+                             (vals (:pages-index fdata)))
                      (mapcat (partial generate-broken-link-changes :component-id)
-                             (vals (:components data))))]
+                             (vals (:components fdata))))]
 
         (if (seq changes)
           (rx/of (dch/commit-changes

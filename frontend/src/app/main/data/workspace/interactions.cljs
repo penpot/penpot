@@ -18,8 +18,8 @@
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
@@ -41,8 +41,8 @@
      ptk/WatchEvent
      (watch [it state _]
        (let [page    (if page-id
-                       (wsh/lookup-page state page-id)
-                       (wsh/lookup-page state))
+                       (dsh/lookup-page state page-id)
+                       (dsh/lookup-page state))
 
              flows   (get page :flows)
              unames  (cfh/get-used-names (vals flows))
@@ -64,7 +64,7 @@
   (ptk/reify ::add-flow-selected-frame
     ptk/WatchEvent
     (watch [_ state _]
-      (let [selected (wsh/lookup-selected state)]
+      (let [selected (dsh/lookup-selected state)]
         (rx/of (add-flow (first selected)))))))
 
 (defn remove-flow
@@ -77,8 +77,8 @@
      ptk/WatchEvent
      (watch [it state _]
        (let [page (if page-id
-                    (wsh/lookup-page state page-id)
-                    (wsh/lookup-page state))]
+                    (dsh/lookup-page state page-id)
+                    (dsh/lookup-page state))]
          (rx/of (dch/commit-changes
                  (-> (pcb/empty-changes it)
                      (pcb/with-page page)
@@ -94,8 +94,8 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [page (if page-id
-                   (wsh/lookup-page state page-id)
-                   (wsh/lookup-page state))
+                   (dsh/lookup-page state page-id)
+                   (dsh/lookup-page state))
             flow (dm/get-in page [:flows flow-id])
             flow (some-> flow update-fn)]
 
@@ -114,7 +114,7 @@
   (ptk/reify ::rename-flow
     ptk/WatchEvent
     (watch [_ state _]
-      (let [page (wsh/lookup-page state)]
+      (let [page (dsh/lookup-page state)]
         (rx/of (update-flow (:id page) flow-id #(assoc % :name name)))))))
 
 (defn start-rename-flow
@@ -165,7 +165,7 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [page-id  (:current-page-id state)
-             page     (wsh/lookup-page state page-id)
+             page     (dsh/lookup-page state page-id)
              objects  (get page :objects)
              frame    (cfh/get-root-frame objects (:id shape))
 
@@ -229,7 +229,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id (:current-page-id state)
-            objects (wsh/lookup-page-objects state page-id)
+            objects (dsh/lookup-page-objects state page-id)
 
             remove-interactions-shape
             (fn [shape]
@@ -258,7 +258,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [initial-pos @ms/mouse-position
-            selected (wsh/lookup-selected state)
+            selected (dsh/lookup-selected state)
             stopper  (mse/drag-stopper stream)]
         (when (= 1 (count selected))
           (rx/concat
@@ -270,9 +270,9 @@
 (defn- get-target-frame
   [state position]
 
-  (let [objects (wsh/lookup-page-objects state)
-        from-id (-> state wsh/lookup-selected first)
-        from-shape (wsh/lookup-shape state from-id)
+  (let [objects (dsh/lookup-page-objects state)
+        from-id (-> state dsh/lookup-selected first)
+        from-shape (dsh/lookup-shape state from-id)
 
         from-frame-id (if (cfh/frame-shape? from-shape)
                         from-id (:frame-id from-shape))
@@ -309,8 +309,8 @@
     (watch [_ state _]
       (let [position     @ms/mouse-position
             target-frame (get-target-frame state position)
-            shape-id     (-> state wsh/lookup-selected first)
-            shape        (wsh/lookup-shape state shape-id)
+            shape-id     (-> state dsh/lookup-selected first)
+            shape        (dsh/lookup-shape state shape-id)
 
             change-interaction
             (fn [interaction]
@@ -368,13 +368,13 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [initial-pos @ms/mouse-position
-            selected (wsh/lookup-selected state)
+            selected (dsh/lookup-selected state)
             stopper  (mse/drag-stopper stream)]
         (when (= 1 (count selected))
           (let [page-id     (:current-page-id state)
-                objects     (wsh/lookup-page-objects state page-id)
+                objects     (dsh/lookup-page-objects state page-id)
                 shape       (->> state
-                                 wsh/lookup-selected
+                                 dsh/lookup-selected
                                  first
                                  (get objects))
                 overlay-pos (-> shape
@@ -418,9 +418,9 @@
                             (gpt/subtract offset))
 
             page-id     (:current-page-id state)
-            objects     (wsh/lookup-page-objects state page-id)
+            objects     (dsh/lookup-page-objects state page-id)
             shape       (->> state
-                             wsh/lookup-selected
+                             dsh/lookup-selected
                              first
                              (get objects))
 

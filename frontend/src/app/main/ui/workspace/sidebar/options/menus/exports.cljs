@@ -9,8 +9,8 @@
   (:require
    [app.common.data :as d]
    [app.main.data.exports.assets :as de]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
@@ -40,7 +40,7 @@
         state              (mf/deref refs/export)
         in-progress?       (:in-progress state)
 
-        shapes-with-exports (->> (wsh/lookup-shapes @st/state ids)
+        shapes-with-exports (->> (dsh/lookup-shapes @st/state ids)
                                  (filter #(pos? (count (:exports %)))))
 
         sname               (when (seqable? exports)

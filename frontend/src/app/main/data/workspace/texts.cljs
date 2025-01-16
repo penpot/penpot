@@ -18,12 +18,12 @@
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
@@ -89,7 +89,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (when (dwc/initialized? state)
-        (let [objects      (wsh/lookup-page-objects state)
+        (let [objects      (dsh/lookup-page-objects state)
               shape        (get objects id)
               editor-state (get-in state [:workspace-editor-state id])
               content      (-> editor-state
@@ -321,7 +321,7 @@
   (ptk/reify ::update-text-range
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects   (wsh/lookup-page-objects state)
+      (let [objects   (dsh/lookup-page-objects state)
             shape     (get objects id)
 
             update-fn
@@ -347,7 +347,7 @@
   (ptk/reify ::update-root-attrs
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects   (wsh/lookup-page-objects state)
+      (let [objects   (dsh/lookup-page-objects state)
             shape     (get objects id)
 
             update-fn
@@ -372,7 +372,7 @@
       ptk/WatchEvent
       (watch [_ state _]
         (when-not (some? (get-in state [:workspace-editor-state id]))
-          (let [objects   (wsh/lookup-page-objects state)
+          (let [objects   (dsh/lookup-page-objects state)
                 shape     (get objects id)
 
                 merge-fn  (fn [node attrs]
@@ -398,7 +398,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (when-not (some? (get-in state [:workspace-editor-state id]))
-        (let [objects   (wsh/lookup-page-objects state)
+        (let [objects   (dsh/lookup-page-objects state)
               shape     (get objects id)
               update-node? (fn [node]
                              (or (txt/is-text-node? node)
@@ -446,9 +446,8 @@
        (when (or
               (and (features/active-feature? state "text-editor/v2") (nil? (:workspace-editor state)))
               (and (not (features/active-feature? state "text-editor/v2")) (nil? (get-in state [:workspace-editor-state id]))))
-         (let [objects   (wsh/lookup-page-objects state)
+         (let [objects   (dsh/lookup-page-objects state)
                shape     (get objects id)
-
                update-node? (some-fn txt/is-text-node? txt/is-paragraph-node?)
 
                shape-ids
@@ -485,8 +484,8 @@
   (ptk/reify ::start-edit-if-selected
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects  (wsh/lookup-page-objects state)
-            selected (->> state wsh/lookup-selected (mapv #(get objects %)))]
+      (let [objects  (dsh/lookup-page-objects state)
+            selected (->> state dsh/lookup-selected (mapv #(get objects %)))]
         (cond-> state
           (and (= 1 (count selected))
                (= (-> selected first :type) :text))
@@ -501,7 +500,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [props (::resize-text-debounce-props state)
-            objects (wsh/lookup-page-objects state)
+            objects (dsh/lookup-page-objects state)
             undo-id (js/Symbol)]
 
         (letfn [(changed-text? [id]
@@ -765,7 +764,7 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [editor-state (:workspace-editor-state state)
-             ids          (d/nilv ids (wsh/lookup-selected state))
+             ids          (d/nilv ids (dsh/lookup-selected state))
              attrs        (-> typography
                               (assoc :typography-ref-file file-id)
                               (assoc :typography-ref-id (:id typography))
@@ -794,8 +793,8 @@
   (ptk/reify ::add-typography
     ptk/WatchEvent
     (watch [_ state _]
-      (let [selected   (wsh/lookup-selected state)
-            objects    (wsh/lookup-page-objects state)
+      (let [selected   (dsh/lookup-selected state)
+            objects    (dsh/lookup-page-objects state)
 
             xform      (comp (keep (d/getf objects))
                              (filter cfh/text-shape?))
@@ -863,7 +862,7 @@
    (ptk/reify ::v2-update-text-shape-content
      ptk/WatchEvent
      (watch [_ state _]
-       (let [objects      (wsh/lookup-page-objects state)
+       (let [objects      (dsh/lookup-page-objects state)
              shape        (get objects id)
              modifiers    (get-in state [:workspace-text-modifier id])
              new-shape?   (nil? (:content shape))]

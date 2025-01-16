@@ -14,8 +14,8 @@
    [app.common.geom.shapes.points :as gpo]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.modifiers :as dwm]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
@@ -135,7 +135,7 @@
         negate                     {:column-gap (if flip-x true false)
                                     :row-gap (if flip-y true false)}
 
-        objects                    (wsh/lookup-page-objects @st/state)
+        objects                    (dsh/lookup-page-objects @st/state)
         children              (->> (cfh/get-immediate-children objects frame-id)
                                    (remove ctl/position-absolute?))
 

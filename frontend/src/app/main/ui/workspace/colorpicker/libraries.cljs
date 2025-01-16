@@ -32,7 +32,7 @@
 
         shared-libs      (mf/deref refs/libraries)
         file-colors      (mf/deref refs/workspace-file-colors)
-        recent-colors    (mf/deref refs/workspace-recent-colors)
+        recent-colors    (mf/deref refs/recent-colors)
         recent-colors    (h/use-equal-memo  (filter #(or (:gradient %) (:color %) (:image %)) recent-colors))
 
         on-library-change

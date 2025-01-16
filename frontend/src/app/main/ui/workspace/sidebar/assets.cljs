@@ -20,10 +20,11 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
-   [app.main.ui.workspace.sidebar.assets.file-library :refer [file-library]]
+   [app.main.ui.workspace.sidebar.assets.file-library :refer [file-library*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (mf/defc assets-libraries*
@@ -31,38 +32,39 @@
    ::mf/props :obj
    ::mf/private true}
   [{:keys [filters]}]
-  (let [libraries (mf/deref refs/libraries)
-        libraries (mf/with-memo [libraries]
+  (let [file-id   (mf/use-ctx ctx/current-file-id)
+
+        libraries (mf/deref refs/libraries)
+        libraries (mf/with-memo [libraries file-id]
                     (->> (vals libraries)
                          (remove :is-indirect)
+                         (remove #(= file-id (:id %)))
                          (map (fn [file]
                                 (update file :data dissoc :pages-index)))
                          (sort-by #(str/lower (:name %)))))]
+
     (for [file libraries]
-      [:& file-library
+      [:> file-library*
        {:key (dm/str (:id file))
         :file file
-        :local? false
-        :default-open? false
+        :is-local false
+        :is-default-open false
         :filters filters}])))
+
+(def ^:private ref:local-library
+  (l/derived (fn [file]
+               (update file :data dissoc :pages-index))
+             refs/file))
 
 (mf/defc assets-local-library
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [{:keys [filters]}]
-  ;; NOTE: as workspace-file is an incomplete view of file (it do not
-  ;; contain :data), we need to reconstruct it using workspace-data
-  (let [file   (mf/deref refs/workspace-file)
-        data   (mf/deref refs/workspace-data)
-        data   (mf/with-memo [data]
-                 (dissoc data :pages-index))
-        file   (mf/with-memo [file data]
-                 (assoc file :data data))]
-
-    [:& file-library
+  (let [file (mf/deref ref:local-library)]
+    [:> file-library*
      {:file file
-      :local? true
-      :default-open? true
+      :is-local true
+      :is-default-open true
       :filters filters}]))
 
 (defn- toggle-values

@@ -12,6 +12,7 @@
    [app.common.logging :as log]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
+   [app.main.data.helpers :as dsh]
    [app.main.features :as features]
    [app.main.worker :as uw]
    [app.util.time :as dt]
@@ -76,32 +77,30 @@
   (ptk/reify ::apply-changes-localy
     ptk/UpdateEvent
     (update [_ state]
-      (let [current-file-id (get state :current-file-id)
-            path            (if (= file-id current-file-id)
-                              [:workspace-data]
-                              [:libraries file-id :data])
+      (let [undo-changes
+            (if pending
+              (->> pending
+                   (map :undo-changes)
+                   (reverse)
+                   (mapcat identity)
+                   (vec))
+              nil)
 
-            undo-changes    (if pending
-                              (->> pending
-                                   (map :undo-changes)
-                                   (reverse)
-                                   (mapcat identity)
-                                   (vec))
-                              nil)
+            redo-changes
+            (if pending
+              (into redo-changes
+                    (mapcat :redo-changes)
+                    pending)
+              redo-changes)
 
-            redo-changes    (if pending
-                              (into redo-changes
-                                    (mapcat :redo-changes)
-                                    pending)
-                              redo-changes)]
+            apply-changes
+            (fn [fdata]
+              (let [fdata (cpc/process-changes fdata undo-changes false)
+                    fdata (cpc/process-changes fdata redo-changes false)
+                    pids (into #{} xf:map-page-id redo-changes)]
+                (reduce #(ctst/update-object-indices %1 %2) fdata pids)))]
 
-        (d/update-in-when state path
-                          (fn [file]
-                            (let [file (cpc/process-changes file undo-changes false)
-                                  file (cpc/process-changes file redo-changes false)
-                                  pids (into #{} xf:map-page-id redo-changes)]
-                              (reduce #(ctst/update-object-indices %1 %2) file pids))))))))
-
+        (update-in state [:files file-id :data] apply-changes)))))
 
 (defn commit
   "Create a commit event instance"
@@ -156,17 +155,11 @@
 
 (defn- resolve-file-revn
   [state file-id]
-  (let [file (:workspace-file state)]
-    (if (= (:id file) file-id)
-      (:revn file)
-      (dm/get-in state [:libraries file-id :revn]))))
+  (:revn (dsh/lookup-file state file-id)))
 
 (defn- resolve-file-vern
   [state file-id]
-  (let [file (:workspace-file state)]
-    (if (= (:id file) file-id)
-      (:vern file)
-      (dm/get-in state [:libraries file-id :vern]))))
+  (:vern (dsh/lookup-file state file-id)))
 
 (defn commit-changes
   "Schedules a list of changes to execute now, and add the corresponding undo changes to

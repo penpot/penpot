@@ -127,7 +127,7 @@
 
 (mf/defc comments-layer
   {::mf/props :obj}
-  [{:keys [zoom file users frame page]}]
+  [{:keys [zoom file frame page]}]
   (let [profile        (mf/deref refs/profile)
         local          (mf/deref refs/comments-local)
 
@@ -208,7 +208,6 @@
        (for [item threads]
          [:> cmt/comment-floating-bubble*
           {:thread item
-           :profiles users
            :position-modifier modifier1
            :zoom zoom
            :on-click on-bubble-click
@@ -219,7 +218,6 @@
        (when-let [thread (get threads-map open-thread-id)]
          [:> cmt/comment-floating-thread*
           {:thread thread
-           :profiles users
            :position-modifier modifier1
            :viewport {:offset-x 0 :offset-y 0 :width (:width vsize) :height (:height vsize)}
            :zoom zoom}])
@@ -227,7 +225,6 @@
        (when-let [draft (:draft local)]
          [:> cmt/comment-floating-thread-draft*
           {:draft draft
-           :profiles users
            :position-modifier modifier1
            :on-cancel on-draft-cancel
            :on-submit on-draft-submit

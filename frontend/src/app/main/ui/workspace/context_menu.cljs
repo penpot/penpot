@@ -748,7 +748,7 @@
 
 ;; FIXME: optimize because it is rendered always
 
-(mf/defc context-menu
+(mf/defc context-menu*
   []
   (let [mdata        (mf/deref menu-ref)
         top          (- (get-in mdata [:position :y]) 20)

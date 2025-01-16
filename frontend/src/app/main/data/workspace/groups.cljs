@@ -17,8 +17,8 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -182,7 +182,7 @@
     (watch [it state _]
       (let [id (d/nilv id (uuid/next))
             page-id  (:current-page-id state)
-            objects  (wsh/lookup-page-objects state page-id)
+            objects  (dsh/lookup-page-objects state page-id)
 
             shapes
             (->> ids
@@ -203,7 +203,7 @@
   (ptk/reify ::group-selected
     ptk/WatchEvent
     (watch [_ state _]
-      (let [selected (wsh/lookup-selected state)]
+      (let [selected (dsh/lookup-selected state)]
         (rx/of (group-shapes nil selected :change-selection? true))))))
 
 (defn ungroup-shapes
@@ -212,7 +212,7 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [page-id (:current-page-id state)
-            objects (wsh/lookup-page-objects state page-id)
+            objects (dsh/lookup-page-objects state page-id)
 
             prepare
             (fn [shape-id]
@@ -264,7 +264,7 @@
   (ptk/reify ::ungroup-selected
     ptk/WatchEvent
     (watch [_ state _]
-      (let [selected (wsh/lookup-selected state)]
+      (let [selected (dsh/lookup-selected state)]
         (rx/of (ungroup-shapes selected :change-selection? true))))))
 
 (defn mask-group
@@ -275,8 +275,8 @@
      ptk/WatchEvent
      (watch [it state _]
        (let [page-id     (:current-page-id state)
-             objects     (wsh/lookup-page-objects state page-id)
-             selected    (->> (or ids (wsh/lookup-selected state))
+             objects     (dsh/lookup-page-objects state page-id)
+             selected    (->> (or ids (dsh/lookup-selected state))
                               (cfh/clean-loops objects)
                               (remove #(ctn/has-any-copy-parent? objects (get objects %))))
              shapes      (shapes-for-grouping objects selected)
@@ -323,9 +323,9 @@
      ptk/WatchEvent
      (watch [it state _]
        (let [page-id  (:current-page-id state)
-             objects  (wsh/lookup-page-objects state page-id)
+             objects  (dsh/lookup-page-objects state page-id)
 
-             masked-groups (->> (d/nilv ids (wsh/lookup-selected state))
+             masked-groups (->> (d/nilv ids (dsh/lookup-selected state))
                                 (map  #(get objects %))
                                 (filter #(or (= :bool (:type %)) (= :group (:type %)))))
 

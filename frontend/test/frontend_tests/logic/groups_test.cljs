@@ -39,7 +39,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'         (ths/get-file-from-store new-state)
+               file'         (ths/get-file-from-state new-state)
                page'         (cthf/current-page file')
                group-id      (->> (:objects page')
                                   vals

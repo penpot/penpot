@@ -20,8 +20,8 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.constants :refer [zoom-half-pixel-precision]]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.drawing.common :as common]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.snap :as snap]
    [app.main.streams :as ms]
    [app.util.array :as array]
@@ -87,7 +87,7 @@
             initial      (cond-> @ms/mouse-position snap-pixel? (gpt/round-step snap-prec))
 
             page-id      (:current-page-id state)
-            objects      (wsh/lookup-page-objects state page-id)
+            objects      (dsh/lookup-page-objects state page-id)
             focus        (:workspace-focus-selected state)
 
             fid          (->> (ctst/top-nested-frame objects initial)

@@ -17,7 +17,7 @@
 
 (mf/defc color-palette-ctx-menu
   [{:keys [show-menu? close-menu on-select-palette selected]}]
-  (let [recent-colors (mf/deref refs/workspace-recent-colors)
+  (let [recent-colors (mf/deref refs/recent-colors)
         file-colors   (mf/deref refs/workspace-file-colors)
         shared-libs   (mf/deref refs/libraries)]
     [:& dropdown {:show show-menu?

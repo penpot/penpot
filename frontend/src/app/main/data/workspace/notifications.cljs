@@ -13,6 +13,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.common :as dc]
+   [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.plugins :as dpl]
    [app.main.data.websocket :as dws]
@@ -273,7 +274,7 @@
    [:file-id ::sm/uuid]
    [:vern :int]])
 
-(def ^:private check-file-restore-params!
+(def ^:private check-file-restore-params
   (sm/check-fn schema:handle-file-restore))
 
 (defn handle-file-restore
@@ -281,15 +282,17 @@
 
   (dm/assert!
    "expected valid parameters"
-   (check-file-restore-params! msg))
+   (check-file-restore-params msg))
 
   (ptk/reify ::handle-file-restore
     ptk/WatchEvent
     (watch [_ state _]
       (let [curr-file-id    (:current-file-id state)
-            curr-vern       (dm/get-in state [:workspace-file :vern])
-            reload?         (and (= file-id curr-file-id) (not= vern curr-vern))]
-        (when reload?
+            file            (dsh/lookup-file state curr-file-id)
+            curr-vern       (:vern file)]
+
+        (when (and (= file-id curr-file-id)
+                   (not= vern curr-vern))
           (rx/of (ptk/event ::dw/reload-current-file)))))))
 
 (def ^:private schema:handle-library-change

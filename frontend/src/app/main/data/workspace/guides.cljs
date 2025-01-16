@@ -13,7 +13,7 @@
    [app.common.types.page :as ctp]
    [app.main.data.changes :as dwc]
    [app.main.data.event :as ev]
-   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.helpers :as dsh]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -31,7 +31,7 @@
 
     ptk/WatchEvent
     (watch [it state _]
-      (let [page (wsh/lookup-page state)
+      (let [page (dsh/lookup-page state)
             changes
             (-> (pcb/empty-changes it)
                 (pcb/with-page page)
@@ -56,7 +56,7 @@
 
     ptk/WatchEvent
     (watch [it state _]
-      (let [page (wsh/lookup-page state)
+      (let [page (dsh/lookup-page state)
             changes
             (-> (pcb/empty-changes it)
                 (pcb/with-page page)
@@ -73,7 +73,7 @@
   (ptk/reify ::remove-guides
     ptk/WatchEvent
     (watch [_ state _]
-      (let [{:keys [guides] :as page} (wsh/lookup-page state)
+      (let [{:keys [guides] :as page} (dsh/lookup-page state)
             guides (-> (select-keys guides ids) (vals))]
         (rx/from (mapv remove-guide guides))))))
 
@@ -88,7 +88,7 @@
       (let [ids (:ids args)
             object-modifiers (:modifiers args)
 
-            objects (wsh/lookup-page-objects state)
+            objects (dsh/lookup-page-objects state)
 
             is-frame? (fn [id] (= :frame (get-in objects [id :type])))
             frame-ids? (into #{} (filter is-frame?) ids)
@@ -104,7 +104,7 @@
                     guide (update guide :position + (get moved (:axis guide)))]
                 (update-guides guide)))
 
-            guides (-> state wsh/lookup-page :guides vals)]
+            guides (-> state dsh/lookup-page :guides vals)]
 
         (->> guides
              (filter (comp frame-ids? :frame-id))

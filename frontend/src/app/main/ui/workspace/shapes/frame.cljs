@@ -11,7 +11,7 @@
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.math :as mth]
    [app.common.thumbnails :as thc]
-   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -70,7 +70,7 @@
        ::mf/wrap-props false}
       [props]
       (let [shape      (unchecked-get props "shape")
-            objects    (wsh/lookup-page-objects @st/state)
+            objects    (dsh/lookup-page-objects @st/state)
 
             frame-id   (dm/get-prop shape :id)
 

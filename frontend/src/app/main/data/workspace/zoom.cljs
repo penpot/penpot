@@ -14,7 +14,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
-   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.helpers :as dsh]
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
@@ -83,7 +83,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [page-id (:current-page-id state)
-            objects (wsh/lookup-page-objects state page-id)
+            objects (dsh/lookup-page-objects state page-id)
             shapes  (cfh/get-immediate-children objects)
             srect   (gsh/shapes->rect shapes)]
         (if (empty? shapes)
@@ -101,11 +101,11 @@
   (ptk/reify ::zoom-to-selected-shape
     ptk/UpdateEvent
     (update [_ state]
-      (let [selected (wsh/lookup-selected state)]
+      (let [selected (dsh/lookup-selected state)]
         (if (empty? selected)
           state
           (let [page-id (:current-page-id state)
-                objects (wsh/lookup-page-objects state page-id)
+                objects (dsh/lookup-page-objects state page-id)
                 srect   (->> selected
                              (map #(get objects %))
                              (gsh/shapes->rect))]
@@ -126,7 +126,7 @@
       (if (empty? ids)
         state
         (let [page-id (:current-page-id state)
-              objects (wsh/lookup-page-objects state page-id)
+              objects (dsh/lookup-page-objects state page-id)
               srect   (->> ids
                            (map #(get objects %))
                            (gsh/shapes->rect))]

@@ -23,10 +23,10 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.main.constants :refer [zoom-half-pixel-precision]]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.comments :as-alias dwcm]
    [app.main.data.workspace.guides :as-alias dwg]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -335,7 +335,7 @@
 
   ([state ignore-constraints ignore-snap-pixel modif-tree params]
    (let [objects
-         (wsh/lookup-page-objects state)
+         (dsh/lookup-page-objects state)
 
          snap-pixel?
          (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
@@ -355,7 +355,7 @@
 (defn- calculate-update-modifiers
   [old-modif-tree state ignore-constraints ignore-snap-pixel modif-tree]
   (let [objects
-        (wsh/lookup-page-objects state)
+        (dsh/lookup-page-objects state)
 
         snap-pixel?
         (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
@@ -421,7 +421,7 @@
    (ptk/reify ::set-rotation-modifiers
      ptk/UpdateEvent
      (update [_ state]
-       (let [objects (wsh/lookup-page-objects state)
+       (let [objects (dsh/lookup-page-objects state)
              ids     (sequence xf-rotation-shape shapes)
 
              get-modifier
@@ -442,7 +442,7 @@
   (ptk/reify ::set-delta-rotation-modifiers
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             ids
             (->> shapes
                  (remove #(get % :blocked false))
@@ -473,7 +473,7 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [text-modifiers    (get state :workspace-text-modifier)
-             objects           (wsh/lookup-page-objects state)
+             objects           (dsh/lookup-page-objects state)
 
              object-modifiers
              (if (some? modifiers)

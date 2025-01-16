@@ -13,7 +13,6 @@
    [app.common.types.color :as ctc]
    [app.common.types.colors-list :as ctcl]
    [app.common.types.container :as ctn]
-   [app.common.types.file :as ctf]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
@@ -43,25 +42,25 @@
         frame-id  (if (cfh/frame-shape? parent)
                     (:id parent)
                     (:frame-id parent))]
-    (ctf/update-file-data
-     file
-     (fn [file-data]
-       (ctpl/update-page file-data
-                         (:id page)
-                         #(ctst/add-shape (:id shape)
-                                          shape
-                                          %
-                                          frame-id
-                                          parent-id
-                                          nil
-                                          true))))))
+    (update file :data
+            (fn [file-data]
+              (ctpl/update-page file-data
+                                (:id page)
+                                #(ctst/add-shape (:id shape)
+                                                 shape
+                                                 %
+                                                 frame-id
+                                                 parent-id
+                                                 nil
+                                                 true))))))
 
 (defn get-shape
   [file label & {:keys [page-label]}]
-  (let [page (if page-label
-               (thf/get-page file page-label)
-               (thf/current-page file))]
-    (ctst/get-shape page (thi/id label))))
+  (let [page     (if page-label
+                   (thf/get-page file page-label)
+                   (thf/current-page file))
+        shape-id (thi/id label)]
+    (ctst/get-shape page shape-id)))
 
 (defn get-shape-by-id
   [file id & {:keys [page-label]}]
@@ -76,12 +75,11 @@
                (thf/get-page file page-label)
                (thf/current-page file))
         shape (ctst/get-shape page (thi/id shape-label))]
-    (ctf/update-file-data
-     file
-     (fn [file-data]
-       (ctpl/update-page file-data
-                         (:id page)
-                         #(ctst/set-shape % (ctn/set-shape-attr shape attr val)))))))
+    (update file :data
+            (fn [file-data]
+              (ctpl/update-page file-data
+                                (:id page)
+                                #(ctst/set-shape % (ctn/set-shape-attr shape attr val)))))))
 
 (defn sample-color
   [label & {:keys [] :as params}]
@@ -104,7 +102,7 @@
 (defn add-sample-library-color
   [file label & {:keys [] :as params}]
   (let [color (sample-color label params)]
-    (ctf/update-file-data file #(ctcl/add-color % color))))
+    (update file :data ctcl/add-color color)))
 
 (defn sample-typography
   [label & {:keys [] :as params}]
@@ -113,7 +111,7 @@
 (defn add-sample-typography
   [file label & {:keys [] :as params}]
   (let [typography (sample-typography label params)]
-    (ctf/update-file-data file #(cttl/add-typography % typography))))
+    (update file :data cttl/add-typography typography)))
 
 (defn add-interaction
   [file origin-label dest-label]
@@ -124,9 +122,8 @@
                          (ctsi/set-destination (:id dest))
                          (assoc :position-relative-to (:id origin)))
         interactions (ctsi/add-interaction (:interactions origin) interaction)]
-    (ctf/update-file-data
-     file
-     (fn [file-data]
-       (ctpl/update-page file-data
-                         (:id page)
-                         #(ctst/set-shape % (assoc origin :interactions interactions)))))))
+    (update file :data
+            (fn [file-data]
+              (ctpl/update-page file-data
+                                (:id page)
+                                #(ctst/set-shape % (assoc origin :interactions interactions)))))))

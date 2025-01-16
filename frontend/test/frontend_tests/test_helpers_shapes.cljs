@@ -41,9 +41,8 @@
 
             store (the/prepare-store state done
                                      (fn [new-state]
-                                       (t/is (= (get-in new-state [:workspace-data
-                                                                   :recent-colors])
-                                                [color]))))]
+                                       (let [colors (:recent-colors new-state)]
+                                         (t/is (= colors [color])))))]
 
         (ptk/emit!
          store

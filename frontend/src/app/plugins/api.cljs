@@ -8,7 +8,6 @@
   "RPC for plugins runtime."
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as cb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
@@ -19,6 +18,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.changes :as ch]
    [app.main.data.common :as dcm]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.colors :as dwc]
@@ -48,15 +48,17 @@
 ;;
 (defn create-shape
   [plugin-id type]
-  (let [page-id (:current-page-id @st/state)
-        page (dm/get-in @st/state [:workspace-data :pages-index page-id])
+  (let [page  (dsh/lookup-page @st/state)
         shape (cts/setup-shape {:type type
-                                :x 0 :y 0 :width 100 :height 100})
+                                :x 0 :y 0
+                                :width 100
+                                :height 100})
         changes
         (-> (cb/empty-changes)
             (cb/with-page page)
             (cb/with-objects (:objects page))
             (cb/add-object shape))]
+
     (st/emit! (ch/commit-changes changes))
     (shape/shape-proxy plugin-id (:id shape))))
 
@@ -160,7 +162,7 @@
                           (map #(obj/get % "$id"))
                           (mapcat #(cfh/get-children-with-self objects %)))
               file-id (:current-file-id @st/state)
-              shared-libs (:libraries @st/state)]
+              shared-libs (:files @st/state)]
 
           (->> (ctc/extract-all-colors shapes file-id shared-libs)
                (group-by :attrs)
@@ -182,7 +184,7 @@
 
           :else
           (let [file-id (:current-file-id @st/state)
-                shared-libs (:libraries @st/state)
+                shared-libs (:files @st/state)
                 objects (u/locate-objects)
                 shapes
                 (->> shapes
@@ -295,8 +297,7 @@
 
     :createPath
     (fn []
-      (let [page-id (:current-page-id @st/state)
-            page (dm/get-in @st/state [:workspace-data :pages-index page-id])
+      (let [page  (dsh/lookup-page @st/state)
             shape (cts/setup-shape
                    {:type :path
                     :content [{:command :move-to :params {:x 0 :y 0}}
@@ -306,6 +307,7 @@
                 (cb/with-page page)
                 (cb/with-objects (:objects page))
                 (cb/add-object shape))]
+
         (st/emit! (ch/commit-changes changes))
         (shape/shape-proxy plugin-id (:id shape))))
 
@@ -316,9 +318,7 @@
         (u/display-not-valid :createText text)
 
         :else
-        (let [file-id (:current-file-id @st/state)
-              page-id (:current-page-id @st/state)
-              page (dm/get-in @st/state [:workspace-data :pages-index page-id])
+        (let [page  (dsh/lookup-page @st/state)
               shape (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
                         (txt/change-text text)
                         (assoc :position-data nil))
@@ -327,8 +327,9 @@
                   (cb/with-page page)
                   (cb/with-objects (:objects page))
                   (cb/add-object shape))]
+
           (st/emit! (ch/commit-changes changes))
-          (shape/shape-proxy plugin-id file-id page-id (:id shape)))))
+          (shape/shape-proxy plugin-id (:id shape)))))
 
     :createShapeFromSvg
     (fn [svg-string]

@@ -13,7 +13,7 @@
    [app.common.geom.rect :as gpr]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.helpers :as dsh]
    [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -38,7 +38,7 @@
 
           (initialize [state local]
             (let [page-id (:current-page-id state)
-                  objects (wsh/lookup-page-objects state page-id)
+                  objects (dsh/lookup-page-objects state page-id)
                   shapes  (cfh/get-immediate-children objects)
                   srect   (gsh/shapes->rect shapes)
                   local   (assoc local :vport size :zoom 1 :zoom-inverse 1 :hide-toolbar false)]

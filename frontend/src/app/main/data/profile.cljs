@@ -330,19 +330,6 @@
              (rx/map (constantly (refresh-profile)))
              (rx/catch on-error))))))
 
-(defn fetch-users
-  []
-  (letfn [(fetched [users state]
-            (->> users
-                 (d/index-by :id)
-                 (assoc state :users)))]
-    (ptk/reify ::fetch-team-users
-      ptk/WatchEvent
-      (watch [_ state _]
-        (let [team-id (:current-team-id state)]
-          (->> (rp/cmd! :get-team-users {:team-id team-id})
-               (rx/map #(partial fetched %))))))))
-
 (defn fetch-file-comments-users
   [{:keys [team-id]}]
   (dm/assert! (uuid? team-id))
