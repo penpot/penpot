@@ -13,30 +13,25 @@ A swatch component can receive several props. The `background` prop is the most 
 
 ## Variants
 
-If the background prop has a hex `color` value it will display a full swatch with a solid color
+If the background prop has a property `value` with an hex color value it will display a full swatch with a solid color
 
 <Canvas of={SwatchStories.Default} />
 
-If the background prop has a hex `color` value and an opacity value it will display a full swatch with a solid color on one side and the same color with the opacity applied on the other side. (default opacity: 1)
+If the background prop has a property `value` with an hex color value and a a property `opacity` it will display a full swatch with a solid color on one side and the same color with the opacity applied on the other side. (default opacity: 1)
 
 <Canvas of={SwatchStories.WithOpacity} />
 
-This component can take a size property to set the size of the swatch. In this case we can set it to `small` (default size: `medium`)
+If the background prop has a gradient property it will display a full swatch with the gradient (linear or radial)
 
-<Canvas of={SwatchStories.Small} />
-
-With the `active` property, we can display the element as being active
-
-<Canvas of={SwatchStories.Active} />
+<Canvas of={SwatchStories.LinearGradient} />
+<Canvas of={SwatchStories.RadialGradient} />
 
 The element can also be interactive, and execute an external function. Typically, it launches the color picker. To make it an interactive button, it accepts an onClick function.
 
 <Canvas of={SwatchStories.Clickable} />
 
-> Due to technical issues regarding the transformation between Clojurescript and Javascript, we are unable to display:
+> Due to technical issues regarding how we display internal images in Penpot we cannot preview:
 
-    - Swatches with gradients
-    - Library Swatches
     - Swatches with images
 
 ## Technical Notes

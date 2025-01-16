@@ -6,6 +6,7 @@
 
 import * as React from "react";
 import Components from "@target/components";
+import { helpers } from "@target/components";
 import { action } from "@storybook/addon-actions";
 
 const { Swatch } = Components;
@@ -38,61 +39,64 @@ export const Default = {};
 export const WithOpacity = {
   args: {
     background: {
-      color: "#7efff5",
+      color: "#2f226c",
       opacity: 0.5,
     },
   },
 };
 
-// These stories are disabled because the gradient and the UUID variants cannot be translated from cljs into JS
-// When the repo is updated to use the new version of rumext, these stories should be re-enabled and tested
-//
-// export const LinearGradient = {
-//   args: {
-//     background: {
-//       gradient: {
-//         type: "linear",
-//         startX: 0,
-//         startY: 0,
-//         endX: 1,
-//         endY: 0,
-//         width: 1,
-//         stops: [
-//           {
-//             color: "#fabada",
-//             opacity: 1,
-//             offset: 0,
-//           },
-//           {
-//             color: "#cc0000",
-//             opacity: 0.5,
-//             offset: 1,
-//           },
-//         ],
-//       },
-//     },
-//   },
-// };
+const stops = [
+  {
+    color: "#151035",
+    opacity: 1,
+    offset: 0,
+  },
+  {
+    color: "#2f226c",
+    opacity: 0.5,
+    offset: 1,
+  },
+];
 
-// export const Rounded = {
-//   args: {
-//     background: {
-//       id: crypto.randomUUID(),
-//       color: "#7efff5",
-//       opacity: 0.5,
-//     },
-//   },
-// };
-
-export const Small = {
+export const LinearGradient = {
   args: {
-    size: "small",
+    background: {
+      gradient: {
+        type: helpers.keyword("linear"),
+        "start-x": 0,
+        "start-y": 0,
+        "end-x": 1,
+        "end-y": 0,
+        width: 1,
+        stops,
+      },
+    },
   },
 };
 
-export const Active = {
+export const RadialGradient = {
   args: {
-    active: true,
+    background: {
+      gradient: {
+        type: helpers.keyword("radial"),
+        "start-x": 0,
+        "start-y": 0,
+        "end-x": 1,
+        "end-y": 0,
+        width: 1,
+        stops,
+      },
+    },
+  },
+};
+
+export const Rounded = {
+  args: {
+    background: {
+      id: helpers.generateUuid(),
+      color: "#2f226c",
+      opacity: 0.5,
+    },
   },
 };
 

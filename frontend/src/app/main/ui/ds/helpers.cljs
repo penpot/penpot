@@ -7,8 +7,11 @@
 (ns app.main.ui.ds.helpers
   "A collection of helpers for exporting them to be used on storybook code."
   (:require
+   [app.common.uuid :refer [random]]
    [rumext.v2 :as mf]))
 
 (def default
   (mf/object
-   {:uuid parse-uuid}))
+   {:generate-uuid random
+    :keyword keyword}))
+
