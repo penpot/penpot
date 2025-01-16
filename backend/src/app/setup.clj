@@ -74,8 +74,7 @@
 
 (defmethod ig/assert-key ::props
   [_ params]
-  (assert (db/pool? (::db/pool params)) "expected valid database pool")
-  (assert (string? (::key params)) "expected valid key string"))
+  (assert (db/pool? (::db/pool params)) "expected valid database pool"))
 
 (defmethod ig/init-key ::props
   [_ {:keys [::db/pool ::key] :as cfg}]
