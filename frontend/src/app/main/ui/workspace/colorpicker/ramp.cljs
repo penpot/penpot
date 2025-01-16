@@ -86,6 +86,7 @@
             (on-change new-color)))]
 
     (mf/use-effect
+     (mf/deps (:hex (enrich-color-map color)))
      (fn []
        (reset! internal-color (enrich-color-map color))))
     [:*
