@@ -95,7 +95,7 @@
                  shape)]
     (select-keys shape measure-attrs)))
 
-(mf/defc measures-menu
+(mf/defc measures-menu*
   {::mf/props :obj
    ::mf/wrap [mf/memo]}
   [{:keys [ids ids-with-children values type all-types shape]}]

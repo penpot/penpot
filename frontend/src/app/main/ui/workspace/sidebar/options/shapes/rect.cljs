@@ -16,7 +16,7 @@
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.measures :refer [select-measure-keys measures-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.measures :refer [select-measure-keys measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
    [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]
@@ -55,10 +55,10 @@
      [:& layer-menu {:ids ids
                      :type type
                      :values layer-values}]
-     [:& measures-menu {:ids ids
-                        :type type
-                        :values measure-values
-                        :shape shape}]
+     [:> measures-menu* {:ids ids
+                         :type type
+                         :values measure-values
+                         :shape shape}]
 
      [:& layout-container-menu
       {:type type
