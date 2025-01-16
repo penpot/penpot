@@ -79,7 +79,6 @@
   [component new-component-id library-data]
   (let [components-v2 (dm/get-in library-data [:options :components-v2])]
     (if components-v2
-
       (let [main-instance-page  (ctf/get-component-page library-data component)
             main-instance-shape (ctf/get-component-root library-data component)
             delta               (gpt/point (+ (:width main-instance-shape) 50) 0)

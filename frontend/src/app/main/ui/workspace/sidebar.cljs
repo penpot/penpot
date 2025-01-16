@@ -48,7 +48,7 @@
               :size "s"
               :aria-label (tr "workspace.sidebar.collapse")}]])
 
-(mf/defc left-sidebar
+(mf/defc left-sidebar*
   {::mf/wrap [mf/memo]
    ::mf/props :obj}
   [{:keys [layout file page-id] :as props}]
@@ -179,9 +179,8 @@
 
 ;; --- Right Sidebar (Component)
 
-(mf/defc right-sidebar
-  {::mf/wrap-props false
-   ::mf/wrap [mf/memo]}
+(mf/defc right-sidebar*
+  {::mf/wrap [mf/memo]}
   [{:keys [layout section file page-id] :as props}]
   (let [drawing-tool     (:tool (mf/deref refs/workspace-drawing))
 
