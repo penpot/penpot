@@ -20,7 +20,7 @@
    [app.main.ui.hooks.resize :as r]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.color-palette :refer [color-palette*]]
-   [app.main.ui.workspace.color-palette-ctx-menu :refer [color-palette-ctx-menu]]
+   [app.main.ui.workspace.color-palette-ctx-menu :refer [color-palette-ctx-menu*]]
    [app.main.ui.workspace.text-palette :refer [text-palette]]
    [app.main.ui.workspace.text-palette-ctx-menu :refer [text-palette-ctx-menu]]
    [app.util.dom :as dom]
@@ -196,10 +196,10 @@
                                  :width vport-width}]])
             (when color-palette?
               [:*
-               [:& color-palette-ctx-menu {:show-menu?  show-menu?
-                                           :close-menu on-close-menu
-                                           :on-select-palette on-select-palette
-                                           :selected @selected}]
+               [:> color-palette-ctx-menu* {:show show-menu?
+                                            :on-close on-close-menu
+                                            :on-select on-select-palette
+                                            :selected @selected}]
                [:> color-palette* {:size size
                                    :selected @selected
                                    :width vport-width}]])]]
