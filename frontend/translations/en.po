@@ -6717,6 +6717,10 @@ msgstr "Add set"
 msgid "workspace.token.tools"
 msgstr "Tools"
 
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.no-permission-themes"
+msgstr "You need to be an editor to use themes"
+
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs
 msgid "workspace.token.save-theme"
 msgstr "Save theme"
