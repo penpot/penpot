@@ -32,9 +32,10 @@
 (t/deftest process-json-stream-test
   (t/async
     done
-    (t/testing "processes empty json string"
+    (t/testing "process simple color token value"
       (let [json (-> {"core" {"color" {"$value" "red"
-                                       "$type" "color"}}}
+                                       "$type" "color"}}
+                      "$metadata" {"tokenSetOrder" ["core"]}}
                      (tr/encode-str {:type :json-verbose}))]
         (->> (rx/of json)
              (sd/process-json-stream)
@@ -103,7 +104,8 @@ color.value tries to reference missing, which is not defined.")))
     done
     (t/testing "fails on missing references in tokens"
       (let [json (-> {"core" {"color" {"$value" "{missing}"
-                                       "$type" "color"}}}
+                                       "$type" "color"}}
+                      "$metadata" {"tokenSetOrder" ["core"]}}
                      (tr/encode-str {:type :json-verbose}))]
         (->> (rx/of json)
              (sd/process-json-stream)

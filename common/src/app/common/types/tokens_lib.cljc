@@ -568,7 +568,7 @@ When `before-set-name` is nil, move set to bottom")
          [:name :string]
          [:group :string]
          [:description [:maybe :string]]
-         [:is-source :boolean]
+         [:is-source [:maybe :boolean]]
          [:modified-at ::sm/inst]
          [:sets [:set {:gen/max 5} :string]]]
    [:fn (partial instance? TokenTheme)]])
@@ -993,37 +993,58 @@ Will return a value that matches this schema:
                         (filter #(and (instance? TokenTheme %)
                                       (not (hidden-temporary-theme? %))))
                         (map (fn [token-theme]
-                               (->> token-theme
-                                    (into {})
-                                    walk/stringify-keys))))
+                               (let [theme-map (->> token-theme
+                                                    (into {})
+                                                    walk/stringify-keys)]
+                                 (-> theme-map
+                                     (set/rename-keys  {"sets" "selectedTokenSets"})
+                                     (update "selectedTokenSets" (fn [sets]
+                                                                   (->> (for [s sets]
+                                                                          [s "enabled"])
+                                                                        (into {})))))))))
                        (tree-seq d/ordered-map? vals themes))
-          sets (into {} (comp
-                         (filter (partial instance? TokenSet))
-                         (map (fn [token-set]
-                                [(:name token-set) (get-dtcg-tokens-tree token-set)])))
-                     (tree-seq d/ordered-map? vals sets))]
-      (assoc sets "$themes" themes)))
+          name-set-tuples (->> sets
+                               (tree-seq d/ordered-map? vals)
+                               (filter (partial instance? TokenSet))
+                               (map (fn [token-set]
+                                      [(:name token-set) (get-dtcg-tokens-tree token-set)])))
+          ordered-set-names (map first name-set-tuples)
+          sets (into {} name-set-tuples)]
+      (-> sets
+          (assoc "$themes" themes)
+          (assoc-in ["$metadata" "tokenSetOrder"] ordered-set-names))))
 
   (decode-dtcg-json [_ parsed-json]
-    (let [;; tokens-studio/plugin will add these meta properties, remove them for now
+    (let [metadata (get parsed-json "$metadata")
           sets-data (dissoc parsed-json "$themes" "$metadata")
-          themes-data (get parsed-json "$themes")
+          themes-data (->> (get parsed-json "$themes")
+                           (map (fn [theme]
+                                  (-> theme
+                                      (set/rename-keys {"selectedTokenSets" "sets"})
+                                      (update "sets" keys)))))
+          set-order (get metadata "tokenSetOrder")
+          name->pos (into {} (map-indexed (fn [idx itm] [itm idx]) set-order))
+          sets-data' (sort-by (comp name->pos first) sets-data)
           lib (make-tokens-lib)
           lib' (reduce
                 (fn [lib [set-name tokens]]
                   (add-set lib (make-token-set
                                 :name set-name
                                 :tokens (flatten-nested-tokens-json tokens ""))))
-                lib sets-data)]
-      (reduce
-       (fn [lib {:strs [name group description is-source modified-at sets]}]
-         (add-theme lib (TokenTheme. name
-                                     group
-                                     description
-                                     is-source
-                                     (dt/parse-instant modified-at)
-                                     (set sets))))
-       lib' themes-data)))
+                lib sets-data')]
+      (if-let [themes-data (seq themes-data)]
+        (reduce
+         (fn [lib {:strs [name group description is-source modified-at sets]}]
+           (add-theme lib (TokenTheme. name
+                                       (or group "")
+                                       description
+                                       (some? is-source)
+                                       (or (some-> modified-at
+                                                   (dt/parse-instant))
+                                           (dt/now))
+                                       (set sets))))
+         lib' themes-data)
+        lib')))
 
   (get-all-tokens [this]
     (reduce

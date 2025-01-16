@@ -1163,7 +1163,8 @@
                                "is-source" false
                                "modified-at" now
                                "name" "theme-1"
-                               "sets" #{"core"}}]
+                               "selectedTokenSets" {"core" "enabled"}}]
+                   "$metadata" {"tokenSetOrder" ["core"]}
                    "core"
                    {"colors" {"red" {"600" {"$value" "#e53e3e"
                                             "$type" "color"}}}
