@@ -209,7 +209,9 @@
                     (open-permissions-dialog plugin))
                   (st/emit! (notif/error (tr "dashboard.plugins.parse-error")))))
               (fn [_]
-                (st/emit! (notif/error (tr "dashboard.plugins.bad-url"))))))))))
+                (st/emit! (notif/error (tr "dashboard.plugins.bad-url"))))))
+        (binding [storage/*sync* true]
+          (swap! storage/session dissoc :plugin-url))))))
 
 (defn use-templates-import
   [can-edit? template-url default-project-id]
