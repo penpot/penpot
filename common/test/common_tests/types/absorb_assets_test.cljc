@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns common-tests.types.types-libraries-test
+(ns common-tests.types.absorb-assets-test
   (:require
    [app.common.data :as d]
    [app.common.test-helpers.components :as thc]
@@ -23,55 +23,7 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
-(t/deftest test-create-file
-  (let [f1 (thf/sample-file :file1)
-        f2 (thf/sample-file :file2 :page-label :page1)
-        f3 (thf/sample-file :file3 :name "testing file")
-        f4 (-> (thf/sample-file :file4 :page-label :page2)
-               (thf/add-sample-page :page3 :name "testing page")
-               (ths/add-sample-shape :shape1))
-        f5 (-> f4
-               (ths/add-sample-shape :shape2)
-               (thf/switch-to-page :page2)
-               (ths/add-sample-shape :shape3 :name "testing shape" :width 100))
-        s1 (ths/get-shape f4 :shape1)
-        s2 (ths/get-shape f5 :shape2 :page-label :page3)
-        s3 (ths/get-shape f5 :shape3)]
-
-    ;; (thf/pprint-file f4)
-
-    (t/is (= (:name f1) "Test file"))
-    (t/is (= (:name f3) "testing file"))
-    (t/is (= (:id f2) (thi/id :file2)))
-    (t/is (= (:id f4) (thi/id :file4)))
-    (t/is (= (-> f4 :data :pages-index vals first :id) (thi/id :page2)))
-    (t/is (= (-> f4 :data :pages-index vals first :name) "Page 1"))
-    (t/is (= (-> f4 :data :pages-index vals second :id) (thi/id :page3)))
-    (t/is (= (-> f4 :data :pages-index vals second :name) "testing page"))
-
-    (t/is (= (:id (thf/current-page f2)) (thi/id :page1)))
-    (t/is (= (:id (thf/current-page f4)) (thi/id :page3)))
-    (t/is (= (:id (thf/current-page f5)) (thi/id :page2)))
-
-    (t/is (= (:id s1) (thi/id :shape1)))
-    (t/is (= (:name s1) "Rectangle"))
-    (t/is (= (:id s2) (thi/id :shape2)))
-    (t/is (= (:name s2) "Rectangle"))
-    (t/is (= (:id s3) (thi/id :shape3)))
-    (t/is (= (:name s3) "testing shape"))
-    (t/is (= (:width s3) 100))
-    (t/is (= (:width (:selrect s3)) 100))))
-
-(t/deftest test-create-components
-  (let [f1 (-> (thf/sample-file :file1)
-               (tho/add-simple-component-with-copy :component1 :main-root :main-child :copy-root))]
-
-    #_(thf/dump-file f1)
-    #_(thf/pprint-file f4)
-
-    (t/is (= (:name f1) "Test file"))))
-
-(t/deftest test-absorb-components
+(t/deftest absorb-components
   (let [;; Setup
         library (-> (thf/sample-file :library :is-shared true)
                     (tho/add-simple-component :component1 :main-root :rect1))
@@ -105,7 +57,7 @@
     (t/is (ctk/is-main-of? main-root' copy-root' true))
     (t/is (ctk/main-instance-of? (:id main-root') (:id (second pages')) component'))))
 
-(t/deftest test-absorb-colors
+(t/deftest absorb-colors
   (let [;; Setup
         library (-> (thf/sample-file :library :is-shared true)
                     (ths/add-sample-library-color :color1 {:name "Test color"
@@ -142,7 +94,7 @@
     (t/is (= (:fill-color-ref-id fill') (thi/id :color1)))
     (t/is (= (:fill-color-ref-file fill') (:id file')))))
 
-(t/deftest test-absorb-typographies
+(t/deftest absorb-typographies
   (let [;; Setup
         library (-> (thf/sample-file :library :is-shared true)
                     (ths/add-sample-typography :typography1 {:name "Test typography"}))

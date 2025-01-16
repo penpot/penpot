@@ -4,14 +4,14 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns common-tests.types-modifiers-test
+(ns common-tests.types.modifiers-test
   (:require
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.types.modifiers :as ctm]
    [clojure.test :as t]))
 
-(t/deftest test-modifiers->transform
+(t/deftest modifiers->transform
   (let [modifiers
         (-> (ctm/empty)
             (ctm/move (gpt/point 100 200))

@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns common-tests.types-shape-interactions-test
+(ns common-tests.types.shape-interactions-test
   (:require
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
@@ -49,7 +49,6 @@
             (ctsi/set-event-type interaction :after-delay frame)]
         (t/is (= :after-delay (:event-type new-interaction)))
         (t/is (= 300 (:delay new-interaction)))))))
-
 
 (t/deftest set-action-type
   (let [interaction ctsi/default-interaction]

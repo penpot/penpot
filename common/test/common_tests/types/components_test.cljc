@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns common-tests.types.types-component-test
+(ns common-tests.types.components-test
   (:require
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
