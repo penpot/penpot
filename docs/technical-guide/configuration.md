@@ -30,7 +30,7 @@ flags (that just enables or disables something). All flags are set in a single
 format: <code class="language-bash"><enable|disable>-\<flag-name></code>. For example:
 
 ```bash
-PENPOT_FLAGS: enable-smpt disable-registration disable-email-verification
+PENPOT_FLAGS: enable-smtp disable-registration disable-email-verification
 ```
 
 ### Registration ###
