@@ -1015,8 +1015,7 @@ Will return a value that matches this schema:
           (assoc-in ["$metadata" "tokenSetOrder"] ordered-set-names))))
 
   (decode-dtcg-json [_ parsed-json]
-    (let [ ;; tokens-studio/plugin will add these meta properties, remove them for now
-          metadata (get parsed-json "$metadata")
+    (let [metadata (get parsed-json "$metadata")
           sets-data (dissoc parsed-json "$themes" "$metadata")
           themes-data (->> (get parsed-json "$themes")
                            (map (fn [theme]
