@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.types.color :as ctc]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.reorder-handler :refer [reorder-handler]]
    [app.main.ui.components.select :refer [select]]
@@ -147,12 +148,7 @@
        [:& reorder-handler {:ref dref}])
 
      ;; Stroke Color
-     [:& color-row {:color {:color (:stroke-color stroke)
-                            :opacity (:stroke-opacity stroke)
-                            :id (:stroke-color-ref-id stroke)
-                            :file-id (:stroke-color-ref-file stroke)
-                            :gradient (:stroke-color-gradient stroke)
-                            :image (:stroke-image stroke)}
+     [:& color-row {:color (ctc/stroke->shape-color stroke)
                     :index index
                     :title title
                     :on-change on-color-change-refactor
