@@ -204,21 +204,23 @@
                                       (cond-> {}
                                         force-frame? (assoc :force-frame-id frame-id)))
 
-         first-shape (cond-> (first new-shapes)
-                       (not (nil? parent-id))
-                       (assoc :parent-id parent-id)
-                       (and (not (nil? parent)) (= :frame (:type parent)))
-                       (assoc :frame-id (:id parent))
-                       (and (not (nil? parent)) (not= :frame (:type parent)))
-                       (assoc :frame-id (:frame-id parent))
-                       (and (not (nil? parent)) (ctn/in-any-component? objects parent))
-                       (dissoc :component-root)
-                       (and (nil? parent) (not (nil? frame-id)))
-                       (assoc :frame-id frame-id))
+         first-shape
+         (cond-> (first new-shapes)
+           (not (nil? parent-id))
+           (assoc :parent-id parent-id)
+           (and (not (nil? parent)) (= :frame (:type parent)))
+           (assoc :frame-id (:id parent))
+           (and (not (nil? parent)) (not= :frame (:type parent)))
+           (assoc :frame-id (:frame-id parent))
+           (and (not (nil? parent)) (ctn/in-any-component? objects parent))
+           (dissoc :component-root)
+           (and (nil? parent) (not (nil? frame-id)))
+           (assoc :frame-id frame-id))
 
          ;; on copy/paste old id is used later to reorder the paster layers
-         changes (cond-> (pcb/add-object changes first-shape {:ignore-touched true})
-                   (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id)))
+         changes
+         (cond-> (pcb/add-object changes first-shape {:ignore-touched true})
+           (some? old-id) (pcb/amend-last-change #(assoc % :old-id old-id)))
 
          changes
          (if (ctl/grid-layout? objects (:parent-id first-shape))
@@ -239,9 +241,10 @@
                  (pcb/reorder-grid-children [(:parent-id first-shape)])))
            changes)
 
-         changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
-                         changes
-                         (rest new-shapes))]
+         changes
+         (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
+                 changes
+                 (rest new-shapes))]
 
      [new-shape changes])))
 
@@ -1487,7 +1490,7 @@
 (defn- update-tokens
   "Token synchronization algorithm. Copy the applied tokens that have changed
    in the origin shape to the dest shape (applying or removing as necessary).
-   
+
    Only the given token attributes are synced."
   [changes container dest-shape orig-shape token-attrs]
   (let [orig-tokens  (get orig-shape :applied-tokens {})
