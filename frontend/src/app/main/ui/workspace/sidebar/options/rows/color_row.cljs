@@ -19,7 +19,6 @@
    [app.main.ui.components.color-input :refer [color-input*]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.reorder-handler :refer [reorder-handler]]
-   [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
@@ -49,24 +48,23 @@
   [{:keys [index color disable-gradient disable-opacity disable-image disable-picker on-change
            on-reorder on-detach on-open on-close on-remove
            disable-drag on-focus on-blur select-only select-on-focus]}]
-  (let [current-file-id (mf/use-ctx ctx/current-file-id)
-        shared-libs     (mf/deref refs/libraries)
-        hover-detach    (mf/use-state false)
-        on-change       (h/use-ref-callback on-change)
+  (let [shared-libs      (mf/deref refs/libraries)
+        hover-detach     (mf/use-state false)
+        on-change        (h/use-ref-callback on-change)
 
-        src-colors      (dm/get-in shared-libs [(:ref-file color) :data :colors])
-        color-name      (dm/get-in src-colors [(:ref-id color) :name])
+        src-colors       (dm/get-in shared-libs [(:ref-file color) :data :colors])
+        color-name       (dm/get-in src-colors [(:ref-id color) :name])
 
         multiple-colors? (uc/multiple? color)
         library-color?   (and (:ref-id color) color-name (not multiple-colors?))
         gradient-color?  (and (not multiple-colors?)
                               (:gradient color)
                               (dm/get-in color [:gradient :type]))
-        image-color? (and (not multiple-colors?)
-                          (:image color))
+        image-color?     (and (not multiple-colors?)
+                              (:image color))
 
-        editing-text*  (mf/use-state false)
-        editing-text?  (deref editing-text*)
+        editing-text*    (mf/use-state false)
+        editing-text?    (deref editing-text*)
 
         opacity?
         (and (not multiple-colors?)
