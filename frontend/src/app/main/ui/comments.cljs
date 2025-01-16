@@ -612,7 +612,7 @@
 (mf/defc comment-reply-form*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [thread]}]
+  [{:keys [on-submit]}]
   (let [show-buttons? (mf/use-state false)
         content       (mf/use-state "")
 
@@ -633,15 +633,17 @@
 
         on-cancel
         (mf/use-fn
-         #(do (reset! content "")
-              (reset! show-buttons? false)))
-
-        on-submit
-        (mf/use-fn
-         (mf/deps thread @content)
          (fn []
-           (st/emit! (dcm/add-comment thread @content))
+           (reset! content "")
+           (reset! show-buttons? false)))
+
+        on-submit*
+        (mf/use-fn
+         (mf/deps @content)
+         (fn []
+           (on-submit @content)
            (on-cancel)))]
+
     [:div {:class (stl/css :form)}
      [:> comment-input*
       {:value @content
@@ -656,10 +658,12 @@
        [:div {:class (stl/css :form-buttons-wrapper)}
         [:> mentions-button*]
         [:> button* {:variant "ghost"
+                     :type "button"
                      :on-click on-cancel}
          (tr "ds.confirm-cancel")]
         [:> button* {:variant "primary"
-                     :on-click on-submit
+                     :type "button"
+                     :on-click on-submit*
                      :disabled disabled?}
          (tr "labels.post")]])]))
 
@@ -669,6 +673,9 @@
   [{:keys [content on-submit on-cancel]}]
   (let [content (mf/use-state content)
 
+        disabled? (or (str/blank? @content)
+                      (str/empty? @content))
+
         on-change
         (mf/use-fn
          #(reset! content %))
@@ -676,10 +683,8 @@
         on-submit*
         (mf/use-fn
          (mf/deps @content)
-         (fn [] (on-submit @content)))
-
-        disabled? (or (str/blank? @content)
-                      (str/empty? @content))]
+         (fn []
+           (on-submit @content)))]
 
     [:div {:class (stl/css :form)}
      [:> comment-input*
@@ -691,9 +696,11 @@
      [:div {:class (stl/css :form-buttons-wrapper)}
       [:> mentions-button*]
       [:> button* {:variant "ghost"
+                   :type "button"
                    :on-click on-cancel}
        (tr "ds.confirm-cancel")]
       [:> button* {:variant "primary"
+                   :type "button"
                    :on-click on-submit*
                    :disabled disabled?}
        (tr "labels.post")]]]))
@@ -734,7 +741,8 @@
         on-submit
         (mf/use-fn
          (mf/deps draft)
-         (partial on-submit draft))]
+         (fn []
+           (on-submit draft)))]
 
     [:> (mf/provider mentions-context) {:value mentions-str}
      [:div
@@ -762,9 +770,11 @@
        [:div {:class (stl/css :form-buttons-wrapper)}
         [:> mentions-button*]
         [:> button* {:variant "ghost"
+                     :type "button"
                      :on-click on-esc}
          (tr "ds.confirm-cancel")]
         [:> button* {:variant "primary"
+                     :type "button"
                      :on-click on-submit
                      :disabled disabled?}
          (tr "labels.post")]]]
@@ -976,7 +986,13 @@
                         (->> (vals comments-map)
                              (sort-by :created-at)))
 
-        first-comment (first comments)]
+        first-comment (first comments)
+
+        on-submit
+        (mf/use-fn
+         (mf/deps thread)
+         (fn [content]
+           (st/emit! (dcm/add-comment thread content))))]
 
     (mf/with-effect [thread-id]
       (st/emit! (dcm/retrieve-comments thread-id)))
@@ -1013,7 +1029,7 @@
             [:> comment-floating-thread-item* {:comment item
                                                :profiles profiles}]])]
 
-        [:> comment-reply-form* {:thread thread}]
+        [:> comment-reply-form* {:on-submit on-submit}]
 
         [:> mentions-panel* {:profiles profiles}]])]))
 
