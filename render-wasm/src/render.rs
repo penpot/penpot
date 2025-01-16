@@ -19,7 +19,12 @@ pub use blend::BlendMode;
 pub use images::*;
 
 pub trait Renderable {
-    fn render(&self, surface: &mut skia::Surface, images: &ImageStore) -> Result<(), String>;
+    fn render(
+        &self,
+        surface: &mut skia::Surface,
+        images: &ImageStore,
+        scale: f32,
+    ) -> Result<(), String>;
     fn blend_mode(&self) -> BlendMode;
     fn opacity(&self) -> f32;
     fn bounds(&self) -> math::Rect;
@@ -157,8 +162,9 @@ impl RenderState {
     }
 
     pub fn render_single_element(&mut self, element: &impl Renderable) {
+        let scale = self.viewbox.zoom * self.options.dpr();
         element
-            .render(&mut self.drawing_surface, &self.images)
+            .render(&mut self.drawing_surface, &self.images, scale)
             .unwrap();
 
         self.drawing_surface.draw(
