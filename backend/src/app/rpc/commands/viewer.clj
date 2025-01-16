@@ -70,6 +70,7 @@
                            :deleted-at nil})]
 
     {:users members
+     :profiles members
      :fonts fonts
      :project project
      :share-links links

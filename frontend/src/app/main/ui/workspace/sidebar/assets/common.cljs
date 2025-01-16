@@ -15,6 +15,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.config :as cf]
+   [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
@@ -58,7 +59,10 @@
                               (if reverse? "z" "a")
                               path)]
                    (str/lower (cfh/merge-path-item path name))))
-               (if ^boolean reverse? > <)))))
+               (if ^boolean reverse? > <))
+
+      :always
+      (vec))))
 
 (defn add-group
   [asset group-name]
@@ -315,10 +319,13 @@
         copies              (filter ctk/in-component-copy? shapes)
 
         current-file-id     (mf/use-ctx ctx/current-file-id)
-        objects             (deref refs/workspace-page-objects)
-        workspace-data      (deref refs/workspace-data)
+        current-page-id     (mf/use-ctx ctx/current-page-id)
+
         libraries           (deref refs/libraries)
-        current-file        {:id current-file-id :data workspace-data}
+        current-file        (get libraries current-file-id)
+
+        objects             (-> (dsh/get-page (:data current-file) current-page-id)
+                                (get :objects))
 
         find-component      (fn [shape include-deleted?]
                               (ctf/resolve-component

@@ -9,9 +9,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.features :as features]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
@@ -56,7 +56,7 @@
         wasm-renderer-enabled? (features/use-feature "render-wasm/v1")
 
         shapes (->
-                (wsh/lookup-page-objects @st/state)
+                (dsh/lookup-page-objects @st/state)
                 (select-keys ids)
                 vals)
 

@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.comments :as dcm]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -24,38 +25,43 @@
         (assoc :frame-id (dm/get-in positions [id :frame-id])))
     thread))
 
-(mf/defc comments-layer
-  {::mf/props :obj}
-  [{:keys [vbox vport zoom file-id page-id drawing] :as props}]
-  (let [vbox-x   (dm/get-prop vbox :x)
-        vbox-y   (dm/get-prop vbox :y)
-        vport-w  (dm/get-prop vport :width)
-        vport-h  (dm/get-prop vport :height)
+(def ^:private ref:thread-positions
+  (l/derived (fn [state]
+               (-> (dsh/lookup-page state)
+                   (get :comment-thread-positions)))
+             st/state))
 
-        pos-x    (* (- vbox-x) zoom)
-        pos-y    (* (- vbox-y) zoom)
+(mf/defc comments-layer*
+  [{:keys [vbox vport zoom drawing file-id page-id]}]
+  (let [vbox-x      (dm/get-prop vbox :x)
+        vbox-y      (dm/get-prop vbox :y)
+        vport-w     (dm/get-prop vport :width)
+        vport-h     (dm/get-prop vport :height)
 
-        profile  (mf/deref refs/profile)
-        profiles (mf/deref refs/profiles)
-        local    (mf/deref refs/comments-local)
+        pos-x       (* (- vbox-x) zoom)
+        pos-y       (* (- vbox-y) zoom)
 
-        positions-ref
-        (mf/with-memo [page-id]
-          ;; FIXME: use lookup helpers here
-          (-> (l/in [:workspace-data :pages-index page-id :comment-thread-positions])
-              (l/derived st/state)))
+        profile     (mf/deref refs/profile)
+        local       (mf/deref refs/comments-local)
 
-        positions   (mf/deref positions-ref)
-        threads-map (mf/deref refs/threads-ref)
+        positions   (mf/deref ref:thread-positions)
+
+        threads-map (mf/deref refs/threads)
+        threads-map (mf/with-memo [threads-map page-id positions]
+                      (reduce-kv (fn [threads id thread]
+                                   (if (= (:page-id thread) page-id)
+                                     (assoc threads id (update-position positions thread))
+                                     threads))
+                                 {}
+                                 threads-map))
 
         threads
-        (mf/with-memo [threads-map positions local profile]
+        (mf/with-memo [threads-map local profile]
           (->> (vals threads-map)
-               (filter #(= (:page-id %) page-id))
-               (mapv (partial update-position positions))
                (dcm/apply-filters local profile)))
 
-        viewport (assoc vport :offset-x pos-x :offset-y pos-y)
+        viewport
+        (assoc vport :offset-x pos-x :offset-y pos-y)
 
         on-draft-cancel
         (mf/use-fn #(st/emit! :interrupt))
@@ -78,7 +84,6 @@
              :style {:transform (dm/fmt "translate(%px, %px)" pos-x pos-y)}}
        (for [item threads]
          [:> cmt/comment-floating-bubble* {:thread item
-                                           :profiles profiles
                                            :zoom zoom
                                            :is-open (= (:id item) (:open local))
                                            :key (:seqn item)}])
@@ -86,15 +91,14 @@
        (when-let [id (:open local)]
          (when-let [thread (get threads-map id)]
            (when (seq (dcm/apply-filters local profile [thread]))
-             [:> cmt/comment-floating-thread* {:thread (update-position positions thread)
-                                               :profiles profiles
-                                               :viewport viewport
-                                               :zoom zoom}])))
+             [:> cmt/comment-floating-thread*
+              {:thread (update-position positions thread)
+               :viewport viewport
+               :zoom zoom}])))
 
        (when-let [draft (:comment drawing)]
-         [:> cmt/comment-floating-thread-draft* {:draft draft
-                                                 :profiles profiles
-                                                 :on-cancel on-draft-cancel
-                                                 :on-submit on-draft-submit
-                                                 :zoom zoom}])]]]))
-
+         [:> cmt/comment-floating-thread-draft*
+          {:draft draft
+           :on-cancel on-draft-cancel
+           :on-submit on-draft-submit
+           :zoom zoom}])]]]))

@@ -10,7 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.types.shape-tree :as ctst]
-   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.helpers :as dsh]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.util.code-beautify :as cb]
@@ -57,7 +57,7 @@
   (ptk/reify ::update-preview
     ptk/EffectEvent
     (effect [_ state _]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             shape (get objects shape-id)
 
             all-children
@@ -94,7 +94,7 @@
   (ptk/reify ::open-preview-selected
     ptk/WatchEvent
     (watch [_ state _]
-      (let [shape-id (first (wsh/lookup-selected state))
+      (let [shape-id (first (dsh/lookup-selected state))
             closed-preview (rx/subject)
             preview (.open js/window "/#/frame-preview")
             listener-fn #(rx/push! closed-preview true)]

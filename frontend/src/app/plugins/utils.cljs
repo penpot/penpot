@@ -11,21 +11,20 @@
    [app.common.data.macros :as dm]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.main.data.helpers :as dsh]
    [app.main.store :as st]
    [app.util.object :as obj]))
 
 (defn locate-file
   [id]
   (assert (uuid? id) "File not valid uuid")
-  (if (= id (:current-file-id @st/state))
-    (-> (:workspace-file @st/state)
-        (assoc :data (:workspace-data @st/state)))
-    (dm/get-in @st/state [:libraries id])))
+  (dsh/lookup-file @st/state id))
 
 (defn locate-page
   [file-id id]
   (assert (uuid? id) "Page not valid uuid")
-  (dm/get-in (locate-file file-id) [:data :pages-index id]))
+  (-> (dsh/lookup-file-data @st/state file-id)
+      (dsh/get-page id)))
 
 (defn locate-objects
   ([]
@@ -62,13 +61,15 @@
   (let [{:keys [profile-id]} (locate-presence session-id)]
     (dm/get-in @st/state [:users profile-id])))
 
+;; FIXME: the impl looks strange: objects is passed by parameters but
+;; then the rest of the file is looked up directly from state.... (?)
 (defn locate-component
   [objects shape]
-  (let [current-file-id (:current-file-id @st/state)
-        workspace-data  (:workspace-data @st/state)
-        libraries       (:libraries @st/state)
+  (let [state           (deref st/state)
+        file            (dsh/lookup-file state)
+        libraries       (dsh/lookup-libraries state)
         root            (ctn/get-instance-root objects shape)]
-    [root (ctf/resolve-component root {:id current-file-id :data workspace-data} libraries {:include-deleted? true})]))
+    [root (ctf/resolve-component root file libraries {:include-deleted? true})]))
 
 (defn proxy->file
   [proxy]
@@ -87,7 +88,7 @@
   [proxy]
   (let [file-id (obj/get proxy "$file")
         page-id (obj/get proxy "$page")
-        id (obj/get proxy "$id")]
+        id      (obj/get proxy "$id")]
     (when (and (some? file-id) (some? page-id) (some? id))
       (locate-shape file-id page-id id))))
 
@@ -167,9 +168,12 @@
 
 (defn get-state
   ([self attr]
-   (let [id (get-data self :id)
-         page-id (d/nilv (get-data self :page-id) (:current-page-id @st/state))]
-     (dm/get-in @st/state [:workspace-data :pages-index page-id :objects id attr])))
+   (let [id      (get-data self :id)
+         page-id (or (get-data self :page-id)
+                     (:current-page-id @st/state))]
+     (-> (dsh/lookup-page-objects @st/state page-id)
+         (dm/get-in [:objects id attr]))))
+
   ([self attr mapfn]
    (-> (get-state self attr)
        (mapfn))))

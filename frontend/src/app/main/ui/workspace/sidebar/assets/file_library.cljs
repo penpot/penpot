@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.types.components-list :as ctkl]
    [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
@@ -19,7 +20,6 @@
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.libraries :refer [create-file-library-ref]]
    [app.main.ui.workspace.sidebar.assets.colors :refer [colors-section]]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.components :refer [components-section]]
@@ -33,6 +33,10 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; REFS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (def ^:private ref:open-status
   (l/derived (l/in [:workspace-assets :open-status]) st/state))
 
@@ -40,8 +44,37 @@
   (-> (l/in [:workspace-assets :selected])
       (l/derived st/state)))
 
+(defn- create-file-ref
+  [library-id]
+  (l/derived (fn [state]
+               (dm/get-in state [:files library-id :data]))
+             st/state))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; LOCAL HELPER HOOKS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- use-library-ref
+  [file-id]
+  (let [library-ref (mf/with-memo [file-id]
+                      (create-file-ref file-id))]
+    (mf/deref library-ref)))
+
+(defn- use-selected
+  "Returns the currently selected assets set on the library"
+  [file-id]
+  (let [selected-ref
+        (mf/with-memo [file-id]
+          (-> (l/key file-id)
+              (l/derived ref:selected)))]
+    (mf/deref selected-ref)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; COMPONENTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (mf/defc file-library-title*
-  {::mf/props :obj}
+  {::mf/private true}
   [{:keys [is-open is-local file-id page-id file-name]}]
   (let [router     (mf/deref refs/router)
         team-id    (mf/use-ctx ctx/current-team-id)
@@ -61,8 +94,9 @@
            (dom/stop-propagation ev)
            (st/emit! (ptk/data-event ::ev/event {::ev/name "navigate-to-library-file"}))))]
 
-    [:div  {:class (stl/css-case :library-title true
-                                 :open is-open)}
+    [:div {:class (stl/css-case
+                   :library-title true
+                   :open is-open)}
      [:& title-bar {:collapsable    true
                     :collapsed      (not is-open)
                     :all-clickable  true
@@ -71,10 +105,9 @@
                                       (mf/html [:div {:class (stl/css :special-title)}
                                                 (tr "workspace.assets.local-library")])
                                       ;; Do we need to add shared info here?
-
                                       (mf/html [:div {:class (stl/css :special-title)}
                                                 file-name]))}
-      (when-not is-local
+      (when-not ^boolean is-local
         [:span {:title (tr "workspace.assets.open-library")}
          [:a {:class (stl/css :file-link)
               :href (str "#" url)
@@ -82,102 +115,87 @@
               :on-click on-click}
           i/open-link]])]]))
 
-(mf/defc file-library-content
-  {::mf/wrap-props false}
-  [{:keys [file local? open-status-ref on-clear-selection filters]}]
-  (let [components-v2      (mf/use-ctx ctx/components-v2)
-        open-status        (mf/deref open-status-ref)
+(defn- extend-selected
+  [selected type asset-groups asset-id file-id]
+  (letfn [(flatten-groups [groups]
+            (reduce concat [(get groups "" [])
+                            (into []
+                                  (->> (filter #(seq (first %)) groups)
+                                       (map second)
+                                       (mapcat flatten-groups)))]))]
 
-        file-id            (:id file)
-        project-id         (:project-id file)
+    (let [selected' (get selected type)]
+      (if (zero? (count selected'))
+        (st/emit! (dw/select-single-asset file-id asset-id type))
+        (let [all-assets  (flatten-groups asset-groups)
+              click-index (d/index-of-pred all-assets #(= (:id %) asset-id))
+              first-index (->> (get selected type)
+                               (map (fn [asset] (d/index-of-pred all-assets #(= (:id %) asset))))
+                               (sort)
+                               (first))
 
-        filters-section    (:section filters)
+              min-index   (min first-index click-index)
+              max-index   (max first-index click-index)
+              ids         (->> (d/enumerate all-assets)
+                               (into #{} (comp (filter #(<= min-index (first %) max-index))
+                                               (map (comp :id second)))))]
 
-        filters-term       (:term filters)
-        filters-ordering   (:ordering filters)
-        filters-list-style (:list-style filters)
+          (st/emit! (dw/select-assets file-id ids type)))))))
 
-        reverse-sort?      (= :desc filters-ordering)
-        listing-thumbs?    (= :thumbs filters-list-style)
+(mf/defc file-library-content*
+  {::mf/private true}
+  [{:keys [file is-local open-status-ref on-clear-selection filters colors media typographies components]}]
+  (let [open-status       (mf/deref open-status-ref)
 
-        library-ref        (mf/with-memo [file-id]
-                             (create-file-library-ref file-id))
+        file-id           (:id file)
+        project-id        (:project-id file)
 
-        library            (mf/deref library-ref)
-        colors             (:colors library)
-        components         (:components library)
-        media              (:media library)
-        typographies       (:typographies library)
+        filters-section   (:section filters)
+        has-filters-term? (not ^boolean (str/empty? (:term filters)))
 
-        colors             (mf/with-memo [filters colors]
-                             (cmm/apply-filters colors filters))
-        components         (mf/with-memo [filters components]
-                             (cmm/apply-filters components filters))
-        media              (mf/with-memo [filters media]
-                             (cmm/apply-filters media filters))
-        typographies       (mf/with-memo [filters typographies]
-                             (cmm/apply-filters typographies filters))
+        reverse-sort?     (= :desc (:ordering filters))
+        listing-thumbs?   (= :thumbs (:list-style filters))
 
-        show-components?   (and (or (= filters-section "all")
-                                    (= filters-section "components"))
-                                (or (pos? (count components))
-                                    (str/empty? filters-term)))
-        show-graphics?     (and (or (= filters-section "all")
-                                    (= filters-section "graphics"))
-                                (or (pos? (count media))
-                                    (and (str/empty? filters-term)
-                                         (not components-v2))))
-        show-colors?       (and (or (= filters-section "all")
-                                    (= filters-section "colors"))
-                                (or (> (count colors) 0)
-                                    (str/empty? filters-term)))
-        show-typography?   (and (or (= filters-section "all")
-                                    (= filters-section "typographies"))
-                                (or (pos? (count typographies))
-                                    (str/empty? filters-term)))
+        selected          (use-selected file-id)
 
-        selected-lens      (mf/with-memo [file-id]
-                             (-> (l/key file-id)
-                                 (l/derived ref:selected)))
+        show-components?
+        (and (or (= filters-section "all")
+                 (= filters-section "components"))
+             (or (pos? (count components))
+                 (not has-filters-term?)))
 
-        selected           (mf/deref selected-lens)
+        show-graphics?
+        (and (or (= filters-section "all")
+                 (= filters-section "graphics"))
+             (pos? (count media)))
 
-        has-term?                (not ^boolean (str/empty? filters-term))
-        force-open-components?   (when ^boolean has-term? (> 60 (count components)))
-        force-open-colors?       (when ^boolean has-term? (> 60 (count colors)))
-        force-open-graphics?     (when ^boolean has-term? (> 60 (count media)))
-        force-open-typographies? (when ^boolean has-term? (> 60 (count typographies)))
+        show-colors?
+        (and (or (= filters-section "all")
+                 (= filters-section "colors"))
+             (or (> (count colors) 0)
+                 (not has-filters-term?)))
 
-        extend-selected
-        (fn [type asset-groups asset-id]
-          (letfn [(flatten-groups [groups]
-                    (reduce concat [(get groups "" [])
-                                    (into []
-                                          (->> (filter #(seq (first %)) groups)
-                                               (map second)
-                                               (mapcat flatten-groups)))]))]
+        show-typography?
+        (and (or (= filters-section "all")
+                 (= filters-section "typographies"))
+             (or (pos? (count typographies))
+                 (not has-filters-term?)))
 
-            (let [selected' (get selected type)]
-              (if (zero? (count selected'))
-                (st/emit! (dw/select-single-asset file-id asset-id type))
-                (let [all-assets  (flatten-groups asset-groups)
-                      click-index (d/index-of-pred all-assets #(= (:id %) asset-id))
-                      first-index (->> (get selected type)
-                                       (map (fn [asset] (d/index-of-pred all-assets #(= (:id %) asset))))
-                                       (sort)
-                                       (first))
+        force-open-components?
+        (when ^boolean has-filters-term? (> 60 (count components)))
 
-                      min-index   (min first-index click-index)
-                      max-index   (max first-index click-index)
-                      ids         (->> (d/enumerate all-assets)
-                                       (into #{} (comp (filter #(<= min-index (first %) max-index))
-                                                       (map (comp :id second)))))]
+        force-open-colors?
+        (when ^boolean has-filters-term? (> 60 (count colors)))
 
-                  (st/emit! (dw/select-assets file-id ids type)))))))
+        force-open-graphics?
+        (when ^boolean has-filters-term? (> 60 (count media)))
+
+        force-open-typographies?
+        (when ^boolean has-filters-term? (> 60 (count typographies)))
 
         on-asset-click
         (mf/use-fn
-         (mf/deps file-id extend-selected)
+         (mf/deps file-id selected)
          (fn [asset-type asset-groups asset-id default-click event]
            (cond
              (kbd/mod? event)
@@ -188,7 +206,7 @@
              (kbd/shift? event)
              (do
                (dom/stop-propagation event)
-               (extend-selected asset-type asset-groups asset-id))
+               (extend-selected selected asset-type asset-groups asset-id file-id))
 
              :else
              (when default-click
@@ -232,7 +250,7 @@
      (when ^boolean show-components?
        [:& components-section
         {:file-id file-id
-         :local? local?
+         :local? is-local
          :components components
          :listing-thumbs? listing-thumbs?
          :open? (or ^boolean force-open-components?
@@ -249,7 +267,7 @@
        [:& graphics-section
         {:file-id file-id
          :project-id project-id
-         :local? local?
+         :local? is-local
          :objects media
          :listing-thumbs? listing-thumbs?
          :open? (or ^boolean force-open-graphics?
@@ -265,7 +283,7 @@
      (when ^boolean show-colors?
        [:& colors-section
         {:file-id file-id
-         :local? local?
+         :local? is-local
          :colors colors
          :open? (or ^boolean force-open-colors?
                     ^boolean (get open-status :colors false))
@@ -281,7 +299,7 @@
        [:& typographies-section
         {:file file
          :file-id (:id file)
-         :local? local?
+         :local? is-local
          :typographies typographies
          :open? (or ^boolean force-open-typographies?
                     ^boolean (get open-status :typographies false))
@@ -303,67 +321,90 @@
         [:span {:class (stl/css :no-found-text)}
          (tr "workspace.assets.not-found")]])]))
 
-(defn- force-lib-open? [file-id filters]
-  (let [library-ref           (mf/with-memo [file-id]
-                                (create-file-library-ref file-id))
-        library               (mf/deref library-ref)
+(mf/defc file-library*
+  [{:keys [file is-local is-default-open? filters]}]
+  (let [file-id      (:id file)
+        file-name    (:name file)
+        page-id      (dm/get-in file [:data :pages 0])
 
-        colors                (:colors library)
-        components            (:components library)
-        media                 (:media library)
-        typographies          (:typographies library)
+        library      (use-library-ref file-id)
 
-        filtered-colors       (mf/with-memo [filters colors]
-                                (cmm/apply-filters colors filters))
-        filtered-components   (mf/with-memo [filters components]
-                                (cmm/apply-filters components filters))
-        filtered-media        (mf/with-memo [filters media]
-                                (cmm/apply-filters media filters))
-        filtered-typographies (mf/with-memo [filters typographies]
-                                (cmm/apply-filters typographies filters))
+        colors       (:colors library)
+        media        (:media library)
+        typographies (:typographies library)
 
-        filters-term          (:term filters)
-        has-term?             (not (str/blank? filters-term))]
-    (and has-term?
-         (some pos? (map count [filtered-components filtered-colors filtered-media filtered-typographies]))
-         (some #(> 60 (count %)) [filtered-components filtered-colors filtered-media filtered-typographies]))))
+        filters-term (:term filters)
 
-(mf/defc file-library
-  {::mf/props :obj}
-  [{:keys [file local? default-open? filters]}]
-  (let [file-id         (:id file)
-        file-name       (:name file)
-        page-id         (dm/get-in file [:data :pages 0])
+        ;; FIXME: maybe unused
+        ;; has-term?    (not (str/blank? filters-term))
 
-        open-status-ref (mf/with-memo [file-id]
-                          (-> (l/key file-id)
-                              (l/derived ref:open-status)))
-        open-status      (mf/deref open-status-ref)
-        force-open-lib?  (force-lib-open? file-id filters)
+        filtered-colors
+        (mf/with-memo [filters colors]
+          (-> (vals colors)
+              (cmm/apply-filters filters)))
 
-        open?            (if (false? (:library open-status)) ;; if the user has closed it specifically, respect that
-                           false
-                           (or force-open-lib?
-                               (d/nilv (:library open-status) default-open?)))
+        filtered-components
+        (mf/with-memo [filters library]
+          (-> (into [] (ctkl/components-seq library))
+              (cmm/apply-filters filters)))
+
+        filtered-media
+        (mf/with-memo [filters media]
+          (-> (vals media)
+              (cmm/apply-filters filters)))
+
+        filtered-typographies
+        (mf/with-memo [filters typographies]
+          (-> (vals typographies)
+              (cmm/apply-filters filters)))
+
+        open-status-ref
+        (mf/with-memo [file-id]
+          (-> (l/key file-id)
+              (l/derived ref:open-status)))
+
+        open-status
+        (mf/deref open-status-ref)
+
+        force-lib-open?
+        (and (not (str/blank? filters-term))
+             (or (> 60 (count filtered-colors))
+                 (> 60 (count filtered-components))
+                 (> 60 (count filtered-media))
+                 (> 60 (count filtered-typographies))))
+
+        open?
+        (if (false? (:library open-status))
+          ;; if the user has closed it specifically, respect that
+          false
+          (or force-lib-open?
+              (d/nilv (:library open-status) is-default-open?)))
 
         unselect-all
         (mf/use-fn
          (mf/deps file-id)
          (fn []
            (st/emit! (dw/unselect-all-assets file-id))))]
+
     [:div {:class (stl/css :tool-window)
            :on-context-menu dom/prevent-default
            :on-click unselect-all}
+
      [:> file-library-title*
       {:file-id file-id
        :page-id page-id
        :file-name file-name
        :is-open open?
-       :is-local local?}]
+       :is-local is-local}]
+
      (when ^boolean open?
-       [:& file-library-content
+       [:> file-library-content*
         {:file file
-         :local? local?
+         :is-local is-local
          :filters filters
+         :colors filtered-colors
+         :components filtered-components
+         :media filtered-media
+         :typographies filtered-typographies
          :on-clear-selection unselect-all
          :open-status-ref open-status-ref}])]))

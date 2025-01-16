@@ -47,30 +47,27 @@
        (str/join "")))
 
 (defn- format-comment-url
-  [thread {:keys [team-id file-id page-id]}]
+  [thread file]
   (str/ffmt "%/#/workspace?%"
             (cf/get :public-uri)
             (uri/map->query-string
-             {:file-id file-id
-              :page-id page-id
-              :team-id team-id
+             {:file-id (:id file)
+              :page-id (:page-id file)
+              :team-id (:team-id file)
               :comment-id (:id thread)})))
 
 (defn- format-comment-ref
-  [{:keys [seqn]} {:keys [file-name page-name]}]
-  (str/ffmt "#%, %, %" seqn file-name page-name))
+  [thread file]
+  (str/ffmt "#%, %, %"
+            (:seqn thread)
+            (:name file)
+            (:page-name file)))
 
-(defn get-team-users
+(defn- get-team-users
   [conn team-id]
   (->> (teams/get-users+props conn team-id)
        (map profile/decode-row)
        (d/index-by :id)))
-
-(defn- resolve-profile-name
-  [conn profile-id]
-  (-> (db/get conn :profile {:id profile-id}
-              {::sql/columns [:fullname]})
-      (get :fullname)))
 
 (defn- notification-email?
   [profile-id owner-id props]
@@ -83,24 +80,22 @@
   (not= :none (-> props :notifications :email-comments)))
 
 (defn send-comment-emails!
-  [conn {:keys [profile-id team-id] :as params} comment thread]
-
-  (let [team-users        (get-team-users conn team-id)
-        source-user       (resolve-profile-name conn profile-id)
-
-        comment-reference (format-comment-ref thread params)
+  [conn profile comment thread file]
+  (let [team-users        (get-team-users conn (:team-id file))
+        comment-reference (format-comment-ref thread file)
         comment-content   (format-comment comment)
-        comment-url       (format-comment-url thread params)
+        comment-url       (format-comment-url thread file)
+        profile-id        (get profile :id)
 
         ;; Users mentioned in this comment
         comment-mentions
         (-> (:mentions comment)
-            (set/difference #{profile-id}))
+            (disj profile-id))
 
         ;; Users mentioned in this thread
         thread-mentions
         (-> (:mentions thread)
-            ;; Remove the mentions in the thread because we're already sending a
+            ;; Remove the mentions in the comment because we're already sending a
             ;; notification
             (set/difference comment-mentions)
             (disj profile-id))
@@ -118,9 +113,10 @@
           (eml/send!
            {::eml/conn conn
             ::eml/factory eml/comment-mention
+            :public-uri (cf/get :public-uri)
             :to email
             :name fullname
-            :source-user source-user
+            :source-user (:fullname profile)
             :comment-reference comment-reference
             :comment-content comment-content
             :comment-url comment-url}))))
@@ -132,9 +128,10 @@
           (eml/send!
            {::eml/conn conn
             ::eml/factory eml/comment-thread
+            :public-uri (cf/get :public-uri)
             :to email
             :name fullname
-            :source-user source-user
+            :source-user (:fullname profile)
             :comment-reference comment-reference
             :comment-content comment-content
             :comment-url comment-url}))))
@@ -146,9 +143,10 @@
           (eml/send!
            {::eml/conn conn
             ::eml/factory eml/comment-notification
+            :public-uri (cf/get :public-uri)
             :to email
             :name fullname
-            :source-user source-user
+            :source-user (:fullname profile)
             :comment-reference comment-reference
             :comment-content comment-content
             :comment-url comment-url}))))))
@@ -165,12 +163,13 @@
 
 (def ^:private
   sql:get-file
-  "select f.id, f.modified_at, f.revn, f.features, f.name,
-          f.project_id, p.team_id, f.data
-     from file as f
-     join project as p on (p.id = f.project_id)
-    where f.id = ?
-      and f.deleted_at is null")
+  "SELECT f.id, f.modified_at, f.revn, f.features, f.name,
+          f.project_id, p.team_id, f.data,
+          f.data_ref_id, f.data_backend
+     FROM file as f
+    INNER JOIN project as p on (p.id = f.project_id)
+    WHERE f.id = ?
+      AND (f.deleted_at IS NULL OR f.deleted_at > now())")
 
 (defn- get-file
   "A specialized version of get-file for comments module."
@@ -182,12 +181,16 @@
                 :hint "file not found"))
 
     (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
-      (let [{:keys [data] :as file} (files/decode-row file)]
+      (let [file (->> file
+                      (files/decode-row)
+                      (feat.fdata/resolve-file-data cfg))
+            data (get file :data)]
         (-> file
             (assoc :page-name (dm/get-in data [:pages-index page-id :name]))
             (assoc :page-id page-id)
             (dissoc :data))))))
 
+;; FIXME: rename
 (defn- get-comment-thread
   [conn thread-id & {:as opts}]
   (-> (db/get-by-id conn :comment-thread thread-id opts)
@@ -249,6 +252,9 @@
 (def ^:private sql:comment-threads
   "SELECT DISTINCT ON (ct.id)
           ct.*,
+          pf.fullname AS owner_fullname,
+          pf.email AS owner_email,
+          pf.photo_id AS owner_photo_id,
           p.team_id AS team_id,
           f.name AS file_name,
           f.project_id AS project_id,
@@ -265,6 +271,7 @@
     INNER JOIN file AS f ON (f.id = ct.file_id)
     INNER JOIN project AS p ON (p.id = f.project_id)
      LEFT JOIN comment_thread_status AS cts ON (cts.thread_id = ct.id AND cts.profile_id = ?)
+     LEFT JOIN profile AS pf ON (ct.owner_id = pf.id)
    WINDOW w AS (PARTITION BY c.thread_id ORDER BY c.created_at ASC)")
 
 (def ^:private sql:comment-threads-by-file-id
@@ -360,15 +367,25 @@
    ::sm/params schema:get-comments}
   [cfg {:keys [::rpc/profile-id thread-id share-id]}]
   (db/run! cfg (fn [{:keys [::db/conn]}]
-                 (let [{:keys [file-id] :as thread} (get-comment-thread conn thread-id)]
+                 (let [{:keys [file-id]} (get-comment-thread conn thread-id)]
                    (files/check-comment-permissions! conn profile-id file-id share-id)
                    (get-comments conn thread-id)))))
 
+(def sql:get-comments
+  "SELECT c.*,
+          ct.file_id AS file_id,
+          pf.fullname AS owner_fullname,
+          pf.email AS owner_email,
+          pf.photo_id AS owner_photo_id
+     FROM comment AS c
+    INNER JOIN comment_thread AS ct ON (ct.id = c.thread_id)
+     LEFT JOIN profile AS pf ON (c.owner_id = pf.id)
+    WHERE c.thread_id = ?
+    ORDER BY c.created_at ASC")
+
 (defn- get-comments
   [conn thread-id]
-  (->> (db/query conn :comment
-                 {:thread-id thread-id}
-                 {:order-by [[:created-at :asc]]})
+  (->> (db/exec! conn [sql:get-comments thread-id])
        (into [] xf-decode-row)))
 
 ;; --- COMMAND: Get file comments users
@@ -429,7 +446,21 @@
    [:page-id ::sm/uuid]
    [:frame-id ::sm/uuid]
    [:share-id {:optional true} [:maybe ::sm/uuid]]
-   [:mentions {:optional true} [:vector ::sm/uuid]]])
+   [:mentions {:optional true} [::sm/set ::sm/uuid]]])
+
+(defn- update-thread-seqn
+  [conn file-id seqn]
+  (db/update! conn :file
+              {:comment-thread-seqn seqn}
+              {:id file-id}
+              {::db/return-keys false}))
+
+(defn add-owner
+  [thread-or-comment profile]
+  (-> thread-or-comment
+      (assoc :owner-fullname (:fullname profile))
+      (assoc :owner-email (:email profile))
+      (assoc :owner-photo-id (:photo-id profile))))
 
 (sv/defmethod ::create-comment-thread
   {::doc/added "1.15"
@@ -437,10 +468,10 @@
    ::rtry/enabled true
    ::rtry/when rtry/conflict-exception?
    ::sm/params schema:create-comment-thread}
-  [cfg {:keys [::rpc/profile-id ::rpc/request-at file-id page-id share-id mentions position content frame-id]}]
+  [cfg {:keys [::rpc/profile-id file-id page-id share-id] :as params}]
   (files/check-comment-permissions! cfg profile-id file-id share-id)
 
-  (let [{:keys [team-id project-id page-name name]} (get-file cfg file-id page-id)]
+  (let [{:keys [team-id project-id] :as file} (get-file cfg file-id page-id)]
     (-> cfg
         (assoc ::quotes/profile-id profile-id)
         (assoc ::quotes/team-id team-id)
@@ -449,26 +480,14 @@
         (quotes/check! {::quotes/id ::quotes/comment-threads-per-file}
                        {::quotes/id ::quotes/comments-per-file}))
 
-    (let [params {:created-at request-at
-                  :profile-id profile-id
-                  :file-id file-id
-                  :file-name name
-                  :page-id page-id
-                  :page-name page-name
-                  :position position
-                  :content content
-                  :frame-id frame-id
-                  :team-id team-id
-                  :project-id project-id
-                  :mentions mentions}
-          thread (-> (db/tx-run! cfg create-comment-thread params)
-                     (decode-row))]
+    (let [params (assoc params ::file file)
+          thread (db/tx-run! cfg create-comment-thread params)]
 
       (vary-meta thread assoc ::audit/props thread))))
 
 (defn- create-comment-thread
   [{:keys [::db/conn] :as cfg}
-   {:keys [profile-id file-id page-id page-name created-at position content mentions frame-id] :as params}]
+   {:keys [::rpc/profile-id ::rpc/request-at ::file position content mentions frame-id] :as params}]
 
   (let [;; NOTE: we take the next seq number from a separate query
         ;; because we need to lock the file for avoid race conditions
@@ -479,46 +498,47 @@
         ;; different storage (example: redis) for alivate the update
         ;; pression on the file table
 
-        seqn      (get-next-seqn conn file-id)
+        profile   (profile/get-profile conn profile-id)
+        seqn      (get-next-seqn conn (:id file))
+
+        file-id   (get file :id)
         thread-id (uuid/next)
+
         thread    (-> (db/insert! conn :comment-thread
                                   {:id thread-id
                                    :file-id file-id
+                                   :page-name (:page-name file)
+                                   :page-id (:page-id file)
                                    :owner-id profile-id
                                    :participants (db/tjson #{profile-id})
-                                   :page-name page-name
-                                   :page-id page-id
-                                   :created-at created-at
-                                   :modified-at created-at
+                                   :created-at request-at
+                                   :modified-at request-at
                                    :seqn seqn
-                                   :position (db/pgpoint position)
                                    :frame-id frame-id
+                                   :position (db/pgpoint position)
                                    :mentions (db/encode-pgarray mentions conn "uuid")})
                       (decode-row))
         comment   (-> (db/insert! conn :comment
                                   {:id (uuid/next)
                                    :thread-id thread-id
                                    :owner-id profile-id
-                                   :created-at created-at
-                                   :modified-at created-at
+                                   :created-at request-at
+                                   :modified-at request-at
                                    :mentions (db/encode-pgarray mentions conn "uuid")
                                    :content content})
                       (decode-row))]
 
     ;; Make the current thread as read.
-    (upsert-comment-thread-status! conn profile-id thread-id created-at)
+    (upsert-comment-thread-status! conn profile-id thread-id request-at)
 
     ;; Optimistic update of current seq number on file.
-    (db/update! conn :file
-                {:comment-thread-seqn seqn}
-                {:id file-id}
-                {::db/return-keys false})
+    (update-thread-seqn conn file-id seqn)
 
     ;; Send mentions emails
-    (send-comment-emails! conn params comment thread)
+    (send-comment-emails! conn profile comment thread file)
 
     (-> thread
-        (select-keys [:id :file-id :page-id :mentions])
+        (add-owner profile)
         (assoc :comment-id (:id comment)))))
 
 ;; --- COMMAND: Update Comment Thread Status
@@ -534,7 +554,7 @@
    ::sm/params schema:update-comment-thread-status
    ::db/transaction true}
   [{:keys [::db/conn]} {:keys [::rpc/profile-id id share-id]}]
-  (let [{:keys [file-id] :as thread} (get-comment-thread conn id ::sql/for-update true)]
+  (let [{:keys [file-id]} (get-comment-thread conn id ::sql/for-update true)]
     (files/check-comment-permissions! conn profile-id file-id share-id)
     (upsert-comment-thread-status! conn profile-id id)))
 
@@ -552,7 +572,7 @@
    ::sm/params schema:update-comment-thread
    ::db/transaction true}
   [{:keys [::db/conn]} {:keys [::rpc/profile-id id is-resolved share-id]}]
-  (let [{:keys [file-id] :as thread} (get-comment-thread conn id ::sql/for-update true)]
+  (let [{:keys [file-id]} (get-comment-thread conn id ::sql/for-update true)]
     (files/check-comment-permissions! conn profile-id file-id share-id)
     (db/update! conn :comment-thread
                 {:is-resolved is-resolved}
@@ -561,15 +581,13 @@
 
 ;; --- COMMAND: Add Comment
 
-(declare ^:private get-comment-thread)
-
 (def ^:private
   schema:create-comment
   [:map {:title "create-comment"}
    [:thread-id ::sm/uuid]
    [:content [:string {:max 250}]]
    [:share-id {:optional true} [:maybe ::sm/uuid]]
-   [:mentions {:optional true} [:vector ::sm/uuid]]])
+   [:mentions {:optional true} [::sm/set ::sm/uuid]]])
 
 (sv/defmethod ::create-comment
   {::doc/added "1.15"
@@ -577,65 +595,58 @@
    ::sm/params schema:create-comment
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id ::rpc/request-at thread-id share-id content mentions]}]
-  (let [{:keys [file-id page-id] :as thread} (get-comment-thread conn thread-id ::sql/for-update true)
-        {file-name :name :keys [team-id project-id page-name] :as file} (get-file cfg file-id page-id)]
+  (let [{:keys [file-id page-id] :as thread}
+        (get-comment-thread conn thread-id ::sql/for-update true)
+
+        {:keys [team-id project-id] :as file}
+        (get-file cfg file-id page-id)]
 
     (files/check-comment-permissions! conn profile-id file-id share-id)
+
     (quotes/check! cfg {::quotes/id ::quotes/comments-per-file
                         ::quotes/profile-id profile-id
                         ::quotes/team-id team-id
                         ::quotes/project-id project-id
                         ::quotes/file-id file-id})
 
-    ;; Update the page-name cached attribute on comment thread table.
-    (when (not= page-name (:page-name thread))
-      (db/update! conn :comment-thread
-                  {:page-name page-name}
-                  {:id thread-id}))
+    (let [profile  (profile/get-profile conn profile-id)
+          mentions (into #{} mentions)
+          params   {:id (uuid/next)
+                    :created-at request-at
+                    :modified-at request-at
+                    :thread-id thread-id
+                    :owner-id profile-id
+                    :content content
+                    :mentions (db/encode-pgarray mentions conn "uuid")}
 
-    (let [comment (-> (db/insert!
-                       conn :comment
-                       {:id (uuid/next)
-                        :created-at request-at
-                        :modified-at request-at
-                        :thread-id thread-id
-                        :owner-id profile-id
-                        :content content
-                        :mentions
-                        (-> mentions
-                            (set)
-                            (db/encode-pgarray conn "uuid"))})
-                      (decode-row))
-          props    {:file-id file-id
-                    :share-id nil}]
+          comment (-> (db/insert! conn :comment params)
+                      (decode-row)
+                      (add-owner profile))]
 
       ;; Update thread modified-at attribute and assoc the current
       ;; profile to the participant set.
-      (db/update! conn :comment-thread
-                  {:modified-at request-at
-                   :participants (-> (:participants thread #{})
-                                     (conj profile-id)
-                                     (db/tjson))
-                   :mentions (-> (:mentions thread)
-                                 (set)
-                                 (into mentions)
-                                 (db/encode-pgarray conn "uuid"))}
-                  {:id thread-id})
+      (let [mentions     (into (:mentions thread) mentions)
+            participants (-> (:participants thread #{})
+                             (conj profile-id))
+            params       {:modified-at request-at
+                          :participants (db/tjson participants)
+                          :mentions (db/encode-pgarray mentions conn "uuid")}
 
-      ;; Update the current profile status in relation to the
-      ;; current thread.
+            ;; Update the page-name cached attribute on comment thread table.
+            params       (cond-> params
+                           (not= (:page-name file) (:page-name thread))
+                           (assoc :page-name (:page-name file)))]
+
+        (db/update! conn :comment-thread params
+                    {:id thread-id}
+                    {::db/return-keys false}))
+
+      ;; Update the current profile status in relation to the current thread
       (upsert-comment-thread-status! conn profile-id thread-id)
 
-      (let [params {:project-id project-id
-                    :profile-id profile-id
-                    :team-id team-id
-                    :file-id (:file-id thread)
-                    :page-id (:page-id thread)
-                    :file-name file-name
-                    :page-name page-name}]
-        (send-comment-emails! conn params comment thread))
+      (send-comment-emails! conn profile comment thread file)
 
-      (vary-meta comment assoc ::audit/props props))))
+      (vary-meta comment assoc ::audit/props comment))))
 
 ;; --- COMMAND: Update Comment
 
@@ -645,16 +656,20 @@
    [:id ::sm/uuid]
    [:content [:string {:max 250}]]
    [:share-id {:optional true} [:maybe ::sm/uuid]]
-   [:mentions {:optional true} [:vector ::sm/uuid]]])
+   [:mentions {:optional true} [::sm/set ::sm/uuid]]])
 
-;; TODO Check if there are new mentions, if there are send the new emails.
+;; TODO: Check if there are new mentions, if there are send the new emails.
+
 (sv/defmethod ::update-comment
   {::doc/added "1.15"
    ::sm/params schema:update-comment
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id ::rpc/request-at id share-id content mentions]}]
-  (let [{:keys [thread-id owner-id] :as comment} (get-comment conn id ::sql/for-update true)
-        {:keys [file-id page-id] :as thread} (get-comment-thread conn thread-id ::sql/for-update true)]
+  (let [{:keys [thread-id owner-id] :as comment}
+        (get-comment conn id ::sql/for-update true)
+
+        {:keys [file-id page-id] :as thread}
+        (get-comment-thread conn thread-id ::sql/for-update true)]
 
     (files/check-comment-permissions! conn profile-id file-id share-id)
 
@@ -675,10 +690,10 @@
                    :page-name page-name
                    :mentions
                    (-> (:mentions thread)
-                       (set)
                        (into mentions)
                        (db/encode-pgarray conn "uuid"))}
-                  {:id thread-id})
+                  {:id thread-id}
+                  {::db/return-keys false})
       nil)))
 
 ;; --- COMMAND: Delete Comment Thread
@@ -700,7 +715,8 @@
       (ex/raise :type :validation
                 :code :not-allowed))
 
-    (db/delete! conn :comment-thread {:id id})
+    (db/delete! conn :comment-thread {:id id}
+                {::db/return-keys false})
     nil))
 
 ;; --- COMMAND: Delete comment
@@ -716,13 +732,19 @@
    ::sm/params schema:delete-comment
    ::db/transaction true}
   [{:keys [::db/conn]} {:keys [::rpc/profile-id id share-id]}]
-  (let [{:keys [owner-id thread-id] :as comment} (get-comment conn id ::sql/for-update true)
-        {:keys [file-id] :as thread} (get-comment-thread conn thread-id)]
+  (let [{:keys [owner-id thread-id] :as comment}
+        (get-comment conn id ::sql/for-update true)
+
+        {:keys [file-id]}
+        (get-comment-thread conn thread-id)]
+
     (files/check-comment-permissions! conn profile-id file-id share-id)
     (when-not (= owner-id profile-id)
       (ex/raise :type :validation
                 :code :not-allowed))
-    (db/delete! conn :comment {:id id})
+
+    (db/delete! conn :comment {:id id}
+                {::db/return-keys false})
     nil))
 
 ;; --- COMMAND: Update comment thread position
@@ -740,13 +762,14 @@
    ::sm/params schema:update-comment-thread-position
    ::db/transaction true}
   [{:keys [::db/conn]} {:keys [::rpc/profile-id ::rpc/request-at id position frame-id share-id]}]
-  (let [{:keys [file-id] :as thread} (get-comment-thread conn id ::sql/for-update true)]
+  (let [{:keys [file-id]} (get-comment-thread conn id ::sql/for-update true)]
     (files/check-comment-permissions! conn profile-id file-id share-id)
     (db/update! conn :comment-thread
                 {:modified-at request-at
                  :position (db/pgpoint position)
                  :frame-id frame-id}
-                {:id (:id thread)})
+                {:id id}
+                {::db/return-keys false})
     nil))
 
 ;; --- COMMAND: Update comment frame
@@ -763,10 +786,11 @@
    ::sm/params schema:update-comment-thread-frame
    ::db/transaction true}
   [{:keys [::db/conn]} {:keys [::rpc/profile-id ::rpc/request-at id frame-id share-id]}]
-  (let [{:keys [file-id] :as thread} (get-comment-thread conn id ::sql/for-update true)]
+  (let [{:keys [file-id]} (get-comment-thread conn id ::sql/for-update true)]
     (files/check-comment-permissions! conn profile-id file-id share-id)
     (db/update! conn :comment-thread
                 {:modified-at request-at
                  :frame-id frame-id}
-                {:id id})
+                {:id id}
+                {::db/return-keys false})
     nil))

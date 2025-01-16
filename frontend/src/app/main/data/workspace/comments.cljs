@@ -17,11 +17,11 @@
    [app.main.data.comments :as dcmt]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.common :as dwco]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.viewport :as dwv]
    [app.main.repo :as rp]
    [app.main.router :as rt]
@@ -35,26 +35,25 @@
 
 (defn initialize-comments
   [file-id]
-  (dm/assert! (uuid? file-id))
   (ptk/reify ::initialize-comments
     ptk/WatchEvent
     (watch [_ _ stream]
-      (let [stopper (rx/filter #(= ::finalize %) stream)]
-        (rx/merge
-         (rx/of (dcmt/retrieve-comment-threads file-id))
-         (->> stream
-              (rx/filter mse/mouse-event?)
-              (rx/filter mse/mouse-click-event?)
-              (rx/switch-map #(rx/take 1 ms/mouse-position))
-              (rx/with-latest-from ms/keyboard-space)
-              (rx/filter (fn [[_ space]] (not space)))
-              (rx/map first)
-              (rx/map handle-comment-layer-click)
-              (rx/take-until stopper))
-         (->> stream
-              (rx/filter dwco/interrupt?)
-              (rx/map handle-interrupt)
-              (rx/take-until stopper)))))))
+      (let [stopper-s (rx/filter #(= ::finalize %) stream)]
+        (->> (rx/merge
+              (rx/of (dcmt/retrieve-comment-threads file-id))
+              (->> stream
+                   (rx/filter mse/mouse-event?)
+                   (rx/filter mse/mouse-click-event?)
+                   (rx/switch-map #(rx/take 1 ms/mouse-position))
+                   (rx/with-latest-from ms/keyboard-space)
+                   (rx/filter (fn [[_ space]] (not space)))
+                   (rx/map first)
+                   (rx/map handle-comment-layer-click))
+              (->> stream
+                   (rx/filter dwco/interrupt?)
+                   (rx/map handle-interrupt)))
+
+             (rx/take-until stopper-s))))))
 
 (defn- handle-interrupt
   []
@@ -65,10 +64,8 @@
         (cond
           (:draft local) (rx/of (dcmt/close-thread))
           (:open local)  (rx/of (dcmt/close-thread))
-
-          :else
-          (rx/of (dwe/clear-edition-mode)
-                 (dws/deselect-all true)))))))
+          :else          (rx/of (dwe/clear-edition-mode)
+                                (dws/deselect-all true)))))))
 
 ;; Event responsible of the what should be executed when user clicked
 ;; on the comments layer. An option can be create a new draft thread,
@@ -139,9 +136,9 @@
    (ptk/reify ::update-comment-thread-position
      ptk/WatchEvent
      (watch [it state _]
-       (let [page      (wsh/lookup-page state)
+       (let [page      (dsh/lookup-page state)
              page-id   (:id page)
-             objects   (wsh/lookup-page-objects state page-id)
+             objects   (dsh/lookup-page-objects state page-id)
              frame-id  (if (nil? frame-id)
                          (ctst/get-frame-id-by-position objects (gpt/point new-x new-y))
                          (:frame-id thread))
@@ -172,7 +169,7 @@
   (ptk/reify ::move-frame-comment-threads
     ptk/WatchEvent
     (watch [_ state _]
-      (let [page       (wsh/lookup-page state)
+      (let [page       (dsh/lookup-page state)
             objects    (get page :objects)
 
             is-frame?  (fn [id] (= :frame (get-in objects [id :type])))

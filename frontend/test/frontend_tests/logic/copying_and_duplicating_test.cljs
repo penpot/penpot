@@ -126,31 +126,32 @@
                                             (not (:component-root %))))
                                   (map :id))]
     (concat
-     (apply concat (mapv #(copy-paste-shape % file :target-page-label target-page-label :target-container-id uuid/zero) frame-1-instance-ids))
-     (apply concat (mapv #(copy-paste-shape % file :target-page-label target-page-label :target-container-id uuid/zero) frame-1-instance-ids)))))
+     (apply concat
+            (mapv #(copy-paste-shape % file :target-page-label target-page-label :target-container-id uuid/zero) frame-1-instance-ids))
+     (apply concat
+            (mapv #(copy-paste-shape % file :target-page-label target-page-label :target-container-id uuid/zero) frame-1-instance-ids)))))
 
 (t/deftest main-and-first-level-copy-1
-  (t/async
-    done
+  (t/async done
     (with-redefs [uuid/next cthi/next-uuid]
       (let [;; ==== Setup
             file     (setup-file)
             store    (ths/setup-store file)
-         ;; ==== Action
+            ;; ==== Action
 
 
-         ;; For each main and first level copy:
-         ;; - Duplicate it two times with copy-paste.
+            ;; For each main and first level copy:
+            ;; - Duplicate it two times with copy-paste.
             events
             (concat
              (duplicate-each-main-and-first-level-copy file)
-           ;; - Change color of Simple1
+             ;; - Change color of Simple1
              (set-color-bottom-shape :frame-simple-1 file {:color "#111111"}))]
 
         (ths/run-store
          store done events
          (fn [new-state]
-           (let [file'         (ths/get-file-from-store new-state)]
+           (let [file'         (ths/get-file-from-state new-state)]
              (t/is (= (count-shapes file' "rect-simple-1" "#111111") 18)))))))))
 
 (t/deftest main-and-first-level-copy-2
@@ -176,7 +177,7 @@
         (ths/run-store
          store done events
          (fn [new-state]
-           (let [file'         (ths/get-file-from-store new-state)]
+           (let [file'         (ths/get-file-from-state new-state)]
              (t/is (= (count-shapes file' "rect-simple-1" "#222222") 15)))))))))
 
 (t/deftest main-and-first-level-copy-3
@@ -203,7 +204,7 @@
         (ths/run-store
          store done events
          (fn [new-state]
-           (let [file'         (ths/get-file-from-store new-state)]
+           (let [file'         (ths/get-file-from-state new-state)]
              (t/is (= (count-shapes file' "rect-simple-1" "#333333") 12)))))))))
 
 
@@ -232,7 +233,7 @@
         (ths/run-store
          store done events
          (fn [new-state]
-           (let [file'         (ths/get-file-from-store new-state)]
+           (let [file'         (ths/get-file-from-state new-state)]
              (t/is (= (count-shapes file' "rect-simple-1" "#444444") 6)))))))))
 
 (t/deftest copy-nested-in-main-1
@@ -255,7 +256,7 @@
         (ths/run-store
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)]
+           (let [file' (ths/get-file-from-state new-state)]
               ;; Check propagation to all copies.
              (t/is (= (count-shapes file' "rect-simple-1" "#111111") 28)))))))))
 
@@ -279,7 +280,7 @@
         (ths/run-store
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)]
+           (let [file' (ths/get-file-from-state new-state)]
               ;; Check propagation to duplicated.
              (t/is (= (count-shapes file' "rect-simple-1" "#222222") 9)))))))))
 
@@ -303,7 +304,7 @@
         (ths/run-store
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)]
+           (let [file' (ths/get-file-from-state new-state)]
               ;; Check that it's NOT PROPAGATED.
              (t/is (= (count-shapes file' "rect-simple-1" "#333333") 2)))))))))
 
@@ -328,7 +329,7 @@
         (ths/run-store
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)]
+           (let [file' (ths/get-file-from-state new-state)]
               ;; Check propagation to all copies.
              (t/is (= (count-shapes file' "rect-simple-1" "#111111") 20)))))))))
 
@@ -357,7 +358,7 @@
         (ths/run-store
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)]
+           (let [file' (ths/get-file-from-state new-state)]
               ;; Check that it's NOT PROPAGATED.
              (t/is (= (count-shapes file' "rect-simple-1" "#111111") 11))
              (t/is (= (count-shapes file' "rect-simple-1" "#222222") 7))
@@ -365,8 +366,7 @@
 
 
 (t/deftest copy-nested-3
-  (t/async
-    done
+  (t/async done
     (with-redefs [uuid/next cthi/next-uuid]
       (let [;; ==== Setup
             file     (setup-file)
@@ -388,7 +388,7 @@
         (ths/run-store
          store done events
          (fn [new-state]
-           (let [file' (-> (ths/get-file-from-store new-state)
+           (let [file' (-> (ths/get-file-from-state new-state)
                            (cthf/switch-to-page :page-2))]
               ;; Check that it's NOT PROPAGATED.
              (t/is (= (count-shapes file' "rect-simple-1" "#111111") 10))

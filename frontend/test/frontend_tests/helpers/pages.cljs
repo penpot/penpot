@@ -20,9 +20,9 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.groups :as dwg]
-   [app.main.data.workspace.layout :as layout]
-   [app.main.data.workspace.state-helpers :as wsh]))
+   [app.main.data.workspace.layout :as layout]))
 
 ;; ---- Helpers to manage pages and objects
 
@@ -33,12 +33,15 @@
    :current-page-id nil
    :workspace-layout layout/default-layout
    :workspace-global layout/default-global
-   :workspace-data {:id current-file-id
-                    :options {:components-v2 true}
-                    :components {}
-                    :pages []
-                    :pages-index {}}
-   :workspace-libraries {}
+
+   :files
+   {current-file-id
+    {:id current-file-id
+     :data {:id current-file-id
+            :options {:components-v2 true}
+            :components {}
+            :pages []
+            :pages-index {}}}}
    :features-team #{"components/v2"}})
 
 (def ^:private idmap (atom {}))
@@ -48,8 +51,9 @@
 
 (defn current-page
   [state]
-  (let [page-id (:current-page-id state)]
-    (get-in state [:workspace-data :pages-index page-id])))
+  (let [page-id (:current-page-id state)
+        file-id (:current-file-id state)]
+    (get-in state [:files file-id :data :pages-index page-id])))
 
 (defn id
   [label]
@@ -65,20 +69,22 @@
   (let [page (current-page state)]
     (cfh/get-children (:objects page) (id label))))
 
+(defn apply-changes
+  [state changes]
+  (let [file-id (:current-file-id state)]
+    (update-in state [:files file-id :data] cp/process-changes changes)))
+
 (defn sample-page
   ([state] (sample-page state {}))
   ([state {:keys [id name] :as props
            :or {id (uuid/next)
                 name "page1"}}]
-
    (swap! idmap assoc :page id)
    (-> state
        (assoc :current-page-id id)
-       (update :workspace-data
-               cp/process-changes
-               [{:type :add-page
-                 :id id
-                 :name name}]))))
+       (apply-changes [{:type :add-page
+                        :id id
+                        :name name}]))))
 
 (defn sample-shape
   ([state label type] (sample-shape state type {}))
@@ -87,13 +93,12 @@
          frame (cfh/get-frame (:objects page))
          shape (cts/setup-shape (merge {:type type :x 0 :y 0 :width 1 :height 1} props))]
      (swap! idmap assoc label (:id shape))
-     (update state :workspace-data
-             cp/process-changes
-             [{:type :add-obj
-               :id (:id shape)
-               :page-id (:id page)
-               :frame-id (:id frame)
-               :obj shape}]))))
+     (apply-changes state
+                    [{:type :add-obj
+                      :id (:id shape)
+                      :page-id (:id page)
+                      :frame-id (:id frame)
+                      :obj shape}]))))
 
 (defn group-shapes
   ([state label ids] (group-shapes state label ids "Group"))
@@ -106,8 +111,7 @@
              (dwg/prepare-create-group (pcb/empty-changes) nil (:objects page) (:id page) shapes prefix true)]
 
          (swap! idmap assoc label (:id group))
-         (update state :workspace-data
-                 cp/process-changes (:redo-changes changes)))))))
+         (apply-changes state (:redo-changes changes)))))))
 
 (defn frame-shapes
   ([state label ids] (frame-shapes state label ids "Board"))
@@ -128,13 +132,12 @@
                                                           true)]
 
          (swap! idmap assoc label (:id frame))
-         (update state :workspace-data
-                 cp/process-changes (:redo-changes changes)))))))
+         (apply-changes state (:redo-changes changes)))))))
 
 (defn make-component
   [state instance-label component-label shape-ids]
   (let [page    (current-page state)
-        objects (wsh/lookup-page-objects state (:id page))
+        objects (dsh/lookup-page-objects state (:id page))
         shapes  (dwg/shapes-for-grouping objects shape-ids)
 
         [group component-id changes]
@@ -149,15 +152,14 @@
 
     (swap! idmap assoc instance-label (:id group)
            component-label component-id)
-    (update state :workspace-data
-            cp/process-changes (:redo-changes changes))))
+    (apply-changes state (:redo-changes changes))))
 
 (defn instantiate-component
   ([state label component-id]
    (instantiate-component state label component-id current-file-id))
   ([state label component-id file-id]
    (let [page      (current-page state)
-         libraries (wsh/get-libraries state)
+         libraries (dsh/lookup-libraries state)
          objects (:objects page)
 
          changes   (-> (pcb/empty-changes nil (:id page))
@@ -173,26 +175,27 @@
                                              libraries)]
 
      (swap! idmap assoc label (:id new-shape))
-     (update state :workspace-data
-             cp/process-changes (:redo-changes changes)))))
+     (apply-changes state (:redo-changes changes)))))
 
 (defn move-to-library
   [state label name]
   (let [library-id (uuid/next)
-        data       (get state :workspace-data)]
+        file-id    (:current-file-id state)
+        data       (get-in state [:files file-id :data])]
     (swap! idmap assoc label library-id)
     (-> state
-        (update :workspace-libraries
-                assoc library-id {:id library-id
-                                  :name name
-                                  :data {:id library-id
-                                         :options (:options data)
-                                         :pages (:pages data)
-                                         :pages-index (:pages-index data)
-                                         :components (:components data)}})
-        (update :workspace-data
-                assoc :components {} :pages [] :pages-index {}))))
-
+        (update :files assoc library-id
+                {:id library-id
+                 :name name
+                 :data {:id library-id
+                        :options (:options data)
+                        :pages (:pages data)
+                        :pages-index (:pages-index data)
+                        :components (:components data)}})
+        (update-in [:files file-id :data] assoc
+                   :components {}
+                   :pages []
+                   :pages-index {}))))
 
 (defn simulate-copy-shape
   [selected objects libraries page file features version]

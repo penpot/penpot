@@ -51,22 +51,20 @@
 
 (defn get-path-location
   [state & ks]
-  (let [edit-id  (get-in state [:workspace-local :edition])
-        page-id  (:current-page-id state)]
-    (into (if edit-id
-            [:workspace-data :pages-index page-id :objects edit-id]
-            [:workspace-drawing :object])
-          ks)))
+  (if-let [edit-id (dm/get-in state [:workspace-local :edition])]
+    (let [page-id  (:current-page-id state)
+          file-id  (:current-file-id state)]
+      (into [:files file-id :data :pages-index page-id :objects edit-id] ks))
+    (into [:workspace-drawing :object] ks)))
 
 (defn get-path
   "Retrieves the location of the path object and additionally can pass
   the arguments. This location can be used in get-in, assoc-in... functions"
   [state & ks]
   (let [path-loc (get-path-location state)
-        shape (-> (get-in state path-loc)
-                  ;; Empty map because we know the current shape will not have children
-                  (upsp/convert-to-path {}))]
-
+        shape    (-> (get-in state path-loc)
+                     ;; Empty map because we know the current shape will not have children
+                     (upsp/convert-to-path {}))]
     (if (empty? ks)
       shape
       (get-in shape ks))))
@@ -74,5 +72,4 @@
 (defn set-content
   [state content]
   (let [path-loc (get-path-location state :content)]
-    (-> state
-        (assoc-in path-loc content))))
+    (assoc-in state path-loc content)))

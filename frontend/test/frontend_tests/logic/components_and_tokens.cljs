@@ -14,10 +14,10 @@
    [app.common.test-helpers.shapes :as cths]
    [app.common.test-helpers.tokens :as ctht]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.data.helpers :as dsh]
    [app.main.data.tokens :as dt]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.update :as wtu]
    [cljs.test :as t :include-macros true]
@@ -79,7 +79,7 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               file'          (ths/get-file-from-store new-state)
+               file'          (ths/get-file-from-state new-state)
                frame1'        (cths/get-shape file' :frame1)
                tokens-frame1' (:applied-tokens frame1')]
 
@@ -111,8 +111,8 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               selected       (wsh/lookup-selected new-state)
-               c-frame1'      (wsh/lookup-shape new-state (first selected))
+               selected       (dsh/lookup-selected new-state)
+               c-frame1'      (dsh/lookup-shape new-state (first selected))
                tokens-frame1' (:applied-tokens c-frame1')]
 
           ;; ==== Check
@@ -145,7 +145,7 @@
                      store done events2
                      (fn [new-state]
                        (let [;; ==== Get
-                             file'          (ths/get-file-from-store new-state)
+                             file'          (ths/get-file-from-state new-state)
                              c-frame1'      (cths/get-shape file' :c-frame1)
                              tokens-frame1' (:applied-tokens c-frame1')]
 
@@ -181,7 +181,7 @@
                      store done events2
                      (fn [new-state]
                        (let [;; ==== Get
-                             file'          (ths/get-file-from-store new-state)
+                             file'          (ths/get-file-from-state new-state)
                              c-frame1'      (cths/get-shape file' :c-frame1)
                              tokens-frame1' (:applied-tokens c-frame1')]
 
@@ -215,7 +215,7 @@
                      store done events2
                      (fn [new-state]
                        (let [;; ==== Get
-                             file'          (ths/get-file-from-store new-state)
+                             file'          (ths/get-file-from-state new-state)
                              c-frame1'      (cths/get-shape file' :c-frame1)
                              tokens-frame1' (:applied-tokens c-frame1')]
 
@@ -256,7 +256,7 @@
                      store done events2
                      (fn [new-state]
                        (let [;; ==== Get
-                             file'          (ths/get-file-from-store new-state)
+                             file'          (ths/get-file-from-state new-state)
                              c-frame1'      (cths/get-shape file' :c-frame1)
                              tokens-frame1' (:applied-tokens c-frame1')]
 
@@ -296,7 +296,7 @@
                      store done events2
                      (fn [new-state]
                        (let [;; ==== Get
-                             file'          (ths/get-file-from-store new-state)
+                             file'          (ths/get-file-from-state new-state)
                              c-frame1'      (cths/get-shape file' :c-frame1)
                              tokens-frame1' (:applied-tokens c-frame1')]
 
@@ -390,7 +390,7 @@
                      store done events2
                      (fn [new-state]
                        (let [;; ==== Get
-                             file'          (ths/get-file-from-store new-state)
+                             file'          (ths/get-file-from-state new-state)
                              frame1'      (cths/get-shape file' :frame1)
                              c-frame1'      (cths/get-shape file' :c-frame1)
                              tokens-frame1' (:applied-tokens c-frame1')]

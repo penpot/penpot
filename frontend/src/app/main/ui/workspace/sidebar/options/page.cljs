@@ -20,7 +20,7 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(def lens:background-color
+(def ^:private ref:background-color
   (-> (l/key :background)
       (l/derived refs/workspace-page)))
 
@@ -28,7 +28,7 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   []
-  (let [background (mf/deref lens:background-color)
+  (let [background (mf/deref ref:background-color)
         on-change  (mf/use-fn #(st/emit! (dw/change-canvas-color %)))
         on-open    (mf/use-fn #(st/emit! (dwu/start-undo-transaction :options)))
         on-close   (mf/use-fn #(st/emit! (dwu/commit-undo-transaction :options)))]

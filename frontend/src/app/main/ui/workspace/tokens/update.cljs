@@ -1,8 +1,8 @@
 (ns app.main.ui.workspace.tokens.update
   (:require
    [app.common.types.token :as ctt]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.shape-layout :as dwsl]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.style-dictionary :as wtsd]
@@ -107,7 +107,7 @@
           shapes-update-info))
 
 (defn update-tokens [state resolved-tokens]
-  (->> (wsh/lookup-page-objects state)
+  (->> (dsh/lookup-page-objects state)
        (collect-shapes-update-info resolved-tokens)
        (actionize-shapes-update-info)))
 

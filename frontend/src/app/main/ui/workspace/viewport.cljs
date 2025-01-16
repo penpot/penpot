@@ -74,8 +74,8 @@
    objects
    selected))
 
-(mf/defc viewport-classic
-  [{:keys [selected wglobal wlocal layout file palete-size] :as props}]
+(mf/defc viewport-classic*
+  [{:keys [selected wglobal wlocal layout file page palete-size]}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
         {:keys [edit-path
@@ -100,13 +100,12 @@
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
 
         ;; DEREFS
-
         drawing           (mf/deref refs/workspace-drawing)
         focus             (mf/deref refs/workspace-focus-selected)
 
-        page              (mf/deref refs/workspace-page)
-        objects           (get page :objects)
+        file-id           (get file :id)
         page-id           (get page :id)
+        objects           (get page :objects)
         background        (get page :background clr/canvas)
 
         base-objects      (ui-hooks/with-focus-objects objects focus)
@@ -157,7 +156,6 @@
         zoom              (d/check-num zoom 1)
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
-
 
         selected-frames   (into #{} (map :frame-id) selected-shapes)
 
@@ -302,12 +300,12 @@
              :edition edition}])]]]
 
       (when show-comments?
-        [:& comments/comments-layer {:vbox vbox
-                                     :vport vport
-                                     :zoom zoom
-                                     :drawing drawing
-                                     :page-id page-id
-                                     :file-id (:id file)}])
+        [:> comments/comments-layer* {:vbox vbox
+                                      :page-id page-id
+                                      :file-id file-id
+                                      :vport vport
+                                      :zoom zoom
+                                      :drawing drawing}])
 
       (when picking-color?
         [:& pixel-overlay/pixel-overlay {:vport vport
@@ -568,6 +566,7 @@
          [:> guides/viewport-guides*
           {:zoom zoom
            :vbox vbox
+           :guides (:guides page)
            :hover-frame guide-frame
            :disabled-guides disabled-guides?
            :modifiers modifiers}])
@@ -648,6 +647,7 @@
               :modifiers modifiers
               :shape frame
               :view-only true}]))]
+
        [:g.scrollbar-wrapper {:clipPath "url(#clip-handlers)"}
         [:& scroll-bars/viewport-scrollbars
          {:objects base-objects
@@ -655,9 +655,9 @@
           :vbox vbox
           :bottom-padding (when palete-size (+ palete-size 8))}]]]]]))
 
-(mf/defc viewport
+(mf/defc viewport*
   [props]
   (let [wasm-renderer-enabled? (features/use-feature "render-wasm/v1")]
     (if ^boolean wasm-renderer-enabled?
-      [:& viewport.wasm/viewport props]
-      [:& viewport-classic props])))
+      [:> viewport.wasm/viewport* props]
+      [:> viewport-classic* props])))

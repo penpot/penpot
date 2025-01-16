@@ -50,9 +50,9 @@
 (mf/defc comments-section
   [{:keys [profile team show? on-hide-comments]}]
   (let [threads-map    (mf/deref refs/comment-threads)
-        profiles       (mf/deref refs/profiles)
-        team-id        (:id team)
 
+        ;; FIXME: with-memo
+        team-id        (:id team)
         tgroups        (->> (vals threads-map)
                             (sort-by :modified-at)
                             (reverse)
@@ -93,14 +93,12 @@
           [:> cmt/comment-dashboard-thread-group*
            {:group (first tgroups)
             :on-thread-click on-navigate
-            :show-file-name true
-            :profiles profiles}]
+            :show-file-name true}]
           (for [tgroup (rest tgroups)]
             [:> cmt/comment-dashboard-thread-group*
              {:group tgroup
               :on-thread-click on-navigate
               :show-file-name true
-              :profiles profiles
               :key (:page-id tgroup)}])]
 
          [:div {:class (stl/css :thread-groups-placeholder)}

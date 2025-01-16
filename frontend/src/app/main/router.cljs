@@ -28,7 +28,8 @@
   (r/map->Match data))
 
 (defn resolve
-  ([router id] (resolve router id {}))
+  ([router id]
+   (resolve router id {}))
   ([router id params]
    (when router
      (when-let [match (r/match-by-name router id)]

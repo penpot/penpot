@@ -11,6 +11,7 @@
    [app.common.logging :as log]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
+   [app.main.data.helpers :as dsh]
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -49,11 +50,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (log/dbg :hint "update-file-revn" :file-id (dm/str file-id) :revn revn)
-      (if-let [current-file-id (:current-file-id state)]
-        (if (= file-id current-file-id)
-          (update-in state [:workspace-file :revn] max revn)
-          (d/update-in-when state [:libraries file-id :revn] max revn))
-        state))
+      (dsh/update-file state file-id #(update % :revn max revn)))
 
     ptk/EffectEvent
     (effect [_ _ _]

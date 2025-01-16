@@ -249,6 +249,7 @@
 
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
         menu-state     (mf/use-state cmm/initial-context-menu-state)
+
         typographies   (mf/with-memo [typographies]
                          (mapv dwl/extract-path-if-missing typographies))
 

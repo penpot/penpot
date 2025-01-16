@@ -9,6 +9,7 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.shapes :as dwsh]
    [cljs.test :as t :include-macros true]
@@ -34,13 +35,10 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               shape1' (get-in new-state [:workspace-data
-                                          :pages-index
-                                          (cthi/id :page1)
-                                          :objects
-                                          (cthi/id :shape1)])
-               fills'      (:fills shape1')
-               fill'       (first fills')]
+               objects (dsh/lookup-page-objects new-state)
+               shape1' (get objects (cthi/id :shape1))
+               fills'  (:fills shape1')
+               fill'   (first fills')]
 
            ;; ==== Check
            (t/is (some? shape1'))
@@ -68,15 +66,11 @@
        store done events
        (fn [new-state]
          (let [;; ==== Get
-               shape1' (get-in new-state [:workspace-data
-                                          :pages-index
-                                          (cthi/id :page1)
-                                          :objects
-                                          (cthi/id :shape1)])
-               stroke'      (-> (:strokes shape1')
-                                first)]
+               objects (dsh/lookup-page-objects new-state)
+               shape1' (get objects (cthi/id :shape1))
+               stroke' (first (:strokes shape1'))]
 
-            ;; ==== Check
+           ;; ==== Check
            ;; (println stroke')
            (t/is (some? shape1'))
            (t/is (= (:stroke-alignment stroke') :inner))

@@ -9,6 +9,7 @@
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
    [app.main.data.comments :as dc]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.comments :as dwc]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -25,7 +26,7 @@
   (obj/type-of? p "CommentProxy"))
 
 (defn comment-proxy
-  [plugin-id file-id page-id thread-id users data]
+  [plugin-id file-id page-id thread-id data]
   (let [data* (atom data)]
     (obj/reify {:name "CommentProxy"}
       ;; Private properties
@@ -36,9 +37,15 @@
       :$id {:enumerable false :get (fn [] (:id data))}
 
       ;; Public properties
+
+      ;; FIXME: inconsistent with comment-thread: owner
       :user
-      {:get
-       (fn [] (user/user-proxy plugin-id (get users (:owner-id data))))}
+      {:get #(->> (dc/get-owner data)
+                  (user/user-proxy plugin-id))}
+
+      :owner
+      {:get #(->> (dc/get-owner data)
+                  (user/user-proxy plugin-id))}
 
       :date
       {:get
@@ -86,19 +93,21 @@
   (obj/type-of? p "CommentThreadProxy"))
 
 (defn comment-thread-proxy
-  [plugin-id file-id page-id users data]
+  [plugin-id file-id page-id data]
   (let [data* (atom data)]
     (obj/reify {:name "CommentThreadProxy"}
       :$plugin {:enumerable false :get (fn [] plugin-id)}
       :$file {:enumerable false :get (fn [] file-id)}
       :$page {:enumerable false :get (fn [] page-id)}
       :$id {:enumerable false :get (fn [] (:id data))}
-      :$users {:enumerable false :get (fn [] users)}
 
       :page {:enumerable false :get #(u/locate-page file-id page-id)}
       :seqNumber {:get #(:seqn data)}
-      :owner {:get #(user/user-proxy plugin-id (get users (:owner-id data)))}
       :board {:get #(shape/shape-proxy plugin-id file-id page-id (:frame-id data))}
+
+      :owner
+      {:get #(->> (dc/get-owner data)
+                  (user/user-proxy plugin-id))}
 
       :position
       {:get
@@ -152,7 +161,7 @@
                    (fn [comments]
                      (resolve
                       (format/format-array
-                       #(comment-proxy plugin-id file-id page-id (:id data) users %) comments)))
+                       #(comment-proxy plugin-id file-id page-id (:id data) %) comments)))
                    reject))))))
 
       :reply
@@ -168,12 +177,12 @@
           (js/Promise.
            (fn [resolve reject]
              (->> (rp/cmd! :create-comment {:thread-id (:id data) :content content})
-                  (rx/subs! #(resolve (comment-proxy plugin-id file-id page-id (:id data) users %)) reject))))))
+                  (rx/subs! #(resolve (comment-proxy plugin-id file-id page-id (:id data) %)) reject))))))
 
       :remove
       (fn []
         (let [profile (:profile @st/state)
-              owner (get users (:owner-id data))]
+              owner   (dsh/lookup-profile @st/state (:owner-id data))]
           (cond
             (not (r/check-permission plugin-id "comment:write"))
             (u/display-not-valid :remove "Plugin doesn't have 'comment:write' permission")

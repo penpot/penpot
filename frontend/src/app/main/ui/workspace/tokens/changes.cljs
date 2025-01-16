@@ -9,11 +9,11 @@
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as wdc]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
@@ -36,7 +36,8 @@
   (ptk/reify ::apply-token
     ptk/WatchEvent
     (watch [_ state _]
-      (when-let [tokens (some-> (get-in state [:workspace-data :tokens-lib])
+      (when-let [tokens (some-> (dsh/lookup-file-data state)
+                                (get :tokens-lib)
                                 (ctob/get-active-themes-set-tokens))]
         (->> (rx/from (sd/resolve-tokens+ tokens))
              (rx/mapcat
@@ -179,7 +180,7 @@
   (ptk/reify ::update-layout-spacing
     ptk/WatchEvent
     (watch [_ state _]
-      (let [layout-shape-ids (->> (wsh/lookup-shapes state shape-ids)
+      (let [layout-shape-ids (->> (dsh/lookup-shapes state shape-ids)
                                   (eduction
                                    (filter :layout)
                                    (map :id)))

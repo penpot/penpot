@@ -9,7 +9,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.text :as txt]
    [app.main.data.changes :as dwc]
-   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.helpers :as dsh]
    [app.main.fonts :as fonts]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -91,7 +91,7 @@
    objects))
 
 (defn- generate-deleted-font-components-changes
-  [state]
+  [fdata]
   (sequence
    (comp (map val)
          (filter should-fix-deleted-font-component?)
@@ -99,27 +99,29 @@
                 {:type :mod-component
                  :id (:id component)
                  :objects (-> (fix-deleted-font-component component) :objects)})))
-   (wsh/lookup-local-components state)))
+   (:components fdata)))
 
 (defn- generate-deleted-font-typography-changes
-  [state]
+  [fdata]
   (sequence
    (comp (map val)
          (filter has-invalid-font-family?)
          (map (fn [typography]
                 {:type :mod-typography
                  :typography (fix-deleted-font-typography typography)})))
-   (get-in state [:workspace-data :typographies])))
+   (:typographies fdata)))
 
 (defn fix-deleted-fonts
   []
   (ptk/reify ::fix-deleted-fonts
     ptk/WatchEvent
     (watch [it state _]
-      (let [data               (get state :workspace-data)
-            shape-changes      (mapcat generate-deleted-font-shape-changes (vals (:pages-index data)))
-            components-changes (generate-deleted-font-components-changes state)
-            typography-changes (generate-deleted-font-typography-changes state)
+      (let [fdata              (dsh/lookup-file-data state)
+            pages              (:pages-index fdata)
+
+            shape-changes      (mapcat generate-deleted-font-shape-changes (vals pages))
+            components-changes (generate-deleted-font-components-changes fdata)
+            typography-changes (generate-deleted-font-typography-changes fdata)
             changes            (concat shape-changes
                                        components-changes
                                        typography-changes)]

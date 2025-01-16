@@ -15,8 +15,8 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.repo :as rp]
    [app.util.webapi :as wapi]
@@ -72,8 +72,8 @@
        (try
          (let [id              (d/nilv id (uuid/next))
                page-id         (:current-page-id state)
-               objects         (wsh/lookup-page-objects state page-id)
-               selected        (if ignore-selection? #{} (wsh/lookup-selected state))
+               objects         (dsh/lookup-page-objects state page-id)
+               selected        (if ignore-selection? #{} (dsh/lookup-selected state))
                base            (cfh/get-base-shape objects selected)
 
                selected-id     (first selected)

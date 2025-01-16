@@ -19,9 +19,9 @@
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dc]
    [app.main.data.event :as ev]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [beicon.v2.core :as rx]
@@ -60,7 +60,7 @@
      ptk/WatchEvent
      (watch [it state _]
        (let [page-id   (or page-id (:current-page-id state))
-             objects   (wsh/lookup-page-objects state page-id)
+             objects   (dsh/lookup-page-objects state page-id)
              ids       (into [] (filter some?) ids)
 
              update-layout-ids
@@ -107,7 +107,7 @@
      ptk/WatchEvent
      (watch [it state _]
        (let [page-id  (:current-page-id state)
-             objects  (wsh/lookup-page-objects state page-id)
+             objects  (dsh/lookup-page-objects state page-id)
 
              [shape changes]
              (-> (pcb/empty-changes it page-id)
@@ -140,7 +140,7 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [page-id (:current-page-id state)
-            objects (wsh/lookup-page-objects state page-id)
+            objects (dsh/lookup-page-objects state page-id)
             shapes  (->> shapes
                          (remove #(dm/get-in objects [% :blocked]))
                          (cfh/order-by-indexed-shapes objects))
@@ -169,16 +169,19 @@
      (watch [it state _]
        (let [file-id       (:current-file-id state)
              page-id       (or page-id (:current-page-id state))
-             file          (wsh/get-file state file-id)
-             page          (wsh/lookup-page state page-id)
-             objects       (wsh/lookup-page-objects state page-id)
+
+             fdata         (dsh/lookup-file-data state file-id)
+             page          (dsh/get-page fdata page-id)
+             objects       (:objects page)
+
              components-v2 (features/active-feature? state "components/v2")
              undo-id (or (:undo-id options) (js/Symbol))
              [all-parents changes] (-> (pcb/empty-changes it (:id page))
-                                       (cls/generate-delete-shapes file page objects ids {:components-v2 components-v2
-                                                                                          :ignore-touched (:component-swap options)
-                                                                                          :undo-group (:undo-group options)
-                                                                                          :undo-id undo-id}))]
+                                       (cls/generate-delete-shapes fdata page objects ids
+                                                                   {:components-v2 components-v2
+                                                                    :ignore-touched (:component-swap options)
+                                                                    :undo-group (:undo-group options)
+                                                                    :undo-id undo-id}))]
 
          (rx/of (dwu/start-undo-transaction undo-id)
                 (dc/detach-comment-thread ids)
@@ -191,15 +194,15 @@
   (ptk/reify ::create-and-add-shape
     ptk/WatchEvent
     (watch [_ state _]
-      (let [vbc       (wsh/viewport-center state)
+      (let [vbc       (dsh/get-viewport-center state)
             x         (:x attrs (- (:x vbc) (/ width 2)))
             y         (:y attrs (- (:y vbc) (/ height 2)))
             page-id   (:current-page-id state)
-            objects   (wsh/lookup-page-objects state page-id)
-            frame-id  (-> (wsh/lookup-page-objects state page-id)
+            objects   (dsh/lookup-page-objects state page-id)
+            frame-id  (-> (dsh/lookup-page-objects state page-id)
                           (ctst/top-nested-frame {:x frame-x :y frame-y}))
 
-            selected  (wsh/lookup-selected state)
+            selected  (dsh/lookup-selected state)
             base      (cfh/get-base-shape objects selected)
 
             parent-id (if (or (and (= 1 (count selected))
@@ -241,8 +244,8 @@
      ptk/WatchEvent
      (watch [it state _]
        (let [page-id      (:current-page-id state)
-             objects      (wsh/lookup-page-objects state page-id)
-             selected     (->> (wsh/lookup-selected state)
+             objects      (dsh/lookup-page-objects state page-id)
+             selected     (->> (dsh/lookup-selected state)
                                (cfh/clean-loops objects)
                                (remove #(ctn/has-any-copy-parent? objects (get objects %))))
 
@@ -291,7 +294,7 @@
               (cond-> obj
                 (boolean? blocked) (assoc :blocked blocked)
                 (boolean? hidden) (assoc :hidden hidden)))
-            objects (wsh/lookup-page-objects state)
+            objects (dsh/lookup-page-objects state)
             ;; We have change only the hidden behaviour, to hide only the
             ;; selected shape, block behaviour remains the same.
             ids     (if (boolean? blocked)
@@ -304,7 +307,7 @@
   (ptk/reify ::toggle-visibility-selected
     ptk/WatchEvent
     (watch [_ state _]
-      (let [selected (wsh/lookup-selected state)]
+      (let [selected (dsh/lookup-selected state)]
         (rx/of (update-shapes selected #(update % :hidden not)))))))
 
 (defn toggle-lock-selected
@@ -312,7 +315,7 @@
   (ptk/reify ::toggle-lock-selected
     ptk/WatchEvent
     (watch [_ state _]
-      (let [selected (wsh/lookup-selected state)]
+      (let [selected (dsh/lookup-selected state)]
         (rx/of (update-shapes selected #(update % :blocked not)))))))
 
 
@@ -323,8 +326,9 @@
   (ptk/reify ::toggle-file-thumbnail-selected
     ptk/WatchEvent
     (watch [_ state _]
-      (let [selected   (wsh/lookup-selected state)
-            pages      (-> state :workspace-data :pages-index vals)
+      (let [selected   (dsh/lookup-selected state)
+            fdata      (dsh/lookup-file-data state)
+            pages      (-> fdata :pages-index vals)
             undo-id  (js/Symbol)]
 
         (rx/concat

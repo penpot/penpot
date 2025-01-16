@@ -103,4 +103,3 @@
               (txt/transform-nodes #(not= (:typography-ref-file %) file-id)
                                    remove-ref-file
                                    content)))))
-

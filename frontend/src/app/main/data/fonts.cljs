@@ -327,27 +327,23 @@
 ;; Workspace related events
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn- update-recent-font
+  "Moves the font/font to the top of the list of recents and then truncates up to 4"
+  [state file-id font]
+  (let [xform (comp
+               (remove #(= font %))
+               (take 3))]
+    (update state file-id #(into [font] xform %))))
+
 (defn add-recent-font
   [font]
   (ptk/reify ::add-recent-font
     ptk/UpdateEvent
     (update [_ state]
-      (let [recent-fonts      (get-in state [:workspace-data :recent-fonts])
-            most-recent-fonts (into [font] (comp (remove #(= font %)) (take 3)) recent-fonts)]
-        (assoc-in state [:workspace-data :recent-fonts] most-recent-fonts)))
+      (let [file-id (:current-file-id state)]
+        (update state :recent-fonts update-recent-font file-id font)))
+
     ptk/EffectEvent
     (effect [_ state _]
-      (let [most-recent-fonts (get-in state [:workspace-data :recent-fonts])]
-        ;; FIXME: this should be prefixed by team
-        (swap! storage/user assoc ::recent-fonts most-recent-fonts)))))
-
-(defn load-recent-fonts
-  [fonts]
-  (ptk/reify ::load-recent-fonts
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [fonts-map (d/index-by :id fonts)
-            saved-recent-fonts (->> (::recent-fonts storage/user)
-                                    (keep #(get fonts-map (:id %)))
-                                    (into #{}))]
-        (assoc-in state [:workspace-data :recent-fonts] saved-recent-fonts)))))
+      (let [recent-fonts (:recent-fonts state)]
+        (swap! storage/user assoc :recent-fonts recent-fonts)))))

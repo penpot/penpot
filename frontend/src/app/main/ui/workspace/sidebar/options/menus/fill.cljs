@@ -9,6 +9,7 @@
   (:require
    [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.types.color :as ctc]
    [app.common.types.shape.attrs :refer [default-color]]
    [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
@@ -167,12 +168,7 @@
           (seq fills)
           [:& h/sortable-container {}
            (for [[index value] (d/enumerate (:fills values []))]
-             [:& color-row {:color {:color (:fill-color value)
-                                    :opacity (:fill-opacity value)
-                                    :id (:fill-color-ref-id value)
-                                    :file-id (:fill-color-ref-file value)
-                                    :gradient (:fill-color-gradient value)
-                                    :image (:fill-image value)}
+             [:& color-row {:color (ctc/fill->color value)
                             :key index
                             :index index
                             :title (tr "workspace.options.fill")

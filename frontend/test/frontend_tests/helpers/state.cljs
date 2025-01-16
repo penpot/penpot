@@ -18,8 +18,6 @@
    :workspace-global layout/default-global
    :current-file-id nil
    :current-page-id nil
-   :workspace-data nil
-   :workspace-libraries {}
    :features-team #{"components/v2"}})
 
 (defn- on-error
@@ -34,8 +32,7 @@
                   (assoc :current-file-id (:id file)
                          :current-page-id (cthf/current-page-id file)
                          :permissions {:can-edit true}
-                         :workspace-file (dissoc file :data)
-                         :workspace-data (:data file)))
+                         :files {(:id file) file}))
         store (ptk/store {:state state :on-error on-error})]
     store))
 
@@ -64,7 +61,7 @@
 
      (ptk/emit! store :the/end))))
 
-(defn get-file-from-store
-  [store]
-  (-> (:workspace-file store)
-      (assoc :data (:workspace-data store))))
+(defn get-file-from-state
+  [state]
+  (let [file-id (:current-file-id state)]
+    (get-in state [:files file-id])))

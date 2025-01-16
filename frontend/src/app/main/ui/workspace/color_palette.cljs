@@ -24,29 +24,30 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-(mf/defc palette-item
+(mf/defc palette-item*
   {::mf/wrap [mf/memo]}
   [{:keys [color size selected]}]
-  (letfn [(select-color [event]
-            (st/emit!
-             (dwl/add-recent-color color)
-             (mdc/apply-color-from-palette color (kbd/alt? event))
-             (when (not= selected :recent)
-               (ptk/event
-                ::ev/event
-                {::ev/name "use-library-color"
-                 ::ev/origin "color-palette"
-                 :external-library (not= selected :file)}))))]
-    [:div {:class (stl/css-case  :color-cell true
-                                 :is-not-library-color (nil? (:id color))
-                                 :no-text (<= size 64))
+  (let [select-color
+        (mf/use-fn
+         (mf/deps color selected)
+         (fn [event]
+           (st/emit! (dwl/add-recent-color color)
+                     (mdc/apply-color-from-palette color (kbd/alt? event))
+                     (when (not= selected :recent)
+                       (ptk/data-event ::ev/event
+                                       {::ev/name "use-library-color"
+                                        ::ev/origin "color-palette"
+                                        :external-library (not= selected :file)})))))]
+    [:div {:class (stl/css-case
+                   :color-cell true
+                   :is-not-library-color (nil? (:id color))
+                   :no-text (<= size 64))
            :title (uc/get-color-name color)
            :on-click select-color}
      [:& cb/color-bullet {:color color}]
      [:& cb/color-name {:color color :size size :origin :palette}]]))
 
-
-(mf/defc palette
+(mf/defc palette*
   [{:keys [current-colors size width selected]}]
   (let [;; We had to do this due to a bug that leave some bugged colors
         current-colors (h/use-equal-memo (filter #(or (:gradient %) (:color %) (:image %)) current-colors))
@@ -140,7 +141,7 @@
                        :max-width (str width "px")
                        :right (str (* offset-step offset) "px")}}
          (for [[idx item] (map-indexed vector current-colors)]
-           [:& palette-item {:color item :key idx :size size :selected selected}])])]
+           [:> palette-item* {:color item :key idx :size size :selected selected}])])]
      (when show-arrows?
        [:button {:class (stl/css :right-arrow)
                  :disabled (= offset max-offset)
@@ -155,7 +156,7 @@
 (mf/defc color-palette
   {::mf/wrap [mf/memo]}
   [{:keys [size width selected] :as props}]
-  (let [recent-colors (mf/deref refs/workspace-recent-colors)
+  (let [recent-colors (mf/deref refs/recent-colors)
         file-colors   (mf/deref refs/workspace-file-colors)
         shared-libs   (mf/deref refs/libraries)
         colors        (mf/use-state [])]
@@ -176,7 +177,7 @@
         (reset! colors (into [] (->> (vals file-colors)
                                      (sort-by :name))))))
 
-    [:& palette {:current-colors @colors
-                 :size size
-                 :width width
-                 :selected selected}]))
+    [:> palette* {:current-colors @colors
+                  :size size
+                  :width width
+                  :selected selected}]))

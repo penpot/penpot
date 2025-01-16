@@ -14,7 +14,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.data.changes :as dch]
    [app.main.data.common :as dcm]
-   [app.main.data.workspace.state-helpers :as wsh]
+   [app.main.data.helpers :as dsh]
    [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -186,7 +186,7 @@
   (ptk/reify ::undo-to-index
     ptk/WatchEvent
     (watch [it state _]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
         (when-not (and (or (some? edition) (some? (:object drawing)))
@@ -219,7 +219,7 @@
   (ptk/reify ::undo
     ptk/WatchEvent
     (watch [it state _]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
 
@@ -257,7 +257,7 @@
   (ptk/reify ::redo
     ptk/WatchEvent
     (watch [it state _]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             edition (get-in state [:workspace-local :edition])
             drawing (get state :workspace-drawing)]
         (when (and (or (nil? edition) (ctl/grid-layout? objects edition))
@@ -291,7 +291,8 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [page-id (:current-page-id state)
-            pages   (dm/get-in state [:workspace-data :pages])]
+            pages   (-> (dsh/lookup-file-data state)
+                        (get :pages))]
         (if (contains? pages page-id)
           (rx/empty)
           (rx/of (dcm/go-to-workspace :page-id (first pages))))))))

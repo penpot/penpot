@@ -15,6 +15,7 @@
    [app.common.svg.path.shapes-to-path :as upsp]
    [app.common.svg.path.subpath :as ups]
    [app.main.data.changes :as dch]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.path.changes :as changes]
    [app.main.data.workspace.path.drawing :as drawing]
@@ -24,7 +25,6 @@
    [app.main.data.workspace.path.streams :as streams]
    [app.main.data.workspace.path.undo :as undo]
    [app.main.data.workspace.shapes :as dwsh]
-   [app.main.data.workspace.state-helpers :as wsh]
    [app.main.streams :as ms]
    [app.util.mouse :as mse]
    [app.util.path.tools :as upt]
@@ -50,7 +50,7 @@
   (ptk/reify ::apply-content-modifiers
     ptk/WatchEvent
     (watch [it state _]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
 
             id (st/get-path-id state)
             page-id (:current-page-id state)
@@ -294,7 +294,7 @@
   (ptk/reify ::start-path-edit
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (wsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
             edit-path (dm/get-in state [:workspace-local :edit-path id])
             content (st/get-path state :content)
             state (cond-> state

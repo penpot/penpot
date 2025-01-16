@@ -45,8 +45,8 @@
   (t/testing "applies token to shape and updates shape attributes to resolved value"
     (t/async
       done
-      (let [file (setup-file-with-tokens)
-            store (ths/setup-store file)
+      (let [file   (setup-file-with-tokens)
+            store  (ths/setup-store file)
             rect-1 (cths/get-shape file :rect-1)
             events [(wtch/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
@@ -55,12 +55,14 @@
         (tohs/run-store-async
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)
-                 token (toht/get-token file' "borderRadius.md")
+           (let [file'   (ths/get-file-from-state new-state)
+                 token   (toht/get-token file' "borderRadius.md")
                  rect-1' (cths/get-shape file' :rect-1)]
+
              (t/testing "shape `:applied-tokens` got updated"
                (t/is (some? (:applied-tokens rect-1')))
                (t/is (= (:r1 (:applied-tokens rect-1')) (:name token))))
+
              (t/testing "shape radius got update to the resolved token value."
                (t/is (= (:r1 rect-1') 24))))))))))
 
@@ -82,7 +84,7 @@
         (tohs/run-store-async
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)
+           (let [file' (ths/get-file-from-state new-state)
                  token (toht/get-token file' "borderRadius.md")
                  rect-1' (cths/get-shape file' :rect-1)]
              (t/testing "shape `:applied-tokens` got updated"
@@ -113,7 +115,7 @@
         (tohs/run-store-async
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)
+           (let [file' (ths/get-file-from-state new-state)
                  token-sm (toht/get-token file' "borderRadius.sm")
                  token-md (toht/get-token file' "borderRadius.md")
                  rect-1' (cths/get-shape file' :rect-1)]
@@ -145,7 +147,7 @@
         (tohs/run-store-async
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)
+           (let [file' (ths/get-file-from-state new-state)
                  token-target' (toht/get-token file' "rotation.medium")
                  rect-1' (cths/get-shape file' :rect-1)]
              (t/is (some? (:applied-tokens rect-1')))
@@ -173,7 +175,7 @@
         (tohs/run-store-async
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)
+           (let [file' (ths/get-file-from-state new-state)
                  token-target' (toht/get-token file' "dimensions.sm")
                  rect-1' (cths/get-shape file' :rect-1)]
              (t/testing "shape `:applied-tokens` got updated"
@@ -203,7 +205,7 @@
         (tohs/run-store-async
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)
+           (let [file' (ths/get-file-from-state new-state)
                  token-target' (toht/get-token file' "sizing.sm")
                  rect-1' (cths/get-shape file' :rect-1)]
              (t/testing "shape `:applied-tokens` got updated"
@@ -252,7 +254,7 @@
         (tohs/run-store-async
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)
+           (let [file' (ths/get-file-from-state new-state)
                  rect-1' (cths/get-shape file' :rect-1)
                  rect-2' (cths/get-shape file' :rect-2)
                  rect-3' (cths/get-shape file' :rect-3)
@@ -288,7 +290,7 @@
         (tohs/run-store-async
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)
+           (let [file' (ths/get-file-from-state new-state)
                  token-target' (toht/get-token file' "rotation.medium")
                  rect-1' (cths/get-shape file' :rect-1)]
              (t/is (some? (:applied-tokens rect-1')))
@@ -319,7 +321,7 @@
         (tohs/run-store-async
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)
+           (let [file' (ths/get-file-from-state new-state)
                  token-target' (toht/get-token file' "stroke-width.sm")
                  rect-with-stroke' (cths/get-shape file' :rect-1)
                  rect-without-stroke' (cths/get-shape file' :rect-2)]
@@ -345,7 +347,7 @@
         (tohs/run-store-async
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)
+           (let [file' (ths/get-file-from-state new-state)
                  token-2' (toht/get-token file' "borderRadius.md")
                  rect-1' (cths/get-shape file' :rect-1)
                  rect-2' (cths/get-shape file' :rect-2)]
@@ -375,7 +377,7 @@
         (tohs/run-store-async
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)
+           (let [file' (ths/get-file-from-state new-state)
                  rect-with-token' (cths/get-shape file' :rect-1)
                  rect-without-token' (cths/get-shape file' :rect-2)
                  rect-with-other-token' (cths/get-shape file' :rect-3)]
@@ -408,7 +410,7 @@
         (tohs/run-store-async
          store done events
          (fn [new-state]
-           (let [file' (ths/get-file-from-store new-state)
+           (let [file' (ths/get-file-from-state new-state)
                  target-token (toht/get-token file' "borderRadius.sm")
                  rect-with-other-token-1' (cths/get-shape file' :rect-1)
                  rect-without-token' (cths/get-shape file' :rect-2)

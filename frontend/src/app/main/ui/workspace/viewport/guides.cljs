@@ -23,7 +23,6 @@
    [app.main.ui.formats :as fmt]
    [app.main.ui.workspace.viewport.rulers :as rulers]
    [app.util.dom :as dom]
-   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (def guide-width 1)
@@ -448,18 +447,14 @@
                    :is-hover true
                    :hover-frame frame}])]))
 
-(def ^:private lens:workspace-guides
-  (-> (l/key :guides)
-      (l/derived refs/workspace-page)))
-
 (mf/defc viewport-guides*
   {::mf/wrap [mf/memo]
    ::mf/props :obj}
-  [{:keys [zoom vbox hover-frame disabled-guides modifiers]}]
-  (let [guides (mf/deref lens:workspace-guides)
-        guides (mf/with-memo [guides vbox]
-                 (->> (vals guides)
-                      (filter (partial guide-inside-vbox? zoom vbox))))
+  [{:keys [zoom vbox hover-frame disabled-guides modifiers guides]}]
+  (let [guides
+        (mf/with-memo [guides vbox]
+          (->> (vals guides)
+               (filter (partial guide-inside-vbox? zoom vbox))))
 
         focus (mf/deref refs/workspace-focus-selected)
 
