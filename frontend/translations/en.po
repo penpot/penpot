@@ -6798,6 +6798,10 @@ msgid "workspace.token.no-sets-yet"
 msgstr "There are no sets yet."
 
 #: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.no-permisions-set"
+msgstr "You need to be an editor to activate / deactivate sets"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
 msgid "workspace.token.no-sets-create"
 msgstr "There are no sets defined yet. Create one first."
 

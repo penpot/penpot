@@ -73,16 +73,27 @@
       :default-value default-value}]))
 
 (mf/defc checkbox
-  [{:keys [checked aria-label on-click]}]
+  [{:keys [checked aria-label on-click disabled]}]
   (let [all? (true? checked)
         mixed? (= checked "mixed")
-        checked? (or all? mixed?)]
+        checked? (or all? mixed?)
+        on-click
+        (mf/use-fn
+         (mf/deps disabled)
+         (fn [e]
+           (when-not disabled
+             (on-click e))))]
     [:div {:role "checkbox"
            :aria-checked (dm/str checked)
+           :disabled disabled
+           :title (when disabled (tr "workspace.token.no-permisions-set"))
            :tab-index 0
            :class (stl/css-case :checkbox-style true
-                                :checkbox-checked-style checked?)
+                                :checkbox-checked-style checked?
+                                :checkbox-disabled-checked (and checked? disabled)
+                                :checkbox-disabled  disabled)
            :on-click on-click}
+
      (when checked?
        [:> icon*
         {:aria-label aria-label
@@ -94,13 +105,14 @@
   [{:keys [label tree-depth tree-path active? selected? collapsed? editing? on-toggle on-edit on-edit-reset on-edit-submit]}]
   (let [editing?' (editing? tree-path)
         active?' (active? tree-path)
+        can-edit?  (:can-edit (deref refs/permissions))
         on-context-menu
         (mf/use-fn
-         (mf/deps editing? tree-path)
+         (mf/deps editing? tree-path can-edit?)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (when-not (editing? tree-path)
+           (when (and can-edit? (not editing?'))
              (st/emit!
               (wdt/show-token-set-context-menu
                {:position (dom/get-client-position event)
@@ -110,18 +122,26 @@
          (fn [event]
            (dom/stop-propagation event)
            (swap! collapsed? not)))
+
         on-double-click
         (mf/use-fn
-         (mf/deps tree-path)
-         #(on-edit tree-path))
+         (mf/deps tree-path can-edit?)
+         (fn []
+           (when can-edit?
+             (on-edit tree-path))))
+
         on-checkbox-click
         (mf/use-fn
-         (mf/deps on-toggle tree-path)
-         #(on-toggle tree-path))
+         (mf/deps on-toggle tree-path can-edit?)
+         (fn []
+           (when can-edit?
+             (on-toggle tree-path))))
+
         on-edit-submit'
         (mf/use-fn
-         (mf/deps tree-path on-edit-submit)
-         #(on-edit-submit tree-path %))]
+         (mf/deps tree-path on-edit-submit can-edit?)
+         (fn [e]
+           (when can-edit? (on-edit-submit tree-path e))))]
     [:div {:role "button"
            :data-testid "tokens-set-group-item"
            :style {"--tree-depth" tree-depth}
@@ -147,6 +167,7 @@
          label]
         [:& checkbox
          {:on-click on-checkbox-click
+          :disabled (not can-edit?)
           :checked (case active?'
                      :all true
                      :partial "mixed"
@@ -158,6 +179,7 @@
   (let [set-name (.-name set)
         editing?' (editing? tree-path)
         active?' (some? (active? set-name))
+        can-edit?  (:can-edit (deref refs/permissions))
         on-click
         (mf/use-fn
          (mf/deps editing?' tree-path)
@@ -167,11 +189,11 @@
              (on-select tree-path))))
         on-context-menu
         (mf/use-fn
-         (mf/deps editing?' tree-path)
+         (mf/deps editing?' tree-path can-edit?)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (when-not editing?'
+           (when (and can-edit? (not editing?'))
              (st/emit!
               (wdt/show-token-set-context-menu
                {:position (dom/get-client-position event)
@@ -211,6 +233,7 @@
          label]
         [:& checkbox
          {:on-click on-checkbox-click
+          :disabled (not can-edit?)
           :arial-label (tr "workspace.token.select-set")
           :checked active?'}]])]))
 

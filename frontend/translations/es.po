@@ -6833,6 +6833,10 @@ msgstr "Duplicar token"
 msgid "workspace.token.edit"
 msgstr "Editar token"
 
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.no-permisions-set"
+msgstr "Debes ser editor para activar / desactivar sets"
+
 msgid "workspace.versions.button.save"
 msgstr "Guardar versión"
 
