@@ -44,7 +44,7 @@
 
 (mf/defc shape-options*
   {::mf/wrap [#(mf/throttle % 60)]}
-  [{:keys [shape shapes-with-children page-id file-id shared-libs]}]
+  [{:keys [shape shapes-with-children page-id file-id shared-libs] :as props}]
   (let [shape-type (dm/get-prop shape :type)
         shape-id   (dm/get-prop shape :id)
 
@@ -55,7 +55,7 @@
 
     [:*
      (case shape-type
-       :frame   [:& frame/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :shared-libs shared-libs}]
+       :frame   [:> frame/options* props]
        :group   [:& group/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :shared-libs shared-libs}]
        :text    [:& text/options {:shape shape  :file-id file-id :shared-libs shared-libs}]
        :rect    [:& rect/options {:shape shape}]
