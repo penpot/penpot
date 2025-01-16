@@ -170,15 +170,13 @@ Token names should only contain letters and digits separated by . characters.")}
                           :r r :g g :b b
                           :h h :s s :v v
                           :alpha 1})))
-        value (mf/use-state (hex->value color))
         on-change' (fn [{:keys [hex]}]
-                     (reset! value (hex->value hex))
                      (when-not (and @dragging? hex)
                        (on-change hex)))]
-    (colorpicker/use-color-picker-css-variables! wrapper-node-ref @value)
+    (colorpicker/use-color-picker-css-variables! wrapper-node-ref (hex->value color))
     [:div {:ref wrapper-node-ref}
      [:& ramp-selector
-      {:color @value
+      {:color (hex->value color)
        :disable-opacity true
        :on-start-drag #(reset! dragging? true)
        :on-finish-drag #(reset! dragging? false)
