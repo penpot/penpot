@@ -5,6 +5,7 @@
 ### :bug: Bugs fixed
 
 - Fix detach when top copy is dangling and nested copy is not [Taiga #9699](https://tree.taiga.io/project/penpot/issue/9699)
+- Fix problem in plugins with `replaceColor` method [#174](https://github.com/penpot/penpot-plugins/issues/174)
 
 ## 2.4.1
 
