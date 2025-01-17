@@ -47,9 +47,10 @@
   []
   (ptk/reify ::fetch-teams
     ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :get-teams)
-           (rx/map teams-fetched)))))
+    (watch [_ state _]
+      (let [share-id (get state :share-id)]
+        (->> (rp/cmd! :get-teams {:share-id share-id})
+             (rx/map teams-fetched))))))
 
 ;; --- EVENT: fetch-members
 
