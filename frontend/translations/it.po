@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-07 11:20+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-01-10 13:00+0000\n"
+"Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
 "Language: it\n"
@@ -6143,9 +6143,8 @@ msgid "workspace.sidebar.collapse"
 msgstr "Comprimi barra laterale"
 
 #: src/app/main/ui/workspace/right_header.cljs:246, src/app/main/ui/workspace/right_header.cljs:247
-#, fuzzy
 msgid "workspace.sidebar.history"
-msgstr "Cronologia (%s)"
+msgstr "Cronologia"
 
 #: src/app/main/ui/workspace/top_toolbar.cljs:143, src/app/main/ui/workspace/top_toolbar.cljs:144
 msgid "workspace.toolbar.frame"
@@ -6575,3 +6574,130 @@ msgstr "Mantieni proporzioni"
 #: src/app/main/ui/workspace/context_menu.cljs:651
 msgid "workspace.context-menu.grid-cells.create-board"
 msgstr "Crea tavola da disegno"
+
+msgid "dashboard.upgrade-plan.no-limits"
+msgstr "Nessun limite alla creatività"
+
+msgid "workspace.versions.warning.text"
+msgstr "Le versioni salvate automaticamente saranno conservate per %s giorni."
+
+msgid "workspace.libraries.empty.no-libraries"
+msgstr "Non ci sono librerie condivise nel tuo team, puoi cercare"
+
+#: src/app/main/ui/workspace/main_menu.cljs:623
+msgid "dashboard.create-version-menu"
+msgstr "Appunta questa versione"
+
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr ""
+"Se desideri incrementare questo limite, scrivici a [support@penpot.app](%s)"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+msgid "shortcuts.copy-link"
+msgstr "Copia link negli appunti"
+
+#: src/app/main/ui/workspace/context_menu.cljs:146
+msgid "workspace.shape.menu.copy_link"
+msgstr "Copia link negli appunti"
+
+#: src/app/main/ui/comments.cljs:147
+msgid "labels.post"
+msgstr "Pubblica"
+
+#: src/app/main/ui/comments.cljs:188
+msgid "labels.reply.thread"
+msgstr "Rispondi"
+
+#: src/app/main/ui/comments.cljs:146
+msgid "labels.replies"
+msgstr "risposte"
+
+#: src/app/main/ui/dashboard/import.cljs:466
+msgid "dashboard.import.import-message"
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "1 file è stato importato con successo."
+msgstr[1] "%s file sono stati importati con successo."
+
+#: src/app/main/ui/dashboard/file_menu.cljs:101
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Il tuo file è stato eliminato con successo"
+msgstr[1] "I tuoi file sono stati eliminati con successo"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:96
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Il tuo file è stato duplicato con successo"
+msgstr[1] "I tuoi file sono stati duplicati con successo"
+
+#: src/app/main/ui/delete_shared.cljs:52
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Rimuovi pubblicazione"
+msgstr[1] "Rimuovi pubblicazioni"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications"
+msgstr "Notifiche"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications.view"
+msgstr "Visualizza notifiche"
+
+#: src/app/main/ui/workspace/main_menu.cljs:630
+msgid "dashboard.show-version-history"
+msgstr "Cronologia versione"
+
+msgid "dashboard.upgrade-plan.penpot-free"
+msgstr "Penpot Gratis"
+
+msgid "dashboard.upgrade-plan.power-up"
+msgstr "Migliora"
+
+msgid "labels.adding"
+msgstr "Aggiungendo…"
+
+#: src/app/main/ui/comments.cljs:446
+msgid "labels.comment.mark-as-solved"
+msgstr "Segna come risolto"
+
+msgid "labels.comment"
+msgstr "Commenta"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:167
+msgid "shortcuts.rename"
+msgstr "Rinomina"
+
+msgid "workspace.assets.add-library"
+msgstr "Aggiungi libreria"
+
+#: src/app/main/ui/workspace/main_menu.cljs:908
+msgid "workspace.header.menu.option.power-up"
+msgstr "Migliora il tuo piano"
+
+msgid "workspace.libraries.empty.some-templates"
+msgstr "alcuni modelli qui"
+
+msgid "workspace.libraries.empty.add-some"
+msgstr "O aggiungi alcuni di questi per provare:"
+
+#: src/app/main/ui/comments.cljs:151
+msgid "labels.replies.new"
+msgstr "nuove risposte"
+
+#: src/app/main/ui/comments.cljs:150
+msgid "labels.reply.new"
+msgstr "nuova risposta"
+
+#: src/app/main/ui/comments.cljs:145
+msgid "labels.reply"
+msgstr "risposta"
+
+#: src/app/main/ui/workspace/sidebar.cljs:242
+msgid "workspace.versions.tab.actions"
+msgstr "Azioni"
+
+#: src/app/main/ui/workspace/sidebar.cljs:241
+msgid "workspace.versions.tab.history"
+msgstr "Cronologia"
