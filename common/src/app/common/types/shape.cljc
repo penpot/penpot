@@ -63,7 +63,7 @@
 
 (def stroke-caps-line #{:round :square})
 (def stroke-caps-marker #{:line-arrow :triangle-arrow :square-marker :circle-marker :diamond-marker})
-(def stroke-caps (set/union stroke-caps-line stroke-caps-marker))
+(def stroke-caps (conj (set/union stroke-caps-line stroke-caps-marker) nil))
 
 (def shape-types
   #{:frame

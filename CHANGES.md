@@ -18,6 +18,7 @@
 ### :bug: Bugs fixed
 
 - Fix problem with alt key measures being stuck [Taiga #9348](https://tree.taiga.io/project/penpot/issue/9348)
+- Fix error when reseting stroke cap
 
 ## 2.4.2
 
