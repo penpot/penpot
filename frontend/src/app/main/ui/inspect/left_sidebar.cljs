@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.inspect.left-sidebar
+(ns app.main.ui.inspect.left-sidebar
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]

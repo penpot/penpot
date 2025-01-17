@@ -4,14 +4,14 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.inspect.attributes.shadow
+(ns app.main.ui.inspect.attributes.shadow
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.components.title-bar :refer [inspect-title-bar]]
-   [app.main.ui.viewer.inspect.attributes.common :refer [color-row]]
+   [app.main.ui.inspect.attributes.common :refer [color-row]]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]

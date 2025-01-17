@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.inspect.right-sidebar
+(ns app.main.ui.inspect.right-sidebar
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.types.component :as ctk]
@@ -14,9 +14,9 @@
    [app.main.ui.components.shape-icon :as sir]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.icons :as i]
-   [app.main.ui.viewer.inspect.attributes :refer [attributes]]
-   [app.main.ui.viewer.inspect.code :refer [code]]
-   [app.main.ui.viewer.inspect.selection-feedback :refer [resolve-shapes]]
+   [app.main.ui.inspect.attributes :refer [attributes]]
+   [app.main.ui.inspect.code :refer [code]]
+   [app.main.ui.inspect.selection-feedback :refer [resolve-shapes]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [potok.v2.core :as ptk]
