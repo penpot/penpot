@@ -609,6 +609,38 @@
            [:span {:class (stl/css :replies-unread)} (str unread-replies " " (tr "labels.reply.new"))]
            [:span {:class (stl/css :replies-unread)} (str unread-replies " " (tr "labels.replies.new"))]))])]])
 
+(mf/defc comment-form-buttons*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [on-submit on-cancel is-disabled]}]
+  (let [handle-cancel
+        (mf/use-fn
+         (mf/deps on-cancel)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-cancel))))
+
+        handle-submit
+        (mf/use-fn
+         (mf/deps on-submit)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-submit))))]
+
+    [:div {:class (stl/css :form-buttons-wrapper)}
+     [:> mentions-button*]
+     [:> button* {:variant "ghost"
+                  :type "button"
+                  :on-key-down handle-cancel
+                  :on-click on-cancel}
+      (tr "ds.confirm-cancel")]
+     [:> button* {:variant "primary"
+                  :type "button"
+                  :on-key-down handle-submit
+                  :on-click on-submit
+                  :disabled is-disabled}
+      (tr "labels.post")]]))
+
 (mf/defc comment-reply-form*
   {::mf/props :obj
    ::mf/private true}
@@ -616,56 +648,47 @@
   (let [show-buttons? (mf/use-state false)
         content       (mf/use-state "")
 
-        disabled? (or (str/blank? @content)
-                      (str/empty? @content))
+        disabled?     (str/blank? @content)
 
-        on-focus
+        handle-focus
         (mf/use-fn
          #(reset! show-buttons? true))
 
-        on-blur
+        handle-blur
         (mf/use-fn
          #(reset! show-buttons? false))
 
-        on-change
+        handle-change
         (mf/use-fn
          #(reset! content %))
 
-        on-cancel
+        handle-cancel
         (mf/use-fn
          (fn []
            (reset! content "")
            (reset! show-buttons? false)))
 
-        on-submit*
+        handle-submit
         (mf/use-fn
          (mf/deps @content)
          (fn []
            (on-submit @content)
-           (on-cancel)))]
+           (handle-cancel)))]
 
     [:div {:class (stl/css :form)}
      [:> comment-input*
       {:value @content
        :placeholder (tr "labels.reply.thread")
        :autofocus? true
-       :on-blur on-blur
-       :on-focus on-focus
-       :on-ctrl-enter on-submit
-       :on-change on-change
+       :on-blur handle-blur
+       :on-focus handle-focus
+       :on-ctrl-enter handle-submit
+       :on-change handle-change
        :max-length 750}]
      (when (or @show-buttons? (seq @content))
-       [:div {:class (stl/css :form-buttons-wrapper)}
-        [:> mentions-button*]
-        [:> button* {:variant "ghost"
-                     :type "button"
-                     :on-click on-cancel}
-         (tr "ds.confirm-cancel")]
-        [:> button* {:variant "primary"
-                     :type "button"
-                     :on-click on-submit*
-                     :disabled disabled?}
-         (tr "labels.post")]])]))
+       [:> comment-form-buttons* {:on-submit handle-submit
+                                  :on-cancel handle-cancel
+                                  :is-disabled disabled?}])]))
 
 (mf/defc comment-edit-form*
   {::mf/props :obj
@@ -673,14 +696,13 @@
   [{:keys [content on-submit on-cancel]}]
   (let [content (mf/use-state content)
 
-        disabled? (or (str/blank? @content)
-                      (str/empty? @content))
+        disabled? (str/blank? @content)
 
-        on-change
+        handle-change
         (mf/use-fn
          #(reset! content %))
 
-        on-submit*
+        handle-submit
         (mf/use-fn
          (mf/deps @content)
          (fn []
@@ -690,20 +712,12 @@
      [:> comment-input*
       {:value @content
        :autofocus? true
-       :on-ctrl-enter on-submit*
-       :on-change on-change
+       :on-ctrl-enter handle-submit
+       :on-change handle-change
        :max-length 750}]
-     [:div {:class (stl/css :form-buttons-wrapper)}
-      [:> mentions-button*]
-      [:> button* {:variant "ghost"
-                   :type "button"
-                   :on-click on-cancel}
-       (tr "ds.confirm-cancel")]
-      [:> button* {:variant "primary"
-                   :type "button"
-                   :on-click on-submit*
-                   :disabled disabled?}
-       (tr "labels.post")]]]))
+     [:> comment-form-buttons* {:on-submit handle-submit
+                                :on-cancel on-cancel
+                                :is-disabled disabled?}]]))
 
 (mf/defc comment-floating-thread-draft*
   {::mf/props :obj}
@@ -720,10 +734,9 @@
         pos-x     (* (:x position) zoom)
         pos-y     (* (:y position) zoom)
 
-        disabled? (or (str/blank? content)
-                      (str/empty? content))
+        disabled? (str/blank? @content)
 
-        on-esc
+        handle-esc
         (mf/use-fn
          (mf/deps draft)
          (fn [event]
@@ -732,13 +745,13 @@
              (on-cancel)
              (st/emit! :interrupt))))
 
-        on-change
+        handle-change
         (mf/use-fn
          (mf/deps draft)
          (fn [content]
            (st/emit! (dcm/update-draft-thread {:content content}))))
 
-        on-submit
+        handle-submit
         (mf/use-fn
          (mf/deps draft)
          (fn []
@@ -762,23 +775,13 @@
         {:placeholder (tr "labels.write-new-comment")
          :value (or content "")
          :autofocus? true
-         :on-esc on-esc
-         :on-change on-change
-         :on-ctrl-enter on-submit
+         :on-esc handle-esc
+         :on-change handle-change
+         :on-ctrl-enter handle-submit
          :max-length 750}]
-
-       [:div {:class (stl/css :form-buttons-wrapper)}
-        [:> mentions-button*]
-        [:> button* {:variant "ghost"
-                     :type "button"
-                     :on-click on-esc}
-         (tr "ds.confirm-cancel")]
-        [:> button* {:variant "primary"
-                     :type "button"
-                     :on-click on-submit
-                     :disabled disabled?}
-         (tr "labels.post")]]]
-
+       [:> comment-form-buttons* {:on-submit handle-submit
+                                  :on-cancel on-cancel
+                                  :is-disabled disabled?}]]
       [:> mentions-panel* {:profiles profiles}]]]))
 
 (mf/defc comment-floating-thread-header*
