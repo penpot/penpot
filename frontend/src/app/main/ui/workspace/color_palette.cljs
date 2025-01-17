@@ -16,6 +16,7 @@
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.main.ui.icons :as i]
    [app.util.color :as uc]
    [app.util.dom :as dom]
@@ -40,13 +41,15 @@
                                        {::ev/name "use-library-color"
                                         ::ev/origin "color-palette"
                                         :external-library (not= selected :file)})))))]
-    [:div {:class (stl/css-case
-                   :color-cell true
-                   :is-not-library-color (nil? (:id color))
-                   :no-text (<= size 64))
-           :title (uc/get-color-name color)
-           :on-click select-color}
-     [:& cb/color-bullet {:color color}]
+    [:button {:class (stl/css-case
+                      :color-cell true
+                      :is-not-library-color (nil? (:id color))
+                      :no-text (<= size 64))
+              :title (uc/get-color-name color)
+              :aria-label (uc/get-color-name color)
+              :type "button"
+              :on-click select-color}
+     [:> swatch* {:background color :size "medium"}]
      [:& cb/color-name {:color color :size size :origin :palette}]]))
 
 (mf/defc palette*
