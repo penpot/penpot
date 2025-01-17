@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.inspect.render
+(ns app.main.ui.inspect.render
   "The main container for a frame in inspect mode"
   (:require
    [app.common.files.helpers :as cfh]
@@ -12,6 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
+   [app.main.ui.inspect.selection-feedback :refer [selection-feedback]]
    [app.main.ui.shapes.bool :as bool]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.frame :as frame]
@@ -22,7 +23,6 @@
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.text :as text]
-   [app.main.ui.viewer.inspect.selection-feedback :refer [selection-feedback]]
    [app.main.ui.viewer.interactions :refer [prepare-objects]]
    [app.util.dom :as dom]
    [app.util.object :as obj]

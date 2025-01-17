@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.inspect.attributes.fill
+(ns app.main.ui.inspect.attributes.fill
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.ui.components.title-bar :refer [inspect-title-bar]]
-   [app.main.ui.viewer.inspect.attributes.common :refer [color-row]]
+   [app.main.ui.inspect.attributes.common :refer [color-row]]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))

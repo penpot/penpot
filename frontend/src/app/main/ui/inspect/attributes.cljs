@@ -4,23 +4,23 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.inspect.attributes
+(ns app.main.ui.inspect.attributes
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.types.components-list :as ctkl]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.viewer.inspect.annotation :refer [annotation]]
-   [app.main.ui.viewer.inspect.attributes.blur :refer [blur-panel]]
-   [app.main.ui.viewer.inspect.attributes.fill :refer [fill-panel]]
-   [app.main.ui.viewer.inspect.attributes.geometry :refer [geometry-panel]]
-   [app.main.ui.viewer.inspect.attributes.image :refer [image-panel]]
-   [app.main.ui.viewer.inspect.attributes.layout :refer [layout-panel]]
-   [app.main.ui.viewer.inspect.attributes.layout-element :refer [layout-element-panel]]
-   [app.main.ui.viewer.inspect.attributes.shadow :refer [shadow-panel]]
-   [app.main.ui.viewer.inspect.attributes.stroke :refer [stroke-panel]]
-   [app.main.ui.viewer.inspect.attributes.svg :refer [svg-panel]]
-   [app.main.ui.viewer.inspect.attributes.text :refer [text-panel]]
-   [app.main.ui.viewer.inspect.exports :refer [exports]]
+   [app.main.ui.inspect.annotation :refer [annotation]]
+   [app.main.ui.inspect.attributes.blur :refer [blur-panel]]
+   [app.main.ui.inspect.attributes.fill :refer [fill-panel]]
+   [app.main.ui.inspect.attributes.geometry :refer [geometry-panel]]
+   [app.main.ui.inspect.attributes.image :refer [image-panel]]
+   [app.main.ui.inspect.attributes.layout :refer [layout-panel]]
+   [app.main.ui.inspect.attributes.layout-element :refer [layout-element-panel]]
+   [app.main.ui.inspect.attributes.shadow :refer [shadow-panel]]
+   [app.main.ui.inspect.attributes.stroke :refer [stroke-panel]]
+   [app.main.ui.inspect.attributes.svg :refer [svg-panel]]
+   [app.main.ui.inspect.attributes.text :refer [text-panel]]
+   [app.main.ui.inspect.exports :refer [exports]]
    [rumext.v2 :as mf]))
 
 (def type->options

@@ -4,14 +4,14 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.viewer.inspect.attributes.geometry
+(ns app.main.ui.inspect.attributes.geometry
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.components.title-bar :refer [inspect-title-bar]]
-   [app.main.ui.viewer.inspect.attributes.common :as cmm]
+   [app.main.ui.inspect.attributes.common :as cmm]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
