@@ -116,26 +116,50 @@
 (declare get-teams)
 
 (def ^:private schema:get-teams
-  [:map {:title "get-teams"}])
+  [:map {:title "get-teams"}
+   [:share-id {:optional true} ::sm/uuid]])
 
 (sv/defmethod ::get-teams
   {::doc/added "1.17"
    ::sm/params schema:get-teams}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id share-id]}]
   (dm/with-open [conn (db/open pool)]
-    (get-teams conn profile-id)))
+    (get-teams conn profile-id share-id)))
 
-(def sql:get-teams-with-permissions
-  "select t.*,
+(def ^:private sql:get-teams-with-permissions
+  "SELECT t.*,
           tp.is_owner,
           tp.is_admin,
           tp.can_edit,
-          (t.id = ?) as is_default
-     from team_profile_rel as tp
-     join team as t on (t.id = tp.team_id)
-    where t.deleted_at is null
-      and tp.profile_id = ?
-    order by tp.created_at asc")
+          (t.id = ?) AS is_default
+     FROM team_profile_rel AS tp
+     JOIN team AS t ON (t.id = tp.team_id)
+    WHERE t.deleted_at IS NULL
+      AND tp.profile_id = ?
+    ORDER BY tp.created_at ASC")
+
+(def ^:private sql:get-teams-from-share-id
+  "WITH teams AS (
+     (SELECT t.* FROM team AS t
+        JOIN team_profile_rel AS tpr ON (t.id = tpr.team_id)
+       WHERE tpr.profile_id = ?)
+
+     UNION
+
+     (SELECT t.* FROM team AS t
+        JOIN project AS p ON (p.team_id = t.id)
+        JOIN file AS f ON (f.project_id = p.id)
+        JOIN share_link AS sl ON (sl.file_id = f.id)
+       WHERE sl.id = ?)
+   )
+
+   SELECT t.*,
+          coalesce(tpr.is_owner, false) AS is_owner,
+          coalesce(tpr.is_admin, false) AS is_admin,
+          coalesce(tpr.can_edit, false) AS can_edit,
+          (t.id = ?) AS is_default
+     FROM teams AS t
+     LEFT JOIN team_profile_rel AS tpr ON (t.id = tpr.team_id AND tpr.profile_id = ?)")
 
 (defn process-permissions
   [team]
@@ -151,9 +175,15 @@
         (assoc :permissions permissions))))
 
 (defn get-teams
-  [conn profile-id]
-  (let [profile (profile/get-profile conn profile-id)]
-    (->> (db/exec! conn [sql:get-teams-with-permissions (:default-team-id profile) profile-id])
+  [conn profile-id share-id]
+  (let [profile (profile/get-profile conn profile-id)
+        team-id (:default-team-id profile)
+
+        teams   (if share-id
+                  (db/exec! conn [sql:get-teams-from-share-id profile-id share-id profile-id team-id])
+                  (db/exec! conn [sql:get-teams-with-permissions team-id profile-id]))]
+
+    (->> teams
          (map decode-row)
          (map process-permissions)
          (vec))))
