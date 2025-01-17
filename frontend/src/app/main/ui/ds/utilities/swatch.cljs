@@ -23,7 +23,7 @@
   [color-item]
   (let [name (:name color-item)
         path (:path color-item)
-        path-and-name (if path (str path " / " name) name)
+        path-and-name (if (and path (not (str/empty? path))) (str path " / " name) name)
         gradient (:gradient color-item)
         image (:image color-item)
         color (:color color-item)]
