@@ -638,6 +638,7 @@
             index   (d/index-of pages id)
             page    (get pindex id)
             page    (assoc page :index index)
+            pages   (filter #(not= % id) pages)
 
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data fdata)
@@ -646,7 +647,7 @@
 
         (rx/of (dch/commit-changes changes)
                (when (= id (:current-page-id state))
-                 (dcm/go-to-workspace)))))))
+                 (dcm/go-to-workspace {:page-id (first pages)})))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WORKSPACE File Actions
