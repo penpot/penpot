@@ -41,6 +41,12 @@ pub extern "C" fn init(width: i32, height: i32) {
 }
 
 #[no_mangle]
+pub extern "C" fn clean_up() {
+    unsafe { STATE = None }
+    mem::free_bytes();
+}
+
+#[no_mangle]
 pub extern "C" fn set_render_options(debug: u32, dpr: f32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     let render_state = state.render_state();

@@ -15,8 +15,10 @@ pub extern "C" fn alloc_bytes(len: usize) -> *mut u8 {
 }
 
 pub fn free_bytes() {
-    let buffer = unsafe { BUFFERU8.take() }.expect("uninitialized buffer");
-    std::mem::drop(buffer);
+    if unsafe { BUFFERU8.is_some() } {
+        let buffer = unsafe { BUFFERU8.take() }.expect("uninitialized buffer");
+        std::mem::drop(buffer);
+    }
 }
 
 pub fn buffer_ptr() -> *mut u8 {
