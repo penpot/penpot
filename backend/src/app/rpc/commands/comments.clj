@@ -462,8 +462,9 @@
                                              :thread-id thread-id
                                              :owner-id profile-id
                                              :content content})
-                        props    {:file-id file-id
-                                  :share-id nil}]
+                        comment (decode-row comment)
+                        props   {:file-id file-id
+                                 :share-id nil}]
 
                     ;; Update thread modified-at attribute and assoc the current
                     ;; profile to the participant set.
