@@ -63,7 +63,6 @@
 (def ^:icon arrow (icon-xref :arrow))
 (def ^:icon asc-sort (icon-xref :asc-sort))
 (def ^:icon board (icon-xref :board))
-(def ^:icon board-2 (icon-xref :board-2))
 (def ^:icon boards-thumbnail (icon-xref :boards-thumbnail))
 (def ^:icon boolean-difference (icon-xref :boolean-difference))
 (def ^:icon boolean-exclude (icon-xref :boolean-exclude))

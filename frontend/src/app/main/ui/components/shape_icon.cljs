@@ -9,7 +9,6 @@
    [app.common.types.component :as ctk]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
-   [app.config :as cf]
    [app.main.ui.icons :as i]
    [rumext.v2 :as mf]))
 
@@ -32,7 +31,7 @@
                i/flex-grid
 
                :else
-               (if (cf/external-feature-flag "boards-01" "test") i/board-2 i/board))
+               i/board)
       ;; TODO -> THUMBNAIL ICON
       :image i/img
       :line (if (cts/has-images? shape) i/img i/path)
@@ -57,7 +56,7 @@
   (if main-instance?
     i/component
     (case type
-      :frame (if (cf/external-feature-flag "boards-01" "test") i/board-2 i/board)
+      :frame i/board
       :image i/img
       :shape i/path
       :text i/text
