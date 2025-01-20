@@ -112,18 +112,20 @@
                                   (wtch/toggle-token {:token token
                                                       :shapes selected-shapes
                                                       :token-type-props token-type-props})))))
-        tokens-count (count tokens)]
+        tokens-count (count tokens)
+        can-edit?  (:can-edit (deref refs/permissions))]
     [:div {:on-click on-toggle-open-click}
      [:& cmm/asset-section {:icon (token-section-icon type)
                             :title title
                             :assets-count tokens-count
                             :open? open?}
       [:& cmm/asset-section-block {:role :title-button}
-       [:> icon-button* {:on-click on-popover-open-click
-                         :variant "ghost"
-                         :icon "add"
-                        ;;  TODO: This needs translation
-                         :aria-label (str "Add token: " title)}]]
+       (when can-edit?
+         [:> icon-button* {:on-click on-popover-open-click
+                           :variant "ghost"
+                           :icon "add"
+                           ;;  TODO: This needs translation
+                           :aria-label (str "Add token: " title)}])]
       (when open?
         [:& cmm/asset-section-block {:role :content}
          [:div {:class (stl/css :token-pills-wrapper)}
@@ -137,7 +139,9 @@
                   on-context-menu (fn [e] (on-context-menu e token))]
               [:& token-pill
                {:key (:name token)
+                :token-type-props token-type-props
                 :token token
+                :selected-shapes selected-shapes
                 :theme-token theme-token
                 :half-applied (or (and applied multiple-selection)
                                   (and applied (not full-applied)))
@@ -165,6 +169,7 @@
 (mf/defc themes-header
   [_props]
   (let [ordered-themes (mf/deref refs/workspace-token-themes-no-hidden)
+        can-edit?  (:can-edit (deref refs/permissions))
         open-modal
         (mf/use-fn
          (fn [e]
@@ -176,34 +181,45 @@
        [:div {:class (stl/css :empty-theme-wrapper)}
         [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
          (tr "workspace.token.no-themes")]
-        [:button {:on-click open-modal
-                  :class (stl/css :create-theme-button)}
-         (tr "workspace.token.create-one")]]
-       [:div {:class (stl/css :theme-select-wrapper)}
-        [:& theme-select]
-        [:> button* {:variant "secondary"
-                     :class (stl/css :edit-theme-button)
-                     :on-click open-modal}
-         (tr "labels.edit")]])]))
+        (when can-edit?
+          [:button {:on-click open-modal
+                    :class (stl/css :create-theme-button)}
+           (tr "workspace.token.create-one")])]
+       (if can-edit?
+         [:div {:class (stl/css :theme-select-wrapper)}
+          [:& theme-select]
+          [:> button* {:variant "secondary"
+                       :class (stl/css :edit-theme-button)
+                       :on-click open-modal}
+           (tr "labels.edit")]]
+         [:div {:title (when-not can-edit?
+                         (tr "workspace.token.no-permission-themes"))}
+          [:& theme-select]]))]))
 
 (mf/defc add-set-button
   [{:keys [on-open style]}]
   (let [{:keys [on-create new?]} (sets-context/use-context)
         on-click #(do
                     (on-open)
-                    (on-create))]
+                    (on-create))
+        can-edit?  (:can-edit (deref refs/permissions))]
     (if (= style "inline")
       (when-not new?
-        [:div {:class (stl/css :empty-sets-wrapper)}
-         [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
-          (tr "workspace.token.no-sets-yet")]
-         [:button {:on-click on-click
-                   :class (stl/css :create-theme-button)}
-          (tr "workspace.token.create-one")]])
-      [:> icon-button* {:variant "ghost"
-                        :icon "add"
-                        :on-click on-click
-                        :aria-label (tr "workspace.token.add set")}])))
+        (if can-edit?
+          [:div {:class (stl/css :empty-sets-wrapper)}
+           [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
+            (tr "workspace.token.no-sets-yet")]
+           [:button {:on-click on-click
+                     :class (stl/css :create-theme-button)}
+            (tr "workspace.token.create-one")]]
+          [:div {:class (stl/css :empty-sets-wrapper)}
+           [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
+            (tr "workspace.token.no-sets-yet")]]))
+      (when can-edit?
+        [:> icon-button* {:variant "ghost"
+                          :icon "add"
+                          :on-click on-click
+                          :aria-label (tr "workspace.token.add set")}]))))
 
 (mf/defc theme-sets-list
   [{:keys [on-open]}]
@@ -219,7 +235,8 @@
 (mf/defc themes-sets-tab
   [{:keys [resize-height]}]
   (let [open? (mf/use-state true)
-        on-open (mf/use-fn #(reset! open? true))]
+        on-open (mf/use-fn #(reset! open? true))
+        can-edit? (:can-edit (deref refs/permissions))]
     [:& sets-context/provider {}
      [:& sets-context-menu]
      [:article {:data-testid "token-themes-sets-sidebar"
@@ -229,8 +246,9 @@
        [:& themes-header]
        [:div {:class (stl/css :sidebar-header)}
         [:& title-bar {:title (tr "labels.sets")}
-         [:& add-set-button {:on-open on-open
-                             :style "header"}]]]
+         (when can-edit?
+           [:& add-set-button {:on-open on-open
+                               :style "header"}])]]
        [:& theme-sets-list {:on-open on-open}]]]]))
 
 (mf/defc tokens-tab
@@ -270,6 +288,7 @@
   [{:keys []}]
   (let [show-menu* (mf/use-state false)
         show-menu? (deref show-menu*)
+        can-edit? (:can-edit (deref refs/permissions))
 
         open-menu
         (mf/use-fn
@@ -311,12 +330,13 @@
                            (dom/trigger-download "tokens.json"))))]
 
     [:div {:class (stl/css :import-export-button-wrapper)}
-     [:input {:type "file"
-              :ref input-ref
-              :style {:display "none"}
-              :id "file-input"
-              :accept ".json"
-              :on-change on-import}]
+     (when can-edit?
+       [:input {:type "file"
+                :ref input-ref
+                :style {:display "none"}
+                :id "file-input"
+                :accept ".json"
+                :on-change on-import}])
      [:> button* {:on-click open-menu
                   :icon "import-export"
                   :variant "secondary"}
@@ -324,9 +344,10 @@
      [:& dropdown-menu {:show show-menu?
                         :on-close close-menu
                         :list-class (stl/css :import-export-menu)}
-      [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
-                               :on-click on-option-click}
-       (tr "labels.import")]
+      (when can-edit?
+        [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
+                                 :on-click on-option-click}
+         (tr "labels.import")])
 
       [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                :on-click on-export}

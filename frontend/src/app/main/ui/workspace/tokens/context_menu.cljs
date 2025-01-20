@@ -306,7 +306,7 @@
       title]
      (when children
        [:*
-        [:> icon* {:icon-d "arrow" :size "s"}]
+        [:> icon* {:icon-id "arrow" :size "s"}]
         [:ul {:class (stl/css :token-context-submenu)
               :data-direction submenu-direction
               :ref submenu-ref

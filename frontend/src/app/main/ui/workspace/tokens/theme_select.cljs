@@ -78,7 +78,7 @@
         active-theme-paths (mf/deref refs/workspace-active-theme-paths-no-hidden)
         active-themes-count (count active-theme-paths)
         themes (mf/deref refs/workspace-token-theme-tree-no-hidden)
-
+        can-edit?  (:can-edit (deref refs/permissions))
         ;; Data
         current-label (cond
                         (> active-themes-count 1) (tr "workspace.token.active-themes" active-themes-count)
@@ -97,15 +97,23 @@
         ;; Dropdown
         dropdown-element* (mf/use-ref nil)
         on-close-dropdown (mf/use-fn #(swap! state* assoc :is-open? false))
-        on-open-dropdown (mf/use-fn #(swap! state* assoc :is-open? true))]
+
+        on-open-dropdown
+        (mf/use-fn
+         (mf/deps can-edit?)
+         (fn []
+           (when can-edit?
+             (swap! state* assoc :is-open? true))))]
 
     ;; TODO: This element should be accessible by keyboard
     [:div {:on-click on-open-dropdown
+           :disabled (not can-edit?)
            :aria-expanded is-open?
            :aria-haspopup "listbox"
            :tab-index "0"
            :role "combobox"
-           :class (stl/css :custom-select)}
+           :class (stl/css-case :custom-select true
+                                :disabled-select (not can-edit?))}
      [:> text* {:as "span" :typography "body-small" :class (stl/css :current-label)}
       current-label]
      [:> icon* {:icon-id i/arrow-down :class (stl/css :dropdown-button) :aria-hidden true}]
