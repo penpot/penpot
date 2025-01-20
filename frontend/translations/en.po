@@ -6292,6 +6292,9 @@ msgstr "Edit themes"
 msgid "workspace.token.edit-token"
 msgstr "Edit token"
 
+msgid "workspace.token.label.group"
+msgstr "Group"
+
 #: src/app/main/ui/workspace/tokens/sets.cljs:186
 #, unused
 msgid "workspace.token.grouping-set-alert"
@@ -6353,6 +6356,9 @@ msgstr "Select set."
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:318
 msgid "workspace.token.set-selection-theme"
 msgstr "Define what token sets should be used as part of this theme option:"
+
+msgid "workspace.token.label.theme"
+msgstr "Theme"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs
 #, unused
