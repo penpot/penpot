@@ -14,6 +14,7 @@
    [app.main.data.shortcuts :as scd]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.drawing.common :as dwc]
+   [app.main.data.workspace.history :as dwh]
    [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -197,7 +198,7 @@
              (st/emit! :interrupt
                        (dw/clear-edition-mode)))
 
-           (st/emit! (-> (dw/toggle-layout-flag :document-history)
+           (st/emit! (-> (dwh/initialize-history)
                          (vary-meta assoc ::ev/origin "workspace-header")))))
 
         open-share-dialog
