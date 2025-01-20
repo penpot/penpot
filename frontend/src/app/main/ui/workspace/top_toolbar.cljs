@@ -10,7 +10,6 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.media :as cm]
-   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -147,7 +146,7 @@
             :on-click select-drawtool
             :data-tool "frame"
             :data-testid "artboard-btn"}
-           (if (cf/external-feature-flag "boards-01" "test") i/board-2 i/board)]]
+           i/board]]
          [:li
           [:button
            {:title (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
@@ -203,7 +202,8 @@
               :aria-label (tr "workspace.toolbar.plugins" (sc/get-tooltip :plugins))
               :class (stl/css :main-toolbar-options-button)
               :on-click #(st/emit!
-                          (ptk/event ::ev/event {::ev/name "open-plugins-manager" ::ev/origin "workspace:toolbar"})
+                          (ptk/data-event ::ev/event {::ev/name "open-plugins-manager"
+                                                      ::ev/origin "workspace:toolbar"})
                           (modal/show :plugin-management {}))
               :data-tool "plugins"
               :data-testid "plugins-btn"}
