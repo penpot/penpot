@@ -640,13 +640,15 @@
   (let [path-split (split-path path)]
     (merge-path-item (first path-split) name)))
 
-(defn split-string-half
-  "Split string in two halfs"
+
+(defn split-by-last-period
+  "Splits a string into two parts:
+   the text before and including the last period, 
+   and the text after the last period."
   [s]
-  (let [len (count s)
-        mid (quot len 2)]
-    [(subs s 0 mid)
-     (subs s mid)]))
+  (if-let [last-period (str/last-index-of s ".")]
+    [(subs s 0 (inc last-period)) (subs s (inc last-period))]
+    [s ""]))
 
 (defn get-frame-objects
   "Retrieves a new objects map only with the objects under frame-id (with frame-id)"

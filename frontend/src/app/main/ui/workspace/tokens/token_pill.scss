@@ -62,22 +62,22 @@
 
 .divided-name-wrapper {
   height: $s-16;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .first-name-wrapper {
-  display: inline-block;
-  max-width: 50%;
   overflow: hidden;
-  white-space: pre;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 
 .last-name-wrapper {
-  display: inline-block;
-  max-width: 50%;
-  overflow: hidden;
-  white-space: pre;
-  direction: rtl;
+  flex-shrink: 0;
+  margin-left: 4px;
 }
 
 .token-pill-applied {
