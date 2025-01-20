@@ -21,7 +21,7 @@
         color (when (seq (ctob/find-token-value-references value))
                 (wtt/resolved-value-hex theme-token))
         contains-path? (str/includes? name ".")
-        splitted-name (cfh/split-string-half name)
+        splitted-name (cfh/split-by-last-period name)
         color (or color (wtt/resolved-value-hex token))
         on-click
         (mf/use-callback
