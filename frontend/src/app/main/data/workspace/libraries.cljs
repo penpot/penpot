@@ -601,14 +601,17 @@
          (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
 (defn instantiate-component
-  "Create a new shape in the current page, from the component with the given id
-  in the given file library. Then selects the newly created instance."
+  "Create a new shape in the current page, from the component with the
+  given id in the given file library. Then selects the newly created
+  instance."
   ([file-id component-id position]
    (instantiate-component file-id component-id position nil))
   ([file-id component-id position {:keys [start-move? initial-point id-ref origin]}]
-   (dm/assert! (uuid? file-id))
-   (dm/assert! (uuid? component-id))
-   (dm/assert! (gpt/point? position))
+
+   (assert (uuid? file-id) "expected a uuid for `file-id`")
+   (assert (uuid? component-id) "expected a uuid for `component-id`")
+   (assert (gpt/point? position) "expected a point for `position`")
+
    (ptk/reify ::instantiate-component
      ptk/WatchEvent
      (watch [it state _]
