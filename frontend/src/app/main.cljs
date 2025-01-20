@@ -30,20 +30,21 @@
    [app.util.i18n :as i18n]
    [app.util.theme :as theme]
    [beicon.v2.core :as rx]
-   [cuerdas.core :as str]
    [debug]
    [features]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (log/setup! {:app :info})
+(log/set-level! :debug)
 
 (when (= :browser cf/target)
-  (log/info :version (:full cf/version)
-            :asserts *assert*
-            :build-date cf/build-date
-            :public-uri (dm/str cf/public-uri))
-  (log/info :flags (str/join "," (map name cf/flags))))
+  (log/inf :version (:full cf/version)
+           :asserts *assert*
+           :build-date cf/build-date
+           :public-uri (dm/str cf/public-uri))
+  (doseq [flag cf/flags]
+    (log/dbg :hint "flag enabled" :flag (name flag))))
 
 (declare reinit)
 
