@@ -460,11 +460,6 @@
        :stencil true
        :alpha true})
 
-(defn clear-canvas
-  []
-  ;; TODO: perform corresponding cleaning
-  )
-
 (defn resize-viewbox
   [width height]
   (h/call internal-module "_resize_viewbox" width height))
@@ -488,9 +483,13 @@
     ;; Initialize Wasm Render Engine
     (h/call internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
     (h/call internal-module "_set_render_options" flags dpr))
-
   (set! (.-width canvas) (* dpr (.-clientWidth ^js canvas)))
   (set! (.-height canvas) (* dpr (.-clientHeight ^js canvas))))
+
+(defn clear-canvas
+  []
+  ;; TODO: perform corresponding cleaning
+  (h/call internal-module "_clean_up"))
 
 (defn set-canvas-background
   [background]
