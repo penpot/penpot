@@ -340,13 +340,18 @@
         (cond-> (some? layout-item-v-sizing)
           (assoc :layout-item-v-sizing layout-item-v-sizing)))))
 
+;; FIXME: remove component-v2 parameter
 (defn make-component-instance
   "Generate a new instance of the component inside the given container.
 
   Clone the shapes of the component, generating new names and ids, and
   linking each new shape to the corresponding one of the
   component. Place the new instance coordinates in the given
-  position."
+  position.
+
+  Warnign: This process does not remap media references (on fills, strokes, ...); that is
+  delegated to an async process on the backend side that checks unreferenced shapes and
+  automatically creates correct references."
   ([container component library-data position components-v2]
    (make-component-instance container component library-data position components-v2 {}))
 
@@ -363,7 +368,8 @@
                                (remove-swap-keep-attrs))
                            (get-shape component (:id component)))
 
-         orig-pos        (gpt/point (:x component-shape) (:y component-shape))
+         orig-pos        (gpt/point (:x component-shape)
+                                    (:y component-shape))
          delta           (gpt/subtract position orig-pos)
 
          objects         (:objects container)
@@ -386,6 +392,9 @@
          frame           (get-shape container frame-id)
          component-frame (get-component-shape objects frame {:allow-main? true})
 
+         ;; This map stores the relation between old shapes (present on the main
+         ;; component) and the new shape-ids (created on this instantiation process). This
+         ;; is mainly used for update grid layout references.
          ids-map         (volatile! {})
 
          update-new-shape
