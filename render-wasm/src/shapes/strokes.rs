@@ -155,10 +155,17 @@ impl Stroke {
         outer
     }
 
-    pub fn to_paint(&self, rect: &math::Rect) -> skia::Paint {
+    pub fn to_paint(&self, rect: &math::Rect, scale: f32) -> skia::Paint {
         let mut paint = self.fill.to_paint(rect);
         paint.set_style(skia::PaintStyle::Stroke);
-        paint.set_stroke_width(self.width);
+
+        let width = match self.kind {
+            StrokeKind::InnerStroke => self.width,
+            StrokeKind::CenterStroke => self.width,
+            StrokeKind::OuterStroke => self.width + (1. / scale),
+        };
+
+        paint.set_stroke_width(width);
         paint.set_anti_alias(true);
 
         if self.style != StrokeStyle::Solid {
@@ -199,17 +206,16 @@ impl Stroke {
         paint
     }
 
-    pub fn to_stroked_paint(&self, kind: StrokeKind, rect: &math::Rect) -> skia::Paint {
-        let mut paint = self.to_paint(rect);
-        match kind {
+    pub fn to_stroked_paint(&self, is_open: bool, rect: &math::Rect, scale: f32) -> skia::Paint {
+        let mut paint = self.to_paint(rect, scale);
+        match self.render_kind(is_open) {
             StrokeKind::InnerStroke => {
-                paint.set_stroke_width(2. * self.width);
+                paint.set_stroke_width(2. * paint.stroke_width());
                 paint
             }
-
             StrokeKind::CenterStroke => paint,
             StrokeKind::OuterStroke => {
-                paint.set_stroke_width(2. * self.width);
+                paint.set_stroke_width(2. * paint.stroke_width());
                 paint
             }
         }
