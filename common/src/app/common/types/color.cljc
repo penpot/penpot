@@ -115,6 +115,9 @@
 (sm/register! ::recent-color schema:recent-color)
 (sm/register! ::color-attrs schema:color-attrs)
 
+(def valid-color?
+  (sm/lazy-validator schema:color))
+
 (def check-color!
   (sm/check-fn schema:color :hint "expected valid color struct"))
 
@@ -143,7 +146,6 @@
 
 ;; --- fill
 
-;; FIXME: revisit, this generates invalid colors
 (defn fill->shape-color
   [fill]
   (d/without-nils
@@ -153,16 +155,6 @@
     :image (:fill-image fill)
     :ref-id (:fill-color-ref-id fill)
     :ref-file (:fill-color-ref-file fill)}))
-
-(defn fill->color
-  [fill]
-  (d/without-nils
-   {:color (:fill-color fill)
-    :opacity (:fill-opacity fill)
-    :gradient (:fill-color-gradient fill)
-    :image (:fill-image fill)
-    :id (:fill-color-ref-id fill)
-    :file-id (:fill-color-ref-file fill)}))
 
 (defn set-fill-color
   [shape position color opacity gradient image]

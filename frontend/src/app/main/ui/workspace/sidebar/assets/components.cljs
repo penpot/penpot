@@ -71,17 +71,13 @@
         [root-shape container]
         (get-component-root-and-container file-id component)
 
-        unselect-all
-        (mf/use-fn
-         (fn []
-           (st/emit! (dw/unselect-all-assets))))
-
         on-component-click
         (mf/use-fn
          (mf/deps component-id on-asset-click)
          (fn [event]
            (dom/stop-propagation event)
-           (on-asset-click component-id unselect-all event)))
+           (when-not (on-asset-click event component-id)
+             (st/emit! (dw/unselect-all-assets)))))
 
         on-component-double-click
         (mf/use-fn

@@ -20,7 +20,7 @@
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measures-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measures-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-menu]]
    [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]
@@ -69,7 +69,7 @@
 
     [:div {:class (stl/css :options)}
      [:& layer-menu {:type type :ids layer-ids :values layer-values}]
-     [:& measures-menu {:type type :ids measure-ids :values measure-values :shape shape}]
+     [:> measures-menu* {:type type :ids measure-ids :values measure-values :shape shape}]
      [:& component-menu {:shapes [shape]}] ;;remove this in components-v2
 
      [:& layout-container-menu

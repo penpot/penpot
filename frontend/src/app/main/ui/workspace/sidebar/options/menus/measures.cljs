@@ -33,7 +33,7 @@
    [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [clojure.set :refer [rename-keys union]]
+   [clojure.set :as set]
    [rumext.v2 :as mf]))
 
 (def measure-attrs
@@ -48,16 +48,27 @@
    :show-content
    :hide-in-viewer])
 
-(def ^:private type->options
-  {:bool    #{:size :position :rotation}
-   :circle  #{:size :position :rotation}
-   :frame   #{:presets :size :position :rotation :radius :clip-content :show-in-viewer}
-   :group   #{:size :position :rotation}
-   :image   #{:size :position :rotation :radius}
-   :path    #{:size :position :rotation}
-   :rect    #{:size :position :rotation :radius}
-   :svg-raw #{:size :position :rotation}
-   :text    #{:size :position :rotation}})
+(def ^:private generic-options
+  #{:size :position :rotation})
+
+(def ^:private rect-options
+  #{:size :position :rotation :radius})
+
+(def ^:private frame-options
+  #{:presets :size :position :rotation :radius :clip-content :show-in-viewer})
+
+(defn- type->options
+  [type]
+  (case type
+    :bool    generic-options
+    :circle  generic-options
+    :frame   frame-options
+    :group   generic-options
+    :image   rect-options
+    :path    generic-options
+    :rect    rect-options
+    :svg-raw generic-options
+    :text    generic-options))
 
 (def ^:private clip-content-icon (i/icon-xref :clip-content (stl/css :checkbox-button)))
 (def ^:private play-icon (i/icon-xref :play (stl/css :checkbox-button)))
@@ -67,37 +78,45 @@
 (defn select-measure-keys
   "Consider some shapes can be drawn from bottom to top or from left to right"
   [shape]
-  (let [shape (cond
-                (and (:flip-x shape) (:flip-y shape))
-                (rename-keys shape {:r1 :r3 :r2 :r4 :r3 :r1 :r4 :r2})
+  (let [flip-x (get shape :flip-x)
+        flip-y (get shape :flip-y)
 
-                (:flip-x shape)
-                (rename-keys shape {:r1 :r2 :r2 :r1 :r3 :r4 :r4 :r3})
+        shape  (cond
+                 (and flip-x flip-y)
+                 (set/rename-keys shape {:r1 :r3 :r2 :r4 :r3 :r1 :r4 :r2})
 
-                (:flip-y shape)
-                (rename-keys shape {:r1 :r4 :r2 :r3 :r3 :r2 :r4 :r1})
+                 flip-x
+                 (set/rename-keys shape {:r1 :r2 :r2 :r1 :r3 :r4 :r4 :r3})
 
-                :else
-                shape)]
+                 flip-y
+                 (set/rename-keys shape {:r1 :r4 :r2 :r3 :r3 :r2 :r4 :r1})
+
+                 :else
+                 shape)]
     (select-keys shape measure-attrs)))
 
-;; -- User/drawing coords
-(mf/defc measures-menu
-  {::mf/wrap-props false
+(mf/defc measures-menu*
+  {::mf/props :obj
    ::mf/wrap [mf/memo]}
   [{:keys [ids ids-with-children values type all-types shape]}]
-  (let [options (if (= type :multiple)
-                  (reduce #(union %1 %2) (map #(get type->options %) all-types))
-                  (get type->options type))
+  (let [design-tokens? (mf/use-ctx muc/design-tokens)
 
-        design-tokens? (mf/use-ctx muc/design-tokens)
+        options
+        (mf/with-memo [type all-types]
+          (if (= type :multiple)
+            (into #{} (mapcat type->options) all-types)
+            (type->options type)))
 
-        ids-with-children (or ids-with-children ids)
+        ids-with-children
+        (or ids-with-children ids)
 
-        old-shapes (if (= type :multiple)
-                     (deref (refs/objects-by-id ids))
-                     [shape])
-        frames (map #(deref (refs/object-by-id (:frame-id %))) old-shapes)
+        old-shapes
+        (if (= type :multiple)
+          (deref (refs/objects-by-id ids))
+          [shape])
+
+        frames
+        (map #(deref (refs/object-by-id (:frame-id %))) old-shapes)
 
         ids (hooks/use-equal-memo ids)
 

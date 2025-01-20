@@ -42,15 +42,20 @@
 
 ;; --- Options
 
-(mf/defc shape-options
+(mf/defc shape-options*
   {::mf/wrap [#(mf/throttle % 60)]}
-  [{:keys [shape shapes-with-children page-id file-id shared-libs]}]
-  (let [workspace-modifiers (mf/deref refs/workspace-modifiers)
-        modifiers (get-in workspace-modifiers [(:id shape) :modifiers])
-        shape (gsh/transform-shape shape modifiers)]
+  [{:keys [shape shapes-with-children page-id file-id shared-libs] :as props}]
+  (let [shape-type (dm/get-prop shape :type)
+        shape-id   (dm/get-prop shape :id)
+
+        modifiers  (mf/deref refs/workspace-modifiers)
+        modifiers  (dm/get-in modifiers [shape-id :modifiers])
+
+        shape      (gsh/transform-shape shape modifiers)]
+
     [:*
-     (case (:type shape)
-       :frame   [:& frame/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :shared-libs shared-libs}]
+     (case shape-type
+       :frame   [:> frame/options* props]
        :group   [:& group/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :shared-libs shared-libs}]
        :text    [:& text/options {:shape shape  :file-id file-id :shared-libs shared-libs}]
        :rect    [:& rect/options {:shape shape}]
@@ -73,7 +78,7 @@
   (when (= (:type panel) :component-swap)
     [:& component-menu {:shapes (:shapes panel) :swap-opened? true}]))
 
-(mf/defc design-menu
+(mf/defc design-menu*
   {::mf/wrap [mf/memo]}
   [{:keys [selected objects page-id file-id selected-shapes shapes-with-children]}]
   (let [sp-panel             (mf/deref refs/specialized-panel)
@@ -104,7 +109,7 @@
        [:& specialized-panel {:panel sp-panel}]
 
        (d/not-empty? drawing)
-       [:& shape-options
+       [:> shape-options*
         {:shape (:object drawing)
          :page-id page-id
          :file-id file-id
@@ -114,7 +119,7 @@
        [:& page/options]
 
        (= 1 (count selected))
-       [:& shape-options
+       [:> shape-options*
         {:shape (first selected-shapes)
          :page-id page-id
          :file-id file-id
@@ -151,12 +156,13 @@
               (st/emit! :interrupt (dwc/set-workspace-read-only false)))))
 
         design-content
-        (mf/html [:& design-menu {:selected selected
-                                  :objects objects
-                                  :page-id page-id
-                                  :file-id file-id
-                                  :selected-shapes selected-shapes
-                                  :shapes-with-children shapes-with-children}])
+        (mf/html [:> design-menu*
+                  {:selected selected
+                   :objects objects
+                   :page-id page-id
+                   :file-id file-id
+                   :selected-shapes selected-shapes
+                   :shapes-with-children shapes-with-children}])
 
         inspect-content
         (mf/html [:div {:class (stl/css :element-options :inspect-options)}

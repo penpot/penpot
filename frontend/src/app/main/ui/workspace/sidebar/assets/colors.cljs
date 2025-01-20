@@ -64,19 +64,6 @@
                        (:color color)    (:color color)
                        :else             (:value color))
 
-        apply-color
-        (mf/use-fn
-         (mf/deps color)
-         (fn [event]
-           (st/emit!
-            (dwl/add-recent-color color)
-            (dc/apply-color-from-palette color (kbd/alt? event))
-            (ptk/event
-             ::ev/event
-             {::ev/name "use-library-color"
-              ::ev/origin "sidebar"
-              :external-library (not local?)}))))
-
         rename-color
         (mf/use-fn
          (mf/deps file-id color-id)
@@ -189,10 +176,17 @@
 
         on-click
         (mf/use-fn
-         (mf/deps color-id apply-color on-asset-click read-only?)
-         (when-not read-only?
-           (dwl/add-recent-color color)
-           (partial on-asset-click color-id apply-color)))]
+         (mf/deps color on-asset-click read-only?)
+         (fn [event]
+           (when-not read-only?
+             (st/emit! (ptk/data-event ::ev/event
+                                       {::ev/name "use-library-color"
+                                        ::ev/origin "sidebar"
+                                        :external-library (not local?)}))
+
+             (when-not (on-asset-click event (:id color))
+               (st/emit! (dwl/add-recent-color color)
+                         (dc/apply-color-from-palette color (kbd/alt? event)))))))]
 
     (mf/with-effect [editing?]
       (when editing?

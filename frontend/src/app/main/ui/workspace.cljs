@@ -29,7 +29,7 @@
    [app.main.ui.workspace.nudge]
    [app.main.ui.workspace.palette :refer [palette]]
    [app.main.ui.workspace.plugins]
-   [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
+   [app.main.ui.workspace.sidebar :refer [left-sidebar* right-sidebar*]]
    [app.main.ui.workspace.sidebar.collapsable-button :refer [collapsed-button]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox*]]
    [app.main.ui.workspace.tokens.modals]
@@ -111,14 +111,14 @@
        [:*
         (if (:collapse-left-sidebar layout)
           [:& collapsed-button]
-          [:& left-sidebar {:layout layout
+          [:> left-sidebar* {:layout layout
+                             :file file
+                             :page-id page-id}])
+        [:> right-sidebar* {:section options-mode
+                            :selected selected
+                            :layout layout
                             :file file
-                            :page-id page-id}])
-        [:& right-sidebar {:section options-mode
-                           :selected selected
-                           :layout layout
-                           :file file
-                           :page-id page-id}]])]))
+                            :page-id page-id}]])]))
 
 (mf/defc workspace-loader*
   {::mf/private true}

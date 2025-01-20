@@ -82,7 +82,9 @@
         on-asset-click
         (mf/use-fn
          (mf/deps object-id on-asset-click)
-         (partial on-asset-click object-id nil))]
+         (fn [event]
+           (on-asset-click event object-id)))]
+
     [:div {:ref item-ref
            :class-name (stl/css-case
                         :selected (contains? selected-objects object-id)

@@ -89,7 +89,7 @@
          text-ids  (filter is-text? ids)
          shape-ids (remove is-text? ids)
 
-         undo-id (js/Symbol)
+         undo-id   (js/Symbol)
 
          attrs
          (cond-> {}
@@ -146,7 +146,8 @@
          (rx/of (dwsh/update-shapes shape-ids transform-attrs)))))))
 
 (defn change-fill
-  ([ids color position] (change-fill ids color position nil))
+  ([ids color position]
+   (change-fill ids color position nil))
   ([ids color position options]
    (ptk/reify ::change-fill
      ptk/WatchEvent

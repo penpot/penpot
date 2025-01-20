@@ -464,8 +464,8 @@
   Returns a list ((asset ((container shapes) (container shapes)...))...)"
   [file-data library-data asset-type]
   (let [assets-seq (case asset-type
-                     :component (ctkl/components-seq library-data)
-                     :color (ctcl/colors-seq library-data)
+                     :component  (ctkl/components-seq library-data)
+                     :color      (ctcl/colors-seq library-data)
                      :typography (ctyl/typographies-seq library-data))
 
         find-usages-in-container
