@@ -394,6 +394,10 @@ msgstr "El token expirará el %s"
 msgid "dashboard.access-tokens.token-will-not-expire"
 msgstr "El token no tiene fecha de expiración"
 
+#: src/app/main/ui/dashboard/placeholder.cljs:48
+msgid "dashboard.add-file"
+msgstr "Añadir archivo"
+
 #: src/app/main/ui/dashboard/file_menu.cljs:311, src/app/main/ui/workspace/main_menu.cljs:585
 msgid "dashboard.add-shared"
 msgstr "Añadir como Biblioteca Compartida"

@@ -6945,3 +6945,7 @@ msgstr "Notifications"
 
 msgid "comments.mentions.not-found"
 msgstr "No people found for @%s"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:48
+msgid "dashboard.add-file"
+msgstr "Add file"
