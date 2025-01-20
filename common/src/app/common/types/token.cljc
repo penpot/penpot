@@ -59,7 +59,8 @@
   [t]
   (token-types t))
 
-(def token-name-ref :string)
+(def token-name-ref
+  [:and :string [:re #"^(?!\$)([a-zA-Z0-9-$]+\.?)*(?<!\.)$"]])
 
 (defn valid-token-name-ref?
   [n]
