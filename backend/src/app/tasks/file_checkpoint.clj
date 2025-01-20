@@ -46,6 +46,10 @@
   (let [used-refs
         (into #{} fgc/xf:collect-used-media (cons file nil))
 
+        _ (println "----------------")
+        _ (prn "AAAA" 0 file-id (:snapshot-id file))
+        _ (prn "AAAA" 1 used-refs)
+
         missing-refs-index
         (reduce (fn [result {:keys [id] :as fmo}]
                   (assoc result id
@@ -58,10 +62,15 @@
                 (db/plan conn [sql:get-missing-media-references
                                (db/create-array conn "uuid" used-refs)
                                file-id]))
+
+        _ (prn "AAAA" (map (fn [[k v]] [k "->" (:id v)]) missing-refs-index))
+
+
         lookup-index
         (fn [id]
           (if-let [mobj (get missing-refs-index id)]
             (do
+              (l/trc :hint "lookup index" :id (str id) :result (str (get mobj :id)))
               (some-> *stats* (swap! update :lookups conj* id))
               (get mobj :id))
 
@@ -70,8 +79,9 @@
         file
         (update file :data cls/relink-shapes lookup-index)]
 
-    (doseq [item (vals missing-refs-index)]
+    (doseq [[old-id item] missing-refs-index]
       (some-> *stats* (swap! update :missing (fnil conj []) item))
+      (l/trc :hint "create missing references" :snap-id (str (:snapshot-id file)) :old-id (str old-id) :id (str (:id item)))
       (db/insert! conn :file-media-object item
                   {::db/return-keys false}))
 
@@ -92,12 +102,13 @@
             (when (feat.fdata/offloaded? file)
               (some->> (:data-ref-id file) (sto/touch-object! storage)))
 
-            (db/update! conn :file-change
-                        {:data data
-                         :data-backend nil
-                         :data-ref-id nil}
-                        {:id snapshot-id}
-                        {::db/return-keys false})))
+            (let [result (db/update! conn :file-change
+                                     {:data data
+                                      :data-backend nil
+                                      :data-ref-id nil}
+                                     {:id snapshot-id}
+                                     {::db/return-keys false})]
+              (prn "AAAA" result))))
 
         (db/plan cfg [fgc/sql:get-snapshots file-id] fgc/plan-opts)))
 
@@ -105,7 +116,7 @@
   [cfg]
   (if-let [file (fgc/get-file cfg)]
     (do
-      (->> file
+      #_(->> file
            (fgc/decode-file cfg)
            (fix-media-references cfg)
            (cfv/validate-file-schema!)
@@ -131,12 +142,10 @@
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [{:keys [props] :as task}]
-    (let [min-age (dt/duration (or (:min-age props)
-                                   (cf/get-deletion-delay)))
-          cfg     (-> cfg
-                      (assoc ::db/rollback (:rollback? props))
-                      (assoc ::fgc/file-id (:file-id props))
-                      (assoc ::fgc/min-age (db/interval min-age)))]
+    (let [cfg (-> cfg
+                  (assoc ::db/rollback (:rollback? props))
+                  (assoc ::fgc/file-id (:file-id props))
+                  (assoc ::fgc/min-age (db/interval 0)))]
 
       (try
         (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]

@@ -260,7 +260,7 @@
       ;; Submit a checkpoint task
       (let [label  (dm/str "file-checkpoint:" (:id file))
             params {:file-id (:id file)}
-            delay  (dt/duration "5s")]
+            delay  (dt/duration "2s")]
         (-> cfg
             (assoc ::wrk/task :file-checkpoint)
             (assoc ::wrk/queue :webhooks)

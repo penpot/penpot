@@ -42,7 +42,7 @@
    :rpc-rlimit-config "resources/rlimit.edn"
    :rpc-climit-config "resources/climit.edn"
 
-   :auto-file-snapshot-every 5
+   :auto-file-snapshot-every 50000
    :auto-file-snapshot-timeout "3h"
 
    :public-uri "http://localhost:3449"

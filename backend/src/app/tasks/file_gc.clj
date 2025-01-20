@@ -33,17 +33,18 @@
 (declare ^:private persist-file!)
 
 (def sql:get-snapshots
-  "SELECT f.file_id AS id,
-          f.data,
-          f.revn,
-          f.version,
-          f.features,
-          f.data_backend,
-          f.data_ref_id
-     FROM file_change AS f
-    WHERE f.file_id = ?
-      AND f.data IS NOT NULL
-    ORDER BY f.created_at ASC")
+  "SELECT fc.file_id AS id,
+          fc.id AS snapshot_id,
+          fc.data,
+          fc.revn,
+          fc.version,
+          fc.features,
+          fc.data_backend,
+          fc.data_ref_id
+     FROM file_change AS fc
+    WHERE fc.file_id = ?
+      AND fc.data IS NOT NULL
+    ORDER BY fc.created_at ASC")
 
 (def ^:private sql:mark-file-media-object-deleted
   "UPDATE file_media_object
