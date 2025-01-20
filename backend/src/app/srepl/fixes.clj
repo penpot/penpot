@@ -272,6 +272,33 @@
                (reduce +)))
 
         num-missing-slots (count-slots-data (:data file))]
+
     (when (pos? num-missing-slots)
       (l/trc :info (str "Shapes with children with the same swap slot: " num-missing-slots) :file-id (str (:id file))))
     file))
+
+(defn check-file-media
+  [{:keys [id data] :as file} _]
+
+  (let [used  (bfc/collect-used-media data)
+        conn  (db/get-connection h/*system*)
+        ids   (db/create-array conn "uuid" used)
+        sql   "SELECT * FROM file_media_object WHERE id = ANY(?)"
+        media (->> (db/exec! conn [sql ids])
+                   (d/index-by :id))]
+
+    (l/info :hint "processing file" :file-id (str id) :media (count used))
+
+    (doseq [media-id used]
+      (let [media (get media media-id)]
+        (cond
+          (nil? media)
+          (l/warn :hint "missing file reference"
+                  :file-id (str id)
+                  :media-id (str media-id))
+
+          (not= id (:file-id media))
+          (l/warn :hint "invalid file reference"
+                  :file-id (str id)
+                  :media-id (str media-id)))))
+    nil))

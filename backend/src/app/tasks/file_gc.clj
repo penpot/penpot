@@ -32,7 +32,7 @@
 (declare ^:private decode-file)
 (declare ^:private persist-file!)
 
-(def ^:private sql:get-snapshots
+(def sql:get-snapshots
   "SELECT f.file_id AS id,
           f.data,
           f.revn,
@@ -51,12 +51,12 @@
     WHERE file_id = ? AND id != ALL(?::uuid[])
    RETURNING id")
 
-(def ^:private xf:collect-used-media
+(def xf:collect-used-media
   (comp
    (map :data)
    (mapcat bfc/collect-used-media)))
 
-(def ^:private plan-opts
+(def plan-opts
   {:fetch-size 1
    :concurrency :read-only
    :cursors :close
@@ -255,12 +255,12 @@
       FOR UPDATE
      SKIP LOCKED")
 
-(defn- get-file
+(defn get-file
   [{:keys [::db/conn ::min-age ::file-id]}]
   (->> (db/exec! conn [sql:get-file min-age file-id])
        (first)))
 
-(defn- decode-file
+(defn decode-file
   [cfg {:keys [id] :as file}]
   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
     (-> (feat.fdata/resolve-file-data cfg file)
@@ -271,7 +271,7 @@
         (update :data assoc :id id)
         (fmg/migrate-file))))
 
-(defn- persist-file!
+(defn persist-file!
   [{:keys [::db/conn ::sto/storage] :as cfg} {:keys [id] :as file}]
   (let [file (if (contains? (:features file) "fdata/objects-map")
                (feat.fdata/enable-objects-map file)

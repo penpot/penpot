@@ -8,6 +8,7 @@
   (:require
    [app.binfile.common :refer [collect-used-media]]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.files.changes :as cpc]
@@ -119,6 +120,7 @@
 (sv/defmethod ::update-file
   {::climit/id [[:update-file/by-profile ::rpc/profile-id]
                 [:update-file/global]]
+
    ::webhooks/event? true
    ::webhooks/batch-timeout (dt/duration "2m")
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
@@ -254,6 +256,20 @@
 
       ;; Send asynchronous notifications
       (send-notifications! cfg params)
+
+      ;; Submit a checkpoint task
+      (let [label  (dm/str "file-checkpoint:" (:id file))
+            params {:file-id (:id file)}
+            delay  (dt/duration "5s")]
+        (-> cfg
+            (assoc ::wrk/task :file-checkpoint)
+            (assoc ::wrk/queue :webhooks)
+            (assoc ::wrk/max-retries 0)
+            (assoc ::wrk/delay delay)
+            (assoc ::wrk/dedupe true)
+            (assoc ::wrk/label label)
+            (assoc ::wrk/params params)
+            (wrk/submit!)))
 
       (vary-meta response assoc ::audit/replace-props
                  {:id         (:id file)

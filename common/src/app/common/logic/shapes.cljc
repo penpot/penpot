@@ -14,7 +14,8 @@
    [app.common.types.container :as ctn]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctl]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [clojure.walk :as walk]))
 
 (defn generate-update-shapes
   [changes ids update-fn objects {:keys [attrs ignore-tree ignore-touched with-objects?]}]
@@ -422,3 +423,48 @@
 (defn show-in-viewer
   [shape]
   (dissoc shape :hide-in-viewer))
+
+(defn relink-shapes
+  "A function responsible to analyze all file data and
+  replace the old :component-file reference with the new
+  ones, using the provided file-index."
+  [data lookup-index]
+  (letfn [(process-map-form [form]
+            (cond-> form
+              ;; Relink image shapes
+              (and (map? (:metadata form))
+                   (= :image (:type form)))
+              (update-in [:metadata :id] lookup-index)
+
+              ;; Relink paths with fill image
+              (map? (:fill-image form))
+              (update-in [:fill-image :id] lookup-index)
+
+              ;; This covers old shapes and the new :fills.
+              (uuid? (:fill-color-ref-file form))
+              (update :fill-color-ref-file lookup-index)
+
+              ;; This covers the old shapes and the new :strokes
+              (uuid? (:stroke-color-ref-file form))
+              (update :stroke-color-ref-file lookup-index)
+
+              ;; This covers all text shapes that have typography referenced
+              (uuid? (:typography-ref-file form))
+              (update :typography-ref-file lookup-index)
+
+              ;; This covers the component instance links
+              (uuid? (:component-file form))
+              (update :component-file lookup-index)
+
+              ;; This covers the shadows and grids (they have directly
+              ;; the :file-id prop)
+              (uuid? (:file-id form))
+              (update :file-id lookup-index)))
+
+          (process-form [form]
+            (if (map? form)
+              (process-map-form form)
+              form))]
+
+    (walk/postwalk process-form data)))
+
