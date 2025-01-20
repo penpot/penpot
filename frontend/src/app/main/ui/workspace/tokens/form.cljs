@@ -52,8 +52,7 @@
   (m/-simple-schema
    {:type :token/invalid-token-name
     :pred #(re-matches valid-token-name-regexp %)
-    :type-properties {:error/fn #(str (:value %) " is not a valid token name.
-Token names should only contain letters and digits separated by . characters and must not start with a $ sign.")}}))
+    :type-properties {:error/fn #(str (:value %) (tr "workspace.token.token-name-validation-error"))}}))
 
 (defn token-name-schema
   "Generate a dynamic schema validation to check if a token path derived from the name already exists at `tokens-tree`."
