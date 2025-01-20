@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.placeholder
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.config :as cf]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as i]
@@ -44,7 +45,7 @@
       [:div {:class (stl/css :grid-empty-placeholder)}
        [:button {:class (stl/css :create-new)
                  :on-click on-click}
-        i/add]])))
+        (if (cf/external-feature-flag "add-file-01" "test") (tr "dashboard.add-file") i/add)]])))
 
 (mf/defc loading-placeholder
   []
