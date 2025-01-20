@@ -46,14 +46,13 @@
   Caution: This will allow a trailing dot like `token-name.`,
   But we will trim that in the `finalize-name`,
   to not throw too many errors while the user is editing."
-  #"([a-zA-Z0-9-]+\.?)*")
+  #"(?!\$)([a-zA-Z0-9-$]+\.?)*")
 
 (def valid-token-name-schema
   (m/-simple-schema
    {:type :token/invalid-token-name
     :pred #(re-matches valid-token-name-regexp %)
-    :type-properties {:error/fn #(str (:value %) " is not a valid token name.
-Token names should only contain letters and digits separated by . characters.")}}))
+    :type-properties {:error/fn #(str (:value %) (tr "workspace.token.token-name-validation-error"))}}))
 
 (defn token-name-schema
   "Generate a dynamic schema validation to check if a token path derived from the name already exists at `tokens-tree`."

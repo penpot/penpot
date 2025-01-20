@@ -6318,6 +6318,12 @@ msgstr "You currently have no themes."
 msgid "workspace.token.num-sets"
 msgstr "%s sets"
 
+
+#: src/app/main/ui/workspace/tokens/form.cljs:55
+msgid "workspace.token.token-name-validation-error"
+msgstr " is not a valid token name.
+Token names should only contain letters and digits separated by . characters and must not start with a $ sign."
+
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:66
 msgid "workspace.token.original-value"
 msgstr "Original value: "
@@ -6931,4 +6937,3 @@ msgstr "Notifications"
 
 msgid "comments.mentions.not-found"
 msgstr "No people found for @%s"
-
