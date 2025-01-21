@@ -10,6 +10,7 @@ mod bools;
 mod fills;
 mod matrix;
 mod paths;
+mod shadows;
 mod strokes;
 mod svgraw;
 
@@ -18,6 +19,7 @@ pub use bools::*;
 pub use fills::*;
 use matrix::*;
 pub use paths::*;
+pub use shadows::*;
 pub use strokes::*;
 pub use svgraw::*;
 
@@ -53,6 +55,7 @@ pub struct Shape {
     pub hidden: bool,
     pub svg: Option<skia::svg::Dom>,
     pub svg_attrs: HashMap<String, String>,
+    shadows: Vec<Shadow>,
 }
 
 impl Shape {
@@ -73,6 +76,7 @@ impl Shape {
             blur: Blur::default(),
             svg: None,
             svg_attrs: HashMap::new(),
+            shadows: vec![],
         }
     }
 
@@ -303,6 +307,20 @@ impl Shape {
 
     pub fn is_recursive(&self) -> bool {
         !matches!(self.kind, Kind::SVGRaw(_))
+    }
+
+    pub fn add_shadow(&mut self, shadow: Shadow) {
+        self.shadows.push(shadow);
+    }
+
+    pub fn clear_shadows(&mut self) {
+        self.shadows.clear();
+    }
+
+    pub fn drop_shadows(&self) -> impl DoubleEndedIterator<Item = &Shadow> {
+        self.shadows
+            .iter()
+            .filter(|shadow| shadow.style() == ShadowStyle::Drop)
     }
 
     pub fn to_path_transform(&self) -> Option<skia::Matrix> {

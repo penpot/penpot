@@ -12,6 +12,7 @@ mod fills;
 mod gpu_state;
 mod images;
 mod options;
+mod shadows;
 mod strokes;
 
 use crate::shapes::{Kind, Shape};
@@ -31,6 +32,7 @@ pub(crate) struct RenderState {
     // by SVG: https://www.w3.org/TR/SVG2/render.html
     pub final_surface: skia::Surface,
     pub drawing_surface: skia::Surface,
+    pub shadow_surface: skia::Surface,
     pub debug_surface: skia::Surface,
     pub font_provider: skia::textlayout::TypefaceFontProvider,
     pub cached_surface_image: Option<CachedSurfaceImage>,
@@ -44,6 +46,9 @@ impl RenderState {
         // This needs to be done once per WebGL context.
         let mut gpu_state = GpuState::new();
         let mut final_surface = gpu_state.create_target_surface(width, height);
+        let shadow_surface = final_surface
+            .new_surface_with_dimensions((width, height))
+            .unwrap();
         let drawing_surface = final_surface
             .new_surface_with_dimensions((width, height))
             .unwrap();
@@ -60,6 +65,7 @@ impl RenderState {
         RenderState {
             gpu_state,
             final_surface,
+            shadow_surface,
             drawing_surface,
             debug_surface,
             cached_surface_image: None,
@@ -113,6 +119,10 @@ impl RenderState {
 
         let surface = self.gpu_state.create_target_surface(dpr_width, dpr_height);
         self.final_surface = surface;
+        self.shadow_surface = self
+            .final_surface
+            .new_surface_with_dimensions((dpr_width, dpr_height))
+            .unwrap();
         self.drawing_surface = self
             .final_surface
             .new_surface_with_dimensions((dpr_width, dpr_height))
@@ -144,6 +154,10 @@ impl RenderState {
             .canvas()
             .clear(self.background_color)
             .reset_matrix();
+        self.shadow_surface
+            .canvas()
+            .clear(self.background_color)
+            .reset_matrix();
         self.final_surface
             .canvas()
             .clear(self.background_color)
@@ -161,6 +175,8 @@ impl RenderState {
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
             Some(&skia::Paint::default()),
         );
+
+        self.shadow_surface.canvas().clear(skia::Color::TRANSPARENT);
 
         self.drawing_surface
             .canvas()
@@ -212,6 +228,10 @@ impl RenderState {
             self.drawing_surface
                 .canvas()
                 .clip_rect(shape.bounds(), skia::ClipOp::Intersect, true);
+        }
+
+        for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
+            shadows::render_drop_shadow(self, shadow, self.viewbox.zoom * self.options.dpr());
         }
 
         self.apply_drawing_to_final_canvas();

@@ -596,6 +596,33 @@ pub extern "C" fn set_shape_path_attrs(num_attrs: u32) {
     }
 }
 
+#[no_mangle]
+pub extern "C" fn add_shape_shadow(
+    raw_color: u32,
+    blur: f32,
+    spread: f32,
+    x: f32,
+    y: f32,
+    raw_style: u8,
+    hidden: bool,
+) {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        let color = skia::Color::new(raw_color);
+        let style = shapes::ShadowStyle::from(raw_style);
+        let shadow = shapes::Shadow::new(color, blur, spread, (x, y), style, hidden);
+        shape.add_shadow(shadow);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn clear_shape_shadows() {
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape.clear_shadows();
+    }
+}
+
 fn main() {
     init_gl();
 }
