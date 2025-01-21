@@ -557,7 +557,8 @@
               :code :schema-validation
               :hint (str/ffmt "invalid file data structure found on file '%'" id)
               :file-id id
-              ::sm/explain (get-fdata-explain data))))
+              ::sm/explain (get-fdata-explain data)))
+  file)
 
 (defn validate-file!
   "Validate full referential integrity and semantic coherence on file data.

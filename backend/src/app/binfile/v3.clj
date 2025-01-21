@@ -638,7 +638,7 @@
      :plugin-data plugin-data}))
 
 (defn- import-file
-  [{:keys [::db/conn ::project-id ::file-id ::file-name] :as cfg}]
+  [{:keys [::project-id ::file-id ::file-name] :as cfg}]
   (let [file-id'   (bfc/lookup-index file-id)
         file       (read-file cfg)
         media      (read-file-media cfg)
@@ -688,10 +688,7 @@
 
       (->> file
            (bfc/register-pending-migrations cfg)
-           (bfc/persist-file! cfg))
-
-      (when (::bfc/overwrite cfg)
-        (db/delete! conn :file-thumbnail {:file-id file-id'}))
+           (bfc/save-file! cfg))
 
       file-id')))
 
@@ -786,7 +783,7 @@
              ::l/sync? true)
 
       (db/insert! conn :file-media-object params
-                  {::db/on-conflict-do-nothing? (::bfc/overwrite cfg)}))))
+                  {::db/on-conflict-do-nothing? false}))))
 
 (defn- import-file-thumbnails
   [{:keys [::db/conn] :as cfg}]
@@ -807,7 +804,7 @@
              ::l/sync? true)
 
       (db/insert! conn :file-tagged-object-thumbnail params
-                  {::db/on-conflict-do-nothing? (::bfc/overwrite cfg)}))))
+                  {::db/on-conflict-do-nothing? false}))))
 
 (defn- import-files
   [{:keys [::bfc/timestamp ::input ::name] :or {timestamp (dt/now)} :as cfg}]

@@ -16,7 +16,9 @@
    [app.db.sql :as sql]
    [app.http :as http]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.files :as files]
    [app.storage :as sto]
+   [app.tasks.file-checkpoint]
    [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -1658,3 +1660,689 @@
             components (get-in result [:data :components])]
         (t/is (not (contains? components c-id)))))))
 
+
+
+
+(defn add-file-media-object
+  [& {:keys [profile-id file-id]}]
+  (let [mfile  {:filename "sample.jpg"
+                :path (th/tempfile "backend_tests/test_files/sample.jpg")
+                :mtype "image/jpeg"
+                :size 312043}
+        params {::th/type :upload-file-media-object
+                ::rpc/profile-id profile-id
+                :file-id file-id
+                :is-local true
+                :name "testfile"
+                :content mfile}
+        out    (th/command! params)]
+
+    ;; (th/print-result! out)
+    (t/is (nil? (:error out)))
+    (:result out)))
+
+(t/deftest file-gc-with-components-and-media-assets
+  (let [storage (:app.storage/storage th/*system*)
+        profile (th/create-profile* 1)
+
+        file-1  (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true})
+
+        file-2  (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+
+        fmedia  (add-file-media-object :profile-id (:id profile) :file-id (:id file-1))
+
+
+        rel     (th/link-file-to-library*
+                 {:file-id (:id file-2)
+                  :library-id (:id file-1)})
+
+        s-id-1  (uuid/random)
+        s-id-2  (uuid/random)
+        c-id    (uuid/random)
+
+        f1-page-id (first (get-in file-1 [:data :pages]))
+        f2-page-id (first (get-in file-2 [:data :pages]))
+
+        fills
+        [{:fill-image
+          {:id (:id fmedia)
+           :name "test"
+           :width 200
+           :height 200}}]]
+
+    ;; Update file library inserting new component
+    (update-file!
+     :file-id (:id file-1)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-obj
+       :page-id f1-page-id
+       :id s-id-1
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id s-id-1
+              :name "Board"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :frame
+              :fills fills
+              :main-instance true
+              :component-root true
+              :component-file (:id file-1)
+              :component-id c-id})}
+      {:type :add-component
+       :path ""
+       :name "Board"
+       :main-instance-id s-id-1
+       :main-instance-page f1-page-id
+       :id c-id
+       :anotation nil}])
+
+    ;; Instanciate a component in a different file
+    (update-file!
+     :file-id (:id file-2)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-obj
+       :page-id f2-page-id
+       :id s-id-2
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id s-id-2
+              :name "Board"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :frame
+              :fills fills
+              :main-instance false
+              :component-root true
+              :component-file (:id file-1)
+              :component-id c-id})}])
+
+
+    ;; Check that file media object references are only set on the
+    ;; original object and the instantiation does not implies changes
+    ;; on references
+    (let [rows (th/db-exec! ["SELECT * FROM file_media_object"])]
+      (t/is (= 1 (count rows)))
+      (t/is (= (:id file-1) (:file-id (first rows))))
+      (t/is (every? (comp nil? :deleted-at) rows)))
+
+    ;; Run the file-gc on file and library
+    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-1)})))
+    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-2)})))
+
+    ;; Check that component exists
+    (let [data {::th/type :get-file
+                ::rpc/profile-id (:id profile)
+                :id (:id file-1)}
+          out  (th/command! data)]
+
+      (t/is (th/success? out))
+      (let [result     (:result out)
+            component (get-in result [:data :components c-id])]
+
+        (t/is (some? component))
+        (t/is (nil? (:objects component)))))
+
+    ;; Now proceed to delete a component
+    (update-file!
+     :file-id (:id file-1)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :del-component
+       :id c-id}
+      {:type :del-obj
+       :page-id f1-page-id
+       :id s-id-1
+       :ignore-touched true}])
+
+    ;; Check that component is marked as deleted
+    (let [data {::th/type :get-file
+                ::rpc/profile-id (:id profile)
+                :id (:id file-1)}
+          out  (th/command! data)]
+
+      (t/is (th/success? out))
+      (let [result (:result out)
+            component (get-in result [:data :components c-id])]
+        (t/is (true? (:deleted component)))
+        (t/is (some? (not-empty (:objects component))))))
+
+    ;; Re-run the file-gc task
+    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-1)})))
+    (t/is (false? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-2)})))
+
+    ;; Check that component is still there after file-gc task
+    (let [data {::th/type :get-file
+                ::rpc/profile-id (:id profile)
+                :id (:id file-1)}
+          out  (th/command! data)]
+
+      (t/is (th/success? out))
+      (let [result (:result out)
+            component (get-in result [:data :components c-id])]
+        (t/is (true? (:deleted component)))
+        (t/is (some? (not-empty (:objects component))))))
+
+    ;; Check that file media object references are still present
+    (let [rows (th/db-exec! ["SELECT * FROM file_media_object"])]
+      ;; (pp/pprint rows)
+      (t/is (= 1 (count rows)))
+      (t/is (= (:id file-1) (:file-id (first rows))))
+      (t/is (every? (comp nil? :deleted-at) rows)))
+
+    ;; Now delete the last instance using deleted component
+    (update-file!
+     :file-id (:id file-2)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :del-obj
+       :page-id f2-page-id
+       :id s-id-2
+       :ignore-touched true}])
+
+    (th/db-exec! ["update file set has_media_trimmed = false where id = ?" (:id file-1)])
+
+    ;; Now, we have deleted the usage of component if we pass file-gc,
+    ;; that component should be deleted
+    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-1)})))
+
+    ;; Check that file media object references are still present,
+    ;; because we have snapshots
+    (let [rows (th/db-exec! ["SELECT * FROM file_media_object"])]
+      ;; (pp/pprint rows)
+      (t/is (= 1 (count rows)))
+      (t/is (= (:id file-1) (:file-id (first rows))))
+      (t/is (every? (comp nil? :deleted-at) rows)))
+
+    ;; Lets delete snapshots and run file-gc again
+    (let [result (th/db-delete! :file_change {:file-id (:id file-1)})]
+      (t/is (= 2 (db/get-update-count result))))
+
+    ;; Rerun file-gc with snapshots deleted
+    (th/db-exec! ["update file set has_media_trimmed = false where id = ?" (:id file-1)])
+    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-1)})))
+
+    ;; Check that file media object references are still present,
+    ;; because we have snapshots
+    (let [rows (th/db-exec! ["SELECT * FROM file_media_object"])]
+      (t/is (= 1 (count rows)))
+      (t/is (= (:id file-1) (:file-id (first rows))))
+      (t/is (every? (comp some? :deleted-at) rows)))
+
+    ;; Check that component is properly removed
+    (let [data {::th/type :get-file
+                ::rpc/profile-id (:id profile)
+                :id (:id file-1)}
+          out  (th/command! data)]
+
+      (t/is (th/success? out))
+      (let [result     (:result out)
+            components (get-in result [:data :components])]
+        (t/is (not (contains? components c-id)))))))
+
+(t/deftest file-gc-with-components-and-media-assets-delete-all
+  (let [storage (:app.storage/storage th/*system*)
+        profile (th/create-profile* 1)
+
+        file-1  (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true})
+
+        file-2  (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+
+        fmedia  (add-file-media-object :profile-id (:id profile) :file-id (:id file-1))
+
+
+        rel     (th/link-file-to-library*
+                 {:file-id (:id file-2)
+                  :library-id (:id file-1)})
+
+        s-id-1  (uuid/random)
+        s-id-2  (uuid/random)
+        c-id    (uuid/random)
+
+        f1-page-id (first (get-in file-1 [:data :pages]))
+        f2-page-id (first (get-in file-2 [:data :pages]))
+
+        fills
+        [{:fill-image
+          {:id (:id fmedia)
+           :name "test"
+           :width 200
+           :height 200}}]]
+
+    ;; Update file library inserting new component
+    (update-file!
+     :file-id (:id file-1)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-obj
+       :page-id f1-page-id
+       :id s-id-1
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id s-id-1
+              :name "Board"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :frame
+              :fills fills
+              :main-instance true
+              :component-root true
+              :component-file (:id file-1)
+              :component-id c-id})}
+      {:type :add-component
+       :path ""
+       :name "Board"
+       :main-instance-id s-id-1
+       :main-instance-page f1-page-id
+       :id c-id
+       :anotation nil}])
+
+    ;; Instanciate a component in a different file
+    (update-file!
+     :file-id (:id file-2)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-obj
+       :page-id f2-page-id
+       :id s-id-2
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id s-id-2
+              :name "Board"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :frame
+              :fills fills
+              :main-instance false
+              :component-root true
+              :component-file (:id file-1)
+              :component-id c-id})}])
+
+
+    ;; Check that file media object references are only set on the
+    ;; original object and the instantiation does not implies changes
+    ;; on references
+    (let [rows (th/db-exec! ["SELECT * FROM file_media_object"])]
+      (t/is (= 1 (count rows)))
+      (t/is (= (:id file-1) (:file-id (first rows))))
+      (t/is (every? (comp nil? :deleted-at) rows)))
+
+    ;; Run the file-gc on file and library
+    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-1)})))
+    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-2)})))
+
+    ;; Now proceed to delete a component
+    (update-file!
+     :file-id (:id file-1)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :del-component
+       :id c-id}
+      {:type :del-obj
+       :page-id f1-page-id
+       :id s-id-1
+       :ignore-touched true}])
+
+    ;; Now delete the last instance using deleted component
+    (update-file!
+     :file-id (:id file-2)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :del-obj
+       :page-id f2-page-id
+       :id s-id-2
+       :ignore-touched true}])
+
+    ;; Lets delete snapshots and run file-gc
+    (let [result (th/db-delete! :file_change {:file-id (:id file-1)})]
+      (t/is (= 2 (db/get-update-count result))))
+
+    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-1)})))
+
+    ;; Check that file media object references are marked all for deletion
+    (let [rows (th/db-exec! ["SELECT * FROM file_media_object"])]
+      ;; (pp/pprint rows)
+      (t/is (= 1 (count rows)))
+      (t/is (= (:id file-1) (:file-id (first rows))))
+      (t/is (every? (comp some? :deleted-at) rows)))
+
+    ;; Check that component is properly removed
+    (let [data {::th/type :get-file
+                ::rpc/profile-id (:id profile)
+                :id (:id file-1)}
+          out  (th/command! data)]
+
+      (t/is (th/success? out))
+      (let [result     (:result out)
+            components (get-in result [:data :components])]
+        (t/is (not (contains? components c-id)))))))
+
+(t/deftest file-gc-and-absorb-library-with-checkpoint
+  (let [storage (:app.storage/storage th/*system*)
+        profile (th/create-profile* 1)
+
+        file-1  (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true})
+
+        file-2  (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+
+        fmedia  (add-file-media-object :profile-id (:id profile) :file-id (:id file-1))
+
+
+        rel     (th/link-file-to-library*
+                 {:file-id (:id file-2)
+                  :library-id (:id file-1)})
+
+        s-id-1  (uuid/random)
+        s-id-2  (uuid/random)
+        c-id    (uuid/random)
+
+        f1-page-id (first (get-in file-1 [:data :pages]))
+        f2-page-id (first (get-in file-2 [:data :pages]))
+
+        fills
+        [{:fill-image
+          {:id (:id fmedia)
+           :name "test"
+           :width 200
+           :height 200}}]]
+
+    ;; Update file library inserting new component
+    (update-file!
+     :file-id (:id file-1)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-obj
+       :page-id f1-page-id
+       :id s-id-1
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id s-id-1
+              :name "Board"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :frame
+              :fills fills
+              :main-instance true
+              :component-root true
+              :component-file (:id file-1)
+              :component-id c-id})}
+      {:type :add-component
+       :path ""
+       :name "Board"
+       :main-instance-id s-id-1
+       :main-instance-page f1-page-id
+       :id c-id
+       :anotation nil}])
+
+    ;; Instanciate a component in a different file
+    (update-file!
+     :file-id (:id file-2)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-obj
+       :page-id f2-page-id
+       :id s-id-2
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id s-id-2
+              :name "Board"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :frame
+              :fills fills
+              :main-instance false
+              :component-root true
+              :component-file (:id file-1)
+              :component-id c-id})}])
+
+
+    ;; Check that file media object references are only set on the
+    ;; original object and the instantiation does not implies changes
+    ;; on references
+    (let [rows (th/db-exec! ["SELECT * FROM file_media_object"])]
+      ;; (pp/pprint rows)
+      (t/is (= 1 (count rows)))
+      (t/is (= (:id file-1) (:file-id (first rows))))
+      (t/is (every? (comp nil? :deleted-at) rows)))
+
+    (t/is (true? (th/run-task! :file-checkpoint {:file-id (:id file-1)})))
+
+    ;; This checkpoint should generate two additional file media
+    ;; references: one for the ongoing file and the other for the
+    ;; snapshot. It is implemented in this way because the reference
+    ;; checking does not maintains a global index, and operates
+    ;; snapshot by snapshot so if two snapshots has two broken
+    ;; references to the same storage file, two different references
+    ;; will be created for each snapshot analyzed.
+    (t/is (true? (th/run-task! :file-checkpoint {:file-id (:id file-2)})))
+
+    ;; Check that new file media object references are created
+    (let [rows (th/db-exec! ["SELECT * FROM file_media_object ORDER BY created_at ASC"])]
+      ;; (pp/pprint rows)
+      (t/is (= 3 (count rows)))
+      (t/is (= (:id file-1) (:file-id (get rows 0))))
+      (t/is (= (:id file-2) (:file-id (get rows 1))))
+      (t/is (= (:id file-2) (:file-id (get rows 2)))))
+
+    ;; Run the file-gc on file and library
+    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-1)})))
+    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-2)})))
+
+    ;; Now proceed to delete file and absorb it
+    (let [data {::th/type :delete-file
+                ::rpc/profile-id (:id profile)
+                :id (:id file-1)}
+          out  (th/command! data)]
+      (t/is (th/success? out)))
+
+    (th/run-task! :delete-object
+                  {:object :file
+                   :deleted-at (dt/now)
+                   :id (:id file-1)})
+
+    ;; Check that file media object references are marked all for deletion
+    (let [rows (th/db-exec! ["SELECT * FROM file_media_object ORDER BY created_at ASC"])]
+      ;; (pp/pprint rows)
+      (t/is (= 3 (count rows)))
+
+      (t/is (= (:id file-1) (:file-id (get rows 0))))
+      (t/is (some? (:deleted-at (get rows 0))))
+
+      (t/is (= (:id file-2) (:file-id (get rows 1))))
+      (t/is (nil? (:deleted-at (get rows 1))))
+      (t/is (= (:id file-2) (:file-id (get rows 2))))
+      (t/is (nil? (:deleted-at (get rows 2)))))
+
+    (th/run-task! :objects-gc
+                  {:min-age 0})
+
+    (let [rows (th/db-exec! ["SELECT * FROM file_media_object ORDER BY created_at ASC"])]
+      (t/is (= 2 (count rows)))
+      (t/is (every? #(= (:id file-2) (:file-id %)) rows))
+      (t/is (every? (comp nil? :deleted-at) rows)))))
+
+
+
+(t/deftest file-gc-and-absorb-library-without-checkpoint
+  (let [storage (:app.storage/storage th/*system*)
+        profile (th/create-profile* 1)
+
+        file-1  (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true})
+
+        file-2  (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+
+        fmedia  (add-file-media-object :profile-id (:id profile) :file-id (:id file-1))
+
+
+        rel     (th/link-file-to-library*
+                 {:file-id (:id file-2)
+                  :library-id (:id file-1)})
+
+        s-id-1  (uuid/random)
+        s-id-2  (uuid/random)
+        c-id    (uuid/random)
+
+        f1-page-id (first (get-in file-1 [:data :pages]))
+        f2-page-id (first (get-in file-2 [:data :pages]))
+
+        fills
+        [{:fill-image
+          {:id (:id fmedia)
+           :name "test"
+           :width 200
+           :height 200}}]]
+
+    ;; Update file library inserting new component
+    (update-file!
+     :file-id (:id file-1)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-obj
+       :page-id f1-page-id
+       :id s-id-1
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id s-id-1
+              :name "Board"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :frame
+              :fills fills
+              :main-instance true
+              :component-root true
+              :component-file (:id file-1)
+              :component-id c-id})}
+      {:type :add-component
+       :path ""
+       :name "Board"
+       :main-instance-id s-id-1
+       :main-instance-page f1-page-id
+       :id c-id
+       :anotation nil}])
+
+    ;; Instanciate a component in a different file
+    (update-file!
+     :file-id (:id file-2)
+     :profile-id (:id profile)
+     :revn 0
+     :vern 0
+     :changes
+     [{:type :add-obj
+       :page-id f2-page-id
+       :id s-id-2
+       :parent-id uuid/zero
+       :frame-id uuid/zero
+       :components-v2 true
+       :obj (cts/setup-shape
+             {:id s-id-2
+              :name "Board"
+              :frame-id uuid/zero
+              :parent-id uuid/zero
+              :type :frame
+              :fills fills
+              :main-instance false
+              :component-root true
+              :component-file (:id file-1)
+              :component-id c-id})}])
+
+
+    ;; Check that file media object references are only set on the
+    ;; original object and the instantiation does not implies changes
+    ;; on references
+    (let [rows (th/db-exec! ["SELECT * FROM file_media_object"])]
+      (t/is (= 1 (count rows)))
+      (t/is (= (:id file-1) (:file-id (first rows))))
+      (t/is (every? (comp nil? :deleted-at) rows)))
+
+    ;; (t/is (true? (th/run-task! :file-checkpoint {:file-id (:id file-1)})))
+    ;; (t/is (true? (th/run-task! :file-checkpoint {:file-id (:id file-2)})))
+
+    ;; Check that new file media object references are created
+    (let [rows (th/db-exec! ["SELECT * FROM file_media_object ORDER BY created_at ASC"])]
+      (t/is (= 1 (count rows))))
+
+    ;; Run the file-gc on file and library
+    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-1)})))
+    (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file-2)})))
+
+    ;; Now proceed to delete file and absorb it
+
+    ;; Check that component is properly removed
+    (let [data {::th/type :delete-file
+                ::rpc/profile-id (:id profile)
+                :id (:id file-1)}
+          out  (th/command! data)]
+
+      ;; (th/print-result! out)
+      (t/is (th/success? out)))
+
+    (th/run-task! :delete-object
+                  {:object :file
+                   :deleted-at (dt/now)
+                   :id (:id file-1)})
+
+    ;; Check that file media object references are marked all for deletion
+    (let [rows (th/db-exec! ["SELECT * FROM file_media_object ORDER BY created_at ASC"])]
+      (t/is (= 1 (count rows)))
+      (t/is (every? (comp some? :deleted-at) rows)))
+
+
+    (th/run-task! :objects-gc
+                  {:min-age 0})
+
+    (let [rows (th/db-exec! ["SELECT * FROM file_media_object ORDER BY created_at ASC"])]
+      (t/is (= 0 (count rows))))))

@@ -54,7 +54,7 @@
 
     ;; Process and persist file
     (let [file (->> (bfc/process-file file)
-                    (bfc/persist-file! cfg))]
+                    (bfc/save-file! cfg))]
 
       ;; The file profile creation is optional, so when no profile is
       ;; present (when this function is called from profile less

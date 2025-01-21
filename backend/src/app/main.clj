@@ -347,6 +347,7 @@
     {:sendmail           (ig/ref ::email/handler)
      :objects-gc         (ig/ref :app.tasks.objects-gc/handler)
      :file-gc            (ig/ref :app.tasks.file-gc/handler)
+     :file-checkpoint    (ig/ref :app.tasks.file-checkpoint/handler)
      :file-gc-scheduler  (ig/ref :app.tasks.file-gc-scheduler/handler)
      :offload-file-data  (ig/ref :app.tasks.offload-file-data/handler)
      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
@@ -394,6 +395,10 @@
    {::db/pool (ig/ref ::db/pool)}
 
    :app.tasks.file-gc/handler
+   {::db/pool     (ig/ref ::db/pool)
+    ::sto/storage (ig/ref ::sto/storage)}
+
+   :app.tasks.file-checkpoint/handler
    {::db/pool     (ig/ref ::db/pool)
     ::sto/storage (ig/ref ::sto/storage)}
 
