@@ -270,19 +270,17 @@
     :else           (throw (IllegalArgumentException. "unable to resolve connectable"))))
 
 (def ^:private params-mapping
-  {::return-keys? :return-keys
-   ::return-keys :return-keys})
+  {::return-keys :return-keys})
 
 (defn rename-opts
   [opts]
   (set/rename-keys opts params-mapping))
 
 (def ^:private default-insert-opts
-  {:builder-fn sql/as-kebab-maps
-   :return-keys true})
+  (assoc sql/default-opts :return-keys true))
 
 (def ^:private default-opts
-  {:builder-fn sql/as-kebab-maps})
+  sql/default-opts)
 
 (defn exec!
   ([ds sv] (exec! ds sv nil))
@@ -333,7 +331,7 @@
 (defn update!
   "A helper that build an UPDATE SQL statement and executes it.
 
-   Given a connectable object, a table name, a hash map of columns and
+  Given a connectable object, a table name, a hash map of columns and
   values to set, and either a hash map of columns and values to search
   on or a vector of a SQL where clause and parameters, perform an
   update on the table.
@@ -413,13 +411,20 @@
                 :hint "database object not found"))
     row))
 
+(def ^:private default-plan-opts
+  (-> default-opts
+      (assoc :fetch-size 1)
+      (assoc :concurrency :read-only)
+      (assoc :cursors :close)
+      (assoc :result-type :forward-only)))
+
 (defn plan
   ([ds sql]
    (-> (get-connectable ds)
-       (jdbc/plan sql default-opts)))
+       (jdbc/plan sql default-plan-opts)))
   ([ds sql opts]
    (-> (get-connectable ds)
-       (jdbc/plan sql (merge default-opts opts)))))
+       (jdbc/plan sql (merge default-plan-opts opts)))))
 
 (defn cursor
   "Return a lazy seq of rows using server side cursors"

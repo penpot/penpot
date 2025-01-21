@@ -15,13 +15,14 @@
 (defn kebab-case [s] (str/replace s #"_" "-"))
 (defn snake-case [s] (str/replace s #"-" "_"))
 
-(def default-opts
-  {:table-fn snake-case
-   :column-fn snake-case})
-
 (defn as-kebab-maps
   [rs opts]
   (jdbc-opt/as-unqualified-modified-maps rs (assoc opts :label-fn kebab-case)))
+
+(def default-opts
+  {:table-fn snake-case
+   :column-fn snake-case
+   :builder-fn as-kebab-maps})
 
 (defn insert
   ([table key-map]
