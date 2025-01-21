@@ -21,14 +21,6 @@ We want to hold our UI code to the same quality standards of the rest of the cod
   - UI components should favor composability.
   - Try to have loose coupling.
 
-### Semantics and accessibility
-
-**Semantic HTML** When developing UI components in Penpot, we believe it is crucial to ensure that our frontend code is semantic and follows HTML conventions. Semantic HTML helps improve the readability and accessibility of Penpot. Use appropriate HTML tags to define the structure and purpose of your content. This not only enhances the user experience but also ensures better accessibility.
-
-**Accessibility** All UI code must be accessible. Ensure that your components are designed to be usable by people with a wide range of abilities and disabilities.
-
-> ✅ When a component follows a pattern set in the WCAG patterns page, we adhere to the rules and guidelines specified there. This ensures consistency and compliance with accessibility standards. See more at [Patterns | APG | WAI | W3C](https://www.w3.org/WAI/ARIA/apg/patterns/)
-
 ### Composability
 
 **Composability is a common pattern** in the Web. We can see it in the standard HTML elements, which are made to be nested one inside another to craft more complex content. Standard Web components also offer slots to make composability more flexible.
@@ -213,9 +205,13 @@ Remember that nesting selector increases specificity, and it's usually not neede
 }
 ```
 
-## Accessibility
+## Semantics and accessibility
+
+All UI code must be accessible. Ensure that your components are designed to be usable by people with a wide range of abilities and disabilities.
 
 ### Let the browser do the heavy lifting
+
+When developing UI components in Penpot, we believe it is crucial to ensure that our frontend code is semantic and follows HTML conventions. Semantic HTML helps improve the readability and accessibility of Penpot. Use appropriate HTML tags to define the structure and purpose of your content. This not only enhances the user experience but also ensures better accessibility.
 
 Whenever possible, leverage HTML semantic elements, which have been implemented by browsers and are accessible out of the box.
 
@@ -235,6 +231,10 @@ If you cannot use a native element because of styling (like a <code class="langu
 When using images as icons, they should have an <code class="language-html">aria-label</code>, <code class="language-html">alt</code>, or similar if they are not decorative and there's no text around to tag the button. Think, for instance, of a generic toolbar without text labels, just icon buttons.
 
 For decorative images, they don't need to be anounced to assistive devices and should have <code class="language-html">aria-hidden</code> set to <code class="language-html">true</code>.
+
+### Component patterns
+
+When a component follows a pattern set in the WCAG patterns page, we adhere to the rules and guidelines specified there. This ensures consistency and compliance with accessibility standards. See more at [Patterns | APG | WAI | W3C](https://www.w3.org/WAI/ARIA/apg/patterns/)
 
 ## Clojure / Rumext implementation notes
 
