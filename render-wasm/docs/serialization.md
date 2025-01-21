@@ -82,7 +82,17 @@ Bool operations (`bool-type`) are serialized as `u8`:
 
 Blur types are serialized as `u8`:
 
+| Value | Field |
+| ----- | ----- |
+| 1     | Layer |
+| \_    | None  |
+
+## Shadow Styles
+
+Shadow styles are serialized as `u8`:
+
 | Value | Field        |
 | ----- | ------------ |
-| 1     | Layer        |
-| \_    | None         |
+| 0     | Drop Shadow  |
+| 1     | Inner Shadow |
+| \_    | Drop Shadow  |

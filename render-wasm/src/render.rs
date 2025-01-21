@@ -12,6 +12,7 @@ mod fills;
 mod gpu_state;
 mod images;
 mod options;
+mod shadows;
 mod strokes;
 
 use crate::shapes::{Kind, Shape};
@@ -185,6 +186,15 @@ impl RenderState {
                 }
             }
             _ => {
+                for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
+                    shadows::render_drop_shadow(
+                        self,
+                        shadow,
+                        &shape.kind(),
+                        shape.to_path_transform().as_ref(),
+                    );
+                }
+
                 for fill in shape.fills().rev() {
                     fills::render(self, shape, fill);
                 }
