@@ -199,16 +199,20 @@
             "the `include-libraries` and `embed-assets` are mutally excluding options")))
 
   (let [detach?  (and (not embed-assets) (not include-libraries))]
-    (cond-> (bfc/get-file cfg file-id)
-      detach?
-      (-> (ctf/detach-external-references file-id)
-          (dissoc :libraries))
+    (db/tx-run! cfg (fn [cfg]
+                      (cond-> (bfc/get-file cfg file-id)
+                        detach?
+                        (-> (ctf/detach-external-references file-id)
+                            (dissoc :libraries))
 
-      embed-assets
-      (update :data #(bfc/embed-assets cfg % file-id))
+                        embed-assets
+                        (update :data #(bfc/embed-assets cfg % file-id))
 
-      :always
-      (bfc/clean-file-features))))
+                        :always
+                        (bfc/clean-file-features)
+
+                        :always
+                        (as-> $ (bfc/upsert-media-references cfg $)))))))
 
 (defn- resolve-extension
   [mtype]
@@ -247,6 +251,7 @@
 (defn- export-file
   [{:keys [::file-id ::output] :as cfg}]
   (let [file         (get-file cfg file-id)
+
         media        (->> (bfc/get-file-media cfg file)
                           (map (fn [media]
                                  (dissoc media :file-id))))
