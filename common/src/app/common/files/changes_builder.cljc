@@ -968,6 +968,11 @@
                                   :id id
                                   :page-id page-id})))
 
+(defn add-media-ref
+  [changes id]
+  (update changes :redo-changes conj {:type :add-media-ref
+                                      :id id}))
+
 (defn restore-component
   [changes id page-id main-instance]
   (assert-library! changes)

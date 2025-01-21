@@ -356,8 +356,12 @@
    (make-component-instance container component library-data position components-v2 {}))
 
   ([container component library-data position components-v2
-    {:keys [main-instance? force-id force-frame-id keep-ids?]
-     :or {main-instance? false force-id nil force-frame-id nil keep-ids? false}}]
+    {:keys [main-instance? force-id force-frame-id keep-ids? remap-media-refs?]
+     :or {main-instance? false
+          force-id nil
+          force-frame-id nil
+          keep-ids? false
+          remap-media-refs? false}}]
    (let [component-page  (when components-v2
                            (ctpl/get-page library-data (:main-instance-page component)))
 
@@ -392,6 +396,12 @@
          frame           (get-shape container frame-id)
          component-frame (get-component-shape objects frame {:allow-main? true})
 
+         assets-refs      (volatile! #{})
+         lookup-asset
+         (fn [id]
+           (vswap! assets-refs conj id)
+           id)
+
          ;; This map stores the relation between old shapes (present on the main
          ;; component) and the new shape-ids (created on this instantiation process). This
          ;; is mainly used for update grid layout references.
@@ -412,6 +422,9 @@
                :always
                (-> (gsh/move delta)
                    (dissoc :touched))
+
+               remap-media-refs?
+               (cfh/relink-shapes lookup-asset)
 
                (and main-instance? root?)
                (assoc :main-instance true)
@@ -457,7 +470,8 @@
                (ctl/remap-grid-cells @ids-map))))]
 
      [(remap-ids new-shape)
-      (map remap-ids new-shapes)])))
+      (map remap-ids new-shapes)
+      @assets-refs])))
 
 (defn get-first-not-copy-parent
   "Go trough the parents until we find a shape that is not a copy of a component."

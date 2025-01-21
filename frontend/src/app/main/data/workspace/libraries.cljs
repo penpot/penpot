@@ -624,6 +624,9 @@
 
              current-file-id (:current-file-id state)
 
+             remap-media-refs?
+             (not= current-file-id file-id)
+
              [new-shape changes]
              (cll/generate-instantiate-component changes
                                                  objects
@@ -631,7 +634,11 @@
                                                  component-id
                                                  position
                                                  page
-                                                 libraries)
+                                                 libraries
+                                                 nil
+                                                 nil
+                                                 nil
+                                                 {:remap-media-refs? remap-media-refs?})
 
              undo-id (js/Symbol)]
 

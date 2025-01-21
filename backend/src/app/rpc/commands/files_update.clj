@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.files-update
   (:require
+   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -435,15 +436,26 @@
   [cfg file changes skip-validate]
   (let [;; WARNING: this ruins performance; maybe we need to find
         ;; some other way to do general validation
-        libs (when (and (or (contains? cf/flags :file-validation)
-                            (contains? cf/flags :soft-file-validation))
-                        (not skip-validate))
-               (get-file-libraries cfg file))
+        libs
+        (when (and (or (contains? cf/flags :file-validation)
+                       (contains? cf/flags :soft-file-validation))
+                   (not skip-validate))
+          (get-file-libraries cfg file))
 
-        file (-> (files/check-version! file)
-                 (update :revn inc)
-                 (update :data cpc/process-changes changes)
-                 (update :data d/without-nils))]
+        state
+        (atom {})
+
+        file
+        (binding [cpc/*state* state]
+          (-> (files/check-version! file)
+              (update :revn inc)
+              (update :data cpc/process-changes changes)
+              (update :data d/without-nils)))
+
+        file
+        (if (:has-media-refs @state)
+          (bfc/upsert-media-references cfg file)
+          file)]
 
     (binding [pmap/*tracked* nil]
       (when (contains? cf/flags :soft-file-validation)

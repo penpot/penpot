@@ -221,6 +221,10 @@
       [:component-id {:optional true} ::sm/uuid]
       [:ignore-touched {:optional true} :boolean]]]
 
+    [:add-media-ref
+     [:map
+      [:id ::sm/uuid]]]
+
     [:set-guide schema:set-guide-change]
     [:set-flow schema:set-flow-change]
     [:set-default-grid schema:set-default-grid-change]
@@ -482,6 +486,11 @@
   first processing phase of changes. Should be set to a hash-set
   instance and will contain changes that caused the touched
   modification."
+  nil)
+
+(def ^:dynamic *state*
+  "A general purpose state to signal some out of order operations
+  to the processor backend."
   nil)
 
 (defmulti process-change (fn [_ change] (:type change)))
@@ -1069,6 +1078,11 @@
   (update data :tokens-lib #(-> %
                                 (ctob/ensure-tokens-lib)
                                 (ctob/delete-set name))))
+
+(defmethod process-change :add-media-ref
+  [data _]
+  (some-> *state* (swap! assoc :has-media-refs true))
+  data)
 
 ;; === Operations
 
