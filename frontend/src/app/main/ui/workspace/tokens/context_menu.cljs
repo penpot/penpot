@@ -202,7 +202,7 @@
                      :separator
                      {:title "Border Radius" :submenu :border-radius}]
                     [:separator]
-                    (stroke-width context-data)
+                    (stroke-width (assoc context-data :on-update-shape wtch/update-stroke-width))
                     [:separator]
                     (generic-attribute-actions #{:x} "X" (assoc context-data :on-update-shape wtch/update-shape-position))
                     (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape wtch/update-shape-position))))}))
