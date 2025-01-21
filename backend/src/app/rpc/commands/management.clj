@@ -67,7 +67,7 @@
                      :is-owner true
                      :is-admin true
                      :can-edit true}
-                    {::db/return-keys? false}))
+                    {::db/return-keys false}))
 
       (doseq [params (sequence (comp
                                 (map #(bfc/remap-id % :file-id))

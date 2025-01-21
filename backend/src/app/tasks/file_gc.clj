@@ -56,12 +56,6 @@
    (map :data)
    (mapcat bfc/collect-used-media)))
 
-(def ^:private plan-opts
-  {:fetch-size 1
-   :concurrency :read-only
-   :cursors :close
-   :result-type :forward-only})
-
 (defn- clean-file-media!
   "Performs the garbage collection of file media objects."
   [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
@@ -69,7 +63,7 @@
                 (map (partial decode-file cfg))
                 xf:collect-used-media)
 
-        used   (->> (db/plan conn [sql:get-snapshots id] plan-opts)
+        used   (->> (db/plan conn [sql:get-snapshots id])
                     (transduce xform conj #{}))
         used   (into used xf:collect-used-media [file])
 
@@ -175,7 +169,7 @@
         (mapcat (partial get-used-components deleted-components file-id))
 
         used-remote
-        (->> (db/plan conn [sql:get-files-for-library file-id] plan-opts)
+        (->> (db/plan conn [sql:get-files-for-library file-id])
              (transduce (comp (map (partial decode-file cfg)) xform) conj #{}))
 
         used-local
