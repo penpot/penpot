@@ -1,0 +1,26 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../_borders.scss" as *;
+
+.notification {
+  align-items: center;
+  background: var(--color-background-primary);
+  border-radius: $br-8;
+  border: $b-1 solid var(--color-background-quaternary);
+  display: flex;
+  justify-content: space-between;
+  padding: var(--sp-l);
+
+  :global(a) {
+    color: var(--color-accent-primary);
+  }
+}
+
+.buttons {
+  display: flex;
+  gap: var(--sp-s);
+}

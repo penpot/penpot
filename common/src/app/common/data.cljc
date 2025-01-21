@@ -1063,3 +1063,8 @@
                 (>= start 0) (< start size)
                 (>= end 0) (<= start end) (<= end size))
        (subvec v start end)))))
+
+(defn append-class
+  [class current-class]
+  (str (if (some? class) (str class " ") "")
+       current-class))

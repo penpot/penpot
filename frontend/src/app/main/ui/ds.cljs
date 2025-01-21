@@ -19,10 +19,15 @@
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon* token-status-list]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
+   [app.main.ui.ds.notifications.actionable :refer [actionable*]]
    [app.main.ui.ds.notifications.toast :refer [toast*]]
+   [app.main.ui.ds.product.avatar :refer [avatar*]]
+   [app.main.ui.ds.product.cta :refer [cta*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
+   [app.main.ui.ds.product.milestone :refer [milestone*]]
    [app.main.ui.ds.storybook :as sb]
+   [app.main.ui.ds.utilities.date :refer [date*]]
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.util.i18n :as i18n]
    [rumext.v2 :as mf]))
@@ -46,8 +51,13 @@
     :Text text*
     :TabSwitcher tab-switcher*
     :Toast toast*
+    :Actionable actionable*
     :TokenStatusIcon token-status-icon*
     :Swatch swatch*
+    :Cta cta*
+    :Avatar avatar*
+    :Milestone milestone*
+    :Date date*
     ;; meta / misc
     :meta
     {:icons (clj->js (sort icon-list))

@@ -18,6 +18,11 @@ $lh-115: 1.15;
 $lh-133: 1.33;
 $size-4: 1rem;
 
+/* Background for storybook */
+body.sb-show-main {
+  background-color: var(--color-background-secondary);
+}
+
 body {
   background-color: var(--color-background-primary);
   color: var(--color-foreground-primary);

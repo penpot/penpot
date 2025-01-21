@@ -1,0 +1,164 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../_sizes.scss" as *;
+@use "../_borders.scss" as *;
+
+// .empty-placeholder {
+//   display: grid;
+//   grid-template-columns: auto 1fr auto;
+//   place-content: center;
+//   background: none;
+//   color: var(--color-foreground-secondary);
+//   height: $sz-160;
+//   max-width: $sz-964;
+//   border-radius: $br-8;
+//   border: $b-1 solid var(--color-background-quaternary);
+// }
+//
+// .text-wrapper {
+//   display: grid;
+//   grid-auto-rows: auto;
+//   align-self: center;
+//   justify-self: center;
+//   max-width: $sz-400;
+// }
+//
+// .placeholder-title {
+//   color: var(--color-foreground-primary);
+// }
+//
+// .svg-decor {
+//   height: $sz-160;
+//   width: $sz-200;
+//   color: var(--color-background-quaternary);
+// }
+
+.milestone {
+  border: $b-1 solid var(--border-color, transparent);
+  border-radius: $br-8;
+
+  cursor: pointer;
+  background: var(--color-background-primary);
+
+  display: grid;
+  grid-template-areas:
+    "avatar name button"
+    "avatar content button";
+  grid-template-rows: auto 1fr;
+  grid-template-columns: calc(var(--sp-xxl) + var(--sp-l)) 1fr auto;
+
+  padding: var(--sp-s) 0;
+  align-items: center;
+
+  column-gap: var(--sp-s);
+
+  &.is-selected,
+  &:hover {
+    --border-color: var(--color-accent-primary);
+  }
+
+  .name-input {
+    --input-bg-color: none;
+    --input-outline-color: none;
+    grid-area: name;
+    padding: 0;
+    border: none;
+
+    input {
+      height: auto;
+      margin: 0;
+      font-family: "worksans", "vazirmatn", sans-serif;
+      font-optical-sizing: auto;
+      font-weight: 400;
+      line-height: 1.3;
+      font-size: 0.875rem;
+    }
+
+    &:hover {
+      --input-bg-color: none;
+      --input-outline-color: none;
+    }
+
+    &:has(*:focus-visible) {
+      --input-bg-color: none;
+      --input-outline-color: none;
+    }
+  }
+}
+
+.avatar {
+  grid-area: avatar;
+  justify-self: flex-end;
+}
+
+.name {
+  grid-area: name;
+}
+
+.date {
+  grid-area: content;
+}
+
+.snapshots {
+  grid-area: content;
+}
+
+.milestone-buttons {
+  grid-area: button;
+  display: flex;
+  padding-right: var(--sp-xs);
+}
+
+.version-entry {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "content button";
+  align-items: center;
+
+  &:hover {
+    --date-color: var(--color-accent-primary);
+    --display-button: visible;
+  }
+}
+
+.toggle-snapshots {
+  background: none;
+  border: none;
+  color: var(--color-foreground-secondary);
+  display: flex;
+  flex-direction: row;
+  gap: var(--sp-xs);
+  justify-items: baseline;
+  margin: 0;
+  margin-top: var(--sp-xxs);
+  padding: 0;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-accent-primary);
+
+    .icon-arrow {
+      --icon-stroke-color: var(--color-accent-primary);
+    }
+  }
+}
+
+.icon-clock {
+  --icon-stroke-color: var(--color-accent-warning);
+}
+
+.icon-arrow {
+  --icon-stroke-color: var(--color-foreground-secondary);
+
+  &.toggled {
+    transform: rotate(90deg);
+  }
+}
+
+.entry-button {
+  visibility: var(--display-button, hidden);
+}

@@ -1,0 +1,48 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../_sizes.scss" as *;
+@use "../_borders.scss" as *;
+
+.avatar {
+  border-radius: $br-circle;
+  overflow: hidden;
+  border: $b-1 solid var(--border-color, none);
+}
+
+.avatar-image {
+  overflow: hidden;
+  border-radius: $br-circle;
+  background-color: var(--color);
+}
+
+.is-selected {
+  --border-color: var(--color-accent-primary);
+  padding: 3px;
+}
+
+.avatar:hover {
+  --border-color: var(--color-accent-primary);
+}
+
+.avatar:focus {
+  --border-color: var(--color-accent-primary);
+}
+
+.is-small {
+  width: $sz-24;
+  height: $sz-24;
+}
+
+.is-medium {
+  width: $sz-32;
+  height: $sz-32;
+}
+
+.is-large {
+  width: $sz-40;
+  height: $sz-40;
+}
