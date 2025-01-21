@@ -25,6 +25,7 @@
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
+   [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.collapse :as dwc]
@@ -919,3 +920,36 @@
              center    (grc/rect->center selrect)
              modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point 1.0 -1.0) center))]
          (rx/of (dwm/apply-modifiers {:modifiers modifiers :ignore-snap-pixel true})))))))
+
+(defn fit-layout-modifiers
+  [objects frame]
+  ;; Set temporaly the auto flag and calculate a reflow to resize and position
+  (let [objects
+        (-> objects
+            (assoc-in [(:id frame) :layout-item-h-sizing] :auto)
+            (assoc-in [(:id frame) :layout-item-v-sizing] :auto))]
+    (gm/set-objects-modifiers {(:id frame) {:modifiers (ctm/reflow-modifiers)}} objects)))
+
+(defn selected-fit-content
+  []
+  (ptk/reify ::selected-fit-content
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects    (dsh/lookup-page-objects state)
+            selected   (dsh/lookup-selected state)
+            undo-group (uuid/next)
+
+            modifiers
+            (->> selected
+                 (map (d/getf objects))
+                 (filter cfh/frame-shape?)
+                 (reduce
+                  (fn [modifiers frame]
+                    (if (ctl/any-layout? frame)
+                      (merge modifiers (fit-layout-modifiers objects frame))
+                      (let [new-modif (gsh/fit-frame-modifiers objects frame)]
+                        (cond-> modifiers
+                          (some? new-modif)
+                          (assoc (:id frame) {:modifiers new-modif})))))
+                  {}))]
+        (rx/of (dwm/apply-modifiers {:modifiers modifiers :undo-group undo-group}))))))

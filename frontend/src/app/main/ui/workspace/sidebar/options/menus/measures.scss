@@ -12,7 +12,8 @@
 }
 
 .presets {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 38px;
   align-items: flex-start;
   gap: $s-4;
 }
@@ -22,7 +23,6 @@
   position: relative;
   display: flex;
   height: $s-32;
-  width: $s-188;
   padding: $s-8;
   border-radius: $br-8;
 

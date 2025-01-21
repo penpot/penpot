@@ -138,6 +138,7 @@
 (def ^:icon-id fill-content "fill-content")
 (def ^:icon-id filter "filter")
 (def ^:icon-id fixed-width "fixed-width")
+(def ^:icon-id fit-content "fit-content")
 (def ^:icon-id flex "flex")
 (def ^:icon-id flex-grid "flex-grid")
 (def ^:icon-id flex-horizontal "flex-horizontal")
