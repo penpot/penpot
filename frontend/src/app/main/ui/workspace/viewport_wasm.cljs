@@ -113,7 +113,8 @@
 
         objects-modified  (mf/with-memo [base-objects text-modifiers modifiers]
                             (binding [cts/*wasm-sync* true]
-                              (apply-modifiers-to-selected selected base-objects text-modifiers modifiers)))
+                              (-> (into selected (keys modifiers))
+                                  (apply-modifiers-to-selected base-objects text-modifiers modifiers))))
 
         selected-shapes   (keep (d/getf objects-modified) selected)
 
