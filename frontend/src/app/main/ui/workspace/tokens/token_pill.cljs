@@ -138,7 +138,7 @@
 
         can-edit? (:can-edit (deref refs/permissions))
         is-viewer (not can-edit?)
-        errors?   (or (nil? theme-token) (and (seq errors) (seq (:errors theme-token))))
+        errors?   (and (seq errors) (seq (:errors theme-token)))
         color     (when (seq (ctob/find-token-value-references value))
                     (wtt/resolved-value-hex theme-token))
         contains-path? (str/includes? name ".")
@@ -186,6 +186,7 @@
              (dom/set-attribute! node "title" title))))]
 
     [:button {:class (stl/css-case :token-pill true
+                                   :token-pill-default can-edit?
                                    :token-pill-applied (and can-edit? (or half-applied full-applied))
                                    :token-pill-invalid (and can-edit? errors?)
                                    :token-pill-invalid-applied (and full-applied errors? can-edit?)
