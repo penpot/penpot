@@ -113,8 +113,10 @@ services:
       - penpot_assets:/opt/data/assets
 
     depends_on:
-      - penpot-postgres
-      - penpot-redis
+      penpot-postgres:
+        condition: service_healthy
+      penpot-redis:
+        condition: service_healthy
 
     networks:
       - penpot
@@ -195,6 +197,11 @@ services:
   penpot-exporter:
     image: "penpotapp/exporter:latest"
     restart: always
+
+    depends_on:
+      penpot-redis:
+        condition: service_healthy
+
     networks:
       - penpot
 
@@ -211,6 +218,13 @@ services:
     restart: always
     stop_signal: SIGINT
 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U penpot"]
+      interval: 2s
+      timeout: 10s
+      retries: 5
+      start_period: 2s
+
     volumes:
       - penpot_postgres_v15:/var/lib/postgresql/data
 
@@ -226,6 +240,14 @@ services:
   penpot-redis:
     image: redis:7.2
     restart: always
+
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
+
     networks:
       - penpot
 
