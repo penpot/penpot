@@ -7,6 +7,10 @@ title: 2. Create a Plugin
 
 This guide covers the creation of a Penpot plugin. Penpot offers two ways to kickstart your development:
 
+<p class="advice">
+Before creating a new plugin perhaps take a look to see if the plugin doesn't already exist in <a href="https://penpot.app/penpothub/plugins">the plugin overview.</a>
+</p>
+
 1. Using a Template:
 
    - **Typescript template**: Using the <a target="_blank" href="https://github.com/penpot/penpot-plugin-starter-template">Penpot Plugin Starter Template</a>: A basic template with the required files for quickstarting your plugin. This template uses Typescript and Vite.
