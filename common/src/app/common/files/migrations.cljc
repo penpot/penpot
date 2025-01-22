@@ -1163,6 +1163,18 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
+(defn migrate-up-61
+  [data]
+  (letfn [(update-object [object]
+            (d/update-when object :shadow #(into [] (reverse %))))
+
+          (update-container [container]
+            (d/update-when container :objects update-vals update-object))]
+
+    (-> data
+        (update :pages-index update-vals update-container)
+        (update :components update-vals update-container))))
+
 (def migrations
   "A vector of all applicable migrations"
   [{:id 2 :migrate-up migrate-up-2}
@@ -1213,5 +1225,6 @@
    {:id 56 :migrate-up migrate-up-56}
    {:id 57 :migrate-up migrate-up-57}
    {:id 59 :migrate-up migrate-up-59}
-   {:id 60 :migrate-up migrate-up-60}])
+   {:id 60 :migrate-up migrate-up-60}
+   {:id 61 :migrate-up migrate-up-61}])
 
