@@ -485,7 +485,7 @@
            :shift? @shift?}])
 
        [:& widgets/frame-titles
-        {:objects base-objects
+        {:objects (with-meta objects-modified nil)
          :selected selected
          :zoom zoom
          :show-artboard-names? show-artboard-names?
