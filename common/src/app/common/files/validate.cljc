@@ -56,7 +56,8 @@
     :instance-head-not-frame
     :misplaced-slot
     :missing-slot
-    :shape-ref-cycle})
+    :shape-ref-cycle
+    :swap-slot-ref-shape-misalignment})
 
 (def ^:private schema:error
   [:map {:title "ValidationError"}
@@ -300,6 +301,24 @@
                   "This shape should not have swap slot"
                   shape file page)))
 
+(defn- check-swap-slot-ref-shape-misalignment
+  [shape file page libraries]
+  (let [swap-slot?       (some? (ctk/get-swap-slot shape))
+        shape-ref        (:shape-ref shape)
+        parent           (dm/get-in page [:objects (:parent-id shape)])
+        head-shape       (ctn/get-head-shape (:objects page) parent)
+        component        (ctf/resolve-component head-shape file libraries {:include-deleted? true})
+        component-file   (if (= (:component-file head-shape) (:id file))
+                           (:data file)
+                           (-> (get libraries (:component-file head-shape)) :data))
+        component-shapes (->> (ctf/get-component-shapes component-file component)
+                              (map :id)
+                              set)]
+    (when (and swap-slot? (contains? component-shapes shape-ref))
+      (report-error :swap-slot-ref-shape-misalignment
+                    (str/ffmt "Referenced shape % found in near component when a swap slot is present" (:shape-ref shape))
+                    shape file page))))
+
 (defn- has-duplicate-swap-slot?
   [shape container]
   (let [shapes   (map #(get (:objects container) %) (:shapes shape))
@@ -367,6 +386,7 @@
   [shape file page libraries library-exists]
   (check-component-not-main-head shape file page libraries)
   (check-component-not-root shape file page)
+  (check-swap-slot-ref-shape-misalignment shape file page libraries)
   ;; We can have situations where the nested copy and the ancestor copy come from different libraries and some of them have been dettached
   ;; so we only validate the shape-ref if the ancestor is from a valid library
   (when library-exists

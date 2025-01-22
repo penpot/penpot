@@ -502,6 +502,19 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
+(defmethod repair-error :swap-slot-ref-shape-misalignment
+  [_ {:keys [shape page-id] :as error} file-data _]
+  (let [repair-shape
+        (fn [shape]
+          ;; Remove the swap slot
+          (log/debug :hint (str "  -> remove swap-slot"))
+          (ctk/remove-swap-slot shape))]
+
+    (log/dbg :hint "repairing shape :swap-slot-ref-shape-misalignment" :id (:id shape) :name (:name shape) :page-id page-id)
+    (-> (pcb/empty-changes nil page-id)
+        (pcb/with-file-data file-data)
+        (pcb/update-shapes [(:id shape)] repair-shape))))
+
 (defmethod repair-error :duplicate-slot
   [_ {:keys [shape page-id] :as error} file-data _]
   (let [page      (ctpl/get-page file-data page-id)
@@ -524,7 +537,6 @@
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes (map :id child-with-duplicate) repair-shape))))
-
 
 
 (defmethod repair-error :component-duplicate-slot
