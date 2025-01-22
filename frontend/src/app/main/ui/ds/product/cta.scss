@@ -9,19 +9,9 @@
 @use "../_borders.scss" as *;
 @use "../typography.scss" as t;
 
-:global(.light) {
-  --color-cta-background: #{$purple-100};
-  --color-cta-border: #{$purple-600-10};
-}
-
-:global(.default) {
-  --color-cta-border: #{$green-950};
-  --color-cta-background: #{$green-1000};
-}
-
 .cta {
   border-radius: $br-8;
-  border: 1px solid var(--color-cta-border);
+  border: $b-1 solid var(--color-cta-border);
   background: var(--color-cta-background);
   padding: var(--sp-m);
 }

@@ -21,11 +21,12 @@
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.ds.notifications.actionable :refer [actionable*]]
    [app.main.ui.ds.notifications.toast :refer [toast*]]
+   [app.main.ui.ds.product.autosaved-milestone :refer [autosaved-milestone*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
    [app.main.ui.ds.product.cta :refer [cta*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
-   [app.main.ui.ds.product.milestone :refer [milestone*]]
+   [app.main.ui.ds.product.user-milestone :refer [user-milestone*]]
    [app.main.ui.ds.storybook :as sb]
    [app.main.ui.ds.utilities.date :refer [date*]]
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
@@ -56,7 +57,8 @@
     :Swatch swatch*
     :Cta cta*
     :Avatar avatar*
-    :Milestone milestone*
+    :AutosavedMilestone autosaved-milestone*
+    :UserMilestone user-milestone*
     :Date date*
     ;; meta / misc
     :meta

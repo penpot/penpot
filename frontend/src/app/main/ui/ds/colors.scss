@@ -11,11 +11,11 @@ $mint-250: #00d1b8;
 $mint-700: #426158;
 $mint-150-60: #7efff599;
 $mint-250-10: #00d1b81a;
+$mint-900: #0d1d1b;
 
 $green-200: #a7e8d9;
 $green-500: #2d9f8f;
 $green-950: #0a2927;
-$green-1000: #0d1d1b;
 
 $orange-200: #ffc8a8;
 $orange-500: #fe4811;
@@ -106,6 +106,9 @@ $grayish-red: #bfbfbf;
   --color-token-border: #{$aqua-400};
   --color-token-accent: #{$aqua-600};
   --color-token-foreground: #{$aqua-800};
+
+  --color-cta-background: #{$purple-100};
+  --color-cta-border: #{$purple-600-10};
 }
 
 :global(.default) {
@@ -144,4 +147,7 @@ $grayish-red: #bfbfbf;
   --color-token-border: #{$violet-700};
   --color-token-accent: #{$violet-600};
   --color-token-foreground: #{$violet-300};
+
+  --color-cta-border: #{$green-950};
+  --color-cta-background: #{$mint-900};
 }

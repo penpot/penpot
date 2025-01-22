@@ -7,36 +7,6 @@
 @use "../_sizes.scss" as *;
 @use "../_borders.scss" as *;
 
-// .empty-placeholder {
-//   display: grid;
-//   grid-template-columns: auto 1fr auto;
-//   place-content: center;
-//   background: none;
-//   color: var(--color-foreground-secondary);
-//   height: $sz-160;
-//   max-width: $sz-964;
-//   border-radius: $br-8;
-//   border: $b-1 solid var(--color-background-quaternary);
-// }
-//
-// .text-wrapper {
-//   display: grid;
-//   grid-auto-rows: auto;
-//   align-self: center;
-//   justify-self: center;
-//   max-width: $sz-400;
-// }
-//
-// .placeholder-title {
-//   color: var(--color-foreground-primary);
-// }
-//
-// .svg-decor {
-//   height: $sz-160;
-//   width: $sz-200;
-//   color: var(--color-background-quaternary);
-// }
-
 .milestone {
   border: $b-1 solid var(--border-color, transparent);
   border-radius: $br-8;
@@ -59,34 +29,6 @@
   &.is-selected,
   &:hover {
     --border-color: var(--color-accent-primary);
-  }
-
-  .name-input {
-    --input-bg-color: none;
-    --input-outline-color: none;
-    grid-area: name;
-    padding: 0;
-    border: none;
-
-    input {
-      height: auto;
-      margin: 0;
-      font-family: "worksans", "vazirmatn", sans-serif;
-      font-optical-sizing: auto;
-      font-weight: 400;
-      line-height: 1.3;
-      font-size: 0.875rem;
-    }
-
-    &:hover {
-      --input-bg-color: none;
-      --input-outline-color: none;
-    }
-
-    &:has(*:focus-visible) {
-      --input-bg-color: none;
-      --input-outline-color: none;
-    }
   }
 }
 

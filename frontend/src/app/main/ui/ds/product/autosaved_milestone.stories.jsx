@@ -1,32 +1,17 @@
 import * as React from "react";
 import Components from "@target/components";
 
-const { Milestone } = Components;
+const { AutosavedMilestone } = Components;
 
 export default {
-  title: "Product/Milestone",
-  component: Milestone,
+  title: "Product/Milestones/Autosaved",
+  component: AutosavedMilestone,
 
   argTypes: {
-    userName: {
-      control: { type: "text" },
-    },
-    userAvatar: {
-      control: { type: "text" },
-    },
-    userColor: {
-      control: { type: "color" },
-    },
     label: {
       control: { type: "text" },
     },
-    date: {
-      control: { type: "date" },
-    },
     active: {
-      control: { type: "boolean" },
-    },
-    editing: {
       control: { type: "boolean" },
     },
     autosaved: {
@@ -41,18 +26,19 @@ export default {
   },
   args: {
     label: "Milestone 1",
-    userName: "Ada Lovelace",
-    userAvatar: "/images/avatar-blue.jpg",
-    userColor: "#79d4ff",
-    date: 1735686000000,
     active: false,
-    editing: false,
-    autosaved: false,
     versionToggled: false,
     snapshots: [1737452413841, 1737452422063, 1737452431603],
     autosavedMessage: "3 autosave versions",
   },
-  render: ({ ...args }) => <Milestone {...args} />,
+  render: ({ ...args }) => {
+    const user = {
+      name: args.userName,
+      avatar: args.userAvatar,
+      color: args.userColor,
+    };
+    return <AutosavedMilestone user={user} {...args} />;
+  },
 };
 
 export const Default = {};

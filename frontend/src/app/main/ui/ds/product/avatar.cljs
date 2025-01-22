@@ -36,11 +36,11 @@
      {:class (d/append-class
               class
               (stl/css-case :avatar true
-                            :is-selected selected
-                            :is-small (= variant "S")
-                            :is-medium (= variant "M")
-                            :is-large (= variant "L")))
-      :style {"--color" color}
+                            :avatar-small (= variant "S")
+                            :avatar-medium (= variant "M")
+                            :avatar-large (= variant "L")
+                            :is-selected selected))
+      :style {"--avatar-color" color}
       :title name}
      [:div {:class (stl/css :avatar-image)}
       [:img {:alt name :src url}]]]))

@@ -11,16 +11,13 @@
   background: var(--color-background-primary);
   border-radius: $br-8;
   border: $b-1 solid var(--color-background-quaternary);
-  display: flex;
+  display: grid;
+  gap: var(--sp-s);
+  grid-template-columns: 1fr auto auto;
   justify-content: space-between;
   padding: var(--sp-l);
 
   :global(a) {
     color: var(--color-accent-primary);
   }
-}
-
-.buttons {
-  display: flex;
-  gap: var(--sp-s);
 }

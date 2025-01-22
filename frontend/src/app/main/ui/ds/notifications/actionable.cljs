@@ -27,8 +27,7 @@
 
   (let [class (d/append-class class (stl/css :notification))
         props (mf/spread-props props {:class class :data-testid "actionable"})]
-    [:> "div" props
+    [:> "aside" props
      [:div {:class (stl/css :notification-message)} children]
-     [:div {:class (stl/css :buttons)}
-      [:> button* {:variant "secondary"} cancelLabel]
-      [:> button* {:variant (if (= variant "default") "primary" "destructive")} actionLabel]]]))
+     [:> button* {:variant "secondary"} cancelLabel]
+     [:> button* {:variant (if (= variant "default") "primary" "destructive")} actionLabel]]))

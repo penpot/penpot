@@ -29,11 +29,10 @@
 (mf/defc date*
   {::mf/props :obj
    ::mf/schema schema:date}
-  [{:keys [class as date selected] :rest props}]
-  (let [as (or as "span")
-        class (d/append-class class (stl/css-case :date true :is-selected selected))
+  [{:keys [class date selected] :rest props}]
+  (let [class (d/append-class class (stl/css-case :date true :is-selected selected))
         date (cond-> date (not (dt/datetime? date)) dt/datetime)]
-    [:> text* {:as as :typography t/body-medium :class class}
+    [:> text* {:as "time" :typography t/body-medium :class class :datetime (dt/format date :iso)}
      (dm/str
       (dt/format date :date-full)
       " . "
