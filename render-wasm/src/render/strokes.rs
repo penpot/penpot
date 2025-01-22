@@ -364,7 +364,7 @@ fn draw_image_stroke_in_container(
         Kind::Circle(rect) => {
             draw_stroke_on_circle(canvas, stroke, rect, &outer_rect, svg_attrs, dpr_scale)
         }
-        Kind::SVGRaw(_) => todo!(),
+        Kind::SVGRaw(_) | Kind::Group(_) => unreachable!("This shape should not have strokes"),
         Kind::Path(p) | Kind::Bool(_, p) => {
             canvas.save();
             let mut path = p.to_skia_path();
@@ -457,7 +457,7 @@ pub fn render(render_state: &mut RenderState, shape: &Shape, stroke: &Stroke) {
                     dpr_scale,
                 );
             }
-            Kind::SVGRaw(_) => todo!(),
+            Kind::SVGRaw(_) | Kind::Group(_) => unreachable!("This shape should not have strokes"),
         }
     }
 }

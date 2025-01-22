@@ -78,6 +78,7 @@ fn draw_image_fill_in_container(
         Kind::SVGRaw(_) => {
             canvas.clip_rect(container, skia::ClipOp::Intersect, true);
         }
+        Kind::Group(_) => unreachable!("A group should not have fills"),
     }
 
     // Draw the image with the calculated destination rectangle
@@ -123,6 +124,6 @@ pub fn render(render_state: &mut RenderState, shape: &Shape, fill: &Fill) {
                 canvas.draw_path(&skia_path, &fill.to_paint(&selrect));
             }
         }
-        (_, _) => todo!(),
+        (_, _) => unreachable!("This shape should not have fills"),
     }
 }

@@ -108,7 +108,7 @@
   (h/call internal-module "_set_shape_clip_content" clip-content))
 
 (defn set-shape-type
-  [type]
+  [type {:keys [masked]}]
   (cond
     (= type :circle)
     (h/call internal-module "_set_shape_kind_circle")
@@ -118,6 +118,9 @@
 
     (= type :bool)
     (h/call internal-module "_set_shape_kind_bool")
+
+    (= type :group)
+    (h/call internal-module "_set_shape_kind_group" masked)
 
     :else
     (h/call internal-module "_set_shape_kind_rect")))
@@ -537,6 +540,7 @@
             (let [shape        (nth shapes index)
                   id           (dm/get-prop shape :id)
                   type         (dm/get-prop shape :type)
+                  masked       (dm/get-prop shape :masked-group)
                   selrect      (dm/get-prop shape :selrect)
                   clip-content (if (= type :frame)
                                  (not (dm/get-prop shape :show-content))
@@ -563,7 +567,7 @@
                   shadows      (dm/get-prop shape :shadow)]
 
               (use-shape id)
-              (set-shape-type type)
+              (set-shape-type type {:masked masked})
               (set-shape-clip-content clip-content)
               (set-shape-selrect selrect)
               (set-shape-rotation rotation)
