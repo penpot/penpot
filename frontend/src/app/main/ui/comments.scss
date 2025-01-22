@@ -6,6 +6,18 @@
 
 @import "refactor/common-refactor.scss";
 
+.cursor-grabbing {
+  cursor: grabbing;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.cursor-auto {
+  cursor: auto;
+}
+
 .grayed-text {
   color: var(--comment-subtitle-color);
 }
@@ -135,10 +147,6 @@
 .floating-preview-displacement {
   margin-left: calc(-1 * ($s-12 + $s-2));
   margin-top: calc(-1 * ($s-8 + $s-2));
-}
-
-.grabbing {
-  cursor: grabbing;
 }
 
 .floating-thread-wrapper {

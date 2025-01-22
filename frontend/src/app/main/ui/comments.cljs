@@ -755,7 +755,7 @@
        :on-click dom/stop-propagation}
       [:> comment-avatar* {:class (stl/css :avatar-lg)
                            :image (cfg/resolve-profile-photo-url profile)}]]
-     [:div {:class (stl/css :floating-thread-wrapper)
+     [:div {:class (stl/css :floating-thread-wrapper :cursor-auto)
             :style {:top (str (- pos-y 24) "px")
                     :left (str (+ pos-x 28) "px")}
             :on-click dom/stop-propagation}
@@ -996,6 +996,7 @@
     [:> (mf/provider mentions-context) {:value mentions-s}
      (when (some? first-comment)
        [:div {:class (stl/css-case :floating-thread-wrapper true
+                                   :cursor-auto true
                                    :left (= (:h-dir pos) :left)
                                    :top (= (:v-dir pos) :top))
               :id (str "thread-" thread-id)
@@ -1131,11 +1132,13 @@
            :on-pointer-leave on-pointer-leave
            :on-click on-click*
            :class (stl/css-case :floating-preview-wrapper true
-                                :floating-preview-bubble (false? (:is-hover @state))
-                                :grabbing (true? (:is-grabbing @state)))}
+                                :floating-preview-bubble (false? (:is-hover @state)))}
 
      (if (:is-hover @state)
-       [:div {:class (stl/css :floating-thread-wrapper :floating-preview-displacement)}
+       [:div {:class (stl/css-case :floating-thread-wrapper true
+                                   :floating-preview-displacement true
+                                   :cursor-pointer (false? (:is-grabbing @state))
+                                   :cursor-grabbing (true? (:is-grabbing @state)))}
         [:div {:class (stl/css :floating-thread-item-wrapper)}
          [:div {:class (stl/css :floating-thread-item)}
           [:> comment-info* {:item thread
