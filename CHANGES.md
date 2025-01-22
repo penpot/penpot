@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.4.3 (Unreleased)
+
+### :bug: Bugs fixed
+
+- Fix errors from editable select on measures menu [Taiga #9888](https://tree.taiga.io/project/penpot/issue/9888)
+
 ## 2.4.2
 
 ### :bug: Bugs fixed
