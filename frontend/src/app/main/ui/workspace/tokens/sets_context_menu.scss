@@ -4,6 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "../../ds/typography.scss" as t;
 @import "refactor/common-refactor.scss";
 
 .token-set-context-menu {
@@ -21,14 +22,11 @@
   background-color: var(--menu-background-color);
   max-height: 100vh;
   overflow-y: auto;
-
-  li {
-    @include bodySmallTypography;
-    color: var(--menu-foreground-color);
-  }
 }
 
 .context-menu-item {
+  @include t.use-typography("body-small");
+  color: var(--menu-foreground-color);
   display: flex;
   align-items: center;
   height: $s-28;
@@ -39,8 +37,5 @@
 
   &:hover {
     background-color: var(--menu-background-color-hover);
-    .title {
-      color: var(--menu-foreground-color-hover);
-    }
   }
 }

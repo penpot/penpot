@@ -19,20 +19,7 @@
 }
 
 .labeled-input-error {
-  border: 1px solid var(--status-color-error-500) !important;
-}
-
-.button {
-  @extend .button-primary;
-}
-
-.action-button {
-  @extend .button-tertiary;
-  height: $s-32;
-  width: $s-28;
-  svg {
-    @extend .button-icon;
-  }
+  border: $s-1 solid var(--status-color-error-500) !important;
 }
 
 .dropdown {
