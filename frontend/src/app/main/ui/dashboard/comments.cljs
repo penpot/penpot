@@ -9,6 +9,7 @@
   (:require
    [app.main.data.comments :as dcm]
    [app.main.data.event :as ev]
+   [app.main.data.notifications :as ntf]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -63,7 +64,18 @@
         (mf/use-callback
          (fn [thread]
            (st/emit! (-> (dwcm/navigate thread)
-                         (with-meta {::ev/origin "dashboard"})))))]
+                         (with-meta {::ev/origin "dashboard"})))))
+
+        on-read-all
+        (mf/use-callback
+         (mf/deps team-id)
+         (fn []
+           (st/emit! (dcm/mark-all-threads-as-read
+                      team-id
+                      #(st/emit! (ntf/show {:level :info
+                                            :type :toast
+                                            :content (tr "dashboard.mark-all-as-read.success")
+                                            :timeout 7000}))))))]
 
     (mf/use-effect
      (mf/deps team-id)
@@ -82,6 +94,13 @@
       [:div {:class (stl/css :dropdown :comments-section :comment-threads-section)}
        [:div {:class (stl/css :header)}
         [:h3 {:class (stl/css :header-title)} (tr "dashboard.notifications")]
+        (when (seq tgroups)
+          [:> icon-button* {:variant "ghost"
+                            :tab-index (if show? "0" "-1")
+                            :aria-label (tr "labels.read")
+                            :on-click on-read-all
+                            :icon "tick"}])
+
         [:> icon-button* {:variant "ghost"
                           :tab-index (if show? "0" "-1")
                           :aria-label (tr "labels.close")
