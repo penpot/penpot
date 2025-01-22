@@ -124,7 +124,7 @@
       :opacity      (api/set-shape-opacity v)
       :hidden       (api/set-shape-hidden v)
       :shapes       (api/set-shape-children v)
-      :content      (api/set-shape-path-content v)
+      :content      (when (= (:type self) :path) (api/set-shape-path-content v))
       :blur         (api/set-shape-blur v)
       nil)
     ;; when something synced with wasm
