@@ -53,7 +53,7 @@
   fixes all not propertly referenced file-media-object for a file"
   [{:keys [id data] :as file} & _]
   (let [conn  (db/get-connection h/*system*)
-        used  (bfc/collect-used-media data)
+        used  (cfh/collect-used-media data)
         ids   (db/create-array conn "uuid" used)
         sql   (str "SELECT * FROM file_media_object WHERE id = ANY(?)")
         rows  (db/exec! conn [sql ids])
