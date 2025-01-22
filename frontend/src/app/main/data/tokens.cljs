@@ -13,8 +13,10 @@
    [app.common.types.shape :as cts]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.changes :as dch]
+   [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.store :as st]
    [app.main.ui.workspace.tokens.token-set :as wtts]
    [app.main.ui.workspace.tokens.update :as wtu]
    [beicon.v2.core :as rx]
@@ -245,7 +247,9 @@
                       ;; Either update or add token to existing set
                       (if-let [prev-token (ctob/get-token token-set (or prev-token-name (:name token)))]
                         (pcb/update-token (pcb/empty-changes) (:name token-set) token prev-token)
-                        (pcb/add-token (pcb/empty-changes) (:name token-set) token)))]
+                        (do
+                          (st/emit! (ptk/event ::ev/event {::ev/name "create-tokens"}))
+                          (pcb/add-token (pcb/empty-changes) (:name token-set) token))))]
         (rx/of
          (set-selected-token-set-path-from-name token-set-name)
          (dch/commit-changes changes))))))

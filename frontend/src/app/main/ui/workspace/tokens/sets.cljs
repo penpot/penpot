@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.data.event :as ev]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -20,6 +21,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn on-toggle-token-set-click [token-set-name]
@@ -44,6 +46,7 @@
         (ctob/join-set-path-str to-path-str)))))
 
 (defn on-create-token-set [_ token-set]
+  (st/emit! (ptk/event ::ev/event {::ev/name "create-tokens-set"}))
   (st/emit! (wdt/create-token-set token-set)))
 
 (mf/defc editing-label
