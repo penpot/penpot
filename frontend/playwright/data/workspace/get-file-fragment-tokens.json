@@ -1,0 +1,469 @@
+{
+  "~:id": "~u51e13852-1a8e-8037-8005-9eabb500f7c7",
+  "~:file-id": "~u51e13852-1a8e-8037-8005-9e9413a1f1f6",
+  "~:created-at": "~m1737542758401",
+  "~:data": {
+    "~:options": {},
+    "~:objects": {
+      "~u00000000-0000-0000-0000-000000000000": {
+        "~#shape": {
+          "~:y": 0,
+          "~:hide-fill-on-export": false,
+          "~:transform": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:rotation": 0,
+          "~:name": "Root Frame",
+          "~:width": 0.01,
+          "~:type": "~:frame",
+          "~:points": [
+            {
+              "~#point": {
+                "~:x": 0.0,
+                "~:y": 0.0
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 0.01,
+                "~:y": 0.0
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 0.01,
+                "~:y": 0.01
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 0.0,
+                "~:y": 0.01
+              }
+            }
+          ],
+          "~:r2": 0,
+          "~:proportion-lock": false,
+          "~:transform-inverse": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:r3": 0,
+          "~:r1": 0,
+          "~:id": "~u00000000-0000-0000-0000-000000000000",
+          "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:strokes": [],
+          "~:x": 0,
+          "~:proportion": 1.0,
+          "~:r4": 0,
+          "~:selrect": {
+            "~#rect": {
+              "~:x": 0,
+              "~:y": 0,
+              "~:width": 0.01,
+              "~:height": 0.01,
+              "~:x1": 0,
+              "~:y1": 0,
+              "~:x2": 0.01,
+              "~:y2": 0.01
+            }
+          },
+          "~:fills": [
+            {
+              "~:fill-color": "#FFFFFF",
+              "~:fill-opacity": 1
+            }
+          ],
+          "~:flip-x": null,
+          "~:height": 0.01,
+          "~:flip-y": null,
+          "~:shapes": [
+            "~uc5b31054-fb6d-80a9-8005-9eab7c0c8759",
+            "~uc5b31054-fb6d-80a9-8005-9eab169af180",
+            "~uc5b31054-fb6d-80a9-8005-9eab3a0c8159"
+          ]
+        }
+      },
+      "~uc5b31054-fb6d-80a9-8005-9eab169af180": {
+        "~#shape": {
+          "~:y": 605.5,
+          "~:transform": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:rotation": 0,
+          "~:grow-type": "~:fixed",
+          "~:hide-in-viewer": false,
+          "~:name": "Rectangle",
+          "~:width": 278,
+          "~:type": "~:rect",
+          "~:points": [
+            {
+              "~#point": {
+                "~:x": 388,
+                "~:y": 605.5
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 666,
+                "~:y": 605.5
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 666,
+                "~:y": 680.5
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 388,
+                "~:y": 680.5
+              }
+            }
+          ],
+          "~:r2": 8,
+          "~:proportion-lock": false,
+          "~:transform-inverse": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:layout-item-v-sizing": "~:fix",
+          "~:r3": 8,
+          "~:r1": 8,
+          "~:id": "~uc5b31054-fb6d-80a9-8005-9eab169af180",
+          "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:applied-tokens": {
+            "~:fill": "button.primary.background",
+            "~:r1": "button.borderRadius",
+            "~:r2": "button.borderRadius",
+            "~:r3": "button.borderRadius",
+            "~:r4": "button.borderRadius"
+          },
+          "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:strokes": [],
+          "~:x": 388,
+          "~:proportion": 1,
+          "~:r4": 8,
+          "~:selrect": {
+            "~#rect": {
+              "~:x": 388,
+              "~:y": 605.5,
+              "~:width": 278,
+              "~:height": 75,
+              "~:x1": 388,
+              "~:y1": 605.5,
+              "~:x2": 666,
+              "~:y2": 680.5
+            }
+          },
+          "~:fills": [
+            {
+              "~:fill-color": "#7f9cf5"
+            }
+          ],
+          "~:flip-x": null,
+          "~:height": 75,
+          "~:flip-y": null
+        }
+      },
+      "~uc5b31054-fb6d-80a9-8005-9eab3a0c8159": {
+        "~#shape": {
+          "~:y": 625,
+          "~:transform": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:rotation": 0,
+          "~:grow-type": "~:auto-width",
+          "~:content": {
+            "~:type": "root",
+            "~:children": [
+              {
+                "~:type": "paragraph-set",
+                "~:children": [
+                  {
+                    "~:line-height": "1.2",
+                    "~:font-style": "normal",
+                    "~:children": [
+                      {
+                        "~:line-height": "1.2",
+                        "~:font-style": "normal",
+                        "~:typography-ref-id": null,
+                        "~:text-transform": "none",
+                        "~:text-align": "left",
+                        "~:font-id": "sourcesanspro",
+                        "~:font-size": "30",
+                        "~:font-weight": "400",
+                        "~:typography-ref-file": null,
+                        "~:text-direction": "ltr",
+                        "~:font-variant-id": "regular",
+                        "~:text-decoration": "none",
+                        "~:letter-spacing": "0",
+                        "~:fills": [
+                          {
+                            "~:fill-color": "#ffffff"
+                          }
+                        ],
+                        "~:font-family": "sourcesanspro",
+                        "~:text": "Button"
+                      }
+                    ],
+                    "~:typography-ref-id": null,
+                    "~:text-transform": "none",
+                    "~:text-align": "left",
+                    "~:font-id": "sourcesanspro",
+                    "~:key": "2623a",
+                    "~:font-size": "30",
+                    "~:font-weight": "400",
+                    "~:typography-ref-file": null,
+                    "~:text-direction": "ltr",
+                    "~:type": "paragraph",
+                    "~:font-variant-id": "regular",
+                    "~:text-decoration": "none",
+                    "~:letter-spacing": "0",
+                    "~:fills": [
+                      {
+                        "~:fill-color": "#ffffff"
+                      }
+                    ],
+                    "~:font-family": "sourcesanspro"
+                  }
+                ]
+              }
+            ]
+          },
+          "~:hide-in-viewer": false,
+          "~:name": "Button",
+          "~:width": 87,
+          "~:type": "~:text",
+          "~:points": [
+            {
+              "~#point": {
+                "~:x": 483.5,
+                "~:y": 625
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 570.5,
+                "~:y": 625
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 570.5,
+                "~:y": 661
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 483.5,
+                "~:y": 661
+              }
+            }
+          ],
+          "~:transform-inverse": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:id": "~uc5b31054-fb6d-80a9-8005-9eab3a0c8159",
+          "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:applied-tokens": {
+            "~:fill": "button.primary.text"
+          },
+          "~:position-data": [
+            {
+              "~#rect": {
+                "~:y": 662.3333345651627,
+                "~:font-style": "normal",
+                "~:text-transform": "none",
+                "~:font-size": "30px",
+                "~:font-weight": "400",
+                "~:y1": -1.3333333730697632,
+                "~:width": 86.60417175292969,
+                "~:text-decoration": "none solid rgb(0, 0, 0)",
+                "~:letter-spacing": "normal",
+                "~:x": 483.5,
+                "~:x1": 0,
+                "~:y2": 37.33333456516266,
+                "~:fills": [
+                  {
+                    "~:fill-color": "#ffffff"
+                  }
+                ],
+                "~:x2": 86.60417175292969,
+                "~:direction": "ltr",
+                "~:font-family": "sourcesanspro",
+                "~:height": 38.66666793823242,
+                "~:text": "Button"
+              }
+            }
+          ],
+          "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:x": 483.5,
+          "~:selrect": {
+            "~#rect": {
+              "~:x": 483.5,
+              "~:y": 625,
+              "~:width": 87,
+              "~:height": 36,
+              "~:x1": 483.5,
+              "~:y1": 625,
+              "~:x2": 570.5,
+              "~:y2": 661
+            }
+          },
+          "~:flip-x": null,
+          "~:height": 36,
+          "~:flip-y": null
+        }
+      },
+      "~uc5b31054-fb6d-80a9-8005-9eab7c0c8759": {
+        "~#shape": {
+          "~:y": 396,
+          "~:transform": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:rotation": 0,
+          "~:grow-type": "~:fixed",
+          "~:hide-in-viewer": false,
+          "~:name": "Rectangle",
+          "~:width": 494,
+          "~:type": "~:rect",
+          "~:points": [
+            {
+              "~#point": {
+                "~:x": 280,
+                "~:y": 396
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 774,
+                "~:y": 396
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 774,
+                "~:y": 890
+              }
+            },
+            {
+              "~#point": {
+                "~:x": 280,
+                "~:y": 890
+              }
+            }
+          ],
+          "~:r2": 8,
+          "~:proportion-lock": false,
+          "~:transform-inverse": {
+            "~#matrix": {
+              "~:a": 1.0,
+              "~:b": 0.0,
+              "~:c": 0.0,
+              "~:d": 1.0,
+              "~:e": 0.0,
+              "~:f": 0.0
+            }
+          },
+          "~:r3": 8,
+          "~:r1": 8,
+          "~:id": "~uc5b31054-fb6d-80a9-8005-9eab7c0c8759",
+          "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:applied-tokens": {
+            "~:fill": "card.background",
+            "~:r1": "card.borderRadius",
+            "~:r2": "card.borderRadius",
+            "~:r3": "card.borderRadius",
+            "~:r4": "card.borderRadius"
+          },
+          "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+          "~:strokes": [],
+          "~:x": 280,
+          "~:proportion": 1,
+          "~:r4": 8,
+          "~:selrect": {
+            "~#rect": {
+              "~:x": 280,
+              "~:y": 396,
+              "~:width": 494,
+              "~:height": 494,
+              "~:x1": 280,
+              "~:y1": 396,
+              "~:x2": 774,
+              "~:y2": 890
+            }
+          },
+          "~:fills": [
+            {
+              "~:fill-color": "#ffffff"
+            }
+          ],
+          "~:flip-x": null,
+          "~:height": 494,
+          "~:flip-y": null
+        }
+      }
+    },
+    "~:id": "~u51e13852-1a8e-8037-8005-9e9413a1f1f7",
+    "~:name": "Page 1",
+    "~:background": "#e8eae9",
+    "~:guides": {
+      "~uc5b31054-fb6d-80a9-8005-9eaaba69431e": {
+        "~:position": 182,
+        "~:frame-id": null,
+        "~:id": "~uc5b31054-fb6d-80a9-8005-9eaaba69431e",
+        "~:axis": "~:x"
+      }
+    }
+  }
+}

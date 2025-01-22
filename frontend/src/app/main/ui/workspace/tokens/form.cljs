@@ -215,7 +215,8 @@
 (mf/defc form
   {::mf/wrap-props false}
   [{:keys [token token-type action selected-token-set-name]}]
-  (let [token (or token {:type token-type})
+  (let [create? (not (instance? ctob/Token token))
+        token (or token {:type token-type})
         token-properties (wtty/get-token-properties token)
         color? (wtt/color-token? token)
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
@@ -388,6 +389,22 @@
            (mf/set-ref-val! cancel-ref nil)
            (dom/prevent-default e)
            (modal/hide!)))]
+
+    ;; Clear form token cache on mount
+    (mf/use-effect
+     (fn []
+       (reset! form-token-cache-atom nil)))
+
+    ;; Update the value when editing an existing token
+    ;; so the user doesn't have to interact with the form to validate the token
+    (mf/use-effect
+     (mf/deps create? resolved-tokens token token-resolve-result set-resolve-value)
+     (fn []
+       (when (and (not create?)
+                  (not @token-resolve-result)
+                  resolved-tokens)
+         (-> (get resolved-tokens @name-ref)
+             (set-resolve-value)))))
 
     [:form {:class (stl/css :form-wrapper)
             :on-submit on-submit}

@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
   await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
-const setupFileWithTokens = async (page) => {
+const setupEmptyTokensFile = async (page) => {
   const workspacePage = new WorkspacePage(page);
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC(
@@ -29,12 +29,44 @@ const setupFileWithTokens = async (page) => {
   };
 };
 
+const setupTokensFile = async (page) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockRPC(
+    "get-team?id=*",
+    "workspace/get-team-tokens.json",
+  );
+  await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-tokens.json");
+  await workspacePage.mockRPC(
+    /get\-file\-fragment\?/,
+    "workspace/get-file-fragment-tokens.json",
+  );
+
+  await workspacePage.goToWorkspace({
+    fileId: "51e13852-1a8e-8037-8005-9e9413a1f1f6",
+    pageId: "51e13852-1a8e-8037-8005-9e9413a1f1f7",
+  });
+
+  const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+  await tokensTabButton.click();
+
+  return {
+    workspacePage,
+    tokensUpdateCreateModal: workspacePage.tokensUpdateCreateModal,
+    tokenThemesSetsSidebar: workspacePage.tokenThemesSetsSidebar,
+    tokenSetItems: workspacePage.tokenSetItems,
+    tokenSetGroupItems: workspacePage.tokenSetGroupItems,
+    tokensSidebar: workspacePage.tokensSidebar,
+    tokenContextMenuForToken: workspacePage.tokenContextMenuForToken,
+  };
+};
+
 test.describe("Tokens: Tokens Tab", () => {
   test("Clicking tokens tab button opens tokens sidebar tab", async ({
     page,
   }) => {
     const { workspacePage, tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupFileWithTokens(page);
+      await setupEmptyTokensFile(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
@@ -46,7 +78,7 @@ test.describe("Tokens: Tokens Tab", () => {
     page,
   }) => {
     const { workspacePage, tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupFileWithTokens(page);
+      await setupEmptyTokensFile(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
     await tokensTabPanel.getByTitle("Add token: Color").click();
@@ -106,9 +138,56 @@ test.describe("Tokens: Tokens Tab", () => {
     ).toHaveAttribute("aria-checked", "true");
   });
 
+  test("User edits token and auto created set show up in the sidebar", async ({
+    page,
+  }) => {
+    const {
+      workspacePage,
+      tokensUpdateCreateModal,
+      tokenThemesSetsSidebar,
+      tokensSidebar,
+      tokenContextMenuForToken,
+    } = await setupTokensFile(page);
+
+    await expect(tokensSidebar).toBeVisible();
+
+    const tokensColorGroup = tokensSidebar.getByRole("button", {
+      name: "Color 92",
+    });
+    await expect(tokensColorGroup).toBeVisible;
+    await tokensColorGroup.click();
+
+    const colorToken = tokensSidebar.getByRole("button", {
+      name: "colors.blue.100",
+    });
+    await expect(colorToken).toBeVisible;
+    await colorToken.click({ button: "right" });
+
+    await expect(tokenContextMenuForToken).toBeVisible();
+    await tokenContextMenuForToken.getByText("Edit token").click();
+
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    await nameField.pressSequentially(".changed");
+
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
+
+    await expect(tokensUpdateCreateModal).not.toBeVisible();
+
+    const colorTokenChanged = tokensSidebar.getByRole("button", {
+      name: "colors.blue.100.changed",
+    });
+    expect(colorTokenChanged).toBeVisible();
+  });
+
   test("User creates grouped color token", async ({ page }) => {
     const { workspacePage, tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupFileWithTokens(page);
+      await setupEmptyTokensFile(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
     await tokensTabPanel.getByTitle("Add token: Color").click();
@@ -156,7 +235,7 @@ test.describe("Tokens: Sets Tab", () => {
   //     tokenThemesSetsSidebar,
   //     tokenSetItems,
   //     tokenSetGroupItems,
-  //   } = await setupFileWithTokens(page);
+  //   } = await setupEmptyTokensFile(page);
   //
   //   const tokensTabButton = tokenThemesSetsSidebar
   //     .getByRole("button", { name: "Add set" })
