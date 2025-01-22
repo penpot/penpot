@@ -55,7 +55,8 @@
     :component-nil-objects-not-allowed
     :instance-head-not-frame
     :misplaced-slot
-    :missing-slot})
+    :missing-slot
+    :shape-ref-cycle})
 
 (def ^:private schema:error
   [:map {:title "ValidationError"}
@@ -482,6 +483,18 @@
                     "This deleted component has children with the same swap slot"
                     component file nil))))
 
+(defn check-ref-cycles
+  [component file]
+  (let [cycles-ids (->> component
+                        :objects
+                        vals
+                        (filter #(= (:id %) (:shape-ref %)))
+                        (map :id))]
+
+    (when (seq cycles-ids)
+      (report-error :shape-ref-cycle
+                    "This deleted component has shapes with shape-ref pointing to self"
+                    component file nil :cycles-ids cycles-ids))))
 
 (defn- check-component
   "Validate semantic coherence of a component. Report all errors found."
@@ -491,7 +504,8 @@
                   "Objects list cannot be nil"
                   component file nil))
   (when (:deleted component)
-    (check-component-duplicate-swap-slot component file)))
+    (check-component-duplicate-swap-slot component file)
+    (check-ref-cycles component file)))
 
 (defn- get-orphan-shapes
   [{:keys [objects] :as page}]
