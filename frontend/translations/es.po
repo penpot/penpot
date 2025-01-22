@@ -6774,6 +6774,10 @@ msgid "workspace.token-set.not-active"
 msgstr "El set de tokens no está aplicado"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs
+msgid "workspace.token.applied-to"
+msgstr "Aplicado a"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs
 msgid "workspace.token.value-not-valid"
 msgstr "El valor no es válido"
 

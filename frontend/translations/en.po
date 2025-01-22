@@ -6356,6 +6356,10 @@ msgstr "Themes"
 msgid "workspace.token-set.not-active"
 msgstr "Token set is not active"
 
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:47
+msgid "workspace.token.applied-to"
+msgstr "Applied to"
+
 #: src/app/main/ui/workspace/tokens/token_pill.cljs
 msgid "workspace.token.value-not-valid"
 msgstr "The value is not valid"
