@@ -26,7 +26,6 @@
    [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [clojure.set :as set]
    [integrant.core :as ig]))
 
 (declare ^:private get-file)
@@ -53,16 +52,21 @@
    RETURNING id")
 
 (def ^:private xf:collect-used-media
-  (comp (map :data) (mapcat bfc/collect-used-media)))
+  (comp
+   (map :data)
+   (mapcat bfc/collect-used-media)))
 
 (defn- clean-file-media!
   "Performs the garbage collection of file media objects."
   [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
-  (let [used   (into #{}
-                     xf:collect-used-media
-                     (cons file
-                           (->> (db/cursor conn [sql:get-snapshots id])
-                                (map (partial decode-file cfg)))))
+  (let [xform  (comp
+                (map (partial decode-file cfg))
+                xf:collect-used-media)
+
+        used   (->> (db/plan conn [sql:get-snapshots id])
+                    (transduce xform conj #{}))
+        used   (into used xf:collect-used-media [file])
+
         ids    (db/create-array conn "uuid" used)
         unused (->> (db/exec! conn [sql:mark-file-media-object-deleted id ids])
                     (into #{} (map :id)))]
@@ -145,51 +149,47 @@
       AND f.deleted_at IS null
     ORDER BY f.modified_at ASC")
 
+(def ^:private xf:map-id (map :id))
+
+(defn- get-used-components
+  "Given a file and a set of components marked for deletion, return a
+  filtered set of component ids that are still un use"
+  [components library-id {:keys [data]}]
+  (filter #(ctf/used-in? data library-id % :component) components))
+
 (defn- clean-deleted-components!
   "Performs the garbage collection of unreferenced deleted components."
   [{:keys [::db/conn] :as cfg} {:keys [data] :as file}]
   (let [file-id (:id file)
 
-        get-used-components
-        (fn [data components]
-          ;; Find which of the components are used in the file.
-          (into #{}
-                (filter #(ctf/used-in? data file-id % :component))
-                components))
+        deleted-components
+        (ctkl/deleted-components-seq data)
 
-        get-unused-components
-        (fn [components files]
-          ;; Find and return a set of unused components (on all files).
-          (reduce (fn [components {:keys [data]}]
-                    (if (seq components)
-                      (->> (get-used-components data components)
-                           (set/difference components))
-                      (reduced components)))
+        xform
+        (mapcat (partial get-used-components deleted-components file-id))
 
-                  components
-                  files))
+        used-remote
+        (->> (db/plan conn [sql:get-files-for-library file-id])
+             (transduce (comp (map (partial decode-file cfg)) xform) conj #{}))
 
-        process-fdata
-        (fn [data unused]
-          (reduce (fn [data id]
-                    (l/trc :hint "delete component"
-                           :component-id (str id)
-                           :file-id (str file-id))
-                    (ctkl/delete-component data id))
-                  data
-                  unused))
+        used-local
+        (into #{} xform [file])
 
-        deleted (into #{} (ctkl/deleted-components-seq data))
+        unused
+        (transduce xf:map-id disj
+                   (into #{} xf:map-id deleted-components)
+                   (concat used-remote used-local))
 
-        unused  (->> (db/cursor conn [sql:get-files-for-library file-id] {:chunk-size 1})
-                     (map (partial decode-file cfg))
-                     (cons file)
-                     (get-unused-components deleted)
-                     (mapv :id)
-                     (set))
-
-        file    (update file :data process-fdata unused)]
-
+        file
+        (update file :data
+                (fn [data]
+                  (reduce (fn [data id]
+                            (l/trc :hint "delete component"
+                                   :component-id (str id)
+                                   :file-id (str file-id))
+                            (ctkl/delete-component data id))
+                          data
+                          unused)))]
 
     (l/dbg :hint "clean" :rel "components" :file-id (str file-id) :total (count unused))
     file))

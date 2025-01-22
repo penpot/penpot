@@ -207,6 +207,7 @@
       ptk/WatchEvent
       (watch [_ _ _]
         (when (is-authenticated? profile)
+          (cf/initialize-external-context-info)
           (->> (rx/concat
                 (rx/of (profile-fetched profile)
                        (fetch-teams)

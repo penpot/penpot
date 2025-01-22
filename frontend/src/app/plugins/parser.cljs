@@ -111,28 +111,36 @@
 
 ;; export interface Color {
 ;;   id?: string;
+;;   fileId?: string;
+;;   refId?: string; // deprecated
+;;   refFile?: string; // deprecated
 ;;   name?: string;
 ;;   path?: string;
 ;;   color?: string;
 ;;   opacity?: number;
-;;   refId?: string;
-;;   refFile?: string;
 ;;   gradient?: Gradient;
 ;;   image?: ImageData;
 ;; }
+(defn parse-color-data
+  [^js color]
+  (when (some? color)
+    (let [id (or (obj/get color "id") (obj/get color "refId"))
+          file-id (or (obj/get color "fileId") (obj/get color "refFile"))]
+      (d/without-nils
+       {:id (parse-id id)
+        :file-id (parse-id file-id)
+        :color (-> (obj/get color "color") parse-hex)
+        :opacity (obj/get color "opacity")
+        :gradient (-> (obj/get color "gradient") parse-gradient)
+        :image (-> (obj/get color "image") parse-image-data)}))))
+
 (defn parse-color
   [^js color]
   (when (some? color)
     (d/without-nils
-     {:id (-> (obj/get color "id") parse-id)
-      :name (obj/get color "name")
-      :path (obj/get color "path")
-      :color (-> (obj/get color "color") parse-hex)
-      :opacity (obj/get color "opacity")
-      :ref-id (-> (obj/get color "refId") parse-id)
-      :ref-file (-> (obj/get color "refFile") parse-id)
-      :gradient (-> (obj/get color "gradient") parse-gradient)
-      :image (-> (obj/get color "image") parse-image-data)})))
+     (-> (parse-color-data color)
+         (assoc :name (obj/get color "name")
+                :path (obj/get color "path"))))))
 
 ;; export interface Shadow {
 ;;   id?: string;

@@ -48,6 +48,7 @@
     :$file {:enumerable false :get (constantly file-id)}
 
     :id {:get (fn [] (dm/str id))}
+    :fileId {:get #(dm/str file-id)}
 
     :name
     {:this true
@@ -98,7 +99,7 @@
          :else
          (let [color (-> (u/proxy->library-color self)
                          (assoc :color value))]
-           (st/emit! (dwl/update-color color file-id)))))}
+           (st/emit! (dwl/update-color-data color file-id)))))}
 
     :opacity
     {:this true
@@ -115,7 +116,7 @@
          :else
          (let [color (-> (u/proxy->library-color self)
                          (assoc :opacity value))]
-           (st/emit! (dwl/update-color color file-id)))))}
+           (st/emit! (dwl/update-color-data color file-id)))))}
 
     :gradient
     {:this true
@@ -133,7 +134,7 @@
            :else
            (let [color (-> (u/proxy->library-color self)
                            (assoc :gradient value))]
-             (st/emit! (dwl/update-color color file-id))))))}
+             (st/emit! (dwl/update-color-data color file-id))))))}
 
     :image
     {:this true
@@ -151,7 +152,7 @@
            :else
            (let [color (-> (u/proxy->library-color self)
                            (assoc :image value))]
-             (st/emit! (dwl/update-color color file-id))))))}
+             (st/emit! (dwl/update-color-data color file-id))))))}
 
     :remove
     (fn []

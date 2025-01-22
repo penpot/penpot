@@ -29,10 +29,11 @@
 ;; --- GENERAL PURPOSE INTERNAL HELPERS
 
 (defn- decode-row
-  [{:keys [participants position] :as row}]
+  [{:keys [participants position mentions] :as row}]
   (cond-> row
     (db/pgpoint? position) (assoc :position (db/decode-pgpoint position))
-    (db/pgobject? participants) (assoc :participants (db/decode-transit-pgobject participants))))
+    (db/pgobject? participants) (assoc :participants (db/decode-transit-pgobject participants))
+    (db/pgarray? mentions) (assoc :mentions (db/decode-pgarray mentions #{}))))
 
 (def xf-decode-row
   (map decode-row))
@@ -461,8 +462,9 @@
                                              :thread-id thread-id
                                              :owner-id profile-id
                                              :content content})
-                        props    {:file-id file-id
-                                  :share-id nil}]
+                        comment (decode-row comment)
+                        props   {:file-id file-id
+                                 :share-id nil}]
 
                     ;; Update thread modified-at attribute and assoc the current
                     ;; profile to the participant set.

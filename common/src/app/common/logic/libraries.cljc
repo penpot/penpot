@@ -304,7 +304,12 @@
                         (and (some? (ctk/get-swap-slot ref-shape))
                              (nil? (ctk/get-swap-slot shape))
                              (not= (:id shape) shape-id))
-                        (pcb/update-shapes [(:id shape)] #(ctk/set-swap-slot % (ctk/get-swap-slot ref-shape))))))]
+                        (pcb/update-shapes [(:id shape)] #(ctk/set-swap-slot % (ctk/get-swap-slot ref-shape)))
+
+                        ;; If we can't get the ref-shape (e.g. it's in an external library not linked),
+                        ;: we can't do a suitable advance. So it's better to detach the shape
+                        (nil? ref-shape)
+                        (pcb/update-shapes [(:id shape)] ctk/detach-shape))))]
 
     (reduce skip-near changes children)))
 

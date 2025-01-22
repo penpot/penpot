@@ -1,10 +1,21 @@
 # CHANGELOG
 
+## 2.4.2
+
+### :bug: Bugs fixed
+
+- Fix detach when top copy is dangling and nested copy is not [Taiga #9699](https://tree.taiga.io/project/penpot/issue/9699)
+- Fix problem in plugins with `replaceColor` method [#174](https://github.com/penpot/penpot-plugins/issues/174)
+- Fix issue with recursive commponents [Taiga #9903](https://tree.taiga.io/project/penpot/issue/9903)
+- Fix missing methods reference on API Docs
+- Fix memory usage issue on file-gc asynchronous task (related to snapshots feature)
+
 ## 2.4.1
 
 ### :bug: Bugs fixed
 
 - Fix error when importing files with touched components [Taiga #9625](https://tree.taiga.io/project/penpot/issue/9625)
+- Fix problem when changing color libraries [Plugins #184](https://github.com/penpot/penpot-plugins/issues/184)
 
 ## 2.4.0
 
