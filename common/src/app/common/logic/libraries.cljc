@@ -202,7 +202,8 @@
                                       position
                                       components-v2
                                       (cond-> {}
-                                        force-frame? (assoc :force-frame-id frame-id)))
+                                        force-frame?
+                                        (assoc :force-frame-id frame-id)))
 
          first-shape (cond-> (first new-shapes)
                        (not (nil? parent-id))

@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.files-update
   (:require
+   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
@@ -118,6 +119,7 @@
 (sv/defmethod ::update-file
   {::climit/id [[:update-file/by-profile ::rpc/profile-id]
                 [:update-file/global]]
+
    ::webhooks/event? true
    ::webhooks/batch-timeout (dt/duration "2m")
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
@@ -419,15 +421,26 @@
   [cfg file changes skip-validate]
   (let [;; WARNING: this ruins performance; maybe we need to find
         ;; some other way to do general validation
-        libs (when (and (or (contains? cf/flags :file-validation)
-                            (contains? cf/flags :soft-file-validation))
-                        (not skip-validate))
-               (get-file-libraries cfg file))
+        libs
+        (when (and (or (contains? cf/flags :file-validation)
+                       (contains? cf/flags :soft-file-validation))
+                   (not skip-validate))
+          (get-file-libraries cfg file))
 
-        file (-> (files/check-version! file)
-                 (update :revn inc)
-                 (update :data cpc/process-changes changes)
-                 (update :data d/without-nils))]
+        state
+        (atom {})
+
+        file
+        (binding [cpc/*state* state]
+          (-> (files/check-version! file)
+              (update :revn inc)
+              (update :data cpc/process-changes changes)
+              (update :data d/without-nils)))
+
+        file
+        (if-let [media-refs (-> @state :media-refs not-empty)]
+          (bfc/update-media-references cfg file media-refs)
+          file)]
 
     (binding [pmap/*tracked* nil]
       (when (contains? cf/flags :soft-file-validation)

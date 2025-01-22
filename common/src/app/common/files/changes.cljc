@@ -484,6 +484,11 @@
   modification."
   nil)
 
+(def ^:dynamic *state*
+  "A general purpose state to signal some out of order operations
+  to the processor backend."
+  nil)
+
 (defmulti process-change (fn [_ change] (:type change)))
 (defmulti process-operation (fn [_ op] (:type op)))
 
@@ -622,6 +627,27 @@
   (let [update-container
         (fn [container]
           (ctst/add-shape id obj container frame-id parent-id index ignore-touched))]
+
+    ;; The main purpose of this is ensure that all created shapes has
+    ;; valid media references; so for make sure of it, we analyze each
+    ;; shape added via `:add-obj` change for media usage, and if shape
+    ;; has media refs, we put that media refs on the check list (on
+    ;; the *state*) which will subsequently be processed and all
+    ;; incorrect references will be corrected.  The media ref is
+    ;; anything that can be pointing to a file-media-object on the
+    ;; shape, per example we have fill-image, stroke-image, etc.
+    (when *state*
+      (let [media-refs
+            (-> (cfh/collect-shape-media-refs obj)
+                (not-empty))
+
+            xform
+            (map (fn [id]
+                   {:page-id page-id
+                    :shape-id (:id obj)
+                    :id id}))]
+
+        (swap! *state* update :media-refs into xform media-refs)))
 
     (if page-id
       (d/update-in-when data [:pages-index page-id] update-container)

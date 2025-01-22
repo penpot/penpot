@@ -352,12 +352,15 @@
   Warnign: This process does not remap media references (on fills, strokes, ...); that is
   delegated to an async process on the backend side that checks unreferenced shapes and
   automatically creates correct references."
-  ([container component library-data position components-v2]
-   (make-component-instance container component library-data position components-v2 {}))
+  ([page component library-data position components-v2]
+   (make-component-instance page component library-data position components-v2 {}))
 
-  ([container component library-data position components-v2
+  ([page component library-data position components-v2
     {:keys [main-instance? force-id force-frame-id keep-ids?]
-     :or {main-instance? false force-id nil force-frame-id nil keep-ids? false}}]
+     :or {main-instance? false
+          force-id nil
+          force-frame-id nil
+          keep-ids? false}}]
    (let [component-page  (when components-v2
                            (ctpl/get-page library-data (:main-instance-page component)))
 
@@ -372,7 +375,7 @@
                                     (:y component-shape))
          delta           (gpt/subtract position orig-pos)
 
-         objects         (:objects container)
+         objects         (:objects page)
          unames          (volatile! (cfh/get-used-names objects))
 
          component-children
@@ -389,7 +392,7 @@
                                                                           (nil? (get component-children (:id %)))
                                                                           ;; We must avoid that destiny frame is inside a copy
                                                                           (not (ctk/in-component-copy? %)))}))
-         frame           (get-shape container frame-id)
+         frame           (get-shape page frame-id)
          component-frame (get-component-shape objects frame {:allow-main? true})
 
          ;; This map stores the relation between old shapes (present on the main
@@ -445,7 +448,7 @@
                            :force-id force-id
                            :keep-ids? keep-ids?
                            :frame-id frame-id
-                           :dest-objects (:objects container))
+                           :dest-objects (:objects page))
 
          ;; Fix empty parent-id and remap all grid cells to the new ids.
          remap-ids
