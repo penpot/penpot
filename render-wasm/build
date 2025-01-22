@@ -16,7 +16,7 @@ export EMCC_CFLAGS="--no-entry \
     -sMAX_WEBGL_VERSION=2 \
     -sMODULARIZE=1 \
     -sEXPORT_NAME=createRustSkiaModule \
-    -sEXPORTED_RUNTIME_METHODS=GL \
+    -sEXPORTED_RUNTIME_METHODS=GL,stringToUTF8 \
     -sEXPORT_ES6=1"
 
 EMSDK_QUIET=1 . /usr/local/emsdk/emsdk_env.sh;

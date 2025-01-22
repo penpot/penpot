@@ -1,65 +1,42 @@
-use std::collections::HashMap;
-
 use skia::Contains;
 use skia_safe as skia;
+use std::collections::HashMap;
 use uuid::Uuid;
 
-use crate::math;
 use crate::view::Viewbox;
 
 mod blend;
+mod cache;
+mod debug;
+mod fills;
 mod gpu_state;
 mod images;
 mod options;
+mod strokes;
 
+use crate::shapes::{Kind, Shape};
+use cache::CachedSurfaceImage;
 use gpu_state::GpuState;
 use options::RenderOptions;
 
 pub use blend::BlendMode;
 pub use images::*;
 
-pub trait Renderable {
-    fn render(
-        &self,
-        surface: &mut skia::Surface,
-        images: &ImageStore,
-        scale: f32,
-    ) -> Result<(), String>;
-    fn blend_mode(&self) -> BlendMode;
-    fn opacity(&self) -> f32;
-    fn bounds(&self) -> math::Rect;
-    fn hidden(&self) -> bool;
-    fn clip(&self) -> bool;
-    fn children_ids(&self) -> Vec<Uuid>;
-    fn image_filter(&self, scale: f32) -> Option<skia::ImageFilter>;
-}
-
-pub(crate) struct CachedSurfaceImage {
-    pub image: Image,
-    pub viewbox: Viewbox,
-    has_all_shapes: bool,
-}
-
-impl CachedSurfaceImage {
-    fn is_dirty_for_zooming(&mut self, viewbox: &Viewbox) -> bool {
-        !self.has_all_shapes && !self.viewbox.area.contains(viewbox.area)
-    }
-
-    fn is_dirty_for_panning(&mut self, _viewbox: &Viewbox) -> bool {
-        !self.has_all_shapes
-    }
-}
-
 pub(crate) struct RenderState {
     gpu_state: GpuState,
+    options: RenderOptions,
+
+    // TODO: Probably we're going to need
+    // a surface stack like the one used
+    // by SVG: https://www.w3.org/TR/SVG2/render.html
     pub final_surface: skia::Surface,
     pub drawing_surface: skia::Surface,
     pub debug_surface: skia::Surface,
+    pub font_provider: skia::textlayout::TypefaceFontProvider,
     pub cached_surface_image: Option<CachedSurfaceImage>,
-    options: RenderOptions,
     pub viewbox: Viewbox,
-    images: ImageStore,
-    background_color: skia::Color,
+    pub images: ImageStore,
+    pub background_color: skia::Color,
 }
 
 impl RenderState {
@@ -74,17 +51,33 @@ impl RenderState {
             .new_surface_with_dimensions((width, height))
             .unwrap();
 
+        let mut font_provider = skia::textlayout::TypefaceFontProvider::new();
+        let default_font = skia::FontMgr::default()
+            .new_from_data(include_bytes!("fonts/RobotoMono-Regular.ttf"), None)
+            .expect("Failed to load font");
+        font_provider.register_typeface(default_font, "robotomono-regular");
+
         RenderState {
             gpu_state,
             final_surface,
             drawing_surface,
             debug_surface,
             cached_surface_image: None,
+            font_provider,
             options: RenderOptions::default(),
             viewbox: Viewbox::new(width as f32, height as f32),
             images: ImageStore::new(),
             background_color: skia::Color::TRANSPARENT,
         }
+    }
+
+    pub fn add_font(&mut self, family_name: String, font_data: &[u8]) -> Result<(), String> {
+        let typeface = skia::FontMgr::default()
+            .new_from_data(font_data, None)
+            .expect("Failed to add font");
+        self.font_provider
+            .register_typeface(typeface, family_name.as_ref());
+        Ok(())
     }
 
     pub fn add_image(&mut self, id: Uuid, image_data: &[u8]) -> Result<(), String> {
@@ -161,11 +154,46 @@ impl RenderState {
             .reset_matrix();
     }
 
-    pub fn render_single_element(&mut self, element: &impl Renderable) {
-        let scale = self.viewbox.zoom * self.options.dpr();
-        element
-            .render(&mut self.drawing_surface, &self.images, scale)
-            .unwrap();
+    pub fn render_shape(&mut self, shape: &mut Shape) {
+        let transform = shape.transform.to_skia_matrix();
+
+        // Check transform-matrix code from common/src/app/common/geom/shapes/transforms.cljc
+        let center = shape.bounds().center();
+        let mut matrix = skia::Matrix::new_identity();
+        matrix.pre_translate(center);
+        matrix.pre_concat(&transform);
+        matrix.pre_translate(-center);
+
+        self.drawing_surface.canvas().concat(&matrix);
+
+        match &shape.kind {
+            Kind::SVGRaw(sr) => {
+                if let Some(svg) = shape.svg.as_ref() {
+                    svg.render(self.drawing_surface.canvas())
+                } else {
+                    let font_manager = skia::FontMgr::from(self.font_provider.clone());
+                    let dom_result = skia::svg::Dom::from_str(sr.content.to_string(), font_manager);
+                    match dom_result {
+                        Ok(dom) => {
+                            dom.render(self.drawing_surface.canvas());
+                            shape.set_svg(dom);
+                        }
+                        Err(e) => {
+                            eprintln!("Error parsing SVG. Error: {}", e);
+                        }
+                    }
+                }
+            }
+            _ => {
+                for fill in shape.fills().rev() {
+                    fills::render(self, shape, fill);
+                }
+
+                for stroke in shape.strokes().rev() {
+                    strokes::render(self, shape, stroke);
+                }
+            }
+        };
 
         self.drawing_surface.draw(
             &mut self.final_surface.canvas(),
@@ -173,12 +201,13 @@ impl RenderState {
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
             Some(&skia::Paint::default()),
         );
+
         self.drawing_surface
             .canvas()
             .clear(skia::Color::TRANSPARENT);
     }
 
-    pub fn zoom(&mut self, tree: &HashMap<Uuid, impl Renderable>) -> Result<(), String> {
+    pub fn zoom(&mut self, tree: &HashMap<Uuid, Shape>) -> Result<(), String> {
         if let Some(cached_surface_image) = self.cached_surface_image.as_mut() {
             let is_dirty = cached_surface_image.is_dirty_for_zooming(&self.viewbox);
             if is_dirty {
@@ -191,7 +220,7 @@ impl RenderState {
         Ok(())
     }
 
-    pub fn pan(&mut self, tree: &HashMap<Uuid, impl Renderable>) -> Result<(), String> {
+    pub fn pan(&mut self, tree: &HashMap<Uuid, Shape>) -> Result<(), String> {
         if let Some(cached_surface_image) = self.cached_surface_image.as_mut() {
             let is_dirty = cached_surface_image.is_dirty_for_panning(&self.viewbox);
             if is_dirty {
@@ -204,11 +233,7 @@ impl RenderState {
         Ok(())
     }
 
-    pub fn render_all(
-        &mut self,
-        tree: &HashMap<Uuid, impl Renderable>,
-        generate_cached_surface_image: bool,
-    ) {
+    pub fn render_all(&mut self, tree: &HashMap<Uuid, Shape>, generate_cached_surface_image: bool) {
         self.reset_canvas();
         self.scale(
             self.viewbox.zoom * self.options.dpr(),
@@ -269,101 +294,64 @@ impl RenderState {
         Ok(())
     }
 
-    fn render_debug_view(&mut self) {
-        let mut paint = skia::Paint::default();
-        paint.set_style(skia::PaintStyle::Stroke);
-        paint.set_color(skia::Color::from_argb(255, 255, 0, 255));
-        paint.set_stroke_width(1.);
-
-        let mut scaled_rect = self.viewbox.area.clone();
-        let x = 100. + scaled_rect.x() * 0.2;
-        let y = 100. + scaled_rect.y() * 0.2;
-        let width = scaled_rect.width() * 0.2;
-        let height = scaled_rect.height() * 0.2;
-        scaled_rect.set_xywh(x, y, width, height);
-
-        self.debug_surface.canvas().draw_rect(scaled_rect, &paint);
-    }
-
-    fn render_debug_element(&mut self, element: &impl Renderable, intersected: bool) {
-        let mut paint = skia::Paint::default();
-        paint.set_style(skia::PaintStyle::Stroke);
-        paint.set_color(if intersected {
-            skia::Color::from_argb(255, 255, 255, 0)
-        } else {
-            skia::Color::from_argb(255, 0, 255, 255)
-        });
-        paint.set_stroke_width(1.);
-
-        let mut scaled_rect = element.bounds();
-        let x = 100. + scaled_rect.x() * 0.2;
-        let y = 100. + scaled_rect.y() * 0.2;
-        let width = scaled_rect.width() * 0.2;
-        let height = scaled_rect.height() * 0.2;
-        scaled_rect.set_xywh(x, y, width, height);
-
-        self.debug_surface.canvas().draw_rect(scaled_rect, &paint);
-    }
-
     fn render_debug(&mut self) {
-        let paint = skia::Paint::default();
-        self.render_debug_view();
-        self.debug_surface.draw(
-            &mut self.final_surface.canvas(),
-            (0.0, 0.0),
-            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
-            Some(&paint),
-        );
+        debug::render(self);
     }
 
     // Returns a boolean indicating if the viewbox contains the rendered shapes
-    fn render_shape_tree(&mut self, root_id: &Uuid, tree: &HashMap<Uuid, impl Renderable>) -> bool {
-        let element = tree.get(&root_id).unwrap();
-        let mut is_complete = self.viewbox.area.contains(element.bounds());
+    fn render_shape_tree(&mut self, root_id: &Uuid, tree: &HashMap<Uuid, Shape>) -> bool {
+        if let Some(element) = tree.get(&root_id) {
+            let mut is_complete = self.viewbox.area.contains(element.bounds());
 
-        if !root_id.is_nil() {
-            if !element.bounds().intersects(self.viewbox.area) || element.hidden() {
-                self.render_debug_element(element, false);
-                // TODO: This means that not all the shapes are rendered so we
-                // need to call a render_all on the zoom out.
-                return is_complete; // TODO return is_complete or return false??
-            } else {
-                self.render_debug_element(element, true);
+            if !root_id.is_nil() {
+                if !element.bounds().intersects(self.viewbox.area) || element.hidden() {
+                    debug::render_debug_element(self, element, false);
+                    // TODO: This means that not all the shapes are rendered so we
+                    // need to call a render_all on the zoom out.
+                    return is_complete; // TODO return is_complete or return false??
+                } else {
+                    debug::render_debug_element(self, element, true);
+                }
             }
-        }
 
-        let mut paint = skia::Paint::default();
-        paint.set_blend_mode(element.blend_mode().into());
-        paint.set_alpha_f(element.opacity());
-        let filter = element.image_filter(self.viewbox.zoom * self.options.dpr());
-        if let Some(image_filter) = filter {
-            paint.set_image_filter(image_filter);
-        }
-
-        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-        // This is needed so the next non-children shape does not carry this shape's transform
-        self.final_surface.canvas().save_layer(&layer_rec);
-        self.drawing_surface.canvas().save();
-
-        if !root_id.is_nil() {
-            self.render_single_element(element);
-            if element.clip() {
-                self.drawing_surface.canvas().clip_rect(
-                    element.bounds(),
-                    skia::ClipOp::Intersect,
-                    true,
-                );
+            let mut paint = skia::Paint::default();
+            paint.set_blend_mode(element.blend_mode().into());
+            paint.set_alpha_f(element.opacity());
+            let filter = element.image_filter(self.viewbox.zoom * self.options.dpr());
+            if let Some(image_filter) = filter {
+                paint.set_image_filter(image_filter);
             }
+
+            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+            // This is needed so the next non-children shape does not carry this shape's transform
+            self.final_surface.canvas().save_layer(&layer_rec);
+            self.drawing_surface.canvas().save();
+
+            if !root_id.is_nil() {
+                self.render_shape(&mut element.clone());
+                if element.clip() {
+                    self.drawing_surface.canvas().clip_rect(
+                        element.bounds(),
+                        skia::ClipOp::Intersect,
+                        true,
+                    );
+                }
+            }
+
+            // draw all the children shapes
+            if element.is_recursive() {
+                for id in element.children_ids() {
+                    is_complete = self.render_shape_tree(&id, tree) && is_complete;
+                }
+            }
+
+            self.final_surface.canvas().restore();
+            self.drawing_surface.canvas().restore();
+
+            return is_complete;
+        } else {
+            eprintln!("Error: Element with root_id {root_id} not found in the tree.");
+            return false;
         }
-
-        // draw all the children shapes
-        for id in element.children_ids() {
-            is_complete = self.render_shape_tree(&id, tree) && is_complete;
-        }
-
-        self.final_surface.canvas().restore();
-        self.drawing_surface.canvas().restore();
-
-        return is_complete;
     }
 }

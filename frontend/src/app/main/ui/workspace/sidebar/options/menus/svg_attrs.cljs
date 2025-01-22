@@ -13,15 +13,25 @@
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
+   [app.util.functions :as uf]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 (mf/defc attribute-value [{:keys [attr value on-change on-delete] :as props}]
-  (let [handle-change
+  (let [last-value (mf/use-state value)
+
+        handle-change*
         (mf/use-fn
-         (mf/deps attr on-change)
+         (uf/debounce (fn [val]
+                        (on-change attr val))
+                      300))
+
+        handle-change
+        (mf/use-fn
+         (mf/deps attr on-change handle-change*)
          (fn [event]
-           (on-change attr (dom/get-target-val event))))
+           (reset! last-value (dom/get-target-val event))
+           (handle-change* (dom/get-target-val event))))
 
         handle-delete
         (mf/use-fn
@@ -35,7 +45,7 @@
        [:div {:class (stl/css :attr-content)}
         [:span {:class (stl/css :attr-name)} label]
         [:div  {:class (stl/css :attr-input)}
-         [:input {:value value
+         [:input {:value @last-value
                   :on-change handle-change}]]
         [:div  {:class (stl/css :attr-actions)}
          [:button {:class (stl/css :attr-action-btn)

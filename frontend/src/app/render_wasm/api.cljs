@@ -7,19 +7,24 @@
 (ns app.render-wasm.api
   "A WASM based render API"
   (:require
+   ["react-dom/server" :as rds]
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.common.svg.path :as path]
    [app.common.uuid :as uuid]
    [app.config :as cf]
+   [app.main.refs :as refs]
+   [app.main.render :as render]
    [app.render-wasm.helpers :as h]
    [app.util.debug :as dbg]
    [app.util.functions :as fns]
    [app.util.http :as http]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
+   [cuerdas.core :as str]
    [goog.object :as gobj]
-   [promesa.core :as p]))
+   [promesa.core :as p]
+   [rumext.v2 :as mf]))
 
 (defonce internal-frame-id nil)
 (defonce internal-module #js {})
@@ -27,6 +32,27 @@
 
 (def dpr
   (if use-dpr? js/window.devicePixelRatio 1.0))
+
+;; Based on app.main.render/object-svg
+(mf/defc object-svg
+  {::mf/props :obj}
+  [{:keys [shape] :as props}]
+  (let [objects (mf/deref refs/workspace-page-objects)
+        shape-wrapper
+        (mf/with-memo [shape]
+          (render/shape-wrapper-factory objects))]
+
+    [:svg {:version "1.1"
+           :xmlns "http://www.w3.org/2000/svg"
+           :xmlnsXlink "http://www.w3.org/1999/xlink"
+           :fill "none"}
+     [:& shape-wrapper {:shape shape}]]))
+
+(defn get-static-markup
+  [shape]
+  (->
+   (mf/element object-svg #js {:shape shape})
+   (rds/renderToStaticMarkup)))
 
 ;; This should never be called from the outside.
 ;; This function receives a "time" parameter that we're not using but maybe in the future could be useful (it is the time since
@@ -133,6 +159,36 @@
                     (aget buffer 2)
                     (aget buffer 3))))
         shape-ids))
+
+(defn- get-string-length [string] (+ (count string) 1))
+
+;; IMPORTANT: It should be noted that only TTF fonts can be stored.
+;; Do not remove, this is going to be useful
+;; when we implement text rendering.
+#_(defn- store-font
+    [family-name font-array-buffer]
+    (let [family-name-size (get-string-length family-name)
+          font-array-buffer-size (.-byteLength font-array-buffer)
+          size (+ font-array-buffer-size family-name-size)
+          ptr  (h/call internal-module "_alloc_bytes" size)
+          family-name-ptr (+ ptr font-array-buffer-size)
+          heap (gobj/get ^js internal-module "HEAPU8")
+          mem  (js/Uint8Array. (.-buffer heap) ptr size)]
+      (.set mem (js/Uint8Array. font-array-buffer))
+      (h/call internal-module "stringToUTF8" family-name family-name-ptr family-name-size)
+      (h/call internal-module "_store_font" family-name-size font-array-buffer-size)))
+
+;; This doesn't work
+#_(store-font-url "roboto-thin-italic" "https://fonts.gstatic.com/s/roboto/v32/KFOiCnqEu92Fr1Mu51QrEzAdLw.woff2")
+;; This does
+#_(store-font-url "sourcesanspro-regular" "http://localhost:3449/fonts/sourcesanspro-regular.ttf")
+;; Do not remove, this is going to be useful
+;; when we implement text rendering.
+#_(defn- store-font-url
+    [family-name font-url]
+    (-> (p/then (js/fetch font-url)
+                (fn [response] (.arrayBuffer response)))
+        (p/then (fn [array-buffer] (store-font family-name array-buffer)))))
 
 (defn- store-image
   [id]
@@ -302,15 +358,43 @@
                 (h/call internal-module "_add_shape_stroke_solid_fill" rgba)))))
         strokes))
 
+(defn serialize-path-attrs
+  [svg-attrs]
+  (reduce
+   (fn [acc [key value]]
+     (str/concat
+      acc
+      (str/kebab key) "\0"
+      value "\0")) "" svg-attrs))
+
+(defn set-shape-path-attrs
+  [attrs]
+  (let [style (:style attrs)
+        attrs (-> attrs
+                  (dissoc :style)
+                  (merge style))
+        str   (serialize-path-attrs attrs)
+        size  (count str)
+        ptr   (h/call internal-module "_alloc_bytes" size)]
+    (h/call internal-module "stringToUTF8" str ptr size)
+    (h/call internal-module "_set_shape_path_attrs" (count attrs))))
+
 (defn set-shape-path-content
   [content]
-  (let [buffer (path/content->buffer content)
-        size (.-byteLength buffer)
-        ptr (h/call internal-module "_alloc_bytes" size)
+  (let [buffer    (path/content->buffer content)
+        size      (.-byteLength buffer)
+        ptr       (h/call internal-module "_alloc_bytes" size)
         heap      (gobj/get ^js internal-module "HEAPU8")
         mem       (js/Uint8Array. (.-buffer heap) ptr size)]
     (.set mem (js/Uint8Array. buffer))
     (h/call internal-module "_set_shape_path_content")))
+
+(defn set-shape-svg-raw-content
+  [content]
+  (let [size (get-string-length content)
+        ptr (h/call internal-module "_alloc_bytes" size)]
+    (h/call internal-module "stringToUTF8" content ptr size)
+    (h/call internal-module "_set_shape_svg_raw_content")))
 
 (defn- translate-blend-mode
   [blend-mode]
@@ -427,7 +511,8 @@
                                   (dm/get-prop shape :r2)
                                   (dm/get-prop shape :r3)
                                   (dm/get-prop shape :r4)])
-                  bool-content (dm/get-prop shape :bool-content)]
+                  bool-content (dm/get-prop shape :bool-content)
+                  svg-attrs    (dm/get-prop shape :svg-attrs)]
 
               (use-shape id)
               (set-shape-type type)
@@ -436,12 +521,16 @@
               (set-shape-rotation rotation)
               (set-shape-transform transform)
               (set-shape-blend-mode blend-mode)
-              (set-shape-children children)
               (set-shape-opacity opacity)
               (set-shape-hidden hidden)
+              (set-shape-children children)
               (when (some? blur)
                 (set-shape-blur blur))
-              (when (and (some? content) (= type :path)) (set-shape-path-content content))
+              (when (and (some? content) (= type :path))
+                (set-shape-path-attrs svg-attrs)
+                (set-shape-path-content content))
+              (when (and (some? content) (= type :svg-raw))
+                (set-shape-svg-raw-content (get-static-markup shape)))
               (when (some? bool-content) (set-shape-bool-content bool-content))
               (when (some? corners) (set-shape-corners corners))
               (let [pending' (concat (set-shape-fills fills) (set-shape-strokes strokes))]
