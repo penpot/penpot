@@ -405,6 +405,14 @@ where users will access the application:
 PENPOT_PUBLIC_URI: http://localhost:9001
 ```
 
+<p class="advice">
+    If you plan to serve Penpot under different domain than `localhost` without HTTPS,
+    you need to disable the `secure` flag on cookies, with the `disable-secure-session-cookies` flag.
+    This is a configuration NOT recommended for production environments.
+</p>
+
+Check all the [flags](#other-flags) to fully customize your instance.
+
 ## Frontend ##
 
 In comparison with backend, frontend only has a small number of runtime configuration
@@ -424,8 +432,8 @@ To connect the frontend to the exporter and backend, you need to fill out these 
 
 ```bash
 # Frontend
-PENPOT_BACKEND_URI: http://your-penpot-backend
-PENPOT_EXPORTER_URI: http://your-penpot-exporter
+PENPOT_BACKEND_URI: http://your-penpot-backend:6060
+PENPOT_EXPORTER_URI: http://your-penpot-exporter:6061
 ```
 
 These variables are used for generate correct nginx.conf file on container startup.
@@ -480,3 +488,4 @@ __Since version 2.0.0__
 [2]: /technical-guide/getting-started#configure-penpot-with-docker
 [3]: /technical-guide/developer/common#dev-environment
 [4]: https://github.com/penpot/penpot/blob/main/docker/images/files/nginx.conf
+
