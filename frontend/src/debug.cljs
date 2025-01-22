@@ -193,8 +193,10 @@
 
 (defn ^:export dump-selected
   []
-  (logjs "selected" (get-selected @st/state))
-  nil)
+  (let [objects (dsh/lookup-page-objects @st/state)
+        result  (->> (get-selected @st/state) (map #(get objects %)))]
+    (logjs "selected" result)
+    nil))
 
 (defn ^:export preview-selected
   []
