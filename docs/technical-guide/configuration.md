@@ -424,8 +424,8 @@ To connect the frontend to the exporter and backend, you need to fill out these 
 
 ```bash
 # Frontend
-PENPOT_BACKEND_URI: http://your-penpot-backend
-PENPOT_EXPORTER_URI: http://your-penpot-exporter
+PENPOT_BACKEND_URI: http://your-penpot-backend:6060
+PENPOT_EXPORTER_URI: http://your-penpot-exporter:6061
 ```
 
 These variables are used for generate correct nginx.conf file on container startup.
