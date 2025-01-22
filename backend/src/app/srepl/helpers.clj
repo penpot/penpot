@@ -8,17 +8,14 @@
   "A  main namespace for server repl."
   (:refer-clojure :exclude [parse-uuid])
   (:require
+   [app.binfile.common :refer [update-file! decode-file]]
    [app.common.data :as d]
-   [app.common.files.migrations :as fmg]
    [app.common.files.validate :as cfv]
    [app.db :as db]
    [app.features.components-v2 :as feat.comp-v2]
-   [app.features.fdata :as feat.fdata]
    [app.main :as main]
    [app.rpc.commands.files :as files]
-   [app.rpc.commands.files-snapshot :as fsnap]
-   [app.util.blob :as blob]
-   [app.util.pointer-map :as pmap]))
+   [app.rpc.commands.files-snapshot :as fsnap]))
 
 (def ^:dynamic *system* nil)
 
@@ -35,49 +32,21 @@
 
 (defn get-file
   "Get the migrated data of one file."
-  ([id] (get-file (or *system* main/system) id nil))
-  ([system id & {:keys [raw?] :as opts}]
+  ([id]
+   (get-file (or *system* main/system) id))
+  ([system id]
    (db/run! system
             (fn [system]
-              (let [file (files/get-file system id :migrate? false)]
-                (if raw?
-                  file
-                  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer system id)]
-                    (-> file
-                        (update :data feat.fdata/process-pointers deref)
-                        (update :data feat.fdata/process-objects (partial into {}))
-                        (fmg/migrate-file)))))))))
+              (->> (files/get-file system id :migrate? false)
+                   (decode-file system))))))
 
-(defn update-file!
-  [system {:keys [id] :as file}]
-  (let [conn (db/get-connection system)
-        file (if (contains? (:features file) "fdata/objects-map")
-               (feat.fdata/enable-objects-map file)
-               file)
-
-        file (if (contains? (:features file) "fdata/pointer-map")
-               (binding [pmap/*tracked* (pmap/create-tracked)]
-                 (let [file (feat.fdata/enable-pointer-map file)]
-                   (feat.fdata/persist-pointers! system id)
-                   file))
-               file)
-
-        file (-> file
-                 (update :features db/encode-pgarray conn "text")
-                 (update :data blob/encode))]
-
-    (db/update! conn :file
-                {:revn (:revn file)
-                 :data (:data file)
-                 :version (:version file)
-                 :features (:features file)
-                 :deleted-at (:deleted-at file)
-                 :created-at (:created-at file)
-                 :modified-at (:modified-at file)
-                 :data-backend nil
-                 :data-ref-id nil
-                 :has-media-trimmed false}
-                {:id (:id file)})))
+(defn get-raw-file
+  "Get the migrated data of one file."
+  ([id] (get-raw-file (or *system* main/system) id))
+  ([system id]
+   (db/run! system
+            (fn [system]
+              (files/get-file system id :migrate? false)))))
 
 (defn update-team!
   [system {:keys [id] :as team}]
@@ -89,14 +58,6 @@
                 params
                 {:id id})
     team))
-
-(defn get-raw-file
-  "Get the migrated data of one file."
-  ([id] (get-raw-file (or *system* main/system) id))
-  ([system id]
-   (db/run! system
-            (fn [system]
-              (files/get-file system id :migrate? false)))))
 
 (defn reset-file-data!
   "Hardcode replace of the data of one file."
@@ -167,7 +128,7 @@
     (fsnap/create-file-snapshot! system nil file-id label))
 
   (let [conn  (db/get-connection system)
-        file  (get-file system file-id opts)
+        file  (get-file system file-id)
         libs  (when with-libraries?
                 (->> (files/get-file-libraries conn file-id)
                      (into [file] (map (fn [{:keys [id]}]
@@ -180,7 +141,9 @@
 
     (when (and (some? file')
                (not (identical? file file')))
-      (when validate? (cfv/validate-file-schema! file'))
+      (when validate?
+        (cfv/validate-file-schema! file'))
+
       (let [file' (update file' :revn inc)]
         (update-file! system file')
         true))))

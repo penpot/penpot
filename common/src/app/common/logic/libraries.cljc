@@ -187,22 +187,28 @@
    (generate-instantiate-component changes objects file-id component-id position page libraries nil nil nil {}))
 
   ([changes objects file-id component-id position page libraries old-id parent-id frame-id
-    {:keys [force-frame?]
-     :or {force-frame? false}}]
+    {:keys [force-frame? remap-media-refs?]
+     :or {force-frame? false
+          remap-media-refs? false}}]
    (let [component     (ctf/get-component libraries file-id component-id)
          parent        (when parent-id (get objects parent-id))
          library       (get libraries file-id)
 
          components-v2 (dm/get-in library [:data :options :components-v2])
 
-         [new-shape new-shapes]
+         [new-shape new-shapes new-media-refs]
          (ctn/make-component-instance page
                                       component
                                       (:data library)
                                       position
                                       components-v2
                                       (cond-> {}
-                                        force-frame? (assoc :force-frame-id frame-id)))
+                                        force-frame?
+                                        (assoc :force-frame-id frame-id)
+
+                                        remap-media-refs?
+                                        (assoc :remap-media-refs? true)))
+
 
          first-shape (cond-> (first new-shapes)
                        (not (nil? parent-id))
@@ -241,7 +247,12 @@
 
          changes (reduce #(pcb/add-object %1 %2 {:ignore-touched true})
                          changes
-                         (rest new-shapes))]
+                         (rest new-shapes))
+
+
+         changes (reduce #(pcb/add-media-ref %1 (:page-id %2) (:shape-id %2) (:id %2))
+                         changes
+                         new-media-refs)]
 
      [new-shape changes])))
 

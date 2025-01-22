@@ -11,9 +11,8 @@
   inactivity (the default threshold is 72h)."
   (:require
    [app.binfile.common :as bfc]
-   [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.files.migrations :as fmg]
+   [app.common.files.helpers :as cfh]
    [app.common.files.validate :as cfv]
    [app.common.logging :as l]
    [app.common.thumbnails :as thc]
@@ -24,8 +23,6 @@
    [app.db :as db]
    [app.features.fdata :as feat.fdata]
    [app.storage :as sto]
-   [app.util.blob :as blob]
-   [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
    [app.worker :as wrk]
    [integrant.core :as ig]))
@@ -33,21 +30,20 @@
 (def ^:private xf:map-id (map :id))
 
 (declare get-file)
-(declare decode-file)
-(declare persist-file!)
 
-(def ^:private sql:get-snapshots
-  "SELECT f.file_id AS id,
-          f.data,
-          f.revn,
-          f.version,
-          f.features,
-          f.data_backend,
-          f.data_ref_id
-     FROM file_change AS f
-    WHERE f.file_id = ?
-      AND f.data IS NOT NULL
-    ORDER BY f.created_at ASC")
+(def sql:get-snapshots
+  "SELECT fc.file_id AS id,
+          fc.id AS snapshot_id,
+          fc.data,
+          fc.revn,
+          fc.version,
+          fc.features,
+          fc.data_backend,
+          fc.data_ref_id
+     FROM file_change AS fc
+    WHERE fc.file_id = ?
+      AND fc.data IS NOT NULL
+    ORDER BY fc.created_at ASC")
 
 (def ^:private sql:mark-file-media-object-deleted
   "UPDATE file_media_object
@@ -55,16 +51,16 @@
     WHERE file_id = ? AND id != ALL(?::uuid[])
    RETURNING id")
 
-(def ^:private xf:collect-used-media
+(def xf:collect-used-media
   (comp
    (map :data)
-   (mapcat bfc/collect-used-media)))
+   (mapcat cfh/collect-used-media)))
 
 (defn- clean-file-media!
   "Performs the garbage collection of file media objects."
   [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
   (let [xform  (comp
-                (map (partial decode-file cfg))
+                (map (partial bfc/decode-file cfg))
                 xf:collect-used-media)
 
         used   (->> (db/plan conn [sql:get-snapshots id])
@@ -172,7 +168,7 @@
 
         used-remote
         (->> (db/plan conn [sql:get-files-for-library file-id])
-             (transduce (comp (map (partial decode-file cfg)) xform) conj #{}))
+             (transduce (comp (map (partial bfc/decode-file cfg)) xform) conj #{}))
 
         used-local
         (into #{} xform [file])
@@ -259,69 +255,14 @@
     (->> (db/exec! conn [sql:get-file min-age file-id])
          (first))))
 
-(defn decode-file
-  "A general purpose file decoding function that resolves all external
-  pointers and return plain vanilla file map"
-  [cfg {:keys [id] :as file}]
-  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
-    (-> (feat.fdata/resolve-file-data cfg file)
-        (update :features db/decode-pgarray #{})
-        (update :data blob/decode)
-        (update :data feat.fdata/process-pointers deref)
-        (update :data feat.fdata/process-objects (partial into {}))
-        (update :data assoc :id id)
-        (fmg/migrate-file))))
-
-(defn persist-file!
-  "A general purpose file persistence function, it used for this task
-  but it also used externally for the same purpose"
-  [{:keys [::db/conn ::sto/storage] :as cfg} {:keys [id] :as file}]
-  (let [file (if (contains? (:features file) "fdata/objects-map")
-               (feat.fdata/enable-objects-map file)
-               file)
-
-        file (if (contains? (:features file) "fdata/pointer-map")
-               (binding [pmap/*tracked* (pmap/create-tracked)]
-                 (let [file (feat.fdata/enable-pointer-map file)]
-                   (feat.fdata/persist-pointers! cfg id)
-                   file))
-               file)
-
-        file (-> file
-                 (update :features db/encode-pgarray conn "text")
-                 (update :data blob/encode))]
-
-    ;; If file was already offloaded, we touch the underlying storage
-    ;; object for properly trigger storage-gc-touched task
-    (when (feat.fdata/offloaded? file)
-      (some->> (:data-ref-id file) (sto/touch-object! storage)))
-
-    (let [params {:has-media-trimmed (:has-media-trimmed file)
-                  :features (:features file)
-                  :version (:version file)
-                  :data (:data file)
-                  :deleted-at (:deleted-at file)
-                  :created-at (:created-at file)
-                  :modified-at (:modified-at file)
-                  :revn (:revn file)
-                  :vern (:vern file)}
-
-          params (-> (d/without-nils params)
-                     (assoc :data-backend nil)
-                     (assoc :data-ref-id nil))]
-
-      (db/update! conn :file params
-                  {:id id}
-                  {::db/return-keys false}))))
-
 (defn- process-file!
   [cfg file-id]
   (if-let [file (get-file cfg file-id)]
     (let [file (->> file
-                    (decode-file cfg)
+                    (bfc/decode-file cfg)
                     (clean-media! cfg)
                     (clean-fragments! cfg))]
-      (persist-file! cfg file)
+      (bfc/update-file! cfg file)
       true)
 
     (do

@@ -352,12 +352,16 @@
   Warnign: This process does not remap media references (on fills, strokes, ...); that is
   delegated to an async process on the backend side that checks unreferenced shapes and
   automatically creates correct references."
-  ([container component library-data position components-v2]
-   (make-component-instance container component library-data position components-v2 {}))
+  ([page component library-data position components-v2]
+   (make-component-instance page component library-data position components-v2 {}))
 
-  ([container component library-data position components-v2
-    {:keys [main-instance? force-id force-frame-id keep-ids?]
-     :or {main-instance? false force-id nil force-frame-id nil keep-ids? false}}]
+  ([page component library-data position components-v2
+    {:keys [main-instance? force-id force-frame-id keep-ids? remap-media-refs?]
+     :or {main-instance? false
+          force-id nil
+          force-frame-id nil
+          keep-ids? false
+          remap-media-refs? false}}]
    (let [component-page  (when components-v2
                            (ctpl/get-page library-data (:main-instance-page component)))
 
@@ -372,7 +376,7 @@
                                     (:y component-shape))
          delta           (gpt/subtract position orig-pos)
 
-         objects         (:objects container)
+         objects         (:objects page)
          unames          (volatile! (cfh/get-used-names objects))
 
          component-children
@@ -389,8 +393,16 @@
                                                                           (nil? (get component-children (:id %)))
                                                                           ;; We must avoid that destiny frame is inside a copy
                                                                           (not (ctk/in-component-copy? %)))}))
-         frame           (get-shape container frame-id)
+         frame           (get-shape page frame-id)
          component-frame (get-component-shape objects frame {:allow-main? true})
+
+         assets-refs     (volatile! #{})
+         page-id         (get page :id)
+
+         lookup-asset
+         (fn [shape-id media-id]
+           (vswap! assets-refs conj {:shape-id shape-id :page-id page-id :id media-id})
+           media-id)
 
          ;; This map stores the relation between old shapes (present on the main
          ;; component) and the new shape-ids (created on this instantiation process). This
@@ -412,6 +424,9 @@
                :always
                (-> (gsh/move delta)
                    (dissoc :touched))
+
+               remap-media-refs?
+               (cfh/relink-media-refs (partial lookup-asset (:id new-shape)))
 
                (and main-instance? root?)
                (assoc :main-instance true)
@@ -445,7 +460,7 @@
                            :force-id force-id
                            :keep-ids? keep-ids?
                            :frame-id frame-id
-                           :dest-objects (:objects container))
+                           :dest-objects (:objects page))
 
          ;; Fix empty parent-id and remap all grid cells to the new ids.
          remap-ids
@@ -457,7 +472,8 @@
                (ctl/remap-grid-cells @ids-map))))]
 
      [(remap-ids new-shape)
-      (map remap-ids new-shapes)])))
+      (map remap-ids new-shapes)
+      @assets-refs])))
 
 (defn get-first-not-copy-parent
   "Go trough the parents until we find a shape that is not a copy of a component."

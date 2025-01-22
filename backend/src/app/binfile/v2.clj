@@ -167,7 +167,7 @@
     (vswap! bfc/*state* (fn [state]
                           (-> state
                               (update :files conj file-id)
-                              (update :file-media-objects into bfc/xf-map-id media)
+                              (update :file-media-objects into bfc/xf:map-id media)
                               (bfc/collect-storage-objects thumbs)
                               (bfc/collect-storage-objects media))))
 
@@ -297,7 +297,7 @@
                         (set/difference (:features file)))]
       (vswap! bfc/*state* update :pending-to-migrate (fnil conj []) [feature (:id file)]))
 
-    (bfc/persist-file! cfg file))
+    (bfc/save-file! cfg file))
 
   (doseq [thumbnail (read-seq cfg :file-object-thumbnail file-id)]
     (let [thumbnail (-> thumbnail
