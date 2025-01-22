@@ -9,7 +9,6 @@
    [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon*]]
-   [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -97,15 +96,15 @@
 
 (defn token-pill-tooltip
   "Generates a tooltip for a given token."
-  [theme-token is-viewer shape token-type-props token half-applied]
-  (let [{:keys [name value resolved-value errors type]} token
+  [is-viewer shape token-type-props token half-applied no-valid-value ref-not-in-active-set]
+  (let [{:keys [name value resolved-value type]} token
         {:keys [title]} token-type-props
         applied-tokens (:applied-tokens shape)
         app-token-vals (set (vals applied-tokens))
         app-token-keys (keys applied-tokens)
         is-applied? (contains? app-token-vals name)
-        no-token-active (nil? theme-token)
-        errors? (or no-token-active (seq errors))
+
+
         applied-to (if half-applied
                      (partially-applied-attr app-token-keys is-applied? token-type-props)
                      (tr "labels.all"))
@@ -117,9 +116,12 @@
 
     (cond
       ;; If there are errors, show the appropriate message
-      errors? (if no-token-active
-                (tr "workspace.token-set.not-active")
-                (sd/humanize-errors token))
+      ref-not-in-active-set
+      (tr "workspace.token.ref-not-valid")
+
+      no-valid-value
+      (tr "workspace.token.value-not-valid")
+
       ;; If the token is applied and the user is a is-viewer, show the details
       (and is-applied? is-viewer)
       (->> [base-title
@@ -128,17 +130,29 @@
               (translate-and-format grouped-values)
               (str "- " title ": " applied-to))]
            (str/join "\n"))
+
       ;; Otherwise only show the base title
       :else base-title)))
 
+(defn contains-reference-value?
+  "Extracts the value between `{}` in a string and checks if it's in the provided vector."
+  [text values]
+  (let [match (second (re-find #"\{([^}]+)\}" text))]
+    (boolean (some #(= % match) values))))
+
 (mf/defc token-pill
   {::mf/wrap-props false}
-  [{:keys [on-click token theme-token full-applied on-context-menu half-applied selected-shapes token-type-props]}]
+  [{:keys [on-click token theme-token full-applied on-context-menu half-applied selected-shapes token-type-props active-theme-tokens]}]
   (let [{:keys [name value errors]} token
-
+        is-reference (some #(= % "{") value)
         can-edit? (:can-edit (deref refs/permissions))
+
         is-viewer (not can-edit?)
-        errors?   (and (seq errors) (seq (:errors theme-token)))
+        ref-not-in-active-set (and is-reference
+                                   (not (contains-reference-value? value  (keys active-theme-tokens))))
+        no-valid-value (seq errors)
+        errors?   (or ref-not-in-active-set
+                      no-valid-value)
         color     (when (seq (ctob/find-token-value-references value))
                     (wtt/resolved-value-hex theme-token))
         contains-path? (str/includes? name ".")
@@ -182,7 +196,7 @@
          (mf/deps selected-shapes is-viewer)
          (fn [event]
            (let [node (dom/get-current-target event)
-                 title (token-pill-tooltip theme-token is-viewer (first selected-shapes) token-type-props token half-applied)]
+                 title (token-pill-tooltip  is-viewer (first selected-shapes) token-type-props token half-applied no-valid-value ref-not-in-active-set)]
              (dom/set-attribute! node "title" title))))]
 
     [:button {:class (stl/css-case :token-pill true

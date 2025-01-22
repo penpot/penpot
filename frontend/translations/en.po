@@ -6318,7 +6318,6 @@ msgstr "You currently have no themes."
 msgid "workspace.token.num-sets"
 msgstr "%s sets"
 
-
 #: src/app/main/ui/workspace/tokens/form.cljs:55
 msgid "workspace.token.token-name-validation-error"
 msgstr " is not a valid token name.
@@ -6356,6 +6355,14 @@ msgstr "Themes"
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:47
 msgid "workspace.token-set.not-active"
 msgstr "Token set is not active"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs
+msgid "workspace.token.value-not-valid"
+msgstr "The value is not valid"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs
+msgid "workspace.token.ref-not-valid"
+msgstr "Reference is not valid or is not in any active set"
 
 #: src/app/main/ui/workspace/sidebar.cljs:117, src/app/main/ui/workspace/sidebar.cljs:126
 msgid "workspace.toolbar.assets"
