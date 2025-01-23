@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.5.0
+## 2.5.0 (Unreleased)
 
 ### :rocket: Epics and highlights
 
@@ -22,6 +22,15 @@
 - Fix error when reseting stroke cap
 - Fix problem with strokes not refreshing in Safari [Taiga #9040](https://tree.taiga.io/project/penpot/issue/9040)
 
+
+## 2.4.3 (Unreleased)
+
+### :bug: Bugs fixed
+
+- Fix errors from editable select on measures menu [Taiga #9888](https://tree.taiga.io/project/penpot/issue/9888)
+- Fix exception on importing some templates from templates slider
+
+
 ## 2.4.2
 
 ### :bug: Bugs fixed
@@ -32,12 +41,14 @@
 - Fix missing methods reference on API Docs
 - Fix memory usage issue on file-gc asynchronous task (related to snapshots feature)
 
+
 ## 2.4.1
 
 ### :bug: Bugs fixed
 
 - Fix error when importing files with touched components [Taiga #9625](https://tree.taiga.io/project/penpot/issue/9625)
 - Fix problem when changing color libraries [Plugins #184](https://github.com/penpot/penpot-plugins/issues/184)
+
 
 ## 2.4.0
 

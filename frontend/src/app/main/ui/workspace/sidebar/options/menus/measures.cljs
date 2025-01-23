@@ -12,7 +12,6 @@
    [app.common.logic.shapes :as cls]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
-   [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [size-presets]]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.interactions :as dwi]
@@ -24,15 +23,10 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-   [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.menus.border-radius :refer  [border-radius-menu]]
-   [app.main.ui.workspace.tokens.core :as wtc]
-   [app.main.ui.workspace.tokens.editable-select :refer [editable-select]]
-   [app.main.ui.workspace.tokens.style-dictionary :as sd]
-   [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [clojure.set :as set]
@@ -101,9 +95,7 @@
   {::mf/props :obj
    ::mf/wrap [mf/memo]}
   [{:keys [ids ids-with-children values type all-types shape]}]
-  (let [design-tokens? (mf/use-ctx muc/design-tokens)
-
-        options
+  (let [options
         (mf/with-memo [type all-types]
           (if (= type :multiple)
             (into #{} (mapcat type->options) all-types)
@@ -124,27 +116,6 @@
 
         selection-parents-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
         selection-parents     (mf/deref selection-parents-ref)
-
-        tokens (sd/use-active-theme-sets-tokens)
-        tokens-by-type (mf/use-memo
-                        (mf/deps tokens)
-                        #(ctob/group-by-type tokens))
-
-        sizing-tokens (:sizing tokens-by-type)
-        width-options (mf/use-memo
-                       (mf/deps shape sizing-tokens)
-                       #(wtc/tokens->select-options
-                         {:shape shape
-                          :tokens sizing-tokens
-                          :attributes (wtty/token-attributes :sizing)
-                          :selected-attributes #{:width}}))
-        height-options (mf/use-memo
-                        (mf/deps shape sizing-tokens)
-                        #(wtc/tokens->select-options
-                          {:shape shape
-                           :tokens sizing-tokens
-                           :attributes (wtty/token-attributes :sizing)
-                           :selected-attributes #{:height}}))
 
         flex-child?       (->> selection-parents (some ctl/flex-layout?))
         absolute?         (ctl/item-absolute? shape)
@@ -252,22 +223,9 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value attr]
-           (let [token-value (wtc/maybe-resolve-token-value value)
-                 undo-id (js/Symbol)]
-             (binding [cts/*wasm-sync* true]
-               (if-not design-tokens?
-                 (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                           (udw/update-dimensions ids attr (or token-value value)))
-                 (st/emit! (udw/trigger-bounding-box-cloaking ids)
-                           (dwu/start-undo-transaction undo-id)
-                           (dwsh/update-shapes ids
-                                               (if token-value
-                                                 #(assoc-in % [:applied-tokens attr] (:id value))
-                                                 #(d/dissoc-in % [:applied-tokens attr]))
-                                               {:reg-objects? true
-                                                :attrs [:applied-tokens]})
-                           (udw/update-dimensions ids attr (or token-value value))
-                           (dwu/commit-undo-transaction undo-id)))))))
+           (binding [cts/*wasm-sync* true]
+             (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                       (udw/update-dimensions ids attr value)))))
 
         on-proportion-lock-change
         (mf/use-fn
@@ -392,50 +350,24 @@
                                     :disabled disabled-width-sizing?)
                :title (tr "workspace.options.width")}
          [:span {:class (stl/css :icon-text)} "W"]
-         (if-not design-tokens?
-           [:> numeric-input* {:min 0.01
-                               :no-validate true
-                               :placeholder (if (= :multiple (:width values)) (tr "settings.multiple") "--")
-                               :on-change on-width-change
-                               :disabled disabled-width-sizing?
-                               :class (stl/css :numeric-input)
-                               :value (:width values)}]
-           [:& editable-select
-            {:placeholder (if (= :multiple (:r1 values)) (tr "settings.multiple") "--")
-             :class (stl/css :token-select)
-             :disabled disabled-width-sizing?
-             :on-change on-width-change
-             :on-token-remove #(on-width-change (wtc/maybe-resolve-token-value %))
-             :options width-options
-             :position :left
-             :value (:width values)
-             :input-props {:type "number"
-                           :no-validate true
-                           :min 0.01}}])]
+         [:> numeric-input* {:min 0.01
+                             :no-validate true
+                             :placeholder (if (= :multiple (:width values)) (tr "settings.multiple") "--")
+                             :on-change on-width-change
+                             :disabled disabled-width-sizing?
+                             :class (stl/css :numeric-input)
+                             :value (:width values)}]]
         [:div {:class (stl/css-case :height true
                                     :disabled disabled-height-sizing?)
                :title (tr "workspace.options.height")}
          [:span {:class (stl/css :icon-text)} "H"]
-         (if-not design-tokens?
-           [:> numeric-input* {:min 0.01
-                               :no-validate true
-                               :placeholder (if (= :multiple (:height values)) (tr "settings.multiple") "--")
-                               :on-change on-height-change
-                               :disabled disabled-height-sizing?
-                               :class (stl/css :numeric-input)
-                               :value (:height values)}]
-           [:& editable-select
-            {:placeholder (if (= :multiple (:r1 values)) (tr "settings.multiple") "--")
-             :class (stl/css :token-select)
-             :disabled disabled-height-sizing?
-             :on-change on-height-change
-             :on-token-remove #(on-height-change (wtc/maybe-resolve-token-value %))
-             :options height-options
-             :position :right
-             :value (:height values)
-             :input-props {:type "number"
-                           :no-validate true
-                           :min 0.01}}])]
+         [:> numeric-input* {:min 0.01
+                             :no-validate true
+                             :placeholder (if (= :multiple (:height values)) (tr "settings.multiple") "--")
+                             :on-change on-height-change
+                             :disabled disabled-height-sizing?
+                             :class (stl/css :numeric-input)
+                             :value (:height values)}]]
         [:button {:class (stl/css-case
                           :lock-size-btn true
                           :selected (true? proportion-lock)

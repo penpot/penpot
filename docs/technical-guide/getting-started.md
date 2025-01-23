@@ -227,6 +227,9 @@ docker compose -f docker-compose.yaml pull
 
 This will fetch the latest images. When you do <code class="language-bash">docker compose up</code> again, the containers will be recreated with the latest version.
 
+<p class="advice">
+    It is strongly recommended to update the Penpot version in small increments, rather than updating between two distant versions.
+</p>
 
 **Important: Upgrade from version 1.x to 2.0**
 

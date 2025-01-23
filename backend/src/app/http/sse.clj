@@ -64,7 +64,8 @@
                           (catch Throwable cause
                             (events/tap :error (errors/handle' cause request))
                             (when-not (ex/instance? java.io.EOFException cause)
-                              (l/err :hint "unexpected error on processing sse response" :cause cause)))
+                              (binding [l/*context* (errors/request->context request)]
+                                (l/err :hint "unexpected error on processing sse response" :cause cause))))
                           (finally
                             (sp/close! events/*channel*)
                             (px/await! listener)))))))}))
