@@ -6,6 +6,33 @@
 
 ### :boom: Breaking changes & Deprecations
 
+Although this is not a breaking change, we believe it’s important to highlight it in this
+section:
+
+This release includes a fix for an internal bug in Penpot that caused incorrect handling
+of media assets (e.g., fill images). The issue has been resolved since version 2.4.3, so
+no new incorrect references will be generated. However, existing files may still contain
+incorrect references.
+
+To address this, we’ve provided a script to correct these references in existing files.
+
+While having incorrect references generally doesn’t result in visible issues, there are
+rare cases where it can cause problems. For example, if a component library (containing
+images) is deleted, and that library is being used in other files, running the FileGC task
+(responsible for freeing up space and performing logical deletions) could leave those
+files with broken references to the images.
+
+To execute script:
+
+```bash
+docker exec -ti <container-name-or-id> ./run.sh app.migrations.media-refs '{:max-jobs 1}'
+```
+
+If you have a big database and many cores available, you can reduce the time of processing
+all files by increasing paralelizacion changing the `max-jobs` value from 1 to N (where N
+is a number of cores)
+
+
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features
