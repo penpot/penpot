@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.common :as dcm]
+   [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -33,6 +34,7 @@
    [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab]]
    [app.util.debug :as dbg]
    [app.util.i18n :refer [tr]]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 ;; --- Left Sidebar (Component)
@@ -87,7 +89,11 @@
         (mf/use-fn #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))
 
         on-tab-change
-        (mf/use-fn #(st/emit! (dcm/go-to-workspace :layout (keyword %))))
+        (mf/use-fn
+         (fn [id]
+           (when (= id "tokens")
+             (st/emit! (ptk/event ::ev/event {::ev/name "open-tokens-tab"})))
+           (st/emit! (dcm/go-to-workspace :layout (keyword id)))))
 
         layers-tab
         (mf/html

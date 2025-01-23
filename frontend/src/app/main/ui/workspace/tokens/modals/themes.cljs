@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
@@ -26,6 +27,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc empty-themes
@@ -208,7 +210,11 @@
   (let [{:keys [dropdown-open? _on-open-dropdown on-close-dropdown on-toggle-dropdown]} (wtco/use-dropdown-open-state)
         theme (ctob/make-token-theme :name "")
         on-back #(set-state (constantly {:type :themes-overview}))
-        on-submit #(st/emit! (wdt/create-token-theme %))
+        on-submit (mf/use-fn
+                   (fn [theme]
+                     (st/emit! (ptk/event ::ev/event {::ev/name "create-tokens-theme"}))
+                     (st/emit! (wdt/create-token-theme theme))))
+
         theme-state (mf/use-state theme)
         disabled? (-> (:name @theme-state)
                       (str/trim)

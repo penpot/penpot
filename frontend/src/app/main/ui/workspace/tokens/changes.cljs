@@ -9,6 +9,7 @@
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as wdc]
@@ -46,6 +47,7 @@
                       resolved-value (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value])
                       tokenized-attributes (wtt/attributes-map attributes token)]
                   (rx/of
+                   (st/emit! (ptk/event ::ev/event {::ev/name "apply-tokens"}))
                    (dwu/start-undo-transaction undo-id)
                    (dwsh/update-shapes shape-ids (fn [shape]
                                                    (cond-> shape
@@ -101,7 +103,7 @@
                        :attrs ctt/border-radius-keys}))
 
 (defn update-shape-radius-single-corner [value shape-ids attributes]
-  ;; NOTE: This key should be namespaced on data tokens, but these events are not there.  
+  ;; NOTE: This key should be namespaced on data tokens, but these events are not there.
   (st/emit! (ptk/data-event :expand-border-radius))
   (dwsh/update-shapes shape-ids
                       (fn [shape]

@@ -10,12 +10,14 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
+   [app.main.ui.components.dropdown-menu :refer [dropdown-menu
+                                                 dropdown-menu-item*]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -39,6 +41,7 @@
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [okulary.core :as l]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]
    [shadow.resource]))
 
@@ -108,6 +111,7 @@
                              (fn [event token]
                                (dom/stop-propagation event)
                                (when (seq selected-shapes)
+
                                  (st/emit!
                                   (wtch/toggle-token {:token token
                                                       :shapes selected-shapes
@@ -304,7 +308,7 @@
            (reset! show-menu* false)))
 
         input-ref (mf/use-ref)
-        on-option-click
+        on-display-file-explorer
         (mf/use-fn
          #(.click (mf/ref-val input-ref)))
 
@@ -314,6 +318,7 @@
             (->> (wapi/read-file-as-text file)
                  (sd/process-json-stream)
                  (rx/subs! (fn [lib]
+                             (st/emit! (ptk/event ::ev/event {::ev/name "import-tokens"}))
                              (st/emit! (dt/import-tokens-lib lib)))
                            (fn [err]
                              (js/console.error err)
@@ -323,6 +328,7 @@
                                                   :timeout 9000})))))
             (set! (.-value (mf/ref-val input-ref)) "")))
         on-export (fn []
+                    (st/emit! (ptk/event ::ev/event {::ev/name "export-tokens"}))
                     (let [tokens-json (some-> (deref refs/tokens-lib)
                                               (ctob/encode-dtcg)
                                               (clj->js)
@@ -347,7 +353,7 @@
                         :list-class (stl/css :import-export-menu)}
       (when can-edit?
         [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
-                                 :on-click on-option-click}
+                                 :on-click on-display-file-explorer}
          (tr "labels.import")])
 
       [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
