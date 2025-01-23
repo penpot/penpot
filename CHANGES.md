@@ -14,6 +14,7 @@
 - Shareable link pointing to an specific board.
 - Copy styles in CSS
 - Copy/paste shape styles (fills, strokes, shadows, etc..)
+- Resize board to fit content option
 
 ### :bug: Bugs fixed
 

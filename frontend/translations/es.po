@@ -5583,6 +5583,9 @@ msgstr "Tamaño"
 msgid "workspace.options.size-presets"
 msgstr "Tamaños predefinidos"
 
+msgid "workspace.options.fit-content"
+msgstr "Redimensionar para ajustar al contenido"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:43
 msgid "workspace.options.stroke"
 msgstr "Borde"

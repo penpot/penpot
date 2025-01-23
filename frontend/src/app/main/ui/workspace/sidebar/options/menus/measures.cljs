@@ -17,6 +17,7 @@
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -24,6 +25,7 @@
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.context :as muc]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.menus.border-radius :refer  [border-radius-menu]]
@@ -328,7 +330,12 @@
                  ;; interactions that navigate to it.
                (apply st/emit! (map #(dwi/remove-all-interactions-nav-to %) ids)))
 
-             (st/emit! (dwu/commit-undo-transaction undo-id)))))]
+             (st/emit! (dwu/commit-undo-transaction undo-id)))))
+
+        handle-fit-content
+        (mf/use-fn
+         (fn []
+           (st/emit! (dwt/selected-fit-content))))]
 
     [:div {:class (stl/css :element-set)}
      (when (and (options :presets)
@@ -372,7 +379,13 @@
                            :id "size-vertical"}]
          [:& radio-button {:icon i/size-horizontal
                            :value "horiz"
-                           :id "size-horizontal"}]]])
+                           :id "size-horizontal"}]]
+        [:> icon-button*
+         {:variant "ghost"
+          :aria-label (tr "workspace.options.fit-content")
+          :title (tr "workspace.options.fit-content")
+          :on-pointer-down handle-fit-content
+          :icon "fit-content"}]])
      (when (options :size)
        [:div {:class (stl/css :size)}
         [:div {:class (stl/css-case :width true

@@ -5550,6 +5550,9 @@ msgstr "Size"
 msgid "workspace.options.size-presets"
 msgstr "Size presets"
 
+msgid "workspace.options.fit-content"
+msgstr "Resize board to fit content"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:43
 msgid "workspace.options.stroke"
 msgstr "Stroke"

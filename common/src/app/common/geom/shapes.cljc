@@ -14,6 +14,7 @@
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.constraints :as gct]
    [app.common.geom.shapes.corners :as gsc]
+   [app.common.geom.shapes.fit-frame :as gsff]
    [app.common.geom.shapes.intersect :as gsi]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.transforms :as gtr]
@@ -166,6 +167,7 @@
 (dm/export gtr/update-group-selrect)
 (dm/export gtr/update-mask-selrect)
 (dm/export gtr/update-bool-selrect)
+(dm/export gtr/apply-transform)
 (dm/export gtr/transform-shape)
 (dm/export gtr/transform-selrect)
 (dm/export gtr/transform-selrect-matrix)
@@ -204,3 +206,6 @@
 
 ;; Rect
 (dm/export grc/rect->points)
+
+;;
+(dm/export gsff/fit-frame-modifiers)
