@@ -951,11 +951,11 @@
           (update-in [:dashboard-projects project-id :count] inc)))))
 
 (defn create-file
-  [{:keys [project-id name] :as params}]
+  [{:keys [project-id name origin] :as params}]
   (dm/assert! (uuid? project-id))
   (ptk/reify ::create-file
     ev/Event
-    (-data [_] {:project-id project-id})
+    (-data [_] {:project-id project-id :origin origin})
 
     ptk/WatchEvent
     (watch [it state _]
