@@ -338,15 +338,18 @@ impl RenderState {
                 }
             }
 
+            self.drawing_surface.canvas().restore();
+
             // draw all the children shapes
             if element.is_recursive() {
                 for id in element.children_ids() {
+                    self.drawing_surface.canvas().save();
                     is_complete = self.render_shape_tree(&id, tree) && is_complete;
+                    self.drawing_surface.canvas().restore();
                 }
             }
 
             self.final_surface.canvas().restore();
-            self.drawing_surface.canvas().restore();
 
             return is_complete;
         } else {
