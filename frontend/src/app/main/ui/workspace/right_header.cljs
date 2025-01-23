@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.right-header
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.config :as cf]
    [app.main.data.events :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as scd]
@@ -250,9 +249,7 @@
           :on-click toggle-history}
          i/history]])
 
-     (when (and
-            (not (:is-default team))
-            (cf/external-feature-flag "share-01" "test"))
+     (when  (not (:is-default team))
        [:a {:class (stl/css :viewer-btn)
             :title (tr "workspace.header.share")
             :on-click open-share-dialog}
