@@ -1616,7 +1616,7 @@
 
                 attr-group (get ctk/sync-attrs attr)
 
-                token-attrs (cto/shape-attr->token-attrs attr)
+                token-attrs (cto/shape-attr->token-attrs attr nil)
                 applied-tokens' (cond-> applied-tokens
                                   (not (and (touched attr-group)
                                             omit-touched?))
