@@ -29,10 +29,9 @@
 (mf/defc menu-entry
   {::mf/props :obj}
   [{:keys [title value on-click]}]
-  [:li
-   {:class (stl/css :context-menu-item)
-    :data-value value
-    :on-click on-click}
+  [:li {:class (stl/css :context-menu-item)
+        :data-value value
+        :on-click on-click}
    [:span {:class (stl/css :title)} title]])
 
 (mf/defc menu

@@ -142,6 +142,7 @@
                 :token-type-props token-type-props
                 :token token
                 :selected-shapes selected-shapes
+                :active-theme-tokens active-theme-tokens
                 :theme-token theme-token
                 :half-applied (or (and applied multiple-selection)
                                   (and applied (not full-applied)))

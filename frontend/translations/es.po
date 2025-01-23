@@ -6776,6 +6776,18 @@ msgstr "Temas"
 msgid "workspace.token-set.not-active"
 msgstr "El set de tokens no está aplicado"
 
+#: src/app/main/ui/workspace/tokens/token_pill.cljs
+msgid "workspace.token.applied-to"
+msgstr "Aplicado a"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs
+msgid "workspace.token.value-not-valid"
+msgstr "El valor no es válido"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs
+msgid "workspace.token.ref-not-valid"
+msgstr "La referencia no es válida o no se encuentra en ningún set activo."
+
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs
 msgid "workspace.token.theme-name"
 msgstr "Tema %s"

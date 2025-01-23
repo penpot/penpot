@@ -106,18 +106,20 @@
   --token-pill-outline: none;
   --token-pill-accent: var(--color-foreground-error);
 
-  &:focus-visible {
-    --token-pill-foreground: var(--color-foreground-error);
-  }
-  &:hover {
-    --token-pill-foreground: var(--color-foreground-primary);
-  }
   &:hover,
   &:focus-visible {
     --token-pill-background: var(--color-background-tertiary);
-    --token-pill-outline: var(--color-background-tertiary);
-    --token-pill-border: var(--color-accent-primary);
     --token-pill-accent: var(--color-foreground-error);
+  }
+  &:hover {
+    --token-pill-foreground: var(--color-foreground-primary);
+    --token-pill-outline: none;
+    --token-pill-border: var(--color-foreground-error);
+  }
+  &:focus-visible {
+    --token-pill-foreground: var(--color-foreground-error);
+    --token-pill-border: var(--color-accent-primary);
+    --token-pill-outline: var(--color-foreground-error);
   }
 }
 
