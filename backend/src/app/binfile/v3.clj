@@ -192,7 +192,7 @@
   (.closeEntry output))
 
 (defn- get-file
-  [{:keys [::embed-assets ::include-libraries] :as cfg} file-id]
+  [{:keys [::bfc/embed-assets ::bfc/include-libraries] :as cfg} file-id]
 
   (when (and include-libraries embed-assets)
     (throw (IllegalArgumentException.
@@ -330,7 +330,7 @@
         (write-entry! output path color)))))
 
 (defn- export-files
-  [{:keys [::ids ::include-libraries ::output] :as cfg}]
+  [{:keys [::bfc/ids ::bfc/include-libraries ::output] :as cfg}]
   (let [ids  (into ids (when include-libraries (bfc/get-libraries cfg ids)))
         rels (if include-libraries
                (->> (bfc/get-files-rels cfg ids)
@@ -509,7 +509,7 @@
     (json/read reader :key-fn json/read-kebab-key)))
 
 (defn- read-file
-  [{:keys [::input ::file-id]}]
+  [{:keys [::bfc/input ::file-id]}]
   (let [path  (str "files/" file-id ".json")
         entry (get-zip-entry input path)]
     (-> (read-entry input entry)
@@ -517,7 +517,7 @@
         (validate-file))))
 
 (defn- read-file-plugin-data
-  [{:keys [::input ::file-id]}]
+  [{:keys [::bfc/input ::file-id]}]
   (let [path  (str "files/" file-id "/plugin-data.json")
         entry (get-zip-entry* input path)]
     (some->> entry
@@ -526,7 +526,7 @@
              (validate-plugin-data))))
 
 (defn- read-file-media
-  [{:keys [::input ::file-id ::entries]}]
+  [{:keys [::bfc/input ::file-id ::entries]}]
   (->> (keep (match-media-entry-fn file-id) entries)
        (reduce (fn [result {:keys [id entry]}]
                  (let [object (->> (read-entry input entry)
@@ -540,7 +540,7 @@
        (not-empty)))
 
 (defn- read-file-colors
-  [{:keys [::input ::file-id ::entries]}]
+  [{:keys [::bfc/input ::file-id ::entries]}]
   (->> (keep (match-color-entry-fn file-id) entries)
        (reduce (fn [result {:keys [id entry]}]
                  (let [object (->> (read-entry input entry)
@@ -553,7 +553,7 @@
        (not-empty)))
 
 (defn- read-file-components
-  [{:keys [::input ::file-id ::entries]}]
+  [{:keys [::bfc/input ::file-id ::entries]}]
   (->> (keep (match-component-entry-fn file-id) entries)
        (reduce (fn [result {:keys [id entry]}]
                  (let [object (->> (read-entry input entry)
@@ -566,7 +566,7 @@
        (not-empty)))
 
 (defn- read-file-typographies
-  [{:keys [::input ::file-id ::entries]}]
+  [{:keys [::bfc/input ::file-id ::entries]}]
   (->> (keep (match-typography-entry-fn file-id) entries)
        (reduce (fn [result {:keys [id entry]}]
                  (let [object (->> (read-entry input entry)
@@ -579,7 +579,7 @@
        (not-empty)))
 
 (defn- read-file-shapes
-  [{:keys [::input ::file-id ::page-id ::entries] :as cfg}]
+  [{:keys [::bfc/input ::file-id ::page-id ::entries] :as cfg}]
   (->> (keep (match-shape-entry-fn file-id page-id) entries)
        (reduce (fn [result {:keys [id entry]}]
                  (let [object (->> (read-entry input entry)
@@ -592,7 +592,7 @@
        (not-empty)))
 
 (defn- read-file-pages
-  [{:keys [::input ::file-id ::entries] :as cfg}]
+  [{:keys [::bfc/input ::file-id ::entries] :as cfg}]
   (->> (keep (match-page-entry-fn file-id) entries)
        (keep (fn [{:keys [id entry]}]
                (let [page (->> (read-entry input entry)
@@ -608,7 +608,7 @@
                (d/ordered-map))))
 
 (defn- read-file-thumbnails
-  [{:keys [::input ::file-id ::entries] :as cfg}]
+  [{:keys [::bfc/input ::file-id ::entries] :as cfg}]
   (->> (keep (match-thumbnail-entry-fn file-id) entries)
        (reduce (fn [result {:keys [page-id frame-id tag entry]}]
                  (let [object (->> (read-entry input entry)
@@ -638,7 +638,7 @@
      :plugin-data plugin-data}))
 
 (defn- import-file
-  [{:keys [::db/conn ::project-id ::file-id ::file-name] :as cfg}]
+  [{:keys [::db/conn ::bfc/project-id ::file-id ::file-name] :as cfg}]
   (let [file-id'   (bfc/lookup-index file-id)
         file       (read-file cfg)
         media      (read-file-media cfg)
@@ -714,7 +714,7 @@
                      :library-file-id libr-id})))))
 
 (defn- import-storage-objects
-  [{:keys [::input ::entries ::bfc/timestamp] :as cfg}]
+  [{:keys [::bfc/input ::entries ::bfc/timestamp] :as cfg}]
   (events/tap :progress {:section :storage-objects})
 
   (let [storage (sto/resolve cfg)
@@ -810,7 +810,7 @@
                   {::db/on-conflict-do-nothing? (::bfc/overwrite cfg)}))))
 
 (defn- import-files
-  [{:keys [::bfc/timestamp ::input ::name] :or {timestamp (dt/now)} :as cfg}]
+  [{:keys [::bfc/timestamp ::bfc/input ::bfc/name] :or {timestamp (dt/now)} :as cfg}]
 
   (dm/assert!
    "expected zip file"
@@ -878,17 +878,17 @@
   "Do the exportation of a specified file in custom penpot binary
   format. There are some options available for customize the output:
 
-  `::include-libraries`: additionally to the specified file, all the
+  `::bfc/include-libraries`: additionally to the specified file, all the
   linked libraries also will be included (including transitive
   dependencies).
 
-  `::embed-assets`: instead of including the libraries, embed in the
+  `::bfc/embed-assets`: instead of including the libraries, embed in the
   same file library all assets used from external libraries."
 
-  [{:keys [::ids] :as cfg} output]
+  [{:keys [::bfc/ids] :as cfg} output]
 
   (dm/assert!
-   "expected a set of uuid's for `::ids` parameter"
+   "expected a set of uuid's for `::bfc/ids` parameter"
    (and (set? ids)
         (every? uuid? ids)))
 
@@ -930,14 +930,13 @@
                 :aborted @ab
                 :cause @cs)))))
 
-
 (defn import-files!
-  [{:keys [::input] :as cfg}]
+  [{:keys [::bfc/input] :as cfg}]
 
   (dm/assert!
    "expected valid profile-id and project-id on `cfg`"
-   (and (uuid? (::profile-id cfg))
-        (uuid? (::project-id cfg))))
+   (and (uuid? (::bfc/profile-id cfg))
+        (uuid? (::bfc/project-id cfg))))
 
   (dm/assert!
    "expected instance of jio/IOFactory for `input`"
@@ -950,7 +949,7 @@
     (l/info :hint "import: started" :id (str id))
     (try
       (with-open [input (ZipFile. (fs/file input))]
-        (import-files (assoc cfg ::input input)))
+        (import-files (assoc cfg ::bfc/input input)))
 
       (catch Throwable cause
         (vreset! cs cause)

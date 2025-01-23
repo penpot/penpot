@@ -54,6 +54,7 @@
                               (::setup/templates cfg))]
     (let [dest (fs/join fs/*cwd* "builtin-templates")
           path (or (:path template) (fs/join dest template-id))]
+
       (if (fs/exists? path)
         (io/input-stream path)
         (let [resp (http/req! cfg

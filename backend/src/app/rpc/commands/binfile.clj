@@ -7,6 +7,7 @@
 (ns app.rpc.commands.binfile
   (:refer-clojure :exclude [assert])
   (:require
+   [app.binfile.common :as bfc]
    [app.binfile.v1 :as bf.v1]
    [app.binfile.v3 :as bf.v3]
    [app.common.logging :as l]
@@ -46,9 +47,9 @@
    (fn [_ output-stream]
      (try
        (-> cfg
-           (assoc ::bf.v1/ids #{file-id})
-           (assoc ::bf.v1/embed-assets embed-assets)
-           (assoc ::bf.v1/include-libraries include-libraries)
+           (assoc ::bfc/ids #{file-id})
+           (assoc ::bfc/embed-assets embed-assets)
+           (assoc ::bfc/include-libraries include-libraries)
            (bf.v1/export-files! output-stream))
        (catch Throwable cause
          (l/err :hint "exception on exporting file"
@@ -61,9 +62,9 @@
    (fn [_ output-stream]
      (try
        (-> cfg
-           (assoc ::bf.v3/ids #{file-id})
-           (assoc ::bf.v3/embed-assets embed-assets)
-           (assoc ::bf.v3/include-libraries include-libraries)
+           (assoc ::bfc/ids #{file-id})
+           (assoc ::bfc/embed-assets embed-assets)
+           (assoc ::bfc/include-libraries include-libraries)
            (bf.v3/export-files! output-stream))
        (catch Throwable cause
          (l/err :hint "exception on exporting file"
@@ -93,10 +94,10 @@
 (defn- import-binfile-v1
   [{:keys [::wrk/executor] :as cfg} {:keys [project-id profile-id name file]}]
   (let [cfg (-> cfg
-                (assoc ::bf.v1/project-id project-id)
-                (assoc ::bf.v1/profile-id profile-id)
-                (assoc ::bf.v1/name name)
-                (assoc ::bf.v1/input (:path file)))]
+                (assoc ::bfc/project-id project-id)
+                (assoc ::bfc/profile-id profile-id)
+                (assoc ::bfc/name name)
+                (assoc ::bfc/input (:path file)))]
 
     ;; NOTE: the importation process performs some operations that are
     ;; not very friendly with virtual threads, and for avoid
@@ -107,10 +108,10 @@
 (defn- import-binfile-v3
   [{:keys [::wrk/executor] :as cfg} {:keys [project-id profile-id name file]}]
   (let [cfg (-> cfg
-                (assoc ::bf.v3/project-id project-id)
-                (assoc ::bf.v3/profile-id profile-id)
-                (assoc ::bf.v3/name name)
-                (assoc ::bf.v3/input (:path file)))]
+                (assoc ::bfc/project-id project-id)
+                (assoc ::bfc/profile-id profile-id)
+                (assoc ::bfc/name name)
+                (assoc ::bfc/input (:path file)))]
     ;; NOTE: the importation process performs some operations that are
     ;; not very friendly with virtual threads, and for avoid
     ;; unexpected blocking of other concurrent operations we dispatch

@@ -298,7 +298,7 @@
 (defmulti write-section ::section)
 
 (defn write-export!
-  [{:keys [::include-libraries ::embed-assets] :as cfg}]
+  [{:keys [::bfc/include-libraries ::bfc/embed-assets] :as cfg}]
   (when (and include-libraries embed-assets)
     (throw (IllegalArgumentException.
             "the `include-libraries` and `embed-assets` are mutally excluding options")))
@@ -323,7 +323,7 @@
             [:v1/metadata :v1/files :v1/rels :v1/sobjects]))))
 
 (defmethod write-section :v1/metadata
-  [{:keys [::output ::ids ::include-libraries] :as cfg}]
+  [{:keys [::output ::bfc/ids ::bfc/include-libraries] :as cfg}]
   (if-let [fids (get-files cfg ids)]
     (let [lids (when include-libraries
                  (bfc/get-libraries cfg ids))
@@ -335,7 +335,7 @@
               :hint "unable to retrieve files for export")))
 
 (defmethod write-section :v1/files
-  [{:keys [::output ::embed-assets ::include-libraries] :as cfg}]
+  [{:keys [::output ::bfc/embed-assets ::bfc/include-libraries] :as cfg}]
 
   ;; Initialize SIDS with empty vector
   (vswap! bfc/*state* assoc :sids [])
@@ -382,7 +382,7 @@
       (vswap! bfc/*state* update :sids into bfc/xf-map-media-id thumbnails))))
 
 (defmethod write-section :v1/rels
-  [{:keys [::output ::include-libraries] :as cfg}]
+  [{:keys [::output ::bfc/include-libraries] :as cfg}]
   (let [ids  (-> bfc/*state* deref :files set)
         rels (when include-libraries
                (bfc/get-files-rels cfg ids))]
@@ -421,15 +421,15 @@
 (defmulti read-import ::version)
 (defmulti read-section ::section)
 
-(s/def ::profile-id ::us/uuid)
-(s/def ::project-id ::us/uuid)
-(s/def ::input io/input-stream?)
+(s/def ::bfc/profile-id ::us/uuid)
+(s/def ::bfc/project-id ::us/uuid)
+(s/def ::bfc/input io/input-stream?)
 (s/def ::overwrite? (s/nilable ::us/boolean))
 (s/def ::ignore-index-errors? (s/nilable ::us/boolean))
 
 ;; FIXME: replace with schema
 (s/def ::read-import-options
-  (s/keys :req [::db/pool ::sto/storage ::project-id ::profile-id ::input]
+  (s/keys :req [::db/pool ::sto/storage ::bfc/project-id ::bfc/profile-id ::bfc/input]
           :opt [::overwrite? ::ignore-index-errors?]))
 
 (defn read-import!
@@ -439,7 +439,7 @@
 
   `::bfc/overwrite`: if true, instead of creating new files and remapping id references,
   it reuses all ids and updates existing objects; defaults to `false`."
-  [{:keys [::input ::bfc/timestamp] :or {timestamp (dt/now)} :as options}]
+  [{:keys [::bfc/input ::bfc/timestamp] :or {timestamp (dt/now)} :as options}]
 
   (dm/assert!
    "expected input stream"
@@ -453,7 +453,7 @@
     (read-import (assoc options ::version version ::bfc/timestamp timestamp))))
 
 (defn- read-import-v1
-  [{:keys [::db/conn ::project-id ::profile-id ::input] :as cfg}]
+  [{:keys [::db/conn ::bfc/project-id ::bfc/profile-id ::bfc/input] :as cfg}]
 
   (bfc/disable-database-timeouts! cfg)
 
@@ -473,7 +473,7 @@
                 (let [options (-> cfg
                                   (assoc ::bfc/features features)
                                   (assoc ::section section)
-                                  (assoc ::input input))]
+                                  (assoc ::bfc/input input))]
                   (binding [bfc/*options* options]
                     (events/tap :progress {:op :import :section section})
                     (read-section options))))
@@ -491,7 +491,7 @@
   (db/tx-run! options read-import-v1))
 
 (defmethod read-section :v1/metadata
-  [{:keys [::input]}]
+  [{:keys [::bfc/input]}]
   (let [{:keys [version files]} (read-obj! input)]
     (l/dbg :hint "metadata readed"
            :version (:full version)
@@ -509,7 +509,7 @@
         thumbnails))
 
 (defmethod read-section :v1/files
-  [{:keys [::db/conn ::input ::project-id ::bfc/overwrite ::name] :as system}]
+  [{:keys [::db/conn ::bfc/input ::bfc/project-id ::bfc/overwrite ::bfc/name] :as system}]
 
   (doseq [[idx expected-file-id] (d/enumerate (-> bfc/*state* deref :files))]
     (let [file       (read-obj! input)
@@ -576,7 +576,7 @@
         file-id'))))
 
 (defmethod read-section :v1/rels
-  [{:keys [::db/conn ::input ::bfc/timestamp]}]
+  [{:keys [::db/conn ::bfc/input ::bfc/timestamp]}]
   (let [rels (read-obj! input)
         ids  (into #{} (-> bfc/*state* deref :files))]
     ;; Insert all file relations
@@ -600,7 +600,7 @@
                   ::l/sync? true))))))
 
 (defmethod read-section :v1/sobjects
-  [{:keys [::db/conn ::input ::bfc/overwrite ::bfc/timestamp] :as cfg}]
+  [{:keys [::db/conn ::bfc/input ::bfc/overwrite ::bfc/timestamp] :as cfg}]
   (let [storage (sto/resolve cfg)
         ids     (read-obj! input)
         thumb?  (into #{} (map :media-id) (:thumbnails @bfc/*state*))]
@@ -674,17 +674,17 @@
   "Do the exportation of a specified file in custom penpot binary
   format. There are some options available for customize the output:
 
-  `::include-libraries`: additionally to the specified file, all the
+  `::bfc/include-libraries`: additionally to the specified file, all the
   linked libraries also will be included (including transitive
   dependencies).
 
-  `::embed-assets`: instead of including the libraries, embed in the
+  `::bfc/embed-assets`: instead of including the libraries, embed in the
   same file library all assets used from external libraries."
 
-  [{:keys [::ids] :as cfg} output]
+  [{:keys [::bfc/ids] :as cfg} output]
 
   (dm/assert!
-   "expected a set of uuid's for `::ids` parameter"
+   "expected a set of uuid's for `::bfc/ids` parameter"
    (and (set? ids)
         (every? uuid? ids)))
 
@@ -719,12 +719,12 @@
                 :cause @cs)))))
 
 (defn import-files!
-  [{:keys [::input] :as cfg}]
+  [{:keys [::bfc/input] :as cfg}]
 
   (dm/assert!
    "expected valid profile-id and project-id on `cfg`"
-   (and (uuid? (::profile-id cfg))
-        (uuid? (::project-id cfg))))
+   (and (uuid? (::bfc/profile-id cfg))
+        (uuid? (::bfc/project-id cfg))))
 
   (dm/assert!
    "expected instance of jio/IOFactory for `input`"
@@ -738,7 +738,7 @@
     (try
       (binding [*position* (atom 0)]
         (pu/with-open [input (io/input-stream input)]
-          (read-import! (assoc cfg ::input input))))
+          (read-import! (assoc cfg ::bfc/input input))))
 
       (catch ZstdIOException cause
         (ex/raise :type :validation

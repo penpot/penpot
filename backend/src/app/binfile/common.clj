@@ -30,7 +30,9 @@
    [app.worker :as-alias wrk]
    [clojure.set :as set]
    [clojure.walk :as walk]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [datoteka.fs :as fs]
+   [datoteka.io :as io]))
 
 (set! *warn-on-reflection* true)
 
@@ -51,6 +53,20 @@
   (* 1024 1024 100))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn parse-file-format
+  [template]
+  (assert (fs/path? template) "expected InputStream for `template`")
+
+  (with-open [^java.lang.AutoCloseable input (io/input-stream template)]
+    (let [buffer (byte-array 4)]
+      (io/read-to-buffer input buffer)
+      (if (and (= (aget buffer 0) 80)
+               (= (aget buffer 1) 75)
+               (= (aget buffer 2) 3)
+               (= (aget buffer 3) 4))
+        :binfile-v3
+        :binfile-v1))))
 
 (def xf-map-id
   (map :id))

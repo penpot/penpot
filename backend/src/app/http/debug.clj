@@ -7,7 +7,9 @@
 (ns app.http.debug
   (:refer-clojure :exclude [error-handler])
   (:require
+   [app.binfile.common :as bfc]
    [app.binfile.v1 :as bf.v1]
+   [app.binfile.v3 :as bf.v3]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
@@ -280,23 +282,23 @@
       (ex/raise :type :validation
                 :code :missing-arguments))
 
-    (let [path (tmp/tempfile :prefix "penpot.export.")]
+    (let [path (tmp/tempfile :prefix "penpot.export." :min-age "30m")]
       (with-open [output (io/output-stream path)]
         (-> cfg
-            (assoc ::bf.v1/ids file-ids)
-            (assoc ::bf.v1/embed-assets embed?)
-            (assoc ::bf.v1/include-libraries libs?)
-            (bf.v1/export-files! output)))
+            (assoc ::bfc/ids file-ids)
+            (assoc ::bfc/embed-assets embed?)
+            (assoc ::bfc/include-libraries libs?)
+            (bf.v3/export-files! output)))
 
       (if clone?
         (let [profile    (profile/get-profile pool profile-id)
               project-id (:default-project-id profile)
               cfg        (assoc cfg
-                                ::bf.v1/overwrite false
-                                ::bf.v1/profile-id profile-id
-                                ::bf.v1/project-id project-id
-                                ::bf.v1/input path)]
-          (bf.v1/import-files! cfg)
+                                ::bfc/overwrite false
+                                ::bfc/profile-id profile-id
+                                ::bfc/project-id project-id
+                                ::bfc/input path)]
+          (bf.v3/import-files! cfg)
           {::yres/status  200
            ::yres/headers {"content-type" "text/plain"}
            ::yres/body    "OK CLONED"})
@@ -315,23 +317,24 @@
               :hint "missing upload file"))
 
   (let [profile    (profile/get-profile pool profile-id)
-        project-id (:default-project-id profile)
-        overwrite? (contains? params :overwrite)
-        migrate?   (contains? params :migrate)]
+        project-id (:default-project-id profile)]
 
     (when-not project-id
       (ex/raise :type :validation
                 :code :missing-project
                 :hint "project not found"))
 
-    (let [path (-> params :file :path)
-          cfg  (assoc cfg
-                      ::bf.v1/overwrite overwrite?
-                      ::bf.v1/migrate migrate?
-                      ::bf.v1/profile-id profile-id
-                      ::bf.v1/project-id project-id
-                      ::bf.v1/input path)]
-      (bf.v1/import-files! cfg)
+    (let [path   (-> params :file :path)
+          format (bfc/parse-file-format path)
+          cfg    (assoc cfg
+                        ::bfc/profile-id profile-id
+                        ::bfc/project-id project-id
+                        ::bfc/input path)]
+
+      (if (= format :binfile-v3)
+        (bf.v3/import-files! cfg)
+        (bf.v1/import-files! cfg))
+
       {::yres/status  200
        ::yres/headers {"content-type" "text/plain"}
        ::yres/body    "OK"})))
