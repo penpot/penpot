@@ -1146,35 +1146,38 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-(defn migrate-up-60
+(defn migrate-up-62
   [data]
-  (letfn [(update-component
-            [component]
-            (let [objects   (:objects component) ;; we only have encounter this on deleted components,
-                                                ;; so the relevant objects are inside the component
-                  cycles-ids (->> objects
-                                  vals
-                                  (filter #(= (:id %) (:shape-ref %)))
-                                  (map :id))
-                  to-detach (->> cycles-ids
-                                 (map #(get objects %))
-                                 (map #(ctn/get-head-shape objects %))
-                                 (map :id)
-                                 distinct
-                                 (mapcat #(ctn/get-children-in-instance objects %))
-                                 (map :id)
-                                 set)]
-              (update component :objects
-                      (fn [objects]
-                        (reduce-kv (fn [acc k v]
-                                     (if (contains? to-detach k)
-                                       (assoc acc k (ctk/detach-shape v))
-                                       (assoc acc k v)))
-                                   {}
-                                   objects)))))]
+  (let [xform-cycles-ids
+        (comp (filter #(= (:id %) (:shape-ref %)))
+              (map :id))
 
-    (-> data
-        (update :components update-vals update-component))))
+        remove-cycles
+        (fn [objects]
+          (let [cycles-ids (into #{} xform-cycles-ids (vals objects))
+                to-detach  (->> cycles-ids
+                                (map #(get objects %))
+                                (map #(ctn/get-head-shape objects %))
+                                (map :id)
+                                distinct
+                                (mapcat #(ctn/get-children-in-instance objects %))
+                                (map :id)
+                                set)]
+
+            (reduce-kv (fn [objects id shape]
+                         (if (contains? to-detach id)
+                           (assoc objects id (ctk/detach-shape shape))
+                           objects))
+                       objects
+                       objects)))
+
+        update-component
+        (fn [component]
+          ;; we only have encounter this on deleted components,
+          ;; so the relevant objects are inside the component
+          (d/update-when component :objects remove-cycles))]
+
+    (update data :components update-vals update-component)))
 
 (def migrations
   "A vector of all applicable migrations"
@@ -1226,5 +1229,4 @@
    {:id 56 :migrate-up migrate-up-56}
    {:id 57 :migrate-up migrate-up-57}
    {:id 59 :migrate-up migrate-up-59}
-   {:id 60 :migrate-up migrate-up-60}])
-
+   {:id 62 :migrate-up migrate-up-62}])
