@@ -119,6 +119,7 @@
 (sv/defmethod ::update-file
   {::climit/id [[:update-file/by-profile ::rpc/profile-id]
                 [:update-file/global]]
+
    ::webhooks/event? true
    ::webhooks/batch-timeout (dt/duration "2m")
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)

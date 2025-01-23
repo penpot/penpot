@@ -28,6 +28,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.db.sql :as-alias sql]
    [app.storage :as sto]
    [app.storage.impl :as sto.impl]
    [app.util.events :as events]
@@ -212,18 +213,18 @@
     (throw (IllegalArgumentException.
             "the `include-libraries` and `embed-assets` are mutally excluding options")))
 
-  (let [detach?  (and (not embed-assets) (not include-libraries))
-        file     (bfc/get-file cfg file-id)]
-    (cond-> file
-      detach?
-      (-> (ctf/detach-external-references file-id)
-          (dissoc :libraries))
+  (let [detach?  (and (not embed-assets) (not include-libraries))]
+    (db/tx-run! cfg (fn [cfg]
+                      (cond-> (bfc/get-file cfg file-id {::sql/for-update true})
+                        detach?
+                        (-> (ctf/detach-external-references file-id)
+                            (dissoc :libraries))
 
-      embed-assets
-      (update :data #(bfc/embed-assets cfg % file-id))
+                        embed-assets
+                        (update :data #(bfc/embed-assets cfg % file-id))
 
-      :always
-      (bfc/clean-file-features))))
+                        :always
+                        (bfc/clean-file-features))))))
 
 (defn- resolve-extension
   [mtype]
@@ -262,6 +263,7 @@
 (defn- export-file
   [{:keys [::file-id ::output] :as cfg}]
   (let [file         (get-file cfg file-id)
+
         media        (->> (bfc/get-file-media cfg file)
                           (map (fn [media]
                                  (dissoc media :file-id))))
@@ -684,7 +686,7 @@
      :plugin-data plugin-data}))
 
 (defn- import-file
-  [{:keys [::db/conn ::bfc/project-id ::file-id ::file-name] :as cfg}]
+  [{:keys [::bfc/project-id ::file-id ::file-name] :as cfg}]
   (let [file-id'   (bfc/lookup-index file-id)
         file       (read-file cfg)
         media      (read-file-media cfg)
@@ -734,10 +736,7 @@
 
       (->> file
            (bfc/register-pending-migrations cfg)
-           (bfc/persist-file! cfg))
-
-      (when (::bfc/overwrite cfg)
-        (db/delete! conn :file-thumbnail {:file-id file-id'}))
+           (bfc/save-file! cfg))
 
       file-id')))
 
@@ -832,8 +831,7 @@
              :file-id (str (:file-id params))
              ::l/sync? true)
 
-      (db/insert! conn :file-media-object params
-                  {::db/on-conflict-do-nothing? (::bfc/overwrite cfg)}))))
+      (db/insert! conn :file-media-object params))))
 
 (defn- import-file-thumbnails
   [{:keys [::db/conn] :as cfg}]
@@ -853,8 +851,7 @@
              :media-id (str media-id)
              ::l/sync? true)
 
-      (db/insert! conn :file-tagged-object-thumbnail params
-                  {::db/on-conflict-do-nothing? (::bfc/overwrite cfg)}))))
+      (db/insert! conn :file-tagged-object-thumbnail params))))
 
 (defn- import-files
   [{:keys [::bfc/timestamp ::bfc/input ::bfc/name] :or {timestamp (dt/now)} :as cfg}]
