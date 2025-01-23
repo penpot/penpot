@@ -123,10 +123,6 @@
 
 (defn process-file!
   [system file-id update-fn & {:keys [label validate? with-libraries?] :or {validate? true} :as opts}]
-
-  (when (string? label)
-    (fsnap/create-file-snapshot! system nil file-id label))
-
   (let [conn  (db/get-connection system)
         file  (get-file system file-id)
         libs  (when with-libraries?
@@ -143,6 +139,9 @@
                (not (identical? file file')))
       (when validate?
         (cfv/validate-file-schema! file'))
+
+      (when (string? label)
+        (fsnap/create-file-snapshot! system nil file-id label))
 
       (let [file' (update file' :revn inc)]
         (update-file! system file')
