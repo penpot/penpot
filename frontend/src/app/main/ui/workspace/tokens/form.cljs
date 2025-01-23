@@ -156,30 +156,43 @@
 
 (defonce form-token-cache-atom (atom nil))
 
-(mf/defc ramp
+(defn hex->value
+  [hex]
+  (when-let [tc (tinycolor/valid-color hex)]
+    (let [hex (str "#" (tinycolor/->hex tc))
+          [r g b] (c/hex->rgb hex)
+          [h s v] (c/hex->hsv hex)]
+      {:hex hex
+       :r r :g g :b b
+       :h h :s s :v v
+       :alpha 1})))
+
+(mf/defc ramp*
   [{:keys [color on-change]}]
   (let [wrapper-node-ref (mf/use-ref nil)
-        dragging? (mf/use-state)
-        hex->value (fn [hex]
-                     (when-let [tc (tinycolor/valid-color hex)]
-                       (let [hex (str "#" (tinycolor/->hex tc))
-                             [r g b] (c/hex->rgb hex)
-                             [h s v] (c/hex->hsv hex)]
-                         {:hex hex
-                          :r r :g g :b b
-                          :h h :s s :v v
-                          :alpha 1})))
-        on-change' (fn [{:keys [hex]}]
-                     (when-not (and @dragging? hex)
-                       (on-change hex)))]
+        dragging-ref     (mf/use-ref false)
+
+        on-start-drag
+        (mf/use-fn #(mf/set-ref-val! dragging-ref true))
+
+        on-finish-drag
+        (mf/use-fn #(mf/set-ref-val! dragging-ref false))
+
+        on-change'
+        (mf/use-fn
+         (mf/deps on-change)
+         (fn [{:keys [hex]}]
+           (let [dragging? (mf/ref-val dragging-ref)]
+             (when-not (and dragging? hex)
+               (on-change hex)))))]
 
     (colorpicker/use-color-picker-css-variables! wrapper-node-ref (hex->value color))
     [:div {:ref wrapper-node-ref}
      [:> ramp-selector*
       {:color (hex->value color)
        :disable-opacity true
-       :on-start-drag #(reset! dragging? true)
-       :on-finish-drag #(reset! dragging? false)
+       :on-start-drag on-start-drag
+       :on-finish-drag on-finish-drag
        :on-change on-change'}]]))
 
 (mf/defc token-value-or-errors
@@ -418,9 +431,9 @@
           [:> input-token-color-bullet*
            {:color @color :on-click on-display-colorpicker}])]
        (when @color-ramp-open?
-         [:& ramp {:color (some-> (or @token-resolve-result (:value token))
-                                  (tinycolor/valid-color))
-                   :on-change on-update-color}])
+         [:> ramp* {:color (some-> (or @token-resolve-result (:value token))
+                                   (tinycolor/valid-color))
+                    :on-change on-update-color}])
        [:& token-value-or-errors {:result-or-errors @token-resolve-result}]]
 
       [:div {:class (stl/css :input-row)}
