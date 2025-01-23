@@ -33,7 +33,7 @@
    [app.main.ui.workspace.colorpicker.harmony :refer [harmony-selector]]
    [app.main.ui.workspace.colorpicker.hsva :refer [hsva-selector]]
    [app.main.ui.workspace.colorpicker.libraries :refer [libraries]]
-   [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
+   [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
    [app.main.ui.workspace.colorpicker.shortcuts :as sc]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -346,7 +346,7 @@
                                       [:div {:class (stl/css :picker-detail-wrapper)}
                                        [:div {:class (stl/css :center-circle)}]
                                        [:canvas#picker-detail {:class (stl/css :picker-detail) :width 256 :height 140}]]
-                                      [:& ramp-selector
+                                      [:> ramp-selector*
                                        {:color current-color
                                         :disable-opacity disable-opacity
                                         :on-change handle-change-color

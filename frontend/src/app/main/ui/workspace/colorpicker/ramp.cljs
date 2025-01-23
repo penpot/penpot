@@ -7,8 +7,8 @@
 (ns app.main.ui.workspace.colorpicker.ramp
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.colors :as cc]
+   [app.common.data :as d]
    [app.common.math :as mth]
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
@@ -52,7 +52,8 @@
                     :top (str (* 100 (- 1 (/ value 255))) "%")}}]]))
 
 
-(defn enrich-color-map [{:keys [h s v] :as color}]
+(defn- enrich-color-map
+  [{:keys [h s v] :as color}]
   (let [h (d/nilv h 0)
         s (d/nilv s 0)
         v (d/nilv v 0)
@@ -63,38 +64,52 @@
            :h h :s s :v v
            :r r :g g :b b)))
 
-(mf/defc ramp-selector
+(mf/defc ramp-selector*
   [{:keys [color disable-opacity on-change on-start-drag on-finish-drag]}]
-  (let [internal-color
+  (let [internal-color*
         (mf/use-state #(enrich-color-map color))
 
-        {:keys [h s v hex alpha]} @internal-color
+        internal-color
+        (deref internal-color*)
+
+        h     (get internal-color :h)
+        s     (get internal-color :s)
+        v     (get internal-color :v)
+        hex   (get internal-color :hex)
+        alpha (get internal-color :alpha)
+
+        bullet-color
+        (mf/with-memo [hex alpha]
+          {:color hex :opacity alpha})
+
         on-change-value-saturation
-        (fn [new-saturation new-value]
-          (let [new-color (-> @internal-color
-                              (assoc :s new-saturation)
-                              (assoc :v new-value)
-                              (enrich-color-map))]
-            (reset! internal-color new-color)
-            (on-change new-color)))
+        (mf/use-fn
+         (mf/deps internal-color on-change)
+         (fn [saturation value]
+           (let [color (-> internal-color
+                           (assoc :s saturation)
+                           (assoc :v value)
+                           (enrich-color-map))]
+             (reset! internal-color* color)
+             (on-change color))))
 
         on-change-hue
-        (fn [new-hue]
-          (let [new-color (-> @internal-color
-                              (assoc :h new-hue)
-                              enrich-color-map)]
-            (reset! internal-color new-color)
-            (on-change new-color)))
+        (mf/use-fn
+         (mf/deps internal-color on-change)
+         (fn [hue]
+           (let [color (-> internal-color
+                           (assoc :h hue)
+                           enrich-color-map)]
+             (reset! internal-color* color)
+             (on-change color))))
 
         on-change-opacity
-        (fn [new-opacity]
-          (let [new-color (-> @internal-color
-                              (assoc :alpha new-opacity))]
-            (reset! internal-color new-color)
-            (on-change new-color)))]
-
-    (mf/with-effect [color]
-      (reset! internal-color (enrich-color-map color)))
+        (mf/use-fn
+         (mf/deps internal-color on-change)
+         (fn [opacity]
+           (let [color (assoc internal-color :alpha opacity)]
+             (reset! internal-color* color)
+             (on-change color))))]
 
     [:*
      [:& value-saturation-selector
@@ -106,9 +121,8 @@
        :on-finish-drag on-finish-drag}]
 
      [:div {:class (stl/css :shade-selector)
-            :style #js {"--bullet-size" "52px"}}
-      [:& cb/color-bullet {:color {:color hex
-                                   :opacity alpha}
+            :style {:--bullet-size "52px"}}
+      [:& cb/color-bullet {:color bullet-color
                            :area true}]
       [:div {:class (stl/css :sliders-wrapper)}
        [:& slider-selector {:type :hue

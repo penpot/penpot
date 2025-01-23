@@ -19,7 +19,7 @@
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.workspace.colorpicker :as colorpicker]
-   [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
+   [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
    [app.main.ui.workspace.tokens.components.controls.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.components.controls.input-tokens :refer [input-tokens*]]
    [app.main.ui.workspace.tokens.errors :as wte]
@@ -172,9 +172,10 @@
         on-change' (fn [{:keys [hex]}]
                      (when-not (and @dragging? hex)
                        (on-change hex)))]
+
     (colorpicker/use-color-picker-css-variables! wrapper-node-ref (hex->value color))
     [:div {:ref wrapper-node-ref}
-     [:& ramp-selector
+     [:> ramp-selector*
       {:color (hex->value color)
        :disable-opacity true
        :on-start-drag #(reset! dragging? true)
