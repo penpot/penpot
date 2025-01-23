@@ -25,7 +25,6 @@
    [app.loggers.webhooks :as-alias webhooks]
    [app.metrics :as-alias mtx]
    [app.metrics.definition :as-alias mdef]
-   [app.migrations.v2 :as migrations.v2]
    [app.msgbus :as-alias mbus]
    [app.redis :as-alias rds]
    [app.rpc :as-alias rpc]
@@ -609,11 +608,6 @@
         (nrepl/start-server :bind "0.0.0.0" :port 6064 :handler cider-nrepl-handler))
 
       (start)
-
-      (when (contains? cf/flags :v2-migration)
-        (px/sleep 5000)
-        (migrations.v2/migrate app.main/system))
-
       (deref p))
     (catch Throwable cause
       (ex/print-throwable cause)
