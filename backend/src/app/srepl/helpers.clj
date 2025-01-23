@@ -8,7 +8,7 @@
   "A  main namespace for server repl."
   (:refer-clojure :exclude [parse-uuid])
   (:require
-   [app.binfile.common :refer [update-file! decode-file]]
+   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.files.validate :as cfv]
    [app.db :as db]
@@ -24,6 +24,10 @@
   (locking println
     (apply println params)))
 
+(defn get-current-system
+  []
+  *system*)
+
 (defn parse-uuid
   [v]
   (if (string? v)
@@ -37,8 +41,8 @@
   ([system id]
    (db/run! system
             (fn [system]
-              (->> (files/get-file system id :migrate? false)
-                   (decode-file system))))))
+              (->> (bfc/get-file system id ::db/for-update true)
+                   (bfc/decode-file system))))))
 
 (defn get-raw-file
   "Get the migrated data of one file."
@@ -124,11 +128,11 @@
 (defn process-file!
   [system file-id update-fn & {:keys [label validate? with-libraries?] :or {validate? true} :as opts}]
   (let [conn  (db/get-connection system)
-        file  (get-file system file-id)
+        file  (bfc/get-file system file-id ::db/for-update true)
         libs  (when with-libraries?
                 (->> (files/get-file-libraries conn file-id)
                      (into [file] (map (fn [{:keys [id]}]
-                                         (get-file system id))))
+                                         (bfc/get-file system id))))
                      (d/index-by :id)))
 
         file' (if with-libraries?
@@ -144,5 +148,5 @@
         (fsnap/create-file-snapshot! system nil file-id label))
 
       (let [file' (update file' :revn inc)]
-        (update-file! system file')
+        (bfc/update-file! system file')
         true))))

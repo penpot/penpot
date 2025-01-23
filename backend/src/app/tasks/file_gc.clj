@@ -253,7 +253,6 @@
     (->> (db/exec! conn [sql:get-file min-age file-id])
          (first))))
 
-
 (defn- process-file!
   [cfg file-id]
   (if-let [file (get-file cfg file-id)]
