@@ -25,6 +25,7 @@
    [app.common.text :as txt]
    [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
    [app.common.types.shape.shadow :as ctss]
@@ -1145,6 +1146,39 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
+(defn migrate-up-62
+  [data]
+  (let [xform-cycles-ids
+        (comp (filter #(= (:id %) (:shape-ref %)))
+              (map :id))
+
+        remove-cycles
+        (fn [objects]
+          (let [cycles-ids (into #{} xform-cycles-ids (vals objects))
+                to-detach  (->> cycles-ids
+                                (map #(get objects %))
+                                (map #(ctn/get-head-shape objects %))
+                                (map :id)
+                                distinct
+                                (mapcat #(ctn/get-children-in-instance objects %))
+                                (map :id)
+                                set)]
+
+            (reduce-kv (fn [objects id shape]
+                         (if (contains? to-detach id)
+                           (assoc objects id (ctk/detach-shape shape))
+                           objects))
+                       objects
+                       objects)))
+
+        update-component
+        (fn [component]
+          ;; we only have encounter this on deleted components,
+          ;; so the relevant objects are inside the component
+          (d/update-when component :objects remove-cycles))]
+
+    (update data :components update-vals update-component)))
+
 (def migrations
   "A vector of all applicable migrations"
   [{:id 2 :migrate-up migrate-up-2}
@@ -1194,5 +1228,5 @@
    {:id 55 :migrate-up migrate-up-55}
    {:id 56 :migrate-up migrate-up-56}
    {:id 57 :migrate-up migrate-up-57}
-   {:id 59 :migrate-up migrate-up-59}])
-
+   {:id 59 :migrate-up migrate-up-59}
+   {:id 62 :migrate-up migrate-up-62}])
