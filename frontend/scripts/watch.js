@@ -1,4 +1,3 @@
-import proc from "node:child_process";
 import fs from "node:fs/promises";
 import ph from "node:path";
 

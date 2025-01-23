@@ -1,5 +1,7 @@
 import { withThemeByClassName } from "@storybook/addon-themes";
 
+import '../resources/public/css/ds.css';
+
 export const decorators = [
   withThemeByClassName({
     themes: {
