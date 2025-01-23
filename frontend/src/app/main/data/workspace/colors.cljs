@@ -382,7 +382,9 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [add-stroke (fn [shape] (update shape :strokes #(into [stroke] %)))]
-        (rx/of (dwsh/update-shapes ids add-stroke))))))
+        (rx/of (dwsh/update-shapes ids
+                                   add-stroke
+                                   {:changed-sub-attr [:add-stroke]}))))))
 
 (defn remove-stroke
   [ids position]
@@ -400,7 +402,9 @@
                      (mapv second)))
               (remove-stroke [shape]
                 (update shape :strokes remove-fill-by-index position))]
-        (rx/of (dwsh/update-shapes ids remove-stroke))))))
+        (rx/of (dwsh/update-shapes ids
+                                   remove-stroke
+                                   {:changed-sub-attr [:remove-stroke]}))))))
 
 (defn remove-all-strokes
   [ids]
@@ -413,7 +417,9 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [remove-all #(assoc % :strokes [])]
-        (rx/of (dwsh/update-shapes ids remove-all))))))
+        (rx/of (dwsh/update-shapes ids
+                                   remove-all
+                                   {:changed-sub-attr [:remove-stroke]}))))))
 
 (defn reorder-shadows
   [ids index new-index]
@@ -431,7 +437,8 @@
     (watch [_ _ _]
       (rx/of (dwsh/update-shapes
               ids
-              #(swap-attrs % :strokes index new-index))))))
+              #(swap-attrs % :strokes index new-index)
+              {:changed-sub-attr [:reorder-stroke]})))))
 
 (defn picker-for-selected-shape
   []

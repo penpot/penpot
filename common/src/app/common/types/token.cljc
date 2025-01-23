@@ -178,8 +178,11 @@
   [shape-attr changed-sub-attr]
   (cond
     (= :fills shape-attr) #{:fill}
-    (and (= :strokes shape-attr) (some #(= % :stroke-color) changed-sub-attr)) #{:stroke-color}
-    (and (= :strokes shape-attr) (some #(= % :stroke-width) changed-sub-attr)) #{:stroke-width}
+    (= :strokes shape-attr)
+    (cond
+      (some #{:stroke-color} changed-sub-attr) #{:stroke-color}
+      (some #{:stroke-width} changed-sub-attr) #{:stroke-width}
+      (some #{:add-stroke :reorder-stroke :remove-stroke} changed-sub-attr) #{:stroke-width :stroke-color})
     (border-radius-keys shape-attr) #{shape-attr}
     (sizing-keys shape-attr) #{shape-attr}
     (opacity-keys shape-attr) #{shape-attr}
