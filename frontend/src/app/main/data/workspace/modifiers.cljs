@@ -438,11 +438,11 @@
 ;; - It consideres the center for everyshape instead of the center of the total selrect
 ;; - The angle param is the desired final value, not a delta
 (defn set-delta-rotation-modifiers
-  [angle shapes {:keys [center delta?] :or {center nil delta? false}}]
+  [angle shapes {:keys [center delta? page-id] :or {center nil delta? false}}]
   (ptk/reify ::set-delta-rotation-modifiers
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (dsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state page-id)
             ids
             (->> shapes
                  (remove #(get % :blocked false))
@@ -466,14 +466,14 @@
    (apply-modifiers nil))
 
   ([{:keys [modifiers undo-transation? stack-undo? ignore-constraints
-            ignore-snap-pixel ignore-touched undo-group]
+            ignore-snap-pixel ignore-touched undo-group page-id]
      :or {undo-transation? true stack-undo? false ignore-constraints false
           ignore-snap-pixel false ignore-touched false}}]
    (ptk/reify ::apply-modifiers
      ptk/WatchEvent
      (watch [_ state _]
        (let [text-modifiers    (get state :workspace-text-modifier)
-             objects           (dsh/lookup-page-objects state)
+             objects           (dsh/lookup-page-objects state page-id)
 
              object-modifiers
              (if (some? modifiers)
