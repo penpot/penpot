@@ -225,3 +225,16 @@ test("Bug 9066 - Problem with grid layout", async ({ page }) => {
     page.getByTestId("children-6ad3e6b9-c5a0-80cf-8005-283bbe378bcb"),
   ).toHaveText(["CBCDEF"]);
 });
+
+test("[Taiga #9929] Paste text in workspace", async ({ page, context }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+  await workspacePage.goToWorkspace();
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.evaluate(() => navigator.clipboard.writeText("Lorem ipsum dolor"));
+  await workspacePage.viewport.click({ button: "right" });
+  await page.getByText("PasteCtrlV").click();
+  await workspacePage.viewport
+    .getByRole("textbox")
+    .getByText("Lorem ipsum dolor");
+});

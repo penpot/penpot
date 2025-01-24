@@ -1722,10 +1722,10 @@
               (coll? transit-data)
               (rx/of (paste-transit (assoc transit-data :in-viewport in-viewport?)))
 
-              (string? html-data)
+              (and (string? html-data) (d/not-empty? html-data))
               (rx/of (paste-html-text html-data text-data))
 
-              (string? text-data)
+              (and (string? text-data) (d/not-empty? text-data))
               (rx/of (paste-text text-data))
 
               :else

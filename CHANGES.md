@@ -7,7 +7,7 @@
 - Fix errors from editable select on measures menu [Taiga #9888](https://tree.taiga.io/project/penpot/issue/9888)
 - Fix exception on importing some templates from templates slider
 - Consolidate adding share button to workspace
-
+- Fix problem when pasting text [Taiga #9929](https://tree.taiga.io/project/penpot/issue/9929)
 
 ## 2.4.2
 
