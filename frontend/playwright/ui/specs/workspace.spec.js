@@ -320,3 +320,20 @@ test("[Taiga #9929] Paste text in workspace", async ({ page, context }) => {
     .getByRole("textbox")
     .getByText("Lorem ipsum dolor");
 });
+
+test("Bug 9877, user navigation to dashboard from header goes to blank page", async ({
+  page,
+}) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+
+  await workspacePage.goToWorkspace();
+
+  const popupPromise = page.waitForEvent("popup");
+  await page.getByText("Drafts").click();
+
+  const popup = await popupPromise;
+  await expect(popup).toHaveURL(
+    /&project-id=c7ce0794-0992-8105-8004-38e630f7920b/,
+  );
+});
