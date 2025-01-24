@@ -20,13 +20,13 @@
 (defn- generate-unapply-tokens
   "When updating attributes that have a token applied, we must unapply it, because the value
    of the attribute now has been given directly, and does not come from the token."
-  [changes objects]
+  [changes objects changed-sub-attr]
   (let [mod-obj-changes (->> (:redo-changes changes)
                              (filter #(= (:type %) :mod-obj)))
 
         check-attr (fn [shape changes attr]
                      (let [tokens      (get shape :applied-tokens {})
-                           token-attrs (cto/shape-attr->token-attrs attr)]
+                           token-attrs (cto/shape-attr->token-attrs attr changed-sub-attr)]
                        (if (some #(contains? tokens %) token-attrs)
                          (pcb/update-shapes changes [(:id shape)] #(cto/unapply-token-id % token-attrs))
                          changes)))
@@ -44,7 +44,7 @@
             mod-obj-changes)))
 
 (defn generate-update-shapes
-  [changes ids update-fn objects {:keys [attrs ignore-tree ignore-touched with-objects?]}]
+  [changes ids update-fn objects {:keys [attrs changed-sub-attr ignore-tree ignore-touched with-objects?]}]
   (let [changes   (reduce
                    (fn [changes id]
                      (let [opts {:attrs attrs
@@ -61,7 +61,7 @@
                     (pcb/reorder-grid-children ids)
                     (cond->
                      (not ignore-touched)
-                      (generate-unapply-tokens objects)))]
+                      (generate-unapply-tokens objects changed-sub-attr)))]
     changes))
 
 (defn- generate-update-shape-flags

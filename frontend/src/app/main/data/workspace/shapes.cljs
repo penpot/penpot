@@ -47,7 +47,7 @@
 
 (defn update-shapes
   ([ids update-fn] (update-shapes ids update-fn nil))
-  ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id ignore-touched undo-group with-objects?]
+  ([ids update-fn {:keys [reg-objects? save-undo? stack-undo? attrs ignore-tree page-id ignore-touched undo-group with-objects? changed-sub-attr]
                    :or {reg-objects? false save-undo? true stack-undo? false ignore-touched false with-objects? false}}]
 
    (dm/assert!
@@ -76,6 +76,7 @@
                                                      update-fn
                                                      objects
                                                      {:attrs attrs
+                                                      :changed-sub-attr changed-sub-attr
                                                       :ignore-tree ignore-tree
                                                       :ignore-touched ignore-touched
                                                       :with-objects? with-objects?})

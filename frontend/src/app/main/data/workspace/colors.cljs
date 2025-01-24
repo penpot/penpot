@@ -272,38 +272,39 @@
    (ptk/reify ::change-stroke-color
      ptk/WatchEvent
      (watch [_ _ _]
-       (rx/of (dwsh/update-shapes
-               ids
-               (fn [shape]
-                 (let [stroke (get-in shape [:strokes index])
-                       attrs (cond-> (build-stroke-style-attrs stroke)
-                               (contains? color :color)
-                               (assoc :stroke-color (:color color))
+       (rx/of (let [options (assoc options :changed-sub-attr [:stroke-color])]
+                (dwsh/update-shapes
+                 ids
+                 (fn [shape]
+                   (let [stroke (get-in shape [:strokes index])
+                         attrs (cond-> (build-stroke-style-attrs stroke)
+                                 (contains? color :color)
+                                 (assoc :stroke-color (:color color))
 
-                               (contains? color :id)
-                               (assoc :stroke-color-ref-id (:id color))
+                                 (contains? color :id)
+                                 (assoc :stroke-color-ref-id (:id color))
 
-                               (contains? color :file-id)
-                               (assoc :stroke-color-ref-file (:file-id color))
+                                 (contains? color :file-id)
+                                 (assoc :stroke-color-ref-file (:file-id color))
 
-                               (contains? color :gradient)
-                               (assoc :stroke-color-gradient (:gradient color))
+                                 (contains? color :gradient)
+                                 (assoc :stroke-color-gradient (:gradient color))
 
-                               (contains? color :opacity)
-                               (assoc :stroke-opacity (:opacity color))
+                                 (contains? color :opacity)
+                                 (assoc :stroke-opacity (:opacity color))
 
-                               (contains? color :image)
-                               (assoc :stroke-image (:image color))
+                                 (contains? color :image)
+                                 (assoc :stroke-image (:image color))
 
-                               :always
-                               (d/without-nils))]
-                   (cond-> shape
-                     (not (contains? shape :strokes))
-                     (assoc :strokes [])
+                                 :always
+                                 (d/without-nils))]
+                     (cond-> shape
+                       (not (contains? shape :strokes))
+                       (assoc :strokes [])
 
-                     :always
-                     (assoc-in [:strokes index] attrs))))
-               options))))))
+                       :always
+                       (assoc-in [:strokes index] attrs))))
+                 options)))))))
 
 (defn change-stroke-attrs
   ([ids attrs index] (change-stroke-attrs ids attrs index nil))
@@ -311,19 +312,21 @@
    (ptk/reify ::change-stroke-attrs
      ptk/WatchEvent
      (watch [_ _ _]
-       (rx/of (dwsh/update-shapes
-               ids
-               (fn [shape]
-                 (let [stroke      (get-in shape [:strokes index])
-                       style-attrs (build-stroke-style-attrs stroke)
-                       attrs       (merge stroke style-attrs attrs)]
-                   (cond-> shape
-                     (not (contains? shape :strokes))
-                     (assoc :strokes [])
+       (let [changed-sub-attr (keys attrs)
+             options (assoc options :changed-sub-attr changed-sub-attr)]
+         (rx/of (dwsh/update-shapes
+                 ids
+                 (fn [shape]
+                   (let [stroke      (get-in shape [:strokes index])
+                         style-attrs (build-stroke-style-attrs stroke)
+                         attrs       (merge stroke style-attrs attrs)]
+                     (cond-> shape
+                       (not (contains? shape :strokes))
+                       (assoc :strokes [])
 
-                     :always
-                     (assoc-in [:strokes index] attrs)))))
-              options)))))
+                       :always
+                       (assoc-in [:strokes index] attrs))))
+                 options)))))))
 
 (defn change-shadow
   [ids attrs index]
@@ -379,7 +382,9 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [add-stroke (fn [shape] (update shape :strokes #(into [stroke] %)))]
-        (rx/of (dwsh/update-shapes ids add-stroke))))))
+        (rx/of (dwsh/update-shapes ids
+                                   add-stroke
+                                   {:attrs [:strokes]}))))))
 
 (defn remove-stroke
   [ids position]
@@ -397,7 +402,9 @@
                      (mapv second)))
               (remove-stroke [shape]
                 (update shape :strokes remove-fill-by-index position))]
-        (rx/of (dwsh/update-shapes ids remove-stroke))))))
+        (rx/of (dwsh/update-shapes ids
+                                   remove-stroke
+                                   {:attrs [:strokes]}))))))
 
 (defn remove-all-strokes
   [ids]
@@ -410,7 +417,9 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [remove-all #(assoc % :strokes [])]
-        (rx/of (dwsh/update-shapes ids remove-all))))))
+        (rx/of (dwsh/update-shapes ids
+                                   remove-all
+                                   {:attrs [:strokes]}))))))
 
 (defn reorder-shadows
   [ids index new-index]
@@ -428,7 +437,8 @@
     (watch [_ _ _]
       (rx/of (dwsh/update-shapes
               ids
-              #(swap-attrs % :strokes index new-index))))))
+              #(swap-attrs % :strokes index new-index)
+              {:attrs [:strokes]})))))
 
 (defn picker-for-selected-shape
   []
