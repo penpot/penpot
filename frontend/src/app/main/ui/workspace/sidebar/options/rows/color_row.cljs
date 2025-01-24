@@ -45,18 +45,18 @@
   (if (= v :multiple) nil v))
 
 (mf/defc color-row
-  [{:keys [index color disable-gradient disable-opacity disable-image disable-picker on-change
-           on-reorder on-detach on-open on-close on-remove
+  [{:keys [index color disable-gradient disable-opacity disable-image disable-picker hidden
+           on-change on-reorder on-detach on-open on-close on-remove
            disable-drag on-focus on-blur select-only select-on-focus]}]
   (let [shared-libs      (mf/deref refs/libraries)
         hover-detach     (mf/use-state false)
         on-change        (h/use-ref-callback on-change)
 
-        src-colors       (dm/get-in shared-libs [(:ref-file color) :data :colors])
-        color-name       (dm/get-in src-colors [(:ref-id color) :name])
+        src-colors       (dm/get-in shared-libs [(or (:ref-file color) (:file-id color)) :data :colors])
+        color-name       (dm/get-in src-colors [(or (:ref-id color) (:id color)) :name])
 
         multiple-colors? (uc/multiple? color)
-        library-color?   (and (:ref-id color) color-name (not multiple-colors?))
+        library-color?   (and (or (:id color) (:ref-id color)) color-name (not multiple-colors?))
         gradient-color?  (and (not multiple-colors?)
                               (:gradient color)
                               (dm/get-in color [:gradient :type]))
@@ -187,6 +187,7 @@
 
     [:div {:class (stl/css-case
                    :color-data true
+                   :hidden hidden
                    :dnd-over-top (= (:over dprops) :top)
                    :dnd-over-bot (= (:over dprops) :bot))}
 
