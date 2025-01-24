@@ -414,7 +414,7 @@
         (when (< index (dec total))
           (rx/of
            (dcmt/close-thread)
-           (rt/nav :viewer params (assoc params :index (inc index)))))))))
+           (rt/nav :viewer (assoc params :index (inc index)))))))))
 
 (def select-first-frame
   (ptk/reify ::select-first-frame
