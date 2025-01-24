@@ -110,7 +110,6 @@
                              (fn [event token]
                                (dom/stop-propagation event)
                                (when (seq selected-shapes)
-
                                  (st/emit!
                                   (wtch/toggle-token {:token token
                                                       :shapes selected-shapes

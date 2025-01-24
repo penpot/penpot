@@ -328,14 +328,17 @@
 
 (defn- calculate-modifiers
   ([state modif-tree]
-   (calculate-modifiers state false false modif-tree))
+   (calculate-modifiers state false false modif-tree nil))
 
-  ([state ignore-constraints ignore-snap-pixel modif-tree]
-   (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree nil))
+  ([state ignore-constraints ignore-snap-pixel modif-tree page-id]
+   (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree page-id nil))
 
-  ([state ignore-constraints ignore-snap-pixel modif-tree params]
-   (let [objects
-         (dsh/lookup-page-objects state)
+  ([state ignore-constraints ignore-snap-pixel modif-tree page-id params]
+   (let [page-id
+         (or page-id (:current-page-id state))
+
+         objects
+         (dsh/lookup-page-objects state page-id)
 
          snap-pixel?
          (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
@@ -402,7 +405,9 @@
    (ptk/reify ::set-modifiers
      ptk/UpdateEvent
      (update [_ state]
-       (assoc state :workspace-modifiers (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree params))))))
+       (let [page-id   (:current-page-id state)
+             modifiers (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree page-id params)]
+         (assoc state :workspace-modifiers modifiers))))))
 
 (def ^:private
   xf-rotation-shape
@@ -438,11 +443,12 @@
 ;; - It consideres the center for everyshape instead of the center of the total selrect
 ;; - The angle param is the desired final value, not a delta
 (defn set-delta-rotation-modifiers
-  [angle shapes {:keys [center delta?] :or {center nil delta? false}}]
+  [angle shapes {:keys [center delta? page-id] :or {center nil delta? false}}]
   (ptk/reify ::set-delta-rotation-modifiers
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (dsh/lookup-page-objects state)
+      (let [page-id (or page-id (:current-page-id state))
+            objects (dsh/lookup-page-objects state page-id)
             ids
             (->> shapes
                  (remove #(get % :blocked false))
@@ -466,18 +472,19 @@
    (apply-modifiers nil))
 
   ([{:keys [modifiers undo-transation? stack-undo? ignore-constraints
-            ignore-snap-pixel ignore-touched undo-group]
+            ignore-snap-pixel ignore-touched undo-group page-id]
      :or {undo-transation? true stack-undo? false ignore-constraints false
           ignore-snap-pixel false ignore-touched false}}]
    (ptk/reify ::apply-modifiers
      ptk/WatchEvent
      (watch [_ state _]
-       (let [text-modifiers    (get state :workspace-text-modifier)
-             objects           (dsh/lookup-page-objects state)
+       (let [text-modifiers (get state :workspace-text-modifier)
+             page-id        (or page-id (:current-page-id state))
+             objects        (dsh/lookup-page-objects state page-id)
 
              object-modifiers
              (if (some? modifiers)
-               (calculate-modifiers state ignore-constraints ignore-snap-pixel modifiers)
+               (calculate-modifiers state ignore-constraints ignore-snap-pixel modifiers page-id)
                (get state :workspace-modifiers))
 
              ids
@@ -519,6 +526,7 @@
                    :ignore-tree ignore-tree
                    :ignore-touched ignore-touched
                    :undo-group undo-group
+                   :page-id page-id
                    ;; Attributes that can change in the transform. This way we don't have to check
                    ;; all the attributes
                    :attrs [:selrect
