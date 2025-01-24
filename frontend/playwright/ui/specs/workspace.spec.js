@@ -307,3 +307,16 @@ test("Copy/paste properties", async ({ page, context }) => {
   await page.getByText("Copy/Paste as").hover();
   await page.getByText("Paste properties").click();
 });
+
+test("[Taiga #9929] Paste text in workspace", async ({ page, context }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+  await workspacePage.goToWorkspace();
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.evaluate(() => navigator.clipboard.writeText("Lorem ipsum dolor"));
+  await workspacePage.viewport.click({ button: "right" });
+  await page.getByText("PasteCtrlV").click();
+  await workspacePage.viewport
+    .getByRole("textbox")
+    .getByText("Lorem ipsum dolor");
+});
