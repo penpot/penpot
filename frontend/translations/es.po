@@ -6705,6 +6705,10 @@ msgid "workspace.token.token-value"
 msgstr "Valor"
 
 #: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.warning-name-change"
+msgstr "Al renombrar este token se romperán las referencias al nombre anterior"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
 msgid "workspace.token.enter-token-value"
 msgstr "Introduce un valor o alias"
 

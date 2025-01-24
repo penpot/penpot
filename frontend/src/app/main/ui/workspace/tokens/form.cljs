@@ -18,6 +18,7 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
+   [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
    [app.main.ui.workspace.tokens.components.controls.input-token-color-bullet :refer [input-token-color-bullet*]]
@@ -227,7 +228,10 @@
            (mf/set-ref-val! cancel-ref node)))
 
         ;; Name
-        touched-name? (mf/use-state false)
+        touched-name* (mf/use-state false)
+        touched-name? (deref touched-name*)
+        warning-name-change* (mf/use-state false)
+        warning-name-change? (deref warning-name-change*)
         name-ref (mf/use-var (:name token))
         name-errors (mf/use-state nil)
         validate-name
@@ -240,13 +244,15 @@
 
         on-blur-name
         (mf/use-fn
-         (mf/deps cancel-ref)
+         (mf/deps cancel-ref touched-name? warning-name-change?)
          (fn [e]
            (let [node (dom/get-related-target e)
                  on-cancel-btn (= node (mf/ref-val cancel-ref))]
              (when-not on-cancel-btn
                (let [value (dom/get-target-val e)
                      errors (validate-name value)]
+                 (when touched-name?
+                   (reset! warning-name-change* true))
                  (reset! name-errors errors))))))
 
         on-update-name-debounced
@@ -261,7 +267,7 @@
         (mf/use-fn
          (mf/deps on-update-name-debounced)
          (fn [e]
-           (reset! touched-name? true)
+           (reset! touched-name* true)
            (reset! name-ref (dom/get-target-val e))
            (on-update-name-debounced e)))
 
@@ -404,7 +410,13 @@
                     :key error
                     :typography "body-small"
                     :class (stl/css :error)}
-          error])]
+          error])
+
+       (when (and warning-name-change? (= action "edit"))
+         [:div {:class (stl/css :warning-name-change-notification-wrapper)}
+          [:> context-notification
+           {:level :warning
+            :content (tr "workspace.token.warning-name-change")}]])]
 
       [:div {:class (stl/css :input-row)}
        [:> input-tokens*
