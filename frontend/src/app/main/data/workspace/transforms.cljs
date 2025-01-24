@@ -314,7 +314,8 @@
    (ptk/reify ::update-dimensions
      ptk/UpdateEvent
      (update [_ state]
-       (let [objects (dsh/lookup-page-objects state)
+       (let [page-id (get options :page-id)
+             objects (dsh/lookup-page-objects state page-id)
              get-modifier
              (fn [shape] (ctm/change-dimensions-modifiers shape attr value))
              modif-tree
@@ -403,16 +404,16 @@
   "Rotate shapes a fixed angle, from a keyboard action."
   ([ids rotation]
    (increase-rotation ids rotation nil))
-  ([ids rotation params & options]
+  ([ids rotation params & {:as options}]
    (ptk/reify ::increase-rotation
      ptk/WatchEvent
      (watch [_ state _]
-       (let [page-id (:current-page-id state)
+       (let [page-id (d/nilv (:page-id params) (:current-page-id state))
              objects (dsh/lookup-page-objects state page-id)
              shapes  (->> ids (map #(get objects %)))]
          (rx/concat
           (rx/of (dwm/set-delta-rotation-modifiers rotation shapes params))
-          (rx/of (dwm/apply-modifiers options))))))))
+          (rx/of (dwm/apply-modifiers (assoc options :page-id page-id)))))))))
 
 
 ;; -- Move ----------------------------------------------------------
@@ -787,14 +788,14 @@
 
 (defn update-position
   "Move shapes to a new position"
-  ([id position] (update-position id position nil))
-  ([id position opts]
+  ([id position] (update-position nil id position nil))
+  ([page-id id position opts]
    (dm/assert! (uuid? id))
 
    (ptk/reify ::update-position
      ptk/WatchEvent
      (watch [_ state _]
-       (let [page-id    (:current-page-id state)
+       (let [page-id    (d/nilv page-id (:current-page-id state))
              objects    (dsh/lookup-page-objects state page-id)
              shape      (get objects id)
              ;; FIXME: performance rect
@@ -809,6 +810,7 @@
              modif-tree (dwm/create-modif-tree [id] (ctm/move-modifiers delta))]
 
          (rx/of (dwm/apply-modifiers {:modifiers modif-tree
+                                      :page-id page-id
                                       :ignore-constraints false
                                       :ignore-touched (:ignore-touched opts)
                                       :ignore-snap-pixel true})))))))

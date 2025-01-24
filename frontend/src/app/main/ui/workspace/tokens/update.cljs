@@ -17,7 +17,7 @@
 (def filter-existing-values? false)
 
 (def attributes->shape-update
-  {#{:r1 :r2 :r3 :r4} wtch/update-shape-radius-all
+  {#{:r1 :r2 :r3 :r4} wtch/update-shape-radius-corners
    ctt/color-keys wtch/update-fill-stroke
    ctt/stroke-width-keys wtch/update-stroke-width
    ctt/sizing-keys wtch/update-shape-dimensions
@@ -86,30 +86,36 @@
   (->> (map (fn [[value attrs]] [attrs {value #{object-id}}]) attrs-values-map)
        (into {})))
 
-(defn collect-shapes-update-info [resolved-tokens shapes]
+(defn collect-shapes-update-info [resolved-tokens objects]
   (reduce
-   (fn [acc [object-id {:keys [applied-tokens] :as shape}]]
+   (fn [acc [shape-id {:keys [applied-tokens] :as shape}]]
      (if (seq applied-tokens)
        (let [applied-tokens (-> (invert-collect-key-vals applied-tokens resolved-tokens shape)
-                                (shape-ids-by-values object-id)
+                                (shape-ids-by-values shape-id)
                                 (split-attribute-groups))]
          (deep-merge acc applied-tokens))
        acc))
-   {} shapes))
+   {} objects))
 
-(defn actionize-shapes-update-info [shapes-update-info]
+(defn actionize-shapes-update-info [page-id shapes-update-info]
   (mapcat (fn [[attrs update-infos]]
             (let [action (some attribute-actions-map attrs)]
               (map
                (fn [[v shape-ids]]
-                 (action v shape-ids attrs))
+                 (action v shape-ids attrs page-id))
                update-infos)))
           shapes-update-info))
 
-(defn update-tokens [state resolved-tokens]
-  (->> (dsh/lookup-page-objects state)
+(defn update-tokens-in-page [state page-id resolved-tokens]
+  (->> (dsh/lookup-page-objects state page-id)
        (collect-shapes-update-info resolved-tokens)
-       (actionize-shapes-update-info)))
+       (actionize-shapes-update-info page-id)))
+
+(defn update-tokens [state resolved-tokens]
+  (reduce (fn [events page-id]
+            (rx/concat events (update-tokens-in-page state page-id resolved-tokens)))
+          (rx/empty)
+          (dsh/get-all-page-ids state)))
 
 (defn update-workspace-tokens []
   (ptk/reify ::update-workspace-tokens

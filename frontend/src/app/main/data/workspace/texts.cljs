@@ -446,8 +446,9 @@
        (when (or
               (and (features/active-feature? state "text-editor/v2") (nil? (:workspace-editor state)))
               (and (not (features/active-feature? state "text-editor/v2")) (nil? (get-in state [:workspace-editor-state id]))))
-         (let [objects   (dsh/lookup-page-objects state)
-               shape     (get objects id)
+         (let [page-id      (get options :page-id (:current-page-id state))
+               objects      (dsh/lookup-page-objects state page-id)
+               shape        (get objects id)
                update-node? (some-fn txt/is-text-node? txt/is-paragraph-node?)
 
                shape-ids
