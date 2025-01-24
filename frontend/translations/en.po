@@ -6714,6 +6714,10 @@ msgid "workspace.token.token-value"
 msgstr "Value"
 
 #: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.warning-name-change"
+msgstr "Renaming this token will break any reference to its old name."
+
+#: src/app/main/ui/workspace/tokens/form.cljs
 msgid "workspace.token.enter-token-value"
 msgstr "Enter token value or alias"
 
