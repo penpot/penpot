@@ -272,7 +272,7 @@
    (ptk/reify ::change-stroke-color
      ptk/WatchEvent
      (watch [_ _ _]
-       (rx/of (let [options (merge options {:changed-sub-attr [:stroke-color]})]
+       (rx/of (let [options (assoc options :changed-sub-attr [:stroke-color])]
                 (dwsh/update-shapes
                  ids
                  (fn [shape]
@@ -313,7 +313,7 @@
      ptk/WatchEvent
      (watch [_ _ _]
        (let [changed-sub-attr (keys attrs)
-             options (merge options {:changed-sub-attr changed-sub-attr})]
+             options (assoc options :changed-sub-attr changed-sub-attr)]
          (rx/of (dwsh/update-shapes
                  ids
                  (fn [shape]
@@ -384,7 +384,7 @@
       (let [add-stroke (fn [shape] (update shape :strokes #(into [stroke] %)))]
         (rx/of (dwsh/update-shapes ids
                                    add-stroke
-                                   {:changed-sub-attr [:add-stroke]}))))))
+                                   {:attrs [:strokes]}))))))
 
 (defn remove-stroke
   [ids position]
@@ -404,7 +404,7 @@
                 (update shape :strokes remove-fill-by-index position))]
         (rx/of (dwsh/update-shapes ids
                                    remove-stroke
-                                   {:changed-sub-attr [:remove-stroke]}))))))
+                                   {:attrs [:strokes]}))))))
 
 (defn remove-all-strokes
   [ids]
@@ -419,7 +419,7 @@
       (let [remove-all #(assoc % :strokes [])]
         (rx/of (dwsh/update-shapes ids
                                    remove-all
-                                   {:changed-sub-attr [:remove-stroke]}))))))
+                                   {:attrs [:strokes]}))))))
 
 (defn reorder-shadows
   [ids index new-index]
@@ -438,7 +438,7 @@
       (rx/of (dwsh/update-shapes
               ids
               #(swap-attrs % :strokes index new-index)
-              {:changed-sub-attr [:reorder-stroke]})))))
+              {:attrs [:strokes]})))))
 
 (defn picker-for-selected-shape
   []

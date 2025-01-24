@@ -190,7 +190,7 @@
                                                       (ctn/set-shape-attr :width 0)
                                                       (ctn/set-shape-attr :height 0)))
                                                 (:objects page)
-                                                {:changed-sub-attr [:remove-stroke]}))
+                                                {}))
 
         file' (thf/apply-changes file changes)
 

@@ -175,19 +175,20 @@
   ::dimensions])
 
 (defn shape-attr->token-attrs
-  [shape-attr changed-sub-attr]
-  (cond
-    (= :fills shape-attr) #{:fill}
-    (= :strokes shape-attr)
-    (cond
-      (some #{:stroke-color} changed-sub-attr) #{:stroke-color}
-      (some #{:stroke-width} changed-sub-attr) #{:stroke-width}
-      (some #{:add-stroke :reorder-stroke :remove-stroke} changed-sub-attr) #{:stroke-width :stroke-color})
-    (border-radius-keys shape-attr) #{shape-attr}
-    (sizing-keys shape-attr) #{shape-attr}
-    (opacity-keys shape-attr) #{shape-attr}
-    (spacing-keys shape-attr) #{shape-attr}
-    (rotation-keys shape-attr) #{shape-attr}))
+  ([shape-attr] (shape-attr->token-attrs shape-attr nil))
+  ([shape-attr changed-sub-attr]
+   (cond
+     (= :fills shape-attr) #{:fill}
+     (and (= :strokes shape-attr) (nil? changed-sub-attr)) #{:stroke-width :stroke-color}
+     (= :strokes shape-attr)
+     (cond
+       (some #{:stroke-color} changed-sub-attr) #{:stroke-color}
+       (some #{:stroke-width} changed-sub-attr) #{:stroke-width})
+     (border-radius-keys shape-attr) #{shape-attr}
+     (sizing-keys shape-attr) #{shape-attr}
+     (opacity-keys shape-attr) #{shape-attr}
+     (spacing-keys shape-attr) #{shape-attr}
+     (rotation-keys shape-attr) #{shape-attr})))
 
 (defn token-attr->shape-attr
   [token-attr]
