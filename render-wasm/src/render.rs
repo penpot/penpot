@@ -142,7 +142,7 @@ impl RenderState {
     pub fn reset_canvas(&mut self) {
         self.drawing_surface
             .canvas()
-            .clear(skia::Color::TRANSPARENT)
+            .clear(self.background_color)
             .reset_matrix();
         self.final_surface
             .canvas()
@@ -154,7 +154,20 @@ impl RenderState {
             .reset_matrix();
     }
 
-    pub fn render_shape(&mut self, shape: &mut Shape) {
+    pub fn apply_drawing_to_final_canvas(&mut self) {
+        self.drawing_surface.draw(
+            &mut self.final_surface.canvas(),
+            (0.0, 0.0),
+            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
+            Some(&skia::Paint::default()),
+        );
+
+        self.drawing_surface
+            .canvas()
+            .clear(skia::Color::TRANSPARENT);
+    }
+
+    pub fn render_shape(&mut self, shape: &mut Shape, clip: bool) {
         let transform = shape.transform.to_skia_matrix();
 
         // Check transform-matrix code from common/src/app/common/geom/shapes/transforms.cljc
@@ -195,16 +208,13 @@ impl RenderState {
             }
         };
 
-        self.drawing_surface.draw(
-            &mut self.final_surface.canvas(),
-            (0.0, 0.0),
-            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
-            Some(&skia::Paint::default()),
-        );
+        if clip {
+            self.drawing_surface
+                .canvas()
+                .clip_rect(shape.bounds(), skia::ClipOp::Intersect, true);
+        }
 
-        self.drawing_surface
-            .canvas()
-            .clear(skia::Color::TRANSPARENT);
+        self.apply_drawing_to_final_canvas();
     }
 
     pub fn zoom(&mut self, tree: &HashMap<Uuid, Shape>) -> Result<(), String> {
@@ -325,17 +335,12 @@ impl RenderState {
             let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
             // This is needed so the next non-children shape does not carry this shape's transform
             self.final_surface.canvas().save_layer(&layer_rec);
-            self.drawing_surface.canvas().save();
 
+            self.drawing_surface.canvas().save();
             if !root_id.is_nil() {
-                self.render_shape(&mut element.clone());
-                if element.clip() {
-                    self.drawing_surface.canvas().clip_rect(
-                        element.bounds(),
-                        skia::ClipOp::Intersect,
-                        true,
-                    );
-                }
+                self.render_shape(&mut element.clone(), element.clip());
+            } else {
+                self.apply_drawing_to_final_canvas();
             }
 
             self.drawing_surface.canvas().restore();
