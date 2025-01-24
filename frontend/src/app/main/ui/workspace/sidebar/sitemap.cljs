@@ -170,7 +170,7 @@
                   :auto-focus true
                   :default-value (:name page "")}]]
         [:*
-         [:span {:class (stl/css :page-name) :data-testid "page-name"}
+         [:span {:class (stl/css :page-name) :title (:name page) :data-testid "page-name"}
           (:name page)]
          [:div {:class  (stl/css :page-actions)}
           (when (and deletable? (not read-only?))
