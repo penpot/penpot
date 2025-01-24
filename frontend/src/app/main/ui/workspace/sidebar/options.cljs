@@ -197,6 +197,10 @@
                     :id "inspect"
                     :content inspect-content}])]
 
+    (mf/with-effect [permissions]
+      (when-not (:can-edit permissions)
+        (on-change-tab :inspect)))
+
     [:div {:class (stl/css :tool-window)}
      [:> tab-switcher* {:tabs tabs
                         :default-selected "info"
