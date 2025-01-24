@@ -101,13 +101,15 @@
      (when (pos? index)
        [:button {:class (stl/css-case :viewer-go-prev true
                                       :left-bar left-bar)
-                 :on-click go-prev-frame}
+                 :on-click go-prev-frame
+                 :aria-label (tr "labels.previous")}
         i/arrow])
      (when (< (+ index 1) num-frames)
        [:button {:class (stl/css-case :viewer-go-next  true
                                       :comment-sidebar comment-sidebar
                                       :right-bar right-bar)
-                 :on-click go-next-frame}
+                 :on-click go-next-frame
+                 :aria-label (tr "labels.next")}
         i/arrow])
      [:div {:class (stl/css-case :viewer-bottom true
                                  :left-bar left-bar)}
