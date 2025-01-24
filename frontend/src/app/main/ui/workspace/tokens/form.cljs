@@ -352,7 +352,7 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps validate-name validate-descripion token resolved-tokens)
+         (mf/deps validate-name validate-descripion token active-theme-tokens)
          (fn [e]
            (dom/prevent-default e)
            (mf/set-ref-val! cancel-ref nil)
@@ -370,7 +370,7 @@
                          (validate-token-value+ {:value final-value
                                                  :name-value final-name
                                                  :token token
-                                                 :tokens resolved-tokens})])
+                                                 :tokens active-theme-tokens})])
                  (p/finally (fn [result err]
                               ;; The result should be a vector of all resolved validations
                               ;; We do not handle the error case as it will be handled by the components validations
