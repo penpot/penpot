@@ -65,6 +65,12 @@
   &::placeholder {
     --input-fg-color: var(--color-foreground-secondary);
   }
+
+  &:is(:autofill, :autofill:hover, :autofill:focus, :autofill:active) {
+    -webkit-text-fill-color: var(--input-fg-color);
+    -webkit-background-clip: text;
+    caret-color: var(--input-bg-color);
+  }
 }
 
 .icon {
