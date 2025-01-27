@@ -287,7 +287,8 @@
         color-ramp-open? (mf/use-state false)
         value-input-ref (mf/use-ref nil)
         value-ref (mf/use-var (:value token))
-        token-resolve-result (mf/use-state (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value]))
+        token-resolve-result* (mf/use-state (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value]))
+        token-resolve-result (deref token-resolve-result*)
         set-resolve-value
         (mf/use-fn
          (fn [token-or-err]
@@ -296,7 +297,7 @@
                      token-or-err
                      (:resolved-value token-or-err))]
              (when color? (reset! color (if error? nil v)))
-             (reset! token-resolve-result v))))
+             (reset! token-resolve-result* v))))
         on-update-value-debounced (use-debonced-resolve-callback name-ref token active-theme-tokens set-resolve-value)
         on-update-value (mf/use-fn
                          (mf/deps on-update-value-debounced)
@@ -316,10 +317,10 @@
                                 (fn []
                                   (swap! color-ramp-open? not)))
 
-        value-error? (seq (:errors @token-resolve-result))
+        value-error? (seq (:errors token-resolve-result))
         valid-value-field? (and
                             (not value-error?)
-                            (valid-value? @token-resolve-result))
+                            (valid-value? token-resolve-result))
 
         ;; Description
         description-ref (mf/use-var (:description token))
@@ -401,7 +402,7 @@
      (mf/deps create? resolved-tokens token token-resolve-result set-resolve-value)
      (fn []
        (when (and (not create?)
-                  (not @token-resolve-result)
+                  (not token-resolve-result)
                   resolved-tokens)
          (-> (get resolved-tokens @name-ref)
              (set-resolve-value)))))
@@ -448,10 +449,10 @@
           [:> input-token-color-bullet*
            {:color @color :on-click on-display-colorpicker}])]
        (when @color-ramp-open?
-         [:> ramp* {:color (some-> (or @token-resolve-result (:value token))
+         [:> ramp* {:color (some-> (or token-resolve-result (:value token))
                                    (tinycolor/valid-color))
                     :on-change on-update-color}])
-       [:& token-value-or-errors {:result-or-errors @token-resolve-result}]]
+       [:& token-value-or-errors {:result-or-errors token-resolve-result}]]
 
       [:div {:class (stl/css :input-row)}
        [:> input-tokens*
