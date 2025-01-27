@@ -161,12 +161,13 @@
   [hex]
   (when-let [tc (tinycolor/valid-color hex)]
     (let [hex (str "#" (tinycolor/->hex tc))
+          alpha (tinycolor/alpha tc)
           [r g b] (c/hex->rgb hex)
           [h s v] (c/hex->hsv hex)]
       {:hex hex
        :r r :g g :b b
        :h h :s s :v v
-       :alpha 1})))
+       :alpha alpha})))
 
 (mf/defc ramp*
   [{:keys [color on-change]}]
@@ -182,16 +183,15 @@
         on-change'
         (mf/use-fn
          (mf/deps on-change)
-         (fn [{:keys [hex]}]
+         (fn [{:keys [hex alpha]}]
            (let [dragging? (mf/ref-val dragging-ref)]
              (when-not (and dragging? hex)
-               (on-change hex)))))]
+               (on-change hex alpha)))))]
 
     (colorpicker/use-color-picker-css-variables! wrapper-node-ref (hex->value color))
     [:div {:ref wrapper-node-ref}
      [:> ramp-selector*
       {:color (hex->value color)
-       :disable-opacity true
        :on-start-drag on-start-drag
        :on-finish-drag on-finish-drag
        :on-change on-change'}]]))
@@ -313,10 +313,15 @@
                              (on-update-value-debounced value))))
         on-update-color (mf/use-fn
                          (mf/deps on-update-value-debounced)
-                         (fn [hex-value]
-                           (reset! value-ref hex-value)
-                           (set! (.-value (mf/ref-val value-input-ref)) hex-value)
-                           (on-update-value-debounced hex-value)))
+                         (fn [hex-value alpha]
+                           (let [color-value (if (= 1 alpha)
+                                               hex-value
+                                               (-> (tinycolor/valid-color hex-value)
+                                                   (tinycolor/set-alpha alpha)
+                                                   (tinycolor/->rgba-string)))]
+                             (reset! value-ref color-value)
+                             (dom/set-value! (mf/ref-val value-input-ref) color-value)
+                             (on-update-value-debounced color-value))))
 
         on-display-colorpicker (mf/use-fn
                                 (mf/deps color-ramp-open?)

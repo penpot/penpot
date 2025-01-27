@@ -135,8 +135,13 @@
 (defn color-token? [token]
   (= (:type token) :color))
 
-(defn resolved-value-hex [{:keys [resolved-value] :as token}]
+(defn color-bullet-color [token-color-value]
+  (when-let [tc (tinycolor/valid-color token-color-value)]
+    (if (tinycolor/alpha tc)
+      {:color (tinycolor/->hex tc)
+       :opacity (tinycolor/alpha tc)}
+      (tinycolor/->hex tc))))
+
+(defn resolved-token-bullet-color [{:keys [resolved-value] :as token}]
   (when (and resolved-value (color-token? token))
-    (some->> (tinycolor/valid-color resolved-value)
-             (tinycolor/->hex)
-             (str "#"))))
+    (color-bullet-color resolved-value)))

@@ -131,11 +131,17 @@
       (let [color-token {:name "color.primary"
                          :value "red"
                          :type :color}
+            color-alpha-token {:name "color.secondary"
+                               :value "rgba(255,0,0,0.5)"
+                               :type :color}
             file (-> (setup-file-with-tokens)
                      (update-in [:data :tokens-lib]
-                                #(ctob/add-token-in-set % "Set A" (ctob/make-token color-token))))
+                                #(-> %
+                                     (ctob/add-token-in-set "Set A" (ctob/make-token color-token))
+                                     (ctob/add-token-in-set "Set A" (ctob/make-token color-alpha-token)))))
             store (ths/setup-store file)
             rect-1 (cths/get-shape file :rect-1)
+            rect-2 (cths/get-shape file :rect-2)
             events [(wtch/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:color}
                                        :token (toht/get-token file "color.primary")
@@ -143,18 +149,40 @@
                     (wtch/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:stroke-color}
                                        :token (toht/get-token file "color.primary")
+                                       :on-update-shape wtch/update-stroke-color})
+                    (wtch/apply-token {:shape-ids [(:id rect-2)]
+                                       :attributes #{:color}
+                                       :token (toht/get-token file "color.secondary")
+                                       :on-update-shape wtch/update-fill})
+                    (wtch/apply-token {:shape-ids [(:id rect-2)]
+                                       :attributes #{:stroke-color}
+                                       :token (toht/get-token file "color.secondary")
                                        :on-update-shape wtch/update-stroke-color})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-state new-state)
                  token-target' (toht/get-token file' "rotation.medium")
-                 rect-1' (cths/get-shape file' :rect-1)]
-             (t/is (some? (:applied-tokens rect-1')))
-             (t/is (= (:fill (:applied-tokens rect-1')) (:name token-target')))
-             (t/is (= (get-in rect-1' [:fills 0 :fill-color]) "#ff0000"))
-             (t/is (= (:stroke (:applied-tokens rect-1')) (:name token-target')))
-             (t/is (= (get-in rect-1' [:strokes 0 :stroke-color]) "#ff0000")))))))))
+                 rect-1' (cths/get-shape file' :rect-1)
+                 rect-2' (cths/get-shape file' :rect-2)]
+             (t/testing "regular color"
+               (t/is (some? (:applied-tokens rect-1')))
+
+               (t/is (= (:fill (:applied-tokens rect-1')) (:name token-target')))
+               (t/is (= (get-in rect-1' [:fills 0 :fill-color]) "#ff0000"))
+
+               (t/is (= (:stroke (:applied-tokens rect-1')) (:name token-target')))
+               (t/is (= (get-in rect-1' [:strokes 0 :stroke-color]) "#ff0000")))
+             (t/testing "color with alpha channel"
+               (t/is (some? (:applied-tokens rect-2')))
+
+               (t/is (= (:fill (:applied-tokens rect-2')) (:name token-target')))
+               (t/is (= (get-in rect-2' [:fills 0 :fill-color]) "#ff0000"))
+               (t/is (= (get-in rect-2' [:fills 0 :fill-opacity]) 0.5))
+
+               (t/is (= (:stroke (:applied-tokens rect-2')) (:name token-target')))
+               (t/is (= (get-in rect-2' [:strokes 0 :stroke-color]) "#ff0000"))
+               (t/is (= (get-in rect-2' [:strokes 0 :stroke-opacity]) 0.5))))))))))
 
 (t/deftest test-apply-dimensions
   (t/testing "applies dimensions token and updates the shapes width and height"

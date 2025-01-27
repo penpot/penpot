@@ -17,9 +17,21 @@
   (assert (tinycolor? tc))
   (.toHex tc))
 
+(defn ->rgba-string [^js tc]
+  (assert (tinycolor? tc))
+  (.toRgbString tc))
+
 (defn color-format [^js tc]
   (assert (tinycolor? tc))
   (.getFormat tc))
+
+(defn alpha [^js tc]
+  (assert (tinycolor? tc))
+  (.getAlpha tc))
+
+(defn set-alpha [^js tc alpha]
+  (assert (tinycolor? tc))
+  (.setAlpha tc alpha))
 
 (comment
   (some-> (valid-color "red") ->hex)

@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.ui.components.color-bullet :refer [color-bullet]]
-   [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
+   [app.main.ui.workspace.tokens.token :as wtt]
    [rumext.v2 :as mf]))
 
 (def ^:private schema::input-token-color-bullet
@@ -22,6 +22,6 @@
   [{:keys [color on-click]}]
   [:div {:class (stl/css :input-token-color-bullet)
          :on-click on-click}
-   (if-let [hex (some-> color tinycolor/valid-color tinycolor/->hex)]
-     [:> color-bullet {:color hex :mini true}]
+   (if-let [color' (wtt/color-bullet-color color)]
+     [:> color-bullet {:color color' :mini true}]
      [:div {:class (stl/css :input-token-color-bullet-placeholder)}])])
