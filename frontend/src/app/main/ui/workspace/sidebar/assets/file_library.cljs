@@ -248,7 +248,7 @@
      (when ^boolean show-components?
        [:& components-section
         {:file-id file-id
-         :local? is-local
+         :is-local is-local
          :components components
          :listing-thumbs? listing-thumbs?
          :open? (or ^boolean force-open-components?
