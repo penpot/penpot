@@ -125,9 +125,9 @@
 (defn color-bullet-color [token-color-value]
   (when-let [tc (tinycolor/valid-color token-color-value)]
     (if (tinycolor/alpha tc)
-      {:color (tinycolor/->hex tc)
+      {:color (tinycolor/->hex-string tc)
        :opacity (tinycolor/alpha tc)}
-      (tinycolor/->hex tc))))
+      (tinycolor/->hex-string tc))))
 
 (defn resolved-token-bullet-color [{:keys [resolved-value] :as token}]
   (when (and resolved-value (color-token? token))

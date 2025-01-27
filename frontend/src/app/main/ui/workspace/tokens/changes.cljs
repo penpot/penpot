@@ -139,7 +139,7 @@
 
 (defn update-color [f value shape-ids]
   (when-let [tc (tinycolor/valid-color value)]
-    (let [hex (str "#" (tinycolor/->hex tc))
+    (let [hex (tinycolor/->hex-string tc)
           opacity (tinycolor/alpha tc)]
       (f shape-ids {:color hex :opacity opacity} 0 {:ignore-touched true}))))
 

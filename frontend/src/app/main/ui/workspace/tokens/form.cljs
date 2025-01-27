@@ -160,7 +160,7 @@
 (defn hex->value
   [hex]
   (when-let [tc (tinycolor/valid-color hex)]
-    (let [hex (str "#" (tinycolor/->hex tc))
+    (let [hex (tinycolor/->hex-string tc)
           alpha (tinycolor/alpha tc)
           [r g b] (c/hex->rgb hex)
           [h s v] (c/hex->hsv hex)]
