@@ -18,11 +18,12 @@
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as ic]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.tokens.common :refer [labeled-input] :as wtco]
+   [app.main.ui.workspace.tokens.components.controls.input-tokens :refer [input-tokens*]]
    [app.main.ui.workspace.tokens.sets :as wts]
    [app.main.ui.workspace.tokens.sets-context :as sets-context]
    [app.util.dom :as dom]
@@ -158,40 +159,35 @@
        (tr "workspace.token.create-theme-title")]]]))
 
 (mf/defc theme-inputs
-  [{:keys [theme dropdown-open? on-close-dropdown on-toggle-dropdown on-change-field]}]
+  [{:keys [theme on-change-field]}]
   (let [theme-groups (mf/deref refs/workspace-token-theme-groups)
-        group-input-ref (mf/use-ref)
+        theme-name-ref (mf/use-ref (:name theme))
+        options (map (fn [group]
+                       {:label group
+                        :id group})
+                     theme-groups)
         on-update-group (partial on-change-field :group)
-        on-update-name (partial on-change-field :name)]
+        on-update-name
+        (mf/use-fn
+         (fn [event]
+           (let [value (-> event dom/get-target dom/get-value)]
+             (on-change-field :name value)
+             (mf/set-ref-val! theme-name-ref value))))]
+
     [:div {:class (stl/css :edit-theme-inputs-wrapper)}
      [:div {:class (stl/css :group-input-wrapper)}
-      (when dropdown-open?
-        [:& wtco/dropdown-select {:id ::groups-dropdown
-                                  :shortcuts-key ::groups-dropdown
-                                  :options (map (fn [group]
-                                                  {:label group
-                                                   :value group})
-                                                theme-groups)
-                                  :on-select (fn [{:keys [value]}]
-                                               (set! (.-value (mf/ref-val group-input-ref)) value)
-                                               (on-update-group value))
-                                  :on-close on-close-dropdown}])
-      [:& labeled-input {:label "Group"
-                         :input-props {:ref group-input-ref
-                                       :default-value (:group theme)
-                                       :on-change (comp on-update-group dom/get-target-val)}
-                         :render-right (when (seq theme-groups)
-                                         (mf/fnc drop-down-button []
-                                           [:button {:class (stl/css :group-drop-down-button)
-                                                     :type "button"
-                                                     :on-click (fn [e]
-                                                                 (dom/stop-propagation e)
-                                                                 (on-toggle-dropdown))}
-                                            [:> icon* {:icon-id "arrow-down"}]]))}]]
+      [:label {:for "groups-dropdown" :class (stl/css :label)} (tr "workspace.token.label.group")]
+      [:> combobox* {:id (dm/str "groups-dropdown")
+                     :default-selected (:group theme)
+                     :options (clj->js options)
+                     :on-change on-update-group}]]
+
      [:div {:class (stl/css :group-input-wrapper)}
-      [:& labeled-input {:label "Theme"
-                         :input-props {:default-value (:name theme)
-                                       :on-change (comp on-update-name dom/get-target-val)}}]]]))
+      [:> input-tokens* {:id "theme-input"
+                         :label (tr "workspace.token.label.theme")
+                         :type "text"
+                         :on-change on-update-name
+                         :value (mf/ref-val theme-name-ref)}]]]))
 
 (mf/defc theme-modal-buttons
   [{:keys [close-modal on-save-form disabled?] :as props}]
@@ -208,8 +204,7 @@
 
 (mf/defc create-theme
   [{:keys [set-state]}]
-  (let [{:keys [dropdown-open? _on-open-dropdown on-close-dropdown on-toggle-dropdown]} (wtco/use-dropdown-open-state)
-        theme (ctob/make-token-theme :name "")
+  (let [theme (ctob/make-token-theme :name "")
         on-back #(set-state (constantly {:type :themes-overview}))
         on-submit (mf/use-fn
                    (fn [theme]
@@ -242,10 +237,7 @@
       (tr "workspace.token.create-theme-title")]
      [:form {:on-submit on-save-form}
       [:div {:class (stl/css :create-theme-wrapper)}
-       [:& theme-inputs {:dropdown-open? dropdown-open?
-                         :on-close-dropdown on-close-dropdown
-                         :on-toggle-dropdown on-toggle-dropdown
-                         :theme theme
+       [:& theme-inputs {:theme theme
                          :on-change-field on-change-field}]
 
        [:div {:class (stl/css :button-footer)}
@@ -269,7 +261,6 @@
         ;; Form / Modal handlers
         on-back #(set-state (constantly {:type :themes-overview}))
         on-submit #(st/emit! (wdt/update-token-theme [(:group theme) (:name theme)] %))
-        {:keys [dropdown-open? _on-open-dropdown on-close-dropdown on-toggle-dropdown]} (wtco/use-dropdown-open-state)
         disabled? (-> (:name @theme-state)
                       (str/trim)
                       (str/empty?))
@@ -349,10 +340,7 @@
         [:> icon* {:icon-id ic/arrow-left :aria-hidden true}]
         (tr "workspace.token.back-to-themes")]
 
-       [:& theme-inputs {:dropdown-open? dropdown-open?
-                         :on-close-dropdown on-close-dropdown
-                         :on-toggle-dropdown on-toggle-dropdown
-                         :theme theme
+       [:& theme-inputs {:theme theme
                          :on-change-field on-change-field}]
        [:> text* {:as "span"  :typography "body-small" :class (stl/css :select-sets-message)}
         (tr "workspace.token.set-selection-theme")]
