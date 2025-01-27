@@ -16,7 +16,7 @@
   [:map
    [:class {:optional true} :string]
    [:tag {:optional true} :string]
-   [:name :string]
+   [:name {:optional true} [:maybe :string]]
    [:url {:optional true} [:maybe :string]]
    [:color {:optional true} [:maybe :string]]
    [:selected {:optional true} :boolean]

@@ -27,7 +27,7 @@
    [:editing {:optional true} :boolean]
    [:user
     [:map
-     [:name :string]
+     [:name {:optional true} [:maybe :string]]
      [:avatar {:optional true} [:maybe :string]]
      [:color {:optional true} [:maybe :string]]]]
    [:label :string]
@@ -64,7 +64,7 @@
        [:> text*  {:as "span" :typography t/body-small :class (stl/css :name)} label])
 
      [:*
-      [:time {:datetime (dt/format date :iso)
+      [:time {:dateTime (dt/format date :iso)
               :class (stl/css :date)} time]
 
       [:div {:class (stl/css :milestone-buttons)}

@@ -1220,12 +1220,10 @@
                   :controls :inline-actions
                   :links   [{:label (tr "workspace.updates.more-info")
                              :callback do-more-info}]
-                  :actions [{:label (tr "workspace.updates.dismiss")
-                             :type :secondary
-                             :callback do-dismiss}
-                            {:label (tr "workspace.updates.update")
-                             :type :primary
-                             :callback do-update}]
+                  :cancel {:label (tr "workspace.updates.dismiss")
+                           :callback do-dismiss}
+                  :accept {:label (tr "workspace.updates.update")
+                           :callback do-update}
                   :tag :sync-dialog)))))))
 
 

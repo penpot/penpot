@@ -34,7 +34,7 @@
   (let [class (d/append-class class (stl/css-case :date true :is-selected selected))
         date (cond-> date (not (dt/datetime? date)) dt/datetime)
         typography (or typography t/body-medium)]
-    [:> text* {:as "time" :typography typography :class class :datetime (dt/format date :iso)}
+    [:> text* {:as "time" :typography typography :class class :dateTime (dt/format date :iso)}
      (dm/str
       (dt/format date :date-full)
       " . "

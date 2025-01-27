@@ -49,7 +49,7 @@
   (ptk/reify ::fetch-versions
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id (:current-file-id state)]
+      (when-let [file-id (:current-file-id state)]
         (->> (rp/cmd! :get-file-snapshots {:file-id file-id})
              (rx/map #(update-version-state {:status :loaded :data %})))))))
 

@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.sidebar.versions
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -20,6 +19,9 @@
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.product.autosaved-milestone :refer [autosaved-milestone*]]
+   [app.main.ui.ds.product.cta :refer [cta*]]
+   [app.main.ui.ds.product.user-milestone :refer [user-milestone*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -51,9 +53,7 @@
 
 (mf/defc version-entry
   [{:keys [entry profile on-restore-version on-delete-version on-rename-version editing?]}]
-  (let [input-ref (mf/use-ref nil)
-
-        show-menu? (mf/use-state false)
+  (let [show-menu? (mf/use-state false)
 
         handle-open-menu
         (mf/use-fn
@@ -112,35 +112,16 @@
              (st/emit! (dwv/update-version-state {:editing nil})))))]
 
     [:li {:class (stl/css :version-entry-wrap)}
-     [:div {:class (stl/css :version-entry :is-snapshot)}
-      [:img {:class (stl/css :version-entry-avatar)
-             :alt (:fullname profile)
-             :src (cfg/resolve-profile-photo-url profile)}]
-
-      [:div {:class (stl/css :version-entry-data)}
-       (if editing?
-         [:input {:class  (stl/css :version-entry-name-edit)
-                  :type "text"
-                  :ref input-ref
-                  :on-focus handle-name-input-focus
-                  :on-blur handle-name-input-blur
-                  :on-key-down handle-name-input-key-down
-                  :auto-focus true
-                  :default-value (:label entry)}]
-
-         [:p {:class (stl/css :version-entry-name)}
-          (:label entry)])
-
-       [:p {:class (stl/css :version-entry-time)}
-        (let [locale (mf/deref i18n/locale)
-              time   (dt/timeago (:created-at entry) {:locale locale})]
-          [:span {:class (stl/css :date)} time])]]
-
-      [:> icon-button* {:class (stl/css :version-entry-options)
-                        :variant "ghost"
-                        :aria-label (tr "workspace.versions.version-menu")
-                        :on-click handle-open-menu
-                        :icon "menu"}]]
+     [:> user-milestone* {:label (:label entry)
+                          :user #js {:name (:fullname profile)
+                                     :avatar (cfg/resolve-profile-photo-url profile)
+                                     :color (:color profile)}
+                          :editing editing?
+                          :date (:created-at entry)
+                          :onOpenMenu handle-open-menu
+                          :onFocusInput handle-name-input-focus
+                          :onBlurInput handle-name-input-blur
+                          :onKeyDownInput handle-name-input-key-down}]
 
      [:& dropdown {:show @show-menu? :on-close handle-close-menu}
       [:ul {:class (stl/css :version-options-dropdown)}
@@ -158,6 +139,7 @@
   [{:keys [index is-expanded entry on-toggle-expand on-pin-snapshot on-restore-snapshot]}]
 
   (let [open-menu (mf/use-state nil)
+        entry-ref (mf/use-ref nil)
 
         handle-toggle-expand
         (mf/use-fn
@@ -180,51 +162,45 @@
          (fn [event]
            (let [node  (dom/get-current-target event)
                  id    (-> (dom/get-data node "id") uuid/uuid)]
-             (when on-restore-snapshot (on-restore-snapshot id)))))]
+             (when on-restore-snapshot (on-restore-snapshot id)))))
 
-    [:li {:class (stl/css :version-entry-wrap)}
-     [:div {:class (stl/css-case :version-entry true
-                                 :is-autosave true
-                                 :is-expanded is-expanded)}
-      [:p {:class (stl/css :version-entry-name)}
-       (tr "workspace.versions.autosaved.version" (dt/format (:created-at entry) :date-full))]
 
-      [:button {:class (stl/css :version-entry-snapshots)
-                :aria-label (tr "workspace.versions.expand-snapshot")
-                :on-click handle-toggle-expand}
-       [:> i/icon* {:icon-id i/clock :class (stl/css :icon-clock)}]
-       (tr "workspace.versions.autosaved.entry" (count (:snapshots entry)))
-       [:> i/icon* {:icon-id i/arrow :class (stl/css :icon-arrow)}]]
+        handle-open-snapshot-menu
+        (mf/use-fn
+         (mf/deps entry)
+         (fn [event index]
+           (let [snapshot (nth (:snapshots entry) index)
+                 current-bb (-> entry-ref mf/ref-val dom/get-bounding-rect :top)
+                 target-bb (-> event dom/get-target dom/get-bounding-rect :top)
+                 offset (+ (- target-bb current-bb) 32)]
+             (swap! open-menu assoc
+                    :snapshot (:id snapshot)
+                    :offset offset))))]
 
-      [:ul {:class (stl/css :version-snapshot-list)}
-       (for [[idx snapshot] (d/enumerate (:snapshots entry))]
-         [:li {:class (stl/css :version-snapshot-entry-wrapper)
-               :key (dm/str "snp-" idx)}
-          [:div {:class (stl/css :version-snapshot-entry)}
-           (str
-            (dt/format (:created-at snapshot) :date-full)
-            " . "
-            (dt/format (:created-at snapshot) :time-24-simple))]
+    [:li {:ref entry-ref :class (stl/css :version-entry-wrap)}
+     [:> autosaved-milestone*
+      {:label (tr "workspace.versions.autosaved.version"
+                  (dt/format (:created-at entry) :date-full))
+       :autosavedMessage (tr "workspace.versions.autosaved.entry" (count (:snapshots entry)))
+       :snapshots (mapv :created-at (:snapshots entry))
+       :versionToggled is-expanded
+       :onClickSnapshotMenu handle-open-snapshot-menu
+       :onToggleExpandSnapshots handle-toggle-expand}]
 
-          [:> icon-button* {:variant "ghost"
-                            :aria-label (tr "workspace.versions.snapshot-menu")
-                            :on-click #(reset! open-menu snapshot)
-                            :icon "menu"
-                            :class (stl/css :version-snapshot-menu-btn)}]
-
-          [:& dropdown {:show (= @open-menu snapshot)
-                        :on-close #(reset! open-menu nil)}
-           [:ul {:class (stl/css :version-options-dropdown)}
-            [:li {:class (stl/css :menu-option)
-                  :role "button"
-                  :data-id (dm/str (:id snapshot))
-                  :on-click handle-restore-snapshot}
-             (tr "workspace.versions.button.restore")]
-            [:li {:class (stl/css :menu-option)
-                  :role "button"
-                  :data-id (dm/str (:id snapshot))
-                  :on-click handle-pin-snapshot}
-             (tr "workspace.versions.button.pin")]]]])]]]))
+     [:& dropdown {:show (some? @open-menu)
+                   :on-close #(reset! open-menu nil)}
+      [:ul {:class (stl/css :version-options-dropdown)
+            :style {"--offset" (dm/str (:offset @open-menu) "px")}}
+       [:li {:class (stl/css :menu-option)
+             :role "button"
+             :data-id (dm/str (:snapshot @open-menu))
+             :on-click handle-restore-snapshot}
+        (tr "workspace.versions.button.restore")]
+       [:li {:class (stl/css :menu-option)
+             :role "button"
+             :data-id (dm/str (:snapshot @open-menu))
+             :on-click handle-pin-snapshot}
+        (tr "workspace.versions.button.pin")]]]]))
 
 (mf/defc versions-toolbox*
   []
@@ -282,12 +258,10 @@
             (ntf/dialog
              :content (tr "workspace.versions.restore-warning")
              :controls :inline-actions
-             :actions [{:label (tr "workspace.updates.dismiss")
-                        :type :secondary
-                        :callback #(st/emit! (ntf/hide))}
-                       {:label (tr "labels.restore")
-                        :type :primary
-                        :callback #(st/emit! (dwv/restore-version id origin))}]
+             :cancel {:label (tr "workspace.updates.dismiss")
+                      :callback #(st/emit! (ntf/hide))}
+             :accept {:label (tr "labels.restore")
+                      :callback #(st/emit! (dwv/restore-version id origin))}
              :tag :restore-dialog))))
 
         handle-restore-version-pinned
@@ -384,12 +358,9 @@
 
                nil))])
 
-        [:div {:class (stl/css :autosave-warning)}
-         [:div {:class (stl/css :autosave-warning-text)}
-          (tr "workspace.versions.warning.text" versions-stored-days)]
-
-         [:div {:class (stl/css :autosave-warning-subtext)}
-          [:> i18n/tr-html*
-           {:tag-name "div"
-            :content (tr "workspace.versions.warning.subtext"
-                         "mailto:support@penpot.app")}]]]])]))
+        [:> cta* {:title (tr "workspace.versions.warning.text" versions-stored-days)}
+         [:> i18n/tr-html*
+          {:tag-name "div"
+           :class (stl/css :cta)
+           :content (tr "workspace.versions.warning.subtext"
+                        "mailto:support@penpot.app")}]]])]))
