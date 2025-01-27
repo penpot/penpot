@@ -247,7 +247,7 @@
     WHERE fmo.id = ANY(?::uuid[])
       AND file_id != ?")
 
-(defn update-media-references
+(defn update-media-references!
   "Given a file and a coll of media-refs, check if all provided
   references are correct or fix them in-place"
   [{:keys [::db/conn] :as cfg} {file-id :id :as file} media-refs]
@@ -260,10 +260,10 @@
                              (dissoc :created-at)
                              (dissoc :deleted-at))))
                 {}
-                (db/plan conn [sql:get-missing-media-references
-                               (->> (into #{} xf-map-id media-refs)
-                                    (db/create-array conn "uuid"))
-                               file-id]))
+                (db/exec! conn [sql:get-missing-media-references
+                                (->> (into #{} xf-map-id media-refs)
+                                     (db/create-array conn "uuid"))
+                                file-id]))
 
         lookup-index
         (fn [id]

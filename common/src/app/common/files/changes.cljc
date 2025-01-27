@@ -622,32 +622,37 @@
 
 ;; --- Shape / Obj
 
+;; The main purpose of this is ensure that all created shapes has
+;; valid media references; so for make sure of it, we analyze each
+;; shape added via `:add-obj` change for media usage, and if shape has
+;; media refs, we put that media refs on the check list (on the
+;; *state*) which will subsequently be processed and all incorrect
+;; references will be corrected.  The media ref is anything that can
+;; be pointing to a file-media-object on the shape, per example we
+;; have fill-image, stroke-image, etc.
+
+(defn- collect-shape-media-refs
+  [state obj page-id]
+  (let [media-refs
+        (-> (cfh/collect-shape-media-refs obj)
+            (not-empty))
+
+        xform
+        (map (fn [id]
+               {:page-id page-id
+                :shape-id (:id obj)
+                :id id}))]
+
+    (update state :media-refs into xform media-refs)))
+
 (defmethod process-change :add-obj
   [data {:keys [id obj page-id component-id frame-id parent-id index ignore-touched]}]
   (let [update-container
         (fn [container]
           (ctst/add-shape id obj container frame-id parent-id index ignore-touched))]
 
-    ;; The main purpose of this is ensure that all created shapes has
-    ;; valid media references; so for make sure of it, we analyze each
-    ;; shape added via `:add-obj` change for media usage, and if shape
-    ;; has media refs, we put that media refs on the check list (on
-    ;; the *state*) which will subsequently be processed and all
-    ;; incorrect references will be corrected.  The media ref is
-    ;; anything that can be pointing to a file-media-object on the
-    ;; shape, per example we have fill-image, stroke-image, etc.
     (when *state*
-      (let [media-refs
-            (-> (cfh/collect-shape-media-refs obj)
-                (not-empty))
-
-            xform
-            (map (fn [id]
-                   {:page-id page-id
-                    :shape-id (:id obj)
-                    :id id}))]
-
-        (swap! *state* update :media-refs into xform media-refs)))
+      (swap! *state* collect-shape-media-refs obj page-id))
 
     (if page-id
       (d/update-in-when data [:pages-index page-id] update-container)

@@ -427,6 +427,12 @@
                    (not skip-validate))
           (get-file-libraries cfg file))
 
+
+        ;; The main purpose of this atom is provide a contextual state
+        ;; for the changes subsystem where optionally some hints can
+        ;; be provided for the changes processing. Right now we are
+        ;; using it for notify about the existence of media refs when
+        ;; a new shape is added.
         state
         (atom {})
 
@@ -439,7 +445,7 @@
 
         file
         (if-let [media-refs (-> @state :media-refs not-empty)]
-          (bfc/update-media-references cfg file media-refs)
+          (bfc/update-media-references! cfg file media-refs)
           file)]
 
     (binding [pmap/*tracked* nil]
