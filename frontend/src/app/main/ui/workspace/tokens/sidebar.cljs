@@ -323,8 +323,7 @@
                              (js/console.error err)
                              (st/emit! (ntf/show {:content (wte/humanize-errors [(ex-data err)])
                                                   :type :toast
-                                                  :level :warning
-                                                  :timeout 9000})))))
+                                                  :level :error})))))
             (set! (.-value (mf/ref-val input-ref)) "")))
         on-export (fn []
                     (st/emit! (ptk/event ::ev/event {::ev/name "export-tokens"}))
