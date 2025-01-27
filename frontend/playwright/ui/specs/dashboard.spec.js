@@ -113,3 +113,21 @@ test("Bug 9443, Admin can not demote owner", async ({ page }) => {
   await expect(page.getByText("Owner")).toBeVisible();
   await expect(page.getByRole("combobox", { name: "Owner" })).toHaveCount(0);
 });
+
+test("Bug 9927, Don't show the banner to invite team members if the user has dismissed it", async ({
+  page,
+}) => {
+  const dashboardPage = new DashboardPage(page);
+  await dashboardPage.setupDashboardFull();
+  await DashboardPage.mockRPC(
+    page,
+    "get-projects?team-id=*",
+    "dashboard/get-projects-second-team.json",
+  );
+  await dashboardPage.goToSecondTeamDashboard();
+  await expect(page.getByText("Team Up")).toBeVisible();
+  await page.getByRole("button", { name: "Close" }).click();
+  await page.reload();
+  await expect(page.getByText("Second team")).toBeVisible();
+  await expect(page.getByText("Team Up")).not.toBeVisible();
+});

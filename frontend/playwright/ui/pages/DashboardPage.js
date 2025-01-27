@@ -55,6 +55,7 @@ export class DashboardPage extends BaseWebSocketPage {
 
   static anyTeamId = "c7ce0794-0992-8105-8004-38e630f40f6d";
   static secondTeamId = "dd33ff88-f4e5-8033-8003-8096cc07bdf3";
+  static newTeamId = "0b5bcbca-32ab-81eb-8005-a153d23d7739";
   static draftProjectId = "c7ce0794-0992-8105-8004-38e630f7920b";
 
   constructor(page) {
