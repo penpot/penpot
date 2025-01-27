@@ -60,7 +60,7 @@
                 (map (partial bfc/decode-file cfg))
                 xf:collect-used-media)
 
-        used   (->> (db/plan conn [sql:get-snapshots id])
+        used   (->> (db/plan conn [sql:get-snapshots id] {:fetch-size 1})
                     (transduce xform conj #{}))
         used   (into used xf:collect-used-media [file])
 
@@ -164,7 +164,7 @@
         (mapcat (partial get-used-components deleted-components file-id))
 
         used-remote
-        (->> (db/plan conn [sql:get-files-for-library file-id])
+        (->> (db/plan conn [sql:get-files-for-library file-id] {:fetch-size 1})
              (transduce (comp (map (partial bfc/decode-file cfg)) xform) conj #{}))
 
         used-local
