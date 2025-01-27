@@ -186,6 +186,40 @@
                (t/is (= (:width rect-1') 100))
                (t/is (= (:height rect-1') 100))))))))))
 
+(t/deftest test-apply-padding
+  (t/testing "applies padding token to shapes with layout"
+    (t/async
+      done
+      (let [dimensions-token {:name "padding.sm"
+                              :value "100"
+                              :type :spacing}
+            file (-> (setup-file-with-tokens)
+                     (ctho/add-frame :frame-1)
+                     (ctho/add-frame :frame-2 {:layout :grid})
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token dimensions-token))))
+            store (ths/setup-store file)
+            frame-1 (cths/get-shape file :frame-1)
+            frame-2 (cths/get-shape file :frame-2)
+            events [(wtch/apply-token {:shape-ids [(:id frame-1) (:id frame-2)]
+                                       :attributes #{:padding}
+                                       :token (toht/get-token file "padding.sm")
+                                       :on-update-shape wtch/update-layout-padding})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 token-target' (toht/get-token file' "dimensions.sm")
+                 frame-1' (cths/get-shape file' :frame-1)
+                 frame-2' (cths/get-shape file' :frame-2)]
+             (t/testing "shape `:applied-tokens` got updated"
+               (t/is (= (:spacing (:applied-tokens frame-1')) (:name token-target')))
+               (t/is (= (:spacing (:applied-tokens frame-2')) (:name token-target'))))
+             (t/testing "shapes padding got updated"
+               (t/is (= (:layout-padding frame-2') {:padding 100})))
+             (t/testing "shapes without layout get ignored"
+               (t/is (nil? (:layout-padding frame-1')))))))))))
+
 (t/deftest test-apply-sizing
   (t/testing "applies sizing token and updates the shapes width and height"
     (t/async
