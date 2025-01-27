@@ -216,7 +216,8 @@
 (mf/defc form
   {::mf/wrap-props false}
   [{:keys [token token-type action selected-token-set-name]}]
-  (let [token (or token {:type token-type})
+  (let [create? (not (instance? ctob/Token token))
+        token (or token {:type token-type})
         token-properties (wtty/get-token-properties token)
         color? (wtt/color-token? token)
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
@@ -292,7 +293,8 @@
         color-ramp-open? (mf/use-state false)
         value-input-ref (mf/use-ref nil)
         value-ref (mf/use-var (:value token))
-        token-resolve-result (mf/use-state (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value]))
+        token-resolve-result* (mf/use-state (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value]))
+        token-resolve-result (deref token-resolve-result*)
         set-resolve-value
         (mf/use-fn
          (fn [token-or-err]
@@ -301,7 +303,7 @@
                      token-or-err
                      (:resolved-value token-or-err))]
              (when color? (reset! color (if error? nil v)))
-             (reset! token-resolve-result v))))
+             (reset! token-resolve-result* v))))
         on-update-value-debounced (use-debonced-resolve-callback name-ref token active-theme-tokens set-resolve-value)
         on-update-value (mf/use-fn
                          (mf/deps on-update-value-debounced)
@@ -321,10 +323,10 @@
                                 (fn []
                                   (swap! color-ramp-open? not)))
 
-        value-error? (seq (:errors @token-resolve-result))
+        value-error? (seq (:errors token-resolve-result))
         valid-value-field? (and
                             (not value-error?)
-                            (valid-value? @token-resolve-result))
+                            (valid-value? token-resolve-result))
 
         ;; Description
         description-ref (mf/use-var (:description token))
@@ -395,6 +397,22 @@
            (dom/prevent-default e)
            (modal/hide!)))]
 
+    ;; Clear form token cache on mount
+    (mf/use-effect
+     (fn []
+       (reset! form-token-cache-atom nil)))
+
+    ;; Update the value when editing an existing token
+    ;; so the user doesn't have to interact with the form to validate the token
+    (mf/use-effect
+     (mf/deps create? resolved-tokens token token-resolve-result set-resolve-value)
+     (fn []
+       (when (and (not create?)
+                  (not token-resolve-result)
+                  resolved-tokens)
+         (-> (get resolved-tokens @name-ref)
+             (set-resolve-value)))))
+
     [:form {:class (stl/css :form-wrapper)
             :on-submit on-submit}
      [:div {:class (stl/css :token-rows)}
@@ -443,10 +461,10 @@
           [:> input-token-color-bullet*
            {:color @color :on-click on-display-colorpicker}])]
        (when @color-ramp-open?
-         [:> ramp* {:color (some-> (or @token-resolve-result (:value token))
+         [:> ramp* {:color (some-> (or token-resolve-result (:value token))
                                    (tinycolor/valid-color))
                     :on-change on-update-color}])
-       [:& token-value-or-errors {:result-or-errors @token-resolve-result}]]
+       [:& token-value-or-errors {:result-or-errors token-resolve-result}]]
 
       [:div {:class (stl/css :input-row)}
        [:> input-tokens*

@@ -370,7 +370,8 @@
         (use-resize-hook :tokens 200 38 400 :y false nil)]
     [:div {:class (stl/css :sidebar-wrapper)}
      [:& themes-sets-tab {:resize-height size-pages-opened}]
-     [:article {:class (stl/css :tokens-section-wrapper)}
+     [:article {:class (stl/css :tokens-section-wrapper)
+                :data-testid "tokens-sidebar"}
       [:div {:class (stl/css :resize-area-horiz)
              :on-pointer-down on-pointer-down-pages
              :on-lost-pointer-capture on-lost-pointer-capture-pages

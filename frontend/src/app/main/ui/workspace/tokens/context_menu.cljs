@@ -392,6 +392,7 @@
     [:& dropdown {:show is-open?
                   :on-close #(st/emit! dt/hide-token-context-menu)}
      [:div {:class (stl/css :token-context-menu)
+            :data-testid "tokens-context-menu-for-token"
             :ref dropdown-ref
             :data-direction dropdown-direction
             :style {:--bottom (if (= dropdown-direction "up")
