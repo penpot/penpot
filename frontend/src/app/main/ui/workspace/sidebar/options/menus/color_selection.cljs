@@ -58,13 +58,15 @@
         groups-ref       (h/use-ref-value groups)
         prev-colors-ref  (mf/use-ref nil)
 
-        color-keys*
-        (mf/use-var
-         (->> (concat colors library-colors)
-              (reduce
-               (fn [result color]
-                 (assoc result color (dm/str (uuid/next))))
-               {})))
+        initial-color-keys
+        (mf/use-memo
+         #(->> (concat colors library-colors)
+               (reduce
+                (fn [result color]
+                  (assoc result color (dm/str (uuid/next))))
+                {})))
+
+        color-keys*  (mf/use-var initial-color-keys)
 
         on-change
         (mf/use-fn
@@ -134,7 +136,8 @@
          ;; we need to keep the color picker open we need to maintain that color. The easier way
          ;; is to render the color elements so even if the library color is no longer we have still
          ;; the component to change it from the color picker.
-         (let [lib-colors (concat (cond->> library-colors (not @expand-lib-color) (take 3)) colors)]
+         (let [lib-colors (cond->> library-colors (not @expand-lib-color) (take 3))
+               lib-colors (concat lib-colors colors)]
            (for [[index color] (d/enumerate lib-colors)]
              [:& color-row
               {:key (get @color-keys* color)

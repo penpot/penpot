@@ -52,8 +52,10 @@
         hover-detach     (mf/use-state false)
         on-change        (h/use-ref-callback on-change)
 
-        src-colors       (dm/get-in shared-libs [(or (:ref-file color) (:file-id color)) :data :colors])
-        color-name       (dm/get-in src-colors [(or (:ref-id color) (:id color)) :name])
+        file-id          (or (:ref-file color) (:file-id color))
+        color-id         (or (:ref-id color) (:id color))
+        src-colors       (dm/get-in shared-libs [file-id :data :colors])
+        color-name       (dm/get-in src-colors [color-id :name])
 
         multiple-colors? (uc/multiple? color)
         library-color?   (and (or (:id color) (:ref-id color)) color-name (not multiple-colors?))
