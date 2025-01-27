@@ -92,7 +92,9 @@
    [:is-shared {:optional true} ::sm/boolean]
    [:data {:optional true} schema:data]
    [:version :int]
-   [:features ::cfeat/features]])
+   [:features ::cfeat/features]
+   [:migrations {:optional true}
+    [::sm/set :string]]])
 
 (sm/register! ::data schema:data)
 (sm/register! ::file schema:file)

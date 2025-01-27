@@ -6,4 +6,7 @@
 
 (ns app.common.files.defaults)
 
+;; DEPRECATED: this number should not be touched anymore, it is
+;; conserved for backward compatibility with all the existing files,
+;; but new files are using a new file migration tracking mechanism
 (def version 67)

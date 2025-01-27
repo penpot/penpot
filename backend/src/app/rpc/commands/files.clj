@@ -22,6 +22,7 @@
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.features.fdata :as feat.fdata]
+   [app.features.file-migrations :as feat.fmigr]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
@@ -243,7 +244,8 @@
       (when (contains? (:features file) "fdata/pointer-map")
         (feat.fdata/persist-pointers! cfg id))
 
-      file)))
+      (feat.fmigr/upsert-migrations! conn file)
+      (feat.fmigr/resolve-applied-migrations cfg file))))
 
 (defn get-file
   [{:keys [::db/conn ::wrk/executor] :as cfg} id
@@ -264,6 +266,7 @@
                             {::db/check-deleted (not include-deleted?)
                              ::db/remove-deleted (not include-deleted?)
                              ::sql/for-update lock-for-update?})
+                    (feat.fmigr/resolve-applied-migrations cfg)
                     (feat.fdata/resolve-file-data cfg))
 
         ;; NOTE: we perform the file decoding in a separate thread

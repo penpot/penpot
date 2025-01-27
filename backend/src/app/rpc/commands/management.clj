@@ -56,8 +56,8 @@
     (vswap! bfc/*state* update :index bfc/update-index fmeds :id)
 
     ;; Process and persist file
-    (let [file (->> (bfc/process-file file)
-                    (bfc/save-file! cfg))]
+    (let [file (bfc/process-file file)]
+      (bfc/insert-file! cfg file ::db/return-keys false)
 
       ;; The file profile creation is optional, so when no profile is
       ;; present (when this function is called from profile less
@@ -86,7 +86,7 @@
                                fmeds)]
         (db/insert! conn :file-media-object params ::db/return-keys false))
 
-      (bfc/decode-file cfg file))))
+      file)))
 
 (def ^:private
   schema:duplicate-file
