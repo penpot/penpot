@@ -65,7 +65,7 @@ fn draw_stroke_on_path(
     let is_open = path.is_open();
     let paint_stroke = stroke.to_stroked_paint(is_open, selrect, svg_attrs, scale);
     // Draw the different kind of strokes for a path requires different strategies:
-    match stroke.kind {
+    match stroke.render_kind(is_open) {
         // For inner stroke we draw a center stroke (with double width) and clip to the original path (that way the extra outer stroke is removed)
         StrokeKind::InnerStroke => {
             canvas.clip_path(&skia_path, skia::ClipOp::Intersect, true);
@@ -93,6 +93,16 @@ fn draw_stroke_on_path(
             canvas.restore();
         }
     }
+
+    handle_stroke_caps(
+        &mut skia_path,
+        stroke,
+        &selrect,
+        canvas,
+        is_open,
+        svg_attrs,
+        scale,
+    );
 }
 
 fn handle_stroke_cap(
@@ -152,7 +162,6 @@ fn handle_stroke_caps(
         let first_point = points.first().unwrap();
         let last_point = points.last().unwrap();
 
-        // let kind = stroke.render_kind(is_open);
         let mut paint_stroke = stroke.to_stroked_paint(is_open, selrect, svg_attrs, dpr_scale);
 
         handle_stroke_cap(
@@ -384,7 +393,7 @@ fn draw_image_stroke_in_container(
                 stroke,
                 &outer_rect,
                 canvas,
-                p.is_open(),
+                is_open,
                 svg_attrs,
                 dpr_scale,
             );
