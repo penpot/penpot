@@ -197,7 +197,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/concat
-       (map #(dwt/update-position % (zipmap attributes (repeat value))) shape-ids)))))
+       (map #(dwt/update-position % (zipmap attributes (repeat value)) {:ignore-touched true}) shape-ids)))))
 
 (defn update-layout-sizing-limits [value shape-ids attributes]
   (ptk/reify ::update-layout-sizing-limits

@@ -787,30 +787,31 @@
 
 (defn update-position
   "Move shapes to a new position"
-  [id position]
-  (dm/assert! (uuid? id))
+  ([id position] (update-position id position nil))
+  ([id position opts]
+   (dm/assert! (uuid? id))
 
-  (ptk/reify ::update-position
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [page-id    (:current-page-id state)
-            objects    (dsh/lookup-page-objects state page-id)
-            shape      (get objects id)
+   (ptk/reify ::update-position
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [page-id    (:current-page-id state)
+             objects    (dsh/lookup-page-objects state page-id)
+             shape      (get objects id)
+             ;; FIXME: performance rect
+             bbox       (-> shape :points grc/points->rect)
 
-            ;; FIXME: performance rect
-            bbox       (-> shape :points grc/points->rect)
+             cpos       (gpt/point (:x bbox) (:y bbox))
+             pos        (gpt/point (or (:x position) (:x bbox))
+                                   (or (:y position) (:y bbox)))
 
-            cpos       (gpt/point (:x bbox) (:y bbox))
-            pos        (gpt/point (or (:x position) (:x bbox))
-                                  (or (:y position) (:y bbox)))
+             delta      (gpt/subtract pos cpos)
 
-            delta      (gpt/subtract pos cpos)
+             modif-tree (dwm/create-modif-tree [id] (ctm/move-modifiers delta))]
 
-            modif-tree (dwm/create-modif-tree [id] (ctm/move-modifiers delta))]
-
-        (rx/of (dwm/apply-modifiers {:modifiers modif-tree
-                                     :ignore-constraints false
-                                     :ignore-snap-pixel true}))))))
+         (rx/of (dwm/apply-modifiers {:modifiers modif-tree
+                                      :ignore-constraints false
+                                      :ignore-touched (:ignore-touched opts)
+                                      :ignore-snap-pixel true})))))))
 
 (defn position-shapes
   [shapes]
