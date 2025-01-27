@@ -88,19 +88,6 @@
     {:path (seq path)
      :selector selector}))
 
-(defn token-names-tree-id-map [tokens]
-  (reduce
-   (fn [acc [_ {:keys [name] :as token}]]
-     (when (string? name)
-       (let [temp-id (random-uuid)
-             token (assoc token :temp/id temp-id)]
-         (-> acc
-             (assoc-in (concat [:tree] (token-name->path name)) token)
-             (assoc-in [:ids-map temp-id] token)))))
-   {:tree {}
-    :ids-map {}}
-   tokens))
-
 (defn token-name-path-exists?
   "Traverses the path from `token-name` down a `token-tree` and checks if a token at that path exists.
 
