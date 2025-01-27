@@ -31,6 +31,7 @@
 - Fix exception on importing some templates from templates slider
 - Consolidate adding share button to workspace
 - Fix problem when pasting text [Taiga #9929](https://tree.taiga.io/project/penpot/issue/9929)
+- Fix incorrect media reference handling on component instantiation
 
 ## 2.4.2
 
