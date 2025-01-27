@@ -11,7 +11,6 @@ $mint-250: #00d1b8;
 $mint-700: #426158;
 $mint-150-60: #7efff599;
 $mint-250-10: #00d1b81a;
-$mint-900: #0d1d1b;
 
 $green-200: #a7e8d9;
 $green-500: #2d9f8f;
@@ -28,7 +27,6 @@ $red-950: #500124;
 
 $pink-400: #ff6fe0;
 
-$purple-100: #f3ebff;
 $purple-200: #e1d2f5;
 $purple-400: #bb97d8;
 $purple-600: #8c33eb;
@@ -76,8 +74,8 @@ $grayish-red: #bfbfbf;
   --color-accent-secondary: #{$cobalt-700};
   --color-accent-tertiary: #{$purple-600};
   --color-accent-quaternary: #{$pink-400};
-  --color-accent-overlay: #{$purple-600-10};
-  --color-accent-select: #{$purple-700-60};
+  --color-accent-overlay: #{$purple-700-60};
+  --color-accent-select: #{$purple-600-10};
 
   --color-accent-success: #{$green-500};
   --color-background-success: #{$green-200};
@@ -106,9 +104,6 @@ $grayish-red: #bfbfbf;
   --color-token-border: #{$aqua-400};
   --color-token-accent: #{$aqua-600};
   --color-token-foreground: #{$aqua-800};
-
-  --color-cta-background: #{$purple-100};
-  --color-cta-border: #{$purple-600-10};
 }
 
 :global(.default) {
@@ -117,8 +112,8 @@ $grayish-red: #bfbfbf;
   --color-accent-secondary: #{$purple-400};
   --color-accent-tertiary: #{$mint-250};
   --color-accent-quaternary: #{$pink-400};
-  --color-accent-overlay: #{$mint-250-10};
-  --color-accent-select: #{$mint-150-60};
+  --color-accent-overlay: #{$mint-150-60};
+  --color-accent-select: #{$mint-250-10};
 
   --color-accent-success: #{$green-500};
   --color-background-success: #{$green-950};
@@ -147,7 +142,4 @@ $grayish-red: #bfbfbf;
   --color-token-border: #{$violet-700};
   --color-token-accent: #{$violet-600};
   --color-token-foreground: #{$violet-300};
-
-  --color-cta-border: #{$green-950};
-  --color-cta-background: #{$mint-900};
 }

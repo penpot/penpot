@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "../_borders.scss" as *;
+@use "../typography.scss" as t;
 
 .notification {
   align-items: center;
@@ -15,9 +16,10 @@
   gap: var(--sp-s);
   grid-template-columns: 1fr auto auto;
   justify-content: space-between;
-  padding: var(--sp-l);
+  padding: var(--sp-s);
+}
 
-  :global(a) {
-    color: var(--color-accent-primary);
-  }
+.notification-message {
+  @include t.use-typography("body-small");
+  color: var(--color-foreground-primary);
 }

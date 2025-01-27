@@ -11,7 +11,7 @@ export default {
       options: ["default", "error"],
       control: { type: "select" },
     },
-    actionLabel: {
+    acceptLabel: {
       control: { type: "text" },
     },
     cancelLabel: {
@@ -20,7 +20,7 @@ export default {
   },
   args: {
     variant: "default",
-    actionLabel: "Update",
+    acceptLabel: "Update",
     cancelLabel: "Dismiss",
   },
   render: ({ ...args }) => (

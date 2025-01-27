@@ -39,7 +39,8 @@
 
         inline?
         [:& inline-notification
-         {:actions (:actions notification)
+         {:accept (:accept notification)
+          :cancel (:cancel notification)
           :links (:links notification)
           :content (:content notification)}]
 

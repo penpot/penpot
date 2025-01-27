@@ -17,17 +17,34 @@
    [:class {:optional true} :string]
    [:variant {:optional true}
     [:maybe [:enum "default" "error"]]]
-   [:actionLabel {:optional true} :string]
-   [:cancelLabel {:optional true} :string]])
+   [:acceptLabel {:optional true} :string]
+   [:cancelLabel {:optional true} :string]
+   [:onAccept {:optional true} [:fn fn?]]
+   [:onCancel {:optional true} [:fn fn?]]])
 
 (mf/defc actionable*
   {::mf/props :obj
    ::mf/schema schema:actionable}
-  [{:keys [class variant actionLabel cancelLabel children] :rest props}]
+  [{:keys [class variant acceptLabel cancelLabel children onAccept onCancel] :rest props}]
 
-  (let [class (d/append-class class (stl/css :notification))
-        props (mf/spread-props props {:class class :data-testid "actionable"})]
+  (let [variant (or variant "default")
+        class (d/append-class class (stl/css :notification))
+        props (mf/spread-props props {:class class :data-testid "actionable"})
+
+        handle-accept
+        (mf/use-fn
+         (fn [e]
+           (when onAccept (onAccept e))))
+
+        handle-cancel
+        (mf/use-fn
+         (fn [e]
+           (when onCancel (onCancel e))))]
+
     [:> "aside" props
-     [:div {:class (stl/css :notification-message)} children]
-     [:> button* {:variant "secondary"} cancelLabel]
-     [:> button* {:variant (if (= variant "default") "primary" "destructive")} actionLabel]]))
+     [:div {:class (stl/css :notification-message)}
+      children]
+     [:> button* {:variant "secondary"
+                  :on-click handle-cancel} cancelLabel]
+     [:> button* {:variant (if (= variant "default") "primary" "destructive")
+                  :on-click handle-accept} acceptLabel]]))

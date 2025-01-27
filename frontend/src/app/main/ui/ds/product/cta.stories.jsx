@@ -16,8 +16,17 @@ export default {
   },
   render: ({ ...args }) => (
     <Cta {...args}>
-      If you’d like to increase this limit, write to us at{" "}
-      <a href="#">support@penpot.app</a>
+      <span
+        style={{
+          fontSize: "0.75rem",
+          color: "var(--color-foreground-secondary)",
+        }}
+      >
+        If you’d like to increase this limit, write to us at{" "}
+        <a style={{ color: "var(--color-accent-primary)" }} href="#">
+          support@penpot.app
+        </a>
+      </span>
     </Cta>
   ),
 };

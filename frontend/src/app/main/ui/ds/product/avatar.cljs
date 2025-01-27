@@ -18,7 +18,7 @@
    [:tag {:optional true} :string]
    [:name :string]
    [:url {:optional true} [:maybe :string]]
-   [:color :string]
+   [:color {:optional true} [:maybe :string]]
    [:selected {:optional true} :boolean]
    [:variant {:optional true}
     [:maybe [:enum "S" "M" "L"]]]])

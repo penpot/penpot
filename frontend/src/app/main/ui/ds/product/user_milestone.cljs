@@ -14,9 +14,10 @@
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
-   [app.main.ui.ds.utilities.date :refer [date* valid-date?]]
+   [app.main.ui.ds.utilities.date :refer [valid-date?]]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
+   [app.util.time :as dt]
    [rumext.v2 :as mf]))
 
 (def ^:private schema:milestone
@@ -28,16 +29,23 @@
     [:map
      [:name :string]
      [:avatar {:optional true} [:maybe :string]]
-     [:color :string]]]
+     [:color {:optional true} [:maybe :string]]]]
    [:label :string]
-   [:date [:fn valid-date?]]])
+   [:date [:fn valid-date?]]
+   [:onOpenMenu {:optional true} [:maybe [:fn fn?]]]
+   [:onFocusInput {:optional true} [:maybe [:fn fn?]]]
+   [:onBlurInput {:optional true} [:maybe [:fn fn?]]]
+   [:onKeyDownInput {:optional true} [:maybe [:fn fn?]]]])
 
 (mf/defc user-milestone*
   {::mf/props :obj
    ::mf/schema schema:milestone}
-  [{:keys [class active editing user label date] :rest props}]
+  [{:keys [class active editing user label date
+           onOpenMenu onFocusInput onBlurInput onKeyDownInput] :rest props}]
   (let [class (d/append-class class (stl/css-case :milestone true :is-selected active))
-        props (mf/spread-props props {:class class :data-testid "milestone"})]
+        props (mf/spread-props props {:class class :data-testid "milestone"})
+        date (cond-> date (not (dt/datetime? date)) dt/datetime)
+        time   (dt/timeago date)]
     [:> "div" props
      [:> avatar* {:name (obj/get user "name")
                   :url (obj/get user "avatar")
@@ -45,23 +53,25 @@
                   :variant "S" :class (stl/css :avatar)}]
 
      (if editing
-       [:> input* {:class (stl/css :name-input) :default-value label}]
-       [:> text*  {:as "span" :typography t/body-medium :class (stl/css :name)} label])
+       [:> input*
+        {:class (stl/css :name-input)
+         :variant "seamless"
+         :default-value label
+         :auto-focus true
+         :on-focus onFocusInput
+         :on-blur onBlurInput
+         :on-key-down onKeyDownInput}]
+       [:> text*  {:as "span" :typography t/body-small :class (stl/css :name)} label])
 
      [:*
-      [:> date*   {:date date :class (stl/css :date)}]
+      [:time {:datetime (dt/format date :iso)
+              :class (stl/css :date)} time]
+
       [:div {:class (stl/css :milestone-buttons)}
-       [:> icon-button* {:class (stl/css :menu-button)
-                         :variant "ghost"
-                         :icon "pin"
-                         :aria-label (tr "workspace.versions.version-menu")
-                         ;;:on-click handle-open-menu
-                         }]
        [:> icon-button* {:class (stl/css :menu-button)
                          :variant "ghost"
                          :icon "menu"
                          :aria-label (tr "workspace.versions.version-menu")
-                         ;;:on-click handle-open-menu
-                         }]]]]))
+                         :on-click onOpenMenu}]]]]))
 
 

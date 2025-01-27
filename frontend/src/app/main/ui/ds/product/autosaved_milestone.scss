@@ -6,6 +6,7 @@
 
 @use "../_sizes.scss" as *;
 @use "../_borders.scss" as *;
+@use "../typography.scss" as t;
 
 .milestone {
   border: $b-1 solid var(--border-color, transparent);
@@ -38,11 +39,23 @@
 }
 
 .name {
+  @include t.use-typography("body-small");
+  grid-area: name;
+  color: var(--color-foreground-primary);
+}
+
+.toggle-message {
+  @include t.use-typography("body-small");
   grid-area: name;
 }
 
 .date {
   grid-area: content;
+  color: var(--date-color, var(--color-foreground-secondary));
+
+  &:hover {
+    --date-color: var(--color-accent-primary);
+  }
 }
 
 .snapshots {
@@ -74,18 +87,16 @@
   display: flex;
   flex-direction: row;
   gap: var(--sp-xs);
-  justify-items: baseline;
+  align-items: flex-end;
   margin: 0;
   margin-top: var(--sp-xxs);
+  margin-bottom: var(--sp-s);
   padding: 0;
   cursor: pointer;
 
   &:hover {
     color: var(--color-accent-primary);
-
-    .icon-arrow {
-      --icon-stroke-color: var(--color-accent-primary);
-    }
+    --icon-stroke-color: var(--color-accent-primary);
   }
 }
 
@@ -95,10 +106,10 @@
 
 .icon-arrow {
   --icon-stroke-color: var(--color-foreground-secondary);
+}
 
-  &.toggled {
-    transform: rotate(90deg);
-  }
+.icon-arrow-toggled {
+  transform: rotate(90deg);
 }
 
 .entry-button {

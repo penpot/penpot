@@ -11,16 +11,11 @@
 
 .cta {
   border-radius: $br-8;
-  border: $b-1 solid var(--color-cta-border);
-  background: var(--color-cta-background);
+  border: $b-1 solid var(--color-accent-primary-muted);
+  background: var(--color-accent-select);
   padding: var(--sp-m);
 }
 
-.cta-message {
-  @include t.use-typography("body-small");
-  color: var(--color-foreground-secondary);
-
-  :global(a) {
-    color: var(--color-accent-primary);
-  }
+.cta-title {
+  color: var(--color-foreground-primary);
 }

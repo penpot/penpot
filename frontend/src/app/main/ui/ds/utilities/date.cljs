@@ -24,15 +24,17 @@
    [:class {:optional true} :string]
    [:as {:optional true} :string]
    [:date [:fn valid-date?]]
-   [:selected {:optional true} :boolean]])
+   [:selected {:optional true} :boolean]
+   [:typography {:optional true} :string]])
 
 (mf/defc date*
   {::mf/props :obj
    ::mf/schema schema:date}
-  [{:keys [class date selected] :rest props}]
+  [{:keys [class date selected typography] :rest props}]
   (let [class (d/append-class class (stl/css-case :date true :is-selected selected))
-        date (cond-> date (not (dt/datetime? date)) dt/datetime)]
-    [:> text* {:as "time" :typography t/body-medium :class class :datetime (dt/format date :iso)}
+        date (cond-> date (not (dt/datetime? date)) dt/datetime)
+        typography (or typography t/body-medium)]
+    [:> text* {:as "time" :typography typography :class class :datetime (dt/format date :iso)}
      (dm/str
       (dt/format date :date-full)
       " . "

@@ -31,30 +31,10 @@
   &:hover {
     --border-color: var(--color-accent-primary);
   }
+}
 
-  .name-input {
-    --input-bg-color: none;
-    --input-outline-color: none;
-    grid-area: name;
-    padding: 0;
-    border: none;
-
-    input {
-      @include t.use-typography("body-medium");
-      height: auto;
-      margin: 0;
-    }
-
-    &:hover {
-      --input-bg-color: none;
-      --input-outline-color: none;
-    }
-
-    &:has(*:focus-visible) {
-      --input-bg-color: none;
-      --input-outline-color: none;
-    }
-  }
+.name-input {
+  grid-area: name;
 }
 
 .avatar {
@@ -64,10 +44,13 @@
 
 .name {
   grid-area: name;
+  color: var(--color-foreground-primary);
 }
 
 .date {
+  @include t.use-typography("body-small");
   grid-area: content;
+  color: var(--color-foreground-secondary);
 }
 
 .snapshots {

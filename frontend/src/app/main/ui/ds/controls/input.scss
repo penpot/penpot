@@ -76,3 +76,25 @@
 .icon {
   color: var(--color-foreground-secondary);
 }
+
+.input-seamless {
+  --input-bg-color: none;
+  --input-outline-color: none;
+  padding: 0;
+  border: none;
+
+  .input {
+    height: auto;
+    margin: 0;
+  }
+
+  &:hover {
+    --input-bg-color: none;
+    --input-outline-color: none;
+  }
+
+  &:has(*:focus-visible) {
+    --input-bg-color: none;
+    --input-outline-color: none;
+  }
+}
