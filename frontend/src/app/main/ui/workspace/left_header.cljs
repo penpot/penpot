@@ -32,6 +32,7 @@
   (let [profile     (mf/deref refs/profile)
         file-id     (:id file)
         file-name   (:name file)
+        project-id  (:id project)
         team-id     (:team-id project)
         shared?     (:is-shared file)
 
@@ -78,7 +79,8 @@
 
         nav-to-project
         (mf/use-fn
-         #(st/emit! (dcm/go-to-dashboard-files ::rt/new-window true)))]
+         (mf/deps project-id)
+         #(st/emit! (dcm/go-to-dashboard-files ::rt/new-window true :project-id project-id)))]
 
     (mf/with-effect [editing?]
       (when ^boolean editing?
