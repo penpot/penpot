@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.files-update
   (:require
+   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
@@ -415,19 +416,37 @@
       (l/error :hint "file validation error"
                :cause cause))))
 
+
 (defn- process-changes-and-validate
   [cfg file changes skip-validate]
   (let [;; WARNING: this ruins performance; maybe we need to find
         ;; some other way to do general validation
-        libs (when (and (or (contains? cf/flags :file-validation)
-                            (contains? cf/flags :soft-file-validation))
-                        (not skip-validate))
-               (get-file-libraries cfg file))
+        libs
+        (when (and (or (contains? cf/flags :file-validation)
+                       (contains? cf/flags :soft-file-validation))
+                   (not skip-validate))
+          (get-file-libraries cfg file))
 
-        file (-> (files/check-version! file)
-                 (update :revn inc)
-                 (update :data cpc/process-changes changes)
-                 (update :data d/without-nils))]
+
+        ;; The main purpose of this atom is provide a contextual state
+        ;; for the changes subsystem where optionally some hints can
+        ;; be provided for the changes processing. Right now we are
+        ;; using it for notify about the existence of media refs when
+        ;; a new shape is added.
+        state
+        (atom {})
+
+        file
+        (binding [cpc/*state* state]
+          (-> (files/check-version! file)
+              (update :revn inc)
+              (update :data cpc/process-changes changes)
+              (update :data d/without-nils)))
+
+        file
+        (if-let [media-refs (-> @state :media-refs not-empty)]
+          (bfc/update-media-references! cfg file media-refs)
+          file)]
 
     (binding [pmap/*tracked* nil]
       (when (contains? cf/flags :soft-file-validation)

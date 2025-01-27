@@ -12,6 +12,7 @@
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
+   [clojure.walk :as walk]
    [cuerdas.core :as str]))
 
 #?(:clj (set! *warn-on-reflection* true))
@@ -532,6 +533,86 @@
        first
        (get-position-on-parent objects)
        inc))
+
+(defn collect-shape-media-refs
+  "Collect all media refs on the provided shape. Returns a set of ids"
+  [shape]
+  (sequence
+   (keep :id)
+   ;; NOTE: because of some bug, we ended with
+   ;; many shape types having the ability to
+   ;; have fill-image attribute (which initially
+   ;; designed for :path shapes).
+   (concat [(:fill-image shape)
+            (:metadata shape)]
+           (map :fill-image (:fills shape))
+           (map :stroke-image (:strokes shape))
+           (->> (:content shape)
+                (tree-seq map? :children)
+                (mapcat :fills)
+                (map :fill-image)))))
+
+(def ^:private
+  xform:collect-media-refs
+  "A transducer for collect media-id usage across a container (page or
+  component)"
+  (comp
+   (map :objects)
+   (mapcat vals)
+   (mapcat collect-shape-media-refs)))
+
+(defn collect-used-media
+  "Given a fdata (file data), returns all media references used in the
+  file data"
+  [data]
+  (-> #{}
+      (into xform:collect-media-refs (vals (:pages-index data)))
+      (into xform:collect-media-refs (vals (:components data)))
+      (into (keys (:media data)))))
+
+(defn relink-media-refs
+  "A function responsible to analyze all file data and replace the
+  old :component-file reference with the new ones, using the provided
+  file-index."
+  [data lookup-index]
+  (letfn [(process-map-form [form]
+            (cond-> form
+              ;; Relink image shapes
+              (and (map? (:metadata form))
+                   (= :image (:type form)))
+              (update-in [:metadata :id] lookup-index)
+
+              ;; Relink paths with fill image
+              (map? (:fill-image form))
+              (update-in [:fill-image :id] lookup-index)
+
+              ;; This covers old shapes and the new :fills.
+              (uuid? (:fill-color-ref-file form))
+              (update :fill-color-ref-file lookup-index)
+
+              ;; This covers the old shapes and the new :strokes
+              (uuid? (:stroke-color-ref-file form))
+              (update :stroke-color-ref-file lookup-index)
+
+              ;; This covers all text shapes that have typography referenced
+              (uuid? (:typography-ref-file form))
+              (update :typography-ref-file lookup-index)
+
+              ;; This covers the component instance links
+              (uuid? (:component-file form))
+              (update :component-file lookup-index)
+
+              ;; This covers the shadows and grids (they have directly
+              ;; the :file-id prop)
+              (uuid? (:file-id form))
+              (update :file-id lookup-index)))
+
+          (process-form [form]
+            (if (map? form)
+              (process-map-form form)
+              form))]
+
+    (walk/postwalk process-form data)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SHAPES ORGANIZATION (PATH MANAGEMENT)

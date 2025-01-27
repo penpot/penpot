@@ -10,7 +10,7 @@
   file is eligible to be garbage collected after some period of
   inactivity (the default threshold is 72h)."
   (:require
-   [app.binfile.common :as bfc]
+   [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
    [app.common.files.validate :as cfv]
    [app.common.logging :as l]
@@ -54,7 +54,7 @@
 (def ^:private xf:collect-used-media
   (comp
    (map :data)
-   (mapcat bfc/collect-used-media)))
+   (mapcat cfh/collect-used-media)))
 
 (defn- clean-file-media!
   "Performs the garbage collection of file media objects."
