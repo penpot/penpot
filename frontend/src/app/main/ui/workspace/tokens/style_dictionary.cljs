@@ -179,7 +179,7 @@
            (= header-2 "Reference Errors:"))
       errors)))
 
-(defn process-json-stream [data-stream & {:keys [legacy?] :or {legacy? false}}]
+(defn process-json-stream [data-stream]
   (->> data-stream
        (rx/map (fn [data]
                  (try
