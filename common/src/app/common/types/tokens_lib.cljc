@@ -1190,7 +1190,7 @@ Will return a value that matches this schema:
 
                               (and (map? node)
                                    (and (contains? node "type")
-                                       (contains? node "value")))
+                                        (contains? node "value")))
                               (set/rename-keys  {"value" "$value"
                                                  "type" "$type"})))
                           sets-data)]
