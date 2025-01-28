@@ -6,6 +6,7 @@
 
 (ns app.main.ui.workspace.tokens.changes
   (:require
+   [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
@@ -173,22 +174,30 @@
                        (zipmap (repeat value)))]
     {:layout-gap layout-gap}))
 
+(defn- shape-ids-with-layout [state shape-ids]
+  (->> (dsh/lookup-shapes state shape-ids)
+       (eduction
+        (filter ctsl/any-layout?)
+        (map :id))))
+
 (defn update-layout-padding [value shape-ids attrs]
-  (dwsl/update-layout shape-ids
-                      {:layout-padding (zipmap attrs (repeat value))}
-                      {:ignore-touched true}))
+  (ptk/reify ::update-layout-padding
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [ids-with-layout (shape-ids-with-layout state shape-ids)]
+        (rx/of
+         (dwsl/update-layout ids-with-layout
+                             {:layout-padding (zipmap attrs (repeat value))}
+                             {:ignore-touched true}))))))
 
 (defn update-layout-spacing [value shape-ids attributes]
   (ptk/reify ::update-layout-spacing
     ptk/WatchEvent
     (watch [_ state _]
-      (let [layout-shape-ids (->> (dsh/lookup-shapes state shape-ids)
-                                  (eduction
-                                   (filter :layout)
-                                   (map :id)))
+      (let [ids-with-layout (shape-ids-with-layout state shape-ids)
             layout-attributes (attributes->layout-gap attributes value)]
         (rx/of
-         (dwsl/update-layout layout-shape-ids
+         (dwsl/update-layout ids-with-layout
                              layout-attributes
                              {:ignore-touched true}))))))
 
