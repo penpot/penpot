@@ -1181,9 +1181,8 @@ Will return a value that matches this schema:
                           (fn [node]
                             (cond-> node
                               (and (map? node)
-                                   (or (contains? node "type")
-                                       (contains? node "value")
-                                       (sequential? (get node "value"))))
+                                   (contains? node "value")
+                                   (sequential? (get node "value")))
                               (update "value"
                                       (fn [seq-value]
                                         (map #(set/rename-keys % {"type" "$type"}) seq-value)))
