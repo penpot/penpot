@@ -328,14 +328,16 @@
 
 (defn- calculate-modifiers
   ([state modif-tree]
-   (calculate-modifiers state false false modif-tree))
+   (calculate-modifiers state false false modif-tree nil))
 
-  ([state ignore-constraints ignore-snap-pixel modif-tree]
-   (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree nil))
+  ([state ignore-constraints ignore-snap-pixel modif-tree page-id]
+   (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree page-id nil))
 
-  ([state ignore-constraints ignore-snap-pixel modif-tree params]
-   (let [objects
-         (dsh/lookup-page-objects state)
+  ([state ignore-constraints ignore-snap-pixel modif-tree page-id params]
+   (let [page-id (d/nilv page-id (:current-page-id state))
+
+         objects
+         (dsh/lookup-page-objects state page-id)
 
          snap-pixel?
          (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
@@ -442,7 +444,8 @@
   (ptk/reify ::set-delta-rotation-modifiers
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (dsh/lookup-page-objects state page-id)
+      (let [page-id (d/nilv page-id (:current-page-id state))
+            objects (dsh/lookup-page-objects state page-id)
             ids
             (->> shapes
                  (remove #(get % :blocked false))
@@ -472,12 +475,13 @@
    (ptk/reify ::apply-modifiers
      ptk/WatchEvent
      (watch [_ state _]
-       (let [text-modifiers    (get state :workspace-text-modifier)
-             objects           (dsh/lookup-page-objects state page-id)
+       (let [text-modifiers (get state :workspace-text-modifier)
+             page-id        (d/nilv page-id (:current-page-id state))
+             objects        (dsh/lookup-page-objects state page-id)
 
              object-modifiers
              (if (some? modifiers)
-               (calculate-modifiers state ignore-constraints ignore-snap-pixel modifiers)
+               (calculate-modifiers state ignore-constraints ignore-snap-pixel modifiers page-id)
                (get state :workspace-modifiers))
 
              ids
@@ -519,6 +523,7 @@
                    :ignore-tree ignore-tree
                    :ignore-touched ignore-touched
                    :undo-group undo-group
+                   :page-id page-id
                    ;; Attributes that can change in the transform. This way we don't have to check
                    ;; all the attributes
                    :attrs [:selrect

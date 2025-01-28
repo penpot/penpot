@@ -144,9 +144,8 @@
        (rx/of
         (udw/trigger-bounding-box-cloaking shape-ids)
         (udw/increase-rotation shape-ids value
-                               nil
-                               :ignore-touched true
-                               :page-id page-id))))))
+                               {:page-id page-id}
+                               :ignore-touched true))))))
 
 (defn update-stroke-width
   ([value shape-ids attributes] (update-stroke-width value shape-ids attributes nil))

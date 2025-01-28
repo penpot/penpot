@@ -404,16 +404,16 @@
   "Rotate shapes a fixed angle, from a keyboard action."
   ([ids rotation]
    (increase-rotation ids rotation nil))
-  ([ids rotation params & options]
+  ([ids rotation params & {:as options}]
    (ptk/reify ::increase-rotation
      ptk/WatchEvent
      (watch [_ state _]
-       (let [page-id (d/nilv (:page-id options) (:current-page-id state))
+       (let [page-id (d/nilv (:page-id params) (:current-page-id state))
              objects (dsh/lookup-page-objects state page-id)
              shapes  (->> ids (map #(get objects %)))]
          (rx/concat
           (rx/of (dwm/set-delta-rotation-modifiers rotation shapes params))
-          (rx/of (dwm/apply-modifiers options))))))))
+          (rx/of (dwm/apply-modifiers (assoc options :page-id page-id)))))))))
 
 
 ;; -- Move ----------------------------------------------------------
