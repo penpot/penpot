@@ -88,14 +88,14 @@
 
 (defn collect-shapes-update-info [resolved-tokens objects]
   (reduce
-       (fn [acc [shape-id {:keys [applied-tokens] :as shape}]]
-         (if (seq applied-tokens)
-           (let [applied-tokens (-> (invert-collect-key-vals applied-tokens resolved-tokens shape)
-                                    (shape-ids-by-values shape-id)
-                                    (split-attribute-groups))]
-             (deep-merge acc applied-tokens))
-           acc))
-       {} objects))
+   (fn [acc [shape-id {:keys [applied-tokens] :as shape}]]
+     (if (seq applied-tokens)
+       (let [applied-tokens (-> (invert-collect-key-vals applied-tokens resolved-tokens shape)
+                                (shape-ids-by-values shape-id)
+                                (split-attribute-groups))]
+         (deep-merge acc applied-tokens))
+       acc))
+   {} objects))
 
 (defn actionize-shapes-update-info [page-id shapes-update-info]
   (mapcat (fn [[attrs update-infos]]

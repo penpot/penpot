@@ -84,7 +84,7 @@
 (defn transform-fill
   ([state ids color transform] (transform-fill state ids color transform nil))
   ([state ids color transform options]
-   (let [page-id   (get options :page-id)
+   (let [page-id   (get options :page-id (get state :current-page-id))
          objects   (dsh/lookup-page-objects state page-id)
          is-text?  #(= :text (:type (get objects %)))
          text-ids  (filter is-text? ids)

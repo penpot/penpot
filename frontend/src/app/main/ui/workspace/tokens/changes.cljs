@@ -167,24 +167,24 @@
       (f shape-ids {:color hex :opacity opacity} 0 {:ignore-touched true :page-id page-id}))))
 
 (defn update-fill
-  ([value shape-ids] (update-fill value shape-ids nil))
-  ([value shape-ids page-id]
+  ([value shape-ids attributes] (update-fill value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
    (update-color wdc/change-fill value shape-ids page-id)))
 
 (defn update-stroke-color
-  ([value shape-ids] (update-stroke-color value shape-ids nil))
-  ([value shape-ids page-id]
+  ([value shape-ids attributes] (update-stroke-color value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
    (update-color wdc/change-stroke-color value shape-ids page-id)))
 
 (defn update-fill-stroke
   ([value shape-ids attributes] (update-fill-stroke value shape-ids attributes nil))
   ([value shape-ids attributes page-id]
-  (ptk/reify ::update-fill-stroke
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of
-       (when (:fill attributes) (update-fill value shape-ids page-id))
-       (when (:stroke-color attributes) (update-stroke-color value shape-ids page-id)))))))
+   (ptk/reify ::update-fill-stroke
+     ptk/WatchEvent
+     (watch [_ _ _]
+       (rx/of
+        (when (:fill attributes) (update-fill value shape-ids attributes page-id))
+        (when (:stroke-color attributes) (update-stroke-color value shape-ids attributes page-id)))))))
 
 (defn update-shape-dimensions
   ([value shape-ids attributes] (update-shape-dimensions value shape-ids attributes nil))
@@ -210,11 +210,11 @@
 (defn update-layout-padding
   ([value shape-ids attrs] (update-layout-padding value shape-ids attrs nil))
   ([value shape-ids attrs page-id]
-  (ptk/reify ::update-layout-padding
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [ids-with-layout (shape-ids-with-layout state page-id shape-ids)]
-        (rx/of
+   (ptk/reify ::update-layout-padding
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [ids-with-layout (shape-ids-with-layout state page-id shape-ids)]
+         (rx/of
           (dwsl/update-layout ids-with-layout
                               {:layout-padding (zipmap attrs (repeat value))}
                               {:ignore-touched true
@@ -227,7 +227,7 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [ids-with-layout (shape-ids-with-layout state page-id shape-ids)
-            layout-attributes (attributes->layout-gap attributes value)]
+             layout-attributes (attributes->layout-gap attributes value)]
          (rx/of
           (dwsl/update-layout ids-with-layout
                               layout-attributes
