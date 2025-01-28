@@ -4,6 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "../../ds/typography.scss" as t;
 @import "refactor/common-refactor.scss";
 
 .version-toolbox {
@@ -145,6 +146,7 @@
   max-width: $s-200;
   right: 0;
   left: unset;
+  top: var(--offset);
   .menu-option {
     @extend .dropdown-element-base;
   }
@@ -231,22 +233,10 @@
   visibility: hidden;
 }
 
-.autosave-warning {
-  display: flex;
-  flex-direction: column;
-  gap: $s-8;
-  padding: $s-16;
-}
-
-.autosave-warning-text {
-  color: var(--color-foreground-primary);
-  font-size: $fs-12;
-  text-transform: uppercase;
-}
-
-.autosave-warning-subtext {
+.cta {
+  @include t.use-typography("body-small");
   color: var(--color-foreground-secondary);
-  font-size: $fs-12;
+
   a {
     color: var(--color-accent-primary);
   }

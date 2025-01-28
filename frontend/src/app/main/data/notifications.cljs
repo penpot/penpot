@@ -32,6 +32,14 @@
     [:or :string :keyword]]
    [:timeout {:optional true}
     [:maybe :int]]
+   [:accept {:optional true}
+    [:map
+     [:label :string]
+     [:callback ::sm/fn]]]
+   [:cancel {:optional true}
+    [:map
+     [:label :string]
+     [:callback ::sm/fn]]]
    [:actions {:optional true}
     [:vector
      [:map
@@ -120,7 +128,7 @@
           :timeout timeout})))
 
 (defn dialog
-  [& {:keys [content controls actions position tag level links]
+  [& {:keys [content controls actions accept cancel position tag level links]
       :or {controls :none position :floating level :info}}]
   (show (d/without-nils
          {:content content
@@ -129,4 +137,6 @@
           :position position
           :controls controls
           :actions actions
+          :accept accept
+          :cancel cancel
           :tag tag})))

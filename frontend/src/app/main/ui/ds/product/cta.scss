@@ -1,0 +1,21 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../colors.scss" as *;
+@use "../_sizes.scss" as *;
+@use "../_borders.scss" as *;
+@use "../typography.scss" as t;
+
+.cta {
+  border-radius: $br-8;
+  border: $b-1 solid var(--color-accent-primary-muted);
+  background: var(--color-accent-select);
+  padding: var(--sp-m);
+}
+
+.cta-title {
+  color: var(--color-foreground-primary);
+}

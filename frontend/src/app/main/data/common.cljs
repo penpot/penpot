@@ -84,7 +84,8 @@
                 :controls :inline-actions
                 :type :inline
                 :level level
-                :actions [{:label "Refresh" :callback force-reload!}]
+                :accept {:label (tr "Refresh")
+                         :callback force-reload!}
                 :tag :notification))
 
         :maintenance
@@ -92,8 +93,8 @@
                 :content (tr "notifications.by-code.maintenance")
                 :controls :inline-actions
                 :type level
-                :actions [{:label (tr "labels.accept")
-                           :callback hide-notifications!}]
+                :accept {:label (tr "labels.accept")
+                         :callback hide-notifications!}
                 :tag :notification))
 
         (rx/of (ntf/dialog
