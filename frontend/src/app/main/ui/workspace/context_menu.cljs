@@ -138,7 +138,7 @@
 (mf/defc context-menu-edit*
   {::mf/props :obj
    ::mf/private true}
-  []
+  [{:keys [shapes]}]
   (let [do-copy           #(st/emit! (dw/copy-selected))
         do-copy-link      #(st/emit! (dw/copy-link-to-clipboard))
 
@@ -206,6 +206,7 @@
 
       [:> menu-entry* {:title (tr "workspace.shape.menu.copy-props")
                        :shortcut (sc/get-tooltip :copy-props)
+                       :disabled (> (count shapes) 1)
                        :on-click handle-copy-props}]
       [:> menu-entry* {:title (tr "workspace.shape.menu.paste-props")
                        :shortcut (sc/get-tooltip :paste-props)

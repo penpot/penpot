@@ -1568,48 +1568,52 @@
                 (js/console.error "clipboard blocked:" error)
                 (rx/empty))]
 
-        (let [selected (->> (dsh/lookup-selected state) first)
-              objects  (dsh/lookup-page-objects state)]
+        (let [selected (dsh/lookup-selected state)]
+          (if (> (count selected) 1)
+            ;; If multiple items are selected don't do anything
+            (rx/empty)
 
-          (when-let [shape (get objects selected)]
-            (let [props (cts/extract-props shape)
-                  features (-> (features/get-team-enabled-features state)
-                               (set/difference cfeat/frontend-only-features))
-                  version  (-> (dsh/lookup-file state) :version)
+            (let [selected (->> (dsh/lookup-selected state) first)
+                  objects  (dsh/lookup-page-objects state)]
+              (when-let [shape (get objects selected)]
+                (let [props (cts/extract-props shape)
+                      features (-> (features/get-team-enabled-features state)
+                                   (set/difference cfeat/frontend-only-features))
+                      version  (-> (dsh/lookup-file state) :version)
 
-                  copy-data {:type :copied-props
-                             :features features
-                             :version version
-                             :props props
-                             :images #{}}]
+                      copy-data {:type :copied-props
+                                 :features features
+                                 :version version
+                                 :props props
+                                 :images #{}}]
 
-              ;; The clipboard API doesn't handle well asynchronous calls because it expects to use
-              ;; the clipboard in an user interaction. If you do an async call the callback is outside
-              ;; the thread of the UI and so Safari blocks the copying event.
-              ;; We use the API `ClipboardItem` that allows promises to be passed and so the event
-              ;; will wait for the promise to resolve and everything should work as expected.
-              ;; This only works in the current versions of the browsers.
-              (if (some? (unchecked-get ug/global "ClipboardItem"))
-                (let [resolve-data-promise
-                      (p/create
-                       (fn [resolve reject]
-                         (->> (rx/of copy-data)
-                              (rx/mapcat resolve-images)
-                              (rx/map #(t/encode-str % {:type :json-verbose}))
-                              (rx/map #(wapi/create-blob % "text/plain"))
-                              (rx/subs! resolve reject))))]
+                  ;; The clipboard API doesn't handle well asynchronous calls because it expects to use
+                  ;; the clipboard in an user interaction. If you do an async call the callback is outside
+                  ;; the thread of the UI and so Safari blocks the copying event.
+                  ;; We use the API `ClipboardItem` that allows promises to be passed and so the event
+                  ;; will wait for the promise to resolve and everything should work as expected.
+                  ;; This only works in the current versions of the browsers.
+                  (if (some? (unchecked-get ug/global "ClipboardItem"))
+                    (let [resolve-data-promise
+                          (p/create
+                           (fn [resolve reject]
+                             (->> (rx/of copy-data)
+                                  (rx/mapcat resolve-images)
+                                  (rx/map #(t/encode-str % {:type :json-verbose}))
+                                  (rx/map #(wapi/create-blob % "text/plain"))
+                                  (rx/subs! resolve reject))))]
 
-                  (->> (rx/from (wapi/write-to-clipboard-promise "text/plain" resolve-data-promise))
-                       (rx/catch on-copy-error)
-                       (rx/ignore)))
-                ;; FIXME: this is to support Firefox versions below 116 that don't support
-                ;; `ClipboardItem` after the version 116 is less common we could remove this.
-                ;; https://caniuse.com/?search=ClipboardItem
-                (->> (rx/of copy-data)
-                     (rx/mapcat resolve-images)
-                     (rx/map #(wapi/write-to-clipboard (t/encode-str % {:type :json-verbose})))
-                     (rx/catch on-copy-error)
-                     (rx/ignore))))))))))
+                      (->> (rx/from (wapi/write-to-clipboard-promise "text/plain" resolve-data-promise))
+                           (rx/catch on-copy-error)
+                           (rx/ignore)))
+                    ;; FIXME: this is to support Firefox versions below 116 that don't support
+                    ;; `ClipboardItem` after the version 116 is less common we could remove this.
+                    ;; https://caniuse.com/?search=ClipboardItem
+                    (->> (rx/of copy-data)
+                         (rx/mapcat resolve-images)
+                         (rx/map #(wapi/write-to-clipboard (t/encode-str % {:type :json-verbose})))
+                         (rx/catch on-copy-error)
+                         (rx/ignore))))))))))))
 
 (defn paste-selected-props
   []
