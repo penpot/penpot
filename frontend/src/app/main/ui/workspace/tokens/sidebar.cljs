@@ -307,10 +307,13 @@
            (reset! show-menu* false)))
 
         input-ref (mf/use-ref)
+        legacy-input-ref (mf/use-ref)
         on-display-file-explorer
         (mf/use-fn
          #(.click (mf/ref-val input-ref)))
-
+        on-legacy-option-click
+        (mf/use-fn
+         #(.click (mf/ref-val legacy-input-ref)))
         on-import
         (fn [event]
           (let [file (-> event .-target .-files (aget 0))]
@@ -324,6 +327,20 @@
                              (st/emit! (ntf/show {:content (wte/humanize-errors [(ex-data err)])
                                                   :type :toast
                                                   :level :error})))))
+            (set! (.-value (mf/ref-val input-ref)) "")))
+        on-legacy-import
+        (fn [event]
+          (let [file (-> event .-target .-files (aget 0))]
+            (->> (sd/process-json-stream (wapi/read-file-as-text file)
+                                         :legacy? true)
+                 (rx/subs! (fn [lib]
+                             (st/emit! (dt/import-tokens-lib lib)))
+                           (fn [err]
+                             (js/console.error err)
+                             (st/emit! (ntf/show {:content (wte/humanize-errors [(ex-data err)])
+                                                  :type :toast
+                                                  :level :warning
+                                                  :timeout 9000})))))
             (set! (.-value (mf/ref-val input-ref)) "")))
         on-export (fn []
                     (st/emit! (ptk/event ::ev/event {::ev/name "export-tokens"}))
@@ -342,6 +359,13 @@
                 :id "file-input"
                 :accept ".json"
                 :on-change on-import}])
+     (when can-edit?
+       [:input {:type "file"
+                :ref legacy-input-ref
+                :style {:display "none"}
+                :id "file-input"
+                :accept ".json"
+                :on-change on-legacy-import}])
      [:> button* {:on-click open-menu
                   :icon "import-export"
                   :variant "secondary"}
@@ -353,7 +377,10 @@
         [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                  :on-click on-display-file-explorer}
          (tr "labels.import")])
-
+      (when can-edit?
+        [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
+                                 :on-click on-legacy-option-click}
+         (tr "labels.legacy-import")])
       [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                :on-click on-export}
        (tr "labels.export")]]]))

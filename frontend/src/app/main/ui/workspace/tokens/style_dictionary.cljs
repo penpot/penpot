@@ -179,7 +179,7 @@
            (= header-2 "Reference Errors:"))
       errors)))
 
-(defn process-json-stream [data-stream]
+(defn process-json-stream [data-stream & {:keys [legacy?] :or {legacy? false}}]
   (->> data-stream
        (rx/map (fn [data]
                  (try
@@ -188,7 +188,9 @@
                      (throw (wte/error-ex-info :error.import/json-parse-error data e))))))
        (rx/map (fn [json-data]
                  (try
-                   (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json-data)
+                   (if-not legacy?
+                     (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json-data)
+                     (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) json-data))
                    (catch js/Error e
                      (throw (wte/error-ex-info :error.import/invalid-json-data json-data e))))))
        (rx/mapcat (fn [tokens-lib]
