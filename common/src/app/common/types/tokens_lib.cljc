@@ -670,25 +670,39 @@ used for managing active sets without a user created theme.")
 
 ;; === Import / Export from DTCG format
 
+(def ^:private legacy-node?
+  (sm/validator
+   [:or
+    [:map
+     ["value" :string]
+     ["type" :string]]
+    [:map
+     ["value" [:sequential [:map ["type" :string]]]]
+     ["type" :string]]
+    [:map
+     ["value" :map]
+     ["type" :string]]]))
+
+(def ^:private dtcg-node?
+  (sm/validator
+   [:or
+    [:map
+     ["$value" :string]
+     ["$type" :string]]
+    [:map
+     ["$value" [:sequential [:map ["$type" :string]]]]
+     ["$type" :string]]
+    [:map
+     ["$value" :map]
+     ["$type" :string]]]))
+
 (defn has-legacy-format?
   "Searches through parsed token file and returns:
    - true when first node satisfies `legacy-node?` predicate
    - false when first node satisfies `dtcg-node?` predicate
    - nil if neither combination is found"
   ([data]
-   (let [legacy-node? (fn [node]
-                        (and (map? node)
-                             (or (and (contains? node "value")
-                                      (contains? node "type"))
-                                 (and (contains? node "value")
-                                      (sequential? (get node "value"))))))
-         dtcg-node? (fn [node]
-                      (and (map? node)
-                           (or (and (contains? node "$value")
-                                    (contains? node "$type"))
-                               (and (contains? node "$value")
-                                    (sequential? (get node "$value"))))))]
-     (has-legacy-format? data legacy-node? dtcg-node?)))
+   (has-legacy-format? data legacy-node? dtcg-node?))
   ([data legacy-node? dtcg-node?]
    (let [branch? map?
          children (fn [node] (vals node))
