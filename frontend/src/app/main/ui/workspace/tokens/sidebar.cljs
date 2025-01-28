@@ -380,7 +380,7 @@
       (when can-edit?
         [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                  :on-click on-legacy-option-click}
-         (tr "labels.legacy-import")])
+         (tr "labels.import-legacy")])
       [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                :on-click on-export}
        (tr "labels.export")]]]))
