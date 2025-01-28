@@ -120,7 +120,7 @@
       (if (= type :rgb)
         [:*
          [:div {:class (stl/css :input-wrapper)}
-          [:span {:class (stl/css :input-label)} "R"]
+          [:label {:for "red-value" :class (stl/css :input-label)} "R"]
           [:input {:id "red-value"
                    :ref (:r refs)
                    :type "number"
@@ -129,7 +129,7 @@
                    :default-value red
                    :on-change (on-change-property :r 255)}]]
          [:div {:class (stl/css :input-wrapper)}
-          [:span {:class (stl/css :input-label)} "G"]
+          [:label {:for "green-value" :class (stl/css :input-label)} "G"]
           [:input {:id "green-value"
                    :ref (:g refs)
                    :type "number"
@@ -138,7 +138,7 @@
                    :default-value green
                    :on-change (on-change-property :g 255)}]]
          [:div {:class (stl/css :input-wrapper)}
-          [:span {:class (stl/css :input-label)} "B"]
+          [:label {:for "blue-value" :class (stl/css :input-label)} "B"]
           [:input {:id "blue-value"
                    :ref (:b refs)
                    :type "number"
@@ -149,7 +149,7 @@
 
         [:*
          [:div {:class (stl/css :input-wrapper)}
-          [:span {:class (stl/css :input-label)} "H"]
+          [:label {:for "hue-value" :class (stl/css :input-label)} "H"]
           [:input {:id "hue-value"
                    :ref (:h refs)
                    :type "number"
@@ -158,7 +158,7 @@
                    :default-value hue
                    :on-change (on-change-property :h 360)}]]
          [:div {:class (stl/css :input-wrapper)}
-          [:span {:class (stl/css :input-label)} "S"]
+          [:label {:for "saturation-value" :class (stl/css :input-label)} "S"]
           [:input {:id "saturation-value"
                    :ref (:s refs)
                    :type "number"
@@ -168,7 +168,7 @@
                    :default-value saturation
                    :on-change (on-change-property :s 100)}]]
          [:div {:class (stl/css :input-wrapper)}
-          [:span {:class (stl/css :input-label)} "V"]
+          [:label {:for "value-value" :class (stl/css :input-label)} "V"]
           [:input {:id "value-value"
                    :ref (:v refs)
                    :type "number"
@@ -179,7 +179,7 @@
      [:div {:class (stl/css :hex-alpha-wrapper)}
       [:div {:class (stl/css-case :input-wrapper true
                                   :hex true)}
-       [:span {:class (stl/css :input-label)} "HEX"]
+       [:label {:for "hex-value" :class (stl/css :input-label)} "HEX"]
        [:input {:id "hex-value"
                 :ref (:hex refs)
                 :default-value hex
@@ -187,7 +187,7 @@
                 :on-blur on-blur-hex}]]
       (when (not disable-opacity)
         [:div {:class (stl/css-case :input-wrapper true)}
-         [:span {:class (stl/css :input-label)} "A"]
+         [:label {:for "alpha-value" :class (stl/css :input-label)} "A"]
          [:input {:id "alpha-value"
                   :ref (:alpha refs)
                   :type "number"
