@@ -749,6 +749,7 @@ Will return a value that matches this schema:
   (get-active-themes-set-tokens [_] "set of set names that are active in the the active themes")
   (encode-dtcg [_] "Encodes library to a dtcg compatible json string")
   (decode-dtcg-json [_ parsed-json] "Decodes parsed json containing tokens and converts to library")
+  (decode-legacy-json [_ parsed-json] "Decodes parsed legacy json containing tokens and converts to library")
   (get-all-tokens [_] "all tokens in the lib")
   (validate [_]))
 
@@ -1173,7 +1174,20 @@ Will return a value that matches this schema:
                                        (set sets))))
          lib' themes-data)
         lib')))
-
+  (decode-legacy-json [_ parsed-legacy-json]
+    (let [other-data (select-keys parsed-legacy-json ["$themes" "$metadata"])
+          sets-data (dissoc parsed-legacy-json "$themes" "$metadata")
+          dtcg-sets-data (walk/postwalk
+                          (fn [node]
+                            (cond-> node
+                              (and (map? node)
+                                   (contains? node "type")
+                                   (contains? node "value"))
+                              (set/rename-keys  {"value" "$value"
+                                                 "type" "$type"})))
+                          sets-data)]
+      (decode-dtcg-json nil (merge other-data
+                                   dtcg-sets-data))))
   (get-all-tokens [this]
     (reduce
      (fn [tokens' set]
