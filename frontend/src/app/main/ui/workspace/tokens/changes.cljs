@@ -96,22 +96,24 @@
 (defn update-shape-radius-all [value shape-ids]
   (dwsh/update-shapes shape-ids
                       (fn [shape]
-                        (when (ctsr/can-get-border-radius? shape)
-                          (ctsr/set-radius-to-all-corners shape value)))
+                        (ctsr/set-radius-to-all-corners shape value))
                       {:reg-objects? true
                        :ignore-touched true
                        :attrs ctt/border-radius-keys}))
 
-(defn update-shape-radius-single-corner [value shape-ids attributes]
-  ;; NOTE: This key should be namespaced on data tokens, but these events are not there.
-  (st/emit! (ptk/data-event :expand-border-radius))
-  (dwsh/update-shapes shape-ids
-                      (fn [shape]
-                        (when (ctsr/can-get-border-radius? shape)
-                          (ctsr/set-radius-to-single-corner shape (first attributes) value)))
-                      {:reg-objects? true
-                       :ignore-touched true
-                       :attrs ctt/border-radius-keys}))
+(defn update-shape-radius-for-corners [value shape-ids attributes]
+  (ptk/reify ::update-shape-radius-for-corners
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of
+       ;; NOTE: This key should be namespaced on data tokens, but these events are not there.
+       (ptk/data-event :expand-border-radius)
+       (dwsh/update-shapes shape-ids
+                           (fn [shape]
+                             (ctsr/set-radius-for-corners shape attributes value))
+                           {:reg-objects? true
+                            :ignore-touched true
+                            :attrs ctt/border-radius-keys})))))
 
 (defn update-opacity [value shape-ids]
   (when (<= 0 value 1)

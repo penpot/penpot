@@ -124,6 +124,49 @@
              (t/testing "while :r4 was kept with borderRadius.sm"
                (t/is (= (:r4 (:applied-tokens rect-1')) (:name token-sm)))))))))))
 
+(t/deftest test-apply-border-radius
+  (t/testing "applies border-radius to all and individual corners"
+    (t/async
+      done
+      (let [file (setup-file-with-tokens {:rect-1 {:r1 100 :r2 100}
+                                          :rect-2 {:r3 100 :r4 100}})
+            store (ths/setup-store file)
+            rect-1 (cths/get-shape file :rect-1)
+            rect-2 (cths/get-shape file :rect-2)
+            events [(wtch/apply-token {:shape-ids [(:id rect-1)]
+                                       :attributes #{:r3 :r4}
+                                       :token (toht/get-token file "borderRadius.sm")
+                                       :on-update-shape wtch/update-shape-radius-for-corners})
+                    (wtch/apply-token {:shape-ids [(:id rect-2)]
+                                       :attributes #{:r1 :r2 :r3 :r4}
+                                       :token (toht/get-token file "borderRadius.sm")
+                                       :on-update-shape wtch/update-shape-radius-all})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 rect-1' (cths/get-shape file' :rect-1)
+                 rect-2' (cths/get-shape file' :rect-2)]
+             (t/testing "individual corners"
+               (t/is (nil? (:r1 (:applied-tokens rect-1'))))
+               (t/is (nil? (:r2 (:applied-tokens rect-1'))))
+               (t/is (= "borderRadius.sm" (:r3 (:applied-tokens rect-1'))))
+               (t/is (= "borderRadius.sm" (:r4 (:applied-tokens rect-1'))))
+               (t/is (= 100 (:r1 rect-1')))
+               (t/is (= 100 (:r2 rect-1')))
+               (t/is (= 12 (:r3 rect-1')))
+               (t/is (= 12 (:r4 rect-1'))))
+
+             (t/testing "all corners"
+               (t/is (= "borderRadius.sm" (:r1 (:applied-tokens rect-2'))))
+               (t/is (= "borderRadius.sm" (:r2 (:applied-tokens rect-2'))))
+               (t/is (= "borderRadius.sm" (:r3 (:applied-tokens rect-2'))))
+               (t/is (= "borderRadius.sm" (:r4 (:applied-tokens rect-2'))))
+               (t/is (= 12 (:r1 rect-2')))
+               (t/is (= 12 (:r2 rect-2')))
+               (t/is (= 12 (:r3 rect-2')))
+               (t/is (= 12 (:r4 rect-2')))))))))))
+
 (t/deftest test-apply-color
   (t/testing "applies color token and updates the shape fill and stroke-color"
     (t/async

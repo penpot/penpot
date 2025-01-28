@@ -56,3 +56,11 @@
     (cond-> shape
       (can-get-border-radius? shape)
       (assoc attr value))))
+
+(defn set-radius-for-corners
+  "Set border radius to `value` for each radius `attr`."
+  [shape attrs value]
+  (reduce
+   (fn [shape' attr]
+     (set-radius-to-single-corner shape' attr value))
+   shape attrs))

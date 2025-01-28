@@ -186,7 +186,7 @@
                                                                           :r4 "Bottom Left"
                                                                           :r3 "Bottom Right"}
                                                        :on-update-shape-all wtch/update-shape-radius-all
-                                                       :on-update-shape wtch/update-shape-radius-single-corner})
+                                                       :on-update-shape wtch/update-shape-radius-for-corners})
      :color (fn [context-data]
               [(generic-attribute-actions #{:fill} "Fill" (assoc context-data :on-update-shape wtch/update-fill))
                (generic-attribute-actions #{:stroke-color} "Stroke" (assoc context-data :on-update-shape wtch/update-stroke-color))])
