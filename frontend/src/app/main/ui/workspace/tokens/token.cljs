@@ -88,19 +88,6 @@
     {:path (seq path)
      :selector selector}))
 
-(defn token-names-tree-id-map [tokens]
-  (reduce
-   (fn [acc [_ {:keys [name] :as token}]]
-     (when (string? name)
-       (let [temp-id (random-uuid)
-             token (assoc token :temp/id temp-id)]
-         (-> acc
-             (assoc-in (concat [:tree] (token-name->path name)) token)
-             (assoc-in [:ids-map temp-id] token)))))
-   {:tree {}
-    :ids-map {}}
-   tokens))
-
 (defn token-name-path-exists?
   "Traverses the path from `token-name` down a `token-tree` and checks if a token at that path exists.
 
@@ -135,8 +122,13 @@
 (defn color-token? [token]
   (= (:type token) :color))
 
-(defn resolved-value-hex [{:keys [resolved-value] :as token}]
+(defn color-bullet-color [token-color-value]
+  (when-let [tc (tinycolor/valid-color token-color-value)]
+    (if (tinycolor/alpha tc)
+      {:color (tinycolor/->hex-string tc)
+       :opacity (tinycolor/alpha tc)}
+      (tinycolor/->hex-string tc))))
+
+(defn resolved-token-bullet-color [{:keys [resolved-value] :as token}]
   (when (and resolved-value (color-token? token))
-    (some->> (tinycolor/valid-color resolved-value)
-             (tinycolor/->hex)
-             (str "#"))))
+    (color-bullet-color resolved-value)))

@@ -154,10 +154,10 @@
         errors?   (or ref-not-in-active-set
                       no-valid-value)
         color     (when (seq (ctob/find-token-value-references value))
-                    (wtt/resolved-value-hex theme-token))
+                    (wtt/resolved-token-bullet-color theme-token))
         contains-path? (str/includes? name ".")
         splitted-name (cfh/split-by-last-period name)
-        color (or color (wtt/resolved-value-hex token))
+        color (or color (wtt/resolved-token-bullet-color token))
 
         on-click
         (mf/use-callback

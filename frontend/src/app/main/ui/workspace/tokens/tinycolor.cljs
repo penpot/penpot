@@ -13,15 +13,22 @@
   (let [tc (tinycolor color-str)]
     (when (.isValid tc) tc)))
 
-(defn ->hex [^js tc]
+(defn ->hex-string [^js tc]
   (assert (tinycolor? tc))
-  (.toHex tc))
+  (.toHexString tc))
+
+(defn ->rgba-string [^js tc]
+  (assert (tinycolor? tc))
+  (.toRgbString tc))
 
 (defn color-format [^js tc]
   (assert (tinycolor? tc))
   (.getFormat tc))
 
-(comment
-  (some-> (valid-color "red") ->hex)
-  (some-> (valid-color "red") color-format)
-  nil)
+(defn alpha [^js tc]
+  (assert (tinycolor? tc))
+  (.getAlpha tc))
+
+(defn set-alpha [^js tc alpha]
+  (assert (tinycolor? tc))
+  (.setAlpha tc alpha))
