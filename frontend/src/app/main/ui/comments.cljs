@@ -122,6 +122,13 @@
        (d/seek (fn [[it _]] (= node it)))
        (second)))
 
+(defn- blank-content?
+  [content]
+  (or (str/blank? content)
+      (str/empty? content)
+      ;; If only one char and it's the zero-width whitespace
+      (and (= 1 (count content)) (= (first content) \u200B))))
+
 ;; Component that renders the component content
 (mf/defc comment-content*
   {::mf/private true}
@@ -602,8 +609,7 @@
   (let [show-buttons? (mf/use-state false)
         content       (mf/use-state "")
 
-        disabled? (or (str/blank? @content)
-                      (str/empty? @content))
+        disabled? (blank-content? @content)
 
         on-focus
         (mf/use-fn
@@ -664,8 +670,7 @@
          (mf/deps @content)
          (fn [] (on-submit @content)))
 
-        disabled? (or (str/blank? @content)
-                      (str/empty? @content))]
+        disabled? (blank-content? @content)]
 
     [:div {:class (stl/css :form)}
      [:> comment-input*
@@ -698,8 +703,7 @@
         pos-x     (* (:x position) zoom)
         pos-y     (* (:y position) zoom)
 
-        disabled? (or (str/blank? content)
-                      (str/empty? content))
+        disabled? (blank-content? content)
 
         on-esc
         (mf/use-fn
