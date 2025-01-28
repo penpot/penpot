@@ -311,7 +311,7 @@
         on-display-file-explorer
         (mf/use-fn
          #(.click (mf/ref-val input-ref)))
-        on-legacy-option-click
+        on-display-legacy-file-explorer
         (mf/use-fn
          #(.click (mf/ref-val legacy-input-ref)))
         on-import
@@ -379,7 +379,7 @@
          (tr "labels.import")])
       (when can-edit?
         [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
-                                 :on-click on-legacy-option-click}
+                                 :on-click on-display-legacy-file-explorer}
          (tr "labels.import-legacy")])
       [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                :on-click on-export}
