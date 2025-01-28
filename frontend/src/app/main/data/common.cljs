@@ -40,6 +40,24 @@
         (assoc state :share-id share-id)
         (dissoc state :share-id)))))
 
+;; FIXME: validation
+(defn set-share-link
+  [slink]
+  (ptk/reify ::set-share-link
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc :share-link slink)
+          (assoc :current-share-id (:id slink))))))
+
+(defn initialize-share-link
+  [share-id]
+  (ptk/reify ::initialize-share-link
+    ptk/WatchEvent
+    (watch [_ state _]
+      (->> (rp/cmd! :get-share-link {:id share-id})
+           (rx/map set-share-link)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SHARE LINK
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

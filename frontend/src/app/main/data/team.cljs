@@ -153,6 +153,21 @@
               (dissoc :fonts))
           state)))))
 
+;; (defn initialize-team-with-share-id
+;;   [share-id]
+;;   (ptk/reify ::initialize-team-with-share-id
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (assoc state :current-share-id share-id))
+
+;;     ptk/WatchEvent
+;;     (watch [_ _ stream]
+;;       (let [stopper (rx/filter (ptk/type? ::finalize-team) stream)]
+;;         (->> (rp/cmd! :get-share-link {:id share-id})
+;;              (rx/map :team-id)
+;;              (rx/map initialize-team)
+;;              (rx/take-until stopper))))))
+
 ;; --- ROLES
 
 (defn update-member-role

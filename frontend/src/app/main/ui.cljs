@@ -26,6 +26,7 @@
    [app.main.ui.onboarding.team-choice :refer [onboarding-team-modal]]
    [app.main.ui.releases :refer [release-notes-modal]]
    [app.main.ui.static :as static]
+   [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
@@ -140,6 +141,38 @@
         ;; The `:key` is mandatory here because we want to reinitialize
         ;; all dom tree instead of simple rerender.
         [:* {:key (str team-id)} children]]])))
+
+(mf/defc share-link-container*
+  "A component that initializes share link if it is provided"
+  {::mf/private true}
+  [{:keys [share-id children]}]
+  (let [slink (mf/deref refs/share-link)]
+
+    (mf/with-effect [share-id]
+      (when (some? share-id)
+        (st/emit! (kk/initialize-share-link share-id))))
+
+    (if-not share-id
+      [:* {} children]
+      (when slink
+        [:* {:key (str share-id)} children]))))
+
+
+(mf/defc viewer-container*
+  {::mf/private true}
+  [{:keys [share-id file-id children]}]
+  (let [team-id* (mf/use-state nil)
+        team-id  (deref team-id*)]
+
+    (mf/with-effect [file-id share-id]
+      (let [sub (->> (rp/cmd! :resolve-team-id {:file-id file-id :share-id share-id})
+                     (rx/map :team-id)
+                     (rx/subs! #(swap! team-id* %)))]
+        #(rx/dispose! sub)))
+
+    (when team-id
+      [:> team-container* {:team-id team-id}
+       children])))
 
 (mf/defc page*
   {::mf/props :obj
@@ -367,15 +400,17 @@
     (mf/with-effect [theme]
       (dom/set-html-theme-color theme))
 
-    (mf/with-effect [share-id]
-      (st/emit! (dcm/set-share-id share-id)))
+    ;; (mf/with-effect [share-id]
+    ;;   (st/emit! (dcm/set-share-id share-id)))
 
     [:> (mf/provider ctx/current-route) {:value route}
      [:> (mf/provider ctx/current-profile) {:value profile}
       [:> (mf/provider ctx/current-route) {:value route}
+       ;; [:> (mf/provider ctx/current-share-id) {:value share-id}
        (if edata
          [:> static/exception-page* {:data edata :route route}]
          [:> error-boundary* {:fallback static/internal-error*}
           [:& notifications/current-notification]
           (when route
-            [:> page* {:route route :profile profile}])])]]]))
+            [:> share-link-container* {:share-id share-id}
+             [:> page* {:route route :profile profile}]])])]]]))

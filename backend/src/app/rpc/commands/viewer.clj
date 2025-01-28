@@ -107,3 +107,40 @@
                (get-view-only-bundle system params)))))
 
 
+(sv/defmethod ::get-viewer-team
+  {::rpc/auth false
+   ::doc/added "1.17"
+   ;; ::sm/params schema:get-view-only-teams
+   }
+  [system {:keys [::rpc/profile-id file-id share-id] :as params}]
+
+
+
+
+
+;; (def schema:get-teams
+;;   [:map {:title "get-view-only-bundle"}
+;;    [:file-id ::sm/uuid]
+;;    [:share-id {:optional true} ::sm/uuid]
+;;    [:features {:optional true} ::cfeat/features]])
+
+;; (sv/defmethod ::get-view-only-teams
+;;   {::rpc/auth false
+;;    ::doc/added "1.17"
+;;    ::sm/params schema:get-view-only-teams}
+;;   [system {:keys [::rpc/profile-id share-id] :as params}]
+;;   (db/run! system
+;;            (fn [{:keys [::db/conn] :as system}]
+
+;;              (let [permissions (files/get-permissions conn profile-id file-id share-id)]
+
+;;                ;; When we have neither profile nor share, we just return a not
+;;                ;; found response to the user.
+;;                (when-not permissions
+;;                  (ex/raise :type :not-found
+;;                            :code :object-not-found
+;;                            :hint "object not found"))
+
+
+;;                (teams/get-teams conn profile-id share-id)))))
+
