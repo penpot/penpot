@@ -70,20 +70,17 @@ export PENPOT_OBJECTS_STORAGE_S3_ENDPOINT=http://minio:9000
 export PENPOT_OBJECTS_STORAGE_S3_BUCKET=penpot
 export PENPOT_OBJECTS_STORAGE_FS_DIRECTORY="assets"
 
-export OPTIONS="
-       -A:jmx-remote -A:dev \
-       -J-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
-       -J-Djdk.attach.allowAttachSelf \
-       -J-Dpolyglot.engine.WarnInterpreterOnly=false \
-       -J-Dlog4j2.configurationFile=log4j2-devenv-repl.xml \
-       -J-XX:+EnableDynamicAgentLoading \
-       -J-XX:-OmitStackTraceInFastThrow \
-       -J-XX:+UnlockDiagnosticVMOptions \
-       -J-XX:+DebugNonSafepoints \
-       -J-Djdk.tracePinnedThreads=full"
+export JAVA_OPTS="--enable-preview \
+       -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
+       -Djdk.attach.allowAttachSelf \
+       -Dlog4j2.configurationFile=log4j2-devenv-repl.xml \
+       -Djdk.tracePinnedThreads=full \
+       -XX:+EnableDynamicAgentLoading \
+       -XX:-OmitStackTraceInFastThrow \
+       -XX:+UnlockDiagnosticVMOptions \
+       -XX:+DebugNonSafepoints";
 
-# Enable preview
-export OPTIONS="$OPTIONS -J--enable-preview"
+export OPTIONS="-A:jmx-remote -A:dev"
 
 # Setup HEAP
 # export OPTIONS="$OPTIONS -J-Xms50m -J-Xmx1024m"
