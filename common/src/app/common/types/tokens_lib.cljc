@@ -670,6 +670,43 @@ used for managing active sets without a user created theme.")
 
 ;; === Import / Export from DTCG format
 
+(defn has-legacy-format?
+  "Searches through parsed token file and returns:
+   - true when first node satisfies `legacy-node?` predicate
+   - false when first node satisfies `dtcg-node?` predicate
+   - nil if neither combination is found"
+  ([data]
+   (let [legacy-node? (fn [node]
+                        (and (map? node)
+                             (or (and (contains? node "value")
+                                      (contains? node "type"))
+                                 (and (contains? node "value")
+                                      (sequential? (get node "value"))))))
+         dtcg-node? (fn [node]
+                      (and (map? node)
+                           (or (and (contains? node "$value")
+                                    (contains? node "$type"))
+                               (and (contains? node "$value")
+                                    (sequential? (get node "$value"))))))]
+     (has-legacy-format? data legacy-node? dtcg-node?)))
+  ([data legacy-node? dtcg-node?]
+   (let [branch? map?
+         children (fn [node] (vals node))
+         check-node (fn [node]
+                      (cond
+                        (legacy-node? node) true
+                        (dtcg-node? node) false
+                        :else nil))
+         walk (fn walk [node]
+                (lazy-seq
+                 (cons
+                  (check-node node)
+                  (when (branch? node)
+                    (mapcat walk (children node))))))]
+     (->> (walk data)
+          (filter some?)
+          first))))
+
 (defn walk-sets-tree-seq
   [nodes & {:keys [walk-children?]
             :or {walk-children? (constantly true)}}]
@@ -1142,7 +1179,6 @@ Will return a value that matches this schema:
       (-> sets
           (assoc "$themes" themes)
           (assoc-in ["$metadata" "tokenSetOrder"] ordered-set-names))))
-
   (decode-dtcg-json [_ parsed-json]
     (let [metadata (get parsed-json "$metadata")
           sets-data (dissoc parsed-json "$themes" "$metadata")

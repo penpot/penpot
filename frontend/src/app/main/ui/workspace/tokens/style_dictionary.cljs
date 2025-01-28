@@ -188,7 +188,7 @@
                      (throw (wte/error-ex-info :error.import/json-parse-error data e))))))
        (rx/map (fn [json-data]
                  (try
-                   (if-not legacy?
+                   (if-not (ctob/has-legacy-format? json-data)
                      (ctob/decode-dtcg-json (ctob/ensure-tokens-lib nil) json-data)
                      (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) json-data))
                    (catch js/Error e
