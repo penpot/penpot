@@ -1174,7 +1174,7 @@ Will return a value that matches this schema:
                                        (set sets))))
          lib' themes-data)
         lib')))
-  (decode-legacy-json [_ parsed-legacy-json]
+  (decode-legacy-json [this parsed-legacy-json]
     (let [other-data (select-keys parsed-legacy-json ["$themes" "$metadata"])
           sets-data (dissoc parsed-legacy-json "$themes" "$metadata")
           dtcg-sets-data (walk/postwalk
@@ -1194,8 +1194,8 @@ Will return a value that matches this schema:
                               (set/rename-keys  {"value" "$value"
                                                  "type" "$type"})))
                           sets-data)]
-      (decode-dtcg-json nil (merge other-data
-                                   dtcg-sets-data))))
+      (decode-dtcg-json this (merge other-data
+                                    dtcg-sets-data))))
   (get-all-tokens [this]
     (reduce
      (fn [tokens' set]
