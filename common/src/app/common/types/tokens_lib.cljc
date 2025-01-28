@@ -1179,6 +1179,7 @@ Will return a value that matches this schema:
       (-> sets
           (assoc "$themes" themes)
           (assoc-in ["$metadata" "tokenSetOrder"] ordered-set-names))))
+
   (decode-dtcg-json [_ parsed-json]
     (let [metadata (get parsed-json "$metadata")
           sets-data (dissoc parsed-json "$themes" "$metadata")
@@ -1210,6 +1211,7 @@ Will return a value that matches this schema:
                                        (set sets))))
          lib' themes-data)
         lib')))
+
   (decode-legacy-json [this parsed-legacy-json]
     (let [other-data (select-keys parsed-legacy-json ["$themes" "$metadata"])
           sets-data (dissoc parsed-legacy-json "$themes" "$metadata")

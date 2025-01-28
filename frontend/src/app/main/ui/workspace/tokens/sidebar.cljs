@@ -310,6 +310,7 @@
         on-display-file-explorer
         (mf/use-fn
          #(.click (mf/ref-val input-ref)))
+
         on-import
         (fn [event]
           (let [file (-> event .-target .-files (aget 0))]
@@ -324,6 +325,7 @@
                                                   :type :toast
                                                   :level :error})))))
             (set! (.-value (mf/ref-val input-ref)) "")))
+
         on-export (fn []
                     (st/emit! (ptk/event ::ev/event {::ev/name "export-tokens"}))
                     (let [tokens-json (some-> (deref refs/tokens-lib)
