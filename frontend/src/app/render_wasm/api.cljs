@@ -469,6 +469,32 @@
         r4 (or (get corners 3) 0)]
     (h/call internal-module "_set_shape_corners" r1 r2 r3 r4)))
 
+
+(defn- translate-shadow-style
+  [style]
+  (case style
+    :drop-shadow 0
+    :inner-shadow 1
+    0))
+
+(defn set-shape-shadows
+  [shadows]
+  (h/call internal-module "_clear_shape_shadows")
+  (let [total-shadows (count shadows)]
+    (loop [index 0]
+      (when (< index total-shadows)
+        (let [shadow (nth shadows index)
+              color (dm/get-prop shadow :color)
+              blur (dm/get-prop shadow :blur)
+              rgba (rgba-from-hex (dm/get-prop color :color) (dm/get-prop color :opacity))
+              hidden (dm/get-prop shadow :hidden)
+              x (dm/get-prop shadow :offset-x)
+              y (dm/get-prop shadow :offset-y)
+              spread (dm/get-prop shadow :spread)
+              style (dm/get-prop shadow :style)]
+          (h/call internal-module "_add_shape_shadow" rgba blur spread x y (translate-shadow-style style) hidden)
+          (recur (inc index)))))))
+
 (def debounce-render-without-cache (fns/debounce render-without-cache 100))
 
 (defn set-view-box
@@ -514,7 +540,8 @@
                                   (dm/get-prop shape :r3)
                                   (dm/get-prop shape :r4)])
                   bool-content (dm/get-prop shape :bool-content)
-                  svg-attrs    (dm/get-prop shape :svg-attrs)]
+                  svg-attrs    (dm/get-prop shape :svg-attrs)
+                  shadows      (dm/get-prop shape :shadow)]
 
               (use-shape id)
               (set-shape-type type)
@@ -535,6 +562,7 @@
                 (set-shape-svg-raw-content (get-static-markup shape)))
               (when (some? bool-content) (set-shape-bool-content bool-content))
               (when (some? corners) (set-shape-corners corners))
+              (when (some? shadows) (set-shape-shadows shadows))
               (let [pending' (concat (set-shape-fills fills) (set-shape-strokes strokes))]
                 (recur (inc index) (into pending pending'))))
             pending))]
