@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2022-08-18 16:16+0000\n"
-"Last-Translator: andy <andres.gonzalez79@gmail.com>\n"
-"Language-Team: English "
-"<https://hosted.weblate.org/projects/penpot/frontend/en/>\n"
+"PO-Revision-Date: 2025-01-29 22:23+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Language-Team: English <https://hosted.weblate.org/projects/penpot/frontend/"
+"en/>\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14-dev\n"
+"X-Generator: Weblate 5.10-dev\n"
 
 #: src/app/main/data/common.cljs:87
 #, fuzzy
@@ -6523,6 +6523,7 @@ msgid "workspace.token.num-sets"
 msgstr "%s sets"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
+#, fuzzy
 msgid "workspace.token.original-value"
 msgstr "Original value: %s"
 
@@ -6531,6 +6532,7 @@ msgid "workspace.token.ref-not-valid"
 msgstr "Reference is not valid or is not in any active set"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:205, src/app/main/ui/workspace/tokens/form.cljs:208, src/app/main/ui/workspace/tokens/token_pill.cljs:115
+#, fuzzy
 msgid "workspace.token.resolved-value"
 msgstr "Resolved value: %s"
 
