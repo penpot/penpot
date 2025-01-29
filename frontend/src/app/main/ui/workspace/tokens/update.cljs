@@ -17,7 +17,7 @@
 (def filter-existing-values? false)
 
 (def attributes->shape-update
-  {#{:r1 :r2 :r3 :r4} wtch/update-shape-radius-for-corners
+  {ctt/border-radius-keys wtch/update-shape-radius-for-corners
    ctt/color-keys wtch/update-fill-stroke
    ctt/stroke-width-keys wtch/update-stroke-width
    ctt/sizing-keys wtch/update-shape-dimensions
