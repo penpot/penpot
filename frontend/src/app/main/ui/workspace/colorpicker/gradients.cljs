@@ -34,10 +34,6 @@
   (/ (.. event -nativeEvent -offsetX)
      (-> event dom/get-current-target dom/get-bounding-rect :width)))
 
-;; (defn- format-rgba
-;;   [{:keys [r g b alpha offset]}]
-;;   (str/ffmt "rgba(%1, %2, %3, %4) %5%%" r g b alpha (* offset 100)))
-
 (defn- format-rgb
   [{:keys [r g b offset]}]
   (str/ffmt "rgb(%1, %2, %3) %4%%" r g b (* offset 100)))
