@@ -86,6 +86,8 @@
                            :token token
                            :shape-ids shape-ids}))
           (rx/of
+           (when (seq (set/intersection ctt/border-radius-keys attributes))
+             (st/emit! (ptk/data-event ::expand-border-radius)))
            (apply-token {:attributes attributes
                          :token token
                          :shape-ids shape-ids
@@ -106,8 +108,6 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of
-       ;; NOTE: This key should be namespaced on data tokens, but these events are not there.
-       (ptk/data-event :expand-border-radius)
        (dwsh/update-shapes shape-ids
                            (fn [shape]
                              (ctsr/set-radius-for-corners shape attributes value))
