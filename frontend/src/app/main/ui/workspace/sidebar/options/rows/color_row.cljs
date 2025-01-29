@@ -44,7 +44,7 @@
   [v]
   (if (= v :multiple) nil v))
 
-(mf/defc color-row
+(mf/defc color-row*
   [{:keys [index color disable-gradient disable-opacity disable-image disable-picker hidden
            on-change on-reorder on-detach on-open on-close on-remove
            disable-drag on-focus on-blur select-only select-on-focus]}]

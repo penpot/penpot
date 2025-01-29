@@ -15,7 +15,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
-   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
+   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
@@ -38,7 +38,9 @@
                      :title       (tr "workspace.options.canvas-background")
                      :class       (stl/css :title-spacing-page)}]]
      [:div {:class (stl/css :element-content)}
-      [:& color-row
+
+      ;; FIXME: memoize color
+      [:> color-row*
        {:disable-gradient true
         :disable-opacity true
         :disable-image true

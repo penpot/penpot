@@ -24,7 +24,7 @@
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
-   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
+   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
@@ -235,17 +235,19 @@
                                :on-change (update-attr index :offset-y basic-offset-y-ref)
                                :on-blur on-blur
                                :value (:offset-y value)}]]
-          [:& color-row {:color (if (string? (:color value))
-                                                ;; Support for old format colors
-                                  {:color (:color value) :opacity (:opacity value)}
-                                  (:color value))
-                         :title (tr "workspace.options.shadow-options.color")
-                         :disable-gradient true
-                         :disable-image true
-                         :on-change update-color
-                         :on-detach detach-color
-                         :on-open manage-on-open
-                         :on-close manage-on-close}]]])]]))
+
+          ;; FIXME: memoize color
+          [:> color-row* {:color (if (string? (:color value))
+                                   ;; Support for old format colors
+                                   {:color (:color value) :opacity (:opacity value)}
+                                   (:color value))
+                          :title (tr "workspace.options.shadow-options.color")
+                          :disable-gradient true
+                          :disable-image true
+                          :on-change update-color
+                          :on-detach detach-color
+                          :on-open manage-on-open
+                          :on-close manage-on-close}]]])]]))
 
 (mf/defc shadow-menu
   {::mf/wrap-props false}

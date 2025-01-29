@@ -16,7 +16,7 @@
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.hooks :as h]
-   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
+   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -58,12 +58,11 @@
         prev-colors-ref  (mf/use-ref nil)
 
         initial-color-keys
-        (mf/use-memo
-         #(->> (concat colors library-colors)
-               (reduce
-                (fn [result color]
-                  (assoc result color (dm/str (uuid/next))))
-                {})))
+        (mf/with-memo []
+          (->> (concat colors library-colors)
+               (reduce (fn [result color]
+                         (assoc result color (dm/str (uuid/next))))
+                       {})))
 
         color-keys*  (mf/use-var initial-color-keys)
 
@@ -138,7 +137,7 @@
          (let [lib-colors (cond->> library-colors (not @expand-lib-color) (take 3))
                lib-colors (concat lib-colors colors)]
            (for [[index color] (d/enumerate lib-colors)]
-             [:& color-row
+             [:> color-row*
               {:key (get @color-keys* color)
                :color color
                :index index
@@ -155,7 +154,7 @@
 
         [:div {:class (stl/css :selected-color-group)}
          (for [[index color] (d/enumerate (cond->> colors (not @expand-color) (take 3)))]
-           [:& color-row
+           [:> color-row*
             {:key (get @color-keys* color)
              :color color
              :index index

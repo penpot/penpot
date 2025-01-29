@@ -17,7 +17,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
-   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
+   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.dom :as dom]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -153,7 +153,8 @@
         :on-focus handle-focus-stop-offset
         :on-blur handle-blur-stop-offset}]]
 
-     [:& color-row
+     ;; FIXME: memoize color
+     [:> color-row*
       {:disable-gradient true
        :disable-picker true
        :color {:color color
