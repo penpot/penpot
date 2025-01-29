@@ -3,11 +3,11 @@ LABEL maintainer="Penpot <docker@penpot.app>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v20.11.1 \
-    CLOJURE_VERSION=1.11.1.1435 \
-    CLJKONDO_VERSION=2024.03.13 \
-    BABASHKA_VERSION=1.3.189 \
-    CLJFMT_VERSION=0.12.0 \
+ENV NODE_VERSION=v22.13.1 \
+    CLOJURE_VERSION=1.12.0.1501 \
+    CLJKONDO_VERSION=2025.01.16 \
+    BABASHKA_VERSION=1.12.196 \
+    CLJFMT_VERSION=0.13.0 \
     RUSTUP_VERSION=1.27.1 \
     RUST_VERSION=1.82.0 \
     LANG=en_US.UTF-8 \
@@ -107,12 +107,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='7d3ab0e8eba95bd682cfda8041c6cb6fa21e09d0d9131316fd7c96c78969de31'; \
-         BINARY_URL='https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.3%2B9/OpenJDK21U-jdk_aarch64_linux_hotspot_21.0.3_9.tar.gz'; \
+         ESUM='fb43ae1202402842559cb6223886ec1663b90ffbec48479abbcb92c92c9012eb'; \
+         BINARY_URL='https://github.com/adoptium/temurin23-binaries/releases/download/jdk-23.0.2%2B7/OpenJDK23U-jdk_aarch64_linux_hotspot_23.0.2_7.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='fffa52c22d797b715a962e6c8d11ec7d79b90dd819b5bc51d62137ea4b22a340'; \
-         BINARY_URL='https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.3%2B9/OpenJDK21U-jdk_x64_linux_hotspot_21.0.3_9.tar.gz'; \
+         ESUM='870ac8c05c6fe563e7a3878a47d0234b83c050e83651d2c47e8b822ec74512dd'; \
+         BINARY_URL='https://github.com/adoptium/temurin23-binaries/releases/download/jdk-23.0.2%2B7/OpenJDK23U-jdk_x64_linux_hotspot_23.0.2_7.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -162,7 +162,7 @@ RUN set -eux; \
     tar -xf /tmp/nodejs.tar.gz --strip-components=1; \
     chown -R root /usr/local/nodejs; \
     corepack enable; \
-    corepack install -g yarn@4.2.2; \
+    corepack install -g yarn@4.3.1; \
     npx playwright install --with-deps chromium; \
     rm -rf /tmp/nodejs.tar.gz;
 

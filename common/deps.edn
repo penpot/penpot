@@ -1,25 +1,25 @@
 {:deps
  {org.clojure/clojure {:mvn/version "1.12.0"}
-  org.clojure/data.json {:mvn/version "2.5.0"}
+  org.clojure/data.json {:mvn/version "2.5.1"}
   org.clojure/tools.cli {:mvn/version "1.1.230"}
   org.clojure/clojurescript {:mvn/version "1.11.132"}
   org.clojure/test.check {:mvn/version "1.1.1"}
   org.clojure/data.fressian {:mvn/version "1.1.0"}
 
   ;; Logging
-  org.apache.logging.log4j/log4j-api {:mvn/version "2.24.1"}
-  org.apache.logging.log4j/log4j-core {:mvn/version "2.24.1"}
-  org.apache.logging.log4j/log4j-web {:mvn/version "2.24.1"}
-  org.apache.logging.log4j/log4j-jul {:mvn/version "2.24.1"}
-  org.apache.logging.log4j/log4j-slf4j2-impl {:mvn/version "2.24.1"}
+  org.apache.logging.log4j/log4j-api {:mvn/version "2.24.3"}
+  org.apache.logging.log4j/log4j-core {:mvn/version "2.24.3"}
+  org.apache.logging.log4j/log4j-web {:mvn/version "2.24.3"}
+  org.apache.logging.log4j/log4j-jul {:mvn/version "2.24.3"}
+  org.apache.logging.log4j/log4j-slf4j2-impl {:mvn/version "2.24.3"}
   org.slf4j/slf4j-api {:mvn/version "2.0.16"}
   pl.tkowalcz.tjahzi/log4j2-appender {:mvn/version "0.9.32"}
 
   selmer/selmer {:mvn/version "1.12.61"}
   criterium/criterium {:mvn/version "0.4.6"}
 
-  metosin/jsonista {:mvn/version "0.3.11"}
-  metosin/malli {:mvn/version "0.16.4"}
+  metosin/jsonista {:mvn/version "0.3.13"}
+  metosin/malli {:mvn/version "0.17.0"}
 
   expound/expound {:mvn/version "0.9.0"}
   com.cognitect/transit-clj {:mvn/version "1.0.333"}
@@ -47,11 +47,10 @@
   org.la4j/la4j {:mvn/version "0.6.0"}
 
   ;; exception printing
-  fipp/fipp {:mvn/version "0.6.26"}
+  fipp/fipp {:mvn/version "0.6.27"}
 
-  io.github.eerohele/pp
-  {:git/tag "2024-09-09.69"
-   :git/sha "de4b20f"}
+  me.flowthing/pp {:mvn/version "2024-11-13.77"}
+
 
   io.aviso/pretty {:mvn/version "1.4.4"}
   environ/environ {:mvn/version "1.2.0"}}
@@ -60,7 +59,7 @@
  {:dev
   {:extra-deps
    {org.clojure/tools.namespace {:mvn/version "RELEASE"}
-    thheller/shadow-cljs {:mvn/version "2.28.18"}
+    thheller/shadow-cljs {:mvn/version "2.28.20"}
     com.clojure-goes-fast/clj-async-profiler {:mvn/version "RELEASE"}
     com.bhauman/rebel-readline {:mvn/version "RELEASE"}
     criterium/criterium {:mvn/version "RELEASE"}
@@ -69,7 +68,7 @@
 
   :build
   {:extra-deps
-   {io.github.clojure/tools.build {:git/tag "v0.10.5" :git/sha "2a21b7a"}}
+   {io.github.clojure/tools.build {:git/tag "v0.10.6" :git/sha "52cf7d6"}}
    :ns-default build}
 
   :test
