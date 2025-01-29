@@ -400,31 +400,47 @@
                    elements)]
     (into #{} (keep :name) elements)))
 
-(defn- extract-numeric-suffix
-  [basename]
-  (if-let [[_ p1 p2] (re-find #"(.*) ([0-9]+)$" basename)]
-    [p1 (+ 1 (d/parse-integer p2))]
-    [basename 1]))
+(defn- name-seq
+  "Creates a lazy sequence of names in the pattern:
+   (str name),
+   (str name (suffix-fn 1)),
+   (str name (suffix-fn 2)),
+   (str name (suffix-fn 3))..."
+  [base-name suffix-fn]
+  (concat
+   [base-name]
+   (map #(str/concat base-name (suffix-fn %))
+        (iterate inc 1))))
+
+(defn ^:private get-suffix
+  "Default suffix impelemtation"
+  [copy-count]
+  (str/concat " " copy-count))
 
 (defn generate-unique-name
-  "A unique name generator"
-  [used basename]
+  "Generates unique name by
+   returning first unique name from the sequence that doesn't exist in existing-names
+  - `base-name` - a name used for further unique name geneations
+  - `existing-names` - exitsing entity names to check uniqness against
+  - options
+    - `:suffix-fn` - a function that generates unique suffix
+       - accepts `copy-number`, returns `string`
+    - `:immediate-suffix?` - boolean, if `true` suffix added immediately"
+  [base-name existing-names & {:keys [suffix-fn immediate-suffix?]
+                               :or {suffix-fn get-suffix}}]
   (dm/assert!
    "expected a set of strings"
-   (sm/check-set-of-strings! used))
+   (sm/check-set-of-strings! existing-names))
 
   (dm/assert!
    "expected a string for `basename`."
-   (string? basename))
-
-  (if-not (contains? used basename)
-    basename
-    (let [[prefix initial] (extract-numeric-suffix basename)]
-      (loop [counter initial]
-        (let [candidate (str prefix " " counter)]
-          (if (contains? used candidate)
-            (recur (inc counter))
-            candidate))))))
+   (string? base-name))
+  (let [existing-name-set (cond-> (set existing-names)
+                            immediate-suffix? (conj base-name))
+        names (name-seq base-name suffix-fn)]
+    (->> names
+         (remove #(contains? existing-name-set %))
+         first)))
 
 (defn walk-pages
   "Go through all pages of a file and apply a function to each one"
@@ -724,7 +740,7 @@
 
 (defn split-by-last-period
   "Splits a string into two parts:
-   the text before and including the last period, 
+   the text before and including the last period,
    and the text after the last period."
   [s]
   (if-let [last-period (str/last-index-of s ".")]
