@@ -90,11 +90,11 @@
                        :p4 "Left"}
         all-padding-attrs (into #{} (keys padding-attrs))
         {:keys [all-selected? selected-pred shape-ids]} (attribute-actions token selected-shapes all-padding-attrs)
-        horizontal-attributes #{:p1 :p3}
+        horizontal-attributes #{:p2 :p4}
         horizontal-padding-selected? (and
                                       (not all-selected?)
                                       (every? selected-pred horizontal-attributes))
-        vertical-attributes #{:p2 :p4}
+        vertical-attributes #{:p1 :p3}
         vertical-padding-selected? (and
                                     (not all-selected?)
                                     (every? selected-pred vertical-attributes))
@@ -113,7 +113,7 @@
                                   (let [props {:token token
                                                :shape-ids shape-ids}
                                         event (cond
-                                                all-selected? (wtch/apply-token (assoc props :attributes-to-remove vertical-attributes))
+                                                all-selected? (wtch/apply-token (assoc props :attributes-to-remove horizontal-attributes))
                                                 horizontal-padding-selected? (wtch/apply-token (assoc props :attributes-to-remove horizontal-attributes))
                                                 :else (wtch/apply-token (assoc props
                                                                                :attributes horizontal-attributes
