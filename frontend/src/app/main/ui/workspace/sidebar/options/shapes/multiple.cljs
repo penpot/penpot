@@ -26,7 +26,7 @@
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [select-measure-keys measure-attrs measures-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-attrs shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-attrs shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
    [app.main.ui.workspace.sidebar.options.menus.text :as ot]
    [rumext.v2 :as mf]))
@@ -401,7 +401,9 @@
          :libraries shared-libs}])
 
      (when-not (empty? shadow-ids)
-       [:& shadow-menu {:type type :ids shadow-ids :values shadow-values}])
+       [:> shadow-menu* {:type type
+                         :ids shadow-ids
+                         :values (get shadow-values :shadow)}])
 
      (when-not (empty? blur-ids)
        [:& blur-menu {:type type :ids blur-ids :values blur-values}])

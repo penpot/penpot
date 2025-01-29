@@ -21,7 +21,7 @@
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measures-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-menu]]
    [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]
    [app.main.ui.workspace.sidebar.options.menus.text :as ot]
@@ -109,7 +109,7 @@
        :libraries shared-libs}]
 
      (when-not (empty? shadow-ids)
-       [:& shadow-menu {:type type :ids ids :values (select-keys shape [:shadow])}])
+       [:> shadow-menu* {:ids ids :values (get shape :shadow) :type type}])
 
      (when-not (empty? blur-ids)
        [:& blur-menu {:type type :ids blur-ids :values blur-values}])
