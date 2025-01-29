@@ -36,12 +36,6 @@
   ([state file-id]
    (dm/get-in state [:files file-id :data])))
 
-(defn get-all-page-ids
-  ([state]
-   (get-all-page-ids state (:current-file-id state)))
-  ([state file-id]
-   (dm/get-in state [:files file-id :data :pages])))
-
 (defn get-page
   [fdata page-id]
   (dm/get-in fdata [:pages-index page-id]))
@@ -67,7 +61,7 @@
                         (:current-file-id state)
                         page-id))
   ([state file-id page-id]
-   (-> (lookup-page state file-id (d/nilv page-id (:current-page-id state)))
+   (-> (lookup-page state file-id page-id)
        (get :objects))))
 
 (defn process-selected-shapes

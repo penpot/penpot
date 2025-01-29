@@ -314,13 +314,14 @@
    (ptk/reify ::update-dimensions
      ptk/UpdateEvent
      (update [_ state]
-       (let [page-id (get options :page-id)
+       (let [page-id (or (get options :page-id)
+                         (get state :current-page-id))
+
              objects (dsh/lookup-page-objects state page-id)
-             get-modifier
-             (fn [shape] (ctm/change-dimensions-modifiers shape attr value))
-             modif-tree
-             (-> (dwm/build-modif-tree ids objects get-modifier)
-                 (gm/set-objects-modifiers objects))]
+             get-modifier (fn [shape]
+                            (ctm/change-dimensions-modifiers shape attr value))
+             modif-tree (-> (dwm/build-modif-tree ids objects get-modifier)
+                            (gm/set-objects-modifiers objects))]
 
          (assoc state :workspace-modifiers modif-tree)))
 
@@ -408,14 +409,14 @@
    (ptk/reify ::increase-rotation
      ptk/WatchEvent
      (watch [_ state _]
-       (let [page-id (d/nilv (:page-id params) (:current-page-id state))
+       (let [page-id (or (:page-id options)
+                         (:current-page-id state))
              objects (dsh/lookup-page-objects state page-id)
-             shapes  (->> ids (map #(get objects %)))]
+             shapes  (->> ids (map #(get objects %)))
+             options (assoc options :page-id page-id)]
          (rx/concat
           (rx/of (dwm/set-delta-rotation-modifiers rotation shapes params))
-          (rx/of (dwm/apply-modifiers (assoc options :page-id page-id)))))))))
-
-
+          (rx/of (dwm/apply-modifiers options))))))))
 ;; -- Move ----------------------------------------------------------
 
 (declare start-move)
@@ -788,14 +789,15 @@
 
 (defn update-position
   "Move shapes to a new position"
-  ([id position] (update-position nil id position nil))
-  ([page-id id position opts]
+  ([id position] (update-position id position nil))
+  ([id position options]
    (dm/assert! (uuid? id))
 
    (ptk/reify ::update-position
      ptk/WatchEvent
      (watch [_ state _]
-       (let [page-id    (d/nilv page-id (:current-page-id state))
+       (let [page-id    (or (get options :page-id)
+                            (get state :current-page-id))
              objects    (dsh/lookup-page-objects state page-id)
              shape      (get objects id)
              ;; FIXME: performance rect
@@ -809,10 +811,11 @@
 
              modif-tree (dwm/create-modif-tree [id] (ctm/move-modifiers delta))]
 
+
+         ;; FIXME: should we pass page-id down to apply-modifiers (?)
          (rx/of (dwm/apply-modifiers {:modifiers modif-tree
-                                      :page-id page-id
                                       :ignore-constraints false
-                                      :ignore-touched (:ignore-touched opts)
+                                      :ignore-touched (:ignore-touched options)
                                       :ignore-snap-pixel true})))))))
 
 (defn position-shapes
