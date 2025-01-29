@@ -133,6 +133,7 @@
         frame-hover       (mf/use-state nil)
         active-frames     (mf/use-state #{})
         canvas-init?      (mf/use-state false)
+        initialized?      (mf/use-state false)
 
         ;; REFS
         [viewport-ref
@@ -293,23 +294,28 @@
         (wasm.api/resize-viewbox (:width vport) (:height vport))))
 
     (mf/with-effect [@canvas-init?  base-objects]
-      (when @canvas-init?
+      (when (and @canvas-init? @initialized?)
         (wasm.api/set-objects base-objects)))
 
     (mf/with-effect [@canvas-init? preview-blend]
       (when (and @canvas-init? preview-blend)
         (wasm.api/request-render "with-effect")))
 
-    (mf/with-effect [@canvas-init? vbox]
-      (when @canvas-init?
+    (mf/with-effect [@canvas-init? zoom vbox background]
+      (when (and @canvas-init? (not @initialized?))
+        (wasm.api/initialize base-objects zoom vbox background)
+        (reset! initialized? true)))
+
+    (mf/with-effect [vbox]
+      (when (and @canvas-init? initialized?)
         (wasm.api/set-view-zoom zoom vbox)))
 
-    (mf/with-effect [@canvas-init? vbox]
-      (when @canvas-init?
+    (mf/with-effect [vbox]
+      (when (and @canvas-init? initialized?)
         (wasm.api/set-view-box zoom vbox)))
 
-    (mf/with-effect [@canvas-init? background]
-      (when @canvas-init?
+    (mf/with-effect [background]
+      (when (and @canvas-init? initialized?)
         (wasm.api/set-canvas-background background)))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool drawing-path?)
