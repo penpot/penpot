@@ -15,6 +15,9 @@
   z-index: 11;
   overflow-y: auto;
   overflow-x: hidden;
+  &.token-modal-large {
+    min-block-size: 38rem;
+  }
 }
 
 .close-btn {
