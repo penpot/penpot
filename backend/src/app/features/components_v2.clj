@@ -1071,7 +1071,7 @@
         groups (d/group-by #(first (cfh/split-path (:path %))) assets)
         ;; If there is a group called as the generic-name we have to preserve it
         unames (into #{} (keep str) (keys groups))
-        groups (rename-keys groups {generic-name (cfh/generate-unique-name unames generic-name)})
+        groups (rename-keys groups {generic-name (cfh/generate-unique-name generic-name unames)})
 
         ;; Split large groups in chunks of max-group-size elements
         groups (loop [groups (seq groups)

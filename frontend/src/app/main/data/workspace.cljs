@@ -507,10 +507,8 @@
       (watch [it state _]
         (let [pages   (-> (dsh/lookup-file-data state)
                           (get :pages-index))
-
               unames  (cfh/get-used-names pages)
-              name    (cfh/generate-unique-name unames "Page 1")
-
+              name    (cfh/generate-unique-name "Page" unames :immediate-suffix? true)
               changes (-> (pcb/empty-changes it)
                           (pcb/add-empty-page id name))]
 
@@ -527,7 +525,13 @@
             page               (get pages page-id)
 
             unames             (cfh/get-used-names pages)
-            name               (cfh/generate-unique-name unames (:name page))
+            suffix-fn          (fn [copy-count]
+                                 (str/concat " "
+                                             (tr "dashboard.copy-suffix")
+                                             (when (> copy-count 1)
+                                               (str " " copy-count))))
+            base-name          (:name page)
+            name               (cfh/generate-unique-name base-name unames :suffix-fn suffix-fn)
             objects            (update-vals (:objects page) #(dissoc % :use-for-thumbnail))
 
             main-instances-ids (set (keep #(when (ctk/main-instance? (val %)) (key %)) objects))
