@@ -113,6 +113,8 @@
         active-color-tab       (mf/use-state (dc/get-active-color-tab))
         drag?                  (mf/use-state false)
 
+        type                   (if (= @active-color-tab "hsva") :hsv :rgb)
+
         fill-image-ref         (mf/use-ref nil)
 
         color-type             (get state :type :color)
@@ -489,7 +491,7 @@
                             :on-change-tab on-change-tab}]]
 
         [:& color-inputs
-         {:type (if (= @active-color-tab :hsva) :hsv :rgb)
+         {:type type
           :disable-opacity disable-opacity
           :color current-color
           :on-change handle-change-color}]

@@ -933,7 +933,7 @@
   (letfn [(update-fn [data]
             (if (some? value)
               (assoc-in data [:plugin-data namespace key] value)
-              (update-in data [:plugin-data namespace] dissoc key)))]
+              (d/update-in-when data [:plugin-data namespace] dissoc key)))]
 
     (case object-type
       :file
