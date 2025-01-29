@@ -6493,23 +6493,7 @@ msgstr "Edit theme"
 msgid "workspace.token.edit-themes"
 msgstr "Edit themes"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:430
-msgid "workspace.token.edit-token"
-msgstr "Edit token"
-
-#: src/app/main/ui/workspace/tokens/form.cljs:481
-msgid "workspace.token.enter-token-description"
-msgstr "Add a description (optional)"
-
-#: src/app/main/ui/workspace/tokens/form.cljs:437
-msgid "workspace.token.enter-token-name"
-msgstr "Enter %s token name"
-
-#: src/app/main/ui/workspace/tokens/form.cljs:463
-msgid "workspace.token.enter-token-value"
-msgstr "Enter token value or alias"
-
-#: src/app/main/ui/workspace/tokens/sets.cljs
+#: src/app/main/ui/workspace/tokens/sets.cljs:186
 #, unused
 msgid "workspace.token.grouping-set-alert"
 msgstr "Token Set grouping is not supported yet."
