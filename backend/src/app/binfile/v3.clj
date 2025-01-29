@@ -616,7 +616,7 @@
        (not-empty)))
 
 (defn- read-file-tokens-lib
-  [{:keys [::input ::file-id ::entries]}]
+  [{:keys [::bfc/input ::file-id ::entries]}]
   (when-let [entry (d/seek (match-tokens-lib-entry-fn file-id) entries)]
     (->> (read-plain-entry input entry)
          (decode-tokens-lib)
