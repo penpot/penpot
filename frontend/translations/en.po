@@ -1143,6 +1143,10 @@ msgstr "Cannot drop a parent set to an own child path."
 msgid "errors.drag-drop.set-exists"
 msgstr "Cannot complete drop, a set with same name already exists at path %s."
 
+#: src/app/main/data/tokens.cljs:294
+msgid "workspace.token.duplicate-suffix"
+msgstr "copy"
+
 #: src/app/main/ui/auth/verify_token.cljs:84, src/app/main/ui/settings/change_email.cljs:29
 msgid "errors.email-already-exists"
 msgstr "Email already used"
@@ -6493,7 +6497,23 @@ msgstr "Edit theme"
 msgid "workspace.token.edit-themes"
 msgstr "Edit themes"
 
-#: src/app/main/ui/workspace/tokens/sets.cljs:186
+#: src/app/main/ui/workspace/tokens/form.cljs:430
+msgid "workspace.token.edit-token"
+msgstr "Edit token"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:481
+msgid "workspace.token.enter-token-description"
+msgstr "Add a description (optional)"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:437
+msgid "workspace.token.enter-token-name"
+msgstr "Enter %s token name"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:463
+msgid "workspace.token.enter-token-value"
+msgstr "Enter token value or alias"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
 #, unused
 msgid "workspace.token.grouping-set-alert"
 msgstr "Token Set grouping is not supported yet."
