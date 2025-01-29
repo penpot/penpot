@@ -5990,6 +5990,9 @@ msgstr "Copy as CSS (nested layers)"
 msgid "workspace.shape.menu.copy-props"
 msgstr "Copy properties"
 
+msgid "workspace.shape.menu.copy-text"
+msgstr "Copy as text"
+
 msgid "workspace.shape.menu.paste-props"
 msgstr "Paste properties"
 

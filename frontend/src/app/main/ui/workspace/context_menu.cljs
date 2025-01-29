@@ -161,6 +161,9 @@
         handle-paste-props
         (mf/use-callback #(st/emit! (dw/paste-selected-props)))
 
+        handle-copy-text
+        (mf/use-callback #(st/emit! (dw/copy-selected-text)))
+
         handle-hover-copy-paste
         (mf/use-callback
          (fn []
@@ -203,6 +206,9 @@
                        :on-click handle-copy-css-nested}]
 
       [:> menu-separator* {}]
+
+      [:> menu-entry* {:title (tr "workspace.shape.menu.copy-text")
+                       :on-click handle-copy-text}]
 
       [:> menu-entry* {:title (tr "workspace.shape.menu.copy-props")
                        :shortcut (sc/get-tooltip :copy-props)

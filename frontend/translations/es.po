@@ -6016,6 +6016,9 @@ msgstr "Copiar como CSS (capas anidadas)"
 msgid "workspace.shape.menu.copy-props"
 msgstr "Copiar propiedades"
 
+msgid "workspace.shape.menu.copy-text"
+msgstr "Copiar como texto"
+
 msgid "workspace.shape.menu.paste-props"
 msgstr "Pegar propiedades"
 

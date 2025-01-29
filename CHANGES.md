@@ -14,6 +14,7 @@
 - Shareable link pointing to an specific board. [Taiga #3219](https://tree.taiga.io/project/penpot/us/3219)
 - Copy styles in CSS [Taiga #9401](https://tree.taiga.io/project/penpot/us/9401)
 - Copy/paste shape styles (fills, strokes, shadows, etc..) [Taiga #8937](https://tree.taiga.io/project/penpot/us/8937)
+- Copy text content to clipboard [Taiga #9970](https://tree.taiga.io/project/penpot/us/9970?milestone=424203)
 - Resize board to fit content option [Taiga #4707](https://tree.taiga.io/project/penpot/us/4707)
 - Rename selected layer via Board name [Taiga #9430](https://tree.taiga.io/project/penpot/us/9430)
 
