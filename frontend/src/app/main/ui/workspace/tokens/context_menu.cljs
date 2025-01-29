@@ -113,7 +113,7 @@
                                   (let [props {:token token
                                                :shape-ids shape-ids}
                                         event (cond
-                                                all-selected? (wtch/apply-token (assoc props :attributes-to-remove vertical-attributes))
+                                                all-selected? (wtch/apply-token (assoc props :attributes-to-remove horizontal-attributes))
                                                 horizontal-padding-selected? (wtch/apply-token (assoc props :attributes-to-remove horizontal-attributes))
                                                 :else (wtch/apply-token (assoc props
                                                                                :attributes horizontal-attributes
