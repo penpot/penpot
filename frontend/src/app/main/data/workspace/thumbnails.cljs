@@ -65,7 +65,7 @@
   [state file-id page-id frame-id tag]
   (let [object-id (thc/fmt-object-id file-id page-id frame-id tag)
         tp        (tp/tpoint-ms)
-        objects   (-> (dsh/lookup-file state file-id)
+        objects   (-> (dsh/lookup-file-data state file-id)
                       (dsh/get-page page-id)
                       :objects)
         shape     (get objects frame-id)]
@@ -94,7 +94,7 @@
 
        ptk/UpdateEvent
        (update [_ state]
-         (update state :workspace-thumbnails
+         (update state :thumbnails
                  (fn [thumbs]
                    (if-let [uri (get thumbs object-id)]
                      (do (vreset! pending uri)
@@ -122,10 +122,10 @@
     (ptk/reify ::assoc-thumbnail
       ptk/UpdateEvent
       (update [_ state]
-        (let [prev-uri (dm/get-in state [:workspace-thumbnails object-id])]
+        (let [prev-uri (dm/get-in state [:thumbnails object-id])]
           (some->> prev-uri (vreset! prev-uri*))
           (l/trc :hint "assoc thumbnail" :object-id object-id :uri uri)
-          (update state :workspace-thumbnails assoc object-id uri)))
+          (update state :thumbnails assoc object-id uri)))
 
       ptk/EffectEvent
       (effect [_ _ _]
@@ -141,8 +141,8 @@
     (update [_ state]
       (let [old-id (dm/str old-id)
             new-id (dm/str new-id)
-            thumbnail (dm/get-in state [:workspace-thumbnails old-id])]
-        (update state :workspace-thumbnails assoc new-id thumbnail)))))
+            thumbnail (dm/get-in state [:thumbnails old-id])]
+        (update state :thumbnails assoc new-id thumbnail)))))
 
 (defn update-thumbnail
   "Updates the thumbnail information for the given `id`"
