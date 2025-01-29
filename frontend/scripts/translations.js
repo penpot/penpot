@@ -238,7 +238,7 @@ async function rehash(options, ...other) {
           entry.comments.reference = val.join(", ");
 
           const flagData = entry.comments.flag ?? "";
-          const flags = flagData.split(/\s*,\s*/).filter((s) => s !== "");
+          let flags = flagData.split(/\s*,\s*/).filter((s) => s !== "");
 
           if (flags.includes("unused")) {
             flags = flags.filter((o) => o !== "unused");
