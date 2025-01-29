@@ -77,7 +77,8 @@
 
     [:div {:class (stl/css :comments-section)}
      [:div
-      {:class (stl/css :workspace-comments-container)
+      {:id "comments"
+       :class (stl/css :workspace-comments-container)
        :style {:width (dm/str vport-w "px")
                :height (dm/str vport-h "px")}}
       [:div {:class (stl/css :threads)
