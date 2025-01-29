@@ -174,8 +174,10 @@
          bounds
          (cond
            (or (empty? (:shapes shape))
-               (or (:masked-group shape) (= :bool (:type shape)))
-               (and (cfh/frame-shape? shape) (not (:show-content shape))))
+               (:masked-group shape)
+               (cfh/bool-shape? shape)
+               (and (cfh/frame-shape? shape)
+                    (not (:show-content shape))))
            [base-bounds]
 
            :else
