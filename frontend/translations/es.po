@@ -1769,7 +1769,6 @@ msgstr "Expirada"
 msgid "labels.export"
 msgstr "Exportar"
 
-
 #: src/app/main/ui/exports/assets.cljs:177
 msgid "labels.import"
 msgstr "Importar"
@@ -6844,10 +6843,6 @@ msgstr "Define que sets de tokens deberian formar parte de este tema:"
 #: src/app/main/ui/workspace/tokens/sets.cljs
 msgid "workspace.token.no-sets"
 msgstr "Aun no hay sets."
-
-#: src/app/main/ui/workspace/tokens/sets.cljs
-msgid "workspace.create-one"
-msgstr "Crea uno."
 
 #: src/app/main/ui/workspace/tokens/sets.cljs
 msgid "workspace.token.no-sets-create"

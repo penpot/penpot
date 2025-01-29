@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-17 14:00+0000\n"
+"PO-Revision-Date: 2025-01-19 03:00+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.9-dev\n"
+"X-Generator: Weblate 5.10-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:154, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -5140,14 +5140,6 @@ msgstr "בראש משמאל"
 msgid "workspace.options.radius-top-right"
 msgstr "בראש מימין"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
-msgid "workspace.options.radius.all-corners"
-msgstr "כל הפינות"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
-msgid "workspace.options.radius.single-corners"
-msgstr "פינות עצמאיות"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:184
 msgid "workspace.options.recent-fonts"
 msgstr "אחרונים"
@@ -6507,3 +6499,258 @@ msgstr ""
 #: src/app/main/ui/dashboard/team.cljs:181, src/app/main/ui/onboarding/team_choice.cljs:100
 msgid "errors.maximum-invitations-by-request-reached"
 msgstr "הגעת למספר הכתובות המרבי (%s) שאפשר להזמין בבקשה אחת"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications.view"
+msgstr "הצגת התראות"
+
+msgid "dashboard.upgrade-plan.penpot-free"
+msgstr "Penpot חינמי"
+
+msgid "dashboard.upgrade-plan.no-limits"
+msgstr "ללא מגבלות על יצירתיות"
+
+msgid "dashboard.upgrade-plan.power-up"
+msgstr "חיזוק"
+
+msgid "labels.comment"
+msgstr "הערה"
+
+#: src/app/main/ui/comments.cljs:446
+msgid "labels.comment.mark-as-solved"
+msgstr "סימון כפתור"
+
+#: src/app/main/ui/exports/assets.cljs:177
+msgid "labels.import"
+msgstr "ייבוא"
+
+#: src/app/main/ui/comments.cljs:147
+msgid "labels.post"
+msgstr "רשומה"
+
+#: src/app/main/ui/comments.cljs:188
+msgid "labels.reply.thread"
+msgstr "תגובה"
+
+#: src/app/main/ui/comments.cljs:146
+msgid "labels.replies"
+msgstr "תגובות"
+
+msgid "labels.show-mentions"
+msgstr "הצגת האזכורים שלך בלבד"
+
+msgid "workspace.assets.add-library"
+msgstr "הוספת ספרייה"
+
+msgid "workspace.libraries.empty.some-templates"
+msgstr "כל מיני תבניות כאן"
+
+msgid "workspace.libraries.empty.add-some"
+msgstr "או להוסיף כמה מאלה לניסיון:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
+msgid "workspace.options.radius.hide-all-corners"
+msgstr "צמצום רדיוס עצמאי"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
+msgid "workspace.options.radius.show-single-corners"
+msgstr "הצגת רדיוס עצמאי"
+
+msgid "workspace.shape.menu.copy-paste-as"
+msgstr "העתקה/הדבקה בתור…"
+
+msgid "workspace.shape.menu.copy-css"
+msgstr "העתקה כ־CSS"
+
+msgid "workspace.shape.menu.copy-css-nested"
+msgstr "העתקה כ־CSS (שכבות מקוננות)"
+
+msgid "workspace.shape.menu.copy-props"
+msgstr "העתקת מאפיינים"
+
+msgid "workspace.shape.menu.paste-props"
+msgstr "הדבקת מאפיינים"
+
+msgid "workspace.versions.warning.text"
+msgstr "גרסאות שנשמרו אוטומטית תישמרנה למשך %s ימים."
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-name"
+msgstr "שם"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-name"
+msgstr "נא למלא את שם האסימון %s"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-value"
+msgstr "ערך"
+
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr ""
+"כדי להגדיל את המגבלה הזאת, נא לכתוב אלינו לכתובת [support@penpot.app](%s)"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-value"
+msgstr "נא למלא ערך או כינוי לאסימון"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-description"
+msgstr "תיאור"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.tools"
+msgstr "כלים"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.delete"
+msgstr "מחיקת אסימון"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.duplicate"
+msgstr "שכפול אסימון"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.edit"
+msgstr "עריכת אסימון"
+
+msgid "dashboard.notifications.notifications-saved"
+msgstr "הגדרות ההתראות עודכנו"
+
+msgid "title.settings.notifications"
+msgstr "התראות - Penpot"
+
+msgid "dashboard.settings.notifications.title"
+msgstr "התראות"
+
+msgid "dashboard.settings.notifications.dashboard.title"
+msgstr "התראות לוח בקרה"
+
+msgid "dashboard.settings.notifications.dashboard-comments.title"
+msgstr "הערות קובץ"
+
+msgid "dashboard.settings.notifications.dashboard-comments.partial"
+msgstr "אזכורים ותגובות בלבד"
+
+msgid "dashboard.settings.notifications.dashboard-comments.none"
+msgstr "אין"
+
+msgid "dashboard.settings.notifications.email-invites.none"
+msgstr "אין"
+
+msgid "dashboard.settings.notifications.submit"
+msgstr "עדכון הגדרות"
+
+msgid "dashboard.import.error"
+msgstr "הייבוא נכשל. נא לנסות שוב"
+
+msgid "dashboard.settings.notifications.email-invites.title"
+msgstr "הזמנות ובקשות"
+
+msgid "dashboard.settings.notifications.email-invites.all"
+msgstr "כל סוגי ההזמנות והבקשות"
+
+msgid "dashboard.settings.notifications.email-comments.partial"
+msgstr "אזכורים ותגובות בלבד"
+
+msgid "dashboard.settings.notifications.email-comments.none"
+msgstr "אין"
+
+msgid "labels.notifications"
+msgstr "התראות"
+
+msgid "dashboard.plugins.bad-url"
+msgstr "כתובת התוסף שגויה"
+
+msgid "dashboard.import.bad-url"
+msgstr "הייבוא נכשל. כתובת התבנית שגויה"
+
+msgid "dashboard.plugins.try-plugin"
+msgstr "התנסות התוסף: "
+
+msgid "dashboard.plugins.parse-error"
+msgstr "לא ניתן לפענח את המניפסט/מצהר של התוסף"
+
+msgid "workspace.versions.tab.history"
+msgstr "היסטוריה"
+
+#: src/app/main/ui/workspace/context_menu.cljs:146
+msgid "workspace.shape.menu.copy-link"
+msgstr "העתקת קישור ללוח הגזירים"
+
+msgid "dashboard.settings.notifications.email-comments.all"
+msgstr "כל ההערות, האזכורים והתגובות"
+
+#: src/app/main/ui/comments.cljs:151
+msgid "labels.replies.new"
+msgstr "תגובות חדשות"
+
+msgid "dashboard.settings.notifications.dashboard-comments.all"
+msgstr "כל ההערות, האזכורים והתגובות"
+
+msgid "dashboard.import.no-perms"
+msgstr "אין לך הרשאה לייבא לצוות הזה"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+msgid "shortcuts.copy-link"
+msgstr "העתקת קישור ללוח הגזירים"
+
+#: src/app/main/ui/workspace/main_menu.cljs:908
+msgid "workspace.header.menu.option.power-up"
+msgstr "חיזוק התוכנית שלך"
+
+msgid "workspace.libraries.empty.no-libraries"
+msgstr "אין ספריות משותפות בצוות שלך, אפשר לחפש אחר"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications"
+msgstr "התראות"
+
+msgid "dashboard.settings.notifications.email.title"
+msgstr "התראות דוא״ל"
+
+#: src/app/main/ui/comments.cljs:145
+msgid "labels.reply"
+msgstr "תגובה"
+
+#: src/app/main/ui/workspace/main_menu.cljs:623
+msgid "dashboard.create-version-menu"
+msgstr "נעיצת הגרסה הזאת"
+
+#: src/app/main/ui/comments.cljs:150
+msgid "labels.reply.new"
+msgstr "תגובה חדשה"
+
+#: src/app/main/ui/workspace/main_menu.cljs:630
+msgid "dashboard.show-version-history"
+msgstr "היסטוריית גרסאות"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:167
+msgid "shortcuts.rename"
+msgstr "שינוי שם"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:47
+msgid "workspace.token-set.not-active"
+msgstr "סדרת האסימונים לא פעילה"
+
+msgid "comments.mentions.not-found"
+msgstr "לא נמצאו אנשים עבור ‎@%s"
+
+#: src/app/main/errors.cljs:228
+msgid "errors.migration-in-progress"
+msgstr "מתבצעת הסבה"
+
+#: src/app/main/ui/workspace/sidebar.cljs:242
+msgid "workspace.versions.tab.actions"
+msgstr "פעולות"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-description"
+msgstr "הוספת תיאור (רשות)"
+
+msgid "dashboard.settings.notifications.email-comments.title"
+msgstr "הערות קובץ"
+
+msgid "labels.adding"
+msgstr "מתווסף…"

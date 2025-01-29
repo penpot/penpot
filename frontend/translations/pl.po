@@ -4066,14 +4066,6 @@ msgstr "Górne lewo"
 msgid "workspace.options.radius-top-right"
 msgstr "Górne prawo"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
-msgid "workspace.options.radius.all-corners"
-msgstr "Wszystkie rogi"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
-msgid "workspace.options.radius.single-corners"
-msgstr "Poszczególne narożniki"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:184
 msgid "workspace.options.recent-fonts"
 msgstr "Bieżące"

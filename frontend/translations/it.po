@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-10 13:00+0000\n"
+"PO-Revision-Date: 2025-01-20 23:00+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
@@ -219,7 +219,7 @@ msgstr "Seleziona tutto"
 
 #: src/app/main/ui/workspace/libraries.cljs:225
 msgid "common.unpublish"
-msgstr "Spubblica"
+msgstr "Rimuovi pubblicazione"
 
 #: src/app/main/ui/dashboard/projects.cljs:88
 msgid "dasboard.team-hero.management"
@@ -403,7 +403,7 @@ msgstr "Chiudi tutto"
 
 #: src/app/main/ui/dashboard/fonts.cljs:441
 msgid "dashboard.fonts.empty-placeholder"
-msgstr "Non hai ancora installato font personalizzati."
+msgstr "I font personalizzati che carichi appariranno qui."
 
 #: src/app/main/ui/dashboard/fonts.cljs:195
 msgid "dashboard.fonts.fonts-added"
@@ -491,7 +491,7 @@ msgstr "Abbandona il team"
 
 #: src/app/main/ui/dashboard/templates.cljs:82, src/app/main/ui/dashboard/templates.cljs:157
 msgid "dashboard.libraries-and-templates"
-msgstr "Librerie e template"
+msgstr "Librerie e modelli"
 
 #: src/app/main/ui/dashboard/templates.cljs:158
 msgid "dashboard.libraries-and-templates.explore"
@@ -500,8 +500,8 @@ msgstr "Esplorane di più e scopri come contribuire"
 #: src/app/main/ui/dashboard/import.cljs:358
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr ""
-"Si è verificato un problema nell'importazione del template. Il template non "
-"è stato importato."
+"Si è verificato un problema nell'importazione del modello. Il modello non è "
+"stato importato."
 
 #: src/app/main/ui/dashboard/libraries.cljs:55
 msgid "dashboard.libraries-title"
@@ -1306,7 +1306,7 @@ msgstr "Lingua"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:1008, src/app/main/ui/workspace/main_menu.cljs:138
 msgid "labels.libraries-and-templates"
-msgstr "Librerie e template"
+msgstr "Librerie e modelli"
 
 #: src/app/main/ui/viewer/header.cljs:209
 msgid "labels.log-or-sign"
@@ -2935,14 +2935,6 @@ msgstr "Altezza.Min"
 #, unused
 msgid "workspace.options.layout-item.title.layout-item-max-h"
 msgstr "Altezza massima"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
-msgid "workspace.options.radius.single-corners"
-msgstr "Angoli indipendenti"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
-msgid "workspace.options.radius.all-corners"
-msgstr "Tutti gli angoli"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:41
 msgid "workspace.options.selection-stroke"
@@ -5133,7 +5125,7 @@ msgstr "Il token scadrà il %s"
 msgid "dashboard.access-tokens.personal.description"
 msgstr ""
 "I token di accesso personali funzionano come alternativa al nostro sistema "
-"di autenticazione login/password e può essere usato per consentire ad "
+"di autenticazione login/password e possono essere usati per consentire ad "
 "un'applicazione di accedere alle API di Penpot interne"
 
 #: src/app/main/ui/dashboard/fonts.cljs:188
@@ -5363,7 +5355,7 @@ msgstr "Vai all'accesso"
 
 #: src/app/main/ui/onboarding/templates.cljs:78
 msgid "onboarding.templates.subtitle"
-msgstr "Ecco alcuni template."
+msgstr "Ecco alcuni modelli."
 
 #: src/app/main/ui/onboarding/templates.cljs:77
 msgid "onboarding.templates.title"
@@ -6597,10 +6589,6 @@ msgstr ""
 msgid "shortcuts.copy-link"
 msgstr "Copia link negli appunti"
 
-#: src/app/main/ui/workspace/context_menu.cljs:146
-msgid "workspace.shape.menu.copy_link"
-msgstr "Copia link negli appunti"
-
 #: src/app/main/ui/comments.cljs:147
 msgid "labels.post"
 msgstr "Pubblica"
@@ -6701,3 +6689,160 @@ msgstr "Azioni"
 #: src/app/main/ui/workspace/sidebar.cljs:241
 msgid "workspace.versions.tab.history"
 msgstr "Cronologia"
+
+#: src/app/main/errors.cljs:228
+msgid "errors.migration-in-progress"
+msgstr "Migrazione in corso"
+
+#: src/app/main/ui/exports/assets.cljs:177
+msgid "labels.import"
+msgstr "Importa"
+
+msgid "labels.show-mentions"
+msgstr "Mostra solo le tue menzioni"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
+msgid "workspace.options.radius.show-single-corners"
+msgstr "Mostra raggio indipendente"
+
+#: src/app/main/ui/workspace/context_menu.cljs:146
+msgid "workspace.shape.menu.copy-link"
+msgstr "Copia link negli appunti"
+
+msgid "workspace.shape.menu.copy-paste-as"
+msgstr "Copia/Incolla come…"
+
+msgid "workspace.shape.menu.copy-css"
+msgstr "Copia come CSS"
+
+msgid "workspace.shape.menu.copy-css-nested"
+msgstr "Copia come CSS (livelli nidificati)"
+
+msgid "workspace.shape.menu.copy-props"
+msgstr "Copia proprietà"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:47
+msgid "workspace.token-set.not-active"
+msgstr "Il set di token non è attivo"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-name"
+msgstr "Inserisci il nome del token %s"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-value"
+msgstr "Valore"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-value"
+msgstr "Inserisci un valore del token o un alias"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.edit"
+msgstr "Modifica token"
+
+msgid "title.settings.notifications"
+msgstr "Notifiche - Penpot"
+
+msgid "dashboard.settings.notifications.dashboard-comments.title"
+msgstr "Commenti dei file"
+
+msgid "dashboard.settings.notifications.dashboard-comments.all"
+msgstr "Tutti i commenti, menzioni e risposte"
+
+msgid "dashboard.settings.notifications.dashboard-comments.partial"
+msgstr "Solo menzioni e risposte"
+
+msgid "dashboard.settings.notifications.dashboard.title"
+msgstr "Notifiche nel pannello di controllo"
+
+msgid "dashboard.settings.notifications.email.title"
+msgstr "Notifiche email"
+
+msgid "dashboard.settings.notifications.email-comments.all"
+msgstr "Tutti i commenti, menzioni e risposte"
+
+msgid "dashboard.settings.notifications.email-invites.none"
+msgstr "Nessuna"
+
+msgid "dashboard.import.error"
+msgstr "Importazione non riuscita. Riprova"
+
+msgid "dashboard.import.no-perms"
+msgstr "Non hai i permessi per importare in questo team"
+
+msgid "dashboard.plugins.try-plugin"
+msgstr "Prova il plugin: "
+
+msgid "comments.mentions.not-found"
+msgstr "Nessuna persona trovata per @%s"
+
+msgid "dashboard.settings.notifications.dashboard-comments.none"
+msgstr "Nessuna"
+
+msgid "dashboard.settings.notifications.email-invites.title"
+msgstr "Inviti e richieste"
+
+msgid "dashboard.settings.notifications.email-comments.none"
+msgstr "Nessuna"
+
+msgid "dashboard.plugins.bad-url"
+msgstr "L'URL del plugin non è corretto"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
+msgid "workspace.options.radius.hide-all-corners"
+msgstr "Comprimi raggio indipendente"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.tools"
+msgstr "Strumenti"
+
+msgid "workspace.shape.menu.paste-props"
+msgstr "Incolla proprietà"
+
+msgid "dashboard.import.bad-url"
+msgstr "Importazione non riuscita. L'URL del modello non è corretto"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-name"
+msgstr "Nome"
+
+msgid "labels.notifications"
+msgstr "Notifiche"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-description"
+msgstr "Descrizione"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-description"
+msgstr "Aggiungi una descrizione (opzionale)"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.delete"
+msgstr "Elimina token"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.duplicate"
+msgstr "Duplica token"
+
+msgid "dashboard.notifications.notifications-saved"
+msgstr "Impostazioni di notifica aggiornate"
+
+msgid "dashboard.settings.notifications.title"
+msgstr "Notifiche"
+
+msgid "dashboard.settings.notifications.email-comments.title"
+msgstr "Commenti dei file"
+
+msgid "dashboard.settings.notifications.submit"
+msgstr "Aggiorna impostazioni"
+
+msgid "dashboard.settings.notifications.email-comments.partial"
+msgstr "Solo menzioni e risposte"
+
+msgid "dashboard.settings.notifications.email-invites.all"
+msgstr "Tutti i tipi di inviti e richieste"
+
+msgid "dashboard.plugins.parse-error"
+msgstr "Impossibile analizzare il manifesto del plugin"

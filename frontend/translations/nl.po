@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-09 08:01+0000\n"
+"PO-Revision-Date: 2025-01-20 23:00+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
@@ -5200,14 +5200,6 @@ msgstr "Boven links"
 msgid "workspace.options.radius-top-right"
 msgstr "Boven rechts"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
-msgid "workspace.options.radius.all-corners"
-msgstr "Alle hoeken"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
-msgid "workspace.options.radius.single-corners"
-msgstr "Onafhankelijke hoeken"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:184
 msgid "workspace.options.recent-fonts"
 msgstr "Recent"
@@ -6656,10 +6648,6 @@ msgstr "Hernoemen"
 msgid "workspace.header.menu.option.power-up"
 msgstr "Geef je plan een boost"
 
-#: src/app/main/ui/workspace/context_menu.cljs:146
-msgid "workspace.shape.menu.copy_link"
-msgstr "Link naar klembord kopiëren"
-
 msgid "workspace.versions.warning.text"
 msgstr "Automatisch opgeslagen versies worden %s dagen bewaard."
 
@@ -6686,3 +6674,160 @@ msgstr "Markeren als opgelost"
 #: src/app/main/ui/workspace/sidebar.cljs:242
 msgid "workspace.versions.tab.actions"
 msgstr "Acties"
+
+#: src/app/main/errors.cljs:228
+msgid "errors.migration-in-progress"
+msgstr "Migratie aan de gang"
+
+#: src/app/main/ui/exports/assets.cljs:177
+msgid "labels.import"
+msgstr "Importeren"
+
+msgid "labels.show-mentions"
+msgstr "Alleen jouw vermeldingen weergeven"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
+msgid "workspace.options.radius.hide-all-corners"
+msgstr "Onafhankelijke radius inklappen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
+msgid "workspace.options.radius.show-single-corners"
+msgstr "Onafhankelijke radius weergeven"
+
+#: src/app/main/ui/workspace/context_menu.cljs:146
+msgid "workspace.shape.menu.copy-link"
+msgstr "Link kopiëren naar klembord"
+
+msgid "workspace.shape.menu.copy-paste-as"
+msgstr "Kopiëren/plakken als…"
+
+msgid "workspace.shape.menu.copy-css"
+msgstr "Kopiëren als CSS"
+
+msgid "workspace.shape.menu.copy-css-nested"
+msgstr "Copy as CSS (geneste lagen)"
+
+msgid "workspace.shape.menu.copy-props"
+msgstr "Eigenschappen kopiëren"
+
+msgid "workspace.shape.menu.paste-props"
+msgstr "Eigenschappen plekken"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:47
+msgid "workspace.token-set.not-active"
+msgstr "Tokenset is niet actief"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-name"
+msgstr "Naam"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-name"
+msgstr "Voer de tokennaam %s in"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-value"
+msgstr "Waarde"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-value"
+msgstr "Voer de tokenwaarde of alias in"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-description"
+msgstr "Beschrijving"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-description"
+msgstr "Voeg een beschrijving toe (optioneel)"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.tools"
+msgstr "Hulpmiddelen"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.delete"
+msgstr "Token verwijderen"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.duplicate"
+msgstr "Token dupliceren"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.edit"
+msgstr "Token bewerken"
+
+msgid "dashboard.notifications.notifications-saved"
+msgstr "Meldingsinstellingen bijgewerkt"
+
+msgid "title.settings.notifications"
+msgstr "Meldingen - Penpot"
+
+msgid "dashboard.settings.notifications.title"
+msgstr "Meldingen"
+
+msgid "dashboard.settings.notifications.dashboard.title"
+msgstr "Meldingen op het dashboard"
+
+msgid "dashboard.settings.notifications.dashboard-comments.all"
+msgstr "Alle opmerkingen, vermeldingen en antwoorden"
+
+msgid "dashboard.settings.notifications.dashboard-comments.partial"
+msgstr "Alleen vermeldingen en antwoorden"
+
+msgid "dashboard.settings.notifications.dashboard-comments.none"
+msgstr "Geen"
+
+msgid "dashboard.settings.notifications.email-comments.all"
+msgstr "Alle opmerkingen, vermeldingen en antwoorden"
+
+msgid "dashboard.settings.notifications.email-comments.partial"
+msgstr "Alleen vermeldingen en antwoorden"
+
+msgid "dashboard.settings.notifications.email-comments.none"
+msgstr "Geen"
+
+msgid "dashboard.settings.notifications.email-invites.title"
+msgstr "Uitnodigingen en verzoeken"
+
+msgid "dashboard.settings.notifications.email-invites.none"
+msgstr "Geen"
+
+msgid "dashboard.settings.notifications.submit"
+msgstr "Instellingen bijwerken"
+
+msgid "dashboard.import.error"
+msgstr "Importeren is mislukt. Probeer het opnieuw"
+
+msgid "dashboard.import.no-perms"
+msgstr "Je hebt geen toestemming om naar dit team te importeren"
+
+msgid "dashboard.plugins.try-plugin"
+msgstr "Probeer plugin: "
+
+msgid "dashboard.plugins.parse-error"
+msgstr "Kan het plug-inmanifest niet verwerken"
+
+msgid "dashboard.plugins.bad-url"
+msgstr "De URL van de plug-in is onjuist"
+
+msgid "labels.notifications"
+msgstr "Meldingen"
+
+msgid "comments.mentions.not-found"
+msgstr "Geen mensen gevonden voor @%s"
+
+msgid "dashboard.settings.notifications.email-invites.all"
+msgstr "Alle soorten uitnodigingen en verzoeken"
+
+msgid "dashboard.import.bad-url"
+msgstr "Importeren is mislukt. De sjabloon-URL is onjuist"
+
+msgid "dashboard.settings.notifications.dashboard-comments.title"
+msgstr "Commentaar bij bestand"
+
+msgid "dashboard.settings.notifications.email-comments.title"
+msgstr "Commentaar bij bestand"
+
+msgid "dashboard.settings.notifications.email.title"
+msgstr "E-mail meldingen"

@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-14 11:14+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-01-20 23:00+0000\n"
+"Last-Translator: Henrik Allberg <henrik@thexorb.com>\n"
 "Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
 "sv/>\n"
 "Language: sv\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.9-dev\n"
+"X-Generator: Weblate 5.10-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:154, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -5178,14 +5178,6 @@ msgstr "Topp vänster"
 msgid "workspace.options.radius-top-right"
 msgstr "Topp höger"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
-msgid "workspace.options.radius.all-corners"
-msgstr "Alla hörn"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
-msgid "workspace.options.radius.single-corners"
-msgstr "Oberoende hörn"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:184
 msgid "workspace.options.recent-fonts"
 msgstr "Nyligen"
@@ -5565,9 +5557,11 @@ msgid "workspace.plugins.permissions.content-write"
 msgstr "Läs och ändra innehållet i filer som användarna har tillgång till."
 
 #: src/app/main/ui/workspace/plugins.cljs:323
-#, fuzzy
 msgid "workspace.plugins.permissions.disclaimer"
-msgstr "Observera att denna plugin har skapats av en extern part."
+msgstr ""
+"Observera att detta plugin har skapats av en extern part, så se till att du "
+"litar på den innan du ger åtkomst. Din datasekretess och säkerhet är viktiga "
+"för oss. Om du har några frågor, vänligen kontakta support."
 
 #: src/app/main/ui/workspace/plugins.cljs:263
 msgid "workspace.plugins.permissions.library-read"
@@ -5578,9 +5572,8 @@ msgid "workspace.plugins.permissions.library-write"
 msgstr "Läs och modifiera dina bibliotek och tillgångar."
 
 #: src/app/main/ui/workspace/plugins.cljs:316
-#, fuzzy
 msgid "workspace.plugins.permissions.title"
-msgstr "DENNA PLUGIN VILL HA TILLSTÅND ATT:"
+msgstr "'%s' PLUGIN ÖNSKAR TILLGÅNG TILL:"
 
 #: src/app/main/ui/workspace/plugins.cljs:250
 msgid "workspace.plugins.permissions.user-read"
@@ -6098,3 +6091,697 @@ msgstr "Uppdatera"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicka för att stänga bana"
+
+msgid "workspace.assets.add-library"
+msgstr "Lägg till bibliotek"
+
+msgid "workspace.libraries.empty.add-some"
+msgstr "Eller lägg till några av dessa för att prova:"
+
+msgid "workspace.libraries.empty.some-templates"
+msgstr "några mallar här"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:108
+msgid "workspace.options.blur-options.toggle-blur"
+msgstr "Växla oskärpa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:184
+msgid "workspace.options.stroke.remove-stroke"
+msgstr "Ta bort streckfärg"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+msgid "workspace.options.blur-options.add-blur"
+msgstr "Lägg till oskärpa"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.edit-token"
+msgstr "Redigera token"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-description"
+msgstr "Lägg till en beskrivning (valfritt)"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-name"
+msgstr "Ange %s tokennamn"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.grouping-set-alert"
+msgstr "Gruppering av Token Set stöds inte."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.no-sets"
+msgstr "Inga uppsättningar"
+
+#: src/app/main/ui/workspace/tokens/form.cljs, src/app/main/ui/workspace/tokens/token_pill.cljs
+msgid "workspace.token.resolved-value"
+msgstr "Lösta värden: "
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.save-theme"
+msgstr "Spara tema"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.original-value"
+msgstr "Originalvärde: "
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.select-set"
+msgstr "Välj uppsättning."
+
+msgid "workspace.versions.filter.all"
+msgstr "Alla versioner"
+
+msgid "workspace.versions.filter.label"
+msgstr "Versionsfilter"
+
+msgid "workspace.versions.filter.mine"
+msgstr "Mina versioner"
+
+msgid "workspace.versions.filter.user"
+msgstr "%s's versioner"
+
+msgid "workspace.versions.loading"
+msgstr "Laddar..."
+
+msgid "workspace.versions.restore-warning"
+msgstr "Vill du återställa den här versionen?"
+
+#: src/app/main/ui/workspace/sidebar.cljs:242
+msgid "workspace.versions.tab.actions"
+msgstr "Åtgärder"
+
+msgid "workspace.versions.tab.history"
+msgstr "Historik"
+
+msgid "workspace.versions.version-menu"
+msgstr "Öppna versionsmenyn"
+
+#: src/app/main/errors.cljs:228
+msgid "errors.migration-in-progress"
+msgstr "Migrering pågår"
+
+#: src/app/main/ui/dashboard/files.cljs:190, src/app/main/ui/dashboard/projects.cljs:284
+msgid "dashboard.empty-placeholder-drafts-subtitle"
+msgstr "När en projektmedlem skapar ett utkast kommer det att visas här."
+
+#: src/app/main/ui/dashboard/files.cljs:185, src/app/main/ui/dashboard/projects.cljs:279
+msgid "dashboard.empty-placeholder-drafts-title"
+msgstr "Inga utkast än."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:32
+msgid "dashboard.empty-placeholder-libraries-title"
+msgstr "Inga bibliotek än."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:150
+msgid "workspace.options.fill.add-fill"
+msgstr "Lägg till fyllningsfärg"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:187
+msgid "workspace.options.export.add-export"
+msgstr "Lägg till export"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:199, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:234
+msgid "workspace.options.export.remove-export"
+msgstr "Ta bort export"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:163
+msgid "workspace.options.fill.remove-fill"
+msgstr "Ta bort fyllningsfärg"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:154
+msgid "workspace.options.flows.remove-flow"
+msgstr "Ta bort flöde"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.themes"
+msgstr "Teman"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1051
+#, unused
+msgid "labels.add"
+msgstr "Lägg till"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:271
+msgid "settings.remove-color"
+msgstr "Ta bort färg"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:323
+msgid "workspace.options.guides.add-guide"
+msgstr "Lägg till guide"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:187
+msgid "workspace.options.guides.remove-guide"
+msgstr "Ta bort guide"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:177, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:315
+msgid "workspace.options.shadow-options.remove-shadow"
+msgstr "Ta bort skugga"
+
+#: src/app/main/ui/workspace/plugins.cljs:196
+msgid "workspace.plugins.error.manifest"
+msgstr "Pluginmanifestet är felaktigt."
+
+#: src/app/main/ui/workspace/plugins.cljs:372
+msgid "workspace.plugins.permissions-update.title"
+msgstr "UPPDATERA DETTA PLUGIN"
+
+#: src/app/main/ui/workspace/context_menu.cljs:241
+msgid "workspace.shape.menu.rename"
+msgstr "Byt namn"
+
+#: src/app/main/ui/workspace/main_menu.cljs:623
+msgid "dashboard.create-version-menu"
+msgstr "Nåla fast denna version"
+
+#: src/app/main/ui/dashboard/files.cljs:191, src/app/main/ui/dashboard/projects.cljs:285
+msgid "dashboard.empty-placeholder-files-subtitle"
+msgstr "När en projektmedlem skapar en fil kommer den att visas här."
+
+#: src/app/main/ui/dashboard/files.cljs:186, src/app/main/ui/dashboard/projects.cljs:280
+msgid "dashboard.empty-placeholder-files-title"
+msgstr "Inga filer än."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:39
+#, markdown
+msgid "dashboard.empty-placeholder-libraries"
+msgstr ""
+"Bibliotek som läggs till i projektet kommer att visas här. Försök att dela "
+"dina filer eller lägg till från våra [Bibliotek & mallar] (https://"
+"penpot.app/libraries-templates)."
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+#, markdown, unused
+msgid "dashboard.empty-placeholder-libraries-subtitle"
+msgstr ""
+"Bibliotek som läggs till i projektet kommer att visas här. Försök att dela "
+"dina filer eller lägg till från våra [Bibliotek & mallar] (https://"
+"penpot.app/libraries-templates)."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:35
+msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
+msgstr "Bibliotek som läggs till i projektet visas här."
+
+#: src/app/main/ui/dashboard/fonts.cljs:444
+msgid "dashboard.fonts.empty-placeholder-viewer"
+msgstr "Inga anpassade teckensnitt än."
+
+#: src/app/main/data/common.cljs:202
+msgid "dashboard.permissions-change.admin"
+msgstr "Du är nu en administratör i detta team."
+
+#: src/app/main/data/common.cljs:201
+msgid "dashboard.permissions-change.editor"
+msgstr "Du är nu en redaktör i det här teamet."
+
+#: src/app/main/data/common.cljs:203
+msgid "dashboard.permissions-change.owner"
+msgstr "Du är nu ägare till detta team."
+
+#: src/app/main/data/common.cljs:200
+msgid "dashboard.permissions-change.viewer"
+msgstr "Du är nu en tittare i det här teamet."
+
+#: src/app/main/data/common.cljs:235
+msgid "dashboard.removed-from-team"
+msgstr "Du är inte längre en del av teamet ”%s”."
+
+#: src/app/main/ui/workspace/main_menu.cljs:630
+msgid "dashboard.show-version-history"
+msgstr "Versionshistorik"
+
+msgid "dashboard.upgrade-plan.penpot-free"
+msgstr "Gratis Penpot"
+
+msgid "dashboard.upgrade-plan.no-limits"
+msgstr "Inga gränser för kreativitet"
+
+msgid "dashboard.upgrade-plan.power-up"
+msgstr "Starta upp"
+
+msgid "labels.comment"
+msgstr "Kommentar"
+
+#: src/app/main/ui/comments.cljs:446
+msgid "labels.comment.mark-as-solved"
+msgstr "Markera som löst"
+
+#: src/app/main/ui/comments.cljs:147
+msgid "labels.post"
+msgstr "Inlägg"
+
+#: src/app/main/ui/comments.cljs:150
+msgid "labels.reply.new"
+msgstr "nytt svar"
+
+#: src/app/main/ui/comments.cljs:146
+msgid "labels.replies"
+msgstr "svar"
+
+#: src/app/main/ui/comments.cljs:151
+msgid "labels.replies.new"
+msgstr "nya svar"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:150, src/app/main/ui/workspace/sidebar/versions.cljs:290
+msgid "labels.restore"
+msgstr "Återställ"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:246
+msgid "labels.sets"
+msgstr "Uppsättningar"
+
+msgid "labels.show-mentions"
+msgstr "Visa bara dina omnämnanden"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:187
+msgid "labels.themes"
+msgstr "Teman"
+
+#: src/app/main/ui/dashboard/team.cljs:216
+msgid "modals.invite-team-member.text"
+msgstr ""
+"Du kan bjuda in medlemmar till teamet så att de får tillgång till den här "
+"filen och alla teamets filer."
+
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:421
+msgid "workspace.assets.typography.add-typography"
+msgstr "Lägg till teckenssnitt"
+
+#: src/app/main/ui/workspace/libraries.cljs:300
+msgid "workspace.libraries.more-templates"
+msgstr "Du kan titta efter "
+
+#: src/app/main/ui/workspace/libraries.cljs:304
+msgid "workspace.libraries.more-templates-link"
+msgstr "fler mallar här"
+
+msgid "workspace.libraries.empty.no-libraries"
+msgstr "Det finns inga delade bibliotek i ditt team, du kan leta efter"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
+msgid "workspace.options.blur-options.remove-blur"
+msgstr "Ta bort oskärpa"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:183
+msgid "workspace.options.guides.toggle-guide"
+msgstr "Växla guide"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:735
+msgid "workspace.options.interactions.add-interaction"
+msgstr "Lägg till interaktion"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.interactions.remove-interaction"
+msgstr "Ta bort interaktion"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:191, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:197
+msgid "workspace.options.layer-options.toggle-layer"
+msgstr "Växla lagersynlighet"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
+msgid "workspace.options.radius.hide-all-corners"
+msgstr "Dra ihop oberoende radie"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
+msgid "workspace.options.radius.show-single-corners"
+msgstr "Visa oberoende radie"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:302
+msgid "workspace.options.shadow-options.add-shadow"
+msgstr "Lägg till skugga"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:173
+msgid "workspace.options.shadow-options.toggle-shadow"
+msgstr "Växla skugga"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:171
+msgid "workspace.options.stroke.add-stroke"
+msgstr "Lägg till streckfärg"
+
+#: src/app/main/ui/workspace/plugins.cljs:376
+msgid "workspace.plugins.permissions-update.warning"
+msgstr ""
+"Detta plugin har ändrats sedan du senast öppnade det. Det vill nu också få "
+"tillgång till:"
+
+#: src/app/main/ui/workspace/plugins.cljs:283
+msgid "workspace.plugins.permissions.allow-download"
+msgstr "Starta nedladdning av filer."
+
+#: src/app/main/ui/workspace/plugins.cljs:276
+msgid "workspace.plugins.permissions.comment-read"
+msgstr "Läs dina kommentarer och svar."
+
+#: src/app/main/ui/workspace/plugins.cljs:270
+msgid "workspace.plugins.permissions.comment-write"
+msgstr "Läs och modifiera dina kommentarer och svara i ditt namn."
+
+#: src/app/main/ui/workspace/plugins.cljs:425
+msgid "workspace.plugins.try-out.title"
+msgstr "'%s' PLUGIN ÄR INSTALLERAD FÖR DIN ANVÄNDARE!"
+
+#: src/app/main/ui/workspace/plugins.cljs:442
+msgid "workspace.plugins.try-out.try"
+msgstr "TESTA PLUGIN"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1004, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1030
+msgid "workspace.shape.menu.add-layout"
+msgstr "Lägg till layout"
+
+#: src/app/main/ui/workspace/context_menu.cljs:146
+msgid "workspace.shape.menu.copy-link"
+msgstr "Kopiera länken till urklipp"
+
+msgid "workspace.shape.menu.copy-paste-as"
+msgstr "Kopiera/Klistra in som ..."
+
+msgid "workspace.shape.menu.copy-css"
+msgstr "Kopiera som CSS"
+
+msgid "workspace.shape.menu.copy-css-nested"
+msgstr "Kopiera som CSS (nästlade lager)"
+
+msgid "workspace.shape.menu.copy-props"
+msgstr "Kopiera egenskaper"
+
+msgid "workspace.shape.menu.paste-props"
+msgstr "Klista in egenskaper"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1022
+msgid "workspace.shape.menu.remove-layout"
+msgstr "Ta bort layout"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:229
+msgid "workspace.sidebar.sitemap.add-page"
+msgstr "Lägg till sida"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs
+msgid "workspace.token.active-themes"
+msgstr "%s aktiva teman"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.add set"
+msgstr "Lägg till uppsättning"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.back-to-themes"
+msgstr "Tillbaka till temalista"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.create-new-theme"
+msgstr "Skapa ditt första tema nu."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.create-one"
+msgstr "Skapa ett."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.create-theme-title"
+msgstr "Skapa tema"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.create-token"
+msgstr "Skapa en ny %s token"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.edit-theme-title"
+msgstr "Redigera tema"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.delete-theme-title"
+msgstr "Ta bort tema"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs
+msgid "workspace.token.edit-themes"
+msgstr "Redigera teman"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.new-theme"
+msgstr "Nytt tema"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs
+msgid "workspace.token.no-active-theme"
+msgstr "Inget tema aktiverat"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.no-sets-create"
+msgstr "Det finns inga uppsättningar definierade. Skapa ett först."
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.no-sets-yet"
+msgstr "Det finns inga uppsättningar."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.no-themes"
+msgstr "Det finns inga teman."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.no-themes-currently"
+msgstr "Du har för närvarande inga teman."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.num-sets"
+msgstr "%s uppsättningar"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+msgid "workspace.token.set-selection-theme"
+msgstr ""
+"Definiera vilka tokenuppsättningar som ska användas som en del av detta "
+"temaalternativ:"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.theme-name"
+msgstr "Tema %s"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:47
+msgid "workspace.token-set.not-active"
+msgstr "Token set är inte aktivt"
+
+msgid "workspace.versions.button.pin"
+msgstr "Fastnålad version"
+
+msgid "workspace.versions.autosaved.entry"
+msgstr "%s autosparade versioner"
+
+msgid "workspace.versions.autosaved.version"
+msgstr "Autosparad %s"
+
+msgid "workspace.versions.button.restore"
+msgstr "Återställ version"
+
+msgid "workspace.versions.expand-snapshot"
+msgstr "Expandera snapshots"
+
+msgid "workspace.versions.button.save"
+msgstr "Spara version"
+
+msgid "workspace.versions.empty"
+msgstr "Det finns inga versioner"
+
+msgid "workspace.versions.warning.text"
+msgstr "Autosparade versioner sparas i %s dagar."
+
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr ""
+"Om du vill höja denna gräns kan du skriva till oss på [support@penpot.app]"
+"(%s)"
+
+msgid "workspace.versions.snapshot-menu"
+msgstr "Öppna snapshot-menyn"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-value"
+msgstr "Värde"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-value"
+msgstr "Ange tokenvärde eller alias"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-description"
+msgstr "Beskrivning"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.tools"
+msgstr "Verktyg"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.delete"
+msgstr "Ta bort token"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.duplicate"
+msgstr "Duplicera token"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.edit"
+msgstr "Redigera token"
+
+msgid "dashboard.notifications.notifications-saved"
+msgstr "Notifieringsinställningar uppdaterade"
+
+msgid "title.settings.notifications"
+msgstr "Notifieringar - Penpot"
+
+msgid "dashboard.settings.notifications.title"
+msgstr "Notifieringar"
+
+msgid "dashboard.settings.notifications.dashboard.title"
+msgstr "Översiktsvy Notifieringar"
+
+msgid "dashboard.settings.notifications.dashboard-comments.title"
+msgstr "Filkommentarer"
+
+msgid "dashboard.settings.notifications.dashboard-comments.all"
+msgstr "Alla kommentarer, omnämnanden och svar"
+
+msgid "dashboard.settings.notifications.dashboard-comments.partial"
+msgstr "Bara omnämnanden och svar"
+
+msgid "dashboard.settings.notifications.dashboard-comments.none"
+msgstr "Inga"
+
+msgid "dashboard.settings.notifications.email-comments.all"
+msgstr "Alla kommentarer, omnämnanden och svar"
+
+msgid "dashboard.settings.notifications.email-comments.partial"
+msgstr "Bara omnämnaden och svar"
+
+msgid "dashboard.settings.notifications.email-comments.none"
+msgstr "Inga"
+
+msgid "dashboard.settings.notifications.email-invites.title"
+msgstr "Inbjudningar och förfrågningar"
+
+msgid "dashboard.settings.notifications.email-invites.all"
+msgstr "Alla typer av inbjudningar och förfrågningar"
+
+msgid "dashboard.settings.notifications.email-invites.none"
+msgstr "Inga"
+
+msgid "dashboard.settings.notifications.submit"
+msgstr "Uppdatera inställningar"
+
+msgid "dashboard.import.error"
+msgstr "Importen misslyckades. Försök igen"
+
+msgid "dashboard.import.bad-url"
+msgstr "Importen misslyckades. Mall URL:en är inkorrekt"
+
+msgid "dashboard.import.no-perms"
+msgstr "Du har inte behörighet att importera till det här teamet"
+
+msgid "dashboard.plugins.parse-error"
+msgstr "Kan inte tolka plugin-manifestet"
+
+msgid "dashboard.plugins.bad-url"
+msgstr "Plugin-URL:en är felaktig"
+
+msgid "labels.notifications"
+msgstr "Notifieringar"
+
+msgid "comments.mentions.not-found"
+msgstr "Inga personer hittades för @%s"
+
+#: src/app/main/ui/workspace/plugins.cljs:429
+msgid "workspace.plugins.try-out.message"
+msgstr ""
+"Vill du ta en titt? Det kommer att öppnas i ett nytt utkast för ditt "
+"nuvarande team. (Om inte, kan du alltid hitta det i de installerade plugins "
+"för alla filer.)"
+
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:500
+msgid "workspace.assets.colors.add-color"
+msgstr "Lägg till färg"
+
+#: src/app/main/ui/comments.cljs:145
+msgid "labels.reply"
+msgstr "svara"
+
+#: src/app/main/ui/workspace/main_menu.cljs:908
+msgid "workspace.header.menu.option.power-up"
+msgstr "Starta upp dina plan"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications"
+msgstr "Notifieringar"
+
+#: src/app/main/ui/comments.cljs:340, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:295, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:324
+msgid "labels.options"
+msgstr "Alternativ"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:523
+msgid "workspace.assets.components.add-component"
+msgstr "Lägg till komponent"
+
+#: src/app/main/ui/dashboard/team.cljs:181, src/app/main/ui/onboarding/team_choice.cljs:100
+msgid "errors.maximum-invitations-by-request-reached"
+msgstr ""
+"Det maximala (%s) antalet e-postmeddelanden som kan bjudas in i en enda "
+"begäran har uppnåtts"
+
+#: src/app/main/ui/dashboard/fonts.cljs:445
+msgid "dashboard.fonts.empty-placeholder-viewer-sub"
+msgstr "När en projektmedlem laddar upp ett anpassat teckensnitt visas det här."
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications.view"
+msgstr "Visa notifieringar"
+
+#: src/app/main/ui/comments.cljs:188
+msgid "labels.reply.thread"
+msgstr "Svara"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+msgid "shortcuts.copy-link"
+msgstr "Kopiera länk till urklipp"
+
+msgid "dashboard.settings.notifications.email-comments.title"
+msgstr "Filkommentarer"
+
+#: src/app/main/data/plugins.cljs:86, src/app/main/ui/workspace/main_menu.cljs:743, src/app/main/ui/workspace/plugins.cljs:82
+msgid "workspace.plugins.error.need-editor"
+msgstr "Du måste vara redaktör för att kunna använda detta plugin"
+
+#: src/app/main/ui/workspace/plugins.cljs:86
+msgid "workspace.plugins.remove-plugin"
+msgstr "Ta bort plugin"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:96
+msgid "labels.collapse"
+msgstr "Dra ihop"
+
+#: src/app/main/ui/dashboard/team.cljs:944
+msgid "dashboard.webhooks.cant-edit"
+msgstr "Du kan bara ta bort eller ändra webhooks som du har skapat."
+
+#: src/app/main/ui/exports/assets.cljs:177
+msgid "labels.import"
+msgstr "Importera"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:167
+msgid "shortcuts.rename"
+msgstr "Byt namn"
+
+#: src/app/main/ui/workspace/right_header.cljs:255
+msgid "workspace.header.share"
+msgstr "Dela"
+
+#: src/app/main/ui/workspace/plugins.cljs:436
+msgid "workspace.plugins.try-out.cancel"
+msgstr "INTE NU"
+
+msgid "dashboard.settings.notifications.email.title"
+msgstr "Mail Notifieringar"
+
+msgid "dashboard.plugins.try-plugin"
+msgstr "Testa plugin: "
+
+msgid "labels.adding"
+msgstr "Lägger till..."
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-name"
+msgstr "Namn"

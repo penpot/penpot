@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-09 08:01+0000\n"
+"PO-Revision-Date: 2025-01-19 03:00+0000\n"
 "Last-Translator: Linerly <linerly@proton.me>\n"
 "Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
 "frontend/id/>\n"
@@ -5157,14 +5157,6 @@ msgstr "Kiri atas"
 msgid "workspace.options.radius-top-right"
 msgstr "Kanan atas"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
-msgid "workspace.options.radius.all-corners"
-msgstr "Semua sudut"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
-msgid "workspace.options.radius.single-corners"
-msgstr "Sudut tersendiri"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:184
 msgid "workspace.options.recent-fonts"
 msgstr "Terkini"
@@ -6565,7 +6557,7 @@ msgstr "Menambahkan..."
 
 #: src/app/main/ui/workspace/tokens/form.cljs:391
 msgid "workspace.token.token-value"
-msgstr " "
+msgstr "Nilai"
 
 #: src/app/main/ui/dashboard/comments.cljs
 msgid "dashboard.notifications.view"
@@ -6620,7 +6612,7 @@ msgstr "Atau tambahkan beberapa dari sini untuk mencoba:"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:373
 msgid "workspace.token.token-name"
-msgstr " "
+msgstr "Nama"
 
 #: src/app/main/ui/workspace/sidebar.cljs:242
 msgid "workspace.versions.tab.actions"
@@ -6641,22 +6633,151 @@ msgstr "Riwayat versi"
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Penpot Gratis"
 
-#: src/app/main/ui/workspace/context_menu.cljs:146
-msgid "workspace.shape.menu.copy_link"
-msgstr "Salin tautan ke papan klip"
-
 #: src/app/main/ui/workspace/tokens/form.cljs:408
 msgid "workspace.token.enter-token-description"
-msgstr " "
+msgstr "Tambahkan deskripsi (opsional)"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:370
 msgid "workspace.token.enter-token-name"
-msgstr " "
+msgstr "Masukkan nama token %s"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:390
 msgid "workspace.token.enter-token-value"
-msgstr " "
+msgstr "Masukkan nilai atau alias token"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:409
 msgid "workspace.token.token-description"
-msgstr " "
+msgstr "Deskripsi"
+
+#: src/app/main/errors.cljs:228
+msgid "errors.migration-in-progress"
+msgstr "Migrasi sedang berlangsung"
+
+#: src/app/main/ui/exports/assets.cljs:177
+msgid "labels.import"
+msgstr "Impor"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
+msgid "workspace.options.radius.hide-all-corners"
+msgstr "Tutup radius tersendiri"
+
+msgid "workspace.shape.menu.copy-css"
+msgstr "Salin sebagai CSS"
+
+msgid "workspace.shape.menu.copy-css-nested"
+msgstr "Salin sebagai CSS (lapisan bersarang)"
+
+msgid "workspace.shape.menu.copy-props"
+msgstr "Salin properti"
+
+msgid "workspace.shape.menu.paste-props"
+msgstr "Tempel properti"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.delete"
+msgstr "Hapus token"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.duplicate"
+msgstr "Gandakan token"
+
+msgid "title.settings.notifications"
+msgstr "Notifikasi - Penpot"
+
+msgid "dashboard.settings.notifications.title"
+msgstr "Notifikasi"
+
+msgid "dashboard.settings.notifications.dashboard.title"
+msgstr "Notifikasi Dasbor"
+
+msgid "dashboard.settings.notifications.dashboard-comments.title"
+msgstr "Komentar berkas"
+
+msgid "dashboard.settings.notifications.dashboard-comments.all"
+msgstr "Semua komentar, sebutan, dan balasan"
+
+msgid "dashboard.settings.notifications.dashboard-comments.none"
+msgstr "Tidak ada"
+
+msgid "dashboard.settings.notifications.email.title"
+msgstr "Notifikasi Surel"
+
+msgid "dashboard.settings.notifications.email-comments.title"
+msgstr "Komentar berkas"
+
+msgid "dashboard.settings.notifications.email-comments.none"
+msgstr "Tidak ada"
+
+msgid "dashboard.settings.notifications.email-invites.title"
+msgstr "Undangan dan permintaan"
+
+msgid "dashboard.settings.notifications.email-invites.all"
+msgstr "Semua jenis undangan dan permintaan"
+
+msgid "dashboard.import.error"
+msgstr "Pengimporan gagal. Silakan coba lagi"
+
+msgid "dashboard.import.bad-url"
+msgstr "Pengimporan gagal. URL templat salah"
+
+msgid "dashboard.import.no-perms"
+msgstr "Anda tidak memiliki perizinan untuk mengimpor ke tim ini"
+
+msgid "dashboard.plugins.try-plugin"
+msgstr "Coba plugin: "
+
+msgid "dashboard.plugins.parse-error"
+msgstr "Tidak dapat mengurai manifes plugin"
+
+msgid "dashboard.plugins.bad-url"
+msgstr "URL plugin salah"
+
+msgid "labels.notifications"
+msgstr "Notifikasi"
+
+msgid "comments.mentions.not-found"
+msgstr "Tidak ada orang yang ditemukan untuk @%s"
+
+msgid "workspace.shape.menu.copy-paste-as"
+msgstr "Salin/Tempel sebagai ..."
+
+msgid "labels.show-mentions"
+msgstr "Hanya tampilkan sebutan Anda"
+
+#: src/app/main/ui/workspace/context_menu.cljs:146
+msgid "workspace.shape.menu.copy-link"
+msgstr "Salin tautan ke papan klip"
+
+msgid "dashboard.settings.notifications.dashboard-comments.partial"
+msgstr "Hanya sebutan dan balasan"
+
+msgid "dashboard.settings.notifications.email-comments.partial"
+msgstr "Hanya sebutan dan balasan"
+
+msgid "dashboard.settings.notifications.email-comments.all"
+msgstr "Semua komentar, sebutan, dan balasan"
+
+msgid "dashboard.settings.notifications.email-invites.none"
+msgstr "Tidak ada"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.edit"
+msgstr "Sunting token"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:47
+msgid "workspace.token-set.not-active"
+msgstr "Token yang diatur tidak aktif"
+
+msgid "dashboard.settings.notifications.submit"
+msgstr "Perbarui pengaturan"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
+msgid "workspace.options.radius.show-single-corners"
+msgstr "Buka radius tersendiri"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.tools"
+msgstr "Peralatan"
+
+msgid "dashboard.notifications.notifications-saved"
+msgstr "Pengaturan notifikasi diperbarui"

@@ -4489,14 +4489,6 @@ msgstr "saman hagu"
 msgid "workspace.options.radius-top-right"
 msgstr "saman dama"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
-msgid "workspace.options.radius.all-corners"
-msgstr "duka kwanar"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
-msgid "workspace.options.radius.single-corners"
-msgstr "kwanar da take cin gashin kanta"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:184
 msgid "workspace.options.recent-fonts"
 msgstr "da dimi dimi"

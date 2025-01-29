@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-09 08:01+0000\n"
+"PO-Revision-Date: 2025-01-19 03:00+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -5198,14 +5198,6 @@ msgstr "Augšā pa kreisi"
 msgid "workspace.options.radius-top-right"
 msgstr "Augšā pa labi"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
-msgid "workspace.options.radius.all-corners"
-msgstr "Visi stūri"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
-msgid "workspace.options.radius.single-corners"
-msgstr "Atsevišķie stūri"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:184
 msgid "workspace.options.recent-fonts"
 msgstr "Pēdējie"
@@ -6570,10 +6562,6 @@ msgstr "Nav ierobežojumu radošumam"
 msgid "workspace.libraries.empty.no-libraries"
 msgstr "Tavā komandā nav kopīgotu bibliotēku, kuras var meklēt"
 
-#: src/app/main/ui/workspace/context_menu.cljs:146
-msgid "workspace.shape.menu.copy_link"
-msgstr "Ievietot saiti starpliktuvē"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
 msgid "shortcuts.copy-link"
 msgstr "Ievietot saiti starpliktuvē"
@@ -6683,3 +6671,32 @@ msgstr "Vēsture"
 #: src/app/main/ui/workspace/tokens/form.cljs:194, src/app/main/ui/workspace/tokens/form.cljs:197, src/app/main/ui/workspace/tokens/sidebar.cljs:67
 msgid "workspace.token.resolved-value"
 msgstr "Atrisinātā vērtība: "
+
+#: src/app/main/errors.cljs:228
+msgid "errors.migration-in-progress"
+msgstr "Notiek pārcelšana"
+
+msgid "labels.show-mentions"
+msgstr "Rādīt tikai manas pieminēšanas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
+msgid "workspace.options.radius.hide-all-corners"
+msgstr "Sakļaut neatkarīgu rādiusu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
+msgid "workspace.options.radius.show-single-corners"
+msgstr "Rādīt neatkarīgu rādiusu"
+
+#: src/app/main/ui/workspace/context_menu.cljs:146
+msgid "workspace.shape.menu.copy-link"
+msgstr "Ievietot saiti starpliktuvē"
+
+msgid "workspace.shape.menu.copy-paste-as"
+msgstr "Ievietot starpliktuvē/ielīmēt kā ..."
+
+msgid "workspace.shape.menu.copy-css"
+msgstr "Ievietot starpliktuvē kā CSS"
+
+#: src/app/main/ui/exports/assets.cljs:177
+msgid "labels.import"
+msgstr "Ievietot"

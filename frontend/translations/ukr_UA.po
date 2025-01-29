@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-16 19:00+0000\n"
+"PO-Revision-Date: 2025-01-28 12:02+0000\n"
 "Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
@@ -18,7 +18,7 @@ msgstr "Уже маєте обліковий запис?"
 
 #: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:274
 msgid "auth.check-mail"
-msgstr "Перевірте свою електрону скриньку"
+msgstr "Перевірте свою електронну скриньку"
 
 #: src/app/main/ui/auth/register.cljs:277
 msgid "auth.check-your-email"
@@ -42,7 +42,7 @@ msgstr "Хочете лише спробувати?"
 #: src/app/main/ui/auth/login.cljs:42
 msgid "auth.demo-warning"
 msgstr ""
-"Це демонстраційний варіант сервісу, не використовуйте для реальної роботи, "
+"Це демонстраційний варіант сервісу, не використовуйте для роботи, бо "
 "створені проєкти періодично очищуватимуться."
 
 #: src/app/main/ui/auth/login.cljs:197, src/app/main/ui/viewer/login.cljs:84
@@ -246,11 +246,11 @@ msgstr[2] "%s сторінок було поширено"
 
 #: src/app/main/ui/viewer/share_link.cljs:300
 msgid "common.share-link.permissions-can-comment"
-msgstr "Можуть додавати коментарі"
+msgstr "Можна додавати коментарі"
 
 #: src/app/main/ui/viewer/share_link.cljs:310
 msgid "common.share-link.permissions-can-inspect"
-msgstr "Можуть переглядати код"
+msgstr "Можна переглядати код"
 
 #: src/app/main/ui/viewer/share_link.cljs:195
 msgid "common.share-link.permissions-hint"
@@ -278,7 +278,7 @@ msgstr "Вибрати все"
 
 #: src/app/main/ui/workspace/libraries.cljs:225
 msgid "common.unpublish"
-msgstr "Зняти з публікації"
+msgstr "Скасувати публікацію"
 
 #: src/app/main/ui/dashboard/projects.cljs:88
 msgid "dasboard.team-hero.management"
@@ -297,7 +297,7 @@ msgstr "Об'єднуйтесь!"
 #: src/app/main/ui/dashboard/projects.cljs
 #, unused
 msgid "dasboard.tutorial-hero.info"
-msgstr "Вивчайте основи Penpot із задоволення, використовуючи ці посібники."
+msgstr "Вивчайте основи Penpot, отримуючи задоволення від цих посібників."
 
 #: src/app/main/ui/dashboard/projects.cljs
 #, unused
@@ -363,7 +363,7 @@ msgstr "90 днів"
 
 #: src/app/main/ui/settings/access_tokens.cljs:132
 msgid "dashboard.access-tokens.expiration-never"
-msgstr "Несплинний"
+msgstr "Ніколи"
 
 #: src/app/main/ui/settings/access_tokens.cljs:271
 msgid "dashboard.access-tokens.expired-on"
@@ -663,7 +663,7 @@ msgstr "Бібліотеки"
 
 #: src/app/main/ui/dashboard/placeholder.cljs:54
 msgid "dashboard.loading-files"
-msgstr "завантажую ваші файли…"
+msgstr "завантаження ваших файлів…"
 
 #: src/app/main/ui/dashboard/fonts.cljs:435
 msgid "dashboard.loading-fonts"
@@ -735,7 +735,7 @@ msgstr "Змінити пароль"
 
 #: src/app/main/ui/dashboard/pin_button.cljs:24, src/app/main/ui/dashboard/project_menu.cljs:95
 msgid "dashboard.pin-unpin"
-msgstr "Закріпити/Відчепити"
+msgstr "Пришпилити/відшпилити"
 
 #: src/app/main/ui/dashboard/projects.cljs:52
 msgid "dashboard.projects-title"
@@ -885,7 +885,7 @@ msgstr "Ваш обліковий запис"
 
 #: src/app/main/ui/settings/profile.cljs:67
 msgid "dashboard.your-email"
-msgstr "Електрона пошта"
+msgstr "Електронна пошта"
 
 #: src/app/main/ui/settings/profile.cljs:59
 msgid "dashboard.your-name"
@@ -970,7 +970,7 @@ msgstr "Цей домен не дозволений"
 #: src/app/main/ui/auth/recovery_request.cljs:57, src/app/main/ui/auth/register.cljs:57, src/app/main/ui/auth/register.cljs:60, src/app/main/ui/dashboard/team.cljs:615, src/app/main/ui/settings/change_email.cljs:37
 msgid "errors.email-has-permanent-bounces"
 msgstr ""
-"Електрона пошта \"%s\" має багато скарг про постійне повернення повідомлень."
+"Електронна пошта \"%s\" має багато скарг про постійне повернення повідомлень."
 
 #: src/app/main/ui/dashboard/team.cljs:190, src/app/main/ui/onboarding/team_choice.cljs:109
 msgid "errors.email-spam-or-permanent-bounces"
@@ -1062,7 +1062,7 @@ msgstr "Схоже, це зображення є недійсним."
 #: src/app/main/ui/dashboard/team.cljs:610
 msgid "errors.member-is-muted"
 msgstr ""
-"Електрона пошта профілю, який ви намагаєтесь запросити, має приглушення "
+"Електронна пошта профілю, який ви намагаєтесь запросити, має приглушення "
 "листів (скарги на спам або постійне пересилання)."
 
 #: src/app/main/ui/settings/password.cljs
@@ -1098,8 +1098,8 @@ msgstr "Виявлено несумісну функцію \"%s\""
 #: src/app/main/ui/dashboard/sidebar.cljs:365, src/app/main/ui/dashboard/team.cljs:389
 msgid "errors.team-leave.insufficient-members"
 msgstr ""
-"Недостатньо учасників, щоб покинути команду, ви, ймовірно, хочете видалити "
-"її."
+"Недостатньо учасників, щоб покинути команду, яку ви, ймовірно, хочете "
+"видалити."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:368, src/app/main/ui/dashboard/team.cljs:392
 msgid "errors.team-leave.member-does-not-exists"
@@ -1157,7 +1157,7 @@ msgstr "Неочікуваний статус %s"
 
 #: src/app/main/ui/auth/login.cljs:114, src/app/main/ui/auth/login.cljs:118
 msgid "errors.wrong-credentials"
-msgstr "Електрона пошта або пароль неправильні."
+msgstr "Електронна пошта або пароль неправильні."
 
 #: src/app/main/ui/settings/password.cljs
 #, unused
@@ -1194,7 +1194,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/feedback.cljs:65
 msgid "feedback.title"
-msgstr "Електрона пошта"
+msgstr "Електронна пошта"
 
 #: src/app/main/ui/settings/feedback.cljs:102
 msgid "feedback.twitter-go-to"
@@ -1468,7 +1468,7 @@ msgstr "Інформація"
 
 #: src/app/main/ui/workspace/main_menu.cljs:162
 msgid "label.shortcuts"
-msgstr "Ярлики"
+msgstr "Скорочення"
 
 #: src/app/main/data/common.cljs:93, src/app/main/ui/dashboard/import.cljs:503
 msgid "labels.accept"
@@ -1587,7 +1587,7 @@ msgstr "Видалити"
 
 #: src/app/main/ui/comments.cljs:363
 msgid "labels.delete-comment"
-msgstr "Видалити коментарій"
+msgstr "Видалити коментар"
 
 #: src/app/main/ui/comments.cljs:360
 msgid "labels.delete-comment-thread"
@@ -1757,7 +1757,7 @@ msgstr "Маркетинг"
 
 #: src/app/main/ui/dashboard/team.cljs:499
 msgid "labels.member"
-msgstr "Член"
+msgstr "Учасник"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:510, src/app/main/ui/dashboard/team.cljs:94, src/app/main/ui/dashboard/team.cljs:102
 msgid "labels.members"
@@ -1889,7 +1889,7 @@ msgstr "Видалити"
 
 #: src/app/main/ui/dashboard/team.cljs:345
 msgid "labels.remove-member"
-msgstr "Вилучити члена"
+msgstr "Вилучити учасника"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:288, src/app/main/ui/dashboard/project_menu.cljs:87, src/app/main/ui/dashboard/sidebar.cljs:539, src/app/main/ui/workspace/sidebar/assets/groups.cljs:153, src/app/main/ui/workspace/sidebar/versions.cljs:146, src/app/main/ui/workspace/tokens/sets_context_menu.cljs:43
 msgid "labels.rename"
@@ -1993,7 +1993,7 @@ msgstr "Керівник команди"
 
 #: src/app/main/ui/onboarding/questions.cljs:257
 msgid "labels.team-member"
-msgstr "Член команди"
+msgstr "Учасник команди"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:992, src/app/main/ui/workspace/main_menu.cljs:122
 msgid "labels.tutorials"
@@ -2029,7 +2029,7 @@ msgstr "Лише для перегляду"
 
 #: src/app/main/ui/dashboard/team.cljs:125, src/app/main/ui/dashboard/team.cljs:304, src/app/main/ui/dashboard/team.cljs:552, src/app/main/ui/dashboard/team.cljs:588, src/app/main/ui/onboarding/team_choice.cljs:64
 msgid "labels.viewer"
-msgstr "Спостерігач"
+msgstr "Глядач"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:523, src/app/main/ui/dashboard/team.cljs:97, src/app/main/ui/dashboard/team.cljs:107, src/app/main/ui/dashboard/team.cljs:918
 msgid "labels.webhooks"
@@ -2037,7 +2037,7 @@ msgstr "Вебхуки"
 
 #: src/app/main/ui/comments.cljs:197
 msgid "labels.write-new-comment"
-msgstr "Написати новий коментарій"
+msgstr "Написати новий коментар"
 
 #: src/app/main/ui/dashboard/team.cljs:262
 msgid "labels.you"
@@ -2124,7 +2124,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/change_email.cljs:104
 msgid "modals.change-email.new-email"
-msgstr "Нова електрона пошта"
+msgstr "Нова електронна пошта"
 
 #: src/app/main/ui/settings/change_email.cljs:119
 msgid "modals.change-email.submit"
@@ -2339,15 +2339,15 @@ msgstr "Видалення команди"
 
 #: src/app/main/ui/dashboard/team.cljs:457
 msgid "modals.delete-team-member-confirm.accept"
-msgstr "Видалити члена"
+msgstr "Видалити учасника"
 
 #: src/app/main/ui/dashboard/team.cljs:456
 msgid "modals.delete-team-member-confirm.message"
-msgstr "Ви впевнені, що хочете видалити цього члена з команди?"
+msgstr "Ви впевнені, що хочете видалити цього учасника з команди?"
 
 #: src/app/main/ui/dashboard/team.cljs:455
 msgid "modals.delete-team-member-confirm.title"
-msgstr "Видалити члена команди"
+msgstr "Видалити учасника команди"
 
 #: src/app/main/ui/delete_shared.cljs:59
 msgid "modals.delete-unpublish-shared-confirm.activated.hint"
@@ -2393,7 +2393,7 @@ msgstr "Електроні адреси, розділені комами"
 #: src/app/main/ui/dashboard/team.cljs:223
 msgid "modals.invite-member.repeated-invitation"
 msgstr ""
-"Деякі електроні адреси належать поточним членам команди. Запрошення не "
+"Деякі електроні адреси належать поточним учасникам команди. Запрошення не "
 "надсилатимуться."
 
 #: src/app/main/ui/dashboard/team.cljs:212
@@ -2403,8 +2403,8 @@ msgstr "Запросити учасників до команди"
 #: src/app/main/ui/dashboard/sidebar.cljs:423, src/app/main/ui/dashboard/team.cljs:423
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""
-"Так як ви єдиний член цієї команди, її буде видалено разом з проєктами та "
-"файлами команди."
+"Так як ви єдиний учасником цієї команди, її буде видалено разом з проєктами "
+"та файлами команди."
 
 #: src/app/main/ui/dashboard/sidebar.cljs:422, src/app/main/ui/dashboard/team.cljs:422
 msgid "modals.leave-and-close-confirm.message"
@@ -2419,8 +2419,8 @@ msgstr ""
 #: src/app/main/ui/dashboard/change_owner.cljs:54
 msgid "modals.leave-and-reassign.hint1"
 msgstr ""
-"Ви власник цієї команди. Будь ласка, оберіть іншого члена, щоб підвищити "
-"його до власника перш ніж ви покинете команду."
+"Ви власник цієї команди. Будь ласка, оберіть іншого учасника, щоб підвищити "
+"його до власника перш ніж покинути команду."
 
 #: src/app/main/ui/dashboard/change_owner.cljs:77
 msgid "modals.leave-and-reassign.promote-and-leave"
@@ -2428,7 +2428,7 @@ msgstr "Підвищити та покинути"
 
 #: src/app/main/ui/dashboard/change_owner.cljs:33
 msgid "modals.leave-and-reassign.select-member-to-promote"
-msgstr "Виберіть члена для підвищення"
+msgstr "Виберіть учасника для підвищення"
 
 #: src/app/main/ui/dashboard/change_owner.cljs:48
 msgid "modals.leave-and-reassign.title"
@@ -3071,7 +3071,7 @@ msgstr "Панель управління"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:423
 msgid "shortcut-section.viewer"
-msgstr "Переглядач"
+msgstr "Глядач"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:417
 msgid "shortcut-section.workspace"
@@ -3440,7 +3440,7 @@ msgstr "Наступна дошка"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:516
 msgid "shortcuts.not-found"
-msgstr "Ярликів не знайдено"
+msgstr "Скорочень не знайдено"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:146
 msgid "shortcuts.opacity-0"
@@ -3536,7 +3536,7 @@ msgstr "Масштабувати"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:168
 msgid "shortcuts.search-placeholder"
-msgstr "Пошук ярликів"
+msgstr "Пошук скорочень"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:169
 msgid "shortcuts.select-all"
@@ -3564,7 +3564,7 @@ msgstr "Показати / приховати піксельну сітку"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:175
 msgid "shortcuts.show-shortcuts"
-msgstr "Показати / приховати ярлики"
+msgstr "Показати / приховати скорочення"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:176
 msgid "shortcuts.snap-nodes"
@@ -3826,7 +3826,7 @@ msgstr "Дослідити (%s)"
 
 #: src/app/main/ui/viewer/interactions.cljs:286
 msgid "viewer.header.interactions"
-msgstr "Інтеракції"
+msgstr "Взаємодії"
 
 #: src/app/main/ui/viewer/header.cljs:333
 msgid "viewer.header.interactions-section"
@@ -5498,7 +5498,7 @@ msgstr "Прямокутник (%s)"
 #: src/app/main/ui/workspace/left_toolbar.cljs
 #, unused
 msgid "workspace.toolbar.shortcuts"
-msgstr "Ярлики (%s)"
+msgstr "Скорочення (%s)"
 
 #: src/app/main/ui/workspace/top_toolbar.cljs:170, src/app/main/ui/workspace/top_toolbar.cljs:171
 msgid "workspace.toolbar.text"
@@ -5708,7 +5708,7 @@ msgstr "Чернеток ще немає."
 
 #: src/app/main/ui/dashboard/files.cljs:191, src/app/main/ui/dashboard/projects.cljs:285
 msgid "dashboard.empty-placeholder-files-subtitle"
-msgstr "Як тільки учасник проєкту створить файл, він буде відображений тут."
+msgstr "Як тільки учасник проєкту створить файл, він зʼявиться тут."
 
 #: src/app/main/ui/dashboard/placeholder.cljs:32
 msgid "dashboard.empty-placeholder-libraries-title"
@@ -5720,7 +5720,7 @@ msgstr "Відтепер ви власник цієї команди."
 
 #: src/app/main/data/common.cljs:203
 msgid "dashboard.permissions-change.viewer"
-msgstr "Відтепер ви спостерігач у цій команді."
+msgstr "Відтепер ви переглядач цієї команди."
 
 #: src/app/main/data/common.cljs:205
 msgid "dashboard.permissions-change.admin"
@@ -6025,10 +6025,6 @@ msgstr ""
 "Використовуйте кнопку програвання в заголовку, щоб запустити перегляд "
 "прототипів."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
-msgid "workspace.options.radius.single-corners"
-msgstr "Незалежні кути"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:192
 msgid "workspace.options.stroke-color"
 msgstr "Колір обведення"
@@ -6299,7 +6295,7 @@ msgstr "Автозбережено %s"
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:224
 msgid "workspace.versions.button.pin"
-msgstr "Прикріпити версію"
+msgstr "Пришпилити версію"
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:345, src/app/main/ui/workspace/sidebar/versions.cljs:347
 msgid "workspace.versions.button.save"
@@ -6381,10 +6377,6 @@ msgstr "Жирне"
 #: src/app/main/ui/workspace/context_menu.cljs:404
 msgid "workspace.shape.menu.flow-start"
 msgstr "Початок потоку"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
-msgid "workspace.options.radius.all-corners"
-msgstr "Усі кути"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:184
 msgid "workspace.options.recent-fonts"
@@ -6607,10 +6599,6 @@ msgstr "Додати бібліотеку"
 msgid "workspace.header.menu.option.power-up"
 msgstr "Підсилити свій план"
 
-#: src/app/main/ui/workspace/context_menu.cljs:146
-msgid "workspace.shape.menu.copy_link"
-msgstr "Копіювати посилання до буферу обміну"
-
 msgid "workspace.versions.warning.text"
 msgstr "Автозбережені версії зберігатимуться протягом %s днів."
 
@@ -6696,3 +6684,160 @@ msgstr "У команді немає Спільних Бібліотек"
 #: src/app/main/ui/workspace/sidebar.cljs:242
 msgid "workspace.versions.tab.actions"
 msgstr "Дії"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-name"
+msgstr "Ім'я"
+
+msgid "labels.show-mentions"
+msgstr "Показувати лише ваші згадки"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-value"
+msgstr "Значення"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.token-description"
+msgstr "Опис"
+
+#: src/app/main/errors.cljs:228
+msgid "errors.migration-in-progress"
+msgstr "Міграція триває"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
+msgid "workspace.options.radius.show-single-corners"
+msgstr "Показати незалежні радіуси кутів"
+
+msgid "dashboard.import.no-perms"
+msgstr "Ви не маєте права імпортувати цю команду"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.duplicate"
+msgstr "Дублювати токен"
+
+msgid "dashboard.notifications.notifications-saved"
+msgstr "Налаштування сповіщень оновлено"
+
+msgid "dashboard.settings.notifications.dashboard-comments.none"
+msgstr "Нічого"
+
+msgid "dashboard.settings.notifications.email-invites.all"
+msgstr "Усі види запрошень та запитів"
+
+msgid "dashboard.settings.notifications.email-invites.none"
+msgstr "Нічого"
+
+msgid "dashboard.plugins.parse-error"
+msgstr "Не вдається розібрати маніфест плагіну"
+
+msgid "labels.notifications"
+msgstr "Сповіщення"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.delete"
+msgstr "Видалити токен"
+
+#: src/app/main/ui/exports/assets.cljs:177
+msgid "labels.import"
+msgstr "Імпортувати"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-name"
+msgstr "Введіть %s ім'я токену"
+
+msgid "dashboard.settings.notifications.email-comments.partial"
+msgstr "Тільки згадки та відповіді"
+
+msgid "workspace.shape.menu.paste-props"
+msgstr "Вставити властивості"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
+msgid "workspace.options.radius.hide-all-corners"
+msgstr "Згорнути незалежні радіуси"
+
+#: src/app/main/ui/workspace/context_menu.cljs:146
+msgid "workspace.shape.menu.copy-link"
+msgstr "Копіювати посилання в буфер обміну"
+
+msgid "workspace.shape.menu.copy-paste-as"
+msgstr "Копіювання/вставка як ..."
+
+msgid "workspace.shape.menu.copy-css"
+msgstr "Копіювати як CSS"
+
+msgid "workspace.shape.menu.copy-css-nested"
+msgstr "Копіювати як CSS (вкладені шари)"
+
+msgid "workspace.shape.menu.copy-props"
+msgstr "Копіювати властивості"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:47
+msgid "workspace.token-set.not-active"
+msgstr "Набір токенів не активний"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-value"
+msgstr "Введіть значення токену чи його псевдонім"
+
+#: src/app/main/ui/workspace/tokens/form.cljs
+msgid "workspace.token.enter-token-description"
+msgstr "Додайте опис (необов'язково)"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+msgid "workspace.token.tools"
+msgstr "Інструменти"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs
+msgid "workspace.token.edit"
+msgstr "Змінити токен"
+
+msgid "title.settings.notifications"
+msgstr "Сповіщення - Penpot"
+
+msgid "dashboard.settings.notifications.title"
+msgstr "Сповіщення"
+
+msgid "dashboard.settings.notifications.dashboard.title"
+msgstr "Сповіщення панелі керування"
+
+msgid "dashboard.settings.notifications.dashboard-comments.title"
+msgstr "Коментарі до файлів"
+
+msgid "dashboard.settings.notifications.dashboard-comments.all"
+msgstr "Усі коментарі, згадки та відповіді"
+
+msgid "dashboard.settings.notifications.dashboard-comments.partial"
+msgstr "Тільки згадки та відповіді"
+
+msgid "dashboard.settings.notifications.email.title"
+msgstr "Сповіщення е-пошти"
+
+msgid "dashboard.settings.notifications.email-comments.title"
+msgstr "Коментарі до файлів"
+
+msgid "dashboard.settings.notifications.email-comments.all"
+msgstr "Усі коментарі, згадки та відповіді"
+
+msgid "dashboard.settings.notifications.email-comments.none"
+msgstr "Нічого"
+
+msgid "dashboard.settings.notifications.email-invites.title"
+msgstr "Запрошення та запити"
+
+msgid "dashboard.settings.notifications.submit"
+msgstr "Оновити налаштування"
+
+msgid "dashboard.import.error"
+msgstr "Імпортування не вдалось. Спробуйте пізніше"
+
+msgid "dashboard.import.bad-url"
+msgstr "Імпортування не вдалось. Посилання шаблону неправильне"
+
+msgid "dashboard.plugins.try-plugin"
+msgstr "Спробуйте плагін: "
+
+msgid "dashboard.plugins.bad-url"
+msgstr "Посилання плагіну неправильне"
+
+msgid "comments.mentions.not-found"
+msgstr "Не знайдено людей для @%s"

@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-07-25 17:09+0000\n"
+"PO-Revision-Date: 2025-01-25 18:01+0000\n"
 "Last-Translator: AlexTECPlayz <alextec70@outlook.com>\n"
-"Language-Team: Romanian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ro/>\n"
+"Language-Team: Romanian <https://hosted.weblate.org/projects/penpot/frontend/"
+"ro/>\n"
 "Language: ro\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < "
 "20)) ? 1 : 2;\n"
-"X-Generator: Weblate 5.7-dev\n"
+"X-Generator: Weblate 5.10-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:154, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -4560,14 +4560,6 @@ msgstr "Stânga sus"
 msgid "workspace.options.radius-top-right"
 msgstr "Dreapta sus"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:639
-msgid "workspace.options.radius.all-corners"
-msgstr "Toate colţurile"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:640
-msgid "workspace.options.radius.single-corners"
-msgstr "Colțuri independente"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:184
 msgid "workspace.options.recent-fonts"
 msgstr "Recente"
@@ -5380,3 +5372,117 @@ msgstr "Actualizează"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click pentru a închide calea"
+
+#: src/app/main/data/common.cljs:235
+msgid "dashboard.removed-from-team"
+msgstr "Nu mai sunteți parte din echipa \"%s\"."
+
+#: src/app/main/ui/auth/register.cljs:253
+msgid "auth.register-account-title"
+msgstr "Numele dvs."
+
+#: src/app/main/ui/auth/register.cljs:157
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr ""
+"Sunt de acord cu [termenii și condițiile](%s) și "
+"[politica de confidențialitate](%s)."
+
+#: src/app/main/ui/dashboard/files.cljs:191, src/app/main/ui/dashboard/projects.cljs:285
+msgid "dashboard.empty-placeholder-files-subtitle"
+msgstr ""
+"Odată ce un membru de proiect creează un fișier, acesta va fi afișat aici."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:39
+#, markdown
+msgid "dashboard.empty-placeholder-libraries"
+msgstr ""
+"Bibliotecile adăugate la proiect vor apărea aici. Încercați să vă partajați "
+"fișierele sau adăugați din [Biblioteci și șabloane](https://penpot.app/"
+"libraries-templates)."
+
+#: src/app/main/ui/dashboard/fonts.cljs:445
+msgid "dashboard.fonts.empty-placeholder-viewer-sub"
+msgstr ""
+"Odată ce un membru de proiect încarcă un font personalizat. acesta va fi "
+"afișat aici."
+
+#: src/app/main/ui/dashboard/fonts.cljs:444
+msgid "dashboard.fonts.empty-placeholder-viewer"
+msgstr "Nu aveți încă fonturi personalizate."
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+#, markdown, unused
+msgid "dashboard.empty-placeholder-libraries-subtitle"
+msgstr ""
+"Bibliotecile adăugate la proiect vor apărea aici. Încercați să vă partajați "
+"fișierele sau adăugați din [Biblioteci și șabloane](https://penpot.app/"
+"libraries-templates)."
+
+#: src/app/main/ui/dashboard/files.cljs:186, src/app/main/ui/dashboard/projects.cljs:280
+msgid "dashboard.empty-placeholder-files-title"
+msgstr "Nu aveți încă fișiere."
+
+#: src/app/main/ui/dashboard/files.cljs:185, src/app/main/ui/dashboard/projects.cljs:279
+msgid "dashboard.empty-placeholder-drafts-title"
+msgstr "Nu aveți încă ciorne."
+
+#: src/app/main/ui/dashboard/files.cljs:190, src/app/main/ui/dashboard/projects.cljs:284
+msgid "dashboard.empty-placeholder-drafts-subtitle"
+msgstr ""
+"Odată ce un membru de proiect creează o ciornă, aceasta va fi afișată aici."
+
+#: src/app/main/ui/auth/register.cljs:254
+msgid "auth.register-account-tagline"
+msgstr ""
+"Spuneți-ne cum ar trebui să vă adresăm pe pagina de pornire și în e-mailuri."
+
+#, unused
+msgid "dashboard.import.analyze-error.components-v2"
+msgstr "Fișier cu componente v2 activat, dar această echipă încă nu îl suportă."
+
+#, unused
+msgid "auth.terms-privacy-agreement"
+msgstr ""
+"Când creați un cont, sunteți de acord cu termenii și condițiile și politica "
+"de confidențialitate."
+
+#: src/app/main/ui/workspace/main_menu.cljs:623
+msgid "dashboard.create-version-menu"
+msgstr "Fixați această versiune"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:35
+msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
+msgstr "Bibliotecile adăugate la proiect vor apărea aici."
+
+#: src/app/main/ui/dashboard/placeholder.cljs:32
+msgid "dashboard.empty-placeholder-libraries-title"
+msgstr "Nu aveți încă biblioteci."
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications"
+msgstr "Notificări"
+
+#: src/app/main/ui/dashboard/comments.cljs
+msgid "dashboard.notifications.view"
+msgstr "Afișați notificările"
+
+#: src/app/main/data/common.cljs:202
+msgid "dashboard.permissions-change.admin"
+msgstr "Sunteți acum un administrator în această echipă."
+
+#: src/app/main/data/common.cljs:203
+msgid "dashboard.permissions-change.owner"
+msgstr "Dețineți acum această echipă."
+
+#: src/app/main/data/common.cljs:200
+msgid "dashboard.permissions-change.viewer"
+msgstr "Sunteți acum un cititor în această echipă."
+
+#: src/app/main/ui/workspace/main_menu.cljs:630
+msgid "dashboard.show-version-history"
+msgstr "Istoric versiuni"
+
+#: src/app/main/data/common.cljs:201
+msgid "dashboard.permissions-change.editor"
+msgstr "Sunteți acum un editor în această echipă."
