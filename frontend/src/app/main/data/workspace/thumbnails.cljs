@@ -65,7 +65,7 @@
   [state file-id page-id frame-id tag]
   (let [object-id (thc/fmt-object-id file-id page-id frame-id tag)
         tp        (tp/tpoint-ms)
-        objects   (-> (dsh/lookup-file state file-id)
+        objects   (-> (dsh/lookup-file-data state file-id)
                       (dsh/get-page page-id)
                       :objects)
         shape     (get objects frame-id)]
