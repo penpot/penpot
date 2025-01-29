@@ -138,7 +138,7 @@ impl RenderState {
     pub fn flush(&mut self) {
         self.gpu_state
             .context
-            .flush_and_submit_surface(&mut self.final_surface, None)
+            .flush_and_submit_surface(&mut self.final_surface, None);
     }
 
     pub fn translate(&mut self, dx: f32, dy: f32) {
@@ -169,6 +169,10 @@ impl RenderState {
     }
 
     pub fn apply_drawing_to_final_canvas(&mut self) {
+        self.gpu_state
+            .context
+            .flush_and_submit_surface(&mut self.drawing_surface, None);
+
         self.drawing_surface.draw(
             &mut self.final_surface.canvas(),
             (0.0, 0.0),
