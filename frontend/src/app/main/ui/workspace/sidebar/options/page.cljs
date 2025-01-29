@@ -24,14 +24,18 @@
   (-> (l/key :background)
       (l/derived refs/workspace-page)))
 
-(mf/defc options
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+(mf/defc options*
+  {::mf/wrap [mf/memo]}
   []
   (let [background (mf/deref ref:background-color)
         on-change  (mf/use-fn #(st/emit! (dw/change-canvas-color %)))
         on-open    (mf/use-fn #(st/emit! (dwu/start-undo-transaction :options)))
-        on-close   (mf/use-fn #(st/emit! (dwu/commit-undo-transaction :options)))]
+        on-close   (mf/use-fn #(st/emit! (dwu/commit-undo-transaction :options)))
+
+        color      (mf/with-memo [background]
+                     {:color (d/nilv background clr/canvas)
+                      :opacity 1})]
+
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
       [:& title-bar {:collapsable false
@@ -39,14 +43,12 @@
                      :class       (stl/css :title-spacing-page)}]]
      [:div {:class (stl/css :element-content)}
 
-      ;; FIXME: memoize color
       [:> color-row*
        {:disable-gradient true
         :disable-opacity true
         :disable-image true
         :title (tr "workspace.options.canvas-background")
-        :color {:color (d/nilv background clr/canvas)
-                :opacity 1}
+        :color color
         :on-change on-change
         :on-open on-open
         :on-close on-close}]]]))
