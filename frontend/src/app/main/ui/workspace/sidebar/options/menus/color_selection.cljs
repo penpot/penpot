@@ -8,9 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.types.color :as ctc]
-   [app.common.uuid :as uuid]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.selection :as dws]
    [app.main.store :as st]
@@ -57,15 +55,6 @@
         groups-ref       (h/use-ref-value groups)
         prev-colors-ref  (mf/use-ref nil)
 
-        initial-color-keys
-        (mf/with-memo []
-          (->> (concat colors library-colors)
-               (reduce (fn [result color]
-                         (assoc result color (dm/str (uuid/next))))
-                       {})))
-
-        color-keys*  (mf/use-var initial-color-keys)
-
         on-change
         (mf/use-fn
          (fn [new-color old-color from-picker?]
@@ -93,7 +82,6 @@
                  (mf/set-ref-val! prev-colors-ref
                                   (conj prev-colors color))))
 
-             (swap! color-keys* assoc new-color (get @color-keys* old-color))
              (st/emit! (dc/change-color-in-selected cops new-color old-color)))))
 
         on-open
@@ -138,7 +126,7 @@
                lib-colors (concat lib-colors colors)]
            (for [[index color] (d/enumerate lib-colors)]
              [:> color-row*
-              {:key (get @color-keys* color)
+              {:key index
                :color color
                :index index
                :hidden (not (:id color))
@@ -155,7 +143,7 @@
         [:div {:class (stl/css :selected-color-group)}
          (for [[index color] (d/enumerate (cond->> colors (not @expand-color) (take 3)))]
            [:> color-row*
-            {:key (get @color-keys* color)
+            {:key index
              :color color
              :index index
              :select-only select-only
