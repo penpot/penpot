@@ -401,11 +401,12 @@
     (into #{} (keep :name) elements)))
 
 (defn- name-seq
-  "Creates a lazy sequence of names in the pattern:
-   (str name),
-   (str name (suffix-fn 1)),
-   (str name (suffix-fn 2)),
-   (str name (suffix-fn 3))..."
+  "Creates a lazy, infinite sequence of names starting with `base-name`,
+   followed by variants with suffixes applied. The sequence follows this pattern:
+   - `base-name`
+   - `(str base-name (suffix-fn 1))`
+   - `(str base-name (suffix-fn 2))`
+   - `(str base-name (suffix-fn 3))`, etc."
   [base-name suffix-fn]
   (concat
    [base-name]
@@ -418,14 +419,18 @@
   (str/concat " " copy-count))
 
 (defn generate-unique-name
-  "Generates unique name by
-   returning first unique name from the sequence that doesn't exist in existing-names
-  - `base-name` - a name used for further unique name geneations
-  - `existing-names` - exitsing entity names to check uniqness against
-  - options
-    - `:suffix-fn` - a function that generates unique suffix
-       - accepts `copy-number`, returns `string`
-    - `:immediate-suffix?` - boolean, if `true` suffix added immediately"
+  "Generates a unique name by selecting the first available name from a generated sequence.
+   The sequence consists of `base-name` and its variants, avoiding conflicts with `existing-names`.
+
+   Parameters:
+   - `base-name` - string used as the base for name generation.
+   - `existing-names` - a set of existing names to check for uniqueness.
+   - Options:
+     - `:suffix-fn` - a function that generates suffixes, given an integer (default: `get-suffix`).
+     - `:immediate-suffix?` - if `true`, the base name is considered taken, and suffixing starts immediately.
+
+   Returns:
+   - A unique name not present in `existing-names`."
   [base-name existing-names & {:keys [suffix-fn immediate-suffix?]
                                :or {suffix-fn get-suffix}}]
   (dm/assert!
