@@ -135,6 +135,10 @@
                          {:ignore-touched true
                           :page-id page-id}))))
 
+;; FIXME: if attributes are not always present, maybe we have an
+;; options here for pass optional value and preserve the correct and
+;; uniform api across all functions (?)
+
 (defn update-rotation
   ([value shape-ids attributes] (update-rotation value shape-ids attributes nil))
   ([value shape-ids _attributes page-id] ; The attributes param is needed to have the same arity that other update functions
@@ -143,9 +147,9 @@
      (watch [_ _ _]
        (rx/of
         (udw/trigger-bounding-box-cloaking shape-ids)
-        (udw/increase-rotation shape-ids value
-                               {:page-id page-id}
-                               :ignore-touched true))))))
+        (udw/increase-rotation shape-ids value nil
+                               {:page-id page-id
+                                :ignore-touched true}))))))
 
 (defn update-stroke-width
   ([value shape-ids attributes] (update-stroke-width value shape-ids attributes nil))
@@ -240,7 +244,7 @@
      ptk/WatchEvent
      (watch [_ _ _]
        (rx/concat
-        (map #(dwt/update-position page-id % (zipmap attributes (repeat value)) {:ignore-touched true}) shape-ids))))))
+        (map #(dwt/update-position % (zipmap attributes (repeat value)) {:ignore-touched true :page-id page-id}) shape-ids))))))
 
 (defn update-layout-sizing-limits
   ([value shape-ids attributes] (update-layout-sizing-limits value shape-ids attributes nil))

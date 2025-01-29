@@ -1,8 +1,10 @@
 (ns app.main.ui.workspace.tokens.update
   (:require
+   [app.common.files.helpers :as cfh]
    [app.common.types.token :as ctt]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.shape-layout :as dwsl]
+  [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.style-dictionary :as wtsd]
@@ -86,18 +88,29 @@
   (->> (map (fn [[value attrs]] [attrs {value #{object-id}}]) attrs-values-map)
        (into {})))
 
-(defn collect-shapes-update-info [resolved-tokens objects]
-  (reduce
-   (fn [acc [shape-id {:keys [applied-tokens] :as shape}]]
-     (if (seq applied-tokens)
-       (let [applied-tokens (-> (invert-collect-key-vals applied-tokens resolved-tokens shape)
-                                (shape-ids-by-values shape-id)
-                                (split-attribute-groups))]
-         (deep-merge acc applied-tokens))
-       acc))
-   {} objects))
+(defn- collect-shapes-update-info [resolved-tokens objects]
+  (loop [items (seq objects)
+         frame-ids #{}
+         tokens {}]
+    (if-let [[shape-id {:keys [applied-tokens] :as shape}] (first items)]
+      (let [applied-tokens
+            (-> (invert-collect-key-vals applied-tokens resolved-tokens shape)
+                (shape-ids-by-values shape-id)
+                (split-attribute-groups))
 
-(defn actionize-shapes-update-info [page-id shapes-update-info]
+            parent-frame-id
+            (cfh/get-shape-id-root-frame objects shape-id)]
+
+        (recur (rest items)
+               (if parent-frame-id
+                 (conj frame-ids parent-frame-id)
+                 frame-ids)
+               (deep-merge tokens applied-tokens)))
+
+      [tokens frame-ids])))
+
+;; FIXME: revisit this
+(defn- actionize-shapes-update-info [page-id shapes-update-info]
   (mapcat (fn [[attrs update-infos]]
             (let [action (some attribute-actions-map attrs)]
               (map
@@ -106,30 +119,41 @@
                update-infos)))
           shapes-update-info))
 
-(defn update-tokens-in-page [state page-id resolved-tokens]
-  (->> (dsh/lookup-page-objects state page-id)
-       (collect-shapes-update-info resolved-tokens)
-       (actionize-shapes-update-info page-id)))
+(defn update-tokens
+  [state resolved-tokens]
+  (let [file-id (get state :current-file-id)
+        fdata   (dsh/lookup-file-data state file-id)]
+    (->> (rx/from (:pages fdata))
+         (rx/mapcat
+          (fn [page-id]
+            (let [page
+                  (dsh/get-page fdata page-id)
 
-(defn update-tokens [state resolved-tokens]
-  (reduce (fn [events page-id]
-            (rx/concat events (update-tokens-in-page state page-id resolved-tokens)))
-          (rx/empty)
-          (dsh/get-all-page-ids state)))
+                  [attrs frame-ids]
+                  (collect-shapes-update-info resolved-tokens (:objects page))
 
-(defn update-workspace-tokens []
+                  actions
+                  (actionize-shapes-update-info page-id attrs)]
+
+              (rx/merge
+               (rx/from actions)
+               (->> (rx/from frame-ids)
+                    (rx/mapcat (fn [frame-id]
+                                 (rx/of (dwt/clear-thumbnail file-id  page-id frame-id "frame")
+                                        (dwt/clear-thumbnail file-id  page-id frame-id "component"))))))))))))
+
+(defn update-workspace-tokens
+  []
   (ptk/reify ::update-workspace-tokens
     ptk/WatchEvent
     (watch [_ state _]
-      (->>
-       (rx/from
-        (->
-         (wtts/get-active-theme-sets-tokens-names-map state)
-         (wtsd/resolve-tokens+)))
-       (rx/mapcat
-        (fn [sd-tokens]
-          (let [undo-id (js/Symbol)]
-            (rx/concat
-             (rx/of (dwu/start-undo-transaction undo-id))
-             (update-tokens state sd-tokens)
-             (rx/of (dwu/commit-undo-transaction undo-id))))))))))
+      (let [tokens (-> (wtts/get-active-theme-sets-tokens-names-map state)
+                       (wtsd/resolve-tokens+))]
+        (->> (rx/from tokens)
+             (rx/mapcat (fn [sd-tokens]
+                          (let [undo-id (js/Symbol)]
+                            (rx/concat
+                             (rx/of (dwu/start-undo-transaction undo-id))
+                             (update-tokens state sd-tokens)
+                             (rx/of (dwu/commit-undo-transaction undo-id)))))))))))
+

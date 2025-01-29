@@ -761,7 +761,7 @@
   (ptk/reify ::library-thumbnails-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-thumbnails merge thumbnails))))
+      (update state :thumbnails merge thumbnails))))
 
 (defn fetch-library-thumbnails
   [library-id]
@@ -1408,7 +1408,7 @@
           (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
                (rx/map (fn [thumbnails]
                          (fn [state]
-                           (update state :workspace-thumbnails merge thumbnails))))))
+                           (update state :thumbnails merge thumbnails))))))
          (rx/of (ptk/reify ::attach-library-finished)))))))
 
 (defn unlink-file-from-library

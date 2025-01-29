@@ -334,7 +334,8 @@
    (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree page-id nil))
 
   ([state ignore-constraints ignore-snap-pixel modif-tree page-id params]
-   (let [page-id (d/nilv page-id (:current-page-id state))
+   (let [page-id
+         (or page-id (:current-page-id state))
 
          objects
          (dsh/lookup-page-objects state page-id)
@@ -404,7 +405,9 @@
    (ptk/reify ::set-modifiers
      ptk/UpdateEvent
      (update [_ state]
-       (assoc state :workspace-modifiers (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree params))))))
+       (let [page-id   (:current-page-id state)
+             modifiers (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree page-id params)]
+         (assoc state :workspace-modifiers modifiers))))))
 
 (def ^:private
   xf-rotation-shape
@@ -444,8 +447,9 @@
   (ptk/reify ::set-delta-rotation-modifiers
     ptk/UpdateEvent
     (update [_ state]
-      (let [page-id (d/nilv page-id (:current-page-id state))
+      (let [page-id (or page-id (:current-page-id state))
             objects (dsh/lookup-page-objects state page-id)
+
             ids
             (->> shapes
                  (remove #(get % :blocked false))
@@ -476,7 +480,7 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [text-modifiers (get state :workspace-text-modifier)
-             page-id        (d/nilv page-id (:current-page-id state))
+             page-id        (or page-id (:current-page-id state))
              objects        (dsh/lookup-page-objects state page-id)
 
              object-modifiers

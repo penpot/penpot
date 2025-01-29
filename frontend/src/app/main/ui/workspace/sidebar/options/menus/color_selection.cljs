@@ -140,7 +140,7 @@
                lib-colors (concat lib-colors colors)]
            (for [[index color] (d/enumerate lib-colors)]
              [:& color-row
-              {:key (get @color-keys* color)
+              {:key #_(get @color-keys* color) (str (random-uuid))
                :color color
                :index index
                :hidden (not (:id color))
@@ -157,7 +157,7 @@
         [:div {:class (stl/css :selected-color-group)}
          (for [[index color] (d/enumerate (cond->> colors (not @expand-color) (take 3)))]
            [:& color-row
-            {:key (get @color-keys* color)
+            {:key #_(get @color-keys* color) (str (random-uuid))
              :color color
              :index index
              :select-only select-only
