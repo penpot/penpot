@@ -10,7 +10,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs-shape fill-menu]]
@@ -113,10 +113,10 @@
      [:& stroke-menu {:ids ids
                       :type shape-type
                       :values stroke-values}]
-     [:& color-selection-menu {:type shape-type
-                               :shapes shapes-with-children
-                               :file-id file-id
-                               :shared-libs shared-libs}]
+     [:> color-selection-menu* {:type shape-type
+                                :shapes shapes-with-children
+                                :file-id file-id
+                                :libraries shared-libs}]
      [:& shadow-menu {:ids ids
                       :values (select-keys shape [:shadow])}]
      [:& blur-menu {:ids ids

@@ -17,7 +17,7 @@
    [app.main.refs :as refs]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-attrs exports-menu]]
@@ -394,7 +394,11 @@
                         :disable-stroke-style has-text?}])
 
      (when-not (empty? shapes)
-       [:& color-selection-menu {:file-id file-id :type type :shapes (vals objects-no-measures) :shared-libs shared-libs}])
+       [:> color-selection-menu*
+        {:file-id file-id
+         :type type
+         :shapes (vals objects-no-measures)
+         :libraries shared-libs}])
 
      (when-not (empty? shadow-ids)
        [:& shadow-menu {:type type :ids shadow-ids :values shadow-values}])

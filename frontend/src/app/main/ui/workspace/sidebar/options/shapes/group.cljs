@@ -12,7 +12,7 @@
    [app.main.refs :as refs]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu]]
@@ -102,10 +102,11 @@
      (when-not (empty? stroke-ids)
        [:& stroke-menu {:type type :ids stroke-ids :values stroke-values}])
 
-     [:& color-selection-menu {:type type
-                               :shapes (vals objects)
-                               :file-id file-id
-                               :shared-libs shared-libs}]
+     [:> color-selection-menu*
+      {:type type
+       :shapes (vals objects)
+       :file-id file-id
+       :libraries shared-libs}]
 
      (when-not (empty? shadow-ids)
        [:& shadow-menu {:type type :ids ids :values (select-keys shape [:shadow])}])

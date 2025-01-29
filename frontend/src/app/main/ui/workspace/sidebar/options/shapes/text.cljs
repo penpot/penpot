@@ -15,7 +15,7 @@
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu fill-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
@@ -146,7 +146,11 @@
                       :disable-stroke-style true}]
 
      (when (= :multiple (:fills fill-values))
-       [:& color-selection-menu {:type type :shapes [shape] :file-id file-id :shared-libs shared-libs}])
+       [:> color-selection-menu*
+        {:type type
+         :shapes [shape]
+         :file-id file-id
+         :libraries shared-libs}])
 
      [:& shadow-menu
       {:ids ids

@@ -37,20 +37,19 @@
 (def xf:map-shape-id
   (map :shape-id))
 
-(mf/defc color-selection-menu
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]
-   ::mf/wrap-props false}
-  [{:keys [shapes file-id shared-libs]}]
+(mf/defc color-selection-menu*
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]}
+  [{:keys [shapes file-id libraries]}]
   (let [{:keys [groups library-colors colors]}
-        (mf/with-memo [shapes file-id shared-libs]
-          (prepare-colors shapes file-id shared-libs))
+        (mf/with-memo [file-id shapes libraries]
+          (prepare-colors shapes file-id libraries))
 
-        state*           (mf/use-state true)
-        open?            (deref state*)
+        open*            (mf/use-state true)
+        open?            (deref open*)
 
         has-colors?      (or (some? (seq colors)) (some? (seq library-colors)))
 
-        toggle-content   (mf/use-fn #(swap! state* not))
+        toggle-content   (mf/use-fn #(swap! open* not))
 
         expand-lib-color (mf/use-state false)
         expand-color     (mf/use-state false)
