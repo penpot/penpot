@@ -1537,6 +1537,37 @@
             css (css/generate-style objects selected selected {:with-prelude? false})]
         (wapi/write-to-clipboard css)))))
 
+(defn copy-selected-text
+  []
+  (ptk/reify ::copy-selected-text
+    ptk/EffectEvent
+    (effect [_ state _]
+      (let [selected (dsh/lookup-selected state)
+            objects  (dsh/lookup-page-objects state)
+
+            text-shapes
+            (->> (cfh/selected-with-children objects selected)
+                 (keep (d/getf objects))
+                 (filter cfh/text-shape?))
+
+            selected (into (d/ordered-set) (map :id) text-shapes)
+
+            ;; Narrow the objects map so it contains only relevant data for
+            ;; selected and its parents
+            objects  (cfh/selected-subtree objects selected)
+            selected (->> (ctst/sort-z-index objects selected)
+                          (into (d/ordered-set)))
+
+            text
+            (->> selected
+                 (map
+                  (fn [id]
+                    (let [shape (get objects id)]
+                      (-> shape :content txt/content->text))))
+                 (str/join "\n"))]
+
+        (wapi/write-to-clipboard text)))))
+
 (defn copy-selected-props
   []
   (ptk/reify ::copy-selected-props
