@@ -48,11 +48,11 @@
        (str/join ", ")
        (str/ffmt "linear-gradient(90deg, %1)")))
 
-(mf/defc stop-input-row
+(mf/defc stop-input-row*
+  {::mf/private true}
   [{:keys [stop
            index
            is-selected
-
            on-select-stop
            on-change-stop
            on-remove-stop
@@ -61,7 +61,7 @@
            on-blur-stop-offset
            on-focus-stop-color
            on-blur-stop-color]}]
-  (let [{:keys [color opacity offset]} stop
+  (let [offset (get stop :offset)
 
         handle-change-stop-color
         (mf/use-callback
@@ -149,19 +149,17 @@
         :on-focus handle-focus-stop-offset
         :on-blur handle-blur-stop-offset}]]
 
-     ;; FIXME: memoize color
      [:> color-row*
       {:disable-gradient true
        :disable-picker true
-       :color {:color color
-               :opacity opacity}
+       :color stop
        :index index
        :on-change handle-change-stop-color
        :on-remove handle-remove-stop
        :on-focus handle-focus-stop-color
        :on-blur handle-blur-stop-color}]]))
 
-(mf/defc gradients
+(mf/defc gradients*
   [{:keys [type
            stops
            editing-stop
@@ -177,7 +175,7 @@
            on-rotate-stops
            on-reorder-stops]}]
 
-  (let [preview-state  (mf/use-state {:hover? false :offset 0.5})
+  (let [preview-state  (mf/use-state #(do {:hover? false :offset 0.5}))
         dragging-ref   (mf/use-ref false)
         start-ref      (mf/use-ref nil)
         start-offset   (mf/use-ref nil)
@@ -347,7 +345,7 @@
      [:div {:class (stl/css :gradient-stops-list)}
       [:& h/sortable-container {}
        (for [[index stop] (d/enumerate stops)]
-         [:& stop-input-row
+         [:> stop-input-row*
           {:key index
            :stop stop
            :index index
