@@ -215,7 +215,7 @@
 
 (mf/defc form
   {::mf/wrap-props false}
-  [{:keys [token token-type action selected-token-set-name]}]
+  [{:keys [token token-type action selected-token-set-name on-display-colorpicker]}]
   (let [create? (not (instance? ctob/Token token))
         token (or token {:type token-type})
         token-properties (wtty/get-token-properties token)
@@ -290,7 +290,8 @@
 
         ;; Value
         color (mf/use-state (when color? (:value token)))
-        color-ramp-open? (mf/use-state false)
+        color-ramp-open* (mf/use-state false)
+        color-ramp-open? (deref color-ramp-open*)
         value-input-ref (mf/use-ref nil)
         value-ref (mf/use-var (:value token))
         token-resolve-result* (mf/use-state (get-in resolved-tokens [(wtt/token-identifier token) :resolved-value]))
@@ -323,10 +324,13 @@
                              (dom/set-value! (mf/ref-val value-input-ref) color-value)
                              (on-update-value-debounced color-value))))
 
-        on-display-colorpicker (mf/use-fn
-                                (mf/deps color-ramp-open?)
-                                (fn []
-                                  (swap! color-ramp-open? not)))
+        on-display-colorpicker'
+        (mf/use-fn
+         (mf/deps color-ramp-open? on-display-colorpicker)
+         (fn []
+           (let [open? (not color-ramp-open?)]
+             (reset! color-ramp-open* open?)
+             (on-display-colorpicker open?))))
 
         value-error? (seq (:errors token-resolve-result))
         valid-value-field? (and
@@ -464,8 +468,8 @@
          :on-blur on-update-value}
         (when color?
           [:> input-token-color-bullet*
-           {:color @color :on-click on-display-colorpicker}])]
-       (when @color-ramp-open?
+           {:color @color :on-click on-display-colorpicker'}])]
+       (when color-ramp-open?
          [:> ramp* {:color (some-> (or token-resolve-result (:value token))
                                    (tinycolor/valid-color))
                     :on-change on-update-color}])
