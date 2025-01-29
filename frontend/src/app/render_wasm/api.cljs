@@ -573,6 +573,19 @@
            (rx/reduce conj [])
            (rx/subs! request-render)))))
 
+(defn set-canvas-background
+  [background]
+  (let [rgba (rgba-from-hex background 1)]
+    (h/call internal-module "_set_canvas_background" rgba)
+    (request-render "set-canvas-background")))
+
+(defn initialize
+  [base-objects zoom vbox background]
+  (let [rgba (rgba-from-hex background 1)]
+    (h/call internal-module "_set_canvas_background" rgba)
+    (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
+    (set-objects base-objects)))
+
 (def ^:private canvas-options
   #js {:antialias false
        :depth true
@@ -609,11 +622,6 @@
   []
   ;; TODO: perform corresponding cleaning
   (h/call internal-module "_clean_up"))
-
-(defn set-canvas-background
-  [background]
-  (let [rgba (rgba-from-hex background 1)]
-    (h/call internal-module "_set_canvas_background" rgba)))
 
 (defonce module
   (delay

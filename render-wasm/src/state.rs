@@ -67,6 +67,5 @@ impl<'a> State<'a> {
 
     pub fn set_background_color(&mut self, color: skia::Color) {
         self.render_state.set_background_color(color);
-        self.render_all(true);
     }
 }
