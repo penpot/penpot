@@ -5,21 +5,26 @@
 // Copyright (c) KALEIDOS INC
 
 @use "../_borders.scss" as *;
-@use "../typography.scss" as t;
+@use "../typography.scss" as *;
 
 .notification {
+  @include use-typography("body-medium");
+
+  --actionable-bg-color: var(--color-background-primary);
+  --actionable-fg-color: var(--color-foreground-primary);
+  --actionable-border-color: var(--color-background-quaternary);
+  --actionable-icon-color: var(--color-foreground-secondary);
+  --actionable-padding: var(--sp-s);
+
   align-items: center;
-  background: var(--color-background-primary);
+  background: var(--actionable-bg-color);
   border-radius: $br-8;
-  border: $b-1 solid var(--color-background-quaternary);
+  border: $b-1 solid var(--actionable-border-color);
+  color: var(--actionable-fg-color);
   display: grid;
   gap: var(--sp-s);
   grid-template-columns: 1fr auto auto;
   justify-content: space-between;
-  padding: var(--sp-s);
-}
-
-.notification-message {
-  @include t.use-typography("body-small");
-  color: var(--color-foreground-primary);
+  padding: var(--actionable-padding);
+  padding-inline-start: var(--sp-l);
 }
