@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.4.3 (Unreleased)
+## 2.4.3
 
 ### :bug: Bugs fixed
 
