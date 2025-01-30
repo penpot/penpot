@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-29 22:23+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-01-30 23:57+0000\n"
+"Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
 "Language: ukr_UA\n"
@@ -1388,7 +1388,7 @@ msgstr "Спільнота Penpot"
 
 #: src/app/main/ui/settings/feedback.cljs:69
 msgid "feedback.subject"
-msgstr "Тема"
+msgstr "Причина"
 
 #: src/app/main/ui/settings/feedback.cljs:66
 msgid "feedback.subtitle"
@@ -4660,7 +4660,7 @@ msgstr "Редагування сітки"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:65
 msgid "workspace.layout_grid.editor.top-bar.done"
-msgstr "Виконано"
+msgstr "Готово"
 
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:62
 msgid "workspace.layout_grid.editor.top-bar.locate"
@@ -5401,7 +5401,7 @@ msgstr "Сяяння"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:140
 msgid "workspace.options.layer-options.blend-mode.multiply"
-msgstr "Помножити"
+msgstr "Примножити"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:138
 msgid "workspace.options.layer-options.blend-mode.normal"
@@ -5861,7 +5861,7 @@ msgstr "Фіксована"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:389
 msgid "workspace.options.text-options.letter-spacing"
-msgstr "Міжлітеральний відступ"
+msgstr "Інтервал між літерами"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:371
 msgid "workspace.options.text-options.line-height"
@@ -5926,7 +5926,7 @@ msgstr "ВЕРХНІЙ РЕГІСТР"
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:753
 msgid "workspace.options.use-play-button"
 msgstr ""
-"Використовуйте кнопку програвання в заголовку, щоб запустити перегляд "
+"Використовуйте кнопку відтворення в заголовку, щоб запустити перегляд "
 "прототипів."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:351
@@ -5992,11 +5992,11 @@ msgstr "Дослідіть [більше плагінів](%s)"
 
 #: src/app/main/ui/workspace/plugins.cljs:209
 msgid "workspace.plugins.empty-plugins"
-msgstr "У вас ще немає жодного плагіну"
+msgstr "Ви поки не встановлювали жодного плагіна"
 
 #: src/app/main/ui/workspace/plugins.cljs:196
 msgid "workspace.plugins.error.manifest"
-msgstr "Маніфест плагіну неправильний."
+msgstr "Маніфест плагіна неправильний."
 
 #: src/app/main/data/plugins.cljs:86, src/app/main/ui/workspace/main_menu.cljs:743, src/app/main/ui/workspace/plugins.cljs:82
 msgid "workspace.plugins.error.need-editor"
@@ -6004,7 +6004,7 @@ msgstr "Щоб використовувати цей плагін, ви маєт
 
 #: src/app/main/ui/workspace/plugins.cljs:192
 msgid "workspace.plugins.error.url"
-msgstr "Плагіну не існує чи посилання неправильне."
+msgstr "Плагін не існує або посилання на нього неправильне."
 
 #: src/app/main/ui/workspace/plugins.cljs:188
 msgid "workspace.plugins.install"
@@ -6055,9 +6055,10 @@ msgstr "Читати та модифікувати вміст файлів, до
 #: src/app/main/ui/workspace/plugins.cljs:323
 msgid "workspace.plugins.permissions.disclaimer"
 msgstr ""
-"Зауважте, що плагін створено третьою особою, тож впевніться що ви довіряєте "
-"йому перш ніж надавати дозволи. Для нас важлива приватність та безпека "
-"ваших даних. Якщо маєте якісь сумніви, то просимо зв'язатись з підтримкою."
+"Зауважте, що плагін створено зовнішньою стороною, тож впевніться що ви "
+"довіряєте йому перш ніж надавати дозволи. Для нас важлива приватність та "
+"безпека ваших даних. Якщо маєте якісь сумніви, то просимо зв'язатись з "
+"підтримкою."
 
 #: src/app/main/ui/workspace/plugins.cljs:263
 msgid "workspace.plugins.permissions.library-read"
@@ -6073,7 +6074,7 @@ msgstr "'%s' ПЛАГІН ЗАПИТУЄ ДОСТУП НА:"
 
 #: src/app/main/ui/workspace/plugins.cljs:250
 msgid "workspace.plugins.permissions.user-read"
-msgstr "Прочитати інформацію профілю поточного користувача."
+msgstr "Читати інформацію профілю поточного користувача."
 
 #: src/app/main/ui/workspace/plugins.cljs:214
 msgid "workspace.plugins.plugin-list-link"
@@ -6151,7 +6152,7 @@ msgstr "Копіювати посилання в буфер обміну"
 
 #: src/app/main/ui/workspace/context_menu.cljs:201
 msgid "workspace.shape.menu.copy-paste-as"
-msgstr "Копіювання/вставка як ..."
+msgstr "Копіювати/вставити як ..."
 
 #: src/app/main/ui/workspace/context_menu.cljs:213
 msgid "workspace.shape.menu.copy-props"
@@ -6211,7 +6212,7 @@ msgstr "Виключити"
 
 #: src/app/main/ui/workspace/context_menu.cljs:441, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:89
 msgid "workspace.shape.menu.flatten"
-msgstr "Вирівнювати"
+msgstr "Вирівняти"
 
 #: src/app/main/ui/workspace/context_menu.cljs:282
 msgid "workspace.shape.menu.flip-horizontal"
@@ -6260,7 +6261,7 @@ msgstr "Заблокувати"
 
 #: src/app/main/ui/workspace/context_menu.cljs:355
 msgid "workspace.shape.menu.mask"
-msgstr "Маскувати"
+msgstr "Додати маску"
 
 #: src/app/main/ui/workspace/context_menu.cljs:194, src/app/main/ui/workspace/context_menu.cljs:655
 msgid "workspace.shape.menu.paste"
@@ -6527,14 +6528,12 @@ msgid "workspace.token.num-sets"
 msgstr "%s наборів"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
-#, fuzzy
 msgid "workspace.token.original-value"
-msgstr "Початкове значення: "
+msgstr "Початкове значення: %s"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:205, src/app/main/ui/workspace/tokens/form.cljs:208, src/app/main/ui/workspace/tokens/token_pill.cljs:115
-#, fuzzy
 msgid "workspace.token.resolved-value"
-msgstr "Розв'язане значення: "
+msgstr "Отримане значення: %s"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:203
 msgid "workspace.token.save-theme"
@@ -6638,7 +6637,7 @@ msgstr "Перемкнути панель інструментів"
 
 #: src/app/main/ui/workspace/viewport/top_bar.cljs:39
 msgid "workspace.top-bar.read-only.done"
-msgstr "Виконано"
+msgstr "Готово"
 
 #: src/app/main/ui/workspace/viewport/top_bar.cljs:36
 #, markdown
@@ -6888,3 +6887,68 @@ msgstr "Автозбережені версії зберігатимуться �
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Натисність щоб закінчити шлях"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:48
+msgid "dashboard.add-file"
+msgstr "Додати файл"
+
+#: src/app/main/data/tokens.cljs:199
+msgid "errors.drag-drop.parent-to-child"
+msgstr "Не можна кинути батьківський набір на власний дочірній шлях."
+
+#: src/app/main/ui/workspace/context_menu.cljs:210
+msgid "workspace.shape.menu.copy-text"
+msgstr "Копіювати як текст"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:187
+msgid "workspace.token.label.theme"
+msgstr "Тема"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:89
+msgid "workspace.token.no-permisions-set"
+msgstr "Щоб активувати / деактивувати набір, ви маєте бути редактором"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:120
+msgid "workspace.token.ref-not-valid"
+msgstr "Посилання недійсне або ні на одному із активних наборів"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:279
+msgid "workspace.token.tokens-section-title"
+msgstr "ТОКЕНИ -  %s"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:123
+msgid "workspace.token.value-not-valid"
+msgstr "Значення недійсне"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:200
+msgid "workspace.token.no-permission-themes"
+msgstr "Щоб використовувати ці теми ви маєте бути редактором"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:128
+msgid "workspace.token.applied-to"
+msgstr "Застосовано до"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:56
+msgid "workspace.token.token-name-validation-error"
+msgstr ""
+" недійсне імʼя токену.\n"
+"Імʼя має містити тільки літери та цифри, розділені крапкою та не мають "
+"починатись із символу \"$\"."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:343, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:344
+msgid "workspace.options.fit-content"
+msgstr "Змінити розмір щоб заповнити"
+
+#: src/app/main/data/tokens.cljs:198
+msgid "errors.drag-drop.set-exists"
+msgstr "Не вдалось кинути, набір з таким самим імʼям вже існує за шляхом %s."
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:179
+msgid "workspace.token.label.group"
+msgstr "Група"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:458
+msgid "workspace.token.warning-name-change"
+msgstr ""
+"Перейменовування токену призведе до розірвання будь-яких згадок про старе "
+"імʼя."
