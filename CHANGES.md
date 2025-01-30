@@ -9,6 +9,7 @@
 - Consolidate adding share button to workspace
 - Fix problem when pasting text [Taiga #9929](https://tree.taiga.io/project/penpot/issue/9929)
 - Fix incorrect media reference handling on component instantiation
+- Fix stroke color change with a simple color over old library color [Taiga #9963](https://tree.taiga.io/project/penpot/issue/9963)
 
 
 ## 2.4.2

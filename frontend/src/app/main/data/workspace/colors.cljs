@@ -251,6 +251,14 @@
                           (contains? attrs :file-id)
                           (assoc :stroke-color-ref-file (:file-id attrs))
 
+                          ;; These nils will be remove before updating the shape
+                          ;; but old refs to library colors will be removed as well
+                          (not (contains? attrs :id))
+                          (assoc :stroke-color-ref-id nil)
+
+                          (not (contains? attrs :file-id))
+                          (assoc :stroke-color-ref-file nil)
+
                           (contains? attrs :gradient)
                           (assoc :stroke-color-gradient (:gradient attrs))
 
@@ -279,6 +287,7 @@
                                     (not (contains? new-attrs :stroke-alignment))
                                     (assoc :stroke-alignment :center)
 
+                                    ;; Nils added to clean library colors are removed here
                                     :always
                                     (d/without-nils))]
                     (cond-> shape
