@@ -9,7 +9,7 @@
 
    :modules
    {:test {:init-fn common-tests.runner/-main
-           :prepend-js "globalThis.navigator = {userAgent: \"\"}"}}}
+           :prepend-js ";if (typeof globalThis.navigator?.userAgent === 'undefined') { globalThis.navigator = {userAgent: ''}; };"}}}
 
   :bench
   {:target :node-script

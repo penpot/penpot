@@ -72,7 +72,7 @@
   ([context type id media]
    (let [file-id (:file-id context)
          path (case type
-                :manifest           (str "manifest.json")
+                :manifest           "manifest.json"
                 :page               (str file-id "/" id ".svg")
                 :colors-list        (str file-id "/colors.json")
                 :colors             (let [ext (cm/mtype->extension (:mtype media))]

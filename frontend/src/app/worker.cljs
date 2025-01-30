@@ -168,7 +168,6 @@
   (.removeEventListener js/self "message" on-message))
 
 (defn ^:dev/after-load start []
-  []
   (set! process-message-sub (subscribe-buffer-messages))
   (.addEventListener js/self "message" on-message))
 
