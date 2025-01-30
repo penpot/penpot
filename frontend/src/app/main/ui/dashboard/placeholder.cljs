@@ -20,7 +20,7 @@
         (mf/use-fn
          (mf/deps create-fn)
          (fn [_]
-           (create-fn "dashboard:empty-folder-placeholder")))
+           (create-fn "dashboard:empty-folder-placeholder" false)))
         show-text (mf/use-state nil)
         on-mouse-enter (mf/use-fn #(reset! show-text true))
         on-mouse-leave (mf/use-fn #(reset! show-text nil))]

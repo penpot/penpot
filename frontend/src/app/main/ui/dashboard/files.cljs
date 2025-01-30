@@ -158,7 +158,7 @@
          (mf/deps project)
          (fn [origin]
            (let [mdata  {:on-success on-file-created}
-                 params {:project-id (:id project)}]
+                 params {:project-id (:id project) :has-files (> file-count 0)}]
              (st/emit! (-> (dd/create-file (with-meta params mdata))
                            (with-meta {::ev/origin origin}))))))]
 

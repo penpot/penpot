@@ -953,9 +953,11 @@
 (defn create-file
   [{:keys [project-id name] :as params}]
   (dm/assert! (uuid? project-id))
+
   (ptk/reify ::create-file
     ev/Event
-    (-data [_] {:project-id project-id})
+    (-data [_] {:project-id project-id
+                :has-files (:has-files params)})
 
     ptk/WatchEvent
     (watch [it state _]
