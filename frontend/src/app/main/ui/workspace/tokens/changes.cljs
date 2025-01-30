@@ -97,19 +97,15 @@
 (defn update-shape-radius-all [value shape-ids]
   (dwsh/update-shapes shape-ids
                       (fn [shape]
-                        (when (ctsr/can-get-border-radius? shape)
-                          (ctsr/set-radius-to-all-corners shape value)))
+                        (ctsr/set-radius-to-all-corners shape value))
                       {:reg-objects? true
                        :ignore-touched true
                        :attrs ctt/border-radius-keys}))
 
-(defn update-shape-radius-single-corner [value shape-ids attributes]
-  ;; NOTE: This key should be namespaced on data tokens, but these events are not there.
-  (st/emit! (ptk/data-event :expand-border-radius))
+(defn update-shape-radius-for-corners [value shape-ids attributes]
   (dwsh/update-shapes shape-ids
                       (fn [shape]
-                        (when (ctsr/can-get-border-radius? shape)
-                          (ctsr/set-radius-to-single-corner shape (first attributes) value)))
+                        (ctsr/set-radius-for-corners shape attributes value))
                       {:reg-objects? true
                        :ignore-touched true
                        :attrs ctt/border-radius-keys}))

@@ -23,6 +23,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.timers :as timers]
    [okulary.core :as l]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 ;; Actions ---------------------------------------------------------------------
@@ -179,6 +180,11 @@
                               :on-update-shape wtch/update-layout-sizing-limits}
                              context-data)))
 
+(defn update-shape-radius-for-corners [value shape-ids attributes]
+  (st/emit!
+   (ptk/data-event :expand-border-radius)
+   (wtch/update-shape-radius-for-corners value shape-ids attributes)))
+
 (def shape-attribute-actions-map
   (let [stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")]
     {:border-radius (partial all-or-sepearate-actions {:attribute-labels {:r1 "Top Left"
@@ -186,7 +192,7 @@
                                                                           :r4 "Bottom Left"
                                                                           :r3 "Bottom Right"}
                                                        :on-update-shape-all wtch/update-shape-radius-all
-                                                       :on-update-shape wtch/update-shape-radius-single-corner})
+                                                       :on-update-shape update-shape-radius-for-corners})
      :color (fn [context-data]
               [(generic-attribute-actions #{:fill} "Fill" (assoc context-data :on-update-shape wtch/update-fill))
                (generic-attribute-actions #{:stroke-color} "Stroke" (assoc context-data :on-update-shape wtch/update-stroke-color))])
