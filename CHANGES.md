@@ -25,7 +25,8 @@
 - Fix problem with strokes not refreshing in Safari [Taiga #9040](https://tree.taiga.io/project/penpot/issue/9040)
 - Fix problem with multiple color changes [Taiga #9631](https://tree.taiga.io/project/penpot/issue/9631)
 
-## 2.4.3 (Unreleased)
+
+## 2.4.3
 
 ### :bug: Bugs fixed
 

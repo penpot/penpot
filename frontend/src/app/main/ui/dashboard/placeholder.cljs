@@ -20,7 +20,10 @@
         (mf/use-fn
          (mf/deps create-fn)
          (fn [_]
-           (create-fn "dashboard:empty-folder-placeholder")))]
+           (create-fn "dashboard:empty-folder-placeholder")))
+        show-text (mf/use-state nil)
+        on-mouse-enter (mf/use-fn #(reset! show-text true))
+        on-mouse-leave (mf/use-fn #(reset! show-text nil))]
     (cond
       (true? dragging?)
       [:ul
@@ -43,9 +46,15 @@
 
       :else
       [:div {:class (stl/css :grid-empty-placeholder)}
-       [:button {:class (stl/css :create-new)
-                 :on-click on-click}
-        (if (cf/external-feature-flag "add-file-01" "test") (tr "dashboard.add-file") i/add)]])))
+       (if (cf/external-feature-flag "add-file-01" "test")
+         [:button {:class (stl/css :create-new)
+                   :on-click on-click
+                   :on-mouse-enter on-mouse-enter
+                   :on-mouse-leave on-mouse-leave}
+          (if @show-text (tr "dashboard.add-file") i/add)]
+         [:button {:class (stl/css :create-new)
+                   :on-click on-click}
+          i/add])])))
 
 (mf/defc loading-placeholder
   []

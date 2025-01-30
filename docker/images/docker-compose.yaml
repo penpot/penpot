@@ -29,6 +29,15 @@ x-flags: &penpot-flags
 x-uri: &penpot-public-uri
   PENPOT_PUBLIC_URI: http://localhost:9001
 
+x-body-size: &penpot-http-body-size
+  # Max body size (30MiB); Used for plain requests, should never be
+  # greater than multi-part size
+  PENPOT_HTTP_SERVER_MAX_BODY_SIZE: 31457280
+
+  # Max multipart body size (350MiB)
+  PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE: 367001600
+
+
 networks:
   penpot:
 
@@ -103,7 +112,7 @@ services:
       # - "traefik.http.routers.penpot-https.tls.certresolver=letsencrypt"
 
     environment:
-      << : *penpot-flags
+      << : [*penpot-flags, *penpot-http-body-size]
 
   penpot-backend:
     image: "penpotapp/backend:latest"
@@ -125,7 +134,7 @@ services:
     ## container.
 
     environment:
-      << : [*penpot-flags, *penpot-public-uri]
+      << : [*penpot-flags, *penpot-public-uri, *penpot-http-body-size]
 
       ## Penpot SECRET KEY. It serves as a master key from which other keys for subsystems
       ## (eg http sessions, or invitations) are derived.
@@ -283,5 +292,3 @@ services:
   #   ports:
   #     - 9000:9000
   #     - 9001:9001
-
-

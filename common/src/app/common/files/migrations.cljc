@@ -1179,7 +1179,25 @@
 
     (update data :components update-vals update-component)))
 
-(defn migrate-up-63
+(defn migrate-up-65
+  [data]
+  (let [update-object
+        (fn [object]
+          (d/update-when object :plugin-data d/without-nils))
+
+        update-page
+        (fn [page]
+          (-> (update-object page)
+              (update :objects update-vals update-object)))]
+
+    (-> data
+        (update-object)
+        (d/update-when :pages-index update-vals update-page)
+        (d/update-when :colors update-vals update-object)
+        (d/update-when :typographies update-vals update-object)
+        (d/update-when :components update-vals update-object))))
+
+(defn migrate-up-66
   [data]
   (letfn [(update-object [object]
             (if (and (:rx object) (not (:r1 object)))
@@ -1197,7 +1215,7 @@
         (update :pages-index update-vals update-container)
         (update :components update-vals update-container))))
 
-(defn migrate-up-64
+(defn migrate-up-67
   [data]
   (letfn [(update-object [object]
             (d/update-when object :shadow #(into [] (reverse %))))
@@ -1260,5 +1278,6 @@
    {:id 57 :migrate-up migrate-up-57}
    {:id 59 :migrate-up migrate-up-59}
    {:id 62 :migrate-up migrate-up-62}
-   {:id 63 :migrate-up migrate-up-63}
-   {:id 64 :migrate-up migrate-up-64}])
+   {:id 65 :migrate-up migrate-up-65}
+   {:id 66 :migrate-up migrate-up-66}
+   {:id 67 :migrate-up migrate-up-67}])

@@ -358,6 +358,16 @@ export class SelectionController extends EventTarget {
           detail: this.#currentStyle,
         })
       );
+    } else {
+      const firstInline = this.#textEditor.root?.firstElementChild?.firstElementChild;
+      if (firstInline) {
+        this.#updateCurrentStyle(firstInline);
+        this.dispatchEvent(
+          new CustomEvent("stylechange", {
+            detail: this.#currentStyle,
+          }),
+        );
+      }
     }
   }
 
