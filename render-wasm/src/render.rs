@@ -23,6 +23,9 @@ use options::RenderOptions;
 pub use blend::BlendMode;
 pub use images::*;
 
+const DEFAULT_FONT_BYTES: &[u8] =
+    include_bytes!("../../frontend/resources/fonts/RobotoMono-Regular.ttf");
+
 pub(crate) struct RenderState {
     gpu_state: GpuState,
     options: RenderOptions,
@@ -58,7 +61,7 @@ impl RenderState {
 
         let mut font_provider = skia::textlayout::TypefaceFontProvider::new();
         let default_font = skia::FontMgr::default()
-            .new_from_data(include_bytes!("fonts/RobotoMono-Regular.ttf"), None)
+            .new_from_data(DEFAULT_FONT_BYTES, None)
             .expect("Failed to load font");
         font_provider.register_typeface(default_font, "robotomono-regular");
 
@@ -288,6 +291,8 @@ impl RenderState {
         if self.options.is_debug_visible() {
             self.render_debug();
         }
+
+        debug::render_wasm_label(self);
 
         self.flush();
     }
