@@ -22,6 +22,23 @@ fn render_debug_view(render_state: &mut RenderState) {
         .draw_rect(scaled_rect, &paint);
 }
 
+pub fn render_wasm_label(render_state: &mut RenderState) {
+    let canvas = render_state.final_surface.canvas();
+
+    let skia::ISize { width, height } = canvas.base_layer_size();
+    let p = skia::Point::new(width as f32 - 100.0, height as f32 - 25.0);
+    let mut paint = skia::Paint::default();
+    paint.set_color(skia::Color::from_argb(100, 0, 0, 0));
+
+    let font_provider = &render_state.font_provider;
+    let typeface = font_provider
+        .match_family_style("robotomono-regular", skia::FontStyle::default())
+        .unwrap();
+
+    let font = skia::Font::new(typeface, 10.0);
+    canvas.draw_str("WASM RENDERER", p, &font, &paint);
+}
+
 pub fn render_debug_element(render_state: &mut RenderState, element: &Shape, intersected: bool) {
     let mut paint = skia::Paint::default();
     paint.set_style(skia::PaintStyle::Stroke);
