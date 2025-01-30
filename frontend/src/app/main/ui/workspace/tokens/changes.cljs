@@ -104,16 +104,12 @@
                        :attrs ctt/border-radius-keys}))
 
 (defn update-shape-radius-for-corners [value shape-ids attributes]
-  (ptk/reify ::update-shape-radius-for-corners
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of
-       (dwsh/update-shapes shape-ids
-                           (fn [shape]
-                             (ctsr/set-radius-for-corners shape attributes value))
-                           {:reg-objects? true
-                            :ignore-touched true
-                            :attrs ctt/border-radius-keys})))))
+  (dwsh/update-shapes shape-ids
+                      (fn [shape]
+                        (ctsr/set-radius-for-corners shape attributes value))
+                      {:reg-objects? true
+                       :ignore-touched true
+                       :attrs ctt/border-radius-keys}))
 
 (defn update-opacity [value shape-ids]
   (when (<= 0 value 1)
