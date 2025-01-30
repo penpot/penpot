@@ -147,7 +147,7 @@
 
    :modules
    {:test {:init-fn frontend-tests.runner/init
-           :prepend-js "globalThis.navigator = {userAgent: \"\"}"}}}
+           :prepend-js ";if (typeof globalThis.navigator?.userAgent === 'undefined') { globalThis.navigator = {userAgent: ''}; };"}}}
 
   :lib-penpot
   {:target :esm

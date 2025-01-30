@@ -432,7 +432,7 @@ __metadata:
     luxon: "npm:^3.4.4"
     nodemon: "npm:^3.1.7"
     sax: "npm:^1.4.1"
-    shadow-cljs: "npm:2.28.18"
+    shadow-cljs: "npm:2.28.20"
     source-map-support: "npm:^0.5.21"
     ws: "npm:^8.17.0"
   languageName: unknown
@@ -1793,9 +1793,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"shadow-cljs@npm:2.28.18":
-  version: 2.28.18
-  resolution: "shadow-cljs@npm:2.28.18"
+"shadow-cljs@npm:2.28.20":
+  version: 2.28.20
+  resolution: "shadow-cljs@npm:2.28.20"
   dependencies:
     node-libs-browser: "npm:^2.2.1"
     readline-sync: "npm:^1.4.7"
@@ -1805,7 +1805,7 @@ __metadata:
     ws: "npm:^7.4.6"
   bin:
     shadow-cljs: cli/runner.js
-  checksum: 10c0/4732cd11a5722644a0a91ae5560a55f62432ae5317bd2d1fd5bf12af8354c81776f4fcfce5c477b43af1ac2ecd4a216887337e1b92cca37a1b8cb9c157a393c1
+  checksum: 10c0/f4aaa5127ffd7b717f00fec0b3e1d01df5f31effbaa741e4980a87432783d09a400807c39e3dcaeb4d7b3c13f432f55e96ead22291a9b90d437c8994d72fb2c2
   languageName: node
   linkType: hard
 
