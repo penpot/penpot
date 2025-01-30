@@ -13,6 +13,18 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
+(def tips
+  [["tips.tip-01" "title" "message"]
+   ["tips.tip-02" "title" "message"]
+   ["tips.tip-03" "title" "message"]
+   ["tips.tip-04" "title" "message"]
+   ["tips.tip-05" "title" "message"]
+   ["tips.tip-06" "title" "message"]
+   ["tips.tip-07" "title" "message"]
+   ["tips.tip-08" "title" "message"]
+   ["tips.tip-09" "title" "message"]
+   ["tips.tip-10" "title" "message"]])
+
 (mf/defc loader-icon*
   {::mf/props :obj
    ::mf/private true}
@@ -43,17 +55,50 @@
 (mf/defc loader*
   {::mf/props :obj
    ::mf/schema schema:loader}
-  [{:keys [class width height title overlay children] :rest props}]
-
+  [{:keys [class width height title overlay children file-loading] :rest props}]
   (let [w (or width (when (some? height) (mth/ceil (* height (/ 100 27)))) 100)
         h (or height (when (some? width) (mth/ceil (* width (/ 27 100)))) 27)
-        class (dm/str (or class "") " " (stl/css-case :wrapper true
-                                                      :wrapper-overlay overlay))
+        class (dm/str (or class "") " " 
+                     (stl/css-case :wrapper true
+                                  :wrapper-overlay overlay
+                                  :file-loading file-loading))
         title (or title (tr "labels.loading"))
-        props (mf/spread-props props {:class class})]
+        current-tip (mf/use-state nil)
+        show-tips (mf/use-state false)]
+    
+    (mf/use-effect
+     (mf/deps)
+     (fn []
+       (when file-loading
+         (let [timer (js/setTimeout
+                     (fn []
+                       (let [tip (rand-nth tips)]
+                         (reset! current-tip [(tr (str (first tip) "." (second tip)))
+                                           (tr (str (first tip) "." (nth tip 2)))]))
+                       (reset! show-tips true))
+                     1000)]
+           #(js/clearTimeout timer)))))
+    
+    (mf/use-effect
+     (mf/deps @show-tips file-loading)
+     (fn []
+       (when (and @show-tips file-loading)
+         (let [interval-id (js/setInterval 
+                           #(let [tip (rand-nth tips)]
+                              (reset! current-tip [(tr (str (first tip) "." (second tip)))
+                                                (tr (str (first tip) "." (nth tip 2)))]))
+                           4000)]
+           #(js/clearInterval interval-id)))))
 
-    [:> "div" props
-     [:> loader-icon* {:title title
-                       :width w
-                       :height h}]
+    [:> "div" {:class class}
+     [:div {:class (stl/css :loader-content)}
+      [:> loader-icon* {:title title
+                        :width w
+                        :height h}]
+      (when (and file-loading @show-tips @current-tip)
+        [:div {:class (stl/css :tips-container)}
+         [:div {:class (stl/css :tip-title)}
+          (first @current-tip)]
+         [:div {:class (stl/css :tip-message)}
+          (second @current-tip)]])]
      children]))
