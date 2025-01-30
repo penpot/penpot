@@ -158,7 +158,7 @@
                    :on-click create-theme}
        (tr "workspace.token.create-theme-title")]]]))
 
-(mf/defc theme-inputs
+(mf/defc theme-inputs*
   [{:keys [theme on-change-field]}]
   (let [theme-groups (mf/deref refs/workspace-token-theme-groups)
         theme-name-ref (mf/use-ref (:name theme))
@@ -166,9 +166,14 @@
                        {:label group
                         :id group})
                      theme-groups)
-        on-update-group (partial on-change-field :group)
+        on-update-group
+        (mf/use-fn
+         (mf/deps on-change-field)
+         #(on-change-field :group %))
+
         on-update-name
         (mf/use-fn
+         (mf/deps on-change-field)
          (fn [event]
            (let [value (-> event dom/get-target dom/get-value)]
              (on-change-field :name value)
@@ -187,9 +192,10 @@
                          :label (tr "workspace.token.label.theme")
                          :type "text"
                          :on-change on-update-name
-                         :value (mf/ref-val theme-name-ref)}]]]))
+                         :value (mf/ref-val theme-name-ref)
+                         :auto-focus true}]]]))
 
-(mf/defc theme-modal-buttons
+(mf/defc theme-modal-buttons*
   [{:keys [close-modal on-save-form disabled?] :as props}]
   [:*
    [:> button* {:variant "secondary"
@@ -206,44 +212,55 @@
   [{:keys [set-state]}]
   (let [theme (ctob/make-token-theme :name "")
         on-back #(set-state (constantly {:type :themes-overview}))
-        on-submit (mf/use-fn
-                   (fn [theme]
-                     (st/emit! (ptk/event ::ev/event {::ev/name "create-tokens-theme"}))
-                     (st/emit! (wdt/create-token-theme theme))))
-
-        theme-state (mf/use-state theme)
-        disabled? (-> (:name @theme-state)
+        theme-state* (mf/use-state theme)
+        theme-state (deref theme-state*)
+        disabled? (-> (:name theme-state)
                       (str/trim)
                       (str/empty?))
-        on-change-field (fn [field value]
-                          (swap! theme-state #(assoc % field value)))
-        on-save-form (mf/use-callback
-                      (mf/deps theme-state on-submit)
-                      (fn [e]
-                        (dom/prevent-default e)
-                        (let [theme (-> @theme-state
-                                        (update :name str/trim)
-                                        (update :group str/trim)
-                                        (update :description str/trim))]
-                          (when-not (str/empty? (:name theme))
-                            (on-submit theme)))
-                        (on-back)))
-        close-modal (mf/use-fn
-                     (fn [e]
-                       (dom/prevent-default e)
-                       (st/emit! (modal/hide))))]
+
+        on-change-field
+        (mf/use-fn
+         (fn [field value]
+           (swap! theme-state* #(assoc % field value))))
+
+        on-save-form
+        (mf/use-callback
+         (mf/deps theme-state)
+         (fn [e]
+           (dom/prevent-default e)
+           (let [theme (-> theme-state
+                           (update :name str/trim)
+                           (update :group str/trim)
+                           (update :description str/trim))]
+             (when-not (str/empty? (:name theme))
+               (st/emit! (ptk/event ::ev/event {::ev/name "create-tokens-theme"}))
+               (st/emit! (wdt/create-token-theme theme))))
+           (on-back)))
+
+        close-modal
+        (mf/use-fn
+         (fn [e]
+           (dom/prevent-default e)
+           (st/emit! (modal/hide))))]
+
     [:div {:class (stl/css :themes-modal-wrapper)}
      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
       (tr "workspace.token.create-theme-title")]
      [:form {:on-submit on-save-form}
       [:div {:class (stl/css :create-theme-wrapper)}
-       [:& theme-inputs {:theme theme
-                         :on-change-field on-change-field}]
+       [:> theme-inputs* {:theme theme
+                          :on-change-field on-change-field}]
 
        [:div {:class (stl/css :button-footer)}
-        [:& theme-modal-buttons {:close-modal close-modal
-                                 :on-save-form on-save-form
-                                 :disabled? disabled?}]]]]]))
+        [:> theme-modal-buttons* {:close-modal close-modal
+                                  :on-save-form on-save-form
+                                  :disabled? disabled?}]]]]]))
+
+(defn- make-lib-with-theme [theme sets]
+  (-> (ctob/make-tokens-lib)
+      (ctob/add-theme theme)
+      (ctob/add-sets sets)
+      (ctob/activate-theme (:group theme) (:name theme))))
 
 (mf/defc controlled-edit-theme
   [{:keys [state set-state]}]
@@ -252,30 +269,29 @@
         ordered-token-sets (mf/deref refs/workspace-ordered-token-sets)
         token-sets (mf/deref refs/workspace-token-sets-tree)
         theme (mf/deref (refs/workspace-token-theme theme-group theme-name))
-        theme-state (mf/use-state theme)
-        lib (-> (ctob/make-tokens-lib)
-                (ctob/add-theme @theme-state)
-                (ctob/add-sets ordered-token-sets)
-                (ctob/activate-theme (:group @theme-state) (:name @theme-state)))
+
+        theme-state* (mf/use-state theme)
+        theme-state (deref theme-state*)
+        lib (make-lib-with-theme theme-state ordered-token-sets)
 
         ;; Form / Modal handlers
         on-back #(set-state (constantly {:type :themes-overview}))
         on-submit #(st/emit! (wdt/update-token-theme [(:group theme) (:name theme)] %))
-        disabled? (-> (:name @theme-state)
+        disabled? (-> (:name theme-state)
                       (str/trim)
                       (str/empty?))
 
         on-change-field
         (mf/use-fn
          (fn [field value]
-           (swap! theme-state #(assoc % field value))))
+           (swap! theme-state* #(assoc % field value))))
 
         on-save-form
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps theme-state on-submit)
          (fn [e]
            (dom/prevent-default e)
-           (let [theme (-> @theme-state
+           (let [theme (-> theme-state
                            (update :name str/trim)
                            (update :group str/trim)
                            (update :description str/trim))]
@@ -298,28 +314,30 @@
 
         ;; Sets tree handlers
         token-set-group-active?
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps theme-state)
          (fn [group-path]
            (ctob/sets-at-path-all-active? lib group-path)))
 
         token-set-active?
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps theme-state)
          (fn [set-name]
-           (get-in @theme-state [:sets set-name])))
+           (get-in theme-state [:sets set-name])))
 
         on-toggle-token-set
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps theme-state)
          (fn [set-name]
-           (swap! theme-state #(ctob/toggle-set % set-name))))
+           (swap! theme-state* #(ctob/toggle-set % set-name))))
 
         on-toggle-token-set-group
-        (mf/use-callback
-         (mf/deps theme-state)
+        (mf/use-fn
+         (mf/deps theme-state ordered-token-sets)
          (fn [group-path]
-           (swap! theme-state #(clt/toggle-token-set-group group-path lib %))))
+           (swap! theme-state* (fn [theme']
+                                 (let [lib' (make-lib-with-theme theme' ordered-token-sets)]
+                                   (clt/toggle-token-set-group group-path lib' theme'))))))
 
         on-click-token-set
         (mf/use-callback
@@ -340,8 +358,8 @@
         [:> icon* {:icon-id ic/arrow-left :aria-hidden true}]
         (tr "workspace.token.back-to-themes")]
 
-       [:& theme-inputs {:theme theme
-                         :on-change-field on-change-field}]
+       [:> theme-inputs* {:theme theme
+                          :on-change-field on-change-field}]
        [:> text* {:as "span"  :typography "body-small" :class (stl/css :select-sets-message)}
         (tr "workspace.token.set-selection-theme")]
        [:div {:class (stl/css :sets-list-wrapper)}
@@ -364,9 +382,9 @@
                      :on-click on-delete-token}
          (tr "labels.delete")]
         [:div {:class (stl/css :button-footer)}
-         [:& theme-modal-buttons {:close-modal close-modal
-                                  :on-save-form on-save-form
-                                  :disabled? disabled?}]]]]]]))
+         [:> theme-modal-buttons* {:close-modal close-modal
+                                   :on-save-form on-save-form
+                                   :disabled? disabled?}]]]]]]))
 
 (mf/defc themes-modal-body
   [_]
@@ -390,7 +408,8 @@
   [_args]
   (let [handle-close-dialog (mf/use-callback #(st/emit! (modal/hide)))]
     [:div {:class (stl/css :modal-overlay)}
-     [:div {:class (stl/css :modal-dialog)}
+     [:div {:class (stl/css :modal-dialog)
+            :data-testid "token-theme-update-create-modal"}
       [:> icon-button* {:class (stl/css :close-btn)
                         :on-click handle-close-dialog
                         :aria-label (tr "labels.close")
