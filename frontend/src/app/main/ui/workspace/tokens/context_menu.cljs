@@ -180,14 +180,9 @@
                               :on-update-shape wtch/update-layout-sizing-limits}
                              context-data)))
 
-(defn update-shape-radius-all [value shape-ids]
-  (st/emit!
-   (ptk/data-event ::expand-border-radius)
-   (wtch/update-shape-radius-all value shape-ids)))
-
 (defn update-shape-radius-for-corners [value shape-ids attributes]
   (st/emit!
-   (ptk/data-event ::expand-border-radius)
+   (ptk/data-event :expand-border-radius)
    (wtch/update-shape-radius-for-corners value shape-ids attributes)))
 
 (def shape-attribute-actions-map
@@ -196,7 +191,7 @@
                                                                           :r2 "Top Right"
                                                                           :r4 "Bottom Left"
                                                                           :r3 "Bottom Right"}
-                                                       :on-update-shape-all update-shape-radius-all
+                                                       :on-update-shape-all wtch/update-shape-radius-all
                                                        :on-update-shape update-shape-radius-for-corners})
      :color (fn [context-data]
               [(generic-attribute-actions #{:fill} "Fill" (assoc context-data :on-update-shape wtch/update-fill))

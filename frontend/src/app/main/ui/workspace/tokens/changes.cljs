@@ -86,8 +86,6 @@
                            :token token
                            :shape-ids shape-ids}))
           (rx/of
-           (when (seq (set/intersection ctt/border-radius-keys attributes))
-             (st/emit! (ptk/data-event ::expand-border-radius)))
            (apply-token {:attributes attributes
                          :token token
                          :shape-ids shape-ids
