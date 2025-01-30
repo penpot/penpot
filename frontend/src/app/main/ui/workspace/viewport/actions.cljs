@@ -376,9 +376,10 @@
      (let [event  (.getBrowserEvent ^js event)
            target (dom/get-target event)
            mod? (kbd/mod? event)
-           picking-color? (= "pixel-overlay" (.-id target))]
+           picking-color? (= "pixel-overlay" (.-id target))
+           on-comments-layer? (dom/is-child? (dom/get-element "comments") target)]
 
-       (when (or (uwvv/inside-viewport? target) picking-color?)
+       (when (or (uwvv/inside-viewport? target) picking-color? on-comments-layer?)
          (dom/prevent-default event)
          (dom/stop-propagation event)
          (let [raw-pt (dom/get-client-position event)

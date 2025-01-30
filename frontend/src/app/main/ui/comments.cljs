@@ -602,10 +602,42 @@
            [:span {:class (stl/css :replies-unread)} (str unread-replies " " (tr "labels.reply.new"))]
            [:span {:class (stl/css :replies-unread)} (str unread-replies " " (tr "labels.replies.new"))]))])]])
 
+(mf/defc comment-form-buttons*
+  {::mf/props :obj
+   ::mf/private true}
+  [{:keys [on-submit on-cancel is-disabled]}]
+  (let [handle-cancel
+        (mf/use-fn
+         (mf/deps on-cancel)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-cancel))))
+
+        handle-submit
+        (mf/use-fn
+         (mf/deps on-submit)
+         (fn [event]
+           (when (kbd/enter? event)
+             (on-submit))))]
+
+    [:div {:class (stl/css :form-buttons-wrapper)}
+     [:> mentions-button*]
+     [:> button* {:variant "ghost"
+                  :type "button"
+                  :on-key-down handle-cancel
+                  :on-click on-cancel}
+      (tr "ds.confirm-cancel")]
+     [:> button* {:variant "primary"
+                  :type "button"
+                  :on-key-down handle-submit
+                  :on-click on-submit
+                  :disabled is-disabled}
+      (tr "labels.post")]]))
+
 (mf/defc comment-reply-form*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [thread]}]
+  [{:keys [on-submit]}]
   (let [show-buttons? (mf/use-state false)
         content       (mf/use-state "")
 
@@ -628,11 +660,11 @@
          #(do (reset! content "")
               (reset! show-buttons? false)))
 
-        on-submit
+        on-submit*
         (mf/use-fn
-         (mf/deps thread @content)
+         (mf/deps @content)
          (fn []
-           (st/emit! (dcm/add-comment thread @content))
+           (on-submit @content)
            (on-cancel)))]
 
     [:div {:class (stl/css :form)}
@@ -642,24 +674,20 @@
        :autofocus true
        :on-blur on-blur
        :on-focus on-focus
-       :on-ctrl-enter on-submit
+       :on-ctrl-enter on-submit*
        :on-change on-change
        :max-length 750}]
      (when (or @show-buttons? (seq @content))
-       [:div {:class (stl/css :form-buttons-wrapper)}
-        [:> mentions-button*]
-        [:> button* {:variant "ghost"
-                     :on-click on-cancel}
-         (tr "ds.confirm-cancel")]
-        [:> button* {:variant "primary"
-                     :on-click on-submit
-                     :disabled disabled?}
-         (tr "labels.post")]])]))
+       [:> comment-form-buttons* {:on-submit on-submit*
+                                  :on-cancel on-cancel
+                                  :is-disabled disabled?}])]))
 
 (mf/defc comment-edit-form*
   {::mf/private true}
   [{:keys [content on-submit on-cancel]}]
-  (let [content (mf/use-state content)
+  (let [content   (mf/use-state content)
+
+        disabled? (blank-content? @content)
 
         on-change
         (mf/use-fn
@@ -668,9 +696,7 @@
         on-submit*
         (mf/use-fn
          (mf/deps @content)
-         (fn [] (on-submit @content)))
-
-        disabled? (blank-content? @content)]
+         (fn [] (on-submit @content)))]
 
     [:div {:class (stl/css :form)}
      [:> comment-input*
@@ -679,15 +705,9 @@
        :on-ctrl-enter on-submit*
        :on-change on-change
        :max-length 750}]
-     [:div {:class (stl/css :form-buttons-wrapper)}
-      [:> mentions-button*]
-      [:> button* {:variant "ghost"
-                   :on-click on-cancel}
-       (tr "ds.confirm-cancel")]
-      [:> button* {:variant "primary"
-                   :on-click on-submit*
-                   :disabled disabled?}
-       (tr "labels.post")]]]))
+     [:> comment-form-buttons* {:on-submit on-submit*
+                                :on-cancel on-cancel
+                                :is-disabled disabled?}]]))
 
 (mf/defc comment-floating-thread-draft*
   [{:keys [draft zoom on-cancel on-submit position-modifier]}]
@@ -720,10 +740,11 @@
          (fn [content]
            (st/emit! (dcm/update-draft-thread {:content content}))))
 
-        on-submit
+        on-submit*
         (mf/use-fn
          (mf/deps draft)
-         (partial on-submit draft))]
+         (fn []
+           (on-submit draft)))]
 
     [:> (mf/provider mentions-context) {:value mentions-s}
      [:div
@@ -734,7 +755,7 @@
        :on-click dom/stop-propagation}
       [:> comment-avatar* {:class (stl/css :avatar-lg)
                            :image (cfg/resolve-profile-photo-url profile)}]]
-     [:div {:class (stl/css :floating-thread-wrapper)
+     [:div {:class (stl/css :floating-thread-wrapper :cursor-auto)
             :style {:top (str (- pos-y 24) "px")
                     :left (str (+ pos-x 28) "px")}
             :on-click dom/stop-propagation}
@@ -745,19 +766,11 @@
          :autofocus true
          :on-esc on-esc
          :on-change on-change
-         :on-ctrl-enter on-submit
+         :on-ctrl-enter on-submit*
          :max-length 750}]
-
-       [:div {:class (stl/css :form-buttons-wrapper)}
-        [:> mentions-button*]
-        [:> button* {:variant "ghost"
-                     :on-click on-esc}
-         (tr "ds.confirm-cancel")]
-        [:> button* {:variant "primary"
-                     :on-click on-submit
-                     :disabled disabled?}
-         (tr "labels.post")]]]
-
+       [:> comment-form-buttons* {:on-submit on-submit*
+                                  :on-cancel on-esc
+                                  :is-disabled disabled?}]]
       [:> mentions-panel*]]]))
 
 (mf/defc comment-floating-thread-header*
@@ -935,7 +948,7 @@
   {::mf/wrap [mf/memo]}
   [{:keys [thread zoom origin position-modifier viewport]}]
   (let [ref           (mf/use-ref)
-        mentions-s (mf/use-memo #(rx/subject))
+        mentions-s    (mf/use-memo #(rx/subject))
         thread-id     (:id thread)
         thread-pos    (:position thread)
 
@@ -962,7 +975,13 @@
                         (->> (vals comments-map)
                              (sort-by :created-at)))
 
-        first-comment (first comments)]
+        first-comment (first comments)
+
+        on-submit
+        (mf/use-fn
+         (mf/deps thread)
+         (fn [content]
+           (st/emit! (dcm/add-comment thread content))))]
 
     (mf/with-effect [thread-id]
       (st/emit! (dcm/retrieve-comments thread-id)))
@@ -977,6 +996,7 @@
     [:> (mf/provider mentions-context) {:value mentions-s}
      (when (some? first-comment)
        [:div {:class (stl/css-case :floating-thread-wrapper true
+                                   :cursor-auto true
                                    :left (= (:h-dir pos) :left)
                                    :top (= (:v-dir pos) :top))
               :id (str "thread-" thread-id)
@@ -996,7 +1016,7 @@
            [:* {:key (dm/str (:id item))}
             [:> comment-floating-thread-item* {:comment item}]])]
 
-        [:> comment-reply-form* {:thread thread}]
+        [:> comment-reply-form* {:on-submit on-submit}]
 
         [:> mentions-panel*]])]))
 
@@ -1112,11 +1132,13 @@
            :on-pointer-leave on-pointer-leave
            :on-click on-click*
            :class (stl/css-case :floating-preview-wrapper true
-                                :floating-preview-bubble (false? (:is-hover @state))
-                                :grabbing (true? (:is-grabbing @state)))}
+                                :floating-preview-bubble (false? (:is-hover @state)))}
 
      (if (:is-hover @state)
-       [:div {:class (stl/css :floating-thread-wrapper :floating-preview-displacement)}
+       [:div {:class (stl/css-case :floating-thread-wrapper true
+                                   :floating-preview-displacement true
+                                   :cursor-pointer (false? (:is-grabbing @state))
+                                   :cursor-grabbing (true? (:is-grabbing @state)))}
         [:div {:class (stl/css :floating-thread-item-wrapper)}
          [:div {:class (stl/css :floating-thread-item)}
           [:> comment-info* {:item thread

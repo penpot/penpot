@@ -21,6 +21,7 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.comments :as wc]
+   [app.main.ui.workspace.viewport.utils :as utils]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
@@ -131,6 +132,8 @@
   (let [profile        (mf/deref refs/profile)
         local          (mf/deref refs/comments-local)
 
+        cursor         (utils/get-cursor :comments)
+
         open-thread-id (:open local)
         page-id        (:id page)
         file-id        (:id file)
@@ -203,7 +206,7 @@
 
     [:div {:class (stl/css :comments-section)
            :on-click on-click}
-     [:div {:class (stl/css :viewer-comments-container)}
+     [:div {:class (dm/str cursor " " (stl/css :viewer-comments-container))}
       [:div {:class (stl/css :threads)}
        (for [item threads]
          [:> cmt/comment-floating-bubble*
