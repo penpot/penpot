@@ -58,6 +58,12 @@
   :redundant-do
   {:level :off}
 
+  :redundant-ignore
+  {:level :off}
+
+  :redundant-nested-call
+  {:level :off}
+
   :earmuffed-var-not-dynamic
   {:level :off}
 
