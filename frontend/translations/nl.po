@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-29 22:23+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-01-30 23:57+0000\n"
+"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
 "Language: nl\n"
@@ -1848,7 +1848,7 @@ msgstr "Bestand bewerken"
 
 #: src/app/main/ui/dashboard/team.cljs:126, src/app/main/ui/dashboard/team.cljs:310, src/app/main/ui/dashboard/team.cljs:555, src/app/main/ui/dashboard/team.cljs:588, src/app/main/ui/onboarding/team_choice.cljs:65
 msgid "labels.editor"
-msgstr "Editor"
+msgstr "Redacteur"
 
 #: src/app/main/ui/onboarding/questions.cljs:404
 msgid "labels.event"
@@ -6516,14 +6516,12 @@ msgid "workspace.token.num-sets"
 msgstr "%s verzamelingen"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
-#, fuzzy
 msgid "workspace.token.original-value"
-msgstr "Oorspronkelijke waarde: "
+msgstr "Oorspronkelijke waarde: %s"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:205, src/app/main/ui/workspace/tokens/form.cljs:208, src/app/main/ui/workspace/tokens/token_pill.cljs:115
-#, fuzzy
 msgid "workspace.token.resolved-value"
-msgstr "Besloten waarde: "
+msgstr "Besloten waarde: %s"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:203
 msgid "workspace.token.save-theme"
@@ -6877,3 +6875,70 @@ msgstr "Automatisch opgeslagen versies worden %s dagen bewaard."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik om het pad te sluiten"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:48
+msgid "dashboard.add-file"
+msgstr "Bestand toevoegen"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:89
+msgid "workspace.token.no-permisions-set"
+msgstr "Je moet een redacteur zijn om verzamelingen in/uit te schakelen"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:200
+msgid "workspace.token.no-permission-themes"
+msgstr "Je moet een redacteur zijn om thema's te gebruiken"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:123
+msgid "workspace.token.value-not-valid"
+msgstr "Ongeldige waarde"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:279
+msgid "workspace.token.tokens-section-title"
+msgstr "TOKENS -  %s"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:458
+msgid "workspace.token.warning-name-change"
+msgstr ""
+"Met het wijzigen van de naam van dit token, worden alle verwijzingen naar de "
+"oude naam verbroken."
+
+#: src/app/main/ui/workspace/context_menu.cljs:210
+msgid "workspace.shape.menu.copy-text"
+msgstr "Kopiëren als tekst"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:187
+msgid "workspace.token.label.theme"
+msgstr "Thema"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:343, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:344
+msgid "workspace.options.fit-content"
+msgstr "Grootte van bord aanpassen aan inhoud"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:128
+msgid "workspace.token.applied-to"
+msgstr "Toegepast op"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:179
+msgid "workspace.token.label.group"
+msgstr "Groep"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:120
+msgid "workspace.token.ref-not-valid"
+msgstr "Referentie is niet geldig of zit niet in een actieve verzameling"
+
+#: src/app/main/data/tokens.cljs:199
+msgid "errors.drag-drop.parent-to-child"
+msgstr "Kan bovenliggende verzameling niet toepassen op onderliggend pad."
+
+#: src/app/main/data/tokens.cljs:198
+msgid "errors.drag-drop.set-exists"
+msgstr ""
+"Kan sleepactie niet voltooien. Er bestaat al een verzameling met dezelfde "
+"naam op pad %s."
+
+#: src/app/main/ui/workspace/tokens/form.cljs:56
+msgid "workspace.token.token-name-validation-error"
+msgstr ""
+" is geen geldige tokennaam.\n"
+"Tokennamen mogen alleen letters en cijfers bevatten, gescheiden door . (punt)"
+" en mogen niet beginnen met een $."
