@@ -62,11 +62,6 @@
   (h/call internal-module "_render")
   (set! internal-frame-id nil))
 
-(defn- render-without-cache
-  [_]
-  (h/call internal-module "_render_without_cache")
-  (set! internal-frame-id nil))
-
 (defn- rgba-from-hex
   "Takes a hex color in #rrggbb format, and an opacity value from 0 to 1 and returns its 32-bit rgba representation"
   [hex opacity]
@@ -495,18 +490,13 @@
           (h/call internal-module "_add_shape_shadow" rgba blur spread x y (translate-shadow-style style) hidden)
           (recur (inc index)))))))
 
-(def debounce-render-without-cache (fns/debounce render-without-cache 100))
+(def debounce-render (fns/debounce render 100))
 
 (defn set-view-box
   [zoom vbox]
   (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-  (h/call internal-module "_pan"))
-
-(defn set-view-zoom
-  [zoom vbox]
-  (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-  (h/call internal-module "_zoom")
-  (debounce-render-without-cache))
+  (h/call internal-module "_render_from_cache")
+  (debounce-render))
 
 (defn set-objects
   [objects]

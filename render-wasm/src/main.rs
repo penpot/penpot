@@ -58,34 +58,28 @@ pub extern "C" fn set_render_options(debug: u32, dpr: f32) {
 #[no_mangle]
 pub extern "C" fn set_canvas_background(raw_color: u32) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-
     let color = skia::Color::new(raw_color);
     state.set_background_color(color);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn render() {
+pub unsafe extern "C" fn render(timestamp: i32) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
-    state.render_all(true);
+    state.start_render_loop(timestamp).expect("Error rendering");
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn render_without_cache() {
+pub unsafe extern "C" fn render_from_cache() {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
-    state.render_all(false);
+    state.render_from_cache();
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn zoom() {
-    let state: &mut Box<State<'_>> =
-        unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    state.zoom();
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn pan() {
-    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
-    state.pan();
+pub unsafe extern "C" fn process_animation_frame(timestamp: i32) {
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
+    state
+        .process_animation_frame(timestamp)
+        .expect("Error processing animation frame");
 }
 
 #[no_mangle]

@@ -23,7 +23,7 @@ fn render_debug_view(render_state: &mut RenderState) {
 }
 
 pub fn render_wasm_label(render_state: &mut RenderState) {
-    let canvas = render_state.final_surface.canvas();
+    let canvas = render_state.render_surface.canvas();
 
     let skia::ISize { width, height } = canvas.base_layer_size();
     let p = skia::Point::new(width as f32 - 100.0, height as f32 - 25.0);
@@ -66,7 +66,7 @@ pub fn render(render_state: &mut RenderState) {
     let paint = skia::Paint::default();
     render_debug_view(render_state);
     render_state.debug_surface.draw(
-        &mut render_state.final_surface.canvas(),
+        &mut render_state.render_surface.canvas(),
         (0.0, 0.0),
         skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
         Some(&paint),

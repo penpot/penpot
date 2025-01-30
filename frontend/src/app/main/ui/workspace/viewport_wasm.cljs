@@ -306,11 +306,7 @@
         (wasm.api/initialize base-objects zoom vbox background)
         (reset! initialized? true)))
 
-    (mf/with-effect [vbox]
-      (when (and @canvas-init? initialized?)
-        (wasm.api/set-view-zoom zoom vbox)))
-
-    (mf/with-effect [vbox]
+    (mf/with-effect [vbox zoom]
       (when (and @canvas-init? initialized?)
         (wasm.api/set-view-box zoom vbox)))
 

@@ -1,4 +1,3 @@
-use skia::Contains;
 use skia_safe as skia;
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -26,14 +25,24 @@ pub use images::*;
 const DEFAULT_FONT_BYTES: &[u8] =
     include_bytes!("../../frontend/resources/fonts/RobotoMono-Regular.ttf");
 
+const MAX_BLOCKING_TIME_MS: i32 = 32;
+const NODE_BATCH_THRESHOLD: i32 = 10;
+
+extern "C" {
+    fn emscripten_run_script(script: *const i8);
+    fn emscripten_run_script_int(script: *const i8) -> i32;
+}
+
+fn get_time() -> i32 {
+    let script = std::ffi::CString::new("performance.now()").unwrap();
+    unsafe { emscripten_run_script_int(script.as_ptr()) }
+}
+
 pub(crate) struct RenderState {
     gpu_state: GpuState,
-    options: RenderOptions,
-
-    // TODO: Probably we're going to need
-    // a surface stack like the one used
-    // by SVG: https://www.w3.org/TR/SVG2/render.html
+    pub options: RenderOptions,
     pub final_surface: skia::Surface,
+    pub render_surface: skia::Surface,
     pub drawing_surface: skia::Surface,
     pub shadow_surface: skia::Surface,
     pub debug_surface: skia::Surface,
@@ -42,6 +51,12 @@ pub(crate) struct RenderState {
     pub viewbox: Viewbox,
     pub images: ImageStore,
     pub background_color: skia::Color,
+    // Identifier of the current requestAnimationFrame call, if any.
+    pub render_request_id: Option<i32>,
+    // Indicates whether the rendering process has pending frames.
+    pub render_in_progress: bool,
+    // Stack of nodes pending to be rendered. The boolean flag indicates if the node has already been visited.
+    pub pending_nodes: Vec<(Uuid, bool)>,
 }
 
 impl RenderState {
@@ -49,6 +64,9 @@ impl RenderState {
         // This needs to be done once per WebGL context.
         let mut gpu_state = GpuState::new();
         let mut final_surface = gpu_state.create_target_surface(width, height);
+        let render_surface = final_surface
+            .new_surface_with_dimensions((width, height))
+            .unwrap();
         let shadow_surface = final_surface
             .new_surface_with_dimensions((width, height))
             .unwrap();
@@ -68,6 +86,7 @@ impl RenderState {
         RenderState {
             gpu_state,
             final_surface,
+            render_surface,
             shadow_surface,
             drawing_surface,
             debug_surface,
@@ -77,6 +96,9 @@ impl RenderState {
             viewbox: Viewbox::new(width as f32, height as f32),
             images: ImageStore::new(),
             background_color: skia::Color::TRANSPARENT,
+            render_request_id: None,
+            render_in_progress: false,
+            pending_nodes: vec![],
         }
     }
 
@@ -113,7 +135,7 @@ impl RenderState {
 
     pub fn set_background_color(&mut self, color: skia::Color) {
         self.background_color = color;
-        let _ = self.render_all_from_cache();
+        let _ = self.render_from_cache();
     }
 
     pub fn resize(&mut self, width: i32, height: i32) {
@@ -122,6 +144,10 @@ impl RenderState {
 
         let surface = self.gpu_state.create_target_surface(dpr_width, dpr_height);
         self.final_surface = surface;
+        self.render_surface = self
+            .final_surface
+            .new_surface_with_dimensions((dpr_width, dpr_height))
+            .unwrap();
         self.shadow_surface = self
             .final_surface
             .new_surface_with_dimensions((dpr_width, dpr_height))
@@ -153,15 +179,17 @@ impl RenderState {
     }
 
     pub fn reset_canvas(&mut self) {
+        self.drawing_surface.canvas().restore_to_count(1);
+        self.render_surface.canvas().restore_to_count(1);
         self.drawing_surface
             .canvas()
             .clear(self.background_color)
             .reset_matrix();
-        self.shadow_surface
+        self.render_surface
             .canvas()
             .clear(self.background_color)
             .reset_matrix();
-        self.final_surface
+        self.shadow_surface
             .canvas()
             .clear(self.background_color)
             .reset_matrix();
@@ -171,17 +199,30 @@ impl RenderState {
             .reset_matrix();
     }
 
-    pub fn apply_drawing_to_final_canvas(&mut self) {
-        self.gpu_state
-            .context
-            .flush_and_submit_surface(&mut self.drawing_surface, None);
-
-        self.drawing_surface.draw(
+    pub fn apply_render_to_final_canvas(&mut self) {
+        self.render_surface.draw(
             &mut self.final_surface.canvas(),
             (0.0, 0.0),
             skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
             Some(&skia::Paint::default()),
         );
+    }
+
+    pub fn apply_drawing_to_render_canvas(&mut self) {
+        self.gpu_state
+            .context
+            .flush_and_submit_surface(&mut self.drawing_surface, None);
+
+        self.drawing_surface.draw(
+            &mut self.render_surface.canvas(),
+            (0.0, 0.0),
+            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
+            Some(&skia::Paint::default()),
+        );
+
+        self.gpu_state
+            .context
+            .flush_and_submit_surface(&mut self.render_surface, None);
 
         self.shadow_surface.canvas().clear(skia::Color::TRANSPARENT);
 
@@ -241,65 +282,78 @@ impl RenderState {
             shadows::render_drop_shadow(self, shadow, self.viewbox.zoom * self.options.dpr());
         }
 
-        self.apply_drawing_to_final_canvas();
+        self.apply_drawing_to_render_canvas();
     }
 
-    pub fn zoom(&mut self, tree: &HashMap<Uuid, Shape>) -> Result<(), String> {
-        if let Some(cached_surface_image) = self.cached_surface_image.as_mut() {
-            let is_dirty = cached_surface_image.is_dirty_for_zooming(&self.viewbox);
-            if is_dirty {
-                self.render_all(tree, true);
-            } else {
-                self.render_all_from_cache()?;
+    pub fn start_render_loop(
+        &mut self,
+        tree: &mut HashMap<Uuid, Shape>,
+        timestamp: i32,
+    ) -> Result<(), String> {
+        if self.render_in_progress {
+            if let Some(frame_id) = self.render_request_id {
+                self.cancel_animation_frame(frame_id);
             }
         }
-
-        Ok(())
-    }
-
-    pub fn pan(&mut self, tree: &HashMap<Uuid, Shape>) -> Result<(), String> {
-        if let Some(cached_surface_image) = self.cached_surface_image.as_mut() {
-            let is_dirty = cached_surface_image.is_dirty_for_panning(&self.viewbox);
-            if is_dirty {
-                self.render_all(tree, true);
-            } else {
-                self.render_all_from_cache()?;
-            }
-        }
-
-        Ok(())
-    }
-
-    pub fn render_all(&mut self, tree: &HashMap<Uuid, Shape>, generate_cached_surface_image: bool) {
         self.reset_canvas();
         self.scale(
             self.viewbox.zoom * self.options.dpr(),
             self.viewbox.zoom * self.options.dpr(),
         );
         self.translate(self.viewbox.pan_x, self.viewbox.pan_y);
-
-        // Reset shape tree
-        let is_complete = self.render_shape_tree(&Uuid::nil(), tree);
-        if generate_cached_surface_image || self.cached_surface_image.is_none() {
-            self.cached_surface_image = Some(CachedSurfaceImage {
-                image: self.final_surface.image_snapshot(),
-                viewbox: self.viewbox,
-                has_all_shapes: is_complete,
-            });
-        }
-
-        if self.options.is_debug_visible() {
-            self.render_debug();
-        }
-
-        debug::render_wasm_label(self);
-
-        self.flush();
+        self.pending_nodes = vec![(Uuid::nil(), false)];
+        self.render_in_progress = true;
+        self.process_animation_frame(tree, timestamp)?;
+        Ok(())
     }
 
-    fn render_all_from_cache(&mut self) -> Result<(), String> {
-        self.reset_canvas();
+    pub fn request_animation_frame(&mut self) -> i32 {
+        let script =
+            std::ffi::CString::new("requestAnimationFrame(_process_animation_frame)").unwrap();
+        unsafe { emscripten_run_script_int(script.as_ptr()) }
+    }
 
+    pub fn cancel_animation_frame(&mut self, frame_id: i32) {
+        let cancel_script = format!("cancelAnimationFrame({})", frame_id);
+        let c_cancel_script = std::ffi::CString::new(cancel_script).unwrap();
+        unsafe {
+            emscripten_run_script(c_cancel_script.as_ptr());
+        }
+    }
+
+    pub fn process_animation_frame(
+        &mut self,
+        tree: &mut HashMap<Uuid, Shape>,
+        timestamp: i32,
+    ) -> Result<(), String> {
+        if self.render_in_progress {
+            self.render_shape_tree(tree, timestamp)?;
+            if self.render_in_progress {
+                if let Some(frame_id) = self.render_request_id {
+                    self.cancel_animation_frame(frame_id);
+                }
+                self.render_request_id = Some(self.request_animation_frame());
+            }
+        }
+
+        // self.render_in_progress can have changed
+        if !self.render_in_progress {
+            self.cached_surface_image = Some(CachedSurfaceImage {
+                image: self.render_surface.image_snapshot(),
+                viewbox: self.viewbox,
+            });
+            if self.options.is_debug_visible() {
+                self.render_debug();
+            }
+
+            debug::render_wasm_label(self);
+            self.apply_render_to_final_canvas();
+            self.flush();
+        }
+        Ok(())
+    }
+
+    pub fn render_from_cache(&mut self) -> Result<(), String> {
         let cached = self
             .cached_surface_image
             .as_ref()
@@ -337,58 +391,72 @@ impl RenderState {
         debug::render(self);
     }
 
-    // Returns a boolean indicating if the viewbox contains the rendered shapes
-    fn render_shape_tree(&mut self, root_id: &Uuid, tree: &HashMap<Uuid, Shape>) -> bool {
-        if let Some(element) = tree.get(&root_id) {
-            let mut is_complete = self.viewbox.area.contains(element.bounds());
-
-            if !root_id.is_nil() {
-                if !element.bounds().intersects(self.viewbox.area) || element.hidden() {
-                    debug::render_debug_element(self, element, false);
-                    // TODO: This means that not all the shapes are rendered so we
-                    // need to call a render_all on the zoom out.
-                    return is_complete; // TODO return is_complete or return false??
-                } else {
-                    debug::render_debug_element(self, element, true);
-                }
-            }
-
-            let mut paint = skia::Paint::default();
-            paint.set_blend_mode(element.blend_mode().into());
-            paint.set_alpha_f(element.opacity());
-            let filter = element.image_filter(self.viewbox.zoom * self.options.dpr());
-            if let Some(image_filter) = filter {
-                paint.set_image_filter(image_filter);
-            }
-
-            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-            // This is needed so the next non-children shape does not carry this shape's transform
-            self.final_surface.canvas().save_layer(&layer_rec);
-
-            self.drawing_surface.canvas().save();
-            if !root_id.is_nil() {
-                self.render_shape(&mut element.clone(), element.clip());
-            } else {
-                self.apply_drawing_to_final_canvas();
-            }
-
-            self.drawing_surface.canvas().restore();
-
-            // draw all the children shapes
-            if element.is_recursive() {
-                for id in element.children_ids() {
-                    self.drawing_surface.canvas().save();
-                    is_complete = self.render_shape_tree(&id, tree) && is_complete;
-                    self.drawing_surface.canvas().restore();
-                }
-            }
-
-            self.final_surface.canvas().restore();
-
-            return is_complete;
-        } else {
-            eprintln!("Error: Element with root_id {root_id} not found in the tree.");
-            return false;
+    pub fn render_shape_tree(
+        &mut self,
+        tree: &HashMap<Uuid, Shape>,
+        timestamp: i32,
+    ) -> Result<(), String> {
+        if !self.render_in_progress {
+            return Ok(());
         }
+
+        let mut i = 0;
+        while let Some((node_id, visited_children)) = self.pending_nodes.pop() {
+            let element = tree.get(&node_id).ok_or(
+                "Error: Element with root_id {node_id} not found in the tree.".to_string(),
+            )?;
+
+            if !visited_children {
+                if !node_id.is_nil() {
+                    if !element.bounds().intersects(self.viewbox.area) || element.hidden() {
+                        debug::render_debug_element(self, element, false);
+                        continue;
+                    } else {
+                        debug::render_debug_element(self, element, true);
+                    }
+                }
+
+                let mut paint = skia::Paint::default();
+                paint.set_blend_mode(element.blend_mode().into());
+                paint.set_alpha_f(element.opacity());
+
+                if let Some(image_filter) =
+                    element.image_filter(self.viewbox.zoom * self.options.dpr())
+                {
+                    paint.set_image_filter(image_filter);
+                }
+
+                let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+                self.render_surface.canvas().save_layer(&layer_rec);
+
+                self.drawing_surface.canvas().save();
+                if !node_id.is_nil() {
+                    self.render_shape(&mut element.clone(), element.clip());
+                } else {
+                    self.apply_drawing_to_render_canvas();
+                }
+                self.drawing_surface.canvas().restore();
+
+                // Set the node as visited before processing children
+                self.pending_nodes.push((node_id, true));
+
+                if element.is_recursive() {
+                    for child_id in element.children_ids().iter().rev() {
+                        self.pending_nodes.push((*child_id, false));
+                    }
+                }
+            } else {
+                self.render_surface.canvas().restore();
+            }
+            // We try to avoid doing too many calls to get_time
+            if i % NODE_BATCH_THRESHOLD == 0 && get_time() - timestamp > MAX_BLOCKING_TIME_MS {
+                return Ok(());
+            }
+            i += 1;
+        }
+
+        // If we finish processing every node rendering is complete
+        self.render_in_progress = false;
+        Ok(())
     }
 }
