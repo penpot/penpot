@@ -10,7 +10,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs-shape fill-menu]]
@@ -20,7 +20,7 @@
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [select-measure-keys measures-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
    [rumext.v2 :as mf]))
 
@@ -113,12 +113,11 @@
      [:& stroke-menu {:ids ids
                       :type shape-type
                       :values stroke-values}]
-     [:& color-selection-menu {:type shape-type
-                               :shapes shapes-with-children
-                               :file-id file-id
-                               :shared-libs shared-libs}]
-     [:& shadow-menu {:ids ids
-                      :values (select-keys shape [:shadow])}]
+     [:> color-selection-menu* {:type shape-type
+                                :shapes shapes-with-children
+                                :file-id file-id
+                                :libraries shared-libs}]
+     [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
      [:& blur-menu {:ids ids
                     :values (select-keys shape [:blur])}]
      [:& frame-grid {:shape shape}]]))

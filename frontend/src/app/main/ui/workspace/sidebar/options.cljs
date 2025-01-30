@@ -116,7 +116,7 @@
          :shared-libs shared-libs}]
 
        (= 0 (count selected))
-       [:& page/options]
+       [:> page/options*]
 
        (= 1 (count selected))
        [:> shape-options*

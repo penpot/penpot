@@ -19,7 +19,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
-   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
+   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
@@ -196,12 +196,12 @@
         (when (= :square type)
           [:div {:class (stl/css :square-row)}
            [:div {:class (stl/css :advanced-row)}
-            [:& color-row {:color (:color params)
-                           :title (tr "workspace.options.grid.params.color")
-                           :disable-gradient true
-                           :disable-image true
-                           :on-change handle-change-color
-                           :on-detach handle-detach-color}]
+            [:> color-row* {:color (:color params)
+                            :title (tr "workspace.options.grid.params.color")
+                            :disable-gradient true
+                            :disable-image true
+                            :on-change handle-change-color
+                            :on-detach handle-detach-color}]
             [:button {:class (stl/css-case :show-more-options true
                                            :selected show-more-options?)
                       :on-click toggle-more-options}
@@ -237,12 +237,12 @@
                          :on-change (handle-change :params :type)}]]
 
             [:div {:class (stl/css :color-wrapper)}
-             [:& color-row {:color (:color params)
-                            :title (tr "workspace.options.grid.params.color")
-                            :disable-gradient true
-                            :disable-image true
-                            :on-change handle-change-color
-                            :on-detach handle-detach-color}]]]
+             [:> color-row* {:color (:color params)
+                             :title (tr "workspace.options.grid.params.color")
+                             :disable-gradient true
+                             :disable-image true
+                             :on-change handle-change-color
+                             :on-detach handle-detach-color}]]]
 
            [:div {:class (stl/css :advanced-row)}
             [:div {:class (stl/css :height)

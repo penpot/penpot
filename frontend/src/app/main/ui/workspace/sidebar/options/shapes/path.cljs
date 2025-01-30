@@ -17,7 +17,7 @@
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
    [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]
    [rumext.v2 :as mf]))
@@ -89,8 +89,7 @@
                       :type type
                       :show-caps true
                       :values stroke-values}]
-     [:& shadow-menu {:ids ids
-                      :values (select-keys shape [:shadow])}]
+     [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
      [:& blur-menu {:ids ids
                     :values (select-keys shape [:blur])}]
      [:& svg-attrs-menu {:ids ids

@@ -8,15 +8,13 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.types.color :as ctc]
-   [app.common.uuid :as uuid]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.selection :as dws]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.hooks :as h]
-   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
+   [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -37,36 +35,25 @@
 (def xf:map-shape-id
   (map :shape-id))
 
-(mf/defc color-selection-menu
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]
-   ::mf/wrap-props false}
-  [{:keys [shapes file-id shared-libs]}]
+(mf/defc color-selection-menu*
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]}
+  [{:keys [shapes file-id libraries]}]
   (let [{:keys [groups library-colors colors]}
-        (mf/with-memo [shapes file-id shared-libs]
-          (prepare-colors shapes file-id shared-libs))
+        (mf/with-memo [file-id shapes libraries]
+          (prepare-colors shapes file-id libraries))
 
-        state*           (mf/use-state true)
-        open?            (deref state*)
+        open*            (mf/use-state true)
+        open?            (deref open*)
 
         has-colors?      (or (some? (seq colors)) (some? (seq library-colors)))
 
-        toggle-content   (mf/use-fn #(swap! state* not))
+        toggle-content   (mf/use-fn #(swap! open* not))
 
         expand-lib-color (mf/use-state false)
         expand-color     (mf/use-state false)
 
         groups-ref       (h/use-ref-value groups)
         prev-colors-ref  (mf/use-ref nil)
-
-        initial-color-keys
-        (mf/use-memo
-         #(->> (concat colors library-colors)
-               (reduce
-                (fn [result color]
-                  (assoc result color (dm/str (uuid/next))))
-                {})))
-
-        color-keys*  (mf/use-var initial-color-keys)
 
         on-change
         (mf/use-fn
@@ -95,7 +82,6 @@
                  (mf/set-ref-val! prev-colors-ref
                                   (conj prev-colors color))))
 
-             (swap! color-keys* assoc new-color (get @color-keys* old-color))
              (st/emit! (dc/change-color-in-selected cops new-color old-color)))))
 
         on-open
@@ -139,8 +125,8 @@
          (let [lib-colors (cond->> library-colors (not @expand-lib-color) (take 3))
                lib-colors (concat lib-colors colors)]
            (for [[index color] (d/enumerate lib-colors)]
-             [:& color-row
-              {:key (get @color-keys* color)
+             [:> color-row*
+              {:key index
                :color color
                :index index
                :hidden (not (:id color))
@@ -156,8 +142,8 @@
 
         [:div {:class (stl/css :selected-color-group)}
          (for [[index color] (d/enumerate (cond->> colors (not @expand-color) (take 3)))]
-           [:& color-row
-            {:key (get @color-keys* color)
+           [:> color-row*
+            {:key index
              :color color
              :index index
              :select-only select-only

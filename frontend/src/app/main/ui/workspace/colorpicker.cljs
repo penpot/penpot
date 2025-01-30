@@ -29,7 +29,7 @@
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs]]
-   [app.main.ui.workspace.colorpicker.gradients :refer [gradients]]
+   [app.main.ui.workspace.colorpicker.gradients :refer [gradients*]]
    [app.main.ui.workspace.colorpicker.harmony :refer [harmony-selector]]
    [app.main.ui.workspace.colorpicker.hsva :refer [hsva-selector]]
    [app.main.ui.workspace.colorpicker.libraries :refer [libraries]]
@@ -110,7 +110,7 @@
                                      :linear :linear-gradient
                                      :radial :radial-gradient)
                                    :color))
-        active-color-tab       (mf/use-state (dc/get-active-color-tab))
+        active-color-tab       (mf/use-state #(dc/get-active-color-tab))
         drag?                  (mf/use-state false)
 
         type                   (if (= @active-color-tab "hsva") :hsv :rgb)
@@ -436,7 +436,7 @@
          i/picker])]
 
      (when (= selected-mode :gradient)
-       [:& gradients
+       [:> gradients*
         {:type (:type state)
          :stops (:stops state)
          :editing-stop (:editing-stop state)

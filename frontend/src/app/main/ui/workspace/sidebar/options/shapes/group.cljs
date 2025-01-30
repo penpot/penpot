@@ -12,7 +12,7 @@
    [app.main.refs :as refs]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu]]
@@ -21,7 +21,7 @@
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measures-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-menu]]
    [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]
    [app.main.ui.workspace.sidebar.options.menus.text :as ot]
@@ -102,13 +102,14 @@
      (when-not (empty? stroke-ids)
        [:& stroke-menu {:type type :ids stroke-ids :values stroke-values}])
 
-     [:& color-selection-menu {:type type
-                               :shapes (vals objects)
-                               :file-id file-id
-                               :shared-libs shared-libs}]
+     [:> color-selection-menu*
+      {:type type
+       :shapes (vals objects)
+       :file-id file-id
+       :libraries shared-libs}]
 
      (when-not (empty? shadow-ids)
-       [:& shadow-menu {:type type :ids ids :values (select-keys shape [:shadow])}])
+       [:> shadow-menu* {:ids ids :values (get shape :shadow) :type type}])
 
      (when-not (empty? blur-ids)
        [:& blur-menu {:type type :ids blur-ids :values blur-values}])

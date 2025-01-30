@@ -15,7 +15,7 @@
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu fill-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
@@ -23,7 +23,7 @@
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
    [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu]]
    [rumext.v2 :as mf]))
@@ -146,11 +146,13 @@
                       :disable-stroke-style true}]
 
      (when (= :multiple (:fills fill-values))
-       [:& color-selection-menu {:type type :shapes [shape] :file-id file-id :shared-libs shared-libs}])
+       [:> color-selection-menu*
+        {:type type
+         :shapes [shape]
+         :file-id file-id
+         :libraries shared-libs}])
 
-     [:& shadow-menu
-      {:ids ids
-       :values (select-keys shape [:shadow])}]
+     [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
 
      [:& blur-menu
       {:ids ids
