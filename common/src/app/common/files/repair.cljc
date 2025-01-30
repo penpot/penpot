@@ -494,7 +494,7 @@
   (let [repair-shape
         (fn [shape]
           ;; Remove the swap slot
-          (log/debug :hint (str "  -> remove swap-slot"))
+          (log/debug :hint "  -> remove swap-slot")
           (ctk/remove-swap-slot shape))]
 
     (log/dbg :hint "repairing shape :misplaced-slot" :id (:id shape) :name (:name shape) :page-id page-id)
