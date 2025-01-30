@@ -621,6 +621,7 @@
 
           comment (-> (db/insert! conn :comment params)
                       (decode-row)
+                      (assoc :file-id file-id)
                       (add-owner profile))]
 
       ;; Update thread modified-at attribute and assoc the current
