@@ -1,0 +1,50 @@
+name: 'Commit Message Check'
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+  push:
+    branches:
+      - main
+      - develop
+      - staging
+
+jobs:
+  check-commit-message:
+    name: Check Commit Message
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Commit Type
+        uses: gsactions/commit-message-checker@v2
+        with:
+          pattern: '^:(lipstick|globe_with_meridians|wrench|books|arrow_up|zap|ambulance|construction|boom|fire|whale|bug|sparkles|paperclip|tada|recycle):\s[A-Z].*[^.]$'
+          flags: 'gm'
+          error: 'Commit should match CONTRIBUTING.md guideline'
+          checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
+          accessToken: ${{ secrets.GITHUB_TOKEN }} # github access token is only required if checkAllCommitMessages is true
+
+      # - name: Check Line Length
+      #   uses: gsactions/commit-message-checker@v2
+      #   with:
+      #     pattern: '^[^#].{74}'
+      #     error: 'The maximum line length of 74 characters is exceeded.'
+      #     excludeDescription: 'true' # optional: this excludes the description body of a pull request
+      #     excludeTitle: 'true' # optional: this excludes the title of a pull request
+      #     checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
+      #     accessToken: ${{ secrets.GITHUB_TOKEN }} # github access token is only required if checkAllCommitMessages is ue
+      # - name: Check for Resolves / Fixes
+      #   uses: gsactions/commit-message-checker@v2
+      #   with:
+      #     pattern: '^.+(Resolves|Fixes): \#[0-9]+$'
+      #     error: 'You need at least one "Resolves|Fixes: #<issue number>" line.'
+
+
