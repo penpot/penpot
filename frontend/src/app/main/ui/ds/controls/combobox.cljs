@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list] :as i]
    [app.util.array :as array]
@@ -242,17 +243,18 @@
                 :on-change on-input-change
                 :on-key-down on-key-down}]]
 
-      [:> :button {:type "button"
-                   :tab-index "-1"
-                   :aria-expanded open
-                   :aria-controls listbox-id
-                   :class (stl/css :button-toggle-list)
-                   :on-click on-click}
-       [:> icon* {:icon-id i/arrow
-                  :class (stl/css :arrow)
-                  :size "s"
-                  :aria-hidden true
-                  :data-testid "combobox-open-button"}]]]
+      (when (d/not-empty? options)
+        [:> :button {:type "button"
+                     :tab-index "-1"
+                     :aria-expanded open
+                     :aria-controls listbox-id
+                     :class (stl/css :button-toggle-list)
+                     :on-click on-click}
+         [:> icon* {:icon-id i/arrow
+                    :class (stl/css :arrow)
+                    :size "s"
+                    :aria-hidden true
+                    :data-testid "combobox-open-button"}]])]
 
      (when (and open (seq dropdown-options))
        [:> options-dropdown* {:on-click on-option-click
