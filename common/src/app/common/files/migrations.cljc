@@ -81,7 +81,7 @@
                 (take-while #(<= % version))
                 (map #(str "legacy-" %))
                 (filter #(contains? available-migrations %)))
-        result (transduce xform conj (d/ordered-set) (range 1 65))]
+        result (transduce xform conj (d/ordered-set) (range 1 (inc cfd/version)))]
     result))
 
 (defn migrate-file
