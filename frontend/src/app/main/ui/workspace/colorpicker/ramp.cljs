@@ -111,6 +111,11 @@
              (reset! internal-color* color)
              (on-change color))))]
 
+    (mf/use-effect
+     (mf/deps color)
+     (fn []
+       (reset! internal-color* (enrich-color-map color))))
+
     [:*
      [:& value-saturation-selector
       {:hue h
