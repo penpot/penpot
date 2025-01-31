@@ -1,11 +1,10 @@
-use skia::Contains;
 use skia_safe as skia;
 use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::math;
 use crate::view::Viewbox;
-use skia::Matrix;
+use skia::{Contains, Matrix};
 
 mod blend;
 mod cache;
@@ -60,6 +59,7 @@ pub(crate) struct RenderState {
     pub render_surface: skia::Surface,
     pub drawing_surface: skia::Surface,
     pub shadow_surface: skia::Surface,
+    pub overlay_surface: skia::Surface,
     pub debug_surface: skia::Surface,
     pub font_provider: skia::textlayout::TypefaceFontProvider,
     pub cached_surface_image: Option<CachedSurfaceImage>,
@@ -86,6 +86,9 @@ impl RenderState {
         let shadow_surface = final_surface
             .new_surface_with_dimensions((width, height))
             .unwrap();
+        let overlay_surface = final_surface
+            .new_surface_with_dimensions((width, height))
+            .unwrap();
         let drawing_surface = final_surface
             .new_surface_with_dimensions((width, height))
             .unwrap();
@@ -102,6 +105,7 @@ impl RenderState {
             gpu_state,
             final_surface,
             render_surface,
+            overlay_surface,
             shadow_surface,
             drawing_surface,
             debug_surface,
@@ -164,6 +168,10 @@ impl RenderState {
             .final_surface
             .new_surface_with_dimensions((dpr_width, dpr_height))
             .unwrap();
+        self.overlay_surface = self
+            .final_surface
+            .new_surface_with_dimensions((dpr_width, dpr_height))
+            .unwrap();
         self.shadow_surface = self
             .final_surface
             .new_surface_with_dimensions((dpr_width, dpr_height))
@@ -201,6 +209,14 @@ impl RenderState {
             .canvas()
             .clear(self.background_color)
             .reset_matrix();
+        self.overlay_surface
+            .canvas()
+            .clear(self.background_color)
+            .reset_matrix();
+        self.final_surface
+            .canvas()
+            .clear(self.background_color)
+            .reset_matrix();
         self.debug_surface
             .canvas()
             .clear(skia::Color::TRANSPARENT)
@@ -232,8 +248,20 @@ impl RenderState {
             .context
             .flush_and_submit_surface(&mut self.render_surface, None);
 
-        self.shadow_surface.canvas().clear(skia::Color::TRANSPARENT);
+        self.gpu_state
+            .context
+            .flush_and_submit_surface(&mut self.overlay_surface, None);
+        self.overlay_surface.draw(
+            &mut self.render_surface.canvas(),
+            (0.0, 0.0),
+            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
+            None,
+        );
 
+        self.shadow_surface.canvas().clear(skia::Color::TRANSPARENT);
+        self.overlay_surface
+            .canvas()
+            .clear(skia::Color::TRANSPARENT);
         self.drawing_surface
             .canvas()
             .clear(skia::Color::TRANSPARENT);
@@ -296,12 +324,24 @@ impl RenderState {
                 for stroke in shape.strokes().rev() {
                     strokes::render(self, shape, stroke);
                 }
+
+                for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
+                    shadows::render_inner_shadow(
+                        self,
+                        shadow,
+                        self.viewbox.zoom * self.options.dpr(),
+                    );
+                }
+
+                for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
+                    shadows::render_drop_shadow(
+                        self,
+                        shadow,
+                        self.viewbox.zoom * self.options.dpr(),
+                    );
+                }
             }
         };
-
-        for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
-            shadows::render_drop_shadow(self, shadow, self.viewbox.zoom * self.options.dpr());
-        }
 
         self.apply_drawing_to_render_canvas();
     }
