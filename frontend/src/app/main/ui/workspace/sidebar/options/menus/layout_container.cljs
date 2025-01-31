@@ -334,12 +334,13 @@
 
     [:div {:class (stl/css :paddings-simple)}
      [:div {:class (stl/css :padding-simple)
-            :title "Vertical padding"}
+            :title (tr "workspace.layout_grid.editor.padding.vertical")}
       [:span {:class (stl/css :icon)}
        i/padding-top-bottom]
       [:> numeric-input*
        {:class (stl/css :numeric-input)
         :placeholder (tr "settings.multiple")
+        :aria-label (tr "workspace.layout_grid.editor.padding.vertical")
         :data-attr "p1"
         :on-change on-change'
         :on-focus on-focus
@@ -347,13 +348,14 @@
         :min 0
         :value p1}]]
      [:div {:class (stl/css :padding-simple)
-            :title "Horizontal padding"}
+            :title (tr "workspace.layout_grid.editor.padding.horizontal")}
 
       [:span {:class (stl/css :icon)}
        i/padding-left-right]
       [:> numeric-input*
        {:className (stl/css :numeric-input)
         :placeholder (tr "settings.multiple")
+        :aria-label (tr "workspace.layout_grid.editor.padding.horizontal")
         :data-attr "p2"
         :on-change on-change'
         :on-focus on-focus
@@ -391,12 +393,13 @@
 
     [:div {:class (stl/css :paddings-multiple)}
      [:div {:class (stl/css :padding-multiple)
-            :title "Top padding"}
+            :title (tr "workspace.layout_grid.editor.padding.top")}
       [:span {:class (stl/css :icon)}
        i/padding-top]
       [:> numeric-input*
        {:class (stl/css :numeric-input)
         :placeholder "--"
+        :aria-label (tr "workspace.layout_grid.editor.padding.top")
         :data-attr "p1"
         :on-change on-change'
         :on-focus on-focus
@@ -405,12 +408,13 @@
         :value p1}]]
 
      [:div {:class (stl/css :padding-multiple)
-            :title "Right padding"}
+            :title (tr "workspace.layout_grid.editor.padding.right")}
       [:span {:class (stl/css :icon)}
        i/padding-right]
       [:> numeric-input*
        {:class (stl/css :numeric-input)
         :placeholder "--"
+        :aria-label (tr "workspace.layout_grid.editor.padding.right")
         :data-attr "p2"
         :on-change on-change'
         :on-focus on-focus
@@ -419,12 +423,13 @@
         :value p2}]]
 
      [:div {:class (stl/css :padding-multiple)
-            :title "Bottom padding"}
+            :title (tr "workspace.layout_grid.editor.padding.bottom")}
       [:span {:class (stl/css :icon)}
        i/padding-bottom]
       [:> numeric-input*
        {:class (stl/css :numeric-input)
         :placeholder "--"
+        :aria-label (tr "workspace.layout_grid.editor.padding.bottom")
         :data-attr "p3"
         :on-change on-change'
         :on-focus on-focus
@@ -433,12 +438,13 @@
         :value p3}]]
 
      [:div {:class (stl/css :padding-multiple)
-            :title "Left padding"}
+            :title (tr "workspace.layout_grid.editor.padding.left")}
       [:span {:class (stl/css :icon)}
        i/padding-left]
       [:> numeric-input*
        {:class (stl/css :numeric-input)
         :placeholder "--"
+        :aria-label (tr "workspace.layout_grid.editor.padding.left")
         :data-attr "p4"
         :on-change on-change'
         :on-focus on-focus
@@ -478,6 +484,7 @@
                        :padding-toggle true
                        :selected (= type :multiple))
                :title (tr "workspace.layout_grid.editor.padding.expand")
+               :aria-label (tr "workspace.layout_grid.editor.padding.expand")
                :data-type (d/name type)
                :on-click on-type-change'}
       i/padding-extended]]))

@@ -4627,6 +4627,30 @@ msgstr "Salir"
 msgid "workspace.layout_grid.editor.padding.expand"
 msgstr "Mostrar el padding a 4 lados"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:337
+msgid "workspace.layout_grid.editor.padding.vertical"
+msgstr "Padding vertical"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:351
+msgid "workspace.layout_grid.editor.padding.horizontal"
+msgstr "Padding horizontal"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:396
+msgid "workspace.layout_grid.editor.padding.top"
+msgstr "Padding superior"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:411
+msgid "workspace.layout_grid.editor.padding.right"
+msgstr "Padding derecho"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:425
+msgid "workspace.layout_grid.editor.padding.bottom"
+msgstr "Padding inferior"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:439
+msgid "workspace.layout_grid.editor.padding.left"
+msgstr "Padding izquierdo"
+
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:59
 msgid "workspace.layout_grid.editor.title"
 msgstr "Editando rejilla"
