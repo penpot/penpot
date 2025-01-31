@@ -8,10 +8,12 @@ source ~/.bashrc
 
 echo "[start-tmux.sh] Installing node dependencies"
 pushd ~/penpot/frontend/
-yarn install
+corepack up;
+yarn install;
 yarn run playwright install --with-deps chromium
 popd
 pushd ~/penpot/exporter/
+corepack up;
 yarn install
 yarn run playwright install --with-deps chromium
 popd

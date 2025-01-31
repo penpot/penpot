@@ -162,7 +162,6 @@ RUN set -eux; \
     tar -xf /tmp/nodejs.tar.gz --strip-components=1; \
     chown -R root /usr/local/nodejs; \
     corepack enable; \
-    corepack install -g yarn@4.3.1; \
     npx playwright install --with-deps chromium; \
     rm -rf /tmp/nodejs.tar.gz;
 
@@ -276,14 +275,6 @@ RUN set -eux; \
   ./emsdk install latest; \
   ./emsdk activate latest; \
   rustup target add wasm32-unknown-emscripten;
-
-USER penpot
-
-RUN set -eux; \
-    corepack enable; \
-    corepack install -g yarn@4.3.1;
-
-USER root
 
 WORKDIR /home
 
