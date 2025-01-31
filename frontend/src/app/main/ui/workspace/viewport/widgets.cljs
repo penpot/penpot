@@ -147,9 +147,10 @@
         (mf/use-fn
          (mf/deps frame-id edition?)
          (fn []
-           (if (not edition?)
-             (reset! edition* true)
-             (st/emit! (dw/start-rename-shape frame-id)))))
+           (when-not (-> @st/state :workspace-global :read-only?)
+             (if (not edition?)
+               (reset! edition* true)
+               (st/emit! (dw/start-rename-shape frame-id))))))
 
         accept-edit
         (mf/use-fn
