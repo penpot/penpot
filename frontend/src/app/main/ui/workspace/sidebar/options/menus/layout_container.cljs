@@ -303,12 +303,12 @@
         p1 (if (and (not (= :multiple value))
                     (= p1 p3))
              p1
-             "--")
+             nil)
 
         p2 (if (and (not (= :multiple value))
                     (= p2 p4))
              p2
-             "--")
+             nil)
 
         on-change'
         (mf/use-fn
@@ -339,10 +339,11 @@
        i/padding-top-bottom]
       [:> numeric-input*
        {:class (stl/css :numeric-input)
-        :placeholder "--"
+        :placeholder (tr "settings.multiple")
         :data-attr "p1"
         :on-change on-change'
         :on-focus on-focus
+        :nillable true
         :min 0
         :value p1}]]
      [:div {:class (stl/css :padding-simple)
@@ -352,12 +353,13 @@
        i/padding-left-right]
       [:> numeric-input*
        {:className (stl/css :numeric-input)
-        :placeholder "--"
+        :placeholder (tr "settings.multiple")
         :data-attr "p2"
         :on-change on-change'
         :on-focus on-focus
         :on-blur on-padding-blur
         :min 0
+        :nillable true
         :value p2}]]]))
 
 (mf/defc multiple-padding-selection
