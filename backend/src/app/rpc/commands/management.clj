@@ -57,7 +57,7 @@
 
     ;; Process and persist file
     (let [file (->> (bfc/process-file file)
-                    (bfc/persist-file! cfg))]
+                    (bfc/save-file! cfg))]
 
       ;; The file profile creation is optional, so when no profile is
       ;; present (when this function is called from profile less
@@ -86,7 +86,7 @@
                                fmeds)]
         (db/insert! conn :file-media-object params ::db/return-keys false))
 
-      file)))
+      (bfc/decode-file cfg file))))
 
 (def ^:private
   schema:duplicate-file

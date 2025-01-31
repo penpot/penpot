@@ -424,21 +424,15 @@
 (s/def ::bfc/profile-id ::us/uuid)
 (s/def ::bfc/project-id ::us/uuid)
 (s/def ::bfc/input io/input-stream?)
-(s/def ::overwrite? (s/nilable ::us/boolean))
 (s/def ::ignore-index-errors? (s/nilable ::us/boolean))
 
-;; FIXME: replace with schema
 (s/def ::read-import-options
   (s/keys :req [::db/pool ::sto/storage ::bfc/project-id ::bfc/profile-id ::bfc/input]
-          :opt [::overwrite? ::ignore-index-errors?]))
+          :opt [::ignore-index-errors?]))
 
 (defn read-import!
   "Do the importation of the specified resource in penpot custom binary
-  format. There are some options for customize the importation
-  behavior:
-
-  `::bfc/overwrite`: if true, instead of creating new files and remapping id references,
-  it reuses all ids and updates existing objects; defaults to `false`."
+  format."
   [{:keys [::bfc/input ::bfc/timestamp] :or {timestamp (dt/now)} :as options}]
 
   (dm/assert!
@@ -509,8 +503,7 @@
         thumbnails))
 
 (defmethod read-section :v1/files
-  [{:keys [::db/conn ::bfc/input ::bfc/project-id ::bfc/overwrite ::bfc/name] :as system}]
-
+  [{:keys [::bfc/input ::bfc/project-id ::bfc/name] :as system}]
   (doseq [[idx expected-file-id] (d/enumerate (-> bfc/*state* deref :files))]
     (let [file       (read-obj! input)
           media      (read-obj! input)
@@ -568,10 +561,7 @@
           (vswap! bfc/*state* update :pending-to-migrate (fnil conj []) [feature file-id']))
 
         (l/dbg :hint "create file" :id (str file-id') ::l/sync? true)
-        (bfc/persist-file! system file)
-
-        (when overwrite
-          (db/delete! conn :file-thumbnail {:file-id file-id'}))
+        (bfc/save-file! system file)
 
         file-id'))))
 
@@ -600,7 +590,7 @@
                   ::l/sync? true))))))
 
 (defmethod read-section :v1/sobjects
-  [{:keys [::db/conn ::bfc/input ::bfc/overwrite ::bfc/timestamp] :as cfg}]
+  [{:keys [::db/conn ::bfc/input ::bfc/timestamp] :as cfg}]
   (let [storage (sto/resolve cfg)
         ids     (read-obj! input)
         thumb?  (into #{} (map :media-id) (:thumbnails @bfc/*state*))]
@@ -653,8 +643,7 @@
                       (-> item
                           (assoc :file-id file-id)
                           (d/update-when :media-id bfc/lookup-index)
-                          (d/update-when :thumbnail-id bfc/lookup-index))
-                      {::db/on-conflict-do-nothing? overwrite}))))
+                          (d/update-when :thumbnail-id bfc/lookup-index))))))
 
     (doseq [item (:thumbnails @bfc/*state*)]
       (let [item (update item :media-id bfc/lookup-index)]
@@ -663,8 +652,7 @@
                :media-id (str (:media-id item))
                :object-id (:object-id item)
                ::l/sync? true)
-        (db/insert! conn :file-tagged-object-thumbnail item
-                    {::db/on-conflict-do-nothing? overwrite})))))
+        (db/insert! conn :file-tagged-object-thumbnail item)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HIGH LEVEL API

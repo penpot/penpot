@@ -25,6 +25,7 @@
    [app.features.fdata :as feat.fdata]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
+   [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.util.time :as dt]
@@ -148,17 +149,30 @@
     features (assoc :features (db/decode-pgarray features #{}))
     data     (assoc :data (blob/decode data))))
 
+(defn decode-file
+  "A general purpose file decoding function that resolves all external
+  pointers, run migrations and return plain vanilla file map"
+  [cfg {:keys [id] :as file}]
+  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
+    (-> (feat.fdata/resolve-file-data cfg file)
+        (update :features db/decode-pgarray #{})
+        (update :data blob/decode)
+        (update :data feat.fdata/process-pointers deref)
+        (update :data feat.fdata/process-objects (partial into {}))
+        (update :data assoc :id id)
+        (fmg/migrate-file))))
+
 (defn get-file
-  [cfg file-id]
+  "Get file, resolve all features and apply migrations.
+
+  Usefull when you have plan to apply massive or not cirurgical
+  operations on file, because it removes the ovehead of lazy fetching
+  and decoding."
+  [cfg file-id & {:as opts}]
   (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                 (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
-                   (when-let [file (db/get* conn :file {:id file-id}
-                                            {::db/remove-deleted false})]
-                     (let [file (feat.fdata/resolve-file-data cfg file)]
-                       (-> file
-                           (decode-row)
-                           (update :data feat.fdata/process-pointers deref)
-                           (update :data feat.fdata/process-objects (partial into {})))))))))
+                 (some->> (db/get* conn :file {:id file-id}
+                                   (assoc opts ::db/remove-deleted false))
+                          (decode-file cfg)))))
 
 (defn clean-file-features
   [file]
@@ -306,19 +320,15 @@
 
     file))
 
-(defn get-file-media
-  [cfg {:keys [data id] :as file}]
-  (db/run! cfg (fn [{:keys [::db/conn]}]
-                 (let [ids (cfh/collect-used-media data)
-                       ids (db/create-array conn "uuid" ids)
-                       sql (str "SELECT * FROM file_media_object WHERE id = ANY(?)")]
+(def sql:get-file-media
+  "SELECT * FROM file_media_object WHERE id = ANY(?)")
 
-                   ;; We assoc the file-id again to the file-media-object row
-                   ;; because there are cases that used objects refer to other
-                   ;; files and we need to ensure in the exportation process that
-                   ;; all ids matches
-                   (->> (db/exec! conn [sql ids])
-                        (mapv #(assoc % :file-id id)))))))
+(defn get-file-media
+  [cfg {:keys [data] :as file}]
+  (db/run! cfg (fn [{:keys [::db/conn]}]
+                 (let [used (cfh/collect-used-media data)
+                       used (db/create-array conn "uuid" used)]
+                   (db/exec! conn [sql:get-file-media used])))))
 
 (def ^:private sql:get-team-files-ids
   "SELECT f.id FROM file AS f
@@ -431,75 +441,96 @@
                           (update :colors relink-colors)
                           (d/without-nils))))))
 
-(defn- upsert-file!
-  [conn file]
-  (let [sql (str "INSERT INTO file (id, project_id, name, revn, version, is_shared, data, created_at, modified_at) "
-                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) "
-                 "ON CONFLICT (id) DO UPDATE SET data=?, version=?")]
-    (db/exec-one! conn [sql
-                        (:id file)
-                        (:project-id file)
-                        (:name file)
-                        (:revn file)
-                        (:version file)
-                        (:is-shared file)
-                        (:data file)
-                        (:created-at file)
-                        (:modified-at file)
-                        (:data file)
-                        (:version file)])))
+(defn- encode-file
+  [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
+  (let [file (if (contains? (:features file) "fdata/objects-map")
+               (feat.fdata/enable-objects-map file)
+               file)
 
-(defn persist-file!
-  "Applies all the final validations and perist the file."
-  [{:keys [::db/conn ::timestamp] :as cfg} {:keys [id] :as file}]
+        file (if (contains? (:features file) "fdata/pointer-map")
+               (binding [pmap/*tracked* (pmap/create-tracked)]
+                 (let [file (feat.fdata/enable-pointer-map file)]
+                   (feat.fdata/persist-pointers! cfg id)
+                   file))
+               file)]
+
+    (-> file
+        (update :features db/encode-pgarray conn "text")
+        (update :data blob/encode))))
+
+(defn- file->params
+  [file]
+  (let [params {:has-media-trimmed (:has-media-trimmed file)
+                :ignore-sync-until (:ignore-sync-until file)
+                :project-id (:project-id file)
+                :features (:features file)
+                :name (:name file)
+                :is-shared (:is-shared file)
+                :version (:version file)
+                :data (:data file)
+                :id (:id file)
+                :deleted-at (:deleted-at file)
+                :created-at (:created-at file)
+                :modified-at (:modified-at file)
+                :revn (:revn file)
+                :vern (:vern file)}]
+
+    (-> (d/without-nils params)
+        (assoc :data-backend nil)
+        (assoc :data-ref-id nil))))
+
+(defn insert-file!
+  "Insert a new file into the database table"
+  [{:keys [::db/conn] :as cfg} file]
+  (let [params (-> (encode-file cfg file)
+                   (file->params))]
+    (db/insert! conn :file params {::db/return-keys true})))
+
+(defn update-file!
+  "Update an existing file on the database."
+  [{:keys [::db/conn ::sto/storage] :as cfg} {:keys [id] :as file}]
+  (let [file   (encode-file cfg file)
+        params (-> (file->params file)
+                   (dissoc :id))]
+
+    ;; If file was already offloaded, we touch the underlying storage
+    ;; object for properly trigger storage-gc-touched task
+    (when (feat.fdata/offloaded? file)
+      (some->> (:data-ref-id file) (sto/touch-object! storage)))
+
+    (db/update! conn :file params {:id id} {::db/return-keys true})))
+
+(defn save-file!
+  "Applies all the final validations and perist the file, binfile
+  specific, should not be used outside of binfile domain"
+  [{:keys [::timestamp] :as cfg} file]
 
   (dm/assert!
    "expected valid timestamp"
    (dt/instant? timestamp))
 
-  (let [file   (-> file
-                   (assoc :created-at timestamp)
-                   (assoc :modified-at timestamp)
-                   (assoc :ignore-sync-until (dt/plus timestamp (dt/duration {:seconds 5})))
-                   (update :features
-                           (fn [features]
-                             (let [features (cfeat/check-supported-features! features)]
-                               (-> (::features cfg #{})
-                                   (set/union features)
-                                   ;; We never want to store
-                                   ;; frontend-only features on file
-                                   (set/difference cfeat/frontend-only-features))))))
+  (let [file (-> file
+                 (assoc :created-at timestamp)
+                 (assoc :modified-at timestamp)
+                 (assoc :ignore-sync-until (dt/plus timestamp (dt/duration {:seconds 5})))
+                 (update :features
+                         (fn [features]
+                           (let [features (cfeat/check-supported-features! features)]
+                             (-> (::features cfg #{})
+                                 (set/union features)
+                                 ;; We never want to store
+                                 ;; frontend-only features on file
+                                 (set/difference cfeat/frontend-only-features))))))]
 
+    (when (contains? cf/flags :file-schema-validation)
+      (fval/validate-file-schema! file))
 
-        _      (when (contains? cf/flags :file-schema-validation)
-                 (fval/validate-file-schema! file))
+    (when (contains? cf/flags :soft-file-schema-validation)
+      (let [result (ex/try! (fval/validate-file-schema! file))]
+        (when (ex/exception? result)
+          (l/error :hint "file schema validation error" :cause result))))
 
-        _      (when (contains? cf/flags :soft-file-schema-validation)
-                 (let [result (ex/try! (fval/validate-file-schema! file))]
-                   (when (ex/exception? result)
-                     (l/error :hint "file schema validation error" :cause result))))
-
-        file   (if (contains? (:features file) "fdata/objects-map")
-                 (feat.fdata/enable-objects-map file)
-                 file)
-
-        file   (if (contains? (:features file) "fdata/pointer-map")
-                 (binding [pmap/*tracked* (pmap/create-tracked)]
-                   (let [file (feat.fdata/enable-pointer-map file)]
-                     (feat.fdata/persist-pointers! cfg id)
-                     file))
-                 file)
-
-        params (-> file
-                   (update :features db/encode-pgarray conn "text")
-                   (update :data blob/encode))]
-
-    (if (::overwrite cfg)
-      (upsert-file! conn params)
-      (db/insert! conn :file params ::db/return-keys false))
-
-    file))
-
+    (insert-file! cfg file)))
 
 (defn register-pending-migrations
   "All features that are enabled and requires explicit migration are

@@ -16,6 +16,7 @@
    [app.db.sql :as sql]
    [app.http :as http]
    [app.rpc :as-alias rpc]
+   [app.rpc.commands.files :as files]
    [app.storage :as sto]
    [app.util.time :as dt]
    [backend-tests.helpers :as th]
@@ -1827,5 +1828,3 @@
 
       (t/is (= (:id file-2) (:file-id (get rows 0))))
       (t/is (nil? (:deleted-at (get rows 0)))))))
-
-

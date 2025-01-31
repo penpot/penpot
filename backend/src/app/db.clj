@@ -413,7 +413,7 @@
 
 (def ^:private default-plan-opts
   (-> default-opts
-      (assoc :fetch-size 1)
+      (assoc :fetch-size 1000)
       (assoc :concurrency :read-only)
       (assoc :cursors :close)
       (assoc :result-type :forward-only)))

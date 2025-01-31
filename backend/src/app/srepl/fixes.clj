@@ -272,6 +272,7 @@
                (reduce +)))
 
         num-missing-slots (count-slots-data (:data file))]
+
     (when (pos? num-missing-slots)
       (l/trc :info (str "Shapes with children with the same swap slot: " num-missing-slots) :file-id (str (:id file))))
     file))
