@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
+set -x
+
+_SCRIPT_DIR=$(dirname $0);
+pushd $_SCRIPT_DIR;
 
 . ./_build_env 
 
-set -x
-
-pushd $_SCRIPT_DIR;
 cargo build $_CARGO_PARAMS
 
 cp target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.js ../frontend/resources/public/js/

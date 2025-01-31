@@ -24,7 +24,6 @@ EMSDK_QUIET=1 . /usr/local/emsdk/emsdk_env.sh;
 
 export EM_CACHE="/tmp/emsdk_cache";
 
-_SCRIPT_DIR=$(dirname $0);
 _CARGO_PARAMS="--target=wasm32-unknown-emscripten";
 
 if [ "$_BUILD_MODE" = "release" ]; then
