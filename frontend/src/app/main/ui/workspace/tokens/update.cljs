@@ -4,6 +4,7 @@
    [app.common.types.token :as ctt]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.ui.workspace.tokens.changes :as wtch]
@@ -91,6 +92,7 @@
 (defn- collect-shapes-update-info [resolved-tokens objects]
   (loop [items (seq objects)
          frame-ids #{}
+         text-ids []
          tokens {}]
     (if-let [[shape-id {:keys [applied-tokens] :as shape}] (first items)]
       (let [applied-tokens
@@ -105,9 +107,12 @@
                (if parent-frame-id
                  (conj frame-ids parent-frame-id)
                  frame-ids)
+               (if (cfh/text-shape? shape)
+                 (conj text-ids shape-id)
+                 text-ids)
                (deep-merge tokens applied-tokens)))
 
-      [tokens frame-ids])))
+      [tokens frame-ids text-ids])))
 
 ;; FIXME: revisit this
 (defn- actionize-shapes-update-info [page-id shapes-update-info]
@@ -121,15 +126,16 @@
 
 (defn update-tokens
   [state resolved-tokens]
-  (let [file-id (get state :current-file-id)
-        fdata   (dsh/lookup-file-data state file-id)]
+  (let [file-id         (get state :current-file-id)
+        current-page-id (get state :current-page-id)
+        fdata           (dsh/lookup-file-data state file-id)]
     (->> (rx/from (:pages fdata))
          (rx/mapcat
           (fn [page-id]
             (let [page
                   (dsh/get-page fdata page-id)
 
-                  [attrs frame-ids]
+                  [attrs frame-ids text-ids]
                   (collect-shapes-update-info resolved-tokens (:objects page))
 
                   actions
@@ -139,8 +145,14 @@
                (rx/from actions)
                (->> (rx/from frame-ids)
                     (rx/mapcat (fn [frame-id]
-                                 (rx/of (dwt/clear-thumbnail file-id  page-id frame-id "frame")
-                                        (dwt/clear-thumbnail file-id  page-id frame-id "component"))))))))))))
+                                 (rx/of (dwt/clear-thumbnail file-id page-id frame-id "frame")
+                                        (dwt/clear-thumbnail file-id page-id frame-id "component")))))
+               (when (not= page-id current-page-id)   ;; Texts in the current page have already their position-data regenerated
+                 (rx/of (dwsh/update-shapes text-ids  ;; after change. But those on other pages need to be specifically reset.
+                                            (fn [shape]
+                                              (dissoc shape :position-data))
+                                            {:page-id page-id
+                                             :ignore-touched true}))))))))))
 
 (defn update-workspace-tokens
   []
