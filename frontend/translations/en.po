@@ -395,7 +395,7 @@ msgstr "The token will expire on %s"
 msgid "dashboard.access-tokens.token-will-not-expire"
 msgstr "The token has no expiration date"
 
-#: src/app/main/ui/dashboard/placeholder.cljs:48
+#: src/app/main/ui/dashboard/placeholder.cljs:54
 msgid "dashboard.add-file"
 msgstr "Add file"
 
@@ -407,7 +407,7 @@ msgstr "Add as Shared Library"
 msgid "dashboard.change-email"
 msgstr "Change email"
 
-#: src/app/main/data/dashboard.cljs:288, src/app/main/data/dashboard.cljs:507
+#: src/app/main/data/dashboard.cljs:288, src/app/main/data/dashboard.cljs:508
 msgid "dashboard.copy-suffix"
 msgstr "(copy)"
 
@@ -459,7 +459,7 @@ msgstr "Once a project member creates a file, it will be displayed here."
 msgid "dashboard.empty-placeholder-files-title"
 msgstr "No files yet."
 
-#: src/app/main/ui/dashboard/placeholder.cljs:40
+#: src/app/main/ui/dashboard/placeholder.cljs:43
 #, markdown
 msgid "dashboard.empty-placeholder-libraries"
 msgstr ""
@@ -475,11 +475,11 @@ msgstr ""
 "add from our [Libraries & "
 "templates](https://penpot.app/libraries-templates)."
 
-#: src/app/main/ui/dashboard/placeholder.cljs:36
+#: src/app/main/ui/dashboard/placeholder.cljs:39
 msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
 msgstr "Libraries added to the project will appear here."
 
-#: src/app/main/ui/dashboard/placeholder.cljs:33
+#: src/app/main/ui/dashboard/placeholder.cljs:36
 msgid "dashboard.empty-placeholder-libraries-title"
 msgstr "No libraries yet."
 
@@ -723,7 +723,7 @@ msgstr "There was a problem importing the template. The template wasn't imported
 msgid "dashboard.libraries-title"
 msgstr "Libraries"
 
-#: src/app/main/ui/dashboard/placeholder.cljs:55
+#: src/app/main/ui/dashboard/placeholder.cljs:64
 msgid "dashboard.loading-files"
 msgstr "loading your files …"
 
@@ -747,7 +747,7 @@ msgstr "Move to other team"
 msgid "dashboard.new-file"
 msgstr "+ New File"
 
-#: src/app/main/data/dashboard.cljs:482, src/app/main/data/dashboard.cljs:591
+#: src/app/main/data/dashboard.cljs:483, src/app/main/data/dashboard.cljs:592
 msgid "dashboard.new-file-prefix"
 msgstr "New File"
 
@@ -755,7 +755,7 @@ msgstr "New File"
 msgid "dashboard.new-project"
 msgstr "+ New project"
 
-#: src/app/main/data/dashboard.cljs:252, src/app/main/data/dashboard.cljs:594
+#: src/app/main/data/dashboard.cljs:252, src/app/main/data/dashboard.cljs:595
 msgid "dashboard.new-project-prefix"
 msgstr "New Project"
 
@@ -1095,7 +1095,7 @@ msgstr "Components to update:"
 msgid "ds.confirm-allow"
 msgstr "Allow"
 
-#: src/app/main/ui/comments.cljs:653, src/app/main/ui/comments.cljs:686, src/app/main/ui/comments.cljs:755, src/app/main/ui/confirm.cljs:36, src/app/main/ui/workspace/plugins.cljs:330, src/app/main/ui/workspace/plugins.cljs:384
+#: src/app/main/ui/comments.cljs:629, src/app/main/ui/confirm.cljs:36, src/app/main/ui/workspace/plugins.cljs:330, src/app/main/ui/workspace/plugins.cljs:384
 msgid "ds.confirm-cancel"
 msgstr "Cancel"
 
@@ -1703,7 +1703,7 @@ msgstr "Admin"
 msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
-#: src/app/main/ui/workspace/tokens/context_menu.cljs:63, src/app/main/ui/workspace/tokens/context_menu.cljs:101, src/app/main/ui/workspace/tokens/token_pill.cljs:110
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:64, src/app/main/ui/workspace/tokens/context_menu.cljs:102, src/app/main/ui/workspace/tokens/token_pill.cljs:110
 msgid "labels.all"
 msgstr "All"
 
@@ -1741,15 +1741,15 @@ msgstr "Close"
 msgid "labels.collapse"
 msgstr "Collapse"
 
-#: src/app/main/ui/comments.cljs:812
+#: src/app/main/ui/comments.cljs:825
 msgid "labels.comment"
 msgstr "Comment"
 
-#: src/app/main/ui/comments.cljs:816
+#: src/app/main/ui/comments.cljs:829
 msgid "labels.comment.mark-as-solved"
 msgstr "Mark as solved"
 
-#: src/app/main/ui/viewer/comments.cljs:70, src/app/main/ui/workspace/comments.cljs:123
+#: src/app/main/ui/viewer/comments.cljs:71, src/app/main/ui/workspace/comments.cljs:123
 msgid "labels.comments"
 msgstr "Comments"
 
@@ -1805,11 +1805,11 @@ msgstr "Dashboard"
 msgid "labels.delete"
 msgstr "Delete"
 
-#: src/app/main/ui/comments.cljs:907
+#: src/app/main/ui/comments.cljs:920
 msgid "labels.delete-comment"
 msgstr "Delete comment"
 
-#: src/app/main/ui/comments.cljs:830
+#: src/app/main/ui/comments.cljs:843
 msgid "labels.delete-comment-thread"
 msgstr "Delete thread"
 
@@ -1837,7 +1837,7 @@ msgstr "Discard"
 msgid "labels.drafts"
 msgstr "Drafts"
 
-#: src/app/main/ui/comments.cljs:903, src/app/main/ui/dashboard/fonts.cljs:256, src/app/main/ui/dashboard/team.cljs:950, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:205, src/app/main/ui/workspace/tokens/sidebar.cljs:198
+#: src/app/main/ui/comments.cljs:916, src/app/main/ui/dashboard/fonts.cljs:256, src/app/main/ui/dashboard/team.cljs:950, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:205, src/app/main/ui/workspace/tokens/sidebar.cljs:198
 msgid "labels.edit"
 msgstr "Edit"
 
@@ -1917,7 +1917,7 @@ msgstr "Graphic design"
 msgid "labels.help-center"
 msgstr "Help Center"
 
-#: src/app/main/ui/viewer/comments.cljs:103, src/app/main/ui/workspace/comments.cljs:72
+#: src/app/main/ui/viewer/comments.cljs:104, src/app/main/ui/workspace/comments.cljs:72
 msgid "labels.hide-resolved-comments"
 msgstr "Hide resolved comments"
 
@@ -1959,7 +1959,7 @@ msgstr "Language"
 msgid "labels.libraries-and-templates"
 msgstr "Libraries & Templates"
 
-#: src/app/main/ui/auth/verify_token.cljs:100, src/app/main/ui/dashboard/grid.cljs:114, src/app/main/ui/dashboard/grid.cljs:133, src/app/main/ui/dashboard/import.cljs:253, src/app/main/ui/dashboard/placeholder.cljs:53, src/app/main/ui/ds/product/loader.cljs:52, src/app/main/ui/exports/files.cljs:62, src/app/main/ui/viewer.cljs:643, src/app/main/ui/workspace.cljs:126, src/app/main/ui.cljs:67, src/app/main/ui.cljs:105, src/app/main/ui.cljs:124
+#: src/app/main/ui/auth/verify_token.cljs:100, src/app/main/ui/dashboard/grid.cljs:114, src/app/main/ui/dashboard/grid.cljs:133, src/app/main/ui/dashboard/import.cljs:253, src/app/main/ui/dashboard/placeholder.cljs:62, src/app/main/ui/ds/product/loader.cljs:52, src/app/main/ui/exports/files.cljs:62, src/app/main/ui/viewer.cljs:643, src/app/main/ui/workspace.cljs:126, src/app/main/ui.cljs:67, src/app/main/ui.cljs:105, src/app/main/ui.cljs:124
 msgid "labels.loading"
 msgstr "Loading…"
 
@@ -2052,7 +2052,7 @@ msgstr "Old password"
 msgid "labels.only-yours"
 msgstr "Only yours"
 
-#: src/app/main/ui/comments.cljs:545, src/app/main/ui/comments.cljs:822, src/app/main/ui/comments.cljs:886, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:295, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:324
+#: src/app/main/ui/comments.cljs:545, src/app/main/ui/comments.cljs:835, src/app/main/ui/comments.cljs:899, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:295, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:324
 msgid "labels.options"
 msgstr "Options"
 
@@ -2080,7 +2080,7 @@ msgstr "Password"
 msgid "labels.pending-invitation"
 msgstr "Pending"
 
-#: src/app/main/ui/comments.cljs:657, src/app/main/ui/comments.cljs:690, src/app/main/ui/comments.cljs:759
+#: src/app/main/ui/comments.cljs:635
 msgid "labels.post"
 msgstr "Post"
 
@@ -2146,7 +2146,7 @@ msgstr "reply"
 msgid "labels.reply.new"
 msgstr "new reply"
 
-#: src/app/main/ui/comments.cljs:641
+#: src/app/main/ui/comments.cljs:673
 msgid "labels.reply.thread"
 msgstr "Reply"
 
@@ -2218,11 +2218,11 @@ msgstr "Share prototype"
 msgid "labels.shared-libraries"
 msgstr "Libraries"
 
-#: src/app/main/ui/viewer/comments.cljs:82, src/app/main/ui/workspace/comments.cljs:54, src/app/main/ui/workspace/comments.cljs:134
+#: src/app/main/ui/viewer/comments.cljs:83, src/app/main/ui/workspace/comments.cljs:54, src/app/main/ui/workspace/comments.cljs:134
 msgid "labels.show-all-comments"
 msgstr "Show all comments"
 
-#: src/app/main/ui/viewer/comments.cljs:115
+#: src/app/main/ui/viewer/comments.cljs:116
 msgid "labels.show-comments-list"
 msgstr "Show comments list"
 
@@ -2230,7 +2230,7 @@ msgstr "Show comments list"
 msgid "labels.show-mentions"
 msgstr "Show only your mentions"
 
-#: src/app/main/ui/viewer/comments.cljs:91, src/app/main/ui/workspace/comments.cljs:60, src/app/main/ui/workspace/comments.cljs:135
+#: src/app/main/ui/viewer/comments.cljs:92, src/app/main/ui/workspace/comments.cljs:60, src/app/main/ui/workspace/comments.cljs:135
 msgid "labels.show-your-comments"
 msgstr "Show only your comments"
 
@@ -2302,7 +2302,7 @@ msgstr "Viewer"
 msgid "labels.webhooks"
 msgstr "Webhooks"
 
-#: src/app/main/ui/comments.cljs:743
+#: src/app/main/ui/comments.cljs:764
 msgid "labels.write-new-comment"
 msgstr "Write new comment"
 
@@ -2474,17 +2474,17 @@ msgstr "By removing your account you’ll lose all your current projects and arc
 msgid "modals.delete-account.title"
 msgstr "Are you sure you want to delete your account?"
 
-#: src/app/main/ui/comments.cljs:800
+#: src/app/main/ui/comments.cljs:813
 msgid "modals.delete-comment-thread.accept"
 msgstr "Delete conversation"
 
-#: src/app/main/ui/comments.cljs:799
+#: src/app/main/ui/comments.cljs:812
 msgid "modals.delete-comment-thread.message"
 msgstr ""
 "Are you sure you want to delete this conversation? All comments in this "
 "thread will be deleted."
 
-#: src/app/main/ui/comments.cljs:798
+#: src/app/main/ui/comments.cljs:811
 msgid "modals.delete-comment-thread.title"
 msgstr "Delete conversation"
 
@@ -3315,7 +3315,7 @@ msgstr "Go to login"
 msgid "settings.detach"
 msgstr "Detach"
 
-#: src/app/main/ui/viewer/inspect/exports.cljs:147, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:90, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:622, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:137, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:162, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:355, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:366, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:386, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:397, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:413, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:315, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:182, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:380, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:397, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:247, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:172
+#: src/app/main/ui/viewer/inspect/exports.cljs:147, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:90, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:622, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:137, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:162, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:355, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:366, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:386, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:397, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:413, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:302, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:182, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:380, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:397, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:247, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:173
 msgid "settings.multiple"
 msgstr "Mixed"
 
@@ -3501,6 +3501,10 @@ msgstr "Copy"
 msgid "shortcuts.copy-link"
 msgstr "Copy link to clipboard"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:106
+msgid "shortcuts.copy-props"
+msgstr "Copy properties"
+
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:95
 msgid "shortcuts.create-component"
 msgstr "Create component"
@@ -3572,6 +3576,10 @@ msgstr "Export shapes"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:112
 msgid "shortcuts.fit-all"
 msgstr "Zoom to fit all"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:590
+msgid "shortcuts.fit-content-selected"
+msgstr "Resize board to fit content"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:113
 msgid "shortcuts.flip-horizontal"
@@ -3788,6 +3796,14 @@ msgstr " or "
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:164
 msgid "shortcuts.paste"
 msgstr "Paste"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:111
+msgid "shortcuts.paste-props"
+msgstr "Paste properties"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:604
+msgid "shortcuts.plugins"
+msgstr "Plugins manager"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:165
 msgid "shortcuts.prev-frame"
@@ -4817,7 +4833,7 @@ msgstr "Selection blur"
 msgid "workspace.options.blur-options.toggle-blur"
 msgstr "Toggle blur"
 
-#: src/app/main/ui/workspace/sidebar/options/page.cljs:38, src/app/main/ui/workspace/sidebar/options/page.cljs:45
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:42, src/app/main/ui/workspace/sidebar/options/page.cljs:50
 msgid "workspace.options.canvas-background"
 msgstr "Canvas background"
 
@@ -5547,11 +5563,11 @@ msgstr "space between"
 msgid "workspace.options.layout.top"
 msgstr "Top"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:171
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:157
 msgid "workspace.options.more-colors"
 msgstr "More colors"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:155
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:141
 msgid "workspace.options.more-lib-colors"
 msgstr "More library colors"
 
@@ -5616,7 +5632,7 @@ msgstr "Search font"
 msgid "workspace.options.select-a-shape"
 msgstr "Select a shape, board or group to drag a connection to other board."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:128
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:114
 msgid "workspace.options.selection-color"
 msgstr "Selected colors"
 
@@ -5628,55 +5644,55 @@ msgstr "Selection fill"
 msgid "workspace.options.selection-stroke"
 msgstr "Selection stroke"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:305
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:292
 msgid "workspace.options.shadow-options.add-shadow"
 msgstr "Add shadow"
 
-#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:40, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:202, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:204
+#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:40, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:168, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:170
 msgid "workspace.options.shadow-options.blur"
 msgstr "Blur"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:242
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:200
 msgid "workspace.options.shadow-options.color"
 msgstr "Shadow color"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:146
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:112
 msgid "workspace.options.shadow-options.drop-shadow"
 msgstr "Drop shadow"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:147
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:113
 msgid "workspace.options.shadow-options.inner-shadow"
 msgstr "Inner shadow"
 
-#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:190
+#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:158
 msgid "workspace.options.shadow-options.offsetx"
 msgstr "X"
 
-#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:39, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:228
+#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:39, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:190
 msgid "workspace.options.shadow-options.offsety"
 msgstr "Y"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:180, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:318
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:305
 msgid "workspace.options.shadow-options.remove-shadow"
 msgstr "Remove shadow"
 
-#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:41, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:215, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:217
+#: src/app/main/ui/viewer/inspect/attributes/shadow.cljs:41, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:179, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:181
 msgid "workspace.options.shadow-options.spread"
 msgstr "Spread"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:300
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:287
 msgid "workspace.options.shadow-options.title"
 msgstr "Shadow"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:299
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:286
 msgid "workspace.options.shadow-options.title.group"
 msgstr "Group shadow"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:298
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:285
 msgid "workspace.options.shadow-options.title.multiple"
 msgstr "Selection shadows"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:176
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:144
 msgid "workspace.options.shadow-options.toggle-shadow"
 msgstr "Toggle shadow"
 
@@ -5761,7 +5777,7 @@ msgstr "Triangle"
 msgid "workspace.options.stroke-color"
 msgstr "Stroke color"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:165
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:166
 msgid "workspace.options.stroke-width"
 msgstr "Stroke width"
 
@@ -6429,7 +6445,7 @@ msgstr "Create theme"
 msgid "workspace.token.create-token"
 msgstr "Create new %s token"
 
-#: src/app/main/ui/workspace/tokens/context_menu.cljs:228
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:234
 msgid "workspace.token.delete"
 msgstr "Delete token"
 
@@ -6437,11 +6453,11 @@ msgstr "Delete token"
 msgid "workspace.token.delete-theme-title"
 msgstr "Delete theme"
 
-#: src/app/main/ui/workspace/tokens/context_menu.cljs:225
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:231
 msgid "workspace.token.duplicate"
 msgstr "Duplicate token"
 
-#: src/app/main/ui/workspace/tokens/context_menu.cljs:212
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:218
 msgid "workspace.token.edit"
 msgstr "Edit token"
 
