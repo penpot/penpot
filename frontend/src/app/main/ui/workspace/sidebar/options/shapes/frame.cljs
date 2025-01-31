@@ -8,10 +8,11 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.shape.layout :as ctl]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu variant-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs-shape fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
@@ -66,58 +67,62 @@
         is-layout-container?      (ctl/any-layout? shape)
         is-flex-layout?           (ctl/flex-layout? shape)
         is-grid-layout?           (ctl/grid-layout? shape)
-        is-layout-child-absolute? (ctl/item-absolute? shape)]
+        is-layout-child-absolute? (ctl/item-absolute? shape)
+        variants?                 (features/use-feature "variants/v1")
+        is-variant?               (when variants? (:is-variant-container shape))]
 
-    [:*
-     [:& layer-menu {:ids ids
-                     :type shape-type
-                     :values layer-values}]
-     [:> measures-menu* {:ids ids
-                         :values measure-values
-                         :type shape-type
-                         :shape shape}]
+    (if is-variant?
+      [:& variant-menu {:shapes [shape]}]
+      [:*
+       [:& layer-menu {:ids ids
+                       :type shape-type
+                       :values layer-values}]
+       [:> measures-menu* {:ids ids
+                           :values measure-values
+                           :type shape-type
+                           :shape shape}]
 
-     [:& component-menu {:shapes [shape]}]
+       [:& component-menu {:shapes [shape]}]
 
-     [:& layout-container-menu
-      {:type shape-type
-       :ids [(:id shape)]
-       :values layout-container-values
-       :multiple false}]
+       [:& layout-container-menu
+        {:type shape-type
+         :ids [(:id shape)]
+         :values layout-container-values
+         :multiple false}]
 
-     (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
-       [:& grid-cell/options
-        {:shape (first parents)
-         :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
+       (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
+         [:& grid-cell/options
+          {:shape (first parents)
+           :cell (ctl/get-cell-by-shape-id (first parents) (first ids))}])
 
-     (when (or is-layout-child? is-layout-container?)
-       [:& layout-item-menu
-        {:ids ids
-         :type shape-type
-         :values layout-item-values
-         :is-flex-parent? is-flex-parent?
-         :is-grid-parent? is-grid-parent?
-         :is-flex-layout? is-flex-layout?
-         :is-grid-layout? is-grid-layout?
-         :is-layout-child? is-layout-child?
-         :is-layout-container? is-layout-container?
-         :shape shape}])
+       (when (or is-layout-child? is-layout-container?)
+         [:& layout-item-menu
+          {:ids ids
+           :type shape-type
+           :values layout-item-values
+           :is-flex-parent? is-flex-parent?
+           :is-grid-parent? is-grid-parent?
+           :is-flex-layout? is-flex-layout?
+           :is-grid-layout? is-grid-layout?
+           :is-layout-child? is-layout-child?
+           :is-layout-container? is-layout-container?
+           :shape shape}])
 
-     (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
-       [:& constraints-menu {:ids ids
-                             :values constraint-values}])
+       (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
+         [:& constraints-menu {:ids ids
+                               :values constraint-values}])
 
-     [:& fill-menu {:ids ids
-                    :type shape-type
-                    :values (select-keys shape fill-attrs-shape)}]
-     [:& stroke-menu {:ids ids
+       [:& fill-menu {:ids ids
                       :type shape-type
-                      :values stroke-values}]
-     [:> color-selection-menu* {:type shape-type
-                                :shapes shapes-with-children
-                                :file-id file-id
-                                :libraries shared-libs}]
-     [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
-     [:& blur-menu {:ids ids
-                    :values (select-keys shape [:blur])}]
-     [:& frame-grid {:shape shape}]]))
+                      :values (select-keys shape fill-attrs-shape)}]
+       [:& stroke-menu {:ids ids
+                        :type shape-type
+                        :values stroke-values}]
+       [:> color-selection-menu* {:type shape-type
+                                  :shapes shapes-with-children
+                                  :file-id file-id
+                                  :libraries shared-libs}]
+       [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
+       [:& blur-menu {:ids ids
+                      :values (select-keys shape [:blur])}]
+       [:& frame-grid {:shape shape}]])))

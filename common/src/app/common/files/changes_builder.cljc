@@ -861,7 +861,6 @@
 
 (defn move-token-set-group-before
   [changes {:keys [from-path to-path before-path before-group? prev-before-path prev-before-group?]}]
-  (prn prev-before-path prev-before-group?)
   (-> changes
       (update :redo-changes conj {:type :move-token-set-group-before
                                   :from-path from-path
@@ -971,31 +970,37 @@
          (apply-changes-local)))))
 
 (defn update-component
-  [changes id update-fn]
-  (assert-library! changes)
-  (let [library-data   (::library-data (meta changes))
-        prev-component (get-in library-data [:components id])
-        new-component  (update-fn prev-component)]
-    (if prev-component
-      (-> changes
-          (update :redo-changes conj {:type :mod-component
-                                      :id id
-                                      :name (:name new-component)
-                                      :path (:path new-component)
-                                      :main-instance-id (:main-instance-id new-component)
-                                      :main-instance-page (:main-instance-page new-component)
-                                      :annotation (:annotation new-component)
-                                      :objects (:objects new-component) ;; this won't exist in components-v2 (except for deleted components)
-                                      :modified-at (:modified-at new-component)})
-          (update :undo-changes conj {:type :mod-component
-                                      :id id
-                                      :name (:name prev-component)
-                                      :path (:path prev-component)
-                                      :main-instance-id (:main-instance-id prev-component)
-                                      :main-instance-page (:main-instance-page prev-component)
-                                      :annotation (:annotation prev-component)
-                                      :objects (:objects prev-component)}))
-      changes)))
+  ([changes id update-fn]
+   (let [library-data   (::library-data (meta changes))
+         prev-component (get-in library-data [:components id])]
+     (update-component changes id prev-component update-fn)))
+  ([changes id prev-component update-fn]
+   (assert-library! changes)
+   (let [new-component  (update-fn prev-component)]
+     (if prev-component
+       (-> changes
+           (update :redo-changes conj {:type :mod-component
+                                       :id id
+                                       :name (:name new-component)
+                                       :path (:path new-component)
+                                       :main-instance-id (:main-instance-id new-component)
+                                       :main-instance-page (:main-instance-page new-component)
+                                       :annotation (:annotation new-component)
+                                       :variant-id (:variant-id new-component)
+                                       :variant-properties (:variant-properties new-component)
+                                       :objects (:objects new-component) ;; this won't exist in components-v2 (except for deleted components)
+                                       :modified-at (:modified-at new-component)})
+           (update :undo-changes conj {:type :mod-component
+                                       :id id
+                                       :name (:name prev-component)
+                                       :path (:path prev-component)
+                                       :main-instance-id (:main-instance-id prev-component)
+                                       :main-instance-page (:main-instance-page prev-component)
+                                       :annotation (:annotation prev-component)
+                                       :variant-id (:variant-id prev-component)
+                                       :variant-properties (:variant-properties prev-component)
+                                       :objects (:objects prev-component)}))
+       changes))))
 
 (defn delete-component
   [changes id page-id]

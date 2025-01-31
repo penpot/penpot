@@ -26,6 +26,7 @@
   max-height: $sz-400;
   overflow-y: auto;
   overflow-x: hidden;
+  z-index: var(--z-index-dropdown);
 }
 
 .option {

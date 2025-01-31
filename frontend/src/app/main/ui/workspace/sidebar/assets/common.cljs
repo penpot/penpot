@@ -20,6 +20,8 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.data.workspace.variants :as dwv]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.render :refer [component-svg component-svg-thumbnail]]
    [app.main.store :as st]
@@ -372,6 +374,8 @@
         can-detach? (and (seq copies)
                          (every? #(not (ctn/has-any-copy-parent? objects %)) copies))
 
+        variants? (features/use-feature "variants/v1")
+
 
         do-detach-component
         #(st/emit! (dwl/detach-components (map :id copies)))
@@ -404,6 +408,10 @@
 
         do-create-annotation
         #(st/emit! (dw/set-annotations-id-for-create id))
+
+        do-add-variant
+        #(when variants?
+           (st/emit! (dwv/transform-in-variant id)))
 
         do-show-local-component
         #(st/emit! (dwl/go-to-local-component :id component-id))
@@ -454,5 +462,8 @@
                          :action do-show-component})
                       (when can-update-main?
                         {:title (tr "workspace.shape.menu.update-main")
-                         :action do-update-component})]]
+                         :action do-update-component})
+                      (when (and variants? (not multi) main-instance?)
+                        {:title (tr "workspace.shape.menu.add-variant")
+                         :action do-add-variant})]]
     (filter (complement nil?) menu-entries)))

@@ -520,17 +520,19 @@
 
 (defn duplicate-component
   "Create a new component copied from the one with the given id."
-  [library-id component-id]
-  (ptk/reify ::duplicate-component
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [libraries          (dsh/lookup-libraries state)
-            library            (get libraries library-id)
-            components-v2      (features/active-feature? state "components/v2")
-            changes (-> (pcb/empty-changes it nil)
-                        (cll/generate-duplicate-component library component-id components-v2))]
+  ([library-id component-id]
+   (duplicate-component library-id component-id (uuid/next)))
+  ([library-id component-id new-component-id]
+   (ptk/reify ::duplicate-component
+     ptk/WatchEvent
+     (watch [it state _]
+       (let [libraries          (dsh/lookup-libraries state)
+             library            (get libraries library-id)
+             components-v2      (features/active-feature? state "components/v2")
+             changes (-> (pcb/empty-changes it nil)
+                         (cll/generate-duplicate-component library component-id new-component-id components-v2))]
 
-        (rx/of (dch/commit-changes changes))))))
+         (rx/of (dch/commit-changes changes)))))))
 
 (defn delete-component
   "Delete the component with the given id, from the current file library."
@@ -984,7 +986,7 @@
                  second)
             0)))))
 
-(defn- component-swap
+(defn component-swap
   "Swaps a component with another one"
   [shape file-id id-new-component]
   (dm/assert! (uuid? id-new-component))

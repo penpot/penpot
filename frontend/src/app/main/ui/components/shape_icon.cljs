@@ -17,10 +17,15 @@
   [{:keys [shape main-instance?]}]
   (if (ctk/instance-head? shape)
     (if main-instance?
-      i/component
+      (if (ctk/is-variant? shape)
+        i/variant
+        i/component)
       i/component-copy)
     (case (:type shape)
       :frame (cond
+               (ctk/is-variant-container? shape)
+               i/component
+
                (and (ctl/flex-layout? shape) (ctl/col? shape))
                i/flex-horizontal
 

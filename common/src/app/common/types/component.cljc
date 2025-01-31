@@ -215,6 +215,19 @@
   (and (= shape-id (:main-instance-id component))
        (= page-id (:main-instance-page component))))
 
+
+(defn is-variant?
+  "Check if this shape or component is a variant component"
+  [item]
+  (some? (:variant-id item)))
+
+
+(defn is-variant-container?
+  "Check if this shape is a variant container"
+  [shape]
+  (:is-variant-container shape))
+
+
 (defn set-touched-group
   [touched group]
   (when group

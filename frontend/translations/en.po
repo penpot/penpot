@@ -6210,6 +6210,15 @@ msgstr "Selection to board"
 msgid "workspace.shape.menu.create-component"
 msgstr "Create component"
 
+msgid "workspace.shape.menu.add-variant"
+msgstr "Add variant"
+
+msgid "workspace.shape.menu.add-variant-property"
+msgstr "Add new property"
+
+msgid "workspace.shape.menu.remove-variant-property"
+msgstr "Remove property"
+
 #: src/app/main/ui/workspace/context_menu.cljs:565
 msgid "workspace.shape.menu.create-multiple-components"
 msgstr "Create multiple components"
