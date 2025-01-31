@@ -9,7 +9,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes.common :as gco]
-   [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [clojure.walk :as walk]
@@ -424,7 +423,7 @@
 
    Parameters:
    - `base-name` - string used as the base for name generation.
-   - `existing-names` - a set of existing names to check for uniqueness.
+   - `existing-names` - a collection of existing names to check for uniqueness.
    - Options:
      - `:suffix-fn` - a function that generates suffixes, given an integer (default: `get-suffix`).
      - `:immediate-suffix?` - if `true`, the base name is considered taken, and suffixing starts immediately.
@@ -435,7 +434,7 @@
                                :or {suffix-fn get-suffix}}]
   (dm/assert!
    "expected a set of strings"
-   (sm/check-set-of-strings! existing-names))
+   (coll? existing-names))
 
   (dm/assert!
    "expected a string for `basename`."
