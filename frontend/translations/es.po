@@ -3465,6 +3465,10 @@ msgstr "Diferencia"
 msgid "shortcuts.bool-exclude"
 msgstr "Exclusión"
 
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:590
+msgid "shortcuts.fit-content-selected"
+msgstr "Redimensionar para ajustar al contenido"
+
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:86
 msgid "shortcuts.bool-intersection"
 msgstr "Interescción"
@@ -3952,6 +3956,18 @@ msgstr "Mostrar/ocultar paleta de textos"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:204
 msgid "shortcuts.toggle-theme"
 msgstr "Cambiar tema"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:604
+msgid "shortcuts.plugins"
+msgstr "Gestor de extensiones"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:106
+msgid "shortcuts.copy-props"
+msgstr "Copiar propiedades"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:111
+msgid "shortcuts.paste-props"
+msgstr "Pegar propiedades"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:205
 msgid "shortcuts.toggle-visibility"
