@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-29 22:23+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-02-01 01:01+0000\n"
+"Last-Translator: Linerly <linerly@proton.me>\n"
 "Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
 "frontend/id/>\n"
 "Language: id\n"
@@ -6469,14 +6469,12 @@ msgid "workspace.token.num-sets"
 msgstr "%s set"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
-#, fuzzy
 msgid "workspace.token.original-value"
-msgstr "Nilai asli: "
+msgstr "Nilai asli: %s"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:205, src/app/main/ui/workspace/tokens/form.cljs:208, src/app/main/ui/workspace/tokens/token_pill.cljs:115
-#, fuzzy
 msgid "workspace.token.resolved-value"
-msgstr "Nilai terselesaikan: "
+msgstr "Nilai terselesaikan: %s"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:203
 msgid "workspace.token.save-theme"
@@ -6828,3 +6826,11 @@ msgstr "Versi tersimpan otomatis akan disimpan selama %s hari."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik untuk menutup jalur"
+
+#: src/app/main/data/common.cljs:87
+msgid "Refresh"
+msgstr " "
+
+#: src/app/main/ui/dashboard/placeholder.cljs:48
+msgid "dashboard.add-file"
+msgstr "Tambahkan berkas"
