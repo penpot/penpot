@@ -188,6 +188,7 @@ services:
       ## audit what data we send with the code available on github.
 
       PENPOT_TELEMETRY_ENABLED: true
+      PENPOT_TELEMETRY_REFERER: compose
 
       ## Example SMTP/Email configuration. By default, emails are sent to the mailcatch
       ## service, but for production usage it is recommended to setup a real SMTP
