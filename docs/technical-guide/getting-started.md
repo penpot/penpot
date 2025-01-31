@@ -175,6 +175,17 @@ docker compose -p penpot -f docker-compose.yaml up -d
 
 At the end it will start listening on http://localhost:9001
 
+<p class="advice">
+    If you don't change anything, by default this will use the latest image published in dockerhub.
+</p>
+
+If you want to have more control over the version (which is recommended), you can use the PENPOT_VERSION envvar in the common ways:
+- setting the value in the .env file
+- or passing the envvar in the command line
+
+```bash
+PENPOT_VERSION=2.4.3 docker compose -p penpot -f docker-compose.yaml up -d
+```
 
 ### Stop Penpot
 
