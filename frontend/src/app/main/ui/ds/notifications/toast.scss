@@ -9,24 +9,26 @@
 @use "../typography.scss" as *;
 
 .toast {
-  @include use-typography("body-small");
+  @include use-typography("body-medium");
 
   --toast-bg-color: var(--color-background-primary);
   --toast-fg-color: var(--color-foreground-primary);
   --toast-border-color: var(--color-background-quaternary);
+  --toast-padding: var(--sp-l);
   --toast-icon-color: var(--color-foreground-secondary);
+  --toast-icon-margin: var(--sp-xxs);
 
-  min-width: $sz-224;
-  height: $sz-32;
+  min-inline-size: $sz-224;
+  max-inline-size: $sz-480;
   background-color: var(--toast-bg-color);
   border: $b-1 solid var(--toast-border-color);
   border-radius: $br-8;
-  padding: 0 var(--sp-s);
+  padding: var(--toast-padding);
 
   display: inline-grid;
   grid-template-columns: auto 1fr auto;
   column-gap: var(--sp-s);
-  align-items: center;
+  align-items: flex-start;
 
   color: var(--toast-fg-color);
 }
@@ -61,6 +63,7 @@
 
 .icon {
   color: var(--toast-icon-color);
+  margin-block-start: var(--toast-icon-margin);
 }
 
 .close-button {
