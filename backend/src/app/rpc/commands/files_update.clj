@@ -224,8 +224,6 @@
                                                   process-changes-and-validate
                                                   changes skip-validate))))]
 
-      ;; (prn "AAAAAAAAAAAA" (:migrations file))
-
       (feat.fmigr/upsert-migrations! conn file)
       (persist-file! cfg file)
 
