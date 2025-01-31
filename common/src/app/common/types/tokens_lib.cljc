@@ -801,6 +801,7 @@ used for managing active sets without a user created theme.")
   (set-path-exists? [_ path] "if a set at `path` exists")
   (set-group-path-exists? [_ path] "if a set group at `path` exists")
   (add-token-in-set [_ set-name token] "add token to a set")
+  (get-token-in-set [_ set-name token-name] "get token in a set")
   (update-token-in-set [_ set-name token-name f] "update a token in a set")
   (delete-token-from-set [_ set-name token-name] "delete a token from a set")
   (toggle-set-in-theme [_ group-name theme-name set-name] "toggle a set used / not used in a theme")
@@ -1133,6 +1134,11 @@ Will return a value that matches this schema:
   (add-token-in-set [this set-name token]
     (dm/assert! "expected valid token instance" (check-token! token))
     (update-set this set-name #(add-token % token)))
+
+  (get-token-in-set [this set-name token-name]
+    (some-> this
+            (get-set set-name)
+            (get-token token-name)))
 
   (update-token-in-set [this set-name token-name f]
     (update-set this set-name #(update-token % token-name f)))

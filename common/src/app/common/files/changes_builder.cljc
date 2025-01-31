@@ -884,30 +884,31 @@
         (update :undo-changes conj {:type :set-tokens-lib :tokens-lib prev-tokens-lib})
         (apply-changes-local))))
 
-(defn add-token
-  [changes set-name token]
-  (-> changes
-      (update :redo-changes conj {:type :add-token :set-name set-name :token token})
-      (update :undo-changes conj {:type :del-token :set-name set-name :name (:name token)})
-      (apply-changes-local)))
-
-(defn update-token
-  [changes set-name token prev-token]
-  (-> changes
-      (update :redo-changes conj {:type :mod-token :set-name set-name :name (:name prev-token) :token token})
-      (update :undo-changes conj {:type :mod-token :set-name set-name :name (:name token) :token (or prev-token token)})
-      (apply-changes-local)))
-
-(defn delete-token
-  [changes set-name token-name]
+(defn set-token [changes set-name token-name params]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
         prev-token (some-> (get library-data :tokens-lib)
                            (ctob/get-set set-name)
                            (ctob/get-token token-name))]
     (-> changes
-        (update :redo-changes conj {:type :del-token :set-name set-name :name token-name})
-        (update :undo-changes conj {:type :add-token :set-name set-name :token prev-token})
+        (update :redo-changes conj {:type :set-token
+                                    :set-name set-name
+                                    :token-name token-name
+                                    :params params})
+        (update :undo-changes conj (if prev-token
+                                     {:type :set-token
+                                      :set-name set-name
+                                      :token-name (or
+                                                   ;; Undo of edit
+                                                   (get-in params [:token :name])
+                                                   ;; Undo of delete
+                                                   token-name)
+                                      :params {:token prev-token}}
+                                     ;; Undo of create token
+                                     {:type :set-token
+                                      :set-name set-name
+                                      :token-name token-name
+                                      :params nil}))
         (apply-changes-local))))
 
 (defn add-component
