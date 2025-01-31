@@ -277,6 +277,14 @@ RUN set -eux; \
   ./emsdk activate latest; \
   rustup target add wasm32-unknown-emscripten;
 
+USER penpot
+
+RUN set -eux; \
+    corepack enable; \
+    corepack install -g yarn@4.3.1;
+
+USER root
+
 WORKDIR /home
 
 COPY files/nginx.conf /etc/nginx/nginx.conf
