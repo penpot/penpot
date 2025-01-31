@@ -373,34 +373,42 @@
   (mf/use-callback
    (mf/deps zoom)
    (fn [event]
-     (let [event  (.getBrowserEvent ^js event)
-           target (dom/get-target event)
-           mod? (kbd/mod? event)
-           picking-color? (= "pixel-overlay" (.-id target))
-           on-comments-layer? (dom/is-child? (dom/get-element "comments") target)]
+     (let [event      (.getBrowserEvent ^js event)
 
-       (when (or (uwvv/inside-viewport? target) picking-color? on-comments-layer?)
+           target     (dom/get-target event)
+           mod?       (kbd/mod? event)
+           ctrl?      (kbd/ctrl? event)
+
+           picking-color?   (= "pixel-overlay" (.-id target))
+           comments-layer?  (dom/is-child? (dom/get-element "comments") target)
+
+           raw-pt     (dom/get-client-position event)
+           pt         (uwvv/point->viewport raw-pt)
+
+           norm-event ^js (nw/normalize-wheel event)
+
+           delta-y    (.-pixelY norm-event)
+           delta-x    (.-pixelX norm-event)
+           delta-zoom (+ delta-y delta-x)
+
+           scale      (+ 1 (mth/abs (* scale-per-pixel delta-zoom)))
+           scale      (if (pos? delta-zoom) (/ 1 scale) scale)]
+
+       (when (or (uwvv/inside-viewport? target) picking-color?)
          (dom/prevent-default event)
          (dom/stop-propagation event)
-         (let [raw-pt (dom/get-client-position event)
-               pt     (uwvv/point->viewport raw-pt)
-               norm-event ^js (nw/normalize-wheel event)
-               ctrl?  (kbd/ctrl? event)
-               delta-y (.-pixelY norm-event)
-               delta-x (.-pixelX norm-event)]
+         (if (or ctrl? mod?)
+           (st/emit! (dw/set-zoom pt scale))
+           (if (and (not (cfg/check-platform? :macos)) (kbd/shift? event))
+             ;; macos sends delta-x automatically, don't need to do it
+             (st/emit! (dw/update-viewport-position {:x #(+ % (/ delta-y zoom))}))
+             (st/emit! (dw/update-viewport-position {:x #(+ % (/ delta-x zoom))
+                                                     :y #(+ % (/ delta-y zoom))})))))
 
-           (if (or ctrl? mod?)
-             (let [delta-zoom (+ delta-y delta-x)
-                   scale (+ 1 (mth/abs (* scale-per-pixel delta-zoom)))
-                   scale (if (pos? delta-zoom) (/ 1 scale) scale)]
-               (st/emit! (dw/set-zoom pt scale)))
-
-             (if (and (not (cfg/check-platform? :macos))
-                      ;; macos sends delta-x automatically, don't need to do it
-                      (kbd/shift? event))
-               (st/emit! (dw/update-viewport-position {:x #(+ % (/ delta-y zoom))}))
-               (st/emit! (dw/update-viewport-position {:x #(+ % (/ delta-x zoom))
-                                                       :y #(+ % (/ delta-y zoom))}))))))))))
+       (when (and comments-layer? (or ctrl? mod?))
+         (dom/prevent-default event)
+         (dom/stop-propagation event)
+         (st/emit! (dw/set-zoom pt scale)))))))
 
 (defn on-drag-enter
   [comp-inst-ref]
