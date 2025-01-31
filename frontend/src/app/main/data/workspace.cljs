@@ -1650,21 +1650,22 @@
   []
   (ptk/reify ::paste-selected-props
     ptk/WatchEvent
-    (watch [_ _ _]
-      (letfn [(decode-entry [entry]
-                (-> entry t/decode-str paste-transit-props))
+    (watch [_ state _]
+      (when-not (-> state :workspace-global :read-only?)
+        (letfn [(decode-entry [entry]
+                  (-> entry t/decode-str paste-transit-props))
 
-              (on-error [cause]
-                (let [data (ex-data cause)]
-                  (if (:not-implemented data)
-                    (rx/of (ntf/warn (tr "errors.clipboard-not-implemented")))
-                    (js/console.error "Clipboard error:" cause))
-                  (rx/empty)))]
+                (on-error [cause]
+                  (let [data (ex-data cause)]
+                    (if (:not-implemented data)
+                      (rx/of (ntf/warn (tr "errors.clipboard-not-implemented")))
+                      (js/console.error "Clipboard error:" cause))
+                    (rx/empty)))]
 
-        (->> (wapi/read-from-clipboard)
-             (rx/map decode-entry)
-             (rx/take 1)
-             (rx/catch on-error))))))
+          (->> (wapi/read-from-clipboard)
+               (rx/map decode-entry)
+               (rx/take 1)
+               (rx/catch on-error)))))))
 
 (defn selected-frame? [state]
   (let [selected (dsh/lookup-selected state)
