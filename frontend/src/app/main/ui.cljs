@@ -6,6 +6,7 @@
 
 (ns app.main.ui
   (:require
+   [app.common.data.macros :as dm]
    [app.common.data :as d]
    [app.config :as cf]
    [app.main.data.common :as dcm]
@@ -27,6 +28,7 @@
    [app.main.ui.releases :refer [release-notes-modal]]
    [app.main.ui.static :as static]
    [app.main.ui.hooks :as hooks]
+   [app.main.data.viewer :as dv]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
@@ -39,7 +41,7 @@
 (def verify-token-page
   (mf/lazy-component app.main.ui.auth.verify-token/verify-token))
 
-(def viewer-page
+(def viewer-page*
   (mf/lazy-component app.main.ui.viewer/viewer*))
 
 (def dashboard-page
@@ -142,37 +144,35 @@
         ;; all dom tree instead of simple rerender.
         [:* {:key (str team-id)} children]]])))
 
-(mf/defc share-link-container*
-  "A component that initializes share link if it is provided"
-  {::mf/private true}
-  [{:keys [share-id children]}]
-  (let [slink (mf/deref refs/share-link)]
+;; (mf/defc share-link-container*
+;;   "A component that initializes share link if it is provided"
+;;   {::mf/private true}
+;;   [{:keys [share-id children]}]
+;;   (let [slink (mf/deref refs/share-link)]
 
-    (mf/with-effect [share-id]
-      (when (some? share-id)
-        (st/emit! (kk/initialize-share-link share-id))))
+;;     (mf/with-effect [share-id]
+;;       (when (some? share-id)
+;;         (st/emit! (kk/initialize-share-link share-id))))
 
-    (if-not share-id
-      [:* {} children]
-      (when slink
-        [:* {:key (str share-id)} children]))))
+;;     (if-not share-id
+;;       [:* {} children]
+;;       (when slink
+;;         [:* {:key (str share-id)} children]))))
 
 
 (mf/defc viewer-container*
   {::mf/private true}
   [{:keys [share-id file-id children]}]
-  (let [team-id* (mf/use-state nil)
-        team-id  (deref team-id*)]
 
-    (mf/with-effect [file-id share-id]
-      (let [sub (->> (rp/cmd! :resolve-team-id {:file-id file-id :share-id share-id})
-                     (rx/map :team-id)
-                     (rx/subs! #(swap! team-id* %)))]
-        #(rx/dispose! sub)))
+  (mf/with-effect [file-id share-id]
+    (st/emit! (dv/initialize-step-1 file-id share-id)))
 
-    (when team-id
-      [:> team-container* {:team-id team-id}
-       children])))
+  (let [{:keys [id permissions]} (mf/deref refs/team)]
+    [:> (mf/provider ctx/current-team-id) {:value id}
+     [:> (mf/provider ctx/permissions) {:value permissions}
+      ;; The `:key` is mandatory here because we want to reinitialize
+      ;; all dom tree instead of simple rerender.
+      [:* {:key (dm/str id)} children]]]))
 
 (mf/defc page*
   {::mf/props :obj
@@ -319,16 +319,17 @@
             share    (:share params)]
 
         [:? {}
-         [:> viewer-page
-          {:page-id page-id
-           :file-id file-id
-           :frame-id frame-id
-           :section section
-           :index index
-           :share-id share-id
-           :interactions-mode imode
-           :share share}]])
-
+         [:> viewer-container* {:file-id file-id
+                                :share-id share-id}
+          [:> viewer-page*
+           {:page-id page-id
+            :file-id file-id
+            :frame-id frame-id
+            :section section
+            :index index
+            :share-id share-id
+            :interactions-mode imode
+            :share share}]]])
 
       :workspace-legacy
       (let [project-id (some-> params :path :project-id uuid)
@@ -406,11 +407,10 @@
     [:> (mf/provider ctx/current-route) {:value route}
      [:> (mf/provider ctx/current-profile) {:value profile}
       [:> (mf/provider ctx/current-route) {:value route}
-       ;; [:> (mf/provider ctx/current-share-id) {:value share-id}
-       (if edata
-         [:> static/exception-page* {:data edata :route route}]
-         [:> error-boundary* {:fallback static/internal-error*}
+       [:> (mf/provider ctx/current-share-id) {:value share-id}
+        (if edata
+          [:> static/exception-page* {:data edata :route route}]
+          [:> error-boundary* {:fallback static/internal-error*}
           [:& notifications/current-notification]
-          (when route
-            [:> share-link-container* {:share-id share-id}
-             [:> page* {:route route :profile profile}]])])]]]))
+           (when route
+             [:> page* {:route route :profile profile}])])]]]]))

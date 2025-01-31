@@ -54,7 +54,7 @@
 
 ;; --- EVENT: fetch-members
 
-(defn- members-fetched
+(defn members-fetched
   [team-id members]
   (ptk/reify ::members-fetched
     ptk/UpdateEvent

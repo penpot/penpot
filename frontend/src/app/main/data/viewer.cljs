@@ -20,6 +20,7 @@
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
+   [app.main.data.team :as team]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.router :as rt]
@@ -49,19 +50,9 @@
 (declare zoom-to-fill)
 (declare zoom-to-fit)
 
-(def ^:private
-  schema:initialize
-  [:map {:title "initialize"}
-   [:file-id ::sm/uuid]
-   [:share-id {:optional true} [:maybe ::sm/uuid]]
-   [:page-id {:optional true} ::sm/uuid]])
 
-(defn initialize
-  [{:keys [file-id share-id] :as params}]
-  (dm/assert!
-   "expected valid params"
-   (sm/check schema:initialize params))
-
+(defn initialize-step-1
+  [file-id share-id]
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
@@ -77,9 +68,43 @@
 
     ptk/WatchEvent
     (watch [_ state _]
+      (->> (rp/cmd! :get-viewer-info {:file-id file-id :share-id share-id})
+           (rx/mapcat (fn [{:keys [team members]}]
+                        (rx/of (team/teams-fetched [team])
+                               (team/set-current-team team)
+                               (team/members-fetched (:id team) members))))))))
+
+(def ^:private
+  schema:initialize
+  [:map {:title "initialize"}
+   [:file-id ::sm/uuid]
+   [:share-id {:optional true} [:maybe ::sm/uuid]]
+   [:page-id {:optional true} ::sm/uuid]])
+
+(defn initialize-step-2
+  [{:keys [file-id share-id] :as params}]
+  ;; (dm/assert!
+  ;;  "expected valid params"
+  ;;  (sm/check schema:initialize params))
+
+  (ptk/reify ::initialize-step-2
+    ;; ptk/UpdateEvent
+    ;; (update [_ state]
+    ;;   (-> state
+    ;;       (assoc :current-file-id file-id)
+    ;;       (assoc :current-share-id share-id)
+    ;;       (update :viewer-local
+    ;;               (fn [lstate]
+    ;;                 (if (nil? lstate)
+    ;;                   default-local-state
+    ;;                   lstate)))
+    ;;       (assoc-in [:viewer-local :share-id] share-id)))
+
+    ptk/WatchEvent
+    (watch [_ state _]
       (rx/of (fetch-bundle (d/without-nils params))
              ;; Only fetch threads for logged-in users
-             (when (some? (:profile state))
+             #_(when (some? (:profile state))
                (fetch-comment-threads params))))
 
     ptk/EffectEvent
@@ -92,12 +117,12 @@
       (let [name (str "viewer-" file-id)]
         (unchecked-set ug/global "name" name)))))
 
-(defn finalize
-  [_]
-  (ptk/reify ::finalize
-    ptk/UpdateEvent
-    (update [_ state]
-      (dissoc state :viewer))))
+;; (defn finalize
+;;   [_]
+;;   (ptk/reify ::finalize
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (dissoc state :viewer))))
 
 ;; --- Data Fetching
 
@@ -117,27 +142,27 @@
 
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
-    (watch [_ _ _]
-      (let [;; NOTE: in viewer we don't have access to the team when
-            ;; user is not logged-in, so we can't know which features
-            ;; are active from team, so in this case it is necesary
-            ;; report the whole set of supported features instead of
-            ;; the enabled ones.
-            features cfeat/supported-features
-            params'  (cond-> {:file-id file-id :features features}
-                       (uuid? share-id)
-                       (assoc :share-id share-id))
+    (watch [_ state _]
+      (let [team     (ds/lookup-team state)
+            features (features/get-team-enabled-features state)
 
-            resolve  (fn [[key pointer]]
-                       (let [params {:file-id file-id :fragment-id @pointer}
-                             params (cond-> params
-                                      (uuid? share-id)
-                                      (assoc :share-id share-id))]
-                         (->> (rp/cmd! :get-file-fragment params)
-                              (rx/map :data)
-                              (rx/map #(vector key %)))))]
+            params   {:file-id file-id
+                      :features features}
+            params  (cond-> params
+                      (uuid? share-id)
+                      (assoc :share-id share-id))
 
-        (->> (rp/cmd! :get-view-only-bundle params')
+            resolve
+            (fn [[key pointer]]
+              (let [params {:file-id file-id :fragment-id @pointer}
+                    params (cond-> params
+                             (uuid? share-id)
+                             (assoc :share-id share-id))]
+                (->> (rp/cmd! :get-file-fragment params)
+                     (rx/map :data)
+                     (rx/map #(vector key %)))))]
+
+        (->> (rp/cmd! :get-viewer-bundle params')
              (rx/mapcat
               (fn [bundle]
                 (->> (rx/from (-> bundle :file :data :pages-index seq))
