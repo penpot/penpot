@@ -1630,9 +1630,19 @@
             fdata (migrate-graphics fdata)]
         (update fdata :options assoc :components-v2 true)))))
 
+;; FIXME: revisit this fn
+(defn- fix-version*
+  [{:keys [version] :as file}]
+  (if (int? version)
+    file
+    (let [version (or (-> file :data :version) 0)]
+      (-> file
+          (assoc :version version)
+          (update :data dissoc :version)))))
+
 (defn- fix-version
   [file]
-  (let [file (fmg/fix-version file)]
+  (let [file (fix-version* file)]
     (if (> (:version file) 22)
       (assoc file :version 22)
       file)))

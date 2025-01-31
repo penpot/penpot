@@ -734,9 +734,9 @@
                    (dissoc :options)
                    (bfc/process-file))]
 
-      (->> file
-           (bfc/register-pending-migrations cfg)
-           (bfc/save-file! cfg))
+
+      (bfc/register-pending-migrations! cfg file)
+      (bfc/save-file! cfg file ::db/return-keys false)
 
       file-id')))
 

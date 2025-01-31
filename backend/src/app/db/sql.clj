@@ -39,7 +39,10 @@
 
 (defn insert-many
   [table cols rows opts]
-  (let [opts (merge default-opts opts)]
+  (let [opts (merge default-opts opts)
+        opts (cond-> opts
+               (::on-conflict-do-nothing opts)
+               (assoc :suffix "ON CONFLICT DO NOTHING"))]
     (sql/for-insert-multi table cols rows opts)))
 
 (defn select

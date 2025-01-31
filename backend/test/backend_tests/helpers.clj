@@ -210,14 +210,14 @@
   ([system i {:keys [profile-id project-id] :as params}]
    (dm/assert! "expected uuid" (uuid? profile-id))
    (dm/assert! "expected uuid" (uuid? project-id))
-   (db/run! system
-            (fn [system]
-              (let [features (cfeat/get-enabled-features cf/flags)]
-                (files.create/create-file system
-                                          (merge {:id (mk-uuid "file" i)
-                                                  :name (str "file" i)
-                                                  :features features}
-                                                 params)))))))
+   (db/tx-run! system
+               (fn [system]
+                 (let [features (cfeat/get-enabled-features cf/flags)]
+                   (files.create/create-file system
+                                             (merge {:id (mk-uuid "file" i)
+                                                     :name (str "file" i)
+                                                     :features features}
+                                                    params)))))))
 
 (defn mark-file-deleted*
   ([params]

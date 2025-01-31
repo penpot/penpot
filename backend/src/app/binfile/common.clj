@@ -23,6 +23,7 @@
    [app.db.sql :as sql]
    [app.features.components-v2 :as feat.compv2]
    [app.features.fdata :as feat.fdata]
+   [app.features.file-migrations :as feat.fmigr]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.storage :as sto]
@@ -58,6 +59,7 @@
 (def file-attrs
   #{:id
     :name
+    :migrations
     :features
     :project-id
     :is-shared
@@ -154,13 +156,17 @@
   pointers, run migrations and return plain vanilla file map"
   [cfg {:keys [id] :as file}]
   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
-    (-> (feat.fdata/resolve-file-data cfg file)
-        (update :features db/decode-pgarray #{})
-        (update :data blob/decode)
-        (update :data feat.fdata/process-pointers deref)
-        (update :data feat.fdata/process-objects (partial into {}))
-        (update :data assoc :id id)
-        (fmg/migrate-file))))
+    (let [file (->> file
+                    (feat.fmigr/resolve-applied-migrations cfg)
+                    (feat.fdata/resolve-file-data cfg))]
+
+      (-> file
+          (update :features db/decode-pgarray #{})
+          (update :data blob/decode)
+          (update :data feat.fdata/process-pointers deref)
+          (update :data feat.fdata/process-objects (partial into {}))
+          (update :data assoc :id id)
+          (fmg/migrate-file)))))
 
 (defn get-file
   "Get file, resolve all features and apply migrations.
@@ -414,20 +420,9 @@
     (db/exec-one! conn ["SET LOCAL idle_in_transaction_session_timeout = 0"])
     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])))
 
-(defn- fix-version
-  [file]
-  (let [file (fmg/fix-version file)]
-    ;; FIXME: We're temporarily activating all migrations because a
-    ;; problem in the environments messed up with the version numbers
-    ;; When this problem is fixed delete the following line
-    (if (> (:version file) 22)
-      (assoc file :version 22)
-      file)))
-
 (defn process-file
   [{:keys [id] :as file}]
   (-> file
-      (fix-version)
       (update :data (fn [fdata]
                       (-> fdata
                           (assoc :id id)
@@ -441,7 +436,7 @@
                           (update :colors relink-colors)
                           (d/without-nils))))))
 
-(defn- encode-file
+(defn encode-file
   [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
   (let [file (if (contains? (:features file) "fdata/objects-map")
                (feat.fdata/enable-objects-map file)
@@ -458,7 +453,7 @@
         (update :features db/encode-pgarray conn "text")
         (update :data blob/encode))))
 
-(defn- file->params
+(defn get-params-from-file
   [file]
   (let [params {:has-media-trimmed (:has-media-trimmed file)
                 :ignore-sync-until (:ignore-sync-until file)
@@ -481,16 +476,17 @@
 
 (defn insert-file!
   "Insert a new file into the database table"
-  [{:keys [::db/conn] :as cfg} file]
+  [{:keys [::db/conn] :as cfg} file & {:as opts}]
+  (feat.fmigr/upsert-migrations! conn file)
   (let [params (-> (encode-file cfg file)
-                   (file->params))]
-    (db/insert! conn :file params {::db/return-keys true})))
+                   (get-params-from-file))]
+    (db/insert! conn :file params opts)))
 
 (defn update-file!
   "Update an existing file on the database."
-  [{:keys [::db/conn ::sto/storage] :as cfg} {:keys [id] :as file}]
+  [{:keys [::db/conn ::sto/storage] :as cfg} {:keys [id] :as file} & {:as opts}]
   (let [file   (encode-file cfg file)
-        params (-> (file->params file)
+        params (-> (get-params-from-file file)
                    (dissoc :id))]
 
     ;; If file was already offloaded, we touch the underlying storage
@@ -498,12 +494,13 @@
     (when (feat.fdata/offloaded? file)
       (some->> (:data-ref-id file) (sto/touch-object! storage)))
 
-    (db/update! conn :file params {:id id} {::db/return-keys true})))
+    (feat.fmigr/upsert-migrations! conn file)
+    (db/update! conn :file params {:id id} opts)))
 
 (defn save-file!
   "Applies all the final validations and perist the file, binfile
   specific, should not be used outside of binfile domain"
-  [{:keys [::timestamp] :as cfg} file]
+  [{:keys [::timestamp] :as cfg} file & {:as opts}]
 
   (dm/assert!
    "expected valid timestamp"
@@ -530,9 +527,9 @@
         (when (ex/exception? result)
           (l/error :hint "file schema validation error" :cause result))))
 
-    (insert-file! cfg file)))
+    (insert-file! cfg file opts)))
 
-(defn register-pending-migrations
+(defn register-pending-migrations!
   "All features that are enabled and requires explicit migration are
   added to the state for a posterior migration step."
   [cfg {:keys [id features] :as file}]
