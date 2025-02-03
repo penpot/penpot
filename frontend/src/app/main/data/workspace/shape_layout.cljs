@@ -524,7 +524,9 @@
    (ptk/reify ::update-layout-child
      ptk/WatchEvent
      (watch [_ state _]
-       (let [objects (dsh/lookup-page-objects state)
+       (let [page-id (or (get options :page-id)
+                         (get state :current-page-id))
+             objects (dsh/lookup-page-objects state page-id)
              children-ids (->> ids (mapcat #(cfh/get-children-ids objects %)))
              parent-ids (->> ids (map #(cfh/get-parent-id objects %)))
              undo-id (js/Symbol)]
