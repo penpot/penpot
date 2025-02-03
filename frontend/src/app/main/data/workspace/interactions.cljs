@@ -44,9 +44,9 @@
                        (dsh/lookup-page state page-id)
                        (dsh/lookup-page state))
 
-             flows   (get page :flows)
-             unames  (cfh/get-used-names (vals flows))
-             name    (or name (cfh/generate-unique-name unames "Flow 1"))
+             unames  (cfh/get-used-names (vals (get page :flows)))
+             name    (or name
+                         (cfh/generate-unique-name "Flow" unames :immediate-suffix? true))
 
              flow-id (or flow-id (uuid/next))
 

@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.logic.tokens :as clt]
    [app.common.types.shape :as cts]
@@ -286,10 +287,21 @@
   (ptk/reify ::duplicate-token
     ptk/WatchEvent
     (watch [_ state _]
-      (when-let [token (some-> (dwts/get-selected-token-set-token state token-name)
-                               (update :name #(str/concat % "-copy")))]
-        (rx/of
-         (update-create-token {:token token}))))))
+      (let [token-set (dwts/get-selected-token-set state)
+            token (some-> token-set (ctob/get-token token-name))
+            tokens (some-> token-set (ctob/get-tokens))
+            suffix-fn (fn [copy-count]
+                        (let [suffix (tr "workspace.token.duplicate-suffix")]
+                          (str/concat "-"
+                                      suffix
+                                      (when (> copy-count 1)
+                                        (str "-" copy-count)))))
+            unames (map :name tokens)
+            copy-name (cfh/generate-unique-name token-name unames :suffix-fn suffix-fn)]
+        (when token
+          (rx/of
+           (update-create-token
+            {:token (assoc token :name copy-name)})))))))
 
 (defn set-token-type-section-open
   [token-type open?]
