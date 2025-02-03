@@ -8,9 +8,9 @@
   (:require
    [app.main.data.notifications :as ntf]
    [app.main.store :as st]
+   [app.main.ui.ds.notifications.toast :refer [toast*]]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.main.ui.notifications.inline-notification :refer [inline-notification]]
-   [app.main.ui.notifications.toast-notification :refer [toast-notification]]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -26,16 +26,16 @@
         inline?      (or (= :inline (:type notification))
                          (= :floating (:position notification)))
         toast?       (or (= :toast (:type notification))
-                         (some? (:timeout notification)))]
+                         (some? (:timeout notification)))
+        content     (or (:content notification) "")]
 
     (when notification
       (cond
         toast?
-        [:& toast-notification
+        [:> toast*
          {:level (or (:level notification) :info)
-          :links (:links notification)
-          :on-close on-close
-          :content (:content notification)}]
+          :type (:type notification)
+          :on-close on-close} content]
 
         inline?
         [:& inline-notification
@@ -51,8 +51,7 @@
           :content (:content notification)}]
 
         :else
-        [:& toast-notification
+        [:> toast*
          {:level (or (:level notification) :info)
-          :links (:links notification)
-          :on-close on-close
-          :content (:content notification)}]))))
+          :type (:type notification)
+          :on-close on-close} content]))))

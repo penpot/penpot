@@ -1,0 +1,68 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../../_sizes.scss" as *;
+@use "../../_borders.scss" as *;
+@use "../../typography.scss" as *;
+
+.notification-pill {
+  @include use-typography("body-medium");
+
+  --notification-bg-color: var(--color-background-primary);
+  --notification-fg-color: var(--color-foreground-primary);
+  --notification-border-color: var(--color-background-quaternary);
+  --notification-padding: var(--sp-l);
+  --notification-icon-color: var(--color-foreground-secondary);
+  --notification-icon-margin: var(--sp-xxs);
+
+  background-color: var(--notification-bg-color);
+  border: $b-1 solid var(--notification-border-color);
+  border-radius: $br-8;
+  padding: var(--notification-padding);
+
+  display: flex;
+  gap: var(--sp-s);
+
+  color: var(--notification-fg-color);
+}
+
+.type-toast {
+  padding-inline-end: var(--sp-xxxl);
+}
+
+.level-info {
+  --notification-bg-color: var(--color-background-info);
+  --notification-fg-color: var(--color-foreground-primary);
+  --notification-border-color: var(--color-accent-info);
+  --notification-icon-color: var(--color-accent-info);
+}
+
+.level-error {
+  --notification-bg-color: var(--color-background-error);
+  --notification-fg-color: var(--color-foreground-primary);
+  --notification-border-color: var(--color-accent-error);
+  --notification-icon-color: var(--color-accent-error);
+}
+
+.level-warning {
+  --notification-bg-color: var(--color-background-warning);
+  --notification-fg-color: var(--color-foreground-warning);
+  --notification-border-color: var(--color-accent-warning);
+  --notification-icon-color: var(--color-accent-warning);
+}
+
+.level-success {
+  --notification-bg-color: var(--color-background-success);
+  --notification-fg-color: var(--color-foreground-success);
+  --notification-border-color: var(--color-accent-success);
+  --notification-icon-color: var(--color-accent-success);
+}
+
+.icon {
+  flex-shrink: 0;
+  color: var(--notification-icon-color);
+  margin-block-start: var(--notification-icon-margin);
+}
