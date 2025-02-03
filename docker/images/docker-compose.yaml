@@ -72,7 +72,7 @@ services:
   #     - "443:443"
 
   penpot-frontend:
-    image: "penpotapp/frontend:latest"
+    image: "penpotapp/frontend:${PENPOT_VERSION:-latest}"
     restart: always
     ports:
       - 9001:8080
@@ -115,7 +115,7 @@ services:
       << : [*penpot-flags, *penpot-http-body-size]
 
   penpot-backend:
-    image: "penpotapp/backend:latest"
+    image: "penpotapp/backend:${PENPOT_VERSION:-latest}"
     restart: always
 
     volumes:
@@ -188,6 +188,7 @@ services:
       ## audit what data we send with the code available on github.
 
       PENPOT_TELEMETRY_ENABLED: true
+      PENPOT_TELEMETRY_REFERER: compose
 
       ## Example SMTP/Email configuration. By default, emails are sent to the mailcatch
       ## service, but for production usage it is recommended to setup a real SMTP
@@ -204,7 +205,7 @@ services:
       PENPOT_SMTP_SSL: false
 
   penpot-exporter:
-    image: "penpotapp/exporter:latest"
+    image: "penpotapp/exporter:${PENPOT_VERSION:-latest}"
     restart: always
 
     depends_on:
