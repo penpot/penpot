@@ -10,6 +10,7 @@
    [app.config :as cf]
    [app.main.data.common :as dcm]
    [app.main.data.team :as dtm]
+   [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
@@ -29,7 +30,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def auth-page
@@ -61,8 +61,7 @@
                                                     :file-id file-id
                                                     :page-id page-id
                                                     :layout layout)))
-                   ptk/handle-error)))
-
+                   errors/on-error)))
   [:> loader*
    {:title (tr "labels.loading")
     :overlay true}])
