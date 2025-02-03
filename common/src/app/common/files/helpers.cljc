@@ -407,10 +407,9 @@
    - `(str base-name (suffix-fn 2))`
    - `(str base-name (suffix-fn 3))`, etc."
   [base-name suffix-fn]
-  (concat
-   [base-name]
-   (map #(str/concat base-name (suffix-fn %))
-        (iterate inc 1))))
+  (cons base-name
+        (map #(str/concat base-name (suffix-fn %))
+             (iterate inc 1))))
 
 (defn ^:private get-suffix
   "Default suffix impelemtation"
