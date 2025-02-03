@@ -172,3 +172,36 @@ test("BUG 9061 - Group blur visibility toggle icon not updating", async ({
   await blurButton.click();
   await expect(blurIcon).toHaveAttribute("href", "#icon-hide");
 });
+
+test("BUG 9543 - Layout padding inputs not showing 'mixed' when needed", async ({
+  page,
+}) => {
+  const workspace = new WorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockRPC(/get\-file\?/, "design/get-file-9543.json");
+  await workspace.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=*",
+    "design/get-file-fragment-9543.json",
+  );
+  await workspace.mockRPC("update-file?id=*", "design/update-file-9543.json");
+
+  await workspace.goToWorkspace({
+    fileId: "525a5d8b-028e-80e7-8005-aa6cad42f27d",
+    pageId: "525a5d8b-028e-80e7-8005-aa6cad42f27e",
+  });
+
+  await workspace.clickLeafLayer("Board");
+  let toggle = workspace.page.getByRole("button", {
+    name: "Show 4 sided padding options",
+  });
+
+  await toggle.click();
+  await workspace.page.getByLabel("Top padding").fill("10");
+  await toggle.click();
+
+  await expect(workspace.page.getByLabel("Vertical padding")).toHaveValue("");
+  await expect(workspace.page.getByLabel("Vertical padding")).toHaveAttribute(
+    "placeholder",
+    "Mixed",
+  );
+});

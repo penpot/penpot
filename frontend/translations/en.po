@@ -4641,6 +4641,30 @@ msgstr "Exit"
 msgid "workspace.layout_grid.editor.padding.expand"
 msgstr "Show 4 sided padding options"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:337
+msgid "workspace.layout_grid.editor.padding.vertical"
+msgstr "Vertical padding"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:351
+msgid "workspace.layout_grid.editor.padding.horizontal"
+msgstr "Horizontal padding"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:396
+msgid "workspace.layout_grid.editor.padding.top"
+msgstr "Top padding"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:411
+msgid "workspace.layout_grid.editor.padding.right"
+msgstr "Right padding"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:425
+msgid "workspace.layout_grid.editor.padding.bottom"
+msgstr "Bottom padding"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:439
+msgid "workspace.layout_grid.editor.padding.left"
+msgstr "Left padding"
+
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:59
 msgid "workspace.layout_grid.editor.title"
 msgstr "Editing grid"
