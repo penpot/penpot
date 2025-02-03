@@ -767,6 +767,27 @@ msgstr "+ Nuevo proyecto"
 msgid "dashboard.new-project-prefix"
 msgstr "Nuevo Proyecto"
 
+msgid "dashboard.empty-project.create"
+msgstr "Crear un nuevo archivo"
+
+msgid "dashboard.empty-project.start"
+msgstr "Empieza a crear cosas increíbles"
+
+msgid "dashboard.empty-project.import"
+msgstr "Importa un fichero"
+
+msgid "dashboard.empty-project.import-penpot"
+msgstr "Importa un fichero .penpot"
+
+msgid "dashboard.empty-project.add-library"
+msgstr "Añade una Biblioteca o Plantilla"
+
+msgid "dashboard.empty-project.explore"
+msgstr "Explora algunas para añadir"
+
+msgid "dashboard.empty-project.go-to-libraries"
+msgstr "Ir a Bibliotecas y Plantillas"
+
 #: src/app/main/ui/dashboard/search.cljs:77
 msgid "dashboard.no-matches-for"
 msgstr "No se encuentra “%s“"

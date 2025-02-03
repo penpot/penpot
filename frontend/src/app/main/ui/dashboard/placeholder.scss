@@ -33,6 +33,7 @@
       a {
         color: var(--color-foreground-primary);
       }
+
       p {
         max-width: $s-360;
         text-align: center;
@@ -92,6 +93,7 @@
 
 .placeholder-markdown {
   @include t.use-typography("body-large");
+
   a {
     color: var(--color-accent-primary);
   }
@@ -99,4 +101,44 @@
 
 .empty-placeholder-libraries {
   margin: $s-16;
+}
+
+.empty-project-container {
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  gap: $s-16;
+  margin-top: $s-12;
+}
+
+.empty-project-card {
+  @include t.use-typography("body-small");
+  --color-card-background: var(--color-background-tertiary);
+  --color-card-title: var(--color-foreground-primary);
+  --color-card-subtitle: var(--color-foreground-secondary);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--color-card-background);
+  border: $s-2 solid var(--color-background-quaternary);
+  border-radius: $br-8;
+  padding: var(--sp-m) 0;
+
+  &:hover {
+    --color-card-background: var(--color-accent-primary);
+    --color-card-title: var(--color-background-secondary);
+    --color-card-subtitle: var(--color-background-secondary);
+    cursor: pointer;
+  }
+
+  flex-grow: 1;
+}
+
+.empty-project-card-title {
+  color: var(--color-card-title);
+}
+
+.empty-project-card-subtitle {
+  color: var(--color-card-subtitle);
 }
