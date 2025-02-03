@@ -481,6 +481,7 @@
                  file)
 
         params (-> file
+                   (dissoc :deleted-at)
                    (update :features db/encode-pgarray conn "text")
                    (update :data blob/encode))]
 
