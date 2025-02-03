@@ -6,6 +6,7 @@
 
 import * as React from "react";
 import Components from "@target/components";
+import { action } from "@storybook/addon-actions";
 
 const { Toast } = Components;
 
@@ -19,13 +20,12 @@ export default {
   },
   args: {
     children: "Lorem ipsum",
-    onClose: () => {
-      alert("Close callback");
-    },
+    type: "toast",
+    onClose: action("on-close"),
   },
   parameters: {
     controls: {
-      exclude: ["onClose"],
+      exclude: ["onClose", "type"],
     },
   },
   render: ({ ...args }) => <Toast {...args} />,

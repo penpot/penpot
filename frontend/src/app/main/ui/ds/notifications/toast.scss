@@ -7,72 +7,33 @@
 @use "../_sizes.scss" as *;
 @use "../_borders.scss" as *;
 @use "../typography.scss" as *;
+@use "../spacing.scss" as *;
+@use "../z-index.scss" as *;
 
 .toast {
-  @include use-typography("body-medium");
-
-  --toast-bg-color: var(--color-background-primary);
-  --toast-fg-color: var(--color-foreground-primary);
-  --toast-border-color: var(--color-background-quaternary);
-  --toast-padding: var(--sp-l);
   --toast-icon-color: var(--color-foreground-secondary);
-  --toast-icon-margin: var(--sp-xxs);
+  --toast-vertical-index: var(--z-index-notifications);
+  --toast-inset-block-start-position: var(--sp-l);
+  --toast-inset-inline-end-position: var(--sp-l);
 
   min-inline-size: $sz-224;
   max-inline-size: $sz-480;
-  background-color: var(--toast-bg-color);
-  border: $b-1 solid var(--toast-border-color);
-  border-radius: $br-8;
-  padding: var(--toast-padding);
 
-  display: inline-grid;
-  grid-template-columns: auto 1fr auto;
-  column-gap: var(--sp-s);
-  align-items: flex-start;
-
-  color: var(--toast-fg-color);
-}
-
-.toast-info {
-  --toast-bg-color: var(--color-background-info);
-  --toast-fg-color: var(--color-foreground-primary);
-  --toast-border-color: var(--color-accent-info);
-  --toast-icon-color: var(--color-accent-info);
-}
-
-.toast-error {
-  --toast-bg-color: var(--color-background-error);
-  --toast-fg-color: var(--color-foreground-primary);
-  --toast-border-color: var(--color-accent-error);
-  --toast-icon-color: var(--color-accent-error);
-}
-
-.toast-warning {
-  --toast-bg-color: var(--color-background-warning);
-  --toast-fg-color: var(--color-foreground-primary);
-  --toast-border-color: var(--color-accent-warning);
-  --toast-icon-color: var(--color-accent-warning);
-}
-
-.toast-success {
-  --toast-bg-color: var(--color-background-success);
-  --toast-fg-color: var(--color-foreground-primary);
-  --toast-border-color: var(--color-accent-success);
-  --toast-icon-color: var(--color-accent-success);
-}
-
-.icon {
-  color: var(--toast-icon-color);
-  margin-block-start: var(--toast-icon-margin);
+  display: block;
+  position: fixed;
+  inset-block-start: var(--toast-inset-block-start-position);
+  inset-inline-end: var(--toast-inset-inline-end-position);
+  z-index: var(--toast-vertical-index);
 }
 
 .close-button {
   appearance: none;
   width: $sz-16;
   height: $sz-16;
-  display: inline-grid;
-  place-content: center;
+  position: absolute;
+  top: var(--sp-l);
+  right: var(--sp-l);
+  background: none;
   border: none;
-  background: var(--toast-bg-color);
   color: var(--toast-icon-color);
 }
