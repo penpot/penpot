@@ -2011,7 +2011,7 @@
         has-flow?        (partial ctp/get-frame-flow flows)]
 
     (reduce (fn [changes frame-id]
-              (let [name     (cfh/generate-unique-name @unames "Flow 1")
+              (let [name     (cfh/generate-unique-name "Flow" @unames :immediate-suffix? true)
                     frame-id (get ids-map frame-id)
                     flow-id  (uuid/next)
                     new-flow {:id flow-id

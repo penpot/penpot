@@ -1143,6 +1143,10 @@ msgstr "Cannot drop a parent set to an own child path."
 msgid "errors.drag-drop.set-exists"
 msgstr "Cannot complete drop, a set with same name already exists at path %s."
 
+#: src/app/main/data/tokens.cljs:294
+msgid "workspace.token.duplicate-suffix"
+msgstr "copy"
+
 #: src/app/main/ui/auth/verify_token.cljs:84, src/app/main/ui/settings/change_email.cljs:29
 msgid "errors.email-already-exists"
 msgstr "Email already used"
