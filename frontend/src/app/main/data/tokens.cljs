@@ -107,11 +107,9 @@
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
 
-(defn create-token-set [token-set]
-  (let [new-token-set (merge
-                       {:name "Token Set"
-                        :tokens []}
-                       token-set)]
+(defn create-token-set [set-name token-set]
+  (let [new-token-set (-> token-set
+                          (update :name #(if (empty? %) set-name (ctob/join-set-path [% set-name]))))]
     (ptk/reify ::create-token-set
       ptk/WatchEvent
       (watch [it _ _]

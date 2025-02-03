@@ -26,6 +26,7 @@ const setupEmptyTokensFile = async (page) => {
     tokenThemesSetsSidebar: workspacePage.tokenThemesSetsSidebar,
     tokenSetItems: workspacePage.tokenSetItems,
     tokenSetGroupItems: workspacePage.tokenSetGroupItems,
+    tokenContextMenuForSet: workspacePage.tokenContextMenuForSet,
   };
 };
 
@@ -58,6 +59,7 @@ const setupTokensFile = async (page) => {
     tokenSetGroupItems: workspacePage.tokenSetGroupItems,
     tokensSidebar: workspacePage.tokensSidebar,
     tokenContextMenuForToken: workspacePage.tokenContextMenuForToken,
+    tokenContextMenuForSet: workspacePage.tokenContextMenuForSet,
   };
 };
 
@@ -223,27 +225,43 @@ test.describe("Tokens: Sets Tab", () => {
     await setInput.press(finalKey);
   };
 
-  // test("User creates sets tree structure by entering a set path", async ({
-  //   page,
-  // }) => {
-  //   const {
-  //     workspacePage,
-  //     tokenThemesSetsSidebar,
-  //     tokenSetItems,
-  //     tokenSetGroupItems,
-  //   } = await setupEmptyTokensFile(page);
-  //
-  //   const tokensTabButton = tokenThemesSetsSidebar
-  //     .getByRole("button", { name: "Add set" })
-  //     .click();
-  //
-  //   await createSet(tokenThemesSetsSidebar, "core/colors/light");
-  //   await createSet(tokenThemesSetsSidebar, "core/colors/dark");
-  //
-  //   // User cancels during editing
-  //   await createSet(tokenThemesSetsSidebar, "core/colors/dark", "Escape");
-  //
-  //   await expect(tokenSetItems).toHaveCount(2);
-  //   await expect(tokenSetGroupItems).toHaveCount(2);
-  // });
+  test("User creates sets tree structure by entering a set path", async ({
+    page,
+  }) => {
+    const {
+      workspacePage,
+      tokenThemesSetsSidebar,
+      tokenSetItems,
+      tokenSetGroupItems,
+      tokenContextMenuForSet,
+    } = await setupEmptyTokensFile(page);
+
+    const tokensTabButton = tokenThemesSetsSidebar
+      .getByRole("button", { name: "Add set" })
+      .click();
+
+    await createSet(tokenThemesSetsSidebar, "core/colors/light");
+    await createSet(tokenThemesSetsSidebar, "core/colors/dark");
+
+    // User cancels during editing
+    await createSet(tokenThemesSetsSidebar, "core/colors/dark", "Escape");
+
+    await expect(tokenSetItems).toHaveCount(2);
+    await expect(tokenSetGroupItems).toHaveCount(2);
+
+    // Create set in group
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "Collapse core" })
+      .click({ button: "right" });
+    await expect(tokenContextMenuForSet).toBeVisible();
+    await tokenContextMenuForSet.getByText("Add set to this group").click();
+
+    const setInput = tokenThemesSetsSidebar.locator("input:focus");
+    await expect(setInput).toBeVisible();
+    await setInput.fill("sizes/small");
+    await setInput.press("Enter");
+
+    await expect(tokenSetItems).toHaveCount(3);
+    await expect(tokenSetGroupItems).toHaveCount(3);
+  });
 });
