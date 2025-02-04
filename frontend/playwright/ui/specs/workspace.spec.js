@@ -321,6 +321,55 @@ test("[Taiga #9929] Paste text in workspace", async ({ page, context }) => {
     .getByText("Lorem ipsum dolor");
 });
 
+test("[Taiga #9930] Zoom fit all doesn't fits all", async ({
+  page,
+  context,
+}) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+  await workspacePage.mockRPC(/get\-file\?/, "workspace/get-file-9930.json");
+  await workspacePage.goToWorkspace({
+    fileId: "8f843b59-7fbb-81ce-8005-aa6d47ae3111",
+    pageId: "fb9798e7-a547-80ae-8005-9ffda4a13e2c",
+  });
+
+  const zoom = await page.getByTitle("Zoom");
+  await zoom.click();
+
+  const zoomIn = await page.getByTitle("Zoom in");
+  await zoomIn.click();
+  await zoomIn.click();
+  await zoomIn.click();
+
+  // Zoom fit all
+  await page.keyboard.press("Shift+1");
+
+  const ids = [
+    "shape-165d1e5a-5873-8010-8005-9ffdbeaeec59",
+    "shape-165d1e5a-5873-8010-8005-9ffdbeaf8d8a",
+    "shape-165d1e5a-5873-8010-8005-9ffdbeaf8d9e",
+    "shape-165d1e5a-5873-8010-8005-9ffdbeb053d9",
+    "shape-165d1e5a-5873-8010-8005-9ffdbeb09738",
+    "shape-165d1e5a-5873-8010-8005-9ffdbeb0f3fc",
+  ];
+
+  function contains(container, contained) {
+    return (
+      container.x <= contained.x &&
+      container.y <= contained.y &&
+      container.width >= contained.width &&
+      container.height >= contained.height
+    );
+  }
+
+  const viewportBoundingBox = await workspacePage.viewport.boundingBox();
+  for (const id of ids) {
+    const shape = await page.locator(`.ws-shape-wrapper > g#${id}`);
+    const shapeBoundingBox = await shape.boundingBox();
+    expect(contains(viewportBoundingBox, shapeBoundingBox)).toBeTruthy();
+  }
+});
+
 test("Bug 9877, user navigation to dashboard from header goes to blank page", async ({
   page,
 }) => {

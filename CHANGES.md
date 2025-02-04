@@ -57,6 +57,9 @@ is a number of cores)
 - Copy text content to clipboard [Taiga #9970](https://tree.taiga.io/project/penpot/us/9970?milestone=424203)
 - Resize board to fit content option [Taiga #4707](https://tree.taiga.io/project/penpot/us/4707)
 - Rename selected layer via Board name [Taiga #9430](https://tree.taiga.io/project/penpot/us/9430)
+- [COMMENTS] Mention Functionality with and Sidebar Filters [Taiga #9237](https://tree.taiga.io/project/penpot/us/9237)
+- [COMMENTS] Visual Changes in Comments [Taiga #9234](https://tree.taiga.io/project/penpot/us/9234)
+- [COMMENTS] Notifications in Backend, Profile Section, and Mention Email Notification [Taiga #9233](https://tree.taiga.io/project/penpot/us/9233)
 
 ### :bug: Bugs fixed
 

@@ -511,7 +511,9 @@
         {:limit limit
          :can-edit can-edit
          :create-fn create-fn
-         :origin origin}])]))
+         :origin origin
+         :project-id project-id
+         :on-finish-import on-finish-import}])]))
 
 (mf/defc line-grid-row
   [{:keys [files selected-files dragging? limit can-edit] :as props}]
@@ -635,4 +637,6 @@
         {:dragging? @dragging?
          :limit limit
          :can-edit can-edit
-         :create-fn create-fn}])]))
+         :create-fn create-fn
+         :project-id project-id
+         :on-finish-import on-finish-import}])]))

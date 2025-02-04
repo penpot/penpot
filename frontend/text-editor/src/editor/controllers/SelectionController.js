@@ -1047,6 +1047,7 @@ export class SelectionController extends EventTarget {
     if (fragment.children.length === 1
      && fragment.firstElementChild?.dataset?.inline === "force"
     ) {
+      const collapseNode = fragment.lastElementChild.firstChild
       if (this.isInlineStart) {
         this.focusInline.before(...fragment.firstElementChild.children)
       } else if (this.isInlineEnd) {
@@ -1058,9 +1059,12 @@ export class SelectionController extends EventTarget {
         )
         this.focusInline.after(...fragment.firstElementChild.children, newInline)
       }
-      return;
+      return this.collapse(
+        collapseNode,
+        collapseNode.nodeValue.length
+      );
     }
-
+    const collapseNode = fragment.lastElementChild.lastElementChild.firstChild
     if (this.isParagraphStart) {
       this.focusParagraph.before(fragment);
     } else if (this.isParagraphEnd) {
@@ -1073,6 +1077,7 @@ export class SelectionController extends EventTarget {
       );
       this.focusParagraph.after(fragment, newParagraph);
     }
+    return this.collapse(collapseNode, collapseNode.nodeValue.length);
   }
 
   /**
