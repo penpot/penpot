@@ -90,7 +90,7 @@
           state
           (update state :workspace-local
                   (fn [{:keys [vport] :as local}]
-                    (let [srect (gal/adjust-to-viewport vport srect {:padding 40})
+                    (let [srect (gal/adjust-to-viewport vport srect {:padding 160})
                           zoom  (/ (:width vport) (:width srect))]
                       (-> local
                           (assoc :zoom zoom)
