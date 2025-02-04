@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.data.events :as ev]
-   [app.main.data.modal :as modal]
    [app.main.data.shortcuts :as scd]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.drawing.common :as dwc]
@@ -159,8 +158,6 @@
 
         input-ref         (mf/use-ref nil)
 
-        team              (mf/deref refs/team)
-
         nav-to-viewer
         (mf/use-fn
          (mf/deps file-id page-id)
@@ -197,15 +194,7 @@
                        (dw/clear-edition-mode)))
 
            (st/emit! (-> (dw/toggle-layout-flag :document-history)
-                         (vary-meta assoc ::ev/origin "workspace-header")))))
-
-        open-share-dialog
-        (mf/use-fn
-         (mf/deps team)
-         (fn []
-           (st/emit! (modal/show {:type :invite-members
-                                  :team team
-                                  :origin :workspace}))))]
+                         (vary-meta assoc ::ev/origin "workspace-header")))))]
 
     (mf/with-effect [editing?]
       (when ^boolean editing?
@@ -248,12 +237,6 @@
                                :history-button true)
           :on-click toggle-history}
          i/history]])
-
-     (when  (not (:is-default team))
-       [:a {:class (stl/css :viewer-btn)
-            :title (tr "workspace.header.share")
-            :on-click open-share-dialog}
-        i/share])
 
      [:a {:class (stl/css :viewer-btn)
           :title (tr "workspace.header.viewer" (sc/get-tooltip :open-viewer))
