@@ -324,6 +324,7 @@
                                                   :type :toast
                                                   :level :error})))))
             (set! (.-value (mf/ref-val input-ref)) "")))
+
         on-export (fn []
                     (st/emit! (ptk/event ::ev/event {::ev/name "export-tokens"}))
                     (let [tokens-json (some-> (deref refs/tokens-lib)
@@ -352,7 +353,6 @@
         [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                  :on-click on-display-file-explorer}
          (tr "labels.import")])
-
       [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                :on-click on-export}
        (tr "labels.export")]]]))
