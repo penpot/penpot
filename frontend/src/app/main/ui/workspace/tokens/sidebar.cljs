@@ -254,24 +254,31 @@
                                :style "header"}])]]
        [:& theme-sets-list {:on-open on-open}]]]]))
 
-(mf/defc tokens-tab
-  [_props]
-  (let [objects (mf/deref refs/workspace-page-objects)
+(mf/defc tokens-tab*
+  []
+  (let [objects         (mf/deref refs/workspace-page-objects)
+        selected        (mf/deref refs/selected-shapes)
 
-        selected (mf/deref refs/selected-shapes)
-        selected-shapes (into [] (keep (d/getf objects)) selected)
+        selected-shapes
+        (mf/with-memo [selected objects]
+          (into [] (keep (d/getf objects)) selected))
 
-        active-theme-tokens (sd/use-active-theme-sets-tokens)
+        active-theme-tokens
+        (sd/use-active-theme-tokens)
 
-        tokens (sd/use-resolved-workspace-tokens)
+        tokens
+        (sd/use-resolved-workspace-tokens)
 
-        selected-token-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
+        selected-token-set-tokens
+        (mf/deref refs/workspace-selected-token-set-tokens)
 
-        selected-token-set-name (mf/deref refs/workspace-selected-token-set-name)
+        selected-token-set-name
+        (mf/deref refs/workspace-selected-token-set-name)
 
-        token-groups (mf/with-memo [tokens selected-token-set-tokens]
-                       (-> (select-keys tokens (keys selected-token-set-tokens))
-                           (sorted-token-groups)))]
+        token-groups
+        (mf/with-memo [tokens selected-token-set-tokens]
+          (-> (select-keys tokens (keys selected-token-set-tokens))
+              (sorted-token-groups)))]
     [:*
      [:& token-context-menu]
      [:& title-bar {:all-clickable true
@@ -357,10 +364,9 @@
                                :on-click on-export}
        (tr "labels.export")]]]))
 
-(mf/defc tokens-sidebar-tab
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
-  [_props]
+(mf/defc tokens-sidebar-tab*
+  {::mf/wrap [mf/memo]}
+  []
   (let [{on-pointer-down-pages :on-pointer-down
          on-lost-pointer-capture-pages :on-lost-pointer-capture
          on-pointer-move-pages :on-pointer-move
@@ -374,5 +380,5 @@
              :on-pointer-down on-pointer-down-pages
              :on-lost-pointer-capture on-lost-pointer-capture-pages
              :on-pointer-move on-pointer-move-pages}]
-      [:& tokens-tab]]
+      [:> tokens-tab*]]
      [:& import-export-button]]))

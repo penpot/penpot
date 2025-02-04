@@ -295,6 +295,8 @@
         prefer-selected-token-set-tokens (merge active-theme-tokens selected-token-set-tokens)]
     (use-resolved-tokens prefer-selected-token-set-tokens)))
 
-(defn use-active-theme-sets-tokens []
+(defn use-active-theme-tokens
+  "A hook that returns active tokens for the current active theme"
+  []
   (-> (mf/deref refs/workspace-active-theme-sets-tokens)
       (use-resolved-tokens {:cache-atom !theme-tokens-cache})))
