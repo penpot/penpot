@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-08-23 09:16+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Portuguese (Portugal) "
-"<https://hosted.weblate.org/projects/penpot/frontend/pt_PT/>\n"
+"PO-Revision-Date: 2025-02-04 21:01+0000\n"
+"Last-Translator: TheScientistPT <joao.ed.reis.gomes@gmail.com>\n"
+"Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
+"penpot/frontend/pt_PT/>\n"
 "Language: pt_PT\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.7.1-dev\n"
+"X-Generator: Weblate 5.10-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -5952,3 +5952,570 @@ msgstr "Clica para fechar o caminho"
 
 #~ msgid "workspace.options.layout.direction.left"
 #~ msgstr "Linha"
+
+#: src/app/main/ui/workspace/libraries.cljs:173
+msgid "labels.adding"
+msgstr "A adicionar..."
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:167
+msgid "shortcuts.rename"
+msgstr "Renomear"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+msgid "shortcuts.copy-link"
+msgstr "Copiar ligação para a área de transferência"
+
+#: src/app/main/ui/workspace/plugins.cljs:436
+msgid "workspace.plugins.try-out.cancel"
+msgstr "AGORA NÃO"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:333
+msgid "workspace.token.edit-theme-title"
+msgstr "Editar tema"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:72
+msgid "workspace.token.edit-themes"
+msgstr "Editar temas"
+
+#: src/app/main/ui/settings/notifications.cljs:64
+msgid "title.settings.notifications"
+msgstr "Notificações - Penpot"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:249
+msgid "workspace.sidebar.sitemap.add-page"
+msgstr "Adicionar página"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:48
+msgid "dashboard.add-file"
+msgstr "Adicionar ficheiro"
+
+#: src/app/main/ui/workspace/main_menu.cljs:623
+msgid "dashboard.create-version-menu"
+msgstr "Afixar esta versão"
+
+#: src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:285
+msgid "dashboard.empty-placeholder-drafts-subtitle"
+msgstr "Assim que um membro do projeto crie um rascunho, será apresentado aqui."
+
+#: src/app/main/ui/dashboard/files.cljs:194, src/app/main/ui/dashboard/projects.cljs:280
+msgid "dashboard.empty-placeholder-drafts-title"
+msgstr "Ainda não existem rascunhos."
+
+#: src/app/main/ui/dashboard/files.cljs:200, src/app/main/ui/dashboard/projects.cljs:286
+msgid "dashboard.empty-placeholder-files-subtitle"
+msgstr ""
+"Assim que um membro do projeto criar um ficheiro, será apresentado aqui."
+
+#: src/app/main/ui/settings/notifications.cljs:76
+msgid "dashboard.settings.notifications.dashboard-comments.all"
+msgstr "Todos os comentários, menções e respostas"
+
+#: src/app/main/ui/settings/notifications.cljs:77
+msgid "dashboard.settings.notifications.dashboard-comments.partial"
+msgstr "Apenas menções e respostas"
+
+#: src/app/main/ui/settings/notifications.cljs:82
+msgid "dashboard.settings.notifications.email.title"
+msgstr "Notificações por Email"
+
+#: src/app/main/ui/settings/notifications.cljs:92
+msgid "dashboard.settings.notifications.email-invites.title"
+msgstr "Convites e pedidos"
+
+#: src/app/main/ui/settings/notifications.cljs:103
+msgid "dashboard.settings.notifications.submit"
+msgstr "Atualizar definições"
+
+#: src/app/main/ui/workspace/plugins.cljs:336, src/app/main/ui/workspace/plugins.cljs:390
+msgid "ds.confirm-allow"
+msgstr "Permitir"
+
+#: src/app/main/ui/comments.cljs:812
+msgid "labels.comment"
+msgstr "Comentário"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:180
+msgid "labels.collapse"
+msgstr "Colapsar"
+
+#: src/app/main/ui/settings/sidebar.cljs:99
+msgid "labels.notifications"
+msgstr "Notificações"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:355
+msgid "labels.import"
+msgstr "Importar"
+
+#: src/app/main/ui/static.cljs:248, src/app/main/ui/static.cljs:259
+msgid "not-found.no-permission.project-name"
+msgstr "PROJETO"
+
+#: src/app/main/ui/static.cljs:312, src/app/main/ui/static.cljs:321
+msgid "not-found.no-permission.ask"
+msgstr "PEDIR ACESSO"
+
+#: src/app/main/ui/onboarding/questions.cljs:406
+msgid "onboarding.questions.referer.social"
+msgstr "Redes sociais (X, Linkedin, FB, etc)"
+
+#: src/app/main/ui/onboarding/questions.cljs:405
+msgid "onboarding.questions.referer.search"
+msgstr "Motor de busca (Google, Yahoo, Bing)"
+
+#: src/app/main/ui/onboarding/questions.cljs:407
+msgid "onboarding.questions.referer.article"
+msgstr "Artigo (Blogue, Post, Newsletter)"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:174, src/app/main/ui/workspace/sidebar/assets.cljs:179
+msgid "workspace.assets.add-library"
+msgstr "Adicionar biblioteca"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:171
+msgid "workspace.options.stroke.add-stroke"
+msgstr "Adicionar cor de traço"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:184
+msgid "workspace.options.stroke.remove-stroke"
+msgstr "Remover traço"
+
+#: src/app/main/ui/workspace/plugins.cljs:442
+msgid "workspace.plugins.try-out.try"
+msgstr "TESTAR PLUGIN"
+
+#: src/app/main/ui/workspace/context_menu.cljs:210
+msgid "workspace.shape.menu.copy-text"
+msgstr "Copiar como texto"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159, src/app/main/ui/workspace/tokens/modals/themes.cljs:237
+msgid "workspace.token.create-theme-title"
+msgstr "Criar tema"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:128
+msgid "workspace.token.applied-to"
+msgstr "Aplicado a"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:187
+msgid "workspace.token.label.theme"
+msgstr "Tema"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:348
+msgid "workspace.token.tools"
+msgstr "Ferramentas"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:123
+msgid "workspace.token.value-not-valid"
+msgstr "O valor não é válido"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:308
+msgid "workspace.versions.filter.label"
+msgstr "Filtro de versões"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:327, src/app/main/ui/workspace/sidebar/versions.cljs:329
+msgid "workspace.versions.button.save"
+msgstr "Guardar versão"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:198
+msgid "workspace.versions.button.restore"
+msgstr "Restaurar versão"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:203
+msgid "workspace.versions.button.pin"
+msgstr "Afixar versão"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:322
+msgid "workspace.versions.loading"
+msgstr "A carregar..."
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:310
+msgid "workspace.versions.filter.mine"
+msgstr "As minhas versões"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:316
+msgid "workspace.versions.filter.user"
+msgstr "Versões de %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:343, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:344
+msgid "workspace.options.fit-content"
+msgstr "Redimensionar para ajustar ao conteúdo"
+
+#: src/app/main/ui/workspace/right_header.cljs:255
+msgid "workspace.header.share"
+msgstr "Partilhar"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:735
+msgid "workspace.options.interactions.add-interaction"
+msgstr "Adicionar interação"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:341
+msgid "workspace.token.back-to-themes"
+msgstr "Voltar à lista de temas"
+
+#: src/app/main/ui/auth/verify_token.cljs:100, src/app/main/ui/dashboard/grid.cljs:114, src/app/main/ui/dashboard/grid.cljs:133, src/app/main/ui/dashboard/import.cljs:253, src/app/main/ui/dashboard/placeholder.cljs:53, src/app/main/ui/ds/product/loader.cljs:52, src/app/main/ui/exports/files.cljs:62, src/app/main/ui/viewer.cljs:643, src/app/main/ui/workspace.cljs:126, src/app/main/ui.cljs:67, src/app/main/ui.cljs:105, src/app/main/ui.cljs:124
+msgid "labels.loading"
+msgstr "A carregar…"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:510
+msgid "workspace.assets.components.add-component"
+msgstr "Adicionar componente"
+
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:494
+msgid "workspace.assets.colors.add-color"
+msgstr "Adicionar cor"
+
+#: src/app/main/ui/workspace/plugins.cljs:257
+msgid "workspace.plugins.permissions.library-write"
+msgstr "Ler e modificar as tuas bibliotecas e recursos."
+
+#: src/app/main/ui/workspace/plugins.cljs:276
+msgid "workspace.plugins.permissions.comment-read"
+msgstr "Ler os teus comentários e respostas."
+
+#: src/app/main/ui/workspace/plugins.cljs:270
+msgid "workspace.plugins.permissions.comment-write"
+msgstr "Ler e modificar os teus comentários, e enviar respostas em teu nome."
+
+#: src/app/main/ui/workspace/plugins.cljs:263
+msgid "workspace.plugins.permissions.library-read"
+msgstr "Ler informações sobre as tuas bibliotecas e recursos."
+
+#: src/app/main/ui/workspace/plugins.cljs:86
+msgid "workspace.plugins.remove-plugin"
+msgstr "Remover plugin"
+
+#: src/app/main/ui/workspace/plugins.cljs:316
+msgid "workspace.plugins.permissions.title"
+msgstr "O PLUGIN '%s' SOLICITA ACESSO A:"
+
+#: src/app/main/ui/workspace/plugins.cljs:250
+msgid "workspace.plugins.permissions.user-read"
+msgstr "Ler as informações de perfil do utilizador atual."
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:114
+msgid "workspace.token.original-value"
+msgstr "Valor original: %s"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43, src/app/main/ui/workspace/tokens/modals/themes.cljs:88
+msgid "workspace.token.themes"
+msgstr "Temas"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+#, unused
+msgid "workspace.token.theme-name"
+msgstr "Tema %s"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:309
+msgid "workspace.versions.filter.all"
+msgstr "Todas as versões"
+
+#: src/app/main/ui/static.cljs:62
+msgid "labels.copyright"
+msgstr "Kaleidos @2024"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:270
+msgid "settings.remove-color"
+msgstr "Remover cor"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:151
+msgid "workspace.options.fill.add-fill"
+msgstr "Adicionar cor de preenchimento"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:164
+msgid "workspace.options.fill.remove-fill"
+msgstr "Remover preenchimento"
+
+#: src/app/main/data/plugins.cljs:86, src/app/main/ui/workspace/main_menu.cljs:743, src/app/main/ui/workspace/plugins.cljs:82
+msgid "workspace.plugins.error.need-editor"
+msgstr "Precisas de ser um(a) editor(a) para usar este plugin"
+
+#: src/app/main/ui/workspace/plugins.cljs:372
+msgid "workspace.plugins.permissions-update.title"
+msgstr "ATUALIZAR ESTE PLUGIN"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:56
+msgid "workspace.token.new-theme"
+msgstr "Novo tema"
+
+#: src/app/main/errors.cljs:228
+msgid "errors.migration-in-progress"
+msgstr "Migração em progresso"
+
+#: src/app/main/ui/auth/recovery_request.cljs:114
+msgid "not-found.login.sent-recovery"
+msgstr "Enviámos um email de recuperação para"
+
+#: src/app/main/ui/static.cljs:330
+msgid "not-found.desc-message.error"
+msgstr "Erro 404"
+
+#: src/app/main/ui/static.cljs:64
+msgid "not-found.made-with-love"
+msgstr "Feito com AMOR e código aberto"
+
+#: src/app/main/ui/static.cljs:150
+msgid "not-found.login.start-using"
+msgstr "E começa a usar o Penpot em poucos segundos!"
+
+#: src/app/main/ui/static.cljs:149
+msgid "not-found.login.signup-free"
+msgstr "Inscreve-te gratuitamente"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:201, src/app/main/ui/workspace/top_toolbar.cljs:202
+msgid "workspace.toolbar.plugins"
+msgstr "Plugins (%s)"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:36
+msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
+msgstr "As bibliotecas que forem adicionadas ao projeto aparecerão aqui."
+
+#: src/app/main/ui/dashboard/comments.cljs:84
+msgid "dashboard.notifications"
+msgstr "Notificações"
+
+#: src/app/main/ui/dashboard/comments.cljs:44
+msgid "dashboard.notifications.view"
+msgstr "Ver notificações"
+
+#: src/app/main/ui/workspace/main_menu.cljs:630
+msgid "dashboard.show-version-history"
+msgstr "Histórico de versões"
+
+#: src/app/main/ui/dashboard/team.cljs:954
+msgid "dashboard.webhooks.cant-edit"
+msgstr "Só podes apagar ou modificar webhooks que criaste."
+
+#: src/app/main/ui/dashboard/sidebar.cljs:968
+msgid "dashboard.upgrade-plan.penpot-free"
+msgstr "Penpot Gratuito"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:969
+msgid "dashboard.upgrade-plan.no-limits"
+msgstr "Criatividade sem limites"
+
+#: src/app/main/ui/workspace/libraries.cljs:173
+msgid "labels.add"
+msgstr "Adicionar"
+
+#: src/app/main/ui/comments.cljs:545, src/app/main/ui/comments.cljs:822, src/app/main/ui/comments.cljs:886, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:295, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:324
+msgid "labels.options"
+msgstr "Opções"
+
+#: src/app/main/ui/comments.cljs:641
+msgid "labels.reply.thread"
+msgstr "Responder"
+
+#: src/app/main/ui/comments.cljs:602
+msgid "labels.reply.new"
+msgstr "nova resposta"
+
+#: src/app/main/ui/comments.cljs:597
+msgid "labels.reply"
+msgstr "resposta"
+
+#: src/app/main/ui/comments.cljs:598
+msgid "labels.replies"
+msgstr "respostas"
+
+#: src/app/main/ui/comments.cljs:603
+msgid "labels.replies.new"
+msgstr "novas respostas"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:133, src/app/main/ui/workspace/sidebar/versions.cljs:263
+msgid "labels.restore"
+msgstr "Restaurar"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:183
+msgid "labels.themes"
+msgstr "Temas"
+
+#: src/app/main/ui/workspace/comments.cljs:66, src/app/main/ui/workspace/comments.cljs:136
+msgid "labels.show-mentions"
+msgstr "Mostrar apenas as tuas menções"
+
+#: src/app/main/ui/dashboard/team.cljs:216
+msgid "modals.invite-team-member.text"
+msgstr ""
+"Podes convidar membros para a equipa para que estes possam ter acesso a este "
+"ficheiro e todos os ficheiros da equipa."
+
+#: src/app/main/ui/static.cljs:291
+msgid "not-found.no-permission.already-requested.file"
+msgstr "Já solicitaste acesso a este ficheiro."
+
+#: src/app/main/ui/static.cljs:292
+msgid "not-found.no-permission.already-requested.or-others.file"
+msgstr ""
+"Já solicitaste acesso a este ficheiro, ou outros ficheiros, ou projetos "
+"desta equipa."
+
+#: src/app/main/ui/static.cljs:297
+msgid "not-found.no-permission.already-requested.project"
+msgstr "Já solicitaste acesso a este projeto."
+
+#: src/app/main/ui/static.cljs:331
+msgid "not-found.desc-message.doesnt-exist"
+msgstr "Esta página não existe"
+
+#: src/app/main/ui/auth/recovery_request.cljs:116
+msgid "not-found.login.sent-recovery-check"
+msgstr ""
+"Verifica o teu email e clica no link para criares uma nova palavra-passe."
+
+#: src/app/main/ui/static.cljs:303
+msgid "not-found.no-permission.done.success"
+msgstr "O teu pedido foi enviado com sucesso!"
+
+#: src/app/main/ui/static.cljs:309
+msgid "not-found.no-permission.file"
+msgstr "Não tens acesso a este ficheiro."
+
+#: src/app/main/ui/static.cljs:51, src/app/main/ui/static.cljs:287, src/app/main/ui/static.cljs:293, src/app/main/ui/static.cljs:299, src/app/main/ui/static.cljs:305, src/app/main/ui/static.cljs:314, src/app/main/ui/static.cljs:323
+msgid "not-found.no-permission.go-dashboard"
+msgstr "Ir para o teu Penpot"
+
+#: src/app/main/ui/static.cljs:249, src/app/main/ui/static.cljs:261
+msgid "not-found.no-permission.penpot-file"
+msgstr "Ficheiro do Penpot"
+
+#: src/app/main/data/common.cljs:93
+msgid "notifications.by-code.maintenance"
+msgstr ""
+"Pausa de manutenção: nos próximos 5 minutos estaremos fora de serviço para "
+"manutenção."
+
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:404
+msgid "workspace.assets.typography.add-typography"
+msgstr "Adicionar tipografia"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+msgid "workspace.options.blur-options.add-blur"
+msgstr "Adicionar desfoque"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
+msgid "workspace.options.blur-options.remove-blur"
+msgstr "Remover desfoque"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:323
+msgid "workspace.options.guides.add-guide"
+msgstr "Adicionar guia"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:187
+msgid "workspace.options.guides.remove-guide"
+msgstr "Remover guia"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.interactions.remove-interaction"
+msgstr "Remover interação"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:305
+msgid "workspace.options.shadow-options.add-shadow"
+msgstr "Adicionar sombra"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:180, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:318
+msgid "workspace.options.shadow-options.remove-shadow"
+msgstr "Remover sombra"
+
+#: src/app/main/ui/workspace/plugins.cljs:202
+#, markdown
+msgid "workspace.plugins.discover"
+msgstr "Descobre [mais plugins](%s)"
+
+#: src/app/main/ui/workspace/context_menu.cljs:203
+msgid "workspace.shape.menu.copy-css"
+msgstr "Copiar como CSS"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1004, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1030
+msgid "workspace.shape.menu.add-layout"
+msgstr "Adicionar layout"
+
+#: src/app/main/ui/workspace/context_menu.cljs:201
+msgid "workspace.shape.menu.copy-paste-as"
+msgstr "Copiar/Colar como ..."
+
+#: src/app/main/ui/workspace/context_menu.cljs:188
+msgid "workspace.shape.menu.copy-link"
+msgstr "Copiar ligação para a área de transferência"
+
+#: src/app/main/ui/workspace/context_menu.cljs:217
+msgid "workspace.shape.menu.paste-props"
+msgstr "Colar propriedades"
+
+#: src/app/main/ui/workspace/context_menu.cljs:213
+msgid "workspace.shape.menu.copy-props"
+msgstr "Copiar propriedades"
+
+#: src/app/main/ui/workspace/context_menu.cljs:312
+msgid "workspace.shape.menu.rename"
+msgstr "Renomear"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:84
+msgid "workspace.token.active-themes"
+msgstr "%s temas ativos"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:203
+msgid "workspace.token.save-theme"
+msgstr "Guardar tema"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:151
+msgid "workspace.token.delete-theme-title"
+msgstr "Eliminar tema"
+
+#: src/app/main/ui/workspace/sidebar.cljs:284
+msgid "workspace.versions.tab.actions"
+msgstr "Ações"
+
+#: src/app/main/ui/workspace/sidebar.cljs:281
+msgid "workspace.versions.tab.history"
+msgstr "Histórico"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:440
+msgid "workspace.token.token-name"
+msgstr "Nome"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:482
+msgid "workspace.token.token-description"
+msgstr "Descrição"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:464
+msgid "workspace.token.token-value"
+msgstr "Valor"
+
+#: src/app/main/ui/ds/product/autosaved_milestone.cljs:67, src/app/main/ui/ds/product/user_milestone.cljs:74
+msgid "workspace.versions.version-menu"
+msgstr "Abrir menu de versões"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:481
+msgid "workspace.token.enter-token-description"
+msgstr "Adicionar uma descrição (opcional)"
+
+#: src/app/main/ui/settings/notifications.cljs:71
+msgid "dashboard.settings.notifications.title"
+msgstr "Notificações"
+
+#: src/app/main/ui/settings/notifications.cljs:42
+msgid "dashboard.notifications.notifications-saved"
+msgstr "Definições de notificação atualizadas"
+
+#: src/app/main/ui/settings/notifications.cljs:86
+msgid "dashboard.settings.notifications.email-comments.all"
+msgstr "Todos os comentários, menções e respostas"
+
+#: src/app/main/ui/settings/notifications.cljs:87
+msgid "dashboard.settings.notifications.email-comments.partial"
+msgstr "Apenas menções e respostas"
+
+#, unused
+msgid "labels.ok"
+msgstr "Ok"
+
+#: src/app/main/ui/workspace/plugins.cljs:425
+msgid "workspace.plugins.try-out.title"
+msgstr "O PLUGIN '%s' FOI INSTALADO PARA O TEU UTILIZADOR!"
+
+#: src/app/main/ui/comments.cljs:816
+msgid "labels.comment.mark-as-solved"
+msgstr "Marcar como resolvido"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1022
+msgid "workspace.shape.menu.remove-layout"
+msgstr "Remover layout"
