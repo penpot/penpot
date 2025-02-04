@@ -78,42 +78,47 @@
                             (l/derived lens:token-type-open-status)))
         {:keys [modal attributes all-attributes title]} token-type-props
 
-        on-context-menu (mf/use-fn
-                         (fn [event token]
-                           (dom/prevent-default event)
-                           (dom/stop-propagation event)
-                           (st/emit! (dt/show-token-context-menu
-                                      {:type :token
-                                       :position (dom/get-client-position event)
-                                       :errors (:errors token)
-                                       :token-name (:name token)}))))
+        on-context-menu
+        (mf/use-fn
+         (fn [event token]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (st/emit! (dt/show-token-context-menu
+                      {:type :token
+                       :position (dom/get-client-position event)
+                       :errors (:errors token)
+                       :token-name (:name token)}))))
 
-        on-toggle-open-click (mf/use-fn
-                              (mf/deps open? tokens)
-                              #(st/emit! (dt/set-token-type-section-open type (not open?))))
-        on-popover-open-click (mf/use-fn
-                               (fn [event]
-                                 (mf/deps type title)
-                                 (let [{:keys [key fields]} modal]
-                                   (dom/stop-propagation event)
-                                   (st/emit! (dt/set-token-type-section-open type true))
-                                   (modal/show! key {:x (.-clientX ^js event)
-                                                     :y (.-clientY ^js event)
-                                                     :position :right
-                                                     :fields fields
-                                                     :title title
-                                                     :action "create"
-                                                     :token-type type}))))
+        on-toggle-open-click
+        (mf/use-fn
+         (mf/deps open? tokens)
+         #(st/emit! (dt/set-token-type-section-open type (not open?))))
 
-        on-token-pill-click (mf/use-fn
-                             (mf/deps selected-shapes token-type-props)
-                             (fn [event token]
-                               (dom/stop-propagation event)
-                               (when (seq selected-shapes)
-                                 (st/emit!
-                                  (wtch/toggle-token {:token token
-                                                      :shapes selected-shapes
-                                                      :token-type-props token-type-props})))))
+        on-popover-open-click
+        (mf/use-fn
+         (fn [event]
+           (mf/deps type title)
+           (let [{:keys [key fields]} modal]
+             (dom/stop-propagation event)
+             (st/emit! (dt/set-token-type-section-open type true))
+             (modal/show! key {:x (.-clientX ^js event)
+                               :y (.-clientY ^js event)
+                               :position :right
+                               :fields fields
+                               :title title
+                               :action "create"
+                               :token-type type}))))
+
+        on-token-pill-click
+        (mf/use-fn
+         (mf/deps selected-shapes token-type-props)
+         (fn [event token]
+           (dom/stop-propagation event)
+           (when (seq selected-shapes)
+             (st/emit!
+              (wtch/toggle-token {:token token
+                                  :shapes selected-shapes
+                                  :token-type-props token-type-props})))))
         tokens-count (count tokens)
         can-edit?  (:can-edit (deref refs/permissions))]
 
