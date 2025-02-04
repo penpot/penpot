@@ -105,9 +105,9 @@
 
 .empty-project-container {
   width: 100%;
-  display: flex;
-  justify-content: space-around;
+  display: grid;
   gap: $s-16;
+  grid-template-columns: 1fr 1fr 1fr;
   margin-top: $s-12;
 }
 
@@ -130,6 +130,10 @@
     --color-card-title: var(--color-background-secondary);
     --color-card-subtitle: var(--color-background-secondary);
     cursor: pointer;
+
+    .empty-project-card-title {
+      font-weight: $fw500;
+    }
   }
 
   flex-grow: 1;
