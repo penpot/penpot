@@ -144,11 +144,13 @@
   {::mf/wrap-props false}
   [{:keys [on-click token theme-token full-applied on-context-menu half-applied selected-shapes token-type-props active-theme-tokens]}]
   (let [{:keys [name value errors]} token
-        is-reference (some #(= % "{") value)
+
+        is-reference? (str/includes? value "{")
+
         can-edit? (:can-edit (deref refs/permissions))
 
         is-viewer (not can-edit?)
-        ref-not-in-active-set (and is-reference
+        ref-not-in-active-set (and is-reference?
                                    (not (contains-reference-value? value  (keys active-theme-tokens))))
         no-valid-value (seq errors)
         errors?   (or ref-not-in-active-set
