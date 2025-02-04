@@ -23,7 +23,8 @@ export function mergeStyleDeclarations(target, source) {
   // for (const styleName of source) {
   for (let index = 0; index < source.length; index++) {
     const styleName = source.item(index);
-    target.setProperty(styleName, source.getPropertyValue(styleName));
+    const styleValue = source.getPropertyValue(styleName);
+    target.setProperty(styleName, styleValue);
   }
   return target
 }
@@ -108,9 +109,10 @@ export function getComputedStyle(element) {
           inertElement.style.setProperty(styleName, newValue);
         }
       } else {
+        const newValue = currentElement.style.getPropertyValue(styleName);
         inertElement.style.setProperty(
           styleName,
-          currentElement.style.getPropertyValue(styleName)
+          newValue
         );
       }
     }
@@ -130,9 +132,10 @@ export function getComputedStyle(element) {
  * @returns {CSSStyleDeclaration}
  */
 export function normalizeStyles(node, styleDefaults = getStyleDefaultsDeclaration()) {
+  const computedStyle = getComputedStyle(node.parentElement);
   const styleDeclaration = mergeStyleDeclarations(
     styleDefaults,
-    getComputedStyle(node.parentElement)
+    computedStyle
   );
 
   // If there's a color property, we should convert it to
@@ -149,7 +152,7 @@ export function normalizeStyles(node, styleDefaults = getStyleDefaultsDeclaratio
   // If there's a font-family property and not a --font-id, then
   // we remove the font-family because it will not work.
   const fontFamily = styleDeclaration.getPropertyValue("font-family");
-  const fontId = styleDeclaration.getPropertyPriority("--font-id");
+  const fontId = styleDeclaration.getPropertyValue("--font-id");
   if (fontFamily && !fontId) {
     styleDeclaration.removeProperty("font-family");
   }

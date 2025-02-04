@@ -73,10 +73,11 @@ export function mapContentFragmentFromDocument(document, root, styleDefaults) {
         currentParagraph = createParagraph(undefined, currentStyle);
       }
     }
-
     const inline = createInline(new Text(currentNode.nodeValue), currentStyle);
     const fontSize = inline.style.getPropertyValue("font-size");
     if (!fontSize) console.warn("font-size", fontSize);
+    const fontFamily = inline.style.getPropertyValue("font-family");
+    if (!fontFamily) console.warn("font-family", fontFamily);
     currentParagraph.appendChild(inline);
 
     currentNode = nodeIterator.nextNode();
