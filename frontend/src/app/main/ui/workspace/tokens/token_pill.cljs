@@ -9,6 +9,7 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon*]]
    [app.main.ui.workspace.tokens.token :as wtt]
+   [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -95,9 +96,9 @@
 
 (defn- generate-tooltip
   "Generates a tooltip for a given token"
-  [is-viewer shape token-type-props token half-applied no-valid-value ref-not-in-active-set]
+  [is-viewer shape token half-applied no-valid-value ref-not-in-active-set]
   (let [{:keys [name value resolved-value type]} token
-        {:keys [title]} token-type-props
+        {:keys [title] :as token-type-props} (get wtty/token-types (:type token))
         applied-tokens (:applied-tokens shape)
         app-token-vals (set (vals applied-tokens))
         app-token-keys (keys applied-tokens)
@@ -142,7 +143,7 @@
     (contains? active-tokens match)))
 
 (mf/defc token-pill*
-  [{:keys [on-click token full-applied on-context-menu half-applied selected-shapes token-type-props active-theme-tokens]}]
+  [{:keys [on-click token full-applied on-context-menu half-applied selected-shapes active-theme-tokens]}]
   (let [{:keys [name value errors]} token
 
         is-reference?  (wtt/is-reference? token)
@@ -203,8 +204,7 @@
          (mf/deps selected-shapes is-viewer)
          (fn [event]
            (let [node  (dom/get-current-target event)
-                 title (generate-tooltip is-viewer (first selected-shapes)
-                                         token-type-props token
+                 title (generate-tooltip is-viewer (first selected-shapes) token
                                          half-applied no-valid-value ref-not-in-active-set)]
              (dom/set-attribute! node "title" title))))]
 

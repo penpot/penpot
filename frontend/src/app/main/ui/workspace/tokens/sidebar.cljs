@@ -35,6 +35,7 @@
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.token-pill :refer [token-pill*]]
    [app.main.ui.workspace.tokens.token-types :as wtty]
+   [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.webapi :as wapi]
@@ -74,10 +75,12 @@
 
 (mf/defc token-group*
   {::mf/private true}
-  [{:keys [type tokens selected-shapes token-type-props active-theme-tokens]}]
+  [{:keys [type tokens selected-shapes active-theme-tokens]}]
   (let [open? (mf/deref (-> (l/key type)
                             (l/derived lens:token-type-open-status)))
-        {:keys [modal attributes all-attributes title]} token-type-props
+
+        {:keys [modal attributes all-attributes title] :as token-type-props}
+        (get wtty/token-types type)
 
         tokens
         (mf/with-memo [tokens]
@@ -150,7 +153,6 @@
 
               [:> token-pill*
                {:key (:name token)
-                :token-type-props token-type-props
                 :token (d/nilv theme-token token)
                 :selected-shapes selected-shapes
                 :active-theme-tokens active-theme-tokens
@@ -163,19 +165,23 @@
                 :on-context-menu on-context-menu}]))]])]]))
 
 (defn- get-sorted-token-groups
-  "Separate token-types into groups of `:empty` or `:filled` depending if tokens exist for that type.
-  Sort each group alphabetically (by their `:token-key`)."
-  [tokens]
-  (let [tokens-by-type (ctob/group-by-type tokens)
-        {:keys [empty filled]} (->> wtty/token-types
-                                    (map (fn [[token-key token-type-props]]
-                                           {:token-key token-key
-                                            :token-type-props token-type-props
-                                            :tokens (get tokens-by-type token-key [])}))
-                                    (group-by (fn [{:keys [tokens]}]
-                                                (if (empty? tokens) :empty :filled))))]
-    {:empty (sort-by :token-key empty)
-     :filled (sort-by :token-key filled)}))
+  "Separate token-types into groups of `empty` or `filled` depending if
+  tokens exist for that type.  Sort each group alphabetically (by
+  their type)."
+  [tokens-by-type]
+  (loop [empty  #js []
+         filled #js []
+         types  (-> wtty/token-types keys seq)]
+    (if-let [type (first types)]
+      (if (not-empty (get tokens-by-type type))
+        (recur empty
+               (array/conj! filled type)
+               (rest types))
+        (recur (array/conj! empty type)
+               filled
+               (rest types)))
+      [(seq (array/sort! empty))
+       (seq (array/sort! filled))])))
 
 (mf/defc themes-header
   [_props]
@@ -283,31 +289,39 @@
         selected-token-set-name
         (mf/deref refs/workspace-selected-token-set-name)
 
-        token-groups
+        tokens-by-type
         (mf/with-memo [tokens selected-token-set-tokens]
-          (-> (select-keys tokens (keys selected-token-set-tokens))
-              (get-sorted-token-groups)))]
+          (let [tokens (reduce-kv (fn [tokens k _]
+                                    (if (contains? selected-token-set-tokens k)
+                                      tokens
+                                      (dissoc tokens k)))
+                                  tokens
+                                  tokens)]
+            (ctob/group-by-type tokens)))
+
+        [empty-group filled-group]
+        (mf/with-memo [tokens-by-type]
+          (get-sorted-token-groups tokens-by-type))]
 
     [:*
      [:& token-context-menu]
      [:& title-bar {:all-clickable true
                     :title (tr "workspace.token.tokens-section-title" selected-token-set-name)}]
 
-     (for [{:keys [token-key token-type-props tokens]} (:filled token-groups)]
-       [:> token-group* {:key token-key
-                         :type token-key
-                         :selected-shapes selected-shapes
-                         :active-theme-tokens active-theme-tokens
-                         :tokens tokens
-                         :token-type-props token-type-props}])
+     (for [type filled-group]
+       (let [tokens (get tokens-by-type type)]
+         [:> token-group* {:key (name type)
+                           :type type
+                           :selected-shapes selected-shapes
+                           :active-theme-tokens active-theme-tokens
+                           :tokens tokens}]))
 
-     (for [{:keys [token-key token-type-props tokens]} (:empty token-groups)]
-       [:> token-group* {:key token-key
-                         :type token-key
+     (for [type empty-group]
+       [:> token-group* {:key (name type)
+                         :type type
                          :selected-shapes selected-shapes
                          :active-theme-tokens active-theme-tokens
-                         :tokens tokens
-                         :token-type-props token-type-props}])]))
+                         :tokens []}])]))
 
 (mf/defc import-export-button
   {::mf/wrap-props false}
