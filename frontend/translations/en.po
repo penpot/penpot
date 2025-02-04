@@ -1886,6 +1886,10 @@ msgstr "Expired"
 msgid "labels.export"
 msgstr "Export"
 
+#: src/app/main/ui/exports/assets.cljs:177
+msgid "labels.import"
+msgstr "Import"
+
 #: src/app/main/ui/settings/feedback.cljs:48
 msgid "labels.feedback-disabled"
 msgstr "Feedback disabled"

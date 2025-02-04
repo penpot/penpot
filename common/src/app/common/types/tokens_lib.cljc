@@ -670,6 +670,57 @@ used for managing active sets without a user created theme.")
 
 ;; === Import / Export from DTCG format
 
+(def ^:private legacy-node?
+  (sm/validator
+   [:or
+    [:map
+     ["value" :string]
+     ["type" :string]]
+    [:map
+     ["value" [:sequential [:map ["type" :string]]]]
+     ["type" :string]]
+    [:map
+     ["value" :map]
+     ["type" :string]]]))
+
+(def ^:private dtcg-node?
+  (sm/validator
+   [:or
+    [:map
+     ["$value" :string]
+     ["$type" :string]]
+    [:map
+     ["$value" [:sequential [:map ["$type" :string]]]]
+     ["$type" :string]]
+    [:map
+     ["$value" :map]
+     ["$type" :string]]]))
+
+(defn has-legacy-format?
+  "Searches through parsed token file and returns:
+   - true when first node satisfies `legacy-node?` predicate
+   - false when first node satisfies `dtcg-node?` predicate
+   - nil if neither combination is found"
+  ([data]
+   (has-legacy-format? data legacy-node? dtcg-node?))
+  ([data legacy-node? dtcg-node?]
+   (let [branch? map?
+         children (fn [node] (vals node))
+         check-node (fn [node]
+                      (cond
+                        (legacy-node? node) true
+                        (dtcg-node? node) false
+                        :else nil))
+         walk (fn walk [node]
+                (lazy-seq
+                 (cons
+                  (check-node node)
+                  (when (branch? node)
+                    (mapcat walk (children node))))))]
+     (->> (walk data)
+          (filter some?)
+          first))))
+
 (defn walk-sets-tree-seq
   "Walk sets tree as a flat list.
 
@@ -762,6 +813,7 @@ Will return a value that matches this schema:
   (get-active-themes-set-tokens [_] "set of set names that are active in the the active themes")
   (encode-dtcg [_] "Encodes library to a dtcg compatible json string")
   (decode-dtcg-json [_ parsed-json] "Decodes parsed json containing tokens and converts to library")
+  (decode-legacy-json [_ parsed-json] "Decodes parsed legacy json containing tokens and converts to library")
   (get-all-tokens [_] "all tokens in the lib")
   (validate [_]))
 
@@ -1187,6 +1239,27 @@ Will return a value that matches this schema:
          lib' themes-data)
         lib')))
 
+  (decode-legacy-json [this parsed-legacy-json]
+    (let [other-data (select-keys parsed-legacy-json ["$themes" "$metadata"])
+          sets-data (dissoc parsed-legacy-json "$themes" "$metadata")
+          dtcg-sets-data (walk/postwalk
+                          (fn [node]
+                            (cond-> node
+                              (and (map? node)
+                                   (contains? node "value")
+                                   (sequential? (get node "value")))
+                              (update "value"
+                                      (fn [seq-value]
+                                        (map #(set/rename-keys % {"type" "$type"}) seq-value)))
+
+                              (and (map? node)
+                                   (and (contains? node "type")
+                                        (contains? node "value")))
+                              (set/rename-keys  {"value" "$value"
+                                                 "type" "$type"})))
+                          sets-data)]
+      (decode-dtcg-json this (merge other-data
+                                    dtcg-sets-data))))
   (get-all-tokens [this]
     (reduce
      (fn [tokens' set]

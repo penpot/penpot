@@ -1146,6 +1146,41 @@
         (t/is (nil? token-theme'))))))
 
 #?(:clj
+   (t/deftest legacy-json-decoding
+     (t/testing "decode-legacy-json"
+       (let [json (-> (slurp "test/common_tests/types/data/tokens-multi-set-legacy-example.json")
+                      (tr/decode-str))
+             lib (ctob/decode-legacy-json (ctob/ensure-tokens-lib nil) json)
+             get-set-token (fn [set-name token-name]
+                             (some-> (ctob/get-set lib set-name)
+                                     (ctob/get-token token-name)
+                                     (dissoc :modified-at)))
+             token-theme (ctob/get-theme lib "group-1" "theme-1")]
+         (t/is (= '("core" "light" "dark" "theme") (ctob/get-ordered-set-names lib)))
+         (t/testing "set exists in theme"
+           (t/is (= (:group token-theme) "group-1"))
+           (t/is (= (:name token-theme) "theme-1"))
+           (t/is (= (:sets token-theme) #{"light"})))
+         (t/testing "tokens exist in core set"
+           (t/is (= (get-set-token "core" "colors.red.600")
+                    {:name "colors.red.600"
+                     :type :color
+                     :value "#e53e3e"
+                     :description nil}))
+           (t/is (= (get-set-token "core" "spacing.multi-value")
+                    {:name "spacing.multi-value"
+                     :type :spacing
+                     :value "{dimension.sm} {dimension.xl}"
+                     :description "You can have multiple values in a single spacing token"}))
+           (t/is (= (get-set-token "theme" "button.primary.background")
+                    {:name "button.primary.background"
+                     :type :color
+                     :value "{accent.default}"
+                     :description nil})))
+         (t/testing "invalid tokens got discarded"
+           (t/is (nil? (get-set-token "typography" "H1.Bold"))))))))
+
+#?(:clj
    (t/deftest dtcg-encoding-decoding
      (t/testing "decode-dtcg-json"
        (let [json (-> (slurp "test/common_tests/types/data/tokens-multi-set-example.json")
