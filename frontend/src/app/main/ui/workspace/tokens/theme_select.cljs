@@ -95,7 +95,6 @@
         is-open? (:is-open? state)
 
         ;; Dropdown
-        dropdown-element* (mf/use-ref nil)
         on-close-dropdown (mf/use-fn #(swap! state* assoc :is-open? false))
 
         on-open-dropdown
@@ -118,8 +117,7 @@
       current-label]
      [:> icon* {:icon-id i/arrow-down :class (stl/css :dropdown-button) :aria-hidden true}]
      [:& dropdown {:show is-open?
-                   :on-close on-close-dropdown
-                   :ref dropdown-element*}
+                   :on-close on-close-dropdown}
       [:& theme-options {:active-theme-paths active-theme-paths
                          :themes themes
                          :on-close on-close-dropdown}]]]))
