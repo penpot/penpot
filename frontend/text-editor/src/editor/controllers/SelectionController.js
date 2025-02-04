@@ -1066,9 +1066,15 @@ export class SelectionController extends EventTarget {
     }
     const collapseNode = fragment.lastElementChild.lastElementChild.firstChild
     if (this.isParagraphStart) {
+      const a = fragment.lastElementChild;
+      const b = this.focusParagraph;
       this.focusParagraph.before(fragment);
+      mergeParagraphs(a, b);
     } else if (this.isParagraphEnd) {
+      const a = this.focusParagraph;
+      const b = fragment.firstElementChild;
       this.focusParagraph.after(fragment);
+      mergeParagraphs(a, b);
     } else {
       const newParagraph = splitParagraph(
         this.focusParagraph,
