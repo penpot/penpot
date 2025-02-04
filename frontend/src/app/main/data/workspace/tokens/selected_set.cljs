@@ -3,7 +3,7 @@
   Will default to the first set."
   (:require
    [app.common.types.tokens-lib :as ctob]
-   [app.main.data.workspace.tokens.common :as dwtc]
+   [app.main.data.helpers :as dsh]
    [potok.v2.core :as ptk]))
 
 (defn assoc-selected-token-set-name [state set-name]
@@ -11,14 +11,16 @@
 
 (defn get-selected-token-set-name [state]
   (or (get-in state [:workspace-local :selected-token-set-name])
-      (some-> (dwtc/get-workspace-tokens-lib state)
+      (some-> (dsh/lookup-file-data state)
+              (get :tokens-lib)
               (ctob/get-sets)
               (first)
               :name)))
 
 (defn get-selected-token-set [state]
   (when-let [set-name (get-selected-token-set-name state)]
-    (some-> (dwtc/get-workspace-tokens-lib state)
+    (some-> (dsh/lookup-file-data state)
+            (get :tokens-lib)
             (ctob/get-set set-name))))
 
 (defn get-selected-token-set-token [state token-name]
