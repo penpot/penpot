@@ -292,8 +292,15 @@
      [:& title-bar {:all-clickable true
                     :title (tr "workspace.token.tokens-section-title" selected-token-set-name)}]
 
-     (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
-                                                               (:empty token-groups))]
+     (for [{:keys [token-key token-type-props tokens]} (:filled token-groups)]
+       [:> token-component* {:key token-key
+                             :type token-key
+                             :selected-shapes selected-shapes
+                             :active-theme-tokens active-theme-tokens
+                             :tokens tokens
+                             :token-type-props token-type-props}])
+
+     (for [{:keys [token-key token-type-props tokens]} (:empty token-groups)]
        [:> token-component* {:key token-key
                              :type token-key
                              :selected-shapes selected-shapes
