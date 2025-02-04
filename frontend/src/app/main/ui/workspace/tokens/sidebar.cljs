@@ -201,13 +201,13 @@
 
 (mf/defc add-set-button
   [{:keys [on-open style]}]
-  (let [{:keys [on-create new?]} (sets-context/use-context)
+  (let [{:keys [on-create new-path]} (sets-context/use-context)
         on-click #(do
                     (on-open)
-                    (on-create))
+                    (on-create []))
         can-edit?  (:can-edit (deref refs/permissions))]
     (if (= style "inline")
-      (when-not new?
+      (when-not new-path
         (if can-edit?
           [:div {:class (stl/css :empty-sets-wrapper)}
            [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
@@ -227,9 +227,9 @@
 (mf/defc theme-sets-list
   [{:keys [on-open]}]
   (let [token-sets (mf/deref refs/workspace-ordered-token-sets)
-        {:keys [new?] :as ctx} (sets-context/use-context)]
+        {:keys [new-path] :as ctx} (sets-context/use-context)]
     (if (and (empty? token-sets)
-             (not new?))
+             (not new-path))
       [:& add-set-button {:on-open on-open
                           :style "inline"}]
       [:& h/sortable-container {}
