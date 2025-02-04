@@ -22,7 +22,11 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [okulary.core :as l]))
+
+(def ref:persistence-status
+  (l/derived :status refs/persistence))
 
 ;; --- Header Component
 
@@ -108,7 +112,12 @@
          {:class (stl/css :file-name)
           :title file-name
           :on-double-click start-editing-name}
-         [:div {:class (stl/css :status-notification)}]
+         [:div {:class (case (mf/deref ref:persistence-status)
+                        :pending (stl/css :status-notification :pending-status)
+                        :saving (stl/css :status-notification :saving-status)
+                        :saved (stl/css :status-notification :saved-status)
+                        :error (stl/css :status-notification :error-status)
+                        (stl/css :status-notification))}]
          file-name])]
      (when ^boolean shared?
        [:span {:class (stl/css :shared-badge)} i/library])
