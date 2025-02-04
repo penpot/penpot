@@ -138,9 +138,9 @@
 ;; we don't need to perform this regex operation on each rerender
 (defn contains-reference-value?
   "Extracts the value between `{}` in a string and checks if it's in the provided vector."
-  [text values]
+  [text active-tokens]
   (let [match (second (re-find #"\{([^}]+)\}" text))]
-    (boolean (some #(= % match) values))))
+    (contains? active-tokens match)))
 
 (mf/defc token-pill
   {::mf/wrap-props false}
@@ -156,7 +156,7 @@
 
         is-viewer (not can-edit?)
         ref-not-in-active-set (and is-reference?
-                                   (not (contains-reference-value? value  (keys active-theme-tokens))))
+                                   (not (contains-reference-value? value active-theme-tokens)))
 
         no-valid-value (seq errors)
         errors?   (or ref-not-in-active-set
