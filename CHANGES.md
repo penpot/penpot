@@ -37,7 +37,8 @@ is a number of cores)
 
 ### :sparkles: New features
 
-- New gradients UI with multi-stop support. [Taiga #3418](https://tree.taiga.io/project/penpot/epic/3418)
+- [GRADIENTS] New gradients UI with multi-stop support. [Taiga #3418](https://tree.taiga.io/project/penpot/epic/3418)
+- [GRADIENTS] Radial Gradient [Taiga #8768](https://tree.taiga.io/project/penpot/us/8768)
 - Shareable link pointing to an specific board. [Taiga #3219](https://tree.taiga.io/project/penpot/us/3219)
 - Copy styles in CSS [Taiga #9401](https://tree.taiga.io/project/penpot/us/9401)
 - Copy/paste shape styles (fills, strokes, shadows, etc..) [Taiga #8937](https://tree.taiga.io/project/penpot/us/8937)
