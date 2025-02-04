@@ -12,9 +12,6 @@
    [app.main.data.helpers :as dsh]
    [potok.v2.core :as ptk]))
 
-(defn assoc-selected-token-set-name [state set-name]
-  (assoc-in state [:workspace-local :selected-token-set-name] set-name))
-
 (defn get-selected-token-set-name [state]
   (or (get-in state [:workspace-local :selected-token-set-name])
       (some-> (dsh/lookup-file-data state)
@@ -38,8 +35,8 @@
           :tokens))
 
 (defn set-selected-token-set-name
-  [set-name]
+  [name]
   (ptk/reify ::set-selected-token-set-path-from-name
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-selected-token-set-name state set-name))))
+      (update state :workspace-local assoc :selected-token-set-name name))))
