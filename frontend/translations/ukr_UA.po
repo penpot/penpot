@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-02-02 13:01+0000\n"
+"PO-Revision-Date: 2025-02-04 21:01+0000\n"
 "Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
@@ -3115,7 +3115,7 @@ msgstr "Створити команду без запрошення"
 
 #: src/app/main/ui/dashboard/projects.cljs:95, src/app/main/ui/onboarding/team_choice.cljs:159
 msgid "onboarding.choice.team-up.invite-members"
-msgstr "Запристи учасників"
+msgstr "Запрости учасників"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:160
 msgid "onboarding.choice.team-up.invite-members-info"
