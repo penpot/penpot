@@ -34,7 +34,6 @@
    [app.main.ui.workspace.tokens.theme-select :refer [theme-select]]
    [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.token-pill :refer [token-pill*]]
-   [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -80,7 +79,7 @@
                             (l/derived lens:token-type-open-status)))
 
         {:keys [modal attributes all-attributes title] :as token-type-props}
-        (get wtty/token-types type)
+        (get wtch/token-properties type)
 
         tokens
         (mf/with-memo [tokens]
@@ -119,14 +118,12 @@
 
         on-token-pill-click
         (mf/use-fn
-         (mf/deps selected-shapes token-type-props)
+         (mf/deps selected-shapes)
          (fn [event token]
            (dom/stop-propagation event)
            (when (seq selected-shapes)
-             (st/emit!
-              (wtch/toggle-token {:token token
-                                  :shapes selected-shapes
-                                  :token-type-props token-type-props})))))
+             (st/emit! (wtch/toggle-token {:token token
+                                           :shapes selected-shapes})))))
         tokens-count (count tokens)
         can-edit?  (:can-edit (deref refs/permissions))]
 
@@ -171,7 +168,7 @@
   [tokens-by-type]
   (loop [empty  #js []
          filled #js []
-         types  (-> wtty/token-types keys seq)]
+         types  (-> wtch/token-properties keys seq)]
     (if-let [type (first types)]
       (if (not-empty (get tokens-by-type type))
         (recur empty

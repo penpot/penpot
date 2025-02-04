@@ -8,8 +8,8 @@
    [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon*]]
+   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.token :as wtt]
-   [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -75,9 +75,8 @@
 ;; Helper functions
 (defn partially-applied-attr
   "Translates partially applied attributes based on the dictionary."
-  [app-token-keys is-applied token-type-props]
-  (let [{:keys [attributes all-attributes]} token-type-props
-        filtered-keys (if all-attributes
+  [app-token-keys is-applied {:keys [attributes all-attributes]}]
+  (let [filtered-keys (if all-attributes
                         (filter #(contains? all-attributes %) app-token-keys)
                         (filter #(contains? attributes %) app-token-keys))]
     (when is-applied
@@ -98,7 +97,7 @@
   "Generates a tooltip for a given token"
   [is-viewer shape token half-applied no-valid-value ref-not-in-active-set]
   (let [{:keys [name value resolved-value type]} token
-        {:keys [title] :as token-type-props} (get wtty/token-types (:type token))
+        {:keys [title] :as token-props} (wtch/get-token-properties token)
         applied-tokens (:applied-tokens shape)
         app-token-vals (set (vals applied-tokens))
         app-token-keys (keys applied-tokens)
@@ -106,7 +105,7 @@
 
 
         applied-to (if half-applied
-                     (partially-applied-attr app-token-keys is-applied? token-type-props)
+                     (partially-applied-attr app-token-keys is-applied? token-props)
                      (tr "labels.all"))
         grouped-values (group-by dimensions-dictionary app-token-keys)
 

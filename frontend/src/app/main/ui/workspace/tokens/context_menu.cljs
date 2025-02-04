@@ -18,7 +18,6 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.token :as wtt]
-   [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as timers]
@@ -37,7 +36,7 @@
 
 (defn generic-attribute-actions [attributes title {:keys [token selected-shapes on-update-shape]}]
   (let [on-update-shape-fn (or on-update-shape
-                               (-> (wtty/get-token-properties token)
+                               (-> (wtch/get-token-properties token)
                                    (:on-update-shape)))
         {:keys [selected-pred shape-ids]} (attribute-actions token selected-shapes attributes)]
     (map (fn [attribute]
@@ -214,7 +213,7 @@
                     (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape wtch/update-shape-position))))}))
 
 (defn default-actions [{:keys [token selected-token-set-name]}]
-  (let [{:keys [modal]} (wtty/get-token-properties token)]
+  (let [{:keys [modal]} (wtch/get-token-properties token)]
     [{:title (tr "workspace.token.edit")
       :no-selectable true
       :action (fn [event]

@@ -6,6 +6,8 @@
 
 (ns app.main.ui.workspace.tokens.changes
   (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.token :as ctt]
@@ -25,6 +27,8 @@
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [potok.v2.core :as ptk]))
+
+(declare token-properties)
 
 ;; Token Updates ---------------------------------------------------------------
 
@@ -76,12 +80,16 @@
             (update shape :applied-tokens remove-token))))))))
 
 (defn toggle-token
-  [{:keys [token-type-props token shapes] :as _props}]
+  [{:keys [token shapes]}]
   (ptk/reify ::on-toggle-token
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [{:keys [attributes all-attributes on-update-shape]} token-type-props
-            unapply-tokens? (wtt/shapes-token-applied? token shapes (or all-attributes attributes))
+      (let [{:keys [attributes all-attributes on-update-shape]}
+            (get token-properties (:type token))
+
+            unapply-tokens?
+            (wtt/shapes-token-applied? token shapes (or all-attributes attributes))
+
             shape-ids (map :id shapes)]
         (if unapply-tokens?
           (rx/of
@@ -252,3 +260,88 @@
                        (select-keys attributes))]
          (dwsl/update-layout-child shape-ids props {:ignore-touched true
                                                     :page-id page-id}))))))
+
+;; Token Types -----------------------------------------------------------------
+
+;; FIXME: the values should be lazy evaluated, probably a function,
+;; becasue on future we will need to translate that labels and that
+;; can not be done statically
+
+(def token-properties
+  "A map of default properties by token type"
+  (d/ordered-map
+   :border-radius
+   {:title "Border Radius"
+    :attributes ctt/border-radius-keys
+    :on-update-shape update-shape-radius-all
+    :modal {:key :tokens/border-radius
+            :fields [{:label "Border Radius"
+                      :key :border-radius}]}}
+
+   :color
+   {:title "Color"
+    :attributes #{:fill}
+    :all-attributes ctt/color-keys
+    :on-update-shape update-fill-stroke
+    :modal {:key :tokens/color
+            :fields [{:label "Color" :key :color}]}}
+
+   :stroke-width
+   {:title "Stroke Width"
+    :attributes ctt/stroke-width-keys
+    :on-update-shape update-stroke-width
+    :modal {:key :tokens/stroke-width
+            :fields [{:label "Stroke Width"
+                      :key :stroke-width}]}}
+
+   :sizing
+   {:title "Sizing"
+    :attributes #{:width :height}
+    :all-attributes ctt/sizing-keys
+    :on-update-shape update-shape-dimensions
+    :modal {:key :tokens/sizing
+            :fields [{:label "Sizing"
+                      :key :sizing}]}}
+   :dimensions
+   {:title "Dimensions"
+    :attributes #{:width :height}
+    :all-attributes (set/union
+                     ctt/spacing-keys
+                     ctt/sizing-keys
+                     ctt/border-radius-keys
+                     ctt/stroke-width-keys)
+    :on-update-shape update-shape-dimensions
+    :modal {:key :tokens/dimensions
+            :fields [{:label "Dimensions"
+                      :key :dimensions}]}}
+
+   :opacity
+   {:title "Opacity"
+    :attributes ctt/opacity-keys
+    :on-update-shape update-opacity
+    :modal {:key :tokens/opacity
+            :fields [{:label "Opacity"
+                      :key :opacity}]}}
+
+   :rotation
+   {:title "Rotation"
+    :attributes ctt/rotation-keys
+    :on-update-shape update-rotation
+    :modal {:key :tokens/rotation
+            :fields [{:label "Rotation"
+                      :key :rotation}]}}
+   :spacing
+   {:title "Spacing"
+    :attributes #{:column-gap :row-gap}
+    :all-attributes ctt/spacing-keys
+    :on-update-shape update-layout-spacing
+    :modal {:key :tokens/spacing
+            :fields [{:label "Spacing"
+                      :key :spacing}]}}))
+
+(defn get-token-properties [token]
+  (get token-properties (:type token)))
+
+(defn token-attributes [token-type]
+  (dm/get-in token-properties [token-type :attributes]))
+
