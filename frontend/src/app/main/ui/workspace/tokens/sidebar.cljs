@@ -33,7 +33,7 @@
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.theme-select :refer [theme-select]]
    [app.main.ui.workspace.tokens.token :as wtt]
-   [app.main.ui.workspace.tokens.token-pill :refer [token-pill]]
+   [app.main.ui.workspace.tokens.token-pill :refer [token-pill*]]
    [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -140,13 +140,12 @@
                   on-token-click (fn [e]
                                    (on-token-pill-click e token))
                   on-context-menu (fn [e] (on-context-menu e token))]
-              [:& token-pill
+              [:> token-pill*
                {:key (:name token)
                 :token-type-props token-type-props
-                :token token
+                :token (d/nilv theme-token token)
                 :selected-shapes selected-shapes
                 :active-theme-tokens active-theme-tokens
-                :theme-token theme-token
                 :half-applied (or (and applied multiple-selection)
                                   (and applied (not full-applied)))
                 :full-applied (if multiple-selection

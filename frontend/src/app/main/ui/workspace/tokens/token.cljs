@@ -122,6 +122,11 @@
 (defn color-token? [token]
   (= (:type token) :color))
 
+
+;; FIXME: this should be precalculated ?
+(defn is-reference? [token]
+  (str/includes? (:value token) "{"))
+
 (defn color-bullet-color [token-color-value]
   (when-let [tc (tinycolor/valid-color token-color-value)]
     (if (tinycolor/alpha tc)

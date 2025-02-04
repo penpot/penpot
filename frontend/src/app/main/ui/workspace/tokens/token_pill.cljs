@@ -4,7 +4,6 @@
    [app.main.style :as stl])
   (:require
    [app.common.files.helpers :as cfh]
-   [app.common.types.tokens-lib :as ctob]
    [app.main.refs :as refs]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
@@ -94,8 +93,8 @@
                              (str/join ", " (map attribute-dictionary values)) ".")))
                  grouped-values)))
 
-(defn token-pill-tooltip
-  "Generates a tooltip for a given token."
+(defn- generate-tooltip
+  "Generates a tooltip for a given token"
   [is-viewer shape token-type-props token half-applied no-valid-value ref-not-in-active-set]
   (let [{:keys [name value resolved-value type]} token
         {:keys [title]} token-type-props
@@ -142,34 +141,29 @@
   (let [match (second (re-find #"\{([^}]+)\}" text))]
     (contains? active-tokens match)))
 
-(mf/defc token-pill
+(mf/defc token-pill*
   {::mf/wrap-props false}
-  [{:keys [on-click token theme-token full-applied on-context-menu half-applied selected-shapes token-type-props active-theme-tokens]}]
+  [{:keys [on-click token full-applied on-context-menu half-applied selected-shapes token-type-props active-theme-tokens]}]
   (let [{:keys [name value errors]} token
 
-        is-reference?  (str/includes? value "{")
+        is-reference?  (wtt/is-reference? token)
         contains-path? (str/includes? name ".")
-
 
         ;; FIXME: move to context or props
         can-edit? (:can-edit (deref refs/permissions))
 
         is-viewer (not can-edit?)
-        ref-not-in-active-set (and is-reference?
-                                   (not (contains-reference-value? value active-theme-tokens)))
+
+        ref-not-in-active-set
+        (and is-reference?
+             (not (contains-reference-value? value active-theme-tokens)))
 
         no-valid-value (seq errors)
         errors?   (or ref-not-in-active-set
                       no-valid-value)
 
-        ;; FIXME: :zap: this performs a duplicate operation for
-        ;; nothing, this generates a lot of garbage objects for
-        ;; finally not using them
-        color     (when (seq (ctob/find-token-value-references value))
-                    (wtt/resolved-token-bullet-color theme-token))
-
-        splitted-name (cfh/split-by-last-period name)
-        color (or color (wtt/resolved-token-bullet-color token))
+        color (when (wtt/color-token? token)
+                (wtt/resolved-token-bullet-color token))
 
         on-click
         (mf/use-fn
@@ -179,13 +173,14 @@
            (when (and (not (seq errors)) on-click)
              (on-click event))))
 
-        token-status-id (cond
-                          half-applied
-                          "token-status-partial"
-                          full-applied
-                          "token-status-full"
-                          :else
-                          "token-status-non-applied")
+        token-status-id
+        (cond
+          half-applied
+          "token-status-partial"
+          full-applied
+          "token-status-full"
+          :else
+          "token-status-non-applied")
 
         on-context-menu
         (mf/use-fn
@@ -203,28 +198,30 @@
            (when (and can-edit? (not (seq errors)) on-click)
              (on-click event))))
 
+        ;; FIXME: missing deps
         on-hover
         (mf/use-fn
          (mf/deps selected-shapes is-viewer)
          (fn [event]
-           (let [node (dom/get-current-target event)
-                 title (token-pill-tooltip  is-viewer (first selected-shapes)
-                                            token-type-props token
-                                            half-applied no-valid-value ref-not-in-active-set)]
+           (let [node  (dom/get-current-target event)
+                 title (generate-tooltip is-viewer (first selected-shapes)
+                                         token-type-props token
+                                         half-applied no-valid-value ref-not-in-active-set)]
              (dom/set-attribute! node "title" title))))]
 
-    [:button {:class (stl/css-case :token-pill true
-                                   :token-pill-default can-edit?
-                                   :token-pill-applied (and can-edit? (or half-applied full-applied))
-                                   :token-pill-invalid (and can-edit? errors?)
-                                   :token-pill-invalid-applied (and full-applied errors? can-edit?)
-                                   :token-pill-viewer is-viewer
-                                   :token-pill-applied-viewer (and is-viewer
-                                                                   (or half-applied full-applied))
-                                   :token-pill-invalid-viewer (and is-viewer
-                                                                   errors?)
-                                   :token-pill-invalid-applied-viewer (and is-viewer
-                                                                           (and full-applied errors?)))
+    [:button {:class (stl/css-case
+                      :token-pill true
+                      :token-pill-default can-edit?
+                      :token-pill-applied (and can-edit? (or half-applied full-applied))
+                      :token-pill-invalid (and can-edit? errors?)
+                      :token-pill-invalid-applied (and full-applied errors? can-edit?)
+                      :token-pill-viewer is-viewer
+                      :token-pill-applied-viewer (and is-viewer
+                                                      (or half-applied full-applied))
+                      :token-pill-invalid-viewer (and is-viewer
+                                                      errors?)
+                      :token-pill-invalid-applied-viewer (and is-viewer
+                                                              (and full-applied errors?)))
               :type "button"
               :on-click on-click
               :on-mouse-enter on-hover
@@ -234,6 +231,7 @@
        [:> icon*
         {:icon-id "broken-link"
          :class (stl/css :token-pill-icon)}]
+
        color
        [:& color-bullet {:color color
                          :mini true}]
@@ -241,13 +239,13 @@
        [:> token-status-icon*
         {:icon-id token-status-id
          :class (stl/css :token-pill-icon)}])
+
      (if contains-path?
-       [:span {:class (stl/css :divided-name-wrapper)
-               :aria-label name}
-        [:span {:class (stl/css :first-name-wrapper)}
-         (first splitted-name)]
-        [:span {:class (stl/css :last-name-wrapper)}
-         (last splitted-name)]]
+       (let [[first-part last-part] (cfh/split-by-last-period name)]
+         [:span {:class (stl/css :divided-name-wrapper)
+                 :aria-label name}
+          [:span {:class (stl/css :first-name-wrapper)} first-part]
+          [:span {:class (stl/css :last-name-wrapper)} last-part]])
        [:span {:class (stl/css :name-wrapper)
                :aria-label name}
         name])]))
