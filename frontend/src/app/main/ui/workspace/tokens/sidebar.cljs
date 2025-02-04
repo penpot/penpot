@@ -246,7 +246,8 @@
       [:& h/sortable-container {}
        [:& sets-list]])))
 
-(mf/defc themes-sets-tab
+(mf/defc themes-sets-tab*
+  {::mf/private true}
   [{:keys [resize-height]}]
   (let [open? (mf/use-state true)
         on-open (mf/use-fn #(reset! open? true))
@@ -400,7 +401,7 @@
          size-pages-opened :size}
         (use-resize-hook :tokens 200 38 "0.6" :y false nil)]
     [:div {:class (stl/css :sidebar-wrapper)}
-     [:& themes-sets-tab {:resize-height size-pages-opened}]
+     [:> themes-sets-tab* {:resize-height size-pages-opened}]
      [:article {:class (stl/css :tokens-section-wrapper)
                 :data-testid "tokens-sidebar"}
       [:div {:class (stl/css :resize-area-horiz)
