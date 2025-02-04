@@ -79,6 +79,10 @@
                             (l/derived lens:token-type-open-status)))
         {:keys [modal attributes all-attributes title]} token-type-props
 
+        tokens
+        (mf/with-memo [tokens]
+          (vec (sort-by :name tokens)))
+
         on-context-menu
         (mf/use-fn
          (fn [event token]
@@ -138,7 +142,7 @@
       (when open?
         [:& cmm/asset-section-block {:role :content}
          [:div {:class (stl/css :token-pills-wrapper)}
-          (for [token (sort-by :name tokens)]
+          (for [token tokens]
             (let [theme-token (get active-theme-tokens (:name token))
                   multiple-selection (< 1 (count selected-shapes))
                   full-applied (:all-selected? (attribute-actions token selected-shapes (or all-attributes attributes)))
