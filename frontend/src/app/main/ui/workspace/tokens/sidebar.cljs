@@ -72,7 +72,7 @@
      :shape-ids shape-ids
      :selected-pred #(seq (% ids-by-attributes))}))
 
-(mf/defc token-component*
+(mf/defc token-group*
   {::mf/private true}
   [{:keys [type tokens selected-shapes token-type-props active-theme-tokens]}]
   (let [open? (mf/deref (-> (l/key type)
@@ -287,26 +287,27 @@
         (mf/with-memo [tokens selected-token-set-tokens]
           (-> (select-keys tokens (keys selected-token-set-tokens))
               (sorted-token-groups)))]
+
     [:*
      [:& token-context-menu]
      [:& title-bar {:all-clickable true
                     :title (tr "workspace.token.tokens-section-title" selected-token-set-name)}]
 
      (for [{:keys [token-key token-type-props tokens]} (:filled token-groups)]
-       [:> token-component* {:key token-key
-                             :type token-key
-                             :selected-shapes selected-shapes
-                             :active-theme-tokens active-theme-tokens
-                             :tokens tokens
-                             :token-type-props token-type-props}])
+       [:> token-group* {:key token-key
+                         :type token-key
+                         :selected-shapes selected-shapes
+                         :active-theme-tokens active-theme-tokens
+                         :tokens tokens
+                         :token-type-props token-type-props}])
 
      (for [{:keys [token-key token-type-props tokens]} (:empty token-groups)]
-       [:> token-component* {:key token-key
-                             :type token-key
-                             :selected-shapes selected-shapes
-                             :active-theme-tokens active-theme-tokens
-                             :tokens tokens
-                             :token-type-props token-type-props}])]))
+       [:> token-group* {:key token-key
+                         :type token-key
+                         :selected-shapes selected-shapes
+                         :active-theme-tokens active-theme-tokens
+                         :tokens tokens
+                         :token-type-props token-type-props}])]))
 
 (mf/defc import-export-button
   {::mf/wrap-props false}
