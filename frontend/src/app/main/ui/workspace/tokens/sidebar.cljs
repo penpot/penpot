@@ -162,7 +162,7 @@
                 :on-click on-token-pill-click
                 :on-context-menu on-context-menu}]))]])]]))
 
-(defn sorted-token-groups
+(defn- get-sorted-token-groups
   "Separate token-types into groups of `:empty` or `:filled` depending if tokens exist for that type.
   Sort each group alphabetically (by their `:token-key`)."
   [tokens]
@@ -286,7 +286,7 @@
         token-groups
         (mf/with-memo [tokens selected-token-set-tokens]
           (-> (select-keys tokens (keys selected-token-set-tokens))
-              (sorted-token-groups)))]
+              (get-sorted-token-groups)))]
 
     [:*
      [:& token-context-menu]
