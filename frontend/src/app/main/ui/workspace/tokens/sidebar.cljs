@@ -72,7 +72,8 @@
      :shape-ids shape-ids
      :selected-pred #(seq (% ids-by-attributes))}))
 
-(mf/defc token-component
+(mf/defc token-component*
+  {::mf/private true}
   [{:keys [type tokens selected-shapes token-type-props active-theme-tokens]}]
   (let [open? (mf/deref (-> (l/key type)
                             (l/derived lens:token-type-open-status)))
@@ -289,12 +290,12 @@
 
      (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
                                                                (:empty token-groups))]
-       [:& token-component {:key token-key
-                            :type token-key
-                            :selected-shapes selected-shapes
-                            :active-theme-tokens active-theme-tokens
-                            :tokens tokens
-                            :token-type-props token-type-props}])]))
+       [:> token-component* {:key token-key
+                             :type token-key
+                             :selected-shapes selected-shapes
+                             :active-theme-tokens active-theme-tokens
+                             :tokens tokens
+                             :token-type-props token-type-props}])]))
 
 (mf/defc import-export-button
   {::mf/wrap-props false}
