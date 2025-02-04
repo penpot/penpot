@@ -15,14 +15,12 @@
 (defn set-path->id [set-path]
   (dm/str "set-" set-path))
 
-(def initial {:editing-id nil
-              :new? false})
+(def initial {})
 
 (def context (mf/create-context initial))
 
 (def static-context
   {:editing? (constantly false)
-   :new? false
    :on-edit (constantly nil)
    :on-create (constantly nil)
    :on-reset (constantly nil)})
@@ -37,7 +35,7 @@
 
 (defn use-context []
   (let [ctx (mf/use-ctx context)
-        {:keys [editing-id new?]} @ctx
+        {:keys [editing-id new-path]} @ctx
         editing? (mf/use-callback
                   (mf/deps editing-id)
                   #(= editing-id %))
@@ -45,11 +43,12 @@
                  (fn [editing-id]
                    (reset! ctx (assoc @ctx :editing-id editing-id))))
         on-create (mf/use-fn
-                   #(swap! ctx assoc :editing-id (random-uuid) :new? true))
+                   (fn [path]
+                     (swap! ctx assoc :editing-id (random-uuid) :new-path path)))
         on-reset (mf/use-fn
                   #(reset! ctx initial))]
     {:editing? editing?
-     :new? new?
+     :new-path new-path
      :on-edit on-edit
      :on-create on-create
      :on-reset on-reset}))

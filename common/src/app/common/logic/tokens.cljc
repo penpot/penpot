@@ -52,7 +52,7 @@
   [tokens-lib {:keys [from-index to-index position collapsed-paths]
                :or {collapsed-paths #{}}}]
   (let [tree (-> (ctob/get-set-tree tokens-lib)
-                 (ctob/walk-sets-tree-seq :walk-children? #(contains? collapsed-paths %)))
+                 (ctob/walk-sets-tree-seq :skip-children-pred #(contains? collapsed-paths %)))
         from (nth tree from-index)
         to (nth tree to-index)
         before (case position

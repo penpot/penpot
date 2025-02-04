@@ -6518,6 +6518,10 @@ msgstr "Enter token value or alias"
 msgid "workspace.token.grouping-set-alert"
 msgstr "Token Set grouping is not supported yet."
 
+#: src/app/main/ui/workspace/tokens/sets_context_menu.cljs
+msgid "workspace.token.add-set-to-group"
+msgstr "Add set to this group"
+
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:179
 msgid "workspace.token.label.group"
 msgstr "Group"

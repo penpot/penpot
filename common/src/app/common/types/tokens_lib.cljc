@@ -671,18 +671,31 @@ used for managing active sets without a user created theme.")
 ;; === Import / Export from DTCG format
 
 (defn walk-sets-tree-seq
-  [nodes & {:keys [walk-children?]
-            :or {walk-children? (constantly true)}}]
+  "Walk sets tree as a flat list.
+
+  Options:
+    `:skip-children-pred`: predicate to skip iterating over a set groups children by checking the path of the set group
+    `:new-editing-set-path`: append a an item with `:new?` at the given path"
+  [nodes & {:keys [skip-children-pred new-editing-set-path]
+            :or {skip-children-pred (constantly false)}}]
   (let [walk (fn walk [node {:keys [parent depth]
                              :or {parent []
                                   depth 0}
                              :as opts}]
                (lazy-seq
                 (if (d/ordered-map? node)
-                  (mapcat #(walk % opts) node)
+                  (let [root (cond-> node
+                               (= [] new-editing-set-path) (assoc :new? true))]
+                    (mapcat #(walk % opts) root))
                   (let [[k v] node]
                     (cond
-                      ;;; Set
+                      ;; New set
+                      (= :new? k) [{:new? true
+                                    :group? false
+                                    :parent-path parent
+                                    :depth depth}]
+
+                      ;; Set
                       (and v (instance? TokenSet v))
                       [{:group? false
                         :path (split-token-set-path (:name v))
@@ -698,12 +711,12 @@ used for managing active sets without a user created theme.")
                                   :path path
                                   :parent-path parent
                                   :depth depth}]
-                        (if (walk-children? path)
+                        (if (skip-children-pred path)
                           [item]
-                          (cons
-                           item
-                           (mapcat #(walk % (assoc opts :parent path :depth (inc depth))) v)))))))))]
-    (walk nodes nil)))
+                          (let [v' (cond-> v
+                                     (= path new-editing-set-path) (assoc :new? true))]
+                            (cons item (mapcat #(walk % (assoc opts :parent path :depth (inc depth))) v'))))))))))]
+    (walk (or nodes (d/ordered-map)) nil)))
 
 (defn flatten-nested-tokens-json
   "Recursively flatten the dtcg token structure, joining keys with '.'."
