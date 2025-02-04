@@ -108,6 +108,7 @@
          {:class (stl/css :file-name)
           :title file-name
           :on-double-click start-editing-name}
+         [:div {:class (stl/css :status-notification)}]
          file-name])]
      (when ^boolean shared?
        [:span {:class (stl/css :shared-badge)} i/library])

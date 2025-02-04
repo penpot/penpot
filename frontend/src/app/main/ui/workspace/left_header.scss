@@ -49,6 +49,9 @@
   @include smallTitleTipography;
   text-transform: none;
   color: var(--title-foreground-color-hover);
+  align-items: center;
+  display: flex;
+  flex-direction: row;
 }
 
 .file-name-input {
@@ -79,4 +82,13 @@
     height: $s-16;
     width: $s-16;
   }
+}
+
+.status-notification {
+  width: $s-6;
+  height: $s-6;
+  background-color: red;
+  border-radius: 50%;
+  margin-right: $s-4;
+  flex-shrink: 0;
 }
