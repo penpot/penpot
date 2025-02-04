@@ -116,6 +116,7 @@
                                                       :token-type-props token-type-props})))))
         tokens-count (count tokens)
         can-edit?  (:can-edit (deref refs/permissions))]
+
     [:div {:on-click on-toggle-open-click}
      [:& cmm/asset-section {:icon (token-section-icon type)
                             :title title

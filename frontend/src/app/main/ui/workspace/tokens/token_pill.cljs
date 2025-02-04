@@ -134,6 +134,8 @@
       ;; Otherwise only show the base title
       :else base-title)))
 
+;; FIXME: the token thould already have precalculated references, so
+;; we don't need to perform this regex operation on each rerender
 (defn contains-reference-value?
   "Extracts the value between `{}` in a string and checks if it's in the provided vector."
   [text values]
@@ -145,24 +147,32 @@
   [{:keys [on-click token theme-token full-applied on-context-menu half-applied selected-shapes token-type-props active-theme-tokens]}]
   (let [{:keys [name value errors]} token
 
-        is-reference? (str/includes? value "{")
+        is-reference?  (str/includes? value "{")
+        contains-path? (str/includes? name ".")
 
+
+        ;; FIXME: move to context or props
         can-edit? (:can-edit (deref refs/permissions))
 
         is-viewer (not can-edit?)
         ref-not-in-active-set (and is-reference?
                                    (not (contains-reference-value? value  (keys active-theme-tokens))))
+
         no-valid-value (seq errors)
         errors?   (or ref-not-in-active-set
                       no-valid-value)
+
+        ;; FIXME: :zap: this performs a duplicate operation for
+        ;; nothing, this generates a lot of garbage objects for
+        ;; finally not using them
         color     (when (seq (ctob/find-token-value-references value))
                     (wtt/resolved-token-bullet-color theme-token))
-        contains-path? (str/includes? name ".")
+
         splitted-name (cfh/split-by-last-period name)
         color (or color (wtt/resolved-token-bullet-color token))
 
         on-click
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps errors? on-click)
          (fn [event]
            (dom/stop-propagation event)
@@ -198,7 +208,9 @@
          (mf/deps selected-shapes is-viewer)
          (fn [event]
            (let [node (dom/get-current-target event)
-                 title (token-pill-tooltip  is-viewer (first selected-shapes) token-type-props token half-applied no-valid-value ref-not-in-active-set)]
+                 title (token-pill-tooltip  is-viewer (first selected-shapes)
+                                            token-type-props token
+                                            half-applied no-valid-value ref-not-in-active-set)]
              (dom/set-attribute! node "title" title))))]
 
     [:button {:class (stl/css-case :token-pill true
