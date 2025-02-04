@@ -79,7 +79,7 @@
                      :on-click on-click
                      :on-mouse-enter on-mouse-enter
                      :on-mouse-leave on-mouse-leave}
-            (if @show-text (tr "dashboard.add-file") i/add)]
+            (if @show-text (tr "dashboard.empty-project.create") i/add)]
            [:button {:class (stl/css :create-new)
                      :on-click on-click}
             i/add])]))))
