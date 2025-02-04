@@ -142,7 +142,6 @@
     (contains? active-tokens match)))
 
 (mf/defc token-pill*
-  {::mf/wrap-props false}
   [{:keys [on-click token full-applied on-context-menu half-applied selected-shapes token-type-props active-theme-tokens]}]
   (let [{:keys [name value errors]} token
 
@@ -167,11 +166,11 @@
 
         on-click
         (mf/use-fn
-         (mf/deps errors? on-click)
+         (mf/deps errors? on-click token)
          (fn [event]
            (dom/stop-propagation event)
            (when (and (not (seq errors)) on-click)
-             (on-click event))))
+             (on-click event token))))
 
         token-status-id
         (cond
@@ -184,11 +183,11 @@
 
         on-context-menu
         (mf/use-fn
-         (mf/deps can-edit? on-context-menu)
+         (mf/deps can-edit? on-context-menu token)
          (fn [e]
            (dom/stop-propagation e)
            (when can-edit?
-             (on-context-menu e))))
+             (on-context-menu e token))))
 
         on-click
         (mf/use-fn

@@ -133,13 +133,11 @@
         [:& cmm/asset-section-block {:role :content}
          [:div {:class (stl/css :token-pills-wrapper)}
           (for [token (sort-by :name tokens)]
-            (let [theme-token (get active-theme-tokens (wtt/token-identifier token))
+            (let [theme-token (get active-theme-tokens (:name token))
                   multiple-selection (< 1 (count selected-shapes))
                   full-applied (:all-selected? (attribute-actions token selected-shapes (or all-attributes attributes)))
-                  applied (wtt/shapes-token-applied? token selected-shapes (or all-attributes attributes))
-                  on-token-click (fn [e]
-                                   (on-token-pill-click e token))
-                  on-context-menu (fn [e] (on-context-menu e token))]
+                  applied      (wtt/shapes-token-applied? token selected-shapes (or all-attributes attributes))]
+
               [:> token-pill*
                {:key (:name token)
                 :token-type-props token-type-props
@@ -151,7 +149,7 @@
                 :full-applied (if multiple-selection
                                 false
                                 applied)
-                :on-click on-token-click
+                :on-click on-token-pill-click
                 :on-context-menu on-context-menu}]))]])]]))
 
 (defn sorted-token-groups

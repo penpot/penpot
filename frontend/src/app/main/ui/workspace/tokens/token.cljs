@@ -21,7 +21,9 @@
                         {:value parsed-value
                          :unit unit}))))
 
-(defn token-identifier [{:keys [name] :as _token}]
+;; FIXME: looks very redundant function
+(defn token-identifier
+  [{:keys [name] :as _token}]
   name)
 
 (defn attributes-map
