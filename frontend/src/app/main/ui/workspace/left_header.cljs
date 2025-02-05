@@ -36,9 +36,11 @@
         project-id  (:id project)
         team-id     (:team-id project)
         shared?     (:is-shared file)
-        persistence-status (-> refs/persistence
-                             (mf/deref)
-                             :status)
+        persistence
+        (mf/deref refs/persistence)
+
+        persistence-status
+        (get persistence :status)
 
         read-only?  (mf/use-ctx ctx/workspace-read-only?)
 
