@@ -22,8 +22,8 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
-   [rumext.v2 :as mf]
-   [okulary.core :as l]))
+   [okulary.core :as l]
+   [rumext.v2 :as mf]))
 
 (def ref:persistence-status
   (l/derived :status refs/persistence))
@@ -114,17 +114,17 @@
           :on-double-click start-editing-name}
           ;;-- Persistende state widget
          [:div {:class (case (mf/deref ref:persistence-status)
-                        :pending (stl/css :status-notification :pending-status)
-                        :saving (stl/css :status-notification :saving-status)
-                        :saved (stl/css :status-notification :saved-status)
-                        :error (stl/css :status-notification :error-status)
-                        (stl/css :status-notification))
+                         :pending (stl/css :status-notification :pending-status)
+                         :saving (stl/css :status-notification :saving-status)
+                         :saved (stl/css :status-notification :saved-status)
+                         :error (stl/css :status-notification :error-status)
+                         (stl/css :status-notification))
                 :title (case (mf/deref ref:persistence-status)
-                        :pending (tr "workspace.header.saving")
-                        :saving (tr "workspace.header.saving")
-                        :saved (tr "workspace.header.saved")
-                        :error (tr "workspace.header.save-error")
-                        nil)}
+                         :pending (tr "workspace.header.saving")
+                         :saving (tr "workspace.header.saving")
+                         :saved (tr "workspace.header.saved")
+                         :error (tr "workspace.header.save-error")
+                         nil)}
           (case (mf/deref ref:persistence-status)
             :pending i/status-alert
             :saving i/status-alert
