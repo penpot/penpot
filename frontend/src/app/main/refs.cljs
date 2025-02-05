@@ -144,7 +144,7 @@
   (l/derived
    (fn [{:keys [objects selected]}]
      (dsh/process-selected-shapes objects selected))
-   selected-shapes-data))
+   selected-shapes-data =))
 
 (defn make-selected-ref
   [id]
