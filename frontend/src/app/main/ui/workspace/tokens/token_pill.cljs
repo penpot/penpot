@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.main.refs :as refs]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
@@ -157,14 +158,10 @@
         shape-ids         (into #{} xf:map-id selected-shapes)]
     (wtt/shapes-applied-all? ids-by-attributes shape-ids attributes)))
 
-
 (mf/defc token-pill*
   {::mf/wrap [mf/memo]}
   [{:keys [on-click token on-context-menu selected-shapes active-theme-tokens]}]
   (let [{:keys [name value errors]} token
-
-        token
-        (or (get active-theme-tokens (:name token)) token)
 
         has-selected?  (pos? (count selected-shapes))
         is-reference?  (wtt/is-reference? token)
@@ -175,12 +172,12 @@
 
         full-applied?
         (if has-selected?
-          (applied-all-attributes? token selected-shapes (or all-attributes attributes))
+          (applied-all-attributes? token selected-shapes (d/nilv all-attributes attributes))
           true)
 
         applied?
         (if has-selected?
-          (wtt/shapes-token-applied? token selected-shapes (or all-attributes attributes))
+          (wtt/shapes-token-applied? token selected-shapes (d/nilv all-attributes attributes))
           false)
 
         half-applied?
@@ -196,11 +193,16 @@
              (not (contains-reference-value? value active-theme-tokens)))
 
         no-valid-value (seq errors)
-        errors?   (or ref-not-in-active-set
-                      no-valid-value)
 
-        color (when (wtt/color-token? token)
-                (wtt/resolved-token-bullet-color token))
+        errors?
+        (or ref-not-in-active-set
+            no-valid-value)
+
+        color
+        (when (wtt/color-token? token)
+          (let [theme-token (get active-theme-tokens (:name token))]
+            (or (wtt/resolved-token-bullet-color theme-token)
+                (wtt/resolved-token-bullet-color token))))
 
         on-click
         (mf/use-fn
