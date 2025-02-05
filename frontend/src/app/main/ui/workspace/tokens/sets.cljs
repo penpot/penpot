@@ -107,6 +107,8 @@
         editing?'  (editing? editing-id)
         collapsed? (some? (get @collapsed-paths tree-path))
         can-edit?  (:can-edit (deref refs/permissions))
+        ;; Used by playwright to get the correct item by label
+        label-id   (str editing-id "-label")
 
         on-context-menu
         (mf/use-fn
@@ -165,6 +167,7 @@
 
     [:div {:ref dref
            :role "button"
+           :aria-labelledby label-id
            :data-testid "tokens-set-group-item"
            :style {"--tree-depth" tree-depth}
            :class (stl/css-case :set-item-container true
@@ -188,7 +191,8 @@
          :on-submit on-edit-submit'}]
        [:*
         [:div {:class (stl/css :set-name)
-               :on-double-click on-double-click}
+               :on-double-click on-double-click
+               :id label-id}
          label]
         [:& checkbox
          {:on-click on-checkbox-click

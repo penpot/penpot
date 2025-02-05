@@ -1371,271 +1371,279 @@
               }
             ],
             [
-              "S-light",
+              "G-LightDark",
               {
-                "~#penpot/token-set": {
-                  "~:name": "light",
-                  "~:description": null,
-                  "~:modified-at": "~m1737542498290",
-                  "~:tokens": {
-                    "~#ordered-map": [
-                      [
-                        "accent.default",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "accent.default",
-                            "~:type": "~:color",
-                            "~:value": "{colors.indigo.400}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498290"
-                          }
+                "~#ordered-map": [
+                  [
+                    "S-light",
+                    {
+                      "~#penpot/token-set": {
+                        "~:name": "LightDark/light",
+                        "~:description": null,
+                        "~:modified-at": "~m1737542498290",
+                        "~:tokens": {
+                          "~#ordered-map": [
+                            [
+                              "accent.default",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "accent.default",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.indigo.400}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498290"
+                                }
+                              }
+                            ],
+                            [
+                              "bg.muted",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "bg.muted",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.100}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498290"
+                                }
+                              }
+                            ],
+                            [
+                              "bg.subtle",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "bg.subtle",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.200}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498290"
+                                }
+                              }
+                            ],
+                            [
+                              "accent.bg",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "accent.bg",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.indigo.200}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498290"
+                                }
+                              }
+                            ],
+                            [
+                              "accent.onAccent",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "accent.onAccent",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.white}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498290"
+                                }
+                              }
+                            ],
+                            [
+                              "shadows.default",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "shadows.default",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.900}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498290"
+                                }
+                              }
+                            ],
+                            [
+                              "fg.muted",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "fg.muted",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.700}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498289"
+                                }
+                              }
+                            ],
+                            [
+                              "fg.default",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "fg.default",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.black}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498289"
+                                }
+                              }
+                            ],
+                            [
+                              "fg.subtle",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "fg.subtle",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.500}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498290"
+                                }
+                              }
+                            ],
+                            [
+                              "bg.default",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "bg.default",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.white}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498290"
+                                }
+                              }
+                            ]
+                          ]
                         }
-                      ],
-                      [
-                        "bg.muted",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "bg.muted",
-                            "~:type": "~:color",
-                            "~:value": "{colors.gray.100}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498290"
-                          }
+                      }
+                    }
+                  ],
+
+                  [
+                    "S-dark",
+                    {
+                      "~#penpot/token-set": {
+                        "~:name": "LightDark/dark",
+                        "~:description": null,
+                        "~:modified-at": "~m1737542498291",
+                        "~:tokens": {
+                          "~#ordered-map": [
+                            [
+                              "accent.default",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "accent.default",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.indigo.600}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ],
+                            [
+                              "bg.muted",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "bg.muted",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.700}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ],
+                            [
+                              "bg.subtle",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "bg.subtle",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.600}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ],
+                            [
+                              "accent.bg",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "accent.bg",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.indigo.800}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ],
+                            [
+                              "accent.onAccent",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "accent.onAccent",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.white}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ],
+                            [
+                              "shadows.default",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "shadows.default",
+                                  "~:type": "~:color",
+                                  "~:value": "rgba({colors.black}, 0.3)",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ],
+                            [
+                              "fg.muted",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "fg.muted",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.300}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ],
+                            [
+                              "fg.default",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "fg.default",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.white}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ],
+                            [
+                              "fg.subtle",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "fg.subtle",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.500}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ],
+                            [
+                              "bg.default",
+                              {
+                                "~#penpot/token": {
+                                  "~:name": "bg.default",
+                                  "~:type": "~:color",
+                                  "~:value": "{colors.gray.900}",
+                                  "~:description": null,
+                                  "~:modified-at": "~m1737542498291"
+                                }
+                              }
+                            ]
+                          ]
                         }
-                      ],
-                      [
-                        "bg.subtle",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "bg.subtle",
-                            "~:type": "~:color",
-                            "~:value": "{colors.gray.200}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498290"
-                          }
-                        }
-                      ],
-                      [
-                        "accent.bg",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "accent.bg",
-                            "~:type": "~:color",
-                            "~:value": "{colors.indigo.200}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498290"
-                          }
-                        }
-                      ],
-                      [
-                        "accent.onAccent",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "accent.onAccent",
-                            "~:type": "~:color",
-                            "~:value": "{colors.white}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498290"
-                          }
-                        }
-                      ],
-                      [
-                        "shadows.default",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "shadows.default",
-                            "~:type": "~:color",
-                            "~:value": "{colors.gray.900}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498290"
-                          }
-                        }
-                      ],
-                      [
-                        "fg.muted",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "fg.muted",
-                            "~:type": "~:color",
-                            "~:value": "{colors.gray.700}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498289"
-                          }
-                        }
-                      ],
-                      [
-                        "fg.default",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "fg.default",
-                            "~:type": "~:color",
-                            "~:value": "{colors.black}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498289"
-                          }
-                        }
-                      ],
-                      [
-                        "fg.subtle",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "fg.subtle",
-                            "~:type": "~:color",
-                            "~:value": "{colors.gray.500}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498290"
-                          }
-                        }
-                      ],
-                      [
-                        "bg.default",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "bg.default",
-                            "~:type": "~:color",
-                            "~:value": "{colors.white}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498290"
-                          }
-                        }
-                      ]
-                    ]
-                  }
-                }
-              }
-            ],
-            [
-              "S-dark",
-              {
-                "~#penpot/token-set": {
-                  "~:name": "dark",
-                  "~:description": null,
-                  "~:modified-at": "~m1737542498291",
-                  "~:tokens": {
-                    "~#ordered-map": [
-                      [
-                        "accent.default",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "accent.default",
-                            "~:type": "~:color",
-                            "~:value": "{colors.indigo.600}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498291"
-                          }
-                        }
-                      ],
-                      [
-                        "bg.muted",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "bg.muted",
-                            "~:type": "~:color",
-                            "~:value": "{colors.gray.700}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498291"
-                          }
-                        }
-                      ],
-                      [
-                        "bg.subtle",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "bg.subtle",
-                            "~:type": "~:color",
-                            "~:value": "{colors.gray.600}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498291"
-                          }
-                        }
-                      ],
-                      [
-                        "accent.bg",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "accent.bg",
-                            "~:type": "~:color",
-                            "~:value": "{colors.indigo.800}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498291"
-                          }
-                        }
-                      ],
-                      [
-                        "accent.onAccent",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "accent.onAccent",
-                            "~:type": "~:color",
-                            "~:value": "{colors.white}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498291"
-                          }
-                        }
-                      ],
-                      [
-                        "shadows.default",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "shadows.default",
-                            "~:type": "~:color",
-                            "~:value": "rgba({colors.black}, 0.3)",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498291"
-                          }
-                        }
-                      ],
-                      [
-                        "fg.muted",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "fg.muted",
-                            "~:type": "~:color",
-                            "~:value": "{colors.gray.300}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498291"
-                          }
-                        }
-                      ],
-                      [
-                        "fg.default",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "fg.default",
-                            "~:type": "~:color",
-                            "~:value": "{colors.white}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498291"
-                          }
-                        }
-                      ],
-                      [
-                        "fg.subtle",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "fg.subtle",
-                            "~:type": "~:color",
-                            "~:value": "{colors.gray.500}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498291"
-                          }
-                        }
-                      ],
-                      [
-                        "bg.default",
-                        {
-                          "~#penpot/token": {
-                            "~:name": "bg.default",
-                            "~:type": "~:color",
-                            "~:value": "{colors.gray.900}",
-                            "~:description": null,
-                            "~:modified-at": "~m1737542498291"
-                          }
-                        }
-                      ]
-                    ]
-                  }
-                }
+                      }
+                    }
+                  ]
+                ]
               }
             ],
             [
@@ -1742,7 +1750,7 @@
                         "~:is-source": false,
                         "~:modified-at": "~m1737542746842",
                         "~:sets": {
-                          "~#set": ["light", "theme", "core"]
+                          "~#set": ["LightDark/light", "theme", "core"]
                         }
                       }
                     }
@@ -1757,7 +1765,7 @@
                         "~:is-source": false,
                         "~:modified-at": "~m1737542746842",
                         "~:sets": {
-                          "~#set": ["dark", "theme", "core"]
+                          "~#set": ["LightDark/dark", "theme", "core"]
                         }
                       }
                     }
@@ -1779,7 +1787,7 @@
                         "~:is-source": false,
                         "~:modified-at": "~m1737542683555",
                         "~:sets": {
-                          "~#set": ["light", "theme", "core"]
+                          "~#set": ["LightDark/light", "theme", "core"]
                         }
                       }
                     }

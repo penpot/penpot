@@ -88,6 +88,9 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.tokensUpdateCreateModal = page.getByTestId(
       "token-update-create-modal",
     );
+    this.tokenThemeUpdateCreateModal = page.getByTestId(
+      "token-theme-update-create-modal",
+    );
     this.tokenThemesSetsSidebar = page.getByTestId("token-themes-sets-sidebar");
     this.tokensSidebar = page.getByTestId("tokens-sidebar");
     this.tokenSetItems = page.getByTestId("tokens-set-item");

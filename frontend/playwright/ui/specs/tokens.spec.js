@@ -54,6 +54,7 @@ const setupTokensFile = async (page) => {
   return {
     workspacePage,
     tokensUpdateCreateModal: workspacePage.tokensUpdateCreateModal,
+    tokenThemeUpdateCreateModal: workspacePage.tokenThemeUpdateCreateModal,
     tokenThemesSetsSidebar: workspacePage.tokenThemesSetsSidebar,
     tokenSetItems: workspacePage.tokenSetItems,
     tokenSetGroupItems: workspacePage.tokenSetGroupItems,
@@ -183,6 +184,89 @@ test.describe("Tokens: Tokens Tab", () => {
     expect(colorTokenChanged).toBeVisible();
   });
 
+  test("User edits theme and activates it in the sidebar", async ({ page }) => {
+    const {
+      workspacePage,
+      tokensUpdateCreateModal,
+      tokenThemesSetsSidebar,
+      tokensSidebar,
+      tokenContextMenuForToken,
+      tokenThemeUpdateCreateModal,
+    } = await setupTokensFile(page);
+
+    await expect(tokenThemesSetsSidebar).toBeVisible();
+
+    await tokenThemesSetsSidebar.getByRole("button", { name: "Edit" }).click();
+
+    await expect(tokenThemeUpdateCreateModal).toBeVisible();
+    await tokenThemeUpdateCreateModal
+      .getByRole("button", { name: "sets" })
+      .first()
+      .click();
+
+    await tokenThemeUpdateCreateModal.getByLabel("Theme").fill("Changed");
+
+    const lightDarkSetGroup = tokenThemeUpdateCreateModal.getByRole("button", {
+      name: "LightDark",
+      exact: true,
+    });
+    await expect(lightDarkSetGroup).toBeVisible();
+    const lightSet = tokenThemeUpdateCreateModal.getByRole("button", {
+      name: "light",
+      exact: true,
+    });
+    const darkSet = tokenThemeUpdateCreateModal.getByRole("button", {
+      name: "dark",
+      exact: true,
+    });
+
+    // Mixed set group
+    await expect(lightSet.getByRole("checkbox")).toBeChecked();
+    await expect(darkSet.getByRole("checkbox")).not.toBeChecked();
+
+    // Disable all
+    await lightDarkSetGroup.getByRole("checkbox").click();
+    await expect(lightSet.getByRole("checkbox")).not.toBeChecked();
+    await expect(darkSet.getByRole("checkbox")).not.toBeChecked();
+
+    // Enable all
+    await lightDarkSetGroup.getByRole("checkbox").click();
+    await expect(lightSet.getByRole("checkbox")).toBeChecked();
+    await expect(darkSet.getByRole("checkbox")).toBeChecked();
+
+    await tokenThemeUpdateCreateModal
+      .getByRole("button", {
+        name: "save theme",
+      })
+      .click();
+
+    await expect(
+      tokenThemeUpdateCreateModal.getByText("Changed" + "4 sets"),
+    ).toBeVisible();
+
+    await tokenThemeUpdateCreateModal
+      .getByRole("button", { name: "Close" })
+      .click();
+    await expect(tokenThemeUpdateCreateModal).not.toBeVisible();
+
+    const themeSelect = tokenThemesSetsSidebar.getByRole("combobox");
+
+    await themeSelect.click();
+    await themeSelect.getByRole("option", { name: "Changed" }).click();
+
+    const sidebarLightSet = tokenThemesSetsSidebar.getByRole("button", {
+      name: "light",
+      exact: true,
+    });
+    const sidebarDarkSet = tokenThemesSetsSidebar.getByRole("button", {
+      name: "dark",
+      exact: true,
+    });
+
+    await expect(sidebarLightSet.getByRole("checkbox")).toBeChecked();
+    await expect(sidebarDarkSet.getByRole("checkbox")).toBeChecked();
+  });
+
   test("User creates grouped color token", async ({ page }) => {
     const { workspacePage, tokensUpdateCreateModal, tokenThemesSetsSidebar } =
       await setupEmptyTokensFile(page);
@@ -251,7 +335,7 @@ test.describe("Tokens: Sets Tab", () => {
 
     // Create set in group
     await tokenThemesSetsSidebar
-      .getByRole("button", { name: "Collapse core" })
+      .getByRole("button", { name: "core" })
       .click({ button: "right" });
     await expect(tokenContextMenuForSet).toBeVisible();
     await tokenContextMenuForSet.getByText("Add set to this group").click();
