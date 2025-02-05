@@ -141,17 +141,49 @@
   (let [match (second (re-find #"\{([^}]+)\}" text))]
     (contains? active-tokens match)))
 
+(def ^:private
+  xf:map-id
+  (map :id))
+
+(defn- applied-all-attributes?
+  [token selected-shapes attributes]
+  (let [ids-by-attributes (wtt/shapes-ids-by-applied-attributes token selected-shapes attributes)
+        shape-ids         (into #{} xf:map-id selected-shapes)]
+    (wtt/shapes-applied-all? ids-by-attributes shape-ids attributes)))
+
+
 (mf/defc token-pill*
-  [{:keys [on-click token full-applied on-context-menu half-applied selected-shapes active-theme-tokens]}]
+  {::mf/wrap [mf/memo]}
+  [{:keys [on-click token on-context-menu selected-shapes active-theme-tokens]}]
   (let [{:keys [name value errors]} token
 
+        token
+        (or (get active-theme-tokens (:name token)) token)
+
+        has-selected?  (pos? (count selected-shapes))
         is-reference?  (wtt/is-reference? token)
         contains-path? (str/includes? name ".")
+
+        {:keys [attributes all-attributes]}
+        (get wtch/token-properties (:type token))
+
+        full-applied?
+        (if has-selected?
+          (applied-all-attributes? token selected-shapes (or all-attributes attributes))
+          true)
+
+        applied?
+        (if has-selected?
+          (wtt/shapes-token-applied? token selected-shapes (or all-attributes attributes))
+          false)
+
+        half-applied?
+        (and applied? (not full-applied?))
 
         ;; FIXME: move to context or props
         can-edit? (:can-edit (deref refs/permissions))
 
-        is-viewer (not can-edit?)
+        is-viewer? (not can-edit?)
 
         ref-not-in-active-set
         (and is-reference?
@@ -174,9 +206,9 @@
 
         token-status-id
         (cond
-          half-applied
+          half-applied?
           "token-status-partial"
-          full-applied
+          full-applied?
           "token-status-full"
           :else
           "token-status-non-applied")
@@ -200,26 +232,26 @@
         ;; FIXME: missing deps
         on-hover
         (mf/use-fn
-         (mf/deps selected-shapes is-viewer)
+         (mf/deps selected-shapes is-viewer?)
          (fn [event]
            (let [node  (dom/get-current-target event)
-                 title (generate-tooltip is-viewer (first selected-shapes) token
-                                         half-applied no-valid-value ref-not-in-active-set)]
+                 title (generate-tooltip is-viewer? (first selected-shapes) token
+                                         half-applied? no-valid-value ref-not-in-active-set)]
              (dom/set-attribute! node "title" title))))]
 
     [:button {:class (stl/css-case
                       :token-pill true
                       :token-pill-default can-edit?
-                      :token-pill-applied (and can-edit? (or half-applied full-applied))
+                      :token-pill-applied (and can-edit? has-selected? (or half-applied? full-applied?))
                       :token-pill-invalid (and can-edit? errors?)
-                      :token-pill-invalid-applied (and full-applied errors? can-edit?)
-                      :token-pill-viewer is-viewer
-                      :token-pill-applied-viewer (and is-viewer
-                                                      (or half-applied full-applied))
-                      :token-pill-invalid-viewer (and is-viewer
+                      :token-pill-invalid-applied (and full-applied? errors? can-edit?)
+                      :token-pill-viewer is-viewer?
+                      :token-pill-applied-viewer (and is-viewer? has-selected?
+                                                      (or half-applied? full-applied?))
+                      :token-pill-invalid-viewer (and is-viewer?
                                                       errors?)
-                      :token-pill-invalid-applied-viewer (and is-viewer
-                                                              (and full-applied errors?)))
+                      :token-pill-invalid-applied-viewer (and is-viewer?
+                                                              (and full-applied? errors?)))
               :type "button"
               :on-click on-click
               :on-mouse-enter on-hover

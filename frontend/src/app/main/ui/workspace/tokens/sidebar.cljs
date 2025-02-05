@@ -33,7 +33,6 @@
    [app.main.ui.workspace.tokens.sets-context-menu :refer [sets-context-menu]]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.theme-select :refer [theme-select]]
-   [app.main.ui.workspace.tokens.token :as wtt]
    [app.main.ui.workspace.tokens.token-pill :refer [token-pill*]]
    [app.util.array :as array]
    [app.util.dom :as dom]
@@ -66,19 +65,10 @@
     :sizing "expand"
     "add"))
 
-(def ^:private
-  xf:map-id
-  (map :id))
-
-(defn- all-selected? [token selected-shapes attributes]
-  (let [ids-by-attributes (wtt/shapes-ids-by-applied-attributes token selected-shapes attributes)
-        shape-ids         (into #{} xf:map-id selected-shapes)]
-    (wtt/shapes-applied-all? ids-by-attributes shape-ids attributes)))
-
 (mf/defc token-group*
   {::mf/private true}
   [{:keys [type tokens selected-shapes active-theme-tokens is-open]}]
-  (let [{:keys [modal attributes all-attributes title] :as token-type-props}
+  (let [{:keys [modal title]}
         (get wtch/token-properties type)
 
         tokens
@@ -144,23 +134,13 @@
         [:& cmm/asset-section-block {:role :content}
          [:div {:class (stl/css :token-pills-wrapper)}
           (for [token tokens]
-            (let [theme-token (get active-theme-tokens (:name token))
-                  multiple-selection (< 1 (count selected-shapes))
-                  full-applied (all-selected? token selected-shapes (or all-attributes attributes))
-                  applied      (wtt/shapes-token-applied? token selected-shapes (or all-attributes attributes))]
-
-              [:> token-pill*
-               {:key (:name token)
-                :token (d/nilv theme-token token)
-                :selected-shapes selected-shapes
-                :active-theme-tokens active-theme-tokens
-                :half-applied (or (and applied multiple-selection)
-                                  (and applied (not full-applied)))
-                :full-applied (if multiple-selection
-                                false
-                                applied)
-                :on-click on-token-pill-click
-                :on-context-menu on-context-menu}]))]])]]))
+            [:> token-pill*
+             {:key (:name token)
+              :token token
+              :selected-shapes selected-shapes
+              :active-theme-tokens active-theme-tokens
+              :on-click on-token-pill-click
+              :on-context-menu on-context-menu}])]])]]))
 
 (defn- get-sorted-token-groups
   "Separate token-types into groups of `empty` or `filled` depending if
