@@ -535,10 +535,11 @@
    (letfn [(get-frame [parent-id]
              (if (cfh/frame-shape? objects parent-id) parent-id (get-in objects [parent-id :frame-id])))]
      (let [parent (get objects parent-id)
-          ;; We can always move the children to the parent they already have
+          ;; We can always move the children to the parent they already have.
            no-changes?
            (->> children (every? #(= parent-id (:parent-id %))))]
-       (if (or no-changes? (not (invalid-structure-for-component? objects parent children pasting? libraries)))
+       ;; In case no-changes is true we must ensure we are copy pasting the children in the same position
+       (if (or (and no-changes? (not pasting?)) (not (invalid-structure-for-component? objects parent children pasting? libraries)))
          [parent-id (get-frame parent-id)]
          (recur (:parent-id parent) objects children pasting? libraries))))))
 
