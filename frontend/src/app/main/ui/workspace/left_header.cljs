@@ -118,7 +118,19 @@
                         :saving (stl/css :status-notification :saving-status)
                         :saved (stl/css :status-notification :saved-status)
                         :error (stl/css :status-notification :error-status)
-                        (stl/css :status-notification))}]
+                        (stl/css :status-notification))
+                :title (case (mf/deref ref:persistence-status)
+                        :pending (tr "workspace.header.saving")
+                        :saving (tr "workspace.header.saving")
+                        :saved (tr "workspace.header.saved")
+                        :error (tr "workspace.header.save-error")
+                        nil)}
+          (case (mf/deref ref:persistence-status)
+            :pending i/status-alert
+            :saving i/status-alert
+            :saved i/status-tick
+            :error i/status-wrong
+            nil)]
          file-name])]
      (when ^boolean shared?
        [:span {:class (stl/css :shared-badge)} i/library])
