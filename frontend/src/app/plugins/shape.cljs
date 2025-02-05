@@ -954,7 +954,7 @@
 
                  :else
                  (do (st/emit! (dwsl/create-layout-from-id id :flex :from-frame? true :calculate-params? false))
-                     (grid/grid-layout-proxy plugin-id file-id page-id id)))))
+                     (flex/flex-layout-proxy plugin-id file-id page-id id)))))
 
            :addGridLayout
            (fn []
