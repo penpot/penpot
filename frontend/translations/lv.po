@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-29 22:23+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-02-06 11:02+0000\n"
+"Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
 "Language: lv\n"
@@ -6370,14 +6370,12 @@ msgid "workspace.token.num-sets"
 msgstr "%s kopas"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
-#, fuzzy
 msgid "workspace.token.original-value"
-msgstr "Sākotnējā vērtība: "
+msgstr "Sākotnējā vērtība: %s"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:205, src/app/main/ui/workspace/tokens/form.cljs:208, src/app/main/ui/workspace/tokens/token_pill.cljs:115
-#, fuzzy
 msgid "workspace.token.resolved-value"
-msgstr "Atrisinātā vērtība: "
+msgstr "Atrisinātā vērtība: %s"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:203
 msgid "workspace.token.save-theme"
@@ -6715,3 +6713,75 @@ msgstr "Automātiski saglabātas versijas tiks paturētas %s dienas."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Jānoklikšķina, lai aizvērtu ceļu"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:48
+msgid "dashboard.add-file"
+msgstr "Pievienot datni"
+
+#: src/app/main/ui/dashboard.cljs:212
+msgid "dashboard.plugins.bad-url"
+msgstr "Spraudņa URL ir nepareizs"
+
+#: src/app/main/ui/dashboard.cljs:210
+msgid "dashboard.plugins.parse-error"
+msgstr "Nevar apstrādāt spraudņa manifestu"
+
+#: src/app/main/ui/dashboard.cljs:173
+msgid "dashboard.plugins.try-plugin"
+msgstr "Izmēģināt spraudni: "
+
+#: src/app/main/ui/settings/notifications.cljs:73
+msgid "dashboard.settings.notifications.dashboard-comments.title"
+msgstr "Datņu piebildes"
+
+#: src/app/main/ui/settings/notifications.cljs:72
+msgid "dashboard.settings.notifications.dashboard.title"
+msgstr "Pārskata paneļa paziņojumi"
+
+#: src/app/main/ui/settings/notifications.cljs:87
+msgid "dashboard.settings.notifications.email-comments.partial"
+msgstr "Tikai pieminēšanas un atbildes"
+
+#: src/app/main/ui/settings/notifications.cljs:83
+msgid "dashboard.settings.notifications.email-comments.title"
+msgstr "Datņu piebildes"
+
+#: src/app/main/ui/settings/notifications.cljs:88
+msgid "dashboard.settings.notifications.email-comments.none"
+msgstr "Neviena"
+
+#: src/app/main/ui/settings/notifications.cljs:86
+msgid "dashboard.settings.notifications.email-comments.all"
+msgstr "Visas piebildes, pieminēšanas un atbildes"
+
+#: src/app/main/ui/comments.cljs:504
+msgid "comments.mentions.not-found"
+msgstr "Netika atrasts neviens cilvēks @%s"
+
+#: src/app/main/ui/dashboard.cljs:248
+msgid "dashboard.import.bad-url"
+msgstr "Ievietošana neizdevās. Sagataves URL ir nepareizs"
+
+#: src/app/main/ui/dashboard.cljs:242
+msgid "dashboard.import.error"
+msgstr "Ievietošana neizdevās. Lūgums mēģināt vēlreiz"
+
+#: src/app/main/ui/settings/notifications.cljs:42
+msgid "dashboard.notifications.notifications-saved"
+msgstr "Paziņojumu iestatījumi atjaunināti"
+
+#: src/app/main/ui/settings/notifications.cljs:77
+msgid "dashboard.settings.notifications.dashboard-comments.partial"
+msgstr "Tikai pieminēšanas un atbildes"
+
+#: src/app/main/ui/settings/notifications.cljs:76
+msgid "dashboard.settings.notifications.dashboard-comments.all"
+msgstr "Visas piebildes, pieminēšanas un atbildes"
+
+#: src/app/main/ui/settings/notifications.cljs:78
+msgid "dashboard.settings.notifications.dashboard-comments.none"
+msgstr "Neviena"
+
+#: src/app/main/ui/dashboard.cljs:249
+msgid "dashboard.import.no-perms"
+msgstr "Nav atļaujas ievietot šajā komandā"
