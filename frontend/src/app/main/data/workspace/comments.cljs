@@ -207,12 +207,14 @@
     ptk/WatchEvent
     (watch [_ state _]
       (rx/concat
-       (rx/of
-        (rt/nav :workspace
-                (-> (rt/get-params state)
-                    (assoc :page-id (:page-id thread))
-                    (dissoc :comment-id))
-                {::rt/replace true}))
+       (if (some? thread)
+         (rx/of
+          (rt/nav :workspace
+                  (-> (rt/get-params state)
+                      (assoc :page-id (:page-id thread))
+                      (dissoc :comment-id))
+                  {::rt/replace true}))
+         (rx/empty))
        (->> (rx/of
              (dwd/select-for-drawing :comments)
              (center-to-comment-thread thread)
