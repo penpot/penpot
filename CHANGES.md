@@ -57,6 +57,7 @@ is a number of cores)
 - Fix problem with multiple color changes [Taiga #9631](https://tree.taiga.io/project/penpot/issue/9631)
 - Fix problem in plugins with zoomIntoView [Plugins #189](https://github.com/penpot/penpot-plugins/issues/189)
 - Fix problem in plugins with renaming components [Taiga #10060](https://tree.taiga.io/project/penpot/issue/10060)
+- Added upload svg with images method [#5489](https://github.com/penpot/penpot/issues/5489)
 
 ## 2.4.3
 
