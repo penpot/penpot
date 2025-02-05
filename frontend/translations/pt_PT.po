@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-02-04 21:01+0000\n"
+"PO-Revision-Date: 2025-02-06 11:02+0000\n"
 "Last-Translator: TheScientistPT <joao.ed.reis.gomes@gmail.com>\n"
 "Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_PT/>\n"
@@ -6519,3 +6519,23 @@ msgstr "Marcar como resolvido"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1022
 msgid "workspace.shape.menu.remove-layout"
 msgstr "Remover layout"
+
+#: src/app/main/ui/dashboard/files.cljs:195, src/app/main/ui/dashboard/projects.cljs:281
+msgid "dashboard.empty-placeholder-files-title"
+msgstr "Ainda não existem ficheiros."
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:336
+msgid "workspace.versions.empty"
+msgstr "Ainda não existem versões"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:259
+msgid "workspace.versions.restore-warning"
+msgstr "Queres restaurar esta versão?"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:33
+msgid "dashboard.empty-placeholder-libraries-title"
+msgstr "Ainda não existem bibliotecas."
+
+#: src/app/main/ui/settings/notifications.cljs:73
+msgid "dashboard.settings.notifications.dashboard-comments.title"
+msgstr "Comentários de ficheiros"
