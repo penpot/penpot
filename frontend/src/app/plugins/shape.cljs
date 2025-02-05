@@ -211,7 +211,7 @@
                   (u/display-not-valid :name value)
 
                   :else
-                  (st/emit! (dwsh/update-shapes [id] #(assoc % :name value))))))}
+                  (st/emit! (dw/end-rename-shape id value)))))}
 
            :blocked
            {:this true
