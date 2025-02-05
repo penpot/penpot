@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -44,8 +45,8 @@
    [rumext.v2 :as mf]
    [shadow.resource]))
 
-(def lens:token-type-open-status
-  (l/derived (l/in [:workspace-tokens :open-status]) st/state))
+(def ref:token-type-open-status
+  (l/derived #(dm/get-in % [:workspace-local :token-type-open-status]) st/state))
 
 ;; Components ------------------------------------------------------------------
 
@@ -65,20 +66,19 @@
     :sizing "expand"
     "add"))
 
-(defn attribute-actions [token selected-shapes attributes]
+(def ^:private
+  xf:map-id
+  (map :id))
+
+(defn- all-selected? [token selected-shapes attributes]
   (let [ids-by-attributes (wtt/shapes-ids-by-applied-attributes token selected-shapes attributes)
-        shape-ids (into #{} (map :id selected-shapes))]
-    {:all-selected? (wtt/shapes-applied-all? ids-by-attributes shape-ids attributes)
-     :shape-ids shape-ids
-     :selected-pred #(seq (% ids-by-attributes))}))
+        shape-ids         (into #{} xf:map-id selected-shapes)]
+    (wtt/shapes-applied-all? ids-by-attributes shape-ids attributes)))
 
 (mf/defc token-group*
   {::mf/private true}
-  [{:keys [type tokens selected-shapes active-theme-tokens]}]
-  (let [open? (mf/deref (-> (l/key type)
-                            (l/derived lens:token-type-open-status)))
-
-        {:keys [modal attributes all-attributes title] :as token-type-props}
+  [{:keys [type tokens selected-shapes active-theme-tokens is-open]}]
+  (let [{:keys [modal attributes all-attributes title] :as token-type-props}
         (get wtch/token-properties type)
 
         tokens
@@ -98,23 +98,24 @@
 
         on-toggle-open-click
         (mf/use-fn
-         (mf/deps open? tokens)
-         #(st/emit! (dt/set-token-type-section-open type (not open?))))
+         (mf/deps is-open type)
+         #(st/emit! (dt/set-token-type-section-open type (not is-open))))
 
         on-popover-open-click
         (mf/use-fn
+         (mf/deps type title modal)
          (fn [event]
-           (mf/deps type title)
-           (let [{:keys [key fields]} modal]
-             (dom/stop-propagation event)
-             (st/emit! (dt/set-token-type-section-open type true))
-             (modal/show! key {:x (.-clientX ^js event)
-                               :y (.-clientY ^js event)
-                               :position :right
-                               :fields fields
-                               :title title
-                               :action "create"
-                               :token-type type}))))
+           (dom/stop-propagation event)
+           (st/emit! (dt/set-token-type-section-open type true)
+                     ;; FIXME: use dom/get-client-position
+                     (modal/show (:key modal)
+                                 {:x (.-clientX ^js event)
+                                  :y (.-clientY ^js event)
+                                  :position :right
+                                  :fields (:fields modal)
+                                  :title title
+                                  :action "create"
+                                  :token-type type}))))
 
         on-token-pill-click
         (mf/use-fn
@@ -131,7 +132,7 @@
      [:& cmm/asset-section {:icon (token-section-icon type)
                             :title title
                             :assets-count tokens-count
-                            :open? open?}
+                            :open? is-open}
       [:& cmm/asset-section-block {:role :title-button}
        (when can-edit?
          [:> icon-button* {:on-click on-popover-open-click
@@ -139,13 +140,13 @@
                            :icon "add"
                            ;;  TODO: This needs translation
                            :aria-label (str "Add token: " title)}])]
-      (when open?
+      (when is-open
         [:& cmm/asset-section-block {:role :content}
          [:div {:class (stl/css :token-pills-wrapper)}
           (for [token tokens]
             (let [theme-token (get active-theme-tokens (:name token))
                   multiple-selection (< 1 (count selected-shapes))
-                  full-applied (:all-selected? (attribute-actions token selected-shapes (or all-attributes attributes)))
+                  full-applied (all-selected? token selected-shapes (or all-attributes attributes))
                   applied      (wtt/shapes-token-applied? token selected-shapes (or all-attributes attributes))]
 
               [:> token-pill*
@@ -270,6 +271,7 @@
   []
   (let [objects         (mf/deref refs/workspace-page-objects)
         selected        (mf/deref refs/selected-shapes)
+        open-status     (mf/deref ref:token-type-open-status)
 
         selected-shapes
         (mf/with-memo [selected objects]
@@ -309,6 +311,7 @@
      (for [type filled-group]
        (let [tokens (get tokens-by-type type)]
          [:> token-group* {:key (name type)
+                           :is-open (get open-status type false)
                            :type type
                            :selected-shapes selected-shapes
                            :active-theme-tokens active-theme-tokens
