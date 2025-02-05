@@ -346,6 +346,25 @@
           (st/emit! (dwm/create-svg-shape id "svg" svg-string (gpt/point 0 0)))
           (shape/shape-proxy plugin-id file-id page-id id))))
 
+    :createShapeFromSvgWithImages
+    (fn [svg-string]
+      (js/Promise.
+       (fn [resolve reject]
+         (cond
+           (or (not (string? svg-string)) (empty? svg-string))
+           (do
+             (u/display-not-valid :createShapeFromSvg "Svg not valid")
+             (reject "Svg not valid"))
+
+           :else
+           (let [id (uuid/next)
+                 file-id (:current-file-id @st/state)
+                 page-id (:current-page-id @st/state)]
+             (st/emit! (dwm/create-svg-shape-with-images
+                        file-id id "svg" svg-string (gpt/point 0 0)
+                        #(resolve (shape/shape-proxy plugin-id file-id page-id id))
+                        reject)))))))
+
     :createBoolean
     (fn [bool-type shapes]
       (let [bool-type (keyword bool-type)]
