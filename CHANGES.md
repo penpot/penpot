@@ -58,6 +58,7 @@ is a number of cores)
 - Fix problem in plugins with zoomIntoView [Plugins #189](https://github.com/penpot/penpot-plugins/issues/189)
 - Fix problem in plugins with renaming components [Taiga #10060](https://tree.taiga.io/project/penpot/issue/10060)
 - Added upload svg with images method [#5489](https://github.com/penpot/penpot/issues/5489)
+- Fix problem with root frame parent reference [Taiga #9437](https://tree.taiga.io/project/penpot/issue/9437)
 
 ## 2.4.3
 
