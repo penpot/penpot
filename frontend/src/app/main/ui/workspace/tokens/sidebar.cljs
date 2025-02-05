@@ -19,6 +19,7 @@
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu
                                                  dropdown-menu-item*]]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
@@ -161,15 +162,24 @@
       [(seq (array/sort! empty))
        (seq (array/sort! filled))])))
 
-(mf/defc themes-header
-  [_props]
-  (let [ordered-themes (mf/deref refs/workspace-token-themes-no-hidden)
-        can-edit?  (:can-edit (deref refs/permissions))
+(mf/defc themes-header*
+  {::mf/private true}
+  []
+  (let [ordered-themes
+        (mf/deref refs/workspace-token-themes-no-hidden)
+
+        permissions
+        (mf/use-ctx ctx/permissions)
+
+        can-edit?
+        (get permissions :can-edit)
+
         open-modal
         (mf/use-fn
          (fn [e]
            (dom/stop-propagation e)
            (modal/show! :tokens/themes {})))]
+
     [:div {:class (stl/css :themes-wrapper)}
      [:span {:class (stl/css :themes-header)} (tr "labels.themes")]
      (if (empty? ordered-themes)
@@ -191,13 +201,24 @@
                          (tr "workspace.token.no-permission-themes"))}
           [:& theme-select]]))]))
 
-(mf/defc add-set-button
-  [{:keys [on-open style]}]
-  (let [{:keys [on-create new-path]} (sets-context/use-context)
-        on-click #(do
-                    (on-open)
-                    (on-create []))
-        can-edit?  (:can-edit (deref refs/permissions))]
+(mf/defc add-set-button*
+  {::mf/private true}
+  [{:keys [style]}]
+  (let [{:keys [on-create new-path]}
+        (sets-context/use-context)
+
+        permissions
+        (mf/use-ctx ctx/permissions)
+
+        can-edit?
+        (get permissions :can-edit)
+
+        on-click
+        (mf/use-fn
+         (mf/deps on-create)
+         (fn []
+           (on-create [])))]
+
     (if (= style "inline")
       (when-not new-path
         (if can-edit?
@@ -216,36 +237,39 @@
                           :on-click on-click
                           :aria-label (tr "workspace.token.add set")}]))))
 
-(mf/defc theme-sets-list
-  [{:keys [on-open]}]
+(mf/defc theme-sets-list*
+  {::mf/private true}
+  []
   (let [token-sets (mf/deref refs/workspace-ordered-token-sets)
         {:keys [new-path] :as ctx} (sets-context/use-context)]
     (if (and (empty? token-sets)
              (not new-path))
-      [:& add-set-button {:on-open on-open
-                          :style "inline"}]
+      [:> add-set-button* {:style "inline"}]
       [:& h/sortable-container {}
        [:& sets-list]])))
 
 (mf/defc themes-sets-tab*
   {::mf/private true}
   [{:keys [resize-height]}]
-  (let [open? (mf/use-state true)
-        on-open (mf/use-fn #(reset! open? true))
-        can-edit? (:can-edit (deref refs/permissions))]
+  (let [permissions
+        (mf/use-ctx ctx/permissions)
+
+        can-edit?
+        (get permissions :can-edit)]
+
     [:& sets-context/provider {}
      [:& sets-context-menu]
      [:article {:data-testid "token-themes-sets-sidebar"
                 :class (stl/css :sets-section-wrapper)
                 :style {"--resize-height" (str resize-height "px")}}
       [:div {:class (stl/css :sets-sidebar)}
-       [:& themes-header]
+       [:> themes-header*]
        [:div {:class (stl/css :sidebar-header)}
         [:& title-bar {:title (tr "labels.sets")}
          (when can-edit?
-           [:& add-set-button {:on-open on-open
-                               :style "header"}])]]
-       [:& theme-sets-list {:on-open on-open}]]]]))
+           [:> add-set-button* {:style "header"}])]]
+
+       [:> theme-sets-list* {}]]]]))
 
 (mf/defc tokens-tab*
   []
