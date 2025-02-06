@@ -54,6 +54,7 @@ is a number of cores)
 - Fix missing state refresh on notifications update [Taiga #10253](https://tree.taiga.io/project/penpot/issue/10253)
 - Fix icon visualization on select component [Taiga #8889](https://tree.taiga.io/project/penpot/issue/8889)
 - Fix typo on integration tests docs [Taiga #10112](https://tree.taiga.io/project/penpot/issue/10112)
+- Fix menu shadow color [Taiga #10102](https://tree.taiga.io/project/penpot/issue/10102)
 - Fix problem with alt key measures being stuck [Taiga #9348](https://tree.taiga.io/project/penpot/issue/9348)
 - Fix error when reseting stroke cap
 - Fix problem with strokes not refreshing in Safari [Taiga #9040](https://tree.taiga.io/project/penpot/issue/9040)
