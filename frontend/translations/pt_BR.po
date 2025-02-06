@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-02-06 11:01+0000\n"
+"PO-Revision-Date: 2025-02-06 13:41+0000\n"
 "Last-Translator: Robson Cardoso dos Santos <cardoso.rcs@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
@@ -4910,3 +4910,147 @@ msgid "auth.login-tagline"
 msgstr ""
 "Penpot é uma ferramenta de código aberto gratuíto para colaboração em Design "
 "e código"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+#, unused
+msgid "workspace.token.theme-name"
+msgstr "Tema %s"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:43, src/app/main/ui/workspace/tokens/modals/themes.cljs:88
+msgid "workspace.token.themes"
+msgstr "Temas"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:464
+msgid "workspace.token.token-value"
+msgstr "Valor"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:440
+msgid "workspace.token.token-name"
+msgstr "Nome"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:431
+msgid "workspace.token.create-token"
+msgstr "Criar novo token %s"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:249
+msgid "workspace.sidebar.sitemap.add-page"
+msgstr "Adicionar página"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:212
+msgid "workspace.token.edit"
+msgstr "Editar token"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:279
+msgid "workspace.token.tokens-section-title"
+msgstr ""
+
+#: src/app/main/ui/workspace/tokens/form.cljs:458
+msgid "workspace.token.warning-name-change"
+msgstr "Renomear este token quebrará quaisquer referência para o nome antigo."
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:123
+msgid "workspace.token.value-not-valid"
+msgstr "O valor não é válido"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:348
+msgid "workspace.token.tools"
+msgstr "Ferramentas"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:203
+msgid "workspace.versions.button.pin"
+msgstr "Fixar versão"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:198
+msgid "workspace.versions.button.restore"
+msgstr "Restaurar versão"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:361
+msgid "workspace.versions.warning.text"
+msgstr "Versões com salvamento automático serão mantidos por %s dias."
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:225
+msgid "workspace.token.duplicate"
+msgstr "Duplicar token"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:228
+msgid "workspace.token.delete"
+msgstr "Remover token"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:159, src/app/main/ui/workspace/tokens/modals/themes.cljs:237
+msgid "workspace.token.create-theme-title"
+msgstr "Criar tema"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:51
+msgid "workspace.token.create-new-theme"
+msgstr "Crie seu primeiro tema agora."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:191, src/app/main/ui/workspace/tokens/sidebar.cljs:218
+msgid "workspace.token.create-one"
+msgstr "Criar um."
+
+#: src/app/main/data/workspace/libraries.cljs:1221
+msgid "workspace.updates.more-info"
+msgstr "Mais informações"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:327, src/app/main/ui/workspace/sidebar/versions.cljs:329
+msgid "workspace.versions.button.save"
+msgstr "Salvar versão"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:336
+msgid "workspace.versions.empty"
+msgstr "Não existem versões ainda"
+
+#: src/app/main/ui/ds/product/autosaved_milestone.cljs:53
+msgid "workspace.versions.expand-snapshot"
+msgstr "Expandir snapshot"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:309
+msgid "workspace.versions.filter.all"
+msgstr "Todas as versões"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:308
+msgid "workspace.versions.filter.label"
+msgstr "Filtro de versões"
+
+#: src/app/main/ui/ds/product/autosaved_milestone.cljs:67, src/app/main/ui/ds/product/user_milestone.cljs:74
+msgid "workspace.versions.version-menu"
+msgstr "Abrir menu de versão"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:341
+msgid "workspace.token.back-to-themes"
+msgstr "Voltar a listagem de temas"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:151
+msgid "workspace.token.delete-theme-title"
+msgstr "Remover tema"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:310
+msgid "workspace.versions.filter.mine"
+msgstr "Minhas versões"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:316
+msgid "workspace.versions.filter.user"
+msgstr "%s's versões"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:322
+msgid "workspace.versions.loading"
+msgstr "Carregando..."
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:259
+msgid "workspace.versions.restore-warning"
+msgstr "Gostaria de restaurar esta versão?"
+
+#, unused
+msgid "workspace.versions.snapshot-menu"
+msgstr "Abrir menu snapshot"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:365
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr ""
+"Se você gostaria de aumentar esse limite, nos envie um email para "
+"[support@penpot.app](%s)"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:482
+msgid "workspace.token.token-description"
+msgstr "Descrição"
