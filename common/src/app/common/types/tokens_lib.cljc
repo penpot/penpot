@@ -26,15 +26,18 @@
 (def valid-groupable-item?
   (sm/validator schema:groupable-item))
 
-(def ^:private xf:clean-string
-  (comp (map str/trim)
-        (remove str/empty?)))
-
 (defn split-path
   "Decompose a string in the form 'one.two.three' into a vector of strings, removing spaces."
+
   [path separator]
-  (->> (str/split path separator)
-       (into [] xf:clean-string)))
+  (let [xf (comp (map str/trim)
+                 (remove str/empty?))]
+    (->> (str/split path separator)
+         (into [] xf))))
+
+(defn split-path-name [s separator]
+  (let [[path name] (str/split s (re-pattern (str "\\" separator)) 2)]
+    [(or path "") name]))
 
 (defn join-path
   "Regenerate a path as a string, from a vector."
@@ -471,7 +474,7 @@
   (join-path [group name] theme-separator))
 
 (defn split-token-theme-path [path]
-  (split-path path theme-separator))
+  (split-path-name path theme-separator))
 
 (def hidden-token-theme-group
   "")
@@ -1206,7 +1209,7 @@ Will return a value that matches this schema:
           tokens (order-theme-set theme)))
        (d/ordered-map) active-themes)))
 
-  (encode-dtcg [_]
+  (encode-dtcg [this]
     (let [themes (into []
                        (comp
                         (filter #(and (instance? TokenTheme %)
@@ -1222,16 +1225,21 @@ Will return a value that matches this schema:
                                                                           [s "enabled"])
                                                                         (into {})))))))))
                        (tree-seq d/ordered-map? vals themes))
+          ;; Active themes without exposing hidden penpot theme
+          active-themes-clear (disj active-themes hidden-token-theme-path)
           name-set-tuples (->> sets
                                (tree-seq d/ordered-map? vals)
                                (filter (partial instance? TokenSet))
                                (map (fn [token-set]
                                       [(:name token-set) (get-dtcg-tokens-tree token-set)])))
           ordered-set-names (map first name-set-tuples)
-          sets (into {} name-set-tuples)]
+          sets (into {} name-set-tuples)
+          active-sets (get-active-themes-set-names this)]
       (-> sets
           (assoc "$themes" themes)
-          (assoc-in ["$metadata" "tokenSetOrder"] ordered-set-names))))
+          (assoc-in ["$metadata" "tokenSetOrder"] ordered-set-names)
+          (assoc-in ["$metadata" "activeThemes"] active-themes-clear)
+          (assoc-in ["$metadata" "activeSets"] active-sets))))
 
   (decode-dtcg-json [_ parsed-json]
     (let [metadata (get parsed-json "$metadata")
@@ -1241,6 +1249,19 @@ Will return a value that matches this schema:
                                   (-> theme
                                       (set/rename-keys {"selectedTokenSets" "sets"})
                                       (update "sets" keys)))))
+          active-sets (get metadata "activeSets")
+          active-themes (get metadata "activeThemes")
+          themes-data (if (empty? active-themes)
+                        (conj themes-data {"name" hidden-token-theme-name
+                                           "group" ""
+                                           "description" nil
+                                           "is-source" true
+                                           "modified-at" (dt/now)
+                                           "sets" active-sets})
+                        themes-data)
+          active-themes (if (empty? active-themes)
+                          #{hidden-token-theme-path}
+                          active-themes)
           set-order (get metadata "tokenSetOrder")
           name->pos (into {} (map-indexed (fn [idx itm] [itm idx]) set-order))
           sets-data' (sort-by (comp name->pos first) sets-data)
@@ -1252,17 +1273,23 @@ Will return a value that matches this schema:
                                 :tokens (flatten-nested-tokens-json tokens ""))))
                 lib sets-data')]
       (if-let [themes-data (seq themes-data)]
-        (reduce
-         (fn [lib {:strs [name group description is-source modified-at sets]}]
-           (add-theme lib (TokenTheme. name
-                                       (or group "")
-                                       description
-                                       (some? is-source)
-                                       (or (some-> modified-at
-                                                   (dt/parse-instant))
-                                           (dt/now))
-                                       (set sets))))
-         lib' themes-data)
+        (as-> lib' $
+          (reduce
+           (fn [lib {:strs [name group description is-source modified-at sets]}]
+             (add-theme lib (TokenTheme. name
+                                         (or group "")
+                                         description
+                                         (some? is-source)
+                                         (or (some-> modified-at
+                                                     (dt/parse-instant))
+                                             (dt/now))
+                                         (set sets))))
+           $ themes-data)
+          (reduce
+           (fn [lib active-theme]
+             (let [[group name] (split-token-theme-path active-theme)]
+               (activate-theme lib group name)))
+           $ active-themes))
         lib')))
 
   (decode-legacy-json [this parsed-legacy-json]
