@@ -115,47 +115,46 @@
   top: $s-44;
   left: 50%;
   z-index: $z-index-20;
+}
 
-  .grid-actions-container {
-    @include flexRow;
-    background: var(--panel-background-color);
-    border-radius: $br-12;
-    box-shadow: 0px 0px $s-12 0px var(--menu-shadow-color);
-    gap: $s-8;
-    height: $s-48;
-    margin-left: -50%;
-    padding: $s-8;
-    cursor: initial;
-    pointer-events: initial;
-    width: $s-512;
-  }
+.grid-actions-container {
+  @include flexRow;
+  background: var(--panel-background-color);
+  border-radius: $br-12;
+  box-shadow: 0px 0px $s-12 0px var(--menu-shadow-color);
+  gap: $s-8;
+  height: $s-48;
+  margin-left: -50%;
+  padding: $s-8;
+  cursor: initial;
+  pointer-events: initial;
+  width: $s-512;
+}
 
-  .grid-actions-title {
-    flex: 1;
-    font-size: $fs-12;
-    color: var(--color-foreground-secondary);
-    padding-left: $s-8;
-  }
+.grid-actions-title {
+  flex: 1;
+  font-size: $fs-12;
+  color: var(--color-foreground-secondary);
+  padding-left: $s-8;
+}
 
-  .board-name {
-  }
+.locate-btn {
+  @extend .button-secondary;
+  text-transform: uppercase;
+  padding: $s-8 $s-20;
+  font-size: $fs-11;
+}
 
-  .locate-btn {
-    @extend .button-secondary;
-    text-transform: uppercase;
-    padding: $s-8 $s-20;
-    font-size: $fs-11;
-  }
-  .done-btn {
-    @extend .button-primary;
-    text-transform: uppercase;
-    padding: $s-8 $s-20;
-    font-size: $fs-11;
-  }
-  .close-btn {
-    @extend .button-tertiary;
-    svg {
-      @extend .button-icon;
-    }
+.done-btn {
+  @extend .button-primary;
+  text-transform: uppercase;
+  padding: $s-8 $s-20;
+  font-size: $fs-11;
+}
+
+.close-btn {
+  @extend .button-tertiary;
+  svg {
+    @extend .button-icon;
   }
 }
