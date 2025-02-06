@@ -476,3 +476,24 @@
            (rx/take 1)
            (rx/map #(svg/add-svg-shapes id % position {:ignore-selection? true
                                                        :change-selection? false}))))))
+(defn create-svg-shape-with-images
+  [file-id id name svg-string position on-success on-error]
+  (ptk/reify ::create-svg-shape-with-images
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (svg->clj [name svg-string])
+           (rx/take 1)
+           (rx/mapcat
+            (fn [svg-data]
+              (->> (svg/upload-images svg-data file-id)
+                   (rx/map #(assoc svg-data :image-data %)))))
+           (rx/map
+            (fn [svg-data]
+              (svg/add-svg-shapes
+               id
+               svg-data
+               position
+               {:ignore-selection? true
+                :change-selection? false})))
+           (rx/tap on-success)
+           (rx/catch on-error)))))

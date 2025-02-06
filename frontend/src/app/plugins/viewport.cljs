@@ -8,11 +8,11 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]
    [app.main.data.workspace.viewport :as dwv]
    [app.main.data.workspace.zoom :as dwz]
    [app.main.store :as st]
    [app.plugins.format :as format]
+   [app.plugins.shape :as ps]
    [app.plugins.utils :as u]
    [app.util.object :as obj]))
 
@@ -85,12 +85,13 @@
 
     :zoomIntoView
     (fn [shapes]
-      (let [ids
-            (->> shapes
-                 (map (fn [v]
-                        (if (string? v)
-                          (uuid/uuid v)
-                          (uuid/uuid (obj/get v "x"))))))]
-        (st/emit! (dwz/fit-to-shapes ids))))))
+      (cond
+        (not (every? ps/shape-proxy? shapes))
+        (u/display-not-valid :zoomIntoView "Argument should be valid shapes")
+
+        :else
+        (let [ids (->> shapes
+                       (map (fn [shape] (obj/get shape "$id"))))]
+          (st/emit! (dwz/fit-to-shapes ids)))))))
 
 

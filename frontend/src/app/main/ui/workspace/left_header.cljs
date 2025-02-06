@@ -35,6 +35,11 @@
         project-id  (:id project)
         team-id     (:team-id project)
         shared?     (:is-shared file)
+        persistence
+        (mf/deref refs/persistence)
+
+        persistence-status
+        (get persistence :status)
 
         read-only?  (mf/use-ctx ctx/workspace-read-only?)
 
@@ -108,6 +113,25 @@
          {:class (stl/css :file-name)
           :title file-name
           :on-double-click start-editing-name}
+          ;;-- Persistende state widget
+         [:div {:class (case persistence-status
+                         :pending (stl/css :status-notification :pending-status)
+                         :saving (stl/css :status-notification :saving-status)
+                         :saved (stl/css :status-notification :saved-status)
+                         :error (stl/css :status-notification :error-status)
+                         (stl/css :status-notification))
+                :title (case persistence-status
+                         :pending (tr "workspace.header.saving")
+                         :saving (tr "workspace.header.saving")
+                         :saved (tr "workspace.header.saved")
+                         :error (tr "workspace.header.save-error")
+                         nil)}
+          (case persistence-status
+            :pending i/status-alert
+            :saving i/status-alert
+            :saved i/status-tick
+            :error i/status-wrong
+            nil)]
          file-name])]
      (when ^boolean shared?
        [:span {:class (stl/css :shared-badge)} i/library])
