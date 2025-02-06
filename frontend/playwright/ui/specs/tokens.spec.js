@@ -178,7 +178,7 @@ test.describe("Tokens: Tokens Tab", () => {
     const colorTokenChanged = tokensSidebar.getByRole("button", {
       name: "colors.blue.100.changed",
     });
-    expect(colorTokenChanged).toBeVisible();
+    await expect(colorTokenChanged).toBeVisible();
   });
 
   test("User creates grouped color token", async ({ page }) => {
