@@ -29,7 +29,7 @@
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.errors :as wte]
-   [app.main.ui.workspace.tokens.sets :refer [sets-list]]
+   [app.main.ui.workspace.tokens.sets :refer [sets-list*]]
    [app.main.ui.workspace.tokens.sets-context :as sets-context]
    [app.main.ui.workspace.tokens.sets-context-menu :refer [sets-context-menu]]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
@@ -239,18 +239,31 @@
 
 (mf/defc theme-sets-list*
   {::mf/private true}
-  []
-  (let [token-sets (mf/deref refs/workspace-ordered-token-sets)
-        {:keys [new-path] :as ctx} (sets-context/use-context)]
+  [{:keys [tokens-lib]}]
+  (let [token-sets
+        (ctob/get-sets tokens-lib)
+
+        selected-token-set-name
+        (mf/deref refs/selected-token-set-name)
+
+        selected-token-set-name
+        (if selected-token-set-name
+          selected-token-set-name
+          (-> token-sets first :name))
+
+        {:keys [new-path] :as ctx}
+        (sets-context/use-context)]
+
     (if (and (empty? token-sets)
              (not new-path))
       [:> add-set-button* {:style "inline"}]
       [:& h/sortable-container {}
-       [:& sets-list]])))
+       [:> sets-list* {:tokens-lib tokens-lib
+                       :selected-token-set-name selected-token-set-name}]])))
 
 (mf/defc themes-sets-tab*
   {::mf/private true}
-  [{:keys [resize-height]}]
+  [{:keys [resize-height] :as props}]
   (let [permissions
         (mf/use-ctx ctx/permissions)
 
@@ -269,7 +282,7 @@
          (when can-edit?
            [:> add-set-button* {:style "header"}])]]
 
-       [:> theme-sets-list* {}]]]]))
+       [:> theme-sets-list* props]]]]))
 
 (mf/defc tokens-tab*
   []
@@ -406,14 +419,19 @@
          on-lost-pointer-capture-pages :on-lost-pointer-capture
          on-pointer-move-pages :on-pointer-move
          size-pages-opened :size}
-        (use-resize-hook :tokens 200 38 "0.6" :y false nil)]
+        (use-resize-hook :tokens 200 38 400 :y false nil)
+
+        tokens-lib
+        (mf/deref refs/tokens-lib)]
+
     [:div {:class (stl/css :sidebar-wrapper)}
-     [:> themes-sets-tab* {:resize-height size-pages-opened}]
+     [:> themes-sets-tab* {:resize-height size-pages-opened
+                           :tokens-lib tokens-lib}]
      [:article {:class (stl/css :tokens-section-wrapper)
                 :data-testid "tokens-sidebar"}
       [:div {:class (stl/css :resize-area-horiz)
              :on-pointer-down on-pointer-down-pages
              :on-lost-pointer-capture on-lost-pointer-capture-pages
              :on-pointer-move on-pointer-move-pages}]
-      [:> tokens-tab*]]
+      [:> tokens-tab* {:tokens-lib tokens-lib}]]
      [:& import-export-button]]))

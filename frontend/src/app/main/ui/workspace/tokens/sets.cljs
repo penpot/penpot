@@ -445,23 +445,32 @@
          :on-edit-submit-set on-update-token-set
          :on-edit-submit-group on-update-token-set-group}])]))
 
+(mf/defc sets-list*
+  [{:keys [tokens-lib selected-token-set-name]}]
 
-(mf/defc sets-list
-  [{:keys []}]
-  (let [token-sets (mf/deref refs/workspace-token-sets-tree)
-        selected-token-set-name (mf/deref refs/workspace-selected-token-set-name)
-        token-set-selected? (mf/use-fn
-                             (mf/deps token-sets selected-token-set-name)
-                             (fn [set-name]
-                               (= set-name selected-token-set-name)))
-        active-token-set-names (mf/deref refs/workspace-active-set-names)
-        token-set-active? (mf/use-fn
-                           (mf/deps active-token-set-names)
-                           (fn [set-name]
-                             (get active-token-set-names set-name)))
-        token-set-group-active? (mf/use-fn
-                                 (fn [group-path]
-                                   @(refs/token-sets-at-path-all-active group-path)))]
+  (let [token-sets
+        (ctob/get-set-tree tokens-lib)
+
+        token-set-selected?
+        (mf/use-fn
+         (mf/deps token-sets selected-token-set-name)
+         (fn [set-name]
+           (= set-name selected-token-set-name)))
+
+        active-token-set-names
+        (mf/deref refs/workspace-active-set-names)
+
+        token-set-active?
+        (mf/use-fn
+         (mf/deps active-token-set-names)
+         (fn [set-name]
+           (get active-token-set-names set-name)))
+
+        token-set-group-active?
+        (mf/use-fn
+         (fn [group-path]
+           @(refs/token-sets-at-path-all-active group-path)))]
+
     [:& controlled-sets-list
      {:token-sets token-sets
       :token-set-selected? token-set-selected?

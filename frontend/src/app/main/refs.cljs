@@ -453,8 +453,12 @@
 (def workspace-token-themes-no-hidden
   (l/derived #(remove ctob/hidden-temporary-theme? %) workspace-token-themes))
 
+;; FIXME: deprecated
 (def workspace-selected-token-set-name
   (l/derived dwts/get-selected-token-set-name st/state))
+
+(def selected-token-set-name
+  (l/derived (l/key :selected-token-set-name) workspace-local))
 
 (def workspace-ordered-token-sets
   (l/derived #(or (some-> % ctob/get-sets) []) tokens-lib))
