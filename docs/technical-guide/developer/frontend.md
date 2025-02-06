@@ -319,14 +319,14 @@ cd penpot/frontend
 3. Run the tests with <code class="language-bash">yarn</code>:
 
 ```bash
-yarn e2e:test
+yarn test:e2e
 ```
 
 > 💡 **TIP:** By default, the tests will _not_ run in parallel. You can set the amount of workers to run the tests with <code class="language-bash">--workers</code>. Note that, depending on your machine, this might make some tests flaky.
 
 ```bash
 # run in parallel with 4 workers
-yarn e2e:test --workers 4
+yarn test:e2e --workers 4
 ```
 
 #### Running the tests in Chromium
