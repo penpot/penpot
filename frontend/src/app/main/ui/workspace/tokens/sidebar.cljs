@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.json :as json]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -72,6 +73,9 @@
   (let [{:keys [modal title]}
         (get wtch/token-properties type)
 
+        can-edit?
+        (mf/use-ctx ctx/can-edit?)
+
         tokens
         (mf/with-memo [tokens]
           (vec (sort-by :name tokens)))
@@ -115,14 +119,12 @@
            (dom/stop-propagation event)
            (when (seq selected-shapes)
              (st/emit! (wtch/toggle-token {:token token
-                                           :shapes selected-shapes})))))
-        tokens-count (count tokens)
-        can-edit?  (:can-edit (deref refs/permissions))]
+                                           :shapes selected-shapes})))))]
 
     [:div {:on-click on-toggle-open-click}
      [:& cmm/asset-section {:icon (token-section-icon type)
                             :title title
-                            :assets-count tokens-count
+                            :assets-count (count tokens)
                             :open? is-open}
       [:& cmm/asset-section-block {:role :title-button}
        (when can-edit?
@@ -168,11 +170,8 @@
   (let [ordered-themes
         (mf/deref refs/workspace-token-themes-no-hidden)
 
-        permissions
-        (mf/use-ctx ctx/permissions)
-
         can-edit?
-        (get permissions :can-edit)
+        (mf/use-ctx ctx/can-edit?)
 
         open-modal
         (mf/use-fn
