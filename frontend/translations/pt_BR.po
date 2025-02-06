@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-02-06 13:41+0000\n"
-"Last-Translator: Robson Cardoso dos Santos <cardoso.rcs@gmail.com>\n"
+"Last-Translator: Renan Mayrinck <renan.mtk@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) <https://hosted.weblate.org/projects/"
 "penpot/frontend/pt_BR/>\n"
 "Language: pt_BR\n"
@@ -50,7 +50,7 @@ msgstr "Nome completo"
 
 #: src/app/main/ui/auth/register.cljs:137, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:101
 msgid "auth.login-here"
-msgstr "Entrar aqui"
+msgstr "Fazer Login"
 
 #: src/app/main/ui/auth/login.cljs:196
 msgid "auth.login-submit"
