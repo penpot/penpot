@@ -106,7 +106,10 @@
 (defn get-token-path [path]
   (get-path path token-separator))
 
-(defn split-token-path [path]
+;; FIXME: misleading name, we are spliting name into path, not
+;; spliting path into path
+(defn split-token-path
+  [path]
   (split-path path token-separator))
 
 (defrecord Token [name type value description modified-at])
