@@ -61,7 +61,7 @@ Take a look at the Penpot Library methods in the <a target="_blank" href="https:
 
 ### Is there a place where I can share my plugin?
 
-You will be able to share your plugin with the <a target="_blank" href="https://community.penpot.app/">Penpot community</a>. In the future, we plan to create a place where we will publish the plugins we know about, but this is still something we have to define.
+<a target="_blank" href="https://penpot.app/penpothub">Penpot Hub</a> is where you can share plugins, templates and libraries all made possible through open-source collaboration. To add your plugin to our catalog, simply fill out <a target="_blank" href="https://penpot.app/penpothub/plugins/create-plugin">this form</a> with your plugin's details.
 
 ### My plugin works on my local machine, but I couldn’t install it on Penpot. What could be the problem?
 
