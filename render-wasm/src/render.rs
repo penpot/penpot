@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::math;
+use crate::matrix::Matrix;
 use crate::view::Viewbox;
 
 mod blend;
@@ -232,7 +233,18 @@ impl RenderState {
             .clear(skia::Color::TRANSPARENT);
     }
 
-    pub fn render_shape(&mut self, shape: &mut Shape, clip_bounds: Option<skia::Rect>) {
+    pub fn render_shape(
+        &mut self,
+        shape: &mut Shape,
+        modifiers: Option<&Matrix>,
+        clip_bounds: Option<skia::Rect>,
+    ) {
+        if let Some(modifiers) = modifiers {
+            self.drawing_surface
+                .canvas()
+                .concat(&modifiers.to_skia_matrix());
+        }
+
         let transform = shape.transform.to_skia_matrix();
 
         // Check transform-matrix code from common/src/app/common/geom/shapes/transforms.cljc
@@ -289,6 +301,7 @@ impl RenderState {
     pub fn start_render_loop(
         &mut self,
         tree: &mut HashMap<Uuid, Shape>,
+        modifiers: &HashMap<Uuid, Matrix>,
         timestamp: i32,
     ) -> Result<(), String> {
         if self.render_in_progress {
@@ -304,7 +317,7 @@ impl RenderState {
         self.translate(self.viewbox.pan_x, self.viewbox.pan_y);
         self.pending_nodes = vec![(Uuid::nil(), false, None)];
         self.render_in_progress = true;
-        self.process_animation_frame(tree, timestamp)?;
+        self.process_animation_frame(tree, modifiers, timestamp)?;
         Ok(())
     }
 
@@ -325,10 +338,11 @@ impl RenderState {
     pub fn process_animation_frame(
         &mut self,
         tree: &mut HashMap<Uuid, Shape>,
+        modifiers: &HashMap<Uuid, Matrix>,
         timestamp: i32,
     ) -> Result<(), String> {
         if self.render_in_progress {
-            self.render_shape_tree(tree, timestamp)?;
+            self.render_shape_tree(tree, modifiers, timestamp)?;
             if self.render_in_progress {
                 if let Some(frame_id) = self.render_request_id {
                     self.cancel_animation_frame(frame_id);
@@ -395,6 +409,7 @@ impl RenderState {
     pub fn render_shape_tree(
         &mut self,
         tree: &HashMap<Uuid, Shape>,
+        modifiers: &HashMap<Uuid, Matrix>,
         timestamp: i32,
     ) -> Result<(), String> {
         if !self.render_in_progress {
@@ -432,7 +447,11 @@ impl RenderState {
 
                 self.drawing_surface.canvas().save();
                 if !node_id.is_nil() {
-                    self.render_shape(&mut element.clone(), clip_bounds);
+                    self.render_shape(
+                        &mut element.clone(),
+                        modifiers.get(&element.id),
+                        clip_bounds,
+                    );
                 } else {
                     self.apply_drawing_to_render_canvas();
                 }

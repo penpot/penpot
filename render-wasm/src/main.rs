@@ -1,7 +1,11 @@
+use std::collections::HashSet;
+use uuid::Uuid;
+
 use skia_safe as skia;
 
 mod debug;
 mod math;
+mod matrix;
 mod mem;
 mod render;
 mod shapes;
@@ -9,8 +13,8 @@ mod state;
 mod utils;
 mod view;
 
-use crate::shapes::{BoolType, Kind, Path};
-
+use crate::mem::SerializableResult;
+use crate::shapes::{BoolType, Kind, Path, TransformEntry};
 use crate::state::State;
 use crate::utils::uuid_from_u32_quartet;
 
@@ -587,6 +591,67 @@ pub extern "C" fn set_shape_path_attrs(num_attrs: u32) {
             let value = extract_string(&mut start, &bytes);
             shape.set_path_attr(name, value);
         }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn propagate_modifiers() -> *mut u8 {
+    let bytes = mem::bytes();
+
+    let mut entries: Vec<_> = bytes
+        .chunks(size_of::<TransformEntry>())
+        .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+
+    let mut processed = HashSet::<Uuid>::new();
+
+    let mut result = Vec::<TransformEntry>::new();
+
+    // Propagate the transform to children
+    while let Some(entry) = entries.pop() {
+        if !processed.contains(&entry.id) {
+            if let Some(shape) = state.shapes.get(&entry.id) {
+                let mut children: Vec<TransformEntry> = shape
+                    .children
+                    .iter()
+                    .map(|id| TransformEntry {
+                        id: id.clone(),
+                        transform: entry.transform,
+                    })
+                    .collect();
+
+                entries.append(&mut children);
+
+                processed.insert(entry.id);
+                result.push(entry.clone());
+            }
+        }
+    }
+    mem::write_vec(result)
+}
+
+#[no_mangle]
+pub extern "C" fn clean_modifiers() {
+    if let Some(state) = unsafe { STATE.as_mut() } {
+        state.modifiers.clear();
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn set_modifiers() {
+    let bytes = mem::bytes();
+
+    let entries: Vec<_> = bytes
+        .chunks(size_of::<TransformEntry>())
+        .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+
+    for entry in entries {
+        state.modifiers.insert(entry.id, entry.transform);
     }
 }
 

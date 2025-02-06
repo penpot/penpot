@@ -6,7 +6,7 @@ else
     export _BUILD_MODE=${1:-debug};
 fi
 
-export EMCC_CFLAGS="--no-entry \
+EMCC_CFLAGS="--no-entry \
     -Os \
     -sASSERTIONS=1 \
     -sALLOW_TABLE_GROWTH=1 \
@@ -28,8 +28,11 @@ _CARGO_PARAMS="--target=wasm32-unknown-emscripten";
 
 if [ "$_BUILD_MODE" = "release" ]; then
     _CARGO_PARAMS="--release $_CARGO_PARAMS"
+else
+    EMCC_CFLAGS="$EMCC_CFLAGS -sMALLOC=emmalloc-debug"
 fi
 
+export EMCC_CFLAGS;
 export _CARGO_PARAMS;
 
 export SKIA_BINARIES_URL="https://github.com/penpot/skia-binaries/releases/download/0.80.1-1/skia-binaries-9e7d2684a17084095aef-wasm32-unknown-emscripten-gl-svg-textlayout.tar.gz"

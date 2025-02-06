@@ -12,7 +12,6 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.modifiers :as dwm]
@@ -112,9 +111,7 @@
         text-modifiers    (mf/deref refs/workspace-text-modifier)
 
         objects-modified  (mf/with-memo [base-objects text-modifiers modifiers]
-                            (binding [cts/*wasm-sync* true]
-                              (-> (into selected (keys modifiers))
-                                  (apply-modifiers-to-selected base-objects text-modifiers modifiers))))
+                            (apply-modifiers-to-selected selected base-objects text-modifiers modifiers))
 
         selected-shapes   (keep (d/getf objects-modified) selected)
 

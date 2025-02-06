@@ -318,7 +318,13 @@
   [{:keys [shape zoom color on-move-selected on-context-menu disable-handlers]}]
   (let [selrect        (dm/get-prop shape :selrect)
         transform-type (mf/deref refs/current-transform)
-        transform      (gsh/transform-str shape)]
+        sr-transform   (mf/deref refs/workspace-selrect-transform)
+
+        transform
+        (dm/str
+         (cond->> (gsh/transform-matrix shape)
+           (some? sr-transform)
+           (gmt/multiply sr-transform)))]
 
     (when (and (some? selrect)
                (not (or (= transform-type :move)
@@ -336,13 +342,18 @@
   {::mf/wrap-props false}
   [{:keys [shape zoom color on-resize on-rotate disable-handlers]}]
   (let [transform-type (mf/deref refs/current-transform)
+        sr-transform  (mf/deref refs/workspace-selrect-transform)
+
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
 
         layout         (mf/deref refs/workspace-layout)
         scale-text?    (contains? layout :scale-text)
 
         selrect        (dm/get-prop shape :selrect)
-        transform      (gsh/transform-matrix shape)
+
+        transform      (cond->> (gsh/transform-matrix shape)
+                         (some? sr-transform)
+                         (gmt/multiply sr-transform))
 
         rotation       (-> (gpt/point 1 0)
                            (gpt/transform (:transform shape))
