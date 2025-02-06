@@ -404,6 +404,10 @@
 (defn retrieve-comment-threads
   [file-id]
   (ptk/reify ::retrieve-comment-threads
+    ptk/UpdateEvent
+    (update [_ state]
+      (dissoc state :comment-threads))
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [share-id (-> state :viewer-local :share-id)]
