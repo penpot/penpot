@@ -108,6 +108,8 @@
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
 
+(declare set-selected-token-set-name)
+
 (defn create-token-set [set-name token-set]
   (let [new-token-set (-> token-set
                           (update :name #(if (empty? %) set-name (ctob/join-set-path [% set-name]))))]
@@ -117,7 +119,7 @@
         (let [changes (-> (pcb/empty-changes it)
                           (pcb/add-token-set new-token-set))]
           (rx/of
-           (dwts/set-selected-token-set-name (:name new-token-set))
+           (set-selected-token-set-name (:name new-token-set))
            (dch/commit-changes changes)))))))
 
 (defn rename-token-set-group [set-group-path set-group-fname]
@@ -138,7 +140,7 @@
             changes (-> (pcb/empty-changes it)
                         (pcb/update-token-set token-set prev-token-set))]
         (rx/of
-         (dwts/set-selected-token-set-name (:name token-set))
+         (set-selected-token-set-name (:name token-set))
          (dch/commit-changes changes))))))
 
 (defn toggle-token-set [{:keys [token-set-name]}]
@@ -164,18 +166,11 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (dsh/lookup-file-data state)
-            update-token-set-change (some-> lib
-                                            (ctob/get-sets)
-                                            (first)
-                                            (:name)
-                                            (dwts/set-selected-token-set-name))
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/set-tokens-lib lib))]
-        (rx/of
-         (dch/commit-changes changes)
-         update-token-set-change
-         (wtu/update-workspace-tokens))))))
+        (rx/of (dch/commit-changes changes)
+               (wtu/update-workspace-tokens))))))
 
 (defn delete-token-set-path [group? path]
   (ptk/reify ::delete-token-set-path
@@ -221,20 +216,13 @@
   (ptk/reify ::drop-token-set
     ptk/WatchEvent
     (watch [it state _]
-      (let [undo-id (js/Symbol)]
-        (try
-          (when-let [changes (clt/generate-move-token-set (pcb/empty-changes it) (get-tokens-lib state) drop-opts)]
-            (rx/of
-             (dwu/start-undo-transaction undo-id)
-             (dch/commit-changes changes)
-             (some-> (get-in changes [:redo-changes 0 :to-path])
-                     (ctob/join-set-path)
-                     (dwts/set-selected-token-set-name))
-             (wtu/update-workspace-tokens)
-             (dwu/commit-undo-transaction undo-id)))
-          (catch js/Error e
-            (rx/of
-             (drop-error (ex-data e)))))))))
+      (try
+        (when-let [changes (clt/generate-move-token-set (pcb/empty-changes it) (get-tokens-lib state) drop-opts)]
+          (rx/of (dch/commit-changes changes)
+                 (wtu/update-workspace-tokens)))
+        (catch js/Error e
+          (rx/of
+           (drop-error (ex-data e))))))))
 
 (defn update-create-token
   [{:keys [token prev-token-name]}]
@@ -267,7 +255,7 @@
                           (pcb/set-token set-name (or prev-token-name (:name token)) token)))]
 
         (rx/of
-         (dwts/set-selected-token-set-name set-name)
+         (set-selected-token-set-name set-name)
          (when-not prev-token-name
            (ptk/event ::ev/event {::ev/name "create-tokens"}))
          (dch/commit-changes changes))))))
@@ -345,3 +333,11 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-local :token-set-context-menu] nil))))
+
+(defn set-selected-token-set-name
+  [name]
+  (ptk/reify ::set-selected-token-set-name
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local assoc :selected-token-set-name name))))
+

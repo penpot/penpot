@@ -5,7 +5,6 @@
    [app.common.logging :as l]
    [app.common.transit :as t]
    [app.common.types.tokens-lib :as ctob]
-   [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]

@@ -12,7 +12,6 @@
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.event :as ev]
    [app.main.data.tokens :as wdt]
-   [app.main.data.workspace.tokens.selected-set :as dwts]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -34,7 +33,7 @@
   (st/emit! (wdt/toggle-token-set-group group-path)))
 
 (defn on-select-token-set-click [set-name]
-  (st/emit! (dwts/set-selected-token-set-name set-name)))
+  (st/emit! (wdt/set-selected-token-set-name set-name)))
 
 (defn on-update-token-set [set-name token-set]
   (st/emit! (wdt/update-token-set (:name token-set) (ctob/update-name token-set set-name))))
@@ -449,7 +448,7 @@
   [{:keys [tokens-lib selected-token-set-name]}]
 
   (let [token-sets
-        (ctob/get-set-tree tokens-lib)
+        (some-> tokens-lib (ctob/get-set-tree))
 
         token-set-selected?
         (mf/use-fn

@@ -240,16 +240,16 @@
 (mf/defc theme-sets-list*
   {::mf/private true}
   [{:keys [tokens-lib]}]
-  (let [token-sets
-        (ctob/get-sets tokens-lib)
+  (let [;; FIXME: This is an inneficient operation just for being
+        ;; ability to check if there are some sets and lookup the
+        ;; first one when no set is selected, should be REFACTORED; is
+        ;; inneficient because instead of return the sets as-is (tree)
+        ;; it firstly makes it a plain seq from tree.
+        token-sets
+        (some-> tokens-lib (ctob/get-sets))
 
         selected-token-set-name
         (mf/deref refs/selected-token-set-name)
-
-        selected-token-set-name
-        (if selected-token-set-name
-          selected-token-set-name
-          (-> token-sets first :name))
 
         {:keys [new-path] :as ctx}
         (sets-context/use-context)]
@@ -309,15 +309,15 @@
         selected-token-set-name
         (mf/deref refs/selected-token-set-name)
 
+        selected-token-set
+        (when selected-token-set-name
+          (some-> tokens-lib (ctob/get-set selected-token-set-name)))
+
         ;; If we have not selected any set explicitly we just
         ;; select the first one from the list of sets
         selected-token-set-tokens
-        (if selected-token-set-name
-          (-> (ctob/get-set tokens-lib selected-token-set-name)
-              (get :tokens))
-          (-> (ctob/get-sets tokens-lib)
-              (first)
-              (get :tokens)))
+        (when selected-token-set
+          (get selected-token-set :tokens))
 
         tokens
         (mf/with-memo [active-theme-tokens selected-token-set-tokens]
@@ -339,6 +339,31 @@
         [empty-group filled-group]
         (mf/with-memo [tokens-by-type]
           (get-sorted-token-groups tokens-by-type))]
+
+    (mf/with-effect [tokens-lib selected-token-set-name]
+      (when tokens-lib
+        (if selected-token-set-name
+          ;; WORKAROUND: because we don't have a stable reference (by
+          ;; ID per example) to token sets, when a set is moved the
+          ;; name/path of the set changes and now can point to not
+          ;; existing object; on this cases we perform a best effort
+          ;; search around all existing sets that matches the
+          ;; name (and not the path) and select it if it is found
+          (when-not (ctob/get-set tokens-lib selected-token-set-name)
+            (let [selected-name (ctob/get-token-set-final-name selected-token-set-name)
+                  match         (->> (ctob/get-sets tokens-lib)
+                                     (map :name)
+                                     (filter (fn [name]
+                                               (let [path (ctob/split-token-set-name name)]
+                                                 (= (peek path) selected-name))))
+                                     (first))]
+              (when match
+                (st/emit! (dt/set-selected-token-set-name match)))))
+
+          (let [match (->> (ctob/get-sets tokens-lib)
+                           (first)
+                           (:name))]
+            (st/emit! (dt/set-selected-token-set-name match))))))
 
     [:*
      [:& token-context-menu]
