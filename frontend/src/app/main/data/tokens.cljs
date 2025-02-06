@@ -19,6 +19,7 @@
    [app.main.data.notifications :as ntf]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.tokens.selected-set :as dwts]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
    [app.main.ui.workspace.tokens.update :as wtu]
    [app.util.i18n :refer [tr]]
@@ -221,15 +222,20 @@
   (ptk/reify ::drop-token-set
     ptk/WatchEvent
     (watch [it state _]
-      (try
-        (when-let [changes (clt/generate-move-token-set (pcb/empty-changes it) (get-tokens-lib state) drop-opts)]
-          (rx/of
-           (dch/commit-changes changes)
-           (some-> (get-in changes [:redo-changes 0 :to-path]) (dwts/set-selected-token-set-name))
-           (wtu/update-workspace-tokens)))
-        (catch js/Error e
-          (rx/of
-           (drop-error (ex-data e))))))))
+      (let [undo-id (js/Symbol)]
+        (try
+          (when-let [changes (clt/generate-move-token-set (pcb/empty-changes it) (get-tokens-lib state) drop-opts)]
+            (rx/of
+             (dwu/start-undo-transaction undo-id)
+             (dch/commit-changes changes)
+             (some-> (get-in changes [:redo-changes 0 :to-path])
+                     (ctob/join-set-path)
+                     (dwts/set-selected-token-set-name))
+             (wtu/update-workspace-tokens)
+             (dwu/commit-undo-transaction undo-id)))
+          (catch js/Error e
+            (rx/of
+             (drop-error (ex-data e)))))))))
 
 (defn update-create-token
   [{:keys [token prev-token-name]}]
