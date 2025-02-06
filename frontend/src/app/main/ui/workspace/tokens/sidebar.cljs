@@ -385,12 +385,15 @@
                          :active-theme-tokens active-theme-tokens
                          :tokens []}])]))
 
-(mf/defc import-export-button
-  {::mf/wrap-props false}
-  [{:keys []}]
-  (let [show-menu* (mf/use-state false)
+(mf/defc import-export-button*
+  []
+  (let [input-ref  (mf/use-ref)
+
+        show-menu* (mf/use-state false)
         show-menu? (deref show-menu*)
-        can-edit? (:can-edit (deref refs/permissions))
+
+        can-edit?
+        (mf/use-ctx ctx/can-edit?)
 
         open-menu
         (mf/use-fn
@@ -404,34 +407,37 @@
            (dom/stop-propagation event)
            (reset! show-menu* false)))
 
-        input-ref (mf/use-ref)
         on-display-file-explorer
-        (mf/use-fn
-         #(.click (mf/ref-val input-ref)))
+        (mf/use-fn #(dom/click (mf/ref-val input-ref)))
 
         on-import
-        (fn [event]
-          (let [file (-> event .-target .-files (aget 0))]
-            (->> (wapi/read-file-as-text file)
-                 (sd/process-json-stream)
-                 (rx/subs! (fn [lib]
-                             (st/emit! (ptk/event ::ev/event {::ev/name "import-tokens"}))
-                             (st/emit! (dt/import-tokens-lib lib)))
-                           (fn [err]
-                             (js/console.error err)
-                             (st/emit! (ntf/show {:content (wte/humanize-errors [(ex-data err)])
-                                                  :type :toast
-                                                  :level :error})))))
-            (set! (.-value (mf/ref-val input-ref)) "")))
+        (mf/use-fn
+         (fn [event]
+           (let [file (-> (dom/get-target event)
+                          (dom/get-files)
+                          (first))]
+             (->> (wapi/read-file-as-text file)
+                  (sd/process-json-stream)
+                  (rx/subs! (fn [lib]
+                              (st/emit! (ptk/data-event ::ev/event {::ev/name "import-tokens"})
+                                        (dt/import-tokens-lib lib)))
+                            (fn [err]
+                              (js/console.error err)
+                              (st/emit! (ntf/show {:content (wte/humanize-errors [(ex-data err)])
+                                                   :type :toast
+                                                   :level :error})))))
+             (-> (mf/ref-val input-ref)
+                 (dom/set-value! "")))))
 
-        on-export (fn []
-                    (st/emit! (ptk/event ::ev/event {::ev/name "export-tokens"}))
-                    (let [tokens-json (some-> (deref refs/tokens-lib)
-                                              (ctob/encode-dtcg)
-                                              (clj->js)
-                                              (js/JSON.stringify nil 2))]
-                      (->> (wapi/create-blob (or tokens-json "{}") "application/json")
-                           (dom/trigger-download "tokens.json"))))]
+        on-export
+        (mf/use-fn
+         (fn []
+           (st/emit! (ptk/data-event ::ev/event {::ev/name "export-tokens"}))
+           (let [tokens-json (some-> (deref refs/tokens-lib)
+                                     (ctob/encode-dtcg)
+                                     (json/encode :key-fn identity))]
+             (->> (wapi/create-blob (or tokens-json "{}") "application/json")
+                  (dom/trigger-download "tokens.json")))))]
 
     [:div {:class (stl/css :import-export-button-wrapper)}
      (when can-edit?
@@ -478,4 +484,4 @@
              :on-lost-pointer-capture on-lost-pointer-capture-pages
              :on-pointer-move on-pointer-move-pages}]
       [:> tokens-tab* {:tokens-lib tokens-lib}]]
-     [:& import-export-button]]))
+     [:> import-export-button*]]))
