@@ -320,7 +320,7 @@
          (tr "workspace.assets.not-found")]])]))
 
 (mf/defc file-library*
-  [{:keys [file is-local is-default-open? filters]}]
+  [{:keys [file is-local is-default-open filters]}]
   (let [file-id      (:id file)
         file-name    (:name file)
         page-id      (dm/get-in file [:data :pages 0])
@@ -376,7 +376,7 @@
           ;; if the user has closed it specifically, respect that
           false
           (or force-lib-open?
-              (d/nilv (:library open-status) is-default-open?)))
+              (d/nilv (:library open-status) is-default-open)))
 
         unselect-all
         (mf/use-fn
