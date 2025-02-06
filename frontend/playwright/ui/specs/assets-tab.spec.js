@@ -60,8 +60,8 @@ test("BUG 10090 - Local library should be expanded by default", async ({
 
   await workspacePage.clickAssets();
 
-  expect(workspacePage.sidebar.getByText("Local library")).toBeVisible();
-  expect(workspacePage.sidebar.getByText("Components")).toBeVisible();
-  expect(workspacePage.sidebar.getByText("Colors")).toBeVisible();
-  expect(workspacePage.sidebar.getByText("Typographies")).toBeVisible();
+  await expect(workspacePage.sidebar.getByText("Local library")).toBeVisible();
+  await expect(workspacePage.sidebar.getByText("Components")).toBeVisible();
+  await expect(workspacePage.sidebar.getByText("Colors")).toBeVisible();
+  await expect(workspacePage.sidebar.getByText("Typographies")).toBeVisible();
 });
