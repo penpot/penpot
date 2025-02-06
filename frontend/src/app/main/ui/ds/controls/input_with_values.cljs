@@ -22,7 +22,6 @@
 
 (mf/defc input-with-values*
   {::mf/props :obj
-   ::mf/forward-ref true
    ::mf/schema schema:input-with-values}
   [{:keys [name values on-blur]}]
   (let [editing*  (mf/use-state false)
@@ -38,6 +37,7 @@
            (dom/focus! input)))
         on-stop-edit
         (mf/use-fn
+         (mf/deps on-blur)
          (fn [event]
            (let [new-name (dom/get-target-val event)]
              (dom/stop-propagation event)
@@ -63,6 +63,7 @@
          :auto-focus true
          :on-blur on-stop-edit
          :on-key-down handle-key-down}]]
-      [:div {:class (stl/css :input-with-values-container :input-with-values-grid) :title title :on-click on-edit}
+      [:div {:class (stl/css :input-with-values-container :input-with-values-grid)
+             :title title :on-click on-edit}
        [:span {:class (stl/css :input-with-values-name)}  name]
        [:span {:class (stl/css :input-with-values-values)} values]])))
