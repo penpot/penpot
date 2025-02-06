@@ -26,13 +26,15 @@
 (def valid-groupable-item?
   (sm/validator schema:groupable-item))
 
+(def ^:private xf:clean-string
+  (comp (map str/trim)
+        (remove str/empty?)))
+
 (defn split-path
   "Decompose a string in the form 'one.two.three' into a vector of strings, removing spaces."
   [path separator]
-  (let [xf (comp (map str/trim)
-                 (remove str/empty?))]
-    (->> (str/split path separator)
-         (into [] xf))))
+  (->> (str/split path separator)
+       (into [] xf:clean-string)))
 
 (defn join-path
   "Regenerate a path as a string, from a vector."
