@@ -298,15 +298,27 @@ test.describe("Tokens: Tokens Tab", () => {
 });
 
 test.describe("Tokens: Sets Tab", () => {
+  const changeSetInput = async (sidebar, setName, finalKey = "Enter") => {
+    const setInput = sidebar.locator("input:focus");
+    await expect(setInput).toBeVisible();
+    await setInput.fill(setName);
+    await setInput.press(finalKey);
+  };
+
   const createSet = async (sidebar, setName, finalKey = "Enter") => {
     const tokensTabButton = sidebar
       .getByRole("button", { name: "Add set" })
       .click();
 
-    const setInput = sidebar.locator("input:focus");
-    await expect(setInput).toBeVisible();
-    await setInput.fill(setName);
-    await setInput.press(finalKey);
+    await changeSetInput(sidebar, setName, (finalKey = "Enter"));
+  };
+
+  const assertSetsList = async (el, sets) => {
+    const buttons = await el.getByRole("button").allTextContents();
+    const filteredButtons = buttons.filter(
+      (text) => text && text !== "Create one.",
+    );
+    await expect(filteredButtons).toEqual(sets);
   };
 
   test("User creates sets tree structure by entering a set path", async ({
@@ -327,11 +339,46 @@ test.describe("Tokens: Sets Tab", () => {
     await createSet(tokenThemesSetsSidebar, "core/colors/light");
     await createSet(tokenThemesSetsSidebar, "core/colors/dark");
 
+    await assertSetsList(tokenThemesSetsSidebar, [
+      "core",
+      "colors",
+      "light",
+      "dark",
+    ]);
+
+    // User renames set
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "light" })
+      .click({ button: "right" });
+    await expect(tokenContextMenuForSet).toBeVisible();
+    await tokenContextMenuForSet.getByText("Rename").click();
+    await changeSetInput(tokenThemesSetsSidebar, "light-renamed");
+
     // User cancels during editing
     await createSet(tokenThemesSetsSidebar, "core/colors/dark", "Escape");
 
-    await expect(tokenSetItems).toHaveCount(2);
-    await expect(tokenSetGroupItems).toHaveCount(2);
+    await assertSetsList(tokenThemesSetsSidebar, [
+      "core",
+      "colors",
+      "light-renamed",
+      "dark",
+    ]);
+
+    // Creates nesting by renaming set with double click
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "light-renamed" })
+      .click({ button: "right" });
+    await expect(tokenContextMenuForSet).toBeVisible();
+    await tokenContextMenuForSet.getByText("Rename").click();
+    await changeSetInput(tokenThemesSetsSidebar, "nested/light");
+
+    await assertSetsList(tokenThemesSetsSidebar, [
+      "core",
+      "colors",
+      "nested",
+      "light",
+      "dark",
+    ]);
 
     // Create set in group
     await tokenThemesSetsSidebar
@@ -339,13 +386,16 @@ test.describe("Tokens: Sets Tab", () => {
       .click({ button: "right" });
     await expect(tokenContextMenuForSet).toBeVisible();
     await tokenContextMenuForSet.getByText("Add set to this group").click();
+    await changeSetInput(tokenThemesSetsSidebar, "sizes/small");
 
-    const setInput = tokenThemesSetsSidebar.locator("input:focus");
-    await expect(setInput).toBeVisible();
-    await setInput.fill("sizes/small");
-    await setInput.press("Enter");
-
-    await expect(tokenSetItems).toHaveCount(3);
-    await expect(tokenSetGroupItems).toHaveCount(3);
+    await assertSetsList(tokenThemesSetsSidebar, [
+      "core",
+      "colors",
+      "nested",
+      "light",
+      "dark",
+      "sizes",
+      "small",
+    ]);
   });
 });
