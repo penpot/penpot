@@ -285,7 +285,7 @@
        [:> theme-sets-list* props]]]]))
 
 (mf/defc tokens-tab*
-  []
+  [{:keys [tokens-lib]}]
   (let [objects         (mf/deref refs/workspace-page-objects)
         selected        (mf/deref refs/selected-shapes)
         open-status     (mf/deref ref:token-type-open-status)
@@ -295,16 +295,36 @@
           (into [] (keep (d/getf objects)) selected))
 
         active-theme-tokens
-        (sd/use-active-theme-tokens)
+        (mf/with-memo [tokens-lib]
+          (if tokens-lib
+            (ctob/get-active-themes-set-tokens tokens-lib)
+            {}))
+
+        ;; Resolve tokens as second step
+        active-theme-tokens
+        (sd/use-resolved-tokens* active-theme-tokens)
+
+        ;; This only checks for the currently explicitly selected set
+        ;; name, it is ephimeral and can be nil
+        selected-token-set-name
+        (mf/deref refs/selected-token-set-name)
+
+        ;; If we have not selected any set explicitly we just
+        ;; select the first one from the list of sets
+        selected-token-set-tokens
+        (if selected-token-set-name
+          (-> (ctob/get-set tokens-lib selected-token-set-name)
+              (get :tokens))
+          (-> (ctob/get-sets tokens-lib)
+              (first)
+              (get :tokens)))
 
         tokens
-        (sd/use-resolved-workspace-tokens)
+        (mf/with-memo [active-theme-tokens selected-token-set-tokens]
+          (merge active-theme-tokens selected-token-set-tokens))
 
-        selected-token-set-tokens
-        (mf/deref refs/workspace-selected-token-set-tokens)
-
-        selected-token-set-name
-        (mf/deref refs/workspace-selected-token-set-name)
+        tokens
+        (sd/use-resolved-tokens* tokens)
 
         tokens-by-type
         (mf/with-memo [tokens selected-token-set-tokens]
