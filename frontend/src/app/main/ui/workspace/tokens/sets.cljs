@@ -37,7 +37,7 @@
   (st/emit! (dwts/set-selected-token-set-name set-name)))
 
 (defn on-update-token-set [set-name token-set]
-  (st/emit! (wdt/update-token-set set-name (ctob/update-name token-set set-name))))
+  (st/emit! (wdt/update-token-set (:name token-set) (ctob/update-name token-set set-name))))
 
 (defn on-update-token-set-group [set-group-path set-group-fname]
   (st/emit! (wdt/rename-token-set-group set-group-path set-group-fname)))
