@@ -32,7 +32,7 @@
    [app.main.ui.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.sets :refer [sets-list*]]
    [app.main.ui.workspace.tokens.sets-context :as sets-context]
-   [app.main.ui.workspace.tokens.sets-context-menu :refer [sets-context-menu]]
+   [app.main.ui.workspace.tokens.sets-context-menu :refer [sets-context-menu*]]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.theme-select :refer [theme-select]]
    [app.main.ui.workspace.tokens.token-pill :refer [token-pill*]]
@@ -270,7 +270,7 @@
         (get permissions :can-edit)]
 
     [:& sets-context/provider {}
-     [:& sets-context-menu]
+     [:> sets-context-menu*]
      [:article {:data-testid "token-themes-sets-sidebar"
                 :class (stl/css :sets-section-wrapper)
                 :style {"--resize-height" (str resize-height "px")}}

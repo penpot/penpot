@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.tokens.sets-context-menu
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.main.data.tokens :as wdt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -59,24 +60,27 @@
      [:& menu-entry {:title (tr "labels.rename") :on-click edit-name}]
      [:& menu-entry {:title (tr "labels.delete")  :on-click delete-set}]]))
 
-(mf/defc sets-context-menu
+(mf/defc sets-context-menu*
   []
-  (let [mdata (mf/deref sets-menu-ref)
-        top (+ (get-in mdata [:position :y]) 5)
-        left (+ (get-in mdata [:position :x]) 5)
-        width (mf/use-state 0)
-        dropdown-ref (mf/use-ref)]
-    (mf/use-effect
-     (mf/deps mdata)
-     (fn []
-       (when-let [node (mf/ref-val dropdown-ref)]
-         (reset! width (.-offsetWidth node)))))
-    [:& dropdown {:show (boolean mdata)
-                  :on-close #(st/emit! wdt/hide-token-set-context-menu)}
+  (let [{:keys [position is-group path]}
+        (mf/deref sets-menu-ref)
+
+        position-top
+        (+ (dm/get-prop position :y) 5)
+
+        position-left
+        (+ (dm/get-prop position :x) 5)
+
+        on-close
+        (mf/use-fn
+         #(st/emit! wdt/hide-token-set-context-menu))]
+
+    [:& dropdown {:show (some? position)
+                  :on-close on-close}
      [:div {:class (stl/css :token-set-context-menu)
             :data-testid "tokens-context-menu-for-set"
-            :ref dropdown-ref
-            :style {:top top :left left}
+            :style {:top position-top
+                    :left position-left}
             :on-context-menu prevent-default}
-      [:& menu {:group? (:group? mdata)
-                :path (:path mdata)}]]]))
+      [:& menu {:group? is-group
+                :path path}]]]))

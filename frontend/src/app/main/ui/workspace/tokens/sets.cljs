@@ -119,7 +119,7 @@
              (st/emit!
               (wdt/show-token-set-context-menu
                {:position (dom/get-client-position event)
-                :group? true
+                :is-group true
                 :path tree-path})))))
 
         on-collapse-click
@@ -227,7 +227,7 @@
              (st/emit!
               (wdt/show-token-set-context-menu
                {:position (dom/get-client-position event)
-                :group? false
+                :is-group false
                 :path tree-path})))))
 
         on-double-click
