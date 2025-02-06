@@ -181,7 +181,8 @@
            (when (or (not= (str/lower (:hex color)) (str/lower (:hex current-color)))
                      (not= (:h color) (:h current-color))
                      (not= (:s color) (:s current-color))
-                     (not= (:v color) (:v current-color)))
+                     (not= (:v color) (:v current-color))
+                     (not= (:alpha color) (:alpha current-color)))
              (let [recent-color (merge current-color color)
                    recent-color (dc/materialize-color-components recent-color)]
                (st/emit! (dc/update-colorpicker-color recent-color (not @drag?)))))))
