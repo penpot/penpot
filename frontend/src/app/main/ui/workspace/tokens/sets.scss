@@ -20,8 +20,9 @@
   min-height: $s-32;
   cursor: pointer;
   color: var(--layer-row-foreground-color);
-  padding-left: calc($s-32 * var(--tree-depth, 0));
+  padding-left: calc($s-24 * var(--tree-depth, 0) + $s-8);
   border: $s-2 solid transparent;
+  gap: $s-2;
 
   &.dnd-over-bot {
     border-bottom: $s-2 solid var(--layer-row-foreground-color-hover);
@@ -36,10 +37,13 @@
 
 .set-item-group {
   cursor: unset;
+  padding-left: calc($s-24 * var(--tree-depth, 0));
+  gap: 0;
 }
 
 .set-item-group-collapse-button {
   cursor: pointer;
+  width: auto;
 }
 
 .set-name {
