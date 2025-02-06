@@ -30,7 +30,7 @@
   "Decompose a string in the form 'one.two.three' into a vector of strings, removing spaces."
   [path separator]
   (let [xf (comp (map str/trim)
-                 (remove str/empty?))]
+                 #_(remove str/empty?))]
     (->> (str/split path separator)
          (into [] xf))))
 
@@ -1205,7 +1205,8 @@ Will return a value that matches this schema:
           sets (into {} name-set-tuples)]
       (-> sets
           (assoc "$themes" themes)
-          (assoc-in ["$metadata" "tokenSetOrder"] ordered-set-names))))
+          (assoc-in ["$metadata" "tokenSetOrder"] ordered-set-names)
+          (assoc-in ["$metadata" "activeThemes"] active-themes))))
 
   (decode-dtcg-json [_ parsed-json]
     (let [metadata (get parsed-json "$metadata")
@@ -1215,6 +1216,7 @@ Will return a value that matches this schema:
                                   (-> theme
                                       (set/rename-keys {"selectedTokenSets" "sets"})
                                       (update "sets" keys)))))
+          active-themes (get metadata "activeThemes")
           set-order (get metadata "tokenSetOrder")
           name->pos (into {} (map-indexed (fn [idx itm] [itm idx]) set-order))
           sets-data' (sort-by (comp name->pos first) sets-data)
@@ -1226,17 +1228,23 @@ Will return a value that matches this schema:
                                 :tokens (flatten-nested-tokens-json tokens ""))))
                 lib sets-data')]
       (if-let [themes-data (seq themes-data)]
-        (reduce
-         (fn [lib {:strs [name group description is-source modified-at sets]}]
-           (add-theme lib (TokenTheme. name
-                                       (or group "")
-                                       description
-                                       (some? is-source)
-                                       (or (some-> modified-at
-                                                   (dt/parse-instant))
-                                           (dt/now))
-                                       (set sets))))
-         lib' themes-data)
+        (as-> lib' $
+          (reduce
+           (fn [lib {:strs [name group description is-source modified-at sets]}]
+             (add-theme lib (TokenTheme. name
+                                         (or group "")
+                                         description
+                                         (some? is-source)
+                                         (or (some-> modified-at
+                                                     (dt/parse-instant))
+                                             (dt/now))
+                                         (set sets))))
+           $ themes-data)
+          (reduce
+           (fn [lib active-theme]
+             (let [[group name] (split-token-theme-path active-theme)]
+               (activate-theme lib group name)))
+           $ active-themes))
         lib')))
 
   (decode-legacy-json [this parsed-legacy-json]
