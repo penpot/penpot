@@ -42,7 +42,8 @@
            (let [new-name (dom/get-target-val event)]
              (dom/stop-propagation event)
              (reset! editing* false)
-             (on-blur new-name))))
+             (when on-blur
+               (on-blur new-name)))))
 
         handle-key-down
         (mf/use-fn
@@ -54,11 +55,10 @@
              (when ^boolean esc? (dom/blur! node)))))]
 
     (if editing?
-      [:div {:class (stl/css :input-with-values-container)}
+      [:div {:class (stl/css :input-with-values-edit-container)}
        [:> input*
         {:ref input-ref
-         :class (stl/css :name-input)
-         :variant "seamless"
+         :class (stl/css :input-with-values-editing)
          :default-value name
          :auto-focus true
          :on-blur on-stop-edit

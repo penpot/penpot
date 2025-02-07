@@ -65,7 +65,6 @@
   margin: var(--input-margin, unset); // remove settings from global css
   padding: 0;
   appearance: none;
-  margin-inline-start: var(--sp-xxs);
   height: var(--input-height, #{$sz-32});
   border: none;
   background: none;
@@ -91,6 +90,10 @@
     -webkit-background-clip: text;
     caret-color: var(--input-bg-color);
   }
+}
+
+.input-with-icon {
+  margin-inline-start: var(--sp-xxs);
 }
 
 .icon {

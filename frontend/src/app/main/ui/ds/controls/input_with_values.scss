@@ -14,15 +14,19 @@
   border-radius: $br-8;
   background-color: var(--assets-item-background-color);
   padding: var(--sp-s);
-  width: 100%;
-}
-
-.input-with-values-grid {
+  width: 99%;
   display: grid;
   grid-template-columns: auto 1fr;
   gap: var(--sp-s);
   overflow: hidden;
   white-space: nowrap;
+  height: $sz-32;
+}
+
+.input-with-values-edit-container {
+  width: 99%;
+  border-radius: $br-8;
+  height: $sz-32;
 }
 
 .input-with-values-name,
