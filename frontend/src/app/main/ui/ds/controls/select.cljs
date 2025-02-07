@@ -198,7 +198,7 @@
         label]]
       [:> icon* {:icon-id i/arrow
                  :class (stl/css :arrow)
-                 :size "s"
+                 :size "m"
                  :aria-hidden true}]]
      (when open
        [:> options-dropdown* {:on-click on-option-click
