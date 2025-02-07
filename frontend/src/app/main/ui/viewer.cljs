@@ -626,16 +626,12 @@
 (mf/defc viewer*
   {::mf/props :obj}
   [{:keys [file-id share-id page-id] :as props}]
+
   (mf/with-effect [file-id page-id share-id]
-    (let [params {:file-id file-id
-                  :page-id page-id
-                  :share-id share-id}]
-      (st/emit! (dv/initialize params))
-      (fn []
-        (st/emit! (dv/finalize params)))))
+    (st/emit! (dv/initialize-step-2 file-id page-id share-id)))
 
   (if-let [data (mf/deref refs/viewer-data)]
-    (let [props (obj/merge props #js {:data data :key (dm/str file-id)})]
+    (let [props (mf/spread-props props {:data data :key (dm/str file-id)})]
       [:*
        [:> modal-container*]
        [:> viewer-content* props]])

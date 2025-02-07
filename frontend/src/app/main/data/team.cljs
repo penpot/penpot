@@ -47,13 +47,14 @@
   []
   (ptk/reify ::fetch-teams
     ptk/WatchEvent
-    (watch [_ _ _]
-      (->> (rp/cmd! :get-teams)
-           (rx/map teams-fetched)))))
+    (watch [_ state _]
+      (let [share-id (get state :share-id)]
+        (->> (rp/cmd! :get-teams {:share-id share-id})
+             (rx/map teams-fetched))))))
 
 ;; --- EVENT: fetch-members
 
-(defn- members-fetched
+(defn members-fetched
   [team-id members]
   (ptk/reify ::members-fetched
     ptk/UpdateEvent
@@ -151,6 +152,21 @@
               (dissoc :shared-files)
               (dissoc :fonts))
           state)))))
+
+;; (defn initialize-team-with-share-id
+;;   [share-id]
+;;   (ptk/reify ::initialize-team-with-share-id
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (assoc state :current-share-id share-id))
+
+;;     ptk/WatchEvent
+;;     (watch [_ _ stream]
+;;       (let [stopper (rx/filter (ptk/type? ::finalize-team) stream)]
+;;         (->> (rp/cmd! :get-share-link {:id share-id})
+;;              (rx/map :team-id)
+;;              (rx/map initialize-team)
+;;              (rx/take-until stopper))))))
 
 ;; --- ROLES
 

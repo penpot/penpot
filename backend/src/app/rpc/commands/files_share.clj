@@ -68,3 +68,31 @@
       (files/check-edition-permissions! conn profile-id (:file-id slink))
       (db/delete! conn :share-link {:id id})
       nil)))
+
+(def ^:private sql:get-share-link
+  "SELECT sl.id,
+          sl.file_id,
+          sl.created_at,
+          p.team_id,
+          p.id AS project_id,
+          sl.pages,
+          sl.who_comment,
+          sl.who_inspect
+     FROM share_link AS sl
+    INNER JOIN file AS f ON (f.id = sl.file_id)
+    INNER JOIN project AS p (p.id = f.project_id)
+    WHERE sl.id = ?")
+
+(def ^:private schema:get-share-link
+  [:map {:title "delete-share-link"}
+   [:id ::sm/uuid]])
+
+(sv/defmethod ::get-share-link
+  "Get public information about the share link"
+  {::doc/added "2.5"
+   ::rpc/auth false
+   ::doc/module ::files
+   ::sm/params schema:delete-share-link}
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id]}]
+  (some-> (db/exec-one! pool [sql:get-share-link id])
+          (update :pages db/decode-pgarray #{})))

@@ -19,6 +19,12 @@
   ([state profile-id]
    (dm/get-in state [:profiles profile-id])))
 
+(defn lookup-team
+  ([state]
+   (lookup-team state (:current-team-id state)))
+  ([state team-id]
+   (dm/get-in state [:teams team-id])))
+
 (defn lookup-libraries
   "Retrieve all libraries, including the local file."
   [state]
