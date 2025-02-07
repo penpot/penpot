@@ -28,6 +28,7 @@
    [app.main.ui.workspace.tokens.sets-context :as sets-context]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.keyboard :as k]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -197,16 +198,32 @@
 
 (mf/defc theme-modal-buttons*
   [{:keys [close-modal on-save-form disabled?] :as props}]
-  [:*
-   [:> button* {:variant "secondary"
-                :type "button"
-                :on-click close-modal}
-    (tr "labels.cancel")]
-   [:> button* {:variant "primary"
-                :type "submit"
-                :on-click on-save-form
-                :disabled disabled?}
-    (tr "workspace.token.save-theme")]])
+  (let [handle-key-down-cancel
+        (mf/use-fn
+         (mf/deps close-modal)
+         (fn [event]
+           (when (k/enter? event)
+             (close-modal event))))
+
+        handle-key-down-save
+        (mf/use-fn
+         (mf/deps on-save-form)
+         (fn [event]
+           (when (k/enter? event)
+             (on-save-form event))))]
+
+    [:*
+     [:> button* {:variant "secondary"
+                  :type "button"
+                  :on-click close-modal
+                  :on-key-down handle-key-down-cancel}
+      (tr "labels.cancel")]
+     [:> button* {:variant "primary"
+                  :type "submit"
+                  :on-click on-save-form
+                  :on-key-down handle-key-down-save
+                  :disabled disabled?}
+      (tr "workspace.token.save-theme")]]))
 
 (mf/defc create-theme
   [{:keys [set-state]}]
