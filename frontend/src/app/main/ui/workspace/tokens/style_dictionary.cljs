@@ -9,6 +9,7 @@
    [app.main.ui.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
+   [app.main.ui.workspace.tokens.warnings :as wtw]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]
@@ -59,6 +60,31 @@
       :references references}
      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
 
+(defn parse-sd-token-opacity-value
+  "Parses `value` of a dimensions `sd-token` into a map like `{:value 1 :unit \"px\"}`.
+  If the `value` is not parseable and/or has missing references returns a map with `:errors`.
+  If the `value` is parseable but is out of range returns a map with `warnings`."
+  [value has-references?]
+
+  (let [parsed-value (wtt/parse-token-value value)
+        out-of-scope (< 100 (:value parsed-value))
+        references (seq (ctob/find-token-value-references value))]
+    (cond
+      (and parsed-value (not out-of-scope))
+      parsed-value
+
+      references
+      {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
+       :references references}
+
+      (and (not has-references?) out-of-scope)
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-opacity value)]}
+
+      (and has-references? out-of-scope)
+      (assoc parsed-value :warnings [(wtw/warning-with-value :warning.style-dictionary/invalid-referenced-token-value value)])
+
+      :else {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
+
 (defn process-sd-tokens
   "Converts a StyleDictionary dictionary with resolved tokens (aka `sd-tokens`) back to clojure.
   The `get-origin-token` argument should be a function that takes an
@@ -95,14 +121,22 @@
    (fn [acc ^js sd-token]
      (let [origin-token (get-origin-token sd-token)
            value (.-value sd-token)
+           has-references? (str/includes? (:value origin-token) "{")
            parsed-token-value (case (:type origin-token)
                                 :color (parse-sd-token-color-value value)
+                                :opacity (parse-sd-token-opacity-value value has-references?)
                                 (parse-sd-token-dimensions-value value))
-           output-token (if (:errors parsed-token-value)
-                          (merge origin-token parsed-token-value)
-                          (assoc origin-token
-                                 :resolved-value (:value parsed-token-value)
-                                 :unit (:unit parsed-token-value)))]
+           output-token (cond (:errors parsed-token-value)
+                              (merge origin-token parsed-token-value)
+                              (:warnings parsed-token-value)
+                              (assoc origin-token
+                                     :resolved-value (:value parsed-token-value)
+                                     :warnings (:warnings parsed-token-value)
+                                     :unit (:unit parsed-token-value))
+                              :else
+                              (assoc origin-token
+                                     :resolved-value (:value parsed-token-value)
+                                     :unit (:unit parsed-token-value)))]
        (assoc acc (:name output-token) output-token)))
    {} sd-tokens))
 
