@@ -20,7 +20,6 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.tokens.selected-set :as dwts]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.store :as st]
    [app.main.ui.workspace.tokens.update :as wtu]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
