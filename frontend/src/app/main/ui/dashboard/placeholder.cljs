@@ -24,9 +24,7 @@
   [{:keys [on-create on-finish-import project-id] :as props}]
   (let [file-input       (mf/use-ref nil)
         on-add-library   (mf/use-fn
-                          (fn [event]
-                            (dom/prevent-default event)
-                            (dom/stop-propagation event)
+                          (fn [_]
                             (st/emit! (ptk/event ::ev/event {::ev/name "explore-libraries-click"
                                                              ::ev/origin "dashboard"
                                                              :section "empty-placeholder-projects"}))
