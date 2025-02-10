@@ -3,7 +3,6 @@
    [app.common.files.helpers :as cfh]
    [app.common.types.token :as ctt]
    [app.main.data.helpers :as dsh]
-   [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.undo :as dwu]
@@ -26,8 +25,8 @@
    ctt/sizing-keys wtch/update-shape-dimensions
    ctt/opacity-keys wtch/update-opacity
    #{:x :y} wtch/update-shape-position
-   #{:p1 :p2 :p3 :p4} (fn [resolved-value shape-ids attrs]
-                        (dwsl/update-layout shape-ids {:layout-padding (zipmap attrs (repeat resolved-value))}))
+   #{:p1 :p2 :p3 :p4} wtch/update-layout-padding
+   #{:m1 :m2 :m3 :m4} wtch/update-layout-item-margin
    #{:column-gap :row-gap} wtch/update-layout-spacing
    #{:width :height} wtch/update-shape-dimensions
    #{:layout-item-min-w :layout-item-min-h :layout-item-max-w :layout-item-max-h} wtch/update-layout-sizing-limits

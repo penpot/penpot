@@ -203,6 +203,26 @@
         (filter ctsl/any-layout?)
         (map :id))))
 
+(defn- shape-ids-with-layout-parent [state page-id shape-ids]
+  (let [objects (dsh/lookup-page-objects state)]
+    (->> (dsh/lookup-shapes state page-id shape-ids)
+         (eduction
+          (filter #(ctsl/any-layout-immediate-child? objects %))
+          (map :id)))))
+
+(defn update-layout-item-margin
+  ([value shape-ids attrs] (update-layout-item-margin value shape-ids attrs nil))
+  ([value shape-ids attrs page-id]
+   (ptk/reify ::update-layout-item-margin
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [ids-with-layout-parent (shape-ids-with-layout-parent state (or page-id (:current-page-id state)) shape-ids)]
+         (rx/of
+          (dwsl/update-layout ids-with-layout-parent
+                              {:layout-item-margin (zipmap attrs (repeat value))}
+                              {:ignore-touched true
+                               :page-id page-id})))))))
+
 (defn update-layout-padding
   ([value shape-ids attrs] (update-layout-padding value shape-ids attrs nil))
   ([value shape-ids attrs page-id]
@@ -222,7 +242,7 @@
    (ptk/reify ::update-layout-spacing
      ptk/WatchEvent
      (watch [_ state _]
-       (let [ids-with-layout (shape-ids-with-layout state page-id shape-ids)
+       (let [ids-with-layout (shape-ids-with-layout state (or page-id (:current-page-id state)) shape-ids)
              layout-attributes (attributes->layout-gap attributes value)]
          (rx/of
           (dwsl/update-layout ids-with-layout
