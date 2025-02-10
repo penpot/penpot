@@ -3528,7 +3528,7 @@ msgstr "Copiar"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
 msgid "shortcuts.copy-link"
-msgstr "Copiar enlace al portapapeles"
+msgstr "Copiar enlace"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:95
 msgid "shortcuts.create-component"
@@ -6190,7 +6190,7 @@ msgstr "Copiar como CSS (capas anidadas)"
 
 #: src/app/main/ui/workspace/context_menu.cljs:188
 msgid "workspace.shape.menu.copy-link"
-msgstr "Copiar enlace al portapapeles"
+msgstr "Copiar enlace"
 
 #: src/app/main/ui/workspace/context_menu.cljs:201
 msgid "workspace.shape.menu.copy-paste-as"
