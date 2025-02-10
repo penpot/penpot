@@ -425,7 +425,9 @@
   []
   (let [mentions-s (mf/use-ctx mentions-context)
         profile    (mf/deref refs/profile)
-        profiles   (mf/deref refs/profiles)
+
+        team       (mf/deref refs/team)
+        members    (:members team)
 
         state*
         (mf/use-state
@@ -437,10 +439,8 @@
         (deref state*)
 
         mentions-users
-        (mf/with-memo [mention-filter]
-
-
-          (->> (vals profiles)
+        (mf/with-memo [mention-filter members]
+          (->> members
                (filter (fn [{:keys [id fullname email]}]
                          (and
                           (not= id (:id profile))
@@ -461,9 +461,12 @@
            (dom/stop-propagation event)
            (let [id (-> (dom/get-current-target event)
                         (dom/get-data "user-id")
-                        (uuid/uuid))]
+                        (uuid/uuid))
+
+                 user   (d/seek #(= (:id %) id) members)]
+
              (rx/push! mentions-s {:type :insert-mention
-                                   :data {:user (get profiles id)}}))))]
+                                   :data {:user user}}))))]
 
     (mf/with-effect [mentions-users selected]
       (let [sub

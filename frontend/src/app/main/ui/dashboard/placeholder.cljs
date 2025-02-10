@@ -8,19 +8,27 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.config :as cf]
+   [app.main.data.event :as ev]
+   [app.main.store :as st]
    [app.main.ui.dashboard.import :as udi]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc empty-placeholder-projects*
   {::mf/wrap-props false}
   [{:keys [on-create on-finish-import project-id] :as props}]
   (let [file-input       (mf/use-ref nil)
-        on-add-library   (mf/use-fn #(dom/open-new-window "https://penpot.app/penpothub/libraries-templates"))
+        on-add-library   (mf/use-fn
+                          (fn [_]
+                            (st/emit! (ptk/event ::ev/event {::ev/name "explore-libraries-click"
+                                                             ::ev/origin "dashboard"
+                                                             :section "empty-placeholder-projects"}))
+                            (dom/open-new-window "https://penpot.app/penpothub/libraries-templates")))
         on-import-files  (mf/use-fn #(dom/click (mf/ref-val file-input)))]
 
     [:div {:class (stl/css :empty-project-container)}
