@@ -36,19 +36,20 @@ impl<'a> State<'a> {
         &mut self.render_state
     }
 
-    pub fn pan(&mut self) {
-        // TODO: propagate error to main fn
-        let _ = self.render_state.pan(&self.shapes).unwrap();
-    }
-
-    pub fn zoom(&mut self) {
-        // TODO: propagate error to main fn
-        let _ = self.render_state.zoom(&self.shapes).unwrap();
-    }
-
-    pub fn render_all(&mut self, generate_cached_surface_image: bool) {
+    pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
         self.render_state
-            .render_all(&self.shapes, generate_cached_surface_image);
+            .start_render_loop(&mut self.shapes, timestamp)?;
+        Ok(())
+    }
+
+    pub fn process_animation_frame(&mut self, timestamp: i32) -> Result<(), String> {
+        self.render_state
+            .process_animation_frame(&mut self.shapes, timestamp)?;
+        Ok(())
+    }
+
+    pub fn render_from_cache(&mut self) {
+        let _ = self.render_state.render_from_cache();
     }
 
     pub fn use_shape(&'a mut self, id: Uuid) {

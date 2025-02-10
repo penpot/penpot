@@ -13,7 +13,7 @@ pub fn render_drop_shadow(render_state: &mut RenderState, shadow: &Shadow, scale
     );
 
     render_state.shadow_surface.draw(
-        &mut render_state.final_surface.canvas(),
+        &mut render_state.render_surface.canvas(),
         (0.0, 0.0),
         skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
         Some(&skia::Paint::default()),
