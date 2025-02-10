@@ -3524,7 +3524,7 @@ msgstr "Copy"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
 msgid "shortcuts.copy-link"
-msgstr "Copy link to clipboard"
+msgstr "Copy link"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:106
 msgid "shortcuts.copy-props"
@@ -6184,7 +6184,7 @@ msgstr "Copy as CSS (nested layers)"
 
 #: src/app/main/ui/workspace/context_menu.cljs:188
 msgid "workspace.shape.menu.copy-link"
-msgstr "Copy link to clipboard"
+msgstr "Copy link"
 
 #: src/app/main/ui/workspace/context_menu.cljs:201
 msgid "workspace.shape.menu.copy-paste-as"
