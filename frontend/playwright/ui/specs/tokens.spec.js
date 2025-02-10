@@ -15,6 +15,11 @@ const setupEmptyTokensFile = async (page) => {
     "workspace/get-team-tokens.json",
   );
 
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
+
   await workspacePage.goToWorkspace();
 
   const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
@@ -42,6 +47,10 @@ const setupTokensFile = async (page) => {
     /get\-file\-fragment\?/,
     "workspace/get-file-fragment-tokens.json",
   );
+  await workspacePage.mockRPC(
+    "update-file?id=*",
+    "workspace/update-file-create-rect.json",
+  );
 
   await workspacePage.goToWorkspace({
     fileId: "51e13852-1a8e-8037-8005-9e9413a1f1f6",
@@ -68,8 +77,7 @@ test.describe("Tokens: Tokens Tab", () => {
   test("Clicking tokens tab button opens tokens sidebar tab", async ({
     page,
   }) => {
-    const { workspacePage, tokensUpdateCreateModal, tokenThemesSetsSidebar } =
-      await setupEmptyTokensFile(page);
+    await setupEmptyTokensFile(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
 
@@ -80,7 +88,7 @@ test.describe("Tokens: Tokens Tab", () => {
   test("User creates color token and auto created set show up in the sidebar", async ({
     page,
   }) => {
-    const { workspacePage, tokensUpdateCreateModal, tokenThemesSetsSidebar } =
+    const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
       await setupEmptyTokensFile(page);
 
     const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
@@ -96,7 +104,15 @@ test.describe("Tokens: Tokens Tab", () => {
     await nameField.click();
     await nameField.fill("color.primary");
 
+    // try invalid value
     await valueField.click();
+
+    await valueField.fill("1");
+    await expect(
+      tokensUpdateCreateModal.getByText("Invalid color value: 1"),
+    ).toBeVisible();
+
+    // valid value
     await valueField.fill("red");
 
     const submitButton = tokensUpdateCreateModal.getByRole("button", {
@@ -141,6 +157,60 @@ test.describe("Tokens: Tokens Tab", () => {
     ).toHaveAttribute("aria-checked", "true");
   });
 
+  test("User creates dimensions token and auto created set show up in the sidebar", async ({
+    page,
+  }) => {
+    const { tokensUpdateCreateModal, tokenThemesSetsSidebar } =
+      await setupEmptyTokensFile(page);
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+    await tokensTabPanel.getByTitle("Add token: Dimensions").click();
+
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    const valueField = tokensUpdateCreateModal.getByLabel("Value");
+
+    await nameField.click();
+    await nameField.fill("dimension.spacing.small");
+
+    // try invalid value first
+    await valueField.click();
+
+    await valueField.fill("red");
+    await expect(
+      tokensUpdateCreateModal.getByText("Invalid token value: red"),
+    ).toBeVisible();
+
+    // valid value
+    await valueField.fill("4px");
+    await expect(
+      tokensUpdateCreateModal.getByText("Resolved value: 4"),
+    ).toBeVisible();
+
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
+
+    await expect(
+      tokensTabPanel.getByText("dimension.spacing.small"),
+    ).toBeVisible();
+
+    // Global set has been auto created and is active
+    await expect(
+      tokenThemesSetsSidebar.getByRole("button", {
+        name: "Global",
+      }),
+    ).toHaveCount(1);
+    await expect(
+      tokenThemesSetsSidebar.getByRole("button", {
+        name: "Global",
+      }),
+    ).toHaveAttribute("aria-checked", "true");
+  });
+
   test("User edits token and auto created set show up in the sidebar", async ({
     page,
   }) => {
@@ -157,13 +227,13 @@ test.describe("Tokens: Tokens Tab", () => {
     const tokensColorGroup = tokensSidebar.getByRole("button", {
       name: "Color 92",
     });
-    await expect(tokensColorGroup).toBeVisible;
+    await expect(tokensColorGroup).toBeVisible();
     await tokensColorGroup.click();
 
     const colorToken = tokensSidebar.getByRole("button", {
       name: "colors.blue.100",
     });
-    await expect(colorToken).toBeVisible;
+    await expect(colorToken).toBeVisible();
     await colorToken.click({ button: "right" });
 
     await expect(tokenContextMenuForToken).toBeVisible();
@@ -298,6 +368,80 @@ test.describe("Tokens: Tokens Tab", () => {
 
     await expect(tokensTabPanel.getByLabel("color.dark.primary")).toBeEnabled();
   });
+
+  test("User duplicate color token", async ({ page }) => {
+    const { tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFile(page);
+
+    await expect(tokensSidebar).toBeVisible();
+
+    const tokensColorGroup = tokensSidebar.getByRole("button", {
+      name: "Color 92",
+    });
+
+    await expect(tokensColorGroup).toBeVisible();
+    await tokensColorGroup.click();
+
+    const colorToken = tokensSidebar.getByRole("button", {
+      name: "colors.blue.100",
+    });
+
+    await colorToken.click({ button: "right" });
+    await expect(tokenContextMenuForToken).toBeVisible();
+
+    await tokenContextMenuForToken.getByText("Duplicate token").click();
+    await expect(tokenContextMenuForToken).not.toBeVisible();
+
+    await expect(
+      tokensSidebar.getByRole("button", { name: "colors.blue.100-copy" }),
+    ).toBeVisible();
+  });
+
+  test("User delete color token", async ({ page }) => {
+    const { tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFile(page);
+
+    await expect(tokensSidebar).toBeVisible();
+
+    const tokensColorGroup = tokensSidebar.getByRole("button", {
+      name: "Color 92",
+    });
+    await expect(tokensColorGroup).toBeVisible();
+
+    await tokensColorGroup.click();
+
+    const colorToken = tokensSidebar.getByRole("button", {
+      name: "colors.blue.100",
+    });
+    await expect(colorToken).toBeVisible();
+    await colorToken.click({ button: "right" });
+
+    await expect(tokenContextMenuForToken).toBeVisible();
+    await tokenContextMenuForToken.getByText("Delete token").click();
+
+    await expect(tokenContextMenuForToken).not.toBeVisible();
+    await expect(colorToken).not.toBeVisible();
+  });
+
+  test("User fold/unfold color tokens", async ({ page }) => {
+    const { tokensSidebar, tokenContextMenuForToken } =
+      await setupTokensFile(page);
+
+    await expect(tokensSidebar).toBeVisible();
+
+    const tokensColorGroup = tokensSidebar.getByRole("button", {
+      name: "Color 92",
+    });
+    await expect(tokensColorGroup).toBeVisible();
+    await tokensColorGroup.click();
+
+    const colorToken = tokensSidebar.getByRole("button", {
+      name: "colors.blue.100",
+    });
+    await expect(colorToken).toBeVisible();
+    await tokensColorGroup.click();
+    await expect(colorToken).not.toBeVisible();
+  });
 });
 
 test.describe("Tokens: Sets Tab", () => {
@@ -327,13 +471,8 @@ test.describe("Tokens: Sets Tab", () => {
   test("User creates sets tree structure by entering a set path", async ({
     page,
   }) => {
-    const {
-      workspacePage,
-      tokenThemesSetsSidebar,
-      tokenSetItems,
-      tokenSetGroupItems,
-      tokenContextMenuForSet,
-    } = await setupEmptyTokensFile(page);
+    const { tokenThemesSetsSidebar, tokenContextMenuForSet } =
+      await setupEmptyTokensFile(page);
 
     const tokensTabButton = tokenThemesSetsSidebar
       .getByRole("button", { name: "Add set" })
@@ -400,5 +539,197 @@ test.describe("Tokens: Sets Tab", () => {
       "sizes",
       "small",
     ]);
+
+    // User deletes set
+    await tokenThemesSetsSidebar
+      .getByRole("button", { name: "nested" })
+      .click({ button: "right" });
+    await expect(tokenContextMenuForSet).toBeVisible();
+    await tokenContextMenuForSet.getByText("Delete").click();
+
+    await assertSetsList(tokenThemesSetsSidebar, [
+      "core",
+      "colors",
+      "dark",
+      "sizes",
+      "small",
+    ]);
+  });
+
+  test("Fold/Unfold set", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokenSetGroupItems } =
+      await setupTokensFile(page);
+
+    await expect(tokenThemesSetsSidebar).toBeVisible();
+
+    const darkSet = tokenThemesSetsSidebar.getByRole("button", {
+      name: "dark",
+      exact: true,
+    });
+
+    await expect(darkSet).toBeVisible();
+
+    const setGroup = await tokenSetGroupItems
+      .filter({ hasText: "LightDark" })
+      .first();
+
+    await setGroup.getByRole("button").filter({ title: "Collapse" }).click();
+
+    await expect(darkSet).toHaveCount(0);
+  });
+
+  test("Change current theme", async ({ page }) => {
+    const { tokenThemesSetsSidebar, tokenSetItems } =
+      await setupTokensFile(page);
+
+    await expect(tokenSetItems.nth(1)).toHaveAttribute("aria-checked", "true");
+    await expect(tokenSetItems.nth(2)).toHaveAttribute("aria-checked", "false");
+
+    await tokenThemesSetsSidebar.getByTestId("theme-select").click();
+    await page
+      .getByTestId("theme-select-dropdown")
+      .getByRole("option", { name: "Dark", exact: true })
+      .click();
+
+    await expect(tokenSetItems.nth(1)).toHaveAttribute("aria-checked", "false");
+    await expect(tokenSetItems.nth(2)).toHaveAttribute("aria-checked", "true");
+  });
+});
+
+test.describe("Tokens: Themes modal", () => {
+  test("Delete theme", async ({ page }) => {
+    const { tokenThemeUpdateCreateModal, workspacePage } =
+      await setupTokensFile(page);
+
+    workspacePage.openTokenThemesModal();
+
+    await expect(
+      tokenThemeUpdateCreateModal.getByRole("button", { name: "Delete theme" }),
+    ).toHaveCount(2);
+
+    await tokenThemeUpdateCreateModal
+      .getByRole("button", { name: "Delete theme" })
+      .first()
+      .click();
+
+    await expect(
+      tokenThemeUpdateCreateModal.getByRole("button", { name: "Delete theme" }),
+    ).toHaveCount(1);
+  });
+
+  test("Create theme", async ({ page }) => {
+    const { tokenThemeUpdateCreateModal, workspacePage } =
+      await setupTokensFile(page);
+
+    workspacePage.openTokenThemesModal();
+
+    await tokenThemeUpdateCreateModal
+      .getByRole("button", {
+        name: "Create theme",
+      })
+      .click();
+
+    await tokenThemeUpdateCreateModal
+      .getByLabel("Group")
+      .fill("New Group name");
+    await tokenThemeUpdateCreateModal
+      .getByLabel("Theme")
+      .fill("New Theme name");
+
+    await tokenThemeUpdateCreateModal
+      .getByRole("button", {
+        name: "Save theme",
+      })
+      .click();
+
+    await expect(
+      tokenThemeUpdateCreateModal.getByText("New Theme name"),
+    ).toBeVisible();
+    await expect(
+      tokenThemeUpdateCreateModal.getByText("New Group name"),
+    ).toBeVisible();
+  });
+
+  test("Edit theme", async ({ page }) => {
+    const { tokenThemeUpdateCreateModal, workspacePage } =
+      await setupTokensFile(page);
+
+    workspacePage.openTokenThemesModal();
+
+    await expect(
+      tokenThemeUpdateCreateModal.getByText("no sets"),
+    ).not.toBeVisible();
+    await expect(
+      tokenThemeUpdateCreateModal.getByText("3 active sets"),
+    ).toHaveCount(2);
+
+    await tokenThemeUpdateCreateModal
+      .getByText("3 active sets")
+      .first()
+      .click();
+
+    await tokenThemeUpdateCreateModal
+      .getByLabel("Theme")
+      .fill("Changed Theme name");
+    await tokenThemeUpdateCreateModal
+      .getByLabel("Group")
+      .fill("Changed Group name");
+
+    const checkboxes = await tokenThemeUpdateCreateModal
+      .locator('[role="checkbox"]')
+      .all();
+
+    for (const checkbox of checkboxes) {
+      const isChecked = await checkbox.getAttribute("aria-checked");
+
+      if (isChecked === "true") {
+        await checkbox.click();
+      }
+    }
+
+    await tokenThemeUpdateCreateModal
+      .getByRole("button", {
+        name: "Save theme",
+      })
+      .click();
+
+    await expect(
+      tokenThemeUpdateCreateModal.getByText("Changed Theme name"),
+    ).toBeVisible();
+    await expect(
+      tokenThemeUpdateCreateModal.getByText("Changed Group name"),
+    ).toBeVisible();
+  });
+
+  test.describe("Tokens: Apply token", () => {
+    test("User applies color token to a shape", async ({ page }) => {
+      const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+        await setupTokensFile(page);
+
+      await page.getByRole("tab", { name: "Layers" }).click();
+
+      await workspacePage.layers
+        .getByTestId("layer-row")
+        .filter({ hasText: "Button" })
+        .click();
+
+      const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+      await tokensTabButton.click();
+
+      await tokensSidebar
+        .getByRole("button")
+        .filter({ hasText: "Color" })
+        .click();
+
+      await tokensSidebar
+        .getByRole("button", { name: "colors.black" })
+        .click({ button: "right" });
+      await tokenContextMenuForToken.getByText("Fill").click();
+      const inputColor = await workspacePage.page
+        .getByPlaceholder("Mixed")
+        .nth(2);
+
+      await expect(inputColor).toHaveValue("000000");
+    });
   });
 });
