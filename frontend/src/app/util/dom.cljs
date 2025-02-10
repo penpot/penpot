@@ -457,6 +457,10 @@
   {:width (.-innerWidth ^js js/window)
    :height (.-innerHeight ^js js/window)})
 
+(defn get-window-height
+  []
+  (.-innerHeight ^js js/window))
+
 (defn get-computed-styles
   [node]
   (js/getComputedStyle node))
