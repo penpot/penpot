@@ -32,6 +32,7 @@
    [app.util.dom :as dom]
    [app.util.functions :as uf]
    [app.util.i18n :refer [tr]]
+   [app.util.keyboard :as k]
    [cuerdas.core :as str]
    [malli.core :as m]
    [malli.error :as me]
@@ -404,7 +405,25 @@
          (fn [e]
            (mf/set-ref-val! cancel-ref nil)
            (dom/prevent-default e)
-           (modal/hide!)))]
+           (modal/hide!)))
+        handle-key-down-delete
+        (mf/use-fn
+         (mf/deps on-delete-token)
+         (fn [e]
+           (when (k/enter? e)
+             (on-delete-token e))))
+        handle-key-down-cancel
+        (mf/use-fn
+         (mf/deps on-cancel)
+         (fn [e]
+           (when (k/enter? e)
+             (on-cancel e))))
+        handle-key-down-save
+        (mf/use-fn
+         (fn [e]
+           (mf/deps on-submit)
+           (when (k/enter? e)
+             (on-submit e))))]
 
     ;; Clear form token cache on mount
     (mf/use-effect
@@ -493,18 +512,21 @@
                                   :with-delete (= action "edit"))}
        (when (= action "edit")
          [:> button* {:on-click on-delete-token
+                      :on-key-down handle-key-down-delete
                       :class (stl/css :delete-btn)
                       :type "button"
                       :icon i/delete
                       :variant "secondary"}
           (tr "labels.delete")])
        [:> button* {:on-click on-cancel
+                    :on-key-down handle-key-down-cancel
                     :type "button"
                     :on-ref  on-cancel-ref
                     :id "token-modal-cancel"
                     :variant "secondary"}
         (tr "labels.cancel")]
        [:> button* {:type "submit"
+                    :on-key-down handle-key-down-save
                     :variant "primary"
                     :disabled disabled?}
         (tr "labels.save")]]]]))
