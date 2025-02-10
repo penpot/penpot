@@ -2,6 +2,7 @@ use skia_safe as skia;
 use std::collections::HashMap;
 use uuid::Uuid;
 
+use crate::math;
 use crate::view::Viewbox;
 
 mod blend;
@@ -55,8 +56,8 @@ pub(crate) struct RenderState {
     pub render_request_id: Option<i32>,
     // Indicates whether the rendering process has pending frames.
     pub render_in_progress: bool,
-    // Stack of nodes pending to be rendered. The boolean flag indicates if the node has already been visited.
-    pub pending_nodes: Vec<(Uuid, bool)>,
+    // Stack of nodes pending to be rendered. The boolean flag indicates if the node has already been visited. The rect the optional bounds to clip.
+    pub pending_nodes: Vec<(Uuid, bool, Option<math::Rect>)>,
 }
 
 impl RenderState {
@@ -231,7 +232,7 @@ impl RenderState {
             .clear(skia::Color::TRANSPARENT);
     }
 
-    pub fn render_shape(&mut self, shape: &mut Shape, clip: bool) {
+    pub fn render_shape(&mut self, shape: &mut Shape, clip_bounds: Option<skia::Rect>) {
         let transform = shape.transform.to_skia_matrix();
 
         // Check transform-matrix code from common/src/app/common/geom/shapes/transforms.cljc
@@ -242,6 +243,12 @@ impl RenderState {
         matrix.pre_translate(-center);
 
         self.drawing_surface.canvas().concat(&matrix);
+
+        if let Some(bounds) = clip_bounds {
+            self.drawing_surface
+                .canvas()
+                .clip_rect(bounds, skia::ClipOp::Intersect, true);
+        }
 
         match &shape.kind {
             Kind::SVGRaw(sr) => {
@@ -272,12 +279,6 @@ impl RenderState {
             }
         };
 
-        if clip {
-            self.drawing_surface
-                .canvas()
-                .clip_rect(shape.bounds(), skia::ClipOp::Intersect, true);
-        }
-
         for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
             shadows::render_drop_shadow(self, shadow, self.viewbox.zoom * self.options.dpr());
         }
@@ -301,7 +302,7 @@ impl RenderState {
             self.viewbox.zoom * self.options.dpr(),
         );
         self.translate(self.viewbox.pan_x, self.viewbox.pan_y);
-        self.pending_nodes = vec![(Uuid::nil(), false)];
+        self.pending_nodes = vec![(Uuid::nil(), false, None)];
         self.render_in_progress = true;
         self.process_animation_frame(tree, timestamp)?;
         Ok(())
@@ -401,7 +402,7 @@ impl RenderState {
         }
 
         let mut i = 0;
-        while let Some((node_id, visited_children)) = self.pending_nodes.pop() {
+        while let Some((node_id, visited_children, clip_bounds)) = self.pending_nodes.pop() {
             let element = tree.get(&node_id).ok_or(
                 "Error: Element with root_id {node_id} not found in the tree.".to_string(),
             )?;
@@ -431,18 +432,21 @@ impl RenderState {
 
                 self.drawing_surface.canvas().save();
                 if !node_id.is_nil() {
-                    self.render_shape(&mut element.clone(), element.clip());
+                    self.render_shape(&mut element.clone(), clip_bounds);
                 } else {
                     self.apply_drawing_to_render_canvas();
                 }
                 self.drawing_surface.canvas().restore();
 
                 // Set the node as visited before processing children
-                self.pending_nodes.push((node_id, true));
-
+                self.pending_nodes.push((node_id, true, None));
                 if element.is_recursive() {
+                    let children_clip_bounds =
+                        (!node_id.is_nil() & element.clip()).then(|| element.bounds());
+
                     for child_id in element.children_ids().iter().rev() {
-                        self.pending_nodes.push((*child_id, false));
+                        self.pending_nodes
+                            .push((*child_id, false, children_clip_bounds));
                     }
                 }
             } else {
