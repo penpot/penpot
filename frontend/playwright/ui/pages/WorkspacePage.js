@@ -260,4 +260,9 @@ export class WorkspacePage extends BaseWebSocketPage {
   async clickTogglePalettesVisibility(clickOptions = {}) {
     await this.togglePalettesVisibility.click(clickOptions);
   }
+
+  async openTokenThemesModal(clickOptions = {}) {
+    await this.tokenThemesSetsSidebar.getByText("Edit").click(clickOptions);
+    await expect(this.tokenThemeUpdateCreateModal).toBeVisible();
+  }
 }

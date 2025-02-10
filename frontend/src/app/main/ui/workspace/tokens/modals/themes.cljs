@@ -130,6 +130,7 @@
              [:div {:class (stl/css :theme-row-right)}
               (if-let [sets-count (some-> theme :sets seq count)]
                 [:> button* {:class (stl/css :sets-count-button)
+                             :data-testid "edit-theme"
                              :variant "secondary"
                              :type "button"
                              :on-click on-edit-theme}
@@ -149,6 +150,7 @@
 
               [:> icon-button* {:on-click delete-theme
                                 :variant "ghost"
+                                :data-testid "delete-theme"
                                 :aria-label (tr "workspace.token.delete-theme-title")
                                 :icon "delete"}]]])]])]
 
