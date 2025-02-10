@@ -1160,6 +1160,10 @@ msgstr "No se han podido cargar las fuentes %s"
 msgid "errors.cannot-upload"
 msgstr "No se puede cargar el archivo multimedia."
 
+#: src/app/main/ui/comments.cljs:689
+msgid "errors.character-limit-exceeded"
+msgstr "Se ha superado el límite de caracteres"
+
 #: src/app/main/data/workspace.cljs:1463, src/app/main/data/workspace.cljs:1660
 msgid "errors.clipboard-not-implemented"
 msgstr "Tu navegador no puede realizar esta operación"
