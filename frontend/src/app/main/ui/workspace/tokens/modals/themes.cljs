@@ -25,7 +25,6 @@
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.tokens.components.controls.input-tokens :refer [input-tokens*]]
    [app.main.ui.workspace.tokens.sets :as wts]
-   [app.main.ui.workspace.tokens.sets-context :as sets-context]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as k]
@@ -339,8 +338,8 @@
         token-set-active?
         (mf/use-fn
          (mf/deps theme-state)
-         (fn [set-name]
-           (get-in theme-state [:sets set-name])))
+         (fn [name]
+           (contains? (:sets theme-state) name)))
 
         on-toggle-token-set
         (mf/use-fn
@@ -381,16 +380,15 @@
         (tr "workspace.token.set-selection-theme")]
        [:div {:class (stl/css :sets-list-wrapper)}
 
-        [:& wts/controlled-sets-list
+        [:> wts/controlled-sets-list*
          {:token-sets token-sets
-          :token-set-selected? (constantly false)
-          :token-set-active? token-set-active?
-          :token-set-group-active? token-set-group-active?
+          :is-token-set-active token-set-active?
+          :is-token-set-group-active token-set-group-active?
           :on-select on-click-token-set
+          :can-edit false
           :on-toggle-token-set on-toggle-token-set
           :on-toggle-token-set-group on-toggle-token-set-group
-          :origin "theme-modal"
-          :context sets-context/static-context}]]
+          :origin "theme-modal"}]]
 
        [:div {:class (stl/css :edit-theme-footer)}
         [:> button* {:variant "secondary"
@@ -432,5 +430,4 @@
                         :aria-label (tr "labels.close")
                         :variant "action"
                         :icon "close"}]
-      [:& sets-context/provider {}
-       [:& themes-modal-body]]]]))
+      [:& themes-modal-body]]]))

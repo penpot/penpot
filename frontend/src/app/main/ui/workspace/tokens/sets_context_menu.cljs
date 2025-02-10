@@ -8,18 +8,18 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.main.data.tokens :as wdt]
+   [app.common.types.tokens-lib :as ctob]
+   [app.main.data.tokens :as dt]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.workspace.tokens.sets-context :as sets-context]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(def ^:private ref:tokens-sets-context-menu
-  (l/derived :token-set-context-menu refs/workspace-local))
+(def ^:private ref:token-sets-context-menu
+  (l/derived :token-set-context-menu refs/workspace-tokens))
 
 (defn- prevent-default
   [event]
@@ -34,27 +34,22 @@
    [:span {:class (stl/css :title)} title]])
 
 (mf/defc menu*
+  {::mf/private true}
   [{:keys [is-group path]}]
-  (let [{:keys [on-create on-edit]} (sets-context/use-context)
-
-        create-set-at-path
-        (mf/use-fn
-         (mf/deps path on-create)
-         #(on-create path))
+  (let [create-set-at-path
+        (mf/use-fn (mf/deps path) #(st/emit! (dt/start-token-set-creation path)))
 
         edit-name
         (mf/use-fn
-         (mf/deps is-group on-edit)
+         (mf/deps path)
          (fn []
-           (let [path (if is-group
-                        (sets-context/set-group-path->id path)
-                        (sets-context/set-path->id path))]
-             (on-edit path))))
+           (let [name (ctob/join-set-path path)]
+             (st/emit! (dt/start-token-set-edition name)))))
 
         delete-set
         (mf/use-fn
          (mf/deps is-group path)
-         #(st/emit! (wdt/delete-token-set-path is-group path)))]
+         #(st/emit! (dt/delete-token-set-path is-group path)))]
 
     [:ul {:class (stl/css :context-list)}
      (when is-group
@@ -62,10 +57,10 @@
      [:> menu-entry* {:title (tr "labels.rename") :on-click edit-name}]
      [:> menu-entry* {:title (tr "labels.delete")  :on-click delete-set}]]))
 
-(mf/defc sets-context-menu*
+(mf/defc token-set-context-menu*
   []
   (let [{:keys [position is-group path]}
-        (mf/deref ref:tokens-sets-context-menu)
+        (mf/deref ref:token-sets-context-menu)
 
         position-top
         (+ (dm/get-prop position :y) 5)
@@ -74,8 +69,7 @@
         (+ (dm/get-prop position :x) 5)
 
         on-close
-        (mf/use-fn
-         #(st/emit! wdt/hide-token-set-context-menu))]
+        (mf/use-fn #(st/emit! (dt/assign-token-set-context-menu nil)))]
 
     [:& dropdown {:show (some? position)
                   :on-close on-close}

@@ -4,12 +4,28 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "../../ds/typography.scss" as *;
 @import "refactor/common-refactor.scss";
 
 .sets-list {
   width: 100%;
   margin-bottom: 0;
   overflow-y: auto;
+}
+
+.empty-sets-wrapper {
+  padding: $s-12;
+  padding-inline-start: $s-24;
+  color: var(--color-foreground-secondary);
+}
+
+.create-set-button {
+  @include use-typography("body-small");
+  background-color: transparent;
+  border: none;
+  appearance: none;
+  color: var(--color-accent-primary);
+  cursor: pointer;
 }
 
 .set-item-container {

@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.json :as json]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.event :as ev]
@@ -30,9 +29,8 @@
    [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.errors :as wte]
-   [app.main.ui.workspace.tokens.sets :refer [sets-list*]]
-   [app.main.ui.workspace.tokens.sets-context :as sets-context]
-   [app.main.ui.workspace.tokens.sets-context-menu :refer [sets-context-menu*]]
+   [app.main.ui.workspace.tokens.sets :as tsets]
+   [app.main.ui.workspace.tokens.sets-context-menu :refer [token-set-context-menu*]]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.theme-select :refer [theme-select]]
    [app.main.ui.workspace.tokens.token-pill :refer [token-pill*]]
@@ -47,7 +45,7 @@
    [shadow.resource]))
 
 (def ref:token-type-open-status
-  (l/derived #(dm/get-in % [:workspace-local :token-type-open-status]) st/state))
+  (l/derived (l/key :open-status-by-type) refs/workspace-tokens))
 
 ;; Components ------------------------------------------------------------------
 
@@ -85,7 +83,7 @@
          (fn [event token]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (st/emit! (dt/show-token-context-menu
+           (st/emit! (dt/assign-token-context-menu
                       {:type :token
                        :position (dom/get-client-position event)
                        :errors (:errors token)
@@ -200,43 +198,7 @@
                          (tr "workspace.token.no-permission-themes"))}
           [:& theme-select]]))]))
 
-(mf/defc add-set-button*
-  {::mf/private true}
-  [{:keys [style]}]
-  (let [{:keys [on-create new-path]}
-        (sets-context/use-context)
-
-        permissions
-        (mf/use-ctx ctx/permissions)
-
-        can-edit?
-        (get permissions :can-edit)
-
-        on-click
-        (mf/use-fn
-         (mf/deps on-create)
-         (fn []
-           (on-create [])))]
-
-    (if (= style "inline")
-      (when-not new-path
-        (if can-edit?
-          [:div {:class (stl/css :empty-sets-wrapper)}
-           [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
-            (tr "workspace.token.no-sets-yet")]
-           [:button {:on-click on-click
-                     :class (stl/css :create-theme-button)}
-            (tr "workspace.token.create-one")]]
-          [:div {:class (stl/css :empty-sets-wrapper)}
-           [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
-            (tr "workspace.token.no-sets-yet")]]))
-      (when can-edit?
-        [:> icon-button* {:variant "ghost"
-                          :icon "add"
-                          :on-click on-click
-                          :aria-label (tr "workspace.token.add set")}]))))
-
-(mf/defc theme-sets-list*
+(mf/defc token-sets-list*
   {::mf/private true}
   [{:keys [tokens-lib]}]
   (let [;; FIXME: This is an inneficient operation just for being
@@ -250,27 +212,31 @@
         selected-token-set-name
         (mf/deref refs/selected-token-set-name)
 
-        {:keys [new-path] :as ctx}
-        (sets-context/use-context)]
+        {:keys [token-set-edition-id
+                token-set-new-path]}
+        (mf/deref refs/workspace-tokens)]
 
     (if (and (empty? token-sets)
-             (not new-path))
-      [:> add-set-button* {:style "inline"}]
-      [:& h/sortable-container {}
-       [:> sets-list* {:tokens-lib tokens-lib
-                       :selected-token-set-name selected-token-set-name}]])))
+             (not token-set-new-path))
 
-(mf/defc themes-sets-tab*
+      (when-not token-set-new-path
+        [:> tsets/inline-add-button*])
+
+      [:> h/sortable-container {}
+       [:> tsets/sets-list*
+        {:tokens-lib tokens-lib
+         :new-path token-set-new-path
+         :edition-id token-set-edition-id
+         :selected selected-token-set-name}]])))
+
+(mf/defc token-sets-section*
   {::mf/private true}
   [{:keys [resize-height] :as props}]
-  (let [permissions
-        (mf/use-ctx ctx/permissions)
+  (let [can-edit?
+        (mf/use-ctx ctx/can-edit?)]
 
-        can-edit?
-        (get permissions :can-edit)]
-
-    [:& sets-context/provider {}
-     [:> sets-context-menu*]
+    [:*
+     [:> token-set-context-menu*]
      [:article {:data-testid "token-themes-sets-sidebar"
                 :class (stl/css :sets-section-wrapper)
                 :style {"--resize-height" (str resize-height "px")}}
@@ -279,11 +245,11 @@
        [:div {:class (stl/css :sidebar-header)}
         [:& title-bar {:title (tr "labels.sets")}
          (when can-edit?
-           [:> add-set-button* {:style "header"}])]]
+           [:> tsets/add-button*])]]
 
-       [:> theme-sets-list* props]]]]))
+       [:> token-sets-list* props]]]]))
 
-(mf/defc tokens-tab*
+(mf/defc tokens-section*
   [{:keys [tokens-lib]}]
   (let [objects         (mf/deref refs/workspace-page-objects)
         selected        (mf/deref refs/selected-shapes)
@@ -475,13 +441,14 @@
         (mf/deref refs/tokens-lib)]
 
     [:div {:class (stl/css :sidebar-wrapper)}
-     [:> themes-sets-tab* {:resize-height size-pages-opened
-                           :tokens-lib tokens-lib}]
+     [:> token-sets-section*
+      {:resize-height size-pages-opened
+       :tokens-lib tokens-lib}]
      [:article {:class (stl/css :tokens-section-wrapper)
                 :data-testid "tokens-sidebar"}
       [:div {:class (stl/css :resize-area-horiz)
              :on-pointer-down on-pointer-down-pages
              :on-lost-pointer-capture on-lost-pointer-capture-pages
              :on-pointer-move on-pointer-move-pages}]
-      [:> tokens-tab* {:tokens-lib tokens-lib}]]
+      [:> tokens-section* {:tokens-lib tokens-lib}]]
      [:> import-export-button*]]))

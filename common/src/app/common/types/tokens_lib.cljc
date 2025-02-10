@@ -691,6 +691,7 @@ used for managing active sets without a user created theme.")
           (filter some?)
           first))))
 
+;; DEPRECATED
 (defn walk-sets-tree-seq
   "Walk sets tree as a flat list.
 
@@ -738,6 +739,67 @@ used for managing active sets without a user created theme.")
                                      (= path new-editing-set-path) (assoc :new? true))]
                             (cons item (mapcat #(walk % (assoc opts :parent path :depth (inc depth))) v'))))))))))]
     (walk (or nodes (d/ordered-map)) nil)))
+
+
+(defn sets-tree-seq
+  "Get tokens sets tree as a flat list
+
+  Options:
+    `:skip-children-pred`: predicate to skip iterating over a set groups children by checking the path of the set group
+    `:new-editing-set-path`: append a an item with `:new?` at the given path"
+
+  [tree & {:keys [skip-children-pred new-at-path]
+           :or {skip-children-pred (constantly false)}}]
+  (let [walk (fn walk [[k v :as node] parent depth]
+               (lazy-seq
+                (cond
+                  ;; New set
+                  (= :is-new k)
+                  (let [tset (make-token-set :name (if (empty? parent)
+                                                     ""
+                                                     (join-set-path parent)))]
+                    [{:is-new true
+                      :is-group false
+                      :id ""
+                      :parent-path parent
+                      :token-set tset
+                      :depth depth}])
+
+                  ;; Set
+                  (and v (instance? TokenSet v))
+                  (let [name (:name v)]
+                    [{:is-group false
+                      :path (split-token-set-name name)
+                      :id name
+                      :parent-path parent
+                      :depth depth
+                      :token-set v}])
+
+                  ;; Set group
+                  (and v (d/ordered-map? v))
+                  (let [unprefixed-path (last (split-set-str-path-prefix k))
+                        path (conj parent unprefixed-path)
+                        item {:is-group true
+                              :path path
+                              :id (join-set-path path)
+                              :parent-path parent
+                              :depth depth}]
+
+                    (if (skip-children-pred path)
+                      [item]
+                      (let [v (cond-> v
+                                (= path new-at-path)
+                                (assoc :is-new true))]
+                        (cons item
+                              (mapcat #(walk % path (inc depth)) v))))))))
+
+        tree (cond-> tree
+               (= [] new-at-path)
+               (assoc :is-new true))]
+    (->> tree
+         (mapcat #(walk % [] 0))
+         (map-indexed (fn [index item]
+                        (assoc item :index index))))))
 
 (defn flatten-nested-tokens-json
   "Recursively flatten the dtcg token structure, joining keys with '.'."
