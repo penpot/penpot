@@ -53,6 +53,7 @@
   margin-bottom: 0;
   padding: $s-4 $s-6;
   color: var(--input-hint-color);
+  white-space: pre-wrap;
 }
 
 .resolved-value-placeholder {
@@ -61,6 +62,10 @@
 
 .resolved-value-error {
   --input-hint-color: var(--status-color-error-500);
+}
+
+.resolved-value-warning {
+  --input-hint-color: var(--status-color-warning-500);
 }
 
 .form-modal-title {

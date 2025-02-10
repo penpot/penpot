@@ -35,6 +35,11 @@
    {:error/code :error.style-dictionary/invalid-token-value
     :error/fn #(str "Invalid token value: " %)}
 
+   :error.style-dictionary/invalid-token-value-opacity
+   {:error/code :error.style-dictionary/invalid-token-value-opacity
+    :error/fn #(str/join "\n" [(str "Invalid token value: " % ".") "Opacity must be between 0 and 100% or 0 and 1  (e.g. 50% or 0.5)"])}
+
+
    :error/unknown
    {:error/code :error/unknown
     :error/message "Unknown error"}})
