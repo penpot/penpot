@@ -11,6 +11,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.controls.input-with-values :refer [input-with-values*]]
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list]]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg* raw-svg-list]]
@@ -44,6 +45,7 @@
     :Icon icon*
     :IconButton icon-button*
     :Input input*
+    :InputWithValues input-with-values*
     :EmptyPlaceholder empty-placeholder*
     :Loader loader*
     :RawSvg raw-svg*
