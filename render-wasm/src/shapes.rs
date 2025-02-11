@@ -3,25 +3,26 @@ use skia_safe as skia;
 use std::collections::HashMap;
 use uuid::Uuid;
 
+use crate::matrix::Matrix;
 use crate::render::BlendMode;
 
 mod blurs;
 mod bools;
 mod fills;
-mod matrix;
 mod paths;
 mod shadows;
 mod strokes;
 mod svgraw;
+mod transform;
 
 pub use blurs::*;
 pub use bools::*;
 pub use fills::*;
-use matrix::*;
 pub use paths::*;
 pub use shadows::*;
 pub use strokes::*;
 pub use svgraw::*;
+pub use transform::*;
 
 pub type CornerRadius = skia::Point;
 pub type Corners = [CornerRadius; 4];

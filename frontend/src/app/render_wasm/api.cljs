@@ -9,6 +9,7 @@
   (:require
    ["react-dom/server" :as rds]
    [app.common.data.macros :as dm]
+   [app.common.geom.matrix :as gmt]
    [app.common.math :as mth]
    [app.common.svg.path :as path]
    [app.common.uuid :as uuid]
@@ -563,11 +564,106 @@
            (rx/reduce conj [])
            (rx/subs! request-render)))))
 
+(defn uuid->u8
+  [id]
+  (let [buffer (uuid/get-u32 id)
+        u32-arr (js/Uint32Array. 4)]
+    (doseq [i (range 0 4)]
+      (aset u32-arr i (aget buffer i)))
+    (js/Uint8Array. (.-buffer u32-arr))))
+
+(defn matrix->u8
+  [{:keys [a b c d e f]}]
+  (let [f32-arr (js/Float32Array. 6)]
+    (aset f32-arr 0 a)
+    (aset f32-arr 1 b)
+    (aset f32-arr 2 c)
+    (aset f32-arr 3 d)
+    (aset f32-arr 4 e)
+    (aset f32-arr 5 f)
+    (js/Uint8Array. (.-buffer f32-arr))))
+
+(defn data->entry
+  [data offset]
+  (let [id1 (.getUint32 data (+ offset 0) true)
+        id2 (.getUint32 data (+ offset 4) true)
+        id3 (.getUint32 data (+ offset 8) true)
+        id4 (.getUint32 data (+ offset 12) true)
+
+        a (.getFloat32 data (+ offset 16) true)
+        b (.getFloat32 data (+ offset 20) true)
+        c (.getFloat32 data (+ offset 24) true)
+        d (.getFloat32 data (+ offset 28) true)
+        e (.getFloat32 data (+ offset 32) true)
+        f (.getFloat32 data (+ offset 36) true)
+
+        id (uuid/from-unsigned-parts id1 id2 id3 id4)]
+
+    {:id id
+     :transform (gmt/matrix a b c d e f)}))
+
+(defn propagate-modifiers
+  [entries]
+  (let [entry-size 40
+        ptr (h/call internal-module "_alloc_bytes" (* entry-size (count entries)))
+
+        heap
+        (js/Uint8Array.
+         (.-buffer (gobj/get ^js internal-module "HEAPU8"))
+         ptr
+         (* entry-size (count entries)))]
+
+    (loop [entries (seq entries)
+           offset  0]
+      (when-not (empty? entries)
+        (let [{:keys [id transform]} (first entries)]
+          (.set heap (uuid->u8 id) offset)
+          (.set heap (matrix->u8 transform) (+ offset 16))
+          (recur (rest entries) (+ offset entry-size)))))
+
+    (let [result-ptr (h/call internal-module "_propagate_modifiers")
+          heap (js/DataView. (.-buffer (gobj/get ^js internal-module "HEAPU8")))
+          len (.getUint32 heap result-ptr true)
+          result
+          (->> (range 0 len)
+               (mapv #(data->entry heap (+ result-ptr 4 (* % entry-size)))))]
+      (h/call internal-module "_free_bytes")
+
+      result)))
+
 (defn set-canvas-background
   [background]
   (let [rgba (rgba-from-hex background 1)]
     (h/call internal-module "_set_canvas_background" rgba)
     (request-render "set-canvas-background")))
+
+(defn set-modifiers
+  [modifiers]
+  (if (empty? modifiers)
+    (h/call internal-module "_clean_modifiers")
+
+    (let [ENTRY_SIZE 40
+
+          ptr
+          (h/call internal-module "_alloc_bytes" (* ENTRY_SIZE (count modifiers)))
+
+          heap
+          (js/Uint8Array.
+           (.-buffer (gobj/get ^js internal-module "HEAPU8"))
+           ptr
+           (* ENTRY_SIZE (count modifiers)))]
+
+      (loop [entries (seq modifiers)
+             offset  0]
+        (when-not (empty? entries)
+          (let [{:keys [id transform]} (first entries)]
+            (.set heap (uuid->u8 id) offset)
+            (.set heap (matrix->u8 transform) (+ offset 16))
+            (recur (rest entries) (+ offset ENTRY_SIZE)))))
+
+      (h/call internal-module "_set_modifiers")
+
+      (request-render "set-modifiers"))))
 
 (defn initialize
   [base-objects zoom vbox background]

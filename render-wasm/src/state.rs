@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use crate::matrix;
 use skia_safe as skia;
 use uuid::Uuid;
 
@@ -16,6 +17,7 @@ pub(crate) struct State<'a> {
     pub current_id: Option<Uuid>,
     pub current_shape: Option<&'a mut Shape>,
     pub shapes: HashMap<Uuid, Shape>,
+    pub modifiers: HashMap<Uuid, matrix::Matrix>,
 }
 
 impl<'a> State<'a> {
@@ -25,6 +27,7 @@ impl<'a> State<'a> {
             current_id: None,
             current_shape: None,
             shapes: HashMap::with_capacity(capacity),
+            modifiers: HashMap::new(),
         }
     }
 
@@ -38,13 +41,13 @@ impl<'a> State<'a> {
 
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
         self.render_state
-            .start_render_loop(&mut self.shapes, timestamp)?;
+            .start_render_loop(&mut self.shapes, &self.modifiers, timestamp)?;
         Ok(())
     }
 
     pub fn process_animation_frame(&mut self, timestamp: i32) -> Result<(), String> {
         self.render_state
-            .process_animation_frame(&mut self.shapes, timestamp)?;
+            .process_animation_frame(&mut self.shapes, &self.modifiers, timestamp)?;
         Ok(())
     }
 

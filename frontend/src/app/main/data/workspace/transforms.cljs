@@ -32,6 +32,7 @@
    [app.main.data.workspace.modifiers :as dwm]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
    [app.main.snap :as snap]
    [app.main.streams :as ms]
    [app.util.array :as array]
@@ -132,7 +133,9 @@
   (ptk/reify ::finish-transform
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-local dissoc :transform :duplicate-move-started? false))))
+      (-> state
+          (update :workspace-local dissoc :transform :duplicate-move-started?)
+          (dissoc :workspace-selrect-transform)))))
 
 ;; -- Resize --------------------------------------------------------
 
@@ -217,27 +220,23 @@
                   (not (mth/close? (dm/get-prop scalev :x) 1))
 
                   set-fix-height?
-                  (not (mth/close? (dm/get-prop scalev :y) 1))
+                  (not (mth/close? (dm/get-prop scalev :y) 1))]
 
-                  modifiers (cond-> (ctm/empty)
-                              (some? displacement)
-                              (ctm/move displacement)
+              (cond-> (ctm/empty)
+                (some? displacement)
+                (ctm/move displacement)
 
-                              :always
-                              (ctm/resize scalev resize-origin shape-transform shape-transform-inverse)
+                :always
+                (ctm/resize scalev resize-origin shape-transform shape-transform-inverse)
 
-                              ^boolean set-fix-width?
-                              (ctm/change-property :layout-item-h-sizing :fix)
+                ^boolean set-fix-width?
+                (ctm/change-property :layout-item-h-sizing :fix)
 
-                              ^boolean set-fix-height?
-                              (ctm/change-property :layout-item-v-sizing :fix)
+                ^boolean set-fix-height?
+                (ctm/change-property :layout-item-v-sizing :fix)
 
-                              ^boolean scale-text
-                              (ctm/scale-content (dm/get-prop scalev :x)))
-
-                  modif-tree (dwm/create-modif-tree ids modifiers)]
-
-              (rx/of (dwm/set-modifiers modif-tree scale-text))))
+                ^boolean scale-text
+                (ctm/scale-content (dm/get-prop scalev :x)))))
 
           ;; Unifies the instantaneous proportion lock modifier
           ;; activated by Shift key and the shapes own proportion
@@ -264,18 +263,43 @@
               focus   (:workspace-focus-selected state)
               zoom    (dm/get-in state [:workspace-local :zoom] 1)
               objects (dsh/lookup-page-objects state page-id)
-              shapes  (map (d/getf objects) ids)]
+              shapes  (map (d/getf objects) ids)
+
+              resize-events-stream
+              (->> ms/mouse-position
+                   (rx/filter some?)
+                   (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
+                   (rx/map normalize-proportion-lock)
+                   (rx/switch-map
+                    (fn [[point _ _ :as current]]
+                      (->> (snap/closest-snap-point page-id shapes objects layout zoom focus point)
+                           (rx/map #(conj current %)))))
+                   (rx/map #(resize shape initial-position layout %))
+                   (rx/share))]
 
           (rx/concat
-           (->> ms/mouse-position
-                (rx/filter some?)
-                (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
-                (rx/map normalize-proportion-lock)
-                (rx/switch-map (fn [[point _ _ :as current]]
-                                 (->> (snap/closest-snap-point page-id shapes objects layout zoom focus point)
-                                      (rx/map #(conj current %)))))
-                (rx/mapcat (partial resize shape initial-position layout))
-                (rx/take-until stopper))
+           (rx/merge
+            (->> resize-events-stream
+                 (rx/mapcat
+                  (fn [modifiers]
+                    (let [modif-tree (dwm/create-modif-tree ids modifiers)]
+                      (if (features/active-feature? state "render-wasm/v1")
+                        (rx/of
+                         (dwm/set-selrect-transform modifiers)
+                         (dwm/set-wasm-modifiers modif-tree (contains? layout :scale-text)))
+
+                        (rx/of (dwm/set-modifiers modif-tree (contains? layout :scale-text)))))))
+                 (rx/take-until stopper))
+
+            ;; The last event we need to use the old method so the elements are correctly positioned until
+            ;; all the logic is implemented in wasm
+            (if (features/active-feature? state "render-wasm/v1")
+              (->> resize-events-stream
+                   (rx/take-until stopper)
+                   (rx/last)
+                   (rx/map #(dwm/set-modifiers (dwm/create-modif-tree ids %) (contains? layout :scale-text))))
+              (rx/empty)))
+
            (rx/of (dwm/apply-modifiers)
                   (finish-transform))))))))
 
@@ -371,7 +395,7 @@
           (assoc-in [:workspace-local :transform] :rotate)))
 
     ptk/WatchEvent
-    (watch [_ _ stream]
+    (watch [_ state stream]
       (let [stopper         (mse/drag-stopper stream)
             group           (gsh/shapes->rect shapes)
             group-center    (grc/rect->center group)
@@ -390,15 +414,29 @@
                     angle (if shift?
                             (* (mth/floor (/ angle 15)) 15)
                             angle)]
-                angle))]
+                angle))
+
+            angle-stream
+            (->> ms/mouse-position
+                 (rx/with-latest-from ms/mouse-position-mod ms/mouse-position-shift)
+                 (rx/map
+                  (fn [[pos mod? shift?]]
+                    (calculate-angle pos mod? shift?)))
+                 (rx/share))]
         (rx/concat
-         (->> ms/mouse-position
-              (rx/with-latest-from ms/mouse-position-mod ms/mouse-position-shift)
-              (rx/map
-               (fn [[pos mod? shift?]]
-                 (let [delta-angle (calculate-angle pos mod? shift?)]
-                   (dwm/set-rotation-modifiers delta-angle shapes group-center))))
-              (rx/take-until stopper))
+         (rx/merge
+          (->> angle-stream
+               (rx/map
+                #(if (features/active-feature? state "render-wasm/v1")
+                   (dwm/set-wasm-rotation-modifiers % shapes group-center)
+                   (dwm/set-rotation-modifiers % shapes group-center)))
+               (rx/take-until stopper))
+          (if (features/active-feature? state "render-wasm/v1")
+            (->> angle-stream
+                 (rx/take-until stopper)
+                 (rx/last)
+                 (rx/map #(dwm/set-rotation-modifiers % shapes group-center)))
+            (rx/empty)))
          (rx/of (dwm/apply-modifiers)
                 (finish-transform)))))))
 
@@ -536,16 +574,17 @@
              position (->> ms/mouse-position
                            (rx/map #(gpt/to-vec from-position %)))
 
-             snap-delta (rx/concat
-                         ;; We send the nil first so the stream is not waiting for the first value
-                         (rx/of nil)
-                         (->> position
-                              ;; FIXME: performance throttle
-                              (rx/throttle 20)
-                              (rx/switch-map
-                               (fn [pos]
-                                 (->> (snap/closest-snap-move page-id shapes objects layout zoom focus pos)
-                                      (rx/map #(array pos %)))))))]
+             snap-delta
+             (rx/concat
+              ;; We send the nil first so the stream is not waiting for the first value
+              (rx/of nil)
+              (->> position
+                   ;; FIXME: performance throttle
+                   (rx/throttle 20)
+                   (rx/switch-map
+                    (fn [pos]
+                      (->> (snap/closest-snap-move page-id shapes objects layout zoom focus pos)
+                           (rx/map #(array pos %)))))))]
          (if (empty? shapes)
            (rx/of (finish-transform))
            (let [move-stream
@@ -570,29 +609,45 @@
                                cell-data        (when (and grid-layout? (not mod?)) (gslg/get-drop-cell target-frame objects position))]
                            (array move-vector target-frame drop-index cell-data))))
 
-                      (rx/take-until stopper))]
+                      (rx/take-until stopper))
+
+                 modifiers-stream
+                 (->> move-stream
+                      (rx/with-latest-from array/conj ms/mouse-position-shift)
+                      (rx/map
+                       (fn [[move-vector target-frame drop-index cell-data shift?]]
+                         (let [x-disp? (> (mth/abs (:x move-vector)) (mth/abs (:y move-vector)))
+                               [move-vector snap-ignore-axis]
+                               (cond
+                                 (and shift? x-disp?)
+                                 [(assoc move-vector :y 0) :y]
+
+                                 shift?
+                                 [(assoc move-vector :x 0) :x]
+
+                                 :else
+                                 [move-vector nil])]
+                           [(-> (dwm/create-modif-tree ids (ctm/move-modifiers move-vector))
+                                (dwm/build-change-frame-modifiers objects selected target-frame drop-index cell-data))
+                            snap-ignore-axis])))
+                      (rx/share))]
 
              (rx/merge
               ;; Temporary modifiers stream
-              (->> move-stream
-                   (rx/with-latest-from array/conj ms/mouse-position-shift)
+              (->> modifiers-stream
                    (rx/map
-                    (fn [[move-vector target-frame drop-index cell-data shift?]]
-                      (let [x-disp? (> (mth/abs (:x move-vector)) (mth/abs (:y move-vector)))
-                            [move-vector snap-ignore-axis]
-                            (cond
-                              (and shift? x-disp?)
-                              [(assoc move-vector :y 0) :y]
+                    (fn [[modifiers snap-ignore-axis]]
+                      (if (features/active-feature? state "render-wasm/v1")
+                        (dwm/set-wasm-modifiers modifiers false false {:snap-ignore-axis snap-ignore-axis})
+                        (dwm/set-modifiers modifiers false false {:snap-ignore-axis snap-ignore-axis})))))
 
-                              shift?
-                              [(assoc move-vector :x 0) :x]
-
-                              :else
-                              [move-vector nil])]
-
-                        (-> (dwm/create-modif-tree ids (ctm/move-modifiers move-vector))
-                            (dwm/build-change-frame-modifiers objects selected target-frame drop-index cell-data)
-                            (dwm/set-modifiers false false {:snap-ignore-axis snap-ignore-axis}))))))
+              (if (features/active-feature? state "render-wasm/v1")
+                (->> modifiers-stream
+                     (rx/last)
+                     (rx/map
+                      (fn [[modifiers snap-ignore-axis]]
+                        (dwm/set-modifiers modifiers false false {:snap-ignore-axis snap-ignore-axis}))))
+                (rx/empty))
 
               (->> move-stream
                    (rx/with-latest-from ms/mouse-position-alt)

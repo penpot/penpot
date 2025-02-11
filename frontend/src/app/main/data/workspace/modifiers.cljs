@@ -28,6 +28,8 @@
    [app.main.data.workspace.guides :as-alias dwg]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.features :as features]
+   [app.render-wasm.api :as wasm.api]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -160,8 +162,13 @@
       change-to-fixed?
       (assoc :grow-type :fixed))))
 
-(defn- clear-local-transform []
+(defn clear-local-transform []
   (ptk/reify ::clear-local-transform
+    ptk/EffectEvent
+    (effect [_ state _]
+      (when (features/active-feature? state "render-wasm/v1")
+        (wasm.api/set-modifiers nil)))
+
     ptk/UpdateEvent
     (update [_ state]
       (-> state
@@ -391,6 +398,7 @@
      (update [_ state]
        (update state :workspace-modifiers calculate-update-modifiers state ignore-constraints ignore-snap-pixel modif-tree)))))
 
+
 (defn set-modifiers
   ([modif-tree]
    (set-modifiers modif-tree false))
@@ -409,6 +417,37 @@
              modifiers (calculate-modifiers state ignore-constraints ignore-snap-pixel modif-tree page-id params)]
          (assoc state :workspace-modifiers modifiers))))))
 
+(defn set-wasm-modifiers
+  ([modif-tree]
+   (set-wasm-modifiers modif-tree false))
+
+  ([modif-tree ignore-constraints]
+   (set-wasm-modifiers modif-tree ignore-constraints false))
+
+  ([modif-tree ignore-constraints ignore-snap-pixel]
+   (set-wasm-modifiers modif-tree ignore-constraints ignore-snap-pixel nil))
+
+  ([modif-tree _ignore-constraints _ignore-snap-pixel _params]
+   (ptk/reify ::set-wasm-modifiers
+     ptk/EffectEvent
+     (effect [_ _ _]
+       (let [entries
+             (->> modif-tree
+                  (mapv (fn [[id data]]
+                          {:id id
+                           :transform (ctm/modifiers->transform (:modifiers data))})))
+
+             modifiers-new
+             (wasm.api/propagate-modifiers entries)]
+         (wasm.api/set-modifiers modifiers-new))))))
+
+(defn set-selrect-transform
+  [modifiers]
+  (ptk/reify ::set-selrect-transform
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :workspace-selrect-transform (ctm/modifiers->transform modifiers)))))
+
 (def ^:private
   xf-rotation-shape
   (comp
@@ -418,6 +457,33 @@
 
 ;; Rotation use different algorithm to calculate children
 ;; modifiers (and do not use child constraints).
+(defn set-wasm-rotation-modifiers
+  ([angle shapes]
+   (set-wasm-rotation-modifiers angle shapes (-> shapes gsh/shapes->rect grc/rect->center)))
+
+  ([angle shapes center]
+   (ptk/reify ::set-wasm-rotation-modifiers
+     ptk/EffectEvent
+     (effect [_ state _]
+       (let [objects (dsh/lookup-page-objects state)
+             ids     (sequence xf-rotation-shape shapes)
+
+             get-modifier
+             (fn [shape]
+               (ctm/rotation-modifiers shape center angle))
+
+             modif-tree
+             (-> (build-modif-tree ids objects get-modifier)
+                 (gm/set-objects-modifiers objects))
+
+             modifiers
+             (->> modif-tree
+                  (map (fn [[id {:keys [modifiers]}]]
+                         {:id id
+                          :transform (ctm/modifiers->transform modifiers)})))]
+
+         (wasm.api/set-modifiers modifiers))))))
+
 (defn set-rotation-modifiers
   ([angle shapes]
    (set-rotation-modifiers angle shapes (-> shapes gsh/shapes->rect grc/rect->center)))
@@ -575,3 +641,4 @@
           (if undo-transation?
             (rx/of (dwu/commit-undo-transaction undo-id))
             (rx/empty))))))))
+
