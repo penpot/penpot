@@ -530,7 +530,7 @@
 
 (defn- match-storage-entry-fn
   []
-  (let [pattern (str "^objects/([^/]+).json$")
+  (let [pattern "^objects/([^/]+).json$"
         pattern (re-pattern pattern)]
     (fn [entry]
       (when-let [[_ id] (re-matches pattern (zip-entry-name entry))]

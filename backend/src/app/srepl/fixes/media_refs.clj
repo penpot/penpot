@@ -20,7 +20,7 @@
          (mapcat (fn [object]
                    (->> (cfh/collect-shape-media-refs object)
                         (map (fn [id]
-                               {:object-id (:id object)
+                               {:shape-id (:id object)
                                 :id id}))))))
         process-page
         (fn [result page-id container]
