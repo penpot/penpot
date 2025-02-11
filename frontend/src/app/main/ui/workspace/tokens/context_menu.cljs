@@ -219,7 +219,7 @@
       :action (fn [event]
                 (let [{:keys [key fields]} modal]
                   (dom/stop-propagation event)
-                  (st/emit! (dt/assign-token-set-context-menu nil)
+                  (st/emit! (dt/assign-token-context-menu nil)
                             (modal/show key {:x (.-clientX ^js event)
                                              :y (.-clientY ^js event)
                                              :position :right

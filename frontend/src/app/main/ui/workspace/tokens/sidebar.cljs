@@ -82,7 +82,6 @@
         (mf/use-fn
          (fn [event token]
            (dom/prevent-default event)
-           (dom/stop-propagation event)
            (st/emit! (dt/assign-token-context-menu
                       {:type :token
                        :position (dom/get-client-position event)
