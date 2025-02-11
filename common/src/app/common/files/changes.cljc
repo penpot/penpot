@@ -685,7 +685,7 @@
       (d/update-in-when data [:components component-id] update-container))))
 
 (defn- process-operations
-  [objects {:keys [id operations] :as change}]
+  [objects {:keys [page-id id operations] :as change}]
   (if-let [shape (get objects id)]
     (let [shape    (reduce process-operation shape operations)
           touched? (-> shape meta ::ctn/touched)]
@@ -694,6 +694,10 @@
       ;; need to report them for to be used in the second
       ;; phase of changes procesing
       (when touched? (some-> *touched-changes* (vswap! conj change)))
+
+      (when (and *state* page-id)
+        (swap! *state* collect-shape-media-refs shape page-id))
+
       (assoc objects id shape))
 
     objects))
