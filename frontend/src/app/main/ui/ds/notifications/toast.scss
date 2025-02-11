@@ -26,6 +26,22 @@
   z-index: var(--toast-vertical-index);
 }
 
+.level-info {
+  --toast-icon-color: var(--color-accent-info);
+}
+
+.level-error {
+  --toast-icon-color: var(--color-accent-error);
+}
+
+.level-warning {
+  --toast-icon-color: var(--color-accent-warning);
+}
+
+.level-success {
+  --toast-icon-color: var(--color-accent-success);
+}
+
 .close-button {
   appearance: none;
   width: $sz-16;

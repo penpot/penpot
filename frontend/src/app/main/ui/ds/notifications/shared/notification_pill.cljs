@@ -23,20 +23,31 @@
 (def ^:private schema:notification-pill
   [:map
    [:level [:enum :info :warning :error :success]]
-   [:type  [:enum :toast :context]]])
+   [:type  [:enum :toast :context]]
+   [:appearance {:optional true} [:enum :neutral :ghost]]
+   [:is-html {:optional true} :boolean]])
 
 (mf/defc notification-pill*
   {::mf/props :obj
    ::mf/schema schema:notification-pill}
-  [{:keys [level type children]}]
+  [{:keys [level type is-html appearance children]}]
   (let [class (stl/css-case :notification-pill true
+                            :appearance-neutral (= appearance :neutral)
+                            :appearance-ghost (= appearance :ghost)
                             :type-toast (= type :toast)
                             :type-context (= type :context)
                             :level-warning  (= level :warning)
                             :level-error    (= level :error)
                             :level-success  (= level :success)
                             :level-info     (= level :info))
+        is-html (or is-html false)
         icon-id (icons-by-level level)]
     [:div {:class class}
      [:> i/icon* {:icon-id icon-id :class (stl/css :icon)}]
-     children]))
+      ;; The content can arrive in markdown format, in these cases
+   ;;  we will use the prop is-html to true to indicate it and
+   ;; that the html injection is performed and the necessary css classes are applied.
+     (if is-html
+       [:div {:class (stl/css :context-text)
+              :dangerouslySetInnerHTML #js {:__html children}}]
+       children)]))
