@@ -392,7 +392,7 @@ impl RenderState {
         ));
         self.final_surface
             .canvas()
-            .draw_image(image.clone(), (0, 0), Some(&paint));
+            .draw_image(image, (0, 0), Some(&paint));
 
         self.final_surface.canvas().restore();
         self.drawing_surface.canvas().restore();
@@ -408,7 +408,7 @@ impl RenderState {
 
     pub fn render_shape_tree(
         &mut self,
-        tree: &HashMap<Uuid, Shape>,
+        tree: &mut HashMap<Uuid, Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
         timestamp: i32,
     ) -> Result<(), String> {
@@ -418,17 +418,17 @@ impl RenderState {
 
         let mut i = 0;
         while let Some((node_id, visited_children, clip_bounds)) = self.pending_nodes.pop() {
-            let element = tree.get(&node_id).ok_or(
+            let element = tree.get_mut(&node_id).ok_or(
                 "Error: Element with root_id {node_id} not found in the tree.".to_string(),
             )?;
 
             if !visited_children {
                 if !node_id.is_nil() {
                     if !element.bounds().intersects(self.viewbox.area) || element.hidden() {
-                        debug::render_debug_element(self, element, false);
+                        debug::render_debug_element(self, &element, false);
                         continue;
                     } else {
-                        debug::render_debug_element(self, element, true);
+                        debug::render_debug_element(self, &element, true);
                     }
                 }
 
@@ -447,11 +447,7 @@ impl RenderState {
 
                 self.drawing_surface.canvas().save();
                 if !node_id.is_nil() {
-                    self.render_shape(
-                        &mut element.clone(),
-                        modifiers.get(&element.id),
-                        clip_bounds,
-                    );
+                    self.render_shape(element, modifiers.get(&element.id), clip_bounds);
                 } else {
                     self.apply_drawing_to_render_canvas();
                 }
