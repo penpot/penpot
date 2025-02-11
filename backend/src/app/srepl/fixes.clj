@@ -55,7 +55,7 @@
   (let [conn  (db/get-connection h/*system*)
         used  (cfh/collect-used-media data)
         ids   (db/create-array conn "uuid" used)
-        sql   (str "SELECT * FROM file_media_object WHERE id = ANY(?)")
+        sql   "SELECT * FROM file_media_object WHERE id = ANY(?)"
         rows  (db/exec! conn [sql ids])
         index (reduce (fn [index media]
                         (if (not= (:file-id media) id)
