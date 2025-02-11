@@ -241,7 +241,7 @@ test.describe("Tokens: Tokens Tab", () => {
       .click();
 
     await expect(
-      tokenThemeUpdateCreateModal.getByText("Changed" + "4 sets"),
+      tokenThemeUpdateCreateModal.getByText("Changed" + "4 active sets"),
     ).toBeVisible();
 
     await tokenThemeUpdateCreateModal
