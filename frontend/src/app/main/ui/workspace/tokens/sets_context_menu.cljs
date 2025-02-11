@@ -39,14 +39,14 @@
   (let [create-set-at-path
         (mf/use-fn (mf/deps path) #(st/emit! (dt/start-token-set-creation path)))
 
-        edit-name
+        on-edit
         (mf/use-fn
          (mf/deps path)
          (fn []
            (let [name (ctob/join-set-path path)]
              (st/emit! (dt/start-token-set-edition name)))))
 
-        delete-set
+        on-delete
         (mf/use-fn
          (mf/deps is-group path)
          #(st/emit! (dt/delete-token-set-path is-group path)))]
@@ -54,8 +54,8 @@
     [:ul {:class (stl/css :context-list)}
      (when is-group
        [:> menu-entry* {:title (tr "workspace.token.add-set-to-group") :on-click create-set-at-path}])
-     [:> menu-entry* {:title (tr "labels.rename") :on-click edit-name}]
-     [:> menu-entry* {:title (tr "labels.delete")  :on-click delete-set}]]))
+     [:> menu-entry* {:title (tr "labels.rename") :on-click on-edit}]
+     [:> menu-entry* {:title (tr "labels.delete")  :on-click on-delete}]]))
 
 (mf/defc token-set-context-menu*
   []

@@ -181,7 +181,8 @@
         (rx/of (dch/commit-changes changes)
                (wtu/update-workspace-tokens))))))
 
-(defn delete-token-set-path [group? path]
+(defn delete-token-set-path
+  [group? path]
   (ptk/reify ::delete-token-set-path
     ptk/WatchEvent
     (watch [it state _]
@@ -189,9 +190,8 @@
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/delete-token-set-path group? path))]
-        (rx/of
-         (dch/commit-changes changes)
-         (wtu/update-workspace-tokens))))))
+        (rx/of (dch/commit-changes changes)
+               (wtu/update-workspace-tokens))))))
 
 (defn drop-error [{:keys [error to-path]}]
   (ptk/reify ::drop-error

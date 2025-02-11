@@ -48,7 +48,8 @@
             (dt/update-token-set (:name token-set) (ctob/update-name token-set name))))
 
 (defn- on-update-token-set-group [path name]
-  (st/emit! (dt/rename-token-set-group path name)))
+  (st/emit! (dt/clear-token-set-edition)
+            (dt/rename-token-set-group path name)))
 
 (defn- on-create-token-set [name token-set]
   (st/emit! (ptk/data-event ::ev/event {::ev/name "create-token-set" :name name})
