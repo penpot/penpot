@@ -31,6 +31,8 @@
 ;; TOKENS Getters
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; FIXME: lookup rename
+
 (defn get-tokens-lib
   [state]
   (-> (dsh/lookup-file-data state)
@@ -237,32 +239,37 @@
   (ptk/reify ::update-create-token
     ptk/WatchEvent
     (watch [it state _]
-      (let [data (dsh/lookup-file-data state)
-            token-set (dwts/get-selected-token-set state)
-            set-name (or (:name token-set) "Global")
-            changes (if (not token-set)
-                      ;; No set created add a global set
-                      (let [tokens-lib (get-tokens-lib state)
-                            token-set (ctob/make-token-set :name set-name :tokens {(:name token) token})
-                            hidden-theme (ctob/make-hidden-token-theme :sets [set-name])
-                            active-theme-paths (some-> tokens-lib ctob/get-active-theme-paths)
-                            add-to-hidden-theme? (= active-theme-paths #{ctob/hidden-token-theme-path})
-                            base-changes (pcb/add-token-set (pcb/empty-changes) token-set)]
-                        (cond
-                          (not tokens-lib)
-                          (-> base-changes
-                              (pcb/add-token-theme hidden-theme)
-                              (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} #{}))
+      (let [data       (dsh/lookup-file-data state)
+            selected   (dm/get-in state [:workspace-tokens :selected-token-set-name])
 
-                          add-to-hidden-theme?
-                          (let [prev-hidden-theme (ctob/get-theme tokens-lib ctob/hidden-token-theme-group ctob/hidden-token-theme-name)]
-                            (-> base-changes
-                                (pcb/update-token-theme (ctob/toggle-set prev-hidden-theme ctob/hidden-token-theme-path) prev-hidden-theme)))
+            tokens-lib (get-tokens-lib state)
+            token-set  (if selected
+                         (some-> tokens-lib (ctob/get-set selected))
+                         (some-> tokens-lib (ctob/get-sets) (first)))
 
-                          :else base-changes))
-                      (-> (pcb/empty-changes it)
-                          (pcb/with-library-data data)
-                          (pcb/set-token set-name (or prev-token-name (:name token)) token)))]
+            set-name   (or (:name token-set) "Global")
+            changes    (if (not token-set)
+                         ;; No set created add a global set
+                         (let [token-set (ctob/make-token-set :name set-name :tokens {(:name token) token})
+                               hidden-theme (ctob/make-hidden-token-theme :sets [set-name])
+                               active-theme-paths (some-> tokens-lib ctob/get-active-theme-paths)
+                               add-to-hidden-theme? (= active-theme-paths #{ctob/hidden-token-theme-path})
+                               base-changes (pcb/add-token-set (pcb/empty-changes) token-set)]
+                           (cond
+                             (not tokens-lib)
+                             (-> base-changes
+                                 (pcb/add-token-theme hidden-theme)
+                                 (pcb/update-active-token-themes #{ctob/hidden-token-theme-path} #{}))
+
+                             add-to-hidden-theme?
+                             (let [prev-hidden-theme (ctob/get-theme tokens-lib ctob/hidden-token-theme-group ctob/hidden-token-theme-name)]
+                               (-> base-changes
+                                   (pcb/update-token-theme (ctob/toggle-set prev-hidden-theme ctob/hidden-token-theme-path) prev-hidden-theme)))
+
+                             :else base-changes))
+                         (-> (pcb/empty-changes it)
+                             (pcb/with-library-data data)
+                             (pcb/set-token set-name (or prev-token-name (:name token)) token)))]
 
         (rx/of
          (set-selected-token-set-name set-name)
