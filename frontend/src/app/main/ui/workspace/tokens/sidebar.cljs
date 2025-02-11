@@ -305,29 +305,14 @@
           (get-sorted-token-groups tokens-by-type))]
 
     (mf/with-effect [tokens-lib selected-token-set-name]
-      (when tokens-lib
-        (if selected-token-set-name
-          ;; WORKAROUND: because we don't have a stable reference (by
-          ;; ID per example) to token sets, when a set is moved the
-          ;; name/path of the set changes and now can point to not
-          ;; existing object; on this cases we perform a best effort
-          ;; search around all existing sets that matches the
-          ;; name (and not the path) and select it if it is found
-          (when-not (ctob/get-set tokens-lib selected-token-set-name)
-            (let [selected-name (ctob/get-token-set-final-name selected-token-set-name)
-                  match         (->> (ctob/get-sets tokens-lib)
-                                     (map :name)
-                                     (filter (fn [name]
-                                               (let [path (ctob/split-token-set-name name)]
-                                                 (= (peek path) selected-name))))
-                                     (first))]
-              (when match
-                (st/emit! (dt/set-selected-token-set-name match)))))
-
-          (let [match (->> (ctob/get-sets tokens-lib)
-                           (first)
-                           (:name))]
-            (st/emit! (dt/set-selected-token-set-name match))))))
+      (when (and tokens-lib
+                 (or (nil? selected-token-set-name)
+                     (and selected-token-set-name
+                          (not (ctob/get-set tokens-lib selected-token-set-name)))))
+        (let [match (->> (ctob/get-sets tokens-lib)
+                         (first)
+                         (:name))]
+          (st/emit! (dt/set-selected-token-set-name match)))))
 
     [:*
      [:& token-context-menu]
