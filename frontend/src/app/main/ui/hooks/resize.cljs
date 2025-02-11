@@ -48,6 +48,14 @@
          start-size-ref (mf/use-ref nil)
          start-ref      (mf/use-ref nil)
 
+         window-height (dom/get-window-height)
+
+         max-val (mf/with-memo [max-val window-height]
+                   (let [parsed-max-val (when (string? max-val) (d/parse-double max-val))]
+                     (if parsed-max-val
+                       (* window-height parsed-max-val)
+                       max-val)))
+
          on-pointer-down
          (mf/use-fn
           (mf/deps current-size)
@@ -79,6 +87,7 @@
                               (get axis))
 
                     start-size (mf/ref-val start-size-ref)
+
                     new-size (-> (+ start-size delta) (max min-val) (min max-val))]
                 (reset! current-size* new-size)
                 (swap! storage/user update-persistent-state file-id key new-size)))))

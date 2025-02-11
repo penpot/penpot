@@ -365,7 +365,7 @@
          on-lost-pointer-capture-pages :on-lost-pointer-capture
          on-pointer-move-pages :on-pointer-move
          size-pages-opened :size}
-        (use-resize-hook :tokens 200 38 400 :y false nil)]
+        (use-resize-hook :tokens 200 38 "0.6" :y false nil)]
     [:div {:class (stl/css :sidebar-wrapper)}
      [:& themes-sets-tab {:resize-height size-pages-opened}]
      [:article {:class (stl/css :tokens-section-wrapper)
