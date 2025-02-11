@@ -6,29 +6,38 @@
 
 import * as React from "react";
 import Components from "@target/components";
-import { action } from "@storybook/addon-actions";
 
-const { Toast } = Components;
+const { ContextNotification } = Components;
 
 export default {
-  title: "Notifications/Toast",
-  component: Toast,
+  title: "Notifications/ContextNotification",
+  component: ContextNotification,
   argTypes: {
     children: {
       control: { type: "text" },
     },
+    appearance: {
+      options: ["neutral", "ghost"],
+      control: { type: "select" },
+    },
+    level: {
+      options: ["info", "error", "warning", "success"],
+      control: { type: "select" },
+    },
   },
   args: {
     children: "Lorem ipsum",
-    type: "toast",
-    onClose: action("on-close"),
+    isHtml: false,
+    type: "context",
+    appearance: "neutral",
+    level: "info",
   },
   parameters: {
     controls: {
-      exclude: ["onClose", "type"],
+      exclude: ["type", "isHtml"],
     },
   },
-  render: ({ ...args }) => <Toast {...args} />,
+  render: ({ ...args }) => <ContextNotification {...args} />,
 };
 
 export const Default = {};
@@ -37,6 +46,9 @@ export const WithLongerText = {
   args: {
     children:
       "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent lorem ante, bibendum sed ex.",
+  },
+  parameters: {
+    controls: { exclude: ["isHtml"] },
   },
 };
 
@@ -56,7 +68,7 @@ export const Info = {
     level: "info",
   },
   parameters: {
-    controls: { exclude: ["level", "onClose"] },
+    controls: { exclude: ["level", "isHtml"] },
   },
 };
 
@@ -65,7 +77,7 @@ export const Error = {
     level: "error",
   },
   parameters: {
-    controls: { exclude: ["level", "onClose"] },
+    controls: { exclude: ["level", "isHtml"] },
   },
 };
 
@@ -74,7 +86,7 @@ export const Warning = {
     level: "warning",
   },
   parameters: {
-    controls: { exclude: ["level", "onClose"] },
+    controls: { exclude: ["level", "isHtml"] },
   },
 };
 
@@ -83,6 +95,6 @@ export const Success = {
     level: "success",
   },
   parameters: {
-    controls: { exclude: ["level", "onClose"] },
+    controls: { exclude: ["level", "isHtml"] },
   },
 };

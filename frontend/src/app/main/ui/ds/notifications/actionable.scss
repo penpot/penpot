@@ -27,4 +27,10 @@
   justify-content: space-between;
   padding: var(--actionable-padding);
   padding-inline-start: var(--sp-l);
+
+  // Targets the potential links included by the creator in the children props.
+  & a {
+    color: var(--color-accent-primary);
+    text-decoration: none;
+  }
 }

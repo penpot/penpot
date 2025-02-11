@@ -21,6 +21,7 @@
    [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon* token-status-list]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.ds.notifications.actionable :refer [actionable*]]
+   [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.notifications.shared.notification-pill :refer [notification-pill*]]
    [app.main.ui.ds.notifications.toast :refer [toast*]]
    [app.main.ui.ds.product.autosaved-milestone :refer [autosaved-milestone*]]
@@ -55,6 +56,7 @@
     :Text text*
     :TabSwitcher tab-switcher*
     :Toast toast*
+    :ContextNotification context-notification*
     :NotificationPill notification-pill*
     :Actionable actionable*
     :TokenStatusIcon token-status-icon*

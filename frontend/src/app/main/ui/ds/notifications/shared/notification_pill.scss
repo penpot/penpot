@@ -27,10 +27,20 @@
   gap: var(--sp-s);
 
   color: var(--notification-fg-color);
+
+  // Targets the potential links included by the creator in the children props.
+  & a {
+    color: var(--color-accent-primary);
+    text-decoration: none;
+  }
 }
 
 .type-toast {
   padding-inline-end: var(--sp-xxxl);
+}
+
+.appearance-ghost {
+  background-color: transparent;
 }
 
 .level-info {
