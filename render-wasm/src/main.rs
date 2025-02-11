@@ -1,11 +1,7 @@
-use std::collections::HashSet;
-use uuid::Uuid;
-
 use skia_safe as skia;
 
 mod debug;
 mod math;
-mod matrix;
 mod mem;
 mod render;
 mod shapes;
@@ -14,7 +10,7 @@ mod utils;
 mod view;
 
 use crate::mem::SerializableResult;
-use crate::shapes::{BoolType, Kind, Path, TransformEntry};
+use crate::shapes::{BoolType, ConstraintH, ConstraintV, Kind, Path, TransformEntry};
 use crate::state::State;
 use crate::utils::uuid_from_u32_quartet;
 
@@ -268,20 +264,22 @@ pub extern "C" fn add_shape_radial_fill(
 }
 
 #[no_mangle]
-pub extern "C" fn add_shape_fill_stops(ptr: *mut shapes::RawStopData, n_stops: u32) {
+pub extern "C" fn add_shape_fill_stops() {
+    let bytes = mem::bytes();
+
+    let entries: Vec<_> = bytes
+        .chunks(size_of::<shapes::RawStopData>())
+        .map(|data| shapes::RawStopData::from_bytes(data.try_into().unwrap()))
+        .collect();
+
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
 
     if let Some(shape) = state.current_shape() {
-        let len = n_stops as usize;
-
-        unsafe {
-            let buffer = Vec::<shapes::RawStopData>::from_raw_parts(ptr, len, len);
-            shape
-                .add_fill_gradient_stops(buffer)
-                .expect("could not add gradient stops");
-            mem::free_bytes();
-        }
+        shape
+            .add_fill_gradient_stops(entries)
+            .expect("could not add gradient stops");
     }
+    mem::free_bytes();
 }
 
 #[no_mangle]
@@ -387,6 +385,22 @@ pub extern "C" fn set_shape_opacity(opacity: f32) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.set_opacity(opacity);
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn set_shape_constraint_h(constraint: u8) {
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape.set_constraint_h(ConstraintH::from(constraint))
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn set_shape_constraint_v(constraint: u8) {
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape.set_constraint_v(ConstraintV::from(constraint))
     }
 }
 
@@ -598,37 +612,14 @@ pub extern "C" fn set_shape_path_attrs(num_attrs: u32) {
 pub extern "C" fn propagate_modifiers() -> *mut u8 {
     let bytes = mem::bytes();
 
-    let mut entries: Vec<_> = bytes
-        .chunks(size_of::<TransformEntry>())
+    let entries: Vec<_> = bytes
+        .chunks(size_of::<<TransformEntry as SerializableResult>::BytesType>())
         .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
         .collect();
 
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
+    let result = shapes::propagate_modifiers(state, entries);
 
-    let mut processed = HashSet::<Uuid>::new();
-
-    let mut result = Vec::<TransformEntry>::new();
-
-    // Propagate the transform to children
-    while let Some(entry) = entries.pop() {
-        if !processed.contains(&entry.id) {
-            if let Some(shape) = state.shapes.get(&entry.id) {
-                let mut children: Vec<TransformEntry> = shape
-                    .children
-                    .iter()
-                    .map(|id| TransformEntry {
-                        id: id.clone(),
-                        transform: entry.transform,
-                    })
-                    .collect();
-
-                entries.append(&mut children);
-
-                processed.insert(entry.id);
-                result.push(entry.clone());
-            }
-        }
-    }
     mem::write_vec(result)
 }
 
@@ -644,7 +635,7 @@ pub extern "C" fn set_modifiers() {
     let bytes = mem::bytes();
 
     let entries: Vec<_> = bytes
-        .chunks(size_of::<TransformEntry>())
+        .chunks(size_of::<<TransformEntry as SerializableResult>::BytesType>())
         .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
         .collect();
 

@@ -67,11 +67,13 @@ fn draw_image_fill_in_container(
             canvas.clip_path(&oval_path, skia::ClipOp::Intersect, true);
         }
         Kind::Path(path) | Kind::Bool(_, path) => {
-            canvas.clip_path(
-                &path.to_skia_path().transform(&path_transform.unwrap()),
-                skia::ClipOp::Intersect,
-                true,
-            );
+            if let Some(path_transform) = path_transform {
+                canvas.clip_path(
+                    &path.to_skia_path().transform(&path_transform),
+                    skia::ClipOp::Intersect,
+                    true,
+                );
+            }
         }
         Kind::SVGRaw(_) => {
             canvas.clip_rect(container, skia::ClipOp::Intersect, true);
@@ -79,7 +81,9 @@ fn draw_image_fill_in_container(
     }
 
     // Draw the image with the calculated destination rectangle
-    canvas.draw_image_rect(image.unwrap(), None, dest_rect, &paint);
+    if let Some(image) = image {
+        canvas.draw_image_rect(image, None, dest_rect, &paint);
+    }
 
     // Restore the canvas to remove the clipping
     canvas.restore();
@@ -110,11 +114,14 @@ pub fn render(render_state: &mut RenderState, shape: &Shape, fill: &Fill) {
         (_, Kind::Path(path)) | (_, Kind::Bool(_, path)) => {
             let svg_attrs = &shape.svg_attrs;
             let mut skia_path = &mut path.to_skia_path();
-            skia_path = skia_path.transform(&path_transform.unwrap());
-            if let Some("evenodd") = svg_attrs.get("fill-rule").map(String::as_str) {
-                skia_path.set_fill_type(skia::PathFillType::EvenOdd);
+
+            if let Some(path_transform) = path_transform {
+                skia_path = skia_path.transform(&path_transform);
+                if let Some("evenodd") = svg_attrs.get("fill-rule").map(String::as_str) {
+                    skia_path.set_fill_type(skia::PathFillType::EvenOdd);
+                }
+                canvas.draw_path(&skia_path, &fill.to_paint(&selrect));
             }
-            canvas.draw_path(&skia_path, &fill.to_paint(&selrect));
         }
         (_, _) => todo!(),
     }

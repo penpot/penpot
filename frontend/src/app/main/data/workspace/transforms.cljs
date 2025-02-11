@@ -297,11 +297,15 @@
               (->> resize-events-stream
                    (rx/take-until stopper)
                    (rx/last)
-                   (rx/map #(dwm/set-modifiers (dwm/create-modif-tree ids %) (contains? layout :scale-text))))
+                   (rx/map #(dwm/apply-modifiers {:modifiers (dwm/create-modif-tree ids %)
+                                                  :ignore-constraints (contains? layout :scale-text)})))
               (rx/empty)))
 
-           (rx/of (dwm/apply-modifiers)
-                  (finish-transform))))))))
+           (rx/of
+            (if (features/active-feature? state "render-wasm/v1")
+              (dwm/clear-local-transform)
+              (dwm/apply-modifiers))
+            (finish-transform))))))))
 
 (defn trigger-bounding-box-cloaking
   "Trigger the bounding box cloaking (with default timer of 1sec)

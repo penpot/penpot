@@ -249,7 +249,7 @@
                                                                          offset (:offset stop)]
                                                                      [r g b a (* 100 offset)]))
                                                                  stops)))))
-                (h/call internal-module "_add_shape_fill_stops" stops-ptr n-stops))
+                (h/call internal-module "_add_shape_fill_stops"))
 
               (some? image)
               (let [id            (dm/get-prop image :id)
@@ -422,6 +422,34 @@
 (defn set-shape-opacity
   [opacity]
   (h/call internal-module "_set_shape_opacity" (or opacity 1)))
+
+(defn- translate-constraint-h
+  [type]
+  (case type
+    :left      0
+    :right     1
+    :leftright 2
+    :center    3
+    :scale     4))
+
+(defn set-constraints-h
+  [constraint]
+  (when constraint
+    (h/call internal-module "_set_shape_constraint_h" (translate-constraint-h constraint))))
+
+(defn- translate-constraint-v
+  [type]
+  (case type
+    :top       0
+    :bottom    1
+    :topbottom 2
+    :center    3
+    :scale     4))
+
+(defn set-constraints-v
+  [constraint]
+  (when constraint
+    (h/call internal-module "_set_shape_constraint_v" (translate-constraint-v constraint))))
 
 (defn set-shape-hidden
   [hidden]

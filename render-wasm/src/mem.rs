@@ -57,7 +57,7 @@ pub trait SerializableResult {
   by the implementation of SerializableResult trait
 */
 pub fn write_vec<T: SerializableResult>(result: Vec<T>) -> *mut u8 {
-    let elem_size = size_of::<T>();
+    let elem_size = size_of::<T::BytesType>();
     let bytes_len = 4 + result.len() * elem_size;
     let mut result_bytes = Vec::<u8>::with_capacity(bytes_len);
 
