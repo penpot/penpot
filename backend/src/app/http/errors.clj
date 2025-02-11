@@ -55,13 +55,16 @@
    ::yres/body (ex-data err)})
 
 (defmethod handle-error :restriction
-  [err _ _]
+  [err request _]
   (let [{:keys [code] :as data} (ex-data err)]
     (if (= code :method-not-allowed)
       {::yres/status 405
        ::yres/body data}
-      {::yres/status 400
-       ::yres/body data})))
+
+      (binding [l/*context* (request->context request)]
+        (l/err :hint "restriction error" :data data)
+        {::yres/status 400
+         ::yres/body data}))))
 
 (defmethod handle-error :rate-limit
   [err _ _]
