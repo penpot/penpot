@@ -36,14 +36,16 @@
 (defn- on-toggle-token-set-click [name]
   (st/emit! (dt/toggle-token-set name)))
 
-(defn- on-toggle-token-set-group-click [group-path]
-  (st/emit! (dt/toggle-token-set-group group-path)))
+(defn- on-toggle-token-set-group-click [path]
+  (st/emit! (dt/toggle-token-set-group path)))
 
-(defn- on-select-token-set-click [set-name]
-  (st/emit! (dt/set-selected-token-set-name set-name)))
+(defn- on-select-token-set-click [name]
+  (st/emit! (dt/set-selected-token-set-name name)))
 
-(defn on-update-token-set [set-name token-set]
-  (st/emit! (dt/update-token-set (:name token-set) (ctob/update-name token-set set-name))))
+(defn on-update-token-set
+  [name token-set]
+  (st/emit! (dt/clear-token-set-edition)
+            (dt/update-token-set (:name token-set) (ctob/update-name token-set name))))
 
 (defn- on-update-token-set-group [path name]
   (st/emit! (dt/rename-token-set-group path name)))
