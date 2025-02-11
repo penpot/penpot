@@ -146,7 +146,7 @@
 ;; Input text for comments with mentions
 (mf/defc comment-input*
   {::mf/private true}
-  [{:keys [value placeholder max-length autofocus on-focus on-blur on-change on-esc on-ctrl-enter]}]
+  [{:keys [value placeholder autofocus on-focus on-blur on-change on-esc on-ctrl-enter]}]
 
   (let [value          (d/nilv value "")
         prev-value     (h/use-previous value)
@@ -196,7 +196,7 @@
                (dom/append-child! node (create-text-node)))
 
              (let [new-input (parse-nodes node)]
-               (when (and on-change (<= (count new-input) max-length))
+               (when on-change
                  (on-change new-input))))))
 
         handle-select
@@ -637,6 +637,10 @@
                   :disabled is-disabled}
       (tr "labels.post")]]))
 
+(defn- exceeds-length?
+  [content]
+  (> (count content) 750))
+
 (mf/defc comment-reply-form*
   {::mf/props :obj
    ::mf/private true}
@@ -644,7 +648,8 @@
   (let [show-buttons? (mf/use-state false)
         content       (mf/use-state "")
 
-        disabled? (blank-content? @content)
+        disabled? (or (blank-content? @content)
+                      (exceeds-length? @content))
 
         on-focus
         (mf/use-fn
@@ -678,8 +683,10 @@
        :on-blur on-blur
        :on-focus on-focus
        :on-ctrl-enter on-submit*
-       :on-change on-change
-       :max-length 750}]
+       :on-change on-change}]
+     (when (exceeds-length? @content)
+       [:div {:class (stl/css :error-text)}
+        (tr "errors.character-limit-exceeded")])
      (when (or @show-buttons? (seq @content))
        [:> comment-form-buttons* {:on-submit on-submit*
                                   :on-cancel on-cancel
@@ -690,7 +697,8 @@
   [{:keys [content on-submit on-cancel]}]
   (let [content   (mf/use-state content)
 
-        disabled? (blank-content? @content)
+        disabled? (or (blank-content? @content)
+                      (exceeds-length? @content))
 
         on-change
         (mf/use-fn
@@ -706,8 +714,10 @@
       {:value @content
        :autofocus true
        :on-ctrl-enter on-submit*
-       :on-change on-change
-       :max-length 750}]
+       :on-change on-change}]
+     (when (exceeds-length? @content)
+       [:div {:class (stl/css :error-text)}
+        (tr "errors.character-limit-exceeded")])
      [:> comment-form-buttons* {:on-submit on-submit*
                                 :on-cancel on-cancel
                                 :is-disabled disabled?}]]))
@@ -726,7 +736,8 @@
         pos-x     (* (:x position) zoom)
         pos-y     (* (:y position) zoom)
 
-        disabled? (blank-content? content)
+        disabled? (or (blank-content? content)
+                      (exceeds-length? content))
 
         on-esc
         (mf/use-fn
@@ -769,8 +780,10 @@
          :autofocus true
          :on-esc on-esc
          :on-change on-change
-         :on-ctrl-enter on-submit*
-         :max-length 750}]
+         :on-ctrl-enter on-submit*}]
+       (when (exceeds-length? content)
+         [:div {:class (stl/css :error-text)}
+          (tr "errors.character-limit-exceeded")])
        [:> comment-form-buttons* {:on-submit on-submit*
                                   :on-cancel on-esc
                                   :is-disabled disabled?}]]

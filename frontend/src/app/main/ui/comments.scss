@@ -22,6 +22,11 @@
   color: var(--comment-subtitle-color);
 }
 
+.error-text {
+  @include bodySmallTypography;
+  color: var(--color-foreground-error);
+}
+
 .location {
   color: var(--comment-subtitle-color);
   display: flex;
@@ -246,6 +251,7 @@
   grid-template-columns: 1fr auto auto;
   justify-content: flex-end;
   gap: $s-8;
+  margin-top: $s-8;
 }
 
 .open-mentions-button {
@@ -321,7 +327,6 @@
   border: $s-1 solid var(--input-border-color);
   color: var(--input-foreground-color);
   height: $s-36;
-  margin-bottom: $s-8;
   max-width: $s-260;
   overflow-y: auto;
   padding: $s-8;

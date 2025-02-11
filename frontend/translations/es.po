@@ -1160,6 +1160,10 @@ msgstr "No se han podido cargar las fuentes %s"
 msgid "errors.cannot-upload"
 msgstr "No se puede cargar el archivo multimedia."
 
+#: src/app/main/ui/comments.cljs:689
+msgid "errors.character-limit-exceeded"
+msgstr "Se ha superado el límite de caracteres"
+
 #: src/app/main/data/workspace.cljs:1463, src/app/main/data/workspace.cljs:1660
 msgid "errors.clipboard-not-implemented"
 msgstr "Tu navegador no puede realizar esta operación"
@@ -3524,7 +3528,7 @@ msgstr "Copiar"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
 msgid "shortcuts.copy-link"
-msgstr "Copiar enlace al portapapeles"
+msgstr "Copiar enlace"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:95
 msgid "shortcuts.create-component"
@@ -6186,7 +6190,7 @@ msgstr "Copiar como CSS (capas anidadas)"
 
 #: src/app/main/ui/workspace/context_menu.cljs:188
 msgid "workspace.shape.menu.copy-link"
-msgstr "Copiar enlace al portapapeles"
+msgstr "Copiar enlace"
 
 #: src/app/main/ui/workspace/context_menu.cljs:201
 msgid "workspace.shape.menu.copy-paste-as"

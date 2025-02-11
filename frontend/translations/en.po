@@ -1152,6 +1152,10 @@ msgstr "The fonts %s could not be loaded"
 msgid "errors.cannot-upload"
 msgstr "Cannot upload the media file."
 
+#: src/app/main/ui/comments.cljs:689
+msgid "errors.character-limit-exceeded"
+msgstr "Character limit exceeded"
+
 #: src/app/main/data/workspace.cljs:1463, src/app/main/data/workspace.cljs:1660
 msgid "errors.clipboard-not-implemented"
 msgstr "Your browser cannot do this operation"
@@ -3528,7 +3532,7 @@ msgstr "Copy"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
 msgid "shortcuts.copy-link"
-msgstr "Copy link to clipboard"
+msgstr "Copy link"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:106
 msgid "shortcuts.copy-props"
@@ -6188,7 +6192,7 @@ msgstr "Copy as CSS (nested layers)"
 
 #: src/app/main/ui/workspace/context_menu.cljs:188
 msgid "workspace.shape.menu.copy-link"
-msgstr "Copy link to clipboard"
+msgstr "Copy link"
 
 #: src/app/main/ui/workspace/context_menu.cljs:201
 msgid "workspace.shape.menu.copy-paste-as"
