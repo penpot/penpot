@@ -35,6 +35,11 @@
           (ctob/get-set set-name)
           (ctob/get-token token-name)))))
 
+(defn token-data-eq?
+  "Compare token data without comparing modified timestamp"
+  [t1 t2]
+  (= (dissoc t1 :modified-at) (dissoc t2 :modified-at)))
+
 (defn- set-stroke-width
   [shape stroke-width]
   (let [strokes (if (seq (:strokes shape))

@@ -20,7 +20,6 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.tokens.selected-set :as dwts]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.store :as st]
    [app.main.ui.workspace.tokens.update :as wtu]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
@@ -241,14 +240,15 @@
   [{:keys [token prev-token-name]}]
   (ptk/reify ::update-create-token
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [token-set (dwts/get-selected-token-set state)
-            token-set-name (or (:name token-set) "Global")
+    (watch [it state _]
+      (let [data (dsh/lookup-file-data state)
+            token-set (dwts/get-selected-token-set state)
+            set-name (or (:name token-set) "Global")
             changes (if (not token-set)
                       ;; No set created add a global set
                       (let [tokens-lib (get-tokens-lib state)
-                            token-set (ctob/make-token-set :name token-set-name :tokens {(:name token) token})
-                            hidden-theme (ctob/make-hidden-token-theme :sets [token-set-name])
+                            token-set (ctob/make-token-set :name set-name :tokens {(:name token) token})
+                            hidden-theme (ctob/make-hidden-token-theme :sets [set-name])
                             active-theme-paths (some-> tokens-lib ctob/get-active-theme-paths)
                             add-to-hidden-theme? (= active-theme-paths #{ctob/hidden-token-theme-path})
                             base-changes (pcb/add-token-set (pcb/empty-changes) token-set)]
@@ -262,14 +262,14 @@
                                                      (pcb/update-token-theme (ctob/toggle-set prev-hidden-theme ctob/hidden-token-theme-path) prev-hidden-theme)))
 
                           :else base-changes))
-                      ;; Either update or add token to existing set
-                      (if-let [prev-token (ctob/get-token token-set (or prev-token-name (:name token)))]
-                        (pcb/update-token (pcb/empty-changes) (:name token-set) token prev-token)
-                        (do
-                          (st/emit! (ptk/event ::ev/event {::ev/name "create-tokens"}))
-                          (pcb/add-token (pcb/empty-changes) (:name token-set) token))))]
+                      (-> (pcb/empty-changes it)
+                          (pcb/with-library-data data)
+                          (pcb/set-token set-name (or prev-token-name (:name token)) token)))]
+
         (rx/of
-         (dwts/set-selected-token-set-name token-set-name)
+         (dwts/set-selected-token-set-name set-name)
+         (when-not prev-token-name
+           (ptk/event ::ev/event {::ev/name "create-tokens"}))
          (dch/commit-changes changes))))))
 
 (defn delete-token
@@ -282,7 +282,7 @@
       (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/delete-token set-name token-name))]
+                        (pcb/set-token set-name token-name nil))]
         (rx/of (dch/commit-changes changes))))))
 
 (defn duplicate-token

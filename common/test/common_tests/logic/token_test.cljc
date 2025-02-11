@@ -73,6 +73,70 @@
       ;; Undo
       (t/is (some? (ctob/get-hidden-theme undo-lib))))))
 
+(t/deftest set-token-test
+  (t/testing "delete token"
+    (let [set-name "foo"
+          token-name "to.delete.color.red"
+          file (setup-file #(-> %
+                                (ctob/add-set (ctob/make-token-set :name set-name))
+                                (ctob/add-token-in-set set-name (ctob/make-token {:name token-name
+                                                                                  :value "red"
+                                                                                  :type :color}))))
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (pcb/set-token set-name token-name nil))
+
+          redo (thf/apply-changes file changes)
+          redo-lib (tht/get-tokens-lib redo)
+          undo (thf/apply-undo-changes redo changes)
+          undo-lib (tht/get-tokens-lib undo)]
+      (t/is (nil? (ctob/get-token-in-set redo-lib set-name token-name)))
+      ;; Undo
+      (t/is (some? (ctob/get-token-in-set undo-lib set-name token-name)))))
+
+  (t/testing "add token"
+    (let [set-name "foo"
+          token (ctob/make-token {:name "to.add.color.red"
+                                  :value "red"
+                                  :type :color})
+          file (setup-file #(-> % (ctob/add-set (ctob/make-token-set :name set-name))))
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (pcb/set-token set-name (:name token) token))
+
+          redo (thf/apply-changes file changes)
+          redo-lib (tht/get-tokens-lib redo)
+          undo (thf/apply-undo-changes redo changes)
+          undo-lib (tht/get-tokens-lib undo)]
+      (t/is (= token (ctob/get-token-in-set redo-lib set-name (:name token))))
+      ;; Undo
+      (t/is (nil? (ctob/get-token-in-set undo-lib set-name (:name token))))))
+
+  (t/testing "update token"
+    (let [set-name "foo"
+          prev-token (ctob/make-token {:name "to.update.color.red"
+                                       :value "red"
+                                       :type :color})
+          token (-> prev-token
+                    (assoc :name "color.red.changed")
+                    (assoc :value "blue"))
+          file (setup-file #(-> %
+                                (ctob/add-set (ctob/make-token-set :name set-name))
+                                (ctob/add-token-in-set set-name prev-token)))
+          changes (-> (pcb/empty-changes)
+                      (pcb/with-library-data (:data file))
+                      (pcb/set-token set-name (:name prev-token) token))
+
+          redo (thf/apply-changes file changes)
+          redo-lib (tht/get-tokens-lib redo)
+          undo (thf/apply-undo-changes redo changes)
+          undo-lib (tht/get-tokens-lib undo)]
+      (t/is (tht/token-data-eq? token (ctob/get-token-in-set redo-lib set-name (:name token))))
+      (t/is (nil? (ctob/get-token-in-set redo-lib set-name (:name prev-token))))
+      ;; Undo
+      (t/is (tht/token-data-eq? prev-token (ctob/get-token-in-set undo-lib set-name (:name prev-token))))
+      (t/is (nil? (ctob/get-token-in-set undo-lib set-name (:name token)))))))
+
 (t/deftest generate-toggle-token-set-group-test
   (t/testing "toggling set group with no active sets inside will activate all child sets"
     (let [file (setup-file #(-> %
