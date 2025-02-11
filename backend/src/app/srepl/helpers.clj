@@ -132,9 +132,10 @@
                                          (bfc/get-file system id))))
                      (d/index-by :id)))
 
-        file' (if with-libraries?
-                (update-fn file libs opts)
-                (update-fn file opts))]
+        file' (when file
+                (if with-libraries?
+                  (update-fn file libs opts)
+                  (update-fn file opts)))]
 
     (when (and (some? file')
                (not (identical? file file')))
