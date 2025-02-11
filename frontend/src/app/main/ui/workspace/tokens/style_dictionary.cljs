@@ -67,7 +67,7 @@
   [value has-references?]
 
   (let [parsed-value (wtt/parse-token-value value)
-        out-of-scope (< 100 (:value parsed-value))
+        out-of-scope (not (<= 0 (:value parsed-value) 1))
         references (seq (ctob/find-token-value-references value))]
     (cond
       (and parsed-value (not out-of-scope))
