@@ -884,7 +884,7 @@
         (update :undo-changes conj {:type :set-tokens-lib :tokens-lib prev-tokens-lib})
         (apply-changes-local))))
 
-(defn set-token [changes set-name token-name params]
+(defn set-token [changes set-name token-name token]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
         prev-token (some-> (get library-data :tokens-lib)
@@ -894,21 +894,21 @@
         (update :redo-changes conj {:type :set-token
                                     :set-name set-name
                                     :token-name token-name
-                                    :params params})
+                                    :token token})
         (update :undo-changes conj (if prev-token
                                      {:type :set-token
                                       :set-name set-name
                                       :token-name (or
                                                    ;; Undo of edit
-                                                   (get-in params [:token :name])
+                                                   (:name token)
                                                    ;; Undo of delete
                                                    token-name)
-                                      :params {:token prev-token}}
+                                      :token prev-token}
                                      ;; Undo of create token
                                      {:type :set-token
                                       :set-name set-name
                                       :token-name token-name
-                                      :params nil}))
+                                      :token nil}))
         (apply-changes-local))))
 
 (defn add-component

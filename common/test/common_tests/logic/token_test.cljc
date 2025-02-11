@@ -102,7 +102,7 @@
           file (setup-file #(-> % (ctob/add-set (ctob/make-token-set :name set-name))))
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (pcb/set-token set-name (:name token) {:token token}))
+                      (pcb/set-token set-name (:name token) token))
 
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
@@ -125,7 +125,7 @@
                                 (ctob/add-token-in-set set-name prev-token)))
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (pcb/set-token set-name (:name prev-token) {:token token}))
+                      (pcb/set-token set-name (:name prev-token) token))
 
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)

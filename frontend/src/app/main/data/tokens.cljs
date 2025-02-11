@@ -264,7 +264,7 @@
                           :else base-changes))
                       (-> (pcb/empty-changes it)
                           (pcb/with-library-data data)
-                          (pcb/set-token set-name (or prev-token-name (:name token)) {:token token})))]
+                          (pcb/set-token set-name (or prev-token-name (:name token)) token)))]
 
         (rx/of
          (dwts/set-selected-token-set-name set-name)
