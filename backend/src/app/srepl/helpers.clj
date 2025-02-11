@@ -39,10 +39,7 @@
   ([id]
    (get-file (or *system* main/system) id))
   ([system id]
-   (db/run! system
-            (fn [system]
-              (->> (bfc/get-file system id ::db/for-update true)
-                   (bfc/decode-file system))))))
+   (db/run! system bfc/get-file id)))
 
 (defn get-raw-file
   "Get the migrated data of one file."
