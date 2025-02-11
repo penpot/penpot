@@ -409,8 +409,9 @@
   [cfg data file-id]
   (let [library-ids (get-libraries cfg [file-id])]
     (reduce (fn [data library-id]
-              (let [library (get-file cfg library-id)]
-                (ctf/absorb-assets data (:data library))))
+              (if-let [library (get-file cfg library-id)]
+                (ctf/absorb-assets data (:data library))
+                data))
             data
             library-ids)))
 
