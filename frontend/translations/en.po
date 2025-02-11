@@ -6575,9 +6575,9 @@ msgstr "You need to be an editor to activate / deactivate sets"
 msgid "workspace.token.no-permission-themes"
 msgstr "You need to be an editor to use themes"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:146
-msgid "workspace.token.no-sets"
-msgstr "No sets"
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs
+msgid "workspace.token.no-active-sets"
+msgstr "No active sets"
 
 #: src/app/main/ui/workspace/tokens/sets.cljs:401, src/app/main/ui/workspace/tokens/sets.cljs:405
 msgid "workspace.token.no-sets-create"
@@ -6596,8 +6596,8 @@ msgid "workspace.token.no-themes-currently"
 msgstr "You currently have no themes."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:137
-msgid "workspace.token.num-sets"
-msgstr "%s sets"
+msgid "workspace.token.num-active-sets"
+msgstr "%s active sets"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
 #, fuzzy

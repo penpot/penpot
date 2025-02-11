@@ -135,7 +135,7 @@
                              :on-click on-edit-theme}
                  [:div {:class (stl/css :label-wrapper)}
                   [:> text* {:as "span" :typography "body-medium"}
-                   (tr "workspace.token.num-sets" sets-count)]
+                   (tr "workspace.token.num-active-sets" sets-count)]
                   [:> icon* {:icon-id "arrow-right"}]]]
 
                 [:> button* {:class (stl/css :sets-count-empty-button)
@@ -144,7 +144,7 @@
                              :on-click on-edit-theme}
                  [:div {:class (stl/css :label-wrapper)}
                   [:> text* {:as "span" :typography "body-medium"}
-                   (tr "workspace.token.no-sets")]
+                   (tr "workspace.token.no-active-sets")]
                   [:> icon* {:icon-id "arrow-right"}]]])
 
               [:> icon-button* {:on-click delete-theme
