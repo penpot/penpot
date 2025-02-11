@@ -392,7 +392,7 @@ impl RenderState {
         ));
         self.final_surface
             .canvas()
-            .draw_image(image.clone(), (0, 0), Some(&paint));
+            .draw_image(image, (0, 0), Some(&paint));
 
         self.final_surface.canvas().restore();
         self.drawing_surface.canvas().restore();
