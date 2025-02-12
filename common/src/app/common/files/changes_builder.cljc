@@ -904,11 +904,34 @@
                                                    ;; Undo of delete
                                                    token-name)
                                       :token prev-token}
-                                     ;; Undo of create token
+                                     ;; Undo of create
                                      {:type :set-token
                                       :set-name set-name
                                       :token-name token-name
                                       :token nil}))
+        (apply-changes-local))))
+
+(defn set-token-set [changes set-name token-set]
+  (assert-library! changes)
+  (let [library-data (::library-data (meta changes))
+        prev-token-set (some-> (get library-data :tokens-lib)
+                               (ctob/get-set set-name))]
+    (-> changes
+        (update :redo-changes conj {:type :set-token-set
+                                    :set-name set-name
+                                    :token-set token-set})
+        (update :undo-changes conj (if prev-token-set
+                                     {:type :set-token-set
+                                      :set-name (or
+                                                 ;; Undo of edit
+                                                 (:name token-set)
+                                                 ;; Undo of delete
+                                                 set-name)
+                                      :token-set prev-token-set}
+                                     ;; Undo of create
+                                     {:type :set-token-set
+                                      :set-name set-name
+                                      :token-set nil}))
         (apply-changes-local))))
 
 (defn add-component

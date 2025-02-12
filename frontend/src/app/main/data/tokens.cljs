@@ -113,9 +113,11 @@
                           (update :name #(if (empty? %) set-name (ctob/join-set-path [% set-name]))))]
     (ptk/reify ::create-token-set
       ptk/WatchEvent
-      (watch [it _ _]
-        (let [changes (-> (pcb/empty-changes it)
-                          (pcb/add-token-set new-token-set))]
+      (watch [it state _]
+        (let [data (dsh/lookup-file-data state)
+              changes (-> (pcb/empty-changes it)
+                          (pcb/with-library-data data)
+                          (pcb/set-token-set set-name new-token-set))]
           (rx/of
            (dwts/set-selected-token-set-name (:name new-token-set))
            (dch/commit-changes changes)))))))

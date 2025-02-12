@@ -463,7 +463,13 @@
       [:type [:= :set-token]]
       [:set-name :string]
       [:token-name :string]
-      [:token [:maybe ::cto/token]]]]]])
+      [:token [:maybe ::cto/token]]]]
+
+    [:set-token-set
+     [:map {:title "SetTokenSetChange"}
+      [:type [:= :set-token-set]]
+      [:set-name :string]
+      [:token-set [:maybe ::ctob/token-set]]]]]])
 
 (def schema:changes
   [:sequential {:gen/max 5 :gen/min 1} schema:change])
@@ -1043,6 +1049,22 @@
                 :else
                 (ctob/update-token-in-set lib' set-name token-name (fn [prev-token]
                                                                      (ctob/make-token (merge prev-token token)))))))))
+
+(defmethod process-change :set-token-set
+  [data {:keys [set-name token-set]}]
+  (update data :tokens-lib
+          (fn [lib]
+            (let [lib' (ctob/ensure-tokens-lib lib)]
+              (cond
+                (not token-set)
+                (ctob/delete-set-path lib' (ctob/split-token-set-name set-name))
+
+                (not (ctob/get-set lib' set-name))
+                (ctob/add-set lib' (ctob/make-token-set token-set))
+
+                :else
+                (ctob/update-set lib' set-name (fn [prev-token-set]
+                                                 (ctob/make-token-set (merge prev-token-set token-set)))))))))
 
 (defmethod process-change :add-temporary-token-theme
   [data {:keys [token-theme]}]
