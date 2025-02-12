@@ -930,14 +930,17 @@
     (watch [it state _]
       (let [page-id (:current-page-id state)
             objects (dsh/lookup-page-objects state page-id)
+            data    (dsh/lookup-file-data state)
             ids     (cleanup-invalid-moving-shapes ids objects frame-id)
-            changes (cls/generate-relocate (pcb/empty-changes it)
-                                           objects
-                                           frame-id
-                                           page-id
-                                           drop-index
-                                           ids
-                                           :cell cell)]
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-page-id page-id)
+                        (pcb/with-objects objects)
+                        (pcb/with-library-data data)
+                        (cls/generate-relocate
+                         frame-id
+                         drop-index
+                         ids
+                         :cell cell))]
 
         (when (and (some? frame-id) (d/not-empty? changes))
           (rx/of (dch/commit-changes changes)
