@@ -474,6 +474,13 @@
              (rx/tap on-success)
              (rx/catch on-error))))))
 
+(defn- team-deleted
+  [id]
+  (ptk/reify ::team-deleted
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :teams dissoc id))))
+
 (defn delete-team
   [{:keys [id] :as params}]
   (ptk/reify ::delete-team
@@ -485,7 +492,10 @@
             (meta params)]
 
         (->> (rp/cmd! :delete-team {:id id})
-             (rx/mapcat on-success)
+             (rx/mapcat (fn [result]
+                          (rx/concat
+                           (rx/of (team-deleted id))
+                           (on-success result))))
              (rx/catch on-error))))))
 
 (defn delete-webhook
