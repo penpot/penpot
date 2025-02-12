@@ -16,6 +16,7 @@
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
+   [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.websocket :as dws]
    [app.main.features :as features]
@@ -247,10 +248,10 @@
   (ptk/reify ::create-project
     ptk/WatchEvent
     (watch [_ state _]
-      (let [projects (get state :projects)
+      (let [team-id  (:current-team-id state)
+            projects (dsh/lookup-team-projects state team-id)
             unames   (cfh/get-used-names projects)
             name     (cfh/generate-unique-name unames (str (tr "dashboard.new-project-prefix") " 1"))
-            team-id  (:current-team-id state)
             params   {:name name
                       :team-id team-id}
             {:keys [on-success on-error]
@@ -478,7 +479,7 @@
              :or {on-success identity
                   on-error rx/throw}} (meta params)
 
-            files    (get state :files)
+            files    (dsh/lookup-team-files state)
             unames   (cfh/get-used-names files)
             name     (or name (cfh/generate-unique-name unames (str (tr "dashboard.new-file-prefix") " 1")))
             features (-> (features/get-team-enabled-features state)
@@ -587,10 +588,10 @@
             pparams       (:path-params route)
             in-project?   (contains? pparams :project-id)
             name          (if in-project?
-                            (let [files  (get state :files)
+                            (let [files  (dsh/lookup-team-files state team-id)
                                   unames (cfh/get-used-names files)]
                               (cfh/generate-unique-name unames (str (tr "dashboard.new-file-prefix") " 1")))
-                            (let [projects (get state :projects)
+                            (let [projects (dsh/lookup-team-projects  state team-id)
                                   unames   (cfh/get-used-names projects)]
                               (cfh/generate-unique-name unames (str (tr "dashboard.new-project-prefix") " 1"))))
             params        (if in-project?

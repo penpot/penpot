@@ -384,8 +384,10 @@
           f.revn,
           f.vern,
           f.is_shared,
-          ft.media_id AS thumbnail_id
+          ft.media_id AS thumbnail_id,
+          p.team_id
      from file as f
+     inner join project as p on (p.id = f.project_id)
      left join file_thumbnail as ft on (ft.file_id = f.id
                                         and ft.revn = f.revn
                                         and ft.deleted_at is null)
@@ -539,7 +541,8 @@
           f.modified_at,
           f.name,
           f.is_shared,
-          ft.media_id
+          ft.media_id,
+          p.team_id
      from file as f
     inner join project as p on (p.id = f.project_id)
      left join file_thumbnail as ft on (ft.file_id = f.id and ft.revn = f.revn and ft.deleted_at is null)
@@ -686,7 +689,8 @@
             f.name,
             f.is_shared,
             ft.media_id AS thumbnail_id,
-            row_number() over w as row_num
+            row_number() over w as row_num,
+            p.team_id
        from file as f
       inner join project as p on (p.id = f.project_id)
        left join file_thumbnail as ft on (ft.file_id = f.id
