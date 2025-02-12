@@ -911,7 +911,7 @@
                                       :token nil}))
         (apply-changes-local))))
 
-(defn set-token-set [changes set-name token-set]
+(defn set-token-set [changes set-name group? token-set]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
         prev-token-set (some-> (get library-data :tokens-lib)
@@ -919,7 +919,8 @@
     (-> changes
         (update :redo-changes conj {:type :set-token-set
                                     :set-name set-name
-                                    :token-set token-set})
+                                    :token-set token-set
+                                    :group? group?})
         (update :undo-changes conj (if prev-token-set
                                      {:type :set-token-set
                                       :set-name (or
@@ -927,11 +928,13 @@
                                                  (:name token-set)
                                                  ;; Undo of delete
                                                  set-name)
-                                      :token-set prev-token-set}
+                                      :token-set prev-token-set
+                                      :group? group?}
                                      ;; Undo of create
                                      {:type :set-token-set
                                       :set-name set-name
-                                      :token-set nil}))
+                                      :token-set nil
+                                      :group? group?}))
         (apply-changes-local))))
 
 (defn add-component

@@ -117,7 +117,7 @@
         (let [data (dsh/lookup-file-data state)
               changes (-> (pcb/empty-changes it)
                           (pcb/with-library-data data)
-                          (pcb/set-token-set set-name new-token-set))]
+                          (pcb/set-token-set set-name false new-token-set))]
           (rx/of
            (dwts/set-selected-token-set-name (:name new-token-set))
            (dch/commit-changes changes)))))))
@@ -186,7 +186,7 @@
       (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/delete-token-set-path group? path))]
+                        (pcb/set-token-set (ctob/join-set-path path) group? nil))]
         (rx/of
          (dch/commit-changes changes)
          (wtu/update-workspace-tokens))))))
@@ -253,7 +253,7 @@
                             hidden-theme (ctob/make-hidden-token-theme :sets [set-name])
                             active-theme-paths (some-> tokens-lib ctob/get-active-theme-paths)
                             add-to-hidden-theme? (= active-theme-paths #{ctob/hidden-token-theme-path})
-                            base-changes (pcb/add-token-set (pcb/empty-changes) token-set)]
+                            base-changes (pcb/set-token-set (pcb/empty-changes) set-name false token-set)]
                         (cond
                           (not tokens-lib) (-> base-changes
                                                (pcb/add-token-theme hidden-theme)

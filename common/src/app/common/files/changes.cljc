@@ -443,16 +443,6 @@
       [:before-path [:maybe [:vector :string]]]
       [:before-group? [:maybe :boolean]]]]
 
-    [:del-token-set
-     [:map {:title "DelTokenSetChange"}
-      [:type [:= :del-token-set]]
-      [:name :string]]]
-
-    [:del-token-set-path
-     [:map {:title "DelTokenSetPathChange"}
-      [:type [:= :del-token-set-path]]
-      [:path :string]]]
-
     [:set-tokens-lib
      [:map {:title "SetTokensLib"}
       [:type [:= :set-tokens-lib]]
@@ -469,7 +459,10 @@
      [:map {:title "SetTokenSetChange"}
       [:type [:= :set-token-set]]
       [:set-name :string]
-      [:token-set [:maybe ::ctob/token-set]]]]]])
+      [:group? :boolean]
+      ;; TODO Can auto-generate for this spec
+      ;; The generation fails for `:token-set` due to the `[:and [:fn (partial instance? TokenSet)]]`
+      [:token-set :any #_[:maybe ::ctob/token-set]]]]]])
 
 (def schema:changes
   [:sequential {:gen/max 5 :gen/min 1} schema:change])
@@ -1051,13 +1044,15 @@
                                                                      (ctob/make-token (merge prev-token token)))))))))
 
 (defmethod process-change :set-token-set
-  [data {:keys [set-name token-set]}]
+  [data {:keys [set-name group? token-set]}]
   (update data :tokens-lib
           (fn [lib]
             (let [lib' (ctob/ensure-tokens-lib lib)]
               (cond
                 (not token-set)
-                (ctob/delete-set-path lib' (ctob/split-token-set-name set-name))
+                (if group?
+                  (ctob/delete-set-group lib' set-name)
+                  (ctob/delete-set lib' set-name))
 
                 (not (ctob/get-set lib' set-name))
                 (ctob/add-set lib' (ctob/make-token-set token-set))
@@ -1142,18 +1137,6 @@
   (update data :tokens-lib #(-> %
                                 (ctob/ensure-tokens-lib)
                                 (ctob/move-set-group from-path to-path before-path before-group?))))
-
-(defmethod process-change :del-token-set
-  [data {:keys [name]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/delete-set-path name))))
-
-(defmethod process-change :del-token-set-path
-  [data {:keys [path]}]
-  (update data :tokens-lib #(-> %
-                                (ctob/ensure-tokens-lib)
-                                (ctob/delete-set-path path))))
 
 ;; === Operations
 
