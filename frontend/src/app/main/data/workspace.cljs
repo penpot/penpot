@@ -450,10 +450,12 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id (:current-file-id state)]
-        (rx/of (preload-data-uris page-id)
-               (dwth/watch-state-changes file-id page-id)
-               (dwl/watch-component-changes))))))
+      (if (dsh/lookup-page state page-id)
+        (let [file-id (:current-file-id state)]
+          (rx/of (preload-data-uris page-id)
+                 (dwth/watch-state-changes file-id page-id)
+                 (dwl/watch-component-changes)))
+        (rx/of (dcm/go-to-workspace))))))
 
 (defn finalize-page
   [page-id]

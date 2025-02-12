@@ -62,6 +62,7 @@ is a number of cores)
 - Added upload svg with images method [#5489](https://github.com/penpot/penpot/issues/5489)
 - Fix problem with root frame parent reference [Taiga #9437](https://tree.taiga.io/project/penpot/issue/9437)
 - Fix change flex direction using plugins API [Taiga #9407](https://tree.taiga.io/project/penpot/issue/9407)
+- Fix problem opening url when page-id didn't exist [Taiga #10157](https://tree.taiga.io/project/penpot/issue/10157)
 
 ## 2.4.3
 
