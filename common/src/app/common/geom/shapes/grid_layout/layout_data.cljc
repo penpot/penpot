@@ -212,8 +212,10 @@
         (if (= type :column)
           [:column :column-span]
           [:row :row-span])
-        from-idx (dec (get cell prop))
-        to-idx (+ (dec (get cell prop)) (get cell prop-span))
+        from-idx (-> (dec (get cell prop))
+                     (mth/clamp 0 (dec (count track-list))))
+        to-idx (-> (+ (dec (get cell prop)) (get cell prop-span))
+                   (mth/clamp 0 (dec (count track-list))))
         tracks (subvec track-list from-idx to-idx)]
     (some? (->> tracks (d/seek #(= :flex (:type %)))))))
 
@@ -291,8 +293,10 @@
               (fn [allocated cell]
                 (let [shape-id (first (:shapes cell))
 
-                      from-idx (dec (get cell prop))
-                      to-idx (+ (dec (get cell prop)) (get cell prop-span))
+                      from-idx (-> (dec (get cell prop))
+                                   (mth/clamp 0 (dec (count track-list))))
+                      to-idx (-> (+ (dec (get cell prop)) (get cell prop-span))
+                                 (mth/clamp 0 (dec (count track-list))))
 
                       indexed-tracks (subvec (d/enumerate track-list) from-idx to-idx)
                       to-allocate (size-to-allocate type parent (get children-map shape-id) cell bounds objects)
@@ -597,11 +601,10 @@
             row (nth row-tracks (dec (:row grid-cell)) nil)
 
             column-start-p (:start-p column)
-            row-start-p (:start-p row)
-
-            start-p (gpt/add origin
-                             (gpt/add
-                              (gpt/to-vec origin column-start-p)
-                              (gpt/to-vec origin row-start-p)))]
-
-        (assoc grid-cell :start-p  start-p)))))
+            row-start-p (:start-p row)]
+        (when (and (some? column-start-p) (some? row-start-p))
+          (let [start-p (gpt/add origin
+                                 (gpt/add
+                                  (gpt/to-vec origin column-start-p)
+                                  (gpt/to-vec origin row-start-p)))]
+            (assoc grid-cell :start-p  start-p)))))))
