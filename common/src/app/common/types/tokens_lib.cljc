@@ -44,17 +44,13 @@
 (defn group-item
   "Add a group to the item name, in the form group.name."
   [item group-name separator]
-  (dm/assert!
-   "expected groupable item"
-   (valid-groupable-item? item))
-  (update item :name #(str group-name separator %)))
+  (assert (valid-groupable-item? item) "expected groupable item")
+  (update item :name #(dm/str group-name separator %)))
 
 (defn ungroup-item
   "Remove the first group from the item name."
   [item separator]
-  (dm/assert!
-   "expected groupable item"
-   (valid-groupable-item? item))
+  (assert (valid-groupable-item? item) "expected groupable item")
   (update item :name #(-> %
                           (split-path separator)
                           (rest)
@@ -63,9 +59,7 @@
 (defn get-path
   "Get the groups part of the name as a vector. E.g. group.subgroup.name -> ['group' 'subgroup']"
   [item separator]
-  (dm/assert!
-   "expected groupable item"
-   (valid-groupable-item? item))
+  (assert (valid-groupable-item? item) "expected groupable item")
   (split-path (:name item) separator))
 
 (defn get-groups-str
@@ -78,9 +72,7 @@
 (defn get-final-name
   "Get the final part of the name. E.g. group.subgroup.name -> name"
   [item separator]
-  (dm/assert!
-   "expected groupable item"
-   (valid-groupable-item? item))
+  (assert (valid-groupable-item? item) "expected groupable item")
   (-> (:name item)
       (split-path separator)
       (last)))
@@ -94,9 +86,7 @@
   "Get all children of a group of a grouping tree. Each child is
    a tuple [name item], where item "
   [group]
-  (dm/assert!
-   "expected group node"
-   (group? group))
+  (assert (group? group) "expected group node")
   (seq group))
 
 ;; === Token
@@ -114,36 +104,37 @@
 
 (defrecord Token [name type value description modified-at])
 
+(defn token?
+  [o]
+  (instance? Token o))
+
+(def schema:token-attrs
+  [:map {:title "Token"}
+   [:name cto/token-name-ref]
+   [:type [::sm/one-of cto/token-types]]
+   [:value :any]
+   [:description [:maybe :string]]
+   [:modified-at ::sm/inst]])
+
 (def schema:token
   [:and
-   [:map {:title "Token"}
-    [:name cto/token-name-ref]
-    [:type [::sm/one-of cto/token-types]]
-    [:value :any]
-    [:description [:maybe :string]]
-    [:modified-at ::sm/inst]]
-   [:fn (partial instance? Token)]])
+   schema:token-attrs
+   [:fn token?]])
 
-(sm/register! ::token schema:token)
+(def check-token
+  (sm/check-fn schema:token :hint "expected valid token"))
 
-(def valid-token?
-  (sm/validator schema:token))
-
-(def check-token!
-  (sm/check-fn ::token))
+(def ^:private check-token-attrs
+  (sm/check-fn schema:token-attrs :hint "expected valid params for token"))
 
 (defn make-token
-  [& {:keys [] :as params}]
-  (let [params (-> params
-                   (dissoc :id) ;; we will remove this when old data structures are removed
-                   (update :modified-at #(or % (dt/now))))
-        token  (map->Token params)]
-
-    (dm/assert!
-     "expected valid token"
-     (check-token! token))
-
-    token))
+  [& {:as attrs}]
+  (-> attrs
+      (dissoc :id) ;; we will remove this when old data structures are removed
+      (update :modified-at #(or % (dt/now)))
+      (update :description d/nilv "")
+      (check-token-attrs)
+      (map->Token)))
 
 (defn find-token-value-references
   "Returns set of token references found in `token-value`.
@@ -336,17 +327,16 @@
                tokens))
 
   (add-token [_ token]
-    (dm/assert! "expected valid token" (check-token! token))
-    (TokenSet. name
-               description
-               (dt/now)
-               (assoc tokens (:name token) token)))
+    (let [token (check-token token)]
+      (TokenSet. name
+                 description
+                 (dt/now)
+                 (assoc tokens (:name token) token))))
 
   (update-token [this token-name f]
     (if-let [token (get tokens token-name)]
       (let [token' (-> (make-token (f token))
                        (assoc :modified-at (dt/now)))]
-        (check-token! token')
         (TokenSet. name
                    description
                    (dt/now)
@@ -382,36 +372,44 @@
                                                     "$type" (cto/token-type->dtcg-token-type (:type token))}
                                              (:description token) (assoc "$description" (:description token)))))))
 
+(defn token-set?
+  [o]
+  (instance? TokenSet o))
+
+(def schema:token-set-attrs
+  [:map {:title "TokenSet"}
+   [:name :string]
+   [:description [:maybe :string]]
+   [:modified-at ::sm/inst]
+   [:tokens [:and
+             [:map-of {:gen/max 5} :string schema:token]
+             [:fn d/ordered-map?]]]])
+
 (def schema:token-set
-  [:and [:map {:title "TokenSet"}
-         [:name :string]
-         [:description [:maybe :string]]
-         [:modified-at ::sm/inst]
-         [:tokens [:and [:map-of {:gen/max 5} :string ::token]
-                   [:fn d/ordered-map?]]]]
-   [:fn (partial instance? TokenSet)]])
+  [:and
+   schema:token-set-attrs
+   [:fn token-set?]])
 
 (sm/register! ::token-set schema:token-set)
 
 (def valid-token-set?
   (sm/validator schema:token-set))
 
-(def check-token-set!
-  (sm/check-fn ::token-set))
+(def check-token-set
+  (sm/check-fn schema:token-set :hint "expected valid token set"))
+
+(def ^:private check-token-set-attrs
+  (sm/check-fn schema:token-set-attrs :hint "expected valid params for token-set"))
 
 (defn make-token-set
-  [& {:keys [] :as params}]
-  (let [params    (-> params
-                      (dissoc :id)
-                      (update :modified-at #(or % (dt/now)))
-                      (update :tokens #(into (d/ordered-map) %)))
-        token-set (map->TokenSet params)]
-
-    (dm/assert!
-     "expected valid token set"
-     (check-token-set! token-set))
-
-    token-set))
+  [& {:as attrs}]
+  (-> attrs
+      (dissoc :id)
+      (update :modified-at #(or % (dt/now)))
+      (update :tokens #(into (d/ordered-map) %))
+      (update :description d/nilv "")
+      (check-token-set-attrs)
+      (map->TokenSet)))
 
 ;; === TokenSets (collection)
 
@@ -455,21 +453,15 @@
                                 [:fn d/ordered-map?]]]}}
    [:ref ::node]])
 
-(sm/register! ::token-set-node schema:token-set-node)
-
 (def schema:token-sets
   [:and
    [:map-of {:title "TokenSets"}
-    :string ::token-set-node]
+    :string
+    schema:token-set-node]
    [:fn d/ordered-map?]])
-
-(sm/register! ::token-sets schema:token-sets)
 
 (def valid-token-sets?
   (sm/validator schema:token-sets))
-
-(def check-token-sets!
-  (sm/check-fn ::token-sets))
 
 ;; === TokenTheme
 
@@ -549,23 +541,34 @@
   (hidden-temporary-theme? [this]
     (theme-matches-group-name this hidden-token-theme-group hidden-token-theme-name)))
 
+(defn token-theme?
+  [o]
+  (instance? TokenTheme o))
+
+(def schema:token-theme-attrs
+  [:map {:title "TokenTheme"}
+   [:name :string]
+   [:group :string]
+   [:description [:maybe :string]]
+   [:is-source [:maybe :boolean]]
+   [:modified-at ::sm/inst]
+   [:sets [:set {:gen/max 5} :string]]])
+
 (def schema:token-theme
-  [:and [:map {:title "TokenTheme"}
-         [:name :string]
-         [:group :string]
-         [:description [:maybe :string]]
-         [:is-source [:maybe :boolean]]
-         [:modified-at ::sm/inst]
-         [:sets [:set {:gen/max 5} :string]]]
-   [:fn (partial instance? TokenTheme)]])
+  [:and
+   schema:token-theme-attrs
+   [:fn token-theme?]])
 
 (sm/register! ::token-theme schema:token-theme)
 
 (def valid-token-theme?
   (sm/validator schema:token-theme))
 
-(def check-token-theme!
-  (sm/check-fn ::token-theme))
+(def check-token-theme
+  (sm/check-fn schema:token-theme :hint "expected a valid token-theme"))
+
+(def ^:private check-token-theme-attrs
+  (sm/check-fn schema:token-theme-attrs :hint "expected valid params for token-theme"))
 
 (def top-level-theme-group-name
   "Top level theme groups have an empty string as the theme group."
@@ -575,26 +578,23 @@
   (= group top-level-theme-group-name))
 
 (defn make-token-theme
-  [& {:keys [] :as params}]
-  (let [params    (-> params
-                      (dissoc :id)
-                      (update :group #(or % top-level-theme-group-name))
-                      (update :is-source #(or % false))
-                      (update :modified-at #(or % (dt/now)))
-                      (update :sets #(into #{} %)))
-        token-theme (map->TokenTheme params)]
-
-    (dm/assert!
-     "expected valid token theme"
-     (check-token-theme! token-theme))
-
-    token-theme))
+  [& {:as attrs}]
+  (-> attrs
+      (dissoc :id)
+      (update :group d/nilv top-level-theme-group-name)
+      (update :is-source d/nilv false)
+      (update :modified-at #(or % (dt/now)))
+      (update :sets set)
+      (update :description d/nilv "")
+      (check-token-theme-attrs)
+      (map->TokenTheme)))
 
 (defn make-hidden-token-theme
-  [& {:keys [] :as params}]
-  (make-token-theme (assoc params
-                           :group hidden-token-theme-group
-                           :name hidden-token-theme-name)))
+  [& {:as attrs}]
+  (-> attrs
+      (assoc :group hidden-token-theme-group)
+      (assoc :name hidden-token-theme-name)
+      (make-token-theme)))
 
 ;; === TokenThemes (collection)
 
@@ -606,8 +606,7 @@
   (get-theme-tree [_] "get a nested tree of all themes in the library")
   (get-themes [_] "get an ordered sequence of all themes in the library")
   (get-theme [_ group name] "get one theme looking for name")
-  (get-hidden-theme [_] "get the theme hidden from the user ,
-used for managing active sets without a user created theme.")
+  (get-hidden-theme [_] "get the theme hidden from the user, used for managing active sets without a user created theme.")
   (get-theme-groups [_] "get a sequence of group names by order")
   (get-active-theme-paths [_] "get the active theme paths")
   (get-active-themes [_] "get an ordered sequence of active themes in the library")
@@ -620,23 +619,18 @@ used for managing active sets without a user created theme.")
 (def schema:token-themes
   [:and
    [:map-of {:title "TokenThemes"}
-    :string [:and [:map-of :string ::token-theme]
+    :string [:and [:map-of :string schema:token-theme]
              [:fn d/ordered-map?]]]
    [:fn d/ordered-map?]])
-
-(sm/register! ::token-themes schema:token-themes)
 
 (def valid-token-themes?
   (sm/validator schema:token-themes))
 
-(def check-token-themes!
-  (sm/check-fn ::token-themes))
-
-(def schema:active-token-themes
-  [:set string?])
+(def ^:private schema:active-themes
+  [:set :string])
 
 (def valid-active-token-themes?
-  (sm/validator schema:active-token-themes))
+  (sm/validator schema:active-themes))
 
 ;; === Import / Export from DTCG format
 
@@ -869,17 +863,14 @@ Will return a value that matches this schema:
 
   ITokenSets
   (add-set [_ token-set]
-    (dm/assert! "expected valid token set" (check-token-set! token-set))
-    (let [path (get-token-set-prefixed-path token-set)]
+    (let [path      (get-token-set-prefixed-path token-set)
+          token-set (check-token-set token-set)]
       (TokensLib. (d/oassoc-in sets path token-set)
                   themes
                   active-themes)))
 
   (add-sets [this token-sets]
-    (reduce
-     (fn [lib set]
-       (add-set lib set))
-     this token-sets))
+    (reduce add-set this token-sets))
 
   (update-set [this set-name f]
     (let [prefixed-full-path (set-name->prefixed-full-path set-name)
@@ -889,7 +880,6 @@ Will return a value that matches this schema:
                        (assoc :modified-at (dt/now)))
               prefixed-full-path' (get-token-set-prefixed-path set')
               name-changed? (not= (:name set) (:name set'))]
-          (check-token-set! set')
           (if name-changed?
             (TokensLib. (-> sets
                             (d/oassoc-in-before prefixed-full-path prefixed-full-path' set')
@@ -1061,10 +1051,10 @@ Will return a value that matches this schema:
 
   ITokenThemes
   (add-theme [_ token-theme]
-    (dm/assert! "expected valid token theme" (check-token-theme! token-theme))
-    (TokensLib. sets
-                (update themes (:group token-theme) d/oassoc (:name token-theme) token-theme)
-                active-themes))
+    (let [token-theme (check-token-theme token-theme)]
+      (TokensLib. sets
+                  (update themes (:group token-theme) d/oassoc (:name token-theme) token-theme)
+                  active-themes)))
 
   (update-theme [this group name f]
     (let [theme (dm/get-in themes [group name])]
@@ -1076,7 +1066,6 @@ Will return a value that matches this schema:
               same-group? (= group group')
               same-name? (= name name')
               same-path? (and same-group? same-name?)]
-          (check-token-theme! theme')
           (TokensLib. sets
                       (if same-path?
                         (update themes group' assoc name' theme')
@@ -1164,7 +1153,6 @@ Will return a value that matches this schema:
     (some? (get-in sets (set-group-path->set-group-prefixed-path set-path))))
 
   (add-token-in-set [this set-name token]
-    (dm/assert! "expected valid token instance" (check-token! token))
     (update-set this set-name #(add-token % token)))
 
   (get-token-in-set [this set-name token-name]
@@ -1304,6 +1292,7 @@ Will return a value that matches this schema:
        (into tokens' (map (fn [x] [(:name x) x]) (get-tokens set))))
      {} (get-sets this)))
 
+  ;; FIXME: revisit if this still necessary
   (validate [_]
     (and (valid-token-sets? sets)
          (valid-token-themes? themes)
@@ -1314,11 +1303,14 @@ Will return a value that matches this schema:
   (and (instance? TokensLib o)
        (validate o)))
 
-(defn check-tokens-lib!
-  [lib]
-  (dm/assert!
-   "expected valid tokens lib"
-   (valid-tokens-lib? lib)))
+(def ^:private check-token-sets
+  (sm/check-fn schema:token-sets :hint "expected valid token sets"))
+
+(def ^:private check-token-themes
+  (sm/check-fn schema:token-themes :hint "expected valid token themes"))
+
+(def ^:private check-active-themes
+  (sm/check-fn schema:active-themes :hint "expected valid active themes"))
 
 (defn make-tokens-lib
   "Create an empty or prepopulated tokens library."
@@ -1333,13 +1325,11 @@ Will return a value that matches this schema:
                     :active-themes #{}))
 
   ([& {:keys [sets themes active-themes]}]
-   (let [tokens-lib (TokensLib. sets themes (or active-themes #{}))]
-
-     (dm/assert!
-      "expected valid tokens lib"
-      (valid-tokens-lib? tokens-lib))
-
-     tokens-lib)))
+   (let [active-themes (d/nilv active-themes #{})]
+     (TokensLib.
+      (check-token-sets sets)
+      (check-token-themes themes)
+      (check-active-themes active-themes)))))
 
 (defn ensure-tokens-lib
   [tokens-lib]
@@ -1353,10 +1343,11 @@ Will return a value that matches this schema:
 (def type:tokens-lib
   {:type ::tokens-lib
    :pred valid-tokens-lib?
-   :type-properties {:encode/json encode-dtcg
-                     :decode/json decode-dtcg}})
+   :type-properties
+   {:encode/json encode-dtcg
+    :decode/json decode-dtcg}})
 
-(sm/register! ::tokens-lib type:tokens-lib)
+(sm/register! type:tokens-lib)
 
 ;; === Serialization handlers for RPC API (transit) and database (fressian)
 
@@ -1369,17 +1360,17 @@ Will return a value that matches this schema:
  {:id "penpot/token-set"
   :class TokenSet
   :wfn #(into {} %)
-  :rfn #(make-token-set %)}
+  :rfn #(map->TokenSet %)}
 
  {:id "penpot/token-theme"
   :class TokenTheme
   :wfn #(into {} %)
-  :rfn #(make-token-theme %)}
+  :rfn #(map->TokenTheme %)}
 
  {:id "penpot/token"
   :class Token
   :wfn #(into {} %)
-  :rfn #(make-token %)})
+  :rfn #(map->Token %)})
 
 #?(:clj
    (fres/add-handlers!

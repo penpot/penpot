@@ -37,23 +37,21 @@
       (t/is (= (:name token1) "test-token-1"))
       (t/is (= (:type token1) :boolean))
       (t/is (= (:value token1) true))
-      (t/is (nil? (:description token1)))
+      (t/is (= (:description token1) ""))
       (t/is (some? (:modified-at token1)))
-      (t/is (ctob/valid-token? token1))
+      (t/is (ctob/check-token token1))
 
       (t/is (= (:name token2) "test-token-2"))
       (t/is (= (:type token2) :numeric))
       (t/is (= (:value token2) 66))
       (t/is (= (:description token2) "test description"))
       (t/is (= (:modified-at token2) now))
-      (t/is (ctob/valid-token? token2))))
+      (t/is (ctob/check-token token2))))
 
   (t/testing "invalid-tokens"
-    (let [args {:name 777
-                :type :invalid}]
-      (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid token"
-                              (apply ctob/make-token args)))
-      (t/is (false? (ctob/valid-token? {})))))
+    (let [params {:name 777 :type :invalid}]
+      (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid params for token"
+                              (ctob/make-token params)))))
 
   (t/testing "find-token-value-references"
     (t/testing "finds references inside curly braces in a string"
@@ -75,7 +73,7 @@
                                           :tokens [])]
 
       (t/is (= (:name token-set1) "test-token-set-1"))
-      (t/is (nil? (:description token-set1)))
+      (t/is (= (:description token-set1) ""))
       (t/is (some? (:modified-at token-set1)))
       (t/is (empty? (:tokens token-set1)))
 
@@ -85,10 +83,9 @@
       (t/is (empty? (:tokens token-set2)))))
 
   (t/testing "invalid-token-set"
-    (let [args {:name 777
-                :description 999}]
-      (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid token set"
-                              (apply ctob/make-token-set args)))))
+    (let [params {:name 777 :description 999}]
+      (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid params for token-set"
+                              (ctob/make-token-set params)))))
 
   (t/testing "move-token-set"
     (t/testing "flat"
@@ -192,7 +189,7 @@
 
       (t/is (= (:name token-theme1) "test-token-theme-1"))
       (t/is (= (:group token-theme1) ""))
-      (t/is (nil? (:description token-theme1)))
+      (t/is (= (:description token-theme1) ""))
       (t/is (false? (:is-source token-theme1)))
       (t/is (some? (:modified-at token-theme1)))
       (t/is (empty? (:sets token-theme1)))
@@ -205,12 +202,12 @@
       (t/is (empty? (:sets token-theme2)))))
 
   (t/testing "invalid-token-theme"
-    (let [args {:name 777
-                :group nil
-                :description 999
-                :is-source 42}]
-      (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid token theme"
-                              (apply ctob/make-token-theme args))))))
+    (let [params {:name 777
+                  :group nil
+                  :description 999
+                  :is-source 42}]
+      (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid params for token-theme"
+                              (ctob/make-token-theme params))))))
 
 
 (t/deftest tokens-lib
@@ -219,10 +216,9 @@
       (t/is (= (ctob/set-count tokens-lib) 0))))
 
   (t/testing "invalid-tokens-lib"
-    (let [args {:sets nil
-                :themes nil}]
-      (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid tokens lib"
-                              (apply ctob/make-tokens-lib args))))))
+    (let [params {:sets nil :themes nil}]
+      (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid token sets"
+                              (ctob/make-tokens-lib params))))))
 
 
 (t/testing "token-set in a lib"
@@ -413,7 +409,7 @@
       (t/is (= (count (:tokens token-set')) 2))
       (t/is (= (d/index-of (keys (:tokens token-set')) "updated-name") 0))
       (t/is (= (:name token') "updated-name"))
-      (t/is (= (:description token') nil))
+      (t/is (= (:description token') ""))
       (t/is (= (:value token') true))
       (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set)))
       (t/is (dt/is-after? (:modified-at token') (:modified-at token)))))
@@ -757,7 +753,7 @@
 
         (t/is (= (ctob/set-count tokens-lib') 1))
         (t/is (= (:name token') "group1.updated-name"))
-        (t/is (= (:description token') nil))
+        (t/is (= (:description token') ""))
         (t/is (= (:value token') true))
         (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set)))
         (t/is (dt/is-after? (:modified-at token') (:modified-at token)))))
@@ -792,7 +788,7 @@
         (t/is (= (ctob/set-count tokens-lib') 1))
         (t/is (= (d/index-of (keys (:tokens token-set')) "group2.updated-name") 1))
         (t/is (= (:name token') "group2.updated-name"))
-        (t/is (= (:description token') nil))
+        (t/is (= (:description token') ""))
         (t/is (= (:value token') true))
         (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set)))
         (t/is (dt/is-after? (:modified-at token') (:modified-at token)))))
@@ -930,7 +926,7 @@
         (t/is (= (count group1') 3))
         (t/is (= (d/index-of (keys group1') "S-updated-name") 0))
         (t/is (= (:name token-set') "group1/updated-name"))
-        (t/is (= (:description token-set') nil))
+        (t/is (= (:description token-set') ""))
         (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set)))
         sets-tree'))
 
@@ -961,7 +957,7 @@
         (t/is (= (count group2') 1))
         (t/is (nil? (get group1' "S-updated-name")))
         (t/is (= (:name token-set') "group2/updated-name"))
-        (t/is (= (:description token-set') nil))
+        (t/is (= (:description token-set') ""))
         (t/is (dt/is-after? (:modified-at token-set') (:modified-at token-set)))))
 
     (t/testing "delete-set-in-group"
@@ -1097,7 +1093,7 @@
         (t/is (= (d/index-of (keys group1') "updated-name") 0))
         (t/is (= (:name token-theme') "updated-name"))
         (t/is (= (:group token-theme') "group1"))
-        (t/is (= (:description token-theme') nil))
+        (t/is (= (:description token-theme') ""))
         (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
 
     (t/testing "move-theme-of-group"
@@ -1127,7 +1123,7 @@
         (t/is (= (d/index-of (keys group2') "updated-name") 0))
         (t/is (= (:name token-theme') "updated-name"))
         (t/is (= (:group token-theme') "group2"))
-        (t/is (= (:description token-theme') nil))
+        (t/is (= (:description token-theme') ""))
         (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
 
     (t/testing "delete-theme-in-group"
@@ -1166,7 +1162,7 @@
                     {:name "colors.red.600"
                      :type :color
                      :value "#e53e3e"
-                     :description nil}))
+                     :description ""}))
            (t/is (= (get-set-token "core" "spacing.multi-value")
                     {:name "spacing.multi-value"
                      :type :spacing
@@ -1176,7 +1172,7 @@
                     {:name "button.primary.background"
                      :type :color
                      :value "{accent.default}"
-                     :description nil})))
+                     :description ""})))
          (t/testing "invalid tokens got discarded"
            (t/is (nil? (get-set-token "typography" "H1.Bold"))))))))
 
@@ -1200,7 +1196,7 @@
                                      {:name "colors.red.600"
                                       :type :color
                                       :value "#e53e3e"
-                                      :description nil}))
+                                      :description ""}))
            (t/is (tht/token-data-eq? (get-set-token "core" "spacing.multi-value")
                                      {:name "spacing.multi-value"
                                       :type :spacing
@@ -1210,7 +1206,7 @@
                                      {:name "button.primary.background"
                                       :type :color
                                       :value "{accent.default}"
-                                      :description nil})))
+                                      :description ""})))
          (t/testing "invalid tokens got discarded"
            (t/is (nil? (get-set-token "typography" "H1.Bold"))))))
 
@@ -1238,26 +1234,29 @@
                                                                    :group "group-1"
                                                                    :modified-at now
                                                                    :sets #{"core"})))
-             expected (ctob/encode-dtcg tokens-lib)]
-         (t/is (= {"$themes" [{"description" nil
-                               "group" "group-1"
-                               "is-source" false
-                               "modified-at" now
-                               "name" "theme-1"
-                               "selectedTokenSets" {"core" "enabled"}}]
-                   "$metadata" {"tokenSetOrder" ["core"]}
-                   "core"
-                   {"colors" {"red" {"600" {"$value" "#e53e3e"
-                                            "$type" "color"}}}
-                    "spacing"
-                    {"multi-value"
-                     {"$value" "{dimension.sm} {dimension.xl}"
-                      "$type" "spacing"
-                      "$description" "You can have multiple values in a single spacing token"}}
-                    "button"
-                    {"primary" {"background" {"$value" "{accent.default}"
-                                              "$type" "color"}}}}}
-                  expected))))
+             result   (ctob/encode-dtcg tokens-lib)
+             expected {"$themes" [{"description" ""
+                                   "group" "group-1"
+                                   "is-source" false
+                                   "modified-at" now
+                                   "name" "theme-1"
+                                   "selectedTokenSets" {"core" "enabled"}}]
+                       "$metadata" {"tokenSetOrder" ["core"]}
+                       "core"
+                       {"colors" {"red" {"600" {"$value" "#e53e3e"
+                                                "$type" "color"
+                                                "$description" ""}}}
+                        "spacing"
+                        {"multi-value"
+                         {"$value" "{dimension.sm} {dimension.xl}"
+                          "$type" "spacing"
+                          "$description" "You can have multiple values in a single spacing token"}}
+                        "button"
+                        {"primary" {"background" {"$value" "{accent.default}"
+                                                  "$type" "color"
+                                                  "$description" ""}}}}}]
+
+         (t/is (= expected result))))
 
      (t/testing "encode-decode-dtcg-json"
        (with-redefs [dt/now (constantly #inst "2024-10-16T12:01:20.257840055-00:00")]
