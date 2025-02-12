@@ -2015,6 +2015,10 @@ msgstr "Integrante"
 msgid "labels.members"
 msgstr "Integrantes"
 
+#: src/app/main/ui/comments.cljs:558
+msgid "labels.mention"
+msgstr "Mencionar"
+
 #: src/app/main/ui/settings/password.cljs:84
 msgid "labels.new-password"
 msgstr "Nueva contraseña"

@@ -2012,6 +2012,10 @@ msgstr "Member"
 msgid "labels.members"
 msgstr "Members"
 
+#: src/app/main/ui/comments.cljs:558
+msgid "labels.mention"
+msgstr "Mention"
+
 #: src/app/main/ui/settings/password.cljs:84
 msgid "labels.new-password"
 msgstr "New password"
