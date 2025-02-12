@@ -333,7 +333,7 @@
 
         on-context-menu
         (mf/use-fn
-         (mf/deps is-library-view)
+         (mf/deps on-menu-click is-library-view)
          (fn [event]
            (dom/stop-propagation event)
            (dom/prevent-default event)
