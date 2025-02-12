@@ -14,7 +14,6 @@
    [app.common.types.file :as ctf]
    [app.common.types.typographies-list :as ctyl]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -362,7 +361,7 @@
              (nil? shared-libraries)
              (tr "workspace.libraries.loading")
 
-             (and (str/empty? search-term) (cf/external-feature-flag "templates-03" "test"))
+             (str/empty? search-term)
              [:*
               [:div {:class (stl/css :sample-libraries-info)}
                (tr "workspace.libraries.empty.no-libraries")
@@ -376,19 +375,6 @@
                  [:> sample-library-entry*
                   {:library library
                    :importing importing*}])]]
-
-             (str/empty? search-term)
-             [:*
-              [:span {:class (stl/css :empty-state-icon)}
-               library-icon]
-              (tr "workspace.libraries.no-shared-libraries-available")
-              (when (cf/external-feature-flag "templates-01" "test")
-                [:div {:class (stl/css :templates-info)}
-                 (tr "workspace.libraries.more-templates")
-                 [:a {:target "_blank"
-                      :class (stl/css :templates-info-link)
-                      :href "https://penpot.app/libraries-templates"}
-                  (tr "workspace.libraries.more-templates-link")]])]
 
              :else
              (tr "workspace.libraries.no-matches-for" search-term))]))]]))
