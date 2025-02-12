@@ -10,10 +10,14 @@
    [cuerdas.core :as str]))
 
 (def default
-  "A common flags that affects both: backend and frontend."
+  "Flags with default configuration"
   [:enable-registration
    :enable-export-file-v3
-   :enable-login-with-password])
+   :enable-login-with-password
+   :enable-backend-svgo
+   :enable-frontend-svgo
+   :enable-exporter-svgo
+   ])
 
 (defn parse
   [& flags]
