@@ -62,6 +62,7 @@ is a number of cores)
 - Added upload svg with images method [#5489](https://github.com/penpot/penpot/issues/5489)
 - Fix problem with root frame parent reference [Taiga #9437](https://tree.taiga.io/project/penpot/issue/9437)
 - Fix change flex direction using plugins API [Taiga #9407](https://tree.taiga.io/project/penpot/issue/9407)
+- Fix problem with onboarding to a team [Taiga #10143](https://tree.taiga.io/project/penpot/issue/10143)
 
 ## 2.4.3
 
