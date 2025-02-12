@@ -155,6 +155,9 @@ export class DashboardPage extends BaseWebSocketPage {
     await this.mockRPC("search-files", "dashboard/search-files.json", {
       method: "POST",
     });
+    await this.mockRPC("delete-team", "dashboard/delete-team.json", {
+      method: "POST",
+    });
     await this.mockRPC("search-files", "dashboard/search-files.json");
     await this.mockRPC("get-teams", "logged-in-user/get-teams-complete.json");
   }

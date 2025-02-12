@@ -131,3 +131,31 @@ test("Bug 9927, Don't show the banner to invite team members if the user has dis
   await expect(page.getByText("Second team")).toBeVisible();
   await expect(page.getByText("Team Up")).not.toBeVisible();
 });
+
+test("Bug 10141, The team does not disappear from the team list after deletion", async ({
+  page,
+}) => {
+  const dashboardPage = new DashboardPage(page);
+  await dashboardPage.setupDashboardFull();
+  await DashboardPage.mockRPC(
+    page,
+    "get-teams",
+    "logged-in-user/get-teams-complete-owner.json",
+  );
+  await dashboardPage.goToDashboard();
+  await dashboardPage.teamDropdown.click();
+  await expect(page.getByText("Second Team")).toBeVisible();
+  await page.getByText("Second Team").click();
+  await page.getByRole("button", { name: "team-management" }).click();
+  await page.getByTestId("delete-team").click();
+
+  await DashboardPage.mockRPC(
+    page,
+    "get-teams",
+    "logged-in-user/get-teams-default.json",
+  );
+
+  await page.getByRole("button", { name: "Delete team" }).click();
+  await dashboardPage.teamDropdown.click();
+  await expect(page.getByText("Second Team")).not.toBeVisible();
+});
