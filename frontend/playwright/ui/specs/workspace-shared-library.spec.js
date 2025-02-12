@@ -72,3 +72,41 @@ test("Bug 9056 - 'More info' doesn't open the update tab", async ({ page }) => {
     /library updates/i,
   );
 });
+
+test("Bug 10113 - Empty library modal for non-empty library", async ({
+  page,
+}) => {
+  const workspace = new WorkspacePage(page);
+
+  await workspace.setupEmptyFile(page);
+  await workspace.mockRPC(/get\-file\?/, "workspace/get-file-10113.json");
+  await workspace.mockRPC(
+    "get-file-fragment?file-id=*&fragment-id=*",
+    "workspace/get-file-fragment-10113.json",
+  );
+  await workspace.mockRPC(/get\-file\?/, "workspace/get-file-10113.json");
+  await workspace.mockRPC(
+    "get-team-shared-files?team-id=*",
+    "workspace/get-team-shared-files-empty.json",
+  );
+  await workspace.mockRPC(
+    "set-file-shared",
+    "workspace/set-file-shared-10113.json",
+  );
+
+  await workspace.goToWorkspace({
+    fileId: "5b7ebd2b-2907-80db-8005-b9d67c20cf2e",
+    pageId: "5b7ebd2b-2907-80db-8005-b9d67c20cf2f",
+  });
+
+  await workspace.clickAssets();
+  await workspace.openLibrariesModal();
+
+  await workspace.librariesModal
+    .getByRole("button", { name: "Publish" })
+    .click();
+
+  await expect(
+    workspace.page.getByText("Publish empty library"),
+  ).not.toBeVisible();
+});
