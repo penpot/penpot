@@ -15,6 +15,17 @@ test("User loads worskpace with empty file", async ({ page }) => {
   await expect(workspacePage.pageName).toHaveText("Page 1");
 });
 
+test("User opens a file with a bad page id", async ({ page }) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+
+  await workspacePage.goToWorkspace({
+    pageId: "badpage",
+  });
+
+  await expect(workspacePage.pageName).toHaveText("Page 1");
+});
+
 test("User receives presence notifications updates in the workspace", async ({
   page,
 }) => {
