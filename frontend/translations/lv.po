@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-02-06 11:02+0000\n"
+"PO-Revision-Date: 2025-02-13 10:02+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -6785,3 +6785,48 @@ msgstr "Neviena"
 #: src/app/main/ui/dashboard.cljs:249
 msgid "dashboard.import.no-perms"
 msgstr "Nav atļaujas ievietot šajā komandā"
+
+#: src/app/main/ui/settings/notifications.cljs:95
+msgid "dashboard.settings.notifications.email-invites.all"
+msgstr "Visi uzaicinājumu un pieprasījumu veidi"
+
+#: src/app/main/ui/settings/notifications.cljs:98
+msgid "dashboard.settings.notifications.email-invites.none"
+msgstr "Neko"
+
+#: src/app/main/ui/settings/notifications.cljs:92
+msgid "dashboard.settings.notifications.email-invites.title"
+msgstr "Uzaicinājumi un pieprasījumi"
+
+#: src/app/main/ui/settings/notifications.cljs:82
+msgid "dashboard.settings.notifications.email.title"
+msgstr "E-pasta paziņojumi"
+
+#: src/app/main/ui/settings/notifications.cljs:103
+msgid "dashboard.settings.notifications.submit"
+msgstr "Atjaunināt iestatījumus"
+
+#: src/app/main/ui/settings/notifications.cljs:71
+msgid "dashboard.settings.notifications.title"
+msgstr "Paziņojumi"
+
+#: src/app/main/data/tokens.cljs:199
+msgid "errors.drag-drop.parent-to-child"
+msgstr "Nevar nomest vecāku kopu paša bērna ceļā."
+
+#: src/app/main/data/tokens.cljs:198
+msgid "errors.drag-drop.set-exists"
+msgstr ""
+"Nevar pabeigt nomešanu, jo kopa ar tādu pašu nosaukumu jau pastāv ceļā %s."
+
+#: src/app/main/ui/settings/notifications.cljs:64
+msgid "title.settings.notifications"
+msgstr "Paziņojumi - Penpot"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:343, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:344
+msgid "workspace.options.fit-content"
+msgstr "Mainīt paneļa izmēru, lai ietilpinātu saturu"
+
+#: src/app/main/ui/settings/sidebar.cljs:99
+msgid "labels.notifications"
+msgstr "Paziņojumi"
