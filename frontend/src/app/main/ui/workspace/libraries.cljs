@@ -176,15 +176,7 @@
 (defn- empty-library?
   "Check if currentt library summary has elements or not"
   [summary]
-  (let [colors       (or (-> summary :colors :count) 0)
-        components   (or (-> summary :components :count) 0)
-        media        (or (-> summary :media :count) 0)
-        typographies (or (-> summary :typographies :count) 0)]
-
-    (and (zero? colors)
-         (zero? components)
-         (zero? media)
-         (zero? typographies))))
+  (boolean (:is-empty summary)))
 
 (mf/defc libraries-tab*
   {::mf/props :obj
