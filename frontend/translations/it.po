@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-30 23:57+0000\n"
+"PO-Revision-Date: 2025-02-13 10:02+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
@@ -58,7 +58,7 @@ msgstr "Accedi al mio account"
 
 #: src/app/main/ui/auth/register.cljs:137, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:101
 msgid "auth.login-here"
-msgstr "Accedere qui"
+msgstr "Accedi qui."
 
 #: src/app/main/ui/auth/login.cljs:196
 msgid "auth.login-submit"
@@ -572,7 +572,7 @@ msgstr "Esporta i file"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:313
 msgid "dashboard.fonts.deleted-placeholder"
-msgstr "Font mancante"
+msgstr "Carattere mancante"
 
 #: src/app/main/ui/dashboard/fonts.cljs:210
 msgid "dashboard.fonts.dismiss-all"
@@ -580,43 +580,45 @@ msgstr "Chiudi tutto"
 
 #: src/app/main/ui/dashboard/fonts.cljs:445
 msgid "dashboard.fonts.empty-placeholder"
-msgstr "I font personalizzati che carichi appariranno qui."
+msgstr "I caratteri personalizzati che carichi appariranno qui."
 
 #: src/app/main/ui/dashboard/fonts.cljs:448
 msgid "dashboard.fonts.empty-placeholder-viewer"
-msgstr "Nessun font personalizzato presente."
+msgstr "Nessun carattere personalizzato presente."
 
 #: src/app/main/ui/dashboard/fonts.cljs:449
 msgid "dashboard.fonts.empty-placeholder-viewer-sub"
 msgstr ""
-"Quando un membro del progetto carica un font personalizzato, verrà mostrato "
-"qui."
+"Quando un membro del progetto carica un carattere personalizzato, verrà "
+"mostrato qui."
 
 #: src/app/main/ui/dashboard/fonts.cljs:198
 msgid "dashboard.fonts.fonts-added"
 msgid_plural "dashboard.fonts.fonts-added"
-msgstr[0] "1 font aggiunto"
-msgstr[1] "%s font aggiunti"
+msgstr[0] "1 carattere aggiunto"
+msgstr[1] "%s caratteri aggiunti"
 
 #: src/app/main/ui/dashboard/fonts.cljs:174
 #, markdown
 msgid "dashboard.fonts.hero-text1"
 msgstr ""
-"Qualsiasi font web caricato qui verrà aggiunto alla lista dei font family "
-"disponibile nelle impostazioni testo dei file di questo team. I font che "
-"arrecano lo stesso nome di font family verranno raggruppati come un "
-"**singolo font family**. È possibile caricare font con i seguenti "
-"formati:**TTF, OTF e WOFF**(uno solo di questi è necessario)."
+"Qualsiasi carattere web caricato qui verrà aggiunto alla lista delle "
+"famiglie di caratteri disponibili nelle impostazioni testo dei file di "
+"questo team. I caratteri che arrecano lo stesso nome di famiglia di "
+"carattere verranno raggruppati come una **singola famiglia di caratteri**. È "
+"possibile caricare caratteri con i seguenti formati: **TTF, OTF e WOFF** ("
+"uno solo di questi è necessario)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:186
 #, markdown
 msgid "dashboard.fonts.hero-text2"
 msgstr ""
-"È consigliabile caricare unicamente font di cui si è proprietari o dei "
+"È consigliabile caricare unicamente caratteri di cui si è proprietari o dei "
 "quali si possiede la licenza d'uso in Penpot. Ulteriori informazioni sui "
-"diritti dei contenuti sono disponibili nella sezione [Termini di Servizio "
-"di Penpot](https://penpot.app/terms.html). Potresti anche voler "
-"approfondire le [licenze per i font](https://www.typography.com/faq)."
+"diritti dei contenuti sono disponibili nella sezione "
+"[Termini di Servizio di Penpot](https://penpot.app/terms.html). Potresti "
+"anche voler approfondire le [licenze dei caratteri](https://"
+"www.typography.com/faq)."
 
 #: src/app/main/ui/dashboard/fonts.cljs:206
 msgid "dashboard.fonts.upload-all"
@@ -626,10 +628,10 @@ msgstr "Carica tutto"
 #, markdown
 msgid "dashboard.fonts.warning-text"
 msgstr ""
-"Abbiamo rilevato un possibile problema nei tuoi font relativo alle metriche "
-"verticali per diversi sistemi operativi. Per verificarlo, puoi utilizzare "
-"servizi per le metriche verticali dei font come "
-"[questo](https://vertical-metrics.netlify.app/). Inoltre, ti consigliamo di "
+"Abbiamo rilevato un possibile problema nei tuoi caratteri relativo alle "
+"metriche verticali per diversi sistemi operativi. Per verificarlo, puoi "
+"utilizzare servizi per le metriche verticali dei caratteri come [questo]"
+"(https://vertical-metrics.netlify.app/). Inoltre, ti consigliamo di "
 "utilizzare [Transfonter](https://transfonter.org/) per generare webfont e "
 "correggere errori. "
 
@@ -733,7 +735,7 @@ msgstr "caricamento dei file …"
 
 #: src/app/main/ui/dashboard/fonts.cljs:439
 msgid "dashboard.loading-fonts"
-msgstr "caricamento dei font …"
+msgstr "caricamento dei caratteri…"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:291, src/app/main/ui/dashboard/project_menu.cljs:101
 msgid "dashboard.move-to"
@@ -1125,11 +1127,11 @@ msgstr "Sembra che tu non ti sia autenticato o che la sessione sia scaduta."
 
 #: src/app/main/data/fonts.cljs:193, src/app/main/ui/dashboard/fonts.cljs:113
 msgid "errors.bad-font"
-msgstr "Il font %s non può essere caricato"
+msgstr "Il carattere %s non può essere caricato"
 
 #: src/app/main/data/fonts.cljs:192
 msgid "errors.bad-font-plural"
-msgstr "I font %s non posso essere caricati"
+msgstr "I caratteri %s non posso essere caricati"
 
 #: src/app/main/data/workspace/media.cljs:198
 msgid "errors.cannot-upload"
@@ -1534,7 +1536,7 @@ msgstr "Tipografia"
 
 #: src/app/main/ui/viewer/inspect/attributes/text.cljs:89, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:299
 msgid "inspect.attributes.typography.font-family"
-msgstr "Font Family"
+msgstr "Famiglia di caratteri"
 
 #: src/app/main/ui/viewer/inspect/attributes/text.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:317
 msgid "inspect.attributes.typography.font-size"
@@ -1796,7 +1798,7 @@ msgstr "Inserisci il nome del nuovo team"
 
 #, unused
 msgid "labels.custom-fonts"
-msgstr "Font personalizzati"
+msgstr "Caratteri personalizzati"
 
 #: src/app/main/ui/settings/sidebar.cljs:80
 msgid "labels.dashboard"
@@ -1876,11 +1878,11 @@ msgstr "Figma"
 
 #: src/app/main/ui/dashboard/fonts.cljs:422
 msgid "labels.font-family"
-msgstr "Font Family"
+msgstr "Famiglia di caratteri"
 
 #, unused
 msgid "labels.font-providers"
-msgstr "Fornitori di font"
+msgstr "Fornitori di caratteri"
 
 #: src/app/main/ui/dashboard/fonts.cljs:423
 msgid "labels.font-variants"
@@ -1932,7 +1934,7 @@ msgstr "Inattivo"
 
 #: src/app/main/ui/dashboard/fonts.cljs:420
 msgid "labels.installed-fonts"
-msgstr "Font installati"
+msgstr "Caratteri installati"
 
 #: src/app/main/ui/static.cljs:424
 msgid "labels.internal-error.desc-message"
@@ -1998,7 +2000,7 @@ msgstr "Successivo"
 
 #: src/app/main/ui/dashboard/comments.cljs:106, src/app/main/ui/workspace/comments.cljs:161
 msgid "labels.no-comments-available"
-msgstr "Non ci sono notifiche di commenti in attesa"
+msgstr "Non ci sono notifiche di commenti in attesa."
 
 #: src/app/main/ui/dashboard/team.cljs:740
 msgid "labels.no-invitations"
@@ -2179,7 +2181,7 @@ msgstr "Cerca"
 
 #: src/app/main/ui/dashboard/fonts.cljs:425
 msgid "labels.search-font"
-msgstr "Cerca un font"
+msgstr "Cerca un carattere"
 
 #: src/app/main/ui/onboarding/questions.cljs:85, src/app/main/ui/onboarding/questions.cljs:244, src/app/main/ui/onboarding/questions.cljs:255, src/app/main/ui/onboarding/questions.cljs:265
 msgid "labels.select-option"
@@ -2287,7 +2289,7 @@ msgstr "Carica"
 
 #: src/app/main/ui/dashboard/fonts.cljs:173
 msgid "labels.upload-custom-fonts"
-msgstr "Carica font personalizzati"
+msgstr "Carica caratteri personalizzati"
 
 #: src/app/main/ui/dashboard/fonts.cljs:244
 msgid "labels.uploading"
