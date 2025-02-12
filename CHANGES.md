@@ -63,6 +63,7 @@ is a number of cores)
 - Fix problem with root frame parent reference [Taiga #9437](https://tree.taiga.io/project/penpot/issue/9437)
 - Fix change flex direction using plugins API [Taiga #9407](https://tree.taiga.io/project/penpot/issue/9407)
 - Fix problem with onboarding to a team [Taiga #10143](https://tree.taiga.io/project/penpot/issue/10143)
+- Fix problem with grid layout crashing [Taiga #10127](https://tree.taiga.io/project/penpot/issue/10127)
 
 ## 2.4.3
 
