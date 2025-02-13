@@ -27,9 +27,9 @@
 (mf/defc layer-name
   {::mf/wrap-props false
    ::mf/forward-ref true}
-  [{:keys [shape-id shape-name shape-touched? disabled-double-click
-           on-start-edit on-stop-edit depth parent-size selected?
-           type-comp type-frame hidden?]} external-ref]
+  [{:keys [shape-id shape-name is-shape-touched disabled-double-click
+           on-start-edit on-stop-edit depth parent-size is-selected
+           type-comp type-frame is-hidden is-blocked]} external-ref]
   (let [edition*         (mf/use-state false)
         edition?         (deref edition*)
 
@@ -42,9 +42,10 @@
 
         start-edit
         (mf/use-fn
-         (mf/deps disabled-double-click on-start-edit shape-id)
+         (mf/deps disabled-double-click on-start-edit shape-id is-blocked)
          (fn []
-           (when (not disabled-double-click)
+           (when (and (not is-blocked)
+                      (not disabled-double-click))
              (on-start-edit)
              (reset! edition* true)
              (st/emit! (dw/start-rename-shape shape-id)))))
@@ -102,8 +103,8 @@
         {:class (stl/css-case
                  :element-name true
                  :left-ellipsis has-path?
-                 :selected selected?
-                 :hidden hidden?
+                 :selected is-selected
+                 :hidden is-hidden
                  :type-comp type-comp
                  :type-frame type-frame)
          :style {"--depth" depth "--parent-size" parent-size}
@@ -112,5 +113,5 @@
         (if (dbg/enabled? :show-ids)
           (str (d/nilv shape-name "") " | " (str/slice (str shape-id) 24))
           (d/nilv shape-name ""))]
-       (when (and (dbg/enabled? :show-touched) ^boolean shape-touched?)
+       (when (and (dbg/enabled? :show-touched) ^boolean is-shape-touched)
          [:span {:class (stl/css :element-name-touched)} "*"])])))
