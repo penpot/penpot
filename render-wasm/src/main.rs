@@ -48,6 +48,13 @@ pub extern "C" fn clean_up() {
 }
 
 #[no_mangle]
+pub extern "C" fn clear_cache() {
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
+    let render_state = state.render_state();
+    render_state.clear_cache();
+}
+
+#[no_mangle]
 pub extern "C" fn set_render_options(debug: u32, dpr: f32) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     let render_state = state.render_state();
@@ -98,7 +105,9 @@ pub extern "C" fn resize_viewbox(width: i32, height: i32) {
 #[no_mangle]
 pub extern "C" fn set_view(zoom: f32, x: f32, y: f32) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
-    state.render_state().viewbox.set_all(zoom, x, y);
+    let render_state = state.render_state();
+    render_state.invalidate_cache_if_needed();
+    render_state.viewbox.set_all(zoom, x, y);
 }
 
 #[no_mangle]

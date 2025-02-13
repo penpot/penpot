@@ -1,3 +1,4 @@
+use skia::Contains;
 use skia_safe as skia;
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -71,6 +72,7 @@ pub(crate) struct RenderState {
     pub render_in_progress: bool,
     // Stack of nodes pending to be rendered.
     pub pending_nodes: Vec<NodeRenderState>,
+    pub render_complete: bool,
 }
 
 impl RenderState {
@@ -112,6 +114,7 @@ impl RenderState {
             render_request_id: None,
             render_in_progress: false,
             pending_nodes: vec![],
+            render_complete: true,
         }
     }
 
@@ -236,6 +239,12 @@ impl RenderState {
             .clear(skia::Color::TRANSPARENT);
     }
 
+    pub fn invalidate_cache_if_needed(&mut self) {
+        if let Some(ref mut cached_surface_image) = self.cached_surface_image {
+            cached_surface_image.invalidate_if_dirty(&self.viewbox);
+        }
+    }
+
     pub fn render_shape(
         &mut self,
         shape: &mut Shape,
@@ -325,6 +334,7 @@ impl RenderState {
         }];
         self.render_in_progress = true;
         self.process_animation_frame(tree, modifiers, timestamp)?;
+        self.render_complete = true;
         Ok(())
     }
 
@@ -359,20 +369,39 @@ impl RenderState {
         }
 
         // self.render_in_progress can have changed
-        if !self.render_in_progress {
+        if self.render_in_progress {
+            if self.cached_surface_image.is_some() {
+                self.render_from_cache()?;
+            }
+            return Ok(());
+        }
+
+        // Chech if cached_surface_image is not set or is invalid
+        if self
+            .cached_surface_image
+            .as_ref()
+            .map_or(true, |img| img.invalid)
+        {
             self.cached_surface_image = Some(CachedSurfaceImage {
                 image: self.render_surface.image_snapshot(),
                 viewbox: self.viewbox,
+                invalid: false,
+                has_all_shapes: self.render_complete,
             });
-            if self.options.is_debug_visible() {
-                self.render_debug();
-            }
-
-            debug::render_wasm_label(self);
-            self.apply_render_to_final_canvas();
-            self.flush();
         }
+
+        if self.options.is_debug_visible() {
+            self.render_debug();
+        }
+
+        debug::render_wasm_label(self);
+        self.apply_render_to_final_canvas();
+        self.flush();
         Ok(())
+    }
+
+    pub fn clear_cache(&mut self) {
+        self.cached_surface_image = None;
     }
 
     pub fn render_from_cache(&mut self) -> Result<(), String> {
@@ -397,6 +426,7 @@ impl RenderState {
             navigate_x * self.options.dpr(),
             navigate_y * self.options.dpr(),
         ));
+        self.final_surface.canvas().clear(self.background_color);
         self.final_surface
             .canvas()
             .draw_image(image, (0, 0), Some(&paint));
@@ -437,6 +467,7 @@ impl RenderState {
                     .to_string(),
             )?;
 
+            let render_complete = self.viewbox.area.contains(element.bounds());
             if visited_children {
                 if !visited_mask {
                     match element.kind {
@@ -488,6 +519,7 @@ impl RenderState {
             if !node_render_state.id.is_nil() {
                 if !element.bounds().intersects(self.viewbox.area) || element.hidden() {
                     debug::render_debug_shape(self, element, false);
+                    self.render_complete = render_complete;
                     continue;
                 } else {
                     debug::render_debug_shape(self, element, true);

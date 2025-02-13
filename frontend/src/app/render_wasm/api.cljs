@@ -18,7 +18,6 @@
    [app.main.render :as render]
    [app.render-wasm.helpers :as h]
    [app.util.debug :as dbg]
-   [app.util.functions :as fns]
    [app.util.http :as http]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
@@ -522,13 +521,13 @@
           (h/call internal-module "_add_shape_shadow" rgba blur spread x y (translate-shadow-style style) hidden)
           (recur (inc index)))))))
 
-(def debounce-render (fns/debounce render 100))
-
 (defn set-view-box
   [zoom vbox]
   (h/call internal-module "_set_view" zoom (- (:x vbox)) (- (:y vbox)))
-  (h/call internal-module "_render_from_cache")
-  (debounce-render))
+  (render nil))
+
+(defn clear-cache []
+  (h/call internal-module "_clear_cache"))
 
 (defn set-objects
   [objects]
@@ -589,6 +588,7 @@
               (let [pending' (concat (set-shape-fills fills) (set-shape-strokes strokes))]
                 (recur (inc index) (into pending pending'))))
             pending))]
+    (clear-cache)
     (request-render "set-objects")
     (when-let [pending (seq pending)]
       (->> (rx/from pending)
