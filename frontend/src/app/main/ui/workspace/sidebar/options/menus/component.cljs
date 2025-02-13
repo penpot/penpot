@@ -11,6 +11,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
+   [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
@@ -232,17 +233,14 @@
 
 
 (mf/defc component-variant*
-  {::mf/props :obj}
-  [{:keys [component shape libraries]}]
+  [{:keys [component shape data page-id]}]
   (let [id-component (:id component)
         properties   (:variant-properties component)
-        data         (get-in libraries [(:component-file shape) :data])
         variant-id   (:variant-id component)
+        objects      (-> (dsh/get-page data page-id)
+                         (get :objects))
 
-        related-components (->> data
-                                :components
-                                vals
-                                (filter #(= (:variant-id %) variant-id)))
+        related-components (dwv/find-related-components data objects variant-id)
 
         flat-comps ;; Get a list like [{:id 0 :prop1 "v1" :prop2 "v2"} {:id 1, :prop1 "v3" :prop2 "v4"}]
         (map (fn [{:keys [id variant-properties]}]
@@ -594,9 +592,11 @@
   {::mf/props :obj}
   [{:keys [shapes swap-opened?]}]
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
+        current-page-id (mf/use-ctx ctx/current-page-id)
 
         libraries       (deref refs/libraries)
         current-file    (get libraries current-file-id)
+        data            (get-in libraries [current-file-id :data])
 
         state*          (mf/use-state
                          #(do {:show-content true
@@ -732,14 +732,13 @@
             [:& component-annotation {:id id :shape shape :component component :rerender-fn rerender-fn}])
 
           (when (and is-variant? (not swap-opened?) (not multi))
-            [:> component-variant* {:component component :shape shape :libraries libraries}])
+            [:> component-variant* {:component component :shape shape :data data :page-id current-page-id}])
 
           (when (dbg/enabled? :display-touched)
             [:div ":touched " (str (:touched shape))])])])))
 
 
-(mf/defc variant-menu
-  {::mf/props :obj}
+(mf/defc variant-menu*
   [{:keys [shapes]}]
   (let [;; TODO check multi. What is shown? User can change properties like width?
         multi              (> (count shapes) 1)
@@ -749,22 +748,19 @@
 
         libraries          (deref refs/libraries)
         current-file-id    (mf/use-ctx ctx/current-file-id)
+        current-page-id    (mf/use-ctx ctx/current-page-id)
         data               (get-in libraries [current-file-id :data])
 
-        objects            (mf/deref refs/workspace-page-objects)
+        objects            (-> (dsh/get-page data current-page-id)
+                               (get :objects))
+
         first-variant      (get objects (first (:shapes shape)))
         variant-id         (:variant-id first-variant)
 
-        related-components (->> data
-                                :components
-                                vals
-                                (filter #(= (:variant-id %) variant-id)))
-
-        properties         (->> related-components
+        properties         (->> (dwv/find-related-components data objects variant-id)
                                 (mapcat :variant-properties)
                                 (group-by :name)
                                 (map (fn [[k v]] {:name k :values (map :value v)})))
-
 
         menu-open*         (mf/use-state false)
         menu-open?         (deref menu-open*)

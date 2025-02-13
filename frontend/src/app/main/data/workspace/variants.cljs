@@ -9,6 +9,7 @@
    [app.common.colors :as clr]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
+   [app.common.types.components-list :as ctcl]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
@@ -28,6 +29,12 @@
        (map :value)
        (str/join ", ")))
 
+(defn find-related-components
+  [data objects variant-id]
+  (->> (dm/get-in objects [variant-id :shapes])
+       (map #(dm/get-in objects [% :component-id]))
+       (map #(ctcl/get-component data % true))))
+
 (defn update-property-name
   "Update the variant property name on the position pos
    in all the components with this variant-id"
@@ -37,10 +44,10 @@
     (watch [it state _]
       (let [page-id (:current-page-id state)
             data    (dsh/lookup-file-data state)
+            objects (-> (dsh/get-page data page-id)
+                        (get :objects))
 
-            related-components (->> (:components data)
-                                    vals
-                                    (filter #(= (:variant-id %) variant-id)))
+            related-components (find-related-components data objects variant-id)
 
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-library-data data))
@@ -69,11 +76,10 @@
     (watch [it state _]
       (let [page-id (:current-page-id state)
             data    (dsh/lookup-file-data state)
-            objects    (dsh/lookup-page-objects state page-id)
+            objects (-> (dsh/get-page data page-id)
+                        (get :objects))
 
-            related-components (->> (:components data)
-                                    vals
-                                    (filter #(= (:variant-id %) variant-id)))
+            related-components (find-related-components data objects variant-id)
 
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-library-data data)
@@ -104,11 +110,12 @@
     (watch [it state _]
       (let [page-id   (:current-page-id state)
             data      (dsh/lookup-file-data state)
-            objects   (dsh/lookup-page-objects state page-id)
-            component (dm/get-in data [:components component-id])
+            objects (-> (dsh/get-page data page-id)
+                        (get :objects))
+            component (ctcl/get-component data component-id true)
             main-id   (:main-instance-id component)
             properties (-> (:variant-properties component)
-                           (assoc-in [pos :value] value))
+                           (update pos assoc :value value))
 
             name       (properties-to-name properties)
 
@@ -131,12 +138,10 @@
     (watch [it state _]
       (let [page-id (:current-page-id state)
             data    (dsh/lookup-file-data state)
-            objects    (dsh/lookup-page-objects state page-id)
+            objects (-> (dsh/get-page data page-id)
+                        (get :objects))
 
-            related-components (->> (:components data)
-                                    vals
-                                    (filter #(= (:variant-id %) variant-id))
-                                    reverse)
+            related-components (find-related-components data objects variant-id)
 
 
             property-name (str "Property" (-> related-components
@@ -173,7 +178,7 @@
   (ptk/reify ::set-variant-id
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id      (:current-page-id state)
+      (let [page-id (:current-page-id state)
             data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-library-data data)
@@ -192,36 +197,36 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [variant-id (uuid/next)
+            variant-vec [variant-id]
             new-component-id (uuid/next)
             file-id      (:current-file-id state)
             page-id      (:current-page-id state)
-            objects      (dsh/lookup-page-objects state page-id)
+            objects      (dsh/lookup-page-objects state file-id page-id)
             main         (get objects id)
             main-id      (:id main)
-            undo-id  (js/Symbol)]
-
+            undo-id      (js/Symbol)]
 
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dwsh/create-artboard-from-selection variant-id)
-         (cl/remove-all-fills [variant-id] {:color clr/black :opacity 1})
+         (cl/remove-all-fills variant-vec {:color clr/black :opacity 1})
          (dwsl/create-layout-from-id variant-id :flex)
-         (dwsh/update-shapes [variant-id] #(assoc % :layout-item-h-sizing :auto
-                                                  :layout-item-v-sizing :auto
-                                                  :layout-padding {:p1 30 :p2 30 :p3 30 :p4 30}
-                                                  :layout-gap     {:row-gap 0 :column-gap 20}
-                                                  :name (:name main)
-                                                  :r1 20
-                                                  :r2 20
-                                                  :r3 20
-                                                  :r4 20
-                                                  :is-variant-container true))
+         (dwsh/update-shapes variant-vec #(assoc % :layout-item-h-sizing :auto
+                                                 :layout-item-v-sizing :auto
+                                                 :layout-padding {:p1 30 :p2 30 :p3 30 :p4 30}
+                                                 :layout-gap     {:row-gap 0 :column-gap 20}
+                                                 :name (:name main)
+                                                 :r1 20
+                                                 :r2 20
+                                                 :r3 20
+                                                 :r4 20
+                                                 :is-variant-container true))
          (dwsh/update-shapes [main-id] #(assoc % :layout-item-h-sizing :fix :layout-item-v-sizing :fix :variant-id variant-id))
-         (cl/add-stroke [variant-id] {:stroke-alignment :inner
-                                      :stroke-style :solid
-                                      :stroke-color "#bb97d8" ;; todo use color var?
-                                      :stroke-opacity 1
-                                      :stroke-width 2})
+         (cl/add-stroke variant-vec {:stroke-alignment :inner
+                                     :stroke-style :solid
+                                     :stroke-color "#bb97d8" ;; todo use color var?
+                                     :stroke-opacity 1
+                                     :stroke-width 2})
          (dwl/duplicate-component file-id (:component-id main) new-component-id)
          (set-variant-id (:component-id main) variant-id)
          (set-variant-id new-component-id variant-id)

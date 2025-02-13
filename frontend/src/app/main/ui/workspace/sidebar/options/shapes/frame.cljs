@@ -12,7 +12,7 @@
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu variant-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu variant-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs-shape fill-menu]]
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
@@ -72,7 +72,7 @@
         is-variant?               (when variants? (:is-variant-container shape))]
 
     (if is-variant?
-      [:& variant-menu {:shapes [shape]}]
+      [:> variant-menu* {:shapes [shape]}]
       [:*
        [:& layer-menu {:ids ids
                        :type shape-type

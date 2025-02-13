@@ -38,7 +38,7 @@
 
         shape-for-rename (mf/deref lens:shape-for-rename)
 
-        shape-name       (or variant-name shape-name)
+        shape-name       (d/nilv variant-name shape-name)
 
         has-path?        (str/includes? shape-name "/")
 
