@@ -43,6 +43,7 @@
 (def mentions-context (mf/create-context nil))
 (def r-mentions-split #"@\[[^\]]*\]\([^\)]*\)")
 (def r-mentions #"@\[([^\]]*)\]\(([^\)]*)\)")
+(def zero-width-space \u200B)
 
 (defn- parse-comment
   "Parse a comment into its elements (texts and mentions)"
@@ -78,7 +79,7 @@
   ([text]
    (-> (dom/create-element "span")
        (dom/set-data! "type" "text")
-       (dom/set-html! (if (empty? text) "&#8203;" text)))))
+       (dom/set-html! (if (empty? text) zero-width-space text)))))
 
 (defn- create-mention-node
   "Creates a mention node"
@@ -127,7 +128,7 @@
   (or (str/blank? content)
       (str/empty? content)
       ;; If only one char and it's the zero-width whitespace
-      (and (= 1 (count content)) (= (first content) \u200B))))
+      (and (= 1 (count content)) (= (first content) zero-width-space))))
 
 ;; Component that renders the component content
 (mf/defc comment-content*
@@ -183,7 +184,7 @@
                ;; If a node is empty we set the content to "empty"
                (when (and (= (dom/get-data child-node "type") "text")
                           (empty? (dom/get-text child-node)))
-                 (dom/set-html! child-node "&#8203;"))
+                 (dom/set-html! child-node zero-width-space))
 
                ;; Remove mentions that have been modified
                (when (and (= (dom/get-data child-node "type") "mention")
@@ -301,7 +302,7 @@
                      after-span (create-text-node (dm/str " " suffix))
                      sel (wapi/get-selection)]
 
-                 (dom/set-html! span-node (if (empty? prefix) "&#8203;" prefix))
+                 (dom/set-html! span-node (if (empty? prefix) zero-width-space prefix))
                  (dom/insert-after! node span-node mention-span)
                  (dom/insert-after! node mention-span after-span)
                  (wapi/set-cursor-after! after-span)
@@ -368,7 +369,7 @@
 
                    (when span-node
                      (let [txt (.-textContent span-node)]
-                       (dom/set-html! span-node (dm/str (subs txt 0 offset) "\n&#8203;" (subs txt offset)))
+                       (dom/set-html! span-node (dm/str (subs txt 0 offset) "\n" zero-width-space (subs txt offset)))
                        (wapi/set-cursor! span-node (inc offset))
                        (handle-input)))))
 
