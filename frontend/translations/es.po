@@ -2015,6 +2015,10 @@ msgstr "Integrante"
 msgid "labels.members"
 msgstr "Integrantes"
 
+#: src/app/main/ui/comments.cljs:558
+msgid "labels.mention"
+msgstr "Mencionar"
+
 #: src/app/main/ui/settings/password.cljs:84
 msgid "labels.new-password"
 msgstr "Nueva contraseña"
@@ -4800,10 +4804,6 @@ msgstr "Cargando…"
 msgid "workspace.libraries.more-templates"
 msgstr "Puedes buscar "
 
-#: src/app/main/ui/workspace/libraries.cljs:391
-msgid "workspace.libraries.more-templates-link"
-msgstr "más plantillas aquí"
-
 #: src/app/main/ui/workspace/libraries.cljs:481
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "No hay bibliotecas que necesiten ser actualizadas"
@@ -4811,10 +4811,6 @@ msgstr "No hay bibliotecas que necesiten ser actualizadas"
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "No se encuentra “%s“"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "No hay bibliotecas compartidas disponibles"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"

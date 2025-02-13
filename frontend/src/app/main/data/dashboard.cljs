@@ -16,6 +16,7 @@
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.fonts :as df]
+   [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.websocket :as dws]
    [app.main.features :as features]
@@ -248,15 +249,18 @@
   (ptk/reify ::create-project
     ptk/WatchEvent
     (watch [_ state _]
-      (let [unames   (cfh/get-used-names (get state :projects))
+      (let [team-id   (:current-team-id state)
+            projects  (dsh/lookup-team-projects state team-id)
+            unames    (cfh/get-used-names projects)
             base-name (tr "dashboard.new-project-prefix")
-            name     (cfh/generate-unique-name base-name unames :immediate-suffix? true)
-            team-id  (:current-team-id state)
-            params   {:name name
-                      :team-id team-id}
+            name      (cfh/generate-unique-name base-name unames :immediate-suffix? true)
+            team-id   (:current-team-id state)
+            params    {:name name
+                       :team-id team-id}
             {:keys [on-success on-error]
              :or {on-success identity
-                  on-error rx/throw}} (meta params)]
+                  on-error rx/throw}}
+            (meta params)]
         (->> (rp/cmd! :create-project params)
              (rx/tap on-success)
              (rx/map project-created)
@@ -465,10 +469,11 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (assoc-in [:files id] file)
-          (assoc-in [:recent-files id] file)
-          (update-in [:projects project-id :count] inc)))))
+      (let [file (dissoc file :data)]
+        (-> state
+            (assoc-in [:files id] file)
+            (assoc-in [:recent-files id] file)
+            (update-in [:projects project-id :count] inc))))))
 
 (defn create-file
   [{:keys [project-id name] :as params}]
@@ -482,8 +487,11 @@
     (watch [it state _]
       (let [{:keys [on-success on-error]
              :or {on-success identity
-                  on-error rx/throw}} (meta params)
-            unames    (cfh/get-used-names (get state :files))
+                  on-error rx/throw}}
+            (meta params)
+
+            files     (dsh/lookup-team-files state)
+            unames    (cfh/get-used-names files)
             base-name (tr "dashboard.new-file-prefix")
             name      (or name
                           (cfh/generate-unique-name base-name unames :immediate-suffix? true))
@@ -597,10 +605,10 @@
             pparams       (:path-params route)
             in-project?   (contains? pparams :project-id)
             name          (if in-project?
-                            (let [files  (get state :files)
+                            (let [files  (dsh/lookup-team-files state team-id)
                                   unames (cfh/get-used-names files)]
                               (cfh/generate-unique-name (tr "dashboard.new-file-prefix") unames :immediate-suffix? true))
-                            (let [projects (get state :projects)
+                            (let [projects (dsh/lookup-team-projects  state team-id)
                                   unames   (cfh/get-used-names projects)]
                               (cfh/generate-unique-name (tr "dashboard.new-project-prefix") unames :immediate-suffix? true)))
             params        (if in-project?

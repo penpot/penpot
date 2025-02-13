@@ -741,12 +741,12 @@
             redirect-to-page
             (fn [page-id shape-id]
               (rx/merge
-               (rx/of (dcm/go-to-workspace :page-id page-id))
                (->> stream
-                    (rx/filter (ptk/type? ::initialize-page))
+                    (rx/filter (ptk/type? ::dw/initialize-page))
                     (rx/take 1)
                     (rx/observe-on :async)
-                    (rx/mapcat (fn [_] (select-and-zoom shape-id))))))]
+                    (rx/mapcat (fn [_] (select-and-zoom shape-id))))
+               (rx/of (dcm/go-to-workspace :page-id page-id))))]
 
         (when-let [component (dm/get-in data [:components id])]
           (let [page-id  (:main-instance-page component)

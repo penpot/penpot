@@ -227,7 +227,7 @@ export class WorkspacePage extends BaseWebSocketPage {
   }
 
   async openLibrariesModal(clickOptions = {}) {
-    await this.sidebar.getByText("Libraries").click(clickOptions);
+    await this.sidebar.getByTestId("libraries").click(clickOptions);
     await expect(this.librariesModal).toBeVisible();
   }
 

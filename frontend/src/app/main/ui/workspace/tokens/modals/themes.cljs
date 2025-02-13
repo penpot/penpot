@@ -120,7 +120,7 @@
                                  (dom/prevent-default e)
                                  (dom/stop-propagation e)
                                  (st/emit! (wdt/toggle-token-theme-active? group name)))}
-               [:& switch {:name (tr "workspace.token.theme" name)
+               [:& switch {:name (tr "workspace.token.theme-name" name)
                            :on-change (constantly nil)
                            :selected? selected?}]]
               [:> text* {:as "span"  :typography "body-medium" :class (stl/css :theme-name)} name]]

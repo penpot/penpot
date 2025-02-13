@@ -8,7 +8,6 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.assets :as dwa]
@@ -92,12 +91,6 @@
         reverse-sort?  (= :desc ordering)
         num-libs       (count (mf/deref refs/libraries))
 
-        show-templates-04-test1?
-        (and (cf/external-feature-flag "templates-04" "test1") (zero? num-libs))
-
-        show-templates-04-test2?
-        (and (cf/external-feature-flag "templates-04" "test2") (zero? num-libs))
-
         toggle-ordering
         (mf/use-fn
          (mf/deps ordering)
@@ -166,18 +159,12 @@
     [:article  {:class (stl/css :assets-bar)}
      [:div {:class (stl/css :assets-header)}
       (when-not ^boolean read-only?
-        (cond
-          show-templates-04-test1?
-          [:button {:class (stl/css :libraries-button)
-                    :on-click show-libraries-dialog
-                    :data-testid "libraries"}
-           (tr "workspace.assets.add-library")]
-          show-templates-04-test2?
+        (if (= num-libs 1)
           [:button {:class (stl/css :add-library-button)
                     :on-click show-libraries-dialog
                     :data-testid "libraries"}
            (tr "workspace.assets.add-library")]
-          :else
+
           [:button {:class (stl/css :libraries-button)
                     :on-click show-libraries-dialog
                     :data-testid "libraries"}

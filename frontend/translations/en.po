@@ -12,9 +12,8 @@ msgstr ""
 "X-Generator: Weblate 5.10-dev\n"
 
 #: src/app/main/data/common.cljs:87
-#, fuzzy
-msgid "Refresh"
-msgstr ""
+msgid "labels.refresh"
+msgstr "Refresh"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -1386,11 +1385,6 @@ msgstr "Email or password is incorrect."
 msgid "errors.wrong-old-password"
 msgstr "Old password is incorrect"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:85
-#, fuzzy
-msgid "exclude"
-msgstr ""
-
 #: src/app/main/ui/settings/feedback.cljs:74
 msgid "feedback.description"
 msgstr "Description"
@@ -1690,11 +1684,6 @@ msgstr "Text"
 #: src/app/main/ui/viewer/inspect/right_sidebar.cljs:96
 msgid "inspect.tabs.info"
 msgstr "Info"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:80
-#, fuzzy
-msgid "intersection"
-msgstr ""
 
 #: src/app/main/ui/workspace/main_menu.cljs:162
 msgid "label.shortcuts"
@@ -2019,6 +2008,10 @@ msgstr "Member"
 #: src/app/main/ui/dashboard/sidebar.cljs:519, src/app/main/ui/dashboard/team.cljs:94, src/app/main/ui/dashboard/team.cljs:102
 msgid "labels.members"
 msgstr "Members"
+
+#: src/app/main/ui/comments.cljs:558
+msgid "labels.mention"
+msgstr "Mention"
 
 #: src/app/main/ui/settings/password.cljs:84
 msgid "labels.new-password"
@@ -2457,11 +2450,6 @@ msgstr "Create token"
 #: src/app/main/ui/settings/access_tokens.cljs:112
 msgid "modals.create-access-token.title"
 msgstr "Generate access token"
-
-#: src/app/main/ui/settings/access_tokens.cljs:152
-#, fuzzy
-msgid "modals.create-access-token.token"
-msgstr ""
 
 #: src/app/main/ui/dashboard/team.cljs:921
 msgid "modals.create-webhook.submit-label"
@@ -4806,10 +4794,6 @@ msgstr "Loading…"
 msgid "workspace.libraries.more-templates"
 msgstr "You can look for "
 
-#: src/app/main/ui/workspace/libraries.cljs:391
-msgid "workspace.libraries.more-templates-link"
-msgstr "more templates in here"
-
 #: src/app/main/ui/workspace/libraries.cljs:481
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "There are no Shared Libraries that need update"
@@ -4817,10 +4801,6 @@ msgstr "There are no Shared Libraries that need update"
 #: src/app/main/ui/workspace/libraries.cljs:394
 msgid "workspace.libraries.no-matches-for"
 msgstr "No matches found for “%s“"
-
-#: src/app/main/ui/workspace/libraries.cljs:384
-msgid "workspace.libraries.no-shared-libraries-available"
-msgstr "There are no Shared Libraries available"
 
 #: src/app/main/ui/workspace/libraries.cljs:337
 msgid "workspace.libraries.search-shared-libraries"
@@ -6624,11 +6604,6 @@ msgstr "Select set."
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:346
 msgid "workspace.token.set-selection-theme"
 msgstr "Define what token sets should be used as part of this theme option:"
-
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:123
-#, fuzzy
-msgid "workspace.token.theme"
-msgstr ""
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs
 #, unused

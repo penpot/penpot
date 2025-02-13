@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.types.team :as ctt]
@@ -118,8 +119,10 @@
       (let [team-id (:current-team-id state)
             teams   (get state :teams)
             team    (get teams team-id)]
-        (rx/of (set-current-team team)
-               (fetch-members))))))
+        (if (not team)
+          (rx/throw (ex/error :type :authentication))
+          (rx/of (set-current-team team)
+                 (fetch-members)))))))
 
 (defn initialize-team
   [team-id]

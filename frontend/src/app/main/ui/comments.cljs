@@ -237,9 +237,14 @@
                      (str/last-index-of (subs node-text 0 offset) "@")
 
                      mention-text
-                     (subs node-text current-at-symbol)]
+                     (subs node-text current-at-symbol)
 
-                 (if (re-matches #"@\w*" mention-text)
+                     at-symbol-inside-word?
+                     (and (> current-at-symbol 0)
+                          (str/word? (str/slice node-text (- current-at-symbol 1) current-at-symbol)))]
+
+                 (if (and (not at-symbol-inside-word?)
+                          (re-matches #"@\w*" mention-text))
                    (do
                      (reset! cur-mention mention-text)
                      (rx/push! mentions-s {:type :display-mentions})
@@ -304,6 +309,17 @@
 
                  (when (fn? on-change)
                    (on-change (parse-nodes node))))))))
+
+        handle-insert-at-symbol
+        (mf/use-fn
+         (fn []
+           (let [node (mf/ref-val local-ref) [span-node] (current-text-node node)]
+             (when span-node
+               (let [node-text (dom/get-text span-node)
+                     at-symbol (if (blank-content? node-text) "@" " @")]
+
+                 (dom/set-html! span-node (str/concat node-text at-symbol))
+                 (wapi/set-cursor-after! span-node))))))
 
         handle-key-down
         (mf/use-fn
@@ -386,6 +402,8 @@
                 (case type
                   :insert-mention
                   (handle-insert-mention data)
+                  :insert-at-symbol
+                  (handle-insert-at-symbol)
 
                   nil))))))
 
@@ -521,15 +539,25 @@
   {::mf/props :obj
    ::mf/private true}
   []
-  (let [mentions-s      (mf/use-ctx mentions-context)
+  (let [mentions-s        (mf/use-ctx mentions-context)
         display-mentions* (mf/use-state false)
 
-        handle-mouse-down
+        handle-pointer-down
         (mf/use-fn
+         (mf/deps @display-mentions*)
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (rx/push! mentions-s {:type :display-mentions})))]
+           (if @display-mentions*
+             (rx/push! mentions-s {:type :hide-mentions})
+             (rx/push! mentions-s {:type :insert-at-symbol}))))
+
+        handle-key-down
+        (mf/use-fn
+         (mf/deps @display-mentions*)
+         (fn [event]
+           (when (or (kbd/enter? event) (kbd/space? event))
+             (handle-pointer-down event))))]
 
     (mf/use-effect
      (fn []
@@ -545,8 +573,9 @@
 
     [:> icon-button*
      {:variant "ghost"
-      :aria-label (tr "labels.options")
-      :on-pointer-down handle-mouse-down
+      :aria-label (tr "labels.mention")
+      :on-pointer-down handle-pointer-down
+      :on-key-down handle-key-down
       :icon-class (stl/css-case :open-mentions-button true
                                 :is-toggled @display-mentions*)
       :icon "at"}]))

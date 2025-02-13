@@ -168,3 +168,21 @@
   [state]
   (when-let [{:keys [x y width height]} (get-in state [:workspace-local :vbox])]
     (gpt/point (+ x (/ width 2)) (+ y (/ height 2)))))
+
+(defn lookup-team-files
+  ([state]
+   (lookup-team-files state (:current-team-id state)))
+  ([state team-id]
+   (->> state
+        :files
+        (filter #(= team-id (:team-id (val %))))
+        (into {}))))
+
+(defn lookup-team-projects
+  ([state]
+   (lookup-team-projects (:current-team-id state)))
+  ([state team-id]
+   (->> state
+        :projects
+        (filter #(= team-id (:team-id (val %))))
+        (into {}))))
