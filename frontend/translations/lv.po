@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-02-13 10:02+0000\n"
+"PO-Revision-Date: 2025-02-14 15:01+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
 "19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.10\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -105,7 +105,7 @@ msgstr ""
 
 #: src/app/main/ui/auth/recovery_request.cljs:33
 msgid "auth.notifications.recovery-token-sent"
-msgstr "Paroles atkopšanas saite ir nosūtīta e-pastā."
+msgstr "Paroles atkopes saite ir nosūtīta e-pastā."
 
 #: src/app/main/ui/auth/verify_token.cljs:49
 msgid "auth.notifications.team-invitation-accepted"
@@ -133,7 +133,7 @@ msgstr "Mēs nosūtīsim e-pasta ziņojumu ar norādēm"
 
 #: src/app/main/ui/auth/recovery_request.cljs:94
 msgid "auth.recovery-request-title"
-msgstr "Aizmirsat paroli?"
+msgstr "Aizmirsta parole?"
 
 #: src/app/main/ui/auth/recovery.cljs:71
 msgid "auth.recovery-submit"
@@ -370,7 +370,7 @@ msgstr "Derīgs līdz %s"
 
 #: src/app/main/ui/settings/access_tokens.cljs:270
 msgid "dashboard.access-tokens.no-expiration"
-msgstr "Bez derīguma termiņa"
+msgstr "Bez derīguma datuma"
 
 #: src/app/main/ui/settings/access_tokens.cljs:186
 msgid "dashboard.access-tokens.personal"
@@ -385,7 +385,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/access_tokens.cljs:143
 msgid "dashboard.access-tokens.token-will-expire"
-msgstr "Pilnvara ir derīga līdz %s"
+msgstr "Pilnvara beigsies %s"
 
 #: src/app/main/ui/settings/access_tokens.cljs:144
 msgid "dashboard.access-tokens.token-will-not-expire"
@@ -1119,7 +1119,7 @@ msgstr "Apstiprinājuma e-pastam jāatbilst"
 
 #: src/app/main/ui/auth/recovery.cljs:32
 msgid "errors.invalid-recovery-token"
-msgstr "Atkopšanas tekstvienība nav derīga."
+msgstr "Atkopes tekstvienība nav derīga."
 
 #: src/app/main/ui/static.cljs:69
 msgid "errors.invite-invalid"
@@ -2763,13 +2763,12 @@ msgstr ""
 
 #: src/app/main/ui/auth/recovery_request.cljs:114
 msgid "not-found.login.sent-recovery"
-msgstr "Mēs nosūtījām atkopšanas e-pasta ziņojumu uz"
+msgstr "Mēs nosūtījām atkopes e-pasta ziņojumu uz"
 
 #: src/app/main/ui/auth/recovery_request.cljs:116
 msgid "not-found.login.sent-recovery-check"
 msgstr ""
-"Jāpārbauda sava e-pasta kaste un jāklikšķina uz saites, lai izveidotu jaunu "
-"paroli."
+"Jāpārbauda savs e-pasts un jāklikšķina uz saites, lai izveidotu jaunu paroli."
 
 #: src/app/main/ui/static.cljs:149
 msgid "not-found.login.signup-free"
@@ -6830,3 +6829,110 @@ msgstr "Mainīt paneļa izmēru, lai ietilpinātu saturu"
 #: src/app/main/ui/settings/sidebar.cljs:99
 msgid "labels.notifications"
 msgstr "Paziņojumi"
+
+#: src/app/main/ui/workspace/context_menu.cljs:205
+msgid "workspace.shape.menu.copy-css-nested"
+msgstr "Ievietot starpliktuvē kā CSS (pakārtoti slāņi)"
+
+#: src/app/main/ui/workspace/context_menu.cljs:213
+msgid "workspace.shape.menu.copy-props"
+msgstr "Ievietot īpašības starpliktuvē"
+
+#: src/app/main/ui/workspace/context_menu.cljs:210
+msgid "workspace.shape.menu.copy-text"
+msgstr "Ievietot starpliktuvē kā tekstu"
+
+#: src/app/main/ui/workspace/context_menu.cljs:217
+msgid "workspace.shape.menu.paste-props"
+msgstr "Ielīmēt īpašības"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:128
+msgid "workspace.token.applied-to"
+msgstr "Pielietota"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:212
+msgid "workspace.token.edit"
+msgstr "Labot tekstvienību"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:179
+msgid "workspace.token.label.group"
+msgstr "Kopa"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:187
+msgid "workspace.token.label.theme"
+msgstr "Izskats"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:89
+msgid "workspace.token.no-permisions-set"
+msgstr ""
+"Nepieciešams būt redaktoram, lai aktivētu kopas vai atceltu to aktivēšanu"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:200
+msgid "workspace.token.no-permission-themes"
+msgstr "Jābūt redaktoram, lai izmantotu izskatus"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:120
+msgid "workspace.token.ref-not-valid"
+msgstr "Atsauce nav derīga vai tā nav nevienā aktīvā kopā"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:482
+msgid "workspace.token.token-description"
+msgstr "Apraksts"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:440
+msgid "workspace.token.token-name"
+msgstr "Nosaukums"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:56
+msgid "workspace.token.token-name-validation-error"
+msgstr ""
+" nav derīgs tekstvienības nosaukums.\n"
+"Tekstvienību nosaukumos vajadzētu būt burtiem un cipariem, kas atdalīti ar . "
+"rakstzīmēm, un tie nedrīkst sākties ar $ zīmi."
+
+#: src/app/main/ui/workspace/tokens/form.cljs:464
+msgid "workspace.token.token-value"
+msgstr "Vērtība"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:279
+msgid "workspace.token.tokens-section-title"
+msgstr "TEKSTVIENĪBAS -  %s"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:348
+msgid "workspace.token.tools"
+msgstr "Rīki"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:123
+msgid "workspace.token.value-not-valid"
+msgstr "Vērtība nav derīga"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:458
+msgid "workspace.token.warning-name-change"
+msgstr ""
+"Šīs tekstvienības pārdēvēšana salauzīs visas atsauces uz tās iepriekšējo "
+"nosaukumu."
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:47
+#, unused
+msgid "workspace.token-set.not-active"
+msgstr "Tekstvienību kopa nav aktīva"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:228
+msgid "workspace.token.delete"
+msgstr "Izdzēst tekstvienību"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:481
+msgid "workspace.token.enter-token-description"
+msgstr "Pievienot aprakstu (pēc izvēles)"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:437
+msgid "workspace.token.enter-token-name"
+msgstr "Jāievada %s tekstvienības nosaukums"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:463
+msgid "workspace.token.enter-token-value"
+msgstr "Jāievada tekstvienības vērtība vai aizstājvārds"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:225
+msgid "workspace.token.duplicate"
+msgstr "Pavairot tekstvienību"
