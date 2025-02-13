@@ -1,6 +1,7 @@
 (ns app.main.ui.workspace.tokens.token
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -21,7 +22,9 @@
                         {:value parsed-value
                          :unit unit}))))
 
-(defn token-identifier [{:keys [name] :as _token}]
+;; FIXME: looks very redundant function
+(defn token-identifier
+  [{:keys [name] :as _token}]
   name)
 
 (defn attributes-map
@@ -43,7 +46,7 @@
 (defn token-attribute-applied?
   "Test if `token` is applied to a `shape` on single `token-attribute`."
   [token shape token-attribute]
-  (when-let [id (get-in shape [:applied-tokens token-attribute])]
+  (when-let [id (dm/get-in shape [:applied-tokens token-attribute])]
     (= (token-identifier token) id)))
 
 (defn token-applied?
@@ -56,15 +59,18 @@
   [token shapes token-attributes]
   (some #(token-applied? token % token-attributes) shapes))
 
-(defn shapes-ids-by-applied-attributes [token shapes token-attributes]
-  (reduce (fn [acc shape]
-            (let [applied-ids-by-attribute (->> (map #(when (token-attribute-applied? token shape %)
-                                                        [% #{(:id shape)}])
-                                                     token-attributes)
-                                                (filter some?)
-                                                (into {}))]
-              (merge-with into acc applied-ids-by-attribute)))
-          {} shapes))
+(defn shapes-ids-by-applied-attributes
+  [token shapes token-attributes]
+  (let [conj* (fnil conj #{})]
+    (reduce (fn [result shape]
+              (let [shape-id (dm/get-prop shape :id)]
+                (->> token-attributes
+                     (filter #(token-attribute-applied? token shape %))
+                     (reduce (fn [result attr]
+                               (update result attr conj* shape-id))
+                             result))))
+            {}
+            shapes)))
 
 (defn shapes-applied-all? [ids-by-attributes shape-ids attributes]
   (every? #(set/superset? (get ids-by-attributes %) shape-ids) attributes))
@@ -121,6 +127,11 @@
 
 (defn color-token? [token]
   (= (:type token) :color))
+
+
+;; FIXME: this should be precalculated ?
+(defn is-reference? [token]
+  (str/includes? (:value token) "{"))
 
 (defn color-bullet-color [token-color-value]
   (when-let [tc (tinycolor/valid-color token-color-value)]

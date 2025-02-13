@@ -144,7 +144,7 @@
   (l/derived
    (fn [{:keys [objects selected]}]
      (dsh/process-selected-shapes objects selected))
-   selected-shapes-data))
+   selected-shapes-data =))
 
 (defn make-selected-ref
   [id]
@@ -479,6 +479,7 @@
 (def workspace-active-set-names
   (l/derived (d/nilf ctob/get-active-themes-set-names) tokens-lib))
 
+;; FIXME: deprecated, it should not be implemented with ref
 (def workspace-active-theme-sets-tokens
   (l/derived #(or (some-> % ctob/get-active-themes-set-tokens) {}) tokens-lib))
 

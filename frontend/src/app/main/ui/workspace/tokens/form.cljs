@@ -21,13 +21,13 @@
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
+   [app.main.ui.workspace.tokens.changes :as wtch]
    [app.main.ui.workspace.tokens.components.controls.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.components.controls.input-tokens :refer [input-tokens*]]
    [app.main.ui.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
-   [app.main.ui.workspace.tokens.token-types :as wtty]
    [app.main.ui.workspace.tokens.update :as wtu]
    [app.main.ui.workspace.tokens.warnings :as wtw]
    [app.util.dom :as dom]
@@ -223,7 +223,7 @@
   [{:keys [token token-type action selected-token-set-name on-display-colorpicker]}]
   (let [create? (not (instance? ctob/Token token))
         token (or token {:type token-type})
-        token-properties (wtty/get-token-properties token)
+        token-properties (wtch/get-token-properties token)
         color? (wtt/color-token? token)
         selected-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
         active-theme-tokens (mf/deref refs/workspace-active-theme-sets-tokens)

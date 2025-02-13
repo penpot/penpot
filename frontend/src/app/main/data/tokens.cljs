@@ -312,7 +312,7 @@
   (ptk/reify ::set-token-type-section-open
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-tokens :open-status token-type] open?))))
+      (assoc-in state [:workspace-local :token-type-open-status token-type] open?))))
 
 ;; === Token Context Menu
 

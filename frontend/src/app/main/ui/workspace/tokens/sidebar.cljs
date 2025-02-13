@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -18,6 +19,7 @@
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu
                                                  dropdown-menu-item*]]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
@@ -32,9 +34,8 @@
    [app.main.ui.workspace.tokens.sets-context-menu :refer [sets-context-menu]]
    [app.main.ui.workspace.tokens.style-dictionary :as sd]
    [app.main.ui.workspace.tokens.theme-select :refer [theme-select]]
-   [app.main.ui.workspace.tokens.token :as wtt]
-   [app.main.ui.workspace.tokens.token-pill :refer [token-pill]]
-   [app.main.ui.workspace.tokens.token-types :as wtty]
+   [app.main.ui.workspace.tokens.token-pill :refer [token-pill*]]
+   [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.webapi :as wapi]
@@ -44,8 +45,8 @@
    [rumext.v2 :as mf]
    [shadow.resource]))
 
-(def lens:token-type-open-status
-  (l/derived (l/in [:workspace-tokens :open-status]) st/state))
+(def ref:token-type-open-status
+  (l/derived #(dm/get-in % [:workspace-local :token-type-open-status]) st/state))
 
 ;; Components ------------------------------------------------------------------
 
@@ -65,62 +66,64 @@
     :sizing "expand"
     "add"))
 
-(defn attribute-actions [token selected-shapes attributes]
-  (let [ids-by-attributes (wtt/shapes-ids-by-applied-attributes token selected-shapes attributes)
-        shape-ids (into #{} (map :id selected-shapes))]
-    {:all-selected? (wtt/shapes-applied-all? ids-by-attributes shape-ids attributes)
-     :shape-ids shape-ids
-     :selected-pred #(seq (% ids-by-attributes))}))
+(mf/defc token-group*
+  {::mf/private true}
+  [{:keys [type tokens selected-shapes active-theme-tokens is-open]}]
+  (let [{:keys [modal title]}
+        (get wtch/token-properties type)
 
-(mf/defc token-component
-  [{:keys [type tokens selected-shapes token-type-props active-theme-tokens]}]
-  (let [open? (mf/deref (-> (l/key type)
-                            (l/derived lens:token-type-open-status)))
-        {:keys [modal attributes all-attributes title]} token-type-props
+        tokens
+        (mf/with-memo [tokens]
+          (vec (sort-by :name tokens)))
 
-        on-context-menu (mf/use-fn
-                         (fn [event token]
-                           (dom/prevent-default event)
-                           (dom/stop-propagation event)
-                           (st/emit! (dt/show-token-context-menu
-                                      {:type :token
-                                       :position (dom/get-client-position event)
-                                       :errors (:errors token)
-                                       :token-name (:name token)}))))
+        on-context-menu
+        (mf/use-fn
+         (fn [event token]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (st/emit! (dt/show-token-context-menu
+                      {:type :token
+                       :position (dom/get-client-position event)
+                       :errors (:errors token)
+                       :token-name (:name token)}))))
 
-        on-toggle-open-click (mf/use-fn
-                              (mf/deps open? tokens)
-                              #(st/emit! (dt/set-token-type-section-open type (not open?))))
-        on-popover-open-click (mf/use-fn
-                               (fn [event]
-                                 (mf/deps type title)
-                                 (let [{:keys [key fields]} modal]
-                                   (dom/stop-propagation event)
-                                   (st/emit! (dt/set-token-type-section-open type true))
-                                   (modal/show! key {:x (.-clientX ^js event)
-                                                     :y (.-clientY ^js event)
-                                                     :position :right
-                                                     :fields fields
-                                                     :title title
-                                                     :action "create"
-                                                     :token-type type}))))
+        on-toggle-open-click
+        (mf/use-fn
+         (mf/deps is-open type)
+         #(st/emit! (dt/set-token-type-section-open type (not is-open))))
 
-        on-token-pill-click (mf/use-fn
-                             (mf/deps selected-shapes token-type-props)
-                             (fn [event token]
-                               (dom/stop-propagation event)
-                               (when (seq selected-shapes)
-                                 (st/emit!
-                                  (wtch/toggle-token {:token token
-                                                      :shapes selected-shapes
-                                                      :token-type-props token-type-props})))))
+        on-popover-open-click
+        (mf/use-fn
+         (mf/deps type title modal)
+         (fn [event]
+           (dom/stop-propagation event)
+           (st/emit! (dt/set-token-type-section-open type true)
+                     ;; FIXME: use dom/get-client-position
+                     (modal/show (:key modal)
+                                 {:x (.-clientX ^js event)
+                                  :y (.-clientY ^js event)
+                                  :position :right
+                                  :fields (:fields modal)
+                                  :title title
+                                  :action "create"
+                                  :token-type type}))))
+
+        on-token-pill-click
+        (mf/use-fn
+         (mf/deps selected-shapes)
+         (fn [event token]
+           (dom/stop-propagation event)
+           (when (seq selected-shapes)
+             (st/emit! (wtch/toggle-token {:token token
+                                           :shapes selected-shapes})))))
         tokens-count (count tokens)
         can-edit?  (:can-edit (deref refs/permissions))]
+
     [:div {:on-click on-toggle-open-click}
      [:& cmm/asset-section {:icon (token-section-icon type)
                             :title title
                             :assets-count tokens-count
-                            :open? open?}
+                            :open? is-open}
       [:& cmm/asset-section-block {:role :title-button}
        (when can-edit?
          [:> icon-button* {:on-click on-popover-open-click
@@ -128,56 +131,55 @@
                            :icon "add"
                            ;;  TODO: This needs translation
                            :aria-label (str "Add token: " title)}])]
-      (when open?
+      (when is-open
         [:& cmm/asset-section-block {:role :content}
          [:div {:class (stl/css :token-pills-wrapper)}
-          (for [token (sort-by :name tokens)]
-            (let [theme-token (get active-theme-tokens (wtt/token-identifier token))
-                  multiple-selection (< 1 (count selected-shapes))
-                  full-applied (:all-selected? (attribute-actions token selected-shapes (or all-attributes attributes)))
-                  applied (wtt/shapes-token-applied? token selected-shapes (or all-attributes attributes))
-                  on-token-click (fn [e]
-                                   (on-token-pill-click e token))
-                  on-context-menu (fn [e] (on-context-menu e token))]
-              [:& token-pill
-               {:key (:name token)
-                :token-type-props token-type-props
-                :token token
-                :selected-shapes selected-shapes
-                :active-theme-tokens active-theme-tokens
-                :theme-token theme-token
-                :half-applied (or (and applied multiple-selection)
-                                  (and applied (not full-applied)))
-                :full-applied (if multiple-selection
-                                false
-                                applied)
-                :on-click on-token-click
-                :on-context-menu on-context-menu}]))]])]]))
+          (for [token tokens]
+            [:> token-pill*
+             {:key (:name token)
+              :token token
+              :selected-shapes selected-shapes
+              :active-theme-tokens active-theme-tokens
+              :on-click on-token-pill-click
+              :on-context-menu on-context-menu}])]])]]))
 
-(defn sorted-token-groups
-  "Separate token-types into groups of `:empty` or `:filled` depending if tokens exist for that type.
-  Sort each group alphabetically (by their `:token-key`)."
-  [tokens]
-  (let [tokens-by-type (ctob/group-by-type tokens)
-        {:keys [empty filled]} (->> wtty/token-types
-                                    (map (fn [[token-key token-type-props]]
-                                           {:token-key token-key
-                                            :token-type-props token-type-props
-                                            :tokens (get tokens-by-type token-key [])}))
-                                    (group-by (fn [{:keys [tokens]}]
-                                                (if (empty? tokens) :empty :filled))))]
-    {:empty (sort-by :token-key empty)
-     :filled (sort-by :token-key filled)}))
+(defn- get-sorted-token-groups
+  "Separate token-types into groups of `empty` or `filled` depending if
+  tokens exist for that type.  Sort each group alphabetically (by
+  their type)."
+  [tokens-by-type]
+  (loop [empty  #js []
+         filled #js []
+         types  (-> wtch/token-properties keys seq)]
+    (if-let [type (first types)]
+      (if (not-empty (get tokens-by-type type))
+        (recur empty
+               (array/conj! filled type)
+               (rest types))
+        (recur (array/conj! empty type)
+               filled
+               (rest types)))
+      [(seq (array/sort! empty))
+       (seq (array/sort! filled))])))
 
-(mf/defc themes-header
-  [_props]
-  (let [ordered-themes (mf/deref refs/workspace-token-themes-no-hidden)
-        can-edit?  (:can-edit (deref refs/permissions))
+(mf/defc themes-header*
+  {::mf/private true}
+  []
+  (let [ordered-themes
+        (mf/deref refs/workspace-token-themes-no-hidden)
+
+        permissions
+        (mf/use-ctx ctx/permissions)
+
+        can-edit?
+        (get permissions :can-edit)
+
         open-modal
         (mf/use-fn
          (fn [e]
            (dom/stop-propagation e)
            (modal/show! :tokens/themes {})))]
+
     [:div {:class (stl/css :themes-wrapper)}
      [:span {:class (stl/css :themes-header)} (tr "labels.themes")]
      (if (empty? ordered-themes)
@@ -199,13 +201,24 @@
                          (tr "workspace.token.no-permission-themes"))}
           [:& theme-select]]))]))
 
-(mf/defc add-set-button
-  [{:keys [on-open style]}]
-  (let [{:keys [on-create new-path]} (sets-context/use-context)
-        on-click #(do
-                    (on-open)
-                    (on-create []))
-        can-edit?  (:can-edit (deref refs/permissions))]
+(mf/defc add-set-button*
+  {::mf/private true}
+  [{:keys [style]}]
+  (let [{:keys [on-create new-path]}
+        (sets-context/use-context)
+
+        permissions
+        (mf/use-ctx ctx/permissions)
+
+        can-edit?
+        (get permissions :can-edit)
+
+        on-click
+        (mf/use-fn
+         (mf/deps on-create)
+         (fn []
+           (on-create [])))]
+
     (if (= style "inline")
       (when-not new-path
         (if can-edit?
@@ -224,67 +237,96 @@
                           :on-click on-click
                           :aria-label (tr "workspace.token.add set")}]))))
 
-(mf/defc theme-sets-list
-  [{:keys [on-open]}]
+(mf/defc theme-sets-list*
+  {::mf/private true}
+  []
   (let [token-sets (mf/deref refs/workspace-ordered-token-sets)
         {:keys [new-path] :as ctx} (sets-context/use-context)]
     (if (and (empty? token-sets)
              (not new-path))
-      [:& add-set-button {:on-open on-open
-                          :style "inline"}]
+      [:> add-set-button* {:style "inline"}]
       [:& h/sortable-container {}
        [:& sets-list]])))
 
-(mf/defc themes-sets-tab
+(mf/defc themes-sets-tab*
+  {::mf/private true}
   [{:keys [resize-height]}]
-  (let [open? (mf/use-state true)
-        on-open (mf/use-fn #(reset! open? true))
-        can-edit? (:can-edit (deref refs/permissions))]
+  (let [permissions
+        (mf/use-ctx ctx/permissions)
+
+        can-edit?
+        (get permissions :can-edit)]
+
     [:& sets-context/provider {}
      [:& sets-context-menu]
      [:article {:data-testid "token-themes-sets-sidebar"
                 :class (stl/css :sets-section-wrapper)
                 :style {"--resize-height" (str resize-height "px")}}
       [:div {:class (stl/css :sets-sidebar)}
-       [:& themes-header]
+       [:> themes-header*]
        [:div {:class (stl/css :sidebar-header)}
         [:& title-bar {:title (tr "labels.sets")}
          (when can-edit?
-           [:& add-set-button {:on-open on-open
-                               :style "header"}])]]
-       [:& theme-sets-list {:on-open on-open}]]]]))
+           [:> add-set-button* {:style "header"}])]]
 
-(mf/defc tokens-tab
-  [_props]
-  (let [objects (mf/deref refs/workspace-page-objects)
+       [:> theme-sets-list* {}]]]]))
 
-        selected (mf/deref refs/selected-shapes)
-        selected-shapes (into [] (keep (d/getf objects)) selected)
+(mf/defc tokens-tab*
+  []
+  (let [objects         (mf/deref refs/workspace-page-objects)
+        selected        (mf/deref refs/selected-shapes)
+        open-status     (mf/deref ref:token-type-open-status)
 
-        active-theme-tokens (sd/use-active-theme-sets-tokens)
+        selected-shapes
+        (mf/with-memo [selected objects]
+          (into [] (keep (d/getf objects)) selected))
 
-        tokens (sd/use-resolved-workspace-tokens)
+        active-theme-tokens
+        (sd/use-active-theme-tokens)
 
-        selected-token-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
+        tokens
+        (sd/use-resolved-workspace-tokens)
 
-        selected-token-set-name (mf/deref refs/workspace-selected-token-set-name)
+        selected-token-set-tokens
+        (mf/deref refs/workspace-selected-token-set-tokens)
 
-        token-groups (mf/with-memo [tokens selected-token-set-tokens]
-                       (-> (select-keys tokens (keys selected-token-set-tokens))
-                           (sorted-token-groups)))]
+        selected-token-set-name
+        (mf/deref refs/workspace-selected-token-set-name)
+
+        tokens-by-type
+        (mf/with-memo [tokens selected-token-set-tokens]
+          (let [tokens (reduce-kv (fn [tokens k _]
+                                    (if (contains? selected-token-set-tokens k)
+                                      tokens
+                                      (dissoc tokens k)))
+                                  tokens
+                                  tokens)]
+            (ctob/group-by-type tokens)))
+
+        [empty-group filled-group]
+        (mf/with-memo [tokens-by-type]
+          (get-sorted-token-groups tokens-by-type))]
+
     [:*
      [:& token-context-menu]
      [:& title-bar {:all-clickable true
                     :title (tr "workspace.token.tokens-section-title" selected-token-set-name)}]
 
-     (for [{:keys [token-key token-type-props tokens]} (concat (:filled token-groups)
-                                                               (:empty token-groups))]
-       [:& token-component {:key token-key
-                            :type token-key
-                            :selected-shapes selected-shapes
-                            :active-theme-tokens active-theme-tokens
-                            :tokens tokens
-                            :token-type-props token-type-props}])]))
+     (for [type filled-group]
+       (let [tokens (get tokens-by-type type)]
+         [:> token-group* {:key (name type)
+                           :is-open (get open-status type false)
+                           :type type
+                           :selected-shapes selected-shapes
+                           :active-theme-tokens active-theme-tokens
+                           :tokens tokens}]))
+
+     (for [type empty-group]
+       [:> token-group* {:key (name type)
+                         :type type
+                         :selected-shapes selected-shapes
+                         :active-theme-tokens active-theme-tokens
+                         :tokens []}])]))
 
 (mf/defc import-export-button
   {::mf/wrap-props false}
@@ -357,22 +399,21 @@
                                :on-click on-export}
        (tr "labels.export")]]]))
 
-(mf/defc tokens-sidebar-tab
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
-  [_props]
+(mf/defc tokens-sidebar-tab*
+  {::mf/wrap [mf/memo]}
+  []
   (let [{on-pointer-down-pages :on-pointer-down
          on-lost-pointer-capture-pages :on-lost-pointer-capture
          on-pointer-move-pages :on-pointer-move
          size-pages-opened :size}
         (use-resize-hook :tokens 200 38 "0.6" :y false nil)]
     [:div {:class (stl/css :sidebar-wrapper)}
-     [:& themes-sets-tab {:resize-height size-pages-opened}]
+     [:> themes-sets-tab* {:resize-height size-pages-opened}]
      [:article {:class (stl/css :tokens-section-wrapper)
                 :data-testid "tokens-sidebar"}
       [:div {:class (stl/css :resize-area-horiz)
              :on-pointer-down on-pointer-down-pages
              :on-lost-pointer-capture on-lost-pointer-capture-pages
              :on-pointer-move on-pointer-move-pages}]
-      [:& tokens-tab]]
+      [:> tokens-tab*]]
      [:& import-export-button]]))
