@@ -10,7 +10,8 @@ mod utils;
 mod view;
 
 use crate::mem::SerializableResult;
-use crate::shapes::{BoolType, ConstraintH, ConstraintV, Kind, Path, TransformEntry};
+use crate::shapes::{BoolType, ConstraintH, ConstraintV, Group, Kind, Path, TransformEntry};
+
 use crate::state::State;
 use crate::utils::uuid_from_u32_quartet;
 
@@ -63,19 +64,19 @@ pub extern "C" fn set_canvas_background(raw_color: u32) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn render(timestamp: i32) {
+pub extern "C" fn render(timestamp: i32) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     state.start_render_loop(timestamp).expect("Error rendering");
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn render_from_cache() {
+pub extern "C" fn render_from_cache() {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     state.render_from_cache();
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn process_animation_frame(timestamp: i32) {
+pub extern "C" fn process_animation_frame(timestamp: i32) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     state
         .process_animation_frame(timestamp)
@@ -120,7 +121,15 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_shape_kind_circle() {
+pub extern "C" fn set_shape_kind_group(masked: bool) {
+    let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
+    if let Some(shape) = state.current_shape() {
+        shape.set_kind(Kind::Group(Group::new(masked)));
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn set_shape_kind_circle() {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
 
     if let Some(shape) = state.current_shape() {
@@ -129,7 +138,7 @@ pub unsafe extern "C" fn set_shape_kind_circle() {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_shape_kind_rect() {
+pub extern "C" fn set_shape_kind_rect() {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
 
     if let Some(shape) = state.current_shape() {
@@ -141,7 +150,7 @@ pub unsafe extern "C" fn set_shape_kind_rect() {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_shape_kind_path() {
+pub extern "C" fn set_shape_kind_path() {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.set_kind(Kind::Path(Path::default()));
@@ -149,7 +158,7 @@ pub unsafe extern "C" fn set_shape_kind_path() {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_shape_kind_bool() {
+pub extern "C" fn set_shape_kind_bool() {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         match shape.kind() {
@@ -160,7 +169,7 @@ pub unsafe extern "C" fn set_shape_kind_bool() {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_shape_bool_type(raw_bool_type: u8) {
+pub extern "C" fn set_shape_bool_type(raw_bool_type: u8) {
     let state = unsafe { STATE.as_mut() }.expect("got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.set_bool_type(BoolType::from(raw_bool_type))
@@ -176,7 +185,7 @@ pub extern "C" fn set_shape_selrect(left: f32, top: f32, right: f32, bottom: f32
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_shape_clip_content(clip_content: bool) {
+pub extern "C" fn set_shape_clip_content(clip_content: bool) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.set_clip(clip_content);
@@ -184,7 +193,7 @@ pub unsafe extern "C" fn set_shape_clip_content(clip_content: bool) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_shape_rotation(rotation: f32) {
+pub extern "C" fn set_shape_rotation(rotation: f32) {
     let state = unsafe { STATE.as_mut() }.expect("Got an invalid state pointer");
     if let Some(shape) = state.current_shape() {
         shape.set_rotation(rotation);

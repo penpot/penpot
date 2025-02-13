@@ -9,6 +9,7 @@ use skia::Matrix;
 mod blurs;
 mod bools;
 mod fills;
+mod groups;
 mod modifiers;
 mod paths;
 mod shadows;
@@ -19,6 +20,7 @@ mod transform;
 pub use blurs::*;
 pub use bools::*;
 pub use fills::*;
+pub use groups::*;
 pub use modifiers::*;
 pub use paths::*;
 pub use shadows::*;
@@ -36,6 +38,7 @@ pub enum Kind {
     Path(Path),
     Bool(BoolType, Path),
     SVGRaw(SVGRaw),
+    Group(Group),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -269,7 +272,11 @@ impl Shape {
             Kind::Path(_) => {
                 self.set_svg_attr(name, value);
             }
-            Kind::Rect(_, _) | Kind::Circle(_) | Kind::SVGRaw(_) | Kind::Bool(_, _) => todo!(),
+            Kind::Rect(_, _)
+            | Kind::Circle(_)
+            | Kind::SVGRaw(_)
+            | Kind::Bool(_, _)
+            | Kind::Group(_) => unreachable!("This shape should have path attrs"),
         };
     }
 
@@ -340,9 +347,19 @@ impl Shape {
         self.clip_content
     }
 
+    pub fn mask_id(&self) -> Option<&Uuid> {
+        self.children.first()
+    }
+
     pub fn children_ids(&self) -> Vec<Uuid> {
         if let Kind::Bool(_, _) = self.kind {
             vec![]
+        } else if let Kind::Group(group) = self.kind {
+            if group.masked {
+                self.children[1..self.children.len()].to_vec()
+            } else {
+                self.children.clone()
+            }
         } else {
             self.children.clone()
         }

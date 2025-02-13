@@ -40,6 +40,18 @@ fn get_time() -> i32 {
     unsafe { emscripten_run_script_int(script.as_ptr()) }
 }
 
+pub struct NodeRenderState {
+    pub id: Uuid,
+    // We use this bool to keep that we've traversed all the children inside this node.
+    pub visited_children: bool,
+    // This is used to clip the content of frames.
+    pub clip_bounds: Option<math::Rect>,
+    // This is a flag to indicate that we've already drawn the mask of a masked group.
+    pub visited_mask: bool,
+    // This bool indicates that we're drawing the mask shape.
+    pub mask: bool,
+}
+
 pub(crate) struct RenderState {
     gpu_state: GpuState,
     pub options: RenderOptions,
@@ -57,8 +69,8 @@ pub(crate) struct RenderState {
     pub render_request_id: Option<i32>,
     // Indicates whether the rendering process has pending frames.
     pub render_in_progress: bool,
-    // Stack of nodes pending to be rendered. The boolean flag indicates if the node has already been visited. The rect the optional bounds to clip.
-    pub pending_nodes: Vec<(Uuid, bool, Option<math::Rect>)>,
+    // Stack of nodes pending to be rendered.
+    pub pending_nodes: Vec<NodeRenderState>,
 }
 
 impl RenderState {
@@ -78,7 +90,6 @@ impl RenderState {
         let debug_surface = final_surface
             .new_surface_with_dimensions((width, height))
             .unwrap();
-
         let mut font_provider = skia::textlayout::TypefaceFontProvider::new();
         let default_font = skia::FontMgr::default()
             .new_from_data(DEFAULT_FONT_BYTES, None)
@@ -170,14 +181,6 @@ impl RenderState {
         self.gpu_state
             .context
             .flush_and_submit_surface(&mut self.final_surface, None);
-    }
-
-    pub fn translate(&mut self, dx: f32, dy: f32) {
-        self.drawing_surface.canvas().translate((dx, dy));
-    }
-
-    pub fn scale(&mut self, sx: f32, sy: f32) {
-        self.drawing_surface.canvas().scale((sx, sy));
     }
 
     pub fn reset_canvas(&mut self) {
@@ -306,12 +309,20 @@ impl RenderState {
             }
         }
         self.reset_canvas();
-        self.scale(
+        self.drawing_surface.canvas().scale((
             self.viewbox.zoom * self.options.dpr(),
             self.viewbox.zoom * self.options.dpr(),
-        );
-        self.translate(self.viewbox.pan_x, self.viewbox.pan_y);
-        self.pending_nodes = vec![(Uuid::nil(), false, None)];
+        ));
+        self.drawing_surface
+            .canvas()
+            .translate((self.viewbox.pan_x, self.viewbox.pan_y));
+        self.pending_nodes = vec![NodeRenderState {
+            id: Uuid::nil(),
+            visited_children: false,
+            clip_bounds: None,
+            visited_mask: false,
+            mask: false,
+        }];
         self.render_in_progress = true;
         self.process_animation_frame(tree, modifiers, timestamp)?;
         Ok(())
@@ -413,60 +424,154 @@ impl RenderState {
         }
 
         let mut i = 0;
-        while let Some((node_id, visited_children, clip_bounds)) = self.pending_nodes.pop() {
-            let element = tree.get_mut(&node_id).ok_or(
-                "Error: Element with root_id {node_id} not found in the tree.".to_string(),
+        while let Some(node_render_state) = self.pending_nodes.pop() {
+            let NodeRenderState {
+                id: node_id,
+                visited_children,
+                clip_bounds,
+                visited_mask,
+                mask,
+            } = node_render_state;
+            let element = tree.get(&node_render_state.id).ok_or(
+                "Error: Element with root_id {node_render_state.id} not found in the tree."
+                    .to_string(),
             )?;
 
-            if !visited_children {
-                if !node_id.is_nil() {
-                    if !element.bounds().intersects(self.viewbox.area) || element.hidden() {
-                        debug::render_debug_element(self, &element, false);
-                        continue;
-                    } else {
-                        debug::render_debug_element(self, &element, true);
+            if visited_children {
+                if !visited_mask {
+                    match element.kind {
+                        Kind::Group(group) => {
+                            // When we're dealing with masked groups we need to
+                            // do a separate extra step to draw the mask (the last
+                            // element of a masked group) and blend (using
+                            // the blend mode 'destination-in') the content
+                            // of the group and the mask.
+                            if group.masked {
+                                self.pending_nodes.push(NodeRenderState {
+                                    id: node_id,
+                                    visited_children: true,
+                                    clip_bounds: None,
+                                    visited_mask: true,
+                                    mask: false,
+                                });
+                                if let Some(&mask_id) = element.mask_id() {
+                                    self.pending_nodes.push(NodeRenderState {
+                                        id: mask_id,
+                                        visited_children: false,
+                                        clip_bounds: None,
+                                        visited_mask: false,
+                                        mask: true,
+                                    });
+                                }
+                            }
+                        }
+                        _ => {}
                     }
-                }
-
-                let mut paint = skia::Paint::default();
-                paint.set_blend_mode(element.blend_mode().into());
-                paint.set_alpha_f(element.opacity());
-
-                if let Some(image_filter) =
-                    element.image_filter(self.viewbox.zoom * self.options.dpr())
-                {
-                    paint.set_image_filter(image_filter);
-                }
-
-                let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-                self.render_surface.canvas().save_layer(&layer_rec);
-
-                self.drawing_surface.canvas().save();
-                if !node_id.is_nil() {
-                    self.render_shape(element, modifiers.get(&element.id), clip_bounds);
                 } else {
-                    self.apply_drawing_to_render_canvas();
-                }
-                self.drawing_surface.canvas().restore();
-
-                // Set the node as visited before processing children
-                self.pending_nodes.push((node_id, true, None));
-                if element.is_recursive() {
-                    let children_clip_bounds =
-                        (!node_id.is_nil() & element.clip()).then(|| element.bounds());
-
-                    for child_id in element.children_ids().iter().rev() {
-                        self.pending_nodes
-                            .push((*child_id, false, children_clip_bounds));
+                    // Because masked groups needs two rendering passes (first drawing
+                    // the content and then drawing the mask), we need to do an
+                    // extra restore.
+                    match element.kind {
+                        Kind::Group(group) => {
+                            if group.masked {
+                                self.render_surface.canvas().restore();
+                            }
+                        }
+                        _ => {}
                     }
                 }
-            } else {
                 self.render_surface.canvas().restore();
+                continue;
             }
+
+            // If we didn't visited_children this shape, then we need to do
+            if !node_render_state.id.is_nil() {
+                if !element.bounds().intersects(self.viewbox.area) || element.hidden() {
+                    debug::render_debug_shape(self, element, false);
+                    continue;
+                } else {
+                    debug::render_debug_shape(self, element, true);
+                }
+            }
+
+            // Masked groups needs two rendering passes, the first one rendering
+            // the content and the second one rendering the mask so we need to do
+            // an extra save_layer to keep all the masked group separate from other
+            // already drawn elements.
+            match element.kind {
+                Kind::Group(group) => {
+                    if group.masked {
+                        let paint = skia::Paint::default();
+                        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+                        self.render_surface.canvas().save_layer(&layer_rec);
+                    }
+                }
+                _ => {}
+            }
+
+            let mut paint = skia::Paint::default();
+            paint.set_blend_mode(element.blend_mode().into());
+            paint.set_alpha_f(element.opacity());
+
+            // When we're rendering the mask shape we need to set a special blend mode
+            // called 'destination-in' that keeps the drawn content within the mask.
+            // @see https://skia.org/docs/user/api/skblendmode_overview/
+            if mask {
+                let mut mask_paint = skia::Paint::default();
+                mask_paint.set_blend_mode(skia::BlendMode::DstIn);
+                let mask_rec = skia::canvas::SaveLayerRec::default().paint(&mask_paint);
+                self.render_surface.canvas().save_layer(&mask_rec);
+            }
+
+            if let Some(image_filter) = element.image_filter(self.viewbox.zoom * self.options.dpr())
+            {
+                paint.set_image_filter(image_filter);
+            }
+
+            let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+            self.render_surface.canvas().save_layer(&layer_rec);
+
+            self.drawing_surface.canvas().save();
+            if !node_render_state.id.is_nil() {
+                self.render_shape(
+                    &mut element.clone(),
+                    modifiers.get(&element.id),
+                    clip_bounds,
+                );
+            } else {
+                self.apply_drawing_to_render_canvas();
+            }
+            self.drawing_surface.canvas().restore();
+
+            // Set the node as visited_children before processing children
+            self.pending_nodes.push(NodeRenderState {
+                id: node_id,
+                visited_children: true,
+                clip_bounds: None,
+                visited_mask: false,
+                mask: mask,
+            });
+
+            if element.is_recursive() {
+                let children_clip_bounds =
+                    (!node_render_state.id.is_nil() & element.clip()).then(|| element.bounds());
+
+                for child_id in element.children_ids().iter().rev() {
+                    self.pending_nodes.push(NodeRenderState {
+                        id: *child_id,
+                        visited_children: false,
+                        clip_bounds: children_clip_bounds,
+                        visited_mask: false,
+                        mask: false,
+                    });
+                }
+            }
+
             // We try to avoid doing too many calls to get_time
             if i % NODE_BATCH_THRESHOLD == 0 && get_time() - timestamp > MAX_BLOCKING_TIME_MS {
                 return Ok(());
             }
+
             i += 1;
         }
 
