@@ -9,7 +9,6 @@
   (:require
    [app.main.data.comments :as dcm]
    [app.main.data.event :as ev]
-   [app.main.data.notifications :as ntf]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -70,12 +69,7 @@
         (mf/use-callback
          (mf/deps team-id)
          (fn []
-           (st/emit! (dcm/mark-all-threads-as-read
-                      team-id
-                      #(st/emit! (ntf/show {:level :info
-                                            :type :toast
-                                            :content (tr "dashboard.mark-all-as-read.success")
-                                            :timeout 7000}))))))]
+           (st/emit! (dcm/mark-all-threads-as-read team-id))))]
 
     (mf/use-effect
      (mf/deps team-id)

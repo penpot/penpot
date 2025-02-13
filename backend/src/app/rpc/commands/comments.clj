@@ -807,7 +807,7 @@
   {::doc/added "1.15"
    ::sm/params schema:mark-all-threads-as-read}
   [cfg {:keys [::rpc/profile-id threads] :as params}]
-  (db/run!
+  (db/tx-run!
    cfg
    (fn [{:keys [::db/conn]}]
      (doseq [thread-id threads]
