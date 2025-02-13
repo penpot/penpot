@@ -252,7 +252,10 @@ test.describe("Tokens: Tokens Tab", () => {
     const themeSelect = tokenThemesSetsSidebar.getByRole("combobox");
 
     await themeSelect.click();
-    await themeSelect.getByRole("option", { name: "Changed" }).click();
+    await page
+      .getByTestId("theme-select-dropdown")
+      .getByRole("option", { name: "Changed" })
+      .click();
 
     const sidebarLightSet = tokenThemesSetsSidebar.getByRole("button", {
       name: "light",
