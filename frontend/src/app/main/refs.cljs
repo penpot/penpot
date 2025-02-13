@@ -128,6 +128,10 @@
 (def workspace-selrect-transform
   (l/derived :workspace-selrect-transform st/state))
 
+(def workspace-tokens
+  "All tokens related ephimeral state"
+  (l/derived :workspace-tokens st/state))
+
 ;; TODO: rename to workspace-selected (?)
 ;; Don't use directly from components, this is a proxy to improve performance of selected-shapes
 (def ^:private selected-shapes-data
@@ -453,8 +457,8 @@
 (def workspace-token-themes-no-hidden
   (l/derived #(remove ctob/hidden-temporary-theme? %) workspace-token-themes))
 
-(def workspace-selected-token-set-name
-  (l/derived dwts/get-selected-token-set-name st/state))
+(def selected-token-set-name
+  (l/derived (l/key :selected-token-set-name) workspace-tokens))
 
 (def workspace-ordered-token-sets
   (l/derived #(or (some-> % ctob/get-sets) []) tokens-lib))
@@ -476,10 +480,7 @@
 (def workspace-active-theme-paths-no-hidden
   (l/derived #(disj % ctob/hidden-token-theme-path) workspace-active-theme-paths))
 
-(def workspace-active-set-names
-  (l/derived (d/nilf ctob/get-active-themes-set-names) tokens-lib))
-
-;; FIXME: deprecated, it should not be implemented with ref
+;; FIXME: deprecated, it should not be implemented with ref (still used in form)
 (def workspace-active-theme-sets-tokens
   (l/derived #(or (some-> % ctob/get-active-themes-set-tokens) {}) tokens-lib))
 
@@ -491,7 +492,6 @@
 
 (def workspace-selected-token-set-tokens
   (l/derived #(or (dwts/get-selected-token-set-tokens %) {}) st/state))
-
 
 (def plugins-permissions-peek
   (l/derived (fn [state]

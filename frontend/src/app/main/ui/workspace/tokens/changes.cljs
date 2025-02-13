@@ -38,7 +38,7 @@
   Optionally remove attributes from `attributes-to-remove`,
   this is useful for applying a single attribute from an attributes set
   while removing other applied tokens from this set."
-  [{:keys [attributes attributes-to-remove token shape-ids on-update-shape] :as _props}]
+  [{:keys [attributes attributes-to-remove token shape-ids on-update-shape]}]
   (ptk/reify ::apply-token
     ptk/WatchEvent
     (watch [_ state _]

@@ -26,13 +26,15 @@
 (def valid-groupable-item?
   (sm/validator schema:groupable-item))
 
+(def ^:private xf:clean-string
+  (comp (map str/trim)
+        (remove str/empty?)))
+
 (defn split-path
   "Decompose a string in the form 'one.two.three' into a vector of strings, removing spaces."
   [path separator]
-  (let [xf (comp (map str/trim)
-                 (remove str/empty?))]
-    (->> (str/split path separator)
-         (into [] xf))))
+  (->> (str/split path separator)
+       (into [] xf:clean-string)))
 
 (defn join-path
   "Regenerate a path as a string, from a vector."
@@ -104,7 +106,10 @@
 (defn get-token-path [path]
   (get-path path token-separator))
 
-(defn split-token-path [path]
+;; FIXME: misleading name, we are spliting name into path, not
+;; spliting path into path
+(defn split-token-path
+  [path]
   (split-path path token-separator))
 
 (defrecord Token [name type value description modified-at])
@@ -247,70 +252,34 @@
         set-name (add-set-prefix (last paths))]
     (conj set-path set-name)))
 
-(defn split-token-set-path [token-set-path]
-  (split-path token-set-path set-separator))
-
-(defn split-token-set-name [token-set-name]
-  (-> (split-token-set-path token-set-name)
-      (add-token-set-paths-prefix)))
+(defn split-token-set-name
+  [name]
+  (split-path name set-separator))
 
 (defn get-token-set-path [token-set]
   (let [path (get-path token-set set-separator)]
     (add-token-set-paths-prefix path)))
 
-(defn set-name->set-path-string [set-name]
-  (-> (split-token-set-name set-name)
-      (join-set-path)))
-
-(defn set-path->set-name [set-path]
-  (->> (split-token-set-path set-path)
-       (map (fn [path-part]
-              (or (-> (split-set-prefix path-part)
-                      (second))
-                  path-part)))
-       (join-set-path)))
-
-(defn get-token-set-final-name [path]
-  (-> (split-token-set-path path)
-      (last)))
+(defn get-token-set-final-name
+  [name]
+  (-> (split-token-set-name name)
+      (peek)))
 
 (defn set-name->prefixed-full-path [name-str]
-  (-> (split-token-set-path name-str)
+  (-> (split-token-set-name name-str)
       (set-full-path->set-prefixed-full-path)))
 
 (defn get-token-set-prefixed-path [token-set]
   (let [path (get-path token-set set-separator)]
     (set-full-path->set-prefixed-full-path path)))
 
-(defn get-prefixed-token-set-final-prefix [prefixed-path-str]
-  (some-> (get-token-set-final-name prefixed-path-str)
-          (split-set-str-path-prefix)
-          (first)))
-
-(defn set-name-string->prefixed-set-path-string [name-str]
-  (-> (set-name->prefixed-full-path name-str)
-      (join-set-path)))
-
-(defn prefixed-set-path-string->set-path [path-str]
-  (->> (split-token-set-path path-str)
+(defn prefixed-set-path-string->set-name-string [path-str]
+  (->> (split-token-set-name path-str)
        (map (fn [path-part]
               (or (-> (split-set-str-path-prefix path-part)
                       (second))
-                  path-part)))))
-
-(defn prefixed-set-path-string->set-name-string [path-str]
-  (->> (prefixed-set-path-string->set-path path-str)
+                  path-part)))
        (join-set-path)))
-
-(defn prefixed-set-path-final-group?
-  "Predicate if the given prefixed path string ends with a group."
-  [prefixed-path-str]
-  (= (get-prefixed-token-set-final-prefix prefixed-path-str) set-group-prefix))
-
-(defn prefixed-set-path-final-set?
-  "Predicate if the given prefixed path string ends with a set."
-  [prefixed-path-str]
-  (= (get-prefixed-token-set-final-prefix prefixed-path-str) set-prefix))
 
 (defn replace-last-path-name
   "Replaces the last element in a `path` vector with `name`."
@@ -358,7 +327,7 @@
 (defrecord TokenSet [name description modified-at tokens]
   ITokenSet
   (update-name [_ set-name]
-    (TokenSet. (-> (split-token-set-path name)
+    (TokenSet. (-> (split-token-set-name name)
                    (drop-last)
                    (concat [set-name])
                    (join-set-path))
@@ -401,7 +370,8 @@
     (vals tokens))
 
   (get-set-prefixed-path-string [_]
-    (set-name-string->prefixed-set-path-string name))
+    (-> (set-name->prefixed-full-path name)
+        (join-set-path)))
 
   (get-tokens-tree [_]
     (tokens-tree tokens))
@@ -721,6 +691,7 @@ used for managing active sets without a user created theme.")
           (filter some?)
           first))))
 
+;; DEPRECATED
 (defn walk-sets-tree-seq
   "Walk sets tree as a flat list.
 
@@ -749,7 +720,7 @@ used for managing active sets without a user created theme.")
                       ;; Set
                       (and v (instance? TokenSet v))
                       [{:group? false
-                        :path (split-token-set-path (:name v))
+                        :path (split-token-set-name (:name v))
                         :parent-path parent
                         :depth depth
                         :set v}]
@@ -768,6 +739,67 @@ used for managing active sets without a user created theme.")
                                      (= path new-editing-set-path) (assoc :new? true))]
                             (cons item (mapcat #(walk % (assoc opts :parent path :depth (inc depth))) v'))))))))))]
     (walk (or nodes (d/ordered-map)) nil)))
+
+
+(defn sets-tree-seq
+  "Get tokens sets tree as a flat list
+
+  Options:
+    `:skip-children-pred`: predicate to skip iterating over a set groups children by checking the path of the set group
+    `:new-editing-set-path`: append a an item with `:new?` at the given path"
+
+  [tree & {:keys [skip-children-pred new-at-path]
+           :or {skip-children-pred (constantly false)}}]
+  (let [walk (fn walk [[k v :as node] parent depth]
+               (lazy-seq
+                (cond
+                  ;; New set
+                  (= :is-new k)
+                  (let [tset (make-token-set :name (if (empty? parent)
+                                                     ""
+                                                     (join-set-path parent)))]
+                    [{:is-new true
+                      :is-group false
+                      :id ""
+                      :parent-path parent
+                      :token-set tset
+                      :depth depth}])
+
+                  ;; Set
+                  (and v (instance? TokenSet v))
+                  (let [name (:name v)]
+                    [{:is-group false
+                      :path (split-token-set-name name)
+                      :id name
+                      :parent-path parent
+                      :depth depth
+                      :token-set v}])
+
+                  ;; Set group
+                  (and v (d/ordered-map? v))
+                  (let [unprefixed-path (last (split-set-str-path-prefix k))
+                        path (conj parent unprefixed-path)
+                        item {:is-group true
+                              :path path
+                              :id (join-set-path path)
+                              :parent-path parent
+                              :depth depth}]
+
+                    (if (skip-children-pred path)
+                      [item]
+                      (let [v (cond-> v
+                                (= path new-at-path)
+                                (assoc :is-new true))]
+                        (cons item
+                              (mapcat #(walk % path (inc depth)) v))))))))
+
+        tree (cond-> tree
+               (= [] new-at-path)
+               (assoc :is-new true))]
+    (->> tree
+         (mapcat #(walk % [] 0))
+         (map-indexed (fn [index item]
+                        (assoc item :index index))))))
 
 (defn flatten-nested-tokens-json
   "Recursively flatten the dtcg token structure, joining keys with '.'."
@@ -875,7 +907,7 @@ Will return a value that matches this schema:
         this)))
 
   (delete-set-path [_ prefixed-set-name]
-    (let [prefixed-set-path (split-token-set-path prefixed-set-name)
+    (let [prefixed-set-path (split-token-set-name prefixed-set-name)
           set-node (get-in sets prefixed-set-path)
           set-group? (not (instance? TokenSet set-node))
           set-name-string (prefixed-set-path-string->set-name-string prefixed-set-name)]
@@ -983,13 +1015,13 @@ Will return a value that matches this schema:
     (->> (tree-seq d/ordered-map? vals sets)
          (filter (partial instance? TokenSet))))
 
-  (get-path-sets [_ path]
-    (some->> (get-in sets (split-token-set-path path))
+  (get-path-sets [_ name]
+    (some->> (get-in sets (split-token-set-name name))
              (tree-seq d/ordered-map? vals)
              (filter (partial instance? TokenSet))))
 
   (get-sets-at-prefix-path [_ prefixed-path-str]
-    (some->> (get-in sets (split-token-set-path prefixed-path-str))
+    (some->> (get-in sets (split-token-set-name prefixed-path-str))
              (tree-seq d/ordered-map? vals)
              (filter (partial instance? TokenSet))))
 

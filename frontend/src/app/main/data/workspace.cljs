@@ -399,6 +399,7 @@
            :workspace-media-objects
            :workspace-persistence
            :workspace-presence
+           :workspace-tokens
            :workspace-ready
            :workspace-undo)
           (update :workspace-global dissoc :read-only?)

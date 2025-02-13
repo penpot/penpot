@@ -240,15 +240,15 @@
       :no-selectable true
       :action (fn [event]
                 (let [{:keys [key fields]} modal]
-                  (st/emit! dt/hide-token-context-menu)
                   (dom/stop-propagation event)
-                  (modal/show! key {:x (.-clientX ^js event)
-                                    :y (.-clientY ^js event)
-                                    :position :right
-                                    :fields fields
-                                    :action "edit"
-                                    :selected-token-set-name selected-token-set-name
-                                    :token token})))}
+                  (st/emit! (dt/assign-token-context-menu nil)
+                            (modal/show key {:x (.-clientX ^js event)
+                                             :y (.-clientY ^js event)
+                                             :position :right
+                                             :fields fields
+                                             :action "edit"
+                                             :selected-token-set-name selected-token-set-name
+                                             :token token}))))}
      {:title (tr "workspace.token.duplicate")
       :no-selectable true
       :action #(st/emit! (dt/duplicate-token (:name token)))}
@@ -274,8 +274,8 @@
 
 ;; Components ------------------------------------------------------------------
 
-(def tokens-menu-ref
-  (l/derived :token-context-menu refs/workspace-local))
+(def ^:private tokens-menu-ref
+  (l/derived :token-context-menu refs/workspace-tokens))
 
 (defn- prevent-default
   [event]
@@ -377,7 +377,7 @@
         selected-shapes (into [] (keep (d/getf objects)) selected)
         token-name (:token-name mdata)
         token (mf/deref (refs/workspace-selected-token-set-token token-name))
-        selected-token-set-name (mf/deref refs/workspace-selected-token-set-name)]
+        selected-token-set-name (mf/deref refs/selected-token-set-name)]
     [:ul {:class (stl/css :context-list)}
      [:& menu-tree {:submenu-offset width
                     :submenu-direction direction
@@ -416,8 +416,9 @@
             (reset! dropdown-direction* (if is-outside? "up" "down"))
             (mf/set-ref-val! dropdown-direction-change* (inc (mf/ref-val dropdown-direction-change*)))))))
 
+    ;; FIXME: perf optimization
     [:& dropdown {:show is-open?
-                  :on-close #(st/emit! dt/hide-token-context-menu)}
+                  :on-close #(st/emit! (dt/assign-token-context-menu nil))}
      [:div {:class (stl/css :token-context-menu)
             :data-testid "tokens-context-menu-for-token"
             :ref dropdown-ref

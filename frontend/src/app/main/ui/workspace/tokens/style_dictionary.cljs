@@ -5,7 +5,6 @@
    [app.common.logging :as l]
    [app.common.transit :as t]
    [app.common.types.tokens-lib :as ctob]
-   [app.main.refs :as refs]
    [app.main.ui.workspace.tokens.errors :as wte]
    [app.main.ui.workspace.tokens.tinycolor :as tinycolor]
    [app.main.ui.workspace.tokens.token :as wtt]
@@ -166,10 +165,10 @@
   ([tokens-tree get-token]
    (resolve-tokens-tree+ tokens-tree get-token (StyleDictionary. default-config)))
   ([tokens-tree get-token style-dictionary]
-   (-> style-dictionary
-       (add-tokens tokens-tree)
-       (build-dictionary)
-       (p/then #(process-sd-tokens % get-token)))))
+   (let [sdict (-> style-dictionary
+                   (add-tokens tokens-tree)
+                   (build-dictionary))]
+     (p/fmap #(process-sd-tokens % get-token) sdict))))
 
 (defn sd-token-name [^js sd-token]
   (.. sd-token -original -name))
@@ -177,8 +176,10 @@
 (defn sd-token-uuid [^js sd-token]
   (uuid (.-uuid (.-id ^js sd-token))))
 
-(defn resolve-tokens+ [tokens]
-  (resolve-tokens-tree+ (ctob/tokens-tree tokens) #(get tokens (sd-token-name %))))
+(defn resolve-tokens+
+  [tokens]
+  (let [tokens-tree (ctob/tokens-tree tokens)]
+    (resolve-tokens-tree+ tokens-tree #(get tokens (sd-token-name %)))))
 
 (defn resolve-tokens-interactive+
   "Interactive check of resolving tokens.
@@ -267,36 +268,45 @@
              :or {cache-atom !tokens-cache}
              :as config}]
   (let [tokens-state (mf/use-state (get @cache-atom tokens))]
-    (mf/use-effect
-     (mf/deps tokens config)
-     (fn []
-       (let [cached (get @cache-atom tokens)]
-         (cond
-           (nil? tokens) nil
-           ;; The tokens are already processing somewhere
-           (p/promise? cached) (-> cached
-                                   (p/then #(reset! tokens-state %))
-                                   #_(p/catch js/console.error))
-           ;; Get the cached entry
-           (some? cached) (reset! tokens-state cached)
-           ;; No cached entry, start processing
-           :else (let [promise+ (if interactive?
-                                  (resolve-tokens-interactive+ tokens)
-                                  (resolve-tokens+ tokens))]
-                   (swap! cache-atom assoc tokens promise+)
-                   (p/then promise+ (fn [resolved-tokens]
-                                      (swap! cache-atom assoc tokens resolved-tokens)
-                                      (reset! tokens-state resolved-tokens))))))))
+
+    ;; FIXME: this with effect with trigger all the time because
+    ;; `config` will be always a different instance
+
+    (mf/with-effect [tokens config]
+      (let [cached (get @cache-atom tokens)]
+        (cond
+          (nil? tokens) nil
+          ;; The tokens are already processing somewhere
+          (p/promise? cached) (-> cached
+                                  (p/then #(reset! tokens-state %))
+                                  #_(p/catch js/console.error))
+          ;; Get the cached entry
+          (some? cached) (reset! tokens-state cached)
+          ;; No cached entry, start processing
+          :else (let [promise+ (if interactive?
+                                 (resolve-tokens-interactive+ tokens)
+                                 (resolve-tokens+ tokens))]
+                  (swap! cache-atom assoc tokens promise+)
+                  (p/then promise+ (fn [resolved-tokens]
+                                     (swap! cache-atom assoc tokens resolved-tokens)
+                                     (reset! tokens-state resolved-tokens)))))))
     @tokens-state))
 
-(defn use-resolved-workspace-tokens []
-  (let [active-theme-tokens (mf/deref refs/workspace-active-theme-sets-tokens)
-        selected-token-set-tokens (mf/deref refs/workspace-selected-token-set-tokens)
-        prefer-selected-token-set-tokens (merge active-theme-tokens selected-token-set-tokens)]
-    (use-resolved-tokens prefer-selected-token-set-tokens)))
+(defn use-resolved-tokens*
+  "This hook will return the unresolved tokens as state until they are
+  processed, then the state will be updated with the resolved tokens.
 
-(defn use-active-theme-tokens
-  "A hook that returns active tokens for the current active theme"
-  []
-  (-> (mf/deref refs/workspace-active-theme-sets-tokens)
-      (use-resolved-tokens {:cache-atom !theme-tokens-cache})))
+  This is a cache-less, simplified version of use-resolved-tokens
+  hook."
+  [tokens & {:keys [interactive?]}]
+  (let [state* (mf/use-state tokens)]
+    (mf/with-effect [tokens interactive?]
+      (when (seq tokens)
+        (let [promise (if interactive?
+                        (resolve-tokens-interactive+ tokens)
+                        (resolve-tokens+ tokens))]
+
+          (->> promise
+               (p/fmap (fn [resolved-tokens]
+                         (reset! state* resolved-tokens)))))))
+    @state*))

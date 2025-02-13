@@ -9,11 +9,10 @@
   Will default to the first set."
   (:require
    [app.common.types.tokens-lib :as ctob]
-   [app.main.data.helpers :as dsh]
-   [potok.v2.core :as ptk]))
+   [app.main.data.helpers :as dsh]))
 
 (defn get-selected-token-set-name [state]
-  (or (get-in state [:workspace-local :selected-token-set-name])
+  (or (get-in state [:workspace-tokens :selected-token-set-name])
       (some-> (dsh/lookup-file-data state)
               (get :tokens-lib)
               (ctob/get-sets)
@@ -33,10 +32,3 @@
 (defn get-selected-token-set-tokens [state]
   (some-> (get-selected-token-set state)
           :tokens))
-
-(defn set-selected-token-set-name
-  [name]
-  (ptk/reify ::set-selected-token-set-path-from-name
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-local assoc :selected-token-set-name name))))
