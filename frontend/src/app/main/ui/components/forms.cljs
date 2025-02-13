@@ -33,6 +33,8 @@
         more-classes (get props :class)
         auto-focus?  (get props :auto-focus? false)
 
+        data-testid  (d/nilv data-testid input-name)
+
         form         (or form (mf/use-ctx form-ctx))
 
         type'        (mf/use-state input-type)
@@ -153,6 +155,14 @@
          children])
 
       (cond
+        (and touched? (:message error) show-error)
+        (let [message (:message error)]
+          [:div {:id (dm/str "error-" input-name)
+                 :class (stl/css :error)
+                 :data-testid (dm/str data-testid "-error")}
+           message])
+
+        ;; FIXME: DEPRECATED
         (and touched? (:code error) show-error)
         (let [code (:code error)]
           [:div {:id (dm/str "error-" input-name)
@@ -211,6 +221,9 @@
      [:label {:class (stl/css :textarea-label)} label]
      [:> :textarea props]
      (cond
+       (and touched? (:message error))
+       [:span {:class (stl/css :error)} (:message error)]
+
        (and touched? (:code error))
        [:span {:class (stl/css :error)} (tr (:code error))]
 
