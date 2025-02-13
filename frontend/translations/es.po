@@ -6561,7 +6561,11 @@ msgstr "Nuevo tema"
 msgid "workspace.token.no-active-theme"
 msgstr "No hay temas activos"
 
-#: src/app/main/ui/workspace/tokens/sets.cljs:89
+#: src/app/main/ui/workspace/tokens/sets.cljs:91
+msgid "workspace.token.set-edit-placeholder"
+msgstr "Añade un nombre - usa '/' para grupos"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:103
 msgid "workspace.token.no-permisions-set"
 msgstr "Debes ser editor para activar / desactivar sets"
 
