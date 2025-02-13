@@ -534,7 +534,7 @@
                               :on-ungroup on-ungroup
                               :on-context-menu on-context-menu
                               :selected-full selected-full
-                              :local ^boolean is-local}])
+                              :is-local ^boolean is-local}])
 
       [:& cmm/assets-context-menu
        {:on-close on-close-menu
