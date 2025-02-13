@@ -84,7 +84,7 @@
                 :controls :inline-actions
                 :type :inline
                 :level level
-                :accept {:label (tr "Refresh")
+                :accept {:label (tr "labels.refresh")
                          :callback force-reload!}
                 :tag :notification))
 
