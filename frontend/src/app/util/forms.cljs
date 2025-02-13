@@ -27,26 +27,26 @@
       acc
       (cond
         (nil? value)
-        (assoc acc field {:code "errors.field-missing"})
+        (assoc acc field {:code (tr "errors.field-missing")})
 
         (contains? props :error/code)
-        (assoc acc field {:code (:error/code props)})
+        (assoc acc field {:code (tr (:error/code props))})
 
         (contains? props :error/message)
-        (assoc acc field {:code (:error/message props)})
+        (assoc acc field {:code (tr (:error/message props))})
 
         (contains? props :error/fn)
         (let [v-fn (:error/fn props)
               code (v-fn problem)]
-          (assoc acc field {:code code}))
+          (assoc acc field {:code (tr code)}))
 
         (contains? props :error/validators)
         (let [validators (:error/validators props)
               props      (reduce #(%2 %1 value) props validators)]
-          (assoc acc field {:code (d/nilv (:error/code props) "errors.invalid-data")}))
+          (assoc acc field {:code (d/nilv (tr (:error/code props)) (tr "errors.invalid-data"))}))
 
         :else
-        (assoc acc field {:code "errors.invalid-data"})))))
+        (assoc acc field {:code (tr "errors.invalid-data")})))))
 
 (defn- use-rerender-fn
   []
