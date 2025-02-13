@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use crate::matrix;
 use skia_safe as skia;
 use uuid::Uuid;
 
@@ -17,7 +16,7 @@ pub(crate) struct State<'a> {
     pub current_id: Option<Uuid>,
     pub current_shape: Option<&'a mut Shape>,
     pub shapes: HashMap<Uuid, Shape>,
-    pub modifiers: HashMap<Uuid, matrix::Matrix>,
+    pub modifiers: HashMap<Uuid, skia::Matrix>,
 }
 
 impl<'a> State<'a> {

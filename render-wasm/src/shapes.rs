@@ -3,12 +3,13 @@ use skia_safe as skia;
 use std::collections::HashMap;
 use uuid::Uuid;
 
-use crate::matrix::Matrix;
 use crate::render::BlendMode;
+use skia::Matrix;
 
 mod blurs;
 mod bools;
 mod fills;
+mod modifiers;
 mod paths;
 mod shadows;
 mod strokes;
@@ -18,6 +19,7 @@ mod transform;
 pub use blurs::*;
 pub use bools::*;
 pub use fills::*;
+pub use modifiers::*;
 pub use paths::*;
 pub use shadows::*;
 pub use strokes::*;
@@ -36,6 +38,50 @@ pub enum Kind {
     SVGRaw(SVGRaw),
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum ConstraintH {
+    Left,
+    Right,
+    LeftRight,
+    Center,
+    Scale,
+}
+
+impl ConstraintH {
+    pub fn from(value: u8) -> Option<Self> {
+        match value {
+            0 => Some(Self::Left),
+            1 => Some(Self::Right),
+            2 => Some(Self::LeftRight),
+            3 => Some(Self::Center),
+            4 => Some(Self::Scale),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ConstraintV {
+    Top,
+    Bottom,
+    TopBottom,
+    Center,
+    Scale,
+}
+
+impl ConstraintV {
+    pub fn from(value: u8) -> Option<Self> {
+        match value {
+            0 => Some(Self::Top),
+            1 => Some(Self::Bottom),
+            2 => Some(Self::TopBottom),
+            3 => Some(Self::Center),
+            4 => Some(Self::Scale),
+            _ => None,
+        }
+    }
+}
+
 pub type Color = skia::Color;
 
 #[derive(Debug, Clone)]
@@ -47,6 +93,8 @@ pub struct Shape {
     pub selrect: math::Rect,
     pub transform: Matrix,
     pub rotation: f32,
+    pub constraint_h: Option<ConstraintH>,
+    pub constraint_v: Option<ConstraintV>,
     pub clip_content: bool,
     pub fills: Vec<Fill>,
     pub strokes: Vec<Stroke>,
@@ -66,8 +114,10 @@ impl Shape {
             children: Vec::<Uuid>::new(),
             kind: Kind::Rect(math::Rect::new_empty(), None),
             selrect: math::Rect::new_empty(),
-            transform: Matrix::identity(),
+            transform: Matrix::default(),
             rotation: 0.,
+            constraint_h: None,
+            constraint_v: None,
             clip_content: true,
             fills: vec![],
             strokes: vec![],
@@ -111,11 +161,19 @@ impl Shape {
     }
 
     pub fn set_transform(&mut self, a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
-        self.transform = Matrix::new(a, b, c, d, e, f);
+        self.transform = Matrix::new_all(a, c, e, b, d, f, 0.0, 0.0, 1.0);
     }
 
     pub fn set_opacity(&mut self, opacity: f32) {
         self.opacity = opacity;
+    }
+
+    pub fn set_constraint_h(&mut self, constraint: Option<ConstraintH>) {
+        self.constraint_h = constraint;
+    }
+
+    pub fn set_constraint_v(&mut self, constraint: Option<ConstraintV>) {
+        self.constraint_v = constraint;
     }
 
     pub fn set_hidden(&mut self, value: bool) {
@@ -330,7 +388,7 @@ impl Shape {
                 let center = self.bounds().center();
                 let mut matrix = skia::Matrix::new_identity();
                 matrix.pre_translate(center);
-                matrix.pre_concat(&self.transform.no_translation().to_skia_matrix().invert()?);
+                matrix.pre_concat(&self.transform.invert()?);
                 matrix.pre_translate(-center);
 
                 Some(matrix)

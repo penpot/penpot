@@ -19,6 +19,13 @@ impl RawStopData {
     pub fn offset(&self) -> f32 {
         self.offset as f32 / 100.0
     }
+
+    pub fn from_bytes(bytes: [u8; 5]) -> Self {
+        Self {
+            color: [bytes[0], bytes[1], bytes[2], bytes[3]],
+            offset: bytes[4],
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -37,7 +44,7 @@ impl Gradient {
         self.offsets.push(offset);
     }
 
-    fn to_linear_shader(&self, rect: &math::Rect) -> skia::Shader {
+    fn to_linear_shader(&self, rect: &math::Rect) -> Option<skia::Shader> {
         let start = (
             rect.left + self.start.0 * rect.width(),
             rect.top + self.start.1 * rect.height(),
@@ -46,7 +53,7 @@ impl Gradient {
             rect.left + self.end.0 * rect.width(),
             rect.top + self.end.1 * rect.height(),
         );
-        let shader = skia::shader::Shader::linear_gradient(
+        skia::shader::Shader::linear_gradient(
             (start, end),
             self.colors.as_slice(),
             self.offsets.as_slice(),
@@ -54,11 +61,9 @@ impl Gradient {
             None,
             None,
         )
-        .unwrap();
-        shader
     }
 
-    fn to_radial_shader(&self, rect: &math::Rect) -> skia::Shader {
+    fn to_radial_shader(&self, rect: &math::Rect) -> Option<skia::Shader> {
         let center = skia::Point::new(
             rect.left + self.start.0 * rect.width(),
             rect.top + self.start.1 * rect.height(),
@@ -80,7 +85,7 @@ impl Gradient {
         transform.pre_scale((self.width * rect.width() / rect.height(), 1.), None);
         transform.pre_translate((-center.x, -center.y));
 
-        let shader = skia::shader::Shader::radial_gradient(
+        skia::shader::Shader::radial_gradient(
             center,
             distance,
             self.colors.as_slice(),
@@ -89,8 +94,6 @@ impl Gradient {
             None,
             Some(&transform),
         )
-        .unwrap();
-        shader
     }
 }
 

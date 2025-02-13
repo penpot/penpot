@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::math;
-use crate::matrix::Matrix;
 use crate::view::Viewbox;
+use skia::Matrix;
 
 mod blend;
 mod cache;
@@ -240,18 +240,14 @@ impl RenderState {
         clip_bounds: Option<skia::Rect>,
     ) {
         if let Some(modifiers) = modifiers {
-            self.drawing_surface
-                .canvas()
-                .concat(&modifiers.to_skia_matrix());
+            self.drawing_surface.canvas().concat(&modifiers);
         }
 
-        let transform = shape.transform.to_skia_matrix();
-
-        // Check transform-matrix code from common/src/app/common/geom/shapes/transforms.cljc
         let center = shape.bounds().center();
-        let mut matrix = skia::Matrix::new_identity();
-        matrix.pre_translate(center);
-        matrix.pre_concat(&transform);
+
+        // Transform the shape in the center
+        let mut matrix = shape.transform.clone();
+        matrix.post_translate(center);
         matrix.pre_translate(-center);
 
         self.drawing_surface.canvas().concat(&matrix);

@@ -129,6 +129,8 @@
       :blur         (api/set-shape-blur v)
       :svg-attrs    (when (= (:type self) :path)
                       (api/set-shape-path-attrs v))
+      :constraints-h (api/set-constraints-h v)
+      :constraints-v (api/set-constraints-v v)
       :content      (cond
                       (= (:type self) :path)
                       (api/set-shape-path-content v)
