@@ -203,10 +203,11 @@
           store    (ths/setup-store file)
 
          ;; ==== Action
-          events [(dt/update-create-token {:token (ctob/make-token :name "test-token-1"
-                                                                   :type :border-radius
-                                                                   :value 66)
-                                           :prev-token-name "test-token-1"})]
+          events [(dt/set-selected-token-set-name "test-token-set")
+                  (dt/update-token "test-token-1"
+                                   {:name "test-token-1"
+                                    :type :border-radius
+                                    :value 66})]
 
           step2 (fn [_]
                   (let [events2 [(wtu/update-workspace-tokens)
@@ -358,30 +359,25 @@
           store (ths/setup-store file)
 
          ;; ==== Action
-          events [(dt/update-create-token {:token (ctob/make-token :name "token-radius"
-                                                                   :type :border-radius
-                                                                   :value 30)
-                                           :prev-token-name "token-radius"})
-                  (dt/update-create-token {:token (ctob/make-token :name "token-rotation"
-                                                                   :type :rotation
-                                                                   :value 45)
-                                           :prev-token-name "token-rotation"})
-                  (dt/update-create-token {:token (ctob/make-token :name "token-opacity"
-                                                                   :type :opacity
-                                                                   :value 0.9)
-                                           :prev-token-name "token-opacity"})
-                  (dt/update-create-token {:token (ctob/make-token :name "token-stroke-width"
-                                                                   :type :stroke-width
-                                                                   :value 8)
-                                           :prev-token-name "token-stroke-width"})
-                  (dt/update-create-token {:token (ctob/make-token :name "token-color"
-                                                                   :type :color
-                                                                   :value "#ff0000")
-                                           :prev-token-name "token-color"})
-                  (dt/update-create-token {:token (ctob/make-token :name "token-dimensions"
-                                                                   :type :dimensions
-                                                                   :value 200)
-                                           :prev-token-name "token-dimensions"})]
+          events [(dt/set-selected-token-set-name "test-token-set")
+                  (dt/update-token "token-radius"
+                                   {:name "token-radius"
+                                    :value 30})
+                  (dt/update-token "token-rotation"
+                                   {:name "token-rotation"
+                                    :value 45})
+                  (dt/update-token "token-opacity"
+                                   {:name "token-opacity"
+                                    :value 0.9})
+                  (dt/update-token "token-stroke-width"
+                                   {:name "token-stroke-width"
+                                    :value 8})
+                  (dt/update-token "token-color"
+                                   {:name "token-color"
+                                    :value "#ff0000"})
+                  (dt/update-token "token-dimensions"
+                                   {:name "token-dimensions"
+                                    :value 200})]
 
           step2 (fn [_]
                   (let [events2 [(wtu/update-workspace-tokens)
@@ -391,7 +387,7 @@
                      (fn [new-state]
                        (let [;; ==== Get
                              file'          (ths/get-file-from-state new-state)
-                             frame1'      (cths/get-shape file' :frame1)
+                             frame1'        (cths/get-shape file' :frame1)
                              c-frame1'      (cths/get-shape file' :c-frame1)
                              tokens-frame1' (:applied-tokens c-frame1')]
 

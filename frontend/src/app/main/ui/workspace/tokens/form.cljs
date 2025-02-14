@@ -397,13 +397,20 @@
                               ;; The result should be a vector of all resolved validations
                               ;; We do not handle the error case as it will be handled by the components validations
                               (when (and (seq result) (not err))
-                                (st/emit! (dt/update-create-token {:token (ctob/make-token :name final-name
-                                                                                           :type (or (:type token) token-type)
-                                                                                           :value final-value
-                                                                                           :description final-description)
-                                                                   :prev-token-name (:name token)}))
-                                (st/emit! (wtu/update-workspace-tokens))
-                                (modal/hide!))))))))
+                                (st/emit!
+                                 (if (ctob/token? token)
+                                   (dt/update-token (:name token)
+                                                    {:name final-name
+                                                     :value final-value
+                                                     :description final-description})
+
+                                   (dt/create-token {:name final-name
+                                                     :type token-type
+                                                     :value final-value
+                                                     :description final-description}))
+                                 (wtu/update-workspace-tokens)
+                                 (modal/hide)))))))))
+
         on-delete-token
         (mf/use-fn
          (mf/deps selected-token-set-name)
