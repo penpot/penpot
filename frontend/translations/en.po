@@ -6991,5 +6991,5 @@ msgstr "Click to close the path"
 msgid "dashboard.mark-all-as-read.success"
 msgstr "Marked all notifications as read"
 
-msgid "labels.read"
+msgid "label.mark-all-as-read"
 msgstr "Mark all as read"

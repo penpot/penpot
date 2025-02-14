@@ -6963,5 +6963,5 @@ msgstr "Pulsar para cerrar la ruta"
 msgid "dashboard.mark-all-as-read.success"
 msgstr "Se han marcado todas las noficaciones como leídas"
 
-msgid "labels.read"
+msgid "label.mark-all-as-read"
 msgstr "Marcar todo como leído"

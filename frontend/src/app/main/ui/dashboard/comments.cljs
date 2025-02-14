@@ -91,7 +91,7 @@
         (when (seq tgroups)
           [:> icon-button* {:variant "ghost"
                             :tab-index (if show? "0" "-1")
-                            :aria-label (tr "labels.read")
+                            :aria-label (tr "label.mark-all-as-read")
                             :on-click on-read-all
                             :icon "tick"}])
 
