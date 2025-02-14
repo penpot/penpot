@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-01-29 22:23+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-02-14 15:01+0000\n"
+"Last-Translator: \"Amerey.eu\" <info@amerey.eu>\n"
 "Language-Team: Czech <https://hosted.weblate.org/projects/penpot/frontend/cs/"
 ">\n"
 "Language: cs\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=((n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2);\n"
-"X-Generator: Weblate 5.10-dev\n"
+"X-Generator: Weblate 5.10\n"
 
 #: src/app/main/ui/auth/register.cljs:133, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -144,7 +144,7 @@ msgstr "Ještě nemáte účet?"
 
 #: src/app/main/ui/auth/register.cljs:254
 msgid "auth.register-account-tagline"
-msgstr "Dejte nám vědět, jak bychom vám měli říkat."
+msgstr "Řekněte nám, jak bychom vám měli říkat."
 
 #: src/app/main/ui/auth/register.cljs:253
 msgid "auth.register-account-title"
@@ -6309,14 +6309,12 @@ msgid "workspace.token.num-sets"
 msgstr "%s sady"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:114
-#, fuzzy
 msgid "workspace.token.original-value"
-msgstr "Původní hodnota: "
+msgstr "Původní hodnota: %s"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:205, src/app/main/ui/workspace/tokens/form.cljs:208, src/app/main/ui/workspace/tokens/token_pill.cljs:115
-#, fuzzy
 msgid "workspace.token.resolved-value"
-msgstr "Vyřešená hodnota: "
+msgstr "Vyřešená hodnota: %s"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:203
 msgid "workspace.token.save-theme"
@@ -6654,3 +6652,250 @@ msgstr "Automaticky uložené verze budou uchovány po dobu %s dní."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Kliknutím zavřete cestu"
+
+#: src/app/main/ui/settings/notifications.cljs:72
+#, fuzzy
+msgid "dashboard.settings.notifications.dashboard.title"
+msgstr "Oznámení na hlavním panelu"
+
+#: src/app/main/ui/settings/notifications.cljs:86
+msgid "dashboard.settings.notifications.email-comments.all"
+msgstr "Všechny komentáře, zmínky a odpovědi"
+
+#: src/app/main/ui/settings/notifications.cljs:88
+msgid "dashboard.settings.notifications.email-comments.none"
+msgstr "Žádné"
+
+#: src/app/main/ui/settings/notifications.cljs:87
+msgid "dashboard.settings.notifications.email-comments.partial"
+msgstr "Pouze zmínky a odpovědi"
+
+#: src/app/main/ui/settings/notifications.cljs:83
+msgid "dashboard.settings.notifications.email-comments.title"
+msgstr "Komentáře k souboru"
+
+#: src/app/main/ui/settings/notifications.cljs:98
+msgid "dashboard.settings.notifications.email-invites.none"
+msgstr "Žádné"
+
+#: src/app/main/ui/settings/notifications.cljs:92
+msgid "dashboard.settings.notifications.email-invites.title"
+msgstr "Pozvánky a žádosti"
+
+#: src/app/main/ui/settings/notifications.cljs:103
+msgid "dashboard.settings.notifications.submit"
+msgstr "Aktualizovat nastavení"
+
+#: src/app/main/ui/settings/notifications.cljs:64
+msgid "title.settings.notifications"
+msgstr "Upozornění – Penpot"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:343, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:344
+msgid "workspace.options.fit-content"
+msgstr "Změňte velikost panelu podle obsahu"
+
+#: src/app/main/ui/workspace/context_menu.cljs:201
+msgid "workspace.shape.menu.copy-paste-as"
+msgstr "Kopírovat/Vložit jako..."
+
+#: src/app/main/ui/workspace/context_menu.cljs:213
+msgid "workspace.shape.menu.copy-props"
+msgstr "Kopírovat vlastnosti"
+
+#: src/app/main/ui/workspace/context_menu.cljs:210
+msgid "workspace.shape.menu.copy-text"
+msgstr "Kopírovat jako text"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:228
+msgid "workspace.token.delete"
+msgstr "Smazat token"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:225
+msgid "workspace.token.duplicate"
+msgstr "Duplikovat token"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:212
+msgid "workspace.token.edit"
+msgstr "Upravit token"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:481
+msgid "workspace.token.enter-token-description"
+msgstr "Přidejte popis (volitelné)"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:179
+msgid "workspace.token.label.group"
+msgstr "Skupina"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:187
+msgid "workspace.token.label.theme"
+msgstr "Téma"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:89
+msgid "workspace.token.no-permisions-set"
+msgstr "K aktivaci/deaktivaci sad musíte být editor"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:200
+msgid "workspace.token.no-permission-themes"
+msgstr "Abyste mohli používat témata, musíte být editor"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:279
+msgid "workspace.token.tokens-section-title"
+msgstr "TOKENY -  %s"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:348
+msgid "workspace.token.tools"
+msgstr "Nástroje"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:123
+msgid "workspace.token.value-not-valid"
+msgstr "Hodnota není platná"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:458
+msgid "workspace.token.warning-name-change"
+msgstr ""
+"Přejmenováním tohoto tokenu se přeruší jakýkoli odkaz na jeho starý název."
+
+#: src/app/main/ui/settings/notifications.cljs:82
+msgid "dashboard.settings.notifications.email.title"
+msgstr "E-mailová upozornění"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:128
+msgid "workspace.token.applied-to"
+msgstr "Aplikováno na"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:355
+msgid "labels.import"
+msgstr "Import"
+
+#: src/app/main/ui/workspace/context_menu.cljs:205
+msgid "workspace.shape.menu.copy-css-nested"
+msgstr "Kopírovat jako CSS (vnořené vrstvy)"
+
+#: src/app/main/ui/settings/notifications.cljs:71
+msgid "dashboard.settings.notifications.title"
+msgstr "Oznámení"
+
+#: src/app/main/ui/settings/sidebar.cljs:99
+msgid "labels.notifications"
+msgstr "Oznámení"
+
+#: src/app/main/ui/workspace/context_menu.cljs:188
+msgid "workspace.shape.menu.copy-link"
+msgstr "Zkopírovat odkaz do schránky"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:48
+msgid "dashboard.add-file"
+msgstr "Přidat soubor"
+
+#: src/app/main/ui/workspace/context_menu.cljs:203
+msgid "workspace.shape.menu.copy-css"
+msgstr "Kopírovat jako CSS"
+
+#: src/app/main/ui/workspace/context_menu.cljs:217
+msgid "workspace.shape.menu.paste-props"
+msgstr "Vlastnosti vložit"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:56
+msgid "workspace.token.token-name-validation-error"
+msgstr ""
+" není platný název tokenu.\n"
+"Názvy tokenů by měly obsahovat pouze písmena a číslice oddělené znakem . a "
+"nesmí začínat znakem $."
+
+#: src/app/main/ui/settings/notifications.cljs:95
+msgid "dashboard.settings.notifications.email-invites.all"
+msgstr "Všechny typy pozvánek a žádostí"
+
+#: src/app/main/data/tokens.cljs:199
+msgid "errors.drag-drop.parent-to-child"
+msgstr "Nadřazenou sadu nelze přesunout na vlastní podřízenou cestu."
+
+#: src/app/main/data/tokens.cljs:198
+msgid "errors.drag-drop.set-exists"
+msgstr ""
+"Přesouvání nelze dokončit, sada se stejným názvem již v cestě %s existuje."
+
+#: src/app/main/errors.cljs:228
+msgid "errors.migration-in-progress"
+msgstr "Probíhá migrace"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:120
+msgid "workspace.token.ref-not-valid"
+msgstr "Reference není platná nebo není v žádné aktivní sadě"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:482
+msgid "workspace.token.token-description"
+msgstr "Popis"
+
+#: src/app/main/ui/workspace/comments.cljs:66, src/app/main/ui/workspace/comments.cljs:136
+msgid "labels.show-mentions"
+msgstr "Zobrazit pouze vaše zmínky"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:47
+#, unused
+msgid "workspace.token-set.not-active"
+msgstr "Sada tokenů není aktivní"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:437
+msgid "workspace.token.enter-token-name"
+msgstr "Zadejte název tokenu %s"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:463
+msgid "workspace.token.enter-token-value"
+msgstr "Zadejte hodnotu tokenu nebo alias"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:440
+msgid "workspace.token.token-name"
+msgstr "Jméno"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:464
+msgid "workspace.token.token-value"
+msgstr "Hodnota"
+
+#: src/app/main/ui/settings/notifications.cljs:42
+msgid "dashboard.notifications.notifications-saved"
+msgstr "Nastavení oznámení bylo aktualizováno"
+
+#: src/app/main/ui/settings/notifications.cljs:76
+msgid "dashboard.settings.notifications.dashboard-comments.all"
+msgstr "Všechny komentáře, zmínky a odpovědi"
+
+#: src/app/main/ui/settings/notifications.cljs:77
+msgid "dashboard.settings.notifications.dashboard-comments.partial"
+msgstr "Pouze zmínky a odpovědi"
+
+#: src/app/main/ui/settings/notifications.cljs:73
+msgid "dashboard.settings.notifications.dashboard-comments.title"
+msgstr "Komentáře k souboru"
+
+#: src/app/main/ui/settings/notifications.cljs:78
+msgid "dashboard.settings.notifications.dashboard-comments.none"
+msgstr "Žádné"
+
+#: src/app/main/ui/comments.cljs:504
+msgid "comments.mentions.not-found"
+msgstr "Pro @%s nebyli nalezeni žádní lidé"
+
+#: src/app/main/ui/dashboard.cljs:248
+msgid "dashboard.import.bad-url"
+msgstr "Import se nezdařil. Adresa URL šablony je nesprávná"
+
+#: src/app/main/ui/dashboard.cljs:242
+msgid "dashboard.import.error"
+msgstr "Import se nezdařil. Zkuste to prosím znovu"
+
+#: src/app/main/ui/dashboard.cljs:249
+msgid "dashboard.import.no-perms"
+msgstr "Nemáte oprávnění k importu do tohoto týmu"
+
+#: src/app/main/ui/dashboard.cljs:212
+msgid "dashboard.plugins.bad-url"
+msgstr "Adresa URL pluginu je nesprávná"
+
+#: src/app/main/ui/dashboard.cljs:210
+msgid "dashboard.plugins.parse-error"
+msgstr "Manifest pluginu nelze analyzovat"
+
+#: src/app/main/ui/dashboard.cljs:173
+msgid "dashboard.plugins.try-plugin"
+msgstr "Zkuste plugin: "
