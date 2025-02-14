@@ -9,6 +9,7 @@
   (:require
    [app.common.colors :as c]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.tokens :as dt]
@@ -321,9 +322,15 @@
         on-update-value (mf/use-fn
                          (mf/deps on-update-value-debounced)
                          (fn [e]
-                           (let [value (dom/get-target-val e)]
-                             (reset! value-ref value)
-                             (on-update-value-debounced value))))
+                           (let [value (dom/get-target-val e)
+                                 ;; Automatically add # for hex values
+                                 value' (if (and color? (tinycolor/hex-without-hash-prefix? value))
+                                          (let [hex (dm/str "#" value)]
+                                            (dom/set-value! (mf/ref-val value-input-ref) hex)
+                                            hex)
+                                          value)]
+                             (reset! value-ref value')
+                             (on-update-value-debounced value'))))
         on-update-color (mf/use-fn
                          (mf/deps on-update-value-debounced)
                          (fn [hex-value alpha]
