@@ -63,10 +63,10 @@
         target-container-id (or target-container-id (:parent-id shape))]
 
     (filter some?
-            [(when target-page-id (dw/initialize-page (:id file) target-page-id))
+            [(when target-page-id (dw/initialize-page target-page-id))
              (dws/select-shape target-container-id)
              (dw/paste-shapes pdata)
-             (when target-page-id (dw/initialize-page (:id file) (:id page)))])))
+             (when target-page-id (dw/initialize-page (:id page)))])))
 
 (defn- sync-file [file]
   (map (fn [component-tag]

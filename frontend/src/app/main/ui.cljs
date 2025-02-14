@@ -127,6 +127,7 @@
   {::mf/props :obj
    ::mf/private true}
   [{:keys [team-id children]}]
+
   (mf/with-effect [team-id]
     (st/emit! (dtm/initialize-team team-id))
     (fn []

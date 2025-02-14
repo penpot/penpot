@@ -319,6 +319,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
+          (dissoc :files)
+          (dissoc :workspace-ready)
           (assoc :recent-colors (:recent-colors storage/user))
           (assoc :recent-fonts (:recent-fonts storage/user))
           (assoc :current-file-id file-id)
@@ -393,9 +395,11 @@
           (dissoc
            :current-file-id
            :workspace-editor-state
+           :files
            :workspace-media-objects
            :workspace-persistence
            :workspace-presence
+           :workspace-ready
            :workspace-undo)
           (update :workspace-global dissoc :read-only?)
           (assoc-in [:workspace-global :options-mode] :design)))
@@ -423,18 +427,18 @@
 (defmethod ptk/resolve ::reload-current-file [_ _] (reload-current-file))
 
 (defn initialize-page
-  [file-id page-id]
-  (assert (uuid? file-id) "expected valid uuid for `file-id`")
+  [page-id]
+  (assert (uuid? page-id) "expected valid uuid for `page-id`")
 
   (ptk/reify ::initialize-page
     ptk/UpdateEvent
     (update [_ state]
-      (if-let [page (dsh/lookup-page state file-id page-id)]
+      (if-let [{:keys [id] :as page} (dsh/lookup-page state page-id)]
         ;; we maintain a cache of page state for user convenience with the exception of the
         ;; selection; when user abandon the current page, the selection is lost
-        (let [local (dm/get-in state [:workspace-cache [file-id page-id]] default-workspace-local)]
+        (let [local (dm/get-in state [:workspace-cache id] default-workspace-local)]
           (-> state
-              (assoc :current-page-id page-id)
+              (assoc :current-page-id id)
               (assoc :workspace-local (assoc local :selected (d/ordered-set)))
               (assoc :workspace-trimmed-page (dm/select-keys page [:id :name]))
 
@@ -446,25 +450,24 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (if (dsh/lookup-page state file-id page-id)
-        (rx/of (preload-data-uris page-id)
-               (dwth/watch-state-changes file-id page-id)
-               (dwl/watch-component-changes))
-        (rx/of (dcm/go-to-workspace :file-id file-id ::rt/replace true))))))
+      (if (dsh/lookup-page state page-id)
+        (let [file-id (:current-file-id state)]
+          (rx/of (preload-data-uris page-id)
+                 (dwth/watch-state-changes file-id page-id)
+                 (dwl/watch-component-changes)))
+        (rx/of (dcm/go-to-workspace))))))
 
 (defn finalize-page
-  [file-id page-id]
-  (assert (uuid? file-id) "expected valid uuid for `file-id`")
+  [page-id]
   (assert (uuid? page-id) "expected valid uuid for `page-id`")
-
   (ptk/reify ::finalize-page
     ptk/UpdateEvent
     (update [_ state]
       (let [local (-> (:workspace-local state)
                       (dissoc :edition :edit-path :selected))
-            exit? (not= :workspace (rt/lookup-name state))
+            exit? (not= :workspace (dm/get-in state [:route :data :name]))
             state (-> state
-                      (update :workspace-cache assoc [file-id page-id] local)
+                      (update :workspace-cache assoc page-id local)
                       (dissoc :current-page-id
                               :workspace-local
                               :workspace-trimmed-page
