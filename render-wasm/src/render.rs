@@ -213,10 +213,6 @@ impl RenderState {
             .canvas()
             .clear(self.background_color)
             .reset_matrix();
-        self.final_surface
-            .canvas()
-            .clear(self.background_color)
-            .reset_matrix();
         self.debug_surface
             .canvas()
             .clear(skia::Color::TRANSPARENT)
