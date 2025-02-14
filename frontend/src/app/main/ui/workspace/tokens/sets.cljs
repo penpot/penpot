@@ -88,6 +88,7 @@
       :on-blur on-submit-valid
       :on-key-down on-key-down
       :auto-focus true
+      :placeholder (tr "workspace.token.set-edit-placeholder")
       :default-value default-value}]))
 
 (mf/defc checkbox*
