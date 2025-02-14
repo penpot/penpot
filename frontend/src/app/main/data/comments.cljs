@@ -14,8 +14,10 @@
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.notifications :as ntf]
    [app.main.data.team :as dtm]
    [app.main.repo :as rp]
+   [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -453,6 +455,26 @@
                       (rx/reduce #(merge %1 (d/index-by :id %2)) {})
                       (rx/map #(partial fetched-users %))))))
              (rx/catch #(rx/throw {:type :comment-error})))))))
+
+(defn mark-all-threads-as-read
+  "Mark all threads as read"
+  [team-id]
+  (ptk/reify ::mark-all-threads-as-read
+    ev/Event
+    (-data [_] {})
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [threads (-> state :comment-threads vals)]
+        (rx/concat
+         (->> (rp/cmd! :mark-all-threads-as-read {:threads (mapv :id threads)})
+              (rx/map #(retrieve-unread-comment-threads team-id))
+              (rx/catch #(rx/throw {:type :comment-error})))
+         (rx/of (ntf/show {:level :info
+                           :type :toast
+                           :content (tr "dashboard.mark-all-as-read.success")
+                           :timeout 7000})))))))
+
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

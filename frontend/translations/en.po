@@ -6966,3 +6966,9 @@ msgstr "Autosaved versions will be kept for %s days."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "dashboard.mark-all-as-read.success"
+msgstr "Marked all notifications as read"
+
+msgid "label.mark-all-as-read"
+msgstr "Mark all as read"

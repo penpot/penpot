@@ -797,3 +797,18 @@
                 {:id id}
                 {::db/return-keys false})
     nil))
+
+(def ^:private
+  schema:mark-all-threads-as-read
+  [:map {:title "mark-all-threads-as-read"}
+   [:threads [:vector ::sm/uuid]]])
+
+(sv/defmethod ::mark-all-threads-as-read
+  {::doc/added "1.15"
+   ::sm/params schema:mark-all-threads-as-read}
+  [cfg {:keys [::rpc/profile-id threads] :as params}]
+  (db/tx-run!
+   cfg
+   (fn [{:keys [::db/conn]}]
+     (doseq [thread-id threads]
+       (upsert-comment-thread-status! conn profile-id thread-id)))))
