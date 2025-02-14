@@ -9,7 +9,6 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.common :as dcm]
-   [app.main.data.helpers :as dsh]
    [app.main.data.persistence :as dps]
    [app.main.data.plugins :as dpl]
    [app.main.data.workspace :as dw]
@@ -42,13 +41,6 @@
    [goog.events :as events]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
-
-(defn- make-workspace-ready-ref
-  [file-id]
-  (l/derived (fn [state]
-               (and (= file-id (:workspace-ready state))
-                    (some? (dsh/lookup-file-data state file-id))))
-             st/state))
 
 (mf/defc workspace-content*
   {::mf/private true}
@@ -129,35 +121,32 @@
 
 (mf/defc workspace-page*
   {::mf/private true}
-  [{:keys [page-id file layout wglobal]}]
-  (let [page-id (hooks/use-equal-memo page-id)
-        page    (mf/deref refs/workspace-page)]
+  [{:keys [page-id file-id file layout wglobal]}]
+  (let [page (mf/deref refs/workspace-page)]
 
     (mf/with-effect []
       (let [focus-out #(st/emit! (dw/workspace-focus-lost))
             key       (events/listen globals/window "blur" focus-out)]
         (partial events/unlistenByKey key)))
 
-    (mf/with-effect [page-id]
-      (if (some? page-id)
-        (st/emit! (dw/initialize-page page-id))
-        (st/emit! (dcm/go-to-workspace ::rt/replace true)))
-
+    (mf/with-effect [file-id page-id]
+      (st/emit! (dw/initialize-page file-id page-id))
       (fn []
-        (when (some? page-id)
-          (st/emit! (dw/finalize-page page-id)))))
+        (when page-id
+          (st/emit! (dw/finalize-page file-id page-id)))))
 
     (if (some? page)
       [:> workspace-content* {:file file
                               :page page
                               :wglobal wglobal
                               :layout layout}]
-      [:& workspace-loader*])))
-
+      [:> workspace-loader*])))
 
 (def ^:private ref:file-without-data
   (l/derived (fn [file]
-               (dissoc file :data))
+               (-> file
+                   (dissoc :data)
+                   (assoc ::has-data (contains? file :data))))
              refs/file
              =))
 
@@ -181,10 +170,6 @@
         read-only?       (mf/deref refs/workspace-read-only?)
         read-only?       (or read-only? (not (:can-edit permissions)))
 
-        ready*           (mf/with-memo [file-id]
-                           (make-workspace-ready-ref file-id))
-        ready?           (mf/deref ready*)
-
         design-tokens?   (features/use-feature "design-tokens/v1")
 
         background-color (:background-color wglobal)]
@@ -207,6 +192,10 @@
         (st/emit! ::dps/force-persist
                   (dw/finalize-workspace file-id))))
 
+    (mf/with-effect [file page-id]
+      (when-not page-id
+        (st/emit! (dcm/go-to-workspace :file-id file-id ::rt/replace true))))
+
     [:> (mf/provider ctx/current-project-id) {:value project-id}
      [:> (mf/provider ctx/current-file-id) {:value file-id}
       [:> (mf/provider ctx/current-page-id) {:value page-id}
@@ -219,9 +208,11 @@
                              :touch-action "none"}}
            [:> context-menu*]
 
-           (if ^boolean ready?
-             [:> workspace-page* {:page-id page-id
-                                  :file file
-                                  :wglobal wglobal
-                                  :layout layout}]
+           (if (::has-data file)
+             [:> workspace-page*
+              {:page-id page-id
+               :file-id file-id
+               :file file
+               :wglobal wglobal
+               :layout layout}]
              [:> workspace-loader*])]]]]]]]))
