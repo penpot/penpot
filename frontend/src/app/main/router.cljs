@@ -120,6 +120,11 @@
   ([id params & {:as options}]
    (navigate id params options)))
 
+(defn lookup-name
+  [state]
+  (dm/get-in state [:route :data :name]))
+
+;; FIXME: rename to lookup-params
 (defn get-params
   [state]
   (dm/get-in state [:route :params :query]))

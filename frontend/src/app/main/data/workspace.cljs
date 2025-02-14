@@ -108,9 +108,6 @@
 (declare ^:private workspace-initialized)
 (declare ^:private fetch-libraries)
 (declare ^:private libraries-fetched)
-(declare ^:private preload-data-uris)
-
-;; (declare go-to-layout)
 
 ;; --- Initialize Workspace
 
@@ -314,13 +311,10 @@
 (defn initialize-workspace
   [file-id]
   (assert (uuid? file-id) "expected valud uuid for `file-id`")
-
   (ptk/reify ::initialize-workspace
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (dissoc :files)
-          (dissoc :workspace-ready)
           (assoc :recent-colors (:recent-colors storage/user))
           (assoc :recent-fonts (:recent-fonts storage/user))
           (assoc :current-file-id file-id)
@@ -395,11 +389,9 @@
           (dissoc
            :current-file-id
            :workspace-editor-state
-           :files
            :workspace-media-objects
            :workspace-persistence
            :workspace-presence
-           :workspace-ready
            :workspace-undo)
           (update :workspace-global dissoc :read-only?)
           (assoc-in [:workspace-global :options-mode] :design)))
@@ -426,48 +418,67 @@
 ;; Make this event callable through dynamic resolution
 (defmethod ptk/resolve ::reload-current-file [_ _] (reload-current-file))
 
-(defn initialize-page
-  [page-id]
-  (assert (uuid? page-id) "expected valid uuid for `page-id`")
 
-  (ptk/reify ::initialize-page
+
+(def ^:private xf:collect-file-media
+  "Resolve and collect all file media on page objects"
+  (comp (map second)
+        (keep (fn [{:keys [metadata fill-image]}]
+                (cond
+                  (some? metadata)   (cf/resolve-file-media metadata)
+                  (some? fill-image) (cf/resolve-file-media fill-image))))))
+
+
+(defn- initialize-page*
+  "Second phase of page initialization, once we know the page is
+  available on the sate"
+  [file-id page-id page]
+  (ptk/reify ::initialize-page*
     ptk/UpdateEvent
     (update [_ state]
-      (if-let [{:keys [id] :as page} (dsh/lookup-page state page-id)]
-        ;; we maintain a cache of page state for user convenience with the exception of the
-        ;; selection; when user abandon the current page, the selection is lost
-        (let [local (dm/get-in state [:workspace-cache id] default-workspace-local)]
-          (-> state
-              (assoc :current-page-id id)
-              (assoc :workspace-local (assoc local :selected (d/ordered-set)))
-              (assoc :workspace-trimmed-page (dm/select-keys page [:id :name]))
+      ;; selection; when user abandon the current page, the selection is lost
+      (let [local (dm/get-in state [:workspace-cache [file-id page-id]] default-workspace-local)]
+        (-> state
+            (assoc :current-page-id page-id)
+            (assoc :workspace-local (assoc local :selected (d/ordered-set)))
+            (assoc :workspace-trimmed-page (dm/select-keys page [:id :name]))
 
-              ;; FIXME: this should be done on `initialize-layout` (?)
-              (update :workspace-layout layout/load-layout-flags)
-              (update :workspace-global layout/load-layout-state)))
+            ;; FIXME: this should be done on `initialize-layout` (?)
+            (update :workspace-layout layout/load-layout-flags)
+            (update :workspace-global layout/load-layout-state))))
 
-        state))
+    ptk/EffectEvent
+    (effect [_ _ _]
+      (let [uris  (into #{} xf:collect-file-media (:objects page))]
+        (->> (rx/from uris)
+             (rx/subs! #(http/fetch-data-uri % false)))))))
 
+(defn initialize-page
+  [file-id page-id]
+  (assert (uuid? file-id) "expected valid uuid for `file-id`")
+
+  (ptk/reify ::initialize-page
     ptk/WatchEvent
     (watch [_ state _]
-      (if (dsh/lookup-page state page-id)
-        (let [file-id (:current-file-id state)]
-          (rx/of (preload-data-uris page-id)
-                 (dwth/watch-state-changes file-id page-id)
-                 (dwl/watch-component-changes)))
-        (rx/of (dcm/go-to-workspace))))))
+      (if-let [page (dsh/lookup-page state file-id page-id)]
+        (rx/of (initialize-page* file-id page-id page)
+               (dwth/watch-state-changes file-id page-id)
+               (dwl/watch-component-changes))
+        (rx/of (dcm/go-to-workspace :file-id file-id ::rt/replace true))))))
 
 (defn finalize-page
-  [page-id]
+  [file-id page-id]
+  (assert (uuid? file-id) "expected valid uuid for `file-id`")
   (assert (uuid? page-id) "expected valid uuid for `page-id`")
+
   (ptk/reify ::finalize-page
     ptk/UpdateEvent
     (update [_ state]
       (let [local (-> (:workspace-local state)
                       (dissoc :edition :edit-path :selected))
-            exit? (not= :workspace (dm/get-in state [:route :data :name]))
+            exit? (not= :workspace (rt/lookup-name state))
             state (-> state
-                      (update :workspace-cache assoc page-id local)
+                      (update :workspace-cache assoc [file-id page-id] local)
                       (dissoc :current-page-id
                               :workspace-local
                               :workspace-trimmed-page
@@ -475,22 +486,6 @@
 
         (cond-> state
           exit? (dissoc :workspace-drawing))))))
-
-(defn- preload-data-uris
-  "Preloads the image data so it's ready when necessary"
-  [page-id]
-  (ptk/reify ::preload-data-uris
-    ptk/EffectEvent
-    (effect [_ state _]
-      (let [xform (comp (map second)
-                        (keep (fn [{:keys [metadata fill-image]}]
-                                (cond
-                                  (some? metadata)   (cf/resolve-file-media metadata)
-                                  (some? fill-image) (cf/resolve-file-media fill-image)))))
-            uris  (into #{} xform (dsh/lookup-page-objects state page-id))]
-
-        (->> (rx/from uris)
-             (rx/subs! #(http/fetch-data-uri % false)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Page CRUD
