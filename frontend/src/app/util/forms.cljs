@@ -44,7 +44,7 @@
     {:message (translate-code code)}))
 
 (defn- interpret-schema-problem
-  [acc {:keys [schema in value] :as problem}]
+  [acc {:keys [schema in value type] :as problem}]
   (let [props  (m/properties schema)
         tprops (m/type-properties schema)
         field  (or (first in)
@@ -56,7 +56,8 @@
         (nil? field)
         acc
 
-        (nil? value)
+        (or (= type :malli.core/missing-key)
+            (nil? value))
         (assoc acc field {:message (tr "errors.field-missing")})
 
         ;; --- CHECK on schema props

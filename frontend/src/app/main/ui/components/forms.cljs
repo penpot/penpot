@@ -47,7 +47,9 @@
                          (= @type' "email"))
         placeholder  (when is-text? (or placeholder label))
 
-        touched?     (get-in @form [:touched input-name])
+        touched?     (and (contains? (:data @form) input-name)
+                          (get-in @form [:touched input-name]))
+
         error        (get-in @form [:errors input-name])
 
         value        (get-in @form [:data input-name] "")
@@ -183,7 +185,9 @@
 
         focus?   (mf/use-state false)
 
-        touched? (get-in @form [:touched input-name])
+        touched? (and (contains? (:data @form) input-name)
+                      (get-in @form [:touched input-name]))
+
         error    (get-in @form [:errors input-name])
 
         value    (get-in @form [:data input-name] "")
