@@ -316,19 +316,25 @@
          (fn [event]
            (dom/stop-propagation event)
            (dom/prevent-default event)
+
            (when-not selected?
              (when-not (kbd/shift? event)
                (st/emit! (dd/clear-selected-files)))
-             (st/emit! (dd/toggle-file-select file)))
+             (do
+               (st/emit! (dd/toggle-file-select file))))
 
-           (let [client-position (dom/get-client-position event)
-                 position (if (and (nil? (:y client-position)) (nil? (:x client-position)))
-                            (let [target-element (dom/get-target event)
-                                  points         (dom/get-bounding-rect target-element)
-                                  y              (:top points)
-                                  x              (:left points)]
-                              (gpt/point x y))
-                            client-position)]
+           (let [client-position
+                 (dom/get-client-position event)
+
+                 position
+                 (if (and (nil? (:y client-position)) (nil? (:x client-position)))
+                   (let [target-element (dom/get-target event)
+                         points         (dom/get-bounding-rect target-element)
+                         y              (:top points)
+                         x              (:left points)]
+                     (gpt/point x y))
+                   client-position)]
+
              (st/emit! (dd/show-file-menu-with-position file-id position)))))
 
         on-context-menu
@@ -401,50 +407,53 @@
           [:h3 (:name file)])
         [:& grid-item-metadata {:modified-at (:modified-at file)}]]
 
-       (when-not is-library-view
-         [:div {:class (stl/css-case :project-th-actions true :force-display (:menu-open dashboard-local))}
-          [:div
-           {:class (stl/css :project-th-icon :menu)
-            :tab-index "0"
-            :ref menu-ref
-            :id (str file-id "-action-menu")
-            :on-click on-menu-click
-            :on-key-down (fn [event]
-                           (when (kbd/enter? event)
-                             (dom/stop-propagation event)
-                             (on-menu-click event)))}
-           menu-icon
-           (when (and selected? file-menu-open?)
+       [:div {:class (stl/css-case :project-th-actions true :force-display (:menu-open dashboard-local))}
+        [:div
+         {:class (stl/css :project-th-icon :menu)
+          :tab-index "0"
+          :role "button"
+          :aria-label (tr "dashboard.options")
+          :ref menu-ref
+          :id (str file-id "-action-menu")
+          :on-click on-menu-click
+          :on-key-down (fn [event]
+                         (when (kbd/enter? event)
+                           (dom/stop-propagation event)
+                           (on-menu-click event)))}
+         menu-icon
+         (when (and selected? file-menu-open?)
            ;; When the menu is open we disable events in the dashboard. We need to force pointer events
            ;; so the menu can be handled
-             [:div {:style {:pointer-events "all"}}
-              [:> file-menu* {:files (vals selected-files)
-                              :left (+ 24 (:x (:menu-pos dashboard-local)))
-                              :top (:y (:menu-pos dashboard-local))
-                              :can-edit can-edit
-                              :navigate true
-                              :on-edit on-edit
-                              :on-menu-close on-menu-close
-                              :origin origin
-                              :parent-id (dm/str file-id "-action-menu")}]])]])]]]))
+           [:div {:style {:pointer-events "all"}}
+            [:> file-menu* {:files (vals selected-files)
+                            :left (+ 24 (:x (:menu-pos dashboard-local)))
+                            :top (:y (:menu-pos dashboard-local))
+                            :can-edit can-edit
+                            :navigate true
+                            :on-edit on-edit
+                            :on-menu-close on-menu-close
+                            :origin origin
+                            :parent-id (dm/str file-id "-action-menu")}]])]]]]]))
 
 (mf/defc grid
   {::mf/props :obj}
   [{:keys [files project origin limit create-fn can-edit selected-files]}]
   (let [dragging?  (mf/use-state false)
-        project-id (:id project)
+        project-id (get project :id)
+        team-id    (get project :team-id)
+
         node-ref   (mf/use-var nil)
 
         on-finish-import
         (mf/use-fn
+         (mf/deps project-id team-id)
          (fn []
            (st/emit! (dpj/fetch-files project-id)
-                     (dtm/fetch-shared-files)
+                     (dtm/fetch-shared-files team-id)
                      (dd/clear-selected-files))))
 
-
-
-        import-files (use-import-file project-id on-finish-import)
+        import-files
+        (use-import-file project-id on-finish-import)
 
         on-drag-enter
         (mf/use-fn

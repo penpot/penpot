@@ -142,6 +142,8 @@
   (let [id         (:id library)
         importing? (deref importing)
 
+        team-id    (mf/use-ctx ctx/current-team-id)
+
         on-error
         (mf/use-fn
          (fn [_]
@@ -150,11 +152,13 @@
 
         on-success
         (mf/use-fn
+         (mf/deps team-id)
          (fn [_]
-           (st/emit! (dtm/fetch-shared-files))))
+           (st/emit! (dtm/fetch-shared-files team-id))))
 
         import-library
         (mf/use-fn
+         (mf/deps on-success on-error)
          (fn [_]
            (reset! importing id)
            (st/emit! (dd/clone-template
@@ -565,6 +569,7 @@
         file           (deref refs/file)
 
         file-id        (:id file)
+        team-id        (:team-id file)
         shared?        (:is-shared file)
 
         linked-libraries
@@ -611,8 +616,8 @@
                   :id "updates"
                   :content updates-tab}]]
 
-    (mf/with-effect []
-      (st/emit! (dtm/fetch-shared-files)))
+    (mf/with-effect [team-id]
+      (st/emit! (dtm/fetch-shared-files team-id)))
 
     [:div {:class (stl/css :modal-overlay)
            :on-click close-dialog-outside

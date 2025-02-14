@@ -227,26 +227,6 @@
         (->> (rp/cmd! :get-webhooks {:team-id team-id})
              (rx/map (partial webhooks-fetched team-id)))))))
 
-(defn- shared-files-fetched
-  [files]
-  (ptk/reify ::shared-files-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [files (d/index-by :id files)]
-        (assoc state :shared-files files)))))
-
-(defn fetch-shared-files
-  "Event mainly used for fetch a list of shared libraries for a team,
-  this list does not includes the content of the library per se.  It
-  is used mainly for show available libraries and a summary of it."
-  []
-  (ptk/reify ::fetch-shared-files
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [team-id (:current-team-id state)]
-        (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
-             (rx/map shared-files-fetched))))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Modification
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -567,6 +547,25 @@
                            (rx/of (fetch-webhooks)))))
              (rx/catch on-error))))))
 
+(defn- shared-files-fetched
+  [files]
+  (ptk/reify ::shared-files-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [files (d/index-by :id files)]
+        (update state :shared-files merge files)))))
 
+(defn fetch-shared-files
+  "Event mainly used for fetch a list of shared libraries for a team,
+  this list does not includes the content of the library per se.  It
+  is used mainly for show available libraries and a summary of it."
+  ([] (fetch-shared-files nil))
+  ([team-id]
+   (ptk/reify ::fetch-shared-files
+     ptk/WatchEvent
+     (watch [_ state _]
+       (when-let [team-id (or team-id (:current-team-id state))]
+         (->> (rp/cmd! :get-team-shared-files {:team-id team-id})
+              (rx/map shared-files-fetched)))))))
 
 

@@ -15,7 +15,15 @@
    [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [okulary.core :as l]
    [rumext.v2 :as mf]))
+
+(def ^:private ref:selected-files
+  (l/derived (fn [state]
+               (let [selected (get state :selected-files)
+                     files    (get state :shared-files)]
+                 (refs/extract-selected-files files selected)))
+             st/state))
 
 (mf/defc libraries-page*
   {::mf/props :obj}
@@ -23,14 +31,21 @@
   (let [files
         (mf/deref refs/shared-files)
 
-        files
-        (mf/with-memo [files]
-          (->> (vals files)
-               (sort-by :modified-at)
-               (reverse)))
+        team-id
+        (get team :id)
 
         can-edit
         (-> team :permissions :can-edit)
+
+        files
+        (mf/with-memo [files team-id]
+          (->> (vals files)
+               (filter #(= team-id (:team-id %)))
+               (sort-by :modified-at)
+               (reverse)))
+
+        selected-files
+        (mf/deref ref:selected-files)
 
         [rowref limit]
         (hooks/use-dynamic-grid-item-width 350)]
@@ -41,16 +56,19 @@
                     (:name team))]
         (dom/set-html-title (tr "title.dashboard.shared-libraries" tname))))
 
-    (mf/with-effect [team]
-      (st/emit! (dtm/fetch-shared-files)
+    (mf/with-effect [team-id]
+      (st/emit! (dtm/fetch-shared-files team-id)
                 (dd/clear-selected-files)))
 
     [:*
      [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
       [:div#dashboard-libraries-title {:class (stl/css :dashboard-title)}
        [:h1 (tr "dashboard.libraries-title")]]]
-     [:section {:class (stl/css :dashboard-container :no-bg :dashboard-shared)  :ref rowref}
+
+     [:section {:class (stl/css :dashboard-container :no-bg :dashboard-shared)
+                :ref rowref}
       [:& grid {:files files
+                :selected-files selected-files
                 :project default-project
                 :origin :libraries
                 :limit limit
