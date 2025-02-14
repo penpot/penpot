@@ -187,8 +187,8 @@
   (ptk/reify ::show-file-menu-with-position
     ptk/UpdateEvent
     (update [_ state]
-      (update state :dashboard-local
-              assoc :menu-open true
+      (update state :dashboard-local assoc
+              :menu-open true
               :menu-pos pos
               :file-id file-id))))
 

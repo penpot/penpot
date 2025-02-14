@@ -552,7 +552,6 @@
       and p.team_id = ?
     order by f.modified_at desc")
 
-
 (defn- get-library-summary
   [cfg {:keys [id data] :as file}]
   (letfn [(assets-sample [assets limit]
