@@ -399,6 +399,12 @@ impl Shape {
             .filter(|shadow| shadow.style() == ShadowStyle::Drop)
     }
 
+    pub fn inner_shadows(&self) -> impl DoubleEndedIterator<Item = &Shadow> {
+        self.shadows
+            .iter()
+            .filter(|shadow| shadow.style() == ShadowStyle::Inner)
+    }
+
     pub fn to_path_transform(&self) -> Option<skia::Matrix> {
         match self.kind {
             Kind::Path(_) | Kind::Bool(_, _) => {
