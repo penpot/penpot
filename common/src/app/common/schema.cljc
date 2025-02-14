@@ -963,7 +963,6 @@
   {:title "string"
    :description "not whitespace string"
    :gen/gen (sg/word-string)
-   :error/code "errors.invalid-text"
    :error/fn
    (fn [{:keys [value schema]}]
      (let [{:keys [max min] :as props} (properties schema)]
@@ -971,16 +970,23 @@
          (and (string? value)
               (number? max)
               (> (count value) max))
-         ["errors.field-max-length" max]
+         {:code ["errors.field-max-length" max]}
 
          (and (string? value)
               (number? min)
               (< (count value) min))
-         ["errors.field-min-length" min]
+         {:code ["errors.field-min-length" min]}
+
+         (and (string? value)
+              (str/empty? value))
+         {:code "errors.field-missing"}
 
          (and (string? value)
               (str/blank? value))
-         "errors.field-not-all-whitespace")))}})
+         {:code "errors.field-not-all-whitespace"}
+
+         :else
+         {:code "errors.invalid-text"})))}})
 
 (register!
  {:type ::password

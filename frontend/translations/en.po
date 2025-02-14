@@ -1230,6 +1230,18 @@ msgstr "Something wrong has happened."
 msgid "errors.invalid-color"
 msgstr "Invalid color"
 
+#: src/app/util/forms.cljs
+msgid "errors.invalid-data"
+msgstr "Invalid data"
+
+#: src/app/util/forms.cljs
+msgid "errors.field-missing"
+msgstr "Empty field"
+
+#: src/app/util/forms.cljs
+msgid "errors.invalid-text"
+msgstr "Invalid text"
+
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
 #, unused
 msgid "errors.invalid-email"
