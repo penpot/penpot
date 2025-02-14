@@ -411,6 +411,8 @@
         [:div
          {:class (stl/css :project-th-icon :menu)
           :tab-index "0"
+          :role "button"
+          :aria-label (tr "dashboard.options")
           :ref menu-ref
           :id (str file-id "-action-menu")
           :on-click on-menu-click

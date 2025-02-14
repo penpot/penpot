@@ -14,17 +14,20 @@ test("BUG 10421 - Fix libraries context menu", async ({ page }) => {
   const dashboardPage = new DashboardPage(page);
   await dashboardPage.mockRPC(
     "get-team-shared-files?team-id=*",
-    "dashboard/get-team-shared-files-10421.json",
+    "dashboard/get-team-shared-files-10142.json",
+  );
+
+  await dashboardPage.mockRPC(
+    "get-all-projects",
+    "dashboard/get-all-projects.json",
   );
 
   await dashboardPage.goToLibraries();
 
-  await expect(page.getByText("Lorem Ipsum")).toBeVisible();
-  await page
-    .getByRole("button", { name: /Lorem Ipsum/ })
-    .click({ button: "right" });
+  const libraryItem = page.getByTitle(/Lorem Ipsum/);
+
+  await expect(libraryItem).toBeVisible();
+  await libraryItem.getByRole("button", { name: "Options" }).click();
 
   await expect(page.getByText("Rename")).toBeVisible();
-
-  expect(false).toBe(true);
 });
