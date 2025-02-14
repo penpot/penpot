@@ -278,8 +278,9 @@
                         :layout-item-max-w value
                         :layout-item-max-h value}
                        (select-keys attributes))]
-         (dwsl/update-layout-child shape-ids props {:ignore-touched true
-                                                    :page-id page-id}))))))
+         (rx/of
+          (dwsl/update-layout-child shape-ids props {:ignore-touched true
+                                                     :page-id page-id})))))))
 
 ;; Token Types -----------------------------------------------------------------
 
