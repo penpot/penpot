@@ -22,7 +22,6 @@
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.edition :as dwe]
    [app.main.data.workspace.selection :as dws]
-   [app.main.data.workspace.viewport :as dwv]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.streams :as ms]
@@ -118,7 +117,7 @@
                                    :page-id (:page-id thread)))
 
        (->> stream
-            (rx/filter (ptk/type? ::dwv/initialize-viewport))
+            (rx/filter (ptk/type? ::dcmt/comment-threads-fetched))
             (rx/take 1)
             (rx/mapcat #(rx/of (center-to-comment-thread thread)
                                (dwd/select-for-drawing :comments)
