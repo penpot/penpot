@@ -89,10 +89,12 @@
 
         ;; State
         state* (mf/use-state
-                {:id (uuid/next)
-                 :is-open? false})
+                #(do {:id (uuid/next)
+                      :is-open? false
+                      :rect nil}))
         state (deref state*)
         is-open? (:is-open? state)
+        rect (:rect state)
 
         ;; Dropdown
         on-close-dropdown (mf/use-fn #(swap! state* assoc :is-open? false))
@@ -100,9 +102,13 @@
         on-open-dropdown
         (mf/use-fn
          (mf/deps can-edit?)
-         (fn []
+         (fn [event]
            (when can-edit?
-             (swap! state* assoc :is-open? true))))]
+             (when-let [node (dom/get-current-target event)]
+               (let [rect (dom/get-bounding-rect node)]
+                 (swap! state* assoc
+                        :is-open? true
+                        :rect rect))))))]
 
     ;; TODO: This element should be accessible by keyboard
     [:div {:on-click on-open-dropdown
@@ -116,8 +122,19 @@
      [:> text* {:as "span" :typography "body-small" :class (stl/css :current-label)}
       current-label]
      [:> icon* {:icon-id i/arrow-down :class (stl/css :dropdown-button) :aria-hidden true}]
-     [:& dropdown {:show is-open?
-                   :on-close on-close-dropdown}
-      [:& theme-options {:active-theme-paths active-theme-paths
-                         :themes themes
-                         :on-close on-close-dropdown}]]]))
+
+     (when is-open?
+       (mf/portal
+        (mf/html
+         [:div {:class (stl/css :dropdown-portal)
+                :data-testid "theme-select-dropdown"
+                :style {:top (:top rect)
+                        :left (:left rect)
+                        :width (:width rect)}}
+
+          [:& dropdown {:show is-open?
+                        :on-close on-close-dropdown}
+           [:& theme-options {:active-theme-paths active-theme-paths
+                              :themes themes
+                              :on-close on-close-dropdown}]]])
+        (.-body js/document)))]))

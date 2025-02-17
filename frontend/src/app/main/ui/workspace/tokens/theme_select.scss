@@ -122,3 +122,7 @@
 .current-label {
   @include textEllipsis;
 }
+
+.dropdown-portal {
+  position: absolute;
+}
