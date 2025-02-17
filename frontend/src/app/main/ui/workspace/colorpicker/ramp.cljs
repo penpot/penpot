@@ -50,11 +50,13 @@
              (calculate-pos event))))]
 
     [:div {:class (stl/css :value-saturation-selector)
+           :data-testid "value-saturation-selector"
            :on-pointer-down handle-start-drag
            :on-pointer-up handle-stop-drag
            :on-click calculate-pos
            :on-pointer-move handle-change-pointer-move}
      [:div {:class (stl/css :handler)
+            :data-testid "ramp-handler"
             :style {:pointer-events "none"
                     :left (str (* 100 saturation) "%")
                     :top (str (* 100 (- 1 (/ value 255))) "%")}}]]))

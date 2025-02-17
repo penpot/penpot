@@ -172,6 +172,48 @@ test("User adds a library and its automatically selected in the color palette", 
   ).toBeVisible();
 });
 
+test("Bug 10179 - Drag & drop doesn't add colors to the Recent Colors palette", async ({
+  page,
+}) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.goToWorkspace();
+
+  await workspacePage.page.keyboard.press("Alt+p");
+
+  await expect(
+    workspacePage.palette.getByText(
+      "There are no color styles in your library yet",
+    ),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "#E8E9EA" }).click();
+  await expect(page.getByTestId("colorpicker")).toBeVisible();
+  const handler = await page.getByTestId("ramp-handler");
+  await expect(handler).toBeVisible();
+  const saturation_selection = await page.getByTestId(
+    "value-saturation-selector",
+  );
+  await expect(saturation_selection).toBeVisible();
+  const saturation_box = await saturation_selection.boundingBox();
+  const handler_box = await handler.boundingBox();
+  await page.mouse.move(
+    handler_box.x + handler_box.width,
+    handler_box.y + handler_box.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    saturation_box.x + saturation_box.width / 2,
+    saturation_box.y + saturation_box.height / 2,
+  );
+  await page.mouse.up();
+  await expect(
+    workspacePage.palette.getByText(
+      "There are no color styles in your library yet",
+    ),
+  ).not.toBeVisible();
+});
+
 test("Bug 7489 - Workspace-palette items stay hidden when opening with keyboard-shortcut", async ({
   page,
 }) => {
